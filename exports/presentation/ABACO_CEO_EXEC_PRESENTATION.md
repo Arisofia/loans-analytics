@@ -8,7 +8,7 @@
 - **Portfolio:** ~5,000+ credit lines with outstanding_balance > 0; 56 active CLIENT_IDs; average outstanding $1.47K per loan, $131.6K per client; grouped by CLIENT_ID for concentration.
 - **Concentration (CLIENT_ID):** Top-10 at 19.87% of AUM (below 30% covenant); Top-1 single-obligor <4% policy; largest single loan $9.4K; payer-level only informational.
 - **DPD status:** 45 loans ≤30 DPD (80%); 8 loans 30-60 (12%); 3 loans 60-90 (4%); 2 loans 90-120 (2%); 1 loan 120-150 (1%); 1 loan 150-180 (1%); 0 default >180; default rate 0%.
-- **Customer types (CLIENT_ID):** New 12 clients ($1,584K AUM, ~17% churn); Recurrent 38 ($5,006K AUM, ~21% churn); Recovered 6 ($778K AUM, ~1 reactivation/month); all default 0%.
+- **Customer types (CLIENT_ID):** New 12 clients ($1,584K AUM, ~17% churn); Recurrent 38 ($5,006K AUM, ~21% churn); Recovered 6 ($778K AUM, ~1 reactivation/month); all at 0% default rate.
 - **Pricing & terms:** Weighted APR 28.5%; weighted EIR 32.1%; average term 4.2 months; APR range 12-45% with 2 loans >40% flagged.
 - **Utilization:** Mean 67.3%, median 65%, max 98%; 15 lines <50% (growth upside), 3 lines >90% (monitor).
 - **DPD stats (by CLIENT_ID):** Mean 8.5 days; median 5; max 165; best 0; worst 165.
