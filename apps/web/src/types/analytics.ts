@@ -57,17 +57,23 @@ export type ProcessedAnalytics = Readonly<{
 // EXTENDED ANALYTICS DOMAIN TYPES
 // ============================================
 
+/**
+ * ISO 8601 date string used for serialized date values coming from/to APIs.
+ * Example: "2025-03-15T00:00:00.000Z"
+ */
+export type ISODateString = string
+
 export interface LoanDataset {
   loans: LoanRecord[]
   balances: LoanParBalanceRecord[]
-  uploadedAt: Date
+  uploadedAt: ISODateString
   filename: string
 }
 
 export interface LoanRecord {
   loan_id: string
-  maturity_date: string
-  origination_date: string
+  maturity_date: ISODateString
+  origination_date: ISODateString
   loan_amount: number
   customer_id: string
   customer_name: string
@@ -78,7 +84,7 @@ export interface LoanRecord {
 
 export interface LoanParBalanceRecord {
   loan_id_raw: string
-  reporting_date: string
+  reporting_date: ISODateString
   par_balance: number
   dpd: number
   customer_id: string
@@ -86,7 +92,7 @@ export interface LoanParBalanceRecord {
 }
 
 export interface PortfolioSnapshot {
-  reportingDate: string
+  reportingDate: ISODateString
   totalAUM: number
   totalLoans: number
   activeCustomers: number
@@ -219,7 +225,7 @@ export interface TreemapNode {
     avgTicket?: number
     kamCode?: string
     segment?: string
-    quality?: 'Performing' | 'Late' | 'Default'
+    quality?: 'performing' | 'late' | 'default'
   }
 }
 
@@ -260,18 +266,98 @@ export interface AnalyticsExportConfig {
   sections: AnalyticsExportSection[]
 }
 
-export interface AnalyticsExportSection {
+export type AnalyticsExportSection =
+  | KPIExportSection
+  | ChartExportSection
+  | TableExportSection
+  | NarrativeExportSection
+  | TreemapExportSection
+  | MatrixExportSection
+
+export interface KPIExportSection {
   id: string
   title: string
-  type: 'kpi' | 'chart' | 'table' | 'narrative' | 'treemap' | 'matrix'
-  data: any
-  config?: any
+  type: 'kpi'
+  data: AnalyticsKPI[] | KPIDashboardSection
+  config?: {
+    layout?: 'single' | 'grid'
+    columns?: number
+  }
+}
+
+export interface ChartSeries {
+  label: string
+  values: number[]
+}
+
+export interface ChartExportSection {
+  id: string
+  title: string
+  type: 'chart'
+  data: {
+    chartType: 'line' | 'bar' | 'pie' | 'area' | 'scatter'
+    labels: string[]
+    series: ChartSeries[]
+  }
+  config?: {
+    stacked?: boolean
+    showLegend?: boolean
+    valueFormat?: 'currency' | 'percentage' | 'number' | 'text'
+  }
+}
+
+export interface TableExportSection {
+  id: string
+  title: string
+  type: 'table'
+  data: {
+    columns: string[]
+    rows: Record<string, string | number | null>[]
+  }
+  config?: {
+    sortable?: boolean
+    columnFormats?: Record<string, 'currency' | 'percentage' | 'number' | 'text'>
+  }
+}
+
+export interface NarrativeExportSection {
+  id: string
+  title: string
+  type: 'narrative'
+  data: {
+    content: string
+    language?: 'en' | 'es'
+    tone?: 'professional' | 'technical' | 'casual'
+  }
+  config?: {
+    includeSummary?: boolean
+  }
+}
+
+export interface TreemapExportSection {
+  id: string
+  title: string
+  type: 'treemap'
+  data: TreemapVisualizationData
+  config?: {
+    showLegend?: boolean
+  }
+}
+
+export interface MatrixExportSection {
+  id: string
+  title: string
+  type: 'matrix'
+  data: RollRateMatrix
+  config?: {
+    highlightDiagonal?: boolean
+  }
 }
 
 export interface AnalyticsFilters {
   dateRange: {
-    start: string
-    end: string
+    start: ISODateString
+    end: ISODateString
   }
   kamCodes?: string[]
   segments?: ('anchor' | 'midMarket' | 'small')[]
@@ -283,8 +369,8 @@ export interface AnalyticsFilters {
 
 export interface UploadValidationResult {
   isValid: boolean
-  errors: UploadError[]
-  warnings: UploadWarning[]
+  errors: UploadIssue[]
+  warnings: UploadIssue[]
   summary: {
     totalRows: number
     validRows: number
@@ -294,20 +380,14 @@ export interface UploadValidationResult {
   }
 }
 
-export interface UploadError {
-  row: number
-  field: string
-  value: any
-  message: string
-  severity: 'error'
-}
+export type UploadSeverity = 'error' | 'warning'
 
-export interface UploadWarning {
+export interface UploadIssue {
   row: number
   field: string
   value: any
   message: string
-  severity: 'warning'
+  severity: UploadSeverity
 }
 
 export interface AnalyticsDashboardState {
@@ -316,8 +396,8 @@ export interface AnalyticsDashboardState {
   error: string | null
   filters: AnalyticsFilters
   activeView: 'overview' | 'quality' | 'concentration' | 'growth' | 'rollrate'
-  selectedDate: string
-  comparisonDate?: string
+  selectedDate: ISODateString
+  comparisonDate?: ISODateString
 }
 
 export interface AnalyticsAlert {
@@ -329,6 +409,6 @@ export interface AnalyticsAlert {
   metric?: string
   value?: number
   threshold?: number
-  timestamp: Date
+  timestamp: ISODateString
   dismissed: boolean
 }
