@@ -39,9 +39,6 @@
     "src/test/java"
   ],
 
-  // --- Python: Specify interpreter and stop searching everywhere ---
-  "python.defaultInterpreterPath": "/root/.pyenv/shims/python3",
-
   // --- SonarLint: Exclude folders from analysis ---
   "sonarlint.ls.exclusions": [
     "**/node_modules/**",
