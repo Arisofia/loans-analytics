@@ -1,0 +1,9 @@
+# Build & dependency folders
+/node_modules
+/.next
+/build
+/dist
+/.gradle
+/.turbo
+/.venv
+/venv
