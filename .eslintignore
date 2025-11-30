@@ -1,9 +1,9 @@
-# Root-only build & dependency folders (keep package-level source lintable)
-/node_modules
-/.next
-/.turbo
-/.gradle
-/.venv
-/venv
-/build
-/dist
+# Root-anchored build & dependency folders (package-level sources stay lintable)
+/node_modules/
+/.next/
+/.turbo/
+/.gradle/
+/.venv/
+/venv/
+/build/
+/dist/
