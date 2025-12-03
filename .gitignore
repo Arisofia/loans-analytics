@@ -1,15 +1,8 @@
-<<<<<<< HEAD
-gemini-cli/
-.DS_Store
-apps/.DS_Store
-
-# Local development tools and artifacts
-.venv/
-.vscode/
-=======
 # Gradle
 .gradle/
 build/
+**/.gradle/
+**/build/
 
 # Node / JavaScript
 node_modules/
@@ -35,16 +28,6 @@ Thumbs.db
 
 # Project-specific artifacts
 apps/.DS_Store
->>>>>>> upstream/main
-nvm/
-
-# Node build outputs
-node_modules/
-.next/
-
-# Gradle build outputs
-**/.gradle/
-**/build/
 
 # Local repository clones
 abaco-loans-analytics/
@@ -52,6 +35,7 @@ data_samples/
 gemini-cli/
 
 # Environment & platform
+nvm/
 .env
 .env.local
 .env*.local
