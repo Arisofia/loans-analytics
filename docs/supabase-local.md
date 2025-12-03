@@ -1,5 +1,5 @@
 # Supabase Local (Docker Desktop)
-Prereqs: Docker Desktop running; supabase CLI installed; .env with NEXT_PUBLIC_SUPABASE_URL/NEXT_PUBLIC_SUPABASE_ANON_KEY.
+Prereqs: Docker Desktop running; supabase CLI installed; .env with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.
 Commands:
 supabase login
 supabase link --project-ref pljjgdtczxmrxydfuaep
