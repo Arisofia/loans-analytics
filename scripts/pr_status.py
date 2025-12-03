@@ -67,10 +67,10 @@ def summarize_statuses(statuses: List[Dict], state: str) -> str:
     if not statuses:
         return f"Combined state: {state or 'unknown'} (no individual statuses)."
     lines = [f"Combined state: {state or 'unknown'}"]
-    for status in sorted(statuses, key=lambda s: s.get("context", "")):
-        lines.append(
-            f"- {status.get('context')}: {status.get('state')} (url={status.get('target_url')})"
-        )
+    lines.extend(
+        f"- {status.get('context')}: {status.get('state')} (url={status.get('target_url')})"
+        for status in sorted(statuses, key=lambda s: s.get("context", ""))
+    )
     return "\n".join(lines)
 
 
