@@ -28,6 +28,7 @@ ABACO delivers an executive-grade analytics and governance stack for lending tea
 - Web: see `apps/web` for Next.js dashboard setup.
 - Analytics: use `apps/analytics` pipelines for risk and KPI computation; keep formulas versioned and tested.
 - Infra: apply `infra/azure` scripts for environment provisioning; confirm `docs/integration-readiness.md` for service readiness and pre-checks.
+- Integrations: configure Figma, Notion, and Slack SDKs via `docs/integrations.md` (Node.js/TypeScript and Python examples, environment variables, and figma-export token export).
 
 ## Essential knowledge base
 - `docs/Analytics-Vision.md`: Vision, Streamlit blueprint, and narrative alignment for KPIs and prompts.
@@ -37,3 +38,4 @@ ABACO delivers an executive-grade analytics and governance stack for lending tea
 - `docs/Fitten-Code-AI-Manual.md`: Fitten Code AI installation, GitHub integration, FAQs, and local inference testing.
 - `docs/MCP_CONFIGURATION.md`: Adding MCP servers via Codex CLI or `config.toml`, including Context7, Figma, Chrome DevTools, and running Codex as an MCP server.
 - `docs/Zencoder-Troubleshooting.md`: Remediation checklist for the VS Code Zencoder extension (`zencoder-cli ENOENT`).
+- `docs/integrations.md`: Figma, Notion, and Slack SDK setup guides with environment variables, CLI token export, and client snippets for Node.js/TypeScript and Python.
