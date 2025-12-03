@@ -1,14 +1,12 @@
 name: CI Web
 permissions:
   contents: read
-
 on:
   workflow_dispatch:
   push:
     paths:
       - 'apps/web/**'
   pull_request:
-
 jobs:
   build:
     runs-on: ubuntu-latest

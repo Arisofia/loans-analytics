@@ -1,7 +1,5 @@
 # Runbook: Schema Drift
-
 Owner: Data Engineering | SLA: acknowledge 15m, resolve 4h | Escalate to: Data Lead, Source Owner
-
 1) Detect: Alert from schema registry/expectations or failing transforms.
 2) Contain: Freeze downstream loads for affected tables; communicate impacted KPIs.
 3) Triage: Compare contract vs incoming schema; identify new/missing/renamed fields; check source change logs.

@@ -1,25 +1,20 @@
 # ABACO — Loan Analytics Platform
-
 ABACO delivers an executive-grade analytics and governance stack for lending teams. The platform pairs a Next.js dashboard with Python risk pipelines, Azure deployment scripts, and traceable KPI governance.
-
 ## Stack map
 - **apps/web**: Next.js dashboard for portfolio, risk, and growth views.
 - **apps/analytics**: Python scoring, stress testing, and KPI pipelines.
 - **infra/azure**: Azure infra-as-code and deployment scripts.
 - **data_samples**: Anonymized datasets for repeatable development and testing.
 - **Integrations**: Figma / Notion / Slack setup guide at `docs/integrations.md` (see `docs/integration-readiness.md` for service checks).
-
 ## Observability, KPIs, and lineage
 - **KPI catalog**: Use `docs/KPI-Operating-Model.md` to define owners, formulas, and lineage links for every metric; keep PR and issue references for auditability.
 - **Dashboards**: Ensure every visualization lists source tables, refresh timestamp, and on-call owner. Target vs. actual, sparkline trends, and SLA badges should be present on executive views.
 - **Data quality**: Track null/invalid rates, schema drift counts, ingestion success %, and freshness lag; surface alerts into the dashboard and CI comments.
-
 ## Governance and compliance guardrails
 - Enforce PR reviews, lint/test gates, and SonarQube quality gates before merging to main.
 - Store secrets in GitHub or cloud KMS; never commit credentials or sample PII.
 - Require audit logs for dashboard publishes/exports and validate access controls for sensitive fields.
 - Align contributions to the `docs/Analytics-Vision.md` narrative to keep KPIs, prompts, and dashboards within fintech standards.
-
 ## Getting started
 - Validate repository structure before running tooling:
   ```
@@ -29,7 +24,6 @@ ABACO delivers an executive-grade analytics and governance stack for lending tea
 - Web: see `apps/web` for Next.js dashboard setup.
 - Analytics: use `apps/analytics` pipelines for risk and KPI computation; keep formulas versioned and tested.
 - Infra: apply `infra/azure` scripts for environment provisioning; confirm `docs/integration-readiness.md` for service readiness and pre-checks.
-
 ## Essential knowledge base
 - `docs/Analytics-Vision.md`: Vision, Streamlit blueprint, and narrative alignment for KPIs and prompts.
 - `docs/KPI-Operating-Model.md`: Ownership, formulas, dashboard standards, lineage, GitHub guardrails, and audit controls.

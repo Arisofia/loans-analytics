@@ -1,5 +1,4 @@
 name: Deploy to Vercel
-
 on:
   push:
     branches:
@@ -7,24 +6,20 @@ on:
     paths:
       - 'apps/web/**'
   workflow_dispatch:
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
           node-version: 20
-
       - name: Install dependencies
         run: |
           cd apps/web
           npm install
-
       - name: Build
         run: |
           cd apps/web
@@ -32,7 +27,6 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-
       - name: Check Vercel secrets
         id: vercel_secrets
         run: |
@@ -46,7 +40,6 @@ jobs:
             echo "present=false" >> "$GITHUB_OUTPUT"
             echo "Missing secrets:$missing"
           fi
-
       - name: Deploy to Vercel
         if: steps.vercel_secrets.outputs.present == 'true'
         uses: amondnet/vercel-action@v25
@@ -55,7 +48,6 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod --cwd apps/web'
-
       - name: Skip deploy (missing Vercel secrets)
         if: steps.vercel_secrets.outputs.present != 'true'
         run: |

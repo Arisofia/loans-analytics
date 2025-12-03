@@ -7,7 +7,6 @@
 - [ ] Env/alerts: required env vars set/updated (`NEXT_PUBLIC_ALERT_*`, webhooks, emails)?
 - [ ] Runbooks/alerts: updated links or thresholds? next-best actions still valid?
 - [ ] Workflow hygiene: PR assigned to `@codex` and reviewers `@sonarqube`, `@coderabbit`, `@sourcery` (auto-assignment workflow runs on open/update).
-
 # Checklist
 - [ ] CI passed (lint, type-check, tests, build for web/analytics).
 - [ ] SonarCloud coverage/quality gate OK.
