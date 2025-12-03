@@ -1,0 +1,16 @@
+version: "1"
+
+ignore:
+  - '**/node_modules/**'
+  - '**/.next/**'
+  - '**/.turbo/**'
+  - '**/dist/**'
+  - '**/coverage/**'
+  - '**/.gradle/**'
+  - '**/build/**'
+  - '**/data_samples/**'
+  - '**/.github/**'
+
+options:
+  lint: true
+  test_command: ''

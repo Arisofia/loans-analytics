@@ -1,0 +1,24 @@
+version: 2
+
+updates:
+  - &default_settings
+    package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    assignees:
+      - "codex"
+    reviewers:
+      - "sonarqube"
+      - "coderabbit"
+      - "sourcery"
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+  - <<: *default_settings
+    package-ecosystem: "pip"
+    open-pull-requests-limit: 10
+  - <<: *default_settings
+    package-ecosystem: "github-actions"
+    open-pull-requests-limit: 5
