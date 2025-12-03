@@ -1,0 +1,33 @@
+version: 1
+
+# Set the review language to English
+language: "en"
+
+reviews:
+  # Profile can be: chill, balanced, strict
+  profile: "strict"
+  request_changes_workflow: true
+  # Add an executive summary at the beginning of the review
+  high_level_summary: true
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    # Only review PRs that are not drafts
+    drafts: false
+
+chat:
+  auto_reply: true
+
+paths:
+  ignore:
+    - "**/node_modules/**"
+    - "**/.next/**"
+    - "**/dist/**"
+    - "**/.turbo/**"
+    - "**/artifacts/**"
+    - "**/.github/**"
+    - "**/*.md"
+    - "**/data_samples/**"
+    - "**/.gradle/**"
+    - "**/build/**"
+    - "**/coverage/**"
