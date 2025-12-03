@@ -1,19 +1,78 @@
+import type { PostgrestSingleResponse } from '@supabase/supabase-js'
 import Link from 'next/link'
+import { z } from 'zod'
+import {
+  controls as fallbackControls,
+  metrics as fallbackMetrics,
+  products as fallbackProducts,
+  steps as fallbackSteps,
+} from './data'
 import styles from './page.module.css'
 import { supabase } from '../lib/supabaseClient'
+import type { LandingPageData } from '../types/landingPage'
+import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
 
-// Define types for our data
-interface Metric { value: string; label: string; }
-interface Product { title: string; detail: string; }
-interface Step { label: string; title: string; copy: string; }
+const landingPageSchema = z.object({
+  metrics: z.array(
+    z.object({
+      label: z.string().min(1),
+      value: z.string().min(1),
+    })
+  ),
+  products: z.array(
+    z.object({
+      title: z.string().min(1),
+      detail: z.string().min(1),
+    })
+  ),
+  controls: z.array(z.string().min(1)),
+  steps: z.array(
+    z.object({
+      label: z.string().min(1),
+      title: z.string().min(1),
+      copy: z.string().min(1),
+    })
+  ),
+})
 
-async function getData() {
-  const { data, error } = await supabase.from('landing_page_data').select().single()
-  if (error) {
-    console.error('Error fetching landing page data:', error)
-    return { metrics: [], products: [], controls: [], steps: [] }
+const fallbackData: LandingPageData = {
+  metrics: fallbackMetrics,
+  products: fallbackProducts,
+  controls: fallbackControls,
+  steps: fallbackSteps,
+}
+
+function cloneFallback(): LandingPageData {
+  return {
+    metrics: fallbackData.metrics.map((item) => ({ ...item })),
+    products: fallbackData.products.map((item) => ({ ...item })),
+    controls: [...fallbackData.controls],
+    steps: fallbackData.steps.map((item) => ({ ...item })),
   }
-  return data
+}
+
+async function getData(): Promise<LandingPageData> {
+  if (!supabase) {
+    return cloneFallback()
+  }
+
+  const { data, error }: PostgrestSingleResponse<LandingPageData> = await supabase
+    .from('landing_page_data')
+    .select()
+    .single()
+
+  if (error || !data) {
+    console.error('Error fetching landing page data:', error)
+    return cloneFallback()
+  }
+
+  const parsed = landingPageSchema.safeParse(data)
+  if (!parsed.success) {
+    console.error('Invalid landing page payload received:', parsed.error.flatten())
+    return cloneFallback()
+  }
+
+  return parsed.data
 }
 
 export default async function Home() {
@@ -35,9 +94,12 @@ export default async function Home() {
           <Link href="#products" className={styles.secondaryButton}>
             Explore products
           </Link>
+          <Link href="/settings" className={styles.secondaryButton}>
+            Open settings
+          </Link>
         </div>
         <div className={styles.metrics}>
-          {metrics?.map((metric: Metric) => (
+          {metrics.map((metric) => (
             <div key={metric.label} className={styles.metricCard}>
               <span className={styles.metricValue}>{metric.value}</span>
               <span className={styles.metricLabel}>{metric.label}</span>
@@ -56,7 +118,7 @@ export default async function Home() {
           </p>
         </div>
         <div className={styles.cardGrid}>
-          {products?.map((product: Product) => (
+          {products.map((product) => (
             <div key={product.title} className={styles.card}>
               <h3>{product.title}</h3>
               <p>{product.detail}</p>
@@ -76,7 +138,7 @@ export default async function Home() {
         </div>
         <div className={styles.compliance}>
           <div className={styles.complianceList}>
-            {controls?.map((item: string) => (
+            {controls.map((item) => (
               <div key={item} className={styles.checkItem}>
                 <span className={styles.checkBullet} aria-hidden="true" />
                 <span>{item}</span>
@@ -107,7 +169,7 @@ export default async function Home() {
           </p>
         </div>
         <div className={styles.timeline}>
-          {steps?.map((step: Step) => (
+          {steps.map((step) => (
             <div key={step.label} className={styles.timelineStep}>
               <span className={styles.stepBadge}>{step.label}</span>
               <div>
@@ -117,6 +179,10 @@ export default async function Home() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className={styles.section} id="analytics">
+        <AnalyticsDashboard />
       </section>
     </div>
   )

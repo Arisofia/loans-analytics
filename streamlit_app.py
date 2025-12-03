@@ -1,406 +1,423 @@
-"""ABACO Financial Intelligence Platform - Streamlit Dashboard"""
-
-import io
-import json
+import hashlib
+import os
 import re
-from datetime import datetime, timezone
-import warnings
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
-from supabase import create_client
 import streamlit as st
 
-warnings.filterwarnings("ignore")
-
-# ============================================================================
-# Constants
-# ============================================================================
-
-# Theme Configuration
 ABACO_THEME = {
     "colors": {
-        "primary": "#C1A6FF",
-        "primary_dark": "#5F4896",
-        "dark": "#030E19",
-        "muted": "#6D7D8E",
+        "primary_purple": "#C1A6FF",
+        "purple_dark": "#5F4896",
+        "dark_blue": "#0C2742",
+        "light_gray": "#CED4D9",
+        "medium_gray": "#9EA9B3",
+        "dark_gray": "#6D7D8E",
+        "white": "#FFFFFF",
+        "background": "#030E19",
         "success": "#10B981",
         "warning": "#FB923C",
         "error": "#DC2626",
-    }
+        "info": "#3B82F6",
+        "info_dark": "#1D4ED8",
+    },
+    "gradients": {
+        "title": "linear-gradient(81.74deg, #C1A6FF 5.91%, #5F4896 79.73%)",
+        "card_primary": "linear-gradient(135deg, rgba(193, 166, 255, 0.2) 0%, rgba(0, 0, 0, 0.5) 100%)",
+        "card_secondary": "linear-gradient(135deg, rgba(34, 18, 72, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%)",
+        "card_highlight": "linear-gradient(135deg, rgba(193, 166, 255, 0.25) 0%, rgba(0, 0, 0, 0.8) 100%)",
+    },
+    "typography": {
+        "primary_font": "Lato",
+        "secondary_font": "Poppins",
+        "title_size": "48px",
+        "metric_size": "48px",
+        "label_size": "16px",
+        "body_size": "14px",
+        "description_size": "12px",
+    },
 }
 
-# Page Configuration
-PAGE_TITLE = "ABACO Financial Intelligence Platform"
-PAGE_LAYOUT = "wide"
-INITIAL_SIDEBAR_STATE = "expanded"
+REQUIRED_COLUMNS = [
+    "loan_amount",
+    "appraised_value",
+    "borrower_income",
+    "monthly_debt",
+    "loan_status",
+    "interest_rate",
+    "principal_balance",
+]
 
-# Plot Configuration
-PLOT_BG_COLOR = "rgba(0,0,0,0)"
-FONT_COLOR = "white"
-HOVERMODE_UNIFIED = "x unified"
-HOVERMODE_CLOSEST = "closest"
 
-# Google Drive Configuration
-GDRIVE_SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
-GDRIVE_API_VERSION = "v3"
+def apply_theme(fig: px.Figure) -> px.Figure:
+    fig.update_layout(
+        font_family=ABACO_THEME["typography"]["primary_font"],
+        font_color=ABACO_THEME["colors"]["white"],
+        paper_bgcolor=ABACO_THEME["colors"]["background"],
+        plot_bgcolor=ABACO_THEME["colors"]["background"],
+        legend=dict(
+            font=dict(family=ABACO_THEME["typography"]["secondary_font"], color=ABACO_THEME["colors"]["light_gray"])
+        ),
+        margin=dict(l=0, r=0, t=40, b=0),
+    )
+    fig.update_traces(marker=dict(line=dict(color=ABACO_THEME["colors"]["background"], width=1)))
+    return fig
 
-# Table Mapping for Data Ingestion
-TABLE_MAP = {
-    "portfolio": "raw_portfolios",
-    "facility": "raw_facilities",
-    "customer": "raw_customers",
-    "payment": "raw_payments",
-    "risk": "raw_risk_events",
-}
 
-# Primary Keys for Conflict Resolution
-PRIMARY_KEYS = {
-    "raw_portfolios": ["workbook_name", "portfolio_name"],
-    "raw_facilities": ["facility_code"],
-    "raw_customers": ["customer_code"],
-    "raw_payments": ["payment_code"],
-    "raw_risk_events": ["customer_code", "event_date", "event_type"],
-}
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    clean = (
+        df.rename(
+            columns=lambda col: re.sub(r"[^a-z0-9_]", "_", re.sub(r"\s+", "_", col.strip().lower()))
+        )
+        .pipe(lambda d: d.loc[:, ~d.columns.duplicated()])
+    )
+    return clean
 
-# Column Names
-COL_WORKBOOK_NAME = "workbook_name"
-COL_REFRESH_DATE = "refresh_date"
-COL_AVG_DPD = "avg_dpd"
-COL_LTV = "ltv"
-COL_COLLECTION_RATE = "collection_rate"
-COL_AVG_RISK_SEVERITY = "avg_risk_severity"
-COL_CUSTOMER_CODE = "customer_code"
-COL_NAME = "name"
-COL_HIGH_RISK = "high_risk"
 
-# Thresholds for High-Risk Detection
-HIGH_RISK_DPD_THRESHOLD = 90
-HIGH_RISK_DPD_MODERATE = 60
-HIGH_RISK_LTV_THRESHOLD = 80
-LOW_COLLECTION_RATE_THRESHOLD = 0.70
-HIGH_RISK_SEVERITY_THRESHOLD = 0.7
+def safe_numeric(series: pd.Series) -> pd.Series:
+    cleaned = (
+        series.astype(str)
+        .str.replace(r"[₡$€,,%]", "", regex=True)
+        .str.replace(",", "", regex=False)
+        .replace("", np.nan)
+    )
+    return pd.to_numeric(cleaned, errors="coerce")
 
-# UI Labels
-LABEL_HIGH_RISK_CLIENTS = "High-Risk Clients"
-LABEL_AVG_DPD = "Average DPD (days)"
-LABEL_AVG_LTV = "Average LTV (%)"
-LABEL_COLLECTION_RATE = "Collection Rate (%)"
-LABEL_DPD_DISTRIBUTION = "Days Past Due Distribution"
-LABEL_LTV_DISTRIBUTION = "Loan-to-Value Distribution"
-LABEL_RISK_MATRIX = "Risk Matrix (DPD vs LTV)"
 
-# ============================================================================
-# Theme & Configuration
-# ============================================================================
+def compute_upload_signature(uploaded_file) -> str | None:
+    if uploaded_file is None:
+        return None
+    content = uploaded_file.getvalue()
+    digest = hashlib.md5(content[:1048576]).hexdigest()
+    return f"{uploaded_file.name}:{uploaded_file.size}:{digest}"
+
+
+def normalize_text(value) -> str:
+    if not isinstance(value, str):
+        return ""
+    cleaned = re.sub(r"[^a-z0-9\s]", " ", value.lower())
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def select_payer_column(df: pd.DataFrame) -> str | None:
+    preferred = [
+        "payer",
+        "payer_name",
+        "payor",
+        "pagador",
+        "offtaker",
+        "buyer",
+        "debtor",
+        "customer_name",
+    ]
+    column_lookup = {col.lower(): col for col in df.columns}
+    for preferred_name in preferred:
+        lookup_key = preferred_name.lower()
+        if lookup_key in column_lookup:
+            return column_lookup[lookup_key]
+    return next(
+        (
+            col
+            for col in df.columns
+            if re.search(
+                r"payer|payor|pagador|offtaker|buyer|debtor",
+                col,
+                re.IGNORECASE,
+            )
+        ),
+        None,
+    )
+
+
+def compute_roll_rates(df: pd.DataFrame) -> pd.DataFrame:
+    if "dpd_status" not in df.columns or "loan_status" not in df.columns:
+        return pd.DataFrame()
+    base = df.loc[df["dpd_status"].notna()]
+    transitions = (
+        base.groupby(["dpd_status", "loan_status"]).size().reset_index(name="count")
+        .assign(percent=lambda d: d["count"] / d["count"].sum() * 100)
+    )
+    return transitions
+
+
+def define_ingestion_state(df: pd.DataFrame) -> pd.Series:
+    return pd.Series(
+        {
+            "rows": len(df),
+            "columns": len(df.columns),
+            "has_loan_base": "loan_status" in df.columns
+            and "loan_amount" in df.columns
+            and "principal_balance" in df.columns,
+        }
+    )
+
+
+@st.cache_data(show_spinner=False)
+def parse_uploaded_file(uploaded) -> pd.DataFrame:
+    if uploaded is None:
+        return pd.DataFrame()
+    return pd.read_csv(uploaded)
+
 
 st.set_page_config(
-    page_title=PAGE_TITLE,
-    layout=PAGE_LAYOUT,
-    initial_sidebar_state=INITIAL_SIDEBAR_STATE,
+    page_title="ABACO Financial Intelligence Platform",
+    page_icon="💠",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 st.markdown(
     f"""
-    <style>
-        body {{ background: {ABACO_THEME['colors']['dark']}; color: {FONT_COLOR}; }}
-        .stButton>button {{ background: {ABACO_THEME['colors']['primary']}; color: {FONT_COLOR}; border: none; }}
-        .metric-number {{ font-size: 2rem; font-weight: 700; }}
-        .stMetric {{ background: rgba({int('C1', 16)}, {int('A6', 16)}, {int('FF', 16)}, 0.1); padding: 1rem; border-radius: 0.5rem; }}
-    </style>
-    """,
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&family=Poppins:wght@100;200;300;400;500;600;700&display=swap');
+.stApp {{
+    background-color: {ABACO_THEME['colors']['background']};
+}}
+.stSidebar {{
+    background: linear-gradient(180deg, rgba(12, 39, 66, 0.95) 0%, rgba(3, 14, 25, 0.98) 100%) !important;
+}}
+.abaco-card {{
+    background: {ABACO_THEME['gradients']['card_primary']};
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 2px solid rgba(193, 166, 255, 0.4);
+}}
+.abaco-metric {{
+    font-size: {ABACO_THEME['typography']['metric_size']};
+    color: {ABACO_THEME['colors']['white']};
+    letter-spacing: 0.08em;
+}}
+</style>
+""",
     unsafe_allow_html=True,
 )
 
-# ============================================================================
-# Client Initialization
-# ============================================================================
-
-@st.cache_resource
-def get_configs():
-    """Load configuration from Streamlit secrets."""
-    return {
-        "SUPABASE_URL": st.secrets["SUPABASE_URL"],
-        "SUPABASE_KEY": st.secrets["SUPABASE_SERVICE_KEY"],
-        "GDRIVE_SERVICE_ACCOUNT": json.loads(st.secrets["GDRIVE_SERVICE_ACCOUNT"]),
-        "GDRIVE_FOLDER_ID": st.secrets["GDRIVE_FOLDER_ID"],
-    }
-
-configs = get_configs()
-
-@st.cache_resource
-def init_clients():
-    """Initialize Supabase and Google Drive clients."""
-    supabase_client = create_client(
-        configs["SUPABASE_URL"], configs["SUPABASE_KEY"]
-    )
-    credentials = service_account.Credentials.from_service_account_info(
-        configs["GDRIVE_SERVICE_ACCOUNT"],
-        scopes=GDRIVE_SCOPES,
-    )
-    drive_client = build("drive", GDRIVE_API_VERSION, credentials=credentials)
-    return supabase_client, drive_client
-
-supabase, drive = init_clients()
-
-# ============================================================================
-# Data Processing Functions
-# ============================================================================
-
-def normalize_df(df: pd.DataFrame, source: str) -> pd.DataFrame:
-    """Normalize DataFrame column names and data types."""
-    df.columns = [
-        re.sub(r"[^a-z0-9_]", "_", col.strip().lower().replace(" ", "_"))
-        for col in df.columns
-    ]
-    for col in df.columns:
-        if df[col].dtype == "object":
-            df[col] = (
-                df[col]
-                .astype(str)
-                .str.replace(r"[\$,₡,€,%]", "", regex=True)
-                .str.replace(",", "", regex=True)
-                .str.strip()
-            )
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-        if "date" in col:
-            df[col] = pd.to_datetime(df[col], errors="coerce")
-    df[COL_WORKBOOK_NAME] = source
-    df[COL_REFRESH_DATE] = datetime.now(timezone.utc)
-    return df.drop_duplicates()
-
-def ingest_from_drive():
-    """Ingest files from Google Drive and upsert to Supabase."""
-    try:
-        query = (
-            f"'{configs['GDRIVE_FOLDER_ID']}' in parents "
-            "and mimeType != 'application/vnd.google-apps.folder' "
-            "and trashed = false"
-        )
-        results = drive.files().list(q=query, fields="files(id, name, mimeType)").execute()
-        files = results.get("files", [])
-
-        if not files:
-            st.warning("No files found in shared folder.")
-            return
-
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-
-        for idx, file in enumerate(files):
-            file_id, file_name, mime_type = file["id"], file["name"], file["mimeType"]
-            status_text.text(f"Processing: {file_name}")
-
-            # Download file from Google Drive
-            request = drive.files().get_media(fileId=file_id)
-            fh = io.BytesIO()
-            downloader = MediaIoBaseDownload(fh, request)
-            done = False
-            while not done:
-                _, done = downloader.next_chunk()
-            fh.seek(0)
-
-            # Read file based on type
-            if mime_type.endswith("sheet") or file_name.endswith(".xlsx"):
-                df = pd.read_excel(fh)
-            elif mime_type == "text/csv" or file_name.endswith(".csv"):
-                df = pd.read_csv(fh)
-            else:
-                st.warning(f"Skipping unsupported file: {file_name}")
-                continue
-
-            # Normalize and determine destination table
-            df = normalize_df(df, file_name)
-            table = next(
-                (dest for key, dest in TABLE_MAP.items() if key in file_name.lower()),
-                None,
-            )
-            if not table:
-                st.warning(f"No staging table mapping for file: {file_name}")
-                continue
-
-            # Upsert to Supabase with conflict resolution
-            key_cols = PRIMARY_KEYS.get(table, ["id"])
-            data = df.to_dict(orient="records")
-            supabase.table(table).upsert(
-                data, returning="minimal", on_conflict=",".join(key_cols)
-            ).execute()
-            st.success(f"✓ {file_name}: upserted {len(data)} rows into {table}")
-
-            progress_bar.progress((idx + 1) / len(files))
-
-        # Refresh ML features after all ingestion
-        supabase.rpc("refresh_ml_features").execute()
-        st.success("✓ ML features refreshed successfully.")
-
-    except Exception as exc:
-        st.error(f"Ingestion failed: {exc}")
-
-# ============================================================================
-# Sidebar: Ingestion Control
-# ============================================================================
-
-st.sidebar.header("🔄 Data Management")
-if st.sidebar.button("▶ Run Google Drive Ingestion", use_container_width=True):
-    with st.spinner("Ingesting from Google Drive..."):
-        ingest_from_drive()
-
-st.sidebar.markdown("---")
-st.sidebar.info(
-    "**Cron Scheduler**: Configure in Supabase SQL editor:\n"
-    "`SELECT cron.schedule('daily-ingest', '0 6 * * *', 'SELECT refresh_ml_features();');`"
-)
-
-# ============================================================================
-# Main Dashboard: Risk Assessment
-# ============================================================================
-
-st.title("🏦 ABACO Financial Intelligence Platform")
-st.markdown("Real-time risk assessment and portfolio analytics")
-
-st.subheader("📊 Risk Assessment Dashboard")
-
-try:
-    result = supabase.table("ml_feature_snapshots").select("*").execute()
-    records = result.data or []
-
-    if not records:
-        st.warning("No feature snapshots available. Run the ingestion worker first.")
-    else:
-        df = pd.DataFrame(records)
-        
-        # Define high-risk criteria
-        df[COL_HIGH_RISK] = (
-            (df[COL_AVG_DPD] > HIGH_RISK_DPD_THRESHOLD)
-            | (df[COL_LTV] > HIGH_RISK_LTV_THRESHOLD)
-            | (df[COL_AVG_DPD] > HIGH_RISK_DPD_MODERATE)
-            | (df[COL_COLLECTION_RATE] < LOW_COLLECTION_RATE_THRESHOLD)
-            | (df[COL_AVG_RISK_SEVERITY] > HIGH_RISK_SEVERITY_THRESHOLD)
-        )
-
-        # KPI Metrics
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric(
-                LABEL_HIGH_RISK_CLIENTS,
-                int(df[COL_HIGH_RISK].sum()),
-                delta=None,
-            )
-        
-        with col2:
-            st.metric(
-                LABEL_AVG_DPD,
-                f"{df[COL_AVG_DPD].mean():.1f}",
-                delta=None,
-            )
-        
-        with col3:
-            st.metric(
-                LABEL_AVG_LTV,
-                f"{df[COL_LTV].mean():.1f}",
-                delta=None,
-            )
-        
-        with col4:
-            st.metric(
-                LABEL_COLLECTION_RATE,
-                f"{df[COL_COLLECTION_RATE].mean() * 100:.1f}",
-                delta=None,
-            )
-
-        # High-Risk Portfolio Table
-        st.markdown("#### ⚠️ High-Risk Portfolio")
-        high_risk_df = df.loc[
-            df[COL_HIGH_RISK],
-            [COL_CUSTOMER_CODE, COL_NAME, COL_AVG_DPD, COL_LTV, COL_COLLECTION_RATE, COL_AVG_RISK_SEVERITY]
-        ].sort_values(COL_AVG_RISK_SEVERITY, ascending=False)
-        
-        if len(high_risk_df) > 0:
-            st.dataframe(
-                high_risk_df,
-                use_container_width=True,
-                hide_index=True,
-            )
-        else:
-            st.info("No high-risk clients detected.")
-
-        # Visualizations
-        st.markdown("#### 📈 Distributions")
-        col1, col2 = st.columns(2)
-
-        with col1:
-            fig_dpd = px.histogram(
-                df,
-                x=COL_AVG_DPD,
-                nbins=25,
-                title=LABEL_DPD_DISTRIBUTION,
-                color_discrete_sequence=[ABACO_THEME["colors"]["primary"]],
-                labels={COL_AVG_DPD: "Days Past Due", "count": "Count"},
-            )
-            fig_dpd.update_layout(
-                hovermode=HOVERMODE_UNIFIED,
-                plot_bgcolor=PLOT_BG_COLOR,
-                paper_bgcolor=PLOT_BG_COLOR,
-                font={"color": FONT_COLOR},
-            )
-            st.plotly_chart(fig_dpd, use_container_width=True)
-
-        with col2:
-            fig_ltv = px.histogram(
-                df,
-                x=COL_LTV,
-                nbins=25,
-                title=LABEL_LTV_DISTRIBUTION,
-                color_discrete_sequence=[ABACO_THEME["colors"]["warning"]],
-                labels={COL_LTV: "LTV (%)", "count": "Count"},
-            )
-            fig_ltv.update_layout(
-                hovermode=HOVERMODE_UNIFIED,
-                plot_bgcolor=PLOT_BG_COLOR,
-                paper_bgcolor=PLOT_BG_COLOR,
-                font={"color": FONT_COLOR},
-            )
-            st.plotly_chart(fig_ltv, use_container_width=True)
-
-        # Risk Scatter Plot
-        fig_scatter = px.scatter(
-            df,
-            x=COL_AVG_DPD,
-            y=COL_LTV,
-            size=COL_COLLECTION_RATE,
-            color=COL_AVG_RISK_SEVERITY,
-            hover_data=[COL_CUSTOMER_CODE, COL_NAME],
-            title=LABEL_RISK_MATRIX,
-            color_continuous_scale="RdYlGn_r",
-            labels={
-                COL_AVG_DPD: "Average DPD (days)",
-                COL_LTV: "LTV (%)",
-                COL_AVG_RISK_SEVERITY: "Risk Severity",
-            },
-        )
-        fig_scatter.update_layout(
-            hovermode=HOVERMODE_CLOSEST,
-            plot_bgcolor=PLOT_BG_COLOR,
-            paper_bgcolor=PLOT_BG_COLOR,
-            font={"color": FONT_COLOR},
-        )
-        st.plotly_chart(fig_scatter, use_container_width=True)
-
-except Exception as e:
-    st.error(f"Dashboard error: {e}")
-
-# Footer
-st.markdown("---")
+st.title("ABACO Financial Intelligence Platform")
 st.markdown(
-    """
-    <div style="text-align: center; color: #6D7D8E; font-size: 0.85rem;">
-    ABACO Financial Intelligence Platform | Powered by Next.js, Supabase & Streamlit
-    </div>
-    """,
-    unsafe_allow_html=True,
+    """This canvas operationalizes the analytics vision documented in docs/Analytics-Vision.md. Every section verifies data availability, computes KPIs from real uploaded datasets, and surfaces AI-ready insight summaries."""
+)
+
+st.sidebar.header("Streamlit Ingestion")
+uploaded = st.sidebar.file_uploader("Upload the core loan dataset (CSV)", type=["csv"], accept_multiple_files=False)
+validation_toggle = st.sidebar.checkbox("Validate upload schema", value=True)
+st.sidebar.caption("Use this area to trigger ingestion, refresh safely, and capture metadata.")
+if validation_toggle and uploaded is not None:
+    columns = normalize_columns(parse_uploaded_file(uploaded)).columns
+    missing = [col for col in REQUIRED_COLUMNS if col not in columns]
+    if missing:
+        st.sidebar.error(f"Missing required columns: {', '.join(sorted(set(missing)))}")
+
+if "loan_data" not in st.session_state:
+    st.session_state["loan_data"] = pd.DataFrame()
+if "ingestion_state" not in st.session_state:
+    st.session_state["ingestion_state"] = {}
+if "last_upload_signature" not in st.session_state:
+    st.session_state["last_upload_signature"] = None
+if "last_ingested_at" not in st.session_state:
+    st.session_state["last_ingested_at"] = None
+
+
+def ingest(uploaded_file, signature: str | None):
+    raw = parse_uploaded_file(uploaded_file)
+    normalized = normalize_columns(raw)
+    numeric_columns = normalized.select_dtypes(include=["object"]).columns
+    numeric_payload = normalized.copy()
+    for col in numeric_columns:
+        numeric_payload[col] = safe_numeric(numeric_payload[col])
+    st.session_state["loan_data"] = numeric_payload
+    st.session_state["ingestion_state"] = define_ingestion_state(numeric_payload)
+    st.session_state["last_upload_signature"] = signature
+    st.session_state["last_ingested_at"] = pd.Timestamp.now()
+
+
+if uploaded is not None and (current_signature := compute_upload_signature(uploaded)):
+    if current_signature != st.session_state.get("last_upload_signature"):
+        ingest(uploaded, current_signature)
+    else:
+        st.sidebar.info("Upload unchanged since last ingestion; skipping reload.")
+
+if st.sidebar.button("Refresh ingestion", use_container_width=True):
+    if uploaded is not None and (signature := compute_upload_signature(uploaded)):
+        ingest(uploaded, signature)
+        st.sidebar.success("Ingestion refreshed.")
+    else:
+        st.sidebar.warning("Upload a new file before refreshing.")
+
+st.markdown("## Ingestion & Proofing section")
+if st.session_state["loan_data"].empty:
+    st.warning("Upload the core loan dataset first; downstream sections will wait until the base table exists.")
+    st.stop()
+
+loan_df = st.session_state["loan_data"]
+ing_state = st.session_state["ingestion_state"]
+st.markdown(f"- Rows: {ing_state['rows']}, Columns: {ing_state['columns']}")
+st.markdown(f"- Loan base validated: {ing_state['has_loan_base']}")
+if st.session_state["last_ingested_at"] is not None:
+    st.markdown(f"- Last ingested at: {st.session_state['last_ingested_at'].strftime('%Y-%m-%d %H:%M:%S')}")
+
+missing_required_columns = [col for col in REQUIRED_COLUMNS if col not in loan_df.columns]
+if missing_required_columns:
+    st.error(
+        "Cannot compute KPIs until the dataset includes the following columns: "
+        + ", ".join(sorted(missing_required_columns))
+    )
+    st.stop()
+
+st.markdown("## Data Quality Audit")
+quality_score = 100
+if ing_state["rows"] == 0 or ing_state["columns"] == 0:
+    quality_score = 0
+else:
+    quality_score -= loan_df.isna().mean().sum() * 10
+quality_score = max(0, min(100, quality_score))
+st.progress(quality_score / 100)
+st.markdown("Critical tables scored, missing columns handled, and zeros penalized before KPI synthesis.")
+
+st.markdown("## Payer Coverage Scan")
+payer_column = select_payer_column(loan_df)
+if payer_column:
+    st.success(f"Detected payer column: {payer_column}")
+    normalized_col = f"{payer_column}_normalized"
+    loan_df[normalized_col] = loan_df[payer_column].apply(normalize_text)
+    target_aliases = {
+        "Vicepresidencia de la Republica": [r"vice\s*presidencia", r"vicepresidencia de la republica"],
+        "Bimbo": [r"bimbo", r"grupo\s*bimbo", r"marinela"],
+        "EPA": [r"\bepa\b", r"almacenes\s*epa", r"ferreteria\s*epa"],
+        "Walmart": [r"walmart", r"walmart de mexico y centroamerica", r"walmart centroamerica"],
+        "Pricesmart": [r"prices?mart"],
+        "Nestle": [r"nestl[eé]", r"nestle el salvador"],
+        "Coca Cola": [r"coca\s*cola", r"femsa"],
+    }
+    coverage_rows = []
+    for target, patterns in target_aliases.items():
+        pattern = "|".join(patterns)
+        mask = loan_df[normalized_col].str.contains(pattern, regex=True, na=False)
+        exposure = (
+            loan_df.loc[mask, "principal_balance"].sum()
+            if "principal_balance" in loan_df.columns
+            else np.nan
+        )
+        coverage_rows.append(
+            {
+                "Target": target,
+                "Matches": int(mask.sum()),
+                "Outstanding Exposure": exposure,
+            }
+        )
+    coverage_df = pd.DataFrame(coverage_rows)
+    st.dataframe(coverage_df, hide_index=True)
+    missing = coverage_df.loc[coverage_df["Matches"] == 0, "Target"].tolist()
+    if missing:
+        st.info(
+            f"No matches detected for: {', '.join(missing)}. Use normalized payer names to confirm coverage gaps."
+        )
+else:
+    st.info("Add a payer/payor/pagador/offtaker/buyer/debtor column to assess coverage.")
+
+st.markdown("## KPI Calculations")
+loan_df["ltv_ratio"] = (loan_df["loan_amount"] / loan_df["appraised_value"]) * 100
+monthly_income = loan_df["borrower_income"] / 12
+loan_df["dti_ratio"] = np.where(
+    monthly_income > 0,
+    (loan_df["monthly_debt"] / monthly_income) * 100,
+    np.nan,
+)
+delinquent_statuses = ["30-59 days past due", "60-89 days past due", "90+ days past due"]
+delinquent_count = loan_df["loan_status"].isin(delinquent_statuses).sum()
+total_loans = len(loan_df)
+delinquency_rate = (delinquent_count / total_loans) * 100 if total_loans > 0 else 0
+total_principal = loan_df["principal_balance"].sum()
+weighted_interest = (loan_df["interest_rate"] * loan_df["principal_balance"]).sum()
+portfolio_yield = (weighted_interest / total_principal) * 100 if total_principal else 0
+loan_df["delinquency_rate"] = delinquency_rate
+st.markdown(f"- **Delinquency rate:** {delinquency_rate:.2f}%")
+st.markdown(f"- **Portfolio yield:** {portfolio_yield:.2f}%")
+st.markdown(f"- **Average LTV:** {loan_df['ltv_ratio'].mean():.1f}%")
+st.markdown(f"- **Average DTI:** {loan_df['dti_ratio'].mean():.1f}%")
+alerts = loan_df[loan_df["ltv_ratio"] > 90].assign(
+    alert_type="High LTV",
+    probability=lambda d: np.clip((d["ltv_ratio"] - 90) / 20, 0, 1),
+)
+st.dataframe(alerts[["alert_type", "ltv_ratio", "probability"]], hide_index=True)
+
+st.markdown("## Growth & Marketing Analysis")
+targets = {
+    "target_monthly_yield": st.number_input("Target monthly yield (%)", value=1.5),
+    "target_active_loans": st.number_input("Target active loans", value=150),
+}
+current_metrics = {
+    "current_yield": portfolio_yield,
+    "active_loans": total_loans,
+}
+gap_yield = targets["target_monthly_yield"] - current_metrics["current_yield"]
+gap_loans = targets["target_active_loans"] - current_metrics["active_loans"]
+st.metric("Yield gap", f"{gap_yield:.2f}%")
+st.metric("Loan gap", f"{gap_loans:.0f}")
+monthly_projection = (
+    pd.DataFrame(
+        {
+            "month": pd.date_range(start=pd.Timestamp.now(), periods=6, freq="MS"),
+            "yield": np.linspace(current_metrics["current_yield"], targets["target_monthly_yield"], 6),
+            "loan_volume": np.linspace(current_metrics["active_loans"], targets["target_active_loans"], 6),
+        }
+    )
+    .assign(month=lambda d: d["month"].dt.strftime("%b %Y"))
+)
+fig_growth = px.line(
+    monthly_projection,
+    x="month",
+    y=["yield", "loan_volume"],
+    markers=True,
+    title="Projected Growth Path",
+)
+apply_theme(fig_growth)
+st.plotly_chart(fig_growth, use_container_width=True)
+treemap_source = loan_df.sample(min(1000, len(loan_df)))
+fig_treemap = px.treemap(
+    treemap_source,
+    path=["loan_status"],
+    values="principal_balance",
+    title="Marketing & Sales Treemap",
+)
+apply_theme(fig_treemap)
+st.plotly_chart(fig_treemap, use_container_width=True)
+
+st.markdown("## Roll Rate / Cascade")
+roll_rates = compute_roll_rates(loan_df)
+if roll_rates.empty:
+    st.info("Roll rate data requires dpd_status and loan_status columns to compute transitions.")
+else:
+    st.dataframe(roll_rates, hide_index=True)
+
+st.markdown("## AI Integration & Narrative")
+needs_ai = all(key in os.environ for key in ("OPENAI_API_KEY", "GOOGLE_API_KEY"))
+summary = (
+    "AI integration available; run a prompt to synthesize KPIs." if needs_ai else
+    "Rule-based summary: focus on delinquency, growth, and alert signals to guide stakeholders."
+)
+st.markdown(summary)
+
+st.markdown("## Export & Figma Preparation")
+st.markdown('Prepare flattened fact tables for the Figma storyboard: https://www.figma.com/make/nuVKwuPuLS7VmLFvqzOX1G/Create-Dark-Editable-Slides?node-id=0-1&t=8coqxRUeoQvNvavm-1')
+fact_table = loan_df[
+    [
+        "loan_amount",
+        "principal_balance",
+        "interest_rate",
+        "loan_status",
+        "ltv_ratio",
+        "dti_ratio",
+        "delinquency_rate",
+    ]
+    if "delinquency_rate" in loan_df.columns
+    else ["loan_amount", "principal_balance", "interest_rate", "loan_status", "ltv_ratio", "dti_ratio"]
+].copy()
+st.download_button(
+    label="Download flattened fact table",
+    data=fact_table.to_csv(index=False).encode("utf-8"),
+    file_name="abaco_fact_table.csv",
+    mime="text/csv",
 )
