@@ -1,7 +1,0 @@
-organization=abaco-technol
-projectKey=abaco-loans-analytics
-serverUrl=https://sonarcloud.io
-serverVersion=8.0.0.76988
-dashboardUrl=https://sonarcloud.io/dashboard?id=abaco-loans-analytics
-ceTaskId=AZriwtem-0kku-oLltH_
-ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZriwtem-0kku-oLltH_
