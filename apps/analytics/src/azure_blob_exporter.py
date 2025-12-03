@@ -3,9 +3,9 @@ from datetime import datetime, timezone
 from numbers import Number
 from typing import Any, Dict, Optional
 
+from azure.core.exceptions import ResourceExistsError
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, ContentSettings
-from azure.core.exceptions import ResourceExistsError
 
 
 class AzureBlobKPIExporter:
@@ -39,6 +39,9 @@ class AzureBlobKPIExporter:
     def upload_metrics(self, metrics: Dict[str, float], blob_name: Optional[str] = None) -> str:
         if not isinstance(metrics, dict) or not metrics:
             raise ValueError("Metrics payload must be a non-empty dictionary.")
+
+        if blob_name is not None and not isinstance(blob_name, str):
+            raise ValueError("blob_name must be a string if provided.")
 
         normalized_metrics: Dict[str, float] = {}
         for key, value in metrics.items():

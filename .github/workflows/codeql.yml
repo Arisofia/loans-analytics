@@ -1,14 +1,13 @@
-
 name: codeql
 
 on:
-  workflow_dispatch:
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
   schedule:
     - cron: "0 3 * * 1"
+  workflow_dispatch:
 
 permissions:
   actions: read
@@ -17,7 +16,6 @@ permissions:
 
 jobs:
   analyze:
-    name: Analyze (CodeQL)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -25,18 +23,17 @@ jobs:
         language: ["javascript", "python"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up CodeQL
-        uses: github/codeql-action/init@v3.31.5
+        uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3.31.5
+        uses: github/codeql-action/autobuild@v3
 
-      - name: Perform CodeQL Analysis (no upload while default setup is active)
-        uses: github/codeql-action/analyze@v3.31.5
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}"
-          upload: false
