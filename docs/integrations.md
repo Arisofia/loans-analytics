@@ -1,6 +1,6 @@
 # Integrations Guide: Figma, Notion, and Slack SDKs
 
-This guide explains how to set up and use the official SDKs for Figma, Notion, and Slack in Node.js/TypeScript and Python. It lists the environment variables you need, installation commands, and minimal client initialization snippets so you can keep secrets off code and into your runtime configuration.
+This guide explains how to set up and use the official SDKs for Figma, Notion, and Slack in Node.js/TypeScript and Python. It lists the environment variables you need, installation commands, and minimal client initialization snippets so you can keep secrets out of your code and in your runtime configuration.
 
 ## Environment variables
 Export these values before running the examples:
