@@ -208,27 +208,30 @@ export function BulkTokenInput({ open, onClose, onProcessItem }: BulkTokenInputP
 }
 
 function parseInput(input: string): BulkTokenItem[] {
-  return input
+  const items: BulkTokenItem[] = []
+
+  input
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => line.split(',').map((segment) => segment.trim()))
     .filter((parts) => parts.length >= 2)
-    .map((parts) => {
+    .forEach((parts) => {
       const [rawPlatform, token, accountId] = parts
-      const normalizedPlatform = rawPlatform?.toLowerCase() as Platform | undefined
+      const normalizedPlatform = (rawPlatform?.toLowerCase() ?? '') as Platform
 
-      return {
+      if (!PLATFORMS.includes(normalizedPlatform)) return
+
+      items.push({
         platform: normalizedPlatform,
         token: token ?? '',
-        accountId,
-        status: 'pending' as ItemStatus,
+        accountId: accountId ?? '',
+        status: 'pending',
         attempts: 0,
-      }
+      })
     })
-    .filter(
-      (item): item is BulkTokenItem => Boolean(item.platform) && PLATFORMS.includes(item.platform)
-    )
+
+  return items
 }
 
 function waitForDelay(attempt: number) {
