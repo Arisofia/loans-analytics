@@ -225,7 +225,7 @@ export interface TreemapNode {
     avgTicket?: number
     kamCode?: string
     segment?: string
-    quality?: 'performing' | 'late' | 'default'
+    quality?: QualityStatus
   }
 }
 
@@ -361,11 +361,13 @@ export interface AnalyticsFilters {
   }
   kamCodes?: string[]
   segments?: ('anchor' | 'midMarket' | 'small')[]
-  qualityStatus?: ('performing' | 'late' | 'default')[]
+  qualityStatus?: QualityStatus[]
   minTicketSize?: number
   maxTicketSize?: number
   customers?: string[]
 }
+
+export type QualityStatus = 'performing' | 'late' | 'default'
 
 export interface UploadValidationResult {
   isValid: boolean
