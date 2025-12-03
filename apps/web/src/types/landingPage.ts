@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { z } from 'zod'
 
 const metricSchema = z.object({
@@ -31,3 +32,27 @@ export type LandingPageData = z.infer<typeof landingPageDataSchema>
 export const EMPTY_LANDING_PAGE_DATA: LandingPageData = Object.freeze(
   landingPageDataSchema.parse({})
 )
+=======
+export interface Metric {
+  value: string
+  label: string
+}
+
+export interface Product {
+  title: string
+  detail: string
+}
+
+export interface Step {
+  label: string
+  title: string
+  copy: string
+}
+
+export interface LandingPageData {
+  metrics: Metric[]
+  products: Product[]
+  controls: string[]
+  steps: Step[]
+}
+>>>>>>> origin/main
