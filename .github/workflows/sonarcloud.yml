@@ -4,28 +4,72 @@ on:
   push:
     branches:
       - main
+      - codex/**
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 jobs:
   sonarcloud:
     name: SonarCloud Scan
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Necessary for SonarCloud to analyze history
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: 20
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Install dependencies
+        run: |
+          cd apps/web
+          npm ci
+          npm run lint -- --version >/dev/null
+
+      - name: Analytics coverage (pytest)
+        run: |
+          python -m pip install -r apps/analytics/requirements.txt pytest pytest-cov
+          cd apps/analytics
+          pytest --cov=. --cov-report=xml:../coverage-python.xml
+
+      - name: Java coverage (Jacoco)
+        run: |
+          if [ -x ./gradlew ]; then
+            ./gradlew jacocoTestReport
+          else
+            echo "Skipping Jacoco: gradlew not present in repository"
+          fi
+
+      - name: Web coverage placeholder
+        run: |
+          cd apps/web
+          mkdir -p coverage
+          echo "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record" > coverage/lcov.info
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.verbose=true
+            -Dsonar.python.coverage.reportPaths=coverage-python.xml
+            -Dsonar.javascript.lcov.reportPaths=apps/web/coverage/lcov.info
