@@ -1,9 +1,15 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 'use client'
 
 import Link from 'next/link'
 import { useCallback, useRef } from 'react'
 import type { MouseEvent } from 'react'
+=======
+import Link from 'next/link'
+import { controls, metrics, products, steps } from './data'
+import styles from './page.module.css'
+>>>>>>> upstream/main
 =======
 import type { PostgrestSingleResponse } from '@supabase/supabase-js'
 import Link from 'next/link'
@@ -16,6 +22,71 @@ import {
 } from './data'
 >>>>>>> origin/main
 import styles from './page.module.css'
+<<<<<<< HEAD
+import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
+import { logLandingPageDiagnostic } from '../lib/landingPageDiagnostics'
+import {
+  EMPTY_LANDING_PAGE_DATA,
+  landingPageDataSchema,
+  type LandingPageData,
+  type Metric,
+  type Product,
+  type Step,
+} from '../types/landingPage'
+
+async function getData(): Promise<LandingPageData> {
+  if (!supabase || !isSupabaseConfigured) {
+    logLandingPageDiagnostic({
+      status: 'missing-config',
+      supabaseConfigured: false,
+      payload: EMPTY_LANDING_PAGE_DATA,
+    })
+    console.warn('Supabase environment variables are missing; using fallback landing page data')
+    return EMPTY_LANDING_PAGE_DATA
+  }
+
+  const { data, error } = await supabase.from('landing_page_data').select('*').single()
+
+  if (error) {
+    logLandingPageDiagnostic({
+      status: 'fetch-error',
+      supabaseConfigured: true,
+      error,
+      payload: EMPTY_LANDING_PAGE_DATA,
+    })
+    console.error('Error fetching landing page data:', error)
+    return EMPTY_LANDING_PAGE_DATA
+  }
+
+  if (!data) {
+    logLandingPageDiagnostic({
+      status: 'no-data',
+      supabaseConfigured: true,
+      payload: EMPTY_LANDING_PAGE_DATA,
+    })
+    console.error('Landing page data is missing from Supabase response')
+    return EMPTY_LANDING_PAGE_DATA
+  }
+
+  const parsed = landingPageDataSchema.safeParse(data)
+
+  if (!parsed.success) {
+    logLandingPageDiagnostic({
+      status: 'invalid-shape',
+      supabaseConfigured: true,
+      error: parsed.error.flatten(),
+      payload: EMPTY_LANDING_PAGE_DATA,
+    })
+    console.error('Invalid landing page data shape from Supabase:', parsed.error.flatten())
+    return EMPTY_LANDING_PAGE_DATA
+  }
+
+  logLandingPageDiagnostic({
+    status: 'ok',
+    supabaseConfigured: true,
+    payload: parsed.data,
+  })
+=======
 import { supabase } from '../lib/supabaseClient'
 import type { LandingPageData } from '../types/landingPage'
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
@@ -80,11 +151,13 @@ async function getData(): Promise<LandingPageData> {
     return cloneFallback()
   }
 
+>>>>>>> origin/main
   return parsed.data
 }
 
 export default async function Home() {
   const { metrics, products, controls, steps } = await getData()
+>>>>>>> origin/main
 
 <<<<<<< HEAD
 const metrics = [

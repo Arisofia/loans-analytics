@@ -1,6 +1,16 @@
 import numpy as np
+<<<<<<< HEAD
+from typing import Dict, Optional, Protocol, runtime_checkable
+
+
+@runtime_checkable
+class KPIExporter(Protocol):
+    def upload_metrics(self, metrics: Dict[str, float], blob_name: Optional[str] = None) -> str:
+        ...
+=======
 import pandas as pd
 from typing import Dict, List
+>>>>>>> origin/main
 
 class LoanAnalyticsEngine:
     """
@@ -24,6 +34,10 @@ class LoanAnalyticsEngine:
         self.loan_data = loan_data.copy()
         self._validate_columns()
         self._coercion_report = self._coerce_numeric_columns()
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, list]) -> "LoanAnalyticsEngine":
+        return cls(pd.DataFrame(data))
 
     def _validate_columns(self):
         """Ensures the DataFrame contains the necessary columns for KPI computation."""
@@ -178,6 +192,15 @@ class LoanAnalyticsEngine:
             "average_null_ratio_percent": quality["average_null_ratio"],
             "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio"],
         }
+
+    def export_kpis_to_blob(
+        self, exporter: KPIExporter, blob_name: Optional[str] = None
+    ) -> str:
+        if blob_name is not None and not isinstance(blob_name, str):
+            raise ValueError("blob_name must be a string if provided.")
+
+        kpis = self.run_full_analysis()
+        return exporter.upload_metrics(kpis, blob_name=blob_name)
 
 if __name__ == '__main__':
     # Example usage demonstrating the engine's capabilities

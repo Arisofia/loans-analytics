@@ -14,10 +14,14 @@
     "check-all": "npm run type-check && npm run lint && npm run format:check"
   },
   "dependencies": {
+<<<<<<< HEAD
+    "@supabase/supabase-js": "^2.85.0",
+=======
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.48.0",
     "@vercel/analytics": "^1.6.0",
     "@vercel/speed-insights": "^1.3.0",
+>>>>>>> origin/main
     "next": "^16.0.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

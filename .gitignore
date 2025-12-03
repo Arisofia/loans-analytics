@@ -1,3 +1,12 @@
+<<<<<<< HEAD
+gemini-cli/
+.DS_Store
+apps/.DS_Store
+
+# Local development tools and artifacts
+.venv/
+.vscode/
+=======
 # Gradle
 .gradle/
 build/
@@ -5,15 +14,9 @@ build/
 # Node / JavaScript
 node_modules/
 .next/
-<<<<<<< Updated upstream
-<<<<<<< HEAD
 .turbo/
 dist/
 coverage/
-=======
-<<<<<<< Updated upstream
-.next/
->>>>>>> codex/create-integrations-page-layout
 
 # Python
 .venv/
@@ -32,51 +35,24 @@ Thumbs.db
 
 # Project-specific artifacts
 apps/.DS_Store
+>>>>>>> upstream/main
 nvm/
+
+# Node build outputs
+node_modules/
+.next/
+
+# Gradle build outputs
+**/.gradle/
+**/build/
+
+# Local repository clones
 abaco-loans-analytics/
-<<<<<<< HEAD
 data_samples/
 gemini-cli/
-gradle.properties
-=======
-=======
-=======
->>>>>>> Stashed changes
 
-<<<<<<< ours
-<<<<<<< ours
-# Python
-.venv/
-venv/
-__pycache__/
-*.pyc
-
-# IDE / Editor specific
-.vscode/
-*.vsix
-.idea/
-
-# OS specific
-.DS_Store
-Thumbs.db
-=======
-# Gradle build artifacts
-.gradle/
-build/
-
-=======
->>>>>>> theirs
-# Local development tools and artifacts
-nvm/
-abaco-loans-analytics/
->>>>>>> theirs
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-.gradle/
->>>>>>> codex/create-integrations-page-layout
+# Environment & platform
 .env
-.env
-
+.env.local
 .env*.local
-=======
->>>>>>> Stashed changes
+.vercel/
