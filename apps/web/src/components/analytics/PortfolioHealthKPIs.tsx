@@ -20,7 +20,9 @@ export function PortfolioHealthKPIs({ kpis }: Props) {
     <section className={styles.section}>
       <div className={styles.sectionHeader}>
         <p className={styles.sectionTitle}>Portfolio health</p>
-        <p className={styles.sectionCopy}>KPIs rendered in real time with ABACO typography and gradients.</p>
+        <p className={styles.sectionCopy}>
+          KPIs rendered in real time with ABACO typography and gradients.
+        </p>
       </div>
       <div className={styles.grid}>
         {metricSet.map((metric) => (

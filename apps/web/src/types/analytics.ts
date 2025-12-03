@@ -1,4 +1,5 @@
 export type LoanRow = Readonly<{
+  id?: string
   loan_amount: number
   appraised_value: number
   borrower_income: number

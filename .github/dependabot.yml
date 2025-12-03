@@ -1,10 +1,18 @@
 version: 2
+<<<<<<< HEAD
 updates:
   - package-ecosystem: "npm"
+=======
+
+updates:
+  - &default_settings
+    package-ecosystem: "npm"
+>>>>>>> origin/main
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+<<<<<<< HEAD
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
@@ -16,8 +24,32 @@ updates:
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+=======
+    assignees:
+      - "codex"
+    reviewers:
+      - "sonarqube"
+      - "coderabbit"
+      - "sourcery"
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+  - <<: *default_settings
+    package-ecosystem: "pip"
+    open-pull-requests-limit: 10
+  - <<: *default_settings
+    package-ecosystem: "github-actions"
+>>>>>>> origin/main
     open-pull-requests-limit: 5
