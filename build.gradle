@@ -24,10 +24,7 @@ dependencies {
 
     // This starter includes JUnit 5, AssertJ, Mockito, and other essential testing libraries.
     testImplementation 'org.springframework.boot:spring-boot-starter-test:3.1.12'
-<<<<<<< HEAD
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
-=======
->>>>>>> origin/feat/add-new-loan-analytics-chart
 }
 
 test {
