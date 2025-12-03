@@ -1,3 +1,20 @@
+/* stylelint-disable csstree/validator */
+:root {
+  --color-bg: #06080f;
+  --color-text-primary: #f3f6fb;
+  --color-text-secondary: rgba(243, 246, 251, 0.72);
+  --color-text-tertiary: rgba(243, 246, 251, 0.7);
+  --color-accent-green: #22c55e;
+  --color-accent-blue: #2563eb;
+  --color-accent-eyebrow: #8fb5ff;
+  --surface-subtle-darker: rgba(255, 255, 255, 0.03);
+
+  --surface-subtle: rgba(255, 255, 255, 0.04);
+  --surface-interactive: rgba(255, 255, 255, 0.05);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-interactive: rgba(255, 255, 255, 0.16);
+}
+
 .page {
   min-height: 100vh;
   display: flex;
@@ -5,9 +22,12 @@
   gap: 80px;
   padding: 32px 24px 96px;
   background:
-    radial-gradient(circle at 20% 20%, rgba(22, 119, 255, 0.12), transparent 30%),
-    radial-gradient(circle at 80% 0%, rgba(34, 197, 94, 0.14), transparent 28%), #06080f;
-  color: #f3f6fb;
+    radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.12), transparent 30%),
+    radial-gradient(circle at 80% 0%, rgba(34, 197, 94, 0.14), transparent 28%), var(--color-bg);
+  background:
+    radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--color-accent-blue) 12%, transparent), transparent 30%),
+    radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--color-accent-green) 14%, transparent), transparent 28%), var(--color-bg);
+  color: var(--color-text-primary);
 }
 
 .nav {
@@ -87,8 +107,8 @@
   align-self: flex-start;
   padding: 8px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-interactive);
+  background: var(--surface-subtle-darker);
   font-size: 13px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -119,7 +139,8 @@
 
 .hero p {
   max-width: 780px;
-  color: rgba(243, 246, 251, 0.85);
+  color: #d9dde2;
+  color: color-mix(in srgb, var(--color-text-primary) 85%);
   font-size: 18px;
   line-height: 1.7;
 }
@@ -147,8 +168,8 @@
 }
 
 .primaryButton {
-  background: linear-gradient(120deg, #22c55e, #2563eb);
-  color: #06080f;
+  background: linear-gradient(120deg, var(--color-accent-green), var(--color-accent-blue));
+  color: var(--color-bg);
   box-shadow: 0 20px 40px rgba(37, 99, 235, 0.18);
 }
 
@@ -166,14 +187,14 @@
 }
 
 .secondaryButton {
-  color: #f3f6fb;
-  border-color: rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
+  border-color: var(--border-interactive);
+  background: var(--surface-interactive);
 }
 
 .secondaryButton:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: #4d4d4d;
+  background: #0f0f0f;
 }
 
 .linkGhost {
@@ -205,8 +226,8 @@
 .metricCard {
   padding: 18px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -220,11 +241,11 @@
 .metricValue {
   font-size: 28px;
   font-weight: 700;
-  color: #22c55e;
+  color: var(--color-accent-green);
 }
 
 .metricLabel {
-  color: rgba(243, 246, 251, 0.7);
+  color: var(--color-text-tertiary);
   line-height: 1.4;
 }
 
@@ -249,7 +270,7 @@
 }
 
 .eyebrow {
-  color: #8fb5ff;
+  color: var(--color-accent-eyebrow);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   font-size: 13px;
@@ -261,7 +282,7 @@
 }
 
 .sectionCopy {
-  color: rgba(243, 246, 251, 0.72);
+  color: var(--color-text-secondary);
   line-height: 1.7;
   max-width: 780px;
 }
@@ -303,8 +324,9 @@
 }
 
 .card {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(160deg, #111111, #060606);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--surface-subtle) 80%, white), color-mix(in srgb, var(--surface-subtle) 80%, black));
+  border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 20px;
   display: flex;
@@ -330,7 +352,7 @@
 }
 
 .card p {
-  color: rgba(243, 246, 251, 0.72);
+  color: var(--color-text-secondary);
   line-height: 1.6;
 }
 
@@ -375,8 +397,8 @@
 }
 
 .complianceList {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 20px;
   display: flex;
@@ -390,7 +412,8 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  color: rgba(243, 246, 251, 0.8);
+  color: #c4c8ce;
+  color: color-mix(in srgb, var(--color-text-primary) 80%);
 }
 
 .checkBullet {
@@ -398,15 +421,15 @@
   height: 12px;
   border-radius: 50%;
   margin-top: 4px;
-  background: linear-gradient(120deg, #22c55e, #2563eb);
+  background: linear-gradient(120deg, var(--color-accent-green), var(--color-accent-blue));
   box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.12);
 }
 
 .auditBox {
   background:
     radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.16), transparent 40%),
-    rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+    var(--surface-interactive);
+  border: 1px solid #363636;
   border-radius: 16px;
   padding: 20px;
   display: flex;
@@ -422,7 +445,8 @@
 
 .auditBox ul {
   padding-left: 18px;
-  color: rgba(243, 246, 251, 0.75);
+  color: #b9bcc1;
+  color: color-mix(in srgb, var(--color-text-primary) 75%);
   line-height: 1.6;
 }
 
@@ -432,14 +456,14 @@
 
 .primaryGhost {
   align-self: flex-start;
-  color: #f3f6fb;
-  border-color: rgba(255, 255, 255, 0.24);
+  color: var(--color-text-primary);
   background: transparent;
+  border-color: #4d4d4d;
 }
 
 .primaryGhost:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.06);
+  border-color: #ffffff;
+  background: var(--surface-interactive);
 }
 
 .timeline {
@@ -449,8 +473,8 @@
 }
 
 .timelineStep {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
   border-radius: 14px;
   padding: 18px;
   display: flex;
@@ -463,8 +487,8 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(120deg, #22c55e, #2563eb);
-  color: #06080f;
+  background: linear-gradient(120deg, var(--color-accent-green), var(--color-accent-blue));
+  color: var(--color-bg);
   font-weight: 700;
   display: grid;
   place-items: center;
@@ -476,7 +500,7 @@
 }
 
 .timelineStep p {
-  color: rgba(243, 246, 251, 0.7);
+  color: var(--color-text-tertiary);
   line-height: 1.5;
 }
 

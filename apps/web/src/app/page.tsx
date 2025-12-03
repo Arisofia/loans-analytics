@@ -1,6 +1,18 @@
+import type { PostgrestSingleResponse } from '@supabase/supabase-js'
 import Link from 'next/link'
+import { z } from 'zod'
+import {
+  controls as fallbackControls,
+  metrics as fallbackMetrics,
+  products as fallbackProducts,
+  steps as fallbackSteps,
+} from './data'
 import styles from './page.module.css'
+import { supabase } from '../lib/supabaseClient'
+import type { LandingPageData } from '../types/landingPage'
+import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
 
+<<<<<<< HEAD
 type Metric = {
   label: string
   value: string
@@ -166,6 +178,74 @@ const structuredData = {
 }
 
 export default function Home() {
+=======
+const landingPageSchema = z.object({
+  metrics: z.array(
+    z.object({
+      label: z.string().min(1),
+      value: z.string().min(1),
+    })
+  ),
+  products: z.array(
+    z.object({
+      title: z.string().min(1),
+      detail: z.string().min(1),
+    })
+  ),
+  controls: z.array(z.string().min(1)),
+  steps: z.array(
+    z.object({
+      label: z.string().min(1),
+      title: z.string().min(1),
+      copy: z.string().min(1),
+    })
+  ),
+})
+
+const fallbackData: LandingPageData = {
+  metrics: fallbackMetrics,
+  products: fallbackProducts,
+  controls: fallbackControls,
+  steps: fallbackSteps,
+}
+
+function cloneFallback(): LandingPageData {
+  return {
+    metrics: fallbackData.metrics.map((item) => ({ ...item })),
+    products: fallbackData.products.map((item) => ({ ...item })),
+    controls: [...fallbackData.controls],
+    steps: fallbackData.steps.map((item) => ({ ...item })),
+  }
+}
+
+async function getData(): Promise<LandingPageData> {
+  if (!supabase) {
+    return cloneFallback()
+  }
+
+  const { data, error }: PostgrestSingleResponse<LandingPageData> = await supabase
+    .from('landing_page_data')
+    .select()
+    .single()
+
+  if (error || !data) {
+    console.error('Error fetching landing page data:', error)
+    return cloneFallback()
+  }
+
+  const parsed = landingPageSchema.safeParse(data)
+  if (!parsed.success) {
+    console.error('Invalid landing page payload received:', parsed.error.flatten())
+    return cloneFallback()
+  }
+
+  return parsed.data
+}
+
+export default async function Home() {
+  const { metrics, products, controls, steps } = await getData()
+
+>>>>>>> origin/main
   return (
     <main id="main-content" className={styles.page}>
       <script
@@ -202,8 +282,13 @@ export default function Home() {
           <Link href="#products" className={styles.secondaryButton}>
             Explore products
           </Link>
+<<<<<<< HEAD
           <Link href="#kpis" className={styles.linkGhost}>
             View KPI cockpit
+=======
+          <Link href="/settings" className={styles.secondaryButton}>
+            Open settings
+>>>>>>> origin/main
           </Link>
         </div>
         <div className={styles.metrics}>
@@ -217,6 +302,7 @@ export default function Home() {
         </div>
       </header>
 
+<<<<<<< HEAD
       <section id="kpis" aria-labelledby="kpis-heading" className={styles.section}>
         <div className={styles.sectionHeader}>
           <p className={styles.eyebrow}>Performance cockpit</p>
@@ -238,6 +324,9 @@ export default function Home() {
       </section>
 
       <section id="products" aria-labelledby="products-heading" className={styles.section}>
+=======
+      <section id="products" className={styles.section} aria-labelledby="products-heading">
+>>>>>>> origin/main
         <div className={styles.sectionHeader}>
           <p className={styles.eyebrow}>Customer-centric growth</p>
           <h2 id="products-heading">Build, fund, and protect every loan strategy</h2>
@@ -261,6 +350,7 @@ export default function Home() {
         </div>
       </section>
 
+<<<<<<< HEAD
       <section id="dashboards" aria-labelledby="dashboards-heading" className={styles.section}>
         <div className={styles.sectionHeader}>
           <p className={styles.eyebrow}>Signals and dashboards</p>
@@ -294,6 +384,9 @@ export default function Home() {
       </section>
 
       <section id="compliance" aria-labelledby="compliance-heading" className={styles.section}>
+=======
+      <section className={styles.section} aria-labelledby="excellence-heading">
+>>>>>>> origin/main
         <div className={styles.sectionHeader}>
           <p className={styles.eyebrow}>Operational excellence</p>
           <h2 id="compliance-heading">Compliance-first, automation-ready</h2>
@@ -325,7 +418,11 @@ export default function Home() {
         </div>
       </section>
 
+<<<<<<< HEAD
       <section id="demo" aria-labelledby="playbook-heading" className={styles.section}>
+=======
+      <section id="demo" className={styles.section} aria-labelledby="playbook-heading">
+>>>>>>> origin/main
         <div className={styles.sectionHeader}>
           <p className={styles.eyebrow}>Delivery playbook</p>
           <h2 id="playbook-heading">From data to decisions in weeks</h2>
@@ -346,6 +443,14 @@ export default function Home() {
           ))}
         </div>
       </section>
+<<<<<<< HEAD
     </main>
+=======
+
+      <section className={styles.section} id="analytics">
+        <AnalyticsDashboard />
+      </section>
+    </div>
+>>>>>>> origin/main
   )
 }
