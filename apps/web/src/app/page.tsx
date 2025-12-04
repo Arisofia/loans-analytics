@@ -1,11 +1,7 @@
-<<<<<<< HEAD
-import Link from 'next/link'
-import { controls, metrics, products, steps } from './data'
-import styles from './page.module.css'
-=======
 import type { PostgrestSingleResponse } from '@supabase/supabase-js'
 import Link from 'next/link'
-import { z } from 'zod'
+
+import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
 import {
   controls as fallbackControls,
   metrics as fallbackMetrics,
@@ -13,93 +9,14 @@ import {
   steps as fallbackSteps,
 } from './data'
 import styles from './page.module.css'
-<<<<<<< HEAD
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import { logLandingPageDiagnostic } from '../lib/landingPageDiagnostics'
+import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import {
-  EMPTY_LANDING_PAGE_DATA,
   landingPageDataSchema,
   type LandingPageData,
   type Metric,
   type Product,
-  type Step,
 } from '../types/landingPage'
-
-async function getData(): Promise<LandingPageData> {
-  if (!supabase || !isSupabaseConfigured) {
-    logLandingPageDiagnostic({
-      status: 'missing-config',
-      supabaseConfigured: false,
-      payload: EMPTY_LANDING_PAGE_DATA,
-    })
-    console.warn('Supabase environment variables are missing; using fallback landing page data')
-    return EMPTY_LANDING_PAGE_DATA
-  }
-
-  const { data, error } = await supabase.from('landing_page_data').select('*').single()
-
-  if (error) {
-    logLandingPageDiagnostic({
-      status: 'fetch-error',
-      supabaseConfigured: true,
-      error,
-      payload: EMPTY_LANDING_PAGE_DATA,
-    })
-    console.error('Error fetching landing page data:', error)
-    return EMPTY_LANDING_PAGE_DATA
-  }
-
-  if (!data) {
-    logLandingPageDiagnostic({
-      status: 'no-data',
-      supabaseConfigured: true,
-      payload: EMPTY_LANDING_PAGE_DATA,
-    })
-    console.error('Landing page data is missing from Supabase response')
-    return EMPTY_LANDING_PAGE_DATA
-  }
-
-  const parsed = landingPageDataSchema.safeParse(data)
-
-  if (!parsed.success) {
-    logLandingPageDiagnostic({
-      status: 'invalid-shape',
-      supabaseConfigured: true,
-      error: parsed.error.flatten(),
-      payload: EMPTY_LANDING_PAGE_DATA,
-    })
-    console.error('Invalid landing page data shape from Supabase:', parsed.error.flatten())
-    return EMPTY_LANDING_PAGE_DATA
-  }
-
-  logLandingPageDiagnostic({
-    status: 'ok',
-    supabaseConfigured: true,
-    payload: parsed.data,
-  })
-=======
-import { supabase } from '../lib/supabaseClient'
-import type { LandingPageData } from '../types/landingPage'
-import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
-
-<<<<<<< HEAD
-type Metric = {
-  label: string
-  value: string
-  helper?: string
-}
-
-type Product = {
-  title: string
-  detail: string
-  kicker?: string
-}
-
-type Step = {
-  label: string
-  title: string
-  copy: string
-}
 
 const navLinks = [
   { label: 'KPIs', href: '#kpis' },
@@ -109,25 +26,7 @@ const navLinks = [
   { label: 'Playbook', href: '#demo' },
 ]
 
-const metrics: Metric[] = [
-  {
-    label: 'Approval uplift with governed risk',
-    value: '+18%',
-    helper: 'Quarter-over-quarter across prime and near-prime',
-  },
-  {
-    label: 'Reduction in manual reviews',
-    value: '42%',
-    helper: 'Workflow automation with auditability',
-  },
-  {
-    label: 'Portfolio coverage with audit trails',
-    value: '100%',
-    helper: 'Evidence mapped to every decision',
-  },
-]
-
-const scorecards: Metric[] = [
+const scorecards: ReadonlyArray<Metric> = [
   {
     label: 'Application-to-cash velocity',
     value: '< 48 hours',
@@ -145,27 +44,7 @@ const scorecards: Metric[] = [
   },
 ]
 
-const products: Product[] = [
-  {
-    title: 'Portfolio Intelligence',
-    detail: 'Daily performance lenses across cohorts, pricing, liquidity, and partner flows.',
-    kicker: 'Capital efficiency, reserve discipline, and covenant readiness.',
-  },
-  {
-    title: 'Risk Orchestration',
-    detail:
-      'Dynamic policy controls, challenger experiments, and guardrails to defend credit quality.',
-    kicker: 'Segregation of duties with sign-offs and immutable change logs.',
-  },
-  {
-    title: 'Growth Enablement',
-    detail:
-      'Pre-approved journeys, partner-ready APIs, and data rooms that accelerate funding decisions.',
-    kicker: 'Unified evidence packs for investors, auditors, and strategic partners.',
-  },
-]
-
-const dashboards: Product[] = [
+const dashboards: ReadonlyArray<Product> = [
   {
     title: 'Liquidity & funding cockpit',
     detail: 'Covenant monitoring, cash runway, and facility utilization in one governed console.',
@@ -183,32 +62,14 @@ const dashboards: Product[] = [
   },
 ]
 
-const controls = [
-  'Segregated roles, approvals, and immutable audit logs for every change.',
-  'Real-time monitoring of SLAs, risk thresholds, and operational KPIs.',
-  'Encryption by default with least-privilege access across environments.',
-  'Continuous evidence packs for regulators, investors, and funding partners.',
-]
+const baseFallbackData: LandingPageData = {
+  metrics: fallbackMetrics,
+  products: fallbackProducts,
+  controls: fallbackControls,
+  steps: fallbackSteps,
+}
 
-const steps: Step[] = [
-  {
-    label: '01',
-    title: 'Unify data signals',
-    copy: 'Blend credit bureau, behavioral, and operational streams to build a trusted lending graph.',
-  },
-  {
-    label: '02',
-    title: 'Model & decide',
-    copy: 'Score applicants with explainable risk layers and adaptive policies aligned to appetite.',
-  },
-  {
-    label: '03',
-    title: 'Measure & learn',
-    copy: 'Track outcomes against revenue and risk KPIs, iterating with governed experiment loops.',
-  },
-]
-
-const structuredData = {
+const buildStructuredData = (products: ReadonlyArray<Product>) => ({
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: 'Abaco Loans Analytics',
@@ -245,79 +106,82 @@ const structuredData = {
       description: score.helper,
     },
   })),
-}
-
-export default function Home() {
-=======
-const landingPageSchema = z.object({
-  metrics: z.array(
-    z.object({
-      label: z.string().min(1),
-      value: z.string().min(1),
-    })
-  ),
-  products: z.array(
-    z.object({
-      title: z.string().min(1),
-      detail: z.string().min(1),
-    })
-  ),
-  controls: z.array(z.string().min(1)),
-  steps: z.array(
-    z.object({
-      label: z.string().min(1),
-      title: z.string().min(1),
-      copy: z.string().min(1),
-    })
-  ),
 })
 
-const fallbackData: LandingPageData = {
-  metrics: fallbackMetrics,
-  products: fallbackProducts,
-  controls: fallbackControls,
-  steps: fallbackSteps,
-}
-
-function cloneFallback(): LandingPageData {
+function cloneLandingPageData(source: LandingPageData): LandingPageData {
   return {
-    metrics: fallbackData.metrics.map((item) => ({ ...item })),
-    products: fallbackData.products.map((item) => ({ ...item })),
-    controls: [...fallbackData.controls],
-    steps: fallbackData.steps.map((item) => ({ ...item })),
+    metrics: source.metrics.map((item) => ({ ...item })),
+    products: source.products.map((item) => ({ ...item })),
+    controls: [...source.controls],
+    steps: source.steps.map((item) => ({ ...item })),
   }
 }
 
 async function getData(): Promise<LandingPageData> {
-  if (!supabase) {
-    return cloneFallback()
+  const fallback = cloneLandingPageData(baseFallbackData)
+
+  if (!supabase || !isSupabaseConfigured) {
+    logLandingPageDiagnostic({
+      status: 'missing-config',
+      supabaseConfigured: false,
+      payload: fallback,
+    })
+    console.warn('Supabase environment variables are missing; using fallback landing page data')
+    return fallback
   }
 
   const { data, error }: PostgrestSingleResponse<LandingPageData> = await supabase
     .from('landing_page_data')
-    .select()
+    .select('*')
     .single()
 
-  if (error || !data) {
+  if (error) {
+    logLandingPageDiagnostic({
+      status: 'fetch-error',
+      supabaseConfigured: true,
+      error,
+      payload: fallback,
+    })
     console.error('Error fetching landing page data:', error)
-    return cloneFallback()
+    return fallback
   }
 
-  const parsed = landingPageSchema.safeParse(data)
+  if (!data) {
+    logLandingPageDiagnostic({
+      status: 'no-data',
+      supabaseConfigured: true,
+      payload: fallback,
+    })
+    console.error('Landing page data is missing from Supabase response')
+    return fallback
+  }
+
+  const parsed = landingPageDataSchema.safeParse(data)
+
   if (!parsed.success) {
-    console.error('Invalid landing page payload received:', parsed.error.flatten())
-    return cloneFallback()
+    logLandingPageDiagnostic({
+      status: 'invalid-shape',
+      supabaseConfigured: true,
+      error: parsed.error.flatten(),
+      payload: fallback,
+    })
+    console.error('Invalid landing page data shape from Supabase:', parsed.error.flatten())
+    return fallback
   }
 
->>>>>>> origin/main
+  logLandingPageDiagnostic({
+    status: 'ok',
+    supabaseConfigured: true,
+    payload: parsed.data,
+  })
+
   return parsed.data
 }
 
 export default async function Home() {
   const { metrics, products, controls, steps } = await getData()
->>>>>>> origin/main
+  const structuredData = buildStructuredData(products)
 
->>>>>>> origin/main
   return (
     <main id="main-content" className={styles.page}>
       <script
@@ -354,13 +218,8 @@ export default async function Home() {
           <Link href="#products" className={styles.secondaryButton}>
             Explore products
           </Link>
-<<<<<<< HEAD
           <Link href="#kpis" className={styles.linkGhost}>
             View KPI cockpit
-=======
-          <Link href="/settings" className={styles.secondaryButton}>
-            Open settings
->>>>>>> origin/main
           </Link>
         </div>
         <div className={styles.metrics}>
@@ -374,7 +233,6 @@ export default async function Home() {
         </div>
       </header>
 
-<<<<<<< HEAD
       <section id="kpis" aria-labelledby="kpis-heading" className={styles.section}>
         <div className={styles.sectionHeader}>
           <p className={styles.eyebrow}>Performance cockpit</p>
@@ -395,10 +253,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="products" aria-labelledby="products-heading" className={styles.section}>
-=======
       <section id="products" className={styles.section} aria-labelledby="products-heading">
->>>>>>> origin/main
         <div className={styles.sectionHeader}>
           <p className={styles.eyebrow}>Customer-centric growth</p>
           <h2 id="products-heading">Build, fund, and protect every loan strategy</h2>
@@ -422,7 +277,6 @@ export default async function Home() {
         </div>
       </section>
 
-<<<<<<< HEAD
       <section id="dashboards" aria-labelledby="dashboards-heading" className={styles.section}>
         <div className={styles.sectionHeader}>
           <p className={styles.eyebrow}>Signals and dashboards</p>
@@ -456,9 +310,6 @@ export default async function Home() {
       </section>
 
       <section id="compliance" aria-labelledby="compliance-heading" className={styles.section}>
-=======
-      <section className={styles.section} aria-labelledby="excellence-heading">
->>>>>>> origin/main
         <div className={styles.sectionHeader}>
           <p className={styles.eyebrow}>Operational excellence</p>
           <h2 id="compliance-heading">Compliance-first, automation-ready</h2>
@@ -490,11 +341,7 @@ export default async function Home() {
         </div>
       </section>
 
-<<<<<<< HEAD
       <section id="demo" aria-labelledby="playbook-heading" className={styles.section}>
-=======
-      <section id="demo" className={styles.section} aria-labelledby="playbook-heading">
->>>>>>> origin/main
         <div className={styles.sectionHeader}>
           <p className={styles.eyebrow}>Delivery playbook</p>
           <h2 id="playbook-heading">From data to decisions in weeks</h2>
@@ -515,14 +362,10 @@ export default async function Home() {
           ))}
         </div>
       </section>
-<<<<<<< HEAD
-    </main>
-=======
 
       <section className={styles.section} id="analytics">
         <AnalyticsDashboard />
       </section>
-    </div>
->>>>>>> origin/main
+    </main>
   )
 }
