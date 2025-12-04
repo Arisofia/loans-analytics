@@ -58,7 +58,7 @@
 
 .hero p {
   max-width: 780px;
-  color: #d9dde2;
+  color: var(--text-strong);
   color: color-mix(in srgb, var(--color-text-primary) 85%);
   font-size: 18px;
   line-height: 1.7;
@@ -102,7 +102,7 @@
 }
 
 .secondaryButton:hover {
-  border-color: #4d4d4d;
+  border-color: var(--text-strong);
   background: #0f0f0f;
 }
 
@@ -213,7 +213,7 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  color: #c4c8ce;
+  color: var(--text-strong);
   color: color-mix(in srgb, var(--color-text-primary) 80%);
 }
 
@@ -246,7 +246,7 @@
 
 .auditBox ul {
   padding-left: 18px;
-  color: #b9bcc1;
+  color: var(--text-strong);
   color: color-mix(in srgb, var(--color-text-primary) 75%);
   line-height: 1.6;
 }
@@ -259,11 +259,11 @@
   align-self: flex-start;
   color: var(--color-text-primary);
   background: transparent;
-  border-color: #4d4d4d;
+  border-color: var(--text-strong);
 }
 
 .primaryGhost:hover {
-  border-color: #ffffff;
+  border-color: var(--text-strong);
   background: var(--surface-interactive);
 }
 

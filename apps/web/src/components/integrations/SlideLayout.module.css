@@ -14,7 +14,7 @@
 
 .copy {
   max-width: 760px;
-  color: #cbd5e1;
+  color: var(--text-strong);
   line-height: 1.6;
 }
 
@@ -29,7 +29,7 @@
   align-items: center;
   gap: 8px;
   background: linear-gradient(135deg, #7c3aed, #22d3ee);
-  color: #0b1224;
+  color: var(--text-strong);
   padding: 10px 16px;
   border-radius: 999px;
   border: none;
@@ -47,7 +47,7 @@
 
 .secondaryButton {
   background: rgba(148, 163, 184, 0.14);
-  color: #e2e8f0;
+  color: var(--text-strong);
   border: 1px solid rgba(226, 232, 240, 0.18);
 }
 
