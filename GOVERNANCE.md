@@ -18,7 +18,7 @@
    - Production-ready from day one
 
 2. **Traceability is King**
-   - Every financial decision must be traceable to exact code/data source
+   - Every financial decision must be traceable to the exact code/data source
    - Comprehensive audit trails
    - Deterministic computations (no floating-point for currency)
    - Immutable event logs
