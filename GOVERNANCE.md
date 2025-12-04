@@ -244,7 +244,7 @@ rate = 0.05              # Currency precision loss
 
 ### Idempotency Keys
 
-All payments must include idempotency key:
+All payments must include an idempotency key:
 ```python
 idempotency_key = f"{user_id}_{timestamp}_{operation_id}"
 # Ensures no duplicate charges if retry occurs
