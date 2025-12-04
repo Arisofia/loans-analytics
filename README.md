@@ -1,5 +1,22 @@
 # ABACO — Loan Analytics Platform
 
+## Fintech Factory Agentic Ecosystem
+
+State-of-the-art **zero-touch automation** platform for market-leading fintech operations. Combines 7 departmental intelligence stacks with 9 integrated agents for deterministic, production-ready KPI governance and stakeholder reporting.
+
+**Key Features**:
+- **Automated KPI Engine**: PAR_90, collection rates, portfolio health computed from base data (never upstream fields)
+- **Real-time Alerts**: Cascade > Slack/Email/Notion in <5 minutes via BigQuery + Python orchestration
+- **7 Departmental Stacks**: Risk, Compliance, Finance, Technology, Growth, Marketing, Sales
+- **9 Agents Integrated**: Codex, SonarQube, Black, Flake8, PyTest, CodeRabbit, Sourcery, MCP, Gap Resolver
+- **Multi-layer Governance**: Audit trails on every metric; run IDs, timestamps, data versions immutable
+- **Vibe Solutioning**: Rebuild from base, continuous validation, absolute traceability
+
+**Deployment Status**: Phase 1 Foundation (Week 1) ✅ Complete | Phase 2+ In Progress
+
+**Documentation**: See `DEPLOYMENT.md` for operations guide, `CONTEXT.md` for architecture, or `feat/fintech-factory-agentic-ecosystem` branch for full implementation.
+
+
 ABACO delivers an executive-grade analytics and governance stack for lending teams. The platform pairs a Next.js dashboard with Python risk pipelines, Azure deployment scripts, and traceable KPI governance.
 
 ## Stack map
