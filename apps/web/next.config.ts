@@ -8,9 +8,6 @@ const nextConfig: NextConfig = {
   typescript: {
     tsconfigPath: './tsconfig.json',
   },
-  experimental: {
-    turbopackUseSystemTlsCerts: true,
-  },
   turbopack: {
     root: __dirname,
   },
