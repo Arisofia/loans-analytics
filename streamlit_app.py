@@ -2,6 +2,7 @@ import hashlib
 import os
 import re
 import unicodedata
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -66,7 +67,10 @@ def apply_theme(fig: px.Figure) -> px.Figure:
         paper_bgcolor=ABACO_THEME["colors"]["background"],
         plot_bgcolor=ABACO_THEME["colors"]["background"],
         legend=dict(
-            font=dict(family=ABACO_THEME["typography"]["secondary_font"], color=ABACO_THEME["colors"]["light_gray"])
+            font=dict(
+                family=ABACO_THEME["typography"]["secondary_font"],
+                color=ABACO_THEME["colors"]["light_gray"],
+            )
         ),
         margin=dict(l=0, r=0, t=40, b=0),
     )
@@ -76,16 +80,12 @@ def apply_theme(fig: px.Figure) -> px.Figure:
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     clean = (
-        df.rename(
-            columns=lambda col: re.sub(r"[^a-z0-9_]", "_", re.sub(r"\s+", "_", col.strip().lower()))
-        )
+        df.rename(columns=lambda col: re.sub(r"[^a-z0-9_]", "_", re.sub(r"\s+", "_", col.strip().lower())))
         .pipe(lambda d: d.loc[:, ~d.columns.duplicated()])
     )
     return clean
 
 
-<<<<<<< HEAD
-=======
 def safe_numeric(series: pd.Series) -> pd.Series:
     cleaned = (
         series.astype(str)
@@ -96,22 +96,29 @@ def safe_numeric(series: pd.Series) -> pd.Series:
     return pd.to_numeric(cleaned, errors="coerce")
 
 
-def compute_upload_signature(uploaded_file) -> str | None:
+def compute_upload_signature(uploaded_file) -> Optional[str]:
     if uploaded_file is None:
         return None
-    content = uploaded_file.getvalue()
-    digest = hashlib.md5(content[:1048576]).hexdigest()
+    current_position = uploaded_file.tell() if hasattr(uploaded_file, "tell") else None
+    if hasattr(uploaded_file, "seek"):
+        uploaded_file.seek(0)
+    file_bytes = uploaded_file.getvalue()
+    digest = hashlib.sha256(file_bytes).hexdigest()
+    if hasattr(uploaded_file, "seek") and current_position is not None:
+        uploaded_file.seek(current_position)
     return f"{uploaded_file.name}:{uploaded_file.size}:{digest}"
 
 
-def normalize_text(value) -> str:
+def normalize_text(value: str) -> str:
     if not isinstance(value, str):
         return ""
-    cleaned = re.sub(r"[^a-z0-9\s]", " ", value.lower())
-    return re.sub(r"\s+", " ", cleaned).strip()
+    normalized = unicodedata.normalize("NFKD", value)
+    stripped = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    cleaned = re.sub(r"[^a-z0-9]+", " ", stripped.lower()).strip()
+    return re.sub(r"\s+", " ", cleaned)
 
 
-def select_payer_column(df: pd.DataFrame) -> str | None:
+def select_payer_column(df: pd.DataFrame) -> Optional[str]:
     preferred = [
         "payer",
         "payer_name",
@@ -124,24 +131,14 @@ def select_payer_column(df: pd.DataFrame) -> str | None:
     ]
     column_lookup = {col.lower(): col for col in df.columns}
     for preferred_name in preferred:
-        lookup_key = preferred_name.lower()
-        if lookup_key in column_lookup:
-            return column_lookup[lookup_key]
-    return next(
-        (
-            col
-            for col in df.columns
-            if re.search(
-                r"payer|payor|pagador|offtaker|buyer|debtor",
-                col,
-                re.IGNORECASE,
-            )
-        ),
-        None,
-    )
+        if preferred_name.lower() in column_lookup:
+            return column_lookup[preferred_name.lower()]
+    for col in df.columns:
+        if re.search(r"payer|payor|pagador|offtaker|buyer|debtor", col, re.IGNORECASE):
+            return col
+    return None
 
 
->>>>>>> upstream/main
 def compute_roll_rates(df: pd.DataFrame) -> pd.DataFrame:
     if "dpd_status" not in df.columns or "loan_status" not in df.columns:
         return pd.DataFrame()
@@ -165,45 +162,20 @@ def define_ingestion_state(df: pd.DataFrame) -> pd.Series:
     )
 
 
-def normalize_text(value: str) -> str:
-    if not isinstance(value, str):
-        return ""
-    normalized = unicodedata.normalize("NFKD", value)
-    stripped = "".join(ch for ch in normalized if not unicodedata.combining(ch))
-    cleaned = re.sub(r"[^a-z0-9]+", " ", stripped.lower()).strip()
-    return re.sub(r"\s+", " ", cleaned)
-
-
-def select_payer_column(df: pd.DataFrame) -> str | None:
-    preferred = [
-        "payer",
-        "payer_name",
-        "payor",
-        "pagador",
-        "offtaker",
-        "buyer",
-        "debtor",
-        "customer_name",
-    ]
-    for col in df.columns:
-        if col in preferred:
-            return col
-    for col in df.columns:
-        if re.search(r"payer|payor|pagador|offtaker|buyer|debtor", col, re.IGNORECASE):
-            return col
-    return None
-
-
 @st.cache_data(show_spinner=False)
 def parse_uploaded_file(uploaded) -> pd.DataFrame:
     if uploaded is None:
         return pd.DataFrame()
-    return pd.read_csv(uploaded)
+    uploaded.seek(0)
+    try:
+        return pd.read_csv(uploaded)
+    except Exception:
+        return pd.DataFrame()
 
 
 st.set_page_config(
     page_title="ABACO Financial Intelligence Platform",
-    page_icon="💠",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -250,110 +222,41 @@ if validation_toggle and uploaded is not None:
     if missing:
         st.sidebar.error(f"Missing required columns: {', '.join(sorted(set(missing)))}")
 
-def get_upload_signature(uploaded_file) -> str | None:
-    if uploaded_file is None:
-        return None
-    current_position = uploaded_file.tell() if hasattr(uploaded_file, "tell") else None
-    if hasattr(uploaded_file, "seek"):
-        uploaded_file.seek(0)
-    file_bytes = uploaded_file.getvalue()
-    content_hash = hashlib.sha256(file_bytes).hexdigest()
-
-    if hasattr(uploaded_file, "seek") and current_position is not None:
-        uploaded_file.seek(current_position)
-
-    return f"{uploaded_file.name}:{uploaded_file.size}:{content_hash}"
-
-
 if "loan_data" not in st.session_state:
     st.session_state["loan_data"] = pd.DataFrame()
 if "ingestion_state" not in st.session_state:
     st.session_state["ingestion_state"] = {}
-<<<<<<< HEAD
-if "last_upload" not in st.session_state:
-    st.session_state["last_upload"] = None
-if "last_upload_signature" not in st.session_state:
-    st.session_state["last_upload_signature"] = None
-
-
-def should_ingest(signature: str | None) -> bool:
-    return signature is not None and signature != st.session_state.get("last_upload_signature")
-
-
-def ingest(current_upload):
-    signature = get_upload_signature(current_upload)
-    if hasattr(current_upload, "seek"):
-        current_upload.seek(0)
-    raw = parse_uploaded_file(current_upload)
-=======
 if "last_upload_signature" not in st.session_state:
     st.session_state["last_upload_signature"] = None
 if "last_ingested_at" not in st.session_state:
     st.session_state["last_ingested_at"] = None
 
 
-<<<<<<< HEAD
-def compute_upload_signature(uploaded_file) -> str | None:
-    if uploaded_file is None:
-        return None
-    return f"{uploaded_file.name}:{uploaded_file.size}"
+def should_ingest(signature: Optional[str]) -> bool:
+    return signature is not None and signature != st.session_state.get("last_upload_signature")
 
 
-=======
->>>>>>> origin/main
-def ingest(uploaded_file, signature: str | None):
+def ingest(uploaded_file, signature: Optional[str]) -> None:
     raw = parse_uploaded_file(uploaded_file)
->>>>>>> origin/main
     normalized = normalize_columns(raw)
-    numeric_columns = normalized.select_dtypes(include=["object"]).columns
     numeric_payload = normalized.copy()
-    for col in numeric_columns:
-<<<<<<< HEAD
-        numeric_payload[col] = standardize_numeric(numeric_payload[col])
-=======
+    for col in normalized.select_dtypes(include=["object"]).columns:
         converted = safe_numeric(numeric_payload[col])
         if converted.notna().sum() > 0:
             numeric_payload[col] = converted
->>>>>>> upstream/main
     st.session_state["loan_data"] = numeric_payload
     st.session_state["ingestion_state"] = define_ingestion_state(numeric_payload)
-<<<<<<< HEAD
-    st.session_state["last_upload"] = pd.Timestamp.now()
-    st.session_state["last_upload_signature"] = signature
-
-
-current_signature = get_upload_signature(uploaded)
-if should_ingest(current_signature):
-    ingest(uploaded)
-
-if st.sidebar.button("Refresh ingestion", use_container_width=True):
-    if should_ingest(current_signature):
-        ingest(uploaded)
-=======
     st.session_state["last_upload_signature"] = signature
     st.session_state["last_ingested_at"] = pd.Timestamp.now()
 
 
-<<<<<<< HEAD
-if uploaded is not None:
-    current_signature = compute_upload_signature(uploaded)
-    if current_signature != st.session_state.get("last_upload_signature"):
-        ingest(uploaded, current_signature)
+current_signature = compute_upload_signature(uploaded)
+if should_ingest(current_signature):
+    ingest(uploaded, current_signature)
 
 if st.sidebar.button("Refresh ingestion", use_container_width=True):
     if uploaded is not None:
         ingest(uploaded, compute_upload_signature(uploaded))
-=======
-if uploaded is not None and (current_signature := compute_upload_signature(uploaded)):
-    if current_signature != st.session_state.get("last_upload_signature"):
-        ingest(uploaded, current_signature)
-    else:
-        st.sidebar.info("Upload unchanged since last ingestion; skipping reload.")
-
-if st.sidebar.button("Refresh ingestion", use_container_width=True):
-    if uploaded is not None and (signature := compute_upload_signature(uploaded)):
-        ingest(uploaded, signature)
->>>>>>> origin/main
         st.sidebar.success("Ingestion refreshed.")
     else:
         st.sidebar.warning("Upload a new file before refreshing.")
@@ -368,11 +271,6 @@ ing_state = st.session_state["ingestion_state"]
 st.markdown(f"- Rows: {ing_state['rows']}, Columns: {ing_state['columns']}")
 st.markdown(f"- Loan base validated: {ing_state['has_loan_base']}")
 if st.session_state["last_ingested_at"] is not None:
-<<<<<<< HEAD
-    st.markdown(
-        f"- Last ingested at: {st.session_state['last_ingested_at'].strftime('%Y-%m-%d %H:%M:%S')}"
-    )
-=======
     st.markdown(f"- Last ingested at: {st.session_state['last_ingested_at'].strftime('%Y-%m-%d %H:%M:%S')}")
 
 missing_required_columns = [col for col in REQUIRED_COLUMNS if col not in loan_df.columns]
@@ -382,7 +280,6 @@ if missing_required_columns:
         + ", ".join(sorted(missing_required_columns))
     )
     st.stop()
->>>>>>> origin/main
 
 st.markdown("## Data Quality Audit")
 quality_score = calculate_quality_score(loan_df)
@@ -392,10 +289,7 @@ st.markdown("Critical tables scored, missing columns handled, and zeros penalize
 st.markdown("## Payer Coverage Scan")
 payer_column = select_payer_column(loan_df)
 if payer_column:
-<<<<<<< HEAD
-=======
     st.success(f"Detected payer column: {payer_column}")
->>>>>>> origin/main
     normalized_col = f"{payer_column}_normalized"
     loan_df[normalized_col] = loan_df[payer_column].apply(normalize_text)
     target_aliases = {
@@ -411,15 +305,11 @@ if payer_column:
     for target, patterns in target_aliases.items():
         pattern = "|".join(patterns)
         mask = loan_df[normalized_col].str.contains(pattern, regex=True, na=False)
-<<<<<<< HEAD
-        exposure = loan_df.loc[mask, "principal_balance"].sum() if "principal_balance" in loan_df.columns else np.nan
-=======
         exposure = (
             loan_df.loc[mask, "principal_balance"].sum()
             if "principal_balance" in loan_df.columns
             else np.nan
         )
->>>>>>> origin/main
         coverage_rows.append(
             {
                 "Target": target,
@@ -431,17 +321,9 @@ if payer_column:
     st.dataframe(coverage_df, hide_index=True)
     missing = coverage_df.loc[coverage_df["Matches"] == 0, "Target"].tolist()
     if missing:
-<<<<<<< HEAD
         st.info(f"No matches detected for: {', '.join(missing)}. Use normalized payer names to confirm coverage gaps.")
 else:
-    st.info("Add a payer/offtaker column (payer, payor, pagador, buyer, or debtor) to measure international coverage.")
-=======
-        st.info(
-            f"No matches detected for: {', '.join(missing)}. Use normalized payer names to confirm coverage gaps."
-        )
-else:
     st.info("Add a payer/payor/pagador/offtaker/buyer/debtor column to assess coverage.")
->>>>>>> origin/main
 
 st.markdown("## KPI Calculations")
 metrics, enriched_df = portfolio_kpis(loan_df)
@@ -473,10 +355,10 @@ st.metric("Loan gap", f"{gap_loans:.0f}")
 monthly_projection = project_growth(
     current_yield=current_metrics["current_yield"],
     target_yield=targets["target_monthly_yield"],
-    current_loans=current_metrics["active_loans"],
-    target_loans=targets["target_active_loans"],
+    current_loan_volume=current_metrics["active_loans"],
+    target_loan_volume=targets["target_active_loans"],
     periods=6,
-)
+).assign(month=lambda d: d["date"].dt.strftime("%b %Y"))
 fig_growth = px.line(
     monthly_projection,
     x="month",
@@ -506,8 +388,7 @@ else:
 st.markdown("## AI Integration & Narrative")
 needs_ai = all(key in os.environ for key in ("OPENAI_API_KEY", "GOOGLE_API_KEY"))
 summary = (
-    "AI integration available; run a prompt to synthesize KPIs." if needs_ai else
-    "Rule-based summary: focus on delinquency, growth, and alert signals to guide stakeholders."
+    "AI integration available; run a prompt to synthesize KPIs." if needs_ai else "Rule-based summary: focus on delinquency, growth, and alert signals to guide stakeholders."
 )
 st.markdown(summary)
 
