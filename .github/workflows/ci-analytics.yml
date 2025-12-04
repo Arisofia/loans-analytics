@@ -40,14 +40,8 @@ PY
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-<<<<<<< HEAD
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-      - uses: actions/setup-python@a26af69be271e172c85d94de3b4197d8c050d1b4 # v5.6.0
-=======
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
->>>>>>> origin/main
-        with:
+- uses: actions/checkout@v4
+     - uses: actions/setup-python@v5        with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: apps/analytics/requirements.txt
