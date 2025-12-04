@@ -69,6 +69,26 @@ const baseFallbackData: LandingPageData = {
   steps: fallbackSteps,
 }
 
+function mergeWithFallback(
+  data: LandingPageData,
+  fallback: LandingPageData
+): { merged: LandingPageData; fallbackApplied: boolean } {
+  const fallbackApplied =
+    data.metrics.length === 0 ||
+    data.products.length === 0 ||
+    data.controls.length === 0 ||
+    data.steps.length === 0
+
+  const merged: LandingPageData = {
+    metrics: data.metrics.length ? data.metrics : fallback.metrics,
+    products: data.products.length ? data.products : fallback.products,
+    controls: data.controls.length ? data.controls : fallback.controls,
+    steps: data.steps.length ? data.steps : fallback.steps,
+  }
+
+  return { merged, fallbackApplied }
+}
+
 const buildStructuredData = (products: ReadonlyArray<Product>) => ({
   '@context': 'https://schema.org',
   '@type': 'Organization',
@@ -124,6 +144,7 @@ async function getData(): Promise<LandingPageData> {
     logLandingPageDiagnostic({
       status: 'missing-config',
       supabaseConfigured: false,
+      fallbackApplied: true,
       payload: fallback,
     })
     console.warn('Supabase environment variables are missing; using fallback landing page data')
@@ -139,6 +160,7 @@ async function getData(): Promise<LandingPageData> {
     logLandingPageDiagnostic({
       status: 'fetch-error',
       supabaseConfigured: true,
+      fallbackApplied: true,
       error,
       payload: fallback,
     })
@@ -150,6 +172,7 @@ async function getData(): Promise<LandingPageData> {
     logLandingPageDiagnostic({
       status: 'no-data',
       supabaseConfigured: true,
+      fallbackApplied: true,
       payload: fallback,
     })
     console.error('Landing page data is missing from Supabase response')
@@ -162,6 +185,7 @@ async function getData(): Promise<LandingPageData> {
     logLandingPageDiagnostic({
       status: 'invalid-shape',
       supabaseConfigured: true,
+      fallbackApplied: true,
       error: parsed.error.flatten(),
       payload: fallback,
     })
@@ -169,13 +193,16 @@ async function getData(): Promise<LandingPageData> {
     return fallback
   }
 
+  const { merged, fallbackApplied } = mergeWithFallback(parsed.data, fallback)
+
   logLandingPageDiagnostic({
     status: 'ok',
     supabaseConfigured: true,
-    payload: parsed.data,
+    fallbackApplied,
+    payload: merged,
   })
 
-  return parsed.data
+  return merged
 }
 
 export default async function Home() {
