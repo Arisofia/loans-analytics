@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-"""Utility package for feature engineering helpers."""
-
-from .feature_engineering import FeatureEngineer
-
-__all__ = ["FeatureEngineer"]
-=======
 """Public utilities exposed by :mod:`streamlit_app.utils` with lazy loading."""
 
 from importlib import import_module
@@ -56,7 +48,3 @@ def __dir__() -> List[str]:
     """Surface lazily exported attributes to introspection utilities."""
 
     return sorted(set(__all__) | set(globals().keys()))
->>>>>>> upstream/main
-=======
-"""Utility package for feature engineering and helpers used by the Streamlit app."""
->>>>>>> origin/main

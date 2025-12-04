@@ -1,22 +1,3 @@
-<<<<<<< HEAD
-export type Metric = {
-  label: string
-  value: string
-}
-
-export type Product = {
-  title: string
-  detail: string
-}
-
-export type Step = {
-  label: string
-  title: string
-  copy: string
-}
-
-export const metrics: Metric[] = [
-=======
 export type Metric = Readonly<{
   label: string
   value: string
@@ -33,25 +14,13 @@ export type Step = Readonly<{
   copy: string
 }>
 
-<<<<<<< HEAD
-export const metrics = [
-=======
 export const metrics: ReadonlyArray<Metric> = [
->>>>>>> origin/main
   { label: 'Approval uplift with governed risk', value: '+18%' },
   { label: 'Reduction in manual reviews', value: '42%' },
   { label: 'Portfolio coverage with audit trails', value: '100%' },
 ] as const satisfies readonly Metric[]
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-export const products = [
-=======
-export const products: Product[] = [
->>>>>>> upstream/main
-=======
 export const products: ReadonlyArray<Product> = [
->>>>>>> origin/main
   {
     title: 'Portfolio Intelligence',
     detail:
@@ -69,29 +38,13 @@ export const products: ReadonlyArray<Product> = [
   },
 ] as const satisfies readonly Product[]
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-export const controls = [
-=======
-export const controls: string[] = [
->>>>>>> upstream/main
-=======
 export const controls: ReadonlyArray<string> = [
->>>>>>> origin/main
   'Segregated roles, approvals, and immutable audit logs for every change.',
   'Real-time monitoring of SLAs, risk thresholds, and operational KPIs.',
   'Encryption by default with least-privilege access across environments.',
 ] as const satisfies readonly string[]
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-export const steps = [
-=======
-export const steps: Step[] = [
->>>>>>> upstream/main
-=======
 export const steps: ReadonlyArray<Step> = [
->>>>>>> origin/main
   {
     label: '01',
     title: 'Unify data signals',
