@@ -1,4 +1,6 @@
 name: CI Analytics
+permissions:
+  contents: read
 
 on:
   push:
