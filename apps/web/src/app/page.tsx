@@ -21,14 +21,16 @@ const navLinks = [
   { label: 'Playbook', href: '#demo' },
 ]
 
+const fallbackLandingPageData: LandingPageData = {
+  metrics: [...fallbackMetrics],
+  products: [...fallbackProducts],
+  controls: [...fallbackControls],
+  steps: [...fallbackSteps],
+}
+
 async function fetchLandingPageData(): Promise<LandingPageData> {
   if (!supabase || !isSupabaseConfigured) {
-    return {
-      metrics: fallbackMetrics,
-      products: fallbackProducts,
-      controls: fallbackControls,
-      steps: fallbackSteps,
-    }
+    return fallbackLandingPageData
   }
 
   const response: PostgrestSingleResponse<LandingPageData> = await supabase
@@ -36,24 +38,10 @@ async function fetchLandingPageData(): Promise<LandingPageData> {
     .select('*')
     .single()
 
-  if (response.error || !response.data) {
-    return {
-      metrics: fallbackMetrics,
-      products: fallbackProducts,
-      controls: fallbackControls,
-      steps: fallbackSteps,
-    }
-  }
+  if (response.error || !response.data) return fallbackLandingPageData
 
   const parsed = landingPageDataSchema.safeParse(response.data)
-  if (!parsed.success) {
-    return {
-      metrics: fallbackMetrics,
-      products: fallbackProducts,
-      controls: fallbackControls,
-      steps: fallbackSteps,
-    }
-  }
+  if (!parsed.success) return fallbackLandingPageData
 
   return parsed.data
 }
