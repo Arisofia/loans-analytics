@@ -7,6 +7,10 @@ ABACO delivers an executive-grade analytics and governance stack for lending tea
 - **apps/analytics**: Python scoring, stress testing, and KPI pipelines.
 - **infra/azure**: Azure infra-as-code and deployment scripts.
 - **data_samples**: Anonymized datasets for repeatable development and testing.
+<<<<<<< Updated upstream
+=======
+- **Integrations**: Figma / Notion / Slack setup guide at `docs/integrations.md` (see `docs/integration-readiness.md` for service checks).
+>>>>>>> Stashed changes
 
 ## Observability, KPIs, and lineage
 - **KPI catalog**: Use `docs/KPI-Operating-Model.md` to define owners, formulas, and lineage links for every metric; keep PR and issue references for auditability.
