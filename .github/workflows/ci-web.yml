@@ -8,10 +8,43 @@ on:
     paths:
       - 'apps/web/**'
   pull_request:
+<<<<<<< HEAD
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+=======
   workflow_dispatch:
+>>>>>>> origin/main
 
 jobs:
-  build:
+  assignee-check:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/pr-assignee-check.yml
+
+  build-pr:
+    needs: assignee-check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install
+        run: |
+          cd apps/web
+          npm install
+      - name: Lint
+        run: |
+          cd apps/web
+          npm run lint
+      - name: Build
+        run: |
+          cd apps/web
+          npm run build
+
+  build-push:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
 <<<<<<< HEAD

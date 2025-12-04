@@ -1,4 +1,6 @@
 name: SonarCloud
+permissions:
+  contents: read
 
 on:
   push:
@@ -6,11 +8,41 @@ on:
       - main
       - codex/**
   pull_request:
+    branches: [main]
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
-  sonarcloud:
+  assignee-check:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/pr-assignee-check.yml
+
+  sonarcloud-pr:
+    needs: assignee-check
+    if: github.event_name == 'pull_request'
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Necessary for SonarCloud to analyze history
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  sonarcloud-push:
+    if: github.event_name == 'push'
     name: SonarCloud Scan
     runs-on: ubuntu-latest
     env:

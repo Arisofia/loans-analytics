@@ -1,12 +1,43 @@
 name: CI Analytics
+permissions:
+  contents: read
 
 on:
   push:
     paths:
       - "apps/analytics/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/analytics/**"
 
 jobs:
-  analytics:
+  assignee-check:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/pr-assignee-check.yml
+
+  analytics-pr:
+    needs: assignee-check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          cd apps/analytics
+          pip install -r requirements.txt
+      - name: Validate
+        run: |
+          python - <<'PY'
+import pandas as pd
+print("Environment ready. Pandas version:", pd.__version__)
+PY
+
+  analytics-push:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
 <<<<<<< HEAD
