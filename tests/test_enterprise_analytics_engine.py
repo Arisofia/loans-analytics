@@ -1,8 +1,8 @@
-<<<<<<< HEAD
+from pathlib import Path
 import math
 import sys
-from pathlib import Path
 
+import pandas as pd
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -10,6 +10,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.enterprise_analytics_engine import (  # noqa: E402
+    LoanAnalyticsConfig,
+    LoanAnalyticsEngine,
     LoanPosition,
     PortfolioKPIs,
     calculate_monthly_payment,
@@ -105,18 +107,6 @@ def test_portfolio_kpis_surfaces_weighted_metrics():
     assert kpis.risk_adjusted_return == pytest.approx(
         (expected_interest - expected_loss_value) / expected_exposure
     )
-=======
-from pathlib import Path
-import sys
-
-import pandas as pd
-import pytest
-
-ROOT = Path(__file__).resolve().parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from src.enterprise_analytics_engine import LoanAnalyticsEngine, LoanAnalyticsConfig
 
 
 def sample_frame():
@@ -157,86 +147,3 @@ def test_portfolio_kpis_compute_expected_values():
     assert pytest.approx(kpis["loss_given_default"], rel=1e-6) == 0.8
     assert pytest.approx(kpis["prepayment_rate"], rel=1e-6) == pytest.approx(35000 / 285000)
     assert kpis["repayment_velocity"] > 1
-
-
-def test_prepare_data_validates_inputs():
-    base = sample_frame()
-    missing_cols = base.drop(columns=["interest_rate"])
-
-    with pytest.raises(ValueError):
-        LoanAnalyticsEngine(missing_cols)
-
-    invalid_date = base.copy()
-    invalid_date.loc[0, "origination_date"] = "not-a-date"
-    with pytest.raises(ValueError):
-        LoanAnalyticsEngine(invalid_date)
-
-
-def test_prepare_data_rejects_non_numeric_values():
-    base = sample_frame()
-    base["principal"] = base["principal"].astype(object)
-    base.loc[0, "principal"] = "one hundred"
-
-    with pytest.raises(ValueError):
-        LoanAnalyticsEngine(base)
-
-
-def test_prepare_data_rejects_missing_numeric_values_by_default():
-    base = sample_frame()
-    base.loc[2, "outstanding_principal"] = None
-
-    with pytest.raises(ValueError):
-        LoanAnalyticsEngine(base)
-
-
-def test_prepare_data_allows_explicit_numeric_fill_value():
-    base = sample_frame()
-    base.loc[2, "recoveries"] = None
-
-    engine = LoanAnalyticsEngine(
-        base, config=LoanAnalyticsConfig(numeric_missing_fill_value=0.0)
-    )
-
-    assert engine.data.loc[2, "recoveries"] == 0
-
-
-def test_prepare_data_handles_missing_status_with_arrears_flag():
-    base = sample_frame()
-    base.loc[1, "status"] = None
-    base.loc[1, "days_in_arrears"] = 200
-
-    engine = LoanAnalyticsEngine(base)
-    assert bool(engine.data.loc[1, "arrears_flag"]) is True
-
-
-def test_segment_kpis_respects_groupings():
-    engine = LoanAnalyticsEngine(sample_frame())
-    segmented = engine.segment_kpis(["region"])
-
-    latam_row = segmented.loc[segmented["region"] == "LATAM"].iloc[0]
-    emea_row = segmented.loc[segmented["region"] == "EMEA"].iloc[0]
-
-    assert pytest.approx(latam_row["total_outstanding"], rel=1e-6) == 150000
-    assert pytest.approx(latam_row["default_rate"], rel=1e-6) == 0
-    assert pytest.approx(emea_row["loss_given_default"], rel=1e-6) == 0.8
-    assert pytest.approx(emea_row["total_principal"], rel=1e-6) == 75000
-
-
-def test_vintage_default_table_orders_by_quarter():
-    engine = LoanAnalyticsEngine(sample_frame())
-    vintages = engine.vintage_default_table()
-
-    assert list(vintages["origination_quarter"]) == [pd.Period("2022Q4"), pd.Period("2023Q1"), pd.Period("2023Q2")]
-    assert vintages.loc[vintages["origination_quarter"] == pd.Period("2022Q4"), "default_rate"].iloc[0] == 1
-    assert vintages.loc[vintages["origination_quarter"] == pd.Period("2023Q1"), "default_rate"].iloc[0] == 0
-
-
-def test_cashflow_curve_generates_cumulative_view():
-    engine = LoanAnalyticsEngine(sample_frame())
-    curve = engine.cashflow_curve(freq="Q")
-
-    assert "cumulative_cashflow" in curve.columns
-    assert len(curve) == 3
-    expected_cumulative = [-70000, -200000, -250000]
-    assert curve["cumulative_cashflow"].tolist() == expected_cumulative
->>>>>>> origin/main

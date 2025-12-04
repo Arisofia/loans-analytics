@@ -1,5 +1,5 @@
 import numpy as np
-<<<<<<< HEAD
+import pandas as pd
 from typing import Dict, Optional, Protocol, runtime_checkable
 
 
@@ -7,10 +7,7 @@ from typing import Dict, Optional, Protocol, runtime_checkable
 class KPIExporter(Protocol):
     def upload_metrics(self, metrics: Dict[str, float], blob_name: Optional[str] = None) -> str:
         ...
-=======
-import pandas as pd
-from typing import Dict, List
->>>>>>> origin/main
+
 
 class LoanAnalyticsEngine:
     """
