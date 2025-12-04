@@ -269,12 +269,11 @@ Before every commit:
 ### GitHub Secrets (Required)
 
 ```bash
-SONA_TOKEN              # SonarQube authentication
-SOURCERY_TOKEN          # Sourcery refactoring service
+SONARQUBE_TOKEN        # SonarQube authentication
+SOURCERY_TOKEN         # Sourcery refactoring service
 CODERABBIT_TOKEN       # CodeRabbit code review
 SUPABASE_SERVICE_KEY   # Supabase edge function deployment
 KMS_ENCRYPTION_KEY     # Token encryption key
-```
 
 ### Branch Protection (main)
 
