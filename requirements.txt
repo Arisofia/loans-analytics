@@ -9,3 +9,4 @@ notebook==7.5.0
 sqlalchemy==2.0.44
 azure-storage-blob==12.27.1
 azure-identity==1.25.1
+pytest==8.3.2

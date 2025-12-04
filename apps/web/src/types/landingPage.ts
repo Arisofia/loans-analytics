@@ -1,3 +1,38 @@
+<<<<<<< HEAD
+import { z } from 'zod'
+
+const metricSchema = z.object({
+  value: z.string(),
+  label: z.string(),
+})
+
+const productSchema = z.object({
+  title: z.string(),
+  detail: z.string(),
+})
+
+const stepSchema = z.object({
+  label: z.string(),
+  title: z.string(),
+  copy: z.string(),
+})
+
+export const landingPageDataSchema = z.object({
+  metrics: z.array(metricSchema).default([]),
+  products: z.array(productSchema).default([]),
+  controls: z.array(z.string()).default([]),
+  steps: z.array(stepSchema).default([]),
+})
+
+export type Metric = z.infer<typeof metricSchema>
+export type Product = z.infer<typeof productSchema>
+export type Step = z.infer<typeof stepSchema>
+export type LandingPageData = z.infer<typeof landingPageDataSchema>
+
+export const EMPTY_LANDING_PAGE_DATA: LandingPageData = Object.freeze(
+  landingPageDataSchema.parse({})
+)
+=======
 export interface Metric {
   value: string
   label: string
@@ -20,3 +55,4 @@ export interface LandingPageData {
   controls: string[]
   steps: Step[]
 }
+>>>>>>> origin/main

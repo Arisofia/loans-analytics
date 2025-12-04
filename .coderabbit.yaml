@@ -28,3 +28,6 @@ paths:
     - "**/.github/**"
     - "**/*.md"
     - "**/data_samples/**"
+    - "**/.gradle/**"
+    - "**/build/**"
+    - "**/coverage/**"

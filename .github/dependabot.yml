@@ -5,19 +5,45 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    assignees:
+      - "codex"
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
+
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    assignees:
+      - "codex"
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
+
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    assignees:
+      - "codex"
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    assignees:
+      - "codex"
+    reviewers:
+      - "sonarqube"
+      - "coderabbit"
+      - "sourcery"
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]

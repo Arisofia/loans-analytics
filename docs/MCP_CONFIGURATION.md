@@ -24,7 +24,11 @@ After launching Codex and opening the TUI, run `/mcp` to see your actively conne
 
 ## Config file (`config.toml`)
 
+<<<<<<< HEAD
+For granular control, edit `~/.codex/config.toml`. In the IDE extension, open the gear icon in the top right, choose **MCP settings**, then **Open config.toml**.
+=======
 For granular control, edit `~/.codex/config.toml` (on Windows, `%USERPROFILE%\\.codex\\config.toml`). In the IDE extension, open the gear icon in the top right, choose **MCP settings**, then **Open config.toml** to modify the active config file.
+>>>>>>> origin/main
 
 Each MCP server uses its own `[mcp_servers.<server-name>]` table.
 
@@ -46,7 +50,11 @@ Each MCP server uses its own `[mcp_servers.<server-name>]` table.
 - `tool_timeout_sec` (optional): timeout in seconds for tools to run (default 60).
 - `enabled` (optional): set `false` to disable a configured server without deleting it.
 - `enabled_tools` (optional): allow-list of tools exposed from the server.
+<<<<<<< HEAD
+- `disabled_tools` (optional): deny-list of tools to hide (applied after `enabled_tools`).
+=======
 - `disabled_tools` (optional): deny-list of tools to hide; it overrides overlaps with `enabled_tools`.
+>>>>>>> origin/main
 - `[features].rmcp_client` (optional): enables the Rust MCP client for STDIO servers and OAuth on streamable HTTP.
 - `experimental_use_rmcp_client` (optional): older flag for OAuth/streamable HTTP; prefer `[features].rmcp_client`.
 - Set feature flags inside the top-level `[features]` table (not under a specific server).
@@ -76,7 +84,11 @@ http_headers = { "X-Figma-Region" = "us-east-1" }
 [mcp_servers.chrome_devtools]
 url = "http://localhost:3000/mcp"
 enabled_tools = ["open", "screenshot"]
+<<<<<<< HEAD
+disabled_tools = ["screenshot"] # applied after enabled_tools
+=======
 disabled_tools = ["open"] # disabled takes precedence even if also listed in enabled_tools
+>>>>>>> origin/main
 startup_timeout_sec = 20
 tool_timeout_sec = 45
 enabled = true

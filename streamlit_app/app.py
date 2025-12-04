@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 from utils.feature_engineering import FeatureEngineer
+from utils.kri_calculator import KRICalculator
 
 st.set_page_config(layout="wide", page_title="Abaco Loans Analytics Dashboard")
 
@@ -28,6 +29,8 @@ st.title("Abaco Loans Analytics Dashboard")
 # 1. Ingestion and Enrichment
 raw_portfolio_df, data_quality_score = load_and_prepare_data()
 enriched_df = FeatureEngineer.enrich_portfolio(raw_portfolio_df)
+kri_metrics = KRICalculator.calculate(enriched_df)
+kri_mix = KRICalculator.segment_risk_mix(enriched_df)
 
 # 2. Display High-Level Metrics
 st.header("Portfolio Health & Quality Metrics")
@@ -37,7 +40,22 @@ col2.metric("Benchmark Rotation", "94%", "1.5% vs. Target", delta_color="inverse
 col3.metric("Collection Target", "88%", "-4% vs. Target")
 col4.metric("Portfolio Yield", "12.3%", "0.8% vs. Last Q")
 
-# 3. Display Distribution Charts
+# 3. Key Risk Indicators
+st.header("Key Risk Indicators (KRIs)")
+kri_col1, kri_col2, kri_col3 = st.columns(3)
+kri_col1.metric("30+ Delinquency Rate", f"{kri_metrics.delinquency_30_plus_rate:.2%}" if pd.notna(kri_metrics.delinquency_30_plus_rate) else "N/A")
+kri_col2.metric("90+ Delinquency Rate", f"{kri_metrics.delinquency_90_plus_rate:.2%}" if pd.notna(kri_metrics.delinquency_90_plus_rate) else "N/A")
+kri_col3.metric("Average DPD", f"{kri_metrics.average_dpd:.1f}" if pd.notna(kri_metrics.average_dpd) else "N/A")
+
+kri_col4, kri_col5, _ = st.columns(3)
+kri_col4.metric("Avg Utilization", f"{kri_metrics.average_utilization:.2%}" if pd.notna(kri_metrics.average_utilization) else "N/A")
+kri_col5.metric("High Utilization Share", f"{kri_metrics.high_utilization_share:.2%}" if pd.notna(kri_metrics.high_utilization_share) else "N/A")
+
+if kri_mix is not None:
+    st.subheader("Risk Mix by Segment")
+    st.dataframe(kri_mix.style.format("{:.0%}"))
+
+# 4. Display Distribution Charts
 st.header("Customer Distributions")
 col_dist1, col_dist2 = st.columns(2)
 
@@ -61,7 +79,7 @@ with col_dist2:
     )
     st.altair_chart(segment_chart, use_container_width=True)
 
-# 4. Display Customer Data Table
+# 5. Display Customer Data Table
 st.header("Enriched Customer Portfolio Data")
 st.dataframe(enriched_df)
 st.caption("Industry GDP Benchmark: +2.1% (YoY)")
