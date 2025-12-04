@@ -8,15 +8,10 @@ on:
     paths:
       - 'apps/web/**'
   pull_request:
-<<<<<<< HEAD
     branches: [main]
     paths:
       - 'apps/web/**'
-=======
-  workflow_dispatch:
->>>>>>> origin/main
-
-jobs:
+    workflow_dispatch:
   assignee-check:
     if: github.event_name == 'pull_request'
     uses: ./.github/workflows/pr-assignee-check.yml
