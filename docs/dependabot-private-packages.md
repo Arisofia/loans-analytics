@@ -1,10 +1,10 @@
 # Configure Dependabot for Abaco private GitHub Packages
 
-Use these steps to let Dependabot authenticate to the private GitHub Packages feeds that the Abaco Loans Analytics repo depends on. Replace any optional fields only when they differ for another registry; otherwise, keep the values as written so Dependabot can reach the Abaco organization scopes.
+Use these steps to let Dependabot authenticate to the private GitHub Packages feeds that the Abaco Loans Analytics repo depends on. Use the exact repository scope and secret name below so Dependabot can reach the Abaco organization packages.
 
 ## 1) Create a read-only Personal Access Token (PAT)
 - In GitHub, open **Settings → Developer settings → Personal access tokens → Fine-grained tokens**.
-- Click **Generate new token** and name it something like **abaco-dependabot-gh-packages**.
+- Click **Generate new token** and name it **abaco-dependabot-gh-packages**.
 - Scope the token to **Abaco-Technol/abaco-loans-analytics** (and any other private package repos Dependabot must read).
 - Under **Repository permissions**, set **Packages** to **Read-only** and leave other permissions at **No access**.
 - Set an expiration date, then **Generate token** and copy it immediately.
