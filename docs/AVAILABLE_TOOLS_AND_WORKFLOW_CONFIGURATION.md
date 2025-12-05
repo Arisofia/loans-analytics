@@ -49,7 +49,7 @@ steps:
 **Integration Points**:
 - KPI data export (`AzureBlobKPIExporter`)
 - Portfolio calculations CSV storage
-- Validation: `blob_name` must be of type string
+- Validation: `blob_name` must be string type
 
 **Export Contract**:
 ```python
@@ -82,7 +82,7 @@ upload_metrics(metrics_payload: Dict, blob_name: str)
 **Configuration**: 
 - Client configuration with `isSupabaseConfigured` guard
 - Environment variables with trimming/validation
-- Fallback behavior when env vars are missing
+- Fallback behavior when env vars missing
 
 **Available Features**:
 - Landing page data fetching with diagnostics
