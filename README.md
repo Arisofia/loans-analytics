@@ -2,10 +2,12 @@
 
 Arquitectura:
 
-- **apps/web**: Next.js dashboard corporativo.
-- **apps/analytics**: pipelines de Python para riesgo, scoring y KPIs.
-- **infra/azure**: scripts de despliegue Azure.
-- **data_samples**: datasets anonimizados para desarrollo.
+## Stack map
+- **apps/web**: Next.js dashboard for portfolio, risk, and growth views.
+- **apps/analytics**: Python scoring, stress testing, and KPI pipelines.
+- **infra/azure**: Azure infra-as-code and deployment scripts.
+- **data_samples**: Anonymized datasets for repeatable development and testing.
+- **Integrations**: Figma / Notion / Slack setup guide at `docs/integrations.md` (see `docs/integration-readiness.md` for service checks).
 
 Integraciones disponibles:
 

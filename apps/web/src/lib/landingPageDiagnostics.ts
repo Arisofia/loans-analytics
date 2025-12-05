@@ -5,6 +5,7 @@ type LandingPageStatus = 'missing-config' | 'fetch-error' | 'no-data' | 'invalid
 type LandingPageDiagnostic = {
   status: LandingPageStatus
   supabaseConfigured: boolean
+  fallbackApplied?: boolean
   metricCount: number
   productCount: number
   controlCount: number
@@ -37,12 +38,12 @@ export const logLandingPageDiagnostic = (
   const output: LandingPageDiagnostic = {
     status: diagnostic.status,
     supabaseConfigured: diagnostic.supabaseConfigured,
+    fallbackApplied: diagnostic.fallbackApplied,
     error: formatError(diagnostic.error),
     ...counts,
   }
 
   if (diagnostic.status === 'ok') {
-    console.warn('Landing page data diagnostic', output)
     return
   }
 

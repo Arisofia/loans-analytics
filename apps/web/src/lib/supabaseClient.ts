@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+
 import type { LandingPageData } from '../types/landingPage'
 
 type Database = {

@@ -1,18 +1,4 @@
-export type Metric = Readonly<{
-  label: string
-  value: string
-}>
-
-export type Product = Readonly<{
-  title: string
-  detail: string
-}>
-
-export type Step = Readonly<{
-  label: string
-  title: string
-  copy: string
-}>
+import type { Metric, Product, Step } from '../types/landingPage'
 
 export const metrics: ReadonlyArray<Metric> = [
   { label: 'Approval uplift with governed risk', value: '+18%' },
