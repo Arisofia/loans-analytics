@@ -50,3 +50,4 @@ nvm/
 .env*.local
 .vercel/
 eslint.config.js
+.vercel
