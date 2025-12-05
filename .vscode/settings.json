@@ -48,5 +48,6 @@
     "**/dist/**",
     "**/.venv/**",
     "**/venv/**"
-  ]
+  ],
+  "java.configuration.updateBuildConfiguration": "interactive"
 }
