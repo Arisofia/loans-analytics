@@ -25,7 +25,7 @@ Types: feat, fix, chore, docs, refactor, test, perf. Use imperative subjects, no
 
 ## Merging
 - Default: squash-and-merge (one squashed commit to main).
-- Stale PRs auto-close after 5 days of inactivity unless labeled `do-not-close`, `important`, or `blocked`.
+- Stale PRs auto-close after inactivity unless labeled `do-not-close`, `important`, or `blocked`.
 
 ## Hygiene
 - DO: descriptive commits, focused changes, reference issues, keep tests passing.
