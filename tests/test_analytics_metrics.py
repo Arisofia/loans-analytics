@@ -135,6 +135,7 @@ def test_project_growth_builds_monotonic_path():
     assert projection["yield"].iloc[-1] == 2.0
     assert projection["loan_volume"].iloc[0] == 100
     assert projection["loan_volume"].iloc[-1] == 200
+    assert pd.api.types.is_datetime64_any_dtype(projection["date"])
 
 
 def test_project_growth_rejects_insufficient_periods():

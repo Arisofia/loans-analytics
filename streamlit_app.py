@@ -2,6 +2,7 @@ import hashlib
 import os
 import re
 import unicodedata
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -66,7 +67,10 @@ def apply_theme(fig: px.Figure) -> px.Figure:
         paper_bgcolor=ABACO_THEME["colors"]["background"],
         plot_bgcolor=ABACO_THEME["colors"]["background"],
         legend=dict(
-            font=dict(family=ABACO_THEME["typography"]["secondary_font"], color=ABACO_THEME["colors"]["light_gray"])
+            font=dict(
+                family=ABACO_THEME["typography"]["secondary_font"],
+                color=ABACO_THEME["colors"]["light_gray"],
+            )
         ),
         margin=dict(l=0, r=0, t=40, b=0),
     )
@@ -76,9 +80,7 @@ def apply_theme(fig: px.Figure) -> px.Figure:
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     clean = (
-        df.rename(
-            columns=lambda col: re.sub(r"[^a-z0-9_]", "_", re.sub(r"\s+", "_", col.strip().lower()))
-        )
+        df.rename(columns=lambda col: re.sub(r"[^a-z0-9_]", "_", re.sub(r"\s+", "_", col.strip().lower())))
         .pipe(lambda d: d.loc[:, ~d.columns.duplicated()])
     )
     return clean
@@ -107,45 +109,20 @@ def define_ingestion_state(df: pd.DataFrame) -> pd.Series:
     )
 
 
-def normalize_text(value: str) -> str:
-    if not isinstance(value, str):
-        return ""
-    normalized = unicodedata.normalize("NFKD", value)
-    stripped = "".join(ch for ch in normalized if not unicodedata.combining(ch))
-    cleaned = re.sub(r"[^a-z0-9]+", " ", stripped.lower()).strip()
-    return re.sub(r"\s+", " ", cleaned)
-
-
-def select_payer_column(df: pd.DataFrame) -> str | None:
-    preferred = [
-        "payer",
-        "payer_name",
-        "payor",
-        "pagador",
-        "offtaker",
-        "buyer",
-        "debtor",
-        "customer_name",
-    ]
-    for col in df.columns:
-        if col in preferred:
-            return col
-    for col in df.columns:
-        if re.search(r"payer|payor|pagador|offtaker|buyer|debtor", col, re.IGNORECASE):
-            return col
-    return None
-
-
 @st.cache_data(show_spinner=False)
 def parse_uploaded_file(uploaded) -> pd.DataFrame:
     if uploaded is None:
         return pd.DataFrame()
-    return pd.read_csv(uploaded)
+    uploaded.seek(0)
+    try:
+        return pd.read_csv(uploaded)
+    except Exception:
+        return pd.DataFrame()
 
 
 st.set_page_config(
     page_title="ABACO Financial Intelligence Platform",
-    page_icon="💠",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -192,21 +169,6 @@ if validation_toggle and uploaded is not None:
     if missing:
         st.sidebar.error(f"Missing required columns: {', '.join(sorted(set(missing)))}")
 
-def get_upload_signature(uploaded_file) -> str | None:
-    if uploaded_file is None:
-        return None
-    current_position = uploaded_file.tell() if hasattr(uploaded_file, "tell") else None
-    if hasattr(uploaded_file, "seek"):
-        uploaded_file.seek(0)
-    file_bytes = uploaded_file.getvalue()
-    content_hash = hashlib.sha256(file_bytes).hexdigest()
-
-    if hasattr(uploaded_file, "seek") and current_position is not None:
-        uploaded_file.seek(current_position)
-
-    return f"{uploaded_file.name}:{uploaded_file.size}:{content_hash}"
-
-
 if "loan_data" not in st.session_state:
     st.session_state["loan_data"] = pd.DataFrame()
 if "ingestion_state" not in st.session_state:
@@ -224,7 +186,6 @@ def should_ingest(signature: str | None) -> bool:
 def ingest(uploaded_file, signature: str | None):
     raw = parse_uploaded_file(uploaded_file)
     normalized = normalize_columns(raw)
-    numeric_columns = normalized.select_dtypes(include=["object"]).columns
     numeric_payload = normalized.copy()
     for col in numeric_columns:
         numeric_payload[col] = standardize_numeric(numeric_payload[col])
@@ -328,10 +289,10 @@ st.metric("Loan gap", f"{gap_loans:.0f}")
 monthly_projection = project_growth(
     current_yield=current_metrics["current_yield"],
     target_yield=targets["target_monthly_yield"],
-    current_loans=current_metrics["active_loans"],
-    target_loans=targets["target_active_loans"],
+    current_loan_volume=current_metrics["active_loans"],
+    target_loan_volume=targets["target_active_loans"],
     periods=6,
-)
+).assign(month=lambda d: d["date"].dt.strftime("%b %Y"))
 fig_growth = px.line(
     monthly_projection,
     x="month",
@@ -361,8 +322,7 @@ else:
 st.markdown("## AI Integration & Narrative")
 needs_ai = all(key in os.environ for key in ("OPENAI_API_KEY", "GOOGLE_API_KEY"))
 summary = (
-    "AI integration available; run a prompt to synthesize KPIs." if needs_ai else
-    "Rule-based summary: focus on delinquency, growth, and alert signals to guide stakeholders."
+    "AI integration available; run a prompt to synthesize KPIs." if needs_ai else "Rule-based summary: focus on delinquency, growth, and alert signals to guide stakeholders."
 )
 st.markdown(summary)
 

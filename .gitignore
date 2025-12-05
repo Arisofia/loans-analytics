@@ -13,6 +13,15 @@ coverage/
 
 # Python
 .venv/
+.vscode/*
+!.vscode/settings.json
+apps/.DS_Store
+node_modules/
+.next/
+build/
+dist/
+.gradle
+nvm/
 venv/
 __pycache__/
 *.pyc
@@ -41,3 +50,4 @@ nvm/
 .env*.local
 .vercel/
 eslint.config.js
+.vercel

@@ -151,7 +151,7 @@ async function getData(): Promise<LandingPageData> {
     return fallback
   }
 
-  const { data, error }: PostgrestSingleResponse<LandingPageData> = await supabase
+  const response: PostgrestSingleResponse<LandingPageData> = await supabase
     .from('landing_page_data')
     .select('*')
     .single()
@@ -210,22 +210,18 @@ export default async function Home() {
   const structuredData = buildStructuredData(products)
 
   return (
-    <main id="main-content" className={styles.page}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      />
-      <nav className={styles.nav} aria-label="Primary">
-        <div className={styles.brand}>Abaco Loans</div>
-        <div className={styles.navLinks}>
+    <div className={styles.page}>
+      <nav className={styles.nav}>
+        <div className={styles.logo}>ABACO</div>
+        <ul className={styles.navLinks}>
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className={styles.navLink}>
-              {link.label}
-            </Link>
+            <li key={link.href}>
+              <Link href={link.href}>{link.label}</Link>
+            </li>
           ))}
-        </div>
-        <Link href="#demo" className={styles.navCta}>
-          Book a session
+        </ul>
+        <Link className={styles.primaryCta} href="#demo">
+          Request demo
         </Link>
       </nav>
       <header className={styles.hero}>
@@ -366,32 +362,88 @@ export default async function Home() {
             </Link>
           </div>
         </div>
-      </section>
+        <div className={styles.heroBadge}>
+          <span className={styles.badgeLabel}>Reliability</span>
+          <strong>99.4% SLA</strong>
+          <p>Guarded by automated playbooks and transparent audit trails.</p>
+        </div>
+      </header>
 
       <section id="demo" aria-labelledby="playbook-heading" className={styles.section}>
         <div className={styles.sectionHeader}>
-          <p className={styles.eyebrow}>Delivery playbook</p>
-          <h2 id="playbook-heading">From data to decisions in weeks</h2>
-          <p className={styles.sectionCopy}>
-            Guided onboarding, industrialized documentation, and observability to keep every sprint
-            on budget and on time.
+          <div>
+            <p className={styles.eyebrow}>Portfolio KPIs</p>
+            <h2 className={styles.sectionTitle}>Risk-aware growth signals</h2>
+          </div>
+          <p className={styles.sectionSubhead}>
+            Metrics calibrated for underwriting rigor, investor readiness, and day-to-day operating
+            cadence.
           </p>
         </div>
-        <div className={styles.timeline}>
-          {steps.map((step) => (
-            <div key={step.label} className={styles.timelineStep}>
-              <span className={styles.stepBadge}>{step.label}</span>
-              <div>
-                <h3>{step.title}</h3>
-                <p>{step.copy}</p>
-              </div>
-            </div>
+        <div className={styles.metricsGrid}>
+          {landingPageData.metrics.map((metric) => (
+            <article key={metric.label} className={styles.metricCard}>
+              <p className={styles.metricLabel}>{metric.label}</p>
+              <p className={styles.metricValue}>{metric.value}</p>
+            </article>
           ))}
         </div>
       </section>
 
-      <section className={styles.section} id="analytics">
-        <AnalyticsDashboard />
+      <section className={styles.section} id="products">
+        <div className={styles.sectionHeader}>
+          <p className={styles.eyebrow}>Products</p>
+          <h2 className={styles.sectionTitle}>Designed for resilient lending</h2>
+        </div>
+        <div className={styles.productGrid}>
+          {landingPageData.products.map((product) => (
+            <article key={product.title} className={styles.productCard}>
+              <p className={styles.eyebrow}>Capability</p>
+              <h3>{product.title}</h3>
+              <p className={styles.body}>{product.detail}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.section} id="dashboards">
+        <div className={styles.sectionHeader}>
+          <p className={styles.eyebrow}>Dashboards</p>
+          <h2 className={styles.sectionTitle}>Operational intelligence in one view</h2>
+        </div>
+        <div className={styles.dashboardShell}>
+          <AnalyticsDashboard />
+        </div>
+      </section>
+
+      <section className={styles.section} id="compliance">
+        <div className={styles.sectionHeader}>
+          <p className={styles.eyebrow}>Governance</p>
+          <h2 className={styles.sectionTitle}>Controls that keep auditors confident</h2>
+        </div>
+        <ul className={styles.controlList}>
+          {landingPageData.controls.map((control) => (
+            <li key={control}>{control}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section className={styles.section} id="demo">
+        <div className={styles.sectionHeader}>
+          <p className={styles.eyebrow}>Go-live playbook</p>
+          <h2 className={styles.sectionTitle}>Three steps to production</h2>
+        </div>
+        <ol className={styles.stepList}>
+          {landingPageData.steps.map((step) => (
+            <li key={step.label} className={styles.stepCard}>
+              <span className={styles.stepLabel}>{step.label}</span>
+              <div>
+                <h3>{step.title}</h3>
+                <p className={styles.body}>{step.copy}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
       </section>
     </main>
   )

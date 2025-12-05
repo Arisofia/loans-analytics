@@ -1,0 +1,112 @@
+{
+  "metadata": {
+    "extraction_date": "2025-12-04",
+    "data_as_of": "2025-12-02",
+    "last_updated": "2025-12-03",
+    "partner_id": "abaco",
+    "currency": "USD",
+    "extraction_source": "Cascade Debt Analytics Platform",
+    "views_extracted": 9,
+    "total_data_points": 450
+  },
+  "traction": {
+    "total_customers": 327,
+    "total_loans": 17587,
+    "total_volume_usd": 55020000,
+    "monthly_active_clients_latest": 124,
+    "outstanding_balance_usd": 7813919,
+    "growth_metrics": {
+      "volume_mom": -2.80,
+      "volume_qoq": 45.67,
+      "volume_yoy": 135.17,
+      "clients_mom": 5.08,
+      "clients_qoq": 13.76,
+      "clients_yoy": -6.06,
+      "balance_mom": 3.16,
+      "balance_qoq": 18.65,
+      "balance_yoy": 216.20
+    }
+  },
+  "delinquency": {
+    "par90_latest": 1.61,
+    "par7_latest": 5.85,
+    "portfolio_at_risk_30dpd": 456967.63,
+    "total_balance": 7813919.10,
+    "par_metrics": {
+      "par7_mom": -1.45,
+      "par7_qoq": -20.18,
+      "par7_yoy": -68.93
+    }
+  },
+  "collections": {
+    "collection_rate_latest": 2.57,
+    "total_payments_received_latest": 118574.16,
+    "total_payments_scheduled_latest": 4618878.95,
+    "collection_metrics": {
+      "collection_rate_mom": -1.99,
+      "collection_rate_qoq": 2.90,
+      "collection_rate_yoy": -3.26
+    }
+  },
+  "curves": {
+    "cdr_latest": 0.91,
+    "written_off_amount": 9006.38,
+    "starting_balance": 11816765.13,
+    "liquidation_rate": 0.08
+  },
+  "characteristics": {
+    "average_apr": 38.99,
+    "average_apr_mom_change": -0.84,
+    "average_loan_size_usd": 3654,
+    "interest_rate_distribution": {
+      "0_21_pct": "Low",
+      "21_40_pct": "Medium",
+      "40_59_pct": "Medium-High",
+      "59_78_pct": "High",
+      "78_97_pct": "Very High",
+      "97_173_pct": "Extreme"
+    }
+  },
+  "cashflow_simulation": {
+    "scenario_base": "CDR_1.0x_CPR_1.0x_REC_0.0",
+    "forecast_months": 4,
+    "latest_scheduled_amount": 162585.59,
+    "latest_expected_amount": 162585.59,
+    "cdr_adjustment_multiplier": 1.0,
+    "cpr_adjustment_multiplier": 1.0,
+    "recovery_rate": 0.0
+  },
+  "financials": {
+    "balance_sheet": {
+      "total_assets_usd": 6200000,
+      "total_liabilities_usd": 4000000,
+      "equity_usd": 2100000,
+      "cash_balance_usd": 287000,
+      "net_worth_usd": 2100000
+    },
+    "income_statement": {
+      "net_income_usd": -3100000,
+      "net_income_mom_change": -40,
+      "runway_months": 48,
+      "debt_to_equity_ratio": 1.93
+    }
+  },
+  "data_quality": {
+    "loan_tape_as_of": "2025-12-02",
+    "last_updated": "2025-12-03",
+    "data_freshness_hours": 18,
+    "validation_status": "PASS",
+    "data_completeness_pct": 99.8
+  },
+  "api_endpoints": {
+    "traction": "https://app.cascadedebt.com/analytics/risk/traction?pid=abaco",
+    "delinquency": "https://app.cascadedebt.com/analytics/risk/delinquency?pid=abaco",
+    "collections": "https://app.cascadedebt.com/analytics/risk/collection?pid=abaco",
+    "curves": "https://app.cascadedebt.com/analytics/risk/curves?pid=abaco",
+    "cohort": "https://app.cascadedebt.com/analytics/risk/cohort?pid=abaco",
+    "characteristics": "https://app.cascadedebt.com/analytics/risk/characteristics?pid=abaco",
+    "cashflow_simulation": "https://app.cascadedebt.com/analytics/risk/cashflow-simulation?pid=abaco",
+    "financial_key_indicators": "https://app.cascadedebt.com/analytics/financials/key-indicators?pid=abaco",
+    "financial_statements": "https://app.cascadedebt.com/analytics/financials/statements?pid=abaco"
+  }
+}
