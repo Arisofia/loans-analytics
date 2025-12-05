@@ -1,8 +1,4 @@
 const nextConfig = {
-  reactCompiler: true,
-  experimental: {
-    turbopackUseSystemTlsCerts: true,
-  },
   typescript: {
     tsconfigPath: './tsconfig.json',
   },
