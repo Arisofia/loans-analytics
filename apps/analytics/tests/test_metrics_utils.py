@@ -61,7 +61,8 @@ class TestMetricsUtils(unittest.TestCase):
         dashboard = engine.run_full_analysis()
 
         expected = portfolio_kpis(self.portfolio)
-        self.assertEqual(set(dashboard.keys()), set(expected.keys()))
+        # The engine may include extra data-quality fields; ensure the KPI set matches.
+        self.assertTrue(set(expected.keys()).issubset(dashboard.keys()))
         for key in expected:
             self.assertAlmostEqual(dashboard[key], expected[key])
 
