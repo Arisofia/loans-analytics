@@ -1,8 +1,9 @@
+const path = require('path');
+
 const nextConfig = {
   typescript: {
     tsconfigPath: './tsconfig.json',
   },
-  // eslint-disable-next-line @typescript-eslint/require-await
   headers: async () => [
     {
       source: '/:path*',
@@ -26,13 +27,19 @@ const nextConfig = {
       ],
     },
   ],
-  // eslint-disable-next-line @typescript-eslint/require-await
   redirects: async () => [],
-  // eslint-disable-next-line @typescript-eslint/require-await
   rewrites: async () => ({
     beforeFiles: [],
+    afterFiles: [],
     fallback: [],
   }),
+  webpack: (config, { isServer }) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, './src'),
+    };
+    return config;
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
