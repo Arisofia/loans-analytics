@@ -32,9 +32,9 @@ jobs:
       - name: Validate
         run: |
           python - <<'PY'
-import pandas as pd
-print("Environment ready. Pandas version:", pd.__version__)
-PY
+  import pandas as pd
+  print("Environment ready. Pandas version:", pd.__version__)
+  PY
 
   analytics-push:
     if: github.event_name == 'push'
