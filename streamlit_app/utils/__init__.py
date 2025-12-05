@@ -1,4 +1,4 @@
-"""Utility package for feature engineering and helpers used by the Streamlit app."""
+"""Public utilities exposed by :mod:`streamlit_app.utils` with lazy loading."""
 
 from importlib import import_module
 from types import MappingProxyType
