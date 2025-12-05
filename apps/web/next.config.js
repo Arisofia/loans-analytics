@@ -31,7 +31,6 @@ const nextConfig = {
   // eslint-disable-next-line @typescript-eslint/require-await
   rewrites: async () => ({
     beforeFiles: [],
-    afterFiles: [],
     fallback: [],
   }),
 };
