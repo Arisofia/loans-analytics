@@ -6,9 +6,6 @@ const nextConfig = {
   typescript: {
     tsconfigPath: './tsconfig.json',
   },
-  turbopack: {
-    root: __dirname,
-  },
   // eslint-disable-next-line @typescript-eslint/require-await
   headers: async () => [
     {
