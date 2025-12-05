@@ -62,3 +62,55 @@ jobs:
           projectBaseDir: .
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install
+        run: |
+          cd apps/web
+          npm install
+      - name: Lint
+        run: |
+          cd apps/web
+          npm run lint
+      - name: Build
+        run: |
+          cd apps/web
+          npm run build
+      - name: Type-check
+        run: |
+          cd apps/web
+          npm run type-check
+
+  analytics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          cd apps/analytics
+          pip install -r requirements.txt
+      - name: Validate
+        run: |
+          python -c "import pandas as pd; print('Environment ready. Pandas version:', pd.__version__)"
+      - name: Tests and coverage
+        run: |
+          cd apps/analytics
+          pytest --cov=. --cov-report=xml:../coverage-python.xml
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: analytics-coverage
+          path: coverage-python.xml
+
+  assignee-check:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/pr-assignee-check.yml
