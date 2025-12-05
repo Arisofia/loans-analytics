@@ -1,5 +1,5 @@
 // Export main integration components for barrel import
-export { default as IntegrationSettings } from './IntegrationSettings';
+export { IntegrationSettings } from './IntegrationSettings';
 export { default as SlideShell } from './SlideShell';
 export { default as IntegrationCard } from './IntegrationCard';
 export { default as BulkTokenInput } from './BulkTokenInput';
