@@ -90,7 +90,6 @@ def safe_numeric(series: pd.Series) -> pd.Series:
     cleaned = (
         series.astype(str)
         .str.replace(r"[₡$€,,%]", "", regex=True)
-        .str.replace(",", "", regex=False)
         .replace("", np.nan)
     )
     return pd.to_numeric(cleaned, errors="coerce")
