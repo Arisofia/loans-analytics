@@ -28,6 +28,8 @@
     "apps/web"
   ],
 
+  // --- Git: ensure VS Code uses a portable binary path ---
+  "git.path": "/opt/homebrew/bin/git",
   // --- ESLint: Specify the working directory ---
   "eslint.workingDirectories": [
     "./apps/web"
