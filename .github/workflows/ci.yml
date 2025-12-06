@@ -19,15 +19,16 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+          cache: 'gradle'
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew build
+      - name: Build with Gradle (clean, Java 21)
+        run: ./gradlew clean build --no-daemon
 
       - name: Run tests
-        run: ./gradlew test
+        run: ./gradlew test --no-daemon
 
   python:
     runs-on: ubuntu-latest
@@ -54,8 +55,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+          cache: 'gradle'
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew clean build --no-daemon
       - name: SonarQube Scan
         uses: SonarSource/sonarcloud-github-action@v2
         with:

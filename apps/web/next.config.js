@@ -31,6 +31,6 @@ const nextConfig = {
     afterFiles: [],
     fallback: [],
   }),
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig
