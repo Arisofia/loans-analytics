@@ -20,7 +20,7 @@
 ---
 
 ## Slide 2: Where We’re Going (Dec-2026 Target)
-- **Target AUM:** $16,419K by Dec-2026 (start $7,368K Sep-25; +$9,051K growth, +122.8% CAGR, 15 months).
+- **Target AUM:** $16,419K by Dec-2026 (start $7,368K Sep-2025; +$9,051K growth, +122.8% CAGR, 15 months).
 - **Non-linear path:** Trough → ramp → volatile → acceleration → consolidation.
   - Q4-25: Oct $7,171K (-2.7%), Nov $6,819K (-4.9%), Dec $6,465K (-5.5%) | total -12.3% (platform build, wind-down).
   - Q1-26: Jan $8,736K (+35.1% inflection, embedded live), Feb $8,814K (+0.9%), Mar $10,364K (+17.6%) | +60.3% vs trough.
