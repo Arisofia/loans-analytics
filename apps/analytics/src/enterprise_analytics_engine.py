@@ -9,7 +9,7 @@ import pandas as pd
 @runtime_checkable
 class KPIExporter(Protocol):
     def upload_metrics(self, metrics: Dict[str, float], blob_name: Optional[str] = None) -> str:
-        ...
+        pass
 
 
 class LoanAnalyticsEngine:
