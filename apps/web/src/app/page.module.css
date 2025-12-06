@@ -441,7 +441,9 @@
 
 .textLink:hover {
   text-decoration: underline;
-=======
+}
+
+.dashboard {
   display: flex;
   flex-direction: column;
   gap: 96px;
