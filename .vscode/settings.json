@@ -49,5 +49,25 @@
     "**/.venv/**",
     "**/venv/**"
   ],
-  "java.configuration.updateBuildConfiguration": "interactive"
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "sonarlint.connectedMode.project": {
+    "connectionId": "abaco-technol",
+    "projectKey": "abaco-loans-analytics"
+  },
+
+  // --- Analytics & Traceability: Prioritize KPIs, dashboards, and auditability ---
+  // Ensure all code changes for JS/TS run lint at repo root (see AGENTS.md)
+  // Document public utilities in docs/ when changing behavior
+
+  // --- Collaboration & Best Practices ---
+  // Use standardized documentation and review checklists for all dashboard/KPI changes
+  // Maintain clear roles and context for all measurement and visualization outputs
+
+  // --- Compliance & Security ---
+  // Mask PII in all dashboards and restrict access to sensitive data
+  // Log all dashboard actions and alert payloads for audit
+
+  // --- Continuous Learning ---
+  // Surface last refresh time, commit SHA, and contract links in dashboards
+  // Require multi-domain approval for KPI changes and dashboard rollouts
 }

@@ -33,21 +33,4 @@ __pycache__/
 
 # OS files
 .DS_Store
-Thumbs.db
-
-# Project-specific artifacts
-apps/.DS_Store
-
-# Local repository clones
-abaco-loans-analytics/
-data_samples/
-gemini-cli/
-
-# Environment & platform
-nvm/
-.env
-.env.local
-.env*.local
-.vercel/
-eslint.config.js
-.vercel
+.vscode/
