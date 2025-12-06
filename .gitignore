@@ -1,4 +1,36 @@
+# Gradle
+.gradle/
+build/
+**/.gradle/
+**/build/
+
+# Node / JavaScript
+node_modules/
+.next/
+.turbo/
+dist/
+coverage/
+
+# Python
 .venv/
+.vscode/*
+!.vscode/settings.json
+apps/.DS_Store
+node_modules/
+.next/
+build/
+dist/
+.gradle
+nvm/
+venv/
+__pycache__/
+*.pyc
+
+# IDE / Editor
+.vscode/
+.idea/
+*.vsix
+
+# OS files
 .DS_Store
 .vscode/
-ms-dotnettools.csharp-*.vsix

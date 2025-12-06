@@ -1,0 +1,26 @@
+name: Run Script
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/run-script.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/run-script.yml'
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: List scripts
+        run: ls -la scripts/ || echo "No scripts directory found"

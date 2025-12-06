@@ -1,0 +1,148 @@
+# Fintech Factory KPI Definitions
+# Complete taxonomy of Key Performance Indicators for all stakeholders
+# Vibe Solutioning: All KPIs recomputed from base data, deterministic design
+
+version: '1.0'
+namespace: fintech.factory
+last_updated: '2025-12-04T15:00:00Z'
+audit_required: true
+
+kpis:
+  # RISK STACK KPIS
+  risk.par_90:
+    name: "Portfolio at Risk (90+ days)"
+    description: "Percentage of portfolio delinquent beyond 90 days"
+    formula: "SUM(loans.balance WHERE days_past_due >= 90) / SUM(loans.balance)"
+    unit: "%"
+    threshold_warning: 3.0
+    threshold_critical: 5.0
+    refresh_frequency: "daily"
+    data_source: "cascade.loan_status"
+    
+  risk.rdr_90:
+    name: "Recovered Default Rate (90+ days)"
+    description: "Percentage of 90+ day delinquencies that recovered"
+    formula: "SUM(recovered_90_day_balances) / SUM(peak_90_day_balances)"
+    unit: "%"
+    threshold_warning: 50.0
+    threshold_critical: 25.0
+    refresh_frequency: "daily"
+    data_source: "cascade.recovery_tracking"
+
+  risk.collection_rate:
+    name: "Effective Collection Rate"
+    description: "Collections as percentage of receivables outstanding"
+    formula: "SUM(collections) / SUM(receivables_outstanding)"
+    unit: "%"
+    threshold_warning: 1.5
+    threshold_critical: 1.0
+    refresh_frequency: "daily"
+    data_source: "cascade.collections"
+
+  risk.portfolio_health:
+    name: "Portfolio Health Score"
+    description: "Composite score (0-10) reflecting portfolio quality"
+    formula: "(10 - PAR_90) * (RDR_90/100) * (CollectionRate * 10)"
+    unit: "score"
+    threshold_warning: 5.0
+    threshold_critical: 3.0
+    refresh_frequency: "daily"
+    data_source: "computed"
+
+  # GROWTH STACK KPIS
+  growth.origination_volume:
+    name: "Monthly Origination Volume"
+    description: "Total principal amount of new loans originated"
+    formula: "SUM(new_loans.principal_amount WHERE date_approved IN current_month)"
+    unit: "USD"
+    threshold_warning: null
+    threshold_critical: null
+    refresh_frequency: "daily"
+    data_source: "cascade.loan_origination"
+
+  growth.active_clients:
+    name: "Active Client Count"
+    description: "Number of clients with outstanding balances or recent activity"
+    formula: "COUNT(DISTINCT clients WHERE last_activity >= 30_days_ago)"
+    unit: "count"
+    threshold_warning: null
+    threshold_critical: null
+    refresh_frequency: "weekly"
+    data_source: "cascade.client_activity"
+
+  growth.client_retention:
+    name: "Client Retention Rate"
+    description: "Percentage of active clients from prior period still active"
+    formula: "COUNT(active_current_period INTERSECT active_prior_period) / COUNT(active_prior_period)"
+    unit: "%"
+    threshold_warning: 75.0
+    threshold_critical: 50.0
+    refresh_frequency: "monthly"
+    data_source: "cascade.client_lifecycle"
+
+  # FINANCE STACK KPIS
+  finance.arr:
+    name: "Annualized Recurring Revenue"
+    description: "Expected annual revenue from current outstanding loans"
+    formula: "SUM(loans.interest_rate * loans.balance * 12)"
+    unit: "USD"
+    threshold_warning: null
+    threshold_critical: null
+    refresh_frequency: "daily"
+    data_source: "cascade.loan_performance"
+
+  finance.write_off_rate:
+    name: "Write-Off Rate"
+    description: "Percentage of portfolio written off in period"
+    formula: "SUM(written_off_balances) / SUM(beginning_balance)"
+    unit: "%"
+    threshold_warning: 2.0
+    threshold_critical: 3.5
+    refresh_frequency: "monthly"
+    data_source: "cascade.write_offs"
+
+  # COMPLIANCE STACK KPIS
+  compliance.audit_flags:
+    name: "Active Audit Flags"
+    description: "Count of compliance violations requiring attention"
+    formula: "COUNT(audit_events WHERE status = 'open')"
+    unit: "count"
+    threshold_warning: 5
+    threshold_critical: 10
+    refresh_frequency: "hourly"
+    data_source: "compliance.audit_log"
+
+  compliance.data_quality_score:
+    name: "Data Quality Score"
+    description: "Percentage of data passing validation checks"
+    formula: "SUM(validation_passed) / SUM(validation_total)"
+    unit: "%"
+    threshold_warning: 95.0
+    threshold_critical: 90.0
+    refresh_frequency: "hourly"
+    data_source: "data.validation_results"
+
+departmental_kpi_mappings:
+  risk:
+    - risk.par_90
+    - risk.rdr_90
+    - risk.collection_rate
+    - risk.portfolio_health
+  growth:
+    - growth.origination_volume
+    - growth.active_clients
+    - growth.client_retention
+  finance:
+    - finance.arr
+    - finance.write_off_rate
+  compliance:
+    - compliance.audit_flags
+    - compliance.data_quality_score
+  technology:
+    - compliance.data_quality_score
+  marketing:
+    - growth.origination_volume
+    - growth.active_clients
+  sales:
+    - growth.origination_volume
+    - growth.client_retention

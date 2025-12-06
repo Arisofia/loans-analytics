@@ -1,0 +1,40 @@
+name: Assign and request reviewers for PRs
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+permissions:
+  pull-requests: write
+jobs:
+  assign-and-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply default assignee and reviewers
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const repo = context.repo;
+            const desiredAssignees = ['codex'];
+            const desiredReviewers = [];
+            const { data: pull } = await github.rest.pulls.get({
+              ...repo,
+              pull_number: prNumber,
+            });
+            const currentAssignees = pull.assignees.map(({ login }) => login);
+            const currentReviewers = pull.requested_reviewers.map(({ login }) => login);
+            const assigneesToAdd = desiredAssignees.filter((login) => !currentAssignees.includes(login));
+            const reviewersToAdd = desiredReviewers.filter((login) => !currentReviewers.includes(login));
+            if (assigneesToAdd.length > 0) {
+              await github.rest.issues.addAssignees({
+                ...repo,
+                issue_number: prNumber,
+                assignees: assigneesToAdd,
+              });
+            }
+            if (reviewersToAdd.length > 0) {
+              await github.rest.pulls.requestReviewers({
+                ...repo,
+                pull_number: prNumber,
+                reviewers: reviewersToAdd,
+              });
+            }

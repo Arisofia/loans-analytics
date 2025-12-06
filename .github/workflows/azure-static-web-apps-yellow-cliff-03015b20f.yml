@@ -1,7 +1,10 @@
 name: Azure Static Web Apps CI/CD
+<<<<<<< HEAD
 permissions:
   contents: read
   pull-requests: write
+=======
+>>>>>>> upstream/main
 
 on:
   push:
