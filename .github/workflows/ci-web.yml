@@ -11,7 +11,8 @@ on:
     branches: [main]
     paths:
       - 'apps/web/**'
-    workflow_dispatch:
+
+jobs:
   assignee-check:
     if: github.event_name == 'pull_request'
     uses: ./.github/workflows/pr-assignee-check.yml
