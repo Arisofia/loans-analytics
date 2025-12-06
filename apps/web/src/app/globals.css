@@ -48,7 +48,7 @@
 
 :root {
   --bg-surface: #f8fafc;
-  --text-strong: #0f172a;   /* WCAG AA on light backgrounds */
+  --text-strong: #0f172a;   /* WCAG AAA on light backgrounds */
   --text-muted: #1f2937;
   --accent: #0f766e;
 }
