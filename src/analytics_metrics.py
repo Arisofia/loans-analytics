@@ -73,7 +73,11 @@ def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
     _assert_required_columns(df, required_columns)
 
     enriched = df.copy()
-    enriched["ltv_ratio"] = enriched["loan_amount"] / enriched["appraised_value"]
+    enriched["ltv_ratio"] = np.where(
+        enriched["appraised_value"] > 0,
+        enriched["loan_amount"] / enriched["appraised_value"],
+        np.nan,
+    )
     income = enriched["borrower_income"]
     enriched["dti_ratio"] = np.where(
         income > 0, enriched["monthly_debt"] / (income / 12), np.nan
