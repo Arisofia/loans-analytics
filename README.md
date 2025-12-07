@@ -61,3 +61,4 @@ If you see `Failed to spawn Zencoder process: ... zencoder-cli ENOENT` while wor
 - rerun CI
 # Trigger Azure Static Web Apps deployment
 # Trigger Azure Static Web Apps deployment again
+# Trigger SonarCloud workflow
