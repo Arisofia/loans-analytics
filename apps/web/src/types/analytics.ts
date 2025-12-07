@@ -79,8 +79,8 @@ export function isISODateString(value: string): value is ISODateString {
   const isoRegex = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2}))$/;
   if (!isoRegex.test(value)) return false;
   const date = new Date(value);
-  // Check for Invalid Date and that the input matches the normalized ISO string
-  return !isNaN(date.getTime()) && date.toISOString() === value;
+  // Check for Invalid Date
+  return !isNaN(date.getTime());
 }
 export interface LoanDataset {
   loans: LoanRecord[]
