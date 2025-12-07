@@ -239,7 +239,7 @@ def ingest(uploaded_file, signature: Optional[str]) -> None:
     raw = parse_uploaded_file(uploaded_file)
     normalized = normalize_columns(raw)
     numeric_payload = normalized.copy()
-    for col in normalized.select_dtypes(include=["object"]).columns:
+    for col in numeric_payload.select_dtypes(include=["object"]).columns:
         converted = safe_numeric(numeric_payload[col])
         if converted.notna().sum() > 0:
             numeric_payload[col] = converted
