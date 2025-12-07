@@ -264,7 +264,7 @@ export interface KPIDashboardSection {
 
 export interface AnalyticsExportConfig {
   format: 'png' | 'pdf' | 'html' | 'csv' | 'json' | 'markdown'
-  resolution?: '1080p' | '4k' | '5k' | '8k'
+  resolution?: '1920x1080' | '3840x2160' | '5120x2880' | '7680x4320'
   includeData: boolean
   includeCharts: boolean
   includeNarrative: boolean
