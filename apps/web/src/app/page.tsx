@@ -323,7 +323,9 @@ export default async function Home() {
           <div className={styles.stageList}>
             {stages.map((stage) => {
               // stage.conversion is expected to be a percentage value in the range 0-100
-              const conversionWidth = Math.min(100, Math.max(0, stage.conversion))
+              // Normalize if value is in 0-1 range (decimals), otherwise use as-is
+              const normalizedConversion = stage.conversion <= 1 ? stage.conversion * 100 : stage.conversion;
+              const conversionWidth = Math.min(100, Math.max(0, normalizedConversion));
 
               return (
                 <div key={stage.name} className={styles.stageRow}>
