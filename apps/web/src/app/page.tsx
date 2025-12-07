@@ -229,7 +229,7 @@ export default async function Home() {
 
       <section className={styles.metrics} aria-label="Portfolio performance metrics">
         <h2 className={styles.srOnly}>Portfolio performance metrics</h2>
-        {fallbackMetrics.map((metric) => (
+        {metrics.map((metric) => (
           <article key={metric.title} className={styles.card}>
             <div className={styles.cardHeader}>
               <p className={styles.label}>{metric.title}</p>
