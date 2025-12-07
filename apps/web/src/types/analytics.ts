@@ -58,8 +58,13 @@ export type ProcessedAnalytics = Readonly<{
 // ============================================
 
 /**
- * ISO 8601 date string used for serialized date values coming from/to APIs.
- * Example: "2025-03-15T00:00:00.000Z"
+ * Represents a date-time string in ISO 8601 format, typically used for serialized date values in APIs.
+ *
+ * Expected format: "YYYY-MM-DDTHH:mm:ss.sssZ" (e.g., "2025-03-15T00:00:00.000Z").
+ * Timezone: The string should include timezone information, preferably as 'Z' (UTC) or an explicit offset.
+ *
+ * Note: This is a type alias for `string` and does not enforce validation or branding at runtime.
+ * It is the responsibility of the developer to ensure that values conform to the expected ISO 8601 format.
  */
 export type ISODateString = string
 
