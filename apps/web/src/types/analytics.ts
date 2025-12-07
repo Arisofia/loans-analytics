@@ -276,14 +276,22 @@ export interface KPIDashboardSection {
   kpis: AnalyticsKPI[]
 }
 
-export interface AnalyticsExportConfig {
-  format: 'png' | 'pdf' | 'html' | 'csv' | 'json' | 'markdown'
-  resolution?: '1920x1080' | '3840x2160' | '5120x2880' | '7680x4320'
-  includeData: boolean
-  includeCharts: boolean
-  includeNarrative: boolean
-  sections: AnalyticsExportSection[]
-}
+export type AnalyticsExportConfig =
+  | {
+      format: 'png' | 'pdf' | 'html'
+      resolution?: '1920x1080' | '3840x2160' | '5120x2880' | '7680x4320'
+      includeData: boolean
+      includeCharts: boolean
+      includeNarrative: boolean
+      sections: AnalyticsExportSection[]
+    }
+  | {
+      format: 'csv' | 'json' | 'markdown'
+      includeData: boolean
+      includeCharts: boolean
+      includeNarrative: boolean
+      sections: AnalyticsExportSection[]
+    }
 
 export type AnalyticsExportSection =
   | KPIExportSection
