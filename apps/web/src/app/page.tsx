@@ -81,7 +81,30 @@ async function getData(): Promise<LandingPageData> {
 export default async function Home() {
   const { metrics, products, controls, steps } = await getData()
 
-import type { Metric, Stage, RiskItem, Initiative } from './types'
+// Type definitions inlined from './types'
+type Metric = {
+  label: string;
+  value: string;
+};
+
+type Stage = {
+  name: string;
+  volume: string;
+  conversion: number;
+  lift: string;
+};
+
+type RiskItem = {
+  name: string;
+  exposure: string;
+  trend: string;
+};
+
+type Initiative = {
+  name: string;
+  owner: string;
+  status: string;
+};
 import { metrics } from './data'
 const stages: Stage[] = [
   { name: 'Applications', volume: '12,420', conversion: 100, lift: '+6.2%' },
