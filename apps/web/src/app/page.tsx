@@ -324,7 +324,6 @@ export default async function Home() {
       <section className={styles.section} id="analytics">
         <AnalyticsDashboard />
       </section>
->>>>>>> origin/main
     </div>
   )
 }
