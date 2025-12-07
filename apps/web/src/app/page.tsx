@@ -87,6 +87,21 @@ type Metric = {
   value: string;
 };
 
+  return (
+    <main className={styles.main}>
+      <section>
+        <h2>Key Metrics</h2>
+        <ul>
+          {metrics.map((metric: Metric, idx: number) => (
+            <li key={idx}>
+              <strong>{metric.label}:</strong> {metric.value}
+            </li>
+          ))}
+        </ul>
+      </section>
+      {/* Other dashboard sections can be rendered here */}
+    </main>
+  );
 type Stage = {
   name: string;
   volume: string;
