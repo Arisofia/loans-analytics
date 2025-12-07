@@ -11,8 +11,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 # Use latest v4 for bugfixes and security updates
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6 # Use latest v6 for bugfixes and security updates
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: 'npm'
