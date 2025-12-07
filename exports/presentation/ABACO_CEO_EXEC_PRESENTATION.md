@@ -60,7 +60,9 @@
 - **Q2-2026 (Growth):** Revenue $100K → $150K; OpEx ~$35K; cash $50-115K; cumulative breakeven; action: scale ops.
 - **Q3-Q4 2026 (Scale):** Revenue $150K → $200K+; OpEx ~$40K; cash $100-160K; cumulative $500K+ annual; action: deploy for growth, Series B optional.
 - **Full-year 2026 cash:** Start $1-2MM; Q1 cash +$45-195K; Q2-Q4 +$750K–$1.3MM (see monthly breakdown above; range reflects base and upside scenarios); end $1.8-2.9MM; runway 12+ months by Q4-26.
-
+    - _Scenario assumptions:_  
+        - **Base:** 30-40 new customers/month, default rate <1.5%, 60% embedded channel mix, OpEx flat at $35-40K/month.  
+        - **Upside:** 60+ new customers/month, default rate <1%, 70%+ embedded channel mix, OpEx discipline maintained, faster ramp in revenue.
 ---
 
 ## Slide 6: OKRs & Accountability (2026 Framework)
