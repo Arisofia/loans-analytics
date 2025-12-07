@@ -10,6 +10,7 @@ SLACK_TOKEN=...   # Slack bot token
 Install the official or community SDKs with npm:
 
 > **Note:** There is no official Figma SDK for Node.js.  
+> However, Figma provides an [official REST API](https://www.figma.com/developers/api), which is the authoritative reference for programmatic access. The community SDKs below are convenient wrappers around this API.
 > - [`figma-js`](https://www.npmjs.com/package/figma-js) ([GitHub](https://github.com/jongold/figma-js)) is a community-maintained REST client.  
 > - [`@figma-js/sdk`](https://www.npmjs.com/package/@figma-js/sdk) ([GitHub](https://github.com/figma-js/sdk)) is an alternative, also community-maintained.  
 > Both packages may have different levels of maintenance and version compatibility. Check their npm and GitHub pages for the latest updates and activity before choosing one for your project.
