@@ -60,11 +60,11 @@ jobs:
             echo "Skipping Jacoco: gradlew not present in repository"
           fi
 
-      - name: Web coverage placeholder
+      - name: Generate web coverage (Jest)
         run: |
           cd apps/web
-          mkdir -p coverage
-          echo "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record" > coverage/lcov.info
+          npm run test -- --coverage --coverageReporters=lcov
+          # The lcov.info file will be generated at coverage/lcov.info
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
