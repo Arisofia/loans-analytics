@@ -35,7 +35,7 @@
 
 ## Slide 3: Financial Projections & Unit Economics (2026 ramped average)
 - **Baseline AUM:** Sep-2025 $7,368K → Dec-2026 $16,419K; average 2026 AUM midpoint ~$11,900K.
-- **Volume:** 12-month rotation 5.5x → annual origination ~$65,450K.
+- **Volume:** 12-month rotation 5.5x → annual origination ~$65,450K (assumes 5.5x rotation rate remains constant throughout 2026; actual rotation may vary with non-linear AUM growth—see Slide 2).
 - **Gross take-rate:** 1.5% standard → gross revenue ~$982K annually (~$82K/month).
 - **Costs & net:** Warehouse ~60% (-$49K/month), bad debt reserve 1.66% (-$11K), platform/processing 0.3% (-$2K) → net revenue ~$20K/month (~$240K annually).
 - **OpEx & EBITDA:** OpEx $30K/month → EBITDA -$10K/month near breakeven; breakeven expected Q2-26, positive by Q3-26.
