@@ -58,7 +58,7 @@
 - **Q1-2026 (Ramp):** Revenue $50K → $100K/month; OpEx ~$35K; cash $15-65K/month; cumulative recovery; action: aggressive acquisition.
 - **Q2-2026 (Growth):** Revenue $100K → $150K; OpEx ~$35K; cash $50-115K; cumulative breakeven; action: scale ops.
 - **Q3-Q4 2026 (Scale):** Revenue $150K → $200K+; OpEx ~$40K; cash $100-160K; cumulative $500K+ annual; action: deploy for growth, Series B optional.
-- **Full-year 2026 cash:** Start $1-2MM; Q1 cash +$45-195K; Q2-Q4 +$750K; end $1.8-2.9MM; runway 12+ months by Q4-26.
+- **Full-year 2026 cash:** Start $1-2MM; Q1 cash +$45-195K; Q2-Q4 +$750K–$1.3MM (see monthly breakdown above; range reflects base and upside scenarios); end $1.8-2.9MM; runway 12+ months by Q4-26.
 
 ---
 
