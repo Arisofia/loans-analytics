@@ -58,7 +58,6 @@
 
 .hero p {
   max-width: 780px;
-  color: var(--text-strong);
   color: color-mix(in srgb, var(--color-text-primary) 85%);
   font-size: 18px;
   line-height: 1.7;
