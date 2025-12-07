@@ -298,7 +298,7 @@ export default async function Home() {
           </header>
           <div className={styles.stageList}>
             {stages.map((stage) => {
-              // stage.conversion is normalized at the data fetching layer to be a percentage (0-100).
+              // stage.conversion is clamped here to be a percentage (0-100).
               const conversionWidth = Math.min(100, Math.max(0, stage.conversion));
 
               return (
