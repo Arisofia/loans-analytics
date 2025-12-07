@@ -146,8 +146,8 @@ const InitiativesSchema = z.array(InitiativeSchema);
 
 // Fallback data for each type
 const fallbackStages: Stage[] = [
-  { name: "Awareness", volume: "1000", conversion: 0.1, lift: "5%" },
-  { name: "Consideration", volume: "500", conversion: 0.2, lift: "3%" },
+  { name: "Awareness", volume: "1000", conversion: 10, lift: "5%" },
+  { name: "Consideration", volume: "500", conversion: 20, lift: "3%" },
 ];
 
 const fallbackRiskHeat: RiskItem[] = [
