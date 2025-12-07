@@ -52,6 +52,7 @@ def test_validate_loans():
     # Check instance variables
     assert hasattr(ingestion, "errors")
     assert isinstance(ingestion.errors, list)
+    assert len(ingestion.errors) == 0
 
 def test_validate_loans_missing_field():
     df = pd.DataFrame({
@@ -64,6 +65,8 @@ def test_validate_loans_missing_field():
     assert validated["_validation_passed"].iloc[0] == False
     # Check error log for validation warning
     assert isinstance(ingestion.errors, list)
+    assert len(ingestion.errors) >= 1
+    assert ingestion.errors[0].get("stage") == "validation"
 
 def test_get_ingest_summary():
     ingestion = CascadeIngestion()

@@ -43,6 +43,9 @@ def main():
         df = ingester.validate_loans(df)
         summary = ingester.get_ingest_summary()
         logger.info(f"Ingestion summary: {summary['total_errors']} errors")
+        if summary['total_errors'] > 0:
+            logger.error('Validation/ingestion errors detected, aborting pipeline.')
+            return False
         
         # Step 3: Transform data
         logger.info("Step 3: Transforming data for KPI calculation...")
