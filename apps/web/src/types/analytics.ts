@@ -63,11 +63,21 @@ export type ProcessedAnalytics = Readonly<{
  * Expected format: "YYYY-MM-DDTHH:mm:ss.sssZ" (e.g., "2025-03-15T00:00:00.000Z").
  * Timezone: The string should include timezone information, preferably as 'Z' (UTC) or an explicit offset.
  *
- * Note: This is a type alias for `string` and does not enforce validation or branding at runtime.
- * It is the responsibility of the developer to ensure that values conform to the expected ISO 8601 format.
+ * This is a branded type and must be constructed via {@link isISODateString}.
+ * @example
+ *   const date: ISODateString = isISODateString("2025-03-15T00:00:00.000Z") ? "2025-03-15T00:00:00.000Z" as ISODateString : throw new Error("Invalid date");
  */
-export type ISODateString = string
+export type ISODateString = string & { readonly __brand: 'ISODateString' }
 
+/**
+ * Validates whether a string is a valid ISO 8601 date-time string.
+ * Returns true if valid, false otherwise.
+ */
+export function isISODateString(value: string): value is ISODateString {
+  // Regex matches ISO 8601 date-time with optional milliseconds and timezone
+  // Example: 2025-03-15T00:00:00.000Z
+  return /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2}))$/.test(value);
+}
 export interface LoanDataset {
   loans: LoanRecord[]
   balances: LoanParBalanceRecord[]
