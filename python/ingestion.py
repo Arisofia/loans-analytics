@@ -1,6 +1,6 @@
 """Data ingestion module for Cascade Debt platform."""
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -26,10 +26,13 @@ class CascadeIngestion:
         payload = {
             'stage': stage,
             'error': error,
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(UTC).isoformat(),
             'run_id': self.run_id,
         }
         if context:
+            # Normalize filename key for compatibility with existing summaries/tests
+            if 'filename' in context and 'file' not in context:
+                context['file'] = context['filename']
             payload.update(context)
         self.errors.append(payload)
 
