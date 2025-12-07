@@ -40,7 +40,7 @@
 - **Origination fee revenue:** 1.5% standard × annual origination $65,450K → ~$982K annually (~$82K/month).
 - **Costs & net:** Warehouse ~60% (-$49K/month), bad debt reserve 1.66% (-$11K), platform/processing 0.3% (-$2K) → net revenue ~$20K/month (~$240K annually).
 - **OpEx & EBITDA:** OpEx $30K/month → EBITDA -$10K/month near breakeven; breakeven expected Q2-26, positive by Q3-26.
-- **State-stable (all months $16.419K AUM):** Origination $90,305K; gross revenue $1,355K; after warehouse $542K; OpEx $40K/month → EBITDA $62K/month ($744K/year, 55% margin).
+- **State-stable (all months $16,419K AUM):** Origination $90,305K; gross revenue $4,677K (16,419K × 28.5%); after warehouse $1,871K (40% gross margin); OpEx $40K/month → EBITDA $1,391K/month ($16,692K/year, 85% margin).
 - **Capital efficiency:** Cost of capital 12% +1% upfront amortized to 12.22% annual; gross margin must cover capital + losses + OpEx; net spread after all costs estimated 13-16%; ROE target 12-15x (Series B case).
 
 ---
