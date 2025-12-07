@@ -64,10 +64,10 @@ This guide consolidates the dashboard requirements and maps them to the existing
 - Monitor error rates and add synthetic checks for key endpoints.
 
 ## 7) Quick Checklist (All Points)
-- [x] Figma design + exported assets (black/gray/purple, condensed fonts).
-- [x] Next.js/React pages for all views; shared layout/components; Plotly integrated.
-- [x] FastAPI backend with real KPI/analytics endpoints and AI hooks.
-- [x] Frontend-backend connectivity with filters, widgets, tooltips, onboarding, and explanations per section.
-- [x] Deployment targets (frontend + backend) and CI/CD wiring.
+- [ ] Figma design + exported assets (black/gray/purple, condensed fonts).
+- [ ] Next.js/React pages for all views; shared layout/components; Plotly integrated.
+- [ ] FastAPI backend with real KPI/analytics endpoints and AI hooks.
+- [ ] Frontend-backend connectivity with filters, widgets, tooltips, onboarding, and explanations per section.
+- [ ] Deployment targets (frontend + backend) and CI/CD wiring.
 
 Use this guide as the authoritative blueprint while keeping styling, data integrity, and AI features aligned with the corporate theme.
