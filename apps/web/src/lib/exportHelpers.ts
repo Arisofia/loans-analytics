@@ -24,9 +24,9 @@ function escapeCsvValue(value: string): string {
 
 const sanitizeMarkdownCell = (value: string): string =>
   value
-    .replace(/\\/g, '\\\\')
     .replace(/[\r\n]+/g, ' ')
     .replace(/[|`]/g, (match) => `\\${match}`)
+    .replace(/\\/g, '\\\\')
 
 const formatPercentage = (value: number, digits = 1): string => `${value.toFixed(digits)}%`
 
