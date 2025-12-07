@@ -41,7 +41,8 @@
 - **Costs & net:** Warehouse ~60% (-$49K/month), bad debt reserve 1.66% (-$11K), platform/processing 0.3% (-$2K) → net revenue ~$20K/month (~$240K annually).
 - **OpEx & EBITDA:** OpEx $30K/month → EBITDA -$10K/month near breakeven; breakeven expected Q2-26, positive by Q3-26.
 - **State-stable (all months $16,419K AUM):** Origination $90,305K; gross revenue $4,677K (16,419K × 28.5%); after warehouse $1,871K (40% gross margin); OpEx $40K/month → EBITDA $1,391K/year (85% margin).
-- **Capital efficiency:** Cost of capital 12% +1% upfront amortized to 12.22% annual; gross margin must cover capital + losses + OpEx; net spread after all costs estimated 13-16%; ROE target 12-15x (Series B case).
+- **Capital efficiency:** Cost of capital 12% +1% upfront amortized to 12.22% annual; gross margin must cover capital + losses + OpEx; net spread after all costs estimated 13-16%.
+  - **ROE target:** 12-15x refers to cumulative return on equity over the full investment period (not annualized), i.e., total distributions to equity divided by total equity invested, assuming full reinvestment of earnings and portfolio rotation at current levels. This target is based on Series B case projections over a 5-7 year horizon, with leverage and reinvestment as modeled. Assumes no major credit losses, stable cost of capital, and continued portfolio rotation at 5.5x+ per year.
 
 ---
 
