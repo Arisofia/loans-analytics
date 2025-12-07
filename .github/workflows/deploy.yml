@@ -49,7 +49,7 @@ jobs:
 
       - name: Deploy to Vercel
         if: steps.vercel_secrets.outputs.present == 'true'
-        uses: amondnet/vercel-action@v25
+        uses: amondnet/vercel-action@b6e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
