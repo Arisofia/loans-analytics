@@ -81,18 +81,13 @@ async function getData(): Promise<LandingPageData> {
 export default async function Home() {
   const { metrics, products, controls, steps } = await getData()
 
-// Type definitions inlined from './types'
-type Metric = {
-  label: string;
-  value: string;
-};
 
   return (
     <main className={styles.main}>
       <section>
         <h2>Key Metrics</h2>
         <ul>
-          {metrics.map((metric: Metric, idx: number) => (
+          {metrics.map((metric, idx: number) => (
             <li key={idx}>
               <strong>{metric.label}:</strong> {metric.value}
             </li>
