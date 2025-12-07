@@ -7,13 +7,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-<<<<<<< HEAD
   title: 'ABACO — Loan Intelligence',
   description: 'Growth-ready analytics for credit, collections, finance, and funding teams.',
-=======
-  title: 'Abaco Loans Analytics',
-  description: 'Customer-centric lending intelligence with governed growth for Abaco clients.',
->>>>>>> origin/main
 }
 
 export default function RootLayout({
