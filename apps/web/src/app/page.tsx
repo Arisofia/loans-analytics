@@ -105,7 +105,6 @@ type Initiative = {
   owner: string;
   status: string;
 };
-import { metrics } from './data'
 const stages: Stage[] = [
   { name: 'Applications', volume: '12,420', conversion: 100, lift: '+6.2%' },
   { name: 'Pre-approved', volume: '8,310', conversion: 67, lift: '+3.5%' },
