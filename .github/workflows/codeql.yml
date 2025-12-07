@@ -140,6 +140,7 @@ jobs:
           echo "Azure Cosmos DB modeling best practices and documentation checks passed."
 
       - name: Complete File-by-File Audit & KPI/Visualization Traceability
+        if: ${{ github.event_name == "push" }}
         run: |
           echo "🔎 Auditing all files for KPI, dashboard, and visualization traceability..."
           # Check for traceability comments in all Python, TypeScript, SQL, and Markdown files

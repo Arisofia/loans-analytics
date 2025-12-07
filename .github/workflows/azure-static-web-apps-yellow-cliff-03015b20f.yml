@@ -47,7 +47,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
-          app_location: apps/web
+          app_location: 'apps/web'
           output_location: .next
           api_location: ''
           config_file_location: apps/web
@@ -64,3 +64,4 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F }}
           action: close
+          app_location: 'apps/web'

@@ -2,11 +2,11 @@
 Computes all Fintech Factory KPIs from base Cascade Debt data
 Implements Vibe Solutioning: rebuild from base, validate, trace
 """
-import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, Tuple
 import logging
+
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +29,8 @@ class KPIEngine:
                 dpd_30_plus += self.portfolio_data['dpd_30_60_usd'].sum()
             if 'dpd_60_90_usd' in self.portfolio_data.columns:
                 dpd_30_plus += self.portfolio_data['dpd_60_90_usd'].sum()
-                            if 'dpd_90_plus_usd' in self.portfolio_data.columns:
-                                                dpd_30_plus += self.portfolio_data['dpd_90_plus_usd'].sum()
+            if 'dpd_90_plus_usd' in self.portfolio_data.columns:
+                dpd_30_plus += self.portfolio_data['dpd_90_plus_usd'].sum()
             
             total_receivable = self.portfolio_data['total_receivable_usd'].sum()
             par_30 = (dpd_30_plus / total_receivable * 100) if total_receivable > 0 else 0
@@ -63,7 +63,12 @@ class KPIEngine:
         """
         try:
             total_receivables = self.portfolio_data['total_receivable_usd'].sum()
-            total_eligible = total_eligible = self.portfolio_data['total_eligible_usd'].sum() if 'total_eligible_usd' in self.portfolio_data.columns else 0
+            total_eligible = self.portfolio_data['total_eligible_usd'].sum() if 'total_eligible_usd' in self.portfolio_data.columns else 0
+            collections_total = (
+                collections_data['amount'].sum()
+                if isinstance(collections_data, pd.DataFrame) and 'amount' in collections_data.columns
+                else 0
+            )
             
             collection_rate = (total_eligible / total_receivables * 100) if total_receivables > 0 else 0
             
@@ -76,7 +81,7 @@ class KPIEngine:
             })
             
             logger.info(f"Collection Rate calculated: {collection_rate:.2f}%")
-            return collection_rate, {'eligible': total_eligible, 'total': total_receivables}
+            return collection_rate, {'eligible': total_eligible, 'total': total_receivables, 'collections': collections_total}
         
         except Exception as e:
             logger.error(f"Collection Rate calculation failed: {str(e)}")

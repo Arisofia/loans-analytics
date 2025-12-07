@@ -17,7 +17,7 @@ class DataTransformation:
         """Calculate receivables metrics from portfolio data."""
         metrics = {
             'total_receivable': df['total_receivable_usd'].sum(),
-            'total_eligible': df['total_eligible_usd'].sum() if 'total_eligible_usd' in df.columns else 0,,
+            'total_eligible': df['total_eligible_usd'].sum() if 'total_eligible_usd' in df.columns else 0,
             'discounted_balance': df['discounted_balance_usd'].sum() if 'discounted_balance_usd' in df.columns else 0
         }
         logger.info(f"Calculated receivables metrics: {metrics}")
@@ -32,7 +32,7 @@ class DataTransformation:
         
         for col in dpd_columns:
             if col in df.columns and total > 0:
-                dpd_ratios[col] = (df[col].sum() / total * 100)
+                dpd_ratios[col] = df[col].sum() / total * 100
         
         logger.info(f"Calculated DPD ratios: {dpd_ratios}")
         return dpd_ratios
@@ -43,8 +43,8 @@ class DataTransformation:
         
         # Add calculated metrics
         kpi_df['receivable_amount'] = df['total_receivable_usd']
-        kpi_df['eligible_amount'] df['total_eligible_usd'] if 'total_eligible_usd' in df.columns else 0
-        kpi_df['discounted_amount'] =df['discounted_balance_usd'] if 'discounted_balance_usd' in df.columns else 0
+        kpi_df['eligible_amount'] = df['total_eligible_usd'] if 'total_eligible_usd' in df.columns else 0
+        kpi_df['discounted_amount'] = df['discounted_balance_usd'] if 'discounted_balance_usd' in df.columns else 0
         
         # Calculate portfolio metrics
         dpd_ratios = self.calculate_dpd_ratios(df)

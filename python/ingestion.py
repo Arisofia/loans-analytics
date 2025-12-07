@@ -15,20 +15,22 @@ class CascadeIngestion:
     def __init__(self, data_dir: str = 'data'):
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        self.run_id = datetime.utcnow().isoformat()
+        self.run_id = f"ingest_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self.timestamp = datetime.now().isoformat()
         self.errors: List[Dict[str, Any]] = []
     
     def ingest_csv(self, filename: str) -> pd.DataFrame:
         """Ingest CSV file from Cascade Debt export."""
         filepath = self.data_dir / filename
+        self.timestamp = datetime.now().isoformat()
         try:
             df = pd.read_csv(filepath)
             df['_ingest_run_id'] = self.run_id
-            df['_ingest_timestamp'] = datetime.utcnow().isoformat()
+            df['_ingest_timestamp'] = self.timestamp
             logger.info(f'Ingested {len(df)} records from {filename}')
             return df
-        except Exception as e:
-            error = {'file': filename, 'error': str(e), 'timestamp': datetime.utcnow().isoformat(), 'run_id': self.run_idd}
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            error = {'file': filename, 'error': str(e), 'timestamp': datetime.utcnow().isoformat(), 'run_id': self.run_id}
             self.errors.append(error)
             logger.error(f'Failed to ingest {filename}: {e}')
             return pd.DataFrame()
@@ -47,7 +49,9 @@ class CascadeIngestion:
         if 'total_receivable_usd' in df.columns:
             try:
                 pd.to_numeric(df['total_receivable_usd'])
-except (ValueError, TypeError) as e:                validation_errors.appendf('total_receivable_usd column has non-numeric values': {str(e)}'        
+            except (ValueError, TypeError) as e:
+                validation_errors.append(f'total_receivable_usd column has non-numeric values: {str(e)}')
+        
         if validation_errors:
             logger.warning(f'Validation warnings: {validation_errors}')
         
@@ -58,7 +62,7 @@ except (ValueError, TypeError) as e:                validation_errors.appendf('t
         """Get ingestion summary with audit trail."""
         return {
             'run_id': self.run_id,
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': self.timestamp,
             'total_errors': len(self.errors),
             'errors': self.errors,
         }
