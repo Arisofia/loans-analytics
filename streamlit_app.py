@@ -239,13 +239,16 @@ def ingest(uploaded_file, signature: Optional[str]) -> None:
     raw = parse_uploaded_file(uploaded_file)
     normalized = normalize_columns(raw)
     numeric_payload = normalized.copy()
-    for col in numeric_payload.select_dtypes(include=["object"]).columns:
-        converted = safe_numeric(numeric_payload[col])
-        non_null = numeric_payload[col].notna()
-        convertible = converted.notna() & non_null
+    object_cols = numeric_payload.select_dtypes(include=["object"]).columns
+    if len(object_cols) > 0:
+        converted_df = numeric_payload[object_cols].apply(safe_numeric)
+        non_null = numeric_payload[object_cols].notna()
+        convertible = converted_df.notna() & non_null
         # Only convert if at least 95% of non-null values can be converted to numeric
-        if non_null.sum() > 0 and convertible.sum() / non_null.sum() >= 0.95:
-            numeric_payload[col] = converted
+        convertible_ratio = convertible.sum() / non_null.sum()
+        for col in object_cols:
+            if non_null[col].sum() > 0 and convertible_ratio[col] >= 0.95:
+                numeric_payload[col] = converted_df[col]
     st.session_state["loan_data"] = numeric_payload
     st.session_state["ingestion_state"] = define_ingestion_state(numeric_payload)
     st.session_state["last_upload_signature"] = signature
