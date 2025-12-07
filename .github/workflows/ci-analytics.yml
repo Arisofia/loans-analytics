@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6 # Upgrade to v6 for latest features and security patches
-      - uses: actions/setup-python@a26af69be271e172c85d94de3b4197d8c050d1b4 # v5.6.0
+      - uses: actions/setup-python@v6.0.1 # v6.0.1 SHA pinning
         with:
           python-version: "3.11"
           cache: pip
