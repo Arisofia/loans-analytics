@@ -322,8 +322,8 @@ export default async function Home() {
           </header>
           <div className={styles.stageList}>
             {stages.map((stage) => {
-              // stage.conversion is expected to be a percentage value in the range 0-100
-              // Normalize if value is in 0-1 range (decimals), otherwise use as-is
+              // stage.conversion may be provided as a decimal (0-1) or a percentage (0-100) depending on the data source.
+              // Normalize here to ensure consistent display. Ideally, normalization should occur at the API boundary.
               const normalizedConversion = stage.conversion <= 1 ? stage.conversion * 100 : stage.conversion;
               const conversionWidth = Math.min(100, Math.max(0, normalizedConversion));
 
