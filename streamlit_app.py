@@ -241,7 +241,10 @@ def ingest(uploaded_file, signature: Optional[str]) -> None:
     numeric_payload = normalized.copy()
     for col in numeric_payload.select_dtypes(include=["object"]).columns:
         converted = safe_numeric(numeric_payload[col])
-        if converted.notna().sum() > 0:
+        non_null = numeric_payload[col].notna()
+        convertible = converted.notna() & non_null
+        # Only convert if at least 95% of non-null values can be converted to numeric
+        if non_null.sum() > 0 and convertible.sum() / non_null.sum() >= 0.95:
             numeric_payload[col] = converted
     st.session_state["loan_data"] = numeric_payload
     st.session_state["ingestion_state"] = define_ingestion_state(numeric_payload)
