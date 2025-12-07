@@ -307,6 +307,7 @@ export default async function Home() {
           </header>
           <div className={styles.stageList}>
             {stages.map((stage) => {
+              // stage.conversion is expected to be a percentage value in the range 0-100
               const conversionWidth = Math.min(100, Math.max(0, stage.conversion))
 
               return (
