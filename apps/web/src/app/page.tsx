@@ -87,9 +87,6 @@ async function getData(): Promise<LandingPageData> {
 }
 
 export default async function Home() {
-  const { metrics, products, controls, steps } = await getData()
->>>>>>> origin/main
-
   return (
     <div className={styles.page}>
 <<<<<<< HEAD
