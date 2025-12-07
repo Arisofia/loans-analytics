@@ -6,7 +6,11 @@ This guide consolidates the dashboard requirements and maps them to the existing
 - Build the UX in Figma before coding: sidebar navigation, header KPIs, Plotly-ready chart areas, upload widgets, and AI insight panels for **KPIs, Portfolio, Financial, Risk, Growth, Marketing & Sales, Data Quality, AI Insights, Reports**.
 - Corporate theming only: **Black (#000000), Grayscale (#808080), Purple (#4B0082)**. Avoid blue, green, or non-corporate reds.
 - Typography: long, thin, professional fonts (e.g., **Roboto Condensed**, **Montserrat**, **Open Sans Condensed**).
-- Export assets for the app: `public/logo.svg`, `public/icons/*.png`, `public/palette.json`, and `public/fonts/RobotoCondensed.ttf`.
+- Export assets for the app using a consistent naming convention:
+  - Logo: `public/logo.svg`
+  - Icons: export each icon as a PNG file named `icon-[name].png` (e.g., `public/icons/icon-dashboard.png`, `public/icons/icon-upload.png`, `public/icons/icon-settings.png`). All icons should be 32x32px, PNG format, with transparent backgrounds.
+  - Color palette: `public/palette.json`
+  - Fonts: `public/fonts/RobotoCondensed.ttf`
 - Each screen includes microcopy explaining the purpose of the section, with tooltips/onboarding overlays for new users.
 
 ## 2) Frontend (Next.js + React in `apps/web`)
