@@ -13,7 +13,10 @@ Install the official or community SDKs with npm:
 > However, Figma provides an [official REST API](https://www.figma.com/developers/api), which is the authoritative reference for programmatic access. The community SDKs below are convenient wrappers around this API.
 > - [`figma-js`](https://www.npmjs.com/package/figma-js) ([GitHub](https://github.com/jongold/figma-js)) is a community-maintained REST client.  
 > - [`@figma-js/sdk`](https://www.npmjs.com/package/@figma-js/sdk) ([GitHub](https://github.com/figma-js/sdk)) is an alternative, also community-maintained.  
-> Both packages may have different levels of maintenance and version compatibility. Check their npm and GitHub pages for the latest updates and activity before choosing one for your project.
+> **Recommendation:**  
+> - [`figma-js`](https://www.npmjs.com/package/figma-js) is more widely used and has more GitHub stars, but its maintenance activity has slowed in recent years.  
+> - [`@figma-js/sdk`](https://www.npmjs.com/package/@figma-js/sdk) is newer, has more active recent development, and offers better TypeScript support out of the box.  
+> If you need strong TypeScript support or want a more actively maintained package, prefer `@figma-js/sdk`. For broader community usage and more examples, `figma-js` may be preferable. Always check their npm and GitHub pages for the latest status before deciding.
 ```bash
 # Figma REST client (community SDK)
 npm install figma-js                # Or: npm install @figma-js/sdk
