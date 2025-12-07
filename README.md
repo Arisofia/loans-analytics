@@ -8,7 +8,7 @@ For the combined Next.js + FastAPI fintech dashboard (Figma-first, Plotly, AI in
 - **apps/analytics**: Python scoring, stress testing, and KPI pipelines.
 - **infra/azure**: Azure infra-as-code and deployment scripts.
 - **data_samples**: Anonymized datasets for repeatable development and testing.
-- **Integrations**: Figma / Notion / Slack setup guide at `docs/integrations.md` (see `docs/integration-readiness.md` for service checks).
+- **Integrations**: Figma / Notion / Slack setup guide at `docs/integrations.md` (includes SDK installation, environment variables, and code examples; see `docs/integration-readiness.md` for service checks).
 
 ## Observability, KPIs, and lineage
 - **KPI catalog**: Use `docs/KPI-Operating-Model.md` to define owners, formulas, and lineage links for every metric; keep PR and issue references for auditability.
