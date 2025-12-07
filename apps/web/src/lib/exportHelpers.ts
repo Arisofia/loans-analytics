@@ -126,27 +126,35 @@ export function processedAnalyticsToMarkdown(analytics: ProcessedAnalytics): str
     Number.isFinite(value) ? `${value.toFixed(1)}%` : '–'
 
   const sanitizeMarkdownCell = (value: string): string =>
-    value
-      .replace(/[\r\n]+/g, ' ')
-      .replace(/[|`]/g, (match) => `\\${match}`)
+    value.replace(/[\r\n]+/g, ' ').replace(/[|`]/g, (match) => `\\${match}`)
 
   const treemapSection = treemap
-    .map((entry) => `| ${sanitizeMarkdownCell(entry.label)} | ${entry.value.toLocaleString()} | ${sanitizeMarkdownCell(entry.color)} |`)
+    .map(
+      (entry) =>
+        `| ${sanitizeMarkdownCell(entry.label)} | ${entry.value.toLocaleString()} | ${sanitizeMarkdownCell(entry.color)} |`
+    )
     .join('\n')
 
   const rollRateSection = rollRates
-    .map((rate) => `| ${sanitizeMarkdownCell(rate.from)} | ${sanitizeMarkdownCell(rate.to)} | ${formatPercent(rate.percent)} |`)
+    .map(
+      (rate) =>
+        `| ${sanitizeMarkdownCell(rate.from)} | ${sanitizeMarkdownCell(rate.to)} | ${formatPercent(rate.percent)} |`
+    )
     .join('\n')
 
   const growthSection = growthProjection
-    .map((point) => `| ${sanitizeMarkdownCell(point.label)} | ${Number.isFinite(point.yield) ? point.yield.toFixed(1) : '–'} | ${point.loanVolume.toLocaleString()} |`)
+    .map(
+      (point) =>
+        `| ${sanitizeMarkdownCell(point.label)} | ${Number.isFinite(point.yield) ? point.yield.toFixed(1) : '–'} | ${point.loanVolume.toLocaleString()} |`
+    )
     .join('\n')
 
   const treemapTable = treemapSection || '| – | – | – |'
   const rollRateTable = rollRateSection || '| – | – | – |'
   const growthTable = growthSection || '| – | – | – |'
 
-  return `# Portfolio Analytics Report\n\n` +
+  return (
+    `# Portfolio Analytics Report\n\n` +
     `## KPIs\n` +
     `- Delinquency rate: ${formatPercent(kpis.delinquencyRate)}\n` +
     `- Portfolio yield: ${formatPercent(kpis.portfolioYield)}\n` +
@@ -165,4 +173,5 @@ export function processedAnalyticsToMarkdown(analytics: ProcessedAnalytics): str
     `| Month | Yield | Loan Volume |\n` +
     `|---|---|---|\n` +
     `${growthTable}`
+  )
 }
