@@ -312,7 +312,7 @@ export default async function Home() {
                       <span style={{ width: `${conversionWidth}%` }} />
                     </div>
                     <div className={styles.stageNumbers}>
-                      <span>{normalizedConversion.toFixed(1)}%</span>
+                      <span>{stage.conversion.toFixed(1)}%</span>
                       <span className={styles.delta}>{stage.lift}</span>
                     </div>
                   </div>
