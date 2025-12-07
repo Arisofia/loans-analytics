@@ -94,49 +94,104 @@ type Stage = {
   lift: string;
 };
 
+// Zod schemas for validation
+const StageSchema = z.object({
+  name: z.string(),
+  volume: z.string(),
+  conversion: z.number(),
+  lift: z.string(),
+});
+const StagesSchema = z.array(StageSchema);
+
 type RiskItem = {
   name: string;
   exposure: string;
   trend: string;
 };
 
+const RiskItemSchema = z.object({
+  name: z.string(),
+  exposure: z.string(),
+  trend: z.string(),
+});
+const RiskHeatSchema = z.array(RiskItemSchema);
+
 type Initiative = {
   name: string;
   owner: string;
   status: string;
 };
-// Fetch data from Supabase
+
+const InitiativeSchema = z.object({
+  name: z.string(),
+  owner: z.string(),
+  status: z.string(),
+});
+const InitiativesSchema = z.array(InitiativeSchema);
+
+// Fallback data for each type
+const fallbackStages: Stage[] = [
+  { name: "Awareness", volume: "1000", conversion: 0.1, lift: "5%" },
+  { name: "Consideration", volume: "500", conversion: 0.2, lift: "3%" },
+];
+
+const fallbackRiskHeat: RiskItem[] = [
+  { name: "Compliance", exposure: "High", trend: "Up" },
+  { name: "Security", exposure: "Medium", trend: "Stable" },
+];
+
+const fallbackInitiatives: Initiative[] = [
+  { name: "Launch New Product", owner: "Alice", status: "In Progress" },
+  { name: "Improve UX", owner: "Bob", status: "Planned" },
+];
+
+// Fetch data from Supabase with schema validation and fallback
 async function getStages(): Promise<Stage[]> {
   const { data, error } = await supabase
     .from('stages')
     .select('name, volume, conversion, lift');
-  if (error) {
+  if (error || !data) {
     console.error('Error fetching stages:', error);
-    return [];
+    return fallbackStages;
   }
-  return data as Stage[];
+  const parseResult = StagesSchema.safeParse(data);
+  if (!parseResult.success) {
+    console.error('Stage data validation failed:', parseResult.error);
+    return fallbackStages;
+  }
+  return parseResult.data;
 }
 
 async function getRiskHeat(): Promise<RiskItem[]> {
   const { data, error } = await supabase
     .from('risk_heat')
     .select('name, exposure, trend');
-  if (error) {
+  if (error || !data) {
     console.error('Error fetching riskHeat:', error);
-    return [];
+    return fallbackRiskHeat;
   }
-  return data as RiskItem[];
+  const parseResult = RiskHeatSchema.safeParse(data);
+  if (!parseResult.success) {
+    console.error('RiskHeat data validation failed:', parseResult.error);
+    return fallbackRiskHeat;
+  }
+  return parseResult.data;
 }
 
 async function getInitiatives(): Promise<Initiative[]> {
   const { data, error } = await supabase
     .from('initiatives')
     .select('name, owner, status');
-  if (error) {
+  if (error || !data) {
     console.error('Error fetching initiatives:', error);
-    return [];
+    return fallbackInitiatives;
   }
-  return data as Initiative[];
+  const parseResult = InitiativesSchema.safeParse(data);
+  if (!parseResult.success) {
+    console.error('Initiatives data validation failed:', parseResult.error);
+    return fallbackInitiatives;
+  }
+  return parseResult.data;
 }
 
 export default async function Home() {
