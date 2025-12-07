@@ -4,6 +4,6 @@
     { "src": "apps/web/package.json", "use": "@vercel/next" }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "/apps/web/$1" }
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }
