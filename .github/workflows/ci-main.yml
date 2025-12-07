@@ -2,6 +2,7 @@
 name: CI Main
 
 
+
 on:
   push:
     branches: [main, develop]
@@ -10,6 +11,13 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 3 * * *' # Nightly at 3am UTC
+  workflow_call:
+  pr-hygiene:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/pr-assignee-check.yml
+  codex-pr-review:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/codex-pull-request-review.yml
 
 jobs:
   build:
