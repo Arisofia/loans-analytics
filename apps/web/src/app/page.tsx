@@ -105,26 +105,50 @@ type Initiative = {
   owner: string;
   status: string;
 };
-const stages: Stage[] = [
-  { name: 'Applications', volume: '12,420', conversion: 100, lift: '+6.2%' },
-  { name: 'Pre-approved', volume: '8,310', conversion: 67, lift: '+3.5%' },
-  { name: 'Funded', volume: '5,120', conversion: 41, lift: '+2.1%' },
-  { name: 'On-book M1+', volume: '4,910', conversion: 39, lift: '-0.4%' },
-]
+// Fetch data from Supabase
+import { createClient } from '@supabase/supabase-js'
 
-const riskHeat: RiskItem[] = [
-  { name: 'SME working capital', exposure: '$22.4M', trend: 'Stable risk, monitor FX' },
-  { name: 'Salary advance', exposure: '$11.8M', trend: 'Improving vintage curve' },
-  { name: 'Auto loans', exposure: '$9.6M', trend: 'Watchlist dealers reduced 28%' },
-]
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-const initiatives: Initiative[] = [
-  { name: 'AI underwriting refresh', owner: 'Risk', status: 'Deploying' },
-  { name: 'Collections digital playbook', owner: 'CX', status: 'Live' },
-  { name: 'Treasury laddering', owner: 'Finance', status: 'In-flight' },
-]
+async function getStages(): Promise<Stage[]> {
+  const { data, error } = await supabase
+    .from('stages')
+    .select('name, volume, conversion, lift');
+  if (error) {
+    console.error('Error fetching stages:', error);
+    return [];
+  }
+  return data as Stage[];
+}
 
-export default function Home() {
+async function getRiskHeat(): Promise<RiskItem[]> {
+  const { data, error } = await supabase
+    .from('risk_heat')
+    .select('name, exposure, trend');
+  if (error) {
+    console.error('Error fetching riskHeat:', error);
+    return [];
+  }
+  return data as RiskItem[];
+}
+
+async function getInitiatives(): Promise<Initiative[]> {
+  const { data, error } = await supabase
+    .from('initiatives')
+    .select('name, owner, status');
+  if (error) {
+    console.error('Error fetching initiatives:', error);
+    return [];
+  }
+  return data as Initiative[];
+}
+
+export default async function Home() {
+  const stages = await getStages();
+  const riskHeat = await getRiskHeat();
+  const initiatives = await getInitiatives();
   return (
     <div className={styles.page}>
       <header className={styles.hero}>
