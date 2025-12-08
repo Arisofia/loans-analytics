@@ -6,6 +6,9 @@ param webAppName string
 param storageAccountName string
 param sqlServerName string
 param sqlDbName string
+param sqlAdminLogin string
+@secure()
+param sqlAdminPassword string
 
 resource storage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: storageAccountName
@@ -38,8 +41,8 @@ resource sqlserver 'Microsoft.Sql/servers@2022-02-01-preview' = {
   name: sqlServerName
   location: location
   properties: {
-    administratorLogin: 'sqladmin'
-    administratorLoginPassword: 'ChangeMe123!'
+    administratorLogin: sqlAdminLogin
+    administratorLoginPassword: sqlAdminPassword
   }
 }
 

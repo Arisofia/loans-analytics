@@ -126,6 +126,7 @@ jobs:
   provision-infra:
     runs-on: ubuntu-latest
     needs: [build, python, analytics, web]
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
       - name: Azure Login
