@@ -1,0 +1,25 @@
+personas:
+  board:
+    name: "Board of Directors"
+    refresh_frequency: "monthly"
+    sections: [strategic_overview, financial_summary, risk_highlights]
+    kpis: [finance.arr, growth.origination_volume, risk.par_90]
+    permissions: [read_financial, read_risk]
+  cfo:
+    name: "Chief Financial Officer"
+    refresh_frequency: "daily"
+    sections: [cash_position, arr, write_offs, collections]
+    kpis: [finance.arr, finance.write_off_rate, risk.collection_rate]
+    permissions: [read_all_financial, read_risk]
+  cro:
+    name: "Chief Risk Officer"
+    refresh_frequency: "daily"
+    sections: [portfolio_health, delinquency_trends, loss_scenarios]
+    kpis: [risk.par_90, risk.rdr_90, risk.portfolio_health]
+    permissions: [read_risk, read_compliance]
+  growth:
+    name: "Head of Growth"
+    refresh_frequency: "weekly"
+    sections: [origination_pipeline, client_cohorts, channel_performance]
+    kpis: [growth.origination_volume, growth.active_clients, growth.client_retention]
+    permissions: [read_growth, read_marketing]
