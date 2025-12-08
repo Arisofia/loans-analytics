@@ -10,7 +10,7 @@ class DataTransformation:
     """Transform ingested Cascade data into KPI datasets."""
     
     def __init__(self, run_id: str = None):
-        self.run_id = run_id or datetime.utcnow().isoformat()
+        self.run_id = run_id or datetime.now(datetime.UTC).isoformat()
         self.transformations_count = 0
     
     def calculate_receivables_metrics(self, df: pd.DataFrame) -> pd.Series:
@@ -52,7 +52,7 @@ class DataTransformation:
             kpi_df[f'{ratio_name}_pct'] = ratio_value
         
         kpi_df['_transform_run_id'] = self.run_id
-        kpi_df['_transform_timestamp'] = datetime.utcnow().isoformat()
+        kpi_df['_transform_timestamp'] = datetime.now(datetime.UTC).isoformat()
         
         self.transformations_count += 1
         logger.info(f'Transformed {len(kpi_df)} records to KPI dataset')
