@@ -30,7 +30,8 @@ class CascadeIngestion:
             'run_id': self.run_id,
         }
         if context:
-            # Normalize filename key for compatibility with existing summaries/tests
+            # Normalize filename key for compatibility with existing
+            # summaries/tests
             if 'filename' in context and 'file' not in context:
                 context['file'] = context['filename']
             payload.update(context)
@@ -64,7 +65,9 @@ class CascadeIngestion:
                 try:
                     pd.to_numeric(df[numeric_field])
                 except (ValueError, TypeError) as e:  # pragma: no cover - defensive
-                    validation_errors.append(f'{numeric_field} column has non-numeric values: {str(e)}')
+                    validation_errors.append(
+                        f'{numeric_field} column has non-numeric values: {str(e)}'
+                    )
 
         if validation_errors:
             for err in validation_errors:

@@ -13,7 +13,12 @@ def sample_portfolio():
             "appraised_value": [300000, 500000, 160000, 0],
             "borrower_income": [80000, 120000, 60000, 0],
             "monthly_debt": [1500, 2500, 1000, 500],
-            "loan_status": ["current", "30-59 days past due", "current", "90+ days past due"],
+            "loan_status": [
+                "current",
+                "30-59 days past due",
+                "current",
+                "90+ days past due"
+            ],
             "interest_rate": [0.035, 0.042, 0.038, 0.045],
             "principal_balance": [240000, 440000, 145000, 590000],
         }
@@ -35,7 +40,9 @@ def test_ltv_handles_zero_appraised_value(sample_portfolio):
     engine = LoanAnalyticsEngine(sample_portfolio)
     ltv = engine.compute_loan_to_value()
 
-    assert np.isnan(ltv.iloc[-1]), "Zero appraised value should not create inf or crash"
+    assert np.isnan(ltv.iloc[-1]), (
+        "Zero appraised value should not create inf or crash"
+    )
     assert (ltv.dropna() > 0).all()
 
 

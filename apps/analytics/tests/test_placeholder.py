@@ -1,3 +1,3 @@
 def test_placeholder_smoke():
-    # Basic sanity check placeholder to keep pytest happy until real tests land.
-    assert True
+    # Placeholder test to keep pytest passing.
+    assert 1 == 1

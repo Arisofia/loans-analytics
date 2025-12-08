@@ -49,7 +49,8 @@ def test_parse_args_requires_data():
 def test_load_portfolio_file_exists(tmp_path):
     csv_file = tmp_path / "portfolio.csv"
     csv_file.write_text(
-        "loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance\n"
+        "loan_amount,appraised_value,borrower_income,monthly_debt,"
+        "loan_status,interest_rate,principal_balance\n"
         "250000,300000,80000,1500,current,0.035,240000"
     )
     
@@ -66,7 +67,8 @@ def test_load_portfolio_file_not_found():
 def test_load_portfolio_expands_user_path(tmp_path):
     csv_file = tmp_path / "portfolio.csv"
     csv_file.write_text(
-        "loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance\n"
+        "loan_amount,appraised_value,borrower_income,monthly_debt,"
+        "loan_status,interest_rate,principal_balance\n"
         "250000,300000,80000,1500,current,0.035,240000"
     )
     
@@ -82,7 +84,10 @@ def test_summarize_results_prints_output(capsys):
     summarize_results(metrics, 5)
     
     captured = capsys.readouterr()
-    assert "Portfolio Yield Percent" in captured.out or "portfolio yield percent" in captured.out.lower()
+    assert (
+        "Portfolio Yield Percent" in captured.out or
+        "portfolio yield percent" in captured.out.lower()
+    )
     assert "Risk alerts flagged: 5" in captured.out
 
 
@@ -114,7 +119,8 @@ def test_summarize_results_handles_strings(capsys):
 def test_main_full_flow_no_export(mock_load, mock_engine_class, tmp_path):
     csv_file = tmp_path / "portfolio.csv"
     csv_file.write_text(
-        "loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance\n"
+        "loan_amount,appraised_value,borrower_income,monthly_debt,"
+        "loan_status,interest_rate,principal_balance\n"
         "250000,300000,80000,1500,current,0.035,240000"
     )
     
@@ -149,7 +155,8 @@ def test_main_full_flow_no_export(mock_load, mock_engine_class, tmp_path):
 def test_main_output_to_file(mock_load, mock_engine_class, tmp_path):
     csv_file = tmp_path / "portfolio.csv"
     csv_file.write_text(
-        "loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance\n"
+        "loan_amount,appraised_value,borrower_income,monthly_debt,"
+        "loan_status,interest_rate,principal_balance\n"
         "250000,300000,80000,1500,current,0.035,240000"
     )
     output_file = tmp_path / "output.json"
@@ -193,7 +200,8 @@ def test_main_output_to_file(mock_load, mock_engine_class, tmp_path):
 def test_main_blob_export_requires_credentials(mock_load, mock_engine_class, tmp_path):
     csv_file = tmp_path / "portfolio.csv"
     csv_file.write_text(
-        "loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance\n"
+        "loan_amount,appraised_value,borrower_income,monthly_debt,"
+        "loan_status,interest_rate,principal_balance\n"
         "250000,300000,80000,1500,current,0.035,240000"
     )
     
@@ -228,7 +236,8 @@ def test_main_blob_export_requires_credentials(mock_load, mock_engine_class, tmp
 def test_main_blob_export_with_connection_string(mock_load, mock_exporter_class, mock_engine_class, tmp_path):
     csv_file = tmp_path / "portfolio.csv"
     csv_file.write_text(
-        "loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance\n"
+        "loan_amount,appraised_value,borrower_income,monthly_debt,"
+        "loan_status,interest_rate,principal_balance\n"
         "250000,300000,80000,1500,current,0.035,240000"
     )
     
@@ -267,7 +276,8 @@ def test_main_blob_export_with_connection_string(mock_load, mock_exporter_class,
 def test_main_parses_custom_thresholds(mock_parse_args, tmp_path):
     csv_file = tmp_path / "portfolio.csv"
     csv_file.write_text(
-        "loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance\n"
+        "loan_amount,appraised_value,borrower_income,monthly_debt,"
+        "loan_status,interest_rate,principal_balance\n"
         "250000,300000,80000,1500,current,0.035,240000"
     )
     

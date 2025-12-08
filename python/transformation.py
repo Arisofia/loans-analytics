@@ -11,7 +11,6 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-    
 
 class DataTransformation:
     """Transform ingested Cascade data into KPI datasets."""
@@ -24,8 +23,14 @@ class DataTransformation:
         """Calculate receivables metrics from portfolio data."""
         metrics = {
             'total_receivable': df['total_receivable_usd'].sum(),
-            'total_eligible': df['total_eligible_usd'].sum() if 'total_eligible_usd' in df.columns else 0,
-            'discounted_balance': df['discounted_balance_usd'].sum() if 'discounted_balance_usd' in df.columns else 0
+            'total_eligible': (
+                df['total_eligible_usd'].sum()
+                if 'total_eligible_usd' in df.columns else 0
+            ),
+            'discounted_balance': (
+                df['discounted_balance_usd'].sum()
+                if 'discounted_balance_usd' in df.columns else 0
+            ),
         }
         logger.info(f"Calculated receivables metrics: {metrics}")
         return pd.Series(metrics)
@@ -50,8 +55,14 @@ class DataTransformation:
         
         # Add calculated metrics
         kpi_df['receivable_amount'] = df['total_receivable_usd']
-        kpi_df['eligible_amount'] = df['total_eligible_usd'] if 'total_eligible_usd' in df.columns else 0
-        kpi_df['discounted_amount'] = df['discounted_balance_usd'] if 'discounted_balance_usd' in df.columns else 0
+        kpi_df['eligible_amount'] = (
+            df['total_eligible_usd']
+            if 'total_eligible_usd' in df.columns else 0
+        )
+        kpi_df['discounted_amount'] = (
+            df['discounted_balance_usd']
+            if 'discounted_balance_usd' in df.columns else 0
+        )
         
         # Calculate portfolio metrics
         dpd_ratios = self.calculate_dpd_ratios(df)
@@ -65,17 +76,23 @@ class DataTransformation:
         logger.info(f'Transformed {len(kpi_df)} records to KPI dataset')
         return kpi_df
     
-    def validate_transformations(self, original_df: pd.DataFrame, kpi_df: pd.DataFrame) -> bool:
+    def validate_transformations(
+        self, original_df: pd.DataFrame, kpi_df: pd.DataFrame
+    ) -> bool:
         """Validate transformation integrity."""
         if len(original_df) != len(kpi_df):
-            logger.error(f'Row count mismatch: {len(original_df)} vs {len(kpi_df)}')
+            logger.error(
+                f'Row count mismatch: {len(original_df)} vs {len(kpi_df)}'
+            )
             return False
         
         original_total = original_df['total_receivable_usd'].sum()
         kpi_total = kpi_df['receivable_amount'].sum()
         
         if abs(original_total - kpi_total) > 0.01:
-            logger.error(f'Total receivables mismatch: {original_total} vs {kpi_total}')
+            logger.error(
+                f'Total receivables mismatch: {original_total} vs {kpi_total}'
+            )
             return False
         
         logger.info('Transformation validation passed')

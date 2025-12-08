@@ -20,7 +20,12 @@ class TestMetricsUtils(unittest.TestCase):
                 "appraised_value": [300000, 500000, 160000, 750000],
                 "borrower_income": [80000, 120000, 60000, 150000],
                 "monthly_debt": [1500, 2500, 1000, 3000],
-                "loan_status": ["current", "30-59 days past due", "current", "current"],
+                "loan_status": [
+                    "current",
+                    "30-59 days past due",
+                    "current",
+                    "current"
+                ],
                 "interest_rate": [0.035, 0.042, 0.038, 0.045],
                 "principal_balance": [240000, 440000, 145000, 590000],
             }
@@ -28,10 +33,18 @@ class TestMetricsUtils(unittest.TestCase):
 
     def test_kpis_match_expected_values(self):
         kpis = portfolio_kpis(self.portfolio)
-        self.assertAlmostEqual(kpis["portfolio_delinquency_rate_percent"], 25.0)
-        self.assertAlmostEqual(kpis["portfolio_yield_percent"], 4.16537, places=5)
-        self.assertAlmostEqual(kpis["average_ltv_ratio_percent"], 86.7708333, places=5)
-        self.assertAlmostEqual(kpis["average_dti_ratio_percent"], 22.875, places=3)
+        self.assertAlmostEqual(
+            kpis["portfolio_delinquency_rate_percent"], 25.0
+        )
+        self.assertAlmostEqual(
+            kpis["portfolio_yield_percent"], 4.16537, places=5
+        )
+        self.assertAlmostEqual(
+            kpis["average_ltv_ratio_percent"], 86.7708333, places=5
+        )
+        self.assertAlmostEqual(
+            kpis["average_dti_ratio_percent"], 22.875, places=3
+        )
 
     def test_metric_helpers_handle_edge_cases(self):
         data = pd.DataFrame(
@@ -47,14 +60,23 @@ class TestMetricsUtils(unittest.TestCase):
         )
 
         ltv = loan_to_value(data["loan_amount"], data["appraised_value"])
-        dti = debt_to_income_ratio(data["monthly_debt"], data["borrower_income"])
+        dti = debt_to_income_ratio(
+            data["monthly_debt"], data["borrower_income"]
+        )
 
         self.assertTrue(ltv.isna().iloc[0])
         self.assertAlmostEqual(ltv.iloc[1], 0.0)
         self.assertTrue(dti.isna().iloc[0])
         self.assertAlmostEqual(dti.iloc[1], 20.0)
-        self.assertAlmostEqual(portfolio_delinquency_rate(data["loan_status"]), 50.0)
-        self.assertAlmostEqual(weighted_portfolio_yield(data["interest_rate"], data["principal_balance"]), 6.0)
+        self.assertAlmostEqual(
+            portfolio_delinquency_rate(data["loan_status"]), 50.0
+        )
+        self.assertAlmostEqual(
+            weighted_portfolio_yield(
+                data["interest_rate"], data["principal_balance"]
+            ),
+            6.0
+        )
 
     def test_engine_uses_metric_utilities(self):
         engine = LoanAnalyticsEngine(self.portfolio)
@@ -68,7 +90,9 @@ class TestMetricsUtils(unittest.TestCase):
     def test_numeric_coercion_and_defaults(self):
         portfolio = self.portfolio.copy()
         portfolio["loan_amount"] = portfolio["loan_amount"].astype(str)
-        portfolio["principal_balance"] = portfolio["principal_balance"].astype(str)
+        portfolio["principal_balance"] = (
+            portfolio["principal_balance"].astype(str)
+        )
 
         kpis = portfolio_kpis(portfolio)
 

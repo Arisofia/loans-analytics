@@ -15,7 +15,9 @@ from apps.analytics.src.metrics_utils import (
 
 def test_coerce_numeric_all_nan():
     series = pd.Series(["invalid", "data", "values"])
-    with pytest.raises(ValueError, match="must contain at least one numeric value"):
+    with pytest.raises(
+        ValueError, match="must contain at least one numeric value"
+    ):
         _coerce_numeric(series, "test_field")
 
 
@@ -48,17 +50,21 @@ def test_debt_to_income_ratio_zero_income():
 def test_portfolio_delinquency_rate_empty():
     statuses = []
     rate = portfolio_delinquency_rate(statuses)
-    assert rate == 0.0
+    assert rate == pytest.approx(0.0)
 
 
 def test_portfolio_delinquency_rate_no_delinquent():
     statuses = ["current", "current", "current"]
     rate = portfolio_delinquency_rate(statuses)
-    assert rate == 0.0
+    assert rate == pytest.approx(0.0)
 
 
 def test_portfolio_delinquency_rate_all_delinquent():
-    statuses = ["30-59 days past due", "60-89 days past due", "90+ days past due"]
+    statuses = [
+        "30-59 days past due",
+        "60-89 days past due",
+        "90+ days past due"
+    ]
     rate = portfolio_delinquency_rate(statuses)
     assert rate == pytest.approx(100.0)
 
@@ -67,7 +73,7 @@ def test_weighted_portfolio_yield_zero_principal():
     rates = pd.Series([0.05, 0.06, 0.07])
     principals = pd.Series([0, 0, 0])
     yield_rate = weighted_portfolio_yield(rates, principals)
-    assert yield_rate == 0.0
+    assert yield_rate == pytest.approx(0.0)
 
 
 def test_weighted_portfolio_yield_nan_values():
@@ -91,7 +97,7 @@ def test_portfolio_kpis_with_precalculated_ratios():
     })
     kpis = portfolio_kpis(df)
     assert "portfolio_delinquency_rate_percent" in kpis
-    assert kpis["portfolio_delinquency_rate_percent"] == 0.0
+    assert kpis["portfolio_delinquency_rate_percent"] == pytest.approx(0.0)
 
 
 def test_portfolio_kpis_handles_nan_in_ratios():
@@ -113,7 +119,7 @@ def test_coerce_numeric_mixed_valid_invalid():
     series = pd.Series([100, "invalid", 300, np.nan])
     result = _coerce_numeric(series, "test")
     assert result.isna().sum() == 2
-    assert result.iloc[0] == 100.0
+    assert result.iloc[0] == pytest.approx(100.0)
 
 
 def test_loan_to_value_with_negative_values():
