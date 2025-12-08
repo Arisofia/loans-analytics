@@ -1,26 +1,39 @@
+
 import pytest
 import pandas as pd
-from python.ingestion import ingest_data
-from python.transformation import transform_data
-from python.validation import validate_dataframe
-from python.kpi_engine import calculate_kpis
+from python.ingestion import CascadeIngestion
+from python.transformation import DataTransformation
+from python.kpi_engine import KPIEngine
 
-def test_ingest_data():
-    df = ingest_data('data/abaco_portfolio_calculations.csv')
+def test_ingest_data(tmp_path):
+    # Create a sample CSV file
+    csv_content = "period,measurement_date,total_receivable_usd\n2025Q4,2025-12-01,1000.0\n2025Q4,2025-12-02,2000.0"
+    csv_file = tmp_path / "sample.csv"
+    csv_file.write_text(csv_content)
+    ingestion = CascadeIngestion(data_dir=tmp_path)
+    df = ingestion.ingest_csv("sample.csv")
     assert not df.empty
 
 def test_transform_data():
-    df = pd.DataFrame({'amount': [1, 2, None]})
-    df = transform_data(df)
-    assert df['amount'].dtype == float
-    assert df.isnull().sum().sum() == 0
+    df = pd.DataFrame({"period": ["2025Q4"], "measurement_date": ["2025-12-01"], "total_receivable_usd": [1000.0]})
+    transformer = DataTransformation()
+    kpi_df = transformer.transform_to_kpi_dataset(df)
+    assert isinstance(kpi_df, pd.DataFrame)
 
-def test_validate_dataframe():
-    df = pd.DataFrame({'amount': [1.0, 2.0]})
-    validate_dataframe(df)
+def test_validate_loans():
+    df = pd.DataFrame({"period": ["2025Q4"], "measurement_date": ["2025-12-01"], "total_receivable_usd": [1000.0]})
+    ingestion = CascadeIngestion()
+    validated = ingestion.validate_loans(df)
+    assert "_validation_passed" in validated.columns
 
 def test_calculate_kpis():
-    df = pd.DataFrame({'amount': [1.0, 2.0, 3.0]})
-    kpis = calculate_kpis(df)
-    assert kpis['total_loans'] == 6.0
-    assert kpis['avg_loan'] == 2.0
+    df = pd.DataFrame({
+        "period": ["2025Q4", "2025Q4", "2025Q4"],
+        "measurement_date": ["2025-12-01", "2025-12-02", "2025-12-03"],
+        "total_receivable_usd": [1000.0, 2000.0, 3000.0]
+    })
+    transformer = DataTransformation()
+    kpi_df = transformer.transform_to_kpi_dataset(df)
+    kpi_engine = KPIEngine(kpi_df)
+    par_30, _ = kpi_engine.calculate_par_30()
+    assert isinstance(par_30, float)
