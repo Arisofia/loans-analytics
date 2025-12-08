@@ -1,0 +1,39 @@
+# Data Ingestion & Transformation Agent Specification
+# Autonomous agent for robust data ingestion, transformation, and error handling
+
+name: DataIngestionTransformationAgent
+version: '1.0'
+namespace: fintech.factory.agents
+role: "data_engineer"
+requires_human_approval: false
+
+description: |
+  Autonomous agent responsible for fully automated data ingestion, transformation,
+  and error handling. Ensures robust DataFrame construction, validation, and
+  output coverage above expectations. Maintains compliance, security, and
+  auditability throughout the pipeline.
+
+primaryResponsibilities:
+  - Ingest raw data from CSV, API, and database sources
+  - Transform and clean data for analytics
+  - Validate and handle errors at every step
+  - Build robust DataFrames for downstream KPIs and dashboards
+  - Output coverage, completeness, and audit logs
+  - Document all steps and maintain continuous learning
+  - Ensure compliance, security, and auditability
+
+knowledgeSources:
+  - data.abaco_portfolio_calculations: Portfolio metrics CSV
+  - config.kpis.kpi_definitions: KPI definitions and formulas
+  - docs/analytics: Analytics documentation and standards
+
+outputFormats:
+  - transformed_data: Parquet/CSV/JSON
+  - error_log: JSON/Markdown
+  - coverage_report: Markdown/CSV
+  - audit_log: JSON
+
+refreshSchedule:
+  ingestion: "0 6 * * *"  # 6 AM daily
+  transformation: "0 7 * * *"  # 7 AM daily
+  continuous_monitoring: "*/20 * * * *"  # Every 20 minutes

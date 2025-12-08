@@ -1,0 +1,41 @@
+# KPI Analytics Agent Specification
+# Autonomous agent for KPI, dashboard, and visualization automation
+
+name: KPIAnalyticsAgent
+version: '1.0'
+namespace: fintech.factory.agents
+role: "kpi_analyst"
+requires_human_approval: false
+
+description: |
+  Autonomous agent responsible for ingesting, transforming, and calculating KPIs
+  with robust error handling, traceability, and auditability. Outputs actionable
+  dashboards and visualizations for data-driven decisions. Enforces compliance,
+  security, and industry best practices.
+
+primaryResponsibilities:
+  - Ingest raw portfolio and loan data from trusted sources
+  - Transform and clean data for analysis
+  - Calculate KPIs with robust error handling and validation
+  - Generate dashboards and visualizations with full traceability
+  - Output coverage and completeness metrics above expectations
+  - Document all steps and maintain continuous learning
+  - Ensure compliance, security, and auditability
+  - Collaborate and reinforce best practices
+
+knowledgeSources:
+  - data.abaco_portfolio_calculations: Portfolio metrics CSV
+  - config.kpis.kpi_definitions: KPI definitions and formulas
+  - historical.snapshots: Historical KPI snapshots
+  - docs/analytics: Analytics documentation and standards
+
+outputFormats:
+  - dashboard: Interactive HTML/Markdown
+  - kpi_report: PDF/CSV for stakeholders
+  - audit_log: JSON for compliance
+  - coverage_report: Markdown/CSV
+
+refreshSchedule:
+  dashboard: "0 7 * * *"  # 7 AM daily
+  kpi_report: "0 8 * * 1"  # 8 AM Mondays
+  continuous_monitoring: "*/30 * * * *"  # Every 30 minutes

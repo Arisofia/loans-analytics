@@ -10,17 +10,11 @@ on:
     paths:
       - 'apps/web/**'
       - '.github/workflows/azure-static-web-apps-yellow-cliff-03015b20f.yml'
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    branches:
-      - main
-    paths:
-      - 'apps/web/**'
-      - '.github/workflows/azure-static-web-apps-yellow-cliff-03015b20f.yml'
+  workflow_dispatch:
 
 jobs:
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
@@ -37,8 +31,18 @@ jobs:
       - name: Build
         working-directory: apps/web
         run: npm run build
+      - name: Check SWA token
+        id: swa_token
+        run: |
+          if [ -z "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F }}" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "Missing AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Deploy
         id: swa-deploy
+        if: steps.swa_token.outputs.present == 'true'
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F }}
@@ -50,15 +54,6 @@ jobs:
           config_file_location: apps/web
           skip_app_build: true
           skip_api_build: true
-
-  close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    name: Close Pull Request Environment
-    steps:
-      - name: Close PR
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F }}
-          action: close
-          app_location: 'apps/web'
+      - name: Skip deploy (missing token)
+        if: steps.swa_token.outputs.present != 'true'
+        run: echo "Skipping SWA deploy: token missing."

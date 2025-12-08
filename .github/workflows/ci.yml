@@ -126,9 +126,25 @@ jobs:
   provision-infra:
     runs-on: ubuntu-latest
     needs: [build, python, analytics, web]
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
     steps:
       - uses: actions/checkout@v4
+      - name: Validate deployment inputs
+        run: |
+          missing=()
+          [ -z "${{ secrets.AZURE_CREDENTIALS }}" ] && missing+=("AZURE_CREDENTIALS")
+          [ -z "${{ secrets.AZURE_RESOURCE_GROUP }}" ] && missing+=("AZURE_RESOURCE_GROUP")
+          [ -z "${{ secrets.AZURE_WEBAPP_NAME }}" ] && missing+=("AZURE_WEBAPP_NAME")
+          [ -z "${{ secrets.AZURE_STORAGE_NAME }}" ] && missing+=("AZURE_STORAGE_NAME")
+          [ -z "${{ secrets.AZURE_SQLSERVER_NAME }}" ] && missing+=("AZURE_SQLSERVER_NAME")
+          [ -z "${{ secrets.AZURE_SQLDB_NAME }}" ] && missing+=("AZURE_SQLDB_NAME")
+          [ -z "${{ secrets.AZURE_SQL_ADMIN_LOGIN }}" ] && missing+=("AZURE_SQL_ADMIN_LOGIN")
+          [ -z "${{ secrets.AZURE_SQL_ADMIN_PASSWORD }}" ] && missing+=("AZURE_SQL_ADMIN_PASSWORD")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "Missing required deployment secrets: ${missing[*]}"
+            exit 1
+          fi
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -138,11 +154,15 @@ jobs:
           az deployment group create \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --template-file infra/azure/main.bicep \
-            --parameters webAppName=${{ secrets.AZURE_WEBAPP_NAME }} storageAccountName=${{ secrets.AZURE_STORAGE_NAME }} sqlServerName=${{ secrets.AZURE_SQLSERVER_NAME }} sqlDbName=${{ secrets.AZURE_SQLDB_NAME }}
+            --parameters webAppName=${{ secrets.AZURE_WEBAPP_NAME }} \
+              storageAccountName=${{ secrets.AZURE_STORAGE_NAME }} \
+              sqlServerName=${{ secrets.AZURE_SQLSERVER_NAME }} \
+              sqlDbName=${{ secrets.AZURE_SQLDB_NAME }} \
+              sqlAdminLogin=${{ secrets.AZURE_SQL_ADMIN_LOGIN }} \
+              sqlAdminPassword=${{ secrets.AZURE_SQL_ADMIN_PASSWORD }}
       - name: Deploy Application Insights
         run: |
           az deployment group create \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --template-file infra/azure/appinsights.bicep \
             --parameters appInsightsName=${{ secrets.AZURE_APPINSIGHTS_NAME }}
-

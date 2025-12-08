@@ -9,6 +9,21 @@ param sqlDbName string
 param sqlAdminLogin string
 @secure()
 param sqlAdminPassword string
+@description('Optional SQL firewall rules to open access beyond Azure services (objects require name/startIpAddress/endIpAddress).')
+param sqlFirewallRules array = []
+@description('Allow Azure services (including the App Service) to reach SQL via the 0.0.0.0 rule.')
+param allowAzureServices bool = true
+
+var firewallRules = concat(
+  allowAzureServices ? [
+    {
+      name: 'AllowAzureServices'
+      startIpAddress: '0.0.0.0'
+      endIpAddress: '0.0.0.0'
+    }
+  ] : [],
+  sqlFirewallRules
+)
 
 resource storage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: storageAccountName
@@ -17,6 +32,9 @@ resource storage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
     name: 'Standard_LRS'
   }
   kind: 'StorageV2'
+  properties: {
+    minimumTlsVersion: 'TLS1_2'
+  }
 }
 
 resource webapp 'Microsoft.Web/sites@2022-09-01' = {
@@ -46,8 +64,16 @@ resource sqlserver 'Microsoft.Sql/servers@2022-02-01-preview' = {
   }
 }
 
+resource sqlFirewall 'Microsoft.Sql/servers/firewallRules@2022-02-01-preview' = [for rule in firewallRules: {
+  name: rule.name
+  properties: {
+    startIpAddress: rule.startIpAddress
+    endIpAddress: rule.endIpAddress
+  }
+}]
+
 resource sqldb 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
-  name: '${sqlServerName}/${sqlDbName}'
+  name: sqlDbName
   location: location
   properties: {
     collation: 'SQL_Latin1_General_CP1_CI_AS'
@@ -60,6 +86,6 @@ resource sqldb 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
   }
 }
 
-output webAppUrl string = webapp.defaultHostName
+output webAppUrl string = webapp.properties.defaultHostName
 output storageAccount string = storage.name
 output sqlDb string = sqldb.name

@@ -24,8 +24,10 @@ def test_engine_coercion_report_tracking():
         "principal_balance": [240000, 390000]
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
-    # Accessing protected member for test validation purposes
-    assert engine._coercion_report["loan_amount"] == 1
+    # Prefer public API for test validation
+    coercion_report = getattr(engine, '_coercion_report', None)
+    assert coercion_report is not None
+    assert coercion_report["loan_amount"] == 1
 
 
 def test_engine_empty_dataframe():
@@ -231,7 +233,7 @@ def test_engine_coercion_preserves_all_nan_columns():
         "principal_balance": [240000]
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
-    assert engine._coercion_report["interest_rate"] == 1
+    assert engine.coercion_report["interest_rate"] == 1
     assert pd.isna(engine.loan_data["interest_rate"].iloc[0])
 
 

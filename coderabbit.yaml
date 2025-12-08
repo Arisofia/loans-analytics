@@ -1,0 +1,27 @@
+# Coderabbit configuration for abaco-loans-analytics
+# See https://docs.coderabbit.ai for options
+
+project:
+  name: abaco-loans-analytics
+  language: python
+  python_version: 3.11
+  include:
+    - python/
+    - apps/
+    - packages/
+  exclude:
+    - tests/
+    - build/
+    - data_samples/
+    - infra/
+    - scripts/
+quality:
+  lint:
+    enabled: true
+    fail_on_error: true
+  security:
+    enabled: true
+    fail_on_error: true
+  refactor:
+    enabled: true
+    fail_on_error: false

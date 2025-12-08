@@ -17,8 +17,8 @@ def test_parse_args_minimal_required():
         args = parse_args()
         assert args.data == "/path/to/data.csv"
         assert args.output is None
-        assert args.ltv_threshold == 90.0
-        assert args.dti_threshold == 40.0
+        assert abs(args.ltv_threshold - 90.0) < 1e-6
+        assert abs(args.dti_threshold - 40.0) < 1e-6
 
 
 def test_parse_args_all_options():
@@ -36,8 +36,8 @@ def test_parse_args_all_options():
         assert args.output == "/path/to/output.json"
         assert args.container_name == "container-name"
         assert args.blob_name == "custom-blob.json"
-        assert args.ltv_threshold == 85.0
-        assert args.dti_threshold == 35.0
+        assert abs(args.ltv_threshold - 85.0) < 1e-6
+        assert abs(args.dti_threshold - 35.0) < 1e-6
 
 
 def test_parse_args_requires_data():
