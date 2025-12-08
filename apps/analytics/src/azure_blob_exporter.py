@@ -11,15 +11,12 @@ from azure.core.exceptions import ResourceExistsError
 class AzureBlobKPIExporter:
     """Publishes KPI payloads to Azure Blob Storage with traceable metadata."""
 
-    def __init__(
-        self,
-        *,
-        container_name: str,
-        account_url: Optional[str] = None,
-        connection_string: Optional[str] = None,
-        credential: Optional[Any] = None,
-        blob_service_client: Optional[BlobServiceClient] = None,
-    ):
+    def __init__(self, config: Dict[str, Any]):
+        container_name = config.get("container_name")
+        account_url = config.get("account_url")
+        connection_string = config.get("connection_string")
+        credential = config.get("credential")
+        blob_service_client = config.get("blob_service_client")
         if not container_name or not str(container_name).strip():
             raise ValueError("A non-empty container_name is required.")
 

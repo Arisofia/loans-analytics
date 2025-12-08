@@ -1,3 +1,7 @@
+"""
+Module for dashboard analytics and visualization.
+"""
+
 import streamlit as st
 
 def show_dashboard(kpis):

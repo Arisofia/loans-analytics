@@ -7,16 +7,8 @@ from apps.analytics.src.enterprise_analytics_engine import LoanAnalyticsEngine
 
 
 def test_engine_from_dict():
-    data = {
-        "loan_amount": [250000],
-        "appraised_value": [300000],
-        "borrower_income": [80000],
-        "monthly_debt": [1500],
-        "loan_status": ["current"],
-        "interest_rate": [0.035],
-        "principal_balance": [240000]
-    }
-    engine = LoanAnalyticsEngine.from_dict(data)
+    from apps.analytics.tests.test_data_shared import SAMPLE_LOAN_DATA
+    engine = LoanAnalyticsEngine.from_dict(SAMPLE_LOAN_DATA)
     assert isinstance(engine, LoanAnalyticsEngine)
     assert len(engine.loan_data) == 1
 
@@ -32,6 +24,7 @@ def test_engine_coercion_report_tracking():
         "principal_balance": [240000, 390000]
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
+    # Accessing protected member for test validation purposes
     assert engine._coercion_report["loan_amount"] == 1
 
 

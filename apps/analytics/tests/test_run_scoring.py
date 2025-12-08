@@ -181,7 +181,7 @@ def test_main_output_to_file(mock_load, mock_engine_class, tmp_path):
         main()
     
     assert output_file.exists()
-    with open(output_file) as f:
+    with open(output_file, encoding="utf-8") as f:
         data = json.load(f)
     
     assert "metrics" in data
