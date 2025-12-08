@@ -7,9 +7,12 @@ try:
     import streamlit as st
 except ImportError:
     st = None
+def show_dashboard(kpis):
 
-
-
+        print(
+            "Streamlit is not installed. Please install streamlit "
+            "to use the dashboard."
+        )
 
 def show_dashboard(kpis):
     if st is None:
