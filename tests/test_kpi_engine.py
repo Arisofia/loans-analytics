@@ -93,3 +93,49 @@ def test_collection_rate_missing_column():
     assert details["eligible"] == pytest.approx(0)
     # Check audit trail for missing eligible column
     assert any(r["metric"] == "collection_rate" and r["value"] == 0 for r in engine.audit_trail)
+
+def test_par_30_calculation_exception():
+    df = pd.DataFrame({"total_receivable_usd": ["invalid"], "dpd_30_60_usd": [100.0]})
+    engine = KPIEngine(df)
+    with pytest.raises(Exception):
+        engine.calculate_par_30()
+    assert any(r["metric"] == "par_30" and r["calculation_status"] == "failed" for r in engine.audit_trail)
+
+def test_collection_rate_exception():
+    df = pd.DataFrame({"total_receivable_usd": ["invalid"], "total_eligible_usd": [100.0]})
+    engine = KPIEngine(df)
+    with pytest.raises(Exception):
+        engine.calculate_collection_rate()
+    assert any(r["metric"] == "collection_rate" and r["calculation_status"] == "failed" for r in engine.audit_trail)
+
+def test_portfolio_health_exception():
+    df = pd.DataFrame({"total_receivable_usd": [1000.0]})
+    engine = KPIEngine(df)
+    with pytest.raises(Exception):
+        engine.calculate_portfolio_health(None, 50.0)
+    assert any(r["metric"] == "portfolio_health" and r["calculation_status"] == "failed" for r in engine.audit_trail)
+
+def test_par_30_with_missing_dpd_columns():
+    df = pd.DataFrame({"total_receivable_usd": [1000.0]})
+    engine = KPIEngine(df)
+    par_30, details = engine.calculate_par_30()
+    assert par_30 == 0.0
+    assert details["30_plus_balance"] == pytest.approx(0.0)
+
+def test_portfolio_health_boundary_values():
+    engine = KPIEngine(pd.DataFrame({"total_receivable_usd": [1000.0]}))
+    health = engine.calculate_portfolio_health(100.0, 100.0)
+    assert health == pytest.approx(0.0)
+    
+    health_max = engine.calculate_portfolio_health(0.0, 0.0)
+    assert health_max == pytest.approx(0.0)
+
+def test_audit_trail_tracks_multiple_operations():
+    engine = KPIEngine(sample_portfolio())
+    engine.calculate_par_30()
+    engine.calculate_collection_rate()
+    engine.calculate_portfolio_health(15.0, 90.0)
+    
+    trail = engine.get_audit_trail()
+    assert len(trail) == 3
+    assert set(trail["metric"]) == {"par_30", "collection_rate", "portfolio_health"}
