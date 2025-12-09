@@ -59,7 +59,6 @@ def build_refresh_dag():
         download = PythonOperator(
             task_id="download_cascade_exports",
             python_callable=download_cascade_exports,
-            provide_context=True,
         )
 
         validate = PythonOperator(
