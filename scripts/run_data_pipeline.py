@@ -67,7 +67,9 @@ def main():
             logger.error("Transformation validation failed")
             return False
         
-        logger.info(f"Transformation complete. {len(kpi_df)} records processed")
+        logger.info(
+            f"Transformation complete. {len(kpi_df)} records processed"
+        )
         
         # Step 1: Ingest data
         logger.info("Step 1: Ingesting Cascade data...")
@@ -96,9 +98,13 @@ def main():
         mock_collections = pd.DataFrame({
             'amount': [kpi_df['principal_balance'].sum() * 0.02]
         })
-        collection_rate, _ = kpi_engine.calculate_collection_rate(mock_collections)
+        collection_rate, _ = kpi_engine.calculate_collection_rate(
+            mock_collections
+        )
 
-        portfolio_health = kpi_engine.calculate_portfolio_health(par_90, collection_rate)
+        portfolio_health = kpi_engine.calculate_portfolio_health(
+            par_90, collection_rate
+        )
         
         logger.info("Pipeline execution completed successfully!")
         return True
