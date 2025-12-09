@@ -14,7 +14,7 @@ import pandas as pd
 # Add parent directories to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from python.transformation import transform_data
+from python.transformation import DataTransformation
 from python.validation import validate_dataframe
 from python.kpi_engine import KPIEngine
 from python.dashboard import show_dashboard
@@ -43,7 +43,7 @@ def ingest_data(filepath):
         assert not df.empty, "DataFrame is empty"
         return df
     except Exception as e:
-        raise RuntimeError(f"Ingestion failed: {e}")
+        raise RuntimeError(f"Ingestion failed: {e}") from e
 
 def main():
     """
@@ -60,7 +60,7 @@ def main():
         
         # Step 2: Transform data
         logger.info("Step 2: Transforming data for KPI calculation...")
-        kpi_df = transform_data(df)
+        # kpi_df = transform_data(df)  # Removed old reference
         
         # Validate transformation
         if not transformer.validate_transformations(df, kpi_df):
@@ -76,10 +76,14 @@ def main():
         df = ingest_data('data/abaco_portfolio_calculations.csv')
         logger.info(f"Ingested {len(df)} records")
 
+
         # Step 2: Transform data
         logger.info("Step 2: Transforming data for KPI calculation...")
-        kpi_df = transform_data(df)
-        logger.info(f"Transformation complete. {len(kpi_df)} records processed")
+        transformer = DataTransformation()
+        kpi_df = transformer.transform_to_kpi_dataset(df)
+        logger.info(
+            f"Transformation complete. {len(kpi_df)} records processed"
+        )
 
         # Step 3: Validate ingested data
         logger.info("Step 3: Validating ingested data...")
