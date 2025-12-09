@@ -154,3 +154,11 @@ def test_portfolio_kpis_dti_nan_when_income_non_positive(sample_df: pd.DataFrame
     metrics, enriched = portfolio_kpis(df)
     assert enriched["dti_ratio"].isna().all()
     assert metrics["average_dti"] == 0.0
+
+
+def test_portfolio_kpis_ltv_nan_when_appraisal_non_positive(sample_df: pd.DataFrame):
+    df = sample_df.copy()
+    df["appraised_value"] = [0, -100000, 0]
+    metrics, enriched = portfolio_kpis(df)
+    assert enriched["ltv_ratio"].isna().all()
+    assert metrics["average_ltv"] == 0.0

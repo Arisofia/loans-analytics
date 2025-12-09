@@ -42,7 +42,7 @@ export const logLandingPageDiagnostic = (
   }
 
   if (diagnostic.status === 'ok') {
-    console.log('Landing page data diagnostic', output)
+    console.warn('Landing page data diagnostic', output)
     return
   }
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from collections.abc import Iterable
 
 CURRENCY_SYMBOLS = r"[₡$€£¥₽%]"
 
@@ -44,9 +45,8 @@ def calculate_quality_score(df: pd.DataFrame) -> int:
     return int(round(completeness * 100))
 
 
-def _assert_required_columns(df: pd.DataFrame, required: list[str]) -> None:
-    missing = [column for column in required if column not in df.columns]
-    if missing:
+def _assert_required_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
+    if missing := [column for column in required if column not in df.columns]:
         raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
 
@@ -99,7 +99,7 @@ def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
     metrics = {
         "delinquency_rate": float(delinquency_rate),
         "portfolio_yield": float(portfolio_yield),
-        "average_ltv": float(average_ltv) if not np.isnan(average_ltv) else 0.0,
+        "average_ltv": 0.0 if np.isnan(average_ltv) else float(average_ltv),
         "average_dti": average_dti,
     }
     return metrics, enriched

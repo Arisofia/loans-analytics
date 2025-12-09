@@ -1,32 +1,17 @@
-<<<<<<< HEAD
-name: codeql
-
-on:
-=======
-
 name: codeql
 
 on:
   workflow_dispatch:
->>>>>>> origin/main
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
-<<<<<<< HEAD
-  workflow_dispatch:
   schedule:
     - cron: "0 3 * * 1"
 
 concurrency:
   group: codeql-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
-=======
-  schedule:
-    - cron: "0 3 * * 1"
-
->>>>>>> origin/main
 permissions:
   actions: read
   contents: read
@@ -39,11 +24,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-<<<<<<< HEAD
         language: ["javascript", "python", "csharp"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Detect C# projects
         id: detect_csharp
@@ -66,35 +50,16 @@ PY
 
       - name: Set up CodeQL
         if: matrix.language != 'csharp' || steps.detect_csharp.outputs.has_csharp == 'true'
-        uses: github/codeql-action/init@v3
-=======
-        language: ["javascript", "python"]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Set up CodeQL
         uses: github/codeql-action/init@v3.31.5
->>>>>>> origin/main
         with:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
-<<<<<<< HEAD
         if: matrix.language != 'csharp' || steps.detect_csharp.outputs.has_csharp == 'true'
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v3.31.5
 
       - name: Perform CodeQL Analysis
         if: matrix.language != 'csharp' || steps.detect_csharp.outputs.has_csharp == 'true'
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{ matrix.language }}"
-=======
-        uses: github/codeql-action/autobuild@v3.31.5
-
-      - name: Perform CodeQL Analysis (no upload while default setup is active)
         uses: github/codeql-action/analyze@v3.31.5
         with:
           category: "/language:${{ matrix.language }}"
-          upload: false
->>>>>>> origin/main

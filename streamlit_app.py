@@ -89,7 +89,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
 def safe_numeric(series: pd.Series) -> pd.Series:
     cleaned = (
         series.astype(str)
-        .str.replace(r"[₡$€,,%]", "", regex=True)
+        .str.replace(r"[₡$€,%]", "", regex=True)
         .replace("", np.nan)
     )
     return pd.to_numeric(cleaned, errors="coerce")
@@ -132,10 +132,14 @@ def select_payer_column(df: pd.DataFrame) -> Optional[str]:
     for preferred_name in preferred:
         if preferred_name.lower() in column_lookup:
             return column_lookup[preferred_name.lower()]
-    for col in df.columns:
-        if re.search(r"payer|payor|pagador|offtaker|buyer|debtor", col, re.IGNORECASE):
-            return col
-    return None
+    return next(
+        (
+            col
+            for col in df.columns
+            if re.search(r"payer|payor|pagador|offtaker|buyer|debtor", col, re.IGNORECASE)
+        ),
+        None,
+    )
 
 
 def compute_roll_rates(df: pd.DataFrame) -> pd.DataFrame:
@@ -239,16 +243,19 @@ def ingest(uploaded_file, signature: Optional[str]) -> None:
     raw = parse_uploaded_file(uploaded_file)
     normalized = normalize_columns(raw)
     numeric_payload = normalized.copy()
-    object_cols = numeric_payload.select_dtypes(include=["object"]).columns
-    if len(object_cols) > 0:
-        converted_df = numeric_payload[object_cols].apply(safe_numeric)
-        non_null = numeric_payload[object_cols].notna()
-        convertible = converted_df.notna() & non_null
-        # Only convert if at least 95% of non-null values can be converted to numeric
-        convertible_ratio = convertible.sum() / non_null.sum()
-        for col in object_cols:
-            if non_null[col].sum() > 0 and convertible_ratio[col] >= 0.95:
-                numeric_payload[col] = converted_df[col]
+    numeric_columns = {
+        "loan_amount",
+        "appraised_value",
+        "borrower_income",
+        "monthly_debt",
+        "principal_balance",
+        "interest_rate",
+    }
+    target_columns = [col for col in normalized.columns if col in numeric_columns]
+    if target_columns:
+        converted_df = normalized[target_columns].apply(standardize_numeric)
+        for col in target_columns:
+            numeric_payload[col] = converted_df[col]
     st.session_state["loan_data"] = numeric_payload
     st.session_state["ingestion_state"] = define_ingestion_state(numeric_payload)
     st.session_state["last_upload_signature"] = signature
@@ -261,8 +268,12 @@ if should_ingest(current_signature):
 
 if st.sidebar.button("Refresh ingestion", use_container_width=True):
     if uploaded is not None:
-        ingest(uploaded, compute_upload_signature(uploaded))
-        st.sidebar.success("Ingestion refreshed.")
+        refreshed_signature = compute_upload_signature(uploaded)
+        if should_ingest(refreshed_signature):
+            ingest(uploaded, refreshed_signature)
+            st.sidebar.success("Ingestion refreshed.")
+        else:
+            st.sidebar.info("No changes detected since the last ingestion.")
     else:
         st.sidebar.warning("Upload a new file before refreshing.")
 
