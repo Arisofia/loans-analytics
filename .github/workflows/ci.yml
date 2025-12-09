@@ -123,7 +123,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, python, analytics, web]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment: production
+    environment:
+      name: production
+      url: ${{ secrets.PRODUCTION_ENV_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Validate deployment inputs
@@ -145,6 +147,14 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Manual Approval (Production)
+        if: github.ref == 'refs/heads/main'
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: ${{ secrets.PRODUCTION_ENV_URL }}/manual-approval
+          method: 'POST'
+          customHeaders: '{"Authorization": "Bearer ${{ secrets.PRODUCTION_APPROVAL_TOKEN }}"}'
+          data: '{"run_id": "${{ github.run_id }}", "branch": "main"}'
       - name: Deploy Bicep template
         run: |
           az deployment group create \
@@ -162,4 +172,8 @@ jobs:
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --template-file infra/azure/appinsights.bicep \
             --parameters appInsightsName=${{ secrets.AZURE_APPINSIGHTS_NAME }}
+      - name: Audit Log Deployment
+        run: |
+          echo "Deployment run ${{ github.run_id }} to production by ${{ github.actor }} on branch ${{ github.ref }}" >> deployment_audit.log
+          cat deployment_audit.log
 

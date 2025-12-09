@@ -1,4 +1,3 @@
-
 -- Drop and create ingest_runs table
 IF OBJECT_ID('dbo.ingest_runs', 'U') IS NOT NULL
     DROP TABLE dbo.ingest_runs;

@@ -11,8 +11,10 @@ import pandas as pd
 @runtime_checkable
 class KPIExporter(Protocol):
     """
-    Main analytics engine for loan portfolio KPI computation and risk analysis.
-    Implements core methods for calculating KPIs, risk alerts, and data quality profiles.
+    Interface/Protocol defining required methods for exporting KPI data.
+    Implementations should provide methods such as export_kpis, serialize, and close
+    to handle the transfer, serialization, and finalization of KPI metric outputs to external systems
+    (e.g., cloud storage, files, APIs). This does not perform analytics computation.
     """
     def upload_metrics(
         self,

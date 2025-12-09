@@ -5,11 +5,31 @@ This module provides the main Streamlit dashboard for ABACO analytics.
 It includes file ingestion, KPI calculations, payer coverage,
 growth projections, and data export.
 """
+
 import hashlib
 import os
 import re
 import unicodedata
 from typing import Optional
+
+def define_ingestion_state(df: pd.DataFrame) -> dict:
+    """Return ingestion state summary for a DataFrame."""
+    return {
+        "rows": len(df),
+        "columns": len(df.columns),
+        "has_loan_base": "loan_status" in df.columns and "loan_amount" in df.columns and "principal_balance" in df.columns,
+    }
+
+def compute_roll_rates(df: pd.DataFrame) -> pd.DataFrame:
+    """Compute roll rates if required columns exist."""
+    if "dpd_status" not in df.columns or "loan_status" not in df.columns:
+        return pd.DataFrame({})
+    base = df.loc[df["dpd_status"].notna()]
+    transitions = (
+        base.groupby(["dpd_status", "loan_status"]).size().reset_index(name="count")
+        .assign(percent=lambda d: d["count"] / d["count"].sum() * 100)
+    )
+    return transitions
 
 import numpy as np
 import pandas as pd
@@ -82,26 +102,7 @@ REQUIRED_COLUMNS = [
 
 
 def apply_theme(fig: go.Figure) -> go.Figure:
-/*************  ✨ Windsurf Command ⭐  *************/
-    """
-    Applies the ABACO theme to a given Plotly figure.
-
-    This function sets the font family, font color, background color, and
-    plot background color to the values specified in the ABACO_THEME
-    dictionary. Additionally, it sets the legend font family and color,
-    and the trace marker line color and width.
-
-    Parameters
-    ----------
-    fig : go.Figure
-        The Plotly figure to which the theme will be applied.
-
-    Returns
-    -------
-    go.Figure
-        The input figure with the ABACO theme applied.
-    """
-/*******  4a265939-009e-4ca0-b8a2-ebc09a068514  *******/
+    """Applies the ABACO theme to a given Plotly figure."""
     fig.update_layout(
         font_family=ABACO_THEME["typography"]["primary_font"],
         font_color=ABACO_THEME["colors"]["white"],
@@ -151,16 +152,19 @@ def safe_numeric(series: pd.Series) -> pd.Series:
 def compute_upload_signature(file_obj) -> Optional[str]:
     if file_obj is None:
         return None
-    current_position = (
-        file_obj.tell() if hasattr(file_obj, "tell") else None
-    )
-    if hasattr(file_obj, "seek"):
-        file_obj.seek(0)
-    file_bytes = file_obj.getvalue()
-    digest = hashlib.sha256(file_bytes).hexdigest()
-    if hasattr(file_obj, "seek") and current_position is not None:
-        file_obj.seek(current_position)
-    return f"{file_obj.name}:{file_obj.size}:{digest}"
+    try:
+        current_position = file_obj.tell() if hasattr(file_obj, "tell") else None
+        if hasattr(file_obj, "seek"):
+            file_obj.seek(0)
+        file_bytes = file_obj.getvalue() if hasattr(file_obj, "getvalue") else file_obj.read()
+        digest = hashlib.sha256(file_bytes).hexdigest()
+        if hasattr(file_obj, "seek") and current_position is not None:
+            file_obj.seek(current_position)
+        name = getattr(file_obj, "name", "unknown")
+        size = getattr(file_obj, "size", len(file_bytes))
+        return f"{name}:{size}:{digest}"
+    except Exception:
+        return None
 
 
 def normalize_text(value: str) -> str:
@@ -190,43 +194,19 @@ def select_payer_column(df: pd.DataFrame) -> Optional[str]:
         if preferred_name.lower() in column_lookup:
             return column_lookup[preferred_name.lower()]
     for col in df.columns:
-        if re.search(
-            r"payer|payor|pagador|offtaker|buyer|debtor", col, re.IGNORECASE
-        ):
-            font_family=ABACO_THEME["typography"]["primary_font"],
-            font_color=ABACO_THEME["colors"]["white"],
-            paper_bgcolor=ABACO_THEME["colors"]["background"],
-            plot_bgcolor=ABACO_THEME["colors"]["background"],
-            legend={
-                "font": {
-                    "family": ABACO_THEME["typography"]["secondary_font"],
-                    "color": ABACO_THEME["colors"]["light_gray"],
-                }
-            },
-            margin={"l": 0, "r": 0, "t": 40, "b": 0},
-        )
-        fig.update_traces(
-            marker={
-                "line": {
-                    "color": ABACO_THEME["colors"]["background"],
-                    "width": 1
-                }
-            }
-        )
-        return fig
-        and "loan_amount" in df.columns
-        and "principal_balance" in df.columns,
-    })
+        if re.search(r"payer|payor|pagador|offtaker|buyer|debtor", col, re.IGNORECASE):
+            return col
+    return None
 
 
 @st.cache_data(show_spinner=False)
 def parse_uploaded_file(uploaded) -> pd.DataFrame:
     if uploaded is None:
         return pd.DataFrame({})
-    uploaded.seek(0)
     try:
+        uploaded.seek(0)
         return pd.read_csv(uploaded)
-    except ValueError:
+    except Exception:
         return pd.DataFrame({})
 
 
@@ -412,7 +392,7 @@ if payer_column:
         )
         exposure = (
             loan_df.loc[mask, "principal_balance"].sum()
-            if "principal_balance" in loan_df.columns
+            if "principal_balance" in loan_df.columns and mask.any()
             else np.nan
         )
         coverage_rows.append(
@@ -487,15 +467,16 @@ fig_growth = px.line(
 )
 apply_theme(fig_growth)
 st.plotly_chart(fig_growth, use_container_width=True)
-treemap_source = loan_df.sample(min(1000, len(loan_df)))
-fig_treemap = px.treemap(
-    treemap_source,
-    path=["loan_status"],
-    values="principal_balance",
-    title="Marketing & Sales Treemap",
-)
-apply_theme(fig_treemap)
-st.plotly_chart(fig_treemap, use_container_width=True)
+treemap_source = loan_df.sample(min(1000, len(loan_df))) if "principal_balance" in loan_df.columns else pd.DataFrame()
+if not treemap_source.empty:
+    fig_treemap = px.treemap(
+        treemap_source,
+        path=["loan_status"],
+        values="principal_balance",
+        title="Marketing & Sales Treemap",
+    )
+    apply_theme(fig_treemap)
+    st.plotly_chart(fig_treemap, use_container_width=True)
 
 st.markdown("## Roll Rate / Cascade")
 roll_rates = compute_roll_rates(loan_df)
@@ -527,26 +508,17 @@ st.markdown(
     'https://www.figma.com/make/nuVKwuPuLS7VmLFvqzOX1G/'
     'Create-Dark-Editable-Slides?node-id=0-1&t=8coqxRUeoQvNvavm-1'
 )
-fact_table = loan_df[
-    [
-        "loan_amount",
-        "principal_balance",
-        "interest_rate",
-        "loan_status",
-        "ltv_ratio",
-        "dti_ratio",
-        "delinquency_rate",
-    ]
-    if "delinquency_rate" in loan_df.columns
-    else [
-        "loan_amount",
-        "principal_balance",
-        "interest_rate",
-        "loan_status",
-        "ltv_ratio",
-        "dti_ratio",
-    ]
-].copy()
+fact_table_columns = [
+    "loan_amount",
+    "principal_balance",
+    "interest_rate",
+    "loan_status",
+    "ltv_ratio",
+    "dti_ratio",
+]
+if "delinquency_rate" in loan_df.columns:
+    fact_table_columns.append("delinquency_rate")
+fact_table = loan_df[fact_table_columns].copy()
 st.download_button(
     label="Download flattened fact table",
     data=fact_table.to_csv(index=False).encode("utf-8"),

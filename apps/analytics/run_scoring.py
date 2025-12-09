@@ -11,14 +11,15 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
-import pandas as pd
 
-from apps.analytics.src.azure_blob_exporter import AzureBlobKPIExporter
-from apps.analytics.src.enterprise_analytics_engine import LoanAnalyticsEngine
+import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+
+from apps.analytics.src.azure_blob_exporter import AzureBlobKPIExporter
+from apps.analytics.src.enterprise_analytics_engine import LoanAnalyticsEngine
 
 
 def parse_args() -> argparse.Namespace:
