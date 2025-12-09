@@ -35,21 +35,25 @@
 ## Quarterly Review Notes (YYYY-MM-DD)
 
 ### KPIs
+
 - [ ] All definitions reviewed
 - [ ] Data sources validated
 - [ ] Traceability links updated
 - [ ] Stale metrics retired
 
 ### Dashboards
+
 - [ ] Structure and sources audited
 - [ ] Visual standards confirmed
 - [ ] Export/audit log tested
 
 ### Compliance
+
 - [ ] New files/features audited
 - [ ] Audit logs/PII validated
 
 ### Security
+
 - [ ] Vulnerabilities reviewed
 - [ ] Audit log coverage tested
 - [ ] Incidents/remediations documented
