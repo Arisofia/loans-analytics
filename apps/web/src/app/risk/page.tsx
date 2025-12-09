@@ -7,7 +7,8 @@ const riskKpis = [
     value: '3.2%',
     change: '-0.2 pp WoW',
     description: 'Balance 90+ days past due over total receivable.',
-    provenance: 'kpi_snapshots → risk.par_90 (sql/models/risk/par_90.sql)'
+    provenance: 'kpi_snapshots → risk.par_90 (sql/models/risk/par_90.sql)',
+    owner: 'Risk'
   },
   {
     id: 'risk.rdr_90',
@@ -15,7 +16,8 @@ const riskKpis = [
     value: '6.8%',
     change: '+0.1 pp WoW',
     description: 'Cohort defaults past 90 days divided by starting balance.',
-    provenance: 'kpi_snapshots → risk.rdr_90 (sql/models/risk/rdr_90.sql)'
+    provenance: 'kpi_snapshots → risk.rdr_90 (sql/models/risk/rdr_90.sql)',
+    owner: 'Risk'
   },
   {
     id: 'risk.collection_rate',
@@ -23,7 +25,8 @@ const riskKpis = [
     value: '92.0%',
     change: '-0.3 pp d/d',
     description: 'Eligible receivables collected vs. total receivables.',
-    provenance: 'kpi_snapshots → finance.collection_rate (sql/models/finance/collection_rate.sql)'
+    provenance: 'kpi_snapshots → finance.collection_rate (sql/models/finance/collection_rate.sql)',
+    owner: 'Collections'
   }
 ];
 
@@ -33,6 +36,7 @@ function PersonaCard({
   change,
   description,
   provenance,
+  owner,
   id
 }: (typeof riskKpis)[number]) {
   return (
@@ -50,7 +54,7 @@ function PersonaCard({
         <span className="text-2xl font-bold">{value}</span>
         <span className="text-sm text-green-600">{change}</span>
       </div>
-      <div className="mb-2 text-xs text-gray-500">Owner: {provenance.split('→')[1].trim().split(' ')[0]}</div>
+      <div className="mb-2 text-xs text-gray-500">Owner: {owner}</div>
       <Link href={`/kpi/${id}`} className="text-blue-600 hover:underline text-sm">
         View details & lineage
       </Link>

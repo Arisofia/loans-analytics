@@ -7,7 +7,8 @@ const growthKpis = [
     value: '$8.5M',
     change: '+12.0% QoQ',
     description: 'Value of funded loans across all channels.',
-    provenance: 'kpi_snapshots → growth.origination_volume (sql/models/growth/originations.sql)'
+    provenance: 'kpi_snapshots → growth.origination_volume (sql/models/growth/originations.sql)',
+    owner: 'Growth'
   },
   {
     id: 'growth.client_retention',
@@ -15,7 +16,8 @@ const growthKpis = [
     value: '91%',
     change: '+0.8 pp QoQ',
     description: 'Percentage of clients retained quarter-over-quarter.',
-    provenance: 'kpi_snapshots → growth.client_retention (sql/models/growth/client_retention.sql)'
+    provenance: 'kpi_snapshots → growth.client_retention (sql/models/growth/client_retention.sql)',
+    owner: 'Growth'
   },
   {
     id: 'growth.channel_efficiency',
@@ -23,7 +25,8 @@ const growthKpis = [
     value: '3.8x',
     change: '+0.2x QoQ',
     description: 'Channel-level LTV divided by CAC.',
-    provenance: 'kpi_snapshots → growth.channel_efficiency (sql/models/growth/channel_efficiency.sql)'
+    provenance: 'kpi_snapshots → growth.channel_efficiency (sql/models/growth/channel_efficiency.sql)',
+    owner: 'Marketing'
   }
 ];
 
@@ -33,6 +36,7 @@ function PersonaCard({
   change,
   description,
   provenance,
+  owner,
   id
 }: (typeof growthKpis)[number]) {
   return (
@@ -50,7 +54,7 @@ function PersonaCard({
         <span className="text-2xl font-bold">{value}</span>
         <span className="text-sm text-green-600">{change}</span>
       </div>
-      <div className="mb-2 text-xs text-gray-500">Owner: {provenance.split('→')[1].trim().split(' ')[0]}</div>
+      <div className="mb-2 text-xs text-gray-500">Owner: {owner}</div>
       <Link href={`/kpi/${id}`} className="text-blue-600 hover:underline text-sm">
         View details & lineage
       </Link>

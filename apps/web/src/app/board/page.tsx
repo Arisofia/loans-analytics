@@ -7,7 +7,8 @@ const boardKpis = [
     value: '$2.1M',
     change: '+4.5% MoM',
     description: 'Total recurring revenue from all active clients.',
-    provenance: 'kpi_snapshots → finance.arr (sql/models/finance/arr.sql)'
+    provenance: 'kpi_snapshots → finance.arr (sql/models/finance/arr.sql)',
+    owner: 'Finance'
   },
   {
     id: 'growth.origination_volume',
@@ -15,7 +16,8 @@ const boardKpis = [
     value: '$8.5M',
     change: '+12.0% QoQ',
     description: 'Value of loans funded this quarter.',
-    provenance: 'kpi_snapshots → growth.origination_volume (sql/models/growth/originations.sql)'
+    provenance: 'kpi_snapshots → growth.origination_volume (sql/models/growth/originations.sql)',
+    owner: 'Growth'
   },
   {
     id: 'risk.par_90',
@@ -23,7 +25,8 @@ const boardKpis = [
     value: '3.2%',
     change: '-0.2 pp WoW',
     description: 'Outstanding balance 90+ days past due.',
-    provenance: 'kpi_snapshots → risk.par_90 (sql/models/risk/par_90.sql)'
+    provenance: 'kpi_snapshots → risk.par_90 (sql/models/risk/par_90.sql)',
+    owner: 'Risk'
   }
 ];
 
@@ -33,6 +36,7 @@ function PersonaCard({
   change,
   description,
   provenance,
+  owner,
   id
 }: (typeof boardKpis)[number]) {
   return (
@@ -53,7 +57,7 @@ function PersonaCard({
         <span className="text-2xl font-bold">{value}</span>
         <span className="text-sm text-green-600">{change}</span>
       </div>
-      <div className="mb-2 text-xs text-gray-500">Owner: {provenance.split('→')[1].trim().split(' ')[0]}</div>
+      <div className="mb-2 text-xs text-gray-500">Owner: {owner}</div>
       <Link href={`/kpi/${id}`} className="text-blue-600 hover:underline text-sm">
         View details & lineage
       </Link>

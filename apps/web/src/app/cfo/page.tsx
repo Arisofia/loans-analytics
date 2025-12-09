@@ -7,7 +7,8 @@ const cfoKpis = [
     value: '$4.7M',
     change: '+$250k d/d',
     description: 'Available operating cash after restricted balances.',
-    provenance: 'kpi_snapshots → finance.cash_position (sql/models/finance/cash_position.sql)'
+    provenance: 'kpi_snapshots → finance.cash_position (sql/models/finance/cash_position.sql)',
+    owner: 'Treasury'
   },
   {
     id: 'finance.collection_rate',
@@ -15,7 +16,8 @@ const cfoKpis = [
     value: '92.0%',
     change: '-0.3 pp d/d',
     description: 'Eligible receivables collected over total receivables.',
-    provenance: 'kpi_snapshots → finance.collection_rate (sql/models/finance/collection_rate.sql)'
+    provenance: 'kpi_snapshots → finance.collection_rate (sql/models/finance/collection_rate.sql)',
+    owner: 'Collections'
   },
   {
     id: 'finance.write_off_rate',
@@ -23,7 +25,8 @@ const cfoKpis = [
     value: '1.4%',
     change: '+0.05 pp m/m',
     description: 'Charge-offs divided by average principal outstanding.',
-    provenance: 'kpi_snapshots → finance.write_off_rate (sql/models/finance/write_off_rate.sql)'
+    provenance: 'kpi_snapshots → finance.write_off_rate (sql/models/finance/write_off_rate.sql)',
+    owner: 'Finance'
   }
 ];
 
@@ -33,6 +36,7 @@ function PersonaCard({
   change,
   description,
   provenance,
+  owner,
   id
 }: (typeof cfoKpis)[number]) {
   return (
@@ -50,7 +54,7 @@ function PersonaCard({
         <span className="text-2xl font-bold">{value}</span>
         <span className="text-sm text-green-600">{change}</span>
       </div>
-      <div className="mb-2 text-xs text-gray-500">Owner: {provenance.split('→')[1].trim().split(' ')[0]}</div>
+      <div className="mb-2 text-xs text-gray-500">Owner: {owner}</div>
       <Link href={`/kpi/${id}`} className="text-blue-600 hover:underline text-sm">
         View details & lineage
       </Link>
