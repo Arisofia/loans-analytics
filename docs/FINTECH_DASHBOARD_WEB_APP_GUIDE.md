@@ -25,6 +25,7 @@ This guide defines the standards, structure, and traceability requirements for a
 - Retain logs per compliance policy.
 
 ## Compliance Checklist
+
 - [ ] Data sources documented
 - [ ] Refresh cadence defined
 - [ ] Contact person assigned
@@ -34,6 +35,7 @@ This guide defines the standards, structure, and traceability requirements for a
 ## CI/CD Health & Compliance Automation
 
 All code changes (pushes and pull requests) automatically trigger health and compliance checks via CI:
+
 - **Health Check:** Runs `scripts/repo_health_check.sh` to validate repository structure, documentation, and compliance.
 - **Environment Validation:** Runs `scripts/validate_and_fix_env.sh` to ensure environment, permissions, and extensions are correct.
 - Results are logged in CI for every build and PR.
@@ -44,4 +46,5 @@ This automation ensures traceability, auditability, and continuous compliance fo
 For details, see `.github/workflows/ci.yml` and the scripts in `scripts/`.
 
 ## Contact
-For dashboard support, contact: analytics@abaco.loans
+
+For dashboard support, contact: [analytics@abaco.loans](mailto:analytics@abaco.loans)
