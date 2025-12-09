@@ -1,8 +1,5 @@
 
-"""
- Azure Blob KPI Exporter module for publishing KPI payloads to
- Azure Blob Storage.
-"""
+# Azure Blob KPI Exporter module for publishing KPI payloads to Azure Blob Storage.
 
 import json
 from datetime import datetime, timezone
@@ -17,13 +14,16 @@ from azure.core.exceptions import ResourceExistsError
 class AzureBlobKPIExporter:
     """Publishes KPI payloads to Azure Blob Storage with traceable metadata."""
 
-    def __init__(self, config: Dict[str, Any]):
-        """Initializes the AzureBlobKPIExporter with configuration."""
-        container_name = config.get("container_name")
-        account_url = config.get("account_url")
-        connection_string = config.get("connection_string")
-        credential = config.get("credential")
-        blob_service_client = config.get("blob_service_client")
+    def __init__(self, container_name=None, account_url=None, connection_string=None, credential=None, blob_service_client=None, **kwargs):
+        # Support both legacy (test) and config dict signatures
+        if container_name is None and isinstance(kwargs.get('config'), dict):
+            config = kwargs['config']
+            container_name = config.get("container_name")
+            account_url = config.get("account_url")
+            connection_string = config.get("connection_string")
+            credential = config.get("credential")
+            blob_service_client = config.get("blob_service_client")
+
         if not container_name or not str(container_name).strip():
             raise ValueError("A non-empty container_name is required.")
 

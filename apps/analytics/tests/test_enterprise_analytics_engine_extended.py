@@ -7,6 +7,12 @@ from apps.analytics.src.enterprise_analytics_engine import LoanAnalyticsEngine
 
 
 def test_engine_from_dict():
+    """
+    Test the LoanAnalyticsEngine.from_dict method for correct instantiation.
+
+    This function verifies that the engine can be created from a sample dictionary
+    and that the resulting object is a LoanAnalyticsEngine with the expected data length.
+    """
     from apps.analytics.tests.test_data_shared import SAMPLE_LOAN_DATA
     engine = LoanAnalyticsEngine.from_dict(SAMPLE_LOAN_DATA)
     assert isinstance(engine, LoanAnalyticsEngine)
@@ -14,6 +20,13 @@ def test_engine_from_dict():
 
 
 def test_engine_coercion_report_tracking():
+    """
+    Test the coercion report tracking functionality of the LoanAnalyticsEngine.
+
+    This function creates a DataFrame with an invalid value and checks if the
+    coercion report correctly identifies the invalid entry in the 'loan_amount'
+    column, ensuring the engine's data validation logic is robust.
+    """
     data = {
         "loan_amount": [250000, "invalid"],
         "appraised_value": [300000, 400000],
@@ -31,16 +44,25 @@ def test_engine_coercion_report_tracking():
 
 
 def test_engine_empty_dataframe():
+    """
+    Test that LoanAnalyticsEngine raises ValueError for empty DataFrame input.
+    """
     with pytest.raises(ValueError, match="non-empty pandas DataFrame"):
         LoanAnalyticsEngine(pd.DataFrame())
 
 
 def test_engine_non_dataframe_input():
+    """
+    Test that LoanAnalyticsEngine raises ValueError for non-DataFrame input.
+    """
     with pytest.raises(ValueError, match="non-empty pandas DataFrame"):
-        LoanAnalyticsEngine([1, 2, 3])
+        LoanAnalyticsEngine([1, 2, 3])  # type: ignore
 
 
 def test_engine_ltv_with_infinity():
+    """
+    Test that compute_loan_to_value does not return infinity values.
+    """
     data = {
         "loan_amount": [250000, 450000],
         "appraised_value": [0, 500000],
@@ -56,6 +78,9 @@ def test_engine_ltv_with_infinity():
 
 
 def test_engine_dti_with_negative_income():
+    """
+    Test that compute_debt_to_income returns NaN for negative income values.
+    """
     data = {
         "loan_amount": [250000, 450000],
         "appraised_value": [300000, 500000],
@@ -71,6 +96,9 @@ def test_engine_dti_with_negative_income():
 
 
 def test_engine_data_quality_with_duplicates():
+    """
+    Test that data_quality_profile detects duplicate rows in the data.
+    """
     data = {
         "loan_amount": [250000, 250000, 150000],
         "appraised_value": [300000, 300000, 160000],
@@ -86,6 +114,9 @@ def test_engine_data_quality_with_duplicates():
 
 
 def test_engine_data_quality_with_null_values():
+    """
+    Test that data_quality_profile detects null values in the data.
+    """
     data = {
         "loan_amount": [250000, None, 150000],
         "appraised_value": [300000, 500000, None],
@@ -102,6 +133,9 @@ def test_engine_data_quality_with_null_values():
 
 
 def test_engine_data_quality_score_calculation():
+    """
+    Test that data_quality_score is between 0 and 100 for valid data.
+    """
     data = {
         "loan_amount": [250000, 450000, 150000],
         "appraised_value": [300000, 500000, 160000],

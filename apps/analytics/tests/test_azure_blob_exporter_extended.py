@@ -8,16 +8,25 @@ from apps.analytics.src.azure_blob_exporter import AzureBlobKPIExporter
 
 
 def test_exporter_requires_non_empty_container():
+    """
+    Test that AzureBlobKPIExporter raises ValueError for empty container_name.
+    """
     with pytest.raises(ValueError, match="non-empty container_name"):
         AzureBlobKPIExporter(container_name="")
 
 
 def test_exporter_requires_connection_or_url():
+    """
+    Test that AzureBlobKPIExporter raises ValueError if neither connection_string nor account_url is provided.
+    """
     with pytest.raises(ValueError, match="Either connection_string or account_url"):
         AzureBlobKPIExporter(container_name="valid-container")
 
 
 def test_exporter_initialization_with_connection_string():
+    """
+    Test initialization of AzureBlobKPIExporter with a connection string.
+    """
     mock_client = MagicMock(spec=BlobServiceClient)
     with patch("apps.analytics.src.azure_blob_exporter.BlobServiceClient") as mock_bsc:
         mock_bsc.from_connection_string.return_value = mock_client
@@ -30,6 +39,9 @@ def test_exporter_initialization_with_connection_string():
 
 
 def test_exporter_initialization_with_account_url():
+    """
+    Test initialization of AzureBlobKPIExporter with an account URL and credential.
+    """
     mock_client = MagicMock(spec=BlobServiceClient)
     with patch("apps.analytics.src.azure_blob_exporter.BlobServiceClient") as mock_bsc:
         mock_bsc.return_value = mock_client
@@ -42,6 +54,9 @@ def test_exporter_initialization_with_account_url():
 
 
 def test_exporter_uses_provided_blob_service_client():
+    """
+    Test that AzureBlobKPIExporter uses a provided BlobServiceClient instance.
+    """
     mock_client = MagicMock(spec=BlobServiceClient)
     exporter = AzureBlobKPIExporter(
         container_name="test-container",
@@ -51,6 +66,9 @@ def test_exporter_uses_provided_blob_service_client():
 
 
 def test_upload_metrics_requires_dict():
+    """
+    Test that upload_metrics raises ValueError if metrics argument is not a dictionary.
+    """
     exporter = AzureBlobKPIExporter(
         container_name="test",
         blob_service_client=MagicMock()
@@ -60,6 +78,9 @@ def test_upload_metrics_requires_dict():
 
 
 def test_upload_metrics_requires_non_empty_dict():
+    """
+    Test that upload_metrics raises ValueError if metrics dictionary is empty.
+    """
     exporter = AzureBlobKPIExporter(
         container_name="test",
         blob_service_client=MagicMock()
@@ -69,6 +90,9 @@ def test_upload_metrics_requires_non_empty_dict():
 
 
 def test_upload_metrics_blob_name_must_be_string():
+    """
+    Test that upload_metrics raises ValueError if blob_name is not a string.
+    """
     exporter = AzureBlobKPIExporter(
         container_name="test",
         blob_service_client=MagicMock()
@@ -78,6 +102,9 @@ def test_upload_metrics_blob_name_must_be_string():
 
 
 def test_upload_metrics_keys_must_be_strings():
+    """
+    Test that upload_metrics raises ValueError if metric keys are not strings.
+    """
     exporter = AzureBlobKPIExporter(
         container_name="test",
         blob_service_client=MagicMock()
@@ -87,6 +114,9 @@ def test_upload_metrics_keys_must_be_strings():
 
 
 def test_upload_metrics_values_must_be_numeric():
+    """
+    Test that upload_metrics raises ValueError if metric values are not numeric.
+    """
     exporter = AzureBlobKPIExporter(
         container_name="test",
         blob_service_client=MagicMock()
@@ -96,6 +126,9 @@ def test_upload_metrics_values_must_be_numeric():
 
 
 def test_upload_metrics_rejects_boolean_values():
+    """
+    Test that upload_metrics raises ValueError if metric values are boolean.
+    """
     exporter = AzureBlobKPIExporter(
         container_name="test",
         blob_service_client=MagicMock()
@@ -105,6 +138,9 @@ def test_upload_metrics_rejects_boolean_values():
 
 
 def test_upload_metrics_rejects_empty_key():
+    """
+    Test that upload_metrics raises ValueError if metric key is empty string.
+    """
     exporter = AzureBlobKPIExporter(
         container_name="test",
         blob_service_client=MagicMock()
@@ -114,6 +150,9 @@ def test_upload_metrics_rejects_empty_key():
 
 
 def test_upload_metrics_successful_upload():
+    """
+    Test that upload_metrics successfully uploads metrics and returns blob path.
+    """
     mock_client = MagicMock(spec=BlobServiceClient)
     mock_container = MagicMock()
     mock_client.get_container_client.return_value = mock_container
@@ -131,6 +170,9 @@ def test_upload_metrics_successful_upload():
 
 
 def test_upload_metrics_creates_blob_path_with_timestamp():
+    """
+    Test that upload_metrics creates a blob path with a timestamp if blob_name is not provided.
+    """
     mock_client = MagicMock(spec=BlobServiceClient)
     mock_container = MagicMock()
     mock_client.get_container_client.return_value = mock_container
@@ -148,6 +190,9 @@ def test_upload_metrics_creates_blob_path_with_timestamp():
 
 
 def test_upload_metrics_handles_container_already_exists():
+    """
+    Test that upload_metrics handles ResourceExistsError when container already exists.
+    """
     mock_client = MagicMock(spec=BlobServiceClient)
     mock_container = MagicMock()
     mock_container.create_container.side_effect = ResourceExistsError("Container exists")
@@ -166,6 +211,9 @@ def test_upload_metrics_handles_container_already_exists():
 
 
 def test_upload_metrics_payload_structure():
+    """
+    Test that upload_metrics payload structure includes generated_at and metrics keys.
+    """
     mock_client = MagicMock(spec=BlobServiceClient)
     mock_container = MagicMock()
     mock_client.get_container_client.return_value = mock_container
@@ -187,6 +235,9 @@ def test_upload_metrics_payload_structure():
 
 
 def test_upload_metrics_int_values_converted_to_float():
+    """
+    Test that upload_metrics converts integer metric values to float in the payload.
+    """
     mock_client = MagicMock(spec=BlobServiceClient)
     mock_container = MagicMock()
     mock_client.get_container_client.return_value = mock_container

@@ -10,10 +10,24 @@ class KPIExporter(Protocol):
         metrics: Dict[str, float],
         blob_name: Optional[str] = None
     ) -> str:
+        """
+        Upload KPI metrics to a remote storage location (e.g., Azure Blob Storage).
+
+        Args:
+            metrics (Dict[str, float]): Dictionary of KPI metric names and their float values.
+            blob_name (Optional[str]): Optional name for the blob or file to store the metrics.
+
+        Returns:
+            str: The URI or path of the uploaded metrics blob.
+        """
         ...
 
 
 class LoanAnalyticsEngine:
+
+        @property
+        def coercion_report(self):
+            return self._coercion_report
     """
     A robust engine for computing critical KPIs for a loan portfolio.
     This system is designed for scalability and provides traceable,

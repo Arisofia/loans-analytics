@@ -14,6 +14,9 @@ from apps.analytics.src.metrics_utils import (
 
 
 def test_coerce_numeric_all_nan():
+    """
+    Test that _coerce_numeric raises ValueError if all values are non-numeric.
+    """
     series = pd.Series(["invalid", "data", "values"])
     with pytest.raises(
         ValueError, match="must contain at least one numeric value"
@@ -22,12 +25,18 @@ def test_coerce_numeric_all_nan():
 
 
 def test_validate_kpi_columns_empty_dataframe():
+    """
+    Test that validate_kpi_columns raises ValueError for empty DataFrame.
+    """
     df = pd.DataFrame()
     with pytest.raises(ValueError, match="must be a non-empty DataFrame"):
         validate_kpi_columns(df)
 
 
 def test_validate_kpi_columns_missing_multiple():
+    """
+    Test that validate_kpi_columns raises ValueError for missing required columns.
+    """
     df = pd.DataFrame({"loan_amount": [100]})
     with pytest.raises(ValueError, match="Missing required columns"):
         validate_kpi_columns(df)

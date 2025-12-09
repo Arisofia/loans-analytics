@@ -197,12 +197,16 @@ def test_main_output_to_file(mock_load, mock_engine_class, tmp_path):
 
 @patch("apps.analytics.run_scoring.LoanAnalyticsEngine")
 @patch("apps.analytics.run_scoring.load_portfolio")
-def test_main_blob_export_requires_credentials(mock_load, mock_engine_class, tmp_path):
+def test_main_blob_export_requires_credentials(
+    mock_load, mock_engine_class, tmp_path
+):
     csv_file = tmp_path / "portfolio.csv"
     csv_file.write_text(
-        "loan_amount,appraised_value,borrower_income,monthly_debt,"
-        "loan_status,interest_rate,principal_balance\n"
-        "250000,300000,80000,1500,current,0.035,240000"
+        (
+            "loan_amount,appraised_value,borrower_income,monthly_debt,"
+            "loan_status,interest_rate,principal_balance\n"
+            "250000,300000,80000,1500,current,0.035,240000"
+        )
     )
     
     mock_df = pd.DataFrame({
@@ -233,12 +237,16 @@ def test_main_blob_export_requires_credentials(mock_load, mock_engine_class, tmp
 @patch("apps.analytics.run_scoring.LoanAnalyticsEngine")
 @patch("apps.analytics.run_scoring.AzureBlobKPIExporter")
 @patch("apps.analytics.run_scoring.load_portfolio")
-def test_main_blob_export_with_connection_string(mock_load, mock_exporter_class, mock_engine_class, tmp_path):
+def test_main_blob_export_with_connection_string(
+    mock_load, mock_exporter_class, mock_engine_class, tmp_path
+):
     csv_file = tmp_path / "portfolio.csv"
     csv_file.write_text(
-        "loan_amount,appraised_value,borrower_income,monthly_debt,"
-        "loan_status,interest_rate,principal_balance\n"
-        "250000,300000,80000,1500,current,0.035,240000"
+        (
+            "loan_amount,appraised_value,borrower_income,monthly_debt,"
+            "loan_status,interest_rate,principal_balance\n"
+            "250000,300000,80000,1500,current,0.035,240000"
+        )
     )
     
     mock_df = pd.DataFrame({
@@ -261,12 +269,15 @@ def test_main_blob_export_with_connection_string(mock_load, mock_exporter_class,
     mock_exporter = MagicMock()
     mock_exporter_class.return_value = mock_exporter
     
-    with patch("sys.argv", [
-        "script.py",
-        "--data", str(csv_file),
-        "--export-blob", "container",
-        "--connection-string", "mock-connection-string"
-    ]):
+    with patch(
+        "sys.argv",
+        [
+            "script.py",
+            "--data", str(csv_file),
+            "--export-blob", "container",
+            "--connection-string", "mock-connection-string",
+        ],
+    ):
         main()
     
     mock_engine.export_kpis_to_blob.assert_called_once()
@@ -290,7 +301,9 @@ def test_main_parses_custom_thresholds(mock_parse_args, tmp_path):
     mock_parse_args.return_value = mock_args
     
     with patch("apps.analytics.run_scoring.load_portfolio") as mock_load:
-        with patch("apps.analytics.run_scoring.LoanAnalyticsEngine") as mock_engine_class:
+        with patch(
+            "apps.analytics.run_scoring.LoanAnalyticsEngine"
+        ) as mock_engine_class:
             mock_df = pd.DataFrame({
                 "loan_amount": [250000],
                 "appraised_value": [300000],

@@ -3,10 +3,8 @@ Module for dashboard analytics and visualization.
 """
 
 
-try:
-    import streamlit as st
-except ImportError:
-    st = None
+    # import streamlit as st  # Commented out: dependency not present in project
+    st = None  # Streamlit import disabled for dependency compliance
 def show_dashboard(kpis):
 
         print(

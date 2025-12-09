@@ -1,4 +1,7 @@
-"""CLI for running loan KPI analytics on CSV inputs with optional Azure export."""
+"""
+CLI for running loan KPI analytics on CSV inputs
+with optional Azure export.
+"""
 
 import argparse
 import json
@@ -71,12 +74,34 @@ def parse_args() -> argparse.Namespace:
 
 
 def load_portfolio(path: Path) -> pd.DataFrame:
+    """
+    Load a loan portfolio from a CSV file into a pandas DataFrame.
+
+    Args:
+        path (Path): The file path to the CSV data file.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the portfolio data.
+
+    Raises:
+        FileNotFoundError: If the specified file does not exist.
+    """
     if not path.exists():
         raise FileNotFoundError(f"Data file not found: {path}")
     return pd.read_csv(path)
 
 
 def summarize_results(metrics: Dict[str, Any], alerts_rows: int) -> None:
+    """
+    Display a summary of loan portfolio KPIs and risk alerts in a professional, human-readable format.
+
+    Args:
+        metrics (Dict[str, Any]): Dictionary of KPI metric names and their values. Numeric values are formatted to two decimal places; string values are displayed as-is.
+        alerts_rows (int): The number of risk alerts flagged in the portfolio analysis.
+
+    Returns:
+        None. Prints the KPI summary and risk alert count to standard output.
+    """
     print("--- Loan Portfolio KPI Summary ---")
     for key, value in metrics.items():
         label = key.replace("_", " ").title()

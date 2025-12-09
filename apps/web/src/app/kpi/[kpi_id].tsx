@@ -1,8 +1,8 @@
-import { useRouter } from 'next/router';
-import React from 'react';
+import { FC } from 'react';
+import { useParams } from 'next/navigation';
 
 // Mock KPI data (replace with API/backend integration later)
-const kpiCatalog = {
+const kpiCatalog: Record<string, KPI> = {
   'par_90': {
     name: 'Portfolio at Risk 90 (PAR90)',
     description: 'Outstanding balance 90+ days past due',
@@ -23,7 +23,21 @@ const kpiCatalog = {
   // Add more KPIs as needed
 };
 
-const ProvenanceTooltip = ({ kpi }) => (
+interface KPI {
+  name: string;
+  description: string;
+  formula: string;
+  thresholds: { warning: string; critical: string };
+  owner: string;
+  source: string;
+  sql: string;
+  lastRefresh: string;
+  version: string;
+  dataTimestamp: string;
+  segmentBreakdown: Array<{ segment: string; value: number }>;
+}
+
+const ProvenanceTooltip: FC<{ kpi: KPI }> = ({ kpi }) => (
   <div className="text-xs text-gray-500 mt-2">
     <span className="mr-2">Data timestamp: {kpi.dataTimestamp}</span>
     <span className="mr-2">Source: <a href={`https://github.com/Abaco-Technol/abaco-loans-analytics/blob/main/config/kpis/${kpi.source}`} target="_blank" rel="noopener noreferrer">{kpi.source}</a></span>
@@ -32,10 +46,10 @@ const ProvenanceTooltip = ({ kpi }) => (
   </div>
 );
 
-export default function KPIDrilldownPage() {
-  const router = useRouter();
-  const { kpi_id } = router.query;
-  const kpi = kpiCatalog[kpi_id as keyof typeof kpiCatalog];
+const KPIDrilldownPage: FC = () => {
+  const params = useParams();
+  const kpiId = typeof params === 'object' && params !== null ? (params['kpi_id'] as string) : 'par_90';
+  const kpi = kpiCatalog[kpiId] || kpiCatalog['par_90'];
 
   if (!kpi) {
     return <div className="p-8">KPI not found.</div>;
@@ -71,4 +85,6 @@ export default function KPIDrilldownPage() {
       </div>
     </div>
   );
-}
+};
+
+export default KPIDrilldownPage;

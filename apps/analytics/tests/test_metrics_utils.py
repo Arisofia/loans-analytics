@@ -14,6 +14,9 @@ from apps.analytics.src.metrics_utils import (
 
 class TestMetricsUtils(unittest.TestCase):
     def setUp(self):
+        """
+        Set up a sample portfolio DataFrame for use in all test cases.
+        """
         self.portfolio = pd.DataFrame(
             {
                 "loan_amount": [250000, 450000, 150000, 600000],
@@ -32,21 +35,38 @@ class TestMetricsUtils(unittest.TestCase):
         )
 
     def test_kpis_match_expected_values(self):
+        """
+        Test that portfolio_kpis returns expected KPI values for a sample portfolio.
+        """
         kpis = portfolio_kpis(self.portfolio)
         self.assertAlmostEqual(
-            kpis["portfolio_delinquency_rate_percent"], 25.0
+            kpis["portfolio_delinquency_rate_percent"],
+            25.0
         )
         self.assertAlmostEqual(
-            kpis["portfolio_yield_percent"], 4.16537, places=5
+            kpis["portfolio_yield_percent"],
+            4.16537,
+            places=5
         )
         self.assertAlmostEqual(
-            kpis["average_ltv_ratio_percent"], 86.7708333, places=5
+            kpis["average_ltv_ratio_percent"],
+            86.7708333,
+            places=5
         )
         self.assertAlmostEqual(
-            kpis["average_dti_ratio_percent"], 22.875, places=3
+            kpis["average_dti_ratio_percent"],
+            22.875,
+            places=3
         )
 
     def test_metric_helpers_handle_edge_cases(self):
+        """
+        Test metric helper functions for correct handling of edge cases.
+
+        This method verifies that loan-to-value and debt-to-income ratio helpers
+        return expected results (including NaN and zero) when provided with edge-case
+        data such as zero denominators or missing values.
+        """
         data = pd.DataFrame(
             {
                 "loan_amount": [100000, 0],
@@ -79,6 +99,9 @@ class TestMetricsUtils(unittest.TestCase):
         )
 
     def test_engine_uses_metric_utilities(self):
+        """
+        Test that LoanAnalyticsEngine uses metric utilities and returns expected KPI keys.
+        """
         engine = LoanAnalyticsEngine(self.portfolio)
         dashboard = engine.run_full_analysis()
 
@@ -88,6 +111,9 @@ class TestMetricsUtils(unittest.TestCase):
             self.assertAlmostEqual(dashboard[key], expected[key])
 
     def test_numeric_coercion_and_defaults(self):
+        """
+        Test numeric coercion and default handling for loan_amount and principal_balance columns.
+        """
         portfolio = self.portfolio.copy()
         portfolio["loan_amount"] = portfolio["loan_amount"].astype(str)
         portfolio["principal_balance"] = (

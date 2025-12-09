@@ -17,7 +17,18 @@ REQUIRED_KPI_COLUMNS = [
 DELINQUENT_STATUSES = ["30-59 days past due", "60-89 days past due", "90+ days past due"]
 
 def _coerce_numeric(series: pd.Series, field_name: str) -> pd.Series:
-    """Convert a series to numeric values, preserving NaNs for validation visibility."""
+    """
+    Convert a series to numeric values, preserving NaNs for validation visibility.
+
+    Args:
+        series (pd.Series): The input series to convert.
+        field_name (str): The name of the field for error reporting.
+
+    Returns:
+        pd.Series: Numeric series with NaNs for invalid values.
+    Raises:
+        ValueError: If all values are non-numeric.
+    """
 
     numeric = pd.to_numeric(series, errors="coerce")
     if numeric.isna().all():
@@ -26,7 +37,15 @@ def _coerce_numeric(series: pd.Series, field_name: str) -> pd.Series:
 
 
 def validate_kpi_columns(loan_data: pd.DataFrame) -> None:
-    """Validate that all KPI columns exist in the provided dataframe."""
+    """
+    Validate that all KPI columns exist in the provided dataframe.
+
+    Args:
+        loan_data (pd.DataFrame): The loan data to validate.
+
+    Raises:
+        ValueError: If the DataFrame is empty or required columns are missing.
+    """
 
     if loan_data.empty:
         raise ValueError("Input loan_data must be a non-empty DataFrame.")
@@ -37,7 +56,16 @@ def validate_kpi_columns(loan_data: pd.DataFrame) -> None:
 
 
 def loan_to_value(loan_amounts: pd.Series, appraised_values: pd.Series) -> pd.Series:
-    """Compute LTV as a percentage while avoiding division by zero."""
+    """
+    Compute loan-to-value (LTV) ratio as a percentage, avoiding division by zero.
+
+    Args:
+        loan_amounts (pd.Series): Series of loan amounts.
+        appraised_values (pd.Series): Series of appraised property values.
+
+    Returns:
+        pd.Series: LTV ratios as percentages.
+    """
 
     sanitized_amounts = _coerce_numeric(loan_amounts, "loan_amount")
     sanitized_appraised = _coerce_numeric(appraised_values, "appraised_value")
@@ -46,7 +74,16 @@ def loan_to_value(loan_amounts: pd.Series, appraised_values: pd.Series) -> pd.Se
 
 
 def debt_to_income_ratio(monthly_debts: pd.Series, borrower_incomes: pd.Series) -> pd.Series:
-    """Compute DTI as a percentage using monthly income with zero-income safeguards."""
+    """
+    Compute debt-to-income (DTI) ratio as a percentage, using monthly income and safeguarding against zero income.
+
+    Args:
+        monthly_debts (pd.Series): Series of monthly debt payments.
+        borrower_incomes (pd.Series): Series of borrower annual incomes.
+
+    Returns:
+        pd.Series: DTI ratios as percentages.
+    """
 
     sanitized_debt = _coerce_numeric(monthly_debts, "monthly_debt")
     monthly_income = _coerce_numeric(borrower_incomes, "borrower_income") / 12
@@ -55,7 +92,15 @@ def debt_to_income_ratio(monthly_debts: pd.Series, borrower_incomes: pd.Series) 
 
 
 def portfolio_delinquency_rate(statuses: Iterable[str]) -> float:
-    """Return the delinquency rate as a percentage of total rows."""
+    """
+    Calculate the delinquency rate as a percentage of total loans.
+
+    Args:
+        statuses (Iterable[str]): Iterable of loan status strings.
+
+    Returns:
+        float: Delinquency rate percentage.
+    """
     series = pd.Series(list(statuses))
     delinquent_count = series.isin(DELINQUENT_STATUSES).sum()
     total = len(series)
@@ -63,7 +108,16 @@ def portfolio_delinquency_rate(statuses: Iterable[str]) -> float:
 
 
 def weighted_portfolio_yield(interest_rates: pd.Series, principal_balances: pd.Series) -> float:
-    """Calculate weighted yield, returning zero when principal is missing or zero."""
+    """
+    Calculate weighted portfolio yield, returning zero when principal is missing or zero.
+
+    Args:
+        interest_rates (pd.Series): Series of interest rates.
+        principal_balances (pd.Series): Series of principal balances.
+
+    Returns:
+        float: Weighted yield percentage.
+    """
 
     sanitized_principal = _coerce_numeric(principal_balances, "principal_balance").fillna(0)
     total_principal = sanitized_principal.sum()

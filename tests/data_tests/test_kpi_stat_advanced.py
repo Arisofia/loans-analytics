@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 import pytest
-from scipy.stats import shapiro, bartlett, durbin_watson
+from scipy.stats import shapiro, bartlett
+from statsmodels.stats.stattools import durbin_watson
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from python.kpi_engine import calculate_par_90, calculate_collection_rate
 

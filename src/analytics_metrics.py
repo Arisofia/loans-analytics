@@ -7,6 +7,15 @@ CURRENCY_SYMBOLS = r"[₡$€£¥₽%]"
 
 
 def standardize_numeric(series: pd.Series) -> pd.Series:
+    """
+    Standardize a pandas Series to numeric values, cleaning currency symbols and formatting.
+
+    Args:
+        series (pd.Series): Input series to standardize.
+
+    Returns:
+        pd.Series: Numeric series with cleaned values.
+    """
     if pd.api.types.is_numeric_dtype(series):
         return series
 
@@ -27,6 +36,21 @@ def project_growth(
     target_loan_volume: float,
     periods: int = 6,
 ) -> pd.DataFrame:
+    """
+    Project growth of yield and loan volume over a number of periods.
+
+    Args:
+        current_yield (float): Starting yield value.
+        target_yield (float): Target yield value.
+        current_loan_volume (float): Starting loan volume.
+        target_loan_volume (float): Target loan volume.
+        periods (int): Number of periods to project (default 6).
+
+    Returns:
+        pd.DataFrame: DataFrame with projected dates, yields, and loan volumes.
+    Raises:
+        ValueError: If periods < 2.
+    """
     if periods < 2:
         raise ValueError("periods must be at least 2")
 
@@ -37,6 +61,15 @@ def project_growth(
 
 
 def calculate_quality_score(df: pd.DataFrame) -> int:
+    """
+    Calculate a data quality score (0-100) based on completeness of a DataFrame.
+
+    Args:
+        df (pd.DataFrame): DataFrame to score.
+
+    Returns:
+        int: Quality score from 0 to 100.
+    """
     if df.empty:
         return 0
 
@@ -45,6 +78,16 @@ def calculate_quality_score(df: pd.DataFrame) -> int:
 
 
 def _assert_required_columns(df: pd.DataFrame, required: list[str]) -> None:
+    """
+    Assert that all required columns are present in the DataFrame.
+
+    Args:
+        df (pd.DataFrame): DataFrame to check.
+        required (list[str]): List of required column names.
+
+    Raises:
+        ValueError: If any required columns are missing.
+    """
     missing = [column for column in required if column not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns: {', '.join(missing)}")

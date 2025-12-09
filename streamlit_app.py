@@ -66,12 +66,12 @@ def apply_theme(fig: px.Figure) -> px.Figure:
         font_color=ABACO_THEME["colors"]["white"],
         paper_bgcolor=ABACO_THEME["colors"]["background"],
         plot_bgcolor=ABACO_THEME["colors"]["background"],
-        legend=dict(
-            font=dict(
-                family=ABACO_THEME["typography"]["secondary_font"],
-                color=ABACO_THEME["colors"]["light_gray"],
-            )
-        ),
+        legend={
+            "font": {
+                "family": ABACO_THEME["typography"]["secondary_font"],
+                "color": ABACO_THEME["colors"]["light_gray"],
+            }
+        },
         margin=dict(l=0, r=0, t=40, b=0),
     )
     fig.update_traces(marker=dict(line=dict(color=ABACO_THEME["colors"]["background"], width=1)))
@@ -141,7 +141,7 @@ def select_payer_column(df: pd.DataFrame) -> Optional[str]:
 
 def compute_roll_rates(df: pd.DataFrame) -> pd.DataFrame:
     if "dpd_status" not in df.columns or "loan_status" not in df.columns:
-        return pd.DataFrame()
+        return pd.DataFrame({})
     base = df.loc[df["dpd_status"].notna()]
     transitions = (
         base.groupby(["dpd_status", "loan_status"]).size().reset_index(name="count")
@@ -151,26 +151,24 @@ def compute_roll_rates(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def define_ingestion_state(df: pd.DataFrame) -> pd.Series:
-    return pd.Series(
-        {
-            "rows": len(df),
-            "columns": len(df.columns),
-            "has_loan_base": "loan_status" in df.columns
-            and "loan_amount" in df.columns
-            and "principal_balance" in df.columns,
-        }
-    )
+    return pd.Series({
+        "rows": len(df),
+        "columns": len(df.columns),
+        "has_loan_base": "loan_status" in df.columns
+        and "loan_amount" in df.columns
+        and "principal_balance" in df.columns,
+    })
 
 
 @st.cache_data(show_spinner=False)
 def parse_uploaded_file(uploaded) -> pd.DataFrame:
     if uploaded is None:
-        return pd.DataFrame()
+        return pd.DataFrame({})
     uploaded.seek(0)
     try:
         return pd.read_csv(uploaded)
     except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame({})
 
 
 st.set_page_config(

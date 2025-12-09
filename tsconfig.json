@@ -4,7 +4,7 @@
     "lib": ["ES2021", "dom", "dom.iterable"],
     "jsx": "react-jsx",
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "Node",
     "resolveJsonModule": true,
     "allowJs": true,
     "noEmit": true,
@@ -25,27 +25,16 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
+    "typeRoots": ["./node_modules/@types"],
+    "ignoreDeprecations": "6.0",
     "paths": {
-      "@/*": ["./src/*"],
-      "@/components/*": ["./src/components/*"],
-      "@/lib/*": ["./src/lib/*"],
-      "@/types/*": ["./src/types/*"],
-      "@/app/*": ["./src/app/*"]
-    },
-    "ignoreDeprecations": "5.0",
-    "plugins": [
-      {
-        "name": "next"
-      },
-      "include": ["src", "app"],
-      "exclude": ["node_modules"]
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
-  ],
+      "@/*": ["apps/web/src/*"],
+      "@/components/*": ["apps/web/src/components/*"],
+      "@/lib/*": ["apps/web/src/lib/*"],
+      "@/types/*": ["apps/web/src/types/*"],
+      "@/app/*": ["apps/web/src/app/*"]
+    }
+  },
+  "include": ["global.d.ts", "apps/web/src", "apps/web/app"],
   "exclude": ["node_modules"]
 }
