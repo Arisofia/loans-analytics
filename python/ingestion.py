@@ -64,9 +64,11 @@ class CascadeIngestion:
             if numeric_field in df.columns:
                 try:
                     pd.to_numeric(df[numeric_field])
-                except (ValueError, TypeError) as e:  # pragma: no cover - defensive
+                # pragma: no cover - defensive
+                except (ValueError, TypeError) as e:
                     validation_errors.append(
-                        f'{numeric_field} column has non-numeric values: {str(e)}'
+                        f'{numeric_field} column has non-numeric values: '
+                        f'{str(e)}'
                     )
 
         if validation_errors:

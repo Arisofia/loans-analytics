@@ -1,10 +1,11 @@
-
 # Azure Blob KPI Exporter module for publishing KPI payloads to Azure Blob Storage.
+# Azure Blob KPI Exporter module for publishing KPI payloads to Azure Blob
+# Storage.
 
 import json
 from datetime import datetime, timezone
 from numbers import Number
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, ContentSettings
@@ -14,7 +15,10 @@ from azure.core.exceptions import ResourceExistsError
 class AzureBlobKPIExporter:
     """Publishes KPI payloads to Azure Blob Storage with traceable metadata."""
 
-    def __init__(self, container_name=None, account_url=None, connection_string=None, credential=None, blob_service_client=None, **kwargs):
+    def __init__(
+        self, container_name=None, account_url=None, connection_string=None,
+        credential=None, blob_service_client=None, **kwargs
+    ):
         # Support both legacy (test) and config dict signatures
         if container_name is None and isinstance(kwargs.get('config'), dict):
             config = kwargs['config']

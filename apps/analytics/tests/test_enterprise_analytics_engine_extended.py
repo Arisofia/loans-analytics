@@ -1,8 +1,13 @@
+
+"""
+Unit tests for LoanAnalyticsEngine and related analytics logic.
+"""
+
 import pytest
 import pandas as pd
 import numpy as np
-from unittest.mock import MagicMock
-
+from unittest.mock import MagicMock, Mock
+from apps.analytics.src.azure_blob_exporter import AzureBlobKPIExporter
 from apps.analytics.src.enterprise_analytics_engine import LoanAnalyticsEngine
 
 
@@ -10,8 +15,9 @@ def test_engine_from_dict():
     """
     Test the LoanAnalyticsEngine.from_dict method for correct instantiation.
 
-    This function verifies that the engine can be created from a sample dictionary
-    and that the resulting object is a LoanAnalyticsEngine with the expected data length.
+    This function verifies that the engine can be created from a sample
+    dictionary and that the resulting object is a LoanAnalyticsEngine with
+    the expected data length.
     """
     from apps.analytics.tests.test_data_shared import SAMPLE_LOAN_DATA
     engine = LoanAnalyticsEngine.from_dict(SAMPLE_LOAN_DATA)
@@ -151,6 +157,9 @@ def test_engine_data_quality_score_calculation():
 
 
 def test_engine_risk_alerts_empty_result():
+    """
+    Test risk_alerts returns empty DataFrame when no loans exceed thresholds.
+    """
     data = {
         "loan_amount": [250000, 450000, 150000],
         "appraised_value": [300000, 500000, 160000],
@@ -166,6 +175,7 @@ def test_engine_risk_alerts_empty_result():
 
 
 def test_engine_risk_alerts_risk_score_calculation():
+    """Test risk_score calculation in risk_alerts for valid input."""
     data = {
         "loan_amount": [300000],
         "appraised_value": [300000],
@@ -184,6 +194,7 @@ def test_engine_risk_alerts_risk_score_calculation():
 
 
 def test_engine_risk_alerts_with_nan_values():
+    """Test risk_alerts handles NaN values in input data."""
     data = {
         "loan_amount": [300000, 400000],
         "appraised_value": [300000, 400000],
@@ -200,7 +211,27 @@ def test_engine_risk_alerts_with_nan_values():
         assert not np.isnan(alerts["risk_score"]).any()
 
 
-def test_engine_export_kpis_to_blob_invalid_blob_name():
+def test_export_kpis_to_blob_invalid_blob_name_type():
+    """
+    Test that export_kpis_to_blob raises ValueError for invalid blob_name type.
+    """
+    data = {
+        "loan_amount": [250000],
+        "appraised_value": [300000],
+        "borrower_income": [80000],
+        "monthly_debt": [1500],
+        "loan_status": ["current"],
+        "interest_rate": [0.035],
+        "principal_balance": [240000]
+    }
+    engine = LoanAnalyticsEngine(pd.DataFrame(data))
+    exporter = AzureBlobKPIExporter(
+        container_name="test-container",
+        blob_service_client=Mock()
+    )
+    
+    with pytest.raises(ValueError, match="blob_name must be a string"):
+        engine.export_kpis_to_blob(exporter, blob_name="invalid_blob_name")
     data = {
         "loan_amount": [250000],
         "appraised_value": [300000],
@@ -212,12 +243,15 @@ def test_engine_export_kpis_to_blob_invalid_blob_name():
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     mock_exporter = MagicMock()
-    
     with pytest.raises(ValueError, match="blob_name must be a string"):
-        engine.export_kpis_to_blob(mock_exporter, blob_name=123)
+        engine.export_kpis_to_blob(
+            mock_exporter,
+            blob_name="invalid_blob_name"
+        )
 
 
 def test_engine_export_kpis_to_blob_valid():
+    """Test export_kpis_to_blob returns correct value for valid input."""
     data = {
         "loan_amount": [250000],
         "appraised_value": [300000],
@@ -238,6 +272,7 @@ def test_engine_export_kpis_to_blob_valid():
 
 
 def test_engine_source_df_not_modified():
+    """Test that the source DataFrame is not modified by the engine."""
     data = {
         "loan_amount": [250000, 450000],
         "appraised_value": [300000, 500000],
@@ -257,6 +292,9 @@ def test_engine_source_df_not_modified():
 
 
 def test_engine_coercion_preserves_all_nan_columns():
+    """
+    Test coercion_report and NaN preservation for invalid numeric columns.
+    """
     data = {
         "loan_amount": [250000],
         "appraised_value": [300000],
@@ -272,6 +310,9 @@ def test_engine_coercion_preserves_all_nan_columns():
 
 
 def test_engine_run_full_analysis_returns_all_keys():
+    """
+    Test run_full_analysis returns all expected KPI keys.
+    """
     data = {
         "loan_amount": [250000, 450000],
         "appraised_value": [300000, 500000],
@@ -299,6 +340,10 @@ def test_engine_run_full_analysis_returns_all_keys():
 
 
 def test_engine_handles_all_nan_numeric_columns():
+    """
+    Test that run_full_analysis returns a dict when all numeric columns
+    are NaN.
+    """
     data = {
         "loan_amount": [None, None],
         "appraised_value": [300000, 500000],

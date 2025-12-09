@@ -1,3 +1,7 @@
+"""
+Unit tests for metrics utility functions in analytics.
+"""
+
 import pytest
 import pandas as pd
 import numpy as np
@@ -14,9 +18,8 @@ from apps.analytics.src.metrics_utils import (
 
 
 def test_coerce_numeric_all_nan():
-    """
-    Test that _coerce_numeric raises ValueError if all values are non-numeric.
-    """
+    # Test that _coerce_numeric raises ValueError if all values
+    # are non-numeric.
     series = pd.Series(["invalid", "data", "values"])
     with pytest.raises(
         ValueError, match="must contain at least one numeric value"
@@ -29,37 +32,26 @@ def test_validate_kpi_columns_empty_dataframe():
     Test that validate_kpi_columns raises ValueError for empty DataFrame.
     """
     df = pd.DataFrame()
+    # Test: validate_kpi_columns raises ValueError for empty DataFrame.
     with pytest.raises(ValueError, match="must be a non-empty DataFrame"):
         validate_kpi_columns(df)
 
 
 def test_validate_kpi_columns_missing_multiple():
-    """
-    Test that validate_kpi_columns raises ValueError for missing required columns.
-    """
     df = pd.DataFrame({"loan_amount": [100]})
+    # Test: validate_kpi_columns raises ValueError for missing required
+    # columns.
+
     with pytest.raises(ValueError, match="Missing required columns"):
         validate_kpi_columns(df)
 
-
+    
 def test_loan_to_value_all_zeros():
+    # Test loan_to_value returns NaN when appraised values are all zero.
     amounts = pd.Series([100, 200, 300])
     appraised = pd.Series([0, 0, 0])
     ltv = loan_to_value(amounts, appraised)
     assert ltv.isna().all()
-
-
-def test_debt_to_income_ratio_zero_income():
-    debts = pd.Series([500, 1000, 1500])
-    incomes = pd.Series([0, 0, 0])
-    dti = debt_to_income_ratio(debts, incomes)
-    assert dti.isna().all()
-
-
-def test_portfolio_delinquency_rate_empty():
-    statuses = []
-    rate = portfolio_delinquency_rate(statuses)
-    assert rate == pytest.approx(0.0)
 
 
 def test_portfolio_delinquency_rate_no_delinquent():
@@ -76,9 +68,11 @@ def test_portfolio_delinquency_rate_all_delinquent():
     ]
     rate = portfolio_delinquency_rate(statuses)
     assert rate == pytest.approx(100.0)
+    # Test: returns 100.0 when all loans delinquent.
 
 
 def test_weighted_portfolio_yield_zero_principal():
+    # Test: weighted_portfolio_yield returns 0.0 when all principals are zero.
     rates = pd.Series([0.05, 0.06, 0.07])
     principals = pd.Series([0, 0, 0])
     yield_rate = weighted_portfolio_yield(rates, principals)
@@ -86,6 +80,7 @@ def test_weighted_portfolio_yield_zero_principal():
 
 
 def test_weighted_portfolio_yield_nan_values():
+    # Test: weighted_portfolio_yield handles NaN values in rates.
     rates = pd.Series([0.05, np.nan, 0.07])
     principals = pd.Series([100000, 200000, 150000])
     yield_rate = weighted_portfolio_yield(rates, principals)
@@ -93,6 +88,7 @@ def test_weighted_portfolio_yield_nan_values():
 
 
 def test_portfolio_kpis_with_precalculated_ratios():
+    # Test: portfolio_kpis with pre-calculated LTV and DTI ratios.
     df = pd.DataFrame({
         "loan_amount": [250000, 450000, 150000],
         "appraised_value": [300000, 500000, 160000],

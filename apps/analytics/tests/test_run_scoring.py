@@ -1,9 +1,13 @@
-import pytest
+
+"""
+Unit tests for the run_scoring CLI and analytics pipeline.
+"""
+
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+import pytest
 import pandas as pd
-
 from apps.analytics.run_scoring import (
     parse_args,
     load_portfolio,

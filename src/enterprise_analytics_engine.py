@@ -53,7 +53,8 @@ def portfolio_interest_and_risk(
     loans: Sequence[LoanPosition], loss_given_default: float
 ) -> Tuple[float, float]:
     """
-    Aggregate expected first-month interest and expected loss across a portfolio.
+    Aggregate expected first-month interest and expected loss across a
+    portfolio.
 
     Returns:
         A tuple with (expected_monthly_interest, expected_loss_value).
@@ -88,10 +89,12 @@ def calculate_portfolio_kpis(
     loans: Sequence[LoanPosition], loss_given_default: float
 ) -> PortfolioKPIs:
     """
-    Compute weighted averages and expected first-month cash flows for a portfolio.
+    Compute weighted averages and expected first-month cash flows for a
+    portfolio.
 
-    The calculation returns exposure, weighted rate and term (principal weighted),
-    expected total monthly payment, first-month interest, and expected loss.
+    The calculation returns exposure, weighted rate and term (principal
+    weighted), expected total monthly payment, first-month interest, and
+    expected loss.
     """
 
     exposure = 0.0
@@ -106,7 +109,9 @@ def calculate_portfolio_kpis(
         exposure += loan.principal
         weighted_rate += loan.annual_interest_rate * loan.principal
         weighted_term += loan.term_months * loan.principal
-        weighted_default_probability += loan.default_probability * loan.principal
+        weighted_default_probability += (
+            loan.default_probability * loan.principal
+        )
         monthly_payment = calculate_monthly_payment(loan)
         expected_payment += monthly_payment
         expected_interest += loan.principal * _monthly_interest_rate(loan)
