@@ -45,6 +45,33 @@ jobs:
         run: |
           coverage report --fail-under=90
 
+  data-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run KPI contract tests
+        run: pytest tests/data_tests/test_kpi_contracts.py
+      - name: Enforce KPI definition updates
+        run: |
+          BASE_REF=${{ github.base_ref || 'main' }}
+          git fetch origin ${BASE_REF} --depth=1
+          CHANGED=$(git diff --name-only origin/${BASE_REF}...HEAD)
+          echo "Changed files:\n${CHANGED}"
+          if echo "$CHANGED" | grep -Eq "python/kpi_engine.py|config/personas.yml"; then
+            if ! echo "$CHANGED" | grep -q "config/kpis/kpi_definitions.yaml"; then
+              echo "KPI logic changed without updating config/kpis/kpi_definitions.yaml"
+              exit 1
+            fi
+          fi
+
   sonar:
     runs-on: ubuntu-latest
     steps:

@@ -2,9 +2,36 @@
 import logging
 from datetime import datetime
 from typing import Dict, Tuple
+
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+
+def _require_columns(df: pd.DataFrame, required: Tuple[str, ...]):
+    missing = [col for col in required if col not in df.columns]
+    if missing:
+        raise ValueError(f"Missing required columns for KPI calculation: {', '.join(missing)}")
+
+
+def calculate_par_90(df: pd.DataFrame) -> float:
+    """Calculate Portfolio at Risk 90 (PAR90) as a percentage."""
+    _require_columns(df, ("dpd_90_plus_usd", "total_receivable_usd"))
+    total_receivable = df["total_receivable_usd"].sum()
+    if total_receivable == 0:
+        return 0.0
+    par_90 = df["dpd_90_plus_usd"].sum() / total_receivable * 100
+    return par_90
+
+
+def calculate_collection_rate(df: pd.DataFrame) -> float:
+    """Calculate collection rate based on eligible vs total receivables."""
+    _require_columns(df, ("total_receivable_usd", "total_eligible_usd"))
+    total_receivable = df["total_receivable_usd"].sum()
+    if total_receivable == 0:
+        return 0.0
+    total_eligible = df["total_eligible_usd"].sum()
+    return total_eligible / total_receivable * 100
 
 
 class KPIEngine:
