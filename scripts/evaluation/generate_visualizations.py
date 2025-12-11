@@ -47,7 +47,7 @@ def plot_classification_metrics(metrics: Dict, output_dir: Path):
     values = [metrics.get(key, 0) for key in metric_keys]
     
     fig, ax = plt.subplots()
-    bars = ax.bar(metric_names, values, color=['#2ecc71', '#3498db', '#e74c3c', '#f39c12'])
+    bars = ax.bar(metric_names, values)
     
     # Add value labels on bars
     for bar in bars:
