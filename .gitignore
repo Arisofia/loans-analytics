@@ -44,3 +44,4 @@ gemini-cli/
 .vercel/
 eslint.config.js
 .vercel
+.zencoder/
