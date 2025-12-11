@@ -261,11 +261,19 @@ class LoanAnalyticsEngine:
         alerts['dti_component'] = np.clip(
             (alerts['dti_ratio'] - dti_threshold) / 30, 0, 1
         )
-        alerts['risk_score'] = (
-            0.6 * alerts['ltv_component'] + 0.4 * alerts['dti_component']
+        # Compute risk_score using available components with adjusted weights
+        ltv_valid = alerts['ltv_component'].notna()
+        dti_valid = alerts['dti_component'].notna()
+        # Use only available components, normalizing weights
+        alerts['risk_score'] = np.where(
+            ltv_valid & dti_valid,
+            0.6 * alerts['ltv_component'] + 0.4 * alerts['dti_component'],
+            np.where(
+                ltv_valid,
+                alerts['ltv_component'],
+                np.where(dti_valid, alerts['dti_component'], 0.0)
+            )
         )
-        # Ensure risk_score is not NaN
-        alerts['risk_score'] = alerts['risk_score'].fillna(0.0)
         return alerts[['ltv_ratio', 'dti_ratio', 'risk_score']]
 
     def run_full_analysis(self) -> Dict[str, float]:
