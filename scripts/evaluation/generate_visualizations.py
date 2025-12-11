@@ -209,7 +209,11 @@ def generate_summary_report(metrics: Dict, output_dir: Path):
         for key in fin_keys:
             value = metrics.get(key, 'N/A')
             label = key.replace('_', ' ').title()
-            f.write(f"  {label:<30}: {value}\n")
+            if isinstance(value, (float, int)):
+                value_str = f"{value:.2f}"
+            else:
+                value_str = str(value)
+            f.write(f"  {label:<30}: {value_str}\n")
         
         f.write("\n" + "="*60 + "\n")
     
