@@ -1,13 +1,13 @@
 # ABACO — Loan Analytics Platform
 
-Arquitectura:
+## Architecture
 
-- **apps/web**: Next.js dashboard corporativo.
-- **apps/analytics**: pipelines de Python para riesgo, scoring y KPIs.
-- **infra/azure**: scripts de despliegue Azure.
-- **data_samples**: datasets anonimizados para desarrollo.
+- **apps/web**: Next.js corporate dashboard
+- **apps/analytics**: Python pipelines for risk assessment, scoring, and KPIs
+- **infra/azure**: Azure deployment scripts
+- **data_samples**: Anonymized datasets for development
 
-Integraciones disponibles:
+## Available Integrations
 
 - Azure SQL / Cosmos / Storage
 - Supabase
@@ -16,49 +16,46 @@ Integraciones disponibles:
 - SonarCloud
 - GitHub Actions
 
-Consulta `docs/integration-readiness.md` para verificar el estado de cada integración y las comprobaciones previas que debes ejecutar antes de usarlas.
+Refer to `docs/integration-readiness.md` to verify the status of each integration and the prerequisites you must complete before using them.
 
 ## ContosoTeamStats
 
-This repository contains ContosoTeamStats, a .NET 6 Web API for managing sports teams that ships with Docker, Azure deployment scripts, SendGrid/Twilio integrations, and SQL Server migrations. Follow docs/ContosoTeamStats-setup.md for local setup, secrets, database provisioning, and container validation.
+This repository contains ContosoTeamStats, a .NET 6 Web API for managing sports teams that ships with Docker, Azure deployment scripts, SendGrid/Twilio integrations, and SQL Server migrations.
 
-See docs/Analytics-Vision.md for the analytics vision, Streamlit blueprint, and the agent-ready narrative that keeps every KPI, scenario, and AI prompt aligned with our fintech-grade delivery.
+Follow `docs/ContosoTeamStats-setup.md` for local setup, secrets, database provisioning, and container validation.
 
-  contains ContosoTeamStats, a .NET 6 Web API for managing sports teams that ships with Docker, Azure deployment scripts, SendGrid/Twilio integrations, and SQL Server migrations. Follow docs/ContosoTeamStats-setup.md for local setup, secrets, database provisioning, and container validation.
+See `docs/Analytics-Vision.md` for the analytics vision, Streamlit blueprint, and the agent-ready narrative that keeps every KPI, scenario, and AI prompt aligned with our fintech-grade delivery.
 
-## Java and Gradle setup
+## Java and Gradle Setup
 
 Use a locally installed JDK (21+ recommended) and let Gradle's toolchain resolver download the appropriate compiler per module. Avoid adding `org.gradle.java.home` to version control so CI and developers can rely on their own `JAVA_HOME` or toolchains without path-specific overrides.
 
-## Copilot Enterprise workflow
+## Copilot Enterprise Workflow
 
 Use `docs/Copilot-Team-Workflow.md` when inviting your team to Copilot, documenting the validation and security workflows, and keeping the Azure, GitHub Actions, and KPI checklist aligned with your 30-day Enterprise trial (App Service F1, ACR Basic, and free Azure security tiers). The doc includes prompts you can reuse whenever Copilot is guiding changes.
 
- contains ContosoTeamStats, a .NET 6 Web API for managing sports teams that ships with Docker, Azure deployment scripts, SendGrid/Twilio integrations, and SQL Server migrations. Follow docs/ContosoTeamStats-setup.md for local setup, secrets, database provisioning, and container validation.
+## Fitten Code AI
 
-## Fitten Code AI 编程助手
+To integrate Fitten Code AI into this monorepo (local and GitHub), refer to `docs/Fitten-Code-AI-Manual.md`, which covers product introduction, installation, integration, FAQs, and local inference testing.
 
-Para integrar Fitten Code AI en este monorepo (local y GitHub), consulta `docs/Fitten-Code-AI-Manual.md`, que cubre la introducción al producto, instalación, integración, preguntas frecuentes y pruebas de inferencia local.
-
-## MCP configuration
+## MCP Configuration
 
 Use `docs/MCP_CONFIGURATION.md` to add MCP servers via the Codex CLI or by editing `config.toml`, including examples for Context7, Figma, Chrome DevTools, and how to run Codex itself as an MCP server.
 
-## Deno helper
+## Deno Helper
 
 The repository exposes a tiny Deno helper at `main.ts` that verifies the expected directories before you execute tooling such as Fitten or analytics scripts. Run it with:
 
-```
+```sh
 deno run --allow-all main.ts
 ```
 
-`--unstable` is no longer needed in Deno 2.0; only include the specific `--unstable-*` flags when you actually depend on unstable APIs.
+Note: `--unstable` is no longer needed in Deno 2.0; only include the specific `--unstable-*` flags when you actually depend on unstable APIs.
 
-## Troubleshooting VS Code Zencoder extension
+## Troubleshooting VS Code Zencoder Extension
 
 If you see `Failed to spawn Zencoder process: ... zencoder-cli ENOENT` while working in VS Code, follow the remediation checklist in `docs/Zencoder-Troubleshooting.md` to reinstall the extension and restore the missing binary.
-- rerun CI
-- rerun CI
-# Trigger Azure Static Web Apps deployment
-# Trigger Azure Static Web Apps deployment again
-# Trigger SonarCloud workflow
+
+## Deployment
+
+This repository is configured for automated deployment to Azure Static Web Apps and integrates with SonarCloud for code quality analysis.
