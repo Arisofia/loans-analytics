@@ -1,2 +1,10 @@
-# sourcery.yaml disabled due to parse errors
-# Remove or fix if using Sourcery cloud/CLI
+version: "1"
+
+ignore:
+  - '**/tests/**'
+  - 'data_samples/**'
+  - 'build/**'
+  - '**/node_modules/**'
+  - 'infra/**'
+  - 'scripts/**'
+  - '.venv/**'

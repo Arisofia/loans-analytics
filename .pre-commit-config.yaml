@@ -1,0 +1,38 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        language_version: python3
+  - repo: https://github.com/sourcery-ai/sourcery
+    rev: v1.41.1
+    hooks:
+      - id: sourcery
+        args: ["--config", "sourcery.yaml", "--check"]
+  - repo: local
+    hooks:
+      - id: npm-lint
+        name: npm run lint (web)
+        entry: npm run lint
+        language: system
+        types: [javascript, typescript]
+        pass_filenames: false
+        files: ^apps/web/
+      - id: bandit
+        name: bandit security scan
+        entry: bandit -r python apps -x tests,data_samples,infra,scripts
+        language: system
+        files: ^python|^apps/
+        pass_filenames: false
