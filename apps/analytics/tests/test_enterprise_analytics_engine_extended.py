@@ -231,7 +231,7 @@ def test_export_kpis_to_blob_invalid_blob_name_type():
     )
     
     with pytest.raises(ValueError, match="blob_name must be a string"):
-        engine.export_kpis_to_blob(exporter, blob_name="invalid_blob_name")
+        engine.export_kpis_to_blob(exporter, blob_name=123)  # type: ignore
     data = {
         "loan_amount": [250000],
         "appraised_value": [300000],
@@ -246,7 +246,7 @@ def test_export_kpis_to_blob_invalid_blob_name_type():
     with pytest.raises(ValueError, match="blob_name must be a string"):
         engine.export_kpis_to_blob(
             mock_exporter,
-            blob_name="invalid_blob_name"
+            blob_name=123  # type: ignore
         )
 
 

@@ -264,6 +264,8 @@ class LoanAnalyticsEngine:
         alerts['risk_score'] = (
             0.6 * alerts['ltv_component'] + 0.4 * alerts['dti_component']
         )
+        # Ensure risk_score is not NaN
+        alerts['risk_score'] = alerts['risk_score'].fillna(0.0)
         return alerts[['ltv_ratio', 'dti_ratio', 'risk_score']]
 
     def run_full_analysis(self) -> Dict[str, float]:
