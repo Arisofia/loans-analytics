@@ -55,11 +55,11 @@ def build_refresh_dag():
         start_date=datetime(2024, 1, 1),
         catchup=False,
         tags=["kpi", "contracts", "agents"],
-    ) as dag:
         download = PythonOperator(
             task_id="download_cascade_exports",
             python_callable=download_cascade_exports,
         )
+
 
         validate = PythonOperator(
             task_id="validate_raw_data",
