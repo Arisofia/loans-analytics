@@ -184,9 +184,19 @@ def generate_summary_report(metrics: Dict, output_dir: Path):
         
         f.write("Classification Metrics:\n")
         f.write("-" * 40 + "\n")
+
+        # Map metric keys to user-friendly labels consistent with plot legends
+        classification_labels = {
+            'accuracy': 'Accuracy',
+            'precision': 'Precision',
+            'recall': 'Recall',
+            'f1_score': 'F1 Score',
+        }
+
         for key in ['accuracy', 'precision', 'recall', 'f1_score']:
             value = metrics.get(key, 'N/A')
-            f.write(f"  {key.capitalize():<20}: {value}\n")
+            label = classification_labels.get(key, key.replace('_', ' ').title())
+            f.write(f"  {label:<20}: {value}\n")
         
         f.write("\nFinancial Metrics:\n")
         f.write("-" * 40 + "\n")
