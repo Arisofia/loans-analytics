@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import pandas as pd
-from sklearn.metrics import confusion_matrix, roc_curve, auc
+# Removed unused sklearn.metrics imports (confusion_matrix, roc_curve, auc)
 
 # Set style for professional plots
 sns.set_style("whitegrid")
