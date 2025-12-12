@@ -64,7 +64,7 @@ class SlackBotService {
     );
 
     // Warning cue messages
-    // We use 'any' for the message here to avoid TypeScript union errors with subtypes like message_changed
+    // Using 'any' for message to prevent strict union type errors in Bolt
     this.app.message(/:warn:/i, async ({ message, say }: { message: any; say: SayFn }) => {
       await this.handleAlertMessage(message, say);
     });

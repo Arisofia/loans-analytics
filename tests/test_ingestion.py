@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 from python.ingestion import CascadeIngestion
 
+
 def test_ingest_csv(tmp_path):
     # Create a sample CSV file
     csv_content = "period,measurement_date,total_receivable_usd\n2025Q4,2025-12-01,1000.0\n2025Q4,2025-12-02,2000.0"
@@ -27,6 +28,7 @@ def test_ingest_csv(tmp_path):
     # Check values
     assert df["total_receivable_usd"].sum() == pytest.approx(3000.0)
 
+
 def test_ingest_csv_error(tmp_path):
     ingestion = CascadeIngestion(data_dir=tmp_path)
     df = ingestion.ingest_csv("nonexistent.csv")
@@ -38,6 +40,7 @@ def test_ingest_csv_error(tmp_path):
         assert key in err
     assert err["file"] == "nonexistent.csv"
     assert "no such file".lower() in err["error"].lower()
+
 
 def test_validate_loans():
     df = pd.DataFrame({
@@ -54,6 +57,7 @@ def test_validate_loans():
     assert isinstance(ingestion.errors, list)
     assert len(ingestion.errors) == 0
 
+
 def test_validate_loans_missing_field():
     df = pd.DataFrame({
         "period": ["2025Q4"],
@@ -67,6 +71,23 @@ def test_validate_loans_missing_field():
     assert isinstance(ingestion.errors, list)
     assert len(ingestion.errors) >= 1
     assert ingestion.errors[0].get("stage") == "validation"
+
+
+def test_validate_loans_invalid_numeric():
+    df = pd.DataFrame({
+        "period": ["2025Q4"],
+        "measurement_date": ["2025-12-01"],
+        "total_receivable_usd": ["invalid"]
+    })
+    ingestion = CascadeIngestion()
+    validated = ingestion.validate_loans(df)
+    assert "_validation_passed" in validated.columns
+    assert validated["_validation_passed"].iloc[0] == False
+    assert isinstance(ingestion.errors, list)
+    numeric_errors = [err for err in ingestion.errors if err.get("stage") == "validation"]
+    assert numeric_errors
+    assert any("total_receivable_usd" in err.get("error", "") for err in numeric_errors)
+
 
 def test_get_ingest_summary():
     ingestion = CascadeIngestion()
