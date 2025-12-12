@@ -37,15 +37,24 @@ class DataTransformation:
     
     def calculate_dpd_ratios(self, df: pd.DataFrame) -> Dict[str, float]:
         """Calculate Days Past Due (DPD) ratios."""
-        total = df['total_receivable_usd'].sum()
+        try:
+            total = pd.to_numeric(df['total_receivable_usd'], errors='raise').sum()
+        except Exception as e:
+            logger.error(f"Non-numeric value found in total_receivable_usd: {e}")
+            raise ValueError("Non-numeric value found in total_receivable_usd") from e
 
         dpd_columns = [col for col in df.columns if col.startswith('dpd_')]
         dpd_ratios = {}
 
         for col in dpd_columns:
+            try:
+                col_sum = pd.to_numeric(df[col], errors='raise').sum()
+            except Exception as e:
+                logger.error(f"Non-numeric value found in {col}: {e}")
+                raise ValueError(f"Non-numeric value found in {col}") from e
             if col in df.columns and total > 0:
-                dpd_ratios[col] = df[col].sum() / total * 100
-        
+                dpd_ratios[col] = col_sum / total * 100
+
         logger.info(f"Calculated DPD ratios: {dpd_ratios}")
         return dpd_ratios
     
