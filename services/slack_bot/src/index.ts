@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 import { App, Say, SlackEventMiddlewareArgs, Context } from '@slack/bolt';
+=======
+import { App, SayFn, SlackEventMiddlewareArgs } from '@slack/bolt';
+>>>>>>> Stashed changes
 import axios from 'axios';
 
 interface KPIAlert {
@@ -33,8 +37,24 @@ class SlackBotService {
       }
     });
 
+<<<<<<< Updated upstream
     // Listen for message events in alert channels
     this.app.message(/:warn:/i, async ({ message, say }: any) => {
+=======
+    // Mention-based KPI summary lookup
+    this.app.event(
+      'app_mention',
+      async ({ event, say }: SlackEventMiddlewareArgs<'app_mention'>) => {
+        const text = event.text?.toLowerCase() || '';
+        if (text.includes('kpi') || text.includes('alert')) {
+          await this.handleKPIQuery(say);
+        }
+      },
+    );
+
+    // Message reaction for warning cues
+    this.app.message(/:warn:/i, async ({ message, say }: { message: any; say: SayFn }) => {
+>>>>>>> Stashed changes
       await this.handleAlertMessage(message, say);
     });
   }
@@ -105,7 +125,18 @@ class SlackBotService {
     }
   }
 
+<<<<<<< Updated upstream
   private async handleKPIQuery(event: any, say: Say): Promise<void> {
+=======
+  private async handleKPIQuery(say: SayFn): Promise<void> {
+    if (!this.kpiWebhookUrl) {
+      await say({
+        text: 'KPI service URL is not configured. Set KPI_WEBHOOK_URL to enable KPI lookups.',
+      });
+      return;
+    }
+
+>>>>>>> Stashed changes
     try {
       const response = await axios.get(`${this.kpiWebhookUrl}/latest`, {
         headers: { 'Authorization': `Bearer ${process.env.API_KEY}` },
@@ -135,6 +166,7 @@ class SlackBotService {
 
       await say({ blocks });
     } catch (error) {
+<<<<<<< Updated upstream
       await say('Could not retrieve KPI data. Please try again later.');
     }
   }
@@ -150,6 +182,19 @@ class SlackBotService {
       run_id: 'manual',
       timestamp: new Date().toISOString(),
     });
+=======
+      console.error('KPI lookup failed:', error);
+      await say({ text: 'Could not retrieve KPI data. Please try again later.' });
+    }
+  }
+
+  private async handleAlertMessage(message: any, say: SayFn): Promise<void> {
+    const text = message.text?.trim();
+    if (!text) {
+      return;
+    }
+    await say({ text: `Alert noted: "${text}". Forwarding to monitoring.` });
+>>>>>>> Stashed changes
   }
 
   async start(): Promise<void> {
