@@ -1,4 +1,12 @@
+<<<<<<< HEAD
 import { App, SlackEventMiddlewareArgs } from '@slack/bolt';
+=======
+<<<<<<< Updated upstream
+import { App, Say, SlackEventMiddlewareArgs, Context } from '@slack/bolt';
+=======
+import { App, SayFn, SlackEventMiddlewareArgs } from '@slack/bolt';
+>>>>>>> Stashed changes
+>>>>>>> feature/golden-path-documentation
 import axios from 'axios';
 
 type Say = (message: { text?: string; blocks?: any[] }) => Promise<void>;
@@ -54,6 +62,7 @@ class SlackBotService {
     return this.app;
   }
 
+<<<<<<< HEAD
   private setupEventHandlers(): void {
     if (!this.app) return;
 
@@ -61,6 +70,16 @@ class SlackBotService {
     this.app.event(
       'app_mention',
       async ({ event, say }: SlackEventMiddlewareArgs<'app_mention'> & { say: Say }) => {
+=======
+<<<<<<< Updated upstream
+    // Listen for message events in alert channels
+    this.app.message(/:warn:/i, async ({ message, say }: any) => {
+=======
+    // Mention-based KPI summary lookup
+    this.app.event(
+      'app_mention',
+      async ({ event, say }: SlackEventMiddlewareArgs<'app_mention'>) => {
+>>>>>>> feature/golden-path-documentation
         const text = event.text?.toLowerCase() || '';
         if (text.includes('kpi') || text.includes('alert')) {
           await this.handleKPIQuery(say);
@@ -69,7 +88,12 @@ class SlackBotService {
     );
 
     // Message reaction for warning cues
+<<<<<<< HEAD
     this.app.message(/:warn:/i, async ({ message, say }: { message: { text?: string }; say: Say }) => {
+=======
+    this.app.message(/:warn:/i, async ({ message, say }: { message: any; say: SayFn }) => {
+>>>>>>> Stashed changes
+>>>>>>> feature/golden-path-documentation
       await this.handleAlertMessage(message, say);
     });
   }
@@ -108,7 +132,14 @@ class SlackBotService {
     }
   }
 
+<<<<<<< HEAD
   private async handleKPIQuery(say: Say): Promise<void> {
+=======
+<<<<<<< Updated upstream
+  private async handleKPIQuery(event: any, say: Say): Promise<void> {
+=======
+  private async handleKPIQuery(say: SayFn): Promise<void> {
+>>>>>>> feature/golden-path-documentation
     if (!this.kpiWebhookUrl) {
       await say({
         text: 'KPI service URL is not configured. Set KPI_WEBHOOK_URL to enable KPI lookups.',
@@ -116,6 +147,10 @@ class SlackBotService {
       return;
     }
 
+<<<<<<< HEAD
+=======
+>>>>>>> Stashed changes
+>>>>>>> feature/golden-path-documentation
     try {
       const response = await axios.get(`${this.kpiWebhookUrl}/latest`, {
         headers: { Authorization: `Bearer ${process.env.API_KEY}` },
@@ -145,17 +180,46 @@ class SlackBotService {
 
       await say({ blocks });
     } catch (error) {
+<<<<<<< HEAD
       console.error('KPI lookup failed:', error);
+=======
+<<<<<<< Updated upstream
+>>>>>>> feature/golden-path-documentation
       await say('Could not retrieve KPI data. Please try again later.');
     }
   }
 
+<<<<<<< HEAD
   private async handleAlertMessage(message: { text?: string }, say: Say): Promise<void> {
+=======
+  private async handleAlertMessage(message: any, say: Say): Promise<void> {
+    // Process alert messages and aggregate for reporting
+    this.alertQueue.push({
+      department: 'Unknown',
+      kpi_name: message.text,
+      current_value: 0,
+      threshold: 0,
+      severity: 'info',
+      run_id: 'manual',
+      timestamp: new Date().toISOString(),
+    });
+=======
+      console.error('KPI lookup failed:', error);
+      await say({ text: 'Could not retrieve KPI data. Please try again later.' });
+    }
+  }
+
+  private async handleAlertMessage(message: any, say: SayFn): Promise<void> {
+>>>>>>> feature/golden-path-documentation
     const text = message.text?.trim();
     if (!text) {
       return;
     }
     await say({ text: `Alert noted: "${text}". Forwarding to monitoring.` });
+<<<<<<< HEAD
+=======
+>>>>>>> Stashed changes
+>>>>>>> feature/golden-path-documentation
   }
 
   async start(): Promise<void> {

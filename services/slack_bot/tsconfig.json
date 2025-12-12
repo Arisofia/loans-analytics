@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+<<<<<<< HEAD
     "target": "ES2020",
     "module": "commonjs",
     "outDir": "./dist",
@@ -12,3 +13,15 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
 }
+=======
+    "outDir": "dist",
+    "module": "commonjs",
+    "target": "es2019",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "rootDir": "src"
+  },
+  "include": ["src/**/*"]
+}
+>>>>>>> feature/golden-path-documentation
