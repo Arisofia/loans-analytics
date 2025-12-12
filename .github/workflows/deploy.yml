@@ -13,25 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Install dependencies
-        run: |
-          cd apps/web
-          npm install
-
-      - name: Build
-        run: |
-          cd apps/web
-          npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Check Vercel secrets
         id: vercel_secrets
@@ -46,6 +33,24 @@ jobs:
             echo "present=false" >> "$GITHUB_OUTPUT"
             echo "Missing secrets:$missing"
           fi
+
+      - name: Install dependencies
+        run: |
+          cd apps/web
+          npm install
+
+      - name: Pull Vercel project settings
+        if: steps.vercel_secrets.outputs.present == 'true'
+        working-directory: apps/web
+        run: npx vercel pull --yes --environment=production --token "${{ secrets.VERCEL_TOKEN }}" --scope "${{ secrets.VERCEL_ORG_ID }}"
+
+      - name: Build
+        run: |
+          cd apps/web
+          npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Deploy to Vercel
         if: steps.vercel_secrets.outputs.present == 'true'
