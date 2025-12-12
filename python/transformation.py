@@ -50,19 +50,20 @@ class DataTransformation:
         return dpd_ratios
     
     def transform_to_kpi_dataset(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Transform portfolio data into KPI format for analytics."""
-        kpi_df = df.copy()
+        """Transform portfolio data into KPI format for analytics. Fail if required columns are missing."""
+        required_columns = [
+            'total_receivable_usd', 'total_eligible_usd', 'discounted_balance_usd',
+            'dpd_0_7_usd', 'dpd_7_30_usd', 'dpd_30_60_usd', 'dpd_60_90_usd', 'dpd_90_plus_usd'
+        ]
+        missing = [col for col in required_columns if col not in df.columns]
+        if missing:
+            logger.error(f"Transformation failed: missing required columns: {missing}")
+            raise ValueError(f"Transformation failed: missing required columns: {missing}")
 
-        # Add calculated metrics
+        kpi_df = df.copy()
         kpi_df['receivable_amount'] = df['total_receivable_usd']
-        kpi_df['eligible_amount'] = (
-            df['total_eligible_usd']
-            if 'total_eligible_usd' in df.columns else 0
-        )
-        kpi_df['discounted_amount'] = (
-            df['discounted_balance_usd']
-            if 'discounted_balance_usd' in df.columns else 0
-        )
+        kpi_df['eligible_amount'] = df['total_eligible_usd']
+        kpi_df['discounted_amount'] = df['discounted_balance_usd']
 
         # Calculate portfolio metrics
         dpd_ratios = self.calculate_dpd_ratios(df)
