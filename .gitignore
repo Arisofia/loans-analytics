@@ -45,3 +45,7 @@ gemini-cli/
 eslint.config.js
 .vercel
 .zencoder/
+data/metrics/
+logs/
+data/metrics/
+logs/

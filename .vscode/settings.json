@@ -58,6 +58,8 @@
   },
   "java.compile.nullAnalysis.mode": "automatic",
   "python.analysis.typeCheckingMode": "standard",
+  "python-envs.defaultEnvManager": "ms-python.python:system",
+  "python-envs.pythonProjects": [],
 
   // --- Analytics & Traceability: Prioritize KPIs, dashboards, and auditability ---
   // Ensure all code changes for JS/TS run lint at repo root (see AGENTS.md)
