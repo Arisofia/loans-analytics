@@ -67,7 +67,7 @@ def test_validate_calculations():
     results = engine.validate_calculations()
     for key in ["par_30", "collection_rate", "portfolio_health"]:
         assert key in results
-        assert results[key] is True
+        assert bool(results[key]) is True
 
 def test_par_30_zero_receivable():
     df = pd.DataFrame({
