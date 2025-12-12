@@ -42,7 +42,7 @@ jobs:
       - name: Pull Vercel project settings
         if: steps.vercel_secrets.outputs.present == 'true'
         working-directory: apps/web
-        run: npx vercel pull --yes --environment=production --token "${{ secrets.VERCEL_TOKEN }}" --scope "${{ secrets.VERCEL_ORG_ID }}"
+        run: npx vercel pull --yes --environment=production --token "${{ secrets.VERCEL_TOKEN }}"
 
       - name: Build
         run: |
