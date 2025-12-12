@@ -1,6 +1,8 @@
 import { App, SlackEventMiddlewareArgs } from '@slack/bolt';
 import axios from 'axios';
 
+type Say = (message: { text?: string; blocks?: any[] }) => Promise<void>;
+
 interface KPIAlert {
   department: string;
   kpi_name: string;
@@ -52,14 +54,19 @@ class SlackBotService {
   private setupEventHandlers(): void {
     if (!this.app) return;
 
-    this.app.event('app_mention', async ({ event, say }: SlackEventMiddlewareArgs<'app_mention'> & { say: any }) => {
-      const text = event.text?.toLowerCase() || '';
-      if (text.includes('kpi') || text.includes('alert')) {
-        await this.handleKPIQuery(say);
-      }
-    });
+    // Mention-based KPI summary lookup
+    this.app.event(
+      'app_mention',
+      async ({ event, say }: SlackEventMiddlewareArgs<'app_mention'> & { say: Say }) => {
+        const text = event.text?.toLowerCase() || '';
+        if (text.includes('kpi') || text.includes('alert')) {
+          await this.handleKPIQuery(say);
+        }
+      },
+    );
 
-    this.app.message(/:warn:/i, async ({ message, say }: { message: any; say: any }) => {
+    // Warning cue messages
+    this.app.message(/:warn:/i, async ({ message, say }: { message: { text?: string }; say: Say }) => {
       await this.handleAlertMessage(message, say);
     });
   }
@@ -92,7 +99,7 @@ class SlackBotService {
     }
   }
 
-  private async handleKPIQuery(say: any): Promise<void> {
+  private async handleKPIQuery(say: Say): Promise<void> {
     if (!this.kpiWebhookUrl) {
       await say({ text: 'KPI service URL is not configured. Set KPI_WEBHOOK_URL to enable KPI lookups.' });
       return;
@@ -129,7 +136,7 @@ class SlackBotService {
     }
   }
 
-  private async handleAlertMessage(message: any, say: any): Promise<void> {
+  private async handleAlertMessage(message: { text?: string }, say: Say): Promise<void> {
     const text = message.text?.trim();
     if (!text) return;
     await say({ text: `Alert noted: "${text}". Forwarding to monitoring.` });
