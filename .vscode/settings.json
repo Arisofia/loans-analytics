@@ -1,4 +1,23 @@
 {
+  // Use modern file watching for better performance
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/tmp/**": true,
+    "**/build/**": true
+  },
+  // Enable modern TypeScript server features
+  "typescript.tsserver.experimental.enableProjectDiagnostics": true,
+  "typescript.tsserver.useSyntaxServer": "auto",
+  "typescript.tsserver.log": "off",
+  // Remove legacy file watching if present
+  "typescript.tsserver.watchOptions": {
+    "watchFile": "useFsEvents",
+    "watchDirectory": "useFsEvents"
+  }
+}
+{
   // --- General Performance: Exclude folders from all tools ---
   "files.watcherExclude": {
     "**/.git/objects/**": true,
