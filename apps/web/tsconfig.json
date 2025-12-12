@@ -37,9 +37,9 @@
     "plugins": [
       {
         "name": "next"
-      },
-      "include": ["src", "app"],
-      "exclude": ["node_modules"]
+      }
+    ]
+  },
   "include": [
     "next-env.d.ts",
     "**/*.ts",

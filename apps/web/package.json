@@ -1,0 +1,29 @@
+{
+  "name": "abaco-loans-analytics",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "@azure/static-web-apps-cli": "^2.0.7",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.10.2",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.87.0",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@vercel/analytics": "^1.6.1",
+    "@vercel/speed-insights": "^1.3.1",
+    "next": "^16.0.8",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "zod": "^4.1.13"
+  }
+}
