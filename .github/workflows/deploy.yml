@@ -1,34 +1,3 @@
-  deploy-azure:
-    runs-on: ubuntu-latest
-    needs: deploy
-    if: failure()  # Only run if Vercel deploy fails
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Deploy Bicep
-        uses: azure/arm-deploy@v1
-        with:
-          resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          template: infra/azure/main.bicep
-          parameters: |
-            webAppName=${{ secrets.AZURE_WEBAPP_NAME }}
-            storageAccountName=${{ secrets.AZURE_STORAGE_NAME }}
-            sqlServerName=${{ secrets.AZURE_SQLSERVER_NAME }}
-            sqlDbName=${{ secrets.AZURE_SQLDB_NAME }}
-            sqlAdminLogin=${{ secrets.AZURE_SQL_ADMIN_LOGIN }}
-            sqlAdminPassword=${{ secrets.AZURE_SQL_ADMIN_PASSWORD }}
-
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          package: ./apps/web
 name: Deploy to Vercel
 
 on:
@@ -60,14 +29,14 @@ jobs:
         run: |
           cd apps/web
           npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
+      - name: Check Vercel secrets
+        id: vercel_secrets
+        run: |
           missing=""
-          push:
-            branches:
-              - main
-          schedule:
-            - cron: '0 8 * * *'
-          workflow_dispatch:
           [ -z "${{ secrets.VERCEL_TOKEN }}" ] && missing="$missing VERCEL_TOKEN"
           [ -z "${{ secrets.VERCEL_ORG_ID }}" ] && missing="$missing VERCEL_ORG_ID"
           [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ] && missing="$missing VERCEL_PROJECT_ID"
