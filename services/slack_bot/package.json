@@ -9,12 +9,12 @@
     "dev": "ts-node src/index.ts"
   },
   "dependencies": {
-    "@slack/bolt": "^4.6.0",
-    "axios": "^1.6.8"
+    "@slack/bolt": "4.6.0",
+    "axios": "1.6.8"
   },
   "devDependencies": {
-    "@types/node": "^20.10.6",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.0"
+    "@types/node": "20.10.6",
+    "ts-node": "10.9.2",
+    "typescript": "5.4.0"
   }
 }
