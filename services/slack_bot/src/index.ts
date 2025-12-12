@@ -1,7 +1,5 @@
-import { App, SlackEventMiddlewareArgs } from '@slack/bolt';
+import { App, SlackEventMiddlewareArgs, SayFn } from '@slack/bolt';
 import axios from 'axios';
-
-type Say = (message: { text?: string; blocks?: any[] }) => Promise<void>;
 
 interface KPIAlert {
   department: string;
@@ -57,7 +55,7 @@ class SlackBotService {
     // Mention-based KPI summary lookup
     this.app.event(
       'app_mention',
-      async ({ event, say }: SlackEventMiddlewareArgs<'app_mention'> & { say: Say }) => {
+      async ({ event, say }: SlackEventMiddlewareArgs<'app_mention'> & { say: SayFn }) => {
         const text = event.text?.toLowerCase() || '';
         if (text.includes('kpi') || text.includes('alert')) {
           await this.handleKPIQuery(say);
@@ -66,7 +64,8 @@ class SlackBotService {
     );
 
     // Warning cue messages
-    this.app.message(/:warn:/i, async ({ message, say }: { message: { text?: string }; say: Say }) => {
+    // We use 'any' for the message here to avoid TypeScript union errors with subtypes like message_changed
+    this.app.message(/:warn:/i, async ({ message, say }: { message: any; say: SayFn }) => {
       await this.handleAlertMessage(message, say);
     });
   }
@@ -99,7 +98,7 @@ class SlackBotService {
     }
   }
 
-  private async handleKPIQuery(say: Say): Promise<void> {
+  private async handleKPIQuery(say: SayFn): Promise<void> {
     if (!this.kpiWebhookUrl) {
       await say({ text: 'KPI service URL is not configured. Set KPI_WEBHOOK_URL to enable KPI lookups.' });
       return;
@@ -120,7 +119,7 @@ class SlackBotService {
 
       const blocks = [
         { type: 'header', text: { type: 'plain_text', text: 'Latest KPI Dashboard', emoji: true } },
-        ...topKpis.map((kpi) => ({
+        ...topKpis.map((kpi: any) => ({
           type: 'section',
           text: {
             type: 'mrkdwn',
@@ -136,7 +135,7 @@ class SlackBotService {
     }
   }
 
-  private async handleAlertMessage(message: { text?: string }, say: Say): Promise<void> {
+  private async handleAlertMessage(message: { text?: string }, say: SayFn): Promise<void> {
     const text = message.text?.trim();
     if (!text) return;
     await say({ text: `Alert noted: "${text}". Forwarding to monitoring.` });
