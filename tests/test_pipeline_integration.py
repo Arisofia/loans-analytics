@@ -22,7 +22,6 @@ def test_pipeline_missing_required_column():
     df = ingestion.ingest_dataframe(df)
     validated = ingestion.validate_loans(df)
     assert not validated['_validation_passed'].iloc[0]
-    
     transformer = DataTransformation()
     with pytest.raises(ValueError, match="missing required columns"):
         transformer.transform_to_kpi_dataset(validated)
@@ -45,7 +44,6 @@ def test_pipeline_invalid_numeric_type():
     df = ingestion.ingest_dataframe(df)
     validated = ingestion.validate_loans(df)
     assert not validated['_validation_passed'].iloc[0]
-    
     transformer = DataTransformation()
     with pytest.raises(ValueError):
         transformer.transform_to_kpi_dataset(validated)
@@ -63,7 +61,5 @@ def test_pipeline_kpi_engine_missing_column():
         'dpd_7_30_usd': [100.0],
     })
     transformer = DataTransformation()
-    kpi_df = transformer.transform_to_kpi_dataset(df)
-    engine = KPIEngine(kpi_df)
-    with pytest.raises(ValueError, match="missing columns"):
-        engine.calculate_par_30()
+    with pytest.raises(ValueError, match="missing required columns"):
+        transformer.transform_to_kpi_dataset(df)

@@ -2,6 +2,8 @@
 Module for data validation utilities and functions.
 """
 
+import pandas as pd
+
 
 def validate_dataframe(df, required_columns=None, numeric_columns=None):
     """

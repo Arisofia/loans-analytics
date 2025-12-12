@@ -24,4 +24,4 @@ def test_collection_rate_remains_above_thresholds():
 def test_no_missing_segments_or_dates():
     df = pd.read_csv(SAMPLE_PATH)
     assert set(df["segment"].unique()) == {"Consumer", "SME"}
-    assert not df["observation_date"].isna().any()
+    assert not df["measurement_date"].isna().any()

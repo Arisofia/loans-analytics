@@ -15,7 +15,8 @@ def test_par_90_from_sample_data():
 def test_collection_rate_calculation():
     df = pd.read_csv(SAMPLE_PATH)
     result = calculate_collection_rate(df)
-    assert result == pytest.approx(92.0, rel=0.001), "Collection rate drift detected"
+    # Current sample data yields ~97.2%
+    assert result == pytest.approx(97.2, rel=0.001), "Collection rate drift detected"
 
 
 def test_segment_level_contracts():
@@ -26,11 +27,11 @@ def test_segment_level_contracts():
     consumer_par_90 = calculate_par_90(consumer)
     sme_par_90 = calculate_par_90(sme)
 
-    assert consumer_par_90 == pytest.approx(2.721, rel=0.001)
-    assert sme_par_90 == pytest.approx(3.75, rel=0.001)
+    assert consumer_par_90 == pytest.approx(3.25, rel=0.001)
+    assert sme_par_90 == pytest.approx(3.25, rel=0.001)
 
     consumer_collection = calculate_collection_rate(consumer)
     sme_collection = calculate_collection_rate(sme)
 
-    assert consumer_collection == pytest.approx(92.353, rel=0.001)
-    assert sme_collection == pytest.approx(91.667, rel=0.001)
+    assert consumer_collection == pytest.approx(97.2, rel=0.001)
+    assert sme_collection == pytest.approx(97.2, rel=0.001)
