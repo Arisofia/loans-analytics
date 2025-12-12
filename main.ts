@@ -1,4 +1,7 @@
 /** Repository layout helper for ABACO with optional strict and JSON modes. */
+// Node.js compatible version
+import fs from 'fs';
+import path from 'path';
 interface CheckTarget {
   label: string;
   path: string;
@@ -19,7 +22,8 @@ const defaultAreas: CheckTarget[] = [
   { label: "Data samples", path: "data_samples" },
 ];
 
-const { strict, json, extras } = parseArgs(Deno.args);
+const args = process.argv.slice(2);
+const { strict, json, extras } = parseArgs(args);
 const keyAreas = [...defaultAreas, ...extras];
 
 function parseArgs(args: string[]) {
@@ -44,20 +48,20 @@ function parseArgs(args: string[]) {
   return options;
 }
 
-async function describePath(target: CheckTarget): Promise<PathInsight> {
+
+function describePathSync(target: CheckTarget): PathInsight {
   try {
-    const stats = await Deno.lstat(target.path);
-    const type = stats.isDirectory
+    const stats = fs.lstatSync(target.path);
+    const type = stats.isDirectory()
       ? "directory"
-      : stats.isFile
+      : stats.isFile()
         ? "file"
         : "other";
-
     return {
       ...target,
       exists: true,
       type,
-      modified: stats.mtime?.toISOString(),
+      modified: stats.mtime ? stats.mtime.toISOString() : undefined,
     };
   } catch {
     return { ...target, exists: false, type: "other" };
@@ -92,10 +96,17 @@ function printHumanReadable(statuses: PathInsight[]) {
   console.log("\nExample:\n  deno run --allow-read main.ts --strict --path=Temp:data_samples/tmp");
 }
 
-const results = [] as PathInsight[];
-for (const area of keyAreas) results.push(await describePath(area));
+
+
+const results = keyAreas.map(describePathSync);
+
+
 
 if (json) console.log(JSON.stringify(results, null, 2));
 else printHumanReadable(results);
 
-if (strict && results.some((entry) => !entry.exists)) Deno.exit(1);
+if (strict && results.some((entry) => !entry.exists)) process.exit(1);
+
+export {} // Make this file a module to allow top-level await
+
+export {} // Make this file a module to allow top-level await
