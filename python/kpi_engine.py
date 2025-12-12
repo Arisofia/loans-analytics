@@ -48,19 +48,41 @@ class KPIEngine:
     def calculate_par_30(self) -> Tuple[float, Dict]:
         """Portfolio at Risk (30+ days)
         Formula: SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable)
+        Strictly require all columns, log and raise if missing or invalid.
         """
         try:
-            dpd_30_plus = 0
-            if 'dpd_30_60_usd' in self.portfolio_data.columns:
-                dpd_30_plus += self.portfolio_data['dpd_30_60_usd'].sum()
-            if 'dpd_60_90_usd' in self.portfolio_data.columns:
-                dpd_30_plus += self.portfolio_data['dpd_60_90_usd'].sum()
-            if 'dpd_90_plus_usd' in self.portfolio_data.columns:
-                dpd_30_plus += self.portfolio_data['dpd_90_plus_usd'].sum()
+            required = ['dpd_30_60_usd', 'dpd_60_90_usd', 'dpd_90_plus_usd', 'total_receivable_usd']
+            missing = [col for col in required if col not in self.portfolio_data.columns]
+            if missing:
+                msg = f"PAR_30 calculation failed: missing columns: {missing}"
+                logger.error(msg)
+                self.audit_trail.append({
+                    'metric': 'par_30',
+                    'run_id': self.run_id,
+                    'timestamp': datetime.now(),
+                    'error': msg,
+                    'calculation_status': 'failed',
+                    'missing_columns': missing
+                })
+                raise ValueError(msg)
 
-            total_receivable = self.portfolio_data[
-                'total_receivable_usd'
-            ].sum()
+            dpd_30_plus = (
+                self.portfolio_data['dpd_30_60_usd'].sum() +
+                self.portfolio_data['dpd_60_90_usd'].sum() +
+                self.portfolio_data['dpd_90_plus_usd'].sum()
+            )
+            total_receivable = self.portfolio_data['total_receivable_usd'].sum()
+            if not pd.api.types.is_numeric_dtype(self.portfolio_data['total_receivable_usd']):
+                msg = "PAR_30 calculation failed: total_receivable_usd is not numeric"
+                logger.error(msg)
+                self.audit_trail.append({
+                    'metric': 'par_30',
+                    'run_id': self.run_id,
+                    'timestamp': datetime.now(),
+                    'error': msg,
+                    'calculation_status': 'failed'
+                })
+                raise ValueError(msg)
             par_30 = (
                 dpd_30_plus / total_receivable * 100
                 if total_receivable > 0
@@ -75,9 +97,7 @@ class KPIEngine:
                 'calculation_status': 'success'
             })
 
-            logger.info(
-                f"PAR_30 calculated: {par_30:.2f}%"
-            )
+            logger.info(f"PAR_30 calculated: {par_30:.2f}%")
             return (
                 par_30,
                 {
@@ -102,16 +122,37 @@ class KPIEngine:
     ) -> Tuple[float, Dict]:
         """Effective Collection Rate
         Formula: SUM(eligible_receivables) / SUM(total_receivables)
+        Strictly require all columns, log and raise if missing or invalid.
         """
         try:
-            total_receivables = self.portfolio_data[
-                'total_receivable_usd'
-            ].sum()
-            total_eligible = (
-                self.portfolio_data['total_eligible_usd'].sum()
-                if 'total_eligible_usd' in self.portfolio_data.columns
-                else 0
-            )
+            required = ['total_receivable_usd', 'total_eligible_usd']
+            missing = [col for col in required if col not in self.portfolio_data.columns]
+            if missing:
+                msg = f"Collection Rate calculation failed: missing columns: {missing}"
+                logger.error(msg)
+                self.audit_trail.append({
+                    'metric': 'collection_rate',
+                    'run_id': self.run_id,
+                    'timestamp': datetime.now(),
+                    'error': msg,
+                    'calculation_status': 'failed',
+                    'missing_columns': missing
+                })
+                raise ValueError(msg)
+
+            total_receivables = self.portfolio_data['total_receivable_usd'].sum()
+            total_eligible = self.portfolio_data['total_eligible_usd'].sum()
+            if not pd.api.types.is_numeric_dtype(self.portfolio_data['total_receivable_usd']):
+                msg = "Collection Rate calculation failed: total_receivable_usd is not numeric"
+                logger.error(msg)
+                self.audit_trail.append({
+                    'metric': 'collection_rate',
+                    'run_id': self.run_id,
+                    'timestamp': datetime.now(),
+                    'error': msg,
+                    'calculation_status': 'failed'
+                })
+                raise ValueError(msg)
             collections_total = (
                 collections_data['amount'].sum()
                 if (
@@ -135,9 +176,7 @@ class KPIEngine:
                 'calculation_status': 'success',
             })
 
-            logger.info(
-                f"Collection Rate calculated: {collection_rate:.2f}%"
-            )
+            logger.info(f"Collection Rate calculated: {collection_rate:.2f}%")
             return (
                 collection_rate,
                 {
