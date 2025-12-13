@@ -1,4 +1,11 @@
 {
+    "files.exclude": {
+      "**/node_modules/**": true,
+      "**/infra/**": true,
+      "**/orchestration/**": true,
+      "**/services/**": true,
+      "**/.azure/**": true
+    },
   // Use modern file watching for better performance
   "files.watcherExclude": {
     "**/.git/objects/**": true,
@@ -38,7 +45,10 @@
     "**/build": true,
     "**/.gradle": true,
     "**/.venv": true,
-    "**/venv": true
+    "**/venv": true,
+    "**/infra/**": true,
+    "**/orchestration/**": true,
+    "**/services/**": true
   },
 
   // --- Deno: Only enable for the web app ---
@@ -77,8 +87,15 @@
   },
   "java.compile.nullAnalysis.mode": "automatic",
   "python.analysis.typeCheckingMode": "standard",
-  "python-envs.defaultEnvManager": "ms-python.python:system",
-  "python-envs.pythonProjects": [],
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.useLibraryCodeForTypes": true,
+
+  "typescript.disableAutomaticTypeAcquisition": true,
+
+  // ❌ ELIMINADO A PROPÓSITO (causaba el error de environment name)
+  // "python-envs.defaultEnvManager": "ms-python.python:system",
+  // "python-envs.pythonProjects": [],
 
   // --- Analytics & Traceability: Prioritize KPIs, dashboards, and auditability ---
   // Ensure all code changes for JS/TS run lint at repo root (see AGENTS.md)
