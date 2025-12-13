@@ -1,18 +1,18 @@
 version: 2
 updates:
-  # Maintain dependencies for GitHub Actions
+  # Maintain GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
 
-  # Maintain dependencies for pip (Python)
+  # Maintain Python dependencies (pip)
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
 
-  # Maintain dependencies for npm (Node/JS) - detected based on your alerts
+  # Maintain JavaScript dependencies (npm)
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
