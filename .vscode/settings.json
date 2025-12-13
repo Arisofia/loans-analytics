@@ -1,4 +1,12 @@
 {
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv-1/bin/python",
   "python.analysis.typeCheckingMode": "basic",
-  "java.compile.nullAnalysis.mode": "automatic"
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["tests"],
+  "editor.formatOnSave": true,
+  "files.exclude": {
+    "**/.venv": true,
+    "**/.venv-1": true,
+    "**/.git": true
+  }
 }
