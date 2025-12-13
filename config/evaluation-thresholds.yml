@@ -1,221 +1,100 @@
-# Evaluation Metrics Threshold Configuration
-# Configuration for model quality gates and performance standards
-#
-# Each metric can have:
-#   min: Minimum acceptable value (failure if below)
-#   max: Maximum acceptable value (failure if above)
-#   warning: Warning threshold (between min and warning triggers warning)
-#   description: Human-readable explanation of the metric
-
-# ==============================================================================
-# CLASSIFICATION METRICS
-# Standard ML metrics for model performance evaluation
-# ==============================================================================
-
-thresholds:
-  # Overall Accuracy
-  accuracy:
-    min: 0.85
-    warning: 0.90
-    description: "Overall model accuracy on test dataset. Measures correct predictions across all classes."
-  
-  # Precision (Positive Predictive Value)
-  precision:
-    min: 0.80
-    warning: 0.85
-    description: "Precision score - minimize false positives. Critical for loan approval to avoid bad loans."
-  
-  # Recall (Sensitivity, True Positive Rate)
-  recall:
-    min: 0.75
-    warning: 0.82
-    description: "Recall score - minimize false negatives. Important to capture all potential defaults."
-  
-  # F1 Score (Harmonic Mean)
-  f1_score:
-    min: 0.78
-    warning: 0.85
-    description: "F1 score - balanced metric between precision and recall."
-  
-  # ROC AUC Score
-  roc_auc:
-    min: 0.85
-    warning: 0.90
-    description: "Area under ROC curve. Measures model's ability to discriminate between classes."
-
-# ==============================================================================
-# FINANCIAL-SPECIFIC METRICS
-# Domain-specific metrics for loan analytics and credit risk assessment
-# ==============================================================================
-
-  # Default Prediction
-  default_prediction_accuracy:
-    min: 0.88
-    warning: 0.92
-    description: "Accuracy in predicting loan defaults. High precision required for financial safety."
-  
-  # Risk Assessment
-  risk_assessment_precision:
-    min: 0.82
-    warning: 0.88
-    description: "Precision in classifying borrowers into risk categories (low/medium/high)."
-  
-  # Loan Approval Quality
-  loan_approval_quality:
-    min: 0.80
-    warning: 0.85
-    description: "Quality metric for loan approval decisions. Balance between growth and risk."
-  
-  # Portfolio Performance
-  portfolio_performance:
-    min: 0.75
-    warning: 0.82
-    description: "Overall portfolio health indicator. Composite metric of multiple factors."
-  
-  # Delinquency Prediction (30+ days)
-  delinquency_30_prediction:
-    min: 0.78
-    warning: 0.85
-    description: "Accuracy in predicting 30+ day delinquencies. Early warning system."
-  
-  # Delinquency Prediction (90+ days - Serious)
-  delinquency_90_prediction:
-    min: 0.85
-    warning: 0.90
-    description: "Accuracy for 90+ day delinquency (serious). Critical for loss prevention."
-  
-  # Loss Given Default (LGD) Estimation Error
-  lgd_estimation_error:
-    max: 0.15
-    warning: 0.10
-    description: "Mean absolute error in LGD estimation. Lower is better (inverted threshold)."
-  
-  # Probability of Default (PD) Calibration
-  pd_calibration_score:
-    min: 0.80
-    warning: 0.88
-    description: "Calibration quality of PD estimates. Measures prediction reliability."
-
-# ==============================================================================
-# BUSINESS METRICS
-# Business KPIs and operational performance indicators
-# ==============================================================================
-
-  # Customer Lifetime Value Prediction
-  ltv_prediction_accuracy:
-    min: 0.72
-    warning: 0.80
-    description: "Accuracy in predicting customer lifetime value for marketing optimization."
-  
-  # Churn Prediction
-  churn_prediction_precision:
-    min: 0.75
-    warning: 0.82
-    description: "Precision in predicting customer churn for retention strategies."
-  
-  # Cross-Sell Success Rate
-  cross_sell_prediction:
-    min: 0.68
-    warning: 0.75
-    description: "Accuracy in predicting successful cross-sell opportunities."
-  
-  # Fraud Detection Rate
-  fraud_detection_recall:
-    min: 0.92
-    warning: 0.96
-    description: "Recall for fraud detection. Must minimize false negatives (missed fraud)."
-  
-  # Fraud False Positive Rate
-  fraud_false_positive_rate:
-    max: 0.05
-    warning: 0.02
-    description: "False positive rate for fraud detection. Minimize customer friction."
-
-# ==============================================================================
-# MODEL STABILITY METRICS
-# Track model drift and performance degradation over time
-# ==============================================================================
-
-  # Population Stability Index (PSI)
-  psi_score:
-    max: 0.10
-    warning: 0.05
-    description: "Population Stability Index. Values > 0.25 indicate severe drift."
-  
-  # Feature Importance Stability
-  feature_stability_score:
-    min: 0.85
-    warning: 0.92
-    description: "Stability of top feature importances across time periods."
-  
-  # Prediction Distribution Stability
-  prediction_distribution_ks:
-    max: 0.15
-    warning: 0.10
-    description: "Kolmogorov-Smirnov statistic for prediction distribution drift."
-
-# ==============================================================================
-# FAIRNESS & COMPLIANCE METRICS
-# Ensure regulatory compliance and ethical AI practices
-# ==============================================================================
-
-  # Demographic Parity Difference
-  demographic_parity_difference:
-    max: 0.10
-    warning: 0.05
-    description: "Difference in approval rates across protected groups. Lower is fairer."
-  
-  # Equal Opportunity Difference
-  equal_opportunity_difference:
-    max: 0.10
-    warning: 0.05
-    description: "Difference in true positive rates across groups."
-  
-  # Disparate Impact Ratio
-  disparate_impact_ratio:
-    min: 0.80
-    warning: 0.90
-    description: "Ratio of approval rates (protected/reference). Should be close to 1.0."
-
-# ==============================================================================
-# CONFIGURATION METADATA
-# ==============================================================================
-
 metadata:
   version: "1.0.0"
   last_updated: "2025-12-10"
   maintainer: "Data Science Team"
-  review_frequency: "quarterly"
-  
-  # Threshold adjustment policy
+  review_frequency: quarterly
   adjustment_policy: |
-    Thresholds should be reviewed quarterly and adjusted based on:
-    1. Business requirements and risk appetite changes
-    2. Regulatory guideline updates
-    3. Industry benchmark comparisons
-    4. Historical model performance trends
-    5. Portfolio composition changes
-  
-  # Alert escalation
-  escalation:
-    failures: "Immediate notification to Data Science Lead and Risk Management"
-    warnings: "Daily digest to Model Monitoring team"
-    multiple_failures: "Automated model freeze and stakeholder meeting"
+    Thresholds should be reviewed quarterly based on risk, regulation and performance.
 
-# ==============================================================================
-# NOTES
-# ==============================================================================
-# 
-# - All thresholds are configurable and should be adjusted based on:
-#   * Business requirements and risk appetite
-#   * Regulatory requirements (Basel III, CECL, etc.)
-#   * Industry benchmarks and competitive landscape
-#   * Historical performance and portfolio characteristics
-#
-# - Use --strict flag in validation script to treat warnings as failures
-#   for critical production deployments
-#
-# - Monitor threshold hit rates over time to ensure they remain relevant
-#   and achievable while maintaining quality standards
-# 
-# ==============================================================================
+financial_metrics:
+  default_prediction_accuracy:
+    min: 0.88
+    warning: 0.92
+  risk_assessment_precision:
+    min: 0.82
+    warning: 0.88
+  loan_approval_quality:
+    min: 0.80
+    warning: 0.85
+  portfolio_performance:
+    min: 0.75
+    warning: 0.82
+  lgd_estimation_error:
+    max: 0.15
+    warning: 0.10
+
+model_stability:
+  psi_score:
+    max: 0.10
+    warning: 0.05
+  feature_stability_score:
+    min: 0.85
+    warning: 0.92
+  prediction_distribution_ks:
+    max: 0.15
+    warning: 0.10
+
+fairness_compliance:
+  demographic_parity_difference:
+    max: 0.10
+    warning: 0.05
+  equal_opportunity_difference:
+    max: 0.10
+    warning: 0.05
+  disparate_impact_ratio:
+    min: 0.80
+    warning: 0.90
+
+business_kpis:
+  ltv_prediction_accuracy:
+    min: 0.72
+    warning: 0.80
+  churn_prediction_precision:
+    min: 0.75
+    warning: 0.82
+  cross_sell_prediction:
+    min: 0.68
+    warning: 0.75
+
+model_stability:
+  psi_threshold:
+    max: 0.10
+    warning: 0.05
+
+  drift_detection:
+    method: "psi"
+    frequency: "daily"
+  psi_score:
+    max: 0.10
+    warning: 0.05
+
+
+fairness_compliance:
+  demographic_parity:
+    max: 0.10
+    warning: 0.05
+
+  disparate_impact_ratio:
+    min: 0.80
+    warning: 0.90
+  demographic_parity_difference:
+    max: 0.10
+    warning: 0.05
+
+business_kpis:
+  customer_ltv_prediction:
+    min: 0.72
+    warning: 0.80
+  churn_prediction:
+    min: 0.75
+    warning: 0.82
+  cross_sell_opportunities:
+    min: 0.68
+    warning: 0.75
+  fraud_detection:
+    min: 0.92
+    warning: 0.96
+  # keep existing ones if needed
+  ltv_prediction_accuracy:
+    min: 0.72
+    warning: 0.80

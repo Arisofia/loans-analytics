@@ -1,55 +1,23 @@
-# Gradle
-.gradle/
-build/
-**/.gradle/
-**/build/
 
-# Node / JavaScript
-node_modules/
-.next/
-.turbo/
-dist/
-coverage/
+# OS
+.DS_Store
 
 # Python
-.venv/
-.vscode/*
-!.vscode/settings.json
-venv/
 __pycache__/
 *.pyc
+.venv/
+venv/
 
-# IDE / Editor
-.vscode/
-.idea/
-*.vsix
+# Streamlit
+.streamlit/
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Project-specific artifacts
-apps/.DS_Store
-abaco-loans-analytics/figma-financial-dashboard/node_modules/
-
-# Local repository clones
-abaco-loans-analytics/
-data_samples/
-gemini-cli/
-
-# Environment & platform
-.env
-.env.local
-.env*.local
-.vercel/
-eslint.config.js
-.vercel
-.zencoder/
+# Data outputs (NO versionar)
 data/metrics/
+data_samples/*.csv
 logs/
-data/metrics/
-logs/
-data/metrics/
-logs/
-data/metrics/
-logs/
+
+# Build / tooling
+.gradle/
+
+# IDE
+.vscode/tasks.json
