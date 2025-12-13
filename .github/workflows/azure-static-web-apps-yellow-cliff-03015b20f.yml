@@ -56,4 +56,5 @@ jobs:
           skip_api_build: true
       - name: Skip deploy (missing token)
         if: steps.swa_token.outputs.present != 'true'
-        run: echo "Skipping SWA deploy: token missing."
+        run: |
+          echo "Skipping SWA deploy: token missing."
