@@ -412,7 +412,9 @@
 
   .kpiValue {
     font-size: 28px;
-=======
+  }
+
+  /* The following block appears to be a root-level or page-level style. Place it outside the media query if needed, or adjust selector as appropriate. */
   display: flex;
   flex-direction: column;
   gap: 96px;
