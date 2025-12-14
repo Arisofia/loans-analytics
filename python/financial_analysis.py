@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 

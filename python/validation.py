@@ -60,5 +60,5 @@ def safe_numeric(series: pd.Series) -> pd.Series:
     if series.dtype == 'object':
         # Regex handles currency symbols ($, €, £, ¥, ₽, ₡), commas, and percentages
         clean = series.astype(str).str.replace(r'[$,€£¥₽₡%]', '', regex=True).str.replace(',', '')
-        return pd.to_numeric(clean, errors='coerce').fillna(0.0)
-    return pd.to_numeric(series, errors='coerce').fillna(0.0)
+        return pd.to_numeric(clean, errors='coerce')
+    return pd.to_numeric(series, errors='coerce')

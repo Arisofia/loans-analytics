@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import uuid
 from datetime import datetime, timezone
+from typing import Dict
 
 class DataTransformation:
     def __init__(self):
