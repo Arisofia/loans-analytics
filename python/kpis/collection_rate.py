@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from typing import Optional
 from python.validation import safe_numeric
 
 def calculate_collection_rate(df: pd.DataFrame) -> np.float64:
