@@ -44,7 +44,6 @@ jobs:
         run: |
           cd apps/web
           npm ci
-          npm run lint -- --version >/dev/null
 
       - name: Analytics coverage (pytest)
         run: |
