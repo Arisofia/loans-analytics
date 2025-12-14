@@ -14,7 +14,7 @@
     "test": "echo \"Root test placeholder (per CodeQL traceability check)\""
   },
   "dependencies": {
-    "@notionhq/client": "2.2.10",
+    "@notionhq/client": "5.4.0",
     "@supabase/supabase-js": "2.87.1",
     "@vercel/analytics": "1.6.1",
     "@vercel/speed-insights": "1.3.1",
