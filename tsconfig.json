@@ -36,6 +36,6 @@
       "@/app/*": ["./apps/web/src/app/*"]
     }
   },
-  "include": ["global.d.ts", "apps/web/src", "apps/web/app"],
+  "include": ["global.d.ts", "apps/web/src", "apps/web/src/app"],
   "exclude": ["node_modules"]
 }
