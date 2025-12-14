@@ -92,10 +92,9 @@ python scripts/run_data_pipeline.py
 | File | Purpose |
 |------|---------|
 | `python/kpi_engine.py` | Fixed: collection_rate uses `cash_available_usd` |
-| `python/data_validation.py` | Schema validation, numeric bounds checks |
-| `scripts/ingest.py` | CSV → Parquet ingestion with timestamps |
-| `scripts/transform_and_calc.py` | Transformation + KPI calculation + segment breakdown |
-| `tests/unit/test_kpi_calculations.py` | Edge case unit tests (17 tests) |
+| `python/validation.py` | Schema validation, numeric bounds checks |
+| `scripts/run_data_pipeline.py` | Automated pipeline: Ingest → Transform → Calc → Output |
+| `tests/test_kpi_engine.py` | Unit tests for KPI orchestration and logic |
 | `.coveragerc` | Coverage configuration (fail_under=85) |
 | `.pre-commit-config.yaml` | Pre-commit hooks (black, isort, pylint) |
 | `.vscode/tasks.json` | 10+ automated tasks for testing/linting/pipeline |

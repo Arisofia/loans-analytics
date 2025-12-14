@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import logging
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +121,7 @@ class FinancialAnalyzer:
                 logger.info(f"Using {detected_field} as weight field")
                 weight_field = detected_field
             else:
-                logger.error(f"Weight field not found in DataFrame")
+                logger.error("Weight field not found in DataFrame")
                 return pd.DataFrame()
 
         result = {}
