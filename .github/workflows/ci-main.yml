@@ -61,7 +61,8 @@ jobs:
           pip install -r apps/analytics/requirements.txt
       - name: Run tests with coverage
         run: |
-          pytest --cov=python
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          pytest apps/analytics --cov=apps/analytics
       - name: Fail if coverage below 90%
         run: |
           coverage report --fail-under=90
@@ -124,6 +125,7 @@ jobs:
       - name: Install
         run: |
           cd apps/analytics
+          export PYTHONPATH=$PYTHONPATH:$(pwd)/../..
           pip install -r requirements.txt
       - name: Validate
         run: |
@@ -131,6 +133,7 @@ jobs:
       - name: Tests and coverage
         run: |
           cd apps/analytics
+          export PYTHONPATH=$PYTHONPATH:$(pwd)/../..
           pytest --cov=. --cov-report=xml:../coverage-python.xml
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v5
