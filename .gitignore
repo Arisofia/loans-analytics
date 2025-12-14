@@ -25,3 +25,8 @@ node_modules/
 
 clean_settings.json
 tailwind.config.js
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
