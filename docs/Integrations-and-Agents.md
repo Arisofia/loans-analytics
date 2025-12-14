@@ -45,8 +45,7 @@ Use this checklist to connect the project’s external services and to start the
 ## 6. GitHub Actions
 - Ensure the following secrets exist in the repo/org: Azure credentials, database/storage connection strings, Supabase keys, OpenAI/Gemini/Claude tokens, `SONAR_TOKEN`.
 - Run the workflows manually once to validate credentials:
-  - `ci-web.yml` for Next.js build and lint.
-  - `ci-analytics.yml` for Python pipeline checks.
+  - `ci-main.yml` for the centralized lint/test/build pipeline that runs the Next.js app, Python analytics jobs, and Java/Gradle builds.
   - Any deployment workflow that pushes the Docker image to ACR.
 - Capture the run URLs for audit and agent summaries.
 

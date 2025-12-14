@@ -23,7 +23,7 @@ This guide captures the operational steps to onboard the team to GitHub Copilot,
 
 ## Enterprise guardrails to enable
 - **Identity & access**: enforce SSO; require Passkeys/WebAuthn for MFA; disable outside collaborators; set **default repo visibility = private**.
-- **Repo protections**: branch protections with 2 reviewers, required checks (`ci-web`, `codeql`, `sonarcloud`), signed commits, linear history, and **CODEOWNERS** for API/service paths. Mark CodeQL and CI as **required workflows** on `main`.
+- **Repo protections**: branch protections with 2 reviewers, required checks (`ci-main`, `codeql`, `sonarcloud`), signed commits, linear history, and **CODEOWNERS** for API/service paths. Mark CodeQL and CI as **required workflows** on `main`.
 - **Secrets**: enable **Secret scanning + Push Protection + Token Leakage Prevention**; add custom patterns for internal tokens. Enable `actions: read` default permission and **environment secrets** for deployments.
 - **Auditability**: stream **audit logs** to Log Analytics/SIEM, enable **security overview**; ship webhook events for secret scanning to the SIEM to alert.
 - **Policy controls**: enable **content attachment restrictions**, restrict GitHub Apps to an allowlist, require **Dependabot auto-triage rules** and auto-merge for patch updates after checks pass.
@@ -36,7 +36,7 @@ This guide captures the operational steps to onboard the team to GitHub Copilot,
 
 ## CI/CD to Azure (ACR + App Service)
 1. **OIDC to Azure**: in Azure, create a Federated Credential on the SP used for deployment (scope: `api://AzureADTokenExchange`, subject: `repo:<org>/<repo>:environment:<env>`). Store `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, and `AZURE_RESOURCE_GROUP` as GitHub Environment secrets.
-2. **Build & test**: reuse `ci-web.yml`/`ci-analytics.yml` for lint/test. Add a .NET job that runs `dotnet restore`/`dotnet test` for ContosoTeamStats when the API project is present.
+2. **Build & test**: rely on the all-in-one `ci-main.yml` workflow that runs Java/Gradle, Python analytics, and Next.js lint/build/type-check so every push has cross-cutting verification. Add a .NET job that runs `dotnet restore`/`dotnet test` for ContosoTeamStats when the API project is present.
 3. **Containerize**: build/push Docker image to ACR using `docker build` + `az acr login` or `azure/login@v2` + `azure/cli@v2`. Tag as `${{ github.sha }}` and `latest`.
 4. **Deploy**: use `azure/webapps-deploy@v3` (App Service) pointing to the ACR image tag; guard with environment protection rules (approvals, secrets, lock deployments) per `dev`/`prod`.
 5. **Infra-as-Code**: place ARM/Bicep/Terraform in `infra/azure` with review requirements. Run `terraform plan` in PRs and `terraform apply` on protected branches.

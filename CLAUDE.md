@@ -102,7 +102,7 @@ python scripts/transform_and_calc.py data_samples/abaco_portfolio_sample.csv
 | `.coveragerc` | Coverage configuration (fail_under=85) |
 | `.pre-commit-config.yaml` | Pre-commit hooks (black, isort, pylint) |
 | `.vscode/tasks.json` | 10+ automated tasks for testing/linting/pipeline |
-| `.github/workflows/ci.yml` | Updated CI with preflight + coverage gates |
+| `.github/workflows/ci-main.yml` | Consolidated Next.js, Python, and Gradle lint/build/test jobs with preflight + coverage gates |
 
 ## Key Metrics
 
