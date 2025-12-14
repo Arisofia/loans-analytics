@@ -3,6 +3,7 @@
 This guide explains how to set up and use the official SDKs for Figma, Notion, and Slack in Node.js/TypeScript and Python. It lists the environment variables you need, installation commands, and minimal client initialization snippets so you can keep secrets out of your code and in your runtime configuration.
 
 ## Environment variables
+
 Export these values before running the examples:
 
 - `FIGMA_PERSONAL_ACCESS_TOKEN`: Figma personal access token with file read access.
@@ -25,6 +26,7 @@ export SLACK_SIGNING_SECRET="<signing_secret>"
 ## Node.js / TypeScript setup
 
 ### Install SDKs
+
 Choose the packages that match your preferred Figma client:
 
 ```bash
@@ -43,63 +45,68 @@ npm install --save-dev figma-export
 ### Usage examples (TypeScript)
 
 #### Figma client (figma-js)
+
 ```ts
-import { Client } from "figma-js";
+import { Client } from 'figma-js'
 
 const figma = Client({
   personalAccessToken: process.env.FIGMA_PERSONAL_ACCESS_TOKEN!,
-});
+})
 
 async function getFileNodes() {
-  const fileId = process.env.FIGMA_FILE_ID!;
-  const response = await figma.file(fileId);
-  return response.data.document.children;
+  const fileId = process.env.FIGMA_FILE_ID!
+  const response = await figma.file(fileId)
+  return response.data.document.children
 }
 ```
 
 #### Figma client (@figma-js/sdk)
+
 ```ts
-import { Figma } from "@figma-js/sdk";
+import { Figma } from '@figma-js/sdk'
 
 const figma = new Figma({
   personalAccessToken: process.env.FIGMA_PERSONAL_ACCESS_TOKEN!,
-});
+})
 
 async function getFileName() {
-  const fileId = process.env.FIGMA_FILE_ID!;
-  const file = await figma.getFile(fileId);
-  return file.name;
+  const fileId = process.env.FIGMA_FILE_ID!
+  const file = await figma.getFile(fileId)
+  return file.name
 }
 ```
 
 #### Notion client
-```ts
-import { Client } from "@notionhq/client";
 
-const notion = new Client({ auth: process.env.NOTION_TOKEN });
+```ts
+import { Client } from '@notionhq/client'
+
+const notion = new Client({ auth: process.env.NOTION_TOKEN })
 
 async function listDatabasePages() {
-  const databaseId = process.env.NOTION_DATABASE_ID!;
-  const response = await notion.databases.query({ database_id: databaseId });
-  return response.results.map((page) => page.id);
+  const databaseId = process.env.NOTION_DATABASE_ID!
+  const response = await notion.databases.query({ database_id: databaseId })
+  return response.results.map((page) => page.id)
 }
 ```
 
 #### Slack Web API client
-```ts
-import { WebClient } from "@slack/web-api";
 
-const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
+```ts
+import { WebClient } from '@slack/web-api'
+
+const slack = new WebClient(process.env.SLACK_BOT_TOKEN)
 
 async function postHealthCheck(channelId: string) {
   await slack.chat.postMessage({
     channel: channelId,
-    text: "ABACO integrations are live.",
-  });
+    text: 'ABACO integrations are live.',
+  })
 }
 ```
 
 ### Export design tokens from Figma
+
 Use [`figma-export`](https://github.com/marcomontalbano/figma-export) to pull design tokens from a Figma file:
 
 ```bash
@@ -112,6 +119,7 @@ npx figma-export --file-id "$FIGMA_FILE_ID" \
 ## Python setup
 
 ### Install SDKs
+
 ```bash
 pip install figma-python notion-client slack-sdk google-auth google-auth-oauthlib
 ```
@@ -119,6 +127,7 @@ pip install figma-python notion-client slack-sdk google-auth google-auth-oauthli
 ### Usage examples (Python)
 
 #### Figma client
+
 ```python
 from figma import Figma
 import os
@@ -131,6 +140,7 @@ print(file["name"])
 ```
 
 #### Notion client
+
 ```python
 from notion_client import Client
 import os
@@ -144,6 +154,7 @@ def list_database_pages():
 ```
 
 #### Slack SDK
+
 ```python
 from slack_sdk import WebClient
 import os
@@ -159,6 +170,7 @@ slack.chat_postMessage(
 ## Architecture visuals
 
 ### SDK client class diagram
+
 ```mermaid
 classDiagram
   class FigmaClient {
@@ -177,6 +189,7 @@ classDiagram
 ```
 
 ### Integration choice flow
+
 ```mermaid
 flowchart TD
   Start([Start]) --> Lang{Language}

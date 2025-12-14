@@ -7,6 +7,7 @@ This document confirms the **Fintech Factory Architecture** - a production-ready
 ### CONFIRMED DELIVERABLES
 
 **10-Section Repository Structure:**
+
 1. DATA LAYER - Cascade Debt exports, feature tables, KPI baselines
 2. ACCESS & CREDENTIALS - OAuth configs, integration manifests
 3. SCHEMAS & MANIFESTS - KPI definitions, data contracts, validation rules
@@ -19,6 +20,7 @@ This document confirms the **Fintech Factory Architecture** - a production-ready
 10. OUTPUT TEMPLATES - Investor decks, daily briefs, compliance reports
 
 **7 Departmental Intelligence Stacks:**
+
 - Marketing (GA, Meta, HubSpot → Daily CMO Brief)
 - Finance (Originations, Collections → CFO Scorecard)
 - Risk (Delinquency, Bureau → Daily Risk Report)

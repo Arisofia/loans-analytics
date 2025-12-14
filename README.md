@@ -30,7 +30,8 @@ See `docs/Analytics-Vision.md` for the analytics vision, Streamlit blueprint, an
 For the combined Next.js + FastAPI fintech dashboard (Figma-first, Plotly, AI insights, and KPI endpoints), follow `docs/FINTECH_DASHBOARD_WEB_APP_GUIDE.md`.
 
 This repository contains ContosoTeamStats, a .NET 6 Web API for managing sports teams that ships with Docker, Azure deployment scripts, SendGrid/Twilio integrations, and SQL Server migrations. Follow docs/ContosoTeamStats-setup.md for local setup, secrets, database provisioning, and container validation.
->>>>>>> origin/codex/develop-fintech-dashboard-web-app
+
+> > > > > > > origin/codex/develop-fintech-dashboard-web-app
 
 ## Java and Gradle Setup
 

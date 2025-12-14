@@ -4,7 +4,7 @@
 name: KPIAnalyticsAgent
 version: '1.0'
 namespace: fintech.factory.agents
-role: "kpi_analyst"
+role: 'kpi_analyst'
 requires_human_approval: false
 
 description: |
@@ -36,6 +36,6 @@ outputFormats:
   - coverage_report: Markdown/CSV
 
 refreshSchedule:
-  dashboard: "0 7 * * *"  # 7 AM daily
-  kpi_report: "0 8 * * 1"  # 8 AM Mondays
-  continuous_monitoring: "*/30 * * * *"  # Every 30 minutes
+  dashboard: '0 7 * * *' # 7 AM daily
+  kpi_report: '0 8 * * 1' # 8 AM Mondays
+  continuous_monitoring: '*/30 * * * *' # Every 30 minutes

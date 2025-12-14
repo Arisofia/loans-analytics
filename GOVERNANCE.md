@@ -36,6 +36,7 @@
 **Purpose**: Enforce governance rules on every commit and pull request.
 
 **Triggers**:
+
 - Pull requests to `main` or `develop`
 - Pushes to `main` or `develop`
 - Weekly compliance audit (every Sunday)
@@ -43,6 +44,7 @@
 **Jobs**:
 
 #### Compliance Checks
+
 - CodeRabbit analysis (assertive profile, strict mode)
 - Audit trail generation
 - Secret detection (no hardcoded credentials)
@@ -51,15 +53,18 @@
 - Traceability verification
 
 #### SonarQube Quality Gates
+
 - Code metrics and coverage
 - Quality gate enforcement (zero critical issues)
-- >90% test coverage requirement
+- > 90% test coverage requirement
 
 #### Security & Dependency Audit
+
 - Vulnerable dependency detection
 - Dependabot result integration
 
 #### Compliance Reporting
+
 - Automated PR comments with compliance status
 - Artifact uploads (90-day retention)
 - CI/CD dashboard integration
@@ -67,6 +72,7 @@
 ### 2. Code Quality Configuration (`.coderabbit.yaml`)
 
 **Profile**: `assertive`
+
 - Real-time code reviews
 - Request changes on violations
 - High-level summaries
@@ -95,6 +101,7 @@ src/inference/**:
 ### 3. Refactoring Rules (`.sourcery.yaml`)
 
 **Principles**:
+
 - Rank-ordering + survival analysis pattern for complex models
 - State must be per-platform (not global)
 - Lint mode enabled (detect issues without fix)
@@ -105,6 +112,7 @@ src/inference/**:
 **Output**: `audit_log.json` (90-day retention)
 
 **Metadata**:
+
 ```json
 {
   "generated_at": "2024-01-15T14:30:45Z",
@@ -119,6 +127,7 @@ src/inference/**:
 ```
 
 **Events Tracked**:
+
 - `code_quality_violation`: Financial float vs Decimal
 - `security_violation`: Hardcoded secrets detected
 - `fragility_violation`: eval(), bare except, etc.
@@ -130,21 +139,22 @@ src/inference/**:
 
 ### Agent Contracts
 
-| Agent | Primary Duty | Governance |
-|-------|--------------|------------|
-| **Founder** | Business metrics & OKRs | Quarterly reviews, KPI dashboards |
-| **Investor** | Capital allocation & returns | Monthly P&L, IRR tracking |
-| **CTO** | Technical architecture & velocity | Sprint planning, tech debt backlog |
-| **Compliance** | Regulatory adherence & audits | Real-time governance enforcement |
-| **Fraud** | Transaction analysis & anomaly detection | Daily model retraining, 99.5% recall |
-| **Growth** | Acquisition & retention metrics | Weekly cohort analysis |
-| **Risk** | Portfolio risk & stress testing | Daily VaR calculations |
-| **Integrator** | Platform connections & APIs | Token management, sync logs |
-| **MLOps** | Model lifecycle & experimentation | CI/CD for models, auto-retraining |
+| Agent          | Primary Duty                             | Governance                           |
+| -------------- | ---------------------------------------- | ------------------------------------ |
+| **Founder**    | Business metrics & OKRs                  | Quarterly reviews, KPI dashboards    |
+| **Investor**   | Capital allocation & returns             | Monthly P&L, IRR tracking            |
+| **CTO**        | Technical architecture & velocity        | Sprint planning, tech debt backlog   |
+| **Compliance** | Regulatory adherence & audits            | Real-time governance enforcement     |
+| **Fraud**      | Transaction analysis & anomaly detection | Daily model retraining, 99.5% recall |
+| **Growth**     | Acquisition & retention metrics          | Weekly cohort analysis               |
+| **Risk**       | Portfolio risk & stress testing          | Daily VaR calculations               |
+| **Integrator** | Platform connections & APIs              | Token management, sync logs          |
+| **MLOps**      | Model lifecycle & experimentation        | CI/CD for models, auto-retraining    |
 
 ### Event Subscriptions
 
 All agents subscribe to **Kafka topics** by type:
+
 - `financial.transaction` → Fraud, Compliance, Risk
 - `user.lifecycle` → Growth, Investor
 - `system.deployment` → CTO, MLOps
@@ -153,7 +163,9 @@ All agents subscribe to **Kafka topics** by type:
 ## Integrations Page
 
 ### Purpose
+
 Manage API tokens for external platforms (Meta, LinkedIn, custom APIs) with:
+
 - Encrypted storage (AES-256-GCM)
 - Per-platform token isolation
 - Automatic sync logging
@@ -170,12 +182,14 @@ Manage API tokens for external platforms (Meta, LinkedIn, custom APIs) with:
 ### Critical Rules
 
 ❌ **NEVER**:
+
 - Store tokens in plaintext
 - Commit .env files
 - Use eval() for token validation
 - Share state across platforms
 
 ✅ **ALWAYS**:
+
 - Validate provider tokens before storing
 - Log all integration events
 - Implement exponential backoff (3 retry attempts)
@@ -230,6 +244,7 @@ Manage API tokens for external platforms (Meta, LinkedIn, custom APIs) with:
 ### Currency Handling
 
 ✅ **CORRECT**:
+
 ```python
 from decimal import Decimal
 amount = Decimal('1234.56')  # Always use Decimal for currency
@@ -237,6 +252,7 @@ rate = Decimal('0.05')       # Interest rates too
 ```
 
 ❌ **WRONG**:
+
 ```python
 amount = 1234.56         # Float causes rounding errors
 rate = 0.05              # Currency precision loss
@@ -245,6 +261,7 @@ rate = 0.05              # Currency precision loss
 ### Idempotency Keys
 
 All payments must include an idempotency key:
+
 ```python
 idempotency_key = f"{user_id}_{timestamp}_{operation_id}"
 # Ensures no duplicate charges if retry occurs
@@ -334,3 +351,4 @@ KMS_ENCRYPTION_KEY     # Token encryption key
 - [Sourcery Config](.sourcery.yaml)
 - [Audit Log Generator](scripts/generate_audit_log.sh)
 - [CI/CD Pipeline](docs/DEPLOYMENT.md)
+```

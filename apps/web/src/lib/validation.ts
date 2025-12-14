@@ -84,23 +84,23 @@ export function validateAnalytics(data: unknown): ValidationResult<ProcessedAnal
   try {
     const validated = ProcessedAnalyticsSchema.parse(data)
     const warnings: string[] = []
-    
+
     if (validated.loans.length === 0) {
       warnings.push('No loans provided')
     }
-    
+
     if (validated.treemap.length === 0) {
       warnings.push('Treemap is empty - no loan statuses found')
     }
-    
+
     if (validated.rollRates.length === 0) {
       warnings.push('Roll rates are empty - no DPD status data found')
     }
-    
+
     if (validated.kpis.loanCount === 0) {
       warnings.push('Loan count is zero')
     }
-    
+
     return { success: true, data: validated, warnings }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -146,7 +146,7 @@ export function validateCsvInput(content: string): ValidationResult<{
   }
 
   const lines = content.trim().split(/\r?\n/)
-  
+
   if (lines.length < 2) {
     return {
       success: false,

@@ -1,7 +1,7 @@
 name: Slack Notification
 on:
   workflow_run:
-    workflows: ["Run KPI regression and statistical tests"]
+    workflows: ['Run KPI regression and statistical tests']
     types:
       - completed
 jobs:

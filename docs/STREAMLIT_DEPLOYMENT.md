@@ -161,7 +161,7 @@ This guide covers deploying a Streamlit dashboard alongside the Next.js applicat
 
 ```yaml
 // filepath: docker-compose.streamlit.yml
-version: "3.8"
+version: '3.8'
 
 services:
   streamlit:
@@ -170,7 +170,7 @@ services:
       dockerfile: Dockerfile.streamlit
     container_name: abaco-streamlit
     ports:
-      - "8501:8501"
+      - '8501:8501'
     environment:
       STREAMLIT_SERVER_PORT: 8501
       STREAMLIT_SERVER_ADDRESS: 0.0.0.0
@@ -192,7 +192,7 @@ services:
       dockerfile: Dockerfile
     container_name: abaco-nextjs
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
@@ -361,24 +361,24 @@ echo $SUPABASE_SERVICE_KEY
 
 ## Cost Estimation
 
-| Service          | Free Tier | Paid Tier    | Notes                   |
-| ---------------- | --------- | ------------ | ----------------------- |
-| Streamlit Cloud  | 1 app     | $5/app/month | Verified email required |
+| Service              | Free Tier | Paid Tier    | Notes                   |
+| -------------------- | --------- | ------------ | ----------------------- |
+| Streamlit Cloud      | 1 app     | $5/app/month | Verified email required |
 | Cascade Platform API | Free      | Free         | Included with workspace |
-| Supabase         | 500MB DB  | $25+/month   | Scales with usage       |
-| Railway          | None      | $5+/month    | Pay-as-you-go available |
+| Supabase             | 500MB DB  | $25+/month   | Scales with usage       |
+| Railway              | None      | $5+/month    | Pay-as-you-go available |
 
 ## Integration with Next.js Application
 
 The Streamlit dashboard complements the Next.js application:
 
-| Feature                 | Next.js App      | Streamlit Dashboard |
-| ----------------------- | ---------------- | ------------------- |
-| User authentication     | ✅ (Supabase)    | ❌ (Admin only)     |
-| Risk dashboard          | ✅ (Real-time)   | ✅ (Analytics)      |
-| Data ingestion          | ❌               | ✅ (Cascade Platform)   |
-| Portfolio visualization | ✅ (Interactive) | ✅ (Statistical)    |
-| ML predictions          | ✅ (API-based)   | ✅ (Direct)         |
+| Feature                 | Next.js App      | Streamlit Dashboard   |
+| ----------------------- | ---------------- | --------------------- |
+| User authentication     | ✅ (Supabase)    | ❌ (Admin only)       |
+| Risk dashboard          | ✅ (Real-time)   | ✅ (Analytics)        |
+| Data ingestion          | ❌               | ✅ (Cascade Platform) |
+| Portfolio visualization | ✅ (Interactive) | ✅ (Statistical)      |
+| ML predictions          | ✅ (API-based)   | ✅ (Direct)           |
 
 ## Environment Notes
 

@@ -6,15 +6,18 @@ This is the web application for the Abaco Loans Analytics project, built with Ne
 
 1.  **Install dependencies:**
     Navigate to this directory (`apps/web`) and run:
+
     ```bash
     npm install
     ```
 
 2.  **Set up environment variables:**
     Copy the example environment file:
+
     ```bash
     cp .env.example .env.local
     ```
+
     Then, fill in the required values in `.env.local`.
 
 3.  **Run the development server:**
@@ -55,5 +58,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
 # Trigger Azure deployment
+
 # Trigger Azure deployment again

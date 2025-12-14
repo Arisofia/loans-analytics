@@ -9,6 +9,7 @@
 ## What Was Delivered
 
 ### 1. **CI/CD Pipeline** ✅
+
 - **File**: `.github/workflows/ci-main.yml`
 - **Features**:
   - Multi-stage pipeline: Lint → Type-Check → Build → Deploy
@@ -18,6 +19,7 @@
   - Environment-specific secrets management
 
 ### 2. **Error Monitoring** ✅
+
 - **File**: `src/sentry.client.config.ts`
 - **Features**:
   - Client-side error tracking
@@ -26,6 +28,7 @@
   - Dashboard at https://sentry.io
 
 ### 3. **Data Pipeline Validation** ✅
+
 - **File**: `src/lib/validation.ts`
 - **Features**:
   - Zod schemas for all data types
@@ -35,6 +38,7 @@
   - Safe number parsing
 
 ### 4. **Documentation** ✅
+
 - **Files**:
   - `CLAUDE.md` - Complete deployment guide
   - `README.md` - Quick start and environment variables
@@ -43,6 +47,7 @@
   - `PRODUCTION_READINESS.md` - This summary
 
 ### 5. **Security Hardening** ✅
+
 - **Security headers** in `next.config.js`
 - **HTTPS enforcement** (Vercel handles)
 - **Environment variable isolation** (GitHub Secrets)
@@ -62,6 +67,7 @@ All checks pass ✅:
 ```
 
 **Build output**:
+
 - 15 routes (13 static, 1 dynamic, 1 API)
 - Total size: ~2.3 MB (optimized)
 - Next.js 16 + Turbopack
@@ -84,6 +90,7 @@ NEXT_PUBLIC_SENTRY_DSN           (optional, for error tracking)
 ```
 
 **Get values from:**
+
 1. **Vercel**: https://vercel.com/account/tokens (VERCEL_TOKEN)
 2. **Vercel dashboard**: https://vercel.com/dashboard (ORG_ID, PROJECT_ID)
 3. **Supabase**: https://supabase.com/dashboard (SUPABASE_URL, ANON_KEY)
@@ -102,6 +109,7 @@ git push origin main
 ```
 
 This automatically:
+
 1. Runs linting
 2. Runs type checks
 3. Builds the app
@@ -125,17 +133,18 @@ https://sentry.io → select project → Errors
 
 ## Environment Details
 
-| Environment | URL | Branch | Auto-Deploy |
-|-------------|-----|--------|-------------|
-| Production | https://abaco-loans-analytics.vercel.app | `main` | ✅ Yes |
-| Staging | https://abaco-loans-analytics-staging.vercel.app | `staging` | ✅ Yes |
-| Local Dev | http://localhost:3000 | N/A | N/A |
+| Environment | URL                                              | Branch    | Auto-Deploy |
+| ----------- | ------------------------------------------------ | --------- | ----------- |
+| Production  | https://abaco-loans-analytics.vercel.app         | `main`    | ✅ Yes      |
+| Staging     | https://abaco-loans-analytics-staging.vercel.app | `staging` | ✅ Yes      |
+| Local Dev   | http://localhost:3000                            | N/A       | N/A         |
 
 ---
 
 ## Data Pipeline Status
 
 ### Current Implementation
+
 - ✅ CSV parsing
 - ✅ KPI calculations (delinquency, yield, LTV, DTI)
 - ✅ Treemap visualization
@@ -144,6 +153,7 @@ https://sentry.io → select project → Errors
 - ✅ Export to CSV/JSON/Markdown
 
 ### New Validation
+
 - ✅ Input validation (Zod schemas)
 - ✅ Size limits (50MB max)
 - ✅ Error tracking
@@ -151,6 +161,7 @@ https://sentry.io → select project → Errors
 - ✅ Type safety
 
 ### Known Limitations (Optional Future Work)
+
 - ⚠️ No unit tests (can add later)
 - ⚠️ No streaming CSV parser (for files >100MB)
 - ⚠️ No audit logging table
@@ -227,12 +238,14 @@ if (analyticsResult.warnings.length > 0) {
 **URL**: https://sentry.io → select "abaco-loans-analytics" project
 
 **What's tracked**:
+
 - JavaScript errors
 - Unhandled promise rejections
 - Data validation failures
 - Export failures
 
 **Alerts to set up**:
+
 1. Critical errors (>5 per hour)
 2. Data validation failures (>10%)
 3. Export failures (>1%)
@@ -240,6 +253,7 @@ if (analyticsResult.warnings.length > 0) {
 ### Performance Monitoring
 
 **Metrics to track**:
+
 - Build time (should be <10s)
 - Page load time (should be <3s)
 - CSV parsing time (should be <5s for <10k rows)
@@ -251,17 +265,20 @@ if (analyticsResult.warnings.length > 0) {
 ### If Deployment Fails
 
 **Option 1: Revert Last Commit**
+
 ```bash
 git revert <commit-hash>
 git push origin main
 ```
 
 **Option 2: Deploy Previous Version**
+
 1. Go to https://vercel.com → abaco-loans-analytics → Deployments
 2. Find last known-good deployment
 3. Click "..." → "Promote to Production"
 
 **Option 3: Emergency Rollback**
+
 ```bash
 git reset --hard <good-commit>
 git push --force origin main
@@ -272,17 +289,20 @@ git push --force origin main
 ## Next Steps
 
 ### Week 1 (Immediate)
+
 - [ ] Add GitHub Secrets (5 minutes)
 - [ ] Verify deployment works (10 minutes)
 - [ ] Test with sample CSV
 - [ ] Monitor Sentry dashboard
 
 ### Week 2
+
 - [ ] Integrate validation into upload component
 - [ ] Add error UI for bad data
 - [ ] Monitor error patterns
 
 ### Week 3+
+
 - [ ] Add unit tests for validation
 - [ ] Add integration tests
 - [ ] Performance optimization
@@ -293,13 +313,13 @@ git push --force origin main
 
 ### Issues
 
-| Issue Type | Resolution |
-|-----------|-----------|
-| Build failure | Check GitHub Actions logs |
-| Deployment failed | Check Vercel dashboard |
+| Issue Type         | Resolution                           |
+| ------------------ | ------------------------------------ |
+| Build failure      | Check GitHub Actions logs            |
+| Deployment failed  | Check Vercel dashboard               |
 | Errors not showing | Verify NEXT_PUBLIC_SENTRY_DSN is set |
-| CSV upload fails | Check DATA_PIPELINE_QUICKSTART.md |
-| Type errors | Run `npm run type-check` locally |
+| CSV upload fails   | Check DATA_PIPELINE_QUICKSTART.md    |
+| Type errors        | Run `npm run type-check` locally     |
 
 ### Documentation
 
@@ -331,12 +351,12 @@ npm audit fix
 
 ## Cost Estimates (Monthly)
 
-| Service | Cost | Notes |
-|---------|------|-------|
-| Vercel | $0-20 | Free tier up to 100GB bandwidth |
-| Sentry | $0-29 | Free tier up to 5k events/month |
-| Supabase | $25+ | Depends on usage |
-| **Total** | **~$50-75** | Scalable as you grow |
+| Service   | Cost        | Notes                           |
+| --------- | ----------- | ------------------------------- |
+| Vercel    | $0-20       | Free tier up to 100GB bandwidth |
+| Sentry    | $0-29       | Free tier up to 5k events/month |
+| Supabase  | $25+        | Depends on usage                |
+| **Total** | **~$50-75** | Scalable as you grow            |
 
 ---
 

@@ -17,12 +17,12 @@ Install the following on your workstation:
 
 For parity with the cloud workflow and GitHub Actions deployment (.github/workflows/main.yml), create these Azure resources using a free Azure account:
 
-| Resource | Purpose | Free option |
-| --- | --- | --- |
-| **Azure SQL Database** | Host the production database. | Choose the Serverless compute tier for generous free monthly grants. |
-| **Azure App Service** | Host the Docker container in Azure. | Create an App Service Plan on the F1 (Free) tier and set the publish method to Docker Container. |
-| **Azure Container Registry (ACR)** | Store the Docker image pushed by CI. | Basic tier is very low cost; it works well for dev/test pipelines. |
-| **Azure Storage Account** | Store blobs such as team logos or other file uploads. | General Purpose v2 includes a free tier (5 GB storage, 20K transactions/month). |
+| Resource                           | Purpose                                               | Free option                                                                                      |
+| ---------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Azure SQL Database**             | Host the production database.                         | Choose the Serverless compute tier for generous free monthly grants.                             |
+| **Azure App Service**              | Host the Docker container in Azure.                   | Create an App Service Plan on the F1 (Free) tier and set the publish method to Docker Container. |
+| **Azure Container Registry (ACR)** | Store the Docker image pushed by CI.                  | Basic tier is very low cost; it works well for dev/test pipelines.                               |
+| **Azure Storage Account**          | Store blobs such as team logos or other file uploads. | General Purpose v2 includes a free tier (5 GB storage, 20K transactions/month).                  |
 
 ### Step-by-step Local Setup
 
@@ -40,8 +40,8 @@ Populate the configuration file with the services you plan to consume. Example s
   },
   "ConnectionStrings": {
     // Option A: Local SQL Server
-    "SqlConnectionString": "Server=localhost\\SQLEXPRESS;Database=ContosoTeamStats;Trusted_Connection=True;MultipleActiveResultSets=true",
-    
+    "SqlConnectionString": "Server=localhost\\SQLEXPRESS;Database=ContosoTeamStats;Trusted_Connection=True;MultipleActiveResultSets=true"
+
     // Option B: Azure SQL Database (swap the URI shown in the Azure portal)
     // "SqlConnectionString": "Server=tcp:your-server-name.database.windows.net,1433;Initial Catalog=your-db-name;..."
   },

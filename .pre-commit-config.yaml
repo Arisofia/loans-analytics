@@ -24,5 +24,9 @@ repos:
     rev: v3.0.3
     hooks:
       - id: pylint
-        args: ['--max-line-length=100', '--disable=C0301,C0303,C0415,W0611,W1203,W1309']
+        args:
+          [
+            '--max-line-length=100',
+            '--disable=C0301,C0303,C0415,W0611,W1203,W1309',
+          ]
         stages: [commit]

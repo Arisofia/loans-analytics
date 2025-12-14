@@ -16,6 +16,7 @@ The data pipelines are functional but require hardening for production robustnes
 **Purpose**: Parse CSV loan data into structured `LoanRow[]`
 
 **Current Implementation**:
+
 ```typescript
 - Splits by newlines (/\r?\n/)
 - Splits by commas
@@ -26,16 +27,17 @@ The data pipelines are functional but require hardening for production robustnes
 
 **Issues Found** ⚠️:
 
-| Issue | Severity | Details |
-|-------|----------|---------|
-| **No CSV dialect validation** | High | Doesn't handle quoted fields with embedded commas/newlines |
-| **No header validation** | High | Assumes header row; fails silently if missing |
-| **Regex-based number parsing** | Medium | Uses `/[^\d.-]/g` which may mangle negative numbers incorrectly |
-| **No type coercion** | Medium | Returns `0` for invalid numbers; no error tracking |
-| **No duplicate/null detection** | Medium | Silent skipping of incomplete rows |
-| **No size limits** | High | Can process unlimited CSV files (DoS risk) |
+| Issue                           | Severity | Details                                                         |
+| ------------------------------- | -------- | --------------------------------------------------------------- |
+| **No CSV dialect validation**   | High     | Doesn't handle quoted fields with embedded commas/newlines      |
+| **No header validation**        | High     | Assumes header row; fails silently if missing                   |
+| **Regex-based number parsing**  | Medium   | Uses `/[^\d.-]/g` which may mangle negative numbers incorrectly |
+| **No type coercion**            | Medium   | Returns `0` for invalid numbers; no error tracking              |
+| **No duplicate/null detection** | Medium   | Silent skipping of incomplete rows                              |
+| **No size limits**              | High     | Can process unlimited CSV files (DoS risk)                      |
 
 **Recommendation**:
+
 ```typescript
 // Add validation:
 - Require header row with expected columns
@@ -53,6 +55,7 @@ The data pipelines are functional but require hardening for production robustnes
 **Purpose**: Transform raw loan data into analytics (KPIs, visualizations)
 
 **Current Implementation**:
+
 ```typescript
 - Compute KPIs (delinquency, yield, LTV, DTI)
 - Build treemap by loan_status
@@ -62,15 +65,16 @@ The data pipelines are functional but require hardening for production robustnes
 
 **Issues Found** ⚠️:
 
-| Issue | Severity | Details |
-|-------|----------|---------|
-| **No null/undefined checks** | High | Divides by zero with `Math.max(..., 1)` fallback only |
-| **Silent data loss** | Medium | Filters missing dpd_status without logging |
-| **Hardcoded thresholds** | Medium | Delinquency statuses hardcoded; not configurable |
-| **Date generation logic flawed** | Medium | Uses `Date.now() + index * 30 days` which isn't accurate for months |
-| **No rounding consistency** | Low | Mixed precision (toFixed with different digits) |
+| Issue                            | Severity | Details                                                             |
+| -------------------------------- | -------- | ------------------------------------------------------------------- |
+| **No null/undefined checks**     | High     | Divides by zero with `Math.max(..., 1)` fallback only               |
+| **Silent data loss**             | Medium   | Filters missing dpd_status without logging                          |
+| **Hardcoded thresholds**         | Medium   | Delinquency statuses hardcoded; not configurable                    |
+| **Date generation logic flawed** | Medium   | Uses `Date.now() + index * 30 days` which isn't accurate for months |
+| **No rounding consistency**      | Low      | Mixed precision (toFixed with different digits)                     |
 
 **Recommendation**:
+
 ```typescript
 // Add validation:
 - Add explicit null/NaN checks with error tracking
@@ -91,14 +95,15 @@ The data pipelines are functional but require hardening for production robustnes
 
 **Issues Found** ⚠️:
 
-| Issue | Severity | Details |
-|-------|----------|---------|
-| **CSV escaping incomplete** | High | Escapes `"`,`,`,`\r\n` but doesn't validate result |
-| **LTV calculation unvalidated** | Medium | Divides by `Math.max(appraised_value, 1)` without checking loan_amount > 0 |
-| **No header-body mismatch check** | Medium | Assumes all rows have all keys |
-| **Silent failures** | Medium | Missing values become empty strings without tracking |
+| Issue                             | Severity | Details                                                                    |
+| --------------------------------- | -------- | -------------------------------------------------------------------------- |
+| **CSV escaping incomplete**       | High     | Escapes `"`,`,`,`\r\n` but doesn't validate result                         |
+| **LTV calculation unvalidated**   | Medium   | Divides by `Math.max(appraised_value, 1)` without checking loan_amount > 0 |
+| **No header-body mismatch check** | Medium   | Assumes all rows have all keys                                             |
+| **Silent failures**               | Medium   | Missing values become empty strings without tracking                       |
 
 **Recommendation**:
+
 ```typescript
 // Add validation:
 - Use Papa Parse's CSV writer for robust escaping
@@ -113,6 +118,7 @@ The data pipelines are functional but require hardening for production robustnes
 **Status**: ✅ **Low Risk** - Uses `JSON.stringify()` safely
 
 **Recommendation**:
+
 ```typescript
 // Already safe, but could add:
 - Strict type validation via Zod before export
@@ -123,13 +129,14 @@ The data pipelines are functional but require hardening for production robustnes
 
 **Issues Found** ⚠️:
 
-| Issue | Severity | Details |
-|-------|----------|---------|
-| **Markdown escaping inconsistent** | Medium | `sanitizeMarkdownCell` escapes `\|` and backticks but not other markdown syntax |
-| **Silent empty data handling** | Low | Returns placeholder text without structure |
-| **Table format assumed** | Low | Doesn't validate number of columns in rows |
+| Issue                              | Severity | Details                                                                         |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------- |
+| **Markdown escaping inconsistent** | Medium   | `sanitizeMarkdownCell` escapes `\|` and backticks but not other markdown syntax |
+| **Silent empty data handling**     | Low      | Returns placeholder text without structure                                      |
+| **Table format assumed**           | Low      | Doesn't validate number of columns in rows                                      |
 
 **Recommendation**:
+
 ```typescript
 // Add validation:
 - Use proper markdown library for escaping
@@ -147,14 +154,15 @@ The data pipelines are functional but require hardening for production robustnes
 
 **Issues Found** ⚠️:
 
-| Issue | Severity | Details |
-|-------|----------|---------|
-| **Unstable ID generation** | High | Falls back to `Math.random()` if crypto unavailable; not cryptographically secure |
-| **UUID not imported** | Medium | Assumes `crypto.randomUUID()` exists; no polyfill |
-| **Date-based collision risk** | Medium | Fallback uses `Date.now()` which can have same value for multiple rows |
-| **No deduplication** | High | Doesn't check for existing IDs in array |
+| Issue                         | Severity | Details                                                                           |
+| ----------------------------- | -------- | --------------------------------------------------------------------------------- |
+| **Unstable ID generation**    | High     | Falls back to `Math.random()` if crypto unavailable; not cryptographically secure |
+| **UUID not imported**         | Medium   | Assumes `crypto.randomUUID()` exists; no polyfill                                 |
+| **Date-based collision risk** | Medium   | Fallback uses `Date.now()` which can have same value for multiple rows            |
+| **No deduplication**          | High     | Doesn't check for existing IDs in array                                           |
 
 **Recommendation**:
+
 ```typescript
 // Use stable IDs:
 - Use UUID v5 (deterministic) if data is stable
@@ -168,13 +176,14 @@ The data pipelines are functional but require hardening for production robustnes
 
 **Issues Found** ⚠️:
 
-| Issue | Severity | Details |
-|-------|----------|---------|
-| **Silent no-op on not found** | High | Returns original array if ID not found; no error |
-| **ID reassignment possible** | Medium | Line 36 can reassign ID on fallback update |
-| **No validation of updated fields** | Medium | No schema validation of partial update |
+| Issue                               | Severity | Details                                          |
+| ----------------------------------- | -------- | ------------------------------------------------ |
+| **Silent no-op on not found**       | High     | Returns original array if ID not found; no error |
+| **ID reassignment possible**        | Medium   | Line 36 can reassign ID on fallback update       |
+| **No validation of updated fields** | Medium   | No schema validation of partial update           |
 
 **Recommendation**:
+
 ```typescript
 // Improve reliability:
 - Return Result type: { success: true; data } | { success: false; error }
@@ -198,6 +207,7 @@ The codebase has extensive TypeScript types (analytics.ts) but **zero runtime va
 3. **Invalid data acceptance**: Negative loan amounts, NaN values, etc. are silently accepted
 
 **Recommendation**:
+
 ```typescript
 // Add Zod schema validation:
 import { z } from 'zod'
@@ -224,15 +234,17 @@ const validated = LoanRowSchema.parse(row) // or safeParse()
 **Status**: 🔴 **MISSING**
 
 No error handling in any pipeline stage:
+
 - CSV parsing errors → silent failures
 - Calculation failures (division by zero) → returns 0 or NaN
 - Export failures → no error tracking
 - Network errors (Supabase) → not handled
 
 **Recommendation**:
+
 ```typescript
 // Create error context:
-type PipelineResult<T> = 
+type PipelineResult<T> =
   | { success: true; data: T; warnings: string[] }
   | { success: false; error: string; details: any }
 
@@ -283,6 +295,7 @@ const result = {
 ## Recommended Implementation Order
 
 ### Phase 1: Critical (Deploy ASAP)
+
 ```
 1. Add Zod validation to parseLoanCsv()
 2. Add error handling to processLoanRows()
@@ -292,6 +305,7 @@ const result = {
 ```
 
 ### Phase 2: Important (Before Heavy Load)
+
 ```
 6. Add unit tests for each transformation
 7. Add integration test for full pipeline
@@ -301,6 +315,7 @@ const result = {
 ```
 
 ### Phase 3: Nice-to-Have (Future)
+
 ```
 11. Add caching layer
 12. Add streaming CSV parser for huge files
@@ -316,6 +331,7 @@ const result = {
 Create test cases covering:
 
 ### Valid Data
+
 ```
 ✓ Minimal valid loan
 ✓ Maximum valid loan
@@ -324,6 +340,7 @@ Create test cases covering:
 ```
 
 ### Invalid Data
+
 ```
 ✗ Missing columns
 ✗ Non-numeric loan_amount
@@ -336,6 +353,7 @@ Create test cases covering:
 ```
 
 ### Edge Cases
+
 ```
 ⚠ All loans have same status (empty treemap)
 ⚠ No dpd_status provided (empty roll-rate)
@@ -350,11 +368,13 @@ Create test cases covering:
 ### CSV Injection Risk ⚠️
 
 **Issue**: Malicious CSV could execute formulas in Excel:
+
 ```
 =1+9*3       → Executes as formula
 ```
 
 **Mitigation**:
+
 ```typescript
 // Prefix numeric strings with single quote in CSV export
 "=1+9*3" → "'=1+9*3"
@@ -365,6 +385,7 @@ Create test cases covering:
 **Issue**: Unsanitized content in markdown could be rendered as HTML
 
 **Mitigation**:
+
 ```typescript
 // Already escaping pipes, but verify backticks don't enable code injection
 // Use markdown sanitizer library (remarkable, marked with sanitize option)
@@ -375,6 +396,7 @@ Create test cases covering:
 **Issue**: If user-provided data is used in RLS policies
 
 **Mitigation**:
+
 ```typescript
 // Verify RLS policies don't interpolate user input
 // Use parameterized queries (Supabase client already does this)
@@ -385,6 +407,7 @@ Create test cases covering:
 ## Monitoring Recommendations
 
 ### Metrics to Track
+
 ```typescript
 - parseLoanCsv: input_rows, valid_rows, error_rows, parse_time_ms
 - processLoanRows: input_rows, processing_time_ms, calculation_errors
@@ -392,6 +415,7 @@ Create test cases covering:
 ```
 
 ### Alerts to Configure
+
 ```
 - Parse error rate > 5%
 - Processing time > 5 seconds (for <10k rows)
@@ -400,6 +424,7 @@ Create test cases covering:
 ```
 
 ### Sample Structured Log
+
 ```json
 {
   "timestamp": "2025-12-14T12:00:00Z",
@@ -407,9 +432,7 @@ Create test cases covering:
   "input_rows": 10000,
   "valid_rows": 9985,
   "invalid_rows": 15,
-  "errors": [
-    { "row": 5, "field": "loan_amount", "value": "abc", "reason": "not_numeric" }
-  ],
+  "errors": [{ "row": 5, "field": "loan_amount", "value": "abc", "reason": "not_numeric" }],
   "duration_ms": 250,
   "kpis": { "delinquencyRate": 3.2, "portfolioYield": 5.8 }
 }
@@ -422,6 +445,7 @@ Create test cases covering:
 **Overall Assessment**: ✅ **Ready for MVP, needs hardening for production**
 
 ### To Ship Safely:
+
 1. Add Zod validation to all inputs
 2. Wrap pipelines in try-catch with error logging
 3. Add size limits to CSV uploads
@@ -429,6 +453,7 @@ Create test cases covering:
 5. Monitor first week for issues
 
 ### Timeline:
+
 - **Week 1**: Deploy with basic error handling + monitoring
 - **Week 2**: Add unit tests and fix bugs found in production
 - **Week 3**: Add integration tests and performance optimization

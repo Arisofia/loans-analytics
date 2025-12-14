@@ -33,7 +33,9 @@ class SlackBotService {
     this.kpiWebhookUrl = webhookUrl ? webhookUrl.replace(/\/$/, '') : null
 
     if (!token || !signingSecret) {
-      console.warn('SlackBotService: missing SLACK_BOT_TOKEN or SLACK_SIGNING_SECRET; bot not started.')
+      console.warn(
+        'SlackBotService: missing SLACK_BOT_TOKEN or SLACK_SIGNING_SECRET; bot not started.'
+      )
       return
     }
 
@@ -55,19 +57,25 @@ class SlackBotService {
     // Mention-based KPI summary lookup
     this.app.event(
       'app_mention',
-      async ({ event, say }: SlackEventMiddlewareArgs<'app_mention'> & { say: SayFn }) => {
+      async ({
+        event,
+        say,
+      }: SlackEventMiddlewareArgs<'app_mention'> & { say: SayFn }) => {
         const text = event.text?.toLowerCase() || ''
         if (text.includes('kpi') || text.includes('alert')) {
           await this.handleKPIQuery(say)
         }
-      },
+      }
     )
 
     // Warning cue messages
     // Using 'any' for message to prevent strict union type errors in Bolt
-    this.app.message(/:warn:/i, async ({ message, say }: { message: any; say: SayFn }) => {
-      await this.handleAlertMessage(message, say)
-    })
+    this.app.message(
+      /:warn:/i,
+      async ({ message, say }: { message: any; say: SayFn }) => {
+        await this.handleAlertMessage(message, say)
+      }
+    )
   }
 
   async sendKPIAlert(alert: KPIAlert): Promise<void> {
@@ -79,17 +87,32 @@ class SlackBotService {
       await app.client.chat.postMessage({
         channel,
         blocks: [
-          { type: 'header', text: { type: 'plain_text', text: `${severity}: ${alert.kpi_name}`, emoji: true } },
+          {
+            type: 'header',
+            text: {
+              type: 'plain_text',
+              text: `${severity}: ${alert.kpi_name}`,
+              emoji: true,
+            },
+          },
           {
             type: 'section',
             fields: [
               { type: 'mrkdwn', text: `*Department:*\n${alert.department}` },
-              { type: 'mrkdwn', text: `*Current Value:*\n${alert.current_value}` },
+              {
+                type: 'mrkdwn',
+                text: `*Current Value:*\n${alert.current_value}`,
+              },
               { type: 'mrkdwn', text: `*Threshold:*\n${alert.threshold}` },
               { type: 'mrkdwn', text: `*Run ID:*\n${alert.run_id}` },
             ],
           },
-          { type: 'context', elements: [{ type: 'mrkdwn', text: `_Timestamp: ${alert.timestamp}_` }] },
+          {
+            type: 'context',
+            elements: [
+              { type: 'mrkdwn', text: `_Timestamp: ${alert.timestamp}_` },
+            ],
+          },
           { type: 'divider' },
         ],
       })
@@ -100,7 +123,9 @@ class SlackBotService {
 
   private async handleKPIQuery(say: SayFn): Promise<void> {
     if (!this.kpiWebhookUrl) {
-      await say({ text: 'KPI service URL is not configured. Set KPI_WEBHOOK_URL to enable KPI lookups.' })
+      await say({
+        text: 'KPI service URL is not configured. Set KPI_WEBHOOK_URL to enable KPI lookups.',
+      })
       return
     }
 
@@ -118,7 +143,14 @@ class SlackBotService {
       }
 
       const blocks = [
-        { type: 'header', text: { type: 'plain_text', text: 'Latest KPI Dashboard', emoji: true } },
+        {
+          type: 'header',
+          text: {
+            type: 'plain_text',
+            text: 'Latest KPI Dashboard',
+            emoji: true,
+          },
+        },
         ...topKpis.map((kpi: any) => ({
           type: 'section',
           text: {
@@ -131,7 +163,9 @@ class SlackBotService {
       await say({ blocks })
     } catch (error) {
       console.error('KPI lookup failed:', error)
-      await say({ text: 'Could not retrieve KPI data. Please try again later.' })
+      await say({
+        text: 'Could not retrieve KPI data. Please try again later.',
+      })
     }
   }
 
@@ -143,7 +177,9 @@ class SlackBotService {
 
   async start(): Promise<void> {
     if (!this.isConfigured || !this.app) {
-      console.warn('SlackBotService: start skipped because configuration is missing.')
+      console.warn(
+        'SlackBotService: start skipped because configuration is missing.'
+      )
       return
     }
     await this.app.start(Number(process.env.PORT) || 3000)

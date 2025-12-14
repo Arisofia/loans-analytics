@@ -4,7 +4,7 @@
 name: DataIngestionTransformationAgent
 version: '1.0'
 namespace: fintech.factory.agents
-role: "data_engineer"
+role: 'data_engineer'
 requires_human_approval: false
 
 description: |
@@ -34,6 +34,6 @@ outputFormats:
   - audit_log: JSON
 
 refreshSchedule:
-  ingestion: "0 6 * * *"  # 6 AM daily
-  transformation: "0 7 * * *"  # 7 AM daily
-  continuous_monitoring: "*/20 * * * *"  # Every 20 minutes
+  ingestion: '0 6 * * *' # 6 AM daily
+  transformation: '0 7 * * *' # 7 AM daily
+  continuous_monitoring: '*/20 * * * *' # Every 20 minutes

@@ -3,6 +3,7 @@
 This guide consolidates the dashboard requirements and maps them to the existing monorepo layout (`apps/web` for the Next.js UI and `apps/analytics` for Python analytics). Follow it end-to-end to deliver the KPI/AI dashboard without placeholder data.
 
 ## 1) Design & Assets (Figma-first)
+
 - Build the UX in Figma before coding: sidebar navigation, header KPIs, Plotly-ready chart areas, upload widgets, and AI insight panels for **KPIs, Portfolio, Financial, Risk, Growth, Marketing & Sales, Data Quality, AI Insights, Reports**.
 - Corporate theming only: **Black (#000000), Grayscale (#808080), Purple (#4B0082)**. Avoid blue, green, or non-corporate reds.
 - Typography: long, thin, professional fonts (e.g., **Roboto Condensed**, **Montserrat**, **Open Sans Condensed**).
@@ -14,6 +15,7 @@ This guide consolidates the dashboard requirements and maps them to the existing
 - Each screen includes microcopy explaining the purpose of the section, with tooltips/onboarding overlays for new users.
 
 ## 2) Frontend (Next.js + React in `apps/web`)
+
 - Use the existing Next.js project under `apps/web`. Add pages or routes for each view listed above.
 - Install packages for the corporate theme, data fetching, and charts:
   ```bash
@@ -31,6 +33,7 @@ This guide consolidates the dashboard requirements and maps them to the existing
 - Charts: use Plotly with unified styling (dark backgrounds, purple highlights, gray gridlines).
 
 ## 3) Backend (FastAPI service in `apps/analytics`)
+
 - Create a FastAPI app (e.g., `apps/analytics/api/main.py`) that wraps analytics logic from `apps/analytics/src/enterprise_analytics_engine.py` and any future `sfv_metrics.py` module.
 - Key endpoints (JSON responses only, no placeholders):
   - `POST /upload` for CSV/XLSX ingestion into a data store/cache.
@@ -44,6 +47,7 @@ This guide consolidates the dashboard requirements and maps them to the existing
   ```
 
 ## 4) Frontend ↔ Backend Integration
+
 - Store API base URL in env (`NEXT_PUBLIC_API_URL`) and use it across data hooks.
 - Each page pulls its own endpoint and renders conditional UI:
   - KPIs: cards + small explanations per metric.
@@ -54,18 +58,21 @@ This guide consolidates the dashboard requirements and maps them to the existing
 - Error handling: standardized alert component; retry button; analytics logging for failures.
 
 ## 5) Data, Compliance, and Quality Bars
+
 - Only operate on uploaded/ingested data—no mocked values. Show “data needed” states with upload CTA when responses are empty.
 - Validate schema on upload and return actionable errors if columns are missing.
 - Document every endpoint (method, params, response schema, errors) in `docs/API_REFERENCE.md` or OpenAPI.
 - Add unit tests for analytics functions and integration tests for FastAPI routes.
 
 ## 6) Deployment and CI/CD
+
 - Frontend: deploy `apps/web` to Vercel/Netlify; configure environment variables and API URL per environment.
 - Backend: deploy FastAPI to AWS/Azure/Heroku; include a `Procfile` or container spec plus health checks.
 - CI/CD: GitHub Actions job `ci-main.yml` orchestrates lint/test/build for Next.js, Python analytics, and Gradle jobs defined under `.github/workflows`, then handoffs to the deployment workflows.
 - Monitor error rates and add synthetic checks for key endpoints.
 
 ## 7) Quick Checklist (All Points)
+
 - [ ] Figma design + exported assets (black/gray/purple, condensed fonts).
 - [ ] Next.js/React pages for all views; shared layout/components; Plotly integrated.
 - [ ] FastAPI backend with real KPI/analytics endpoints and AI hooks.

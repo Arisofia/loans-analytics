@@ -132,10 +132,10 @@ gh pr merge --rebase
 ### VIII. Success Metrics
 
 - 0 critical security vulnerabilities in production
-- >99% deployment success rate
+- > 99% deployment success rate
 - <15 min MTTR
 - 100% audit log compliance
-- >90% SLA adherence
+- > 90% SLA adherence
 - Zero unplanned outages >5 minutes
 
 ---

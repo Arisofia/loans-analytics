@@ -24,12 +24,14 @@ A new `src/lib/validation.ts` module has been added that provides:
 ### Step 1: Use Validation in CSV Upload
 
 **Current Code** (in `src/components/analytics/LoanUploader.tsx`):
+
 ```typescript
 const rows = parseLoanCsv(content)
 const analytics = processLoanRows(rows)
 ```
 
 **Updated Code** (add validation):
+
 ```typescript
 import { validateCsvInput, validateAnalytics } from '@/lib/validation'
 
@@ -61,12 +63,14 @@ if (!analyticsResult.success) {
 ### Step 2: Add Error Handling to Exports
 
 **Current Code** (in `src/components/analytics/ExportControls.tsx`):
+
 ```typescript
 const csv = processedAnalyticsToCSV(analytics)
 downloadFile(csv, 'report.csv')
 ```
 
 **Updated Code**:
+
 ```typescript
 try {
   const csv = processedAnalyticsToCSV(analytics)
@@ -85,6 +89,7 @@ try {
 **Already configured** in `src/sentry.client.config.ts`
 
 Errors will automatically be tracked. To manually report:
+
 ```typescript
 import * as Sentry from '@sentry/react'
 
@@ -93,8 +98,8 @@ try {
 } catch (error) {
   Sentry.captureException(error, {
     contexts: {
-      data: { rowCount: rows.length, timestamp: new Date().toISOString() }
-    }
+      data: { rowCount: rows.length, timestamp: new Date().toISOString() },
+    },
   })
 }
 ```
@@ -104,6 +109,7 @@ try {
 ## Validation Functions Reference
 
 ### `validateLoanRow(row)`
+
 Validates a single loan record against schema.
 
 ```typescript
@@ -125,6 +131,7 @@ if (result.success) {
 ```
 
 ### `validateCsvInput(content)`
+
 Validates CSV format and size.
 
 ```typescript
@@ -138,6 +145,7 @@ if (result.success) {
 ```
 
 ### `validateAnalytics(data)`
+
 Validates processed analytics output.
 
 ```typescript
@@ -151,6 +159,7 @@ if (result.success) {
 ```
 
 ### `validateNumber(value, fieldName)`
+
 Safely converts and validates numbers.
 
 ```typescript
@@ -167,16 +176,19 @@ if (result.success) {
 ### Before Deploying
 
 - [ ] **CSV size limit**: Verify users can't upload >50MB files
+
   ```typescript
   // Already enforced in validateCsvInput()
   ```
 
 - [ ] **Error logging**: Verify Sentry DSN is set in GitHub Secrets
+
   ```bash
   # In GitHub Actions, set: NEXT_PUBLIC_SENTRY_DSN
   ```
 
 - [ ] **Error UI**: Show user-friendly messages for data errors
+
   ```typescript
   if (result.error === 'CSV file exceeds maximum size') {
     showToast('File too large. Maximum 50MB.')
@@ -214,6 +226,7 @@ These are nice-to-have improvements for later:
 - ❌ Data lineage tracking (can add later)
 
 These **are** already handled:
+
 - ✅ Type safety (TypeScript)
 - ✅ Input validation (Zod)
 - ✅ Error tracking (Sentry)
@@ -225,6 +238,7 @@ These **are** already handled:
 ## Common Error Scenarios
 
 ### User uploads invalid CSV
+
 ```
 ❌ Error: CSV must have at least 7 columns
 ✅ Solution: validateCsvInput() catches this before parsing
@@ -232,6 +246,7 @@ These **are** already handled:
 ```
 
 ### CSV has malformed number
+
 ```
 ❌ Error: Loan amount cannot be parsed as number
 ✅ Solution: parseLoanCsv() returns 0, gets validated on output
@@ -239,6 +254,7 @@ These **are** already handled:
 ```
 
 ### Export fails silently
+
 ```
 ❌ Error: processedAnalyticsToCSV() returns empty string
 ✅ Solution: Add check: if (!csv || csv.length === 0) throw Error
@@ -246,6 +262,7 @@ These **are** already handled:
 ```
 
 ### Memory issue with huge CSV
+
 ```
 ❌ Error: Browser runs out of memory
 ✅ Solution: validateCsvInput() enforces 50MB limit
@@ -257,17 +274,20 @@ These **are** already handled:
 ## Roadmap
 
 ### Week 1 (MVP)
+
 - [x] Validation schemas created
 - [ ] Integrate into LoanUploader component
 - [ ] Test with sample CSVs
 - [ ] Deploy with monitoring enabled
 
 ### Week 2
+
 - [ ] Add error UI components
 - [ ] Add data quality dashboard
 - [ ] Monitor error patterns
 
 ### Week 3+
+
 - [ ] Add unit tests
 - [ ] Add integration tests
 - [ ] Performance optimization
@@ -281,7 +301,7 @@ These **are** already handled:
 Reference the `ValidationResult` type to understand errors:
 
 ```typescript
-type ValidationResult<T> = 
+type ValidationResult<T> =
   | { success: true; data: T; warnings: string[] }
   | { success: false; error: string; details: any }
 ```

@@ -4,7 +4,7 @@
 name: CLevelExecutiveAgent
 version: '1.0'
 namespace: fintech.factory.agents
-role: "c_level_executive"
+role: 'c_level_executive'
 requires_human_approval: true
 
 description: |
@@ -37,6 +37,6 @@ outputFormats:
   - audit_log: JSON
 
 refreshSchedule:
-  executive_dashboard: "0 8 * * 1"  # 8 AM Mondays
-  board_presentation: "0 9 1 * *"  # 9 AM first day of month
-  continuous_monitoring: "*/60 * * * *"  # Every hour
+  executive_dashboard: '0 8 * * 1' # 8 AM Mondays
+  board_presentation: '0 9 1 * *' # 9 AM first day of month
+  continuous_monitoring: '*/60 * * * *' # Every hour
