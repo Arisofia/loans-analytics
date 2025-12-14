@@ -23,3 +23,20 @@ jobs:
       - name: Run data ingestion pipeline
         run: |
           python scripts/run_data_pipeline.py
+      - name: Notify Slack on Success
+        if: success()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": ":tada: Daily data ingestion completed successfully!",
+              "attachments": [
+                {
+                  "title": "Workflow Run",
+                  "title_link": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                  "color": "#36a64f"
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
