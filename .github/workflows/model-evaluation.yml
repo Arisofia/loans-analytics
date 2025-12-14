@@ -98,8 +98,9 @@ jobs:
       
       - name: Send Slack notification on failure
         if: failure() || (steps.threshold-check.outcome == 'failure')
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@v2
         with:
+          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": "🚨 Model Evaluation Failed",
