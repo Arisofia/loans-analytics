@@ -1,7 +1,7 @@
 """
 ABACO Financial Intelligence Platform Streamlit App.
 
-This module provides the main Streamlit dashboard for ABACO analytics.
+This is the CANONICAL Streamlit dashboard for ABACO analytics.
 It includes file ingestion, KPI calculations, payer coverage,
 growth projections, and data export.
 """
@@ -42,53 +42,14 @@ except ImportError as e:
 import plotly.graph_objects as go
 import streamlit as st
 
-from src.analytics_metrics import (
+from python.analytics import (
     calculate_quality_score,
     portfolio_kpis,
     project_growth,
 )
+from python.theme import ABACO_THEME
+from python.validation import safe_numeric
 
-ABACO_THEME = {
-    "colors": {
-        "primary_purple": "#C1A6FF",
-        "purple_dark": "#5F4896",
-        "dark_blue": "#0C2742",
-        "light_gray": "#CED4D9",
-        "medium_gray": "#9EA9B3",
-        "dark_gray": "#6D7D8E",
-        "white": "#FFFFFF",
-        "background": "#030E19",
-        "success": "#10B981",
-        "warning": "#FB923C",
-        "error": "#DC2626",
-        "info": "#3B82F6",
-        "info_dark": "#1D4ED8",
-    },
-    "gradients": {
-        "title": "linear-gradient(81.74deg, #C1A6FF 5.91%, #5F4896 79.73%)",
-        "card_primary": (
-            "linear-gradient(135deg, rgba(193, 166, 255, 0.2) 0%, "
-            "rgba(0, 0, 0, 0.5) 100%)"
-        ),
-        "card_secondary": (
-            "linear-gradient(135deg, rgba(34, 18, 72, 0.4) 0%, "
-            "rgba(0, 0, 0, 0.6) 100%)"
-        ),
-        "card_highlight": (
-            "linear-gradient(135deg, rgba(193, 166, 255, 0.25) 0%, "
-            "rgba(0, 0, 0, 0.8) 100%)"
-        ),
-    },
-    "typography": {
-        "primary_font": "Lato",
-        "secondary_font": "Poppins",
-        "title_size": "48px",
-        "metric_size": "48px",
-        "label_size": "16px",
-        "body_size": "14px",
-        "description_size": "12px",
-    },
-}
 
 REQUIRED_COLUMNS = [
     "loan_amount",
@@ -137,16 +98,6 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         .pipe(lambda d: d.loc[:, ~d.columns.duplicated()])
     )
     return clean
-
-
-def safe_numeric(series: pd.Series) -> pd.Series:
-    cleaned = (
-        series.astype(str)
-        .str.replace(r"[₡$€,,%]", "", regex=True)
-        .str.replace(",", "", regex=False)
-        .replace("", np.nan)
-    )
-    return pd.to_numeric(cleaned, errors="coerce")
 
 
 def compute_upload_signature(file_obj) -> Optional[str]:

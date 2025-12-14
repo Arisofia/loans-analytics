@@ -1,4 +1,3 @@
 {
-  "version": 2,
-  "routes": [{ "src": "/(.*)", "dest": "/apps/web/$1" }]
+  "version": 2
 }

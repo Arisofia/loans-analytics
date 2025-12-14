@@ -1,68 +1,57 @@
-# ABACO — Loan Analytics Platform
+# ABACO Financial Intelligence Platform
 
-## Architecture
+## Overview
+ABACO is a production-ready financial intelligence platform designed for loan portfolio analytics. It provides a dual-interface approach:
+1.  **Streamlit Dashboard:** For interactive exploration of raw loan tapes, growth projections, and payer coverage.
+2.  **Data Pipeline:** For automated processing of portfolio snapshots, KPI calculation (PAR30, PAR90, Collection Rate), and audit trailing.
 
-- **apps/web**: Next.js corporate dashboard
-- **apps/analytics**: Python pipelines for risk assessment, scoring, and KPIs
-- **infra/azure**: Azure deployment scripts
-- **data_samples**: Anonymized datasets for development
+## Repository Structure
 
-## Available Integrations
+### Core Logic (`python/`)
+The business logic is consolidated into a clean Python package structure:
+*   `analytics.py`: Loan-level metrics (Delinquency, Yield, LTV) used by the Dashboard.
+*   `financial_analysis.py`: Advanced financial engineering (DPD buckets, HHI, Weighted Stats).
+*   `kpi_engine.py`: Portfolio-level KPI orchestration.
+*   `ingestion.py` & `validation.py`: Robust data loading and schema validation.
+*   `theme.py`: Centralized design tokens for UI and exports.
+*   `kpis/`: Dedicated modules for specific metrics (`par_30.py`, `par_90.py`, `collection_rate.py`, `portfolio_health.py`).
 
-- Azure SQL / Cosmos / Storage
-- Supabase
-- Vercel
-- OpenAI / Gemini / Claude
-- SonarCloud
-- GitHub Actions
+### Applications
+*   `streamlit_app.py`: The canonical dashboard entry point.
+*   `scripts/run_data_pipeline.py`: Automated pipeline for processing portfolio snapshots.
 
-Refer to `docs/integration-readiness.md` to verify the status of each integration and the prerequisites you must complete before using them.
+### Exports
+*   `scripts/export_presentation.py`: Generates HTML/Markdown artifacts for presentations.
+*   `scripts/export_copilot_slide_payload.py`: Generates JSON payloads for AI slide generation.
 
-## ContosoTeamStats
+## Setup & Usage
 
-This repository contains ContosoTeamStats, a .NET 6 Web API for managing sports teams that ships with Docker, Azure deployment scripts, SendGrid/Twilio integrations, and SQL Server migrations.
+### Prerequisites
+*   Python 3.9+
+*   Dependencies listed in `requirements.txt`
 
-Follow `docs/ContosoTeamStats-setup.md` for local setup, secrets, database provisioning, and container validation.
-
-<<<<<<< HEAD
-See `docs/Analytics-Vision.md` for the analytics vision, Streamlit blueprint, and the agent-ready narrative that keeps every KPI, scenario, and AI prompt aligned with our fintech-grade delivery.
-=======
-For the combined Next.js + FastAPI fintech dashboard (Figma-first, Plotly, AI insights, and KPI endpoints), follow `docs/FINTECH_DASHBOARD_WEB_APP_GUIDE.md`.
-
-This repository contains ContosoTeamStats, a .NET 6 Web API for managing sports teams that ships with Docker, Azure deployment scripts, SendGrid/Twilio integrations, and SQL Server migrations. Follow docs/ContosoTeamStats-setup.md for local setup, secrets, database provisioning, and container validation.
-
-> > > > > > > origin/codex/develop-fintech-dashboard-web-app
-
-## Java and Gradle Setup
-
-Use a locally installed JDK (21+ recommended) and let Gradle's toolchain resolver download the appropriate compiler per module. Avoid adding `org.gradle.java.home` to version control so CI and developers can rely on their own `JAVA_HOME` or toolchains without path-specific overrides.
-
-## Copilot Enterprise Workflow
-
-Use `docs/Copilot-Team-Workflow.md` when inviting your team to Copilot, documenting the validation and security workflows, and keeping the Azure, GitHub Actions, and KPI checklist aligned with your 30-day Enterprise trial (App Service F1, ACR Basic, and free Azure security tiers). The doc includes prompts you can reuse whenever Copilot is guiding changes.
-
-## Fitten Code AI
-
-To integrate Fitten Code AI into this monorepo (local and GitHub), refer to `docs/Fitten-Code-AI-Manual.md`, which covers product introduction, installation, integration, FAQs, and local inference testing.
-
-## MCP Configuration
-
-Use `docs/MCP_CONFIGURATION.md` to add MCP servers via the Codex CLI or by editing `config.toml`, including examples for Context7, Figma, Chrome DevTools, and how to run Codex itself as an MCP server.
-
-## Deno Helper
-
-The repository exposes a tiny Deno helper at `main.ts` that verifies the expected directories before you execute tooling such as Fitten or analytics scripts. Run it with:
-
-```sh
-deno run --allow-all main.ts
+### Installation
+```bash
+pip install -r requirements.txt
 ```
 
-Note: `--unstable` is no longer needed in Deno 2.0; only include the specific `--unstable-*` flags when you actually depend on unstable APIs.
+### Running the Dashboard
+```bash
+streamlit run streamlit_app.py
+```
 
-## Troubleshooting VS Code Zencoder Extension
+### Running the Data Pipeline
+```bash
+python scripts/run_data_pipeline.py
+```
+The pipeline reads from `data_samples/abaco_portfolio_sample.csv` by default and outputs metrics to `data/metrics/`.
 
-If you see `Failed to spawn Zencoder process: ... zencoder-cli ENOENT` while working in VS Code, follow the remediation checklist in `docs/Zencoder-Troubleshooting.md` to reinstall the extension and restore the missing binary.
+### Running Tests
+```bash
+pytest
+```
 
-## Deployment
-
-This repository is configured for automated deployment to Azure Static Web Apps and integrates with SonarCloud for code quality analysis.
+## Key Metrics Definitions
+*   **PAR 30 / PAR 90:** Portfolio at Risk > 30/90 days (Sum of DPD Balance / Total Receivable).
+*   **Collection Rate:** Cash Available / Total Eligible Receivable.
+*   **Portfolio Health:** Composite score (0-10) derived from PAR30 and Collection Rate.

@@ -10,34 +10,29 @@ import textwrap
 
 import pandas as pd
 import plotly.express as px
-
-ABACO_THEME = {
-    "background": "#030E19",
-    "font": "Lato",
-    "metric_color": "#10B981",
-    "accent_gradient": "linear-gradient(120deg, #22c55e, #2563eb)",
-}
+from python.theme import ABACO_THEME
+from python.analytics import project_growth
 
 
 def apply_theme(fig: px.Figure) -> px.Figure:
     fig.update_layout(
         template="plotly_dark",
-        font_family=ABACO_THEME["font"],
-        font_color="#FFFFFF",
-        paper_bgcolor=ABACO_THEME["background"],
-        plot_bgcolor=ABACO_THEME["background"],
+        font_family=ABACO_THEME["typography"]["primary_font"],
+        font_color=ABACO_THEME["colors"]["white"],
+        paper_bgcolor=ABACO_THEME["colors"]["background"],
+        plot_bgcolor=ABACO_THEME["colors"]["background"],
         margin=dict(l=0, r=0, t=40, b=0),
     )
     return fig
 
 
 def build_growth_chart(output_dir: Path) -> Path:
-    projection = pd.DataFrame(
-        {
-            "month": pd.date_range("2025-01-01", periods=6, freq="MS"),
-            "yield": [1.2, 1.4, 1.6, 1.7, 1.9, 2.1],
-            "loan_volume": [120, 135, 150, 168, 185, 205],
-        }
+    projection = project_growth(
+        current_yield=1.2,
+        target_yield=2.1,
+        current_loan_volume=120,
+        target_loan_volume=205,
+        periods=6
     )
     projection["month_label"] = projection["month"].dt.strftime("%b %Y")
     fig = px.line(

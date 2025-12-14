@@ -40,7 +40,7 @@ def test_validate_loans():
         "measurement_date": ["2025-12-01"],
         "total_receivable_usd": [1000.0]
     })
-    ingestion = CascadeIngestion()
+    ingestion = CascadeIngestion(data_dir=".")
     validated = ingestion.validate_loans(df)
     assert "_validation_passed" in validated.columns
     # With hardened required fields, minimal rows fail validation

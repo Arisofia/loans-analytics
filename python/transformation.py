@@ -1,109 +1,79 @@
-
-"""
-Module for data transformation utilities and functions.
-Data transformation module for KPI calculations from raw Cascade data.
-"""
-
-import logging
-from datetime import datetime, timezone
-from typing import Dict, Optional
 import pandas as pd
-
-logger = logging.getLogger(__name__)
-
+import numpy as np
+import uuid
+from datetime import datetime, timezone
+from typing import Dict, Any
 
 class DataTransformation:
-    """Transform ingested Cascade data into KPI datasets."""
-    
-    def __init__(self, run_id: Optional[str] = None):
-        self.run_id = run_id or datetime.now(timezone.utc).isoformat()
+    def __init__(self):
+        # Coderabbit: Assign a unique run_id for each transformation instance for traceability (16 hex chars for lower collision risk)
+        self.run_id = f"tx_{uuid.uuid4().hex[:16]}"
         self.transformations_count = 0
-    
-    def calculate_receivables_metrics(self, df: pd.DataFrame) -> pd.Series:
-        """Calculate receivables metrics from portfolio data."""
-        metrics = {
-            'total_receivable': df['total_receivable_usd'].sum(),
-            'total_eligible': (
-                df['total_eligible_usd'].sum()
-                if 'total_eligible_usd' in df.columns else 0
-            ),
-            'discounted_balance': (
-                df['discounted_balance_usd'].sum()
-                if 'discounted_balance_usd' in df.columns else 0
-            ),
+
+    def calculate_receivables_metrics(self, df: pd.DataFrame) -> Dict[str, float]:
+        """Calculate aggregate metrics for the portfolio."""
+        return {
+            "total_receivable": df["total_receivable_usd"].sum(),
+            "total_eligible": df["total_eligible_usd"].sum(),
+            "discounted_balance": df["discounted_balance_usd"].sum(),
         }
-        logger.info(f"Calculated receivables metrics: {metrics}")
-        return pd.Series(metrics)
-    
+
     def calculate_dpd_ratios(self, df: pd.DataFrame) -> Dict[str, float]:
-        """Calculate Days Past Due (DPD) ratios."""
-        try:
-            total = pd.to_numeric(df['total_receivable_usd'], errors='raise').sum()
-        except Exception as e:
-            logger.error(f"Non-numeric value found in total_receivable_usd: {e}")
-            raise ValueError("Non-numeric value found in total_receivable_usd") from e
+        """Calculate portfolio-level DPD ratios."""
+        total = df["total_receivable_usd"].sum()
+        if total == 0:
+            return {}
+        
+        ratios = {}
+        for col in ["dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"]:
+            if col in df.columns:
+                ratios[col] = (df[col].sum() / total) * 100.0
+        return ratios
 
-        dpd_columns = [col for col in df.columns if col.startswith('dpd_')]
-        dpd_ratios = {}
-
-        for col in dpd_columns:
-            try:
-                col_sum = pd.to_numeric(df[col], errors='raise').sum()
-            except Exception as e:
-                logger.error(f"Non-numeric value found in {col}: {e}")
-                raise ValueError(f"Non-numeric value found in {col}") from e
-            if col in df.columns and total > 0:
-                dpd_ratios[col] = col_sum / total * 100
-
-        logger.info(f"Calculated DPD ratios: {dpd_ratios}")
-        return dpd_ratios
-    
     def transform_to_kpi_dataset(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Transform portfolio data into KPI format for analytics. Fail if required columns are missing."""
-        required_columns = [
-            'total_receivable_usd', 'total_eligible_usd', 'discounted_balance_usd',
-            'dpd_0_7_usd', 'dpd_7_30_usd', 'dpd_30_60_usd', 'dpd_60_90_usd', 'dpd_90_plus_usd'
+        """Transform raw loan data into a KPI-ready dataset with ratios and metadata."""
+        required = [
+            "total_receivable_usd", "total_eligible_usd", "discounted_balance_usd",
+            "dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"
         ]
-        missing = [col for col in required_columns if col not in df.columns]
+        missing = [c for c in required if c not in df.columns]
         if missing:
-            logger.error(f"Transformation failed: missing required columns: {missing}")
             raise ValueError(f"Transformation failed: missing required columns: {missing}")
 
+        for col in required:
+            if not pd.api.types.is_numeric_dtype(df[col]):
+                raise ValueError(f"Column {col} must be numeric")
+
         kpi_df = df.copy()
-        kpi_df['receivable_amount'] = df['total_receivable_usd']
-        kpi_df['eligible_amount'] = df['total_eligible_usd']
-        kpi_df['discounted_amount'] = df['discounted_balance_usd']
+        
+        # Rename columns for KPI dataset
+        kpi_df = kpi_df.rename(columns={
+            "total_receivable_usd": "receivable_amount",
+            "total_eligible_usd": "eligible_amount",
+            "discounted_balance_usd": "discounted_amount"
+        })
 
-        # Calculate portfolio metrics
-        dpd_ratios = self.calculate_dpd_ratios(df)
-        for ratio_name, ratio_value in dpd_ratios.items():
-            kpi_df[f'{ratio_name}_pct'] = ratio_value
-
-        kpi_df['_transform_run_id'] = self.run_id
-        kpi_df['_transform_timestamp'] = datetime.now(timezone.utc).isoformat()
-
+        # Calculate row-level percentages
+        receivable = kpi_df["receivable_amount"].replace(0, np.nan)
+        for col in ["dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"]:
+            if col in df.columns:
+                kpi_df[f"{col}_pct"] = (df[col] / receivable).fillna(0.0) * 100
+        
+        kpi_df["_transform_run_id"] = self.run_id
+        kpi_df["_transform_timestamp"] = datetime.now(timezone.utc).isoformat()
+        
         self.transformations_count += 1
-        logger.info(f'Transformed {len(kpi_df)} records to KPI dataset')
         return kpi_df
-    
-    def validate_transformations(
-        self, original_df: pd.DataFrame, kpi_df: pd.DataFrame
-    ) -> bool:
-        """Validate transformation integrity."""
-        if len(original_df) != len(kpi_df):
-            logger.error(
-                f'Row count mismatch: {len(original_df)} vs {len(kpi_df)}'
-            )
-            return False
-    
-        original_total = original_df['total_receivable_usd'].sum()
-        kpi_total = kpi_df['receivable_amount'].sum()
 
-        if abs(original_total - kpi_total) > 0.01:
-            logger.error(
-                f'Total receivables mismatch: {original_total} vs {kpi_total}'
-            )
+    def validate_transformations(self, original: pd.DataFrame, transformed: pd.DataFrame) -> bool:
+        """Validate that the transformation preserved data integrity."""
+        if len(original) != len(transformed):
             return False
-
-        logger.info('Transformation validation passed')
+        
+        if "total_receivable_usd" in original.columns and "receivable_amount" in transformed.columns:
+            orig_sum = original["total_receivable_usd"].sum()
+            trans_sum = transformed["receivable_amount"].sum()
+            if not np.isclose(orig_sum, trans_sum):
+                return False
+        
         return True

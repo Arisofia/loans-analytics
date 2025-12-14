@@ -39,7 +39,7 @@ def test_transform_data():
 
 def test_validate_loans():
     df = pd.DataFrame({"period": ["2025Q4"], "measurement_date": ["2025-12-01"], "total_receivable_usd": [1000.0]})
-    ingestion = CascadeIngestion()
+    ingestion = CascadeIngestion(data_dir=".")
     validated = ingestion.validate_loans(df)
     assert "_validation_passed" in validated.columns
 

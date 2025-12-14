@@ -21,7 +21,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DEFAULT_INPUT = os.getenv("PIPELINE_INPUT_FILE", "data/abaco_portfolio_calculations.csv")
+DEFAULT_INPUT = os.getenv("PIPELINE_INPUT_FILE", "data_samples/abaco_portfolio_sample.csv")
 METRICS_DIR = Path("data/metrics")
 LOGS_DIR = Path("logs/runs")
 METRICS_DIR.mkdir(parents=True, exist_ok=True)
@@ -104,10 +104,12 @@ def run_pipeline(input_file: str = DEFAULT_INPUT) -> bool:
         try:
             kpi_engine = KPIEngine(kpi_df)
             par_30, par_ctx = kpi_engine.calculate_par_30()
+            par_90, par90_ctx = kpi_engine.calculate_par_90()
             collection_rate, coll_ctx = kpi_engine.calculate_collection_rate()
             health_score = kpi_engine.calculate_portfolio_health(par_30, collection_rate)
             audit["kpis"] = {
                 "par_30": {"value": par_30, **par_ctx},
+                "par_90": {"value": par_90, **par90_ctx},
                 "collection_rate": {"value": collection_rate, **coll_ctx},
                 "health_score": {"value": health_score},
             }

@@ -18,7 +18,7 @@ def test_pipeline_missing_required_column():
         'dpd_60_90_usd': [30.0],
         'dpd_90_plus_usd': [20.0],
     })
-    ingestion = CascadeIngestion()
+    ingestion = CascadeIngestion(data_dir=".")
     df = ingestion.ingest_dataframe(df)
     validated = ingestion.validate_loans(df)
     assert not validated['_validation_passed'].iloc[0]

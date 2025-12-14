@@ -18,6 +18,10 @@ logs/
 
 # Build / tooling
 .gradle/
+.next/
+out/
+build/
+dist/
 
 # IDE
 .vscode/tasks.json
@@ -30,3 +34,8 @@ tailwind.config.js
 .coverage
 .coverage.*
 htmlcov/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
