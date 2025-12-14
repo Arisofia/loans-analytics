@@ -12,11 +12,13 @@ from typing import List, Dict, Any
 logger = logging.getLogger(__name__)
 
 class NotionClient:
-    def __init__(self, token_env: str = "NOTION_META_TOKEN", version_env: str = "NOTION_VERSION"):
-        self.token = os.getenv(token_env)
-        self.version = os.getenv(version_env, "2022-06-28")
+    def __init__(self, token_env: str = None, version_env: str = None):
+        token_key = token_env or "NOTION_META_TOKEN"
+        version_key = version_env or "NOTION_VERSION"
+        self.token = os.getenv(token_key)
+        self.version = os.getenv(version_key, "2022-06-28")
         if not self.token:
-            raise ValueError(f"Environment variable {token_env} is not set")
+            raise ValueError(f"Environment variable {token_key} is not set")
 
     def query_database(self, database_id: str) -> List[Dict[str, Any]]:
         url = f"https://api.notion.com/v1/databases/{database_id}/query"
