@@ -19,7 +19,7 @@ jobs:
             const repo = context.repo;
 
             const desiredAssignees = ['codex'];
-            const desiredReviewers = ['sonarqube', 'coderabbit', 'sourcery'];
+            const desiredReviewers = [];
 
             const { data: pull } = await github.rest.pulls.get({
               ...repo,
