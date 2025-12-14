@@ -21,7 +21,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DEFAULT_INPUT = os.getenv("PIPELINE_INPUT_FILE", "data_samples/abaco_portfolio_sample.csv")
+DEFAULT_INPUT = os.getenv("PIPELINE_INPUT_FILE", "data/abaco_portfolio_calculations.csv")
 METRICS_DIR = Path("data/metrics")
 LOGS_DIR = Path("logs/runs")
 METRICS_DIR.mkdir(parents=True, exist_ok=True)

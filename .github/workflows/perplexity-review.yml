@@ -1,0 +1,54 @@
+name: Perplexity Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  perplexity-review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get PR diff
+        id: diff
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD > pr_diff.txt
+          echo "diff_size=$(wc -c < pr_diff.txt)" >> $GITHUB_OUTPUT
+      
+      - name: Review with Perplexity
+        if: steps.diff.outputs.diff_size < 50000
+        env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Call Perplexity API to review the changes
+          curl -X POST "https://api.perplexity.ai/chat/completions" \
+            -H "Authorization: Bearer $PERPLEXITY_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"model\": \"llama-3.1-sonar-large-128k-online\",
+              \"messages\": [
+                {
+                  \"role\": \"system\",
+                  \"content\": \"You are a code reviewer. Review the following PR diff for data ingestion requirements, security issues, and code quality.\"
+                },
+                {
+                  \"role\": \"user\",
+                  \"content\": \"$(cat pr_diff.txt | head -c 10000)\"
+                }
+              ]
+            }" > review_response.json
+          
+          # Extract review and post as comment
+          review_text=$(jq -r '.choices[0].message.content' review_response.json)
+          
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "## 🤖 Perplexity AI Review\n\n$review_text"
