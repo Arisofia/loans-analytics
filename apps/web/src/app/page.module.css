@@ -212,7 +212,6 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  color: var(--text-strong);
   color: color-mix(in srgb, var(--color-text-primary) 80%);
 }
 
