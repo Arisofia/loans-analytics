@@ -1,0 +1,6 @@
+exclude_dirs:
+  - tests
+  - apps/analytics/tests
+  - .venv
+  - .venv-1
+  - venv
