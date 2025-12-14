@@ -16,7 +16,7 @@ jobs:
         env:
           ASSIGNEES: ${{ toJson(github.event.pull_request.assignees) }}
         run: |
-          if [ -z "$ASSIGNEES" ] || [ "$ASSIGNEES" = "[]" ]; then
+          if [ "$(echo "$ASSIGNEES" | jq 'length')" -eq 0 ]; then
             echo "Please assign at least one owner to this pull request before running CI."
             exit 1
           fi
