@@ -114,8 +114,8 @@ def test_portfolio_kpis_returns_expected_metrics(sample_df: pd.DataFrame):
         / df["principal_balance"].sum()
     )
     expected_portfolio_yield = (df["principal_balance"] * df["interest_rate"]).sum() / df["principal_balance"].sum()
-    expected_average_ltv = (df["loan_amount"] / df["appraised_value"]).mean()
-    expected_average_dti = (df["monthly_debt"] / (df["borrower_income"] / 12)).mean()
+    expected_average_ltv = (df["loan_amount"] / df["appraised_value"]).mean() * 100
+    expected_average_dti = (df["monthly_debt"] / (df["borrower_income"] / 12)).mean() * 100
 
     assert metrics["delinquency_rate"] == pytest.approx(expected_delinquency_rate, rel=1e-6, abs=1e-9)
     assert metrics["portfolio_yield"] == pytest.approx(expected_portfolio_yield, rel=1e-6, abs=1e-9)

@@ -24,7 +24,7 @@ jobs:
           echo "diff_size=$(wc -c < pr_diff.txt)" >> $GITHUB_OUTPUT
       
       - name: Review with Perplexity
-        if: steps.diff.outputs.diff_size < 50000
+        if: fromJSON(steps.diff.outputs.diff_size) < 50000
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
