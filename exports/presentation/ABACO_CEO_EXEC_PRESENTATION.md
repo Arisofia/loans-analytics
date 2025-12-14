@@ -55,7 +55,7 @@
 - **OpEx & EBITDA:** OpEx ~$30K/month → EBITDA ≈ +$145K/month (~$1,738K annually) on ramped averages; breakeven expected Q2-26, positive by Q3-26.
 - **State-stable (all months $16,419K AUM):** Origination $90,305K; gross interest $4,677K; after warehouse $1,871K (40% of interest retained); bad debt & platform ~$321K annually; origination fees ~$1,355K; OpEx $40K/month → EBITDA ~$2,425K/year (~$202K/month, ~85% margin).
 - **Capital efficiency:** Cost of capital 12% +1% upfront amortized to 12.22% annual; gross margin must cover capital + losses + OpEx; net spread after all costs estimated 13-16%.
-  - **ROE target:** 12-15x refers to cumulative return on equity over the full investment period (not annualized), i.e., total distributions to equity divided by total equity invested, assuming full reinvestment of earnings and portfolio rotation at current levels. This target is based on Series B case projections over a 5-7 year horizon, with leverage and reinvestment as modeled. Assumes no major credit losses, stable cost of capital, and continued portfolio rotation at 5.5x+ per year.
+  - **ROE target:** 12-15x cumulative (see Appendix A for definition)
 
 ---
 
