@@ -1,13 +1,8 @@
-from __future__ import annotations
-
 import logging
 from datetime import datetime
 from typing import Dict, Tuple
 
 import pandas as pd
-
-from python.kpis.collection_rate import calculate_collection_rate, calculate_par_90
-from python.kpis.par_30 import calculate_par_30 as calculate_par_30_metric
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +62,7 @@ class KPIEngine:
             }
             self._record_audit("par_30", "success", par_30_value, details)
             return par_30_value, details
-        except Exception as exc:  # pragma: no cover - audit logging path
+        except Exception as exc:
             self._record_audit("par_30", "failed", extra={"error": str(exc)})
             raise
 
@@ -79,60 +74,58 @@ class KPIEngine:
         missing = [col for col in required if col not in self.portfolio_data.columns]
         if missing:
             self._record_audit("collection_rate", "failed", extra={"error": f"missing columns: {missing}"})
-            raise ValueError(f"Missing required columns for collection_rate: {missing}")
+            raise ValueError(f"Missing required columns: {missing}")
 
         try:
-            eligible = pd.to_numeric(self.portfolio_data["total_eligible_usd"], errors="coerce").fillna(0.0).sum()
+            df = self.portfolio_data.copy()
+            for col in required:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
 
-            if collections_data is not None and "amount" in collections_data.columns:
-                cash_series = pd.to_numeric(collections_data["amount"], errors="coerce").fillna(0.0)
+            if collections_data is not None:
+                collections_sum = collections_data.sum()
             else:
-                cash_series = pd.to_numeric(self.portfolio_data.get("cash_available_usd"), errors="coerce").fillna(0.0)
+                collections_sum = df["cash_available_usd"].sum()
 
-            cash_total = cash_series.sum()
-            rate = float(0.0 if eligible == 0 else (cash_total / eligible) * 100.0)
+            total_eligible = df["total_eligible_usd"].sum()
 
-            details: Dict[str, float] = {
-                "cash": float(cash_total),
-                "eligible": float(eligible),
-                "total": float(eligible),
+            if pd.isna(collections_sum) or pd.isna(total_eligible):
+                raise ValueError("Collection rate calculation failed: non-numeric values")
+
+            collection_rate_value = float(0.0 if total_eligible == 0 else (collections_sum / total_eligible) * 100.0)
+            details = {
+                "collections": float(collections_sum),
+                "total_eligible": float(total_eligible),
             }
-            if collections_data is not None and "amount" in collections_data.columns:
-                details["collections"] = float(cash_total)
-
-            self._record_audit("collection_rate", "success", rate, details)
-            return rate, details
-        except Exception as exc:  # pragma: no cover - audit logging path
+            self._record_audit("collection_rate", "success", collection_rate_value, details)
+            return collection_rate_value, details
+        except Exception as exc:
             self._record_audit("collection_rate", "failed", extra={"error": str(exc)})
             raise
 
-    def calculate_portfolio_health(self, par_30: float, collection_rate_value: float) -> float:
-        if par_30 is None or collection_rate_value is None:
-            self._record_audit("portfolio_health", "failed", extra={"error": "missing input values"})
-            raise ValueError("par_30 and collection_rate are required")
+    def calculate_all_kpis(self) -> Dict[str, Tuple[float, Dict[str, float]]]:
+        """Calculate all KPIs and return results with audit trail."""
+        results = {}
 
         try:
-            # Simple heuristic: prefer higher collection rates and lower PAR30.
-            raw_score = (collection_rate_value - par_30) / 10.0
-            health = float(max(0.0, min(10.0, raw_score)))
-            self._record_audit("portfolio_health", "success", health)
-            return health
-        except Exception as exc:  # pragma: no cover - audit logging path
-            self._record_audit("portfolio_health", "failed", extra={"error": str(exc)})
-            raise
+            par_30_value, par_30_details = self.calculate_par_30()
+            results["par_30"] = (par_30_value, par_30_details)
+        except ValueError as e:
+            logger.warning(f"PAR30 calculation failed: {e}")
 
-    def validate_calculations(self) -> Dict[str, bool]:
-        """Validate all calculations meet data quality gates."""
-        validation_results: Dict[str, bool] = {}
+        try:
+            collection_rate, collection_details = self.calculate_collection_rate()
+            results["collection_rate"] = (collection_rate, collection_details)
+        except ValueError as e:
+            logger.warning(f"Collection rate calculation failed: {e}")
 
-        for record in self.audit_trail:
-            if record.get("calculation_status") == "success":
-                metric = record["metric"]
-                value = record.get("value")
+        self.kpi_results = results
+        return results
 
-                if metric in ["par_30", "par_90", "collection_rate"]:
-                    validation_results[metric] = value is not None and 0 <= value <= 100
-                elif metric == "portfolio_health":
-                    validation_results[metric] = value is not None and 0 <= value <= 10
-
-        return validation_results
+    def get_summary(self) -> Dict[str, object]:
+        """Return KPI summary for reporting."""
+        return {
+            "run_id": self.run_id,
+            "kpi_count": len(self.kpi_results),
+            "kpis": self.kpi_results,
+            "audit_trail": self.audit_trail,
+        }
