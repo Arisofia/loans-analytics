@@ -63,8 +63,18 @@
 - **KAM Direct Sales:** CAC $1,500-2,000; ARPU $1,200-1,400; LTV $3,600-4,200 (36m); payback 18-20 months; LTV:CAC 1.8-2.1:1; ~20% of new, best for >$100K AUM clients.
 - **Digital (Meta/WhatsApp):** CAC $300-600; ARPU $1,200-1,400; LTV $3,600-4,200; payback 9-12 months; LTV:CAC 6-10:1; ~20% of new, best for $25-100K AUM.
 - **Embedded (LoanPro/Taktile/ISVs):** CAC $50-150; ARPU $1,400-1,600; LTV $4,200-4,800; payback 3-6 months; LTV:CAC 28-96:1; ~60% of new, best for <$50K AUM.
-- **Blended Dec-2026:** CAC ~$500 (from $800 today; **weighted avg: 60% Embedded [$100] + 20% Digital [$450] + 20% KAM [$1,750] = $500**; *midpoints of stated CAC ranges: Embedded $50-150, Digital $300-600, KAM $1,500-2,000*); ARPU ~$1,400 (from $450 today); LTV ~$4,200 (from $2,400); LTV:CAC 8.4:1 (from 3:1); payback ~13 months (from 18); profile shifts from breakeven to attractive.
+- **Blended Dec-2026:**
 
+  | Metric      | Dec-2026 Target | Today      |
+  |-------------|-----------------|------------|
+  | CAC         | ~$500           | ~$800      |
+  | ARPU        | ~$1,400         | ~$450      |
+  | LTV         | ~$4,200         | ~$2,400    |
+  | LTV:CAC     | 8.4:1           | 3:1        |
+  | Payback     | ~13 months      | ~18 months |
+
+  - **Weighted avg CAC calculation:** 60% Embedded [$100] + 20% Digital [$450] + 20% KAM [$1,750] = $500 (using midpoints: Embedded $50-150, Digital $300-600, KAM $1,500-2,000).
+  - *Profile shifts from breakeven to attractive.*
 ---
 
 ## Slide 5: Cash Flow Bridge (Q4-2025 Trough → Dec-2026)
