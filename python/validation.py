@@ -35,7 +35,7 @@ def validate_dataframe(df: pd.DataFrame, required_columns: Optional[List[str]] =
         missing = [col for col in required_columns if col not in df.columns]
         if missing:
             if len(missing) == 1:
-                raise ValueError(f"Missing required column: {missing[0]}")
+                raise ValueError(f"Missing required columns: {missing[0]}")
             else:
                 raise ValueError(f"Missing required columns: {', '.join(missing)}")
             
@@ -44,7 +44,7 @@ def validate_dataframe(df: pd.DataFrame, required_columns: Optional[List[str]] =
             if col not in df.columns:
                 raise ValueError(f"Missing required numeric column: {col}")
             if not pd.api.types.is_numeric_dtype(df[col]):
-                raise ValueError(f"Column '{col}' must be numeric")
+                raise ValueError(f"Column '{col}' must be numeric (column: {col})")
 
 def validate_numeric_bounds(df: pd.DataFrame, columns: Optional[List[str]] = None) -> Dict[str, bool]:
     """Check numeric columns are non-negative."""

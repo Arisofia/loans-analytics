@@ -17,9 +17,14 @@ class CascadeIngestion:
         try:
             file_path = self.data_dir / filename
             if not file_path.exists():
-                 self._record_error("ingestion", f"File not found: {filename}")
-                 return pd.DataFrame()
-            
+                self.errors.append({
+                    "file": filename,
+                    "error": f"No such file or directory: {filename}",
+                    "timestamp": self.timestamp,
+                    "run_id": self.run_id,
+                    "stage": "ingestion"
+                })
+                return pd.DataFrame()
             df = pd.read_csv(file_path)
             # Coderabbit: Accumulate total rows ingested and track per-file ingestion count
             if "rows_ingested" not in self._summary:
@@ -28,13 +33,18 @@ class CascadeIngestion:
             if "files" not in self._summary:
                 self._summary["files"] = {}
             self._summary["files"][filename] = len(df)
-            
             # Add ingestion metadata
             df["_ingest_run_id"] = self.run_id
             df["_ingest_timestamp"] = self.timestamp
             return df
         except Exception as e:
-            self._record_error("ingestion", str(e))
+            self.errors.append({
+                "file": filename,
+                "error": str(e),
+                "timestamp": self.timestamp,
+                "run_id": self.run_id,
+                "stage": "ingestion"
+            })
             return pd.DataFrame()
 
     def ingest_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -51,17 +61,33 @@ class CascadeIngestion:
     def validate_loans(self, df: pd.DataFrame) -> pd.DataFrame:
         if df.empty:
             return df
-        
         # Add validation flag
         df["_validation_passed"] = True
-        
         try:
-            # Validate presence of critical numeric columns for KPIs
-            validate_dataframe(df, required_columns=NUMERIC_COLUMNS)
+            present_cols = [col for col in NUMERIC_COLUMNS if col in df.columns]
+            missing_cols = [col for col in NUMERIC_COLUMNS if col not in df.columns]
+            # First, check numeric types for present columns
+            if present_cols:
+                validate_dataframe(df, numeric_columns=present_cols)
+            # Then, check for missing columns
+            if missing_cols:
+                validate_dataframe(df, required_columns=NUMERIC_COLUMNS)
         except ValueError as e:
-            self._record_error("validation", str(e))
+            msg = str(e)
+            found_col = None
+            for col in NUMERIC_COLUMNS:
+                if col in msg:
+                    found_col = col
+                    break
+            if found_col:
+                msg = f"Validation error in column '{found_col}': {msg}"
+            else:
+                for col in NUMERIC_COLUMNS:
+                    if col in df.columns and not pd.api.types.is_numeric_dtype(df[col]):
+                        msg = f"Validation error in column '{col}': {msg}"
+                        break
+            self._record_error("validation", msg)
             df["_validation_passed"] = False
-        
         return df
 
     def get_ingest_summary(self) -> Dict[str, Any]:
@@ -75,4 +101,4 @@ class CascadeIngestion:
         return summary
 
     def _record_error(self, stage: str, message: str):
-        self.errors.append({"stage": stage, "message": message})
+        self.errors.append({"stage": stage, "error": message, "timestamp": self.timestamp, "run_id": self.run_id})

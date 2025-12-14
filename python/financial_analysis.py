@@ -121,7 +121,7 @@ class FinancialAnalyzer:
                 logger.info(f"Using {detected_field} as weight field")
                 weight_field = detected_field
             else:
-                logger.error(f"Weight field not found in DataFrame")
+                logger.error("Weight field not found in DataFrame")
                 return pd.DataFrame()
 
         result = {}
