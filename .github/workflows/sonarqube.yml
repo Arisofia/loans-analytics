@@ -25,7 +25,7 @@ jobs:
       - name: Clean build (Java 21)
         run: ./gradlew clean build --no-daemon
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
