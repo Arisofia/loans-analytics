@@ -53,10 +53,14 @@ jobs:
 
       - name: Java coverage (Jacoco)
         run: |
-          if [ -x ./gradlew ]; then
-            ./gradlew jacocoTestReport
+          if find . -name "*.gradle" -o -name "*.gradle.kts" | grep -q .; then
+            if [ -x ./gradlew ]; then
+              ./gradlew jacocoTestReport
+            else
+              echo "Gradle build files found but gradlew not present or not executable; skipping Jacoco"
+            fi
           else
-            echo "Skipping Jacoco: gradlew not present in repository"
+            echo "Skipping Jacoco: no Gradle build files found in repository"
           fi
 
       - name: Generate web coverage (Jest)
