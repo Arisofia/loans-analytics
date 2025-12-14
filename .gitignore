@@ -21,3 +21,4 @@ logs/
 
 # IDE
 .vscode/tasks.json
+node_modules/
