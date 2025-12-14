@@ -31,8 +31,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r apps/analytics/requirements.txt
-          pip install pytest pytest-html pytest-json-report allure-pytest
-          pip install scikit-learn pandas numpy matplotlib seaborn
+          pip install pytest-html pytest-json-report allure-pytest
       
       - name: Run evaluation tests
         continue-on-error: true
