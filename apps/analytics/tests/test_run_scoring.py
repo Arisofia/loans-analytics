@@ -1,4 +1,3 @@
-
 """
 Unit tests for the run_scoring CLI and analytics pipeline.
 """
@@ -8,7 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 import pytest
 import pandas as pd
-from run_scoring import (
+from apps.analytics.run_scoring import (
     parse_args,
     load_portfolio,
     summarize_results,
@@ -118,8 +117,8 @@ def test_summarize_results_handles_strings(capsys):
     assert "healthy" in captured.out
 
 
-@patch("run_scoring.LoanAnalyticsEngine")
-@patch("run_scoring.load_portfolio")
+@patch("apps.analytics.run_scoring.LoanAnalyticsEngine")
+@patch("apps.analytics.run_scoring.load_portfolio")
 def test_main_full_flow_no_export(mock_load, mock_engine_class, tmp_path):
     csv_file = tmp_path / "portfolio.csv"
     csv_file.write_text(
@@ -151,11 +150,12 @@ def test_main_full_flow_no_export(mock_load, mock_engine_class, tmp_path):
         main()
     
     mock_engine.run_full_analysis.assert_called_once()
-    mock_engine.risk_alerts.assert_called_once()
+    # risk_alerts not called because --include-risk-alerts not passed
+    mock_engine.risk_alerts.assert_not_called()
 
 
-@patch("run_scoring.LoanAnalyticsEngine")
-@patch("run_scoring.load_portfolio")
+@patch("apps.analytics.run_scoring.LoanAnalyticsEngine")
+@patch("apps.analytics.run_scoring.load_portfolio")
 def test_main_output_to_file(mock_load, mock_engine_class, tmp_path):
     csv_file = tmp_path / "portfolio.csv"
     csv_file.write_text(
@@ -195,12 +195,11 @@ def test_main_output_to_file(mock_load, mock_engine_class, tmp_path):
     with open(output_file, encoding="utf-8") as f:
         data = json.load(f)
     
-    assert "metrics" in data
-    assert "risk_alert_count" in data
+    assert "portfolio_delinquency_rate_percent" in data
 
 
-@patch("run_scoring.LoanAnalyticsEngine")
-@patch("run_scoring.load_portfolio")
+@patch("apps.analytics.run_scoring.LoanAnalyticsEngine")
+@patch("apps.analytics.run_scoring.load_portfolio")
 def test_main_blob_export_requires_credentials(
     mock_load, mock_engine_class, tmp_path
 ):
@@ -226,7 +225,6 @@ def test_main_blob_export_requires_credentials(
     
     mock_engine = MagicMock()
     mock_engine.run_full_analysis.return_value = {"metric1": 1.0}
-    mock_engine.risk_alerts.return_value = pd.DataFrame()
     mock_engine_class.return_value = mock_engine
     
     with patch("sys.argv", [
@@ -238,9 +236,9 @@ def test_main_blob_export_requires_credentials(
             main()
 
 
-@patch("run_scoring.LoanAnalyticsEngine")
-@patch("run_scoring.AzureBlobKPIExporter")
-@patch("run_scoring.load_portfolio")
+@patch("apps.analytics.run_scoring.LoanAnalyticsEngine")
+@patch("apps.analytics.run_scoring.AzureBlobKPIExporter")
+@patch("apps.analytics.run_scoring.load_portfolio")
 def test_main_blob_export_with_connection_string(
     mock_load, mock_exporter_class, mock_engine_class, tmp_path
 ):
@@ -266,8 +264,6 @@ def test_main_blob_export_with_connection_string(
     
     mock_engine = MagicMock()
     mock_engine.run_full_analysis.return_value = {"metric1": 1.0}
-    mock_engine.risk_alerts.return_value = pd.DataFrame()
-    mock_engine.export_kpis_to_blob.return_value = "container/blob.json"
     mock_engine_class.return_value = mock_engine
     
     mock_exporter = MagicMock()
@@ -284,10 +280,10 @@ def test_main_blob_export_with_connection_string(
     ):
         main()
     
-    mock_engine.export_kpis_to_blob.assert_called_once()
+    mock_exporter.upload_metrics.assert_called_once()
 
 
-@patch("run_scoring.parse_args")
+@patch("apps.analytics.run_scoring.parse_args")
 def test_main_parses_custom_thresholds(mock_parse_args, tmp_path):
     csv_file = tmp_path / "portfolio.csv"
     csv_file.write_text(
@@ -302,11 +298,12 @@ def test_main_parses_custom_thresholds(mock_parse_args, tmp_path):
     mock_args.container_name = None
     mock_args.ltv_threshold = 85.0
     mock_args.dti_threshold = 38.0
+    mock_args.include_risk_alerts = True
     mock_parse_args.return_value = mock_args
     
-    with patch("run_scoring.load_portfolio") as mock_load:
+    with patch("apps.analytics.run_scoring.load_portfolio") as mock_load:
         with patch(
-            "run_scoring.LoanAnalyticsEngine"
+            "apps.analytics.run_scoring.LoanAnalyticsEngine"
         ) as mock_engine_class:
             mock_df = pd.DataFrame({
                 "loan_amount": [250000],
