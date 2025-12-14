@@ -3,6 +3,7 @@ name: CI Main
 permissions:
   contents: read
   issues: write
+  pull-requests: read
 
 on:
   push:
@@ -57,14 +58,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r apps/analytics/requirements.txt
       - name: Run tests with coverage
         run: |
           pytest --cov=python
       - name: Fail if coverage below 90%
         run: |
           coverage report --fail-under=90
-
   sonar:
     runs-on: ubuntu-latest
     steps:
@@ -114,7 +114,6 @@ jobs:
         run: |
           cd apps/web
           npm run type-check
-
   analytics:
     runs-on: ubuntu-latest
     steps:
