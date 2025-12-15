@@ -34,6 +34,16 @@ def test_ingest_csv_error(tmp_path):
     assert "no such file".lower() in err["error"].lower()
 
 
+def test_ingest_csv_empty_file(tmp_path):
+    csv_file = tmp_path / "empty.csv"
+    csv_file.touch()
+    ingestion = CascadeIngestion(data_dir=tmp_path)
+    df = ingestion.ingest_csv("empty.csv")
+    assert df.empty
+    assert len(ingestion.errors) == 1
+    assert "empty" in ingestion.errors[0]["error"].lower()
+
+
 def test_validate_loans():
     df = pd.DataFrame({
         "period": ["2025Q4"],

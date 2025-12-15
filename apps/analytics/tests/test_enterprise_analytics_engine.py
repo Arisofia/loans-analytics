@@ -2,6 +2,7 @@
 Unit tests for LoanAnalyticsEngine and analytics logic.
 """
 
+import logging
 import numpy as np
 import pandas as pd
 
@@ -125,3 +126,16 @@ def test_dti_excludes_nan_from_average(portfolio_fixture):
     dti = engine.compute_debt_to_income()
     # 4 loans, 1 has zero income -> NaN. 3 valid.
     assert dti.notna().sum() == 3
+
+
+def test_check_data_sanity_warns_on_high_interest_rate(portfolio_fixture, caplog):
+    """Test that a warning is logged if interest rates appear to be percentages."""
+    high_rate_portfolio = portfolio_fixture.copy()
+    # Set a rate > 1.0 (e.g. 5.0%) to trigger warning
+    high_rate_portfolio.loc[0, "interest_rate"] = 5.0
+    
+    with caplog.at_level(logging.WARNING):
+        LoanAnalyticsEngine(high_rate_portfolio)
+    
+    assert "Max interest_rate is 5.0" in caplog.text
+    assert "Ensure rates are ratios" in caplog.text

@@ -140,3 +140,35 @@ def validate_iso8601_dates(df: pd.DataFrame, columns: Optional[List[str]] = None
                     break
             validation[f"{col}_iso8601"] = valid
     return validation
+
+def validate_monotonic_increasing(df: pd.DataFrame, columns: Optional[List[str]] = None) -> Dict[str, bool]:
+    """
+    Check that specified columns are monotonically increasing (non-decreasing).
+    Returns a dict mapping column name to True/False.
+    """
+    if columns is None:
+        # Heuristic: columns with 'count', 'total', or 'cumulative' in the name
+        columns = [c for c in df.columns if any(x in c.lower() for x in ["count", "total", "cumulative"])]
+    validation: Dict[str, bool] = {}
+    for col in columns:
+        if col in df.columns:
+            # Ignore nulls for monotonicity check
+            series = df[col].dropna()
+            valid = series.is_monotonic_increasing
+            validation[f"{col}_monotonic_increasing"] = valid
+    return validation
+
+def validate_no_nulls(df: pd.DataFrame, columns: Optional[List[str]] = None) -> Dict[str, bool]:
+    """
+    Check that specified columns have no null values.
+    Returns a dict mapping column name to True/False.
+    """
+    if columns is None:
+        # Heuristic: all columns in REQUIRED_ANALYTICS_COLUMNS and NUMERIC_COLUMNS
+        from python.validation import REQUIRED_ANALYTICS_COLUMNS, NUMERIC_COLUMNS
+        columns = list(set(REQUIRED_ANALYTICS_COLUMNS + NUMERIC_COLUMNS))
+    validation: Dict[str, bool] = {}
+    for col in columns:
+        if col in df.columns:
+            validation[f"{col}_no_nulls"] = not df[col].isnull().any()
+    return validation

@@ -5,15 +5,15 @@ from typing import Dict, Iterable
 import numpy as np
 import pandas as pd
 
-REQUIRED_KPI_COLUMNS = [
-    "loan_amount",
-    "appraised_value",
-    "borrower_income",
-    "monthly_debt",
-    "loan_status",
-    "interest_rate",
-    "principal_balance",
-]
+from python.validation import (
+    REQUIRED_ANALYTICS_COLUMNS,
+    ANALYTICS_NUMERIC_COLUMNS,
+    validate_dataframe,
+    safe_numeric,
+)
+
+# Alias for backward compatibility and clarity within this module
+REQUIRED_KPI_COLUMNS = REQUIRED_ANALYTICS_COLUMNS
 
 DELINQUENT_STATUSES = [
     "30-59 days past due", "60-89 days past due", "90+ days past due"
@@ -35,8 +35,8 @@ def _coerce_numeric(series: pd.Series, field_name: str) -> pd.Series:
         ValueError: If all values are non-numeric.
     """
 
-    numeric = pd.to_numeric(series, errors="coerce")
-    if numeric.isna().all():
+    numeric = safe_numeric(series)
+    if numeric.isna().all() and not series.empty:
         raise ValueError(
             f"Field '{field_name}' must contain at least one numeric value"
         )
@@ -54,18 +54,13 @@ def validate_kpi_columns(loan_data: pd.DataFrame) -> None:
         ValueError: If the DataFrame is empty or required columns are missing.
     """
 
-    errors = []
     if loan_data.empty:
-        msg = "Input loan_data must be a non-empty DataFrame."
-        logging.error(msg)
-        errors.append(msg)
+        raise ValueError("Input loan_data must be a non-empty DataFrame.")
 
-    missing_cols = [col for col in REQUIRED_KPI_COLUMNS if col not in loan_data.columns]
-    if missing_cols:
-        msg = f"Missing required columns in loan_data: {', '.join(missing_cols)}"
-        logging.error(msg)
-        errors.append(msg)
+    # Use centralized validation for structure and types
+    validate_dataframe(loan_data, required_columns=REQUIRED_KPI_COLUMNS, numeric_columns=ANALYTICS_NUMERIC_COLUMNS)
 
+    errors = []
     # Granular checks: NaN, data types, value ranges
     for col in REQUIRED_KPI_COLUMNS:
         if col in loan_data.columns:
@@ -74,12 +69,7 @@ def validate_kpi_columns(loan_data: pd.DataFrame) -> None:
                 msg = f"Column '{col}' contains NaN values."
                 logging.error(msg)
                 errors.append(msg)
-            # Type checks
-            if col in ["loan_amount", "appraised_value", "borrower_income", "monthly_debt", "interest_rate", "principal_balance"]:
-                if not pd.api.types.is_numeric_dtype(series):
-                    msg = f"Column '{col}' is not numeric."
-                    logging.error(msg)
-                    errors.append(msg)
+            if col in ANALYTICS_NUMERIC_COLUMNS:
                 # Value range checks (example: no negative values for amounts)
                 if (series < 0).any():
                     msg = f"Column '{col}' contains negative values."

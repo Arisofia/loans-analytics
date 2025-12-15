@@ -3,9 +3,13 @@ Enterprise Analytics Engine for loan portfolio KPI computation and
 risk analysis.
 """
 
+import logging
 from typing import Dict, List, Optional, Protocol, runtime_checkable
 import numpy as np
 import pandas as pd
+from python.validation import REQUIRED_ANALYTICS_COLUMNS, ANALYTICS_NUMERIC_COLUMNS, validate_dataframe
+
+logger = logging.getLogger(__name__)
 
 
 @runtime_checkable
@@ -69,6 +73,7 @@ class LoanAnalyticsEngine:
         self.loan_data = loan_data.copy()
         self._validate_columns()
         self._coercion_report = self._coerce_numeric_columns()
+        self._check_data_sanity()
 
     def get_engine_info(self) -> str:
         """
@@ -100,32 +105,14 @@ class LoanAnalyticsEngine:
         Ensures the DataFrame contains the necessary columns for KPI
         computation.
         """
-        required_cols = [
-            'loan_amount', 'appraised_value', 'borrower_income',
-            'monthly_debt', 'loan_status', 'interest_rate', 'principal_balance'
-        ]
-        missing_cols = [
-            col for col in required_cols if col not in self.loan_data.columns
-        ]
-        if missing_cols:
-            raise ValueError(
-                f"Missing required columns in loan_data: "
-                f"{', '.join(missing_cols)}"
-            )
+        validate_dataframe(self.loan_data, required_columns=REQUIRED_ANALYTICS_COLUMNS)
 
     def _coerce_numeric_columns(self) -> Dict[str, int]:
         """
         Convert numeric columns to proper dtypes and record invalid values for auditability.
         Returns a report of invalid values coerced to NaN for each column.
         """
-        numeric_cols: List[str] = [
-            'loan_amount',
-            'appraised_value',
-            'borrower_income',
-            'monthly_debt',
-            'interest_rate',
-            'principal_balance',
-        ]
+        numeric_cols: List[str] = ANALYTICS_NUMERIC_COLUMNS
 
         coercion_report: Dict[str, int] = {}
         for col in numeric_cols:
@@ -136,6 +123,15 @@ class LoanAnalyticsEngine:
             self.loan_data[col] = coerced
 
         return coercion_report
+
+    def _check_data_sanity(self):
+        """Perform heuristic checks on data values."""
+        if 'interest_rate' in self.loan_data.columns:
+            # Check if interest rates look like percentages (e.g. 5.0 instead of 0.05)
+            # Assuming typical annual rates are < 100% (ratio < 1.0)
+            max_rate = self.loan_data['interest_rate'].max()
+            if max_rate > 1.0:
+                logger.warning(f"Max interest_rate is {max_rate}. Ensure rates are ratios (e.g., 0.05 for 5%) not percentages.")
 
     def compute_loan_to_value(self) -> pd.Series:
         """
