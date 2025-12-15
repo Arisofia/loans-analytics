@@ -90,7 +90,22 @@
 
 ## Slide 6: OKRs & Accountability (2026 Framework)
 - **Pillars:** Growth & Market Expansion; Engagement & Speed; Risk & Quality; Platform & Automation; Sales & Commercial Funnel; Finance & Capital.
-- **Examples:** Acquire 500 SMEs by Q4-26 (on-track 30-60/month); Top-10 concentration <25%; single-obligor <4% by Nov-15-25; CAC <$600 blended via 60% embedded mix; 2,000 invoices/month by Q4-26; T2F 48h → 12h; STP ≥80%; default <1.2% quarterly; NPL180+ <4%; rotation ≥4.5x; LoanPro & Taktile live by Mar-31-26; CRM portal live by Dec-31-25; data warehouse live Jan-31-26; origination targets $500-600K/month Q4-25 → $1.4-1.6MM Q4-26; EBITDA breakeven H2-26.
+- **Examples:**
+    - Acquire 500 SMEs by Q4-26 (on-track 30-60/month)
+    - Top-10 concentration <25%
+    - Single-obligor <4% by Nov-15-25
+    - CAC <$600 blended via 60% embedded mix
+    - 2,000 invoices/month by Q4-26
+    - T2F 48h → 12h
+    - STP ≥80%
+    - Default <1.2% quarterly
+    - NPL180+ <4%
+    - Rotation ≥4.5x
+    - LoanPro & Taktile live by Mar-31-26
+    - CRM portal live by Dec-31-25
+    - Data warehouse live Jan-31-26
+    - Origination targets $500-600K/month Q4-25 → $1.4-1.6MM Q4-26
+    - EBITDA breakeven H2-26
 - **Cadence:** Weekly sales/credit; bi-weekly product/tech; monthly OKR review & board; quarterly reset; CEO OS dashboard automated daily.
 
 ---
