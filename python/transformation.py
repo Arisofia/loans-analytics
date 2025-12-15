@@ -3,8 +3,22 @@ import numpy as np
 import uuid
 from datetime import datetime, timezone
 from typing import Dict
+from python.validation import REQUIRED_ANALYTICS_COLUMNS, find_column
 
 class DataTransformation:
+    REQUIRED_INPUT_COLUMNS = [
+        "total_receivable_usd", "total_eligible_usd", "discounted_balance_usd",
+        "dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"
+    ]
+
+    REQUIRED_ANALYTICS_COLUMNS = REQUIRED_ANALYTICS_COLUMNS
+
+    COLUMN_MAPPINGS = {
+        "loan_amount": ["receivable_amount"],
+        "principal_balance": ["discounted_amount"],
+        "interest_rate": ["avg_apr_pct"],
+    }
+
     def __init__(self):
         # Coderabbit: Assign a unique run_id for each transformation instance for traceability (16 hex chars for lower collision risk)
         self.run_id = f"tx_{uuid.uuid4().hex[:16]}"
@@ -32,15 +46,11 @@ class DataTransformation:
 
     def transform_to_kpi_dataset(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform raw loan data into a KPI-ready dataset with ratios, analytics columns, and metadata."""
-        required = [
-            "total_receivable_usd", "total_eligible_usd", "discounted_balance_usd",
-            "dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"
-        ]
-        missing = [c for c in required if c not in df.columns]
+        missing = [c for c in self.REQUIRED_INPUT_COLUMNS if c not in df.columns]
         if missing:
             raise ValueError(f"Transformation failed: missing required columns: {missing}")
 
-        for col in required:
+        for col in self.REQUIRED_INPUT_COLUMNS:
             if not pd.api.types.is_numeric_dtype(df[col]):
                 raise ValueError(f"Column {col} must be numeric")
 
@@ -60,22 +70,14 @@ class DataTransformation:
                 kpi_df[f"{col}_pct"] = (df[col] / receivable).fillna(0.0) * 100
 
         # --- Add or map required analytics columns ---
-        analytics_required = [
-            "loan_amount", "appraised_value", "borrower_income", "monthly_debt",
-            "loan_status", "interest_rate", "principal_balance"
-        ]
-        for col in analytics_required:
+        for col in self.REQUIRED_ANALYTICS_COLUMNS:
             if col not in kpi_df.columns:
                 # Try to map from similar columns or set default/NaN
-                if col == "loan_amount":
-                    # Use receivable_amount as a proxy if available
-                    kpi_df[col] = kpi_df["receivable_amount"] if "receivable_amount" in kpi_df.columns else float('nan')
-                elif col == "principal_balance":
-                    # Use discounted_amount as a proxy if available
-                    kpi_df[col] = kpi_df["discounted_amount"] if "discounted_amount" in kpi_df.columns else float('nan')
-                elif col == "interest_rate":
-                    # Use avg_apr_pct if available, else NaN
-                    kpi_df[col] = kpi_df["avg_apr_pct"] if "avg_apr_pct" in kpi_df.columns else float('nan')
+                candidates = self.COLUMN_MAPPINGS.get(col, [])
+                source_col = find_column(kpi_df, candidates)
+                
+                if source_col:
+                    kpi_df[col] = kpi_df[source_col]
                 elif col == "loan_status":
                     kpi_df[col] = "unknown"
                 else:
