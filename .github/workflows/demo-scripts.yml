@@ -24,7 +24,7 @@ jobs:
   run-demos:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -47,8 +47,25 @@ jobs:
           python scripts/generate_markdown_report.py \
             --text demo_output.txt \
             --images dpd_distribution.png exposure_distribution.png
+      - name: Comment Report on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            try {
+              const report = fs.readFileSync('demo_report.md', 'utf8');
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: report
+              });
+            } catch (error) {
+              console.log('No report file found or error reading it');
+            }
       - name: Upload Demo Output
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: financial-analysis-demo
           path: |
