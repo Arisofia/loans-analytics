@@ -44,7 +44,9 @@ jobs:
       - name: Generate Report
         if: always()
         run: |
-          python scripts/generate_markdown_report.py --text demo_output.txt --images dpd_distribution.png exposure_distribution.png
+          python scripts/generate_markdown_report.py \
+            --text demo_output.txt \
+            --images dpd_distribution.png exposure_distribution.png
       - name: Upload Demo Output
         uses: actions/upload-artifact@v4
         with:
@@ -66,7 +68,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Demo Scripts Workflow Failed*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                    "text": "*Demo Scripts Workflow Failed* | Repository: ${{ github.repository }} | Branch: ${{ github.ref_name }} | <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
                   }
                 }
               ]
