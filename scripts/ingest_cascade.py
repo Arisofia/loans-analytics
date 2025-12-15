@@ -260,7 +260,7 @@ def main():
         logger.info("=== Processing Loan Tape ===")
         logger.info("")
         logger.info("To download loan tape data:")
-        logger.info(f"1. Navigate to: {CASC ADE_LOAN_TAPE_URL}?pid={pid}")
+        logger.info(f"1. Navigate to: {CASCADE_LOAN_TAPE_URL}?pid={pid}")
         logger.info("2. Click Export button and select CSV format")
         logger.info(f"3. Save to: {output_dir}/loan_tape_YYYYMMDD.csv")
         logger.info(f"4. Run: python scripts/ingest_cascade.py --loan-tape --input-file {output_dir}/loan_tape_YYYYMMDD.csv")
