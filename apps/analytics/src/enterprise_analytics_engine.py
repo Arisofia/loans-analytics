@@ -79,8 +79,8 @@ class LoanAnalyticsEngine:
         """
         Runs a comprehensive analysis and returns a dictionary of portfolio-level KPIs.
         """
-        self.loan_data['ltv_ratio'] = self.compute_loan_to_value()
-        self.loan_data['dti_ratio'] = self.compute_debt_to_income()
+        ltv_ratio = self.compute_loan_to_value()
+        dti_ratio = self.compute_debt_to_income()
 
         return {
             "portfolio_delinquency_rate_percent": self.compute_delinquency_rate(),
