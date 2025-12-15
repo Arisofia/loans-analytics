@@ -82,8 +82,7 @@ def resolve_workflow_targets(workflows, requested):
         else:
             match = next(
                 (
-                    wf
-                    for wf in workflows
+                    wf for wf in workflows
                     if wf.get("name", "").lower() == item.lower()
                 ),
                 None,
