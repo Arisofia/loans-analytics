@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 import os
-from scripts.clients import GrokClient, AIResponse
+from scripts.clients import GrokClient, GeminiClient, AIResponse
 
 class TestGrokClient(unittest.TestCase):
     def setUp(self):
@@ -58,3 +58,39 @@ class TestGrokClient(unittest.TestCase):
             client = GrokClient(api_key=None)
             with self.assertRaises(ValueError):
                 client.generate_text("prompt")
+
+
+class TestGeminiClient(unittest.TestCase):
+    def setUp(self):
+        self.env_patcher = patch.dict(os.environ, {"GOOGLE_API_KEY": "dummy_key"})
+        self.env_patcher.start()
+
+    def tearDown(self):
+        self.env_patcher.stop()
+
+    @patch("scripts.clients.genai")
+    def test_init_configures_genai(self, mock_genai):
+        _ = GeminiClient()
+        mock_genai.configure.assert_called_with(api_key="dummy_key")
+        mock_genai.GenerativeModel.assert_called_with("gemini-1.5-pro")
+
+    def test_init_raises_without_api_key(self):
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(ValueError):
+                GeminiClient(api_key=None)
+
+    @patch("scripts.clients.genai")
+    def test_generate_text_calls_model(self, mock_genai):
+        mock_model = MagicMock()
+        mock_genai.GenerativeModel.return_value = mock_model
+        
+        mock_response = MagicMock()
+        mock_response.text = "Gemini response"
+        mock_response.to_json.return_value = '{"candidates": []}'
+        mock_model.generate_content.return_value = mock_response
+
+        client = GeminiClient()
+        result = client.generate_text("prompt")
+
+        self.assertEqual(result.text, "Gemini response")
+        mock_model.generate_content.assert_called_with("prompt", generation_config={})

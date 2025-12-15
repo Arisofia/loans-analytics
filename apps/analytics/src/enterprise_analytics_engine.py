@@ -302,6 +302,16 @@ class LoanAnalyticsEngine:
         kpis = self.run_full_analysis()
         return exporter.upload_metrics(kpis, blob_name=blob_name)
 
+    def get_validation_errors(self) -> List[dict]:
+        """
+        Run all data quality checks and return a list of error messages for dashboard surfacing.
+        """
+        from python.ingestion import CascadeIngestion
+        ci = CascadeIngestion()
+        ci.errors.clear()
+        ci.validate_loans(self.loan_data)
+        return ci.errors
+
 
 if __name__ == '__main__':
     # Example usage demonstrating the engine's capabilities

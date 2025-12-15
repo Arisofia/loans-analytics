@@ -1,4 +1,3 @@
-
 import json
 import logging
 import os
@@ -75,8 +74,12 @@ def run_pipeline(input_file: str = DEFAULT_INPUT) -> bool:
 
         logger.info("Validating ingested data")
         df = ingestion.validate_loans(df)
+        # Halt pipeline if validation fails and log all errors
         if not df["_validation_passed"].all():
-            raise RuntimeError("Validation failed; see ingestion.errors")
+            logger.error("Validation failed. Errors: %s", json.dumps(ingestion.errors, indent=2))
+            audit["errors"].extend(ingestion.errors)
+            write_outputs(ingestion.run_id, pd.DataFrame(), audit)
+            return False
 
         logger.info("Transforming to KPI dataset")
         try:

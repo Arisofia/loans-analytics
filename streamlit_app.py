@@ -12,25 +12,6 @@ import re
 import unicodedata
 from typing import Optional
 
-def define_ingestion_state(df: pd.DataFrame) -> dict:
-    """Return ingestion state summary for a DataFrame."""
-    return {
-        "rows": len(df),
-        "columns": len(df.columns),
-        "has_loan_base": "loan_status" in df.columns and "loan_amount" in df.columns and "principal_balance" in df.columns,
-    }
-
-def compute_roll_rates(df: pd.DataFrame) -> pd.DataFrame:
-    """Compute roll rates if required columns exist."""
-    if "dpd_status" not in df.columns or "loan_status" not in df.columns:
-        return pd.DataFrame({})
-    base = df.loc[df["dpd_status"].notna()]
-    transitions = (
-        base.groupby(["dpd_status", "loan_status"]).size().reset_index(name="count")
-        .assign(percent=lambda d: d["count"] / d["count"].sum() * 100)
-    )
-    return transitions
-
 import numpy as np
 import pandas as pd
 try:
@@ -312,6 +293,16 @@ if missing_required_columns:
     )
     st.stop()
 
+# --- Data Quality Error Surfacing ---
+def get_validation_errors(df: pd.DataFrame):
+    """Run all validation checks and return a list of error messages."""
+    from python.ingestion import CascadeIngestion
+    ci = CascadeIngestion()
+    ci.errors.clear()
+    ci.validate_loans(df)
+    return ci.errors
+
+
 st.markdown("## Data Quality Audit")
 quality_score = calculate_quality_score(loan_df)
 st.progress(quality_score / 100)
@@ -319,6 +310,14 @@ st.markdown(
     "Critical tables scored, missing columns handled, and zeros penalized "
     "before KPI synthesis."
 )
+
+# Surface validation errors in dashboard
+validation_errors = get_validation_errors(loan_df)
+if validation_errors:
+    st.error("Data quality validation failed. See details below:")
+    for err in validation_errors:
+        st.markdown(f"- **{err.get('stage', 'validation')}**: {err.get('error')}")
+    st.stop()
 
 st.markdown("## Payer Coverage Scan")
 payer_column = select_payer_column(loan_df)
