@@ -1,0 +1,49 @@
+name: Demo Scripts Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'python/**'
+      - '.github/workflows/demo-scripts.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'python/**'
+      - '.github/workflows/demo-scripts.yml'
+  workflow_dispatch:
+    inputs:
+      DATA_FILE:
+        description: 'Path to CSV data file (relative to repo root)'
+        required: false
+        default: ''
+
+jobs:
+  run-demos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run Financial Analysis Demo
+        run: |
+          if [ -n "${{ inputs.DATA_FILE }}" ]; then
+            python scripts/demo_financial_analysis.py --data "${{ inputs.DATA_FILE }}" > demo_output.txt
+          else
+            python scripts/demo_financial_analysis.py > demo_output.txt
+          fi
+      - name: Upload Demo Output
+        uses: actions/upload-artifact@v4
+        with:
+          name: financial-analysis-demo
+          path: |
+            demo_output.txt
+            *.png
