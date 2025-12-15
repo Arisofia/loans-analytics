@@ -1,20 +1,22 @@
 name: Run Script
 
-permissions:
-  contents: read
-
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - 'scripts/**'
       - '.github/workflows/run-script.yml'
   pull_request:
-    branches: [main]
+    branches:
+      - main
     paths:
       - 'scripts/**'
       - '.github/workflows/run-script.yml'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   run-script:

@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,10 +33,12 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO_FULL_NAME: ${{ github.repository }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
           python - <<'PY'
           import os
           import sys
+          import subprocess
           import textwrap
           import requests
           import google.generativeai as genai
@@ -43,6 +47,7 @@ jobs:
           gemini_key = os.getenv("GEMINI_API_KEY")
           pr_number = os.getenv("PR_NUMBER")
           repo = os.getenv("REPO_FULL_NAME")
+          base_ref = os.getenv("BASE_REF")
 
           if not github_token or not pr_number or not repo:
               print("Missing GitHub context; skipping Gemini review.")
@@ -53,18 +58,10 @@ jobs:
               sys.exit(0)
 
           headers = {"Authorization": f"token {github_token}", "Accept": "application/vnd.github+json"}
-          files_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
 
           try:
-              response = requests.get(files_url, headers=headers, timeout=30)
-              response.raise_for_status()
-              files = response.json()
-              diff_chunks = []
-              for file in files:
-                  patch = file.get("patch")
-                  if patch:
-                      diff_chunks.append(f"File: {file.get('filename')}\n{patch}")
-              diff_text = "\n\n".join(diff_chunks)
+              # Use 3-dot diff to compare PR HEAD against the merge base with the target branch
+              diff_text = subprocess.check_output(["git", "diff", f"origin/{base_ref}...HEAD"], stderr=subprocess.STDOUT).decode("utf-8")
           except Exception as exc:  # pragma: no cover - runtime safeguard
               print(f"Failed to fetch PR diff: {exc}")
               sys.exit(0)
