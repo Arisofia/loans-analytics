@@ -9,8 +9,8 @@ setup(
     packages=find_packages(),
     python_requires=">=3.9",
     install_requires=[
-        "pandas>=1.3.0",
-        "numpy>=1.21.0",
+        "pandas>=2.0.0",
+        "numpy>=1.24.0",
         "requests>=2.26.0",
         "pydantic>=1.8.0",
         "python-dotenv>=0.19.0",
