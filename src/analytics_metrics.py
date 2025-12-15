@@ -46,7 +46,8 @@ def calculate_quality_score(df: pd.DataFrame) -> int:
 
 
 def _assert_required_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
-    if missing := [column for column in required if column not in df.columns]:
+    missing = set(required) - set(df.columns)
+    if missing:
         raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
 
