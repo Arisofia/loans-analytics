@@ -339,7 +339,4 @@ if __name__ == '__main__':
     kpi_dashboard = engine.run_full_analysis()
 
     # Output the KPI dashboard - ready for visualization or reporting
-    print("--- Loan Portfolio KPI Dashboard ---")
-    for kpi, value in kpi_dashboard.items():
-        print(f"{kpi.replace('_', ' ').title()}: {value:.2f}")
-    print("------------------------------------")
+    # Logging handled by run_scoring or external reporting utilities
