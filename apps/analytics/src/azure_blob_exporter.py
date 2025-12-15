@@ -75,7 +75,12 @@ class AzureBlobKPIExporter:
         try:
             container_client.create_container()
         except ResourceExistsError:
-            pass
+            import logging
+            logging.info(f"Container '{self.container_name}' already exists.")
+        except Exception as e:
+            import logging
+            logging.error(f"Failed to create container '{self.container_name}': {e}")
+            raise
 
         timestamp = datetime.now(timezone.utc)
         blob_path = blob_name or (
