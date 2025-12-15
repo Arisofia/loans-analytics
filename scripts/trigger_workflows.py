@@ -18,7 +18,9 @@ def build_request(url, token, data=None, method="GET"):
         "X-GitHub-Api-Version": "2022-11-28",
     }
     encoded = json.dumps(data).encode("utf-8") if data is not None else None
-    return urllib.request.Request(url, data=encoded, headers=headers, method=method)
+    return urllib.request.Request(
+        url, data=encoded, headers=headers, method=method
+    )
 
 
 def ensure_token():
@@ -33,9 +35,14 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Trigger GitHub Actions workflows via workflow_dispatch"
     )
-    parser.add_argument("repo", help="Target repository in the format owner/name")
     parser.add_argument(
-        "--ref", default="main", help="Git ref to dispatch (default: main)"
+        "repo",
+        help="Target repository in the format owner/name",
+    )
+    parser.add_argument(
+        "--ref",
+        default="main",
+        help="Git ref to dispatch (default: main)",
     )
     parser.add_argument(
         "--workflows",
@@ -69,13 +76,17 @@ def resolve_workflow_targets(workflows, requested):
     for item in requested:
         if item.isdigit():
             match = next(
-                (wf for wf in workflows if str(wf.get("id")) == item), None
+                (wf for wf in workflows if str(wf.get("id")) == item),
+                None,
             )
         else:
             match = next(
-                (wf for wf in workflows
-                 if wf.get("name", "").lower() == item.lower()),
-                None
+                (
+                    wf
+                    for wf in workflows
+                    if wf.get("name", "").lower() == item.lower()
+                ),
+                None,
             )
         if not match:
             raise ValueError(f"Workflow '{item}' not found")
@@ -85,7 +96,10 @@ def resolve_workflow_targets(workflows, requested):
 
 def trigger_workflow(repo, workflow, ref, token):
     identifier = workflow.get("id") or workflow.get("file_name")
-    url = f"{API_ROOT}/repos/{repo}/actions/workflows/{identifier}/dispatches"
+    url = (
+        f"{API_ROOT}/repos/{repo}/actions/workflows/"
+        f"{identifier}/dispatches"
+    )
     request = build_request(url, token, {"ref": ref}, method="POST")
     with urllib.request.urlopen(request) as response:
         return response.status == 204
