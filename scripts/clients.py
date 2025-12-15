@@ -4,7 +4,6 @@ These lightweight wrappers keep network concerns isolated from the business
 logic while providing minimal ergonomics for invoking Grok or Gemini models.
 """
 
-from __future__ import annotations
 
 import json
 import logging
