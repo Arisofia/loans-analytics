@@ -37,13 +37,15 @@ jobs:
         if: matrix.language == 'javascript'
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: 'npm'
 
       - name: Setup Python
         if: matrix.language == 'python'
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3

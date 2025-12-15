@@ -16,6 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Lint
@@ -30,6 +31,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: apps/analytics/requirements.txt
       - name: Install dependencies
         run: pip install -r apps/analytics/requirements.txt
       - name: Run tests
