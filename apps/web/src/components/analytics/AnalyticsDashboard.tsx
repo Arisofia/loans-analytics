@@ -58,7 +58,7 @@ export function AnalyticsDashboard() {
       if (!result.success) {
         setAnalyticsError(result.error)
         Sentry.captureException(new Error(result.error), {
-          contexts: { validation: result.details }
+          contexts: { validation: result.details },
         })
         return null
       }
@@ -66,7 +66,7 @@ export function AnalyticsDashboard() {
         setAnalyticsWarning(result.warnings.join('; '))
       }
       return result.data
-    } catch (err: any) {
+    } catch (err: unknown) {
       setAnalyticsError('Unexpected error during analytics processing')
       Sentry.captureException(err)
       return null
@@ -151,8 +151,8 @@ export function AnalyticsDashboard() {
             <div className={styles.sectionHeader}>
               <p className={styles.sectionTitle}>Alert routing & runbooks</p>
               <p className={styles.sectionCopy}>
-                Every chart links to drill-down tables and owners. Alerts route with SLA and next-best
-                action.
+                Every chart links to drill-down tables and owners. Alerts route with SLA and
+                next-best action.
               </p>
             </div>
             <div className={styles.linkGrid}>
@@ -185,8 +185,8 @@ export function AnalyticsDashboard() {
             <div className={styles.sectionHeader}>
               <p className={styles.sectionTitle}>Drill-down tables</p>
               <p className={styles.sectionCopy}>
-                Link charts to real tables for investigation. Configure NEXT_PUBLIC_DRILLDOWN_BASE_URL
-                to point at your data app/API.
+                Link charts to real tables for investigation. Configure
+                NEXT_PUBLIC_DRILLDOWN_BASE_URL to point at your data app/API.
               </p>
             </div>
             <div className={styles.linkGrid}>
@@ -197,7 +197,8 @@ export function AnalyticsDashboard() {
                 { label: 'Ingestion errors', path: '/ingestion-errors' },
               ].map((item) => {
                 const status = drilldownStatuses[item.path] ?? 'unknown'
-                const statusText = status === 'ok' ? 'Ready' : status === 'error' ? 'Error' : 'Unknown'
+                const statusText =
+                  status === 'ok' ? 'Ready' : status === 'error' ? 'Error' : 'Unknown'
                 return (
                   <Link
                     key={item.path}
