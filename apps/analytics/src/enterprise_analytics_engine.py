@@ -53,11 +53,12 @@ class LoanAnalyticsEngine:
         # Assuming borrower_income is annual, convert to monthly
         monthly_income = self.loan_data['borrower_income'] / 12
         # Avoid division by zero
-        return np.where(
+        dti = np.where(
             monthly_income > 0,
             (self.loan_data['monthly_debt'] / monthly_income) * 100,
             np.nan
         )
+        return pd.Series(dti, index=self.loan_data.index)
 
     def compute_delinquency_rate(self) -> float:
         """Computes the overall portfolio delinquency rate."""
