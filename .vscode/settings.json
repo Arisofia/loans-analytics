@@ -2,12 +2,18 @@
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv-1/bin/python",
   "python.analysis.typeCheckingMode": "basic",
   "python.testing.pytestEnabled": true,
-  "python.testing.pytestArgs": ["tests"],
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
   "editor.formatOnSave": true,
   "files.exclude": {
     "**/.venv": true,
     "**/.venv-1": true,
     "**/.git": true
   },
-  "java.compile.nullAnalysis.mode": "automatic"
+  "java.compile.nullAnalysis.mode": "automatic",
+  "sonarlint.connectedMode.project": {
+    "connectionId": "abaco-technol",
+    "projectKey": "abaco-loans-analytics"
+  }
 }

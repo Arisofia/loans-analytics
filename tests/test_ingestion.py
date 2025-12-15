@@ -43,6 +43,18 @@ def test_ingest_csv_empty_file(tmp_path):
     assert len(ingestion.errors) == 1
     assert "empty" in ingestion.errors[0]["error"].lower()
 
+def test_ingest_csv_strict_schema_failure(tmp_path):
+    csv_content = "period,measurement_date,total_receivable_usd\n2025Q4,2025-12-01,1000.0"
+    csv_file = tmp_path / "sample.csv"
+    csv_file.write_text(csv_content)
+    ingestion = CascadeIngestion(data_dir=tmp_path, strict_validation=True)
+    df = ingestion.ingest_csv("sample.csv")
+    assert df.empty  # strict mode aborts on schema issues
+    assert ingestion.errors
+    err = ingestion.errors[0]
+    assert err.get("stage") == "ingestion_validation"
+    assert "missing required numeric columns" in err.get("error", "").lower()
+
 
 def test_validate_loans():
     df = pd.DataFrame({

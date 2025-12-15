@@ -31,8 +31,9 @@ jobs:
           python scripts/run_data_pipeline.py
       - name: Notify Slack on Success
         if: success()
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@v2
         with:
+          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": ":tada: Daily data ingestion completed successfully!",

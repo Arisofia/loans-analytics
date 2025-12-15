@@ -79,7 +79,7 @@ jobs:
           python scripts/run_data_pipeline.py
       - name: Check Repo Maturity
         run: |
-          if [ -f repo_maturity_summary.py ]; then python repo_maturity_summary.py; fi
+          if [ -f scripts/repo_maturity_summary.py ]; then python scripts/repo_maturity_summary.py; fi
       - name: Notify Slack on Failure
         if: failure()
         uses: slackapi/slack-github-action@v2

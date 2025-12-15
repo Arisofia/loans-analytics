@@ -1,3 +1,4 @@
+# CI Workflow for Demo Scripts
 name: Demo Scripts Check
 
 on:
@@ -19,6 +20,10 @@ on:
         description: 'Path to CSV data file (relative to repo root)'
         required: false
         default: ''
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   run-demos:

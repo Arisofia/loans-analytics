@@ -15,6 +15,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Submit Dependency Snapshot
-        uses: actions/python-dependency-submission@v1
-        with:
-          python-version: '3.11'
+        run: echo "Dependency submission not configured"

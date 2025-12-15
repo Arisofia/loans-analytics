@@ -106,3 +106,21 @@ def test_transform_fuzzy_mapping():
     kpi_df = dt.transform_to_kpi_dataset(df)
     assert "interest_rate" in kpi_df.columns
     assert kpi_df["interest_rate"].iloc[0] == 0.15
+
+
+def test_transform_missing_required_columns_raises():
+    dt = DataTransformation()
+    df = pd.DataFrame({
+        "total_receivable_usd": [1000.0],
+        "dpd_0_7_usd": [100.0],
+    })
+    with pytest.raises(ValueError):
+        dt.transform_to_kpi_dataset(df)
+
+
+def test_transform_non_numeric_required_column_raises():
+    dt = DataTransformation()
+    df = sample_df()
+    df["total_receivable_usd"] = ["not-a-number", "also-bad"]
+    with pytest.raises(ValueError):
+        dt.transform_to_kpi_dataset(df)

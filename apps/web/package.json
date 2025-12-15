@@ -27,7 +27,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint src",
+    "lint": "next lint",
     "type-check": "tsc --project tsconfig.json --noEmit",
     "test": "jest"
   },

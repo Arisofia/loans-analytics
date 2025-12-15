@@ -1,24 +1,33 @@
+import argparse
+import argparse
 import json
 import logging
 import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
 # Add project root to path for python/ modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
+from python.compliance import (
+    build_compliance_report,
+    create_access_log_entry,
+    mask_pii_in_dataframe,
+    write_compliance_report,
+)
 from python.ingestion import CascadeIngestion
-from python.transformation import DataTransformation
 from python.kpi_engine import KPIEngine
+from python.transformation import DataTransformation
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
 
 DEFAULT_INPUT = os.getenv("PIPELINE_INPUT_FILE", "data/abaco_portfolio_calculations.csv")
 METRICS_DIR = Path("data/metrics")
@@ -26,7 +35,22 @@ LOGS_DIR = Path("logs/runs")
 METRICS_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
-def write_outputs(run_id: str, kpi_df: pd.DataFrame, audit: Dict[str, Any]) -> None:
+
+def log_stage(stage: str, message: str, **details: Any) -> None:
+    detail_str = ", ".join(f"{key}={value!r}" for key, value in details.items() if value is not None)
+    payload = f"{stage}: {message}"
+    if detail_str:
+        payload = f"{payload} | {detail_str}"
+    logger.info(payload)
+
+
+def write_outputs(
+    run_id: str,
+    kpi_df: pd.DataFrame,
+    audit: Dict[str, Any],
+    metadata: Dict[str, Any],
+    compliance_path: Path,
+) -> Dict[str, Any]:
     metrics_path = METRICS_DIR / f"{run_id}.parquet"
     csv_path = METRICS_DIR / f"{run_id}.csv"
     audit_path = LOGS_DIR / f"{run_id}.json"
@@ -34,70 +58,159 @@ def write_outputs(run_id: str, kpi_df: pd.DataFrame, audit: Dict[str, Any]) -> N
 
     kpi_df.to_parquet(metrics_path, index=False)
     kpi_df.to_csv(csv_path, index=False)
-    with audit_path.open("w", encoding="utf-8") as f:
-        json.dump(audit, f, indent=2, default=str)
+
+    processed_outputs = {
+        "metrics_file": str(metrics_path),
+        "csv_file": str(csv_path),
+        "manifest_file": str(manifest_path),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "compliance_report_file": str(compliance_path),
+    }
 
     manifest = {
         "run_id": run_id,
-        "metrics_file": str(metrics_path),
-        "csv_file": str(csv_path),
-        "audit_file": str(audit_path),
-        "timestamp": audit.get("started_at"),
-        "kpis": audit.get("kpis", {}),
-        "errors": audit.get("errors", []),
-        "kpi_audit_trail": audit.get("kpi_audit_trail", []),
-        "ingest": audit.get("ingest", {}),
-        "transform_run_id": audit.get("transform_run_id", None),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "raw_files": metadata.get("raw_files", []),
+        "processed_outputs": processed_outputs,
+        "processed_data": metadata.get("processed_data"),
+        "lineage": metadata.get("lineage", []),
+        "user": metadata.get("user"),
+        "action": metadata.get("action"),
+        "audit": metadata.get("audit", {}),
+        "compliance_report_file": str(compliance_path),
     }
-    with manifest_path.open("w", encoding="utf-8") as f:
-        json.dump(manifest, f, indent=2, default=str)
 
-    logger.info("Wrote metrics to %s and %s; audit to %s; manifest to %s", metrics_path, csv_path, audit_path, manifest_path)
+    with audit_path.open("w", encoding="utf-8") as handle:
+        json.dump(audit, handle, indent=2, default=str)
 
-def run_pipeline(input_file: str = DEFAULT_INPUT) -> bool:
-    run_started = datetime.now(timezone.utc).isoformat()
-    ingestion = CascadeIngestion(data_dir=str(Path(input_file).parent or "."))
+    with manifest_path.open("w", encoding="utf-8") as handle:
+        json.dump(manifest, handle, indent=2, default=str)
+
+    return processed_outputs
+
+
+def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, action: str | None = None) -> bool:
+    user = user or os.getenv("PIPELINE_RUN_USER", "system")
+    action = action or os.getenv("PIPELINE_RUN_ACTION", "manual")
+    input_path = Path(input_file)
+    data_dir = str(input_path.parent or ".")
+    ingestion = CascadeIngestion(data_dir=data_dir)
+    ingestion.set_context(user=user, action=action, input_file=str(input_path))
     transformer = DataTransformation()
+    transformer.set_context(user=user, action=action, ingest_run_id=ingestion.run_id, source_file=str(input_path))
+
+    log_stage(
+        "pipeline:start",
+        "Starting data pipeline",
+        run_id=ingestion.run_id,
+        user=user,
+        action=action,
+        input_file=str(input_path),
+    )
+    record_access("pipeline:start", "started", f"input_file={input_path}")
+
     audit: Dict[str, Any] = {
         "run_id": ingestion.run_id,
-        "started_at": run_started,
-        "input_file": input_file,
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "input_file": str(input_path),
         "errors": [],
         "kpis": {},
     }
 
+    compliance_log: List[Dict[str, Any]] = []
+
+    def record_access(stage: str, status: str, message: Optional[str] = None) -> None:
+        compliance_log.append(create_access_log_entry(stage, user, action, status, message))
+
+    df = pd.DataFrame()
     try:
-        logger.info("Ingesting %s", input_file)
-        df = ingestion.ingest_csv(Path(input_file).name)
-        if df.empty:
-            raise RuntimeError("Ingestion returned empty DataFrame")
+        df = ingestion.ingest_csv(input_path.name)
+    finally:
+        raw_files = ingestion.raw_files or [
+            {
+                "file": str(input_path),
+                "status": "unknown",
+                "rows": len(df),
+                "timestamp": ingestion.timestamp,
+            }
+        ]
+        log_stage(
+            "pipeline:ingestion",
+            "Ingestion summary",
+            run_id=ingestion.run_id,
+            files=[entry["file"] for entry in raw_files],
+            rows=len(df),
+            errors=len(ingestion.errors),
+        )
+        record_access(
+            "ingestion",
+            "completed" if not ingestion.errors else "warning",
+            f"rows={len(df)}, errors={len(ingestion.errors)}",
+        )
 
-        logger.info("Validating ingested data")
-        df = ingestion.validate_loans(df)
-        # Halt pipeline if validation fails and log all errors
-        if not df["_validation_passed"].all():
-            logger.error("Validation failed. Errors: %s", json.dumps(ingestion.errors, indent=2))
-            audit["errors"].extend(ingestion.errors)
-            write_outputs(ingestion.run_id, pd.DataFrame(), audit)
-            return False
+    try:
+        if not df.empty:
+            df = ingestion.validate_loans(df)
+            validation_passed = bool(df.get("_validation_passed", pd.Series([True] * len(df))).all())
+            log_stage(
+                "pipeline:validation",
+                "Validation completed",
+                run_id=ingestion.run_id,
+                passed=validation_passed,
+                rows=len(df),
+            )
+            record_access(
+                "validation",
+                "passed" if validation_passed else "failed",
+                f"rows={len(df)}",
+            )
+            if not validation_passed:
+                audit["errors"].extend(ingestion.errors)
+        else:
+            log_stage(
+                "pipeline:validation",
+                "Validation skipped (no rows)",
+                run_id=ingestion.run_id,
+            )
+            record_access("validation", "skipped", "no rows to validate")
+    except Exception as exc:
+        error_msg = f"Validation error: {type(exc).__name__}: {exc}"
+        logger.exception(error_msg)
+        audit["errors"].append(error_msg)
+        record_access("validation", "error", error_msg)
 
-        logger.info("Transforming to KPI dataset")
-        try:
+    kpi_df = pd.DataFrame()
+    masked_columns: List[str] = []
+    mask_stage = "not_run"
+    try:
+        if not df.empty and df.get("_validation_passed", pd.Series([False] * len(df))).all():
+            log_stage("pipeline:transformation", "Transforming to KPI dataset", run_id=ingestion.run_id)
             kpi_df = transformer.transform_to_kpi_dataset(df)
-        except Exception as exc:
-            error_msg = f"Transformation error: {type(exc).__name__}: {exc}"
-            logger.error(error_msg, exc_info=True)
-            audit["errors"].extend(ingestion.errors)
-            audit["errors"].append({
-                "stage": "transformation",
-                "error": error_msg,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
-            write_outputs(ingestion.run_id, pd.DataFrame(), audit)
-            return False
+            kpi_df, masked_columns = mask_pii_in_dataframe(kpi_df)
+            mask_stage = "post_transformation"
+            record_access("compliance", "pii_masked", f"columns={masked_columns}")
+            log_stage("pipeline:transformation", "Transformation completed", rows=len(kpi_df), run_id=ingestion.run_id)
+            record_access("transformation", "completed", f"rows={len(kpi_df)}")
+        else:
+            mask_stage = "transformation_skipped"
+            log_stage(
+                "pipeline:transformation",
+                "Skipping transformation (validation failed or no data)",
+                run_id=ingestion.run_id,
+            )
+            record_access("transformation", "skipped", "validation failed or no data")
+    except Exception as exc:
+        error_msg = f"Transformation error: {type(exc).__name__}: {exc}"
+        logger.exception(error_msg)
+        audit["errors"].append(error_msg)
+        record_access("transformation", "error", error_msg)
 
-        logger.info("Calculating KPIs")
-        try:
+    transformation_summary = transformer.get_processing_summary()
+    lineage_records = transformer.get_lineage()
+
+    try:
+        if not kpi_df.empty:
+            log_stage("pipeline:kpi", "Calculating KPIs", run_id=ingestion.run_id)
             kpi_engine = KPIEngine(kpi_df)
             par_30, par_ctx = kpi_engine.calculate_par_30()
             par_90, par90_ctx = kpi_engine.calculate_par_90()
@@ -110,43 +223,99 @@ def run_pipeline(input_file: str = DEFAULT_INPUT) -> bool:
                 "health_score": {"value": health_score, **health_ctx},
             }
             audit["kpi_audit_trail"] = kpi_engine.get_audit_trail().to_dict(orient="records")
-        except Exception as exc:
-            error_msg = f"KPI calculation error: {type(exc).__name__}: {exc}"
-            logger.error(error_msg, exc_info=True)
-            audit["errors"].extend(ingestion.errors)
-            audit["errors"].append({
-                "stage": "kpi_calculation",
-                "error": error_msg,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
-            if 'kpi_engine' in locals():
-                audit["kpi_audit_trail"] = kpi_engine.get_audit_trail().to_dict(orient="records")
-            write_outputs(ingestion.run_id, pd.DataFrame(), audit)
-            return False
-
-        audit["ingest"] = ingestion.get_ingest_summary()
-        audit["transform_run_id"] = transformer.run_id
-
-        logger.info("Writing outputs and audit")
-        write_outputs(ingestion.run_id, kpi_df, audit)
-        logger.info("Pipeline completed successfully (run_id=%s)", ingestion.run_id)
-        return True
-
+            log_stage(
+                "pipeline:kpi",
+                "KPIs calculated",
+                par_30=par_30,
+                par_90=par_90,
+                collection_rate=collection_rate,
+                health_score=health_score,
+                run_id=ingestion.run_id,
+            )
+            record_access(
+                "kpi",
+                "completed",
+                f"par_30={par_30}, par_90={par_90}",
+            )
+        else:
+            log_stage(
+                "pipeline:kpi",
+                "Skipping KPI calculation (no KPI dataset)",
+                run_id=ingestion.run_id,
+            )
+            audit["kpis"] = {}
+            audit["kpi_audit_trail"] = []
+            record_access("kpi", "skipped", "no KPI dataset to calculate")
     except Exception as exc:
-        error_msg = f"{type(exc).__name__}: {exc}"
-        logger.error("Pipeline failed: %s", error_msg, exc_info=True)
-        ingestion.record_error("pipeline", error_msg)
-        audit["errors"].extend(ingestion.errors)
-        audit["errors"].append({
-            "stage": "pipeline",
-            "error": error_msg,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
-        try:
-            write_outputs(ingestion.run_id, pd.DataFrame(), audit)
-        except Exception:
-            pass
-        return False
+        error_msg = f"KPI calculation error: {type(exc).__name__}: {exc}"
+        logger.exception(error_msg)
+        audit["errors"].append(error_msg)
+        record_access("kpi", "error", error_msg)
+        if "kpi_engine" in locals():
+            audit["kpi_audit_trail"] = kpi_engine.get_audit_trail().to_dict(orient="records")
+
+    audit["ingest"] = ingestion.get_ingest_summary()
+    audit["transformation"] = transformation_summary
+    audit["lineage"] = lineage_records
+    audit["metadata"] = {
+        "user": user,
+        "action": action,
+        "initiated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    audit["compliance"] = {
+        "pii_masked_columns": masked_columns,
+        "mask_stage": mask_stage,
+        "access_log": compliance_log,
+    }
+
+    metadata_payload = {
+        "raw_files": raw_files,
+        "user": user,
+        "action": action,
+        "audit": audit,
+        "processed_data": transformation_summary,
+        "lineage": lineage_records,
+        "compliance": audit["compliance"],
+    }
+
+    compliance_path = LOGS_DIR / f"{ingestion.run_id}_compliance_report.json"
+    try:
+        log_stage("pipeline:output", "Writing outputs", run_id=ingestion.run_id)
+        record_access("output", "started", "persisting metrics/csv/manifest")
+        processed_outputs = write_outputs(ingestion.run_id, kpi_df, audit, metadata_payload, compliance_path)
+        record_access("output", "completed", "metrics/csv/manifest persisted")
+        record_access("compliance_report", "started", f"path={compliance_path}")
+        compliance_report = build_compliance_report(
+            ingestion.run_id,
+            compliance_log,
+            masked_columns,
+            mask_stage,
+            audit["metadata"],
+        )
+        write_compliance_report(compliance_report, compliance_path)
+        audit["processed_outputs"] = processed_outputs
+    except Exception as exc:
+        error_msg = f"Failed to write outputs: {type(exc).__name__}: {exc}"
+        logger.exception(error_msg)
+        audit["errors"].append(error_msg)
+        record_access("output", "error", error_msg)
+
+    log_stage(
+        "pipeline:complete",
+        "Pipeline completed",
+        run_id=ingestion.run_id,
+        user=user,
+        action=action,
+        errors=len(audit.get("errors", [])),
+    )
+
+    return True
+
 
 if __name__ == "__main__":
-    run_pipeline(DEFAULT_INPUT)
+    parser = argparse.ArgumentParser(description="Run the ABACO data pipeline")
+    parser.add_argument("--input", default=DEFAULT_INPUT, help="Path to the CSV input file")
+    parser.add_argument("--user", help="Identifier for the user or system triggering the pipeline")
+    parser.add_argument("--action", help="Action context (e.g., github-action, manual-run)")
+    args = parser.parse_args()
+    run_pipeline(input_file=args.input, user=args.user, action=args.action)
