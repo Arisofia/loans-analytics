@@ -12,13 +12,17 @@ export function TreemapVisualization({ entries }: Props) {
     <section className={styles.section}>
       <div className={styles.sectionHeader}>
         <p className={styles.sectionTitle}>Segment treemap</p>
-        <p className={styles.sectionCopy}>Weighted principal balances per status to inform marketing and underwriting.</p>
+        <p className={styles.sectionCopy}>
+          Weighted principal balances per status to inform marketing and underwriting.
+        </p>
       </div>
       <div className={styles.treemapList}>
         {entries.map((entry) => (
           <div className={styles.treemapItem} key={entry.label}>
             <span>{entry.label}</span>
-            <span style={{ color: entry.color, fontWeight: 600 }}>{entry.value.toLocaleString()}</span>
+            <span style={{ color: entry.color, fontWeight: 600 }}>
+              {entry.value.toLocaleString()}
+            </span>
           </div>
         ))}
       </div>

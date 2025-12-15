@@ -11,10 +11,14 @@ export function processedAnalyticsToCSV(analytics: ProcessedAnalytics): string {
 }
 
 export function processedAnalyticsToJSON(analytics: ProcessedAnalytics): string {
-  return JSON.stringify({
-    kpis: analytics.kpis,
-    treemap: analytics.treemap,
-    rollRates: analytics.rollRates,
-    growthProjection: analytics.growthProjection,
-  }, null, 2)
+  return JSON.stringify(
+    {
+      kpis: analytics.kpis,
+      treemap: analytics.treemap,
+      rollRates: analytics.rollRates,
+      growthProjection: analytics.growthProjection,
+    },
+    null,
+    2
+  )
 }

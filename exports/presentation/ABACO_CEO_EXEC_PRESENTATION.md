@@ -1,6 +1,15 @@
 # 🚀 ABACO FINTECH — CEO OPERATING SYSTEM v2
 ### Board Presentation — Oct-16, 2025 (Mid-month snapshot)
 
+### Glossary (abbreviations in this deck)
+- **AUM:** Assets under management (outstanding principal)
+- **DPD / NPL:** Days past due; non-performing loans
+- **KAM:** Key account manager channel
+- **STP / T2F:** Straight-through processing; time-to-fund
+- **ARPU / LTV / CAC:** Average revenue per user; lifetime value; customer acquisition cost
+- **ROE:** Return on equity
+- **KPI:** Key performance indicator; every KPI is instrumented in the CEO OS dashboard with owner, target, and data lineage.
+
 ---
 
 ## Slide 1: Where We Are Today (Oct-16, 2025)
@@ -13,9 +22,12 @@
 - **Utilization:** Mean 67.3%, median 65%, max 98%; 15 lines <50% (growth upside), 3 lines >90% (monitor).
 - **DPD stats (by CLIENT_ID):** Mean 8.5 days; median 5; max 165; best 0; worst 165.
 - **Rotation:** 12-month principal recovered $40,686K on $7,400K average AUM → 5.5x (validated, above 4.5x min).
-- **Revenue snapshot:** Monthly gross ~$87K (7,368K × 28.5% / 12); warehouse ~$52K (60%); bad debt reserve ~$12K (1.66%); net ~$23K; OpEx ~$35K; EBITDA ≈ -$12K/month; runway ~18 months if flat.
+- **Revenue snapshot (instrumented KPIs):**
+  - Gross interest ~$175K/month (7,368K × 28.5% / 12); warehouse cost share ~$105K (60% of interest, traceable via funding dashboard).
+  - Net interest after warehouse ~$70K; bad debt reserve ~$10K (1.66% of AUM per year, accrued monthly); platform costs ~$2K (0.3% per year, accrued monthly).
+  - Net contribution ~$58K/month before OpEx; OpEx ~$35K; EBITDA ≈ +$23K/month; runway ~18 months if flat; all assumptions logged in the finance KPI workbook with owner (CFO) and refresh cadence (weekly).
 - **Data quality:** 78% overall; critical fields 95%+; important 82%; optional 45%; 23 loans missing KAM; remediation weekly, target >95% by Nov-2025.
-- **Entity status:** Abaco Financial ~$0K AUM (collapsed Sep-25); Abaco Technologies ~$7,368K AUM (100% current); migration complete; KAMs 4 with top KAM at 35% volume; 12 industries with B2B Services 40% of AUM; Central America 90%+.
+- **Entity status:** Abaco Financial ~$0K AUM (collapsed Sep-2025); Abaco Technologies ~$7,368K AUM (100% current); migration complete; KAMs 4 with top KAM at 35% volume; 12 industries with B2B Services 40% of AUM; Central America 90%+.
 
 ---
 
@@ -23,7 +35,7 @@
 - **Target AUM:** $16,419K by Dec-2026 (start $7,368K Sep-2025; +$9,051K growth, +122.8% CAGR, 15 months).
 - **Non-linear path:** Trough → ramp → volatile → acceleration → consolidation.
   - Q4-25: Oct $7,171K (-2.7%), Nov $6,819K (-4.9%), Dec $6,465K (-5.5%) | total -12.3% (platform build, wind-down).
-  - Q1-26: Jan $8,736K (+35.1% inflection, embedded live), Feb $8,814K (+0.9%), Mar $10,364K (+17.6%) | +60.3% vs trough.
+  - Q1-26: Jan $8,736K (+35.1% inflection, embedded live), Feb $8,814K (+0.9%), Mar $10,364K (+17.6%) | +60.3% vs Dec-2025 trough.
   - Q2-26: Apr $10,166K (-1.9%), May $11,629K (+14.4%), Jun $11,419K (-1.8%) | +16.3% net, volatile.
   - Q3-26: Jul $12,960K (+13.5%), Aug $12,860K (-0.8%), Sep $14,503K (+12.8%) | +27.1% acceleration.
   - Q4-26: Oct $14,511K (+0.1%), Nov $16,276K (+12.2%), Dec $16,419K (+0.9%) | +13.2% consolidation.
@@ -31,16 +43,23 @@
 - **Segment rebalancing:** >$200K bucket 19.87% → 10%; $100-200K hold 20-25%; $25-100K 25% → 40%; <$25K 10% → 25% to lift LTV:CAC and dilute concentration.
 - **Target metrics (Dec-26):** Default <1.5%; Top-10 concentration 22%; single-obligor 2% (<4% policy); rotation ≥4.5x (today 5.5x); DPD mean <10 days; weighted APR 26-28%; utilization 70-75%; data quality >95%.
 
+**KPI governance & dashboards (traceability and auditability):**
+- **Owners & cadence:** Finance (CFO) owns capital/EBITDA KPIs; Risk (CRO) owns DPD/default/concentration; Growth (CRO/CMO) owns CAC/LTV/activation; Product & Ops (CPO/COO) own STP/T2F and data quality. All KPIs refreshed weekly with monthly board-grade snapshots stored in the CEO OS.
+- **Dashboards:** Unified CEO OS dashboard with drill-through to credit, sales, and funding workspaces; lineage documented (source tables, transformations, definitions) to satisfy audit and compliance.
+- **Controls:** Role-based permissions; change log for metric definitions; reconciliations monthly (finance vs. data warehouse) to ensure measurement integrity.
+
 ---
 
 ## Slide 3: Financial Projections & Unit Economics (2026 ramped average)
 - **Baseline AUM:** Sep-2025 $7,368K → Dec-2026 $16,419K; average 2026 AUM midpoint ~$11,900K.
 - **Volume:** 12-month rotation 5.5x → annual origination ~$65,450K (assumes 5.5x rotation rate remains constant throughout 2026; actual rotation may vary with non-linear AUM growth—see Slide 2).
-- **Gross revenue (interest income):** Weighted APR 28.5% × average AUM $11,900K → ~$3,392K annually (~$283K/month).
-- **Origination fee revenue:** 1.5% standard × annual origination $65,450K → ~$982K annually (~$82K/month).
-- **Costs & net:** Warehouse ~60% (-$49K/month), bad debt reserve 1.66% (-$11K), platform/processing 0.3% (-$2K) → net revenue ~$20K/month (~$240K annually).
-- **OpEx & EBITDA:** OpEx $30K/month → EBITDA -$10K/month near breakeven; breakeven expected Q2-26, positive by Q3-26.
-- **State-stable (all months $16,419K AUM):** Origination $90,305K; gross revenue $4,677K (16,419K × 28.5%); after warehouse $1,871K (40% gross margin); OpEx $40K/month → EBITDA $1,391K/year (85% margin).
+- **Revenue streams:**
+  - Interest income: weighted APR 28.5% × average AUM $11,900K → ~$3,392K annually (~$283K/month).
+  - Origination fees: 1.5% standard × annual origination $65,450K → ~$982K annually (~$82K/month).
+- **Contribution after funding and reserves (interest income):** Warehouse share ~60% (-$170K/month); bad debt reserve 1.66% (-$17K/month); platform/processing 0.3% (-$3K/month) → net interest contribution ~$93K/month (~$1,116K annually).
+- **Total contribution after costs:** Net interest ~$93K/month + origination fees ~$82K/month → ~$175K/month (~$2,098K annually).
+- **OpEx & EBITDA:** OpEx ~$30K/month → EBITDA ≈ +$145K/month (~$1,738K annually) on ramped averages; breakeven expected Q2-26, positive by Q3-26.
+- **State-stable (all months $16,419K AUM):** Origination $90,305K; gross interest $4,677K; after warehouse $1,871K (40% of interest retained); bad debt & platform ~$321K annually; origination fees ~$1,355K; OpEx $40K/month → EBITDA ~$2,425K/year (~$202K/month, ~85% margin).
 - **Capital efficiency:** Cost of capital 12% +1% upfront amortized to 12.22% annual; gross margin must cover capital + losses + OpEx; net spread after all costs estimated 13-16%.
   - **ROE target:** 12-15x refers to cumulative return on equity over the full investment period (not annualized), i.e., total distributions to equity divided by total equity invested, assuming full reinvestment of earnings and portfolio rotation at current levels. This target is based on Series B case projections over a 5-7 year horizon, with leverage and reinvestment as modeled. Assumes no major credit losses, stable cost of capital, and continued portfolio rotation at 5.5x+ per year.
 

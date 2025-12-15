@@ -1,4 +1,10 @@
-import { LoanRow, ProcessedAnalytics, RollRateEntry, TreemapEntry, GrowthPoint } from '@/types/analytics'
+import {
+  LoanRow,
+  ProcessedAnalytics,
+  RollRateEntry,
+  TreemapEntry,
+  GrowthPoint,
+} from '@/types/analytics'
 
 const currencyRegex = /[^\d.-]/g
 
@@ -22,18 +28,18 @@ export function parseLoanCsv(content: string): LoanRow[] {
 
   const keys = header.map((col) => col.trim().toLowerCase())
   return rows.map((parts) => {
-    const record: any = {}
+    const record: Record<string, string> = {}
     parts.forEach((value, index) => {
       record[keys[index] ?? `col_${index}`] = value.trim()
     })
     return {
-      loan_amount: toNumber(record.loan_amount),
-      appraised_value: toNumber(record.appraised_value),
-      borrower_income: toNumber(record.borrower_income),
-      monthly_debt: toNumber(record.monthly_debt),
+      loan_amount: toNumber(record.loan_amount ?? ''),
+      appraised_value: toNumber(record.appraised_value ?? ''),
+      borrower_income: toNumber(record.borrower_income ?? ''),
+      monthly_debt: toNumber(record.monthly_debt ?? ''),
       loan_status: record.loan_status || 'unknown',
-      interest_rate: toNumber(record.interest_rate),
-      principal_balance: toNumber(record.principal_balance),
+      interest_rate: toNumber(record.interest_rate ?? ''),
+      principal_balance: toNumber(record.principal_balance ?? ''),
       dpd_status: record.dpd_status || '',
     }
   })
@@ -61,10 +67,16 @@ function computeKPIs(rows: LoanRow[]) {
   const riskRate = totalLoans ? (delinquentCount / totalLoans) * 100 : 0
 
   const totalPrincipal = rows.reduce((sum, row) => sum + row.principal_balance, 0)
-  const weightedInterest = rows.reduce((sum, row) => sum + row.interest_rate * row.principal_balance, 0)
+  const weightedInterest = rows.reduce(
+    (sum, row) => sum + row.interest_rate * row.principal_balance,
+    0
+  )
   const portfolioYield = totalPrincipal ? (weightedInterest / totalPrincipal) * 100 : 0
 
-  const averageLTV = rows.reduce((sum, row) => sum + (row.loan_amount / Math.max(row.appraised_value, 1)), 0)
+  const averageLTV = rows.reduce(
+    (sum, row) => sum + row.loan_amount / Math.max(row.appraised_value, 1),
+    0
+  )
   const averageDTI = rows.reduce((sum, row) => {
     const income = row.borrower_income / 12
     if (income <= 0) return sum
@@ -74,8 +86,8 @@ function computeKPIs(rows: LoanRow[]) {
   return {
     delinquencyRate: Number(riskRate.toFixed(2)),
     portfolioYield: Number(portfolioYield.toFixed(2)),
-    averageLTV: Number((averageLTV / Math.max(totalLoans, 1) * 100).toFixed(1)),
-    averageDTI: Number((averageDTI / Math.max(totalLoans, 1) * 100).toFixed(1)),
+    averageLTV: Number(((averageLTV / Math.max(totalLoans, 1)) * 100).toFixed(1)),
+    averageDTI: Number(((averageDTI / Math.max(totalLoans, 1)) * 100).toFixed(1)),
     loanCount: totalLoans,
   }
 }
@@ -119,8 +131,10 @@ function buildGrowthProjection(baseYield: number, count: number): GrowthPoint[] 
   const start = baseYield || 1.2
   const loanBase = count || 100
   return Array.from({ length: 6 }).map((_, index) => ({
-    label: new Date(Date.now() + index * 30 * 24 * 60 * 60 * 1000)
-      .toLocaleString('default', { month: 'short', year: 'numeric' }),
+    label: new Date(Date.now() + index * 30 * 24 * 60 * 60 * 1000).toLocaleString('default', {
+      month: 'short',
+      year: 'numeric',
+    }),
     yield: Number((start + index * 0.15).toFixed(2)),
     loanVolume: loanBase + index * 15,
   }))

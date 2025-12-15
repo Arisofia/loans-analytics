@@ -25,8 +25,17 @@
     radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.12), transparent 30%),
     radial-gradient(circle at 80% 0%, rgba(34, 197, 94, 0.14), transparent 28%), var(--color-bg);
   background:
-    radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--color-accent-blue) 12%, transparent), transparent 30%),
-    radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--color-accent-green) 14%, transparent), transparent 28%), var(--color-bg);
+    radial-gradient(
+      circle at 20% 20%,
+      color-mix(in srgb, var(--color-accent-blue) 12%, transparent),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 80% 0%,
+      color-mix(in srgb, var(--color-accent-green) 14%, transparent),
+      transparent 28%
+    ),
+    var(--color-bg);
   color: var(--color-text-primary);
 }
 
@@ -174,7 +183,11 @@
 
 .card {
   background: linear-gradient(160deg, #111111, #060606);
-  background: linear-gradient(160deg, color-mix(in srgb, var(--surface-subtle) 80%, white), color-mix(in srgb, var(--surface-subtle) 80%, black));
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--surface-subtle) 80%, white),
+    color-mix(in srgb, var(--surface-subtle) 80%, black)
+  );
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 20px;
