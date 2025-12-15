@@ -309,7 +309,7 @@ else:
     st.info("Add a payer/payor/pagador/offtaker/buyer/debtor column to assess coverage.")
 
 st.markdown("## KPI Calculations")
-loan_df["ltv_ratio"] = (loan_df["loan_amount"] / loan_df["appraised_value"]) * 100
+loan_df["ltv_ratio"] = (loan_df["loan_amount"] / loan_df["appraised_value"].replace(0, np.nan)) * 100
 monthly_income = loan_df["borrower_income"] / 12
 loan_df["dti_ratio"] = np.where(
     monthly_income > 0,
