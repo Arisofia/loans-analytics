@@ -5,7 +5,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Any, Tuple
+from typing import Dict, Any
 
 import pandas as pd
 
@@ -26,11 +26,6 @@ METRICS_DIR = Path("data/metrics")
 LOGS_DIR = Path("logs/runs")
 METRICS_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
-
-def ensure_required_columns(df: pd.DataFrame, required: Tuple[str, ...]) -> None:
-    missing = [c for c in required if c not in df.columns]
-    if missing:
-        raise ValueError(f"Missing required columns: {missing}")
 
 def write_outputs(run_id: str, kpi_df: pd.DataFrame, audit: Dict[str, Any]) -> None:
     metrics_path = METRICS_DIR / f"{run_id}.parquet"
@@ -83,8 +78,6 @@ def run_pipeline(input_file: str = DEFAULT_INPUT) -> bool:
         if not df["_validation_passed"].all():
             raise RuntimeError("Validation failed; see ingestion.errors")
 
-        ensure_required_columns(df, ("total_receivable_usd",))
-
         logger.info("Transforming to KPI dataset")
         try:
             kpi_df = transformer.transform_to_kpi_dataset(df)
@@ -106,12 +99,12 @@ def run_pipeline(input_file: str = DEFAULT_INPUT) -> bool:
             par_30, par_ctx = kpi_engine.calculate_par_30()
             par_90, par90_ctx = kpi_engine.calculate_par_90()
             collection_rate, coll_ctx = kpi_engine.calculate_collection_rate()
-            health_score = kpi_engine.calculate_portfolio_health(par_30, collection_rate)
+            health_score, health_ctx = kpi_engine.calculate_portfolio_health(par_30, collection_rate)
             audit["kpis"] = {
                 "par_30": {"value": par_30, **par_ctx},
                 "par_90": {"value": par_90, **par90_ctx},
                 "collection_rate": {"value": collection_rate, **coll_ctx},
-                "health_score": {"value": health_score},
+                "health_score": {"value": health_score, **health_ctx},
             }
             audit["kpi_audit_trail"] = kpi_engine.get_audit_trail().to_dict(orient="records")
         except Exception as exc:
@@ -139,7 +132,7 @@ def run_pipeline(input_file: str = DEFAULT_INPUT) -> bool:
     except Exception as exc:
         error_msg = f"{type(exc).__name__}: {exc}"
         logger.error("Pipeline failed: %s", error_msg, exc_info=True)
-        ingestion._record_error("pipeline", error_msg)  # noqa: SLF001
+        ingestion.record_error("pipeline", error_msg)
         audit["errors"].extend(ingestion.errors)
         audit["errors"].append({
             "stage": "pipeline",

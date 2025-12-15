@@ -55,12 +55,13 @@ def test_calculate_portfolio_health():
     engine = KPIEngine(sample_portfolio())
     par_30, _ = engine.calculate_par_30()
     rate, _ = engine.calculate_collection_rate()
-    health = engine.calculate_portfolio_health(par_30, rate)
+    health, details = engine.calculate_portfolio_health(par_30, rate)
     
     # PAR30 = 15.0, Collection = 100.0
     # Health = (10 - 1.5) * (100 / 10) = 8.5 * 10 = 85
     # Capped at 10
     assert health == 10.0
+    assert details["metric"] == "HealthScore"
     assert any(r["metric"] == "HealthScore" and r["value"] == health for r in engine.audit_trail)
 
 
@@ -72,3 +73,10 @@ def test_get_audit_trail():
     assert "metric" in trail.columns
     assert "value" in trail.columns
     assert "PAR30" in trail["metric"].values
+
+
+def test_validate_schema_missing_columns():
+    df = pd.DataFrame({"total_receivable_usd": [100.0]})
+    engine = KPIEngine(df)
+    with pytest.raises(ValueError, match="Missing required columns"):
+        engine.validate_schema()
