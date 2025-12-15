@@ -1,3 +1,23 @@
+      - name: Notify Slack on Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook-type: INCOMING_WEBHOOK
+          payload: |
+            {
+              "text": "🚨 Demo Scripts Workflow Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Demo Scripts Workflow Failed*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 name: Demo Scripts Check
 
 on:
