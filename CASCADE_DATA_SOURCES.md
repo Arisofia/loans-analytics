@@ -70,7 +70,7 @@ This document contains the URLs and instructions for downloading current data fr
 
 1. **Login to Cascade:** Navigate to `https://app.cascadedebt.com/`
 2. **Select Portfolio:** Ensure `pid=abaco` is selected
-3. **Navigate to desired section** using URLs above
+3. **Navigate to desired section** by copying a URL from this document and pasting it into your browser
 4. **Click Export button** (top right of most analytics pages)
 5. **Choose format:** CSV, JSON, XLSX, or PDF
 6. **Download file** to local system
