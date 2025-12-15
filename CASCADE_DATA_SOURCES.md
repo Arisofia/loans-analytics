@@ -88,13 +88,13 @@ This document contains the URLs and instructions for downloading current data fr
 ## Additional Analytics Sections
 
 ### Risk Analytics
-- Key Indicators: `https://app.cascadedebt.com/analytics/risk/indicators?pid=abaco`
-- Traction: `https://app.cascadedebt.com/analytics/risk/traction?pid=abaco`
-- Delinquency: `https://app.cascadedebt.com/analytics/risk/delinquency?pid=abaco`
-- Collection: `https://app.cascadedebt.com/analytics/risk/collection?pid=abaco`
-- Curves: `https://app.cascadedebt.com/analytics/risk/curves?pid=abaco`
-- Cohort: `https://app.cascadedebt.com/analytics/risk/cohort?pid=abaco`
-- Characteristics: `https://app.cascadedebt.com/analytics/risk/characteristics?pid=abaco`
+- [Key Indicators](https://app.cascadedebt.com/analytics/risk/indicators?pid=abaco)
+- [Traction](https://app.cascadedebt.com/analytics/risk/traction?pid=abaco)
+- [Delinquency](https://app.cascadedebt.com/analytics/risk/delinquency?pid=abaco)
+- [Collection](https://app.cascadedebt.com/analytics/risk/collection?pid=abaco)
+- [Curves](https://app.cascadedebt.com/analytics/risk/curves?pid=abaco)
+- [Cohort](https://app.cascadedebt.com/analytics/risk/cohort?pid=abaco)
+- [Characteristics](https://app.cascadedebt.com/analytics/risk/characteristics?pid=abaco)
 
 ### Financial Analytics
 - Overview: `https://app.cascadedebt.com/analytics/financials/overview?pid=abaco`
