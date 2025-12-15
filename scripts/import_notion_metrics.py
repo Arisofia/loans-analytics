@@ -89,7 +89,7 @@ def calcular_estadisticas_metricas(todas_filas: List[Dict[str, Any]]) -> Dict[st
 
     return stats
 
-if __name__ == "__main__":
+def main() -> int:
     """
     Example CLI usage: securely loads configs from environment.
     """
@@ -102,7 +102,13 @@ if __name__ == "__main__":
             processed = [extraer_propiedades_fila(r) for r in rows]
             stats = calcular_estadisticas_metricas(processed)
             print(stats)
+            return 0
         except Exception as e:
             logger.error(f"Failed to import Notion metrics: {e}")
+            return 1
     else:
         logger.error("Set NOTION_DATABASE_ID to run this script.")
+        return 1
+
+if __name__ == "__main__":
+    sys.exit(main())

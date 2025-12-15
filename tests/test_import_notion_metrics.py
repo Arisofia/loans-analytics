@@ -1,5 +1,7 @@
 import unittest
-from scripts.import_notion_metrics import extraer_propiedades_fila, calcular_estadisticas_metricas
+import os
+from unittest.mock import patch, MagicMock
+from scripts.import_notion_metrics import extraer_propiedades_fila, calcular_estadisticas_metricas, main
 
 class TestImportNotionMetrics(unittest.TestCase):
     def test_extraer_propiedades_fila(self):
@@ -41,3 +43,30 @@ class TestImportNotionMetrics(unittest.TestCase):
         self.assertEqual(stats["visualizaciones"]["max"], 300)
         self.assertEqual(stats["visualizaciones"]["min"], 100)
         self.assertEqual(stats["visualizaciones"]["count"], 3)
+
+    @patch("scripts.import_notion_metrics.NotionClient")
+    def test_main_success(self, mock_client_cls):
+        """Test the main execution flow with mocked Notion client."""
+        mock_client = mock_client_cls.return_value
+        mock_client.query_database.return_value = [
+            {
+                "id": "1",
+                "properties": {
+                    "Visualizaciones": {"type": "number", "number": 100}
+                }
+            }
+        ]
+        
+        with patch.dict(os.environ, {"NOTION_DATABASE_ID": "test_db_id"}):
+            with patch("builtins.print") as mock_print:
+                ret = main()
+                self.assertEqual(ret, 0)
+                mock_client.query_database.assert_called_with("test_db_id")
+
+    def test_main_no_env_var(self):
+        """Test main fails gracefully when env var is missing."""
+        with patch.dict(os.environ, {}, clear=True):
+            with patch("scripts.import_notion_metrics.logger") as mock_logger:
+                ret = main()
+                self.assertEqual(ret, 1)
+                mock_logger.error.assert_called_with("Set NOTION_DATABASE_ID to run this script.")
