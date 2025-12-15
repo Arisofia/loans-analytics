@@ -174,7 +174,7 @@ def portfolio_kpis(loan_data: pd.DataFrame) -> Dict[str, float]:
     avg_ltv = ltv_series.mean(skipna=True)
     avg_dti = dti_series.mean(skipna=True)
 
-    return {
+    kpis = {
         "portfolio_delinquency_rate_percent": portfolio_delinquency_rate(
             loan_data["loan_status"]
         ),
@@ -188,3 +188,18 @@ def portfolio_kpis(loan_data: pd.DataFrame) -> Dict[str, float]:
             avg_dti if not np.isnan(avg_dti) else 0.0
         ),
     }
+
+    # Data quality metrics (replicating logic from data_quality_profile)
+    null_ratio = float(loan_data.isna().mean().mean())
+    total_numeric_cells = loan_data.size
+    # Count invalid numeric values (non-numeric in numeric columns)
+    invalid_numeric_count = 0
+    for col in loan_data.select_dtypes(include=[np.number]).columns:
+        invalid_numeric_count += loan_data[col].isna().sum()
+    invalid_numeric_ratio = (invalid_numeric_count / total_numeric_cells) if total_numeric_cells > 0 else 0.0
+    data_quality_score = max(0.0, 100 - (null_ratio * 100))
+
+    kpis["data_quality_score"] = round(data_quality_score, 2)
+    kpis["average_null_ratio_percent"] = round(null_ratio * 100, 2)
+    kpis["invalid_numeric_ratio_percent"] = round(invalid_numeric_ratio * 100, 2)
+    return kpis
