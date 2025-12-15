@@ -28,13 +28,6 @@ jobs:
               assignees: ['codex'],
             });
 
-            await github.rest.pulls.requestReviewers({
-              owner,
-              repo,
-              pull_number,
-              reviewers: ['copilot'],
-            });
-
   codex:
     runs-on: ubuntu-latest
     if: github.event.pull_request.head.repo.fork == false

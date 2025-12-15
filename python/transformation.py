@@ -31,7 +31,7 @@ class DataTransformation:
         return ratios
 
     def transform_to_kpi_dataset(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Transform raw loan data into a KPI-ready dataset with ratios and metadata."""
+        """Transform raw loan data into a KPI-ready dataset with ratios, analytics columns, and metadata."""
         required = [
             "total_receivable_usd", "total_eligible_usd", "discounted_balance_usd",
             "dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"
@@ -45,7 +45,7 @@ class DataTransformation:
                 raise ValueError(f"Column {col} must be numeric")
 
         kpi_df = df.copy()
-        
+
         # Rename columns for KPI dataset
         kpi_df = kpi_df.rename(columns={
             "total_receivable_usd": "receivable_amount",
@@ -58,10 +58,32 @@ class DataTransformation:
         for col in ["dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"]:
             if col in df.columns:
                 kpi_df[f"{col}_pct"] = (df[col] / receivable).fillna(0.0) * 100
-        
+
+        # --- Add or map required analytics columns ---
+        analytics_required = [
+            "loan_amount", "appraised_value", "borrower_income", "monthly_debt",
+            "loan_status", "interest_rate", "principal_balance"
+        ]
+        for col in analytics_required:
+            if col not in kpi_df.columns:
+                # Try to map from similar columns or set default/NaN
+                if col == "loan_amount":
+                    # Use receivable_amount as a proxy if available
+                    kpi_df[col] = kpi_df["receivable_amount"] if "receivable_amount" in kpi_df.columns else float('nan')
+                elif col == "principal_balance":
+                    # Use discounted_amount as a proxy if available
+                    kpi_df[col] = kpi_df["discounted_amount"] if "discounted_amount" in kpi_df.columns else float('nan')
+                elif col == "interest_rate":
+                    # Use avg_apr_pct if available, else NaN
+                    kpi_df[col] = kpi_df["avg_apr_pct"] if "avg_apr_pct" in kpi_df.columns else float('nan')
+                elif col == "loan_status":
+                    kpi_df[col] = "unknown"
+                else:
+                    kpi_df[col] = float('nan')
+
         kpi_df["_transform_run_id"] = self.run_id
         kpi_df["_transform_timestamp"] = datetime.now(timezone.utc).isoformat()
-        
+
         self.transformations_count += 1
         return kpi_df
 
