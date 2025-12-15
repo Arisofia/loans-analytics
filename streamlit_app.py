@@ -86,15 +86,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     return clean
 
 
-def safe_numeric(series: pd.Series) -> pd.Series:
-    cleaned = (
-        series.astype(str)
-        .str.replace(r"[₡$€,%]", "", regex=True)
-        .replace("", np.nan)
-    )
-    return pd.to_numeric(cleaned, errors="coerce")
-
-
+# Removed safe_numeric; use standardize_numeric from src.analytics_metrics instead.
 def compute_upload_signature(uploaded_file) -> Optional[str]:
     if uploaded_file is None:
         return None
