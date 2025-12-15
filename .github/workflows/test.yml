@@ -27,4 +27,4 @@ jobs:
           if [ -f apps/analytics/requirements.txt ]; then pip install -r apps/analytics/requirements.txt; fi
       - name: Run tests
         run: |
-          pytest apps/analytics/tests
+          pytest

@@ -22,11 +22,14 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
-        cache-dependency-path: apps/analytics/requirements.txt
+        cache-dependency-path: |
+          requirements.txt
+          apps/analytics/requirements.txt
         
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install -r requirements.txt
         pip install -r apps/analytics/requirements.txt
         
     - name: Run Preflight Checks
@@ -35,7 +38,7 @@ jobs:
         
     - name: Run Tests
       run: |
-        pytest apps/analytics/tests
+        pytest
         
     - name: Run Data Pipeline
       run: |
