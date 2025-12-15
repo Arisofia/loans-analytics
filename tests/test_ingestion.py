@@ -4,7 +4,7 @@ from python.ingestion import CascadeIngestion
 
 
 def test_ingest_csv(tmp_path):
-    csv_content = "period,measurement_date,total_receivable_usd\n2025Q4,2025-12-01,1000.0\n2025Q4,2025-12-02,2000.0"
+    csv_content = "period,measurement_date,total_receivable_usd,dpd_0_7_usd,dpd_7_30_usd,dpd_30_60_usd,dpd_60_90_usd,dpd_90_plus_usd,total_eligible_usd,discounted_balance_usd,cash_available_usd\n2025Q4,2025-12-01,1000.0,100,100,100,100,100,800,700,500\n2025Q4,2025-12-02,2000.0,200,200,200,200,200,1600,1400,1000"
     csv_file = tmp_path / "sample.csv"
     csv_file.write_text(csv_content)
     ingestion = CascadeIngestion(data_dir=tmp_path)

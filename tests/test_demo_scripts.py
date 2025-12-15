@@ -34,6 +34,7 @@ class TestDemoScripts(unittest.TestCase):
             # Ensure columns check passes for visualization
             mock_enriched.columns = ["loan_id", "dpd_bucket", "exposure_segment"]
             mock_analyzer.enrich_master_dataframe.return_value = mock_enriched
+            mock_analyzer.calculate_hhi.return_value = 5000.0
             
             main()
             mock_read.assert_called_once()
@@ -61,6 +62,7 @@ class TestDemoScripts(unittest.TestCase):
             # Ensure columns check fails for visualization
             mock_enriched.columns = ["loan_id"]
             mock_analyzer.enrich_master_dataframe.return_value = mock_enriched
+            mock_analyzer.calculate_hhi.return_value = 5000.0
             
             main()
             

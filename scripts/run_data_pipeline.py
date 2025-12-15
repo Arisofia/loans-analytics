@@ -99,16 +99,6 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
     transformer = DataTransformation()
     transformer.set_context(user=user, action=action, ingest_run_id=ingestion.run_id, source_file=str(input_path))
 
-    log_stage(
-        "pipeline:start",
-        "Starting data pipeline",
-        run_id=ingestion.run_id,
-        user=user,
-        action=action,
-        input_file=str(input_path),
-    )
-    record_access("pipeline:start", "started", f"input_file={input_path}")
-
     audit: Dict[str, Any] = {
         "run_id": ingestion.run_id,
         "started_at": datetime.now(timezone.utc).isoformat(),
@@ -121,6 +111,16 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
 
     def record_access(stage: str, status: str, message: Optional[str] = None) -> None:
         compliance_log.append(create_access_log_entry(stage, user, action, status, message))
+
+    log_stage(
+        "pipeline:start",
+        "Starting data pipeline",
+        run_id=ingestion.run_id,
+        user=user,
+        action=action,
+        input_file=str(input_path),
+    )
+    record_access("pipeline:start", "started", f"input_file={input_path}")
 
     df = pd.DataFrame()
     try:

@@ -10,6 +10,8 @@ def test_pipeline_missing_required_column():
         'period': ['2025Q1'],
         'measurement_date': ['2025-03-31'],
         # 'total_receivable_usd' is missing
+        'cash_available_usd': [500.0],
+        'total_receivable_usd': [1000.0],
         'total_eligible_usd': [1000.0],
         'discounted_balance_usd': [900.0],
         'dpd_0_7_usd': [800.0],
@@ -32,6 +34,7 @@ def test_pipeline_invalid_numeric_type():
         'period': ['2025Q1'],
         'measurement_date': ['2025-03-31'],
         'total_receivable_usd': ['not-a-number'],
+        'cash_available_usd': [500.0],
         'total_eligible_usd': [1000.0],
         'discounted_balance_usd': [900.0],
         'dpd_0_7_usd': [800.0],
