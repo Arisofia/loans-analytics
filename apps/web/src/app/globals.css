@@ -49,6 +49,5 @@
 :root {
   --bg-surface: #f8fafc;
   --text-strong: #0f172a;   /* WCAG AAA on light backgrounds (tested: #0f172a on #f8fafc, contrast ratio ≈ 14.9:1, AAA requires ≥ 7:1 for normal text) */
-  --text-muted: #1f2937;    /* Contrast ratio ≈ 10.7:1 on #f8fafc (WCAG AAA for normal text, AAA requires ≥ 7:1) */
   --accent: #0f766e;        /* Contrast ratio ≈ 5.7:1 on #f8fafc (WCAG AA for normal text, AA requires ≥ 4.5:1) */
 }
