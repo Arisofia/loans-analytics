@@ -58,8 +58,6 @@ pip install figma-python
 pip install notion-client
 # Slack SDK (official)
 pip install slack-sdk
-# If you need Google credentials for Sheets or other services:
-pip install google-auth-httplib2 google-auth-oauthlib
 ```
 Usage example:
 ```python
