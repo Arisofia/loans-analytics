@@ -6,6 +6,8 @@ import sys
 from typing import Dict, List, Optional
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 DEFAULT_REPO = "Abaco-Technol/abaco-loans-analytics"
 API_ROOT = "https://api.github.com/repos"
@@ -14,6 +16,16 @@ API_ROOT = "https://api.github.com/repos"
 class GitHubRequestError(RuntimeError):
     pass
 
+
+def _create_session() -> requests.Session:
+    session = requests.Session()
+    retries = Retry(
+        total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504]
+    )
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+    return session
+
+SESSION = _create_session()
 
 def _token() -> Optional[str]:
     return os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
@@ -27,7 +39,7 @@ def _headers() -> Dict[str, str]:
 
 
 def _get(url: str, params: Optional[Dict[str, str]] = None) -> Dict:
-    response = requests.get(url, headers=_headers(), params=params, timeout=20)
+    response = SESSION.get(url, headers=_headers(), params=params, timeout=20)
     if response.status_code == 401:
         raise GitHubRequestError("Authentication failed; set GITHUB_TOKEN or GH_TOKEN.")
     if not response.ok:

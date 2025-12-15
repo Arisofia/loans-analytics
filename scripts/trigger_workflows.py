@@ -5,9 +5,21 @@ import sys
 import time
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 API_ROOT = "https://api.github.com"
 
+
+def _create_session() -> requests.Session:
+    session = requests.Session()
+    retries = Retry(
+        total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504]
+    )
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+    return session
+
+SESSION = _create_session()
 
 def ensure_token():
     token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
@@ -50,7 +62,7 @@ def fetch_workflows(repo, token):
         "X-GitHub-Api-Version": "2022-11-28",
     }
     try:
-        response = requests.get(url, headers=headers, timeout=30)
+        response = SESSION.get(url, headers=headers, timeout=30)
         response.raise_for_status()
         return response.json().get("workflows", [])
     except requests.exceptions.RequestException as error:
@@ -91,7 +103,7 @@ def trigger_workflow(repo, workflow, ref, token):
     }
     payload = {"ref": ref}
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        response = SESSION.post(url, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
         return True
     except requests.exceptions.RequestException as error:
