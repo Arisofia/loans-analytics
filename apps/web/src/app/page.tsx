@@ -1,29 +1,22 @@
-<<<<<<< HEAD
 import Link from 'next/link'
+
 import { controls, metrics, products, steps } from './data'
 import styles from './page.module.css'
-=======
-import type { PostgrestSingleResponse } from '@supabase/supabase-js'
-import Link from 'next/link'
-import { z } from 'zod'
-import {
-  controls as fallbackControls,
-  metrics as fallbackMetrics,
-  products as fallbackProducts,
-  steps as fallbackSteps,
-} from './data'
-import styles from './page.module.css'
-<<<<<<< HEAD
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
+import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
 import { logLandingPageDiagnostic } from '../lib/landingPageDiagnostics'
+import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import {
   EMPTY_LANDING_PAGE_DATA,
   landingPageDataSchema,
   type LandingPageData,
-  type Metric,
-  type Product,
-  type Step,
 } from '../types/landingPage'
+
+const fallbackData: LandingPageData = {
+  metrics: metrics.map((item) => ({ ...item })),
+  products: products.map((item) => ({ ...item })),
+  controls: [...controls],
+  steps: steps.map((item) => ({ ...item })),
+}
 
 async function getData(): Promise<LandingPageData> {
   if (!supabase || !isSupabaseConfigured) {
@@ -33,30 +26,20 @@ async function getData(): Promise<LandingPageData> {
       payload: EMPTY_LANDING_PAGE_DATA,
     })
     console.warn('Supabase environment variables are missing; using fallback landing page data')
-    return EMPTY_LANDING_PAGE_DATA
+    return fallbackData
   }
 
   const { data, error } = await supabase.from('landing_page_data').select('*').single()
 
-  if (error) {
+  if (error || !data) {
     logLandingPageDiagnostic({
-      status: 'fetch-error',
+      status: error ? 'fetch-error' : 'no-data',
       supabaseConfigured: true,
-      error,
-      payload: EMPTY_LANDING_PAGE_DATA,
+      error: error ?? undefined,
+      payload: fallbackData,
     })
-    console.error('Error fetching landing page data:', error)
-    return EMPTY_LANDING_PAGE_DATA
-  }
-
-  if (!data) {
-    logLandingPageDiagnostic({
-      status: 'no-data',
-      supabaseConfigured: true,
-      payload: EMPTY_LANDING_PAGE_DATA,
-    })
-    console.error('Landing page data is missing from Supabase response')
-    return EMPTY_LANDING_PAGE_DATA
+    console.error(error ? 'Error fetching landing page data:' : 'Landing page data is missing from Supabase response', error ?? '')
+    return fallbackData
   }
 
   const parsed = landingPageDataSchema.safeParse(data)
@@ -66,10 +49,10 @@ async function getData(): Promise<LandingPageData> {
       status: 'invalid-shape',
       supabaseConfigured: true,
       error: parsed.error.flatten(),
-      payload: EMPTY_LANDING_PAGE_DATA,
+      payload: fallbackData,
     })
     console.error('Invalid landing page data shape from Supabase:', parsed.error.flatten())
-    return EMPTY_LANDING_PAGE_DATA
+    return fallbackData
   }
 
   logLandingPageDiagnostic({
@@ -77,78 +60,12 @@ async function getData(): Promise<LandingPageData> {
     supabaseConfigured: true,
     payload: parsed.data,
   })
-=======
-import { supabase } from '../lib/supabaseClient'
-import type { LandingPageData } from '../types/landingPage'
-import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
 
-const landingPageSchema = z.object({
-  metrics: z.array(
-    z.object({
-      label: z.string().min(1),
-      value: z.string().min(1),
-    })
-  ),
-  products: z.array(
-    z.object({
-      title: z.string().min(1),
-      detail: z.string().min(1),
-    })
-  ),
-  controls: z.array(z.string().min(1)),
-  steps: z.array(
-    z.object({
-      label: z.string().min(1),
-      title: z.string().min(1),
-      copy: z.string().min(1),
-    })
-  ),
-})
-
-const fallbackData: LandingPageData = {
-  metrics: fallbackMetrics,
-  products: fallbackProducts,
-  controls: fallbackControls,
-  steps: fallbackSteps,
-}
-
-function cloneFallback(): LandingPageData {
-  return {
-    metrics: fallbackData.metrics.map((item) => ({ ...item })),
-    products: fallbackData.products.map((item) => ({ ...item })),
-    controls: [...fallbackData.controls],
-    steps: fallbackData.steps.map((item) => ({ ...item })),
-  }
-}
-
-async function getData(): Promise<LandingPageData> {
-  if (!supabase) {
-    return cloneFallback()
-  }
-
-  const { data, error }: PostgrestSingleResponse<LandingPageData> = await supabase
-    .from('landing_page_data')
-    .select()
-    .single()
-
-  if (error || !data) {
-    console.error('Error fetching landing page data:', error)
-    return cloneFallback()
-  }
-
-  const parsed = landingPageSchema.safeParse(data)
-  if (!parsed.success) {
-    console.error('Invalid landing page payload received:', parsed.error.flatten())
-    return cloneFallback()
-  }
-
->>>>>>> origin/main
   return parsed.data
 }
 
 export default async function Home() {
   const { metrics, products, controls, steps } = await getData()
->>>>>>> origin/main
 
   return (
     <div className={styles.page}>
