@@ -1,5 +1,4 @@
 import argparse
-import argparse
 import json
 import logging
 import os
@@ -8,6 +7,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from azure.core.exceptions import ResourceExistsError
+from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient, ContentSettings
 import pandas as pd
 
 # Add project root to path for python/ modules
@@ -35,6 +37,11 @@ LOGS_DIR = Path("logs/runs")
 METRICS_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
+DEFAULT_AZURE_CONTAINER = os.getenv("PIPELINE_AZURE_CONTAINER")
+DEFAULT_AZURE_CONNECTION_STRING = os.getenv("PIPELINE_AZURE_CONNECTION_STRING") or os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+DEFAULT_AZURE_ACCOUNT_URL = os.getenv("PIPELINE_AZURE_ACCOUNT_URL") or os.getenv("AZURE_STORAGE_ACCOUNT_URL")
+DEFAULT_AZURE_BLOB_PREFIX = os.getenv("PIPELINE_AZURE_BLOB_PREFIX", "pipeline-runs")
+
 
 def log_stage(stage: str, message: str, **details: Any) -> None:
     detail_str = ", ".join(f"{key}={value!r}" for key, value in details.items() if value is not None)
@@ -42,6 +49,93 @@ def log_stage(stage: str, message: str, **details: Any) -> None:
     if detail_str:
         payload = f"{payload} | {detail_str}"
     logger.info(payload)
+
+
+def _is_dataframe_empty(df: Any) -> bool:
+    if df is None:
+        return True
+    empty_attr = getattr(df, "empty", None)
+    if isinstance(empty_attr, bool):
+        return empty_attr
+    return False
+
+
+def _guess_content_type(path: Path) -> str:
+    mapping = {
+        ".csv": "text/csv",
+        ".json": "application/json",
+        ".parquet": "application/octet-stream",
+    }
+    return mapping.get(path.suffix.lower(), "application/octet-stream")
+
+
+def upload_outputs_to_azure(
+    processed_outputs: Dict[str, Any],
+    run_id: str,
+    container_name: str,
+    connection_string: str | None = None,
+    account_url: str | None = None,
+    blob_prefix: str | None = None,
+) -> Dict[str, str]:
+    if not container_name or not str(container_name).strip():
+        raise ValueError("Azure container_name is required for export.")
+    if not connection_string and not account_url:
+        raise ValueError("Azure export requires a connection_string or account_url.")
+    blob_service_client = (
+        BlobServiceClient.from_connection_string(connection_string)
+        if connection_string
+        else BlobServiceClient(account_url=account_url, credential=DefaultAzureCredential())
+    )
+    container_client = blob_service_client.get_container_client(str(container_name).strip())
+    try:
+        container_client.create_container()
+    except ResourceExistsError:
+        logger.info("Azure container '%s' already exists.", container_client.container_name)
+    prefix_parts = [blob_prefix.rstrip("/") if blob_prefix else None, run_id]
+    prefix = "/".join([part for part in prefix_parts if part])
+    uploaded: Dict[str, str] = {}
+    for key in ("metrics_file", "csv_file", "manifest_file", "compliance_report_file"):
+        file_path = processed_outputs.get(key)
+        if not file_path:
+            continue
+        path_obj = Path(file_path)
+        if not path_obj.exists():
+            logger.warning("Azure export skipped missing file %s", path_obj)
+            continue
+        blob_name = f"{prefix}/{path_obj.name}" if prefix else path_obj.name
+        with path_obj.open("rb") as handle:
+            container_client.upload_blob(
+                name=blob_name,
+                data=handle,
+                overwrite=True,
+                content_settings=ContentSettings(content_type=_guess_content_type(path_obj)),
+            )
+        uploaded[key] = f"{container_client.container_name}/{blob_name}"
+    return uploaded
+
+
+def rewrite_manifest(
+    manifest_path: Path,
+    run_id: str,
+    processed_outputs: Dict[str, Any],
+    metadata: Dict[str, Any],
+    compliance_path: Path,
+) -> None:
+    manifest = {
+        "run_id": run_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "raw_files": metadata.get("raw_files", []),
+        "processed_outputs": processed_outputs,
+        "processed_data": metadata.get("processed_data"),
+        "lineage": metadata.get("lineage", []),
+        "user": metadata.get("user"),
+        "action": metadata.get("action"),
+        "audit": metadata.get("audit", {}),
+        "compliance_report_file": str(compliance_path),
+    }
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    with manifest_path.open("w", encoding="utf-8") as handle:
+        json.dump(manifest, handle, indent=2, default=str)
 
 
 def write_outputs(
@@ -89,9 +183,22 @@ def write_outputs(
     return processed_outputs
 
 
-def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, action: str | None = None) -> bool:
+def run_pipeline(
+    input_file: str = DEFAULT_INPUT,
+    user: str | None = None,
+    action: str | None = None,
+    azure_container: str | None = None,
+    azure_connection_string: str | None = None,
+    azure_account_url: str | None = None,
+    azure_blob_prefix: str | None = None,
+) -> bool:
     user = user or os.getenv("PIPELINE_RUN_USER", "system")
     action = action or os.getenv("PIPELINE_RUN_ACTION", "manual")
+    azure_container = azure_container or DEFAULT_AZURE_CONTAINER
+    azure_connection_string = azure_connection_string or DEFAULT_AZURE_CONNECTION_STRING
+    azure_account_url = azure_account_url or DEFAULT_AZURE_ACCOUNT_URL
+    azure_blob_prefix = azure_blob_prefix or DEFAULT_AZURE_BLOB_PREFIX
+
     input_path = Path(input_file)
     data_dir = str(input_path.parent or ".")
     ingestion = CascadeIngestion(data_dir=data_dir)
@@ -111,6 +218,9 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
         "errors": [],
         "kpis": {},
     }
+
+    pipeline_success = True
+    validation_passed = False
 
     log_stage(
         "pipeline:start",
@@ -149,9 +259,15 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
         )
 
     try:
-        if not df.empty:
+        if not _is_dataframe_empty(df):
             df = ingestion.validate_loans(df)
-            validation_passed = bool(df.get("_validation_passed", pd.Series([True] * len(df))).all())
+            validation_series = df.get("_validation_passed") if hasattr(df, "get") else None
+            if validation_series is None:
+                try:
+                    validation_series = df["_validation_passed"]
+                except Exception:
+                    validation_series = None
+            validation_passed = bool(getattr(validation_series, "all", lambda: False)())
             log_stage(
                 "pipeline:validation",
                 "Validation completed",
@@ -166,6 +282,7 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
             )
             if not validation_passed:
                 audit["errors"].extend(ingestion.errors)
+                pipeline_success = False
         else:
             log_stage(
                 "pipeline:validation",
@@ -173,17 +290,19 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
                 run_id=ingestion.run_id,
             )
             record_access("validation", "skipped", "no rows to validate")
+            pipeline_success = False
     except Exception as exc:
         error_msg = f"Validation error: {type(exc).__name__}: {exc}"
         logger.exception(error_msg)
         audit["errors"].append(error_msg)
         record_access("validation", "error", error_msg)
+        pipeline_success = False
 
     kpi_df = pd.DataFrame()
     masked_columns: List[str] = []
     mask_stage = "not_run"
     try:
-        if not df.empty and df.get("_validation_passed", pd.Series([False] * len(df))).all():
+        if not _is_dataframe_empty(df) and validation_passed:
             log_stage("pipeline:transformation", "Transforming to KPI dataset", run_id=ingestion.run_id)
             kpi_df = transformer.transform_to_kpi_dataset(df)
             kpi_df, masked_columns = mask_pii_in_dataframe(kpi_df)
@@ -199,17 +318,19 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
                 run_id=ingestion.run_id,
             )
             record_access("transformation", "skipped", "validation failed or no data")
+            pipeline_success = False
     except Exception as exc:
         error_msg = f"Transformation error: {type(exc).__name__}: {exc}"
         logger.exception(error_msg)
         audit["errors"].append(error_msg)
         record_access("transformation", "error", error_msg)
+        pipeline_success = False
 
     transformation_summary = transformer.get_processing_summary()
     lineage_records = transformer.get_lineage()
 
     try:
-        if not kpi_df.empty:
+        if not _is_dataframe_empty(kpi_df):
             log_stage("pipeline:kpi", "Calculating KPIs", run_id=ingestion.run_id)
             kpi_engine = KPIEngine(kpi_df)
             par_30, par_ctx = kpi_engine.calculate_par_30()
@@ -246,11 +367,13 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
             audit["kpis"] = {}
             audit["kpi_audit_trail"] = []
             record_access("kpi", "skipped", "no KPI dataset to calculate")
+            pipeline_success = False
     except Exception as exc:
         error_msg = f"KPI calculation error: {type(exc).__name__}: {exc}"
         logger.exception(error_msg)
         audit["errors"].append(error_msg)
         record_access("kpi", "error", error_msg)
+        pipeline_success = False
         if "kpi_engine" in locals():
             audit["kpi_audit_trail"] = kpi_engine.get_audit_trail().to_dict(orient="records")
 
@@ -280,6 +403,8 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
 
     compliance_path = LOGS_DIR / f"{ingestion.run_id}_compliance_report.json"
     try:
+        if _is_dataframe_empty(kpi_df):
+            raise ValueError("No KPI dataset generated; cannot persist outputs.")
         log_stage("pipeline:output", "Writing outputs", run_id=ingestion.run_id)
         record_access("output", "started", "persisting metrics/csv/manifest")
         processed_outputs = write_outputs(ingestion.run_id, kpi_df, audit, metadata_payload, compliance_path)
@@ -294,11 +419,51 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
         )
         write_compliance_report(compliance_report, compliance_path)
         audit["processed_outputs"] = processed_outputs
+
+        if azure_container:
+            log_stage(
+                "pipeline:azure_export",
+                "Exporting processed outputs to Azure Blob",
+                run_id=ingestion.run_id,
+                container=azure_container,
+            )
+            record_access("azure_export", "started", f"container={azure_container}")
+            try:
+                azure_uploads = upload_outputs_to_azure(
+                    processed_outputs,
+                    ingestion.run_id,
+                    container_name=azure_container,
+                    connection_string=azure_connection_string,
+                    account_url=azure_account_url,
+                    blob_prefix=azure_blob_prefix,
+                )
+            except Exception as azure_exc:
+                error_msg = f"Azure export failed: {type(azure_exc).__name__}: {azure_exc}"
+                logger.exception(error_msg)
+                audit["errors"].append(error_msg)
+                pipeline_success = False
+                record_access("azure_export", "error", error_msg)
+            else:
+                if azure_uploads:
+                    processed_outputs["azure_blobs"] = azure_uploads
+                    audit["processed_outputs"] = processed_outputs
+                    metadata_payload["audit"] = audit
+                    rewrite_manifest(
+                        Path(processed_outputs["manifest_file"]),
+                        ingestion.run_id,
+                        processed_outputs,
+                        metadata_payload,
+                        compliance_path,
+                    )
+                    record_access("azure_export", "completed", f"uploaded={list(azure_uploads.keys())}")
+                else:
+                    record_access("azure_export", "skipped", "no files uploaded")
     except Exception as exc:
         error_msg = f"Failed to write outputs: {type(exc).__name__}: {exc}"
         logger.exception(error_msg)
         audit["errors"].append(error_msg)
         record_access("output", "error", error_msg)
+        pipeline_success = False
 
     log_stage(
         "pipeline:complete",
@@ -307,9 +472,10 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
         user=user,
         action=action,
         errors=len(audit.get("errors", [])),
+        azure_export=bool(azure_container),
     )
 
-    return True
+    return pipeline_success and not audit.get("errors")
 
 
 if __name__ == "__main__":
@@ -317,5 +483,17 @@ if __name__ == "__main__":
     parser.add_argument("--input", default=DEFAULT_INPUT, help="Path to the CSV input file")
     parser.add_argument("--user", help="Identifier for the user or system triggering the pipeline")
     parser.add_argument("--action", help="Action context (e.g., github-action, manual-run)")
+    parser.add_argument("--azure-container", help="Azure Blob container to upload cleaned outputs")
+    parser.add_argument("--azure-connection-string", help="Azure Blob Storage connection string")
+    parser.add_argument("--azure-account-url", help="Azure Blob Storage account URL (used with DefaultAzureCredential)")
+    parser.add_argument("--azure-blob-prefix", help="Prefix for blob paths (default: pipeline-runs/<run_id>)")
     args = parser.parse_args()
-    run_pipeline(input_file=args.input, user=args.user, action=args.action)
+    run_pipeline(
+        input_file=args.input,
+        user=args.user,
+        action=args.action,
+        azure_container=args.azure_container,
+        azure_connection_string=args.azure_connection_string,
+        azure_account_url=args.azure_account_url,
+        azure_blob_prefix=args.azure_blob_prefix,
+    )
