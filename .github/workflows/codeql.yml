@@ -42,4 +42,8 @@ jobs:
         uses: github/codeql-action/analyze@v3.31.5
         with:
           category: "/language:${{ matrix.language }}"
+          # CodeQL upload is disabled while the default setup is active.
+          # This means analysis results will NOT be uploaded to GitHub Security and will not appear in the Security tab.
+          # Enable upload (set to true or remove this line) when you want results to be visible in GitHub Security,
+          # such as after customizing the CodeQL configuration or moving out of default setup.
           upload: false
