@@ -40,6 +40,10 @@ jobs:
           else
             python scripts/demo_financial_analysis.py > demo_output.txt
           fi
+      - name: Generate Report
+        if: always()
+        run: |
+          python scripts/generate_markdown_report.py --text demo_output.txt --images dpd_distribution.png exposure_distribution.png
       - name: Upload Demo Output
         uses: actions/upload-artifact@v4
         with:
@@ -47,3 +51,4 @@ jobs:
           path: |
             demo_output.txt
             *.png
+            demo_report.md
