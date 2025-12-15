@@ -45,19 +45,17 @@ class LoanAnalyticsEngine:
             raise ValueError(f"Missing required columns in loan_data: {', '.join(missing_cols)}")
 
     def compute_loan_to_value(self) -> pd.Series:
-        """Computes the Loan-to-Value (LTV) ratio for each loan."""
-        return (self.loan_data['loan_amount'] / self.loan_data['appraised_value']) * 100
-
     def compute_debt_to_income(self) -> pd.Series:
         """Computes the Debt-to-Income (DTI) ratio for each borrower."""
         # Assuming borrower_income is annual, convert to monthly
         monthly_income = self.loan_data['borrower_income'] / 12
-        # Avoid division by zero
-        dti = np.where(
+        # Avoid division by zero and preserve index alignment by returning a Series
+        dti_values = np.where(
             monthly_income > 0,
             (self.loan_data['monthly_debt'] / monthly_income) * 100,
-            np.nan
+            np.nan,
         )
+        return pd.Series(dti_values, index=self.loan_data.index)
         return pd.Series(dti, index=self.loan_data.index)
 
     def compute_delinquency_rate(self) -> float:
