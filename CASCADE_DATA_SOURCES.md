@@ -115,8 +115,8 @@ This document contains the URLs and instructions for downloading current data fr
 ## Contact & Support
 
 - **Platform:** Cascade Debt
-- **Support:** support.cascadedebt.com
-- **Documentation:** knowledgebase.cascadedebt.com
+- **Support:** https://support.cascadedebt.com
+- **Documentation:** https://knowledgebase.cascadedebt.com
 
 ---
 *Document maintained by: Abaco Analytics Team*
