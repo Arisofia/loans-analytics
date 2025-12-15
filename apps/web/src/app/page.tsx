@@ -95,10 +95,10 @@ const StageSchema = z.object({
 const StagesSchema = z.array(StageSchema);
 
 type RiskItem = {
-  name: string,
-  exposure: string,
-  trend: string,
-}
+  name: string;
+  exposure: string;
+  trend: string;
+};
 
 const RiskItemSchema = z.object({
   name: z.string(),
