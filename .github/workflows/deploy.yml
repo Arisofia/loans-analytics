@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - main
+      - staging
+    paths:
+      - 'apps/web/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+      - staging
     paths:
       - 'apps/web/**'
   workflow_dispatch:
@@ -47,6 +55,15 @@ jobs:
             echo "Missing secrets:$missing"
           fi
 
+      - name: Set Vercel args
+        id: vercel_args
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "args=--prod --cwd apps/web" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=--prebuilt --cwd apps/web" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy to Vercel
         if: steps.vercel_secrets.outputs.present == 'true'
         uses: amondnet/vercel-action@16e87c0a08142b0d0d33b76aeaf20823c381b9b9
@@ -54,7 +71,7 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod --cwd apps/web'
+          vercel-args: ${{ steps.vercel_args.outputs.args }}
 
       - name: Skip deploy (missing Vercel secrets)
         if: steps.vercel_secrets.outputs.present != 'true'
