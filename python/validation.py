@@ -4,12 +4,18 @@ Module for data validation utilities and functions.
 from typing import List, Optional, Dict
 import pandas as pd
 
+
+# Unified required columns for both ingestion and analytics
 REQUIRED_COLUMNS: List[str] = [
-    "measurement_date",
-    "dpd_90_plus_usd",
-    "total_receivable_usd",
-    "total_eligible_usd",
-    "cash_available_usd",
+    "loan_amount",
+    "appraised_value",
+    "borrower_income",
+    "monthly_debt",
+    "loan_status",
+    "interest_rate",
+    "principal_balance",
+    # Optionally, keep ingestion-specific columns if needed:
+    # "measurement_date", "dpd_90_plus_usd", "total_receivable_usd", "total_eligible_usd", "cash_available_usd"
 ]
 
 NUMERIC_COLUMNS: List[str] = [
