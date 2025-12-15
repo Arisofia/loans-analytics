@@ -120,4 +120,4 @@ This document contains the URLs and instructions for downloading current data fr
 
 ---
 *Document maintained by: Abaco Analytics Team*
-*Repository: github.com/Abaco-Technol/abaco-loans-analytics*
+*Repository: https://github.com/Abaco-Technol/abaco-loans-analytics*
