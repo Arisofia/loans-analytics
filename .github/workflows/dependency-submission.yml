@@ -13,7 +13,7 @@ jobs:
   submit-pypi:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Submit Dependency Snapshot
         uses: actions/python-dependency-submission@v1
         with:
