@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 """Public utilities exposed by :mod:`streamlit_app.utils` with lazy loading."""
 
 from importlib import import_module
@@ -49,6 +48,3 @@ def __dir__() -> List[str]:
     """Surface lazily exported attributes to introspection utilities."""
 
     return sorted(set(__all__) | set(globals().keys()))
-=======
-"""Utility package for feature engineering and helpers used by the Streamlit app."""
->>>>>>> origin/main
