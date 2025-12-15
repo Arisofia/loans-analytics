@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run CodeRabbit PR Review
-        uses: coderabbitai/coderabbit@v1
+        uses: coderabbitai/coderabbit-github-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           coderabbit-token: ${{ secrets.CODERABBIT_TOKEN }}

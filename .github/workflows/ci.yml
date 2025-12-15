@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,17 +15,17 @@ jobs:
         python-version: ["3.9", "3.10", "3.11"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r apps/analytics/requirements.txt
         
     - name: Run Preflight Checks
       run: |
@@ -32,7 +33,7 @@ jobs:
         
     - name: Run Tests
       run: |
-        pytest
+        pytest apps/analytics/tests
         
     - name: Run Data Pipeline
       run: |

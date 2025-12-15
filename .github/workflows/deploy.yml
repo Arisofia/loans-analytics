@@ -5,7 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'apps/web/**'
+      - 'src/**'
+      - 'public/**'
+      - 'package.json'
+      - 'next.config.js'
   workflow_dispatch:
 
 jobs:
@@ -36,17 +39,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd apps/web
-          npm install
+          npm ci
 
       - name: Pull Vercel project settings
         if: steps.vercel_secrets.outputs.present == 'true'
-        working-directory: apps/web
         run: npx vercel pull --yes --environment=production --token "${{ secrets.VERCEL_TOKEN }}"
 
       - name: Build
         run: |
-          cd apps/web
           npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -59,7 +59,7 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod --cwd apps/web'
+          vercel-args: '--prod'
 
       - name: Skip deploy (missing Vercel secrets)
         if: steps.vercel_secrets.outputs.present != 'true'

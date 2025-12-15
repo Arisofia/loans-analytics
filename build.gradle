@@ -48,5 +48,5 @@ tasks.named('jacocoTestReport', JacocoReport).configure {
     }
     sourceDirectories.from = files(sourceSets.main.allSource.srcDirs)
     classDirectories.from = files(sourceSets.main.output)
-    executionData.from = fileTree(buildDir).include("/jacoco/test.exec")
+    executionData.from = fileTree(layout.buildDirectory).include("/jacoco/test.exec")
 }
