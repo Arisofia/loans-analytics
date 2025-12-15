@@ -10,6 +10,10 @@
     "typescript": "5.9.3"
   },
   "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
     "test": "echo \"Root test placeholder (per CodeQL traceability check)\""
   },
   "dependencies": {

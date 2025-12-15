@@ -30,15 +30,27 @@ def ensure_token():
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Trigger GitHub Actions workflows via workflow_dispatch")
+    parser = argparse.ArgumentParser(
+        description="Trigger GitHub Actions workflows via workflow_dispatch"
+    )
     parser.add_argument("repo", help="Target repository in the format owner/name")
-    parser.add_argument("--ref", default="main", help="Git ref to dispatch (default: main)")
+    parser.add_argument(
+        "--ref", default="main", help="Git ref to dispatch (default: main)"
+    )
     parser.add_argument(
         "--workflows",
         nargs="+",
-        help="Workflow names or IDs to dispatch. If omitted, all workflows will be dispatched.",
+        help=(
+            "Workflow names or IDs to dispatch. "
+            "If omitted, all workflows will be dispatched."
+        ),
     )
-    parser.add_argument("--delay", type=float, default=0.0, help="Seconds to wait between dispatch calls")
+    parser.add_argument(
+        "--delay",
+        type=float,
+        default=0.0,
+        help="Seconds to wait between dispatch calls",
+    )
     return parser.parse_args()
 
 
@@ -56,9 +68,15 @@ def resolve_workflow_targets(workflows, requested):
     resolved = []
     for item in requested:
         if item.isdigit():
-            match = next((wf for wf in workflows if str(wf.get("id")) == item), None)
+            match = next(
+                (wf for wf in workflows if str(wf.get("id")) == item), None
+            )
         else:
-            match = next((wf for wf in workflows if wf.get("name", "").lower() == item.lower()), None)
+            match = next(
+                (wf for wf in workflows
+                 if wf.get("name", "").lower() == item.lower()),
+                None
+            )
         if not match:
             raise ValueError(f"Workflow '{item}' not found")
         resolved.append(match)
@@ -91,7 +109,9 @@ def main():
             else:
                 print(f"Failed to dispatch {name} on {args.ref}")
         except urllib.error.HTTPError as error:
-            sys.stderr.write(f"Failed to dispatch {name}: {error.read().decode('utf-8')}\n")
+            sys.stderr.write(
+                f"Failed to dispatch {name}: {error.read().decode('utf-8')}\n"
+            )
         if args.delay:
             time.sleep(args.delay)
     if successes == 0:
