@@ -105,7 +105,7 @@
 ---
 
 ## Slide 8: Board Talking Points & Success Definition
-- "On path to $16.4MM AUM by Dec-26 (+74.2% CAGR) with validated 5.5x rotation."
+- "On path to $16.4MM AUM by Dec-26 (+122.8% CAGR) with validated 5.5x rotation."
 - "Non-linear growth: Q4-25 trough, Q1-26 embedded inflection, Q3-26 acceleration, Q4-26 consolidation."
 - "Unit economics improving: CAC $800 → ~$500, LTV:CAC 3:1 → 8.4:1, payback 18 → 13 months."
 - "Default 0% today, policy ≤4%, target <1.5%; data quality 78% → >95% by Nov-25; concentration under control."
