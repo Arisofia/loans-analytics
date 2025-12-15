@@ -15,15 +15,18 @@ jobs:
             const prNumber = context.payload.pull_request.number;
             const repo = context.repo;
             const desiredAssignees = ['codex'];
-            const desiredReviewers = [];
+            const desiredReviewers = ['gemini'];
+            const desiredLabels = ['Codex'];
             const { data: pull } = await github.rest.pulls.get({
               ...repo,
               pull_number: prNumber,
             });
             const currentAssignees = pull.assignees.map(({ login }) => login);
             const currentReviewers = pull.requested_reviewers.map(({ login }) => login);
+            const currentLabels = pull.labels.map(({ name }) => name);
             const assigneesToAdd = desiredAssignees.filter((login) => !currentAssignees.includes(login));
             const reviewersToAdd = desiredReviewers.filter((login) => !currentReviewers.includes(login));
+            const labelsToAdd = desiredLabels.filter((name) => !currentLabels.includes(name));
             if (assigneesToAdd.length > 0) {
               await github.rest.issues.addAssignees({
                 ...repo,
@@ -36,5 +39,12 @@ jobs:
                 ...repo,
                 pull_number: prNumber,
                 reviewers: reviewersToAdd,
+              });
+            }
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                ...repo,
+                issue_number: prNumber,
+                labels: labelsToAdd,
               });
             }
