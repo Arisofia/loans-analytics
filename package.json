@@ -13,7 +13,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "npm --prefix apps/web run lint",
     "test": "echo \"Root test placeholder (per CodeQL traceability check)\""
   },
   "dependencies": {

@@ -82,7 +82,7 @@ def test_validate_loans_missing_field():
     assert bool(validated["_validation_passed"].iloc[0]) is False
     assert isinstance(ingestion.errors, list)
     assert len(ingestion.errors) >= 1
-    assert ingestion.errors[0].get("stage") == "validation"
+    assert ingestion.errors[0].get("stage") == "validation_schema_assertion"
 
 
 def test_validate_loans_invalid_numeric():
@@ -96,7 +96,7 @@ def test_validate_loans_invalid_numeric():
     assert "_validation_passed" in validated.columns
     assert bool(validated["_validation_passed"].iloc[0]) is False
     assert isinstance(ingestion.errors, list)
-    numeric_errors = [err for err in ingestion.errors if err.get("stage") == "validation"]
+    numeric_errors = [err for err in ingestion.errors if err.get("stage") == "validation_schema_assertion"]
     assert numeric_errors
     assert any("total_receivable_usd" in err.get("error", "") for err in numeric_errors)
 

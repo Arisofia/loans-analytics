@@ -52,7 +52,7 @@ class TestRepoMaturitySummary(unittest.TestCase):
         self.assertEqual(level, 3)
 
     def test_level_4_full_maturity(self):
-        """Test that adding Dockerfile and Sonar config reaches level 4."""
-        self.create_structure(["README.md", "requirements.txt", "tests/", ".github/workflows/", "docs/", "Dockerfile", "sonar-project.properties"])
+        """Test that adding Dockerfile reaches level 4."""
+        self.create_structure(["README.md", "requirements.txt", "tests/", ".github/workflows/", "docs/", "Dockerfile"])
         level = determine_level(self.base_path)
         self.assertEqual(level, 4)

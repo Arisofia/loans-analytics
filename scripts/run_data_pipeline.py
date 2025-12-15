@@ -99,6 +99,11 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
     transformer = DataTransformation()
     transformer.set_context(user=user, action=action, ingest_run_id=ingestion.run_id, source_file=str(input_path))
 
+    compliance_log: List[Dict[str, Any]] = []
+
+    def record_access(stage: str, status: str, message: Optional[str] = None) -> None:
+        compliance_log.append(create_access_log_entry(stage, user, action, status, message))
+
     audit: Dict[str, Any] = {
         "run_id": ingestion.run_id,
         "started_at": datetime.now(timezone.utc).isoformat(),
@@ -106,11 +111,6 @@ def run_pipeline(input_file: str = DEFAULT_INPUT, user: str | None = None, actio
         "errors": [],
         "kpis": {},
     }
-
-    compliance_log: List[Dict[str, Any]] = []
-
-    def record_access(stage: str, status: str, message: Optional[str] = None) -> None:
-        compliance_log.append(create_access_log_entry(stage, user, action, status, message))
 
     log_stage(
         "pipeline:start",

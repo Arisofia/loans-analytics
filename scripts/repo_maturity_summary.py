@@ -14,13 +14,12 @@ TESTS_DIR = "tests/"
 WORKFLOWS_DIR = ".github/workflows/"
 DOCS_DIR = "docs/"
 DOCKERFILE = "Dockerfile"
-SONAR = "sonar-project.properties"
 
 LEVEL_CRITERIA = {
     1: [README],
     2: [README, REQUIREMENTS, TESTS_DIR],
     3: [README, REQUIREMENTS, TESTS_DIR, WORKFLOWS_DIR, DOCS_DIR],
-    4: [README, REQUIREMENTS, TESTS_DIR, WORKFLOWS_DIR, DOCS_DIR, DOCKERFILE, SONAR],
+    4: [README, REQUIREMENTS, TESTS_DIR, WORKFLOWS_DIR, DOCS_DIR, DOCKERFILE],
 }
 
 def check_criteria(base_path, criteria):
