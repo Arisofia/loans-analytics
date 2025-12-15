@@ -3,6 +3,8 @@ Module for data validation utilities and functions.
 """
 from typing import List, Optional, Dict
 import pandas as pd
+import re
+from datetime import datetime
 
 
 # Unified required columns for both ingestion and analytics
@@ -113,3 +115,28 @@ def find_column(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
                    (match_type == "substring" and candidate.lower() in col.lower()):
                     return col
     return None
+
+def validate_iso8601_dates(df: pd.DataFrame, columns: Optional[List[str]] = None) -> Dict[str, bool]:
+    """
+    Check that all values in the specified columns are valid ISO 8601 dates (YYYY-MM-DD or full ISO format).
+    Returns a dict mapping column name to True/False.
+    """
+    if columns is None:
+        # Heuristic: columns with 'date' in the name
+        columns = [c for c in df.columns if 'date' in c.lower() or c.lower().endswith('_at')]
+    validation: Dict[str, bool] = {}
+    iso8601_regex = re.compile(r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$")
+    for col in columns:
+        if col in df.columns:
+            # Accept both string and datetime types
+            valid = True
+            for val in df[col]:
+                if pd.isnull(val):
+                    continue
+                if isinstance(val, datetime):
+                    continue
+                if not isinstance(val, str) or not iso8601_regex.match(val):
+                    valid = False
+                    break
+            validation[f"{col}_iso8601"] = valid
+    return validation
