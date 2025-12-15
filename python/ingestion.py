@@ -85,8 +85,14 @@ class CascadeIngestion:
         Enforces:
           - Numeric columns are present and non-negative
           - Percentage columns are between 0 and 100
+          - Date columns are valid ISO 8601
+          - Monotonicity for count/total/cumulative columns
+          - No nulls in required/numeric columns
         """
-        from python.validation import validate_numeric_bounds, validate_percentage_bounds
+        from python.validation import (
+            validate_numeric_bounds, validate_percentage_bounds, validate_iso8601_dates,
+            validate_monotonic_increasing, validate_no_nulls
+        )
         if df.empty:
             return df
         df["_validation_passed"] = True
@@ -107,6 +113,21 @@ class CascadeIngestion:
             for col, ok in pct_results.items():
                 if not ok:
                     raise ValueError(f"Column failed percentage bounds check: {col}")
+            # ISO 8601 date check
+            iso_results = validate_iso8601_dates(df)
+            for col, ok in iso_results.items():
+                if not ok:
+                    raise ValueError(f"Column failed ISO 8601 date check: {col}")
+            # Monotonicity check
+            mono_results = validate_monotonic_increasing(df)
+            for col, ok in mono_results.items():
+                if not ok:
+                    raise ValueError(f"Column failed monotonicity check: {col}")
+            # Null check
+            null_results = validate_no_nulls(df)
+            for col, ok in null_results.items():
+                if not ok:
+                    raise ValueError(f"Column failed null check: {col}")
         except ValueError as e:
             msg = str(e)
             found_col = None
