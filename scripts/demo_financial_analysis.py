@@ -103,5 +103,20 @@ def main():
         plt.savefig(output_img)
         print(f"Saved {output_img}")
 
+    if 'exposure_segment' in enriched_df.columns:
+        print("\n[5] Generating Exposure Segment Chart...")
+        counts = enriched_df['exposure_segment'].value_counts()
+        
+        plt.figure(figsize=(10, 6))
+        counts.plot(kind='bar', color='lightgreen', edgecolor='black')
+        plt.title('Client Exposure Segments')
+        plt.xlabel('Segment')
+        plt.ylabel('Count')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        output_img = "exposure_distribution.png"
+        plt.savefig(output_img)
+        print(f"Saved {output_img}")
+
 if __name__ == "__main__":
     main()
