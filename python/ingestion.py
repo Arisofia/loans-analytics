@@ -13,6 +13,13 @@ class CascadeIngestion:
         self.errors: List[Dict[str, Any]] = []
         self._summary: Dict[str, Any] = {}
 
+    def _update_summary(self, count: int, filename: str = None) -> None:
+        self._summary.setdefault("rows_ingested", 0)
+        self._summary["rows_ingested"] += count
+        if filename:
+            self._summary.setdefault("files", {})
+            self._summary["files"][filename] = count
+
     def ingest_csv(self, filename: str) -> pd.DataFrame:
         try:
             file_path = self.data_dir / filename
@@ -27,12 +34,7 @@ class CascadeIngestion:
                 return pd.DataFrame()
             df = pd.read_csv(file_path)
             # Coderabbit: Accumulate total rows ingested and track per-file ingestion count
-            if "rows_ingested" not in self._summary:
-                self._summary["rows_ingested"] = 0
-            self._summary["rows_ingested"] += len(df)
-            if "files" not in self._summary:
-                self._summary["files"] = {}
-            self._summary["files"][filename] = len(df)
+            self._update_summary(len(df), filename)
             # Add ingestion metadata
             df["_ingest_run_id"] = self.run_id
             df["_ingest_timestamp"] = self.timestamp
@@ -49,9 +51,7 @@ class CascadeIngestion:
 
     def ingest_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """Ingest a DataFrame directly (e.g. from tests or memory)."""
-        if "rows_ingested" not in self._summary:
-            self._summary["rows_ingested"] = 0
-        self._summary["rows_ingested"] += len(df)
+        self._update_summary(len(df))
         
         df = df.copy()
         df["_ingest_run_id"] = self.run_id

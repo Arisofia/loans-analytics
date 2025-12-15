@@ -1,4 +1,5 @@
 """Utility functions for common loan analytics KPIs."""
+import logging
 from typing import Dict, Iterable
 
 import numpy as np
@@ -52,10 +53,6 @@ def validate_kpi_columns(loan_data: pd.DataFrame) -> None:
     Raises:
         ValueError: If the DataFrame is empty or required columns are missing.
     """
-
-
-    import logging
-    logging.basicConfig(filename='data_validation.log', level=logging.ERROR, format='%(asctime)s %(levelname)s:%(message)s')
 
     errors = []
     if loan_data.empty:

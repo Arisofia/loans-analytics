@@ -12,7 +12,7 @@ from typing import List, Dict, Any
 logger = logging.getLogger(__name__)
 
 class NotionClient:
-    def __init__(self, token_env: str = None, version_env: str = None):
+    def __init__(self, token_env: str | None = None, version_env: str | None = None):
         token_key = token_env or "NOTION_META_TOKEN"
         version_key = version_env or "NOTION_VERSION"
         self.token = os.getenv(token_key)
@@ -31,7 +31,7 @@ class NotionClient:
         has_more = True
         start_cursor = None
         while has_more:
-            body = {"start_cursor": start_cursor} if start_cursor else {}
+            body: dict[str, object] = {"start_cursor": start_cursor} if start_cursor else {}
             response = requests.post(url, headers=headers, json=body, timeout=30)
             response.raise_for_status()
             data = response.json()

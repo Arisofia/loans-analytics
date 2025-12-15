@@ -96,8 +96,6 @@ class LoanAnalyticsEngine:
         return cls(pd.DataFrame(input_data))
 
     def _validate_columns(self):
-        # Ensures the DataFrame contains the necessary columns
-        # for KPI computation.
         """
         Ensures the DataFrame contains the necessary columns for KPI
         computation.
@@ -116,10 +114,10 @@ class LoanAnalyticsEngine:
             )
 
     def _coerce_numeric_columns(self) -> Dict[str, int]:
-        # Convert numeric columns to proper dtypes and record
-        # invalid values for auditability.
-
-        # Returns a report of invalid values coerced to NaN for each column.
+        """
+        Convert numeric columns to proper dtypes and record invalid values for auditability.
+        Returns a report of invalid values coerced to NaN for each column.
+        """
         numeric_cols: List[str] = [
             'loan_amount',
             'appraised_value',
@@ -152,7 +150,6 @@ class LoanAnalyticsEngine:
         """
         Computes the Debt-to-Income (DTI) ratio for each borrower.
         """
-        # Computes the Debt-to-Income (DTI) ratio for each borrower.
         monthly_income = self.loan_data['borrower_income'] / 12
         positive_income = monthly_income > 0
         dti = np.where(
@@ -169,7 +166,6 @@ class LoanAnalyticsEngine:
         Returns:
             float: The delinquency rate as a percentage.
         """
-        # Computes the overall portfolio delinquency rate.
         delinquent_statuses = [
             '30-59 days past due',
             '60-89 days past due',
@@ -239,8 +235,6 @@ class LoanAnalyticsEngine:
         Returns:
             pd.DataFrame: A DataFrame containing flagged loans.
         """
-        # Flags high-risk loans for downstream dashboards and
-        # operational alerts.
         ltv = self.compute_loan_to_value()
         dti = self.compute_debt_to_income()
         alerts = self.loan_data.copy().assign(
@@ -277,8 +271,6 @@ class LoanAnalyticsEngine:
         return alerts[['ltv_ratio', 'dti_ratio', 'risk_score']]
 
     def run_full_analysis(self) -> Dict[str, float]:
-        # Runs a comprehensive analysis and returns a dictionary
-        # of portfolio-level KPIs.
         """
         Runs a comprehensive analysis and returns a dictionary of
         portfolio-level KPIs.
@@ -293,8 +285,8 @@ class LoanAnalyticsEngine:
                 self.compute_delinquency_rate()
             ),
             "portfolio_yield_percent": self.compute_portfolio_yield(),
-            "average_ltv_ratio_percent": ltv_ratio.mean(),
-            "average_dti_ratio_percent": dti_ratio.mean(),
+            "average_ltv_ratio_percent": ltv_ratio.mean(skipna=True),
+            "average_dti_ratio_percent": dti_ratio.mean(skipna=True),
             "data_quality_score": quality["data_quality_score"],
             "average_null_ratio_percent": quality["average_null_ratio"],
             "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio"],

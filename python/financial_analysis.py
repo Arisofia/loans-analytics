@@ -105,8 +105,21 @@ class FinancialAnalyzer:
         metrics = metrics or default_metrics
 
         # Check for required fields
-        available_fields = [f for f in metrics if f in loan_df.columns or
-                            any(f in col.lower() for col in loan_df.columns)]
+        def resolve_col(name, columns):
+            # 1. Exact match
+            if name in columns:
+                return name
+            # 2. Case-insensitive exact match
+            for col in columns:
+                if name.lower() == col.lower():
+                    return col
+            # 3. Substring match
+            for col in columns:
+                if name.lower() in col.lower():
+                    return col
+            return None
+
+        available_fields = [f for f in metrics if resolve_col(f, loan_df.columns)]
 
         if not available_fields:
             logger.error(f"None of the required statistic fields found: {metrics}")
@@ -127,7 +140,7 @@ class FinancialAnalyzer:
         result = {}
 
         for stat in available_fields:
-            stat_col = next((col for col in loan_df.columns if stat.lower() in col.lower()), None)
+            stat_col = resolve_col(stat, loan_df.columns)
 
             if stat_col:
                 filtered_df = loan_df.dropna(subset=[stat_col, weight_field])
@@ -152,6 +165,16 @@ class FinancialAnalyzer:
 
         # Helper to find columns
         def find_col(patterns, df):
+            # 1. Exact match
+            for pattern in patterns:
+                if pattern in df.columns:
+                    return pattern
+            # 2. Case-insensitive exact match
+            for pattern in patterns:
+                for col in df.columns:
+                    if pattern.lower() == col.lower():
+                        return col
+            # 3. Substring match
             return next((col for pattern in patterns for col in df.columns if pattern.lower() in col.lower()), None)
 
         if credit_line_field not in result_df.columns:

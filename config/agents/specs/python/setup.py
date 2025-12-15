@@ -11,7 +11,7 @@ setup(
     install_requires=[
         "pandas>=2.0.0",
         "numpy>=1.24.0",
-        "requests>=2.26.0",
+        "requests>=2.31.0",
         "pydantic>=1.8.0",
         "python-dotenv>=0.19.0",
         "sqlalchemy>=1.4.0",
@@ -23,7 +23,7 @@ setup(
     ],
     extras_require={
         "dev": [
-            "pytest>=6.2.0",
+            "pytest>=7.4.0",
             "pytest-cov>=2.12.0",
             "black>=21.6b0",
             "flake8>=3.9.0",

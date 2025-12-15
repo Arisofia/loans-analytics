@@ -88,3 +88,15 @@ def test_get_ingest_summary():
     assert summary["timestamp"] == ingestion.timestamp
     assert isinstance(summary["total_errors"], int)
     assert isinstance(summary["errors"], list)
+
+
+def test_update_summary_tracks_counts():
+    ingestion = CascadeIngestion()
+    ingestion._update_summary(10, "file1.csv")
+    ingestion._update_summary(5, "file2.csv")
+    ingestion._update_summary(20)  # No filename (e.g. dataframe ingest)
+    
+    summary = ingestion.get_ingest_summary()
+    assert summary["rows_ingested"] == 35
+    assert summary["files"]["file1.csv"] == 10
+    assert summary["files"]["file2.csv"] == 5
