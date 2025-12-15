@@ -88,10 +88,10 @@ export default async function Home() {
         </div>
         <div className={styles.metrics}>
           {metrics?.map((metric: Metric) => (
-            <div key={metric.label} className={styles.metricCard}>
-              <span className={styles.metricValue}>{metric.value}</span>
-              <span className={styles.metricLabel}>{metric.label}</span>
-            </div>
+            <dl key={metric.label} className={styles.metricCard}>
+              <dt className={styles.metricLabel}>{metric.label}</dt>
+              <dd className={styles.metricValue}>{metric.value}</dd>
+            </dl>
           ))}
         </div>
       </header>
