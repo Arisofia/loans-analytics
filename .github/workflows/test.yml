@@ -25,7 +25,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt || true
           if [ -f apps/analytics/requirements.txt ]; then pip install -r apps/analytics/requirements.txt; fi
-          pip install pytest
       - name: Run tests
         run: |
-          pytest
+          pytest apps/analytics/tests

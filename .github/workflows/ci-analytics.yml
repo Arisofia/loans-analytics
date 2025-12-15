@@ -23,6 +23,9 @@ jobs:
         run: |
           cd apps/analytics
           pip install -r requirements.txt
+      - name: Validate required analytics columns
+        run: |
+          python -c "import pandas as pd; df = pd.read_csv('data/abaco_portfolio_calculations.csv'); required = ['loan_amount','appraised_value','borrower_income','monthly_debt','loan_status','interest_rate','principal_balance']; missing = [c for c in required if c not in df.columns]; assert not missing, f'Missing required analytics columns: {missing}'"
       - name: Validate
         run: |
           python -c "import pandas as pd; print('Environment ready. Pandas version:', pd.__version__)"
