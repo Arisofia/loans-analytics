@@ -80,3 +80,27 @@ jobs:
       - name: Check Repo Maturity
         run: |
           if [ -f repo_maturity_summary.py ]; then python repo_maturity_summary.py; fi
+      - name: Notify Slack on Failure
+        if: failure()
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook-type: INCOMING_WEBHOOK
+          payload: |
+            {
+              "text": "🚨 CI Main Pipeline Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*CI Main Pipeline Failed*\n" +
+                            "Repository: ${{ github.repository }}\n" +
+                            "Branch: ${{ github.ref_name }}\n" +
+                            "Commit: ${{ github.sha }}\n" +
+                            "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
