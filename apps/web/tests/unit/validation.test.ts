@@ -1,4 +1,4 @@
-import { validateLoanRow, validateAnalytics, validateCsvInput } from '../../src/lib/validation'
+import { validateLoanRow, validateCsvInput } from '../../src/lib/validation'
 import type { LoanRow } from '../../src/types/analytics'
 
 describe('validateLoanRow', () => {
