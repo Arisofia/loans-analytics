@@ -99,7 +99,7 @@
 - **Cash burn in trough:** Maintain 3-month OpEx buffer; strict cost discipline.
 - **Embedded channel delays:** Keep direct KAM pipeline in parallel.
 - **Default rate >2%:** Equifax screening, DTE verification, early collections, root-cause triggers at >2%.
-- **Concentration breaches:** Cap <4% per client; gradual reductions; approval workflow for concentration.
+- **Single-obligor concentration breaches:** Cap <4% per client; gradual reductions; approval workflow for concentration.
 - **Series B timing:** Plan for breakeven H2-26; raise optional; maintain flexibility.
 
 ---
