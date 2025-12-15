@@ -51,3 +51,14 @@ class TestPRStatus(unittest.TestCase):
         with self.assertRaises(GitHubRequestError) as cm:
             render_report("owner/repo", 1)
         self.assertIn("Authentication failed", str(cm.exception))
+
+    @patch("scripts.pr_status.SESSION")
+    def test_list_open_prs(self, mock_session):
+        mock_resp = MagicMock()
+        mock_resp.ok = True
+        mock_resp.json.return_value = [{"number": 1}, {"number": 2}]
+        mock_session.get.return_value = mock_resp
+        
+        from scripts.pr_status import list_open_prs
+        prs = list_open_prs("owner/repo")
+        self.assertEqual(prs, [1, 2])
