@@ -53,16 +53,45 @@ def validate_kpi_columns(loan_data: pd.DataFrame) -> None:
         ValueError: If the DataFrame is empty or required columns are missing.
     """
 
-    if loan_data.empty:
-        raise ValueError("Input loan_data must be a non-empty DataFrame.")
 
-    missing_cols = [
-        col for col in REQUIRED_KPI_COLUMNS if col not in loan_data.columns
-    ]
+    import logging
+    logging.basicConfig(filename='data_validation.log', level=logging.ERROR, format='%(asctime)s %(levelname)s:%(message)s')
+
+    errors = []
+    if loan_data.empty:
+        msg = "Input loan_data must be a non-empty DataFrame."
+        logging.error(msg)
+        errors.append(msg)
+
+    missing_cols = [col for col in REQUIRED_KPI_COLUMNS if col not in loan_data.columns]
     if missing_cols:
-        raise ValueError(
-            f"Missing required columns in loan_data: {', '.join(missing_cols)}"
-        )
+        msg = f"Missing required columns in loan_data: {', '.join(missing_cols)}"
+        logging.error(msg)
+        errors.append(msg)
+
+    # Granular checks: NaN, data types, value ranges
+    for col in REQUIRED_KPI_COLUMNS:
+        if col in loan_data.columns:
+            series = loan_data[col]
+            if series.isna().any():
+                msg = f"Column '{col}' contains NaN values."
+                logging.error(msg)
+                errors.append(msg)
+            # Type checks
+            if col in ["loan_amount", "appraised_value", "borrower_income", "monthly_debt", "interest_rate", "principal_balance"]:
+                if not pd.api.types.is_numeric_dtype(series):
+                    msg = f"Column '{col}' is not numeric."
+                    logging.error(msg)
+                    errors.append(msg)
+                # Value range checks (example: no negative values for amounts)
+                if (series < 0).any():
+                    msg = f"Column '{col}' contains negative values."
+                    logging.error(msg)
+                    errors.append(msg)
+
+    if errors:
+        # Optionally, raise a single error with all issues for monitoring systems
+        raise ValueError("; ".join(errors))
 
 
 def loan_to_value(
