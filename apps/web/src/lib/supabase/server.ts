@@ -1,14 +1,27 @@
-*** Begin Patch
-*** Update File: apps/web/app/account/page.tsx
-@@
- import { createClient } from '@/lib/supabase/server';
- 
- export default async function Account() {
--  const supabase = await createClient();
-+  const supabase = createClient();
-   const {
-     data: { user },
-   } = await supabase.auth.getUser();
-   return <AccountForm user={user} />;
- }
-*** End Patch
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export async function createClient() {
+  const cookieStore = await cookies()
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // Ignorar error en Server Components
+          }
+        },
+      },
+    }
+  )
+}
