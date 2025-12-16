@@ -42,7 +42,8 @@ export default function Avatar({
     };
   }, [avatarUrl]);
 
-  const uploadAvatar: React.ChangeEventHandler<HTMLInputElement> = async (event) => {
+      const filePath = `${uid}-${crypto.randomUUID()}.${fileExt}`;
+
     try {
       setUploading(true);
       if (!event.target.files || event.target.files.length === 0) {
