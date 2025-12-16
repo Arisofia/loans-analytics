@@ -34,6 +34,14 @@ export default function Avatar({
     if (url) downloadImage(url);
   }, [url, supabase]);
 
+  useEffect(() => {
+    if (!avatarUrl) return;
+
+    return () => {
+      URL.revokeObjectURL(avatarUrl);
+    };
+  }, [avatarUrl]);
+
   const uploadAvatar: React.ChangeEventHandler<HTMLInputElement> = async (event) => {
     try {
       setUploading(true);
