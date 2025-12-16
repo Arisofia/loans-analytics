@@ -58,6 +58,10 @@ def validate_dataframe(df: pd.DataFrame, required_columns: Optional[List[str]] =
                 raise ValueError(f"Missing required columns: {', '.join(missing)}")
             
     if numeric_columns:
+        # Fix: Convert columns to numeric
+        for col in numeric_columns:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
         # Fix: Convert columns to numeric, coercing errors to NaN
         for col in numeric_columns:
             if col in df.columns:
@@ -82,6 +86,10 @@ def assert_dataframe_schema(
         if missing:
             raise ValueError(f"{stage} missing required columns: {missing}")
     if numeric_columns:
+        # Fix: Convert columns to numeric
+        for col in numeric_columns:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
         # Fix: Convert columns to numeric, coercing errors to NaN
         for col in numeric_columns:
             if col in df.columns:
