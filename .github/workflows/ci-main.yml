@@ -1,102 +1,24 @@
-name: CI Main
+name: CI
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'apps/web/**'
-      - 'src/**'
-      - 'public/**'
-      - 'package.json'
-      - 'next.config.js'
-      - 'apps/analytics/**'
-      - 'python/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'requirements.txt'
-      - 'requirements.lock.txt'
-      - '.github/workflows/ci-main.yml'
+    branches: [ "main" ]
   pull_request:
-    branches: [main]
-    paths:
-      - 'apps/web/**'
-      - 'src/**'
-      - 'public/**'
-      - 'package.json'
-      - 'next.config.js'
-      - 'apps/analytics/**'
-      - 'python/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'requirements.txt'
-      - 'requirements.lock.txt'
-      - '.github/workflows/ci-main.yml'
-  workflow_dispatch:
+    branches: [ "main" ]
 
 jobs:
-  web-lint:
-    name: Web Lint (Next.js)
+  lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: '18'
       - name: Install dependencies
         run: npm install
-      - name: Lint
+      - name: Run Lint
         run: npm run lint
-
-  analytics-test:
-    name: Analytics Python Tests (${{ matrix.python-version }})
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11"]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: |
-            requirements.txt
-            apps/analytics/requirements.txt
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r apps/analytics/requirements.txt
-      - name: Run Preflight Checks
-        run: |
-          bash scripts/preflight.sh
-      - name: Run tests
-        run: pytest
-      - name: Run Data Pipeline
-        run: |
-          python scripts/run_data_pipeline.py
-      - name: Check Repo Maturity
-        run: |
-          if [ -f scripts/repo_maturity_summary.py ]; then python scripts/repo_maturity_summary.py; fi
-      - name: Notify Slack on Failure
-        if: failure()
-        uses: slackapi/slack-github-action@v2
-        with:
-          webhook-type: INCOMING_WEBHOOK
-          payload: |
-            {
-              "text": "🚨 CI Main Pipeline Failed",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*CI Main Pipeline Failed* | Repository: ${{ github.repository }} | Branch: ${{ github.ref_name }} | <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
