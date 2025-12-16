@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "devDependencies": {
+    "@sentry/cli": "^3.0.0",
     "@types/jest": "30.0.0",
     "@types/node": "^25.0.2",
     "@types/react": "19.2.7",
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "@notionhq/client": "2.2.10",
+    "@supabase/sentry-js-integration": "^0.3.0",
     "@supabase/supabase-js": "2.87.1",
     "@vercel/analytics": "1.6.1",
     "@vercel/speed-insights": "1.3.1",
