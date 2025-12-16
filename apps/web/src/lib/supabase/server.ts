@@ -1,10 +1,14 @@
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-
-export function createClient() {
-  // For Next.js App Router SSR use { cookies }.
-  // If you use pages/older Next.js, pass { req, res } instead.
-  return createServerSupabaseClient({
-    cookies,
-  });
-}
+*** Begin Patch
+*** Update File: apps/web/app/account/page.tsx
+@@
+ import { createClient } from '@/lib/supabase/server';
+ 
+ export default async function Account() {
+-  const supabase = await createClient();
++  const supabase = createClient();
+   const {
+     data: { user },
+   } = await supabase.auth.getUser();
+   return <AccountForm user={user} />;
+ }
+*** End Patch
