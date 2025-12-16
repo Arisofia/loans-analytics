@@ -19,7 +19,6 @@ jobs:
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v7
         env:
-          # This token is required to authenticate with SonarCloud
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
         with:
@@ -27,4 +26,6 @@ jobs:
             -Dsonar.projectKey=abaco-loans-analytics
             -Dsonar.organization=abaco-technol
             -Dsonar.sources=.
-            -Dsonar.exclusions=**/*.test.js,**/*.spec.js,**/node_modules/**,.next/**
+            -Dsonar.tests=tests
+            -Dsonar.exclusions=tests/**,**/node_modules/**,.next/**,**/*.test.js,**/*.spec.js
+            -Dsonar.test.inclusions=tests/**/*.py
