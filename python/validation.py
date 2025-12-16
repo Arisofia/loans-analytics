@@ -75,10 +75,12 @@ def assert_dataframe_schema(
     """Raise AssertionError when the DataFrame schema deviates from expectations."""
     if required_columns:
         missing = [col for col in required_columns if col not in df.columns]
-        assert not missing, f"{stage} missing required columns: {missing}"
+        if missing:
+    raise ValueError(f"{stage} missing required columns: {missing}")
     if numeric_columns:
         non_numeric = [col for col in numeric_columns if col in df.columns and not pd.api.types.is_numeric_dtype(df[col])]
-        assert not non_numeric, f"{stage} non-numeric columns: {non_numeric}"
+        if non_numeric:
+    raise TypeError(f"{stage} non-numeric columns: {non_numeric}")
 
 
 def validate_numeric_bounds(df: pd.DataFrame, columns: Optional[List[str]] = None) -> Dict[str, bool]:
