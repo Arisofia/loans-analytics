@@ -1,31 +1,31 @@
 const { withSentryConfig } = require("@sentry/nextjs");
 
 const nextConfig = {
-  turbopack: {
-    root: __dirname,
-  },
   typescript: {
-    tsconfigPath: './tsconfig.json',
+    tsconfigPath: "./tsconfig.json",
+  },
+  experimental: {
+    serverActions: true,
   },
   headers: async () => [
     {
-      source: '/:path*',
+      source: "/:path*",
       headers: [
         {
-          key: 'X-Content-Type-Options',
-          value: 'nosniff',
+          key: "X-Content-Type-Options",
+          value: "nosniff",
         },
         {
-          key: 'X-Frame-Options',
-          value: 'DENY',
+          key: "X-Frame-Options",
+          value: "DENY",
         },
         {
-          key: 'X-XSS-Protection',
-          value: '1; mode=block',
+          key: "X-XSS-Protection",
+          value: "1; mode=block",
         },
         {
-          key: 'Referrer-Policy',
-          value: 'strict-origin-when-cross-origin',
+          key: "Referrer-Policy",
+          value: "strict-origin-when-cross-origin",
         },
       ],
     },
@@ -36,7 +36,7 @@ const nextConfig = {
     afterFiles: [],
     fallback: [],
   }),
-}
+};
 
 module.exports = withSentryConfig(
   nextConfig,
