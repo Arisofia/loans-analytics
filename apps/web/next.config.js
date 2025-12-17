@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  // Las serverActions ya vienen activadas por defecto en versiones nuevas
-};
+const nextConfig = {};
 
 module.exports = nextConfig;
