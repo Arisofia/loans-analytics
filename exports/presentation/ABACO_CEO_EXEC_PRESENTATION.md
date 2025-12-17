@@ -26,6 +26,8 @@
   - Gross interest ~$175K/month (7,368K × 28.5% / 12); warehouse cost share ~$105K (60% of interest, traceable via funding dashboard).
   - Net interest after warehouse ~$70K; bad debt reserve ~$10K (1.66% of AUM per year, accrued monthly); platform costs ~$2K (0.3% per year, accrued monthly).
   - Net contribution ~$58K/month before OpEx; OpEx ~$35K; EBITDA ≈ +$23K/month; runway ~18 months if flat; all assumptions logged in the finance KPI workbook with owner (CFO) and refresh cadence (weekly).
+- **Data quality:** 78% overall; critical fields 95%+; important 82%; optional 45%; 23 loans missing KAM; remediation weekly, target >95% by Nov-2025.
+- **Entity status:** Abaco Financial ~$0K AUM (collapsed Sep-2025); Abaco Technologies ~$7,368K AUM (100% current); migration complete; 4 KAMs, with the top KAM at 35% of volume; 12 industries with B2B Services 40% of AUM; Central America 90%+.
 - **Revenue snapshot:**
   - Gross interest ~$87K/month (7,368K × 28.5% / 12); warehouse cost share ~$52K (60%).
   - Net interest after warehouse ~$35K; bad debt reserve ~$12K (1.66% of AUM); platform costs ~$2K (0.3%).
@@ -63,6 +65,7 @@
 - **Contribution after funding and reserves (interest income):** Warehouse share ~60% (-$170K/month); bad debt reserve 1.66% (-$17K/month); platform/processing 0.3% (-$3K/month) → net interest contribution ~$93K/month (~$1,116K annually).
 - **Total contribution after costs:** Net interest ~$93K/month + origination fees ~$82K/month → ~$175K/month (~$2,098K annually).
 - **OpEx & EBITDA:** OpEx ~$30K/month → EBITDA ≈ +$145K/month (~$1,738K annually) on ramped averages; breakeven expected Q2-26, positive by Q3-26.
+- **State-stable (all months $16,419K AUM):** Origination $90,305K; gross interest $4,677K; after warehouse $1,871K (40% of interest retained); bad debt & platform ~$321K annually; origination fees ~$1,355K; OpEx $40K/month → EBITDA ~$2,425K/year (~$202K/month, ~84% margin).
 - **State-stable (all months $16,419K AUM):** Origination $90,305K; gross interest $4,677K; after warehouse $1,871K (40% of interest retained); bad debt & platform ~$321K annually; origination fees ~$1,355K; OpEx $40K/month → EBITDA ~$2,425K/year (~$202K/month, ~85% margin).
 - **Steady-state (all months $16,419K AUM):** Origination $90,305K; gross interest $4,677K; after warehouse $1,871K (40% of interest retained); bad debt & platform ~$321K annually; origination fees ~$1,355K; OpEx $40K/month → EBITDA ~$2,425K/year (~$202K/month, ~85% margin).
 - **Capital efficiency:** Cost of capital 12% +1% upfront amortized to 12.22% annual; gross margin must cover capital + losses + OpEx; net spread after all costs estimated 13-16%.
