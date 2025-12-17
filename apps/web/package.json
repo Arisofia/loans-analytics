@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint --dir app --dir src --dir lib"
+    "lint": "next lint app src lib"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.31.0",
