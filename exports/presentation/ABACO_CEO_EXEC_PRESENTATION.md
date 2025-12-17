@@ -16,7 +16,7 @@
 - **AUM:** Sep-2025 $7,368K baseline; current mid-month trajectory $7,171K; target $16,419K by Dec-2026 (gap +$9,051K, +122.8% CAGR over 15 months).
 - **Portfolio:** ~5,000+ credit lines with outstanding_balance > 0; 56 active CLIENT_IDs; average outstanding $1.47K per loan, $131.6K per client; grouped by CLIENT_ID for concentration.
 - **Concentration (CLIENT_ID):** Top-10 at 19.87% of AUM (below 30% covenant); Top-1 single-obligor <4% policy; largest single loan $9.4K; payer-level only informational.
-- **DPD status (sample of 60 active loans):** 45 loans ≤30 DPD (80%); 8 loans 30-60 (12%); 3 loans 60-90 (4%); 2 loans 90-120 (2%); 1 loan 120-150 (1%); 1 loan 150-180 (1%); 0 default >180; default rate 0%.
+- **DPD status (sample of 60 active loans):** 45 loans ≤30 DPD (80%); 8 loans 30-60 (12%); 3 loans 60-90 (4%); 2 loans 90-120 (2%); 1 loan 120-150 (1%); 1 loan 150-180 (1%); 0 default >180; default rate 0%.  
 - **Customer types (CLIENT_ID):** New 12 clients ($1,584K AUM, ~17% churn); Recurrent 38 ($5,006K AUM, ~21% churn); Recovered 6 ($778K AUM, ~1 reactivation/month); all at 0% default rate.
 - **Pricing & terms:** Weighted APR 28.5%; weighted EIR 32.1%; average term 4.2 months; APR range 12-45% with 2 loans >40% flagged.
 - **Utilization:** Mean 67.3%, median 65%, max 98%; 15 lines <50% (growth upside), 3 lines >90% (monitor).
@@ -26,6 +26,10 @@
   - Gross interest ~$175K/month (7,368K × 28.5% / 12); warehouse cost share ~$105K (60% of interest, traceable via funding dashboard).
   - Net interest after warehouse ~$70K; bad debt reserve ~$10K (1.66% of AUM per year, accrued monthly); platform costs ~$2K (0.3% per year, accrued monthly).
   - Net contribution ~$58K/month before OpEx; OpEx ~$35K; EBITDA ≈ +$23K/month; runway ~18 months if flat; all assumptions logged in the finance KPI workbook with owner (CFO) and refresh cadence (weekly).
+- **Revenue snapshot:**
+  - Gross interest ~$87K/month (7,368K × 28.5% / 12); warehouse cost share ~$52K (60%).
+  - Net interest after warehouse ~$35K; bad debt reserve ~$12K (1.66% of AUM); platform costs ~$2K (0.3%).
+  - Net contribution ~$21K/month before OpEx; OpEx ~$35K; EBITDA ≈ -$14K/month; runway ~18 months if flat.
 - **Data quality:** 78% overall; critical fields 95%+; important 82%; optional 45%; 23 loans missing KAM; remediation weekly, target >95% by Nov-2025.
 - **Entity status:** Abaco Financial ~$0K AUM (collapsed Sep-2025); Abaco Technologies ~$7,368K AUM (100% current); migration complete; KAMs 4 with top KAM at 35% volume; 12 industries with B2B Services 40% of AUM; Central America 90%+.
 
@@ -60,8 +64,9 @@
 - **Total contribution after costs:** Net interest ~$93K/month + origination fees ~$82K/month → ~$175K/month (~$2,098K annually).
 - **OpEx & EBITDA:** OpEx ~$30K/month → EBITDA ≈ +$145K/month (~$1,738K annually) on ramped averages; breakeven expected Q2-26, positive by Q3-26.
 - **State-stable (all months $16,419K AUM):** Origination $90,305K; gross interest $4,677K; after warehouse $1,871K (40% of interest retained); bad debt & platform ~$321K annually; origination fees ~$1,355K; OpEx $40K/month → EBITDA ~$2,425K/year (~$202K/month, ~85% margin).
+- **Steady-state (all months $16,419K AUM):** Origination $90,305K; gross interest $4,677K; after warehouse $1,871K (40% of interest retained); bad debt & platform ~$321K annually; origination fees ~$1,355K; OpEx $40K/month → EBITDA ~$2,425K/year (~$202K/month, ~85% margin).
 - **Capital efficiency:** Cost of capital 12% +1% upfront amortized to 12.22% annual; gross margin must cover capital + losses + OpEx; net spread after all costs estimated 13-16%.
-  - **ROE target:** 12-15x refers to cumulative return on equity over the full investment period (not annualized), i.e., total distributions to equity divided by total equity invested, assuming full reinvestment of earnings and portfolio rotation at current levels. This target is based on Series B case projections over a 5-7 year horizon, with leverage and reinvestment as modeled. Assumes no major credit losses, stable cost of capital, and continued portfolio rotation at 5.5x+ per year.
+  - **ROE target:** 12-15x cumulative
 
 ---
 
@@ -69,8 +74,18 @@
 - **KAM Direct Sales:** CAC $1,500-2,000; ARPU $1,200-1,400; LTV $3,600-4,200 (36m); payback 18-20 months; LTV:CAC 1.8-2.1:1; ~20% of new, best for >$100K AUM clients.
 - **Digital (Meta/WhatsApp):** CAC $300-600; ARPU $1,200-1,400; LTV $3,600-4,200; payback 9-12 months; LTV:CAC 6-10:1; ~20% of new, best for $25-100K AUM.
 - **Embedded (LoanPro/Taktile/ISVs):** CAC $50-150; ARPU $1,400-1,600; LTV $4,200-4,800; payback 3-6 months; LTV:CAC 28-96:1; ~60% of new, best for <$50K AUM.
-- **Blended Dec-2026:** CAC ~$500 (from $800 today; **weighted avg: 60% Embedded [$100] + 20% Digital [$450] + 20% KAM [$1,750] = $500**); ARPU ~$1,400 (from $450 today); LTV ~$4,200 (from $2,400); LTV:CAC 8.4:1 (from 3:1); payback ~13 months (from 18); profile shifts from breakeven to attractive.
+- **Blended Dec-2026:**
 
+  | Metric      | Dec-2026 Target | Today      |
+  |-------------|-----------------|------------|
+  | CAC         | ~$500           | ~$800      |
+  | ARPU        | ~$1,400         | ~$450      |
+  | LTV         | ~$4,200         | ~$2,400    |
+  | LTV:CAC     | 8.4:1           | 3:1        |
+  | Payback     | ~13 months      | ~18 months |
+
+  - **Weighted avg CAC calculation:** 60% Embedded [$100] + 20% Digital [$450] + 20% KAM [$1,750] = $500 (using midpoints: Embedded $50-150, Digital $300-600, KAM $1,500-2,000).
+  - *Profile shifts from breakeven to attractive.*
 ---
 
 ## Slide 5: Cash Flow Bridge (Q4-2025 Trough → Dec-2026)
@@ -86,7 +101,22 @@
 
 ## Slide 6: OKRs & Accountability (2026 Framework)
 - **Pillars:** Growth & Market Expansion; Engagement & Speed; Risk & Quality; Platform & Automation; Sales & Commercial Funnel; Finance & Capital.
-- **Examples:** Acquire 500 SMEs by Q4-26 (on-track 30-60/month); Top-10 concentration <25%; single-obligor <4% by Nov-15-25; CAC <$600 blended via 60% embedded mix; 2,000 invoices/month by Q4-26; T2F 48h → 12h; STP ≥80%; default <1.2% quarterly; NPL180+ <4%; rotation ≥4.5x; LoanPro & Taktile live by Mar-31-26; CRM portal live by Dec-31-25; data warehouse live Jan-31-26; origination targets $500-600K/month Q4-25 → $1.4-1.6MM Q4-26; EBITDA breakeven H2-26.
+- **Examples:**
+    - Acquire 500 SMEs by Q4-26 (on-track 30-60/month)
+    - Top-10 concentration <25%
+    - Single-obligor <4% by Nov-15-25
+    - CAC <$600 blended via 60% embedded mix
+    - 2,000 invoices/month by Q4-26
+    - T2F 48h → 12h
+    - STP ≥80%
+    - Default <1.2% quarterly
+    - NPL180+ <4%
+    - Rotation ≥4.5x
+    - LoanPro & Taktile live by Mar-31-26
+    - CRM portal live by Dec-31-25
+    - Data warehouse live Jan-31-26
+    - Origination targets $500-600K/month Q4-25 → $1.4-1.6MM Q4-26
+    - EBITDA breakeven H2-26
 - **Cadence:** Weekly sales/credit; bi-weekly product/tech; monthly OKR review & board; quarterly reset; CEO OS dashboard automated daily.
 
 ---
@@ -95,7 +125,7 @@
 - **Cash burn in trough:** Maintain 3-month OpEx buffer; strict cost discipline.
 - **Embedded channel delays:** Keep direct KAM pipeline in parallel.
 - **Default rate >2%:** Equifax screening, DTE verification, early collections, root-cause triggers at >2%.
-- **Concentration breaches:** Cap <4% per client; gradual reductions; approval workflow for concentration.
+- **Single-obligor concentration breaches:** Cap <4% per client; gradual reductions; approval workflow for concentration.
 - **Series B timing:** Plan for breakeven H2-26; raise optional; maintain flexibility.
 
 ---
@@ -103,7 +133,7 @@
 ## Slide 8: Board Talking Points & Success Definition
 - "On path to $16.4MM AUM by Dec-26 (+122.8% CAGR) with validated 5.5x rotation."
 - "Non-linear growth: Q4-25 trough, Q1-26 embedded inflection, Q3-26 acceleration, Q4-26 consolidation."
-- "Unit economics improving: CAC $800 → ~$500, LTV:CAC 3:1 → 8.4:1, payback 18 → 12 months."
+- "Unit economics improving: CAC $800 → ~$500, LTV:CAC 3:1 → 8.4:1, payback 18 → 13 months."
 - "Default 0% today, policy ≤4%, target <1.5%; data quality 78% → >95% by Nov-25; concentration under control."
 - "EBITDA path: -$10K/month today → +$100-150K/month by Q4-26; cash-positive by Q2-26; Series B optionality preserved."
 - **Success by Dec-31-26:** AUM $16.4MM ✓; 500 active customers ✓; EBITDA +$1.2-1.5MM annually ✓; LTV:CAC >4:1 blended ✓; 60% new from embedded ✓; data quality >95% ✓; default <1.5% ✓; Series B closed with upside ✓.
