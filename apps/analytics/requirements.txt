@@ -1,3 +1,4 @@
 matplotlib
 seaborn
 pyyaml
+pyarrow==14.0.1
