@@ -32,7 +32,7 @@ export default function Avatar({
       }
     }
 
-    if (url) downloadImage(url)
+    if (url) void downloadImage(url)
   }, [url, supabase])
 
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
