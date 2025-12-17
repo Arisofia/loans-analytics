@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from 'next/server';
 /**
  * Temporary no-op middleware to unblock builds.
  * Replace with real Supabase middleware logic when @supabase/ssr is available.
