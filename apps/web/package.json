@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint ./app ./src ./lib"
-  },
+"lint": "next lint"  },
   "dependencies": {
     "@sentry/nextjs": "^10.31.0",
     "@supabase/ssr": "^0.8.0",
