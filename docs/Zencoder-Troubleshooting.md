@@ -25,6 +25,13 @@ This indicates that VS Code cannot locate the `zencoder-cli` binary shipped with
 
 Following this checklist addresses the ENOENT cause (missing binary) without changing repository code, keeping local development environments consistent for all contributors.
 
+
+## Recommended workspace settings
+
+- The workspace `.vscode/settings.json` intentionally shields VS Code from noisy watchers (`files.watcherExclude`/`search.exclude`) while aligning Deno/ESLint/Java/SonarLint with the repo structure—follow the same pattern whenever you need to tweak these tools.
+- Zencoder-specific settings in that file keep `zencoder.mcpServers` ready for the Playwright helper and `zencoder.shellTool.commandConfirmationPolicy` silences repeated confirmations, but we leave `zencoder.codexCliExecutablePath` unset so the extension can use whatever CLI every installation provides.
+- When sharing the repository, encourage teammates to use these settings (or similar JSONC comments) to keep consistent observability and reduce false positives from watchers/language servers.
+
 ## Clear stale `codex-cli` overrides
 
 When VS Code shows this variant of the startup dialog,
