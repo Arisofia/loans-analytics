@@ -25,7 +25,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Debug step: Print package.json to logs to verify the script is correct in CI
+      - name: Debug package.json
+        run: cat package.json
+
       - name: Run Lint
+        # IMPORTANT: Just "npm run lint". No extra arguments.
         run: npm run lint
 
       - name: Run Build
