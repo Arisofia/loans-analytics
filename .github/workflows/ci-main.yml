@@ -9,3 +9,35 @@ on:
   schedule:
     - cron: '0 3 * * *' # Nightly at 3am UTC
 
+<<<<<<< HEAD
+jobs:
+  build-and-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      
+      - name: Use Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Debug step: Print package.json to logs to verify the script is correct in CI
+      - name: Debug package.json
+        run: cat package.json
+
+      - name: Run Lint
+        # IMPORTANT: Just "npm run lint". No extra arguments.
+        run: npm run lint
+
+      - name: Run Build
+        run: npm run build
+=======
+>>>>>>> main

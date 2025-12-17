@@ -37,7 +37,7 @@ export default function AccountForm({ user }: { user: User | null }) {
   }, [user, supabase]);
 
   useEffect(() => {
-    getProfile();
+    void getProfile();
   }, [user, getProfile]);
 
   async function updateProfile({
@@ -77,7 +77,7 @@ export default function AccountForm({ user }: { user: User | null }) {
         size={150}
         onUpload={(url) => {
           setAvatarUrl(url);
-          updateProfile({ fullname, username, website, avatar_url: url });
+          void updateProfile({ fullname, username, website, avatar_url: url });
         }}
       />
       <div>
@@ -114,7 +114,7 @@ export default function AccountForm({ user }: { user: User | null }) {
       <div>
         <button
           className="button primary block"
-          onClick={() => updateProfile({ fullname, username, website, avatar_url })}
+          onClick={() => void updateProfile({ fullname, username, website, avatar_url })}
           disabled={loading}
         >
           {loading ? 'Loading ...' : 'Update'}
