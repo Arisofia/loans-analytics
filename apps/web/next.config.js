@@ -1,14 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    dirs: ['app', 'pages', 'components', 'lib', 'src'],
-  },
-  // Explicitly tell Turbopack this is the root to avoid confusion with parent directories
-  experimental: {
-    turbopack: {
-      root: '.',
-    },
-  },
+  // eslint and turbopack keys removed to fix build warnings
 };
 
 module.exports = nextConfig;
