@@ -12,12 +12,6 @@ on:
   schedule:
     - cron: '0 3 * * *' # Nightly at 3am UTC
   workflow_call:
-  pr-hygiene:
-    if: github.event_name == 'pull_request'
-    uses: ./.github/workflows/pr-assignee-check.yml
-  codex-pr-review:
-    if: github.event_name == 'pull_request'
-    uses: ./.github/workflows/codex-pull-request-review.yml
 
 jobs:
   build:
@@ -134,3 +128,13 @@ jobs:
         with:
           name: analytics-coverage
           path: coverage-python.xml
+
+  pr-hygiene:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/pr-assignee-check.yml
+    secrets: inherit
+
+  codex-pr-review:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/codex-pull-request-review.yml
+    secrets: inherit
