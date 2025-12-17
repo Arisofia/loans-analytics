@@ -1,11 +1,15 @@
-name: CI
+name: CI Main
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main, develop]
   pull_request:
-    branches: [ "main" ]
+    branches: [main, develop]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *' # Nightly at 3am UTC
 
+<<<<<<< HEAD
 jobs:
   build-and-lint:
     runs-on: ubuntu-latest
@@ -35,3 +39,5 @@ jobs:
 
       - name: Run Build
         run: npm run build
+=======
+>>>>>>> main

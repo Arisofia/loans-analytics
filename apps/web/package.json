@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+<<<<<<< HEAD
     "lint": "eslint ."
+=======
+    "lint": "next lint app src lib"
+>>>>>>> main
   },
   "dependencies": {
     "@sentry/nextjs": "^10.31.0",
