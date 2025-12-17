@@ -33,3 +33,4 @@ jobs:
           SUPABASE_ANON_PUBLIC_KEY: ${{ secrets.SUPABASE_ANON_PUBLIC_KEY }}
           FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
           FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+# test
