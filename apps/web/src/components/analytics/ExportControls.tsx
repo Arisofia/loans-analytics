@@ -22,7 +22,9 @@ export function ExportControls({ analytics }: Props) {
     <section className={styles.section}>
       <div className={styles.sectionHeader}>
         <p className={styles.sectionTitle}>Export controls</p>
-        <p className={styles.sectionCopy}>Download CSV, JSON, or markdown so slides and docs stay synced with Copilot.</p>
+        <p className={styles.sectionCopy}>
+          Download CSV, JSON, or markdown so slides and docs stay synced with Copilot.
+        </p>
       </div>
       <div className={styles.exportButtons}>
         <button
@@ -35,7 +37,9 @@ export function ExportControls({ analytics }: Props) {
         <button
           className={styles.secondaryButton}
           type="button"
-          onClick={() => download('analytics.json', processedAnalyticsToJSON(analytics), 'application/json')}
+          onClick={() =>
+            download('analytics.json', processedAnalyticsToJSON(analytics), 'application/json')
+          }
         >
           Download JSON
         </button>

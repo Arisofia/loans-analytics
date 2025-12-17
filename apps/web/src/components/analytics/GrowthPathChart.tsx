@@ -13,7 +13,9 @@ export function GrowthPathChart({ projection }: Props) {
     <section className={styles.section}>
       <div className={styles.sectionHeader}>
         <p className={styles.sectionTitle}>Growth path</p>
-        <p className={styles.sectionCopy}>Monthly interpolation of yield + loan volume with a Copilot-ready narrative.</p>
+        <p className={styles.sectionCopy}>
+          Monthly interpolation of yield + loan volume with a Copilot-ready narrative.
+        </p>
       </div>
       <div className={styles.grid}>
         {projection.map((point) => (
