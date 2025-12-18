@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
 import logging
-from datetime import datetime
+from datetime import datetime, date
 from typing import List, Optional
+from python.validation import find_column
 
 logger = logging.getLogger(__name__)
 
@@ -16,22 +17,24 @@ class FinancialAnalyzer:
         Clasifica los días de atraso en buckets estándar.
         """
         result = df.copy()
-        if dpd_col not in result.columns:
+        target_col = find_column(result, [dpd_col, 'dpd', 'dias_mora', 'days_late'])
+        
+        if not target_col:
             logger.warning(f"Columna {dpd_col} no encontrada para buckets DPD")
             return result
         
         # Ensure numeric
-        result[dpd_col] = pd.to_numeric(result[dpd_col], errors='coerce').fillna(0)
+        result[target_col] = pd.to_numeric(result[target_col], errors='coerce').fillna(0)
 
         conditions = [
-            (result[dpd_col] <= 0),
-            (result[dpd_col] <= 29),
-            (result[dpd_col] <= 59),
-            (result[dpd_col] <= 89),
-            (result[dpd_col] <= 119),
-            (result[dpd_col] <= 149),
-            (result[dpd_col] <= 179),
-            (result[dpd_col] > 179)
+            (result[target_col] <= 0),
+            (result[target_col] <= 29),
+            (result[target_col] <= 59),
+            (result[target_col] <= 89),
+            (result[target_col] <= 119),
+            (result[target_col] <= 149),
+            (result[target_col] <= 179),
+            (result[target_col] > 179)
         ]
         choices = ['Current', '1-29', '30-59', '60-89', '90-119', '120-149', '150-179', '180+']
         
@@ -43,15 +46,16 @@ class FinancialAnalyzer:
         Segmenta clientes basado en su exposición (balance).
         """
         result = df.copy()
-        if exposure_col not in result.columns:
+        target_col = find_column(result, [exposure_col, 'balance', 'saldo', 'amount'])
+        if not target_col:
             return result
             
         # Simple quantile-based segmentation or fixed thresholds
         # Using fixed thresholds as placeholder logic
         conditions = [
-            (result[exposure_col] < 1000),
-            (result[exposure_col] < 10000),
-            (result[exposure_col] >= 10000)
+            (result[target_col] < 1000),
+            (result[target_col] < 10000),
+            (result[target_col] >= 10000)
         ]
         choices = ['Micro', 'Small', 'Medium/Large']
         result['exposure_segment'] = np.select(conditions, choices, default='Unknown')
@@ -62,24 +66,29 @@ class FinancialAnalyzer:
         df: pd.DataFrame,
         customer_id_col: str = 'customer_id',
         loan_count_col: str = 'loan_count',
-        last_active_col: str = 'last_active_date'
+        last_active_col: str = 'last_active_date',
+        reference_date: Optional[date] = None
     ) -> pd.DataFrame:
         """
         Clasificar tipos de cliente: Nuevo, Recurrente, Recuperado.
         """
         result = df.copy()
 
-        if customer_id_col not in result.columns:
+        id_col = find_column(result, [customer_id_col, 'client_id', 'id_cliente'])
+        if not id_col:
             logger.error(f"Columna {customer_id_col} no encontrada en DataFrame")
             return result
 
-        if loan_count_col in result.columns and last_active_col in result.columns:
-            today = pd.to_datetime(datetime.now().date())
-            result[last_active_col] = pd.to_datetime(result[last_active_col])
-            result['days_since_active'] = (today - result[last_active_col]).dt.days
+        count_col = find_column(result, [loan_count_col, 'num_loans', 'prestamos'])
+        active_col = find_column(result, [last_active_col, 'last_active', 'ultima_actividad'])
+
+        if count_col and active_col:
+            ref_date = pd.to_datetime(reference_date or datetime.now().date())
+            result[active_col] = pd.to_datetime(result[active_col])
+            result['days_since_active'] = (ref_date - result[active_col]).dt.days
 
             conditions = [
-                (result[loan_count_col] == 1),
+                (result[count_col] == 1),
                 (result['days_since_active'] <= 90),
                 (result['days_since_active'] > 90)
             ]
@@ -105,8 +114,7 @@ class FinancialAnalyzer:
         metrics = metrics or default_metrics
 
         # Check for required fields
-        available_fields = [f for f in metrics if f in loan_df.columns or
-                            any(f in col.lower() for col in loan_df.columns)]
+        available_fields = [f for f in metrics if find_column(loan_df, [f])]
 
         if not available_fields:
             logger.error(f"None of the required statistic fields found: {metrics}")
@@ -115,7 +123,7 @@ class FinancialAnalyzer:
         if weight_field not in loan_df.columns:
             # Try to auto-detect weight field
             olb_patterns = ['outstanding_balance', 'olb', 'current_balance', 'saldo_actual', 'balance']
-            detected_field = next((col for pattern in olb_patterns for col in loan_df.columns if pattern.lower() in col.lower()), None)
+            detected_field = find_column(loan_df, olb_patterns)
 
             if detected_field:
                 logger.info(f"Using {detected_field} as weight field")
@@ -127,7 +135,7 @@ class FinancialAnalyzer:
         result = {}
 
         for stat in available_fields:
-            stat_col = next((col for col in loan_df.columns if stat.lower() in col.lower()), None)
+            stat_col = find_column(loan_df, [stat])
 
             if stat_col:
                 filtered_df = loan_df.dropna(subset=[stat_col, weight_field])
@@ -150,17 +158,13 @@ class FinancialAnalyzer:
         """
         result_df = loan_df.copy()
 
-        # Helper to find columns
-        def find_col(patterns, df):
-            return next((col for pattern in patterns for col in df.columns if pattern.lower() in col.lower()), None)
-
         if credit_line_field not in result_df.columns:
-            credit_line_field = find_col(['line_amount', 'credit_line', 'line_limit', 'limite_credito'], result_df)
+            credit_line_field = find_column(result_df, ['line_amount', 'credit_line', 'line_limit', 'limite_credito'])
             if not credit_line_field:
                 return result_df
 
         if loan_amount_field not in result_df.columns:
-            loan_amount_field = find_col(['outstanding_balance', 'olb', 'current_balance', 'loan_amount'], result_df)
+            loan_amount_field = find_column(result_df, ['outstanding_balance', 'olb', 'current_balance', 'loan_amount'])
             if not loan_amount_field:
                 return result_df
 
@@ -177,16 +181,19 @@ class FinancialAnalyzer:
     def calculate_hhi(
         self,
         loan_df: pd.DataFrame,
-        customer_id_field: str,
+        customer_id_field: str = 'customer_id',
         exposure_field: str = 'outstanding_balance'
     ) -> float:
         """
         Calculate HHI (Herfindahl-Hirschman Index) for exposure concentration.
         """
-        if exposure_field not in loan_df.columns or customer_id_field not in loan_df.columns:
+        exp_col = find_column(loan_df, [exposure_field, 'balance', 'saldo', 'amount'])
+        id_col = find_column(loan_df, [customer_id_field, 'client_id', 'id_cliente'])
+
+        if not exp_col or not id_col:
             return 0.0
             
-        customer_exposure = loan_df.groupby(customer_id_field)[exposure_field].sum()
+        customer_exposure = loan_df.groupby(id_col)[exp_col].sum()
         total_exposure = customer_exposure.sum()
 
         if total_exposure == 0:
@@ -196,7 +203,7 @@ class FinancialAnalyzer:
         hhi = (market_shares ** 2).sum()
         return hhi * 10000  # Scale to 0-10,000
 
-    def enrich_master_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+    def enrich_master_dataframe(self, df: pd.DataFrame, reference_date: Optional[date] = None) -> pd.DataFrame:
         """
         Aplicar todas las funciones de ingeniería de características al dataframe maestro.
         """
@@ -214,7 +221,7 @@ class FinancialAnalyzer:
 
         # 3. Tipos de cliente
         if all(col in result.columns for col in ['customer_id', 'loan_count', 'last_active_date']):
-            result = self.classify_client_type(result)
+            result = self.classify_client_type(result, reference_date=reference_date)
 
         # 4. Utilización
         result = self.calculate_line_utilization(result)

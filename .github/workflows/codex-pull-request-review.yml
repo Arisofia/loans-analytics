@@ -28,13 +28,6 @@ jobs:
               assignees: ['codex'],
             });
 
-            await github.rest.pulls.requestReviewers({
-              owner,
-              repo,
-              pull_number,
-              reviewers: ['copilot'],
-            });
-
   codex:
     runs-on: ubuntu-latest
     if: github.event.pull_request.head.repo.fork == false
@@ -44,7 +37,7 @@ jobs:
     outputs:
       final_message: ${{ steps.run_codex.outputs.final-message }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
 

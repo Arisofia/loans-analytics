@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from python.financial_analysis import FinancialAnalyzer
 
 class TestFinancialAnalyzer(unittest.TestCase):
@@ -17,6 +17,15 @@ class TestFinancialAnalyzer(unittest.TestCase):
         
         expected = ['Current', '1-29', '30-59', '60-89', '90-119', '120-149', '150-179', '180+', 'Current']
         self.assertListEqual(result['dpd_bucket'].tolist(), expected)
+
+    def test_classify_dpd_buckets_fuzzy(self):
+        # Test with 'DPD' (uppercase) instead of 'days_past_due'
+        data = {
+            'DPD': [0, 45, 200]
+        }
+        df = pd.DataFrame(data)
+        result = self.analyzer.classify_dpd_buckets(df)
+        self.assertListEqual(result['dpd_bucket'].tolist(), ['Current', '30-59', '180+'])
 
     def test_calculate_weighted_stats(self):
         data = {
@@ -41,8 +50,17 @@ class TestFinancialAnalyzer(unittest.TestCase):
         expected = ['Micro', 'Small', 'Medium/Large']
         self.assertListEqual(result['exposure_segment'].tolist(), expected)
 
+    def test_segment_clients_by_exposure_fuzzy(self):
+        # Test with 'Balance' instead of 'outstanding_balance'
+        data = {
+            'Balance': [500, 50000]
+        }
+        df = pd.DataFrame(data)
+        result = self.analyzer.segment_clients_by_exposure(df)
+        self.assertListEqual(result['exposure_segment'].tolist(), ['Micro', 'Medium/Large'])
+
     def test_classify_client_type(self):
-        today = datetime.now().date()
+        today = date(2025, 1, 1)
         data = {
             'customer_id': [1, 2, 3],
             'loan_count': [1, 5, 5],
@@ -53,7 +71,7 @@ class TestFinancialAnalyzer(unittest.TestCase):
             ]
         }
         df = pd.DataFrame(data)
-        result = self.analyzer.classify_client_type(df)
+        result = self.analyzer.classify_client_type(df, reference_date=today)
         
         expected = ['New', 'Recurring', 'Recovered']
         self.assertListEqual(result['client_type'].tolist(), expected)
@@ -80,8 +98,18 @@ class TestFinancialAnalyzer(unittest.TestCase):
         hhi = self.analyzer.calculate_hhi(df, 'customer_id')
         self.assertEqual(hhi, 5000.0)
 
+    def test_calculate_hhi_fuzzy(self):
+        # Test with 'Client_ID' and 'Balance' instead of defaults
+        data = {
+            'Client_ID': ['A', 'B'],
+            'Balance': [100, 100]
+        }
+        df = pd.DataFrame(data)
+        hhi = self.analyzer.calculate_hhi(df)
+        self.assertEqual(hhi, 5000.0)
+
     def test_enrich_master_dataframe(self):
-        today = datetime.now().date()
+        today = date(2025, 1, 1)
         data = {
             'loan_id': [1, 2],
             'customer_id': ['C1', 'C2'],
@@ -93,7 +121,7 @@ class TestFinancialAnalyzer(unittest.TestCase):
             'apr': [0.15, 0.12]
         }
         df = pd.DataFrame(data)
-        result = self.analyzer.enrich_master_dataframe(df)
+        result = self.analyzer.enrich_master_dataframe(df, reference_date=today)
         
         self.assertIn('dpd_bucket', result.columns)
         self.assertIn('exposure_segment', result.columns)

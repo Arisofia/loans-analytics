@@ -1,9 +1,9 @@
 
 
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
-from scripts.clients import GeminiClient, GrokClient
+from scripts.clients import AIResponse, GeminiClient, GrokClient
 
 
 class StandaloneAIEngine:
@@ -27,7 +27,7 @@ class StandaloneAIEngine:
             return payload[: self.max_prompt_chars] + "... [TRUNCATED]"
         return payload
 
-    def _select_client(self, payload: str):
+    def _select_client(self, payload: str) -> Union[GrokClient, GeminiClient]:
         """Route to Gemini for larger contexts or Grok for smaller prompts."""
 
         if len(payload) > self.max_prompt_chars // 2:
@@ -41,5 +41,5 @@ class StandaloneAIEngine:
         prompt = f"Persona: {personality}\nContext: {context}\nData: {sanitized_payload}"
 
         client = self._select_client(sanitized_payload)
-        result = client.generate_text(prompt, context)
+        result: AIResponse = client.generate_text(prompt, context)
         return result.text

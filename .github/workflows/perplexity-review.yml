@@ -38,7 +38,7 @@ jobs:
           DIFF_TEXT=$(cat pr_diff.txt | head -c 10000)
           jq -n --arg diff "$DIFF_TEXT" \
             '{
-              model: "llama-3.1-sonar-large-128k-online",
+              model: "sonar-pro",
               messages: [
                 {role: "system", content: "You are a code reviewer. Review the following PR diff for data ingestion requirements, security issues, and code quality."},
                 {role: "user", content: $diff}

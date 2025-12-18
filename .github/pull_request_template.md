@@ -8,6 +8,7 @@
 - [ ] Env/alerts: required env vars set/updated (`NEXT_PUBLIC_ALERT_*`, webhooks, emails)?
 - [ ] Runbooks/alerts: updated links or thresholds? next-best actions still valid?
 - [ ] Workflow hygiene: PR assigned to `@codex` and reviewers `@sonarqube`, `@coderabbit`, `@sourcery` (auto-assignment workflow runs on open/update).
+- [ ] Ownership: reviewers tagged per `docs/workflow-ownership.md` (Workflow/Secrets, Data/Analytics, Security/Compliance, Frontend as applicable).
 
 # Checklist
 
