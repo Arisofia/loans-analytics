@@ -6,4 +6,9 @@
 - **Data source:** Import the CSV produced by `streamlit_app.py` (download fact table from the app).
 - **Compliance & auditability:** Call out the AI guardrails and decision traceability supporting regulatory readiness.
 - **Narrative:** Focus on delinquency control, yield expansion, and operational automation.
+<<<<<<< HEAD
 Use the HTML files as iframe backgrounds or screenshot them for Figma. Keep the markdown text for slide captions, KPIs, and spotlight highlights.
+=======
+
+Use the HTML files as iframe backgrounds or screenshot them for Figma. Keep the markdown text for slide captions, KPIs, and spotlight highlights.
+>>>>>>> main

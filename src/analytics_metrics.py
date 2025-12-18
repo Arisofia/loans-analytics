@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from __future__ import annotations
 
 from typing import Dict, Iterable, Tuple
@@ -122,3 +123,5 @@ def project_growth(
         }
     )
     return projection
+=======
+>>>>>>> main

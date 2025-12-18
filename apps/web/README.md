@@ -1,14 +1,47 @@
+<<<<<<< HEAD
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 ## Getting Started
 First, run the development server:
+=======
+# Abaco Loans Analytics Web App
+
+This is the web application for the Abaco Loans Analytics project, built with Next.js, TypeScript, and Tailwind CSS.
+
+## Getting Started
+
+1.  **Install dependencies:**
+    Navigate to this directory (`apps/web`) and run:
+
+    ```bash
+    npm install
+    ```
+
+2.  **Set up environment variables:**
+    Copy the example environment file:
+
+    ```bash
+    cp .env.example .env.local
+    ```
+
+    Then, fill in the required values in `.env.local`.
+
+3.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
+
+Open http://localhost:3000 with your browser to see the result.
+
+## Available Scripts
+
+>>>>>>> main
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- npm run dev          # Starts the development server.
+- npm run build        # Builds the application for production.
+- npm run start        # Starts a production server.
+- npm run lint         # Runs ESLint to find and fix problems.
+- npm run type-check   # Runs the TypeScript compiler to check for type errors.
+- npm run test         # Runs Jest tests.
 ```
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
@@ -21,3 +54,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 ## Deploy on Vercel
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+# Trigger Azure deployment
+
+# Trigger Azure deployment again

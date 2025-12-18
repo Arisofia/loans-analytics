@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import math
 import sys
 from pathlib import Path
@@ -103,3 +104,5 @@ def test_portfolio_kpis_surfaces_weighted_metrics():
     assert kpis.risk_adjusted_return == pytest.approx(
         (expected_interest - expected_loss_value) / expected_exposure
     )
+=======
+>>>>>>> main

@@ -17,17 +17,20 @@ For granular control, edit `~/.codex/config.toml`. In the IDE extension, open th
 For granular control, edit `~/.codex/config.toml` (on Windows, `%USERPROFILE%\\.codex\\config.toml`). In the IDE extension, open the gear icon in the top right, choose **MCP settings**, then **Open config.toml** to modify the active config file.
 Each MCP server uses its own `[mcp_servers.<server-name>]` table.
 ### STDIO servers
+
 - `command` (required): command to launch the server.
 - `args` (optional): arguments passed to the server.
 - `env` (optional): environment variables to set for the server.
 - `env_vars` (optional): additional environment variables to whitelist/forward.
 - `cwd` (optional): working directory to launch the server from.
 ### Streamable HTTP servers
+
 - `url` (required): URL to access the server.
 - `bearer_token_env_var` (optional): env var name containing a bearer token for the `Authorization` header.
 - `http_headers` (optional): map of header names to static values.
 - `env_http_headers` (optional): map of header names to env var names (values pulled from env).
 ### Other options
+
 - `startup_timeout_sec` (optional): timeout in seconds for the server to start (default 10).
 - `tool_timeout_sec` (optional): timeout in seconds for tools to run (default 60).
 - `enabled` (optional): set `false` to disable a configured server without deleting it.
@@ -65,6 +68,7 @@ enabled = true
 ```
 ## Examples of useful MCP servers
 Common MCP servers to connect with Codex include:
+
 - **Context7** — access a wide range of developer documentation.
 - **Figma Local/Remote** — access your Figma designs.
 - **Playwright** — control and inspect a browser using Playwright.
@@ -82,9 +86,11 @@ You can launch it with the MCP Inspector:
 npx @modelcontextprotocol/inspector codex mcp-server
 ```
 Sending a `tools/list` request will reveal two tools:
+
 - **codex** — runs a Codex session. Parameters mirror the Codex Config struct.
 - **codex-reply** — continues a Codex session given the conversation ID.
 ### `codex` tool properties
+
 - `prompt` (required): initial user prompt to start the Codex conversation.
 - `approval-policy`: approval policy for shell commands (`untrusted`, `on-failure`, `never`).
 - `base-instructions`: set of instructions to use instead of defaults.
@@ -95,5 +101,6 @@ Sending a `tools/list` request will reveal two tools:
 - `profile`: configuration profile from `config.toml` to specify default options.
 - `sandbox`: sandbox mode (`read-only`, `workspace-write`, or `danger-full-access`).
 ### `codex-reply` tool properties
+
 - `prompt` (required): next user prompt to continue the Codex conversation.
 - `conversationId` (required): ID of the conversation to continue.

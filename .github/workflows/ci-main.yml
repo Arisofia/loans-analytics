@@ -1,0 +1,32 @@
+name: CI Main
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *' # Nightly at 3am UTC
+
+jobs:
+  build-and-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      
+      - name: Use Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies # Installs dependencies for all workspaces
+        run: npm ci # Use `npm ci` for reliable builds
+
+      - name: Run Lint
+        run: npm run lint # This script is configured in the root package.json to target apps/web
+
+      - name: Run Build
+        run: npm run build # This script also targets apps/web

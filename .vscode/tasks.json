@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run tests (pytest)",
+      "type": "shell",
+      "command": "bash -lc 'source ${workspaceFolder}/.venv-1/bin/activate && pytest -q'",
+      "group": {"kind": "test", "isDefault": true}
+    },
+    {
+      "label": "Coverage",
+      "type": "shell",
+      "command": "bash -lc 'source ${workspaceFolder}/.venv-1/bin/activate && coverage run -m pytest && coverage report -m'"
+    }
+  ]
+}
