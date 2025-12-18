@@ -1,16 +1,14 @@
 name: CI Analytics
-
 on:
   push:
     paths:
       - "apps/analytics/**"
-
 jobs:
   analytics:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v6 # Upgrade to v6 for latest features and security patches
+      - uses: actions/setup-python@v6.0.1 # v6.0.1 semantic version pinning
         with:
           python-version: "3.11"
           cache: pip

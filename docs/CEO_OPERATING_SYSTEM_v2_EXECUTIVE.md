@@ -1,14 +1,14 @@
 # CEO Operating System v2 — Executive Presentation (Oct-16, 2025)
-
 ## Scale confirmation
+
 - **Scale:** Thousands (K). Sep-2025 AUM = **$7,368K** (baseline), Dec-2026 target = **$16,419K**.
 - **Pattern:** Explicit month-by-month non-linear path (tough Q4-2025 trough, sharp Q1-2026 rebound, volatile Q2, acceleration Q3, consolidation Q4).
-
 ## Where we are today (Oct-16, 2025)
+
 - **Current AUM:** $7,368K (Abaco Technologies ~$7,368K; Abaco Financial effectively $0 after Sep-2025 collapse, ~91% churn).
 - **Customers:** 56 active SMEs (Abaco Tech 53, Abaco Financial 3). Churn ~25%/month on Tech; need +444 net new to reach 500 by Dec-2026.
 - **Portfolio composition (by line bucket):**
-  - >$200K: 19.87% ($9.4MM) — concentration risk.
+  - > $200K: 19.87% ($9.4MM) — concentration risk.
   - $150–200K: 15.45% ($7.0MM).
   - $75–100K: 13.01% ($6.1MM).
   - $50–75K: 12.92% ($6.1MM).
@@ -23,8 +23,8 @@
   - Abaco Financial: high risk (multiple >90 DPD across sizes) — wind-down/contain.
   - Abaco Technologies: ~3–4% default, manageable; monitor >$150K segment.
 - **Data quality:** ~78% complete; missing KAM assignments and some collateral details; ready for risk analysis and forecasting.
-
 ## Where we are going (Dec-2026 target)
+
 - **AUM path (K):**
   - Sep-25 7,368 → Oct-25 7,171 (-197) → Nov-25 6,819 (-352) → Dec-25 6,465 (-354, trough)
   - Jan-26 8,736 (+2,271 inflection) → Feb-26 8,814 (+78) → Mar-26 10,364 (+1,550)
@@ -41,8 +41,8 @@
 - **Revenue/EBITDA (2026 ramp):** $2–3MM annual revenue equivalent with $50–100K EBITDA by Q4-2026; steady-state potential $270–390MM with 27%+ margins.
 - **Defaults:** Maintain <1.5% per cohort (covenant ≤4%).
 - **Rotation:** Sustain ≥4.5x (currently 5.5x).
-
 ## TAM and funnel
+
 - **TAM:** LatAm B2B invoice market ~$200B; 3–5% factoring penetration → $6–10B; embedded capture ~1% → $60–100MM; Abaco 2026 target $16.4MM AUM = 16–27% of embedded slice.
 - **Funnel (Sep-2025 → Dec-2026):**
   - Market: ~500K SMEs (payables $50–200K/month).
@@ -51,8 +51,8 @@
   - Active: 56 now → 400 target (80% of registered).
   - Factoring: 56 now → 500 target (AUM per customer drops from $131K to ~$32.8K to favor small-bucket growth).
 - **Government factoring:** None today; plan B2G pilot in 2027 after regulatory prep.
-
 ## Portfolio rebalancing targets (to reach $16.4MM)
+
 - Shift growth to <$50K buckets with best LTV:CAC and diversification; reduce concentration in >$200K and $150–200K.
 - Bucket deltas (current → target):
   - <$10K: $2.5MM → $4.0MM (+$1.5MM)
@@ -62,10 +62,10 @@
   - $75–100K: $6.1MM → $7.0MM (+$0.9MM)
   - $100–150K: $2.9MM → $3.0MM (+$0.1MM)
   - $150–200K: $7.0MM → $6.5MM (-$0.5MM)
-  - >$200K: $9.4MM → $8.4MM (-$1.0MM)
+  - > $200K: $9.4MM → $8.4MM (-$1.0MM)
 - Outcome: +$9.0MM net growth while keeping Top-10 <30%, improving LTV:CAC, and reducing default risk.
-
 ## OKRs by phase (operator view)
+
 - **Q4-2025 Trough:**
   - O: Stabilize portfolio and ready platforms for ramp.
   - KR: LoanPro/Taktile/CRM live by Dec; data completeness ≥95%; churn flat MoM; embedded ISV agreements signed; classify 100% “Unassigned” lines.
@@ -81,8 +81,8 @@
 - **Q4-2026 Consolidation:**
   - O: Lock profitability and Series B narrative.
   - KR: +$1.9MM AUM; EBITDA margin >20%; LTV:CAC >4:1; >$200K share below 20%; churn ≤15%.
-
 ## Immediate actions (next 30 days)
+
 - Confirm scale (thousands) and finalize month-by-month non-linear path as above.
 - Wind down Abaco Financial exposures; focus growth engine on Abaco Tech with <$50K priority buckets.
 - Deploy platform stack (LoanPro, Taktile, CRM) and embedded ISV integrations by December.

@@ -1,82 +1,72 @@
+<<<<<<< HEAD
 # Gradle
 .gradle/
 build/
+**/.gradle/
+**/build/
+=======
+>>>>>>> main
 
-# Node / JavaScript
-node_modules/
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Streamlit
+.streamlit/
+
+# Data outputs (NO versionar)
+data/metrics/
+data_samples/*.csv
+logs/
+
+# Build / tooling
+.gradle/
 .next/
-<<<<<<< Updated upstream
 <<<<<<< HEAD
 .turbo/
 dist/
 coverage/
 =======
-<<<<<<< Updated upstream
-.next/
->>>>>>> codex/create-integrations-page-layout
+out/
+build/
+dist/
+>>>>>>> main
 
-# Python
-.venv/
-venv/
-__pycache__/
-*.pyc
+# IDE
+.vscode/tasks.json
+node_modules/
 
-# IDE / Editor
-.vscode/
-.idea/
-*.vsix
+clean_settings.json
+tailwind.config.js
 
-# OS files
-.DS_Store
-Thumbs.db
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
 
+<<<<<<< HEAD
 # Project-specific artifacts
 apps/.DS_Store
-nvm/
+
+# Local repository clones
 abaco-loans-analytics/
-<<<<<<< HEAD
 data_samples/
 gemini-cli/
-gradle.properties
-=======
-=======
-=======
->>>>>>> Stashed changes
 
-<<<<<<< ours
-<<<<<<< ours
-# Python
-.venv/
-venv/
-__pycache__/
-*.pyc
-
-# IDE / Editor specific
-.vscode/
-*.vsix
-.idea/
-
-# OS specific
-.DS_Store
-Thumbs.db
-=======
-# Gradle build artifacts
-.gradle/
-build/
-
-=======
->>>>>>> theirs
-# Local development tools and artifacts
+# Environment & platform
 nvm/
-abaco-loans-analytics/
->>>>>>> theirs
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-.gradle/
->>>>>>> codex/create-integrations-page-layout
 .env
-.env
-
+.env.local
 .env*.local
+.vercel/
 =======
->>>>>>> Stashed changes
+# Environment variables
+.env
+.env.local
+.env.*.local
+>>>>>>> main

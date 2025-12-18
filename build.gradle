@@ -1,3 +1,5 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.1.12'
@@ -7,6 +9,10 @@ plugins {
 
 group = 'com.abaco.loans'
 version = '0.1.0-SNAPSHOT'
+
+bootJar {
+    mainClass = 'com.abaco.loans.Application'
+}
 
 java {
     toolchain {
@@ -24,10 +30,7 @@ dependencies {
 
     // This starter includes JUnit 5, AssertJ, Mockito, and other essential testing libraries.
     testImplementation 'org.springframework.boot:spring-boot-starter-test:3.1.12'
-<<<<<<< HEAD
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
-=======
->>>>>>> origin/feat/add-new-loan-analytics-chart
 }
 
 test {
@@ -35,7 +38,7 @@ test {
 }
 
 // Coverage report for Sonar
-tasks.register('jacocoTestReport', JacocoReport) {
+tasks.named('jacocoTestReport', JacocoReport).configure {
     dependsOn test
     reports {
         xml.required = true
@@ -45,5 +48,5 @@ tasks.register('jacocoTestReport', JacocoReport) {
     }
     sourceDirectories.from = files(sourceSets.main.allSource.srcDirs)
     classDirectories.from = files(sourceSets.main.output)
-    executionData.from = fileTree(buildDir).include("/jacoco/test.exec")
+    executionData.from = fileTree(layout.buildDirectory).include("/jacoco/test.exec")
 }

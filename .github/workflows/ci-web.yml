@@ -1,20 +1,17 @@
 name: CI Web
 permissions:
   contents: read
-
 on:
   workflow_dispatch:
   push:
     paths:
       - 'apps/web/**'
   pull_request:
-  workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6 # Use latest v6 for bugfixes and security updates
       - uses: actions/setup-node@v6
         with:
           node-version: 20

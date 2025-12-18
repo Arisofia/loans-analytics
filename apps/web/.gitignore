@@ -39,7 +39,11 @@ yarn-error.log*
 
 # vercel
 .vercel
+!.vercel/project.json
+!.vercel/.gitignore
+.vercel/.env*
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.env*.local

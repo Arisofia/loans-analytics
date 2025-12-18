@@ -1,0 +1,22 @@
+name: Slack Notification
+on:
+  workflow_run:
+    workflows: ['Run KPI regression and statistical tests']
+    types:
+      - completed
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a
+        with:
+          slack-message: |
+            *KPI Regression & Statistical Tests Completed*
+            Repository: ${{ github.repository }}
+            Workflow: ${{ github.workflow }}
+            Status: ${{ github.event.workflow_run.conclusion }}
+            Run: ${{ github.run_id }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}

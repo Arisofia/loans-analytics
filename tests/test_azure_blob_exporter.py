@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import json
 from unittest.mock import Mock
 
@@ -44,6 +45,14 @@ def test_upload_metrics_rejects_non_numeric_payloads():
         exporter.upload_metrics({"portfolio": "high"})
 
 
+def test_upload_metrics_rejects_non_string_blob_name():
+    exporter = AzureBlobKPIExporter(
+        container_name="kpis", blob_service_client=Mock()
+    )
+    with pytest.raises(ValueError):
+        exporter.upload_metrics({"portfolio_yield_percent": 4.2}, blob_name=42)  # type: ignore[arg-type]
+
+
 def test_exporter_requires_valid_container_name():
     with pytest.raises(ValueError):
         AzureBlobKPIExporter(container_name="  ", blob_service_client=Mock())
@@ -74,3 +83,25 @@ def test_engine_exports_to_blob(monkeypatch):
     assert called_blob_name == "dashboard.json"
     assert "portfolio_delinquency_rate_percent" in called_payload
     assert result_path == "kpis/kpi-dashboard.json"
+
+
+def test_engine_rejects_non_string_blob_name():
+    data = {
+        "loan_amount": [100000, 200000],
+        "appraised_value": [150000, 250000],
+        "borrower_income": [60000, 80000],
+        "monthly_debt": [1000, 1500],
+        "loan_status": ["current", "current"],
+        "interest_rate": [0.04, 0.05],
+        "principal_balance": [95000, 195000],
+    }
+    engine = LoanAnalyticsEngine.from_dict(data)
+
+    exporter = AzureBlobKPIExporter(
+        container_name="kpis", blob_service_client=Mock()
+    )
+
+    with pytest.raises(ValueError):
+        engine.export_kpis_to_blob(exporter, blob_name=123)  # type: ignore[arg-type]
+=======
+>>>>>>> main

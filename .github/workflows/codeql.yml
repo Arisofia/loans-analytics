@@ -1,42 +1,83 @@
-
+<<<<<<< HEAD
 name: codeql
+=======
+name: CodeQL Analysis
 
+>>>>>>> main
 on:
-  workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: [main, develop]
   pull_request:
-    branches: ["main"]
+    branches: [main, develop]
   schedule:
+<<<<<<< HEAD
     - cron: "0 3 * * 1"
+  workflow_dispatch:
+=======
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
 
+>>>>>>> main
 permissions:
   actions: read
   contents: read
   security-events: write
-
 jobs:
   analyze:
-    name: Analyze (CodeQL)
+<<<<<<< HEAD
+=======
+    name: Analyze (${{ matrix.language }})
+>>>>>>> main
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      pull-requests: read
     strategy:
       fail-fast: false
       matrix:
-        language: ["javascript", "python"]
+        language: ['javascript', 'python']
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-
+<<<<<<< HEAD
       - name: Set up CodeQL
-        uses: github/codeql-action/init@v3.31.5
+=======
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        if: matrix.language == 'javascript'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Python
+        if: matrix.language == 'python'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Initialize CodeQL
+>>>>>>> main
+        uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3.31.5
-
-      - name: Perform CodeQL Analysis (no upload while default setup is active)
-        uses: github/codeql-action/analyze@v3.31.5
+<<<<<<< HEAD
+        uses: github/codeql-action/autobuild@v3.25.6
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3.25.6
         with:
           category: "/language:${{ matrix.language }}"
-          upload: false
+=======
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'
+>>>>>>> main

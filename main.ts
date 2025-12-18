@@ -1,30 +1,144 @@
-/** Simple Deno helper that reports the repository layout before launching other helpers. */
-const repoName = "abaco-loans-analytics";
-const keyAreas = [
-  { label: "Web dashboard", path: "apps/web" },
-  { label: "Analytics pipelines", path: "apps/analytics" },
-  { label: "Infrastructure automation", path: "infra/azure" },
-  { label: "Documentation", path: "docs" },
-  { label: "Data samples", path: "data_samples" },
-];
+/** Repository layout helper for ABACO with optional strict and JSON modes. */
+// Node.js compatible version
+import fs from 'fs'
+import path from 'path'
+interface CheckTarget {
+  label: string
+  path: string
+}
 
-async function describePath(path: string) {
+interface PathInsight extends CheckTarget {
+  exists: boolean
+  type: 'directory' | 'file' | 'other'
+  modified?: string
+}
+
+const repoName = 'abaco-loans-analytics'
+const repoRoot = path.resolve(process.cwd())
+
+function normalizeUserPath(userPath: string): string {
+  if (!userPath) {
+    throw new Error('Path argument is empty')
+  }
+  if (path.isAbsolute(userPath)) {
+    throw new Error('Absolute paths are not allowed')
+  }
+  const resolved = path.resolve(repoRoot, userPath)
+  const relative = path.relative(repoRoot, resolved)
+  if (relative === '..' || relative.startsWith('..' + path.sep)) {
+    throw new Error('Path escapes the repository root')
+  }
+  return resolved
+}
+
+const defaultAreas: CheckTarget[] = [
+  { label: 'Web dashboard', path: 'apps/web' },
+  { label: 'Analytics pipelines', path: 'apps/analytics' },
+  { label: 'Infrastructure automation', path: 'infra/azure' },
+  { label: 'Documentation', path: 'docs' },
+  { label: 'Data samples', path: 'data_samples' },
+]
+const normalizedDefaultAreas = defaultAreas.map((target) => ({
+  ...target,
+  path: normalizeUserPath(target.path),
+}))
+
+const args = process.argv.slice(2)
+const { strict, json, extras } = parseArgs(args)
+const keyAreas = [...normalizedDefaultAreas, ...extras]
+
+function parseArgs(args: string[]) {
+  const options = {
+    strict: false,
+    json: false,
+    extras: [] as CheckTarget[],
+  }
+
+  for (const arg of args) {
+    if (arg === '--strict') options.strict = true
+    else if (arg === '--json') options.json = true
+    else if (arg.startsWith('--path=')) {
+      const descriptor = arg.slice('--path='.length)
+      const [label, extraPath] = descriptor.includes(':')
+        ? descriptor.split(':', 2)
+        : [descriptor, descriptor]
+      if (extraPath) {
+        try {
+          const normalized = normalizeUserPath(extraPath)
+          options.extras.push({ label, path: normalized })
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'invalid path argument'
+          console.error(`Invalid --path value "${extraPath}": ${message}`)
+          process.exit(1)
+        }
+      }
+    }
+  }
+
+  return options
+}
+
+function describePathSync(target: CheckTarget): PathInsight {
   try {
-    const stats = await Deno.lstat(path);
-    const type = stats.isDirectory ? "directory" : "file";
-    console.log(`• ${path} (${type}) exists, last modified: ${stats.mtime?.toISOString() ?? "unknown"}`);
+    const stats = fs.lstatSync(target.path)
+    const type = stats.isDirectory()
+      ? 'directory'
+      : stats.isFile()
+        ? 'file'
+        : 'other'
+    return {
+      ...target,
+      exists: true,
+      type,
+      modified: stats.mtime ? stats.mtime.toISOString() : undefined,
+    }
   } catch {
-    console.log(`• ${path} (missing) – consider creating it or checking the repo structure.`);
+    return { ...target, exists: false, type: 'other' }
   }
 }
 
-console.log(`${repoName} — Deno helper`);
-console.log("Check that the key folders exist before running fitten, tests or deployments:\n");
+function printHumanReadable(statuses: PathInsight[]) {
+  console.log(`${repoName} — Deno helper`)
+  console.log(
+    'Check key folders before running Fitten, tests or deployments.\n'
+  )
 
-for (const area of keyAreas) {
-  console.log(`${area.label}: ${area.path}`);
-  await describePath(area.path);
+  for (const status of statuses) {
+    const icon = status.exists ? '✅' : '⚠️'
+    const detail = status.exists
+      ? `${status.type}, last modified: ${status.modified ?? 'unknown'}`
+      : 'missing – consider creating or syncing this path.'
+    console.log(`• ${icon} ${status.label}: ${status.path} (${detail})`)
+  }
+
+  const missing = statuses.filter((entry) => !entry.exists)
+  console.log(
+    `\nSummary: ${statuses.length - missing.length}/${statuses.length} paths available.`
+  )
+  if (missing.length) {
+    console.log('Missing paths:')
+    for (const entry of missing)
+      console.log(`  - ${entry.label} → ${entry.path}`)
+    console.log(
+      'Use --strict to exit with a non-zero code when required folders are absent.'
+    )
+  }
+
+  console.log(
+    '\nOptions:\n  --strict  Exit with code 1 if any path is missing\n  --json    Emit machine-readable JSON\n  --path=label:path  Check an additional path with a custom label'
+  )
+  console.log(
+    '\nExample:\n  deno run --allow-read main.ts --strict --path=Temp:data_samples/tmp'
+  )
 }
 
-console.log("\nTo run the Fitten Code AI onboarding helper, first make sure your model path is configured (see docs/Fitten-Code-AI-Manual.md), then use:\n");
-console.log("  deno run --allow-all main.ts");
+const results = keyAreas.map(describePathSync)
+
+if (json) console.log(JSON.stringify(results, null, 2))
+else printHumanReadable(results)
+
+if (strict && results.some((entry) => !entry.exists)) process.exit(1)
+
+export {} // Make this file a module to allow top-level await
+
+export {} // Make this file a module to allow top-level await
