@@ -1,6 +1,7 @@
 import unittest
 import pandas as pd
-from .feature_engineering import FeatureEngineer
+import streamlit_app.utils as utils
+from streamlit_app.utils import FeatureEngineer
 
 class TestFeatureEngineering(unittest.TestCase):
     """Unit tests for the FeatureEngineer class."""
@@ -56,6 +57,20 @@ class TestFeatureEngineering(unittest.TestCase):
         original_columns = self.sample_data.columns.tolist()
         FeatureEngineer.enrich_portfolio(self.sample_data)
         self.assertEqual(self.sample_data.columns.tolist(), original_columns)
+
+    def test_utils_exposes_feature_engineer_via_dir(self):
+        """Ensure the lazy loader is visible to introspection tools."""
+
+        self.assertIn('FeatureEngineer', dir(utils))
+        self.assertTrue(hasattr(utils, 'FeatureEngineer'))
+
+    def test_utils_surface_is_traceable_and_cached(self):
+        """Validate discovery helpers and cache-friendly lazy loading."""
+
+        self.assertIn('FeatureEngineer', utils.available_utils())
+        first = utils.FeatureEngineer
+        second = utils.FeatureEngineer
+        self.assertIs(first, second)
 
 if __name__ == '__main__':
     unittest.main()

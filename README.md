@@ -1,45 +1,57 @@
-# ABACO — Loan Analytics Platform
+# ABACO Financial Intelligence Platform
 
-Arquitectura:
+## Overview
+ABACO is a production-ready financial intelligence platform designed for loan portfolio analytics. It provides a dual-interface approach:
+1.  **Streamlit Dashboard:** For interactive exploration of raw loan tapes, growth projections, and payer coverage.
+2.  **Data Pipeline:** For automated processing of portfolio snapshots, KPI calculation (PAR30, PAR90, Collection Rate), and audit trailing.
 
-- **apps/web**: Next.js dashboard corporativo.
-- **apps/analytics**: pipelines de Python para riesgo, scoring y KPIs.
-- **infra/azure**: scripts de despliegue Azure.
-- **data_samples**: datasets anonimizados para desarrollo.
+## Repository Structure
 
-Integraciones disponibles:
+### Core Logic (`python/`)
+The business logic is consolidated into a clean Python package structure:
+*   `analytics.py`: Loan-level metrics (Delinquency, Yield, LTV) used by the Dashboard.
+*   `financial_analysis.py`: Advanced financial engineering (DPD buckets, HHI, Weighted Stats).
+*   `kpi_engine.py`: Portfolio-level KPI orchestration.
+*   `ingestion.py` & `validation.py`: Robust data loading and schema validation.
+*   `theme.py`: Centralized design tokens for UI and exports.
+*   `kpis/`: Dedicated modules for specific metrics (`par_30.py`, `par_90.py`, `collection_rate.py`, `portfolio_health.py`).
 
-- Azure SQL / Cosmos / Storage
-- Supabase
-- Vercel
-- OpenAI / Gemini / Claude
-- SonarCloud
-- GitHub Actions
+### Applications
+*   `streamlit_app.py`: The canonical dashboard entry point.
+*   `scripts/run_data_pipeline.py`: Automated pipeline for processing portfolio snapshots.
 
-## ContosoTeamStats
+### Exports
+*   `scripts/export_presentation.py`: Generates HTML/Markdown artifacts for presentations.
+*   `scripts/export_copilot_slide_payload.py`: Generates JSON payloads for AI slide generation.
 
-This repository contains ContosoTeamStats, a .NET 6 Web API for managing sports teams that ships with Docker, Azure deployment scripts, SendGrid/Twilio integrations, and SQL Server migrations. Follow docs/ContosoTeamStats-setup.md for local setup, secrets, database provisioning, and container validation.
+## Setup & Usage
 
-See docs/Analytics-Vision.md for the analytics vision, Streamlit blueprint, and the agent-ready narrative that keeps every KPI, scenario, and AI prompt aligned with our fintech-grade delivery.
+### Prerequisites
+*   Python 3.9+
+*   Dependencies listed in `requirements.txt`
 
- contains ContosoTeamStats, a .NET 6 Web API for managing sports teams that ships with Docker, Azure deployment scripts, SendGrid/Twilio integrations, and SQL Server migrations. Follow docs/ContosoTeamStats-setup.md for local setup, secrets, database provisioning, and container validation.
-
-## Copilot Enterprise workflow
-
-Use `docs/Copilot-Team-Workflow.md` when inviting your team to Copilot, documenting the validation and security workflows, and keeping the Azure, GitHub Actions, and KPI checklist aligned with your 30-day Enterprise trial (App Service F1, ACR Basic, and free Azure security tiers). The doc includes prompts you can reuse whenever Copilot is guiding changes.
-
- contains ContosoTeamStats, a .NET 6 Web API for managing sports teams that ships with Docker, Azure deployment scripts, SendGrid/Twilio integrations, and SQL Server migrations. Follow docs/ContosoTeamStats-setup.md for local setup, secrets, database provisioning, and container validation.
-
-## Fitten Code AI 编程助手
-
-Para integrar Fitten Code AI en este monorepo (local y GitHub), consulta `docs/Fitten-Code-AI-Manual.md`, que cubre la introducción al producto, instalación, integración, preguntas frecuentes y pruebas de inferencia local.
-
-## Deno helper
-
-The repository exposes a tiny Deno helper at `main.ts` that verifies the expected directories before you execute tooling such as Fitten or analytics scripts. Run it with:
-
-```
-deno run --allow-all main.ts
+### Installation
+```bash
+pip install -r requirements.txt
 ```
 
-`--unstable` is no longer needed in Deno 2.0; only include the specific `--unstable-*` flags when you actually depend on unstable APIs.
+### Running the Dashboard
+```bash
+streamlit run streamlit_app.py
+```
+
+### Running the Data Pipeline
+```bash
+python scripts/run_data_pipeline.py
+```
+The pipeline reads from `data_samples/abaco_portfolio_sample.csv` by default and outputs metrics to `data/metrics/`.
+
+### Running Tests
+```bash
+pytest
+```
+
+## Key Metrics Definitions
+*   **PAR 30 / PAR 90:** Portfolio at Risk > 30/90 days (Sum of DPD Balance / Total Receivable).
+*   **Collection Rate:** Cash Available / Total Eligible Receivable.
+*   **Portfolio Health:** Composite score (0-10) derived from PAR30 and Collection Rate.

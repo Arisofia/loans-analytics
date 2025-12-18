@@ -1,0 +1,100 @@
+metadata:
+  version: "1.0.0"
+  last_updated: "2025-12-10"
+  maintainer: "Data Science Team"
+  review_frequency: quarterly
+  adjustment_policy: |
+    Thresholds should be reviewed quarterly based on risk, regulation and performance.
+
+financial_metrics:
+  default_prediction_accuracy:
+    min: 0.88
+    warning: 0.92
+  risk_assessment_precision:
+    min: 0.82
+    warning: 0.88
+  loan_approval_quality:
+    min: 0.80
+    warning: 0.85
+  portfolio_performance:
+    min: 0.75
+    warning: 0.82
+  lgd_estimation_error:
+    max: 0.15
+    warning: 0.10
+
+model_stability:
+  psi_score:
+    max: 0.10
+    warning: 0.05
+  feature_stability_score:
+    min: 0.85
+    warning: 0.92
+  prediction_distribution_ks:
+    max: 0.15
+    warning: 0.10
+
+fairness_compliance:
+  demographic_parity_difference:
+    max: 0.10
+    warning: 0.05
+  equal_opportunity_difference:
+    max: 0.10
+    warning: 0.05
+  disparate_impact_ratio:
+    min: 0.80
+    warning: 0.90
+
+business_kpis:
+  ltv_prediction_accuracy:
+    min: 0.72
+    warning: 0.80
+  churn_prediction_precision:
+    min: 0.75
+    warning: 0.82
+  cross_sell_prediction:
+    min: 0.68
+    warning: 0.75
+
+model_stability:
+  psi_threshold:
+    max: 0.10
+    warning: 0.05
+
+  drift_detection:
+    method: "psi"
+    frequency: "daily"
+  psi_score:
+    max: 0.10
+    warning: 0.05
+
+
+fairness_compliance:
+  demographic_parity:
+    max: 0.10
+    warning: 0.05
+
+  disparate_impact_ratio:
+    min: 0.80
+    warning: 0.90
+  demographic_parity_difference:
+    max: 0.10
+    warning: 0.05
+
+business_kpis:
+  customer_ltv_prediction:
+    min: 0.72
+    warning: 0.80
+  churn_prediction:
+    min: 0.75
+    warning: 0.82
+  cross_sell_opportunities:
+    min: 0.68
+    warning: 0.75
+  fraud_detection:
+    min: 0.92
+    warning: 0.96
+  # keep existing ones if needed
+  ltv_prediction_accuracy:
+    min: 0.72
+    warning: 0.80

@@ -1,8 +1,41 @@
-gemini-cli/
+
+# OS
 .DS_Store
+
+# Python
+__pycache__/
+*.pyc
 .venv/
-.vscode/
-apps/.DS_Store
+venv/
+
+# Streamlit
+.streamlit/
+
+# Data outputs (NO versionar)
+data/metrics/
+data_samples/*.csv
+logs/
+
+# Build / tooling
+.gradle/
+.next/
+out/
+build/
+dist/
+
+# IDE
+.vscode/tasks.json
 node_modules/
-.next/
-.next/
+
+clean_settings.json
+tailwind.config.js
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
+# Environment variables
+.env
+.env.local
+.env.*.local

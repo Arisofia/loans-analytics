@@ -23,12 +23,12 @@ Documenting GitHub Copilot usage under the Enterprise trial keeps the team align
 
 ## 4. Enterprise README checklist
 
-- Create (or expand) `Enterprise-README.md` to summarize: Copilot access, validation branch workflow, Azure free-tier resources used (App Service F1, ACR Basic, Storage), and the GitHub Actions runs (mention `ci-web.yml` and `ci-analytics.yml`).
+- Create (or expand) `Enterprise-README.md` to summarize: Copilot access, validation branch workflow, Azure free-tier resources used (App Service F1, ACR Basic, Storage), and the GitHub Actions run (`ci-main.yml`).
 - Include tenant/subscription details (`abacocapital.co`, subscription `cb1e8785-2893-47a1-be44-d47e13447054`) and the requirement to keep deployments in that scope.
 - Outline how to invite members, run scans, and call Copilot with the sample prompts below.
 
 ## 5. Sample Copilot prompt
 
-> “I’m working on `abaco-loans-analytics`. Please review `.github/workflows/ci-web.yml`, ensure the Docker image build/push steps are clearly described, and help me document the deployment workflow (ACR, App Service, SQL migrations, Swagger validation). Keep everything inside the free Azure trial, note the KPIs we monitor, and suggest automation improvements for the next sprint.”
+> “I’m working on `abaco-loans-analytics`. Please review `.github/workflows/ci-main.yml`, ensure the Docker image build/push steps are clearly described, and help me document the deployment workflow (ACR, App Service, SQL migrations, Swagger validation). Keep everything inside the free Azure trial, note the KPIs we monitor, and suggest automation improvements for the next sprint.”
 
 Use this prompt to keep Copilot-guided work structured, traceable, and aligned with your fintech-grade outcomes.

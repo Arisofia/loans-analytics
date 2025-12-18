@@ -1,0 +1,20 @@
+# Trigger workflow registration
+name: Comment to Figma
+
+on:
+  workflow_dispatch:
+
+jobs:
+  comment-to-figma:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post comment to Figma
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+        run: |
+          COMMENT="Automated result: Workflow check passed at $(date)"
+          curl -X POST "https://api.figma.com/v1/files/$FIGMA_FILE_KEY/comments" \
+            -H "X-Figma-Token: $FIGMA_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"message\": \"$COMMENT\"}"

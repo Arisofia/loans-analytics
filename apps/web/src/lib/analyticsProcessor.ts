@@ -12,35 +12,49 @@ function toNumber(value: string | number): number {
   if (typeof value === 'number') {
     return value
   }
+  // Detectar formato contable negativo (ej: "(1,200.00)") antes de limpiar
+  const isNegative = value.includes('(') && value.includes(')')
   const cleaned = value.replace(currencyRegex, '')
-  return Number(cleaned) || 0
+  const number = Number(cleaned) || 0
+  return isNegative ? -Math.abs(number) : number
 }
+
+type LoanCsvRecord = Record<string, string>
 
 export function parseLoanCsv(content: string): LoanRow[] {
   const rows = content
     .trim()
     .split(/\r?\n/)
-    .map((line) => line.split(','))
+    .map((line) =>
+      // Split by comma, ignoring commas inside double quotes
+      line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map((val) => val.trim().replace(/^"|"$/g, '').replace(/""/g, '"'))
+    )
     .filter((parts) => parts.length >= 7)
 
   const header = rows.shift()
   if (!header) return []
 
   const keys = header.map((col) => col.trim().toLowerCase())
+
+  const toRecord = (parts: string[]): LoanCsvRecord =>
+    parts.reduce<LoanCsvRecord>((acc, value, index) => {
+      const key = keys[index] ?? `col_${index}`
+      acc[key] = value.trim()
+      return acc
+    }, {})
+
   return rows.map((parts) => {
-    const record: Record<string, string> = {}
-    parts.forEach((value, index) => {
-      record[keys[index] ?? `col_${index}`] = value.trim()
-    })
+    const record = toRecord(parts)
+    const getField = (key: string) => record[key] ?? ''
     return {
-      loan_amount: toNumber(record.loan_amount ?? ''),
-      appraised_value: toNumber(record.appraised_value ?? ''),
-      borrower_income: toNumber(record.borrower_income ?? ''),
-      monthly_debt: toNumber(record.monthly_debt ?? ''),
-      loan_status: record.loan_status || 'unknown',
-      interest_rate: toNumber(record.interest_rate ?? ''),
-      principal_balance: toNumber(record.principal_balance ?? ''),
-      dpd_status: record.dpd_status || '',
+      loan_amount: toNumber(getField('loan_amount')),
+      appraised_value: toNumber(getField('appraised_value')),
+      borrower_income: toNumber(getField('borrower_income')),
+      monthly_debt: toNumber(getField('monthly_debt')),
+      loan_status: getField('loan_status') || 'unknown',
+      interest_rate: toNumber(getField('interest_rate')),
+      principal_balance: toNumber(getField('principal_balance')),
+      dpd_status: getField('dpd_status') || '',
     }
   })
 }
@@ -77,17 +91,23 @@ function computeKPIs(rows: LoanRow[]) {
     (sum, row) => sum + row.loan_amount / Math.max(row.appraised_value, 1),
     0
   )
-  const averageDTI = rows.reduce((sum, row) => {
-    const income = row.borrower_income / 12
-    if (income <= 0) return sum
-    return sum + row.monthly_debt / income
-  }, 0)
+  const { totalDTI, validIncomes } = rows.reduce(
+    (acc, row) => {
+      const income = row.borrower_income / 12
+      if (income > 0) {
+        acc.totalDTI += row.monthly_debt / income
+        acc.validIncomes += 1
+      }
+      return acc
+    },
+    { totalDTI: 0, validIncomes: 0 }
+  )
 
   return {
     delinquencyRate: Number(riskRate.toFixed(2)),
     portfolioYield: Number(portfolioYield.toFixed(2)),
     averageLTV: Number(((averageLTV / Math.max(totalLoans, 1)) * 100).toFixed(1)),
-    averageDTI: Number(((averageDTI / Math.max(totalLoans, 1)) * 100).toFixed(1)),
+    averageDTI: Number(((totalDTI / Math.max(validIncomes, 1)) * 100).toFixed(1)),
     loanCount: totalLoans,
   }
 }
