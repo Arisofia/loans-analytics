@@ -1,15 +1,15 @@
 {
-<<<<<<< HEAD
-  "version": 3,
+  "version": 2,
   "builds": [
-    { "src": "apps/web/package.json", "use": "@vercel/next" }
-  ],
-=======
-  "builds": [
-    { "src": "apps/web/package.json", "use": "@vercel/next" }
+    {
+      "src": "apps/web/package.json",
+      "use": "@vercel/next"
+    }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "apps/web/$1" }
+    {
+      "src": "/(.*)",
+      "dest": "apps/web/$1"
+    }
   ]
->>>>>>> main
 }

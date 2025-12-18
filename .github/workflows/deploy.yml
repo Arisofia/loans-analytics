@@ -1,4 +1,5 @@
 name: Deploy to Vercel
+
 on:
   push:
     branches:
@@ -10,37 +11,20 @@ on:
       - 'apps/web/next.config.js'
       - 'package.json'
   workflow_dispatch:
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-<<<<<<< HEAD
-        uses: actions/checkout@v6
-=======
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@v4
 
->>>>>>> main
       - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-<<<<<<< HEAD
-      - name: Install dependencies
-        run: |
-          cd apps/web
-          npm install
-      - name: Build
-        run: |
-          cd apps/web
-          npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-=======
           cache: 'npm'
 
->>>>>>> main
       - name: Check Vercel secrets
         id: vercel_secrets
         run: |
@@ -54,12 +38,11 @@ jobs:
             echo "present=false" >> "$GITHUB_OUTPUT"
             echo "Missing secrets:$missing"
           fi
-<<<<<<< HEAD
-=======
 
       - name: Install dependencies
         run: |
           npm install
+        run: npm ci
 
       - name: Pull Vercel project settings
         if: steps.vercel_secrets.outputs.present == 'true'
@@ -91,20 +74,15 @@ jobs:
           AWS_REGION: 'us-east-1'
           SOURCE_DIR: '.next'
 
->>>>>>> main
       - name: Deploy to Vercel
         if: steps.vercel_secrets.outputs.present == 'true'
-        uses: amondnet/vercel-action@16e87c0a08142b0d0d33b76aeaf20823c381b9b9
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-<<<<<<< HEAD
-          vercel-args: '--prod --cwd apps/web'
-=======
           vercel-args: '--prod'
 
->>>>>>> main
       - name: Skip deploy (missing Vercel secrets)
         if: steps.vercel_secrets.outputs.present != 'true'
         run: |

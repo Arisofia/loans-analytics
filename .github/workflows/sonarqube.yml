@@ -20,8 +20,6 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
-          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
-          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
           SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'jenine-ferderas-github' }}
           SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'abaco-loans-analytics' }}

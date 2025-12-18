@@ -29,8 +29,8 @@ jobs:
   run-demos:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -40,37 +40,16 @@ jobs:
           pip install -r requirements.txt
       - name: Run Financial Analysis Demo
         run: |
-          DATA_FILE="${{ inputs.DATA_FILE || '' }}"
-          if [ -n "$DATA_FILE" ]; then
-            python scripts/demo_financial_analysis.py --data "$DATA_FILE" > demo_output.txt
-          else
-            python scripts/demo_financial_analysis.py > demo_output.txt
-          fi
+          ARGS=$([ -n "${{ inputs.DATA_FILE }}" ] && echo "--data ${{ inputs.DATA_FILE }}" || echo "")
+          python scripts/demo_financial_analysis.py $ARGS > demo_output.txt
       - name: Generate Report
         if: always()
         run: |
           python scripts/generate_markdown_report.py \
             --text demo_output.txt \
             --images dpd_distribution.png exposure_distribution.png
-      - name: Comment Report on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
-        with:
-          script: |
-            const fs = require('fs');
-            try {
-              const report = fs.readFileSync('demo_report.md', 'utf8');
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: report
-              });
-            } catch (error) {
-              console.log('No report file found or error reading it');
-            }
       - name: Upload Demo Output
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@v4
         with:
           name: financial-analysis-demo
           path: |
@@ -79,7 +58,7 @@ jobs:
             demo_report.md
       - name: Notify Slack on Failure
         if: failure()
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a
+        uses: slackapi/slack-github-action@v1
         with:
           webhook-type: INCOMING_WEBHOOK
           payload: |
@@ -90,7 +69,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Demo Scripts Workflow Failed* | Repository: ${{ github.repository }} | Branch: ${{ github.ref_name }} | <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                    "text": "*Demo Scripts Workflow Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
                   }
                 }
               ]
