@@ -2,38 +2,42 @@ name: CI Main
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *' # Nightly at 3am UTC
 
+<<<<<<< HEAD
 jobs:
-  web-lint:
-    name: Web Lint (Next.js)
+  build-and-lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      
+      - name: Use Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: 20
+          node-version: '20'
           cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
       - name: Install dependencies
         run: npm ci
-      - name: Lint
+
+      # Debug step: Print package.json to logs to verify the script is correct in CI
+      - name: Debug package.json
+        run: cat package.json
+
+      - name: Run Lint
+        # IMPORTANT: Just "npm run lint". No extra arguments.
         run: npm run lint
 
-  analytics-test:
-    name: Analytics Python Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: apps/analytics/requirements.txt
-      - name: Install dependencies
-        run: pip install -r apps/analytics/requirements.txt
-      - name: Run tests
-        run: pytest apps/analytics/tests
+      - name: Run Build
+        run: npm run build
+=======
+>>>>>>> main

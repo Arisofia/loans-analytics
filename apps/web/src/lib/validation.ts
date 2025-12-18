@@ -156,7 +156,8 @@ export function validateCsvInput(content: string): ValidationResult<{
   }
 
   const header = lines[0]
-  const columnCount = header.split(',').length
+  // Split by comma, ignoring commas inside double quotes to count columns accurately
+  const columnCount = header.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).length
 
   if (columnCount < 7) {
     return {

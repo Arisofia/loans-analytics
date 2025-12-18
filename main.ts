@@ -14,6 +14,23 @@ interface PathInsight extends CheckTarget {
 }
 
 const repoName = 'abaco-loans-analytics'
+const repoRoot = path.resolve(process.cwd())
+
+function normalizeUserPath(userPath: string): string {
+  if (!userPath) {
+    throw new Error('Path argument is empty')
+  }
+  if (path.isAbsolute(userPath)) {
+    throw new Error('Absolute paths are not allowed')
+  }
+  const resolved = path.resolve(repoRoot, userPath)
+  const relative = path.relative(repoRoot, resolved)
+  if (relative === '..' || relative.startsWith('..' + path.sep)) {
+    throw new Error('Path escapes the repository root')
+  }
+  return resolved
+}
+
 const defaultAreas: CheckTarget[] = [
   { label: 'Web dashboard', path: 'apps/web' },
   { label: 'Analytics pipelines', path: 'apps/analytics' },
@@ -21,10 +38,14 @@ const defaultAreas: CheckTarget[] = [
   { label: 'Documentation', path: 'docs' },
   { label: 'Data samples', path: 'data_samples' },
 ]
+const normalizedDefaultAreas = defaultAreas.map((target) => ({
+  ...target,
+  path: normalizeUserPath(target.path),
+}))
 
 const args = process.argv.slice(2)
 const { strict, json, extras } = parseArgs(args)
-const keyAreas = [...defaultAreas, ...extras]
+const keyAreas = [...normalizedDefaultAreas, ...extras]
 
 function parseArgs(args: string[]) {
   const options = {
@@ -38,10 +59,19 @@ function parseArgs(args: string[]) {
     else if (arg === '--json') options.json = true
     else if (arg.startsWith('--path=')) {
       const descriptor = arg.slice('--path='.length)
-      const [label, path] = descriptor.includes(':')
+      const [label, extraPath] = descriptor.includes(':')
         ? descriptor.split(':', 2)
         : [descriptor, descriptor]
-      if (path) options.extras.push({ label, path })
+      if (extraPath) {
+        try {
+          const normalized = normalizeUserPath(extraPath)
+          options.extras.push({ label, path: normalized })
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'invalid path argument'
+          console.error(`Invalid --path value "${extraPath}": ${message}`)
+          process.exit(1)
+        }
+      }
     }
   }
 

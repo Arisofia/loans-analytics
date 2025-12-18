@@ -6,6 +6,8 @@ type Database = {
     Tables: {
       landing_page_data: {
         Row: LandingPageData
+        Insert: LandingPageData
+        Update: Partial<LandingPageData>
       }
     }
   }
