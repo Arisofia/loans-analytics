@@ -5,10 +5,11 @@ on:
     branches:
       - main
     paths:
-      - 'src/**'
-      - 'public/**'
+      - 'apps/web/src/**'
+      - 'apps/web/public/**'
+      - 'apps/web/package.json'
+      - 'apps/web/next.config.js'
       - 'package.json'
-      - 'next.config.js'
   workflow_dispatch:
 
 jobs:
