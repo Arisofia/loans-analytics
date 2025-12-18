@@ -12,9 +12,6 @@ on:
 jobs:
   build-and-lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/web
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       
@@ -25,11 +22,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: apps/web/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies # Installs dependencies for all workspaces
+        run: npm ci # Use `npm ci` for reliable builds
 
       - name: Run Lint
-        run: npm run lint
+        run: npm run lint # This script is configured in the root package.json to target apps/web
 
       - name: Run Build
-        run: npm run build
+        run: npm run build # This script also targets apps/web
