@@ -1,50 +1,57 @@
 <<<<<<< HEAD
-gemini-cli/
-.DS_Store
-apps/.DS_Store
-
-# Local development tools and artifacts
-.venv/
-.vscode/
-=======
 # Gradle
 .gradle/
 build/
+**/.gradle/
+**/build/
+=======
+>>>>>>> main
 
-# Node / JavaScript
-node_modules/
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Streamlit
+.streamlit/
+
+# Data outputs (NO versionar)
+data/metrics/
+data_samples/*.csv
+logs/
+
+# Build / tooling
+.gradle/
 .next/
+<<<<<<< HEAD
 .turbo/
 dist/
 coverage/
+=======
+out/
+build/
+dist/
+>>>>>>> main
 
-# Python
-.venv/
-venv/
-__pycache__/
-*.pyc
+# IDE
+.vscode/tasks.json
+node_modules/
 
-# IDE / Editor
-.vscode/
-.idea/
-*.vsix
+clean_settings.json
+tailwind.config.js
 
-# OS files
-.DS_Store
-Thumbs.db
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
 
+<<<<<<< HEAD
 # Project-specific artifacts
 apps/.DS_Store
->>>>>>> upstream/main
-nvm/
-
-# Node build outputs
-node_modules/
-.next/
-
-# Gradle build outputs
-**/.gradle/
-**/build/
 
 # Local repository clones
 abaco-loans-analytics/
@@ -52,7 +59,14 @@ data_samples/
 gemini-cli/
 
 # Environment & platform
+nvm/
 .env
 .env.local
 .env*.local
 .vercel/
+=======
+# Environment variables
+.env
+.env.local
+.env.*.local
+>>>>>>> main

@@ -1,0 +1,47 @@
+# Slack Integration Configuration
+# Responsible for real-time alerts and reporting
+
+integration:
+  name: slack
+  type: communication
+  version: 1.0
+
+connection:
+  method: webhook_api
+  auth_type: bearer_token
+  endpoint: https://hooks.slack.com/services/{workspace}/{channel}/{token}
+
+alert_channels:
+  risk_alerts: '#risk-monitoring'
+  compliance_updates: '#compliance-team'
+  executive_briefing: '#executive-briefing'
+  daily_summary: '#fintech-reports'
+
+message_templates:
+  par_90_alert:
+    trigger: 'par_90_pct > 3.0'
+    severity: warning
+    icon: ':warning:'
+    format: 'Portfolio PAR_90 Risk Alert: {{par_90_pct}}%'
+
+  collection_rate:
+    trigger: 'daily_06:00 UTC'
+    severity: info
+    icon: ':chart_with_upwards_trend:'
+    format: 'Daily Collection Rate: {{collection_rate_pct}}%'
+
+  compliance_breach:
+    trigger: 'compliance_check_failed'
+    severity: critical
+    icon: ':rotating_light:'
+    format: 'COMPLIANCE BREACH: {{issue_type}} - {{details}}'
+
+throttling:
+  alert_cooldown_minutes: 15
+  max_daily_alerts: 50
+  batch_reports: daily
+
+metadata:
+  include_timestamps: true
+  include_run_id: true
+  include_data_version: true

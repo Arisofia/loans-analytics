@@ -1,0 +1,55 @@
+
+# Canonical KPI Definitions
+# Each KPI includes: formula, data sources, thresholds, and business owner
+#
+# Threshold semantics:
+# - For "higher-is-bad" KPIs (risk, compliance): threshold is a maximum acceptable value (warn/critical if value > threshold)
+# - For "higher-is-good" KPIs (growth, liquidity): threshold is a minimum acceptable value (warn/critical if value < threshold)
+#
+# Note: Growth KPI uses critical: 0.02 < warning: 0.05 intentionally, meaning critical if growth < 2%, warning if growth < 5%.
+
+risk:
+  name: Portfolio Risk
+  formula: 'sum(defaulted_loans) / sum(total_loans)'
+  formula_language: 'Python'  # Aggregation over portfolio-wide data; nulls treated as zero
+  data_sources:
+    - loan_core
+    - payments
+  threshold:
+    warning: 0.03
+    critical: 0.05
+  owner: CRO
+
+growth:
+  name: Loan Book Growth
+  formula: 'sum(new_loans_amount) / sum(previous_loans_amount)'
+  formula_language: 'Python'  # Aggregation over portfolio-wide data; nulls treated as zero
+  data_sources:
+    - loan_core
+  threshold:
+    warning: 0.05
+    critical: 0.02
+  owner: Head of Growth
+
+liquidity:
+  name: Liquidity Ratio
+  formula: 'cash_on_hand / short_term_liabilities'
+  formula_language: 'Python'  # Portfolio-wide snapshot; nulls treated as zero
+  data_sources:
+    - external_macro
+    - loan_core
+  threshold:
+    warning: 1.2
+    critical: 1.0
+  owner: CFO
+
+compliance:
+  name: Compliance Breaches
+  formula: 'count(breaches)'
+  formula_language: 'Python'  # Portfolio-wide count; nulls ignored
+  data_sources:
+    - compliance_logs
+  threshold:
+    warning: 1
+    critical: 3
+  owner: Compliance Officer

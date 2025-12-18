@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+import { createClient } from '@supabase/supabase-js'
+=======
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { LandingPageData } from '../types/landingPage'
 
@@ -6,15 +9,23 @@ type Database = {
     Tables: {
       landing_page_data: {
         Row: LandingPageData
+        Insert: LandingPageData
+        Update: Partial<LandingPageData>
       }
     }
   }
 }
+>>>>>>> main
 
-<<<<<<< HEAD
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
 
+<<<<<<< HEAD
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
+export const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null
+=======
 const hasValidSupabaseUrl = Boolean(supabaseUrl && /^https?:\/\//.test(supabaseUrl))
 const hasSupabaseEnv = Boolean(hasValidSupabaseUrl && supabaseAnonKey)
 
@@ -23,10 +34,4 @@ export const supabase: SupabaseClient<Database> | null = hasSupabaseEnv
   : null
 
 export const isSupabaseConfigured = hasSupabaseEnv
-=======
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-export const supabase: SupabaseClient<Database> | null =
-  supabaseUrl && supabaseAnonKey ? createClient<Database>(supabaseUrl, supabaseAnonKey) : null
->>>>>>> origin/main
+>>>>>>> main

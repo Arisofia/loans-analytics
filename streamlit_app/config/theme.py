@@ -1,5 +1,4 @@
-"""Centralized Streamlit theme configuration for the analytics app."""
-from __future__ import annotations
+
 
 PRIMARY_COLOR = "#0B6EFD"
 BACKGROUND_COLOR = "#0F172A"
