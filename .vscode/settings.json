@@ -16,5 +16,5 @@
     "connectionId": "abaco-technol",
     "projectKey": "abaco-loans-analytics"
   },
-  "java.configuration.updateBuildConfiguration": "interactive"
+  "java.configuration.updateBuildConfiguration": "disabled"
 }
