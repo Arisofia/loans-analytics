@@ -5,10 +5,11 @@ on:
     branches:
       - main
     paths:
-      - 'src/**'
-      - 'public/**'
+      - 'apps/web/src/**'
+      - 'apps/web/public/**'
+      - 'apps/web/package.json'
+      - 'apps/web/next.config.js'
       - 'package.json'
-      - 'next.config.js'
   workflow_dispatch:
 
 jobs:
@@ -46,12 +47,31 @@ jobs:
         if: steps.vercel_secrets.outputs.present == 'true'
         run: npx vercel pull --yes --environment=production --token "${{ secrets.VERCEL_TOKEN }}"
 
+
       - name: Build
         run: |
           npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Upload build artifact (local)
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: .next
+
+      - name: Upload build to S3 (cloud)
+        if: ${{ secrets.AWS_ACCESS_KEY_ID && secrets.AWS_SECRET_ACCESS_KEY && secrets.AWS_S3_BUCKET }}
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl private --follow-symlinks
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: 'us-east-1'
+          SOURCE_DIR: '.next'
 
       - name: Deploy to Vercel
         if: steps.vercel_secrets.outputs.present == 'true'

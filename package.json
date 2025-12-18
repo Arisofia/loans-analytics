@@ -11,9 +11,9 @@
     "typescript": "5.9.3"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "npm --prefix apps/web run dev",
+    "build": "npm --prefix apps/web run build",
+    "start": "npm --prefix apps/web run start",
     "lint": "npm --prefix apps/web run lint",
     "test": "echo \"Root test placeholder (per CodeQL traceability check)\""
   },
