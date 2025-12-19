@@ -1,8 +1,7 @@
-from __future__ import annotations
-
 """
 Enterprise Analytics Engine for loan portfolio KPI computation and risk analysis.
 """
+from __future__ import annotations
 
 import logging
 from typing import Dict, List, Optional, Protocol, runtime_checkable
@@ -17,7 +16,6 @@ from python.validation import (
 )
 
 logger = logging.getLogger(__name__)
-
 
 @runtime_checkable
 class KPIExporter(Protocol):
