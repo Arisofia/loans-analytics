@@ -1,11 +1,8 @@
-<<<<<<< HEAD
 # Gradle
 .gradle/
 build/
 **/.gradle/
 **/build/
-=======
->>>>>>> main
 
 # OS
 .DS_Store
@@ -25,17 +22,11 @@ data_samples/*.csv
 logs/
 
 # Build / tooling
-.gradle/
 .next/
-<<<<<<< HEAD
 .turbo/
 dist/
 coverage/
-=======
 out/
-build/
-dist/
->>>>>>> main
 
 # IDE
 .vscode/tasks.json
@@ -49,7 +40,6 @@ tailwind.config.js
 .coverage.*
 htmlcov/
 
-<<<<<<< HEAD
 # Project-specific artifacts
 apps/.DS_Store
 
@@ -58,20 +48,12 @@ abaco-loans-analytics/
 data_samples/
 gemini-cli/
 
-# Environment & platform
-nvm/
-.env
-.env.local
-.env*.local
-.vercel/
-=======
 # Environment variables
 .env
 .env.local
 .env.*.local
->>>>>>> main
+.vercel/
+nvm/
+
+# Other
 failed_workflows.csv
-failed_workflows.csv
-*.csv
-failed_workflows.csv
-*.csv

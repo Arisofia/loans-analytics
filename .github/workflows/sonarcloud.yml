@@ -10,6 +10,9 @@ on:
 jobs:
   sonarcloud:
     name: SonarCloud Scan
+    permissions:
+      contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
