@@ -103,15 +103,6 @@ def resolve_workflow_targets(workflows, requested):
 
 def trigger_workflow(repo, workflow, ref, token):
     identifier = workflow.get("id") or workflow.get("file_name")
-<<<<<<< HEAD
-    url = (
-        f"{API_ROOT}/repos/{repo}/actions/workflows/"
-        f"{identifier}/dispatches"
-    )
-    request = build_request(url, token, {"ref": ref}, method="POST")
-    with urllib.request.urlopen(request) as response:
-        return response.status == 204
-=======
     url = f"{API_ROOT}/repos/{repo}/actions/workflows/{identifier}/dispatches"
     headers = {
         "Accept": "application/vnd.github+json",
@@ -129,7 +120,6 @@ def trigger_workflow(repo, workflow, ref, token):
         if error.response is not None:
             sys.stderr.write(f"Response: {error.response.text}\n")
         return False
->>>>>>> origin/main
 
 
 def main():
