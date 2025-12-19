@@ -19,7 +19,10 @@ def build_request(url, token, data=None, method="GET"):
     }
     encoded = json.dumps(data).encode("utf-8") if data is not None else None
     return urllib.request.Request(
-        url, data=encoded, headers=headers, method=method
+        url,
+        data=encoded,
+        headers=headers,
+        method=method,
     )
 
 
@@ -96,8 +99,7 @@ def resolve_workflow_targets(workflows, requested):
 def trigger_workflow(repo, workflow, ref, token):
     identifier = workflow.get("id") or workflow.get("file_name")
     url = (
-        f"{API_ROOT}/repos/{repo}/actions/workflows/"
-        f"{identifier}/dispatches"
+        f"{API_ROOT}/repos/{repo}/actions/workflows/{identifier}/dispatches"
     )
     request = build_request(url, token, {"ref": ref}, method="POST")
     with urllib.request.urlopen(request) as response:
