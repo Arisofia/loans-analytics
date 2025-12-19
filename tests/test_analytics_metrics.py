@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.analytics_metrics import (
+from python.analytics import (
     calculate_quality_score,
     portfolio_kpis,
     project_growth,
@@ -16,11 +16,11 @@ def sample_df() -> pd.DataFrame:
         {
             "loan_amount": [12000, 8000, 16000],
             "appraised_value": [15000, 10000, 20000],
-            "monthly_debt": [500, 400, 300],
             "borrower_income": [60000, 45000, 80000],
+            "monthly_debt": [500, 400, 300],
             "principal_balance": [10000, 5000, 15000],
             "interest_rate": [0.05, 0.07, 0.06],
-            "loan_status": ["current", "delinquent", "current"],
+            "loan_status": ["current", "30-59 days past due", "current"],
         }
     )
 
@@ -58,8 +58,8 @@ def test_standardize_numeric_handles_symbols():
 def test_standardize_numeric_passes_through_numeric_series():
     series = pd.Series([1, 2.5, -3])
     cleaned = standardize_numeric(series)
-    assert cleaned.tolist() == [1, 2.5, -3]
-    assert np.issubdtype(cleaned.dtype, np.number)
+    assert cleaned.tolist() == [1.0, 2.5, -3.0]
+    assert pd.api.types.is_numeric_dtype(cleaned)
 
 
 def test_standardize_numeric_handles_negative_symbols_and_commas():
@@ -90,32 +90,50 @@ def test_project_growth_uses_default_periods():
     assert len(projection) == 6
 
 
+def test_project_growth_supports_decreasing_targets():
+    projection = project_growth(2.0, 1.0, 200, 100, periods=3)
+    assert projection["yield"].is_monotonic_decreasing
+    assert projection["loan_volume"].is_monotonic_decreasing
+
+
 def test_calculate_quality_score_handles_empty_df():
     df = pd.DataFrame()
     score = calculate_quality_score(df)
-    assert score == 0
+    assert score == 0.0
+
+
+def test_calculate_quality_score_rewards_complete_data(sample_df):
+    score = calculate_quality_score(sample_df)
+    assert isinstance(score, float)
+    assert score == 100.0
+
+    df_with_missing = sample_df.copy()
+    df_with_missing.loc[0, "loan_amount"] = None
+    penalized_score = calculate_quality_score(df_with_missing)
+    assert isinstance(penalized_score, float)
+    assert penalized_score < 100.0
 
 
 def test_calculate_quality_score_counts_completeness():
     df = pd.DataFrame({"a": [1, np.nan], "b": [1, 1]})
     score = calculate_quality_score(df)
-    assert score == 75
+    assert score == 75.0
 
 
 def test_portfolio_kpis_returns_expected_metrics(sample_df: pd.DataFrame):
-    df = sample_df
-    metrics, enriched = portfolio_kpis(df)
+    metrics, enriched = portfolio_kpis(sample_df)
     assert set(metrics.keys()) == {"delinquency_rate", "portfolio_yield", "average_ltv", "average_dti"}
     assert "ltv_ratio" in enriched.columns
     assert "dti_ratio" in enriched.columns
 
-    expected_delinquency_rate = (
-        df.loc[df["loan_status"] == "delinquent", "principal_balance"].sum()
-        / df["principal_balance"].sum()
-    )
-    expected_portfolio_yield = (df["principal_balance"] * df["interest_rate"]).sum() / df["principal_balance"].sum()
-    expected_average_ltv = (df["loan_amount"] / df["appraised_value"]).mean()
-    expected_average_dti = (df["monthly_debt"] / (df["borrower_income"] / 12)).mean()
+    expected_delinquency_rate = (1 / len(sample_df)) * 100
+    expected_portfolio_yield = (
+        (sample_df["principal_balance"] * sample_df["interest_rate"]).sum() / sample_df["principal_balance"].sum()
+    ) * 100
+    expected_average_ltv = (sample_df["loan_amount"] / sample_df["appraised_value"]).mean() * 100
+    expected_average_dti = (
+        sample_df["monthly_debt"] / (sample_df["borrower_income"] / 12)
+    ).mean() * 100
 
     assert metrics["delinquency_rate"] == pytest.approx(expected_delinquency_rate, rel=1e-6, abs=1e-9)
     assert metrics["portfolio_yield"] == pytest.approx(expected_portfolio_yield, rel=1e-6, abs=1e-9)
@@ -125,7 +143,7 @@ def test_portfolio_kpis_returns_expected_metrics(sample_df: pd.DataFrame):
 
 def test_portfolio_kpis_missing_column_raises(sample_df: pd.DataFrame):
     df = sample_df.drop(columns=["loan_amount"])
-    with pytest.raises(ValueError, match="Missing required columns: loan_amount"):
+    with pytest.raises(ValueError, match="Missing required column"):
         portfolio_kpis(df)
 
 

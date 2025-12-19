@@ -1,7 +1,10 @@
+
+"""
+Unit tests for metrics utility functions in the analytics engine.
+"""
+
 import unittest
-
 import pandas as pd
-
 from apps.analytics.src.enterprise_analytics_engine import LoanAnalyticsEngine
 from apps.analytics.src.metrics_utils import (
     debt_to_income_ratio,
@@ -12,51 +15,90 @@ from apps.analytics.src.metrics_utils import (
 )
 
 
+
+
 class TestMetricsUtils(unittest.TestCase):
+    """Unit tests for metrics utility functions."""
+
     def setUp(self):
-        self.portfolio = pd.DataFrame(
-            {
-                "loan_amount": [250000, 450000, 150000, 600000],
-                "appraised_value": [300000, 500000, 160000, 750000],
-                "borrower_income": [80000, 120000, 60000, 150000],
-                "monthly_debt": [1500, 2500, 1000, 3000],
-                "loan_status": ["current", "30-59 days past due", "current", "current"],
-                "interest_rate": [0.035, 0.042, 0.038, 0.045],
-                "principal_balance": [240000, 440000, 145000, 590000],
-            }
-        )
+        """Set up a sample portfolio DataFrame for use in all test cases."""
+        self.portfolio = pd.DataFrame({
+            "loan_amount": [250000, 450000, 150000, 600000],
+            "appraised_value": [300000, 500000, 160000, 750000],
+            "borrower_income": [80000, 120000, 60000, 150000],
+            "monthly_debt": [1500, 2500, 1000, 3000],
+            "loan_status": [
+                "current",
+                "30-59 days past due",
+                "current",
+                "current"
+            ],
+            "interest_rate": [0.035, 0.042, 0.038, 0.045],
+            "principal_balance": [240000, 440000, 145000, 590000],
+        })
 
     def test_kpis_match_expected_values(self):
+        """
+        Test that portfolio_kpis returns expected KPI values for a sample
+        portfolio.
+        """
         kpis = portfolio_kpis(self.portfolio)
-        self.assertAlmostEqual(kpis["portfolio_delinquency_rate_percent"], 25.0)
-        self.assertAlmostEqual(kpis["portfolio_yield_percent"], 4.16537, places=5)
-        self.assertAlmostEqual(kpis["average_ltv_ratio_percent"], 86.7708333, places=5)
-        self.assertAlmostEqual(kpis["average_dti_ratio_percent"], 22.875, places=3)
-
-    def test_metric_helpers_handle_edge_cases(self):
-        data = pd.DataFrame(
-            {
-                "loan_amount": [100000, 0],
-                "appraised_value": [0, 200000],
-                "borrower_income": [0, 120000],
-                "monthly_debt": [500, 2000],
-                "loan_status": ["current", "90+ days past due"],
-                "interest_rate": [0.04, 0.06],
-                "principal_balance": [0, 500000],
-            }
+        self.assertAlmostEqual(
+            kpis["portfolio_delinquency_rate_percent"], 25.0
+        )
+        self.assertAlmostEqual(
+            kpis["portfolio_yield_percent"], 4.16537, places=5
+        )
+        self.assertAlmostEqual(
+            kpis["average_ltv_ratio_percent"], 86.7708333, places=5
+        )
+        self.assertAlmostEqual(
+            kpis["average_dti_ratio_percent"], 22.875, places=3
         )
 
+    def test_metric_helpers_handle_edge_cases(self):
+        """
+        Test metric helper functions for correct handling of edge cases.
+
+        This method verifies that loan-to-value and debt-to-income ratio
+        helpers return expected results (including NaN and zero) when
+        provided with edge-case data such as zero denominators or missing
+        values.
+        """
+        data = pd.DataFrame({
+            "loan_amount": [100000, 0],
+            "appraised_value": [0, 200000],
+            "borrower_income": [0, 120000],
+            "monthly_debt": [500, 2000],
+            "loan_status": ["current", "90+ days past due"],
+            "interest_rate": [0.04, 0.06],
+            "principal_balance": [0, 500000],
+        })
+
         ltv = loan_to_value(data["loan_amount"], data["appraised_value"])
-        dti = debt_to_income_ratio(data["monthly_debt"], data["borrower_income"])
+        dti = debt_to_income_ratio(
+            data["monthly_debt"], data["borrower_income"]
+        )
 
         self.assertTrue(ltv.isna().iloc[0])
         self.assertAlmostEqual(ltv.iloc[1], 0.0)
         self.assertTrue(dti.isna().iloc[0])
         self.assertAlmostEqual(dti.iloc[1], 20.0)
-        self.assertAlmostEqual(portfolio_delinquency_rate(data["loan_status"]), 50.0)
-        self.assertAlmostEqual(weighted_portfolio_yield(data["interest_rate"], data["principal_balance"]), 6.0)
+        self.assertAlmostEqual(
+            portfolio_delinquency_rate(data["loan_status"]), 50.0
+        )
+        self.assertAlmostEqual(
+            weighted_portfolio_yield(
+                data["interest_rate"], data["principal_balance"]
+            ),
+            6.0
+        )
 
     def test_engine_uses_metric_utilities(self):
+        """
+        Test that LoanAnalyticsEngine uses metric utilities and returns
+        expected KPI keys.
+        """
         engine = LoanAnalyticsEngine(self.portfolio)
         dashboard = engine.run_full_analysis()
 
@@ -66,9 +108,15 @@ class TestMetricsUtils(unittest.TestCase):
             self.assertAlmostEqual(dashboard[key], expected[key])
 
     def test_numeric_coercion_and_defaults(self):
+        """
+        Test numeric coercion and default handling for loan_amount and
+        principal_balance columns.
+        """
         portfolio = self.portfolio.copy()
         portfolio["loan_amount"] = portfolio["loan_amount"].astype(str)
-        portfolio["principal_balance"] = portfolio["principal_balance"].astype(str)
+        portfolio["principal_balance"] = (
+            portfolio["principal_balance"].astype(str)
+        )
 
         kpis = portfolio_kpis(portfolio)
 

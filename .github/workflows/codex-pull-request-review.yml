@@ -1,9 +1,8 @@
 name: Codex pull request review
-
 on:
+  workflow_call:
   pull_request:
     types: [opened, synchronize, reopened]
-
 jobs:
   assign_metadata:
     runs-on: ubuntu-latest
@@ -19,21 +18,22 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const pull_number = context.payload.pull_request.number;
-
             await github.rest.issues.addAssignees({
               owner,
               repo,
               issue_number: pull_number,
               assignees: ['codex'],
             });
-
+<<<<<<< HEAD
             await github.rest.pulls.requestReviewers({
               owner,
               repo,
               pull_number,
               reviewers: ['copilot'],
             });
+=======
 
+>>>>>>> main
   codex:
     runs-on: ubuntu-latest
     if: github.event.pull_request.head.repo.fork == false
@@ -46,7 +46,6 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
-
       - name: Run Codex
         id: run_codex
         continue-on-error: true
@@ -57,7 +56,6 @@ jobs:
           output-file: codex-output.md
           safety-strategy: drop-sudo
           sandbox: workspace-write
-
   post_feedback:
     runs-on: ubuntu-latest
     permissions:

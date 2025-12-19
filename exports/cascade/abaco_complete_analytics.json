@@ -16,7 +16,7 @@
     "monthly_active_clients_latest": 124,
     "outstanding_balance_usd": 7813919,
     "growth_metrics": {
-      "volume_mom": -2.80,
+      "volume_mom": -2.8,
       "volume_qoq": 45.67,
       "volume_yoy": 135.17,
       "clients_mom": 5.08,
@@ -24,14 +24,14 @@
       "clients_yoy": -6.06,
       "balance_mom": 3.16,
       "balance_qoq": 18.65,
-      "balance_yoy": 216.20
+      "balance_yoy": 216.2
     }
   },
   "delinquency": {
     "par90_latest": 1.61,
     "par7_latest": 5.85,
     "portfolio_at_risk_30dpd": 456967.63,
-    "total_balance": 7813919.10,
+    "total_balance": 7813919.1,
     "par_metrics": {
       "par7_mom": -1.45,
       "par7_qoq": -20.18,
@@ -44,7 +44,7 @@
     "total_payments_scheduled_latest": 4618878.95,
     "collection_metrics": {
       "collection_rate_mom": -1.99,
-      "collection_rate_qoq": 2.90,
+      "collection_rate_qoq": 2.9,
       "collection_rate_yoy": -3.26
     }
   },

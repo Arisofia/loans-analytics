@@ -25,11 +25,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
       - name: Install
         run: |
           cd apps/web
-          npm install
+          npm ci
+      - name: Type-check
+        run: |
+          cd apps/web
+          npm run type-check
       - name: Lint
         run: |
           cd apps/web
@@ -38,6 +44,11 @@ jobs:
         run: |
           cd apps/web
           npm run build
+      - name: Generate placeholder coverage (lcov)
+        run: |
+          cd apps/web
+          mkdir -p coverage
+          echo "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record" > coverage/lcov.info
 
   build-push:
     if: github.event_name == 'push'

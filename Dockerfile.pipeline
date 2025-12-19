@@ -1,0 +1,23 @@
+# Python Dockerfile for Abaco Loans Analytics Pipeline
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies (if needed)
+RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and lock files
+COPY requirements.txt requirements.lock ./
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.lock
+
+# Copy the rest of the code
+COPY . .
+
+# Default command: run the pipeline
+RUN adduser --system --home /app appuser && chown -R appuser:appuser /app
+
+USER appuser
+
+CMD ["python", "scripts/run_data_pipeline.py"]

@@ -17,6 +17,404 @@
 
 .page {
   min-height: 100vh;
+  padding: 64px 24px 96px;
+  background: radial-gradient(circle at 16% 20%, #d9e9ff 0, transparent 26%),
+    radial-gradient(circle at 84% 12%, #fff3d6 0, transparent 22%),
+    linear-gradient(180deg, #f7f9fc 0%, #edf2f7 28%, #f8fbff 100%);
+  color: #0b1b3f;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.shell {
+  max-width: 1140px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.header h1 {
+  font-size: 44px;
+  line-height: 1.1;
+  letter-spacing: -1.4px;
+  margin-top: 8px;
+}
+
+.eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #4c6fff;
+}
+
+.lede {
+  margin-top: 12px;
+  max-width: 780px;
+  font-size: 18px;
+  line-height: 1.5;
+  color: #243552;
+}
+
+.statusBadges {
+  display: flex;
+  gap: 8px;
+}
+
+.pill {
+  border: 1px solid #d7e0f1;
+  background: #ffffff;
+  color: #0b1b3f;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  box-shadow: 0 8px 24px rgba(11, 27, 63, 0.08);
+}
+
+.pillStrong {
+  background: linear-gradient(120deg, #204ecf, #2f7cf1);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.kpiGrid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #dce4f7;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 18px 36px rgba(21, 48, 102, 0.06);
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kpiValue {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.label {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5a6b8a;
+  font-weight: 600;
+}
+
+.meta {
+  color: #5a6b8a;
+  font-size: 14px;
+}
+
+.positive .kpiValue {
+  color: #1f7a4f;
+}
+
+.neutral .kpiValue {
+  color: #2848a0;
+}
+
+.negative .kpiValue {
+  color: #b42318;
+}
+
+.split {
+  grid-template-columns: 1.25fr 1fr;
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cardHead h2 {
+  margin-top: 4px;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.chart .bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.barRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.barMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.barTrack {
+  width: 100%;
+  background: #f0f4fb;
+  border-radius: 999px;
+  height: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 999px;
+}
+
+.primary {
+  background: linear-gradient(90deg, #1c64f2, #3b82f6);
+}
+
+.success {
+  background: linear-gradient(90deg, #0ea45a, #1dd37f);
+}
+
+.accent {
+  background: linear-gradient(90deg, #845ef7, #a78bfa);
+}
+
+.muted {
+  background: linear-gradient(90deg, #7c8db5, #a5b4d8);
+}
+
+.table {
+  padding: 20px;
+}
+
+.tableHead,
+.tableRow {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 0.9fr 0.9fr;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid #e6ecf8;
+}
+
+.tableHead {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b7a95;
+  font-weight: 700;
+}
+
+.tableRow {
+  font-weight: 600;
+  color: #0f234d;
+}
+
+.badge {
+  justify-self: start;
+  padding: 6px 12px;
+  background: #eef2ff;
+  color: #3248a8;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.liquidityGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.liquidity {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.liquidityCard {
+  border: 1px solid #e1e9fa;
+  border-radius: 14px;
+  padding: 14px;
+  background: linear-gradient(180deg, #f9fbff 0%, #ffffff 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.liquidityTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.strong {
+  font-weight: 800;
+  font-size: 20px;
+}
+
+.spark {
+  background: #e7edfa;
+  border-radius: 999px;
+  height: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sparkFill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2f80ed, #56ccf2);
+}
+
+.alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alertList {
+  display: grid;
+  gap: 12px;
+}
+
+.alert {
+  border: 1px solid #e1e6f5;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #f8fbff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.alertTitle {
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #162952;
+}
+
+.footer {
+  border-top: 1px solid #e5ebf8;
+  padding-top: 10px;
+}
+
+.footerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .page {
+    background: radial-gradient(circle at 16% 20%, #0f243f 0, transparent 26%),
+      radial-gradient(circle at 84% 12%, #1c2f55 0, transparent 22%),
+      linear-gradient(180deg, #0c1a33 0%, #0b1a38 28%, #0a1832 100%);
+    color: #e8eefc;
+  }
+
+  .card {
+    background: #0f213f;
+    border-color: #1e3256;
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+  }
+
+  .pill {
+    background: #132a4f;
+    border-color: #27436f;
+    color: #e8eefc;
+    box-shadow: none;
+  }
+
+  .pillStrong {
+    background: linear-gradient(120deg, #2f7cf1, #204ecf);
+  }
+
+  .label,
+  .meta {
+    color: #b9c6e5;
+  }
+
+  .lede {
+    color: #cdd8f0;
+  }
+
+  .kpiValue {
+    color: #e8eefc;
+  }
+
+  .negative .kpiValue {
+    color: #f97066;
+  }
+
+  .barTrack,
+  .spark {
+    background: #1b2e52;
+  }
+
+  .badge {
+    background: #1c2f55;
+    color: #c9d6ff;
+  }
+
+  .liquidityCard {
+    background: linear-gradient(180deg, #13274b 0%, #0f213f 100%);
+    border-color: #1e3256;
+  }
+}
+
+@media (max-width: 900px) {
+  .header {
+    flex-direction: column;
+  }
+
+  .split {
+    grid-template-columns: 1fr;
+  }
+
+  .statusBadges {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .header h1 {
+    font-size: 34px;
+  }
+
+  .kpiValue {
+    font-size: 28px;
+  }
+
+  /* The following block appears to be a root-level or page-level style. Place it outside the media query if needed, or adjust selector as appropriate. */
   display: flex;
   flex-direction: column;
   gap: 80px;
@@ -25,8 +423,17 @@
     radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.12), transparent 30%),
     radial-gradient(circle at 80% 0%, rgba(34, 197, 94, 0.14), transparent 28%), var(--color-bg);
   background:
-    radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--color-accent-blue) 12%, transparent), transparent 30%),
-    radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--color-accent-green) 14%, transparent), transparent 28%), var(--color-bg);
+    radial-gradient(
+      circle at 20% 20%,
+      color-mix(in srgb, var(--color-accent-blue) 12%, transparent),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 80% 0%,
+      color-mix(in srgb, var(--color-accent-green) 14%, transparent),
+      transparent 28%
+    ),
+    var(--color-bg);
   color: var(--color-text-primary);
 }
 
@@ -139,7 +546,6 @@
 
 .hero p {
   max-width: 780px;
-  color: #d9dde2;
   color: color-mix(in srgb, var(--color-text-primary) 85%);
   font-size: 18px;
   line-height: 1.7;
@@ -193,7 +599,7 @@
 }
 
 .secondaryButton:hover {
-  border-color: #4d4d4d;
+  border-color: var(--text-strong);
   background: #0f0f0f;
 }
 
@@ -325,7 +731,11 @@
 
 .card {
   background: linear-gradient(160deg, #111111, #060606);
-  background: linear-gradient(160deg, color-mix(in srgb, var(--surface-subtle) 80%, white), color-mix(in srgb, var(--surface-subtle) 80%, black));
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--surface-subtle) 80%, white),
+    color-mix(in srgb, var(--surface-subtle) 80%, black)
+  );
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 20px;
@@ -412,7 +822,6 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  color: #c4c8ce;
   color: color-mix(in srgb, var(--color-text-primary) 80%);
 }
 
@@ -445,7 +854,7 @@
 
 .auditBox ul {
   padding-left: 18px;
-  color: #b9bcc1;
+  color: var(--text-strong);
   color: color-mix(in srgb, var(--color-text-primary) 75%);
   line-height: 1.6;
 }
@@ -458,11 +867,11 @@
   align-self: flex-start;
   color: var(--color-text-primary);
   background: transparent;
-  border-color: #4d4d4d;
+  border-color: var(--text-strong);
 }
 
 .primaryGhost:hover {
-  border-color: #ffffff;
+  border-color: var(--text-strong);
   background: var(--surface-interactive);
 }
 

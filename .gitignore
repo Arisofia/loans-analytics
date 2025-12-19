@@ -1,40 +1,55 @@
+<<<<<<< HEAD
 # Gradle
 .gradle/
 build/
 **/.gradle/
 **/build/
+=======
+>>>>>>> main
 
-# Node / JavaScript
-node_modules/
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Streamlit
+.streamlit/
+
+# Data outputs (NO versionar)
+data/metrics/
+data_samples/*.csv
+logs/
+
+# Build / tooling
+.gradle/
 .next/
+<<<<<<< HEAD
 .turbo/
 dist/
 coverage/
-
-# Python
-.venv/
-.vscode/*
-!.vscode/settings.json
-apps/.DS_Store
-node_modules/
-.next/
+=======
+out/
 build/
 dist/
-.gradle
-nvm/
-venv/
-__pycache__/
-*.pyc
+>>>>>>> main
 
-# IDE / Editor
-.vscode/
-.idea/
-*.vsix
+# IDE
+.vscode/tasks.json
+node_modules/
 
-# OS files
-.DS_Store
-Thumbs.db
+clean_settings.json
+tailwind.config.js
 
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
+<<<<<<< HEAD
 # Project-specific artifacts
 apps/.DS_Store
 
@@ -49,5 +64,9 @@ nvm/
 .env.local
 .env*.local
 .vercel/
-eslint.config.js
-.vercel
+=======
+# Environment variables
+.env
+.env.local
+.env.*.local
+>>>>>>> main

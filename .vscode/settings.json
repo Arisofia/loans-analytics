@@ -1,52 +1,20 @@
 {
-  // --- General Performance: Exclude folders from all tools ---
-  "files.watcherExclude": {
-    "**/.git/objects/**": true,
-    "**/.git/subtree-cache/**": true,
-    "**/node_modules/*/**": true,
-    "**/.next/**": true,
-    "**/build/**": true,
-    "**/.gradle/**": true,
-    "**/__pycache__/**": true,
-    "**/.venv/**": true,
-    "**/venv/**": true,
-    "**/dist/**": true,
-    "**/out/**": true
-  },
-  "search.exclude": {
-    "**/node_modules": true,
-    "**/.next": true,
-    "**/build": true,
-    "**/.gradle": true,
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv-1/bin/python",
+  "python.analysis.typeCheckingMode": "basic",
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "editor.formatOnSave": true,
+  "files.exclude": {
     "**/.venv": true,
-    "**/venv": true
+    "**/.venv-1": true,
+    "**/.git": true
   },
-
-  // --- Deno: Only enable for the web app ---
-  "deno.enable": true,
-  "deno.enablePaths": [
-    "apps/web"
-  ],
-
-  // --- ESLint: Specify the working directory ---
-  "eslint.workingDirectories": [
-    "./apps/web"
-  ],
-
-  // --- Java: Point to the correct source folders ---
-  "java.project.sourcePaths": [
-    "src/main/java",
-    "src/test/java"
-  ],
-
-  // --- SonarLint: Exclude folders from analysis ---
-  "sonarlint.ls.exclusions": [
-    "**/node_modules/**",
-    "**/.next/**",
-    "**/build/**",
-    "**/.gradle/**",
-    "**/dist/**",
-    "**/.venv/**",
-    "**/venv/**"
-  ]
+  "java.compile.nullAnalysis.mode": "automatic",
+  "sonarlint.connectedMode.project": {
+    "connectionId": "abaco-technol",
+    "projectKey": "abaco-loans-analytics"
+  },
+  "java.configuration.updateBuildConfiguration": "interactive"
 }

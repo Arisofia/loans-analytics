@@ -1,21 +1,31 @@
+<<<<<<< HEAD
 name: Assign and request reviewers for PRs
 on:
   pull_request:
     types: [opened, reopened, ready_for_review, synchronize]
+=======
+name: PR Auto Assign
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, reopened]
+
+# This permissions block is the key fix for "Resource not accessible"
+>>>>>>> main
 permissions:
   pull-requests: write
 jobs:
-  assign-and-request:
+  assign:
     runs-on: ubuntu-latest
     steps:
-      - name: Apply default assignee and reviewers
-        uses: actions/github-script@v7
+      - uses: actions/github-script@v6
         with:
           script: |
+<<<<<<< HEAD
             const prNumber = context.payload.pull_request.number;
             const repo = context.repo;
             const desiredAssignees = ['codex'];
-            const desiredReviewers = [];
+            const desiredReviewers = ['sonarqube', 'coderabbit', 'sourcery'];
             const { data: pull } = await github.rest.pulls.get({
               ...repo,
               pull_number: prNumber,
@@ -37,4 +47,21 @@ jobs:
                 pull_number: prNumber,
                 reviewers: reviewersToAdd,
               });
+=======
+            const desiredReviewers = ['Arisofia'];
+            
+            if (desiredReviewers.length > 0) {
+              try {
+                await github.rest.pulls.requestReviewers({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: context.issue.number,
+                  reviewers: desiredReviewers
+                });
+                console.log(`Requested reviewers: ${desiredReviewers.join(', ')}`);
+              } catch (error) {
+                console.log('Error requesting reviewers: ' + error.message);
+                // Do not fail the build if reviewer assignment fails (e.g., on forks)
+              }
+>>>>>>> main
             }

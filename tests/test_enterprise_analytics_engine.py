@@ -33,7 +33,9 @@ def test_portfolio_interest_and_risk_tracks_defaults():
     near_prime = LoanPosition(principal=75_000, annual_interest_rate=0.14, term_months=36, default_probability=0.05)
     subprime = LoanPosition(principal=40_000, annual_interest_rate=0.2, term_months=18, default_probability=0.12)
 
-    monthly_interest, portfolio_loss = portfolio_interest_and_risk(loans=[prime, near_prime, subprime], loss_given_default=0.45)
+    monthly_interest, portfolio_loss = portfolio_interest_and_risk(
+        loans=[prime, near_prime, subprime], loss_given_default=0.45
+    )
 
     expected_interest = (
         prime.principal * (prime.annual_interest_rate / 12)
@@ -81,8 +83,7 @@ def test_portfolio_kpis_surfaces_weighted_metrics():
         loans[0].term_months * loans[0].principal + loans[1].term_months * loans[1].principal
     ) / expected_exposure
     weighted_default_probability = (
-        loans[0].default_probability * loans[0].principal
-        + loans[1].default_probability * loans[1].principal
+        loans[0].default_probability * loans[0].principal + loans[1].default_probability * loans[1].principal
     ) / expected_exposure
     expected_interest = sum(loan.principal * (loan.annual_interest_rate / 12) for loan in loans)
     expected_loss_value = sum(expected_loss(loan, 0.4) for loan in loans)

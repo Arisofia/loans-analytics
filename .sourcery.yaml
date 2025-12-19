@@ -1,4 +1,4 @@
-version: "1"
+version: '1'
 
 ignore:
   - '**/node_modules/**'
@@ -10,7 +10,3 @@ ignore:
   - '**/build/**'
   - '**/data_samples/**'
   - '**/.github/**'
-
-options:
-  lint: true
-  test_command: ''
