@@ -1,18 +1,19 @@
 """Utility functions for common loan analytics KPIs."""
+import logging
 from typing import Dict, Iterable
 
 import numpy as np
 import pandas as pd
 
-REQUIRED_KPI_COLUMNS = [
-    "loan_amount",
-    "appraised_value",
-    "borrower_income",
-    "monthly_debt",
-    "loan_status",
-    "interest_rate",
-    "principal_balance",
-]
+from python.validation import (
+    REQUIRED_ANALYTICS_COLUMNS,
+    ANALYTICS_NUMERIC_COLUMNS,
+    validate_dataframe,
+    safe_numeric,
+)
+
+# Alias for backward compatibility and clarity within this module
+REQUIRED_KPI_COLUMNS = REQUIRED_ANALYTICS_COLUMNS
 
 DELINQUENT_STATUSES = [
     "30-59 days past due", "60-89 days past due", "90+ days past due"
@@ -34,8 +35,8 @@ def _coerce_numeric(series: pd.Series, field_name: str) -> pd.Series:
         ValueError: If all values are non-numeric.
     """
 
-    numeric = pd.to_numeric(series, errors="coerce")
-    if numeric.isna().all():
+    numeric = safe_numeric(series)
+    if numeric.isna().all() and not series.empty:
         raise ValueError(
             f"Field '{field_name}' must contain at least one numeric value"
         )
@@ -56,13 +57,28 @@ def validate_kpi_columns(loan_data: pd.DataFrame) -> None:
     if loan_data.empty:
         raise ValueError("Input loan_data must be a non-empty DataFrame.")
 
-    missing_cols = [
-        col for col in REQUIRED_KPI_COLUMNS if col not in loan_data.columns
-    ]
-    if missing_cols:
-        raise ValueError(
-            f"Missing required columns in loan_data: {', '.join(missing_cols)}"
-        )
+    # Use centralized validation for structure and types
+    validate_dataframe(loan_data, required_columns=REQUIRED_KPI_COLUMNS, numeric_columns=ANALYTICS_NUMERIC_COLUMNS)
+
+    errors = []
+    # Granular checks: NaN, data types, value ranges
+    for col in REQUIRED_KPI_COLUMNS:
+        if col in loan_data.columns:
+            series = loan_data[col]
+            if series.isna().any():
+                msg = f"Column '{col}' contains NaN values."
+                logging.error(msg)
+                errors.append(msg)
+            if col in ANALYTICS_NUMERIC_COLUMNS:
+                # Value range checks (example: no negative values for amounts)
+                if (series < 0).any():
+                    msg = f"Column '{col}' contains negative values."
+                    logging.error(msg)
+                    errors.append(msg)
+
+    if errors:
+        # Optionally, raise a single error with all issues for monitoring systems
+        raise ValueError("; ".join(errors))
 
 
 def loan_to_value(
@@ -152,34 +168,75 @@ def weighted_portfolio_yield(
     return (weighted_interest / total_principal) * 100
 
 
+
+
+def _data_quality_metrics(loan_data: pd.DataFrame) -> Dict[str, float]:
+    """Build lightweight data quality KPIs used by dashboards."""
+    null_ratio = float(loan_data.isna().mean().mean())
+    duplicate_ratio = float(loan_data.duplicated().mean())
+
+    numeric_columns = [
+        col for col in ANALYTICS_NUMERIC_COLUMNS if col in loan_data.columns
+    ]
+    total_numeric_cells = len(loan_data) * len(numeric_columns)
+    invalid_numeric_count = 0
+    for col in numeric_columns:
+        coerced = safe_numeric(loan_data[col])
+        invalid_numeric_count += max(
+            0,
+            coerced.isna().sum() - loan_data[col].isna().sum()
+        )
+
+    invalid_numeric_ratio = (
+        invalid_numeric_count / total_numeric_cells
+        if total_numeric_cells > 0
+        else 0.0
+    )
+    data_quality_score = max(
+        0.0,
+        100 - (null_ratio * 100) - (duplicate_ratio * 50)
+    )
+
+    return {
+        "data_quality_score": round(data_quality_score, 2),
+        "average_null_ratio_percent": round(null_ratio * 100, 2),
+        "invalid_numeric_ratio_percent": round(invalid_numeric_ratio * 100, 2),
+    }
+
+
 def portfolio_kpis(loan_data: pd.DataFrame) -> Dict[str, float]:
     """Aggregate portfolio KPIs used across analytics modules."""
-    validate_kpi_columns(loan_data)
+    sanitized_data = loan_data.copy()
+    for col in ANALYTICS_NUMERIC_COLUMNS:
+        if col in sanitized_data.columns:
+            sanitized_data[col] = safe_numeric(sanitized_data[col])
+
+    validate_kpi_columns(sanitized_data)
 
     ltv_series = (
-        _coerce_numeric(loan_data["ltv_ratio"], "ltv_ratio")
-        if "ltv_ratio" in loan_data.columns
+        _coerce_numeric(sanitized_data["ltv_ratio"], "ltv_ratio")
+        if "ltv_ratio" in sanitized_data.columns
         else loan_to_value(
-            loan_data["loan_amount"], loan_data["appraised_value"]
+            sanitized_data["loan_amount"], sanitized_data["appraised_value"]
         )
     )
     dti_series = (
-        _coerce_numeric(loan_data["dti_ratio"], "dti_ratio")
-        if "dti_ratio" in loan_data.columns
+        _coerce_numeric(sanitized_data["dti_ratio"], "dti_ratio")
+        if "dti_ratio" in sanitized_data.columns
         else debt_to_income_ratio(
-            loan_data["monthly_debt"], loan_data["borrower_income"]
+            sanitized_data["monthly_debt"], sanitized_data["borrower_income"]
         )
     )
 
     avg_ltv = ltv_series.mean(skipna=True)
     avg_dti = dti_series.mean(skipna=True)
 
-    return {
+    kpis = {
         "portfolio_delinquency_rate_percent": portfolio_delinquency_rate(
-            loan_data["loan_status"]
+            sanitized_data["loan_status"]
         ),
         "portfolio_yield_percent": weighted_portfolio_yield(
-            loan_data["interest_rate"], loan_data["principal_balance"]
+            sanitized_data["interest_rate"], sanitized_data["principal_balance"]
         ),
         "average_ltv_ratio_percent": float(
             avg_ltv if not np.isnan(avg_ltv) else 0.0
@@ -188,3 +245,6 @@ def portfolio_kpis(loan_data: pd.DataFrame) -> Dict[str, float]:
             avg_dti if not np.isnan(avg_dti) else 0.0
         ),
     }
+
+    kpis.update(_data_quality_metrics(sanitized_data))
+    return kpis

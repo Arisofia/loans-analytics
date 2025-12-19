@@ -7,12 +7,15 @@
 Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo Notion con los siguientes componentes:
 
 ### **[Objectives](objectives/)** - Objetivos
+
 **Objetivos a nivel empresa que contienen sub-objetivos para cada equipo.**
+
 - **Incluye:** Objetivos de Empresa (ítems padre) y Objetivos de Equipo (sub-ítems)
 - **Relacionado con:** Equipos, Resultados Clave, Documentos
 - **Descripción:** Metas estratégicas que se alinean con la visión y misión de ventas y mercadeo
 
 **Ejemplos de Objetivos para Ventas y Mercadeo:**
+
 - Incrementar la cuota de mercado en productos financieros clave
 - Mejorar la experiencia del cliente en el journey de compra
 - Expandir la presencia digital y canales de adquisición
@@ -21,12 +24,15 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 ---
 
 ### **[Key Results](key-results/)** - Resultados Clave
+
 **Estos son los resultados medibles que llevarán al cumplimiento del objetivo. Los resultados clave se acumulan hacia los objetivos.**
+
 - **Incluye:** Resultados Clave de Empresa (ítems padre) y Resultados Clave de Equipo (sub-ítem)
 - **Relacionado con:** Equipos, Objetivos, Proyectos
 - **Descripción:** Métricas cuantificables que rastrean el progreso hacia los objetivos
 
 **Ejemplos de KRs para Ventas:**
+
 - Aumentar revenue en 25% YoY
 - Alcanzar 500 nuevos clientes corporativos
 - Incrementar ticket promedio a $15,000
@@ -34,6 +40,7 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 - Lograr una tasa de conversión del 35% en el funnel
 
 **Ejemplos de KRs para Mercadeo:**
+
 - Generar 2,000 leads calificados por mes
 - Alcanzar 100,000 impresiones en redes sociales
 - Incrementar engagement rate a 8%
@@ -43,13 +50,16 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 ---
 
 ### **[Projects](projects/)** - Proyectos
+
 **El trabajo que necesita hacerse para lograr los resultados. Los proyectos se acumulan a cada resultado clave.**
+
 - **Relacionado con:** Resultados Clave, Tareas, Documentos
 - **Descripción:** Iniciativas específicas y flujos de trabajo que entregan los resultados clave
 
 **Ejemplos de Proyectos:**
 
 **Ventas:**
+
 - Implementación de nuevo CRM (Salesforce/HubSpot)
 - Programa de capacitación de equipo comercial
 - Apertura de nuevas sucursales/canales
@@ -57,6 +67,7 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 - Desarrollo de playbook de ventas
 
 **Mercadeo:**
+
 - Campaña de lanzamiento de producto (ProntoCash)
 - Rediseño de website y SEO optimization
 - Programa de content marketing y redes sociales
@@ -66,11 +77,14 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 ---
 
 ### **[Tasks](tasks/)** - Tareas
+
 **Ítems accionables que componen los proyectos.**
+
 - **Relacionado con:** Proyectos, Equipos
 - **Descripción:** Ítems de trabajo granulares con dueños y fechas límite
 
 **Ejemplos de Tareas:**
+
 - Diseñar landing page para campaña Q1
 - Crear presentación de ventas para ProntoCash
 - Configurar campaña de Google Ads
@@ -80,11 +94,14 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 ---
 
 ### **[Docs](docs/)** - Documentos
+
 **Documentación y recursos de apoyo.**
+
 - **Relacionado con:** Objetivos, Proyectos, Equipos
 - **Descripción:** Documentación, especificaciones y materiales de referencia
 
 **Ejemplos de Docs:**
+
 - Sales Playbook 2025
 - Brand Guidelines
 - Product Sheets (fichas de productos)
@@ -95,11 +112,14 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 ---
 
 ### **[Teams](teams/)** - Equipos
+
 **Unidades organizacionales y sus miembros.**
+
 - **Relacionado con:** Objetivos, Resultados Clave, Proyectos, Tareas
 - **Descripción:** Estructura de equipo y mapeo de ownership
 
 **Equipos de Ventas y Mercadeo:**
+
 - Ventas Directas
 - Ventas Corporativas
 - Inside Sales / SDRs
@@ -112,14 +132,14 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 
 ## Enlaces Rápidos
 
-| Base de Datos | Descripción | Enlace |
-|---------------|--------------|--------|
-| **Objectives** | Metas estratégicas y resultados | [Ver Objetivos](objectives/) |
-| **Key Results** | Métricas de éxito medibles | [Ver Resultados Clave](key-results/) |
-| **Projects** | Iniciativas activas y flujos de trabajo | [Ver Proyectos](projects/) |
-| **Tasks** | Ítems de trabajo accionables | [Ver Tareas](tasks/) |
-| **Docs** | Documentación y recursos | [Ver Docs](docs/) |
-| **Teams** | Estructura de equipo y ownership | [Ver Equipos](teams/) |
+| Base de Datos   | Descripción                             | Enlace                               |
+| --------------- | --------------------------------------- | ------------------------------------ |
+| **Objectives**  | Metas estratégicas y resultados         | [Ver Objetivos](objectives/)         |
+| **Key Results** | Métricas de éxito medibles              | [Ver Resultados Clave](key-results/) |
+| **Projects**    | Iniciativas activas y flujos de trabajo | [Ver Proyectos](projects/)           |
+| **Tasks**       | Ítems de trabajo accionables            | [Ver Tareas](tasks/)                 |
+| **Docs**        | Documentación y recursos                | [Ver Docs](docs/)                    |
+| **Teams**       | Estructura de equipo y ownership        | [Ver Equipos](teams/)                |
 
 ---
 
@@ -143,18 +163,21 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 ## Trimestre Actual: Q1 2025
 
 ### Objetivos Activos de Ventas
+
 - [ ] Incrementar revenue en productos de crédito en 30%
 - [ ] Expandir base de clientes corporativos a 500 empresas
 - [ ] Reducir ciclo de ventas promedio a 30 días
 - [ ] Alcanzar $50M en pipeline de ventas
 
 ### Objetivos Activos de Mercadeo
+
 - [ ] Posicionar ProntoCash como líder en fintech para PYMEs
 - [ ] Generar 5,000 leads calificados en Q1
 - [ ] Incrementar brand awareness en 40%
 - [ ] Reducir CAC en 20% vs Q4 2024
 
 ### Métricas Clave
+
 - **Objetivos en Camino:** 0/8
 - **Resultados Clave Logrados:** 0/24
 - **Proyectos en Progreso:** 0/15
@@ -202,5 +225,5 @@ ventas-mercadeo-okrs/
 
 ---
 
-*Última Actualización: 11 de Diciembre, 2025*
-*Equipo: Ventas y Mercadeo | Ábaco Capital*
+_Última Actualización: 11 de Diciembre, 2025_
+_Equipo: Ventas y Mercadeo | Ábaco Capital_

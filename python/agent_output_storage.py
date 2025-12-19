@@ -1,10 +1,10 @@
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 def save_agent_output(agent_name, output, version=None, storage_dir="data/agent_outputs"):
     os.makedirs(storage_dir, exist_ok=True)
-    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     version = version or timestamp
     filename = f"{agent_name}_v{version}.json"
     path = os.path.join(storage_dir, filename)

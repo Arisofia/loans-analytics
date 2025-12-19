@@ -76,11 +76,11 @@ export type ISODateString = string & { readonly __brand: 'ISODateString' }
 export function isISODateString(value: string): value is ISODateString {
   // Regex matches ISO 8601 date-time with optional milliseconds and timezone
   // Example: 2025-03-15T00:00:00.000Z
-  const isoRegex = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2}))$/;
-  if (!isoRegex.test(value)) return false;
-  const date = new Date(value);
+  const isoRegex = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2}))$/
+  if (!isoRegex.test(value)) return false
+  const date = new Date(value)
   // Check for Invalid Date
-  return !isNaN(date.getTime());
+  return !isNaN(date.getTime())
 }
 export interface LoanDataset {
   loans: LoanRecord[]

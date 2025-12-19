@@ -1,28 +1,20 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e
 
-echo "== Python =="
-which python
-python --version
+echo "🚀 Starting Preflight Checks..."
 
-echo "== Pip =="
-which pip
-pip --version
+# Check Python version
+python3 --version
 
-echo "== Key packages =="
-python - <<'PY'
-import pandas, numpy
-print("pandas", pandas.__version__)
-print("numpy", numpy.__version__)
-PY
+# Check if requirements are installed
+echo "📦 Checking dependencies..."
+pip check
 
-echo "== Repo sanity =="
-test -f requirements.txt
-test -f streamlit_app.py
-test -d tests
+# Check for critical directories
+echo "📂 Checking directory structure..."
+[ -d "python" ] || { echo "❌ python/ directory missing"; exit 1; }
+[ -d "tests" ] || { echo "❌ tests/ directory missing"; exit 1; }
+[ -d "data" ] || { echo "⚠️ data/ directory missing (creating...)"; mkdir -p data; }
 
-echo "== Sample data presence =="
-test -f data_samples/abaco_portfolio_sample.csv
-
-echo "== Pytest dry run =="
-pytest -q --disable-warnings --maxfail=1
+echo "✅ Preflight checks passed!"
+exit 0

@@ -10,6 +10,7 @@ As of 2025-12-08, the following low-severity vulnerabilities are present in indi
 No fix is currently available. We are monitoring for upstream updates and will patch as soon as possible. These packages are not used in production-critical paths.
 
 ## Mitigation Plan
+
 - Monitor for updates and apply patches when available.
 - Document and review usage of affected packages.
 - Ensure audit logs and traceability for all pipeline steps.

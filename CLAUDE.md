@@ -63,11 +63,8 @@ pre-commit run --all-files
 
 ### Data Pipeline
 ```bash
-# Ingest CSV → Parquet
-python scripts/ingest.py data_samples/abaco_portfolio_sample.csv
-
-# Transform & Calculate KPIs
-python scripts/transform_and_calc.py data_samples/abaco_portfolio_sample.csv
+# Run Data Pipeline
+python scripts/run_data_pipeline.py
 
 # VS Code tasks: Terminal → Run Task → [Ingest|Pipeline: Transform & Calculate]
 ```
@@ -95,14 +92,13 @@ python scripts/transform_and_calc.py data_samples/abaco_portfolio_sample.csv
 | File | Purpose |
 |------|---------|
 | `python/kpi_engine.py` | Fixed: collection_rate uses `cash_available_usd` |
-| `python/data_validation.py` | Schema validation, numeric bounds checks |
-| `scripts/ingest.py` | CSV → Parquet ingestion with timestamps |
-| `scripts/transform_and_calc.py` | Transformation + KPI calculation + segment breakdown |
-| `tests/unit/test_kpi_calculations.py` | Edge case unit tests (17 tests) |
+| `python/validation.py` | Schema validation, numeric bounds checks |
+| `scripts/run_data_pipeline.py` | Automated pipeline: Ingest → Transform → Calc → Output |
+| `tests/test_kpi_engine.py` | Unit tests for KPI orchestration and logic |
 | `.coveragerc` | Coverage configuration (fail_under=85) |
 | `.pre-commit-config.yaml` | Pre-commit hooks (black, isort, pylint) |
 | `.vscode/tasks.json` | 10+ automated tasks for testing/linting/pipeline |
-| `.github/workflows/ci.yml` | Updated CI with preflight + coverage gates |
+| `.github/workflows/ci-main.yml` | Consolidated Next.js, Python, and Gradle lint/build/test jobs with preflight + coverage gates |
 
 ## Key Metrics
 

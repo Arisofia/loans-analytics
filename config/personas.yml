@@ -1,165 +1,165 @@
 personas:
   board:
-    name: "Board of Directors"
-    refresh_frequency: "monthly"
-    description: "Strategy and risk posture view with full KPI provenance."
+    name: 'Board of Directors'
+    refresh_frequency: 'monthly'
+    description: 'Strategy and risk posture view with full KPI provenance.'
     kpis:
       - id: finance.arr
-        label: "Annual Recurring Revenue"
-        source_table: "kpi_snapshots"
-        owner: "Finance"
-        refresh: "monthly"
+        label: 'Annual Recurring Revenue'
+        source_table: 'kpi_snapshots'
+        owner: 'Finance'
+        refresh: 'monthly'
         alert_thresholds:
           warning: 0.95
           critical: 0.9
         contract:
-          formula: "sum(monthly_recurring_revenue) * 12"
+          formula: 'sum(monthly_recurring_revenue) * 12'
           expected_latency_hours: 24
-          provenance: "sql/models/finance/arr.sql"
+          provenance: 'sql/models/finance/arr.sql'
       - id: growth.origination_volume
-        label: "Origination Volume"
-        source_table: "kpi_snapshots"
-        owner: "Growth"
-        refresh: "weekly"
+        label: 'Origination Volume'
+        source_table: 'kpi_snapshots'
+        owner: 'Growth'
+        refresh: 'weekly'
         alert_thresholds:
           warning: 0.9
           critical: 0.85
         contract:
           formula: "sum(loan_amount) where status = 'funded'"
           expected_latency_hours: 12
-          provenance: "sql/models/growth/originations.sql"
+          provenance: 'sql/models/growth/originations.sql'
       - id: risk.par_90
-        label: "Portfolio at Risk 90"
-        source_table: "kpi_snapshots"
-        owner: "Risk"
-        refresh: "daily"
+        label: 'Portfolio at Risk 90'
+        source_table: 'kpi_snapshots'
+        owner: 'Risk'
+        refresh: 'daily'
         alert_thresholds:
           warning: 0.035
           critical: 0.05
         contract:
-          formula: "sum(dpd_90_plus_usd)/sum(total_receivable_usd)"
+          formula: 'sum(dpd_90_plus_usd)/sum(total_receivable_usd)'
           expected_latency_hours: 6
-          provenance: "sql/models/risk/par_90.sql"
+          provenance: 'sql/models/risk/par_90.sql'
   cfo:
-    name: "Chief Financial Officer"
-    refresh_frequency: "daily"
-    description: "Liquidity, collections, and ARR safeguards."
+    name: 'Chief Financial Officer'
+    refresh_frequency: 'daily'
+    description: 'Liquidity, collections, and ARR safeguards.'
     kpis:
       - id: finance.cash_position
-        label: "Cash Position"
-        source_table: "kpi_snapshots"
-        owner: "Treasury"
-        refresh: "daily"
+        label: 'Cash Position'
+        source_table: 'kpi_snapshots'
+        owner: 'Treasury'
+        refresh: 'daily'
         alert_thresholds:
           warning: 1000000
           critical: 750000
         contract:
-          formula: "cash_balance - restricted_cash"
+          formula: 'cash_balance - restricted_cash'
           expected_latency_hours: 2
-          provenance: "sql/models/finance/cash_position.sql"
+          provenance: 'sql/models/finance/cash_position.sql'
       - id: finance.collection_rate
-        label: "Collection Rate"
-        source_table: "kpi_snapshots"
-        owner: "Collections"
-        refresh: "daily"
+        label: 'Collection Rate'
+        source_table: 'kpi_snapshots'
+        owner: 'Collections'
+        refresh: 'daily'
         alert_thresholds:
           warning: 0.92
           critical: 0.9
         contract:
-          formula: "sum(total_eligible_usd)/sum(total_receivable_usd)"
+          formula: 'sum(total_eligible_usd)/sum(total_receivable_usd)'
           expected_latency_hours: 6
-          provenance: "sql/models/finance/collection_rate.sql"
+          provenance: 'sql/models/finance/collection_rate.sql'
       - id: finance.write_off_rate
-        label: "Write-off Rate"
-        source_table: "kpi_snapshots"
-        owner: "Finance"
-        refresh: "monthly"
+        label: 'Write-off Rate'
+        source_table: 'kpi_snapshots'
+        owner: 'Finance'
+        refresh: 'monthly'
         alert_thresholds:
           warning: 0.03
           critical: 0.05
         contract:
-          formula: "charge_offs / average_principal_outstanding"
+          formula: 'charge_offs / average_principal_outstanding'
           expected_latency_hours: 24
-          provenance: "sql/models/finance/write_off_rate.sql"
+          provenance: 'sql/models/finance/write_off_rate.sql'
   cro:
-    name: "Chief Risk Officer"
-    refresh_frequency: "daily"
-    description: "Credit risk, loss curves, and emerging issue monitoring."
+    name: 'Chief Risk Officer'
+    refresh_frequency: 'daily'
+    description: 'Credit risk, loss curves, and emerging issue monitoring.'
     kpis:
       - id: risk.par_90
-        label: "Portfolio at Risk 90"
-        source_table: "kpi_snapshots"
-        owner: "Risk"
-        refresh: "daily"
+        label: 'Portfolio at Risk 90'
+        source_table: 'kpi_snapshots'
+        owner: 'Risk'
+        refresh: 'daily'
         alert_thresholds:
           warning: 0.035
           critical: 0.05
         contract:
-          formula: "sum(dpd_90_plus_usd)/sum(total_receivable_usd)"
+          formula: 'sum(dpd_90_plus_usd)/sum(total_receivable_usd)'
           expected_latency_hours: 6
-          provenance: "sql/models/risk/par_90.sql"
+          provenance: 'sql/models/risk/par_90.sql'
       - id: risk.rdr_90
-        label: "Roll-rate to Default (90d)"
-        source_table: "kpi_snapshots"
-        owner: "Risk"
-        refresh: "weekly"
+        label: 'Roll-rate to Default (90d)'
+        source_table: 'kpi_snapshots'
+        owner: 'Risk'
+        refresh: 'weekly'
         alert_thresholds:
           warning: 0.07
           critical: 0.1
         contract:
-          formula: "cohort defaults past 90 / starting cohort balance"
+          formula: 'cohort defaults past 90 / starting cohort balance'
           expected_latency_hours: 24
-          provenance: "sql/models/risk/rdr_90.sql"
+          provenance: 'sql/models/risk/rdr_90.sql'
       - id: risk.collection_rate
-        label: "Collections Efficiency"
-        source_table: "kpi_snapshots"
-        owner: "Collections"
-        refresh: "daily"
+        label: 'Collections Efficiency'
+        source_table: 'kpi_snapshots'
+        owner: 'Collections'
+        refresh: 'daily'
         alert_thresholds:
           warning: 0.92
           critical: 0.9
         contract:
-          formula: "sum(total_eligible_usd)/sum(total_receivable_usd)"
+          formula: 'sum(total_eligible_usd)/sum(total_receivable_usd)'
           expected_latency_hours: 6
-          provenance: "sql/models/finance/collection_rate.sql"
+          provenance: 'sql/models/finance/collection_rate.sql'
   growth:
-    name: "Head of Growth"
-    refresh_frequency: "weekly"
-    description: "Acquisition, retention, and pipeline conversion."
+    name: 'Head of Growth'
+    refresh_frequency: 'weekly'
+    description: 'Acquisition, retention, and pipeline conversion.'
     kpis:
       - id: growth.origination_volume
-        label: "Origination Volume"
-        source_table: "kpi_snapshots"
-        owner: "Growth"
-        refresh: "weekly"
+        label: 'Origination Volume'
+        source_table: 'kpi_snapshots'
+        owner: 'Growth'
+        refresh: 'weekly'
         alert_thresholds:
           warning: 0.9
           critical: 0.85
         contract:
           formula: "sum(loan_amount) where status = 'funded'"
           expected_latency_hours: 12
-          provenance: "sql/models/growth/originations.sql"
+          provenance: 'sql/models/growth/originations.sql'
       - id: growth.client_retention
-        label: "Client Retention"
-        source_table: "kpi_snapshots"
-        owner: "Growth"
-        refresh: "monthly"
+        label: 'Client Retention'
+        source_table: 'kpi_snapshots'
+        owner: 'Growth'
+        refresh: 'monthly'
         alert_thresholds:
           warning: 0.93
           critical: 0.9
         contract:
-          formula: "1 - churn_rate"
+          formula: '1 - churn_rate'
           expected_latency_hours: 24
-          provenance: "sql/models/growth/client_retention.sql"
+          provenance: 'sql/models/growth/client_retention.sql'
       - id: growth.channel_efficiency
-        label: "Channel CAC-to-LTV"
-        source_table: "kpi_snapshots"
-        owner: "Marketing"
-        refresh: "monthly"
+        label: 'Channel CAC-to-LTV'
+        source_table: 'kpi_snapshots'
+        owner: 'Marketing'
+        refresh: 'monthly'
         alert_thresholds:
           warning: 3.5
           critical: 3.0
         contract:
-          formula: "ltv / cac"
+          formula: 'ltv / cac'
           expected_latency_hours: 24
-          provenance: "sql/models/growth/channel_efficiency.sql"
+          provenance: 'sql/models/growth/channel_efficiency.sql'

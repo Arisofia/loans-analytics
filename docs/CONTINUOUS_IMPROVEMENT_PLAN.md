@@ -60,4 +60,4 @@
 
 ---
 
-*For questions or to schedule a review, contact: [analytics@abaco.loans](mailto:analytics@abaco.loans)*
+_For questions or to schedule a review, contact: [analytics@abaco.loans](mailto:analytics@abaco.loans)_

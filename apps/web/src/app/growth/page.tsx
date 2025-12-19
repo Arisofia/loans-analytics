@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from 'next/link'
 
 const growthKpis = [
   {
@@ -8,7 +8,7 @@ const growthKpis = [
     change: '+12.0% QoQ',
     description: 'Value of funded loans across all channels.',
     provenance: 'kpi_snapshots → growth.origination_volume (sql/models/growth/originations.sql)',
-    owner: 'Growth'
+    owner: 'Growth',
   },
   {
     id: 'growth.client_retention',
@@ -17,7 +17,7 @@ const growthKpis = [
     change: '+0.8 pp QoQ',
     description: 'Percentage of clients retained quarter-over-quarter.',
     provenance: 'kpi_snapshots → growth.client_retention (sql/models/growth/client_retention.sql)',
-    owner: 'Growth'
+    owner: 'Growth',
   },
   {
     id: 'growth.channel_efficiency',
@@ -25,10 +25,11 @@ const growthKpis = [
     value: '3.8x',
     change: '+0.2x QoQ',
     description: 'Channel-level LTV divided by CAC.',
-    provenance: 'kpi_snapshots → growth.channel_efficiency (sql/models/growth/channel_efficiency.sql)',
-    owner: 'Marketing'
-  }
-];
+    provenance:
+      'kpi_snapshots → growth.channel_efficiency (sql/models/growth/channel_efficiency.sql)',
+    owner: 'Marketing',
+  },
+]
 
 function PersonaCard({
   title,
@@ -37,7 +38,7 @@ function PersonaCard({
   description,
   provenance,
   owner,
-  id
+  id,
 }: (typeof growthKpis)[number]) {
   return (
     <div className="border rounded p-4 bg-white shadow hover:shadow-lg transition" data-kpi-id={id}>
@@ -59,7 +60,7 @@ function PersonaCard({
         View details & lineage
       </Link>
     </div>
-  );
+  )
 }
 
 export default function GrowthDashboard() {
@@ -77,8 +78,9 @@ export default function GrowthDashboard() {
         ))}
       </div>
       <div className="mt-4 text-sm text-gray-400 text-center">
-        Data last refreshed: 2025-01-15 07:00 UTC · Source: Cascade exports · Contracted via config/personas.yml
+        Data last refreshed: 2025-01-15 07:00 UTC · Source: Cascade exports · Contracted via
+        config/personas.yml
       </div>
     </div>
-  );
+  )
 }

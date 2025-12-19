@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from 'next/link'
 
 const cfoKpis = [
   {
@@ -8,7 +8,7 @@ const cfoKpis = [
     change: '+$250k d/d',
     description: 'Available operating cash after restricted balances.',
     provenance: 'kpi_snapshots → finance.cash_position (sql/models/finance/cash_position.sql)',
-    owner: 'Treasury'
+    owner: 'Treasury',
   },
   {
     id: 'finance.collection_rate',
@@ -17,7 +17,7 @@ const cfoKpis = [
     change: '-0.3 pp d/d',
     description: 'Eligible receivables collected over total receivables.',
     provenance: 'kpi_snapshots → finance.collection_rate (sql/models/finance/collection_rate.sql)',
-    owner: 'Collections'
+    owner: 'Collections',
   },
   {
     id: 'finance.write_off_rate',
@@ -26,9 +26,9 @@ const cfoKpis = [
     change: '+0.05 pp m/m',
     description: 'Charge-offs divided by average principal outstanding.',
     provenance: 'kpi_snapshots → finance.write_off_rate (sql/models/finance/write_off_rate.sql)',
-    owner: 'Finance'
-  }
-];
+    owner: 'Finance',
+  },
+]
 
 function PersonaCard({
   title,
@@ -37,7 +37,7 @@ function PersonaCard({
   description,
   provenance,
   owner,
-  id
+  id,
 }: (typeof cfoKpis)[number]) {
   return (
     <div className="border rounded p-4 bg-white shadow hover:shadow-lg transition" data-kpi-id={id}>
@@ -59,7 +59,7 @@ function PersonaCard({
         View details & lineage
       </Link>
     </div>
-  );
+  )
 }
 
 export default function CFODashboard() {
@@ -77,8 +77,9 @@ export default function CFODashboard() {
         ))}
       </div>
       <div className="mt-4 text-sm text-gray-400 text-center">
-        Data last refreshed: 2025-01-15 07:00 UTC · Source: Cascade exports · Contracted via config/personas.yml
+        Data last refreshed: 2025-01-15 07:00 UTC · Source: Cascade exports · Contracted via
+        config/personas.yml
       </div>
     </div>
-  );
+  )
 }

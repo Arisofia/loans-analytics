@@ -1,13 +1,16 @@
-"""Standalone AI engine powered by GrokClient personas."""
-from __future__ import annotations
+
 
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from scripts.grok_client import GrokClient, GrokClientError
+from requests.exceptions import RequestException
+from scripts.clients import GrokClient
 
+
+logger = logging.getLogger(__name__)
 
 class StandaloneAIEngine:
     """Persona-driven AI engine with optional Grok backend."""
@@ -79,8 +82,10 @@ class StandaloneAIEngine:
             return self._offline_response(personality, context, data)
 
         try:
-            return self.ai_client.generate_text(prompt, context)
-        except GrokClientError:
+            response = self.ai_client.generate_text(prompt, context)
+            return response.text
+        except (RequestException, ValueError) as e:
+            logger.warning(f"AI generation failed: {e}")
             return self._offline_response(personality, context, data)
 
     def _offline_response(self, personality: Dict[str, str], context: Dict, data: Dict) -> str:

@@ -1,6 +1,4 @@
-pandas==2.3.3
-numpy==2.3.5
-azure-storage-blob==12.27.1
-azure-identity==1.25.1
-pytest==9.0.1
-pytest-cov==5.0.0
+matplotlib
+seaborn
+pyyaml
+pyarrow==14.0.1

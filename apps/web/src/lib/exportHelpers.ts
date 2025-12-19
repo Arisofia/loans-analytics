@@ -62,7 +62,7 @@ export function processedAnalyticsToJSON(analytics: ProcessedAnalytics): string 
       loans: analytics.loans,
     },
     null,
-    2,
+    2
   )
 }
 
@@ -84,7 +84,7 @@ export function processedAnalyticsToMarkdown(analytics: ProcessedAnalytics): str
       ? treemap
           .map(
             (entry) =>
-              `| ${sanitizeMarkdownCell(entry.label)} | ${entry.value.toLocaleString()} | ${sanitizeMarkdownCell(entry.color)} |`,
+              `| ${sanitizeMarkdownCell(entry.label)} | ${entry.value.toLocaleString()} | ${sanitizeMarkdownCell(entry.color)} |`
           )
           .join('\n')
       : '| No treemap data | - | - |'
@@ -94,7 +94,7 @@ export function processedAnalyticsToMarkdown(analytics: ProcessedAnalytics): str
       ? rollRates
           .map(
             (entry) =>
-              `| ${sanitizeMarkdownCell(entry.from)} → ${sanitizeMarkdownCell(entry.to)} | ${formatPercentage(entry.percent)} |`,
+              `| ${sanitizeMarkdownCell(entry.from)} → ${sanitizeMarkdownCell(entry.to)} | ${formatPercentage(entry.percent)} |`
           )
           .join('\n')
       : '| No roll-rate data | - |'
@@ -104,7 +104,7 @@ export function processedAnalyticsToMarkdown(analytics: ProcessedAnalytics): str
       ? growthProjection
           .map(
             (entry) =>
-              `| ${sanitizeMarkdownCell(entry.label)} | ${entry.yield.toFixed(1)} | ${entry.loanVolume.toLocaleString()} |`,
+              `| ${sanitizeMarkdownCell(entry.label)} | ${entry.yield.toFixed(1)} | ${entry.loanVolume.toLocaleString()} |`
           )
           .join('\n')
       : '| No growth projection data | - | - |'

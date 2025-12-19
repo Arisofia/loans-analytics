@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Abaco Loans Analytics API
-  version: "1.0.0"
+  version: '1.0.0'
   description: |
     API endpoints for Abaco Loans Analytics drilldown status.
     (No Python REST controllers detected in the codebase.)
