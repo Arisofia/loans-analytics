@@ -1,6 +1,6 @@
 # PR Sync Helper Workflow
 
-This workflow keeps pull request branches aligned with the latest `main` changes without having to sync locally.
+This workflow keeps pull request branches aligned with their base branch's latest changes without having to sync locally.
 
 ## How it works
 - Triggers manually via **Run workflow** with a `pr_number` input or from an issue comment containing `/pr-sync` on an open pull request.
