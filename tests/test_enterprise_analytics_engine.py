@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import math
 import sys
 from pathlib import Path
@@ -9,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.enterprise_analytics_engine import (
+from src.enterprise_analytics_engine import (  # noqa: E402
     LoanPosition,
     PortfolioKPIs,
     calculate_monthly_payment,
@@ -104,5 +103,3 @@ def test_portfolio_kpis_surfaces_weighted_metrics():
     assert kpis.risk_adjusted_return == pytest.approx(
         (expected_interest - expected_loss_value) / expected_exposure
     )
-=======
->>>>>>> main

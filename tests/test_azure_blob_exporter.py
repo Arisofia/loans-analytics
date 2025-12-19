@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import json
 from unittest.mock import Mock
 
@@ -103,5 +102,3 @@ def test_engine_rejects_non_string_blob_name():
 
     with pytest.raises(ValueError):
         engine.export_kpis_to_blob(exporter, blob_name=123)  # type: ignore[arg-type]
-=======
->>>>>>> main

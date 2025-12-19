@@ -70,3 +70,8 @@ nvm/
 .env.local
 .env.*.local
 >>>>>>> main
+failed_workflows.csv
+failed_workflows.csv
+*.csv
+failed_workflows.csv
+*.csv
