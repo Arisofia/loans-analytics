@@ -27,7 +27,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "eslint --ext .ts,.tsx .",
     "type-check": "tsc --project tsconfig.json --noEmit",
     "test": "jest"
   },
