@@ -11,18 +11,6 @@ from urllib3.util.retry import Retry
 API_ROOT = "https://api.github.com"
 
 
-<<<<<<< HEAD
-def build_request(url, token, data=None, method="GET"):
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {token}",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
-    encoded = json.dumps(data).encode("utf-8") if data is not None else None
-    return urllib.request.Request(
-        url, data=encoded, headers=headers, method=method
-    )
-=======
 def _create_session() -> requests.Session:
     session = requests.Session()
     retries = Retry(
@@ -30,7 +18,6 @@ def _create_session() -> requests.Session:
     )
     session.mount("https://", HTTPAdapter(max_retries=retries))
     return session
->>>>>>> origin/main
 
 SESSION = _create_session()
 
