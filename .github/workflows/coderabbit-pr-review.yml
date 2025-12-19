@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run CodeRabbit PR Review
-        uses: coderabbitai/ai-pr-reviewer@v2
+        uses: coderabbitai/ai-pr-reviewer@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CODERABBIT_TOKEN: ${{ secrets.CODERABBIT_TOKEN }}
