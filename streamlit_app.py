@@ -262,7 +262,7 @@ quality_score = 100
 if ing_state["rows"] == 0 or ing_state["columns"] == 0:
     quality_score = 0
 else:
-    quality_score -= loan_df.isna().mean().sum() * 10
+    quality_score -= loan_df.isna().mean().mean() * 100
 quality_score = max(0, min(100, quality_score))
 st.progress(quality_score / 100)
 st.markdown("Critical tables scored, missing columns handled, and zeros penalized before KPI synthesis.")
