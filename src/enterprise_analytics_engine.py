@@ -75,7 +75,10 @@ class LoanAnalyticsEngine:
         frame["exposure_at_default"] = frame.apply(
             lambda row: row["balance"] if row["status"] == "default" else 0.0, axis=1
         )
-        frame["currency"] = frame.get("currency", pd.Series([self.config.currency] * len(frame)))
+        frame["currency"] = frame.get(
+            "currency",
+            pd.Series(self.config.currency, index=frame.index),
+        )
 
         return frame
 
