@@ -73,3 +73,5 @@ nvm/
 failed_workflows.csv
 failed_workflows.csv
 *.csv
+failed_workflows.csv
+*.csv
