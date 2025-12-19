@@ -26,6 +26,18 @@ jobs:
           if [ -f apps/analytics/requirements.txt ]; then
             pip install -r apps/analytics/requirements.txt
           fi
+
+                - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install chromium
+      
+      - name: Run Cascade scraper
+        run: python scripts/scrape_cascade.py --loan-tape
+        env:
+          CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
+          CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}
+          CASCADE_PID: abaco
       - name: Run data ingestion pipeline
         run: |
           python scripts/run_data_pipeline.py
