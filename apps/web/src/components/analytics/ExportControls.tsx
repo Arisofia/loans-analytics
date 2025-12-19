@@ -58,11 +58,7 @@ export function ExportControls({ analytics }: Props) {
           className={styles.secondaryButton}
           type="button"
           onClick={() =>
-            download(
-              'analytics.md',
-              processedAnalyticsToMarkdown(analytics),
-              'text/markdown'
-            )
+            download('analytics.md', processedAnalyticsToMarkdown(analytics), 'text/markdown')
           }
         >
           Download Markdown
