@@ -134,5 +134,7 @@ def test_cashflow_curve_shape(sample_frame: pd.DataFrame):
     curve = engine.cashflow_curve(freq="Q")
 
     assert not curve.empty
-    assert curve["cumulative_cashflow"].iloc[-1] == pytest.approx(curve["cashflow"].sum())
     assert curve.shape[1] == 3
+    assert curve["cumulative_cashflow"].iloc[-1] == pytest.approx(curve["cashflow"].sum())
+    # Verify that the total cashflow equals total payments made
+    assert curve["cashflow"].sum() == pytest.approx(sample_frame["payments_made"].sum())
