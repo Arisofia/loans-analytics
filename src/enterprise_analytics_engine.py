@@ -121,14 +121,27 @@ class LoanAnalyticsEngine:
         payments = df["payments_made"].sum()
         return payments / exposure
 
+    def _portfolio_kpis_for_frame(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Compute portfolio KPIs for an already-prepared DataFrame without
+        re-running data normalization or schema checks.
+        This reuses the existing `portfolio_kpis` implementation by
+        temporarily swapping `self.data`.
+        """
+        original_data = self.data
+        try:
+            self.data = df
+            return self.portfolio_kpis()
+        finally:
+            self.data = original_data
+
     def segment_kpis(self, segment: str) -> pd.DataFrame:
         if segment not in self.data.columns:
             raise ValueError(f"Segment column '{segment}' not found")
 
         rows = []
         for value, group in self.data.groupby(segment):
-            engine = LoanAnalyticsEngine(group, config=self.config)
-            metrics = engine.portfolio_kpis()
+            metrics = self._portfolio_kpis_for_frame(group)
             metrics[segment] = value
             rows.append(metrics)
         return pd.DataFrame(rows)
