@@ -75,3 +75,4 @@ failed_workflows.csv
 *.csv
 failed_workflows.csv
 *.csv
+**/node_modules/
