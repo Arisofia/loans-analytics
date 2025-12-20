@@ -237,7 +237,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                                 + "; ".join(context.get("blockers") or ["No merge reasons provided."])
                             )
                 except Exception as e:
-                    print(f"Failed to render report for PR #{num}: {e}")
+                    print(f"Failed to process PR #{num} (rendering or merge): {e}")
                 print("\n")
         elif args.number:
             context = _load_pr_context(args.repo, args.number)
