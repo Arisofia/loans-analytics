@@ -87,10 +87,13 @@ class TestPRStatus(unittest.TestCase):
 
         ready, blockers = merge_readiness(pr, checks, status_payload)
         self.assertFalse(ready)
-        self.assertTrue(any("draft" in blocker for blocker in blockers))
-        self.assertTrue(any("dirty" in blocker for blocker in blockers))
-        self.assertTrue(any("checks" in blocker for blocker in blockers))
-        self.assertTrue(any("failure" in blocker for blocker in blockers))
+        expected_blockers = [
+            "PR is marked as draft",
+            "Mergeable state is dirty",
+            "One or more checks are not successful",
+            "Combined status is failure",
+        ]
+        self.assertCountEqual(blockers, expected_blockers)
 
     @patch("scripts.pr_status.SESSION")
     def test_merge_pr_success(self, mock_session):
