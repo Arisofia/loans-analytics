@@ -32,5 +32,5 @@ All KPI rows below are populated from the current production analytics export at
 | Net Income | CFO/Finance | financials.income_statement.net_income_usd | Finance, Income Statement | Net income | -3,100,000 |
 | Runway Months | CFO/Finance | financials.income_statement.runway_months | Finance, Income Statement | Months of runway | 48 |
 | Debt to Equity Ratio | CFO/Finance | financials.income_statement.debt_to_equity_ratio | Finance, Income Statement | Debt/equity ratio | 1.93 |
-| Data Freshness/Completeness | Compliance | data_quality.data_freshness_hours / data_completeness_pct | Compliance, Data Quality | Data quality metrics | 18 hours freshness / 99.8% completeness |
+| Data Freshness/Completeness | Compliance | data_quality.data_freshness_hours / data_quality.data_completeness_pct | Compliance, Data Quality | Data quality metrics | 18 hours freshness / 99.8% completeness |
 | Validation Status | Compliance | data_quality.validation_status | Compliance, Data Quality | Data validation status | PASS |
