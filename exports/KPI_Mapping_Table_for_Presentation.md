@@ -16,7 +16,7 @@ All KPI rows below are populated from the current production analytics export at
 | Total Balance | Risk | delinquency.total_balance | Risk | Total portfolio balance | 7,813,919.10 |
 | PAR_7 MoM/QoQ/YoY | Risk | delinquency.par_metrics | Risk | PAR_7 change metrics | -1.45% MoM / -20.18% QoQ / -68.93% YoY |
 | Collection Rate | Finance | collections.collection_rate_latest | Collections, Finance | Latest collection rate | 2.57% |
-| Payments Received/Scheduled | Finance | collections.total_payments_received_latest / total_payments_scheduled_latest | Collections, Finance | Payments metrics | 118,574.16 received / 4,618,878.95 scheduled |
+| Payments Received/Scheduled | Finance | collections.total_payments_received_latest / collections.total_payments_scheduled_latest | Collections, Finance | Payments metrics | 118,574.16 received / 4,618,878.95 scheduled |
 | Collection Rate MoM/QoQ/YoY | Finance | collections.collection_metrics | Collections, Finance | Collection rate change metrics | -1.99% MoM / 2.9% QoQ / -3.26% YoY |
 | CDR Latest | Risk/Finance | curves.cdr_latest | Risk, Finance | Cumulative default rate | 0.91% |
 | Written Off Amount | Risk/Finance | curves.written_off_amount | Risk, Finance | Amount written off | 9,006.38 |
