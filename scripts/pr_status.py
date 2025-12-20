@@ -122,7 +122,7 @@ def merge_readiness(
         blockers.append(f"Mergeable state is {mergeable_state or 'unknown'}")
 
     conclusions = {check.get("conclusion") for check in checks if check.get("status") == "completed"}
-    failing_checks = [c for c in conclusions if c not in {"success", "neutral", "skipped"}]
+    failing_checks = conclusions - {"success", "neutral", "skipped"}
     if failing_checks:
         blockers.append("One or more checks are not successful")
 
