@@ -3,7 +3,7 @@
 import argparse
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -49,6 +49,17 @@ def _get(url: str, params: Optional[Dict[str, str]] = None) -> Any:
     return response.json()
 
 
+def _put(url: str, payload: Optional[Dict[str, Any]] = None) -> Any:
+    response = SESSION.put(url, headers=_headers(), json=payload, timeout=20)
+    if response.status_code == 401:
+        raise GitHubRequestError("Authentication failed; set GITHUB_TOKEN or GH_TOKEN.")
+    if not response.ok:
+        raise GitHubRequestError(
+            f"GitHub request failed ({response.status_code}): {response.text}"
+        )
+    return response.json()
+
+
 def list_open_prs(repo: str) -> List[int]:
     payload = _get(f"{API_ROOT}/{repo}/pulls", params={"state": "open", "per_page": "30"})
     if isinstance(payload, list):
@@ -67,6 +78,13 @@ def check_runs(repo: str, sha: str) -> List[Dict]:
 
 def commit_status(repo: str, sha: str) -> Dict:
     return _get(f"{API_ROOT}/{repo}/commits/{sha}/status")
+
+
+def merge_pr(repo: str, number: int, sha: str, method: str = "merge", title: Optional[str] = None) -> Dict:
+    payload: Dict[str, Any] = {"merge_method": method, "sha": sha}
+    if title:
+        payload["commit_title"] = title
+    return _put(f"{API_ROOT}/{repo}/pulls/{number}/merge", payload)
 
 
 def summarize_checks(checks: List[Dict]) -> str:
@@ -93,14 +111,55 @@ def summarize_statuses(statuses: List[Dict], state: str) -> str:
     return "\n".join(lines)
 
 
-def render_report(repo: str, number: int) -> str:
+def merge_readiness(
+    pr: Dict, checks: List[Dict], status_payload: Dict
+) -> Tuple[bool, List[str]]:
+    blockers: List[str] = []
+    mergeable_state = pr.get("mergeable_state")
+    if pr.get("draft"):
+        blockers.append("PR is marked as draft")
+    if mergeable_state not in {"clean", "unstable"}:
+        blockers.append(f"Mergeable state is {mergeable_state or 'unknown'}")
+
+    conclusions = {check.get("conclusion") for check in checks if check.get("status") == "completed"}
+    failing_checks = [c for c in conclusions if c not in {"success", "neutral", "skipped"}]
+    if failing_checks:
+        blockers.append("One or more checks are not successful")
+
+    combined_state = status_payload.get("state")
+    statuses = status_payload.get("statuses", [])
+    if statuses and combined_state != "success":
+        blockers.append(f"Combined status is {combined_state or 'unknown'}")
+
+    return len(blockers) == 0, blockers
+
+
+def _load_pr_context(repo: str, number: int) -> Dict[str, Any]:
     pr = pull_request(repo, number)
     sha = pr.get("head", {}).get("sha")
     if not sha:
         raise GitHubRequestError("Unable to resolve head commit SHA for the pull request.")
-
     checks = check_runs(repo, sha)
     status_payload = commit_status(repo, sha)
+    ready, blockers = merge_readiness(pr, checks, status_payload)
+    return {
+        "pr": pr,
+        "sha": sha,
+        "checks": checks,
+        "status": status_payload,
+        "ready_to_merge": ready,
+        "blockers": blockers,
+    }
+
+
+def render_report(repo: str, number: int) -> str:
+    context = _load_pr_context(repo, number)
+    return render_report_from_context(number, context)
+
+
+def render_report_from_context(number: int, context: Dict[str, Any]) -> str:
+    pr = context["pr"]
+    status_payload = context["status"]
     report_lines = [
         f"PR #{number}: {pr.get('title', 'untitled')}",
         f"URL: {pr.get('html_url')}",
@@ -109,11 +168,16 @@ def render_report(repo: str, number: int) -> str:
         f"Conflicts: {'yes' if pr.get('mergeable_state') == 'dirty' else 'no/unknown'}",
         "",
         "Check runs:",
-        summarize_checks(checks),
+        summarize_checks(context["checks"]),
         "",
         "Commit statuses:",
         summarize_statuses(status_payload.get("statuses", []), status_payload.get("state")),
+        "",
+        f"Ready to merge: {'yes' if context['ready_to_merge'] else 'no'}",
     ]
+    if context["blockers"]:
+        report_lines.append("Merge blockers:")
+        report_lines.extend(f"- {reason}" for reason in context["blockers"])
     return "\n".join(report_lines)
 
 
@@ -123,6 +187,17 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     )
     parser.add_argument("number", type=int, nargs="?", help="Pull request number to inspect.")
     parser.add_argument("--all", action="store_true", help="Report on all open PRs.")
+    parser.add_argument(
+        "--merge",
+        action="store_true",
+        help="Attempt to merge PRs that are ready after reporting status.",
+    )
+    parser.add_argument(
+        "--merge-method",
+        default="merge",
+        choices=["merge", "squash", "rebase"],
+        help="Merge strategy to use when --merge is provided.",
+    )
     parser.add_argument(
         "--repo",
         default=DEFAULT_REPO,
@@ -139,17 +214,51 @@ def main(argv: Optional[List[str]] = None) -> int:
             if not pr_numbers:
                 print(f"No open PRs found for {args.repo}.")
                 return 0
-            
+
             for num in pr_numbers:
                 print(f"--- Checking PR #{num} ---")
                 try:
-                    print(render_report(args.repo, num))
+                    context = _load_pr_context(args.repo, num)
+                    print(render_report_from_context(num, context))
+                    if args.merge:
+                        if context["ready_to_merge"]:
+                            result = merge_pr(
+                                args.repo,
+                                num,
+                                context["sha"],
+                                method=args.merge_method,
+                                title=f"Merge PR #{num}: {context['pr'].get('title', 'untitled')}",
+                            )
+                            status = "merged" if result.get("merged") else "not merged"
+                            print(f"Merge attempt: {status} (sha={result.get('sha')})")
+                        else:
+                            print(
+                                "Merge skipped: "
+                                + "; ".join(context.get("blockers") or ["No merge reasons provided."])
+                            )
                 except Exception as e:
                     print(f"Failed to render report for PR #{num}: {e}")
                 print("\n")
         elif args.number:
-            report = render_report(args.repo, args.number)
+            context = _load_pr_context(args.repo, args.number)
+            report = render_report_from_context(args.number, context)
             print(report)
+            if args.merge:
+                if not context["ready_to_merge"]:
+                    print(
+                        "Merge skipped: "
+                        + "; ".join(context.get("blockers") or ["No merge reasons provided."])
+                    )
+                    return 1
+
+                result = merge_pr(
+                    args.repo,
+                    args.number,
+                    context["sha"],
+                    method=args.merge_method,
+                    title=f"Merge PR #{args.number}: {context['pr'].get('title', 'untitled')}",
+                )
+                print(f"Merge result: {result.get('message', 'completed')} (sha={result.get('sha')})")
         else:
             sys.stderr.write("Error: Must specify a PR number or --all.\n")
             return 1
