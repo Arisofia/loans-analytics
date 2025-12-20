@@ -1,6 +1,6 @@
 import type { Metric, Product, Step } from '../types/landingPage'
 
-type MarketingContent = {
+export type MarketingContent = {
   readonly metrics: readonly Metric[]
   readonly products: readonly Product[]
   readonly controls: readonly string[]
