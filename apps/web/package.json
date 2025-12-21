@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint src tests"
+    "lint": "next lint"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.31.0",
@@ -16,11 +16,12 @@
     "@vercel/speed-insights": "^1.3.1",
     "babel-plugin-react-compiler": "1.0.0",
     "next": "^16.0.10",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "server-only": "^0.0.1",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "^16.0.3",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/node": "^20.19.25",
     "@types/react": "^19.2.7",
