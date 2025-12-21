@@ -3,7 +3,7 @@
 
 version: 1.0
 name: fintech_factory_data_orchestration
-description: "Zero-touch automation for Fintech Factory KPI and compliance pipeline"
+description: 'Zero-touch automation for Fintech Factory KPI and compliance pipeline'
 
 # Global pipeline settings
 global_settings:
@@ -12,14 +12,14 @@ global_settings:
   max_retries: 3
   error_notification: slack
   enable_audit_logging: true
-  
+
 # Data ingestion pipeline
 ingestion_pipeline:
   name: cascade_data_ingestion
-  schedule: "0 3 * * *"  # Daily at 03:00 UTC
+  schedule: '0 3 * * *' # Daily at 03:00 UTC
   source: cascade_debt_export
   target: raw_data_warehouse
-  
+
   steps:
     - name: extract_cascade_export
       type: file_import
@@ -27,7 +27,7 @@ ingestion_pipeline:
         format: csv
         encoding: utf-8
         error_handling: skip_invalid_rows
-        
+
     - name: validate_raw_data
       type: data_validation
       validations:
@@ -38,32 +38,32 @@ ingestion_pipeline:
         - field: original_balance
           rules: [numeric, non_negative]
       on_failure: halt_and_alert
-      
+
     - name: load_to_warehouse
       type: bigquery_load
       config:
         dataset: raw_layer
         table: cascade_loans_raw
         mode: replace
-        
+
 # Transformation pipeline
 transformation_pipeline:
   name: kpi_calculation_engine
   dependencies:
     - cascade_data_ingestion
-  schedule: "0 4 * * *"  # 04:00 UTC (after ingestion)
-  
+  schedule: '0 4 * * *' # 04:00 UTC (after ingestion)
+
   steps:
     - name: compute_par_90
       type: bigquery_query
       query_file: sql/calculations/par_90_calculation.sql
       output_table: analytics_layer.par_90_metrics
-      
+
     - name: compute_collection_rate
       type: bigquery_query
       query_file: sql/calculations/collection_rate.sql
       output_table: analytics_layer.collection_metrics
-      
+
     - name: compute_portfolio_health
       type: python_transform
       script: python/kpi_engine.py:compute_portfolio_health
@@ -72,85 +72,85 @@ transformation_pipeline:
         - collection_metrics
       outputs:
         - analytics_layer.portfolio_health_score
-        
+
     - name: compute_compliance_metrics
       type: bigquery_query
       query_file: sql/calculations/compliance_metrics.sql
       output_table: compliance_layer.compliance_status
-      
+
 # Validation pipeline
 validation_pipeline:
   name: post_transformation_validation
   dependencies:
     - kpi_calculation_engine
-  
+
   steps:
     - name: reconciliation_checks
       type: sql_check
       checks:
         - name: par_90_not_negative
-          sql: "SELECT COUNT(*) FROM portfolio_health_score WHERE par_90_pct < 0"
+          sql: 'SELECT COUNT(*) FROM portfolio_health_score WHERE par_90_pct < 0'
           expected_result: 0
-          
+
         - name: collection_rate_within_bounds
-          sql: "SELECT COUNT(*) FROM collection_metrics WHERE collection_rate_pct > 100"
+          sql: 'SELECT COUNT(*) FROM collection_metrics WHERE collection_rate_pct > 100'
           expected_result: 0
-          
+
     - name: drift_detection
       type: statistical_check
       config:
         baseline_window: 30_days
         alert_threshold: 2.0_sigma
-        
+
 # Distribution pipeline
 distribution_pipeline:
   name: stakeholder_reporting
   dependencies:
     - post_transformation_validation
-  schedule: "0 6 * * *"  # 06:00 UTC
-  
+  schedule: '0 6 * * *' # 06:00 UTC
+
   steps:
     - name: generate_executive_report
       type: report_generator
       template: templates/executive_summary.html
       recipients:
         - executive_briefing@company.com
-      
+
     - name: generate_risk_report
       type: report_generator
       template: templates/risk_analysis.html
       destinations:
-        - slack: "#risk-monitoring"
-        - email: "risk-team@company.com"
-        
+        - slack: '#risk-monitoring'
+        - email: 'risk-team@company.com'
+
     - name: generate_compliance_brief
       type: report_generator
       template: templates/compliance_status.html
       recipients:
         - compliance@company.com
-        
+
     - name: sync_to_notion_workspace
       type: notion_sync
-      database_id: "compliance_dashboard"
+      database_id: 'compliance_dashboard'
       refresh: true
-      
+
 # Alert rules
 alert_rules:
   - rule_name: par_90_critical
-    condition: "par_90_pct > 5.0"
+    condition: 'par_90_pct > 5.0'
     severity: critical
     notification: [slack, email]
-    
+
   - rule_name: collection_rate_low
-    condition: "collection_rate_pct < 0.5"
+    condition: 'collection_rate_pct < 0.5'
     severity: warning
     notification: [slack]
-    
+
   - rule_name: compliance_breach
-    condition: "compliance_status = BREACH"
+    condition: 'compliance_status = BREACH'
     severity: critical
     notification: [slack, email, sms]
-    
+
 # Monitoring and observability
 monitoring:
   metrics_collection: true

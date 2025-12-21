@@ -1,9 +1,3 @@
-# Gradle
-.gradle/
-build/
-**/.gradle/
-**/build/
-
 # Node / JavaScript
 node_modules/
 .next/
@@ -11,10 +5,14 @@ node_modules/
 dist/
 coverage/
 
+# Gradle
+.gradle/
+build/
+**/.gradle/
+**/build/
+
 # Python
 .venv/
-.vscode/*
-!.vscode/settings.json
 venv/
 __pycache__/
 *.pyc
@@ -27,20 +25,17 @@ __pycache__/
 # OS files
 .DS_Store
 Thumbs.db
+apps/.DS_Store
 
 # Project-specific artifacts
-apps/.DS_Store
-abaco-loans-analytics/figma-financial-dashboard/node_modules/
-
-# Local repository clones
 abaco-loans-analytics/
 data_samples/
 gemini-cli/
+nvm/
 
 # Environment & platform
 .env
 .env.local
 .env*.local
 .vercel/
-eslint.config.js
-.vercel
+node_modules

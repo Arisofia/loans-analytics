@@ -5,24 +5,7 @@ build dark presentation slides consistent with the ABACO design tokens.
 
 import json
 from pathlib import Path
-
-ABACO_THEME = {
-    "colors": {
-        "background": "#030E19",
-        "primary": "#C1A6FF",
-        "secondary": "#5F4896",
-        "accent_green": "#22c55e",
-        "accent_blue": "#2563eb",
-        "text_primary": "#f3f6fb",
-        "text_secondary": "rgba(243, 246, 251, 0.72)",
-    },
-    "typography": {
-        "primary_font": "Lato",
-        "secondary_font": "Poppins",
-        "title_size": "48px",
-        "body_size": "14px",
-    },
-}
+from python.theme import ABACO_THEME
 
 SLIDE_TOPICS = [
     {

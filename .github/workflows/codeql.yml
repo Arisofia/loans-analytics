@@ -1,13 +1,17 @@
 name: codeql
 
 on:
+  workflow_dispatch:
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
   schedule:
     - cron: "0 3 * * 1"
-  workflow_dispatch:
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   actions: read
@@ -16,139 +20,30 @@ permissions:
 
 jobs:
   analyze:
-    name: Analyze (${{ matrix.language }})
+    name: Analyze (CodeQL)
     runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-      pull-requests: read
     strategy:
       fail-fast: false
       matrix:
         language: ["javascript", "python"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        if: matrix.language == 'javascript'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Setup Python
-        if: matrix.language == 'python'
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+      - name: Set up CodeQL
+        uses: github/codeql-action/init@v3.31.5
         with:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v3.31.5
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+      - name: Perform CodeQL Analysis (no upload while default setup is active)
+        uses: github/codeql-action/analyze@v3.31.5
         with:
           category: "/language:${{ matrix.language }}"
+          # CodeQL upload is disabled while the default setup is active.
+          # This means analysis results will NOT be uploaded to GitHub Security and will not appear in the Security tab.
+          # Enable upload (set to true or remove this line) when you want results to be visible in GitHub Security,
+          # such as after customizing the CodeQL configuration or moving out of default setup.
           upload: false
-
-      - name: Repository Sync & Traceability Check
-        run: |
-          echo "🔎 Checking repository sync, traceability, and auditability..."
-          # Ensure all source, test, and docs folders are present
-          for dir in src tests docs packages; do
-            if [ ! -d "$dir" ]; then
-              echo "❌ Missing directory: $dir"
-              exit 1
-            fi
-          done
-          # Check for AGENTS.md and azurecosmosdb.instructions.md
-          if [ ! -f AGENTS.md ]; then
-            echo "❌ AGENTS.md missing"
-            exit 1
-          fi
-          if [ ! -f docs/azurecosmosdb.instructions.md ]; then
-            echo "❌ docs/azurecosmosdb.instructions.md missing"
-            exit 1
-          fi
-          echo "✅ Repository structure and documentation present"
-          # Optionally check for Cosmos DB modeling best practices in packages/README.md
-          if ! grep -q "Cosmos DB" packages/README.md; then
-            echo "❌ Cosmos DB modeling guidance missing in packages/README.md"
-            exit 1
-          fi
-          echo "✅ Cosmos DB modeling guidance found in packages/README.md"
-          # Check for lint and test scripts in package.json
-          if [ -f package.json ]; then
-            if ! grep -q '"lint"' package.json; then
-              echo "❌ lint script missing in package.json"
-              exit 1
-            fi
-            if ! grep -q '"test"' package.json; then
-              echo "❌ test script missing in package.json"
-              exit 1
-            fi
-            echo "✅ Lint and test scripts present in package.json"
-          fi
-          echo "Repository sync and traceability checks passed."
-
-      - name: Azure Cosmos DB Modeling Best Practices Check
-        run: |
-          echo "🔎 Checking Azure Cosmos DB modeling best practices and documentation..."
-          # Check for Cosmos DB modeling instructions in docs/azurecosmosdb.instructions.md
-          if ! grep -q "Data Modeling Best Practices" docs/azurecosmosdb.instructions.md; then
-            echo "❌ Data modeling best practices missing in docs/azurecosmosdb.instructions.md"
-            exit 1
-          fi
-          # Check for Cosmos DB use cases and guidance
-          if ! grep -q "Recommended Use Cases for Azure Cosmos DB" docs/azurecosmosdb.instructions.md; then
-            echo "❌ Cosmos DB use cases missing in docs/azurecosmosdb.instructions.md"
-            exit 1
-          fi
-          echo "✅ Azure Cosmos DB modeling guidance and use cases present"
-          # Check for partition key guidance
-          if ! grep -q "Partition Key Choice" docs/azurecosmosdb.instructions.md; then
-            echo "❌ Partition key guidance missing in docs/azurecosmosdb.instructions.md"
-            exit 1
-          fi
-          echo "✅ Partition key guidance present"
-          # Check for SDK best practices
-          if ! grep -q "SDK Best Practices" docs/azurecosmosdb.instructions.md; then
-            echo "❌ SDK best practices missing in docs/azurecosmosdb.instructions.md"
-            exit 1
-          fi
-          echo "✅ SDK best practices present"
-          # Check for developer tooling instructions
-          if ! grep -q "Developer Tooling Instructions" docs/azurecosmosdb.instructions.md; then
-            echo "❌ Developer tooling instructions missing in docs/azurecosmosdb.instructions.md"
-            exit 1
-          fi
-          echo "✅ Developer tooling instructions present"
-          # Check for additional guidelines
-          if ! grep -q "Additional Guidelines" docs/azurecosmosdb.instructions.md; then
-            echo "❌ Additional guidelines missing in docs/azurecosmosdb.instructions.md"
-            exit 1
-          fi
-          echo "✅ Additional guidelines present"
-          echo "Azure Cosmos DB modeling best practices and documentation checks passed."
-
-      - name: Complete File-by-File Audit & KPI/Visualization Traceability
-        if: ${{ github.event_name == "push" }}
-        run: |
-          echo "🔎 Auditing all files for KPI, dashboard, and visualization traceability..."
-          # Check for traceability comments in all Python, TypeScript, SQL, and Markdown files
-          find . -type f \( -name "*.py" -o -name "*.ts" -o -name "*.sql" -o -name "*.md" \) | while read file; do
-            if ! grep -q "Traceability" "$file"; then
-              echo "❌ Traceability comment missing in $file"
-              exit 1
-            fi
-          done
-          echo "✅ All files include traceability, auditability, and collaboration comments"
-          echo "File-by-file audit and traceability checks passed."

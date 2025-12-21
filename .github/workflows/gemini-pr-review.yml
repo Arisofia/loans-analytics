@@ -1,4 +1,7 @@
 name: Gemini AI PR Review
+permissions:
+  contents: read
+  pull-requests: write
 
 on:
   pull_request:

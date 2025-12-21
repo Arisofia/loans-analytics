@@ -5,69 +5,69 @@ integration:
   name: cascade_debt
   type: data_source
   version: 1.0
-  
+
 connection:
   method: csv_export
   frequency: daily
-  schedule: "03:00 UTC"  # Morning ingestion
-  
+  schedule: '03:00 UTC' # Morning ingestion
+
 data_source:
   provider: cascade_debt
   export_formats:
     - csv
     - json
-  
+
 data_mappings:
   loan_id:
     source_field: loan_id
     target_field: loan_id
     required: true
-  
+
   client_id:
     source_field: client_id
     target_field: client_id
     required: true
-  
+
   current_balance:
     source_field: outstanding_balance
     target_field: current_balance
     data_type: numeric
     required: true
-  
+
   original_balance:
     source_field: original_amount
     target_field: original_balance
     data_type: numeric
     required: true
-  
+
   last_payment_date:
     source_field: last_payment_date
     target_field: last_payment_date
     data_type: date
-  
+
   total_collections_30_days:
     source_field: total_received_30d
     target_field: total_collections_30_days
     data_type: numeric
-  
+
 validation_rules:
   - rule: non_negative_balance
     field: current_balance
-    check: ">= 0"
-  
+    check: '>= 0'
+
   - rule: balance_not_exceeds_original
     field: current_balance
-    check: "<= original_balance"
-  
+    check: '<= original_balance'
+
   - rule: valid_client_id
     field: client_id
-    check: "not_null & numeric"
+    check: 'not_null & numeric'
 
 data_retention:
   raw_data: 90 days
   processed_data: 2 years
   archive: yes
-  
+
 error_handling:
   retry_policy: exponential_backoff
   max_retries: 3

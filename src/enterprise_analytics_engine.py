@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence, Tuple
+from typing import Iterable, Tuple
 
 
 @dataclass(frozen=True)
@@ -50,7 +50,7 @@ def expected_loss(loan: LoanPosition, loss_given_default: float) -> float:
 
 
 def portfolio_interest_and_risk(
-    loans: Sequence[LoanPosition], loss_given_default: float
+    loans: Iterable[LoanPosition], loss_given_default: float
 ) -> Tuple[float, float]:
     """
     Aggregate expected first-month interest and expected loss across a portfolio.
@@ -85,7 +85,7 @@ class PortfolioKPIs:
 
 
 def calculate_portfolio_kpis(
-    loans: Sequence[LoanPosition], loss_given_default: float
+    loans: Iterable[LoanPosition], loss_given_default: float
 ) -> PortfolioKPIs:
     """
     Compute weighted averages and expected first-month cash flows for a portfolio.
