@@ -17,18 +17,10 @@ const loanHeaders: Array<keyof LoanRowWithLtv> = [
 function escapeCsvValue(value: string): string {
   // Escape values containing quotes, commas, or any line breaks (CR, LF, or CRLF)
   if (/[",\r\n]/.test(value)) {
-    return `"${value.replaceAll('"', '""')}"`
+    return `"${value.replace(/"/g, '""')}"`
   }
   return value
 }
-
-const sanitizeMarkdownCell = (value: string): string =>
-  value
-    .replace(/[\r\n]+/g, ' ')
-    .replace(/\\/g, '\\\\')
-    .replace(/[|`]/g, (match) => `\\${match}`)
-
-const formatPercentage = (value: number, digits = 1): string => `${value.toFixed(digits)}%`
 
 export function processedAnalyticsToCSV(analytics: ProcessedAnalytics): string {
   const rows: LoanRowWithLtv[] = analytics.loans.map((loan) => ({
@@ -67,71 +59,62 @@ export function processedAnalyticsToJSON(analytics: ProcessedAnalytics): string 
 }
 
 export function processedAnalyticsToMarkdown(analytics: ProcessedAnalytics): string {
-  const { kpis, treemap, rollRates, growthProjection } = analytics
+  const generatedAt = new Date().toISOString()
 
   const kpiRows = [
-    { label: 'Delinquency rate', value: formatPercentage(kpis.delinquencyRate) },
-    { label: 'Portfolio yield', value: formatPercentage(kpis.portfolioYield) },
-    { label: 'Average LTV', value: formatPercentage(kpis.averageLTV) },
-    { label: 'Average DTI', value: formatPercentage(kpis.averageDTI) },
-    { label: 'Loan count', value: kpis.loanCount.toLocaleString() },
+    ['Delinquency rate', `${analytics.kpis.delinquencyRate}%`],
+    ['Portfolio yield', `${analytics.kpis.portfolioYield}%`],
+    ['Average LTV', `${analytics.kpis.averageLTV}%`],
+    ['Average DTI', `${analytics.kpis.averageDTI}%`],
+    ['Active loans', analytics.kpis.loanCount.toString()],
   ]
-    .map((entry) => `| ${entry.label} | ${entry.value} |`)
-    .join('\n')
 
-  const treemapSection =
-    treemap.length > 0
-      ? treemap
-          .map(
-            (entry) =>
-              `| ${sanitizeMarkdownCell(entry.label)} | ${entry.value.toLocaleString()} | ${sanitizeMarkdownCell(entry.color)} |`
-          )
-          .join('\n')
-      : '| No treemap data | - | - |'
+  const treemapTable = analytics.treemap.length
+    ? [
+        '| Segment | Balance | Color |',
+        '| --- | ---: | --- |',
+        ...analytics.treemap.map(
+          (entry) => `| ${entry.label} | ${entry.value.toLocaleString()} | ${entry.color} |`
+        ),
+      ].join('\n')
+    : '_No treemap segments loaded_'
 
-  const rollRatesSection =
-    rollRates.length > 0
-      ? rollRates
-          .map(
-            (entry) =>
-              `| ${sanitizeMarkdownCell(entry.from)} → ${sanitizeMarkdownCell(entry.to)} | ${formatPercentage(entry.percent)} |`
-          )
-          .join('\n')
-      : '| No roll-rate data | - |'
+  const rollRateTable = analytics.rollRates.length
+    ? [
+        '| From (DPD) | To (Status) | Share (%) |',
+        '| --- | --- | ---: |',
+        ...analytics.rollRates.map(
+          (row) => `| ${row.from} | ${row.to} | ${row.percent.toFixed(1)} |`
+        ),
+      ].join('\n')
+    : '_No roll-rate entries loaded_'
 
-  const growthSection =
-    growthProjection.length > 0
-      ? growthProjection
-          .map(
-            (entry) =>
-              `| ${sanitizeMarkdownCell(entry.label)} | ${entry.yield.toFixed(1)} | ${entry.loanVolume.toLocaleString()} |`
-          )
-          .join('\n')
-      : '| No growth projection data | - | - |'
+  const growthTable = analytics.growthProjection.length
+    ? [
+        '| Month | Yield | Loan volume |',
+        '| --- | ---: | ---: |',
+        ...analytics.growthProjection.map(
+          (point) => `| ${point.label} | ${point.yield}% | ${point.loanVolume.toLocaleString()} |`
+        ),
+      ].join('\n')
+    : '_No growth projection available_'
 
   return [
-    '# Analytics Report',
+    '# ABACO portfolio analytics export',
+    `Generated at: ${generatedAt}`,
     '',
-    '## KPIs',
-    '| Metric | Value |',
-    '| --- | --- |',
-    kpiRows,
+    '## KPI summary',
+    '| KPI | Value |',
+    '| --- | ---: |',
+    ...kpiRows.map((row) => `| ${row[0]} | ${row[1]} |`),
     '',
-    '## Treemap',
-    '| Label | Value | Color |',
-    '| --- | --- | --- |',
-    treemapSection,
+    '## Treemap breakdown',
+    treemapTable,
     '',
-    '## Roll Rates',
-    '| Transition | Percent |',
-    '| --- | --- |',
-    rollRatesSection,
+    '## Roll-rate cascade',
+    rollRateTable,
     '',
-    '## Growth Projection',
-    '| Month | Yield | Loan Volume |',
-    '| --- | --- | --- |',
-    growthSection,
-  ]
-    .filter(Boolean)
-    .join('\n')
+    '## Growth projection',
+    growthTable,
+  ].join('\n')
 }

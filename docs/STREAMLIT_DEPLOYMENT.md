@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers deploying a Streamlit dashboard alongside the Next.js application for real-time risk assessment and Cascade Platform data ingestion.
+This guide covers deploying a Streamlit dashboard alongside the Next.js application for real-time risk assessment and Google Drive data ingestion.
 
 **Important**: This workspace runs on Debian GNU/Linux 12 (bookworm) with Node.js 20.x and npm as the canonical package manager.
 
@@ -11,7 +11,7 @@ This guide covers deploying a Streamlit dashboard alongside the Next.js applicat
 ### Prerequisites
 
 - Python 3.11+
-- Cascade Platform service account with Drive API access
+- Google Cloud service account with Drive API access
 - Supabase project with configured secrets
 - Node.js 20.x (for Next.js companion app)
 - npm (officially supported package manager)
@@ -33,7 +33,7 @@ This guide covers deploying a Streamlit dashboard alongside the Next.js applicat
    SUPABASE_URL = "https://your-project.supabase.co"
    SUPABASE_SERVICE_KEY = "your-service-role-key"
 
-   # Cascade Platform Integration
+   # Google Drive Integration
    GDRIVE_FOLDER_ID = "your-google-drive-folder-id"
    GDRIVE_SERVICE_ACCOUNT = '{"type":"service_account","project_id":"...","private_key":"..."}'
 
@@ -161,7 +161,7 @@ This guide covers deploying a Streamlit dashboard alongside the Next.js applicat
 
 ```yaml
 // filepath: docker-compose.streamlit.yml
-version: '3.8'
+version: "3.8"
 
 services:
   streamlit:
@@ -170,7 +170,7 @@ services:
       dockerfile: Dockerfile.streamlit
     container_name: abaco-streamlit
     ports:
-      - '8501:8501'
+      - "8501:8501"
     environment:
       STREAMLIT_SERVER_PORT: 8501
       STREAMLIT_SERVER_ADDRESS: 0.0.0.0
@@ -192,7 +192,7 @@ services:
       dockerfile: Dockerfile
     container_name: abaco-nextjs
     ports:
-      - '3000:3000'
+      - "3000:3000"
     environment:
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
@@ -217,7 +217,7 @@ docker-compose -f docker-compose.streamlit.yml up -d
 
 ## Features
 
-### Cascade Platform Ingestion
+### Google Drive Ingestion
 
 - **Real-time file processing** from configured Drive folder
 - **Format support**: Excel (.xlsx), Google Sheets, CSV
@@ -321,11 +321,11 @@ echo $SUPABASE_SERVICE_KEY
 - Ensure Supabase project is active (not paused)
 - Verify network connectivity to Supabase
 
-### "Permission denied for Cascade Platform access"
+### "Permission denied for Google Drive access"
 
 - Verify service account JSON is valid
 - Check that service account email has folder access
-- Ensure Cascade Platform API is enabled in Cascade Platform Configuration
+- Ensure Google Drive API is enabled in Google Cloud Console
 - Verify service account has "Editor" or "Viewer" role
 
 ## Security Best Practices
@@ -337,7 +337,7 @@ echo $SUPABASE_SERVICE_KEY
 - Never commit secrets to version control
 - Use environment variables in all deployment scenarios
 
-✅ **Cascade Platform Access**
+✅ **Google Drive Access**
 
 - Use service account (not personal account)
 - Grant read-only access to specific folder only
@@ -361,24 +361,24 @@ echo $SUPABASE_SERVICE_KEY
 
 ## Cost Estimation
 
-| Service              | Free Tier | Paid Tier    | Notes                   |
-| -------------------- | --------- | ------------ | ----------------------- |
-| Streamlit Cloud      | 1 app     | $5/app/month | Verified email required |
-| Cascade Platform API | Free      | Free         | Included with workspace |
-| Supabase             | 500MB DB  | $25+/month   | Scales with usage       |
-| Railway              | None      | $5+/month    | Pay-as-you-go available |
+| Service          | Free Tier | Paid Tier    | Notes                   |
+| ---------------- | --------- | ------------ | ----------------------- |
+| Streamlit Cloud  | 1 app     | $5/app/month | Verified email required |
+| Google Drive API | Free      | Free         | Included with workspace |
+| Supabase         | 500MB DB  | $25+/month   | Scales with usage       |
+| Railway          | None      | $5+/month    | Pay-as-you-go available |
 
 ## Integration with Next.js Application
 
 The Streamlit dashboard complements the Next.js application:
 
-| Feature                 | Next.js App      | Streamlit Dashboard   |
-| ----------------------- | ---------------- | --------------------- |
-| User authentication     | ✅ (Supabase)    | ❌ (Admin only)       |
-| Risk dashboard          | ✅ (Real-time)   | ✅ (Analytics)        |
-| Data ingestion          | ❌               | ✅ (Cascade Platform) |
-| Portfolio visualization | ✅ (Interactive) | ✅ (Statistical)      |
-| ML predictions          | ✅ (API-based)   | ✅ (Direct)           |
+| Feature                 | Next.js App      | Streamlit Dashboard |
+| ----------------------- | ---------------- | ------------------- |
+| User authentication     | ✅ (Supabase)    | ❌ (Admin only)     |
+| Risk dashboard          | ✅ (Real-time)   | ✅ (Analytics)      |
+| Data ingestion          | ❌               | ✅ (Google Drive)   |
+| Portfolio visualization | ✅ (Interactive) | ✅ (Statistical)    |
+| ML predictions          | ✅ (API-based)   | ✅ (Direct)         |
 
 ## Environment Notes
 
@@ -390,7 +390,7 @@ The Streamlit dashboard complements the Next.js application:
 
 ## Next Steps
 
-1. **Set up Cascade Platform integration** following Google Cloud setup guide
+1. **Set up Google Drive integration** following Google Cloud setup guide
 2. **Configure Supabase** with required tables and Row Level Security
 3. **Deploy Streamlit** using your preferred option
 4. **Test data ingestion** with sample files
@@ -402,7 +402,7 @@ The Streamlit dashboard complements the Next.js application:
 - [Streamlit Documentation](https://docs.streamlit.io)
 - [Streamlit Cloud Deployment](https://docs.streamlit.io/streamlit-cloud/deploy-your-app)
 - [Railway Documentation](https://docs.railway.app)
-- [Cascade Platform API](https://developers.google.com/drive/api)
+- [Google Drive API](https://developers.google.com/drive/api)
 - [Supabase Documentation](https://supabase.com/docs)
 - [GitHub Copilot Instructions](./.github/copilot-instructions.md)
 

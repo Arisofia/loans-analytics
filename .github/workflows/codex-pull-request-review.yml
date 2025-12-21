@@ -1,7 +1,6 @@
 name: Codex pull request review
 
 on:
-  workflow_call:
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -32,7 +31,7 @@ jobs:
               owner,
               repo,
               pull_number,
-              reviewers: ['copilot'],
+              reviewers: ['sonarqube', 'coderabbit', 'sourcery'],
             });
 
   codex:
@@ -48,16 +47,28 @@ jobs:
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
 
-      - name: Run Codex
+      - name: Run Codex (OpenAI API)
         id: run_codex
-        continue-on-error: true
-        uses: openai/codex-action@v1
-        with:
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          prompt-file: .github/codex/prompts/review.md
-          output-file: codex-output.md
-          safety-strategy: drop-sudo
-          sandbox: workspace-write
+        run: |
+          PROMPT_FILE=".github/codex/prompts/review.md"
+          OUTPUT_FILE="codex-output.md"
+          PROMPT=$(cat "$PROMPT_FILE")
+          RESPONSE=$(curl -s https://api.openai.com/v1/completions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -d '{
+              "model": "code-davinci-002",
+              "prompt": "'"${PROMPT//\"/\\\"}"'",
+              "max_tokens": 512,
+              "temperature": 0.2
+            }')
+          MESSAGE=$(echo "$RESPONSE" | jq -r '.choices[0].text')
+          echo "$MESSAGE" > "$OUTPUT_FILE"
+          echo "final-message<<EOF" >> $GITHUB_OUTPUT
+          echo "$MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
   post_feedback:
     runs-on: ubuntu-latest

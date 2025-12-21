@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2021",
-    "lib": ["ES2021", "dom", "dom.iterable"],
+    "lib": [
+      "ES2021",
+      "dom",
+      "dom.iterable"
+    ],
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "Node",
@@ -25,17 +29,42 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "typeRoots": ["./node_modules/@types"],
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
     // Removed invalid ignoreDeprecations
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./apps/web/src/*"],
-      "@/components/*": ["./apps/web/src/components/*"],
-      "@/lib/*": ["./apps/web/src/lib/*"],
-      "@/types/*": ["./apps/web/src/types/*"],
-      "@/app/*": ["./apps/web/src/app/*"]
-    }
+      "@/*": [
+        "./*"
+      ],
+      "@/components/*": [
+        "./components/*"
+      ],
+      "@/lib/*": [
+        "./lib/*"
+      ],
+      "@/types/*": [
+        "./types/*"
+      ],
+      "@/app/*": [
+        "./app/*"
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
-  "include": ["global.d.ts", "apps/web/src", "apps/web/src/app"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

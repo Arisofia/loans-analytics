@@ -2,7 +2,7 @@ import hashlib
 import json
 import os
 from urllib.parse import urlparse
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import yaml
@@ -42,7 +42,7 @@ class AgentOrchestrator:
 
         self.db_url = self._validate_db_url(db_url or os.getenv("DATABASE_URL"))
         self.engine = create_engine(self.db_url) if self.db_url else None
-        self.SessionLocal = sessionmaker(bind=self.engine) if self.engine else None
+        self.session_local = sessionmaker(bind=self.engine) if self.engine else None
         # Load tools, prompts, etc.
 
     @staticmethod
@@ -65,7 +65,7 @@ class AgentOrchestrator:
     def run(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Placeholder for agent reasoning logic
         # Integrate with tools, prompts, and input data
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         output = {
             "output": "Agent reasoning result",
             "input": input_data,
@@ -75,7 +75,7 @@ class AgentOrchestrator:
             "accuracy_score": None,
             "requires_human_review": False,
         }
-        completed_at = datetime.utcnow()
+        completed_at = datetime.now(timezone.utc)
         self._log_agent_run(start_time, completed_at, input_data, output)
         return output
 
@@ -86,7 +86,7 @@ class AgentOrchestrator:
         input_data: Dict[str, Any],
         output: Dict[str, Any],
     ) -> None:
-        if not self.SessionLocal:
+        if not self.session_local:
             return
 
         record = AgentRun(
@@ -103,7 +103,7 @@ class AgentOrchestrator:
             kpi_snapshot_id=output.get("kpi_snapshot_id"),
         )
 
-        with self.SessionLocal() as session:
+        with self.session_local() as session:
             session.add(record)
             session.commit()
 
