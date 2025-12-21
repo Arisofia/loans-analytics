@@ -7,10 +7,11 @@ from typing import Any, Dict, Optional
 
 import yaml
 from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, Numeric, String, Text, create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
 class AgentRun(Base):

@@ -205,35 +205,35 @@ class CascadeIngestion:
         self._log_step("ingestion:completed", "In-memory ingestion recorded", rows=len(df))
         return df
 
-        def validate_loans(self, df: pd.DataFrame) -> pd.DataFrame:
-                """
-                Validate loan DataFrame and add a '_validation_passed' column.
-
-                WARNING: This function mutates the input DataFrame by adding the '_validation_passed' column.
-                If you do not want the input DataFrame to be changed, pass a copy (e.g., df.copy()) instead.
-
-                Enforces:
-                    - Numeric columns are present and non-negative
-                    - Percentage columns are between 0 and 100
-                    - Date columns are valid ISO 8601
-                    - Monotonicity for count/total/cumulative columns
-                    - No nulls in required/numeric columns
-                """
+    def validate_loans(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Validate loan DataFrame and add a '_validation_passed' column.
+    
+        WARNING: This function mutates the input DataFrame by adding the '_validation_passed' column.
+        If you do not want the input DataFrame to be changed, pass a copy (e.g., df.copy()) instead.
+    
+        Enforces:
+            - Numeric columns are present and non-negative
+            - Percentage columns are between 0 and 100
+            - Date columns are valid ISO 8601
+            - Monotonicity for count/total/cumulative columns
+            - No nulls in required/numeric columns
+        """
         from python.validation import (validate_iso8601_dates,
                                        validate_monotonic_increasing,
                                        validate_no_nulls,
                                        validate_numeric_bounds,
                                        validate_percentage_bounds)
-
+    
         if df.empty:
             self._log_step("validation:skip", "Skipping validation for empty DataFrame")
             return df
-
+    
         # Ensure chronological order for monotonicity checks
         working_df = df.copy()
         if "measurement_date" in working_df.columns:
             working_df = working_df.sort_values("measurement_date", ascending=True).reset_index(drop=True)
-
+    
         working_df["_validation_passed"] = True
         self._log_step("validation:start", "Validating loan records", rows=len(working_df))
         try:

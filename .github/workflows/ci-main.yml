@@ -1,4 +1,7 @@
 # Forced re-index: renamed from ci.yml to ci-main.yml
+permissions:
+  pull-requests: read
+  contents: read
 name: CI Main
 
 
