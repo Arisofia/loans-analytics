@@ -1,4 +1,6 @@
 {
   "version": 2,
-  "routes": [{ "src": "/(.*)", "dest": "/apps/web/$1" }]
+  "installCommand": "npm install",
+  "buildCommand": "cd apps/web && npm run build",
+  "outputDirectory": "apps/web/.next"
 }

@@ -17,6 +17,7 @@ def sample_df():
         "dpd_30_60_usd": [100.0, 200.0, 300.0],
         "dpd_60_90_usd": [50.0, 50.0, 50.0],
         "dpd_90_plus_usd": [25.0, 25.0, 25.0],
+        "cash_available_usd": [900.0, 1800.0, 2700.0],
     })
 
 
@@ -39,7 +40,7 @@ def test_transform_data():
 
 def test_validate_loans():
     df = pd.DataFrame({"period": ["2025Q4"], "measurement_date": ["2025-12-01"], "total_receivable_usd": [1000.0]})
-    ingestion = CascadeIngestion()
+    ingestion = CascadeIngestion(data_dir=".")
     validated = ingestion.validate_loans(df)
     assert "_validation_passed" in validated.columns
 

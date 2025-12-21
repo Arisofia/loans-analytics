@@ -21,6 +21,6 @@ This indicates that VS Code cannot locate the `zencoder-cli` binary shipped with
 
 - If antivirus or endpoint protection tools are present, check their quarantine logs for `zencoder-cli` and whitelist the binary if necessary.
 - For Apple Silicon vs. Intel Macs, make sure the downloaded extension architecture matches your machine; forcing a reinstall typically corrects mismatches.
-- When working on remote containers, ensure the extension is installed in the _remote_ VS Code server (Extensions view → Remote) so the binary path resolves inside the container.
+- When working on remote containers, ensure the extension is installed in the *remote* VS Code server (Extensions view → Remote) so the binary path resolves inside the container.
 
 Following this checklist addresses the ENOENT cause (missing binary) without changing repository code, keeping local development environments consistent for all contributors.

@@ -1,8 +1,3 @@
-"""
-Analytics metrics utilities for loan portfolio KPIs and data cleaning.
-"""
-from __future__ import annotations
-
 import numpy as np
 import pandas as pd
 
@@ -10,16 +5,6 @@ CURRENCY_SYMBOLS = r"[₡$€£¥₽%]"
 
 
 def standardize_numeric(series: pd.Series) -> pd.Series:
-    """
-    Standardize a pandas Series to numeric values, cleaning currency symbols
-    and formatting.
-
-    Args:
-        series (pd.Series): Input series to standardize.
-
-    Returns:
-        pd.Series: Numeric series with cleaned values.
-    """
     if pd.api.types.is_numeric_dtype(series):
         return series
 
@@ -40,47 +25,16 @@ def project_growth(
     target_loan_volume: float,
     periods: int = 6,
 ) -> pd.DataFrame:
-    """
-    Project growth of yield and loan volume over a number of periods.
-
-    Args:
-        current_yield (float): Starting yield value.
-        target_yield (float): Target yield value.
-        current_loan_volume (float): Starting loan volume.
-        target_loan_volume (float): Target loan volume.
-        periods (int): Number of periods to project (default 6).
-
-    Returns:
-        pd.DataFrame: DataFrame with projected dates, yields, and loan volumes.
-    Raises:
-        ValueError: If periods < 2.
-    """
     if periods < 2:
         raise ValueError("periods must be at least 2")
 
     yields = np.linspace(current_yield, target_yield, periods)
     volumes = np.linspace(current_loan_volume, target_loan_volume, periods)
-    schedule = pd.date_range(
-        pd.Timestamp.now().normalize(), periods=periods, freq="MS"
-    )
-    return pd.DataFrame({
-        "date": schedule,
-        "yield": yields,
-        "loan_volume": volumes
-    })
+    schedule = pd.date_range(pd.Timestamp.now().normalize(), periods=periods, freq="MS")
+    return pd.DataFrame({"date": schedule, "yield": yields, "loan_volume": volumes})
 
 
 def calculate_quality_score(df: pd.DataFrame) -> int:
-    """
-    Calculate a data quality score (0-100) based on completeness of a
-    DataFrame.
-
-    Args:
-        df (pd.DataFrame): DataFrame to score.
-
-    Returns:
-        int: Quality score from 0 to 100.
-    """
     if df.empty:
         return 0
 
@@ -89,25 +43,12 @@ def calculate_quality_score(df: pd.DataFrame) -> int:
 
 
 def _assert_required_columns(df: pd.DataFrame, required: list[str]) -> None:
-    """
-    Assert that all required columns are present in the DataFrame.
-
-    Args:
-        df (pd.DataFrame): DataFrame to check.
-        required (list[str]): List of required column names.
-
-    Raises:
-        ValueError: If any required columns are missing.
-    """
     missing = [column for column in required if column not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
 
 def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
-    """
-    Compute portfolio KPIs and return metrics and enriched DataFrame.
-    """
     required_columns = [
         "loan_amount",
         "appraised_value",
@@ -130,9 +71,7 @@ def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
     _assert_required_columns(df, required_columns)
 
     enriched = df.copy()
-    enriched["ltv_ratio"] = (
-        enriched["loan_amount"] / enriched["appraised_value"]
-    )
+    enriched["ltv_ratio"] = enriched["loan_amount"] / enriched["appraised_value"]
     income = enriched["borrower_income"]
     enriched["dti_ratio"] = np.where(
         income > 0, enriched["monthly_debt"] / (income / 12), np.nan
@@ -143,31 +82,18 @@ def portfolio_kpis(df: pd.DataFrame) -> tuple[dict[str, float], pd.DataFrame]:
         enriched["loan_status"].astype(str).str.lower() == "delinquent",
         "principal_balance",
     ].sum()
-    delinquency_rate = (
-        delinquent_principal / total_principal if total_principal else 0.0
-    )
+    delinquency_rate = delinquent_principal / total_principal if total_principal else 0.0
 
-    weighted_interest = (
-        enriched["principal_balance"] * enriched["interest_rate"]
-    ).sum()
-    portfolio_yield = (
-        weighted_interest / total_principal if total_principal else 0.0
-    )
+    weighted_interest = (enriched["principal_balance"] * enriched["interest_rate"]).sum()
+    portfolio_yield = weighted_interest / total_principal if total_principal else 0.0
 
-    average_ltv = (
-        enriched["ltv_ratio"].mean()
-        if not enriched["ltv_ratio"].empty
-        else 0.0
-    )
-    average_dti = float(
-        np.nan_to_num(enriched["dti_ratio"].mean(skipna=True), nan=0.0)
-    )
+    average_ltv = enriched["ltv_ratio"].mean() if not enriched["ltv_ratio"].empty else 0.0
+    average_dti = float(np.nan_to_num(enriched["dti_ratio"].mean(skipna=True), nan=0.0))
 
     metrics = {
         "delinquency_rate": float(delinquency_rate),
         "portfolio_yield": float(portfolio_yield),
-        "average_ltv": float(average_ltv)
-        if not np.isnan(average_ltv) else 0.0,
+        "average_ltv": float(average_ltv) if not np.isnan(average_ltv) else 0.0,
         "average_dti": average_dti,
     }
     return metrics, enriched
