@@ -1,20 +1,32 @@
 import Link from 'next/link'
-
+import { createClient } from '../lib/supabase/server'
+import { landingPageDataSchema, LandingPageData, EMPTY_LANDING_PAGE_DATA } from '../types/landingPage'
 import styles from './page.module.css'
-import {
-  heroStats,
-  metrics,
-  funnelStages,
-  riskItems,
-  initiatives,
-  type HeroStat,
-  type Metric,
-  type FunnelStage,
-  type RiskItem,
-  type Initiative,
-} from './dashboardData'
 
-export default function Home() {
+async function getData(): Promise<LandingPageData> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('landing_page_content')
+      .select('*')
+      .single()
+
+    if (error || !data) {
+      // console.warn('Falling back to default data due to Supabase error:', error)
+      return EMPTY_LANDING_PAGE_DATA
+    }
+
+    return landingPageDataSchema.parse(data)
+  } catch (error) {
+    console.error('Failed to fetch landing page data:', error)
+    return EMPTY_LANDING_PAGE_DATA
+  }
+}
+
+export default async function Home() {
+  const data = await getData()
+  const { metrics, products, steps, controls } = data
+
   return (
     <main className={styles.page} id="main-content">
       <div className={styles.shell}>
@@ -40,30 +52,6 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <div className={styles.heroCard}>
-            <div className={styles.heroHeader}>
-              <p className={styles.label}>Portfolio snapshot</p>
-              <p className={styles.helper}>Live telemetry + automated exports</p>
-            </div>
-            <div className={styles.heroGrid}>
-              {heroStats.map((stat: HeroStat) => (
-                <div key={stat.label} className={styles.heroStat}>
-                  <p className={styles.label}>{stat.label}</p>
-                  <p className={styles.heroValue}>{stat.value}</p>
-                  <p className={`${styles.helper} ${stat.tone ? styles[stat.tone] : ''}`}>{stat.helper}</p>
-                </div>
-              ))}
-            </div>
-            <div className={styles.divider} aria-hidden="true" />
-            <div className={styles.heroFooter}>
-              <div>
-                <p className={styles.helper}>Data quality</p>
-                <p className={styles.heroValue}>98.4%</p>
-                <p className={styles.helper}>Schema coverage across loan + payment feeds</p>
-              </div>
-              <div className={styles.trend}>Stable</div>
-            </div>
-          </div>
         </header>
 
         <section className={styles.section} aria-labelledby="metrics-heading">
@@ -74,109 +62,68 @@ export default function Home() {
               Resilient growth metrics that blend credit health, margin, and operational leverage with ready-to-export evidence.
             </p>
           </div>
-          <h3 className={styles.srOnly}>Key performance indicators</h3>
           <div className={styles.metrics}>
-            {metrics.map((metric: Metric) => (
+            {metrics.map((metric) => (
               <article key={metric.label} className={styles.card}>
                 <div className={styles.cardHeader}>
                   <p className={styles.label}>{metric.label}</p>
-                  <span className={`${styles.delta} ${metric.tone ? styles[metric.tone] : ''}`}>{metric.change}</span>
                 </div>
                 <p className={styles.cardValue}>{metric.value}</p>
-                <p className={styles.helper}>{metric.helper}</p>
+                {metric.helper && <p className={styles.helper}>{metric.helper}</p>}
               </article>
             ))}
           </div>
         </section>
 
-        <section className={`${styles.section} ${styles.grid}`} aria-labelledby="funnel-heading">
-          <div className={styles.panel}>
+        <section className={`${styles.section} ${styles.grid}`} aria-labelledby="products-heading">
+           <div className={styles.panel}>
             <div className={styles.panelHeader}>
               <div>
-                <p className={styles.eyebrow}>Conversion</p>
-                <h2 id="funnel-heading">Acquisition funnel</h2>
+                <p className={styles.eyebrow}>Products</p>
+                <h2 id="products-heading">Core Capabilities</h2>
               </div>
-              <span className={`${styles.pill} ${styles.pillNeutral}`}>Guardrails on</span>
             </div>
-            <p className={styles.helper}>
-              Monitor automated decisioning, human-in-the-loop approvals, and downstream funding velocity.
-            </p>
-            <ol className={styles.stageList}>
-              {funnelStages.map((stage: FunnelStage) => {
-                const width = Math.max(0, Math.min(100, stage.conversion))
-
-                return (
-                  <li key={stage.name} className={styles.stageRow}>
-                    <div className={styles.stageHeader}>
-                      <div>
-                        <p className={styles.label}>{stage.name}</p>
-                        <p className={styles.helper}>{stage.volume} volume</p>
-                      </div>
-                      <span className={`${styles.delta} ${styles.positive}`}>{stage.delta}</span>
+            <div className={styles.grid}>
+                {products.map(product => (
+                    <div key={product.title} className={styles.card}>
+                        <h3 className={styles.cardTitle}>{product.title}</h3>
+                        <p className={styles.helper}>{product.detail}</p>
+                        {product.kicker && <span className={styles.badge}>{product.kicker}</span>}
                     </div>
-                    <div className={styles.stageBar}>
-                      <span className={styles.stageFill} style={{ width: `${width}%` }} />
-                    </div>
-                    <div className={styles.stageNumbers}>
-                      <span>{stage.conversion}% conversion</span>
-                      <span>Target 60%+</span>
-                    </div>
-                  </li>
-                )
-              })}
-            </ol>
-          </div>
-
-          <div className={styles.panel}>
-            <div className={styles.panelHeader}>
-              <div>
-                <p className={styles.eyebrow}>Exposure</p>
-                <h2>Risk concentrations</h2>
-              </div>
-              <span className={`${styles.pill} ${styles.pillPositive}`}>Coverage 4.1x</span>
+                ))}
             </div>
-            <p className={styles.helper}>
-              Track top exposures by product with status tags aligned to credit policy and stress scenarios.
-            </p>
-            <ul className={styles.riskList}>
-              {riskItems.map((risk: RiskItem) => (
-                <li key={risk.name} className={styles.riskItem}>
-                  <div>
-                    <p className={styles.label}>{risk.name}</p>
-                    <p className={styles.helper}>{risk.concentration} of book</p>
-                  </div>
-                  <div className={styles.riskMeta}>
-                    <p className={styles.cardValue}>{risk.exposure}</p>
-                    <span className={`${styles.badge} ${styles[risk.status]}`}>{risk.status}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
           </div>
         </section>
 
-        <section className={styles.section} aria-labelledby="initiatives-heading">
+        <section className={styles.section} aria-labelledby="steps-heading">
           <div className={styles.sectionHeader}>
-            <p className={styles.eyebrow}>Operating rhythm</p>
-            <h2 id="initiatives-heading">Initiatives in flight</h2>
-            <p className={styles.sectionCopy}>
-              Keep stakeholders aligned with accountability, rollout status, and the KPIs each initiative moves.
-            </p>
+            <p className={styles.eyebrow}>Workflow</p>
+            <h2 id="steps-heading">How it works</h2>
           </div>
-          <div className={styles.initiatives}>
-            {initiatives.map((item: Initiative) => (
-              <article key={item.title} className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <div>
-                    <p className={styles.label}>{item.owner}</p>
-                    <h3 className={styles.cardTitle}>{item.title}</h3>
-                  </div>
-                  <span className={styles.badge}>{item.status}</span>
-                </div>
-                <p className={styles.helper}>{item.summary}</p>
-              </article>
+          <div className={styles.metrics}>
+            {steps.map(step => (
+                <article key={step.title} className={styles.card}>
+                    <p className={styles.label}>{step.label}</p>
+                    <h3 className={styles.cardTitle}>{step.title}</h3>
+                    <p className={styles.helper}>{step.copy}</p>
+                </article>
             ))}
           </div>
+        </section>
+
+        <section className={styles.section} aria-labelledby="controls-heading">
+             <div className={styles.sectionHeader}>
+                <p className={styles.eyebrow}>Compliance</p>
+                <h2 id="controls-heading">Active Controls</h2>
+            </div>
+            <ul className={styles.complianceList}>
+                {controls.map((item) => (
+                  <li key={item} className={styles.checkItem}>
+                    <span className={styles.checkBullet} aria-hidden="true" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+            </ul>
         </section>
 
         <section id="demo" className={`${styles.section} ${styles.panel}`} aria-labelledby="demo-heading">
