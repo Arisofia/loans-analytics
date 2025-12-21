@@ -59,7 +59,7 @@ jobs:
 
       - name: Checkout pull request branch
         if: steps.pr.outputs.same_repo == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ steps.pr.outputs.head }}
           fetch-depth: 0
