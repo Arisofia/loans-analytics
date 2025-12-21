@@ -25,14 +25,15 @@ jobs:
           echo "diff_size=$diff_size" >> $GITHUB_OUTPUT
 
       - name: Review with Perplexity
-        if: ${{ steps.diff.outputs.diff_size != '' && steps.diff.outputs.diff_size | fromJSON < 50000 }}
+        if: ${{ steps.diff.outputs.diff_size != '' && fromJSON(steps.diff.outputs.diff_size) < 50000 && secrets.PERPLEXITY_API_KEY != '' }}
+        continue-on-error: true
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "$PERPLEXITY_API_KEY" ]; then
-            echo "Error: PERPLEXITY_API_KEY is not set."
-            exit 1
+            echo "Warning: PERPLEXITY_API_KEY is not set. Skipping review."
+            exit 0
           fi
 
           # Construct JSON payload safely using jq
@@ -53,16 +54,16 @@ jobs:
             -d @request.json)
 
           if [ "$HTTP_CODE" != "200" ]; then
-            echo "Error: Perplexity API returned status $HTTP_CODE"
+            echo "Warning: Perplexity API returned status $HTTP_CODE"
             cat review_response.json
-            exit 1
+            exit 0
           fi
 
           # Extract review and post as comment
           review_text=$(jq -r '.choices[0].message.content' review_response.json)
           if [ -z "$review_text" ] || [ "$review_text" = "null" ]; then
-            echo "Error: Perplexity API returned an empty review."
-            exit 1
+            echo "Warning: Perplexity API returned an empty review."
+            exit 0
           fi
 
           gh pr comment ${{ github.event.pull_request.number }} \
