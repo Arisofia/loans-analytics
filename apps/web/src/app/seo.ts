@@ -3,13 +3,13 @@ import type { Metadata } from 'next'
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://abaco-loans-analytics.com'
 
 const sharedDescription =
-  'Abaco Loans Analytics unifies lending KPIs, governance, and revenue acceleration in one compliant, investor-ready experience.'
+  'ABACO — Loan Intelligence delivers growth-ready analytics for credit, collections, finance, and funding teams with audit-ready controls.'
 
 export const siteMetadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: 'Abaco Loans Analytics | Growth & Risk Intelligence',
+  title: 'ABACO — Loan Intelligence',
   description: sharedDescription,
-  applicationName: 'Abaco Loans Analytics',
+  applicationName: 'ABACO — Loan Intelligence',
   keywords: [
     'lending analytics',
     'fintech dashboards',
@@ -26,23 +26,23 @@ export const siteMetadata: Metadata = {
   },
   openGraph: {
     url: siteUrl,
-    title: 'Abaco Loans Analytics | Growth & Risk Intelligence',
+    title: 'ABACO — Loan Intelligence',
     description: sharedDescription,
     type: 'website',
-    siteName: 'Abaco Loans Analytics',
+    siteName: 'ABACO — Loan Intelligence',
     locale: 'en_US',
     images: [
       {
         url: '/window.svg',
         width: 1200,
         height: 630,
-        alt: 'Abaco Loans Analytics dashboard previews',
+        alt: 'ABACO Loan Intelligence dashboard previews',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Abaco Loans Analytics | Growth & Risk Intelligence',
+    title: 'ABACO — Loan Intelligence',
     description: sharedDescription,
     images: ['/window.svg'],
   },
@@ -50,7 +50,7 @@ export const siteMetadata: Metadata = {
     index: true,
     follow: true,
   },
-  authors: [{ name: 'Abaco Growth & Risk Intelligence' }],
-  creator: 'Abaco Growth & Risk Intelligence',
-  publisher: 'Abaco Loans Analytics',
+  authors: [{ name: 'ABACO Loan Intelligence' }],
+  creator: 'ABACO Loan Intelligence',
+  publisher: 'ABACO Loan Intelligence',
 }
