@@ -1,18 +1,26 @@
-/**
- * Minimal placeholder supabaseClient for builds.
- * Replace with your real client initialization.
- */
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { LandingPageData } from '../types/landingPage'
 
-import { createClient } from '@supabase/supabase-js';
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
-
-export const supabase =
-  SUPABASE_URL && SUPABASE_ANON_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    : null;
-
-export function isSupabaseConfigured() {
-  return !!SUPABASE_URL && !!SUPABASE_ANON_KEY;
+type Database = {
+  public: {
+    Tables: {
+      landing_page_data: {
+        Row: LandingPageData
+        Insert: LandingPageData
+        Update: Partial<LandingPageData>
+      }
+    }
+  }
 }
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+
+const hasValidSupabaseUrl = Boolean(supabaseUrl && /^https?:\/\//.test(supabaseUrl))
+const hasSupabaseEnv = Boolean(hasValidSupabaseUrl && supabaseAnonKey)
+
+export const supabase: SupabaseClient<Database> | null = hasSupabaseEnv
+  ? createClient<Database>(supabaseUrl as string, supabaseAnonKey as string)
+  : null
+
+export const isSupabaseConfigured = hasSupabaseEnv
