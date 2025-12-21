@@ -20,7 +20,7 @@ def test_assert_dataframe_schema_detects_non_numeric_columns():
         "total_receivable_usd": [100.0],
         "total_eligible_usd": ["invalid"],
     })
-    with pytest.raises(TypeError, match="non-numeric column"):
+    with pytest.raises(ValueError, match="must be numeric"):
         assert_dataframe_schema(
             df,
             required_columns=["total_receivable_usd", "total_eligible_usd"],

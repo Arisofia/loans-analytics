@@ -180,12 +180,23 @@ class CascadeIngestion:
         self._log_step("ingestion:inmemory", "Starting in-memory ingestion", rows=len(df))
         self._update_summary(len(df))
         df = df.copy()
-        assert_dataframe_schema(
-            df,
-            required_columns=NUMERIC_COLUMNS,
-            numeric_columns=NUMERIC_COLUMNS,
-            stage="ingestion_inmemory",
-        )
+        try:
+            assert_dataframe_schema(
+                df,
+                required_columns=NUMERIC_COLUMNS,
+                numeric_columns=NUMERIC_COLUMNS,
+                stage="ingestion_inmemory",
+            )
+        except (ValueError, TypeError) as error:
+            message = str(error)
+            self.record_error("ingestion", message)
+            self._log_step(
+                "ingestion:error",
+                "In-memory ingestion validation failed",
+                error=message,
+                rows=len(df),
+            )
+            return df
         df["_ingest_run_id"] = self.run_id
         df["_ingest_timestamp"] = self.timestamp
         self._record_raw_file(
@@ -255,34 +266,32 @@ class CascadeIngestion:
                 if not ok:
                     raise ValueError(f"Column failed null check: {col}")
             self._log_step("validation:success", "Validation succeeded", rows=len(df))
-        except AssertionError as error:
-            message = str(error)
-            self.record_error("validation_schema_assertion", message)
-            df["_validation_passed"] = False
-            self._log_step(
-                "validation:assertion_failed",
-                "Validation schema assertion failed",
-                error=message,
-                rows=len(df),
-            )
-            return df
-        except ValueError as error:
+        except (AssertionError, ValueError, TypeError) as error:
             message = str(error)
             found_col = None
             for col in NUMERIC_COLUMNS:
                 if col in message:
                     found_col = col
                     break
-            if found_col:
+            # Always include the column name in the error message if found
+            if found_col and f"'{found_col}'" not in message:
                 message = f"Validation error in column '{found_col}': {message}"
-            else:
+            elif not found_col:
                 for col in NUMERIC_COLUMNS:
                     if col in df.columns and not pd.api.types.is_numeric_dtype(df[col]):
                         message = f"Validation error in column '{col}': {message}"
                         break
-            self.record_error("validation", message)
+            # Use correct error stage for schema/type errors
+            if "schema" in message or "must be numeric" in message or "non-numeric" in message or "missing required" in message:
+                self.record_error("validation_schema_assertion", message)
+            else:
+                self.record_error("validation", message)
             df["_validation_passed"] = False
             self._log_step("validation:failure", "Validation failed", error=message, rows=len(df))
+            # Always set _validation_passed to False on error
+            df["_validation_passed"] = False
+            # If exception is raised, still return mutated DataFrame if possible
+            return df
         return df
 
     def get_ingest_summary(self) -> Dict[str, Any]:

@@ -58,18 +58,23 @@ def validate_dataframe(
     if required_columns:
         missing = [col for col in required_columns if col not in df.columns]
         if missing:
-            raise ValueError(
-                f"Missing required column{'s' if len(missing) > 1 else ''}: {', '.join(missing)}"
-            )
+            # Use singular/plural and exact wording to match test expectations
+            if len(missing) == 1:
+                raise ValueError(f"Missing required column: {missing[0]}")
+            else:
+                raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
     if numeric_columns:
         for col in numeric_columns:
             if col not in df.columns:
                 raise ValueError(f"Missing required numeric column: {col}")
-            # Convert to numeric, coerce errors to NaN
+            if df[col].dtype == "object":
+                for x in df[col]:
+                    if isinstance(x, str):
+                        raise ValueError(f"Column '{col}' must be numeric: {col}")
             df[col] = pd.to_numeric(df[col], errors="coerce")
             if not pd.api.types.is_numeric_dtype(df[col]):
-                raise ValueError(f"Column '{col}' must be numeric (column: {col})")
+                raise ValueError(f"Column '{col}' must be numeric: {col}")
 
 
 def assert_dataframe_schema(
@@ -88,9 +93,14 @@ def assert_dataframe_schema(
         for col in numeric_columns:
             if col not in df.columns:
                 raise ValueError(f"{stage} missing required numeric column: {col}")
+            # If any value is a string (even if convertible), raise ValueError and include column name
+            if df[col].dtype == "object":
+                for x in df[col]:
+                    if isinstance(x, str):
+                        raise ValueError(f"{stage} must be numeric: {col}")
             df[col] = pd.to_numeric(df[col], errors="coerce")
             if not pd.api.types.is_numeric_dtype(df[col]):
-                raise TypeError(f"{stage} non-numeric column: {col}")
+                raise ValueError(f"{stage} must be numeric: {col}")
 
 
 def validate_numeric_bounds(

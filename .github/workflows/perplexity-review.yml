@@ -25,7 +25,7 @@ jobs:
           echo "diff_size=$diff_size" >> $GITHUB_OUTPUT
 
       - name: Review with Perplexity
-        if: ${{ steps.diff.outputs.diff_size != '' && fromJSON(steps.diff.outputs.diff_size) < 50000 && secrets.PERPLEXITY_API_KEY != '' }}
+        if: ${{ steps.diff.outputs.diff_size != '' && fromJSON(steps.diff.outputs.diff_size) < 50000 }}
         continue-on-error: true
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
