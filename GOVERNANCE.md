@@ -36,6 +36,7 @@
 **Purpose**: Enforce governance rules on every commit and pull request.
 
 **Triggers**:
+
 - Pull requests to `main` or `develop`
 - Pushes to `main` or `develop`
 - Weekly compliance audit (every Sunday)
@@ -43,6 +44,7 @@
 **Jobs**:
 
 #### Compliance Checks
+
 - CodeRabbit analysis (assertive profile, strict mode)
 - Audit trail generation
 - Secret detection (no hardcoded credentials)
@@ -51,15 +53,18 @@
 - Traceability verification
 
 #### SonarQube Quality Gates
+
 - Code metrics and coverage
 - Quality gate enforcement (zero critical issues)
-- >90% test coverage requirement
+- > 90% test coverage requirement
 
 #### Security & Dependency Audit
+
 - Vulnerable dependency detection
 - Dependabot result integration
 
 #### Compliance Reporting
+
 - Automated PR comments with compliance status
 - Artifact uploads (90-day retention)
 - CI/CD dashboard integration
@@ -67,6 +72,7 @@
 ### 2. Code Quality Configuration (`.coderabbit.yaml`)
 
 **Profile**: `assertive`
+
 - Real-time code reviews
 - Request changes on violations
 - High-level summaries
@@ -95,6 +101,7 @@ src/inference/**:
 ### 3. Refactoring Rules (`.sourcery.yaml`)
 
 **Principles**:
+
 - Rank-ordering + survival analysis pattern for complex models
 - State must be per-platform (not global)
 - Lint mode enabled (detect issues without fix)
@@ -105,6 +112,7 @@ src/inference/**:
 **Output**: `audit_log.json` (90-day retention)
 
 **Metadata**:
+
 ```json
 {
   "generated_at": "2024-01-15T14:30:45Z",
@@ -119,6 +127,7 @@ src/inference/**:
 ```
 
 **Events Tracked**:
+
 - `code_quality_violation`: Financial float vs Decimal
 - `security_violation`: Hardcoded secrets detected
 - `fragility_violation`: eval(), bare except, etc.
@@ -130,21 +139,22 @@ src/inference/**:
 
 ### Agent Contracts
 
-| Agent | Primary Duty | Governance |
-|-------|--------------|------------|
-| **Founder** | Business metrics & OKRs | Quarterly reviews, KPI dashboards |
-| **Investor** | Capital allocation & returns | Monthly P&L, IRR tracking |
-| **CTO** | Technical architecture & velocity | Sprint planning, tech debt backlog |
-| **Compliance** | Regulatory adherence & audits | Real-time governance enforcement |
-| **Fraud** | Transaction analysis & anomaly detection | Daily model retraining, 99.5% recall |
-| **Growth** | Acquisition & retention metrics | Weekly cohort analysis |
-| **Risk** | Portfolio risk & stress testing | Daily VaR calculations |
-| **Integrator** | Platform connections & APIs | Token management, sync logs |
-| **MLOps** | Model lifecycle & experimentation | CI/CD for models, auto-retraining |
+| Agent          | Primary Duty                             | Governance                           |
+| -------------- | ---------------------------------------- | ------------------------------------ |
+| **Founder**    | Business metrics & OKRs                  | Quarterly reviews, KPI dashboards    |
+| **Investor**   | Capital allocation & returns             | Monthly P&L, IRR tracking            |
+| **CTO**        | Technical architecture & velocity        | Sprint planning, tech debt backlog   |
+| **Compliance** | Regulatory adherence & audits            | Real-time governance enforcement     |
+| **Fraud**      | Transaction analysis & anomaly detection | Daily model retraining, 99.5% recall |
+| **Growth**     | Acquisition & retention metrics          | Weekly cohort analysis               |
+| **Risk**       | Portfolio risk & stress testing          | Daily VaR calculations               |
+| **Integrator** | Platform connections & APIs              | Token management, sync logs          |
+| **MLOps**      | Model lifecycle & experimentation        | CI/CD for models, auto-retraining    |
 
 ### Event Subscriptions
 
 All agents subscribe to **Kafka topics** by type:
+
 - `financial.transaction` → Fraud, Compliance, Risk
 - `user.lifecycle` → Growth, Investor
 - `system.deployment` → CTO, MLOps
@@ -153,7 +163,9 @@ All agents subscribe to **Kafka topics** by type:
 ## Integrations Page
 
 ### Purpose
+
 Manage API tokens for external platforms (Meta, LinkedIn, custom APIs) with:
+
 - Encrypted storage (AES-256-GCM)
 - Per-platform token isolation
 - Automatic sync logging
@@ -170,12 +182,14 @@ Manage API tokens for external platforms (Meta, LinkedIn, custom APIs) with:
 ### Critical Rules
 
 ❌ **NEVER**:
+
 - Store tokens in plaintext
 - Commit .env files
 - Use eval() for token validation
 - Share state across platforms
 
 ✅ **ALWAYS**:
+
 - Validate provider tokens before storing
 - Log all integration events
 - Implement exponential backoff (3 retry attempts)
@@ -230,6 +244,7 @@ Manage API tokens for external platforms (Meta, LinkedIn, custom APIs) with:
 ### Currency Handling
 
 ✅ **CORRECT**:
+
 ```python
 from decimal import Decimal
 amount = Decimal('1234.56')  # Always use Decimal for currency
@@ -237,6 +252,7 @@ rate = Decimal('0.05')       # Interest rates too
 ```
 
 ❌ **WRONG**:
+
 ```python
 amount = 1234.56         # Float causes rounding errors
 rate = 0.05              # Currency precision loss
@@ -245,6 +261,7 @@ rate = 0.05              # Currency precision loss
 ### Idempotency Keys
 
 All payments must include an idempotency key:
+
 ```python
 idempotency_key = f"{user_id}_{timestamp}_{operation_id}"
 # Ensures no duplicate charges if retry occurs
@@ -286,6 +303,12 @@ KMS_ENCRYPTION_KEY     # Token encryption key
 - Require branches be up to date before merging
 - Include administrators in restrictions
 
+## Ownership & Reviews
+
+- Workflow and secrets ownership is tracked in `docs/workflow-ownership.md`; updates to CI/CD, compliance, or deploy workflows require approval from the documented owners.
+- Data/analytics changes (ingestion, transformation, KPI) must be reviewed by the Data/Analytics owner; security/compliance changes require the Security/Compliance owner; frontend CI changes require the Frontend owner.
+- Secrets usage must be justified in PR descriptions and reviewed by the responsible owner before merge.
+
 ## Monitoring & Alerts
 
 ### Dashboards
@@ -295,12 +318,62 @@ KMS_ENCRYPTION_KEY     # Token encryption key
 - **Audit Trail**: Searchable event log (Ctrl+F by event type)
 - **Agent Status**: Health checks and message queue depth
 
+### Dashboard Stack & Progress
+
+| Component             | Status        | Files                                                                 |
+|----------------------|---------------|-----------------------------------------------------------------------|
+| **Authentication**   | ✅ Production | Auth UI components, Login/SignUp/Password reset forms                 |
+| **Financial Dashboard** | ✅ Live    | `/app/dashboard/financial/` with 4 dashboard cards                    |
+| **API Endpoint**      | ✅ Live       | `/api/financial-intelligence/route.ts` with timing metadata          |
+| **UI Components**     | ✅ Complete   | Radix UI + custom ABACO design system                                 |
+| **Data Visualization**| ✅ Live       | Charts, metrics cards, risk analysis cards                            |
+
+Key Dashboard Components:
+- `FinancialMetrics.tsx` – Live KPI cards with formatting
+- `GrowthChart.tsx` – SVG area chart with 12-month trends
+- `RiskAnalysis.tsx` – VaR, sector exposures, stress scenarios
+- `AIInsights.tsx` – Provider health + confidence scoring
+
 ### Alerts
 
 - Critical compliance violations → Slack #security
 - Failed SonarQube quality gate → Slack #engineering
 - Audit log failures → Slack #devops
 - Agent heartbeat missing → Slack #ops
+
+### ML Stack & Progress
+
+| Layer              | Status        | Details                                                                    |
+|--------------------|---------------|----------------------------------------------------------------------------|
+| **Database Schema** | ✅            | 4 tables: predictions, feedback, weight_adjustments, learning_metrics        |
+| **ML Types**        | ✅            | `types/ml.ts` with Zod schemas for validation                              |
+| **Prediction API**  | ✅            | `/api/ml/predictions/route.ts` (POST + GET)                                 |
+| **Feedback API**    | ✅            | `/api/ml/feedback/route.ts` (POST + GET)                                     |
+| **Integration Layer** | ✅          | Base integration + Grok (xAI) integration with fallbacks                   |
+| **Learning Engine** | ✅            | `lib/ml/continue-learning.ts` with Brier score & accuracy metrics           |
+| **Test Suite**      | ✅            | 16 comprehensive test files covering all layers                            |
+
+### Data & Integration Layer (90% Complete)
+
+| Component                      | Status | Details                                                                        |
+|--------------------------------|--------|--------------------------------------------------------------------------------|
+| **Supabase Client**            | ✅     | SSR-enabled with cookies, auth context                                         |
+| **Financial Intelligence Dataset** | ✅ | Canonical dataset in `lib/data/financial-intelligence.ts`                     |
+| **Risk Indicators**            | ✅     | `lib/risk-indicators.ts` with portfolio analysis                               |
+| **AI Integrations**            | ✅     | xAI Grok + OpenAI with fallback chains                                         |
+| **Base Integrations**          | ✅     | Rate limiting (5 rps), exponential backoff, timeout handling                   |
+
+### Testing Infrastructure (Mature)
+
+**MVP 16 test files covering:**
+- **ML Layer** (`lib/ml/*`)
+- **Integrations** (`lib/integrations/*`)
+- **Supabase clients** (`lib/supabase/*`)
+- **Components** (Auth forms, UI components)
+- **Risk indicators**
+- **API endpoints** (`/app/api/*`)
+
+**Test Framework**: Jest + React Testing Library
 
 ## How to Use
 
@@ -334,3 +407,4 @@ KMS_ENCRYPTION_KEY     # Token encryption key
 - [Sourcery Config](.sourcery.yaml)
 - [Audit Log Generator](scripts/generate_audit_log.sh)
 - [CI/CD Pipeline](docs/DEPLOYMENT.md)
+```

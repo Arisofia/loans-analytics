@@ -1,57 +1,34 @@
 version: 2
-registries:
-  npm-abaco-github:
-    type: npm-registry
-    url: https://npm.pkg.github.com/Abaco-Technol
-    token: ${{secrets.ABACO_GITHUB_PACKAGES_TOKEN}}
-
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    assignees:
-      - "codex"
-    groups:
-      minor-and-patch:
-        update-types: ["minor", "patch"]
-    registries:
-      - npm-abaco-github
-
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    assignees:
-      - "codex"
-    groups:
-      minor-and-patch:
-        update-types: ["minor", "patch"]
-
-  - package-ecosystem: "nuget"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    assignees:
-      - "codex"
-    groups:
-      minor-and-patch:
-        update-types: ["minor", "patch"]
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
+      interval: 'weekly'
     open-pull-requests-limit: 5
     assignees:
-      - "codex"
-    reviewers:
-      - "sonarqube"
-      - "coderabbit"
-      - "sourcery"
+      - 'codex'
     groups:
       minor-and-patch:
-        update-types: ["minor", "patch"]
+        update-types: ['minor', 'patch']
+
+  - package-ecosystem: 'pip'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 10
+    assignees:
+      - 'codex'
+    groups:
+      minor-and-patch:
+        update-types: ['minor', 'patch']
+
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 10
+    assignees:
+      - 'codex'
+    groups:
+      minor-and-patch:
+        update-types: ['minor', 'patch']

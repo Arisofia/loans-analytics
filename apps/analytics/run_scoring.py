@@ -1,11 +1,13 @@
-"""CLI for running loan KPI analytics on CSV inputs with optional Azure export."""
+"""
+CLI for running loan KPI analytics on CSV inputs
+with optional Azure export.
+"""
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Dict
 
 import pandas as pd
 
@@ -13,20 +15,24 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from apps.analytics.src.azure_blob_exporter import AzureBlobKPIExporter
-from apps.analytics.src.enterprise_analytics_engine import LoanAnalyticsEngine
+from apps.analytics.src.azure_blob_exporter import AzureBlobKPIExporter  # noqa: E402
+from apps.analytics.src.enterprise_analytics_engine import LoanAnalyticsEngine  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments for KPI and risk alert computation."""
     parser = argparse.ArgumentParser(
-        description="Compute loan KPIs and optional risk alerts from a CSV dataset."
+        description=(
+            "Compute loan KPIs and optional risk alerts from a CSV dataset."
+        )
     )
     parser.add_argument(
         "--data",
         required=True,
         help=(
-            "Path to a CSV containing loan_amount, appraised_value, borrower_income, "
-            "monthly_debt, loan_status, interest_rate, principal_balance."
+            "Path to a CSV containing loan_amount, appraised_value, "
+            "borrower_income, monthly_debt, loan_status, interest_rate, "
+            "principal_balance."
         ),
     )
     parser.add_argument(
@@ -40,88 +46,109 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--blob-name",
-        dest="blob_name",
-        help="Optional blob name for Azure export (default uses a timestamp).",
+        help="Optional Azure Blob name for the exported KPI JSON.",
     )
     parser.add_argument(
         "--connection-string",
-        dest="connection_string",
-        default=os.getenv("AZURE_STORAGE_CONNECTION_STRING"),
-        help="Azure Storage connection string (falls back to AZURE_STORAGE_CONNECTION_STRING).",
+        help="Azure Blob Storage connection string.",
     )
     parser.add_argument(
         "--account-url",
-        dest="account_url",
-        default=os.getenv("AZURE_STORAGE_ACCOUNT_URL"),
-        help="Azure Storage account URL (falls back to AZURE_STORAGE_ACCOUNT_URL).",
+        help="Azure Blob Storage account URL.",
+    )
+    parser.add_argument(
+        "--include-risk-alerts",
+        dest="include_risk_alerts",
+        action="store_true",
+        help="Compute and include risk alerts.",
     )
     parser.add_argument(
         "--ltv-threshold",
         type=float,
         default=90.0,
-        help="LTV threshold for flagging risk alerts (default: 90).",
+        help="LTV threshold for risk alerts (default: 90.0).",
     )
     parser.add_argument(
         "--dti-threshold",
         type=float,
         default=40.0,
-        help="DTI threshold for flagging risk alerts (default: 40).",
+        help="DTI threshold for risk alerts (default: 40.0).",
     )
     return parser.parse_args()
 
 
-def load_portfolio(path: Path) -> pd.DataFrame:
-    if not path.exists():
-        raise FileNotFoundError(f"Data file not found: {path}")
-    return pd.read_csv(path)
+def load_portfolio(file_path: Path) -> pd.DataFrame:
+    """Load portfolio data from a CSV file."""
+    if not file_path.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+    # Expand user path just in case
+    return pd.read_csv(file_path.expanduser())
 
 
-def summarize_results(metrics: Dict[str, Any], alerts_rows: int) -> None:
-    print("--- Loan Portfolio KPI Summary ---")
+def summarize_results(metrics: Dict[str, float], risk_alert_count: int) -> None:
+    """Print a summary of the analysis results."""
+    print("\n--- Analysis Summary ---")
     for key, value in metrics.items():
-        label = key.replace("_", " ").title()
-        print(f"{label}: {value:.2f}" if isinstance(value, (int, float)) else f"{label}: {value}")
-    print(f"Risk alerts flagged: {alerts_rows}")
-    print("----------------------------------")
+        formatted_key = key.replace("_", " ").title()
+        if isinstance(value, float):
+            print(f"{formatted_key}: {value:.2f}")
+        else:
+            print(f"{formatted_key}: {value}")
+    print(f"Risk alerts flagged: {risk_alert_count}")
+    print("------------------------\n")
 
 
 def main() -> None:
+    """Main entry point for KPI analytics CLI."""
     args = parse_args()
-    data_path = Path(args.data).expanduser().resolve()
 
-    portfolio = load_portfolio(data_path)
-    engine = LoanAnalyticsEngine(portfolio)
+    try:
+        df = load_portfolio(Path(args.data))
+        engine = LoanAnalyticsEngine(df)
+        kpi_results = engine.run_full_analysis()
 
-    metrics = engine.run_full_analysis()
-    alerts = engine.risk_alerts(ltv_threshold=args.ltv_threshold, dti_threshold=args.dti_threshold)
+        if args.output:
+            with open(args.output, "w") as f:
+                json.dump(kpi_results, f, indent=2, default=str)
+            print(f"✅ KPI results written to {args.output}")
 
-    output_payload: Dict[str, Any] = {
-        "data_file": str(data_path),
-        "metrics": metrics,
-        "risk_alert_count": int(len(alerts)),
-        "sample_alerts": alerts.head(5).to_dict(orient="records"),
-    }
-
-    summarize_results(metrics, len(alerts))
-
-    if args.output:
-        output_path = Path(args.output).expanduser().resolve()
-        output_path.write_text(json.dumps(output_payload, indent=2))
-        print(f"Saved KPI payload to {output_path}")
-
-    if args.container_name:
-        if not args.connection_string and not args.account_url:
-            raise SystemExit(
-                "Azure export requested but no connection string or account URL was provided. "
-                "Pass --connection-string/--account-url or set AZURE_STORAGE_CONNECTION_STRING / AZURE_STORAGE_ACCOUNT_URL."
+        risk_alert_count = 0
+        if args.include_risk_alerts:
+            risk_alerts = engine.risk_alerts(
+                ltv_threshold=args.ltv_threshold,
+                dti_threshold=args.dti_threshold
             )
-        exporter = AzureBlobKPIExporter(
-            container_name=args.container_name,
-            connection_string=args.connection_string,
-            account_url=args.account_url,
-        )
-        blob_path = engine.export_kpis_to_blob(exporter, blob_name=args.blob_name)
-        print(f"Uploaded KPI payload to blob: {blob_path}")
+            risk_alert_count = len(risk_alerts)
+            if args.output:
+                alert_path = args.output.replace(".json", "_alerts.json")
+                # Convert DataFrame to dict for JSON serialization
+                alerts_dict = risk_alerts.to_dict(orient="records")
+                with open(alert_path, "w") as f:
+                    json.dump(alerts_dict, f, indent=2, default=str)
+                print(f"✅ Risk alerts written to {alert_path}")
+
+        if args.container_name:
+            exporter = AzureBlobKPIExporter(
+                container_name=args.container_name,
+                connection_string=args.connection_string,
+                account_url=args.account_url
+            )
+            blob_name = args.blob_name or "kpi_results.json"
+            exporter.upload_metrics(kpi_results, blob_name)
+            print(f"✅ KPI results exported to Azure Blob: {blob_name}")
+
+        summarize_results(kpi_results, risk_alert_count)
+        print("\n📊 KPI Analytics Complete")
+
+    except FileNotFoundError as e:
+        print(f"❌ File not found: {e}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as e:
+        print(f"❌ Validation error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
