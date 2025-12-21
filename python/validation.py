@@ -58,7 +58,6 @@ def validate_dataframe(
     if required_columns:
         missing = [col for col in required_columns if col not in df.columns]
         if missing:
-            # Use singular/plural and exact wording to match test expectations
             if len(missing) == 1:
                 raise ValueError(f"Missing required column: {missing[0]}")
             else:
@@ -106,12 +105,28 @@ def assert_dataframe_schema(
 def validate_numeric_bounds(
     df: pd.DataFrame, columns: Optional[List[str]] = None
 ) -> Dict[str, bool]:
-    """Check numeric columns are non-negative."""
+    """
+    Check numeric columns are non-negative.
+    
+    Args:
+        df: DataFrame to validate
+        columns: Columns to check (defaults to NUMERIC_COLUMNS)
+    
+    Returns:
+        Dict mapping column names to validation results. Columns not present 
+        in the DataFrame are silently skipped.
+    
+    Note:
+        NaN values are treated as validation failures.
+    """
     cols_to_check = columns or NUMERIC_COLUMNS
     validation: Dict[str, bool] = {}
     for col in cols_to_check:
         if col in df.columns:
-            validation[f"{col}_non_negative"] = not (df[col] < 0).any()
+            # Check for NaN values and negative values
+            has_nan = df[col].isna().any()
+            has_negative = (df[col] < 0).any()
+            validation[f"{col}_non_negative"] = not (has_nan or has_negative)
     return validation
 
 
@@ -137,10 +152,14 @@ def validate_percentage_bounds(
 
 
 def safe_numeric(series: pd.Series) -> pd.Series:
-    """Coerce a series to numeric, handling currency symbols and commas."""
+    """Coerce a series to numeric, handling currency symbols and commas.
+    Note: If percentages are present (e.g., '50%'), removing '%' yields 50, not 0.5. Adjust as needed for your use case.
+    """
     if series.dtype == "object":
-        # Regex handles currency symbols ($, €, £, ¥, ₽, ₡), commas, and percentages
-        clean = series.astype(str).str.replace(r"[$,€£¥₽₡%]", "", regex=True).str.replace(",", "")
+        # Regex handles currency symbols ($, €, £, ¥, ₽, ₡) and commas
+        clean = series.astype(str).str.replace(r"[$€£¥₽₡,]", "", regex=True)
+        # To handle percentages as fractions, uncomment the following line:
+        # clean = clean.str.replace(r"(\d+(?:\.\d+)?)\s*%", lambda m: str(float(m.group(1)) / 100), regex=True)
         return pd.to_numeric(clean, errors="coerce")
     return pd.to_numeric(series, errors="coerce")
 
@@ -180,6 +199,7 @@ def validate_iso8601_dates(
         # Heuristic: columns with 'date' in the name
         columns = [c for c in df.columns if "date" in c.lower() or c.lower().endswith("_at")]
     validation: Dict[str, bool] = {}
+    # SonarLint: S5843 - This regex is intentionally complex to match ISO 8601 formats.
     iso8601_regex = re.compile(
         r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$"
     )

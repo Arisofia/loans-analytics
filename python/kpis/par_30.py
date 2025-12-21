@@ -5,7 +5,7 @@ import numpy as np
 
 
 
-def calculate_par_30(df: pd.DataFrame) -> float:
+def calculate_par_30(df: pd.DataFrame | None) -> float:
     """
     Calculate Portfolio at Risk (30+ days) as a percentage of receivables.
     Formula: SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100

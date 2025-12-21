@@ -42,17 +42,17 @@ def test_standardize_numeric_handles_symbols():
         ]
     )
     cleaned = standardize_numeric(series)
-    assert cleaned.iloc[0] == 1200.0
-    assert cleaned.iloc[1] == 2500.0
-    assert cleaned.iloc[3] == 3000.0
-    assert cleaned.iloc[4] == 4500.0
-    assert cleaned.iloc[5] == 5500.0
-    assert cleaned.iloc[2] == 25.0
+    assert np.isclose(cleaned.iloc[0], 1200.0)
+    assert np.isclose(cleaned.iloc[1], 2500.0)
+    assert np.isclose(cleaned.iloc[3], 3000.0)
+    assert np.isclose(cleaned.iloc[4], 4500.0)
+    assert np.isclose(cleaned.iloc[5], 5500.0)
+    assert np.isclose(cleaned.iloc[2], 25.0)
     assert pd.isna(cleaned.iloc[6])
     assert pd.isna(cleaned.iloc[7])
     assert pd.isna(cleaned.iloc[8])
     assert pd.isna(cleaned.iloc[9])
-    assert cleaned.iloc[10] == 7500.0
+    assert np.isclose(cleaned.iloc[10], 7500.0)
 
 
 def test_standardize_numeric_passes_through_numeric_series():
