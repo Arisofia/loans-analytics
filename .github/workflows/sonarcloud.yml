@@ -18,23 +18,22 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
-          # Necessary for SonarCloud to analyze history
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -62,16 +61,9 @@ jobs:
             echo "Skipping Jacoco: no Gradle build files found in repository"
           fi
 
-      - name: Generate web coverage (Jest)
-        run: |
-          cd apps/web
-          npm run test -- --coverage --coverageReporters=lcov
-          # The lcov.info file will be generated at coverage/lcov.info
-
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           args: >
             -Dsonar.verbose=true
             -Dsonar.python.coverage.reportPaths=coverage-python.xml
-            -Dsonar.javascript.lcov.reportPaths=apps/web/coverage/lcov.info

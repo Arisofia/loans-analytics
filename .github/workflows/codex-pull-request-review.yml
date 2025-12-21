@@ -8,7 +8,7 @@ on:
 jobs:
   assign_metadata:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == false
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
     permissions:
       pull-requests: write
     steps:
@@ -21,30 +21,38 @@ jobs:
             const repo = context.repo.repo;
             const pull_number = context.payload.pull_request.number;
 
-            await github.rest.issues.addAssignees({
-              owner,
-              repo,
-              issue_number: pull_number,
-              assignees: ['codex'],
-            });
+            try {
+              await github.rest.issues.addAssignees({
+                owner,
+                repo,
+                issue_number: pull_number,
+                assignees: ['codex'],
+              });
+            } catch (_error) {
+              console.log('Could not add assignee (may not exist as user)');
+            }
 
-            await github.rest.pulls.requestReviewers({
-              owner,
-              repo,
-              pull_number,
-              reviewers: ['sonarqube', 'coderabbit', 'sourcery'],
-            });
+            try {
+              await github.rest.pulls.requestReviewers({
+                owner,
+                repo,
+                pull_number,
+                reviewers: ['sonarqube', 'coderabbit', 'sourcery'],
+              });
+            } catch (_error) {
+              console.log('Could not request reviewers (may not exist as users)');
+            }
 
   codex:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == false
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
     permissions:
       contents: read
       pull-requests: write
     outputs:
       final_message: ${{ steps.run_codex.outputs.final-message }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
 
