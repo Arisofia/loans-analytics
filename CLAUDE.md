@@ -73,12 +73,17 @@ npm run check-all --prefix apps/web
 # Simulate Vercel config validation
 node -e "
 const fs = require('fs');
-const config = JSON.parse(fs.readFileSync('vercel.json'));
-if (!config.framework) throw 'Missing framework field';
-if (!config.buildCommand) throw 'Missing buildCommand field';
-if (!config.outputDirectory) throw 'Missing outputDirectory field';
-if (config.version === 2) throw 'Deprecated version 2 - use v3 or omit';
-console.log('✅ vercel.json is valid');
+try {
+  const config = JSON.parse(fs.readFileSync('vercel.json'));
+  if (!config.framework) throw new Error('Missing framework field');
+  if (!config.buildCommand) throw new Error('Missing buildCommand field');
+  if (!config.outputDirectory) throw new Error('Missing outputDirectory field');
+  if (config.version === 2) throw new Error('Deprecated version 2 - use v3 or omit');
+  console.log('✅ vercel.json is valid');
+} catch (e) {
+  console.error('❌ Invalid vercel.json:', e.message);
+  process.exit(1);
+}
 "
 ```
 
