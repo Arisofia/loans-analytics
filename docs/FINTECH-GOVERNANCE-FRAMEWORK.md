@@ -1,18 +1,20 @@
-# ABACO Fintech Governance & Excellence Framework
+# ABACO — Loan Analytics Platform
 
-## Executive Summary
+## Fintech Governance & Excellence Framework
+
+### Executive Summary
 
 This framework establishes market-leading standards for KPI measurement, traceability, compliance, and operational excellence. It operationalizes "Vibe Solutioning": moving from fragile shortcuts to robust, predictable excellence.
 
-## Core Principles
+### Core Principles
 
-1. **Build Integrity**: Every component withstands scrutiny, scale, and change
-2. **Traceability**: Every decision, metric, deployment is auditable
-3. **Stability**: Systems designed for reliability, not just functionality
-4. **Confidence**: Governance, monitoring, automation eliminate uncertainty
-5. **Excellence**: Outcomes superior, not merely correct
+1. **++Build Integrity++**: Every component withstands scrutiny, scale, and change
+2. **++Traceability++**: Every decision, metric, deployment is auditable
+3. **++Stability++**: Systems designed for reliability, not just functionality
+4. **++Confidence++**: Governance, monitoring, automation eliminate uncertainty
+5. **++Excellence++**: Outcomes superior, not merely correct
 
-## I. Strategic KPIs
+### I. Strategic KPIs
 
 - Deployment Success Rate: 100% (>98% threshold)
 - Code Quality Score: >85 (daily)
@@ -24,33 +26,37 @@ This framework establishes market-leading standards for KPI measurement, traceab
 - MTBF: > 720 hours
 - Change Success Rate: > 98%
 
-## II. Governance Layers
+### II. Governance Layers
 
-### Source Code Governance
+#### Source Code Governance
+
 - Branch protection on `main`
 - Mandatory code reviews (2+ approvers)
 - Automated quality gates (SonarQube)
 - Semantic versioning
 
-### CI/CD Governance
+#### CI/CD Governance
+
 - All deployments via GitHub Actions
 - Environment parity validation
 - Automated rollback on failure
 - Immutable deployment audit trail
 
-### Data Governance
+#### Data Governance
+
 - PII masking and encryption
 - RBAC access control
 - Data lineage tracking
 - Retention policies
 
-### Security Governance
+#### Security Governance
+
 - Secrets management (GitHub/Azure KV)
 - OWASP Top 10 compliance
 - Dependency vulnerability scanning
 - API authentication/authorization
 
-## III. Quality Gates (Mandatory)
+### III. Quality Gates (Mandatory)
 
 - Unit Tests: >85% coverage
 - Integration Tests: 100% pass
@@ -59,46 +65,40 @@ This framework establishes market-leading standards for KPI measurement, traceab
 - SAST: Zero high severity
 - Dependency Check: Zero high CVE (Dependabot)
 
-## IV. Deployment Process
+### IV. Deployment Process
 
 1. Trigger: Merge to `main` or manual dispatch
 2. Validation: Automated tests (unit, integration, E2E)
 3. Build: Docker image + SCA scanning
 4. Deploy: Blue-green to Vercel/Production
-5. Monitor: Health checks + APM telemetry
-6. Rollback: Automatic on failure
 
-## V. Compliance & Auditability
+### V. Operational Excellence
 
-**Audit Trail**: Timestamp, Actor, Action, Change, Context (PR #, SHA, env)
+#### Monitoring & Observability
 
-**Mappings**:
-- SOC 2 Type II: Access controls, change mgmt
-- GDPR: Data minimization, consent
-- PCI-DSS: Secrets, encryption
-- ISO 27001: Risk management, incident response
+- Real-time APM (New Relic/Datadog)
+- Distributed tracing
+- Error tracking with context
+- Custom business metrics dashboards
 
-## VI. Team Roles
+#### Incident Response
 
-| Role | SLA | Tools |
-|------|-----|-------|
-| @codex | PR review: 4h | GitHub |
-| @sonarqube | Reporting: Daily | SonarQube |
-| @coderabbit | Analysis: Real-time | CodeRabbit |
-| @sourcery | Refactor: PRs | Sourcery |
-| @gemini | Insights: On-demand | API |
+- Automated alerting (PagerDuty/Slack)
+- Runbook automation
+- Post-mortem requirement (blameless)
+- RCA documentation in wiki
 
-## VII. Terminal Commands (Copy & Paste)
+### VI. Compliance & Audit
 
-### Setup & Development
-```bash
-git clone https://github.com/Abaco-Technol/abaco-loans-analytics.git
-cd abaco-loans-analytics
-git checkout main && git pull origin main
-npm install && npm run build
-```
+- SOC 2 Type II readiness
+- GDPR/CCPA compliance checks
+- Quarterly security audits
+- Audit log retention: 7 years
 
-### Pre-Commit
+### VII. Developer Workflow
+
+#### Pre-Commit
+
 ```bash
 git add .
 npm run lint && npm run test:unit
@@ -106,19 +106,22 @@ git commit -m "feat: [description]"
 git push origin feature-branch
 ```
 
-### GitHub Workflow
+#### GitHub Workflow
+
 ```bash
 gh pr create --title "[FEATURE]: Description" --body "Closes #issue"
 gh pr review --approve --comment "LGTM"
 gh pr merge --auto --squash
 ```
 
-### Deploy to Production
+#### Deploy to Production
+
 ```bash
 vercel --prod
 ```
 
-### Git Sync & Merge
+#### Git Sync & Merge
+
 ```bash
 git fetch origin main
 git rebase origin/main
@@ -126,15 +129,17 @@ git push origin feature-branch -f
 gh pr merge --rebase
 ```
 
-## VIII. Success Metrics
+### VIII. Success Metrics
 
 - 0 critical security vulnerabilities in production
-- >98% deployment success rate
+- > 99% deployment success rate
 - <15 min MTTR
 - 100% audit log compliance
-- >90% SLA adherence
+- > 90% SLA adherence
 - Zero unplanned outages >5 minutes
 
 ---
 
-**Owner**: @codex (CTO) | **Updated**: 2025-12-03 | **Cycle**: Quarterly | **Status**: Active
+**Last Updated**: December 2025  
+**Owner**: Engineering Excellence Team  
+**Review Cadence**: Quarterly

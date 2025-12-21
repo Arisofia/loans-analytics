@@ -1,15 +1,15 @@
-# Gradle
-.gradle/
-build/
-**/.gradle/
-**/build/
-
 # Node / JavaScript
 node_modules/
 .next/
 .turbo/
 dist/
 coverage/
+
+# Gradle
+.gradle/
+build/
+**/.gradle/
+**/build/
 
 # Python
 .venv/
@@ -25,19 +25,17 @@ __pycache__/
 # OS files
 .DS_Store
 Thumbs.db
-
-# Project-specific artifacts
 apps/.DS_Store
 
-# Local repository clones
+# Project-specific artifacts
 abaco-loans-analytics/
 data_samples/
 gemini-cli/
+nvm/
 
 # Environment & platform
-nvm/
 .env
 .env.local
 .env*.local
 .vercel/
-eslint.config.js
+node_modules

@@ -1,0 +1,9 @@
+{
+  "portfolio_delinquency_rate_percent": 0.0,
+  "portfolio_yield_percent": 0.0,
+  "average_ltv_ratio_percent": NaN,
+  "average_dti_ratio_percent": NaN,
+  "data_quality_score": 84.21,
+  "average_null_ratio_percent": 15.79,
+  "invalid_numeric_ratio_percent": 0.0
+}

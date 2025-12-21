@@ -1,0 +1,36 @@
+dist/
+build/
+.next/
+
+# Dependency noise
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Build artifacts
+.next/
+dist/
+build/
+out/
+.gradle/
+coverage/
+
+# Logs & diagnostics
+*.log
+ts-resolution.log
+duplicates.log
+
+logs/
+.env
+.env.*
+
+# IDE / OS
+.vscode-server/
+.DS_Store
+
+# Data artifacts (generated)
+exports/**/*.html
+exports/**/*.zip
+exports/**/*.parquet
