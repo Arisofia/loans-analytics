@@ -11,7 +11,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 3 * * *' # Nightly at 3am UTC
-  workflow_call:
 
 jobs:
   build:
