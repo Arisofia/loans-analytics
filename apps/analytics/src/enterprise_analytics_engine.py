@@ -160,9 +160,9 @@ class LoanAnalyticsEngine:
             100 - (null_ratio * 100) - (duplicate_ratio * 50),
         )
         return {
-            "average_null_ratio": round(null_ratio * 100, 2),
-            "duplicate_ratio": round(duplicate_ratio * 100, 2),
-            "invalid_numeric_ratio": round(invalid_numeric_ratio * 100, 2),
+            "average_null_ratio_percent": round(null_ratio * 100, 2),
+            "duplicate_ratio_percent": round(duplicate_ratio * 100, 2),
+            "invalid_numeric_ratio_percent": round(invalid_numeric_ratio * 100, 2),
             "data_quality_score": round(data_quality_score, 2),
         }
 
@@ -219,8 +219,9 @@ class LoanAnalyticsEngine:
             "average_ltv_ratio_percent": float(ltv_ratio.mean(skipna=True)),
             "average_dti_ratio_percent": float(dti_ratio.mean(skipna=True)),
             "data_quality_score": quality["data_quality_score"],
-            "average_null_ratio_percent": quality["average_null_ratio"],
-            "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio"],
+            "average_null_ratio_percent": quality["average_null_ratio_percent"],
+            "duplicate_ratio_percent": quality["duplicate_ratio_percent"],
+            "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio_percent"],
         }
 
     def export_kpis_to_blob(

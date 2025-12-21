@@ -200,6 +200,7 @@ def _data_quality_metrics(loan_data: pd.DataFrame) -> Dict[str, float]:
     return {
         "data_quality_score": round(data_quality_score, 2),
         "average_null_ratio_percent": round(null_ratio * 100, 2),
+        "duplicate_ratio_percent": round(duplicate_ratio * 100, 2),
         "invalid_numeric_ratio_percent": round(invalid_numeric_ratio * 100, 2),
     }
 
