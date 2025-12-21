@@ -13,7 +13,6 @@ Each KPI includes owner, agent, source, thresholds, drill-down, runbook, and ale
 | Promise-to-Pay Kept | Kept PTPT / total PTPT                            | Collections      | Sentinel      | Promise logs             | Red <80%                            | Agent and borrower drill-down                 | `runbooks/kpi-breach.md`        | Slack `#collections`, email |
 | CAC / LTV           | Acquisition cost vs lifetime value                | Growth           | GrowthCoach   | Marketing + repayment    | Red if CAC/LTV >0.3                 | Channel table, cohort profitability           | `runbooks/kpi-breach.md`        | Slack `#growth`             |
 | Data Quality        | Freshness, completeness, duplicates, schema drift | Data Engineering | Integrator    | Pipelines + monitors     | Red if freshness >1h or null %>1%   | Failed checks, offending rows                 | `runbooks/schema-drift.md`      | Slack `#data`, email        |
-
 ## Actionability rules
 
 - Every chart links to a drill-down table and its runbook. Next-best action is documented per KPI (collections playbook, credit tweak, data fix).
