@@ -1,13 +1,11 @@
 # Fitten Code AI Assistant Manual
 
 ## Product overview
-
 Fitten Code AI (by Fittentech) is a developer-focused coding assistant that can handle code reviews, test suggestions,
 deployment script generation, and more across local and cloud environments. This guide helps the
 `abaco-loans-analytics` repo integrate Fitten Code AI end-to-end, from development through deployment.
 
 ## Installation steps
-
 1. Prepare the basics: Git, Python 3.10+, Node.js (for the web project), Docker (optional for containerization).
 2. Download the Fitten Code AI model and config to secure storage—do not commit them to Git. Per your org policy, place
    them under `/opt/fitten/models`, a shared volume, or a model server.
@@ -30,7 +28,6 @@ deployment script generation, and more across local and cloud environments. This
    them with one command.
 
 ## Feature highlights
-
 - **Instant code analysis**: runs automatically in PRs, commits, or CI and provides inline-style feedback.
 - **Deployment assistant**: generates deployment summaries, Azure scripts, and CI/CD configs to reduce ops friction.
 - **Developer guidance**: tailored recommendations for `apps/web` and `apps/analytics`, including testing coverage tips
@@ -39,7 +36,6 @@ deployment script generation, and more across local and cloud environments. This
   develop–test–deploy–monitor loop.
 
 ## Local and GitHub integration tips
-
 1. Local: set the `FITTEN_CONFIG` environment variable in your shell so Fitten CLI can read `fitten.config.toml`. Use
    commands like `fitten sniff apps/web` to scan subprojects as needed.
 2. GitHub: add `fitten.yml` under `.github/workflows/` to trigger Fitten checks on `pr` and `push`, with Slack/Webhook
@@ -50,7 +46,6 @@ deployment script generation, and more across local and cloud environments. This
    is tracked to closure.
 
 ## FAQ
-
 - **Q: Do Fitten models have to live in the repo?**  
   A: No. Do not commit model files. Just store the path in `fitten.config.toml` and download or mount in CI if needed.
 - **Q: How do I debug Fitten’s suggestions?**  
@@ -61,21 +56,17 @@ deployment script generation, and more across local and cloud environments. This
   generation; they complement one another.
 
 ## Contact
-
-Fittentech (Fitten Code) technical support:
-
-- Website: https://www.fittentech.com/
-- Fitten Code platform: https://code.fittentech.com/
+Fittentech (Fitten Code) technical support:  
+- Website: https://www.fittentech.com/  
+- Fitten Code platform: https://code.fittentech.com/  
 - Reach out via the platform or corporate email for licensing and help.
 
 ## Useful links
-
-- Fitten Code platform: https://code.fittentech.com/
-- Fittentech corporate site: https://www.fittentech.com/
+- Fitten Code platform: https://code.fittentech.com/  
+- Fittentech corporate site: https://www.fittentech.com/  
 - `abaco-loans-analytics` repository (this page): https://github.com/9nnxqzyq4y-eng/abaco-loans-analytics
 
 ## Test local inference
-
 After confirming the model path, you can quickly validate Fitten local inference with Hugging Face Transformers:
 
 ```python

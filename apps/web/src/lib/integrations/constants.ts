@@ -1,26 +1,24 @@
-export const PLATFORMS = ['meta', 'linkedin', 'custom'] as const
-
-export type Platform = (typeof PLATFORMS)[number]
-
-export const SUPABASE_FN_BASE = process.env.NEXT_PUBLIC_SUPABASE_FN_BASE?.replace(/\/$/, '') || ''
-
+/**
+ * Minimal placeholders for integration constants and types.
+ * Extend/replace with full definitions used by your app.
+ */
+export const PLATFORMS = ['github', 'gitlab'] as const;
+export type Platform = (typeof PLATFORMS)[number];
 export const PLATFORM_LABELS: Record<Platform, string> = {
-  meta: 'Meta',
-  linkedin: 'LinkedIn',
-  custom: 'Custom API',
-}
-
+  github: 'GitHub',
+  gitlab: 'GitLab',
+};
 export const PLATFORM_ICONS: Record<Platform, string> = {
-  meta: '⚡️',
-  linkedin: '🔗',
-  custom: '🧩',
-}
-
-export type TokenStatus = 'connected' | 'disconnected' | 'syncing' | 'error'
-
-export const STATUS_COLORS: Record<TokenStatus, string> = {
-  connected: '#0f766e',
-  disconnected: '#334155',
-  syncing: '#7c3aed',
-  error: '#b91c1c',
-}
+  github: '🐙',
+  gitlab: '🦊',
+};
+export const STATUS_COLORS: Record<string, string> = {
+  valid: 'green',
+  invalid: 'red',
+  connected: 'green',
+  disconnected: 'gray',
+  syncing: 'blue',
+  error: 'red',
+};
+export const SUPABASE_FN_BASE = '/api/fn';
+export type TokenStatus = 'valid' | 'invalid' | 'connected' | 'disconnected' | 'syncing' | 'error';

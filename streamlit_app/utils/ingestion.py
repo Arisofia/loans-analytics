@@ -1,5 +1,4 @@
-"""Utilities for ingesting, normalizing, and validating tabular data."""
-from __future__ import annotations
+
 
 import re
 from typing import Dict, List, Optional, Tuple

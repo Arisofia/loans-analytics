@@ -1,11 +1,11 @@
 version: 1
 
 # Set the review language to English
-language: 'en'
+language: "en"
 
 reviews:
   # Profile can be: chill, balanced, strict
-  profile: 'strict'
+  profile: "strict"
   request_changes_workflow: true
   # Add an executive summary at the beginning of the review
   high_level_summary: true
@@ -15,111 +15,19 @@ reviews:
     # Only review PRs that are not drafts
     drafts: false
 
-  # Enforce commit message and changelog rules
-  commit_message:
-    enforce_conventional: true
-    require_issue_reference: false
-    min_length: 15
-  changelog:
-    require_changelog: true
-    changelog_paths:
-      - 'CHANGELOG.md'
-      - 'docs/CHANGELOG.md'
-
 chat:
   auto_reply: true
 
 paths:
   ignore:
-    - '**/node_modules/**'
-    - '**/.next/**'
-    - '**/dist/**'
-    - '**/.turbo/**'
-    - '**/artifacts/**'
-    - '**/.github/**'
-    - '**/*.md'
-    - '**/data_samples/**'
-    - '**/.gradle/**'
-    - '**/build/**'
-    - '**/coverage/**'
-    - '**/logs/**'
-    - '**/tmp/**'
-    - '**/.env'
-    - '**/.env.*'
-    - '**/log/**'
-    - '**/test-output/**'
-    - '**/.pytest_cache/**'
-    - '**/.cache/**'
-    - '**/.DS_Store'
-    - '**/Thumbs.db'
-    - '**/.vscode/**'
-    - '**/.idea/**'
-    - '**/.venv/**'
-    - '**/venv/**'
-    - '**/pip-wheel-metadata/**'
-    - '**/migrations/**'
-    - '**/export/**'
-    - '**/exports/**'
-    - '**/.svn/**'
-    - '**/.hg/**'
-    - '**/.tox/**'
-    - '**/.pnp.*'
-    - '**/.yarn/**'
-    - '**/.parcel-cache/**'
-    - '**/.eslintcache'
-    - '**/.npm/**'
-    - '**/.cache-loader/**'
-    - '**/.nyc_output/**'
-    - '**/.coverage'
-    - '**/.mocha/**'
-    - '**/.jest/**'
-    - '**/.storybook/**'
-    - '**/.cypress/**'
-    - '**/.circleci/**'
-    - '**/.github/workflows/**'
-    - '**/.gitlab-ci.yml'
-    - '**/.docker/**'
-    - '**/.envrc'
-    - '**/.editorconfig'
-    - '**/.prettierrc*'
-    - '**/.stylelintrc*'
-    - '**/.babelrc*'
-    - '**/.gitattributes'
-    - '**/.gitmodules'
-    - '**/.mergify.yml'
-    - '**/.releaserc*'
-    - '**/.commitlintrc*'
-    - '**/.husky/**'
-    - '**/.lintstagedrc*'
-    - '**/.npmrc'
-    - '**/.pnpmfile.cjs'
-    - '**/.yarnrc*'
-    - '**/.envrc*'
-    - '**/.direnv/**'
-    - '**/.terraform/**'
-    - '**/.serverless/**'
-    - '**/.vagrant/**'
-    - '**/.idea_modules/**'
-    - '**/.history/**'
-    - '**/.tmp/**'
-    - '**/tmp/**'
-    - '**/logs/**'
-    - '**/log/**'
-    - '**/test-results/**'
-    - '**/test/**'
-    - '**/tests/**'
-    - '**/examples/**'
-    - '**/sample*/**'
-    - '**/sandbox/**'
-    - '**/docs/examples/**'
-    - '**/docs/samples/**'
-    - '**/docs/test/**'
-    - '**/docs/tests/**'
-    - '**/docs/tmp/**'
-    - '**/docs/logs/**'
-    - '**/docs/coverage/**'
-    - '**/docs/.cache/**'
-    - '**/docs/.tmp/**'
-    - '**/docs/.history/**'
-    - '**/docs/.DS_Store'
-    - '**/docs/Thumbs.db'
+    - "**/node_modules/**"
+    - "**/.next/**"
+    - "**/dist/**"
+    - "**/.turbo/**"
+    - "**/artifacts/**"
+    - "**/.github/**"
+    - "**/*.md"
+    - "**/data_samples/**"
+    - "**/.gradle/**"
+    - "**/build/**"
+    - "**/coverage/**"

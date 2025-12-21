@@ -1,32 +1,41 @@
+# Node / JavaScript
+node_modules/
+.next/
+.turbo/
+dist/
+coverage/
 
-# OS
-.DS_Store
+# Gradle
+.gradle/
+build/
+**/.gradle/
+**/build/
 
 # Python
-__pycache__/
-*.pyc
 .venv/
 venv/
+__pycache__/
+*.pyc
 
-# Streamlit
-.streamlit/
+# IDE / Editor
+.vscode/
+.idea/
+*.vsix
 
-# Data outputs (NO versionar)
-data/metrics/
-data_samples/*.csv
-logs/
+# OS files
+.DS_Store
+Thumbs.db
+apps/.DS_Store
 
-# Build / tooling
-.gradle/
+# Project-specific artifacts
+abaco-loans-analytics/
+data_samples/
+gemini-cli/
+nvm/
 
-# IDE
-.vscode/tasks.json
-node_modules/
-
-clean_settings.json
-tailwind.config.js
-
-# Coverage
-.coverage
-.coverage.*
-htmlcov/
+# Environment & platform
+.env
+.env.local
+.env*.local
+.vercel/
+node_modules

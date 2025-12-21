@@ -35,10 +35,8 @@ class ThresholdValidator:
     
     def _check_metric(
         self,
-        metric_name: str,
         actual_value: float,
-        threshold: Dict[str, Any],
-        category: str = "general"
+        threshold: Dict[str, Any]
     ) -> Tuple[Union[bool, str], str]:
         """Check if a metric meets its threshold.
         
@@ -76,10 +74,8 @@ class ThresholdValidator:
         for metric_name in ['accuracy', 'precision', 'recall', 'f1_score']:
             if metric_name in thresholds and metric_name in metrics:
                 status, message = self._check_metric(
-                    metric_name,
                     metrics[metric_name],
-                    thresholds[metric_name],
-                    'classification'
+                    thresholds[metric_name]
                 )
                 
                 result = {
@@ -108,10 +104,8 @@ class ThresholdValidator:
         for metric_name in financial_metrics:
             if metric_name in thresholds and metric_name in metrics:
                 status, message = self._check_metric(
-                    metric_name,
                     metrics[metric_name],
-                    thresholds[metric_name],
-                    'financial'
+                    thresholds[metric_name]
                 )
                 
                 result = {
@@ -132,10 +126,8 @@ class ThresholdValidator:
         # Validate ROC AUC if present
         if 'roc_auc' in thresholds and 'roc_auc' in metrics:
             status, message = self._check_metric(
-                'roc_auc',
                 metrics['roc_auc'],
-                thresholds['roc_auc'],
-                'performance'
+                thresholds['roc_auc']
             )
             
             result = {

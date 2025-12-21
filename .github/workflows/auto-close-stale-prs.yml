@@ -12,7 +12,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Close stale PRs (5+ days inactive)
-        uses: actions/stale@v9
+        uses: actions/stale@v10
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           stale-pr-message: |

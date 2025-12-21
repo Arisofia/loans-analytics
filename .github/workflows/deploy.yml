@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - main
+      - staging
+    paths:
+      - 'apps/web/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+      - staging
     paths:
       - 'apps/web/**'
   workflow_dispatch:
@@ -13,12 +21,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
+
+      - name: Install dependencies
+        run: |
+          cd apps/web
+          npm install
+
+      - name: Build
+        run: |
+          cd apps/web
+          npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Check Vercel secrets
         id: vercel_secrets
@@ -34,32 +55,30 @@ jobs:
             echo "Missing secrets:$missing"
           fi
 
-      - name: Install dependencies
+      - name: Set Vercel args
+        id: vercel_args
         run: |
-          cd apps/web
-          npm install
-
-      - name: Pull Vercel project settings
-        if: steps.vercel_secrets.outputs.present == 'true'
-        working-directory: apps/web
-        run: npx vercel pull --yes --environment=production --token "${{ secrets.VERCEL_TOKEN }}"
-
-      - name: Build
-        run: |
-          cd apps/web
-          npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "args=--prod --cwd apps/web" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=--prebuilt --cwd apps/web" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Deploy to Vercel
         if: steps.vercel_secrets.outputs.present == 'true'
-        uses: amondnet/vercel-action@16e87c0a08142b0d0d33b76aeaf20823c381b9b9
+        uses: amondnet/vercel-action@b6e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod --cwd apps/web'
+          vercel-args: ${{ steps.vercel_args.outputs.args }}
+        env:
+          VERCEL_GIT_REPO_OWNER: ${{ github.repository_owner }}
+          VERCEL_GIT_REPO_SLUG: ${{ github.event.repository.name }}
+          VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
+          VERCEL_GIT_COMMIT_AUTHOR_LOGIN: ${{ github.actor }}
+          VERCEL_GIT_COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title }}
+          VERCEL_GIT_COMMIT_REF: ${{ github.head_ref || github.ref_name }}
 
       - name: Skip deploy (missing Vercel secrets)
         if: steps.vercel_secrets.outputs.present != 'true'

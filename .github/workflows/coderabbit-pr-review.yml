@@ -1,0 +1,19 @@
+name: CodeRabbit PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  coderabbit-pr-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run CodeRabbit PR Review
+        uses: coderabbitai/ai-pr-reviewer@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CODERABBIT_TOKEN: ${{ secrets.CODERABBIT_TOKEN }}

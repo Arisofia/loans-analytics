@@ -1,5 +1,4 @@
 # Summary
-
 - [ ] KPI impact: which KPIs/dashboards are affected? Link to `docs/analytics/KPIs.md`.
 - [ ] Data sources touched: tables/contracts/migrations updated?
 - [ ] Data/PII touched: list fields or confirm none; logging sanitized?
@@ -10,7 +9,6 @@
 - [ ] Workflow hygiene: PR assigned to `@codex` and reviewers `@sonarqube`, `@coderabbit`, `@sourcery` (auto-assignment workflow runs on open/update).
 
 # Checklist
-
 - [ ] CI passed (lint, type-check, tests, build for web/analytics).
 - [ ] SonarCloud coverage/quality gate OK.
 - [ ] CodeQL/secret scanning OK.

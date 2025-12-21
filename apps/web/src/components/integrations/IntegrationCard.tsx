@@ -23,6 +23,8 @@ type IntegrationCardProps = {
 }
 
 const statusCopy: Record<TokenStatus, string> = {
+  valid: 'Valid',
+  invalid: 'Invalid',
   connected: 'Connected',
   disconnected: 'Disconnected',
   syncing: 'Syncing',
