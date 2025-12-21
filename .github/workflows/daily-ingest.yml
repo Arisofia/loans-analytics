@@ -27,7 +27,7 @@ jobs:
             pip install -r apps/analytics/requirements.txt
           fi
 
-                - name: Install Playwright
+      - name: Install Playwright
         run: |
           pip install playwright
           playwright install chromium
