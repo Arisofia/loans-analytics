@@ -44,6 +44,7 @@ def test_upload_metrics_rejects_non_numeric_payloads():
         exporter.upload_metrics({"portfolio": "high"})
 
 
+<<<<<<< HEAD
 def test_upload_metrics_rejects_non_string_blob_name():
     exporter = AzureBlobKPIExporter(
         container_name="kpis", blob_service_client=Mock()
@@ -52,6 +53,8 @@ def test_upload_metrics_rejects_non_string_blob_name():
         exporter.upload_metrics({"portfolio_yield_percent": 4.2}, blob_name=42)  # type: ignore[arg-type]
 
 
+=======
+>>>>>>> origin/main
 def test_exporter_requires_valid_container_name():
     with pytest.raises(ValueError):
         AzureBlobKPIExporter(container_name="  ", blob_service_client=Mock())
@@ -82,6 +85,7 @@ def test_engine_exports_to_blob(monkeypatch):
     assert called_blob_name == "dashboard.json"
     assert "portfolio_delinquency_rate_percent" in called_payload
     assert result_path == "kpis/kpi-dashboard.json"
+<<<<<<< HEAD
 
 
 def test_engine_rejects_non_string_blob_name():
@@ -102,3 +106,5 @@ def test_engine_rejects_non_string_blob_name():
 
     with pytest.raises(ValueError):
         engine.export_kpis_to_blob(exporter, blob_name=123)  # type: ignore[arg-type]
+=======
+>>>>>>> origin/main
