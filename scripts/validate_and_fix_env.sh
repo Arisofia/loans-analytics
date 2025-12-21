@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Automated validation and fix script for repo, extensions, and permissions
 
-REPO_PATH="$HOME/desktop/documents/abaco-loans-analytics"
+REPO_PATH="$(pwd)"
 EXT_PATH="$HOME/.vscode/extensions/ms-windows-ai-studio.windows-ai-studio-0.26.4-darwin-arm64/resources/lmt/chatAgents"
 AGENT_FILE="AIAgentExpert.agent.md"
 
