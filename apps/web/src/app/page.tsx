@@ -38,7 +38,12 @@ async function getData(): Promise<LandingPageData> {
       error: error ?? undefined,
       payload: fallbackData,
     })
-    console.error(error ? 'Error fetching landing page data:' : 'Landing page data is missing from Supabase response', error ?? '')
+    console.error(
+      error
+        ? 'Error fetching landing page data:'
+        : 'Landing page data is missing from Supabase response',
+      error ?? ''
+    )
     return fallbackData
   }
 
