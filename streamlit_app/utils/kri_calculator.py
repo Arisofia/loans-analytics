@@ -1,6 +1,4 @@
-"""Utility functions for calculating key risk indicators (KRIs)."""
 
-from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Dict, Optional
@@ -21,6 +19,7 @@ class KRIMetrics:
     high_utilization_share: Optional[float]
 
     def as_dict(self) -> Dict[str, Optional[float]]:
+        """Return KRI metrics as a dictionary."""
         return {
             "portfolio_exposure": self.portfolio_exposure,
             "delinquency_30_plus_rate": self.delinquency_30_plus_rate,
@@ -39,8 +38,8 @@ class KRICalculator:
         """Compute the KRI metrics using available columns.
 
         The calculation mirrors the conditional style from the notebook example:
-        values are only produced when prerequisite columns are present; otherwise
-        they default to ``np.nan``.
+        Values are only produced when prerequisite columns are present;
+        otherwise they default to ``np.nan``.
         """
 
         exposure_col = _first_present_column(df, ["outstanding_loan_value", "balance"])

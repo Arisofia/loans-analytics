@@ -1,0 +1,55 @@
+sheet,variable,description
+Collaterals,appraisal_date,Date of the appraisal
+Collaterals,appraisal_value,Value of the appraisal
+Collaterals,asset_type,"If there is collateral for the loan, what is the form of the collateral (house, car, boat, etc.) "
+Collaterals,loan_id,Unique internal ID associated with a specific loan. Customers can have multiple collateral to a single loan.
+Collaterals,purchase_date,Purchase date of the collateral 
+Collaterals,purchase_value,What is the value of the collateral when it was purchased
+Customers,birth_date,Date of customers
+Customers,channel_type,Channel of how the applicant applied for the loan 
+Customers,customer_id,Unique internal ID associated with a client. Customers can have multiple applications and loans. 
+Customers,customer_type,"Individual person or business, or an internal classification"
+Customers,dependents,Number of household dependents of the individual 
+Customers,gender,For individuals: applicant's gender
+Customers,geography_city,City of the applicant 
+Customers,geography_country,Country of the applicant 
+Customers,geography_state,State or province of the applicant
+Customers,income,"For individuals: applicant's income, either exact amount or in a bucketed range"
+Loans,application_date,Date of application for the loan
+Loans,credit_bureau_score,External credit score collected during the application (ie. From a credit bureau)
+Loans,currency,Currency of disbursed value and origination fee 
+Loans,current_outstanding_principal,How much the customer owes in principal remaining
+Loans,customer_id,Unique internal ID associated with a client. Customers can have multiple applications and loans. 
+Loans,disburse_date,Date when capital was disbursed to client  
+Loans,disburse_principal,Value of capital disbursed. If a fee is withheld do not include (ex. Loan Amount minus Origination Fee) 
+Loans,dpd,Days since customer went into default
+Loans,fee_origin,"Value of Origination Fee (fee that is withheld upon disbursal), enter 0 if no fee is collected. "
+Loans,fees_other,""
+Loans,frequency,"Are loans repaid on a bullet, weekly, bi-weekly, monthly, quarterly, etc. frequency"
+Loans,interest_rate,Interest rate in APR terms
+Loans,lender,Debt investor / debt facility that the loan has been pledged or sold to
+Loans,lender,Debt investor / debt facility that the loan has been pledged or sold to
+Loans,loan_grade,Internal credit rating of the application (ie. From internal risk/grading system)
+Loans,loan_id,Unique internal ID associated with a specific loan. Customers can have multiple loans. 
+Schedules,loan_id,Unique internal ID associated with a specific loan. Customers can have multiple loans. 
+Schedules,add_balance,Increase in borrowers balance owed
+Payments,add_balance,Increase in borrowers balance owed
+Schedules,reduce_balance,Reduction in borrowers balance owed
+Payments,reduce_balance,Reduction in borrowers balance owed
+Schedules,interest,The scheduled interest that is to be paid 
+Schedules,rebates,The true value of the discount / rebate provided to the customer  
+Schedules,fees,Any other scheduled fees that need to be paid 
+Payments,actual_principal,The true value of principal paid 
+Loans,terms,The term / maturity of the loan
+Schedules,date_due,Date the payment is due
+Payments,fees,Fees paid
+Payments,loan_id,Unique internal ID associated with a specific loan. Customers can have multiple loans. 
+Payments,rebates,The true value of the discount / rebate provided to the customer  
+Loans,pledge_date,Date the loan was pledged to a facility
+Payments,date_paid,date the real payment was made
+Loans,status,"Late, prepaid or on-time"
+Payments,actual_interest,The true value of interest paid
+Schedules,principal,The scheduled principal that is to be paid
+Schedules,other,The true value of other fees paid
+Payments,other,The true value of other fees paid
+Loans,product_type,Product type of the loan

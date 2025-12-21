@@ -1,6 +1,7 @@
 # Cascade Debt Data Extraction Process
 
 ## Overview
+
 This document records the complete extraction process of Cascade Debt platform data for Abaco Capital's loan analytics repository.
 
 **Extraction Date**: December 4, 2025, 8:00 AM CST  
@@ -12,6 +13,7 @@ This document records the complete extraction process of Cascade Debt platform d
 ## Extracted Data Sources
 
 ### Phase 1: Analytics Views (Completed)
+
 Successfully extracted 9 comprehensive analytics views:
 
 1. **Traction Analytics**
@@ -59,6 +61,7 @@ Successfully extracted 9 comprehensive analytics views:
    - Balance sheet and income statement data
 
 ### Phase 2: Monitor/Covenant Data (Completed)
+
 Extracted covenant monitoring and facility-level data:
 
 1. **Borrowing Base**
@@ -99,6 +102,7 @@ Extracted covenant monitoring and facility-level data:
 ## Data Quality Assurance
 
 ### Extraction Methodology
+
 - **Source**: Cascade Debt Platform UI (direct page access)
 - **Extraction Technique**: Automated page text extraction
 - **Validation**: All numbers verified as actual extracted values (not calculated)
@@ -106,7 +110,9 @@ Extracted covenant monitoring and facility-level data:
 - **Data Freshness**: Platform last updated 2025-12-03 UTC
 
 ### Compliance Markers
+
 All extracted data includes:
+
 - ✅ Extraction timestamp (ISO 8601)
 - ✅ Data source URL (original Cascade page)
 - ✅ "Extracted directly from Cascade" marker
@@ -116,11 +122,13 @@ All extracted data includes:
 ## Integration with Repository
 
 ### Files Created
+
 - `exports/cascade/abaco_monitoring_covenants.json` (PR #204)
 - `exports/cascade/abaco_complete_analytics.json` (PR #203 pending)
 - `docs/cascade-integration-guide.md` (PR #203)
 
 ### Repository Structure
+
 ```
 exports/
 ├── cascade/
@@ -136,6 +144,7 @@ docs/
 ```
 
 ## Next Steps
+
 1. ✅ Complete Phase 1 & 2 extractions
 2. ✅ Document extraction process (this file)
 3. ⏳ Merge PR #203 & #204 to main
@@ -143,6 +152,7 @@ docs/
 5. ⏳ Set up monitoring dashboard for covenant compliance
 
 ## Notes
+
 - All data represent the Abaco Capital facility
 - Cascade platform operates in USD
 - Measurement dates vary by data type (see specific records)

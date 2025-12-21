@@ -10,3 +10,7 @@ ignore:
   - '**/build/**'
   - '**/data_samples/**'
   - '**/.github/**'
+
+options:
+  lint: true
+  test_command: ''

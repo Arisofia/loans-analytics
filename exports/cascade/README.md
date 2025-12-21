@@ -11,12 +11,14 @@ This directory contains Abaco Capital's analytics data exported from Cascade Deb
 Comprehensive JSON export of all risk metrics and analytics views from Cascade Debt.
 
 **Contains:**
+
 - Risk Overview snapshot (Traction, Delinquency, Characteristics, Collection)
 - Key Indicators (Cumulative & Current Traction, Portfolio Performance)
 - Configuration for all 11 available Cascade views
 - API integration notes for automation
 
 **Data Freshness:**
+
 - Loan Tape As Of: 2025-12-02
 - Last Updated: 2025-12-03
 - Date Range: 2023-01-03 to 2025-12-31
@@ -24,6 +26,7 @@ Comprehensive JSON export of all risk metrics and analytics views from Cascade D
 ## Key Metrics Snapshot
 
 ### Portfolio Traction
+
 ```
 Total Unique Customers: 327
 Total Loans: 17,587
@@ -35,6 +38,7 @@ Active Borrowers: 123
 ```
 
 ### Delinquency (Performance)
+
 ```
 PAR 30: 3.31%
 PAR 90 (Latest): 1.61%
@@ -44,6 +48,7 @@ Bad 90 @ 12 Months: 0.58%
 ```
 
 ### Characteristics
+
 ```
 Average APR (12m): 38.99%
 Average Loan Size (12m): $3,654 USD
@@ -52,6 +57,7 @@ Average Headline Interest Rate (12m): 3,712.33%
 ```
 
 ### Collection
+
 ```
 Collection Rate (Latest): 2.57%
 Month-over-Month Change: -104.07% (-97.59%)
@@ -83,7 +89,7 @@ These files should be updated daily via GitHub Actions workflow:
 name: Update Cascade Data
 on:
   schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+    - cron: '0 2 * * *' # Daily at 2 AM UTC
 jobs:
   update-cascade:
     runs-on: ubuntu-latest
@@ -103,12 +109,14 @@ jobs:
 ### API Credentials
 
 Store Cascade API credentials in GitHub Secrets:
+
 - `CASCADE_API_KEY` - Cascade Debt API key
 - `CASCADE_PARTNER_ID` - Should be "abaco"
 
 ### Error Handling
 
 When updating:
+
 1. Validate JSON structure before commit
 2. Check for data consistency (no null values in critical fields)
 3. Log all API errors to GitHub Actions logs
@@ -126,7 +134,7 @@ import cascadeData from '../exports/cascade/abaco_risk_overview.json';
 
 function RiskDashboard() {
   const { overview, key_indicators } = cascadeData;
-  
+
   return (
     <div>
       <h2>Portfolio Traction</h2>
@@ -157,12 +165,14 @@ Before merging PR with updated Cascade data:
 ## Troubleshooting
 
 ### Data Not Updating
+
 1. Check GitHub Actions workflow logs for API errors
 2. Verify CASCADE_API_KEY and CASCADE_PARTNER_ID are set
 3. Test API connection: `curl https://api.cascadedebt.com/health`
 4. Check Cascade Debt status page for any outages
 
 ### Stale Data Warning
+
 If no update for > 24 hours, PR comment will be added with warning.
 
 ## References

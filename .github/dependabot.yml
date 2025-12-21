@@ -1,51 +1,42 @@
 version: 2
-registries:
-  npm-abaco-github:
-    type: npm-registry
-    url: https://npm.pkg.github.com/Abaco-Technol
-    token: ${{secrets.ABACO_GITHUB_PACKAGES_TOKEN}}
-
+<<<<<<< HEAD
 updates:
   - package-ecosystem: "npm"
+=======
+
+updates:
+  - &default_settings
+    package-ecosystem: "npm"
+>>>>>>> origin/main
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
-    assignees:
-      - "codex"
+<<<<<<< HEAD
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
-    registries:
-      - npm-abaco-github
-
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
-    assignees:
-      - "codex"
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
-
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
-    assignees:
-      - "codex"
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
-
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 5
+=======
     assignees:
       - "codex"
     reviewers:
@@ -55,3 +46,10 @@ updates:
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
+  - <<: *default_settings
+    package-ecosystem: "pip"
+    open-pull-requests-limit: 10
+  - <<: *default_settings
+    package-ecosystem: "github-actions"
+>>>>>>> origin/main
+    open-pull-requests-limit: 5

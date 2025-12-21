@@ -1,0 +1,32 @@
+openapi: 3.0.3
+info:
+  title: Abaco Loans Analytics API
+  version: '1.0.0'
+  description: |
+    API endpoints for Abaco Loans Analytics drilldown status.
+    (No Python REST controllers detected in the codebase.)
+servers:
+  - url: /api
+paths:
+  /drilldowns/status:
+    get:
+      summary: Get drilldown module statuses
+      description: Returns the status of each drilldown module.
+      operationId: getDrilldownStatuses
+      tags:
+        - Drilldowns
+      responses:
+        '200':
+          description: Status of all drilldown modules
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                  enum: [ok, error]
+                example:
+                  /delinquency: ok
+                  /roll-rate: ok
+                  /collections: ok
+                  /ingestion-errors: ok

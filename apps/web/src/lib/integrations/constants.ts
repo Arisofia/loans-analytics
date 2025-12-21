@@ -15,6 +15,10 @@ export const PLATFORM_ICONS: Record<Platform, string> = {
 export const STATUS_COLORS: Record<string, string> = {
   valid: 'green',
   invalid: 'red',
+  connected: 'green',
+  disconnected: 'gray',
+  syncing: 'blue',
+  error: 'red',
 };
 export const SUPABASE_FN_BASE = '/api/fn';
-export type TokenStatus = 'valid' | 'invalid';
+export type TokenStatus = 'valid' | 'invalid' | 'connected' | 'disconnected' | 'syncing' | 'error';
