@@ -2,11 +2,11 @@
 Module for data validation utilities and functions.
 """
 
+
+import pandas as pd
 import re
 from datetime import datetime
 from typing import Dict, List, Optional
-
-import pandas as pd
 
 # Unified required columns for both ingestion and analytics
 REQUIRED_ANALYTICS_COLUMNS: List[str] = [
@@ -58,23 +58,16 @@ def validate_dataframe(
     if required_columns:
         missing = [col for col in required_columns if col not in df.columns]
         if missing:
-            if len(missing) == 1:
-                raise ValueError(f"Missing required column: {missing[0]}")
-            else:
-                raise ValueError(f"Missing required columns: {', '.join(missing)}")
+            raise ValueError(
+                f"Missing required column{'s' if len(missing) > 1 else ''}: {', '.join(missing)}"
+            )
 
     if numeric_columns:
-        # Fix: Convert columns to numeric
-        for col in numeric_columns:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors="coerce")
-        # Fix: Convert columns to numeric, coercing errors to NaN
-        for col in numeric_columns:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors="coerce")
         for col in numeric_columns:
             if col not in df.columns:
                 raise ValueError(f"Missing required numeric column: {col}")
+            # Convert to numeric, coerce errors to NaN
+            df[col] = pd.to_numeric(df[col], errors="coerce")
             if not pd.api.types.is_numeric_dtype(df[col]):
                 raise ValueError(f"Column '{col}' must be numeric (column: {col})")
 
@@ -86,27 +79,18 @@ def assert_dataframe_schema(
     numeric_columns: Optional[List[str]] = None,
     stage: str = "DataFrame",
 ) -> None:
-    """Raise AssertionError when the DataFrame schema deviates from expectations."""
+    """Raise AssertionError when the DataFrame schema deviates from requirements."""
     if required_columns:
         missing = [col for col in required_columns if col not in df.columns]
         if missing:
-            raise ValueError(f"{stage} missing required columns: {missing}")
+            raise ValueError(f"{stage} missing required columns: {', '.join(missing)}")
     if numeric_columns:
-        # Fix: Convert columns to numeric
         for col in numeric_columns:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors="coerce")
-        # Fix: Convert columns to numeric, coercing errors to NaN
-        for col in numeric_columns:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors="coerce")
-        non_numeric = [
-            col
-            for col in numeric_columns
-            if col in df.columns and not pd.api.types.is_numeric_dtype(df[col])
-        ]
-        if non_numeric:
-            raise TypeError(f"{stage} non-numeric columns: {non_numeric}")
+            if col not in df.columns:
+                raise ValueError(f"{stage} missing required numeric column: {col}")
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+            if not pd.api.types.is_numeric_dtype(df[col]):
+                raise TypeError(f"{stage} non-numeric column: {col}")
 
 
 def validate_numeric_bounds(
