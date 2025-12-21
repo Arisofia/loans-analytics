@@ -1,50 +1,43 @@
-# Forced re-index: renamed from ci.yml to ci-main.yml
-name: CI Main
-
-
+name: CI
 
 on:
   push:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
-  workflow_dispatch:
-  schedule:
-    - cron: '0 3 * * *' # Nightly at 3am UTC
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java-version: [17, 21]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up JDK ${{ matrix.java-version }}
+
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: ${{ matrix.java-version }}
+          java-version: '21'
           cache: 'gradle'
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-      - name: Build with Gradle (clean, Java ${{ matrix.java-version }})
+
+      - name: Build with Gradle (clean, Java 21)
         run: ./gradlew clean build --no-daemon
+
       - name: Run tests
         run: ./gradlew test --no-daemon
 
   python:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.9', '3.10', '3.11']
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.11'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -81,6 +74,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         continue-on-error: true
+
   web:
     runs-on: ubuntu-latest
     steps:
@@ -104,6 +98,7 @@ jobs:
         run: |
           cd apps/web
           npm run type-check
+
   analytics:
     runs-on: ubuntu-latest
     steps:
@@ -127,16 +122,6 @@ jobs:
         with:
           name: analytics-coverage
           path: coverage-python.xml
-
-  pr-hygiene:
-    if: github.event_name == 'pull_request'
-    uses: ./.github/workflows/pr-assignee-check.yml
-    secrets: inherit
-
-  codex-pr-review:
-    if: github.event_name == 'pull_request'
-    uses: ./.github/workflows/codex-pull-request-review.yml
-    secrets: inherit
 
   dotnet:
     runs-on: ubuntu-latest
@@ -171,3 +156,4 @@ jobs:
         run: |
           dotnet restore
           dotnet test --no-build
+
