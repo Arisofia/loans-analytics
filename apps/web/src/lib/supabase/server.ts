@@ -26,9 +26,9 @@ export async function createClient() {
         setAll(cookiesToSet) {
           // Merge: update only changed cookies, preserve others
           const existing = new Map(cookieStore.getAll().map(c => [c.name, c]));
-          cookiesToSet.forEach(({ name, value, options }) => {
-            existing.set(name, { name, value, options });
-            cookieStore.set(name, value, options);
+          cookiesToSet.forEach(({ name, value }) => {
+            existing.set(name, { name, value });
+            cookieStore.set(name, value);
           });
         },
       },

@@ -29,8 +29,8 @@ export async function middleware(request: NextRequest) {
         setAll(cookiesToSet) {
           // Merge: update only changed cookies, preserve others
           const existing = new Map(request.cookies.getAll().map(c => [c.name, c]));
-          cookiesToSet.forEach(({ name, value, options: _options }) => {
-            existing.set(name, { name, value, options: _options });
+          cookiesToSet.forEach(({ name, value }) => {
+            existing.set(name, { name, value });
             request.cookies.set(name, value);
           });
           response = NextResponse.next({
@@ -38,8 +38,8 @@ export async function middleware(request: NextRequest) {
               headers: request.headers,
             },
           });
-          existing.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
+          existing.forEach(({ name, value }) => {
+            response.cookies.set(name, value);
           });
         },
       },
