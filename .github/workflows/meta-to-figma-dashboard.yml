@@ -1,0 +1,40 @@
+name: Meta to Figma Dashboard
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * *' # every day at 6am UTC
+jobs:
+  meta-to-figma:
+    runs-on: ubuntu-latest
+    env:
+      FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+      FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+      FIGMA_NODE_ID: ${{ secrets.FIGMA_NODE_ID }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy matplotlib pyarrow boto3
+      - name: Run Meta Agent Analysis
+        run: |
+          python python/analytics/meta_agent_analysis.py
+      - name: Upload charts to S3
+        run: |
+          python -c "import boto3, os; s3 = boto3.client('s3');
+for f in os.listdir('exports/meta_agent'):
+ if f.endswith('.png'):
+  s3.upload_file(f'exports/meta_agent/{f}', os.environ['AWS_S3_BUCKET'], f'figma_dashboard/{f}', ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/png'})
+  print(f'Uploaded {f} to S3')"
+      - name: Update Figma dashboard
+        run: |
+          export IMAGE_URL="https://${{ env.AWS_S3_BUCKET }}.s3.amazonaws.com/figma_dashboard/top_ads_spend.png"
+          python scripts/upload_to_figma.py --image-url "$IMAGE_URL" --file-key "$FIGMA_FILE_KEY" --node-id "$FIGMA_NODE_ID" --token "$FIGMA_TOKEN"
