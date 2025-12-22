@@ -168,14 +168,19 @@ def validate_numeric_bounds(
 def validate_percentage_bounds(
     df: pd.DataFrame, columns: Optional[List[str]] = None
 ) -> Dict[str, bool]:
-    """Check percentage columns are between 0 and 100 inclusive."""
+    """Check percentage columns are between 0 and 100 inclusive.
+    
+    Note:
+        NaN values are treated as validation failures.
+    """
     if columns is None:
         columns = _default_percentage_columns(df)
     validation: Dict[str, bool] = {}
     for col in columns:
         if col in df.columns:
-            valid = ((df[col] >= 0) & (df[col] <= 100)).all()
-            validation[f"{col}_in_0_100"] = valid
+            has_nan = df[col].isna().any()
+            in_bounds = ((df[col] >= 0) & (df[col] <= 100)).all()
+            validation[f"{col}_in_0_100"] = in_bounds and not has_nan
     return validation
 
 

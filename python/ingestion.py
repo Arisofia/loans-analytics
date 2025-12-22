@@ -54,11 +54,10 @@ class CascadeIngestion:
 
     def _update_summary(self, count: int, filename: Optional[str] = None) -> None:
         self._summary.setdefault("rows_ingested", 0)
-        self._summary["rows_ingested"] += count
+        self._summary["rows_ingested"] = count
         if filename:
             self._summary.setdefault("files", {})
-            self._summary["files"].setdefault(filename, 0)
-            self._summary["files"][filename] += count
+            self._summary["files"][filename] = count
 
     def _record_raw_file(
         self,

@@ -1,7 +1,7 @@
 """
 Notion Metrics Importer
 ----------------------
-Imports and processes metrics from a Notion databalogging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))se.
+Imports and processes metrics from a Notion database.
 Security: All secrets and tokens are loaded from environment variables.
 Error handling: Robust error handling and logging.
 Config hygiene: No hardcoded secrets or headers.
@@ -67,7 +67,7 @@ def calcular_estadisticas_metricas(todas_filas: List[Dict[str, Any]]) -> Dict[st
     stats = {}
 
     for metric in metrics:
-        values = [f[metric] for f in todas_filas if f.get(metric) is not None]
+        values = [f[metric] for f in todas_filas if f.get(metric) is not None and f[metric] > 0]
         if values:
             stats[metric] = {
                 'promedio': statistics.mean(values),

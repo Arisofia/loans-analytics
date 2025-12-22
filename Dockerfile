@@ -21,7 +21,7 @@ COPY . .
 EXPOSE 8501
 
 # Create non-root user and set permissions
-RUN adduser --system --home /app appuser \
+RUN adduser --system --home /app --group appuser \
   && chown -R appuser:appuser /app
 USER appuser
 
