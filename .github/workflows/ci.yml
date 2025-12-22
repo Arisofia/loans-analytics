@@ -142,3 +142,20 @@ jobs:
       - name: Test
         run: dotnet test --configuration Release --no-restore
 
+  dotnet:
+    if: ${{ hashFiles('**/*.csproj', '**/*.sln', '**/packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore and test
+        run: |
+          dotnet restore
+          dotnet test --no-build
+
