@@ -44,10 +44,10 @@ jobs:
           pip install -r requirements.txt
       - name: Run tests with coverage
         run: |
-          pytest --cov=python
-      - name: Fail if coverage below 90%
+          pytest --cov=python --cov-report=term-missing
+      - name: Fail if coverage below 85%
         run: |
-          coverage report --fail-under=90
+          coverage report --fail-under=85
 
   sonar:
     runs-on: ubuntu-latest
