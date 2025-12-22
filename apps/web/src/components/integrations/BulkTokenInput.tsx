@@ -225,7 +225,7 @@ function parseInput(input: string): BulkTokenItem[] {
       const item: BulkTokenItem = {
         platform: normalizedPlatform as Platform,
         token: token ?? '',
-        accountId: accountIdRaw,
+        accountId: accountIdRaw ?? '',
         status: 'pending' as ItemStatus,
         attempts: 0,
       }
