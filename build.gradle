@@ -33,17 +33,19 @@ test {
 }
 
 // Coverage report for Sonar
-if (!tasks.findByName('jacocoTestReport')) {
-    tasks.register('jacocoTestReport', JacocoReport) {
-        dependsOn test
-        reports {
-            xml.required = true
-            xml.outputLocation = layout.buildDirectory.file("reports/jacoco/jacocoTestReport/jacocoTestReport.xml")
-            html.required = false
-            csv.required = false
-        }
-        sourceDirectories.from = files(sourceSets.main.allSource.srcDirs)
-        classDirectories.from = files(sourceSets.main.output)
-        executionData.from = fileTree(buildDir).include("/jacoco/test.exec")
+tasks.withType(JacocoReport).configureEach {
+    dependsOn test
+    reports {
+        xml.required = true
+        xml.outputLocation = layout.buildDirectory.file("reports/jacoco/jacocoTestReport/jacocoTestReport.xml")
+        html.required = false
+        csv.required = false
     }
+    sourceDirectories.from = files(sourceSets.main.allSource.srcDirs)
+    classDirectories.from = files(sourceSets.main.output)
+    executionData.from = fileTree(buildDir).include("/jacoco/test.exec")
+}
+
+if (!tasks.findByName('jacocoTestReport')) {
+    tasks.register('jacocoTestReport', JacocoReport)
 }

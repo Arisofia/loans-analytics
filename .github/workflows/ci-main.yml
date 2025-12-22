@@ -139,16 +139,6 @@ jobs:
           name: analytics-coverage
           path: apps/coverage-python.xml
 
-  pr-hygiene:
-    if: github.event_name == 'pull_request'
-    uses: ./.github/workflows/pr-assignee-check.yml
-    secrets: inherit
-
-  codex-pr-review:
-    if: github.event_name == 'pull_request'
-    uses: ./.github/workflows/codex-pull-request-review.yml
-    secrets: inherit
-
   dotnet:
     if: ${{ hashFiles('**/*.csproj', '**/*.sln', '**/packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != '' }}
     runs-on: ubuntu-latest

@@ -45,7 +45,6 @@ jobs:
         if: success()
         uses: slackapi/slack-github-action@b6f4640825302dc9b85bd5ffbe34dfc7a762e404
         with:
-          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": ":tada: Daily data ingestion completed successfully!",
@@ -63,7 +62,6 @@ jobs:
         if: failure()
         uses: slackapi/slack-github-action@b6f4640825302dc9b85bd5ffbe34dfc7a762e404
         with:
-          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": ":warning: Daily data ingestion failed!",
