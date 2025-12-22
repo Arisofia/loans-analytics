@@ -87,7 +87,12 @@ def resolve_workflow_targets(workflows, requested):
                     match = workflow
                     break
         if not match:
-            raise ValueError(f"Workflow '{item}' not found")
+            available = [f"{wf.get('name')} (id={wf.get('id')})" for wf in workflows]
+            raise ValueError(
+                "Workflow '{item}' not found; available: {choices}".format(
+                    item=item, choices=", ".join(available)
+                )
+            )
         resolved.append(match)
     return resolved
 
