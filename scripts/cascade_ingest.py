@@ -102,16 +102,16 @@ def run_cascade_ingest(export_url: str, cookie: str, output_prefix: str, user_ag
     if not csv_text:
         raise RuntimeError("Failed to extract CSV from Cascade after retries")
 
-        try:
-            df = pd.read_csv(io.StringIO(csv_text))
-        except Exception:
-            import re
+    try:
+        df = pd.read_csv(io.StringIO(csv_text))
+    except Exception:
+        import re
 
-            matcher = re.search(r"(<pre[^>]*>)(.*?)(</pre>)", csv_text, flags=re.S | re.I)
-            if matcher:
-                df = pd.read_csv(io.StringIO(matcher.group(2)))
-            else:
-                raise
+        matcher = re.search(r"(<pre[^>]*>)(.*?)(</pre>)", csv_text, flags=re.S | re.I)
+        if matcher:
+            df = pd.read_csv(io.StringIO(matcher.group(2)))
+        else:
+            raise
 
     df = canonicalize_loan_tape(df)
     save_and_validate(df, csv_path, parquet_path)

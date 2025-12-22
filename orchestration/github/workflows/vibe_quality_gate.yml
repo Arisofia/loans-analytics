@@ -53,7 +53,7 @@ jobs:
         env:
           SOURCERY_TOKEN: ${{ secrets.SOURCERY_TOKEN }}
         run: |
-          sourcery review . --config .sourcery.yml || true
+          sourcery review .
 
       - name: SonarQube analysis
         env:
