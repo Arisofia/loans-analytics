@@ -1,0 +1,17 @@
+meta:
+  app_id: "<APP_ID>"
+  business_id: "<BUSINESS_ID>"
+  system_user_token_secret_name: "META_SYSTEM_USER_TOKEN"
+  default_ad_accounts:
+    - "act_<AD_ACCOUNT_ID_1>"
+    - "act_<AD_ACCOUNT_ID_2>"
+  polling_interval_minutes: 60
+  fields:
+    - campaign.name
+    - campaign.id
+    - adset.id
+    - adset.name
+    - insights.impressions
+    - insights.clicks
+    - insights.spend
+    - insights.actions
