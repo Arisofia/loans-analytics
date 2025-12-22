@@ -125,43 +125,10 @@ jobs:
 
   dotnet:
     runs-on: ubuntu-latest
-<<<<<<< HEAD
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Detect .NET projects
-        id: dotnet_detect
-        shell: bash
-        run: |
-          shopt -s globstar nullglob
-          files=(**/*.csproj **/*.sln **/packages.config **/*.vbproj **/*.vcxproj **/*.fsproj)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No .NET project files found. Skipping dotnet job."
-            echo "found=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "Found .NET project files:"
-          printf ' - %s\n' "${files[@]}"
-          echo "found=true" >> "$GITHUB_OUTPUT"
-
-      - name: Set up .NET SDK
-        if: steps.dotnet_detect.outputs.found == 'true'
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Restore and test
-        if: steps.dotnet_detect.outputs.found == 'true'
-        run: |
-          dotnet restore
-          dotnet test --no-build
-=======
     if: ${{ hashFiles('**/*.csproj', '**/*.sln', '**/packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != '' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up .NET SDK
         uses: actions/setup-dotnet@v4
         with:
@@ -172,5 +139,4 @@ jobs:
         run: dotnet build --configuration Release --no-restore
       - name: Test
         run: dotnet test --configuration Release --no-restore
->>>>>>> fix/ci-workflow-codecov
 
