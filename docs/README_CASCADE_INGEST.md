@@ -59,6 +59,10 @@ gh pr create --base main \
 - `python/agents/c_suite_agent.py` wireframes executive outputs using `agents/specs/c_suite_agent.yaml` and the prompt in `agents/prompts/c_suite_prompt.md`.
 - The `vibe_quality_gate.yml` workflow enforces Black/Flake8/Sonar/Sourcery + tests as the CI gate for this package.
 
+## Growth agent & risk models
+- `python/agents/growth_agent.py` runs after ingest to spotlight high-potential leads, recording each run in `data/agents/growth/`.
+- `analytics.v_loan_risk_drivers` (SQL defined in `sql/models/v_loan_risk_drivers.sql`) surfaces product-level roll rates so both agents and human operators can trace driver shifts.
+
 ## Logging & Audit
 - Each run writes `data/audit/runs/cascade_ingest_run_<run_id>.json` to capture inputs, outputs, and a hash of the session secret for compliance.
 - Parquet and CSV outputs are saved under the prefix provided via `OUTPUT_PREFIX` and stored as artifacts for downstream consumers.
