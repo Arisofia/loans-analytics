@@ -1,7 +1,7 @@
 name: Cascade Ingest and KPI Extraction
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
   push:
     paths:
       - 'scripts/convert_and_integrate_cascade.py'
