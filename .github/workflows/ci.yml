@@ -151,9 +151,10 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore and test
+      - name: Restore, build, and test
         if: steps.dotnet_detect.outputs.found == 'true'
         run: |
           dotnet restore
+          dotnet build --configuration Release --no-restore
           dotnet test --no-build
 
