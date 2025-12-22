@@ -14,7 +14,7 @@
 | Total Balance                   | Risk                  | delinquency.total_balance                               | Risk                              | Total portfolio balance                           |
 | PAR_7 MoM/QoQ/YoY               | Risk                  | delinquency.par_metrics                                 | Risk                              | PAR_7 change metrics                              |
 | Collection Rate                 | Finance               | collections.collection_rate_latest                      | Collections, Finance               | Latest collection rate                            |
-| Payments Received/Scheduled     | Finance               | collections.total_payments_received_latest / total_payments_scheduled_latest | Collections, Finance | Payments metrics                                    |
+| Payments Received/Scheduled     | Finance               | collections.total_payments_received_latest / collections.total_payments_scheduled_latest | Collections, Finance | Payments metrics                                    |
 | Collection Rate MoM/QoQ/YoY     | Finance               | collections.collection_metrics                          | Collections, Finance               | Collection rate change metrics                    |
 | CDR Latest                      | Risk/Finance          | curves.cdr_latest                                       | Risk, Finance                      | Cumulative default rate                           |
 | Written Off Amount              | Risk/Finance          | curves.written_off_amount                               | Risk, Finance                      | Amount written off                                |
