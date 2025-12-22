@@ -45,6 +45,11 @@ clean_settings.json
 .coverage.*
 htmlcov/
 
+# Compiler traces & artifacts
+*.log
+tsc-trace.log
+**/tsc-trace.log
+
 # Environment variables
 .env
 .env.local
@@ -60,16 +65,3 @@ gemini-cli/
 # Other
 failed_workflows.csv
 *.csv
-# Environment & platform
-.env
-.env.local
-.env*.local
-.vercel/
-# Environment variables
-.env
-.env.local
-.env.*.local
-.vscode/
-=======
-node_modules
-node_modules
