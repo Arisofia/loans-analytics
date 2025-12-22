@@ -1,12 +1,9 @@
 from datetime import datetime
-from pathlib import Path
 
 import pandas as pd
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-
-from src.enterprise_analytics_engine import LoanAnalyticsEngine, LoanAnalyticsConfig
+from src.enterprise_analytics_engine import LoanAnalyticsConfig, LoanAnalyticsEngine
 
 
 @pytest.fixture()
@@ -96,25 +93,9 @@ def test_arrears_flag_defaults_to_days_threshold(sample_frame: pd.DataFrame):
     assert bool(arrears) is True
 
 
-<<<<<<< HEAD
-    expected_exposure = sum(loan.principal for loan in loans)
-    weighted_rate = (
-        loans[0].annual_interest_rate * loans[0].principal + loans[1].annual_interest_rate * loans[1].principal
-    ) / expected_exposure
-    weighted_term = (
-        loans[0].term_months * loans[0].principal + loans[1].term_months * loans[1].principal
-    ) / expected_exposure
-    weighted_default_probability = (
-        loans[0].default_probability * loans[0].principal
-        + loans[1].default_probability * loans[1].principal
-    ) / expected_exposure
-    expected_interest = sum(loan.principal * (loan.annual_interest_rate / 12) for loan in loans)
-    expected_loss_value = sum(expected_loss(loan, 0.4) for loan in loans)
-=======
 def test_portfolio_kpis(sample_frame: pd.DataFrame):
     engine = LoanAnalyticsEngine(sample_frame)
     kpis = engine.portfolio_kpis()
->>>>>>> c97a83f4 (Improve loan analytics validation and coverage)
 
     assert kpis["currency"] == "USD"
     assert kpis["exposure"] == pytest.approx(28_000)

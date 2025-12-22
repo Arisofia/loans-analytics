@@ -2,13 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-<<<<<<< HEAD
-from typing import Iterable, Tuple
-
-
-@dataclass(frozen=True)
-=======
-from typing import Iterable, List, Optional
+from typing import Iterable, Optional, Tuple
 
 import pandas as pd
 
@@ -78,15 +72,16 @@ class LoanAnalyticsEngine:
         )
 
         frame["origination_quarter"] = frame["origination_date"].dt.to_period("Q").astype(str)
-        frame["exposure_at_default"] = frame.apply(
-            lambda row: row["balance"] if row["status"] == "default" else 0.0, axis=1
-        )
-        frame["currency"] = frame.get("currency", pd.Series([self.config.currency] * len(frame)))
+        frame["exposure_at_default"] = (frame["status"] == "default").astype(float) * frame["balance"]
+
+        if "currency" not in frame.columns:
+            frame["currency"] = pd.Series(self.config.currency, index=frame.index)
+        else:
+            frame["currency"] = frame["currency"].fillna(self.config.currency)
 
         return frame
 
-    def portfolio_kpis(self) -> dict:
-        df = self.data
+    def _portfolio_kpis_from_df(self, df: pd.DataFrame) -> dict:
         exposure = df["principal"].sum()
         if exposure <= 0:
             raise ValueError("Total exposure cannot be zero")
@@ -99,8 +94,11 @@ class LoanAnalyticsEngine:
         lgd = self._calculate_lgd(df)
         repayment_velocity = self._repayment_velocity(df)
 
+        currencies = df["currency"].dropna().unique()
+        currency = currencies[0] if len(currencies) else self.config.currency
+
         return {
-            "currency": df["currency"].iloc[0],
+            "currency": currency,
             "exposure": exposure,
             "weighted_interest_rate": weighted_interest_rate,
             "npl_ratio": arrears_exposure / exposure,
@@ -109,6 +107,9 @@ class LoanAnalyticsEngine:
             "prepayment_rate": prepaid_exposure / exposure,
             "repayment_velocity": repayment_velocity,
         }
+
+    def portfolio_kpis(self) -> dict:
+        return self._portfolio_kpis_from_df(self.data)
 
     def _calculate_lgd(self, df: pd.DataFrame) -> float:
         default_exposure = df.loc[df["status"] == "default", "principal"].sum()
@@ -125,13 +126,14 @@ class LoanAnalyticsEngine:
         return payments / exposure
 
     def segment_kpis(self, segment: str) -> pd.DataFrame:
+        """Compute KPIs grouped by a segment column."""
+
         if segment not in self.data.columns:
             raise ValueError(f"Segment column '{segment}' not found")
 
         rows = []
         for value, group in self.data.groupby(segment):
-            engine = LoanAnalyticsEngine(group, config=self.config)
-            metrics = engine.portfolio_kpis()
+            metrics = self._portfolio_kpis_from_df(group)
             metrics[segment] = value
             rows.append(metrics)
         return pd.DataFrame(rows)
@@ -160,7 +162,8 @@ class LoanAnalyticsEngine:
         records = []
         for _, row in self.data.iterrows():
             monthly_payment = row["payments_made"] / max(row["term_months"], 1)
-            periods = pd.date_range(start=row["origination_date"], periods=row["term_months"], freq="M")
+            term_months = max(int(row["term_months"]), 1)
+            periods = pd.date_range(start=row["origination_date"], periods=term_months, freq="M")
             for period in periods:
                 records.append({"period": period, "cashflow": monthly_payment})
 
@@ -185,7 +188,6 @@ class LoanAnalyticsEngine:
 
 # Backwards-compatible exports for legacy callers
 @dataclass
->>>>>>> c97a83f4 (Improve loan analytics validation and coverage)
 class LoanPosition:
     principal: float
     annual_interest_rate: float
