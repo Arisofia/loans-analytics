@@ -13,7 +13,7 @@ export type BulkTokenItem = {
   platform: Platform
   token: string
   accountId?: string
-  status?: TokenStatus | 'pending' | 'success' | 'retrying'
+  status?: TokenStatus | 'pending' | 'success' | 'retrying' | 'error'
   attempts?: number
   message?: string
   resultId?: string

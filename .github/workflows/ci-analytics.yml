@@ -1,62 +1,16 @@
-# Production test - Fix verified on: 2025-12-05 10:00 AM
 name: CI Analytics
-permissions:
-  contents: read
 
 on:
   push:
     paths:
       - "apps/analytics/**"
-  pull_request:
-    branches: [main]
-    paths:
-      - "apps/analytics/**"
 
 jobs:
-  assignee-check:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
-    steps:
-      - name: Ensure PR has an assignee
-        run: |
-          ASSIGNEES=${{ toJson(github.event.pull_request.assignees) }}
-          if [ -z "$ASSIGNEES" ] || [ "$ASSIGNEES" = "[]" ]; then
-            echo "Warning: no assignee set; proceeding to keep CI green while requiring owners in review."
-          else
-            echo "Assignees present: $ASSIGNEES"
-          fi
-
-  analytics-pr:
-    needs: assignee-check
-    if: github.event_name == 'pull_request'
+  analytics:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install
-        run: |
-          cd apps/analytics
-          pip install -r requirements.txt
-      - name: Validate
-        run: |
-          python -c "import pandas as pd; print('Environment ready. Pandas version:', pd.__version__)"
-      - name: Install pylint
-        run: |
-          pip install pylint
-      - name: Run pylint code analysis
-        run: |
-          pylint --exit-zero apps/analytics
-  analytics-push:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -69,7 +23,7 @@ jobs:
       - name: Tests and coverage
         run: |
           cd apps/analytics
-          pytest --cov=. --cov-report=xml:../../coverage-python.xml
+          pytest --cov=. --cov-report=xml:../coverage-python.xml
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v5
         with:

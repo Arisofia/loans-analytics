@@ -49,6 +49,7 @@ Follow the Conventional Commits format for clear, semantic commit messages:
 ### Scope (optional)
 
 The scope specifies what part of the codebase is affected:
+
 - `auth`, `ui`, `api`, `database`, `analytics`, `web`, etc.
 
 ### Subject

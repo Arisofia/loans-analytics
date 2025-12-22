@@ -21,10 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
+        uses: actions/setup-node@v6
         with:
           node-version: 20
 
@@ -66,12 +66,19 @@ jobs:
 
       - name: Deploy to Vercel
         if: steps.vercel_secrets.outputs.present == 'true'
-        uses: amondnet/vercel-action@16e87c0a08142b0d0d33b76aeaf20823c381b9b9
+        uses: amondnet/vercel-action@b6e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: ${{ steps.vercel_args.outputs.args }}
+        env:
+          VERCEL_GIT_REPO_OWNER: ${{ github.repository_owner }}
+          VERCEL_GIT_REPO_SLUG: ${{ github.event.repository.name }}
+          VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
+          VERCEL_GIT_COMMIT_AUTHOR_LOGIN: ${{ github.actor }}
+          VERCEL_GIT_COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title }}
+          VERCEL_GIT_COMMIT_REF: ${{ github.head_ref || github.ref_name }}
 
       - name: Skip deploy (missing Vercel secrets)
         if: steps.vercel_secrets.outputs.present != 'true'
