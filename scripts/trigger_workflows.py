@@ -72,26 +72,26 @@ def fetch_workflows(repo, token):
 def resolve_workflow_targets(workflows, requested):
     if not requested:
         return workflows
+
+    id_lookup = {}
+    name_lookup = {}
+    available = []
+
+    for workflow in workflows:
+        workflow_id = workflow.get("id")
+        name = workflow.get("name", "")
+
+        if workflow_id is not None:
+            id_lookup[str(workflow_id)] = workflow
+        name_lookup[name.lower()] = workflow
+        available.append(f"{name} (id={workflow_id})")
+
     resolved = []
     for item in requested:
-        match = None
-        if item.isdigit():
-            match = next(
-                (wf for wf in workflows if str(wf.get("id")) == item),
-                None,
-            )
-        else:
-            lower_item = item.lower()
-            for workflow in workflows:
-                if workflow.get("name", "").lower() == lower_item:
-                    match = workflow
-                    break
+        match = id_lookup.get(item)
         if not match:
-            available = []
-            for workflow in workflows:
-                name = workflow.get("name")
-                workflow_id = workflow.get("id")
-                available.append(f"{name} (id={workflow_id})")
+            match = name_lookup.get(item.lower())
+        if not match:
             raise ValueError(
                 "Workflow '{item}' not found; available: {choices}".format(
                     item=item, choices=", ".join(available)
