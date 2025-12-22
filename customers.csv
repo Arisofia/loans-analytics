@@ -1,0 +1,333 @@
+customer_id,customer_type,income,currency,gender,birth_date,channel_type,dependents,geography_city,geography_state,geography_country
+CLI0004,,0.0,USD,,,,0,San Salvador,Not Provided,SLV
+CLI0058,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0078,,0.0,USD,,,,0,SAN MARCOS,San Salvador,SLV
+CLI0118,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0134,,0.0,USD,,,,0,SOYAPANGO,San Salvador,SLV
+CLI0136,,0.0,USD,,,,0,MEJICANOS,San Salvador,SLV
+CLI0189,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0211,,0.0,USD,,,,0,EL REFUGIO,Ahuachapán,SLV
+CLI0240,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0241,,0.0,USD,,,,0,MEJICANOS,San Salvador,SLV
+CLI0379,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0430,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0554,,0.0,USD,,,,0,San Salvador,Not Provided,SLV
+CLI0557,,0.0,USD,,,,0,LA LIBERTAD,La Libertad,SLV
+CLI0558,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0581,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0582,,0.0,USD,,,,0,San Salvador,Not Provided,SLV
+CLI0670,,0.0,USD,,,,0,APOPA,San Salvador,SLV
+CLI0688,,0.0,USD,,,,0,EL CARMEN,Cuscatlán,SLV
+CLI0689,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0716,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0786,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0818,,0.0,USD,,,,0,CIUDAD DELGADO,San Salvador,SLV
+CLI0836,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0864,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI0999,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1044,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1066,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1070,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1131,,0.0,USD,,,,0,San Salvador,Not Provided,SLV
+CLI1145,,0.0,USD,,,,0,LA LIBERTAD,La Libertad,SLV
+CLI1159,,0.0,USD,,,,0,San Salvador,Not Provided,SLV
+CLI1279,,0.0,USD,,,,0,MEJICANOS,San Salvador,SLV
+CLI1301,,0.0,USD,,,,0,SOYAPANGO,San Salvador,SLV
+CLI1302,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1308,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1314,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1349,,0.0,USD,,,,0,SANTA TECLA,Not Provided,SLV
+CLI1354,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1464,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1467,,0.0,USD,,,,0,OPICO,La Libertad,SLV
+CLI1477,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1628,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1633,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1635,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI1845,,0.0,USD,,,,0,SAN MARCOS,San Salvador,SLV
+CLI1936,,0.0,USD,,,,0,LA LIBERTAD,La Libertad,SLV
+CLI1970,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2006,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2038,,0.0,USD,,,,0,SOYAPANGO,San Salvador,SLV
+CLI2041,,0.0,USD,,,,0,LA LIBERTAD,La Libertad,SLV
+CLI2043,,0.0,USD,,,,0,COLON,La Libertad,SLV
+CLI2076,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2095,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2124,,0.0,USD,,,,0,SONSONATE,Sonsonate,SLV
+CLI2165,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLI2174,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2208,,0.0,USD,,,,0,APOPA,San Salvador,SLV
+CLI2234,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2256,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2290,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2295,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2313,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2323,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2360,,0.0,USD,,,,0,San Salvador,Not Provided,SLV
+CLI2394,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2452,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2465,,0.0,USD,,,,0,ZARAGOZA,La Libertad,SLV
+CLI2509,,0.0,USD,,,,0,COJUTEPEQUE,Cuscatlán,SLV
+CLI2512,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2514,,0.0,USD,,,,0,NUEVO CUSCATLAN,La Libertad,SLV
+CLI2520,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2532,,0.0,USD,,,,0,MEJICANOS,San Salvador,SLV
+CLI2537,,0.0,USD,,,,0,SOYAPANGO,San Salvador,SLV
+CLI2545,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLI2550,,0.0,USD,,,,0,MEJICANOS,San Salvador,SLV
+CLI2557,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2561,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2563,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2566,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLI2589,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2605,,0.0,USD,,,,0,CIUDAD DELGADO,San Salvador,SLV
+CLI2606,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2608,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2619,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2636,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2683,,0.0,USD,,,,0,SONSONATE,Sonsonate,SLV
+CLI2697,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLI2745,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2747,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2784,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2808,,0.0,USD,,,,0,COLON,La Libertad,SLV
+CLI2810,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLI2824,,0.0,USD,,,,0,SAN JUAN OPICO,La Libertad,SLV
+CLI2825,,0.0,USD,,,,0,CIUDAD ARCE,La Libertad,SLV
+CLIAB000001,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000002,,0.0,USD,,,,0,AHUACHAPAN,Ahuachapán,SLV
+CLIAB000003,,0.0,USD,,,,0,OPICO,La Libertad,SLV
+CLIAB000004,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000005,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000006,,0.0,USD,,,,0,SAN MARCOS,San Salvador,SLV
+CLIAB000007,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000008,,0.0,USD,,,,0,SOYAPANGO,San Salvador,SLV
+CLIAB000009,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000010,,0.0,USD,,,,0,NAHUIZALCO,Sonsonate,SLV
+CLIAB000011,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000012,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000013,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000014,,0.0,USD,,,,0,SAN MIGUEL,San Miguel,SLV
+CLIAB000015,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000016,,0.0,USD,,,,0,SAN MARCOS,San Salvador,SLV
+CLIAB000017,,0.0,USD,,,,0,SAN MARCOS,San Salvador,SLV
+CLIAB000018,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000019,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000020,,0.0,USD,,,,0,MEJICANOS,San Salvador,SLV
+CLIAB000021,,0.0,USD,,,,0,OPICO,La Libertad,SLV
+CLIAB000022,,0.0,USD,,,,0,SAN LORENZO,Ahuachapán,SLV
+CLIAB000023,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000024,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000025,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000026,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000027,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000028,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000029,,0.0,USD,,,,0,JIQUILISCO,Usulután,SLV
+CLIAB000030,,0.0,USD,,,,0,SONSONATE,Sonsonate,SLV
+CLIAB000031,,0.0,USD,,,,0,SAN ANTONIO DEL MONTE,Sonsonate,SLV
+CLIAB000032,,0.0,USD,,,,0,SOYAPANGO,San Salvador,SLV
+CLIAB000033,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000034,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000035,,0.0,USD,,,,0,TURIN,Ahuachapán,SLV
+CLIAB000036,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000037,,0.0,USD,,,,0,TONACATEPEQUE,San Salvador,SLV
+CLIAB000038,,0.0,USD,,,,0,ZARAGOZA,La Libertad,SLV
+CLIAB000039,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000040,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000041,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000042,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000043,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000044,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000046,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000047,,0.0,USD,,,,0,APOPA,San Salvador,SLV
+CLIAB000048,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000049,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000050,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000051,,0.0,USD,,,,0,SOYAPANGO,San Salvador,SLV
+CLIAB000052,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000053,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000054,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000055,,0.0,USD,,,,0,SONSONATE,Sonsonate,SLV
+CLIAB000056,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000057,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000058,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000059,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000060,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000061,,0.0,USD,,,,0,SAN MARCOS,San Salvador,SLV
+CLIAB000062,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000063,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000064,,0.0,USD,,,,0,SOYAPANGO,San Salvador,SLV
+CLIAB000065,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000066,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000067,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000068,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000069,,0.0,USD,,,,0,COLON,La Libertad,SLV
+CLIAB000070,,0.0,USD,,,,0,MEJICANOS,San Salvador,SLV
+CLIAB000071,,0.0,USD,,,,0,SANTA ANA,Santa Ana,SLV
+CLIAB000072,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000073,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000074,,0.0,USD,,,,0,SAN MIGUEL,San Miguel,SLV
+CLIAB000075,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000076,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000077,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000078,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000079,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000080,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000082,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000083,,0.0,USD,,,,0,ILOPANGO,San Salvador,SLV
+CLIAB000084,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000085,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000086,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000087,,0.0,USD,,,,0,ILOPANGO,San Salvador,SLV
+CLIAB000088,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000090,,0.0,USD,,,,0,OPICO,La Libertad,SLV
+CLIAB000092,,0.0,USD,,,,0,COLON,La Libertad,SLV
+CLIAB000093,,0.0,USD,,,,0,LA LIBERTAD,La Libertad,SLV
+CLIAB000094,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000095,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000097,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000098,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000099,,0.0,USD,,,,0,OPICO,La Libertad,SLV
+CLIAB000100,,0.0,USD,,,,0,SANTA ANA,Santa Ana,SLV
+CLIAB000102,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000103,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000105,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000106,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000107,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000108,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000109,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000110,,0.0,USD,,,,0,LA LIBERTAD,La Libertad,SLV
+CLIAB000111,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000113,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000114,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000115,,0.0,USD,,,,0,APOPA,San Salvador,SLV
+CLIAB000116,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000119,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000120,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000121,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000123,,0.0,USD,,,,0,SAN MARCOS,San Salvador,SLV
+CLIAB000124,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000126,,0.0,USD,,,,0,ILOPANGO,San Salvador,SLV
+CLIAB000127,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000128,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000129,,0.0,USD,,,,0,SAN MIGUEL,San Miguel,SLV
+CLIAB000132,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000133,,0.0,USD,,,,0,SONSONATE,Sonsonate,SLV
+CLIAB000135,,0.0,USD,,,,0,MEJICANOS,San Salvador,SLV
+CLIAB000136,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000138,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000139,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000140,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000141,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000143,,0.0,USD,,,,0,SANTA ANA,Santa Ana,SLV
+CLIAB000145,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000146,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000147,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000148,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000149,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000151,,0.0,USD,,,,0,SAN MARCOS,San Salvador,SLV
+CLIAB000152,,0.0,USD,,,,0,CIUDAD DELGADO,San Salvador,SLV
+CLIAB000153,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000154,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000155,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000156,,0.0,USD,,,,0,San Salvador Centro,San Salvador,SLV
+CLIAB000158,,0.0,USD,,,,0,IZALCO,Sonsonate,SLV
+CLIAB000159,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000161,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000162,,0.0,USD,,,,0,ILOPANGO,San Salvador,SLV
+CLIAB000163,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000164,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000165,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000166,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000167,,0.0,USD,,,,0,SOYAPANGO,San Salvador,SLV
+CLIAB000168,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000173,,0.0,USD,,,,0,COLON,La Libertad,SLV
+CLIAB000174,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000175,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000176,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000177,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000178,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000179,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000180,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000181,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000182,,0.0,USD,,,,0,LA LIBERTAD,La Libertad,SLV
+CLIAB000183,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000184,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000185,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000186,,0.0,USD,,,,0,SOYAPANGO,San Salvador,SLV
+CLIAB000187,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000188,,0.0,USD,,,,0,NUEVO CUSCATLAN,La Libertad,SLV
+CLIAB000189,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000190,,0.0,USD,,,,0,OPICO,La Libertad,SLV
+CLIAB000191,,0.0,USD,,,,0,San Salvador Centro,San Salvador,SLV
+CLIAB000192,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000193,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000194,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000195,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000196,,0.0,USD,,,,0,LA LIBERTAD,La Libertad,SLV
+CLIAB000197,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000198,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000199,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000200,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000201,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000202,,0.0,USD,,,,0,COLON,La Libertad,SLV
+CLIAB000204,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000205,,0.0,USD,,,,0,COLON,La Libertad,SLV
+CLIAB000206,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000207,,0.0,USD,,,,0,SANTIAGO TEXACUANGOS,San Salvador,SLV
+CLIAB000208,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000209,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000210,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000211,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000212,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000213,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000214,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000215,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000216,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000217,,0.0,USD,,,,0,SAN MARTIN,San Salvador,SLV
+CLIAB000218,,0.0,USD,,,,0,San Salvador Centro,San Salvador,SLV
+CLIAB000219,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000220,,0.0,USD,,,,0,LA LIBERTAD,La Libertad,SLV
+CLIAB000221,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000222,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000223,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000224,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000225,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000226,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000227,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000228,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000229,,0.0,USD,,,,0,SOYAPANGO,San Salvador,SLV
+CLIAB00023,,0.0,USD,,,,0,SANTA ANA,Santa Ana,SLV
+CLIAB000230,,0.0,USD,,,,0,SANTIAGO TEXACUANGOS,San Salvador,SLV
+CLIAB000231,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000232,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000233,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000234,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000235,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000236,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000237,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000238,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000239,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000240,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000241,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000242,,0.0,USD,,,,0,CHALCHUAPA,Santa Ana,SLV
+CLIAB000243,,0.0,USD,,,,0,LA LIBERTAD,La Libertad,SLV
+CLIAB000244,,0.0,USD,,,,0,SANTA CRUZ MICHAPA,Cuscatlán,SLV
+CLIAB000245,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000246,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000247,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000248,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000249,,0.0,USD,,,,0,ILOPANGO,San Salvador,SLV
+CLIAB000250,,0.0,USD,,,,0,ZARAGOZA,La Libertad,SLV
+CLIAB000251,,0.0,USD,,,,0,SANTA ANA,Santa Ana,SLV
+CLIAB000252,,0.0,USD,,,,0,SANTA TECLA,La Libertad,SLV
+CLIAB000253,,0.0,USD,,,,0,AYUTUXTEPEQUE,San Salvador,SLV
+CLIAB000254,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000255,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000256,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000257,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+CLIAB000258,,0.0,USD,,,,0,La Libertad Este,La Libertad,SLV
+CLIAB000259,,0.0,USD,,,,0,LA LIBERTAD,La Libertad,SLV
+CLIAB000260,,0.0,USD,,,,0,ANTIGUO CUSCATLAN,La Libertad,SLV
+CLIAB000261,,0.0,USD,,,,0,San Salvador,San Salvador,SLV
+PAGAB000170,,0.0,USD,,,,0,San Salvador,San Salvador,SLV

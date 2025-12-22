@@ -1,0 +1,48 @@
+name: Figma Presentation Export
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/export_presentation.py'
+      - 'scripts/export_copilot_slide_payload.py'
+      - 'scripts/export_figma_file_data.py'
+      - 'scripts/verify_figma_kpi_coverage.py'
+      - 'docs/kpi_workflow_catalog.yml'
+      - 'docs/presentation-exports.md'
+      - 'apps/web/src/components/analytics/ExportControls.tsx'
+      - 'apps/web/src/lib/exportHelpers.ts'
+      - 'apps/web/src/types/analytics.ts'
+      - 'exports/presentation/**'
+
+jobs:
+  export-presentation-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Export HTML/Markdown/JSON assets
+        run: |
+          python scripts/export_presentation.py
+          python scripts/export_copilot_slide_payload.py
+          python scripts/export_figma_file_data.py
+      - name: Verify KPI coverage
+        run: |
+          python scripts/verify_figma_kpi_coverage.py
+      - name: Upload presentation assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: figma-presentation-assets
+          path: |
+            exports/presentation/
+            exports/KPI_Mapping_Table.csv
+      - name: Print completion message
+        run: echo "Figma presentation export workflow complete."

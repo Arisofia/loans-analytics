@@ -19,7 +19,7 @@ def test_upload_metrics_uses_blob_service_client():
 
     blob_service_client.get_container_client.assert_called_once_with("kpis")
     container_client.create_container.assert_called_once()
-    args, kwargs = container_client.upload_blob.call_args
+    _, kwargs = container_client.upload_blob.call_args
     assert kwargs["overwrite"] is True
     assert kwargs["content_settings"].content_type == "application/json"
 

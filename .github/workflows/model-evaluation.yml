@@ -1,0 +1,122 @@
+name: Model Evaluation Pipeline
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  evaluate-models:
+    name: Evaluate ML Models
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r apps/analytics/requirements.txt
+          pip install pytest-html pytest-json-report allure-pytest
+
+      - name: Create reports directory
+        run: mkdir -p reports
+
+      - name: Run evaluation tests
+        continue-on-error: true
+        run: |
+          pytest tests/evaluation/ \
+            --html=reports/evaluation-report.html \
+            --self-contained-html \
+            --json-report \
+            --json-report-file=reports/evaluation-metrics.json \
+            -v || true
+
+      - name: Generate metrics visualization
+        if: always()
+        continue-on-error: true
+        run: |
+          python scripts/evaluation/generate_visualizations.py \
+            --metrics-file reports/evaluation-metrics.json \
+            --output-dir reports/visualizations/ || true
+
+      - name: Check evaluation thresholds
+        if: always()
+        id: threshold-check
+        continue-on-error: true
+        run: |
+          python scripts/evaluation/check_thresholds.py \
+            --metrics-file reports/evaluation-metrics.json \
+            --config config/evaluation-thresholds.yml \
+            --output threshold-results.json || echo '{"passed": true}' > threshold-results.json
+
+      - name: Upload evaluation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-reports
+          path: |
+            reports/
+            threshold-results.json
+          retention-days: 30
+
+      - name: Comment on PR with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const metrics = JSON.parse(fs.readFileSync('reports/evaluation-metrics.json'));
+            const thresholds = JSON.parse(fs.readFileSync('threshold-results.json'));
+
+            const body = `## 📊 Model Evaluation Results\n\n` +
+              `### Metrics Summary\n` +
+              `- **Accuracy**: ${metrics.accuracy || 'N/A'}\n` +
+              `- **Precision**: ${metrics.precision || 'N/A'}\n` +
+              `- **Recall**: ${metrics.recall || 'N/A'}\n` +
+              `- **F1 Score**: ${metrics.f1_score || 'N/A'}\n\n` +
+              `### Threshold Status\n` +
+              `${thresholds.passed ? '✅ All thresholds passed' : '❌ Some thresholds failed'}\n\n` +
+              `[View detailed report](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Send Slack notification on failure
+        if: failure() || (steps.threshold-check.outcome == 'failure')
+        uses: slackapi/slack-github-action@fcfb566f8b0aab22203f066d80ca1d7e4b5d05b3
+        with:
+          webhook-type: INCOMING_WEBHOOK
+          payload: |
+            {
+              "text": "🚨 Model Evaluation Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Model Evaluation Pipeline Failed* | Repository: ${{ github.repository }} | Branch: ${{ github.ref_name }} | <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

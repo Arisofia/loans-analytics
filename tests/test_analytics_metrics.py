@@ -42,17 +42,17 @@ def test_standardize_numeric_handles_symbols():
         ]
     )
     cleaned = standardize_numeric(series)
-    assert cleaned.iloc[0] == 1200.0
-    assert cleaned.iloc[1] == 2500.0
-    assert cleaned.iloc[3] == 3000.0
-    assert cleaned.iloc[4] == 4500.0
-    assert cleaned.iloc[5] == 5500.0
-    assert cleaned.iloc[2] == 25.0
+    assert np.isclose(cleaned.iloc[0], 1200.0)
+    assert np.isclose(cleaned.iloc[1], 2500.0)
+    assert np.isclose(cleaned.iloc[3], 3000.0)
+    assert np.isclose(cleaned.iloc[4], 4500.0)
+    assert np.isclose(cleaned.iloc[5], 5500.0)
+    assert np.isclose(cleaned.iloc[2], 25.0)
     assert pd.isna(cleaned.iloc[6])
     assert pd.isna(cleaned.iloc[7])
     assert pd.isna(cleaned.iloc[8])
     assert pd.isna(cleaned.iloc[9])
-    assert cleaned.iloc[10] == 7500.0
+    assert np.isclose(cleaned.iloc[10], 7500.0)
 
 
 def test_standardize_numeric_passes_through_numeric_series():
@@ -77,8 +77,8 @@ def test_standardize_numeric_handles_negative_symbols_and_commas():
 def test_project_growth_builds_monotonic_path():
     projection = project_growth(1.0, 2.0, 100, 200, periods=4)
     assert len(projection) == 4
-    assert projection["yield"].iloc[0] == 1.0
-    assert projection["yield"].iloc[-1] == 2.0
+    assert projection["yield"].iloc[0] == pytest.approx(1.0)
+    assert projection["yield"].iloc[-1] == pytest.approx(2.0)
     assert projection["loan_volume"].iloc[0] == 100
     assert projection["loan_volume"].iloc[-1] == 200
 
@@ -86,8 +86,8 @@ def test_project_growth_builds_monotonic_path():
 def test_project_growth_uses_default_periods():
     projection = project_growth(1.0, 2.0, 100, 200)
     assert len(projection) == 6
-    assert projection["yield"].iloc[0] == 1.0
-    assert projection["yield"].iloc[-1] == 2.0
+    assert projection["yield"].iloc[0] == pytest.approx(1.0)
+    assert projection["yield"].iloc[-1] == pytest.approx(2.0)
     assert projection["loan_volume"].iloc[0] == 100
     assert projection["loan_volume"].iloc[-1] == 200
 
@@ -131,7 +131,7 @@ def test_portfolio_kpis_zero_principal_yield_is_zero(sample_df):
     df = sample_df.copy()
     df["principal_balance"] = 0
     metrics, _ = portfolio_kpis(df)
-    assert metrics["portfolio_yield"] == 0.0
+    assert metrics["portfolio_yield"] == pytest.approx(0.0)
 
 
 def test_portfolio_kpis_dti_nan_when_income_non_positive(sample_df):
@@ -139,7 +139,7 @@ def test_portfolio_kpis_dti_nan_when_income_non_positive(sample_df):
     df["borrower_income"] = [0, -5000, 0]
     metrics, enriched = portfolio_kpis(df)
     assert enriched["dti_ratio"].isna().all()
-    assert metrics["average_dti"] == 0.0
+    assert metrics["average_dti"] == pytest.approx(0.0)
 
 
 def test_portfolio_kpis_dti_mixed_income_ignores_nan_in_average(sample_df):

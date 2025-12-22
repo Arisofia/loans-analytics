@@ -1,0 +1,21 @@
+name: Automation Reminder
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  automation-reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remind about automation and PR rules
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const pr = context.payload.pull_request;
+            const message = `Thank you for your PR!\n\nPlease ensure you follow the PR template, automation rules, and branch protection requirements.\n- All changes must go through PRs.\n- CI and code review are required before merging.\n- For more info, see AGENTS.md.`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: message,
+            });

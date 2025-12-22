@@ -1,0 +1,102 @@
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  lint-and-type-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: apps/web/package.json
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: apps/web
+
+      - name: Run ESLint
+        run: npm run lint
+        working-directory: apps/web
+        continue-on-error: false
+
+      - name: Run TypeScript type check
+        run: npm run type-check
+        working-directory: apps/web
+        continue-on-error: false
+
+      - name: Run Prettier format check
+        run: npm run format:check
+        working-directory: apps/web
+        continue-on-error: false
+
+      - name: Verify build succeeds
+        run: npm run build
+        working-directory: apps/web
+        continue-on-error: false
+
+  vercel-config-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate vercel.json schema
+        run: |
+          if [ ! -f vercel.json ]; then
+            echo "❌ vercel.json not found"
+            exit 1
+          fi
+          
+          # Check required fields for modern Vercel config
+          if ! grep -q '"framework"' vercel.json; then
+            echo "❌ vercel.json missing 'framework' field"
+            exit 1
+          fi
+          
+          if ! grep -q '"buildCommand"' vercel.json; then
+            echo "❌ vercel.json missing 'buildCommand' field"
+            exit 1
+          fi
+          
+          if ! grep -q '"outputDirectory"' vercel.json; then
+            echo "❌ vercel.json missing 'outputDirectory' field"
+            exit 1
+          fi
+          
+          # Reject deprecated version 2 config
+          if grep -q '"version": 2' vercel.json; then
+            echo "❌ vercel.json uses deprecated version 2 - use version 3 or omit"
+            exit 1
+          fi
+          
+          echo "✅ vercel.json configuration is valid"
+
+  github-workflow-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate ci-main.yml workflow
+        run: |
+          if [ ! -f .github/workflows/ci-main.yml ]; then
+            echo "❌ ci-main.yml not found"
+            exit 1
+          fi
+          
+          # Check that Figma update step doesn't contain raw JavaScript
+          if grep -A 5 'name: Update Figma Slides' .github/workflows/ci-main.yml | grep -q 'const '; then
+            echo "❌ ci-main.yml contains JavaScript code in shell step (invalid)"
+            exit 1
+          fi
+          
+          echo "✅ Workflow configuration is valid"
