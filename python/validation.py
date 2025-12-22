@@ -19,6 +19,57 @@ REQUIRED_ANALYTICS_COLUMNS: List[str] = [
     "principal_balance",
 ]
 
+ISO8601_PATTERN = re.compile(
+    r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$"
+)
+
+
+def _missing_columns(df: pd.DataFrame, columns: List[str]) -> List[str]:
+    return [col for col in columns if col not in df.columns]
+
+
+def _validate_numeric_column(
+    df: pd.DataFrame, column: str, context_label: str
+) -> None:
+    if column not in df.columns:
+        raise ValueError(f"{context_label} missing required numeric column: {column}")
+
+    series = df[column]
+    if series.dtype == "object":
+        if series.dropna().apply(lambda value: isinstance(value, str)).any():
+            raise ValueError(f"{context_label} must be numeric: {column}")
+
+    coerced = pd.to_numeric(series, errors="coerce")
+    if not pd.api.types.is_numeric_dtype(coerced):
+        raise ValueError(f"{context_label} must be numeric: {column}")
+
+    df[column] = coerced
+
+
+def _default_percentage_columns(df: pd.DataFrame) -> List[str]:
+    exempt_columns = ["collateralization_pct", "collection_rate_pct"]
+    return [
+        c
+        for c in df.columns
+        if (
+            ("percent" in c)
+            or ("rate" in c)
+            or c.endswith("_pct")
+            or c.endswith("_rate")
+        )
+        and c not in exempt_columns
+    ]
+
+
+def _is_iso8601_value(value) -> bool:
+    if pd.isnull(value):
+        return True
+    if isinstance(value, datetime):
+        return True
+    if isinstance(value, str) and ISO8601_PATTERN.match(value):
+        return True
+    return False
+
 ANALYTICS_NUMERIC_COLUMNS: List[str] = [
     "loan_amount",
     "appraised_value",
@@ -56,24 +107,15 @@ def validate_dataframe(
         ValueError: If validation fails.
     """
     if required_columns:
-        missing = [col for col in required_columns if col not in df.columns]
+        missing = _missing_columns(df, required_columns)
         if missing:
             if len(missing) == 1:
                 raise ValueError(f"Missing required column: {missing[0]}")
-            else:
-                raise ValueError(f"Missing required columns: {', '.join(missing)}")
+            raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
     if numeric_columns:
         for col in numeric_columns:
-            if col not in df.columns:
-                raise ValueError(f"Missing required numeric column: {col}")
-            if df[col].dtype == "object":
-                for x in df[col]:
-                    if isinstance(x, str):
-                        raise ValueError(f"Column '{col}' must be numeric: {col}")
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-            if not pd.api.types.is_numeric_dtype(df[col]):
-                raise ValueError(f"Column '{col}' must be numeric: {col}")
+            _validate_numeric_column(df, col, "Column")
 
 
 def assert_dataframe_schema(
@@ -85,21 +127,14 @@ def assert_dataframe_schema(
 ) -> None:
     """Raise AssertionError when the DataFrame schema deviates from requirements."""
     if required_columns:
-        missing = [col for col in required_columns if col not in df.columns]
+        missing = _missing_columns(df, required_columns)
         if missing:
-            raise ValueError(f"{stage} missing required columns: {', '.join(missing)}")
+            raise ValueError(
+                f"{stage} missing required columns: {', '.join(missing)}"
+            )
     if numeric_columns:
         for col in numeric_columns:
-            if col not in df.columns:
-                raise ValueError(f"{stage} missing required numeric column: {col}")
-            # If any value is a string (even if convertible), raise ValueError and include column name
-            if df[col].dtype == "object":
-                for x in df[col]:
-                    if isinstance(x, str):
-                        raise ValueError(f"{stage} must be numeric: {col}")
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-            if not pd.api.types.is_numeric_dtype(df[col]):
-                raise ValueError(f"{stage} must be numeric: {col}")
+            _validate_numeric_column(df, col, stage)
 
 
 def validate_numeric_bounds(
@@ -135,14 +170,7 @@ def validate_percentage_bounds(
 ) -> Dict[str, bool]:
     """Check percentage columns are between 0 and 100 inclusive."""
     if columns is None:
-        # Exclude columns that can legitimately exceed 100%
-        exempt_columns = ["collateralization_pct", "collection_rate_pct"]
-        columns = [
-            c
-            for c in df.columns
-            if ("percent" in c or "rate" in c or c.endswith("_pct") or c.endswith("_rate"))
-            and c not in exempt_columns
-        ]
+        columns = _default_percentage_columns(df)
     validation: Dict[str, bool] = {}
     for col in columns:
         if col in df.columns:
@@ -199,22 +227,10 @@ def validate_iso8601_dates(
         # Heuristic: columns with 'date' in the name
         columns = [c for c in df.columns if "date" in c.lower() or c.lower().endswith("_at")]
     validation: Dict[str, bool] = {}
-    # SonarLint: S5843 - This regex is intentionally complex to match ISO 8601 formats.
-    iso8601_regex = re.compile(
-        r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$"
-    )
     for col in columns:
         if col in df.columns:
             # Accept both string and datetime types
-            valid = True
-            for val in df[col]:
-                if pd.isnull(val):
-                    continue
-                if isinstance(val, datetime):
-                    continue
-                if not isinstance(val, str) or not iso8601_regex.match(val):
-                    valid = False
-                    break
+            valid = all(_is_iso8601_value(val) for val in df[col])
             validation[f"{col}_iso8601"] = valid
     return validation
 

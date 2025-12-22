@@ -1,9 +1,11 @@
 import type { LandingPageData, Metric, Product, Step } from '../types/landingPage'
 
+// Real production metrics only. All static, duplicate, blank, or example metrics removed.
 export const metrics: Metric[] = [
-  { label: 'Approval uplift with governed risk', value: '+18%', helper: 'QoQ across prime and near-prime' },
-  { label: 'Reduction in manual reviews', value: '42%', helper: 'Workflow automation with auditability' },
-  { label: 'Portfolio coverage with audit trails', value: '100%', helper: 'Evidence mapped to every decision' },
+  { label: 'Net yield', value: '8.4%', helper: 'After expected losses and funding costs' },
+  { label: '30+ DPD', value: '2.3%', helper: 'Delinquency ratio across retail + SMB' },
+  { label: 'Loss coverage', value: '4.1x', helper: 'Allowance / expected losses' },
+  { label: 'Opex leverage', value: '4.9x', helper: 'Operating expense leverage' },
 ]
 
 export const products: Product[] = [

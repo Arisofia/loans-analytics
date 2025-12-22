@@ -95,26 +95,21 @@ def test_arrears_flag_defaults_to_days_threshold(sample_frame: pd.DataFrame):
     arrears = engine.data.loc[engine.data["loan_id"] == "L2", "arrears_flag"].iloc[0]
     assert bool(arrears) is True
 
-
-<<<<<<< HEAD
-    expected_exposure = sum(loan.principal for loan in loans)
-    weighted_rate = (
-        loans[0].annual_interest_rate * loans[0].principal + loans[1].annual_interest_rate * loans[1].principal
-    ) / expected_exposure
-    weighted_term = (
-        loans[0].term_months * loans[0].principal + loans[1].term_months * loans[1].principal
-    ) / expected_exposure
-    weighted_default_probability = (
-        loans[0].default_probability * loans[0].principal
-        + loans[1].default_probability * loans[1].principal
-    ) / expected_exposure
-    expected_interest = sum(loan.principal * (loan.annual_interest_rate / 12) for loan in loans)
-    expected_loss_value = sum(expected_loss(loan, 0.4) for loan in loans)
-=======
 def test_portfolio_kpis(sample_frame: pd.DataFrame):
     engine = LoanAnalyticsEngine(sample_frame)
     kpis = engine.portfolio_kpis()
->>>>>>> c97a83f4 (Improve loan analytics validation and coverage)
+
+    assert kpis["currency"] == "USD"
+    assert kpis["exposure"] == pytest.approx(28_000)
+    assert kpis["weighted_interest_rate"] == pytest.approx((0.1 * 10000 + 0.12 * 5000 + 0.15 * 7000 + 0.08 * 6000) / 28000)
+    assert kpis["npl_ratio"] == pytest.approx((5000 + 7000) / 28000)
+    assert kpis["default_rate"] == pytest.approx(7000 / 28000)
+    assert kpis["lgd"] == pytest.approx(2000 / 7000)
+    assert kpis["prepayment_rate"] == pytest.approx(6000 / 28000)
+    assert kpis["repayment_velocity"] == pytest.approx(13_500 / 28_000)
+def test_portfolio_kpis(sample_frame: pd.DataFrame):
+    engine = LoanAnalyticsEngine(sample_frame)
+    kpis = engine.portfolio_kpis()
 
     assert kpis["currency"] == "USD"
     assert kpis["exposure"] == pytest.approx(28_000)

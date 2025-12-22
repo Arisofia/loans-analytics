@@ -1,0 +1,183 @@
+# KPI Workflow Catalog
+# Maps each KPI to its department, data source, dashboard section, and calculation notes.
+
+kpis:
+  - name: Total Customers
+    department: Growth/Sales
+    data_source: traction.total_customers
+    dashboard_section: Traction, Growth, Sales
+    notes: Count of unique customers
+
+  - name: Total Loans
+    department: Growth/Sales
+    data_source: traction.total_loans
+    dashboard_section: Traction, Growth, Sales
+    notes: Count of loans
+
+  - name: Total Volume (USD)
+    department: Growth/Sales
+    data_source: traction.total_volume_usd
+    dashboard_section: Traction, Growth, Sales
+    notes: Sum of loan volume
+
+  - name: Monthly Active Clients
+    department: Growth/Sales
+    data_source: traction.monthly_active_clients_latest
+    dashboard_section: Traction, Growth, Sales
+    notes: Active clients in latest month
+
+  - name: Outstanding Balance (USD)
+    department: Growth/Sales
+    data_source: traction.outstanding_balance_usd
+    dashboard_section: Traction, Growth, Sales
+    notes: Current outstanding balance
+
+  - name: Volume/Clients/Balance MoM/QoQ/YoY
+    department: Growth/Sales
+    data_source: traction.growth_metrics
+    dashboard_section: Traction, Growth, Sales
+    notes: Growth metrics
+
+  - name: PAR_90
+    department: Risk
+    data_source: delinquency.par90_latest
+    dashboard_section: Risk, Portfolio Health
+    notes: Portfolio at risk >90 days
+
+  - name: PAR_7
+    department: Risk
+    data_source: delinquency.par7_latest
+    dashboard_section: Risk
+    notes: Portfolio at risk >7 days
+
+  - name: Portfolio at Risk 30 DPD
+    department: Risk
+    data_source: delinquency.portfolio_at_risk_30dpd
+    dashboard_section: Risk
+    notes: Balance at risk >30 days past due
+
+  - name: Total Balance
+    department: Risk
+    data_source: delinquency.total_balance
+    dashboard_section: Risk
+    notes: Total portfolio balance
+
+  - name: PAR_7 MoM/QoQ/YoY
+    department: Risk
+    data_source: delinquency.par_metrics
+    dashboard_section: Risk
+    notes: PAR_7 change metrics
+
+  - name: Collection Rate
+    department: Finance
+    data_source: collections.collection_rate_latest
+    dashboard_section: Collections, Finance
+    notes: Latest collection rate
+
+  - name: Payments Received/Scheduled
+    department: Finance
+    data_source: collections.total_payments_received_latest / total_payments_scheduled_latest
+    dashboard_section: Collections, Finance
+    notes: Payments metrics
+
+  - name: Collection Rate MoM/QoQ/YoY
+    department: Finance
+    data_source: collections.collection_metrics
+    dashboard_section: Collections, Finance
+    notes: Collection rate change metrics
+
+  - name: CDR Latest
+    department: Risk/Finance
+    data_source: curves.cdr_latest
+    dashboard_section: Risk, Finance
+    notes: Cumulative default rate
+
+  - name: Written Off Amount
+    department: Risk/Finance
+    data_source: curves.written_off_amount
+    dashboard_section: Risk, Finance
+    notes: Amount written off
+
+  - name: Starting Balance
+    department: Risk/Finance
+    data_source: curves.starting_balance
+    dashboard_section: Risk, Finance
+    notes: Starting balance
+
+  - name: Liquidation Rate
+    department: Risk/Finance
+    data_source: curves.liquidation_rate
+    dashboard_section: Risk, Finance
+    notes: Liquidation rate
+
+  - name: Average APR
+    department: CFO/Finance
+    data_source: characteristics.average_apr
+    dashboard_section: Finance, Portfolio Characteristics
+    notes: Average annual percentage rate
+
+  - name: Average Loan Size (USD)
+    department: CFO/Finance
+    data_source: characteristics.average_loan_size_usd
+    dashboard_section: Finance, Portfolio Characteristics
+    notes: Average loan size
+
+  - name: Interest Rate Distribution
+    department: CFO/Finance
+    data_source: characteristics.interest_rate_distribution
+    dashboard_section: Finance, Portfolio Characteristics
+    notes: Distribution of interest rates
+
+  - name: Cashflow Simulation
+    department: CFO/Finance
+    data_source: cashflow_simulation.*
+    dashboard_section: Finance, Cashflow
+    notes: Scenario, forecast, multipliers, recovery rate
+
+  - name: Total Assets/Liabilities/Equity
+    department: CFO/Finance
+    data_source: financials.balance_sheet
+    dashboard_section: Finance, Balance Sheet
+    notes: Financial position
+
+  - name: Cash Balance
+    department: CFO/Finance
+    data_source: financials.balance_sheet.cash_balance_usd
+    dashboard_section: Finance, Balance Sheet
+    notes: Cash on hand
+
+  - name: Net Worth
+    department: CFO/Finance
+    data_source: financials.balance_sheet.net_worth_usd
+    dashboard_section: Finance, Balance Sheet
+    notes: Net worth
+
+  - name: Net Income
+    department: CFO/Finance
+    data_source: financials.income_statement.net_income_usd
+    dashboard_section: Finance, Income Statement
+    notes: Net income
+
+  - name: Runway Months
+    department: CFO/Finance
+    data_source: financials.income_statement.runway_months
+    dashboard_section: Finance, Income Statement
+    notes: Months of runway
+
+  - name: Debt to Equity Ratio
+    department: CFO/Finance
+    data_source: financials.income_statement.debt_to_equity_ratio
+    dashboard_section: Finance, Income Statement
+    notes: Debt/equity ratio
+
+  - name: Data Freshness/Completeness
+    department: Compliance
+    data_source: data_quality.data_freshness_hours / data_completeness_pct
+    dashboard_section: Compliance, Data Quality
+    notes: Data quality metrics
+
+  - name: Validation Status
+    department: Compliance
+    data_source: data_quality.validation_status
+    dashboard_section: Compliance, Data Quality
+    notes: Data validation status

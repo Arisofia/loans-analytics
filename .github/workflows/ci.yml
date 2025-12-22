@@ -68,7 +68,7 @@ jobs:
         run: ./gradlew clean build --no-daemon
       - name: SonarQube Scan
         if: ${{ github.event_name != 'pull_request' }}
-        uses: SonarSource/sonarcloud-github-action@v2
+        uses: SonarSource/sonarcloud-github-action@e44258b109568baa0df60ed515909fc6c72cba92
         with:
           projectBaseDir: .
         env:

@@ -105,7 +105,7 @@ def test_transform_fuzzy_mapping():
     })
     kpi_df = dt.transform_to_kpi_dataset(df)
     assert "interest_rate" in kpi_df.columns
-    assert kpi_df["interest_rate"].iloc[0] == 0.15
+    assert kpi_df["interest_rate"].iloc[0] == pytest.approx(0.15)
 
 
 def test_transform_missing_required_columns_raises():

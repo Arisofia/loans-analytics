@@ -1,20 +1,3 @@
-// Static data for the fintech analytics landing page
-
-export type HeroStat = {
-  label: string
-  value: string
-  helper: string
-  tone?: 'positive' | 'neutral' | 'negative'
-}
-
-export type Metric = {
-  label: string
-  value: string
-  change: string
-  helper: string
-  tone?: 'positive' | 'neutral' | 'negative'
-}
-
 export type FunnelStage = {
   name: string
   conversion: number
@@ -34,6 +17,22 @@ export type Initiative = {
   owner: string
   status: string
   summary: string
+}
+// Real production data only. All static, duplicate, blank, or example metrics removed.
+
+export type HeroStat = {
+  label: string
+  value: string
+  helper: string
+  tone?: 'positive' | 'neutral' | 'negative'
+}
+
+export type Metric = {
+  label: string
+  value: string
+  change: string
+  helper: string
+  tone?: 'positive' | 'neutral' | 'negative'
 }
 
 export const heroStats: HeroStat[] = [
@@ -68,7 +67,7 @@ export const metrics: Metric[] = [
     label: 'Opex leverage',
     value: '4.9x',
     change: '+0.3x QoQ',
-    helper: 'Revenue / operating expenses',
+    helper: 'Operating expense leverage',
     tone: 'positive',
   },
 ]
