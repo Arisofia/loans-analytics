@@ -129,6 +129,8 @@ jobs:
         run: |
           python -c "import pandas as pd; print('Environment ready. Pandas version:', pd.__version__)"
       - name: Tests and coverage
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           cd apps/analytics
           pytest --cov=. --cov-report=xml:../coverage-python.xml
@@ -136,7 +138,7 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: analytics-coverage
-          path: coverage-python.xml
+          path: apps/coverage-python.xml
 
   dotnet:
     runs-on: ubuntu-latest
