@@ -151,10 +151,15 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore, build, and test
+      - name: Restore dependencies
         if: steps.dotnet_detect.outputs.found == 'true'
-        run: |
-          dotnet restore
-          dotnet build --configuration Release --no-restore
-          dotnet test --configuration Release --no-build
+        run: dotnet restore
+
+      - name: Build
+        if: steps.dotnet_detect.outputs.found == 'true'
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        if: steps.dotnet_detect.outputs.found == 'true'
+        run: dotnet test --configuration Release --no-build --no-restore
 
