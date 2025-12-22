@@ -73,7 +73,6 @@ jobs:
           projectBaseDir: .
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        continue-on-error: true
 
   web:
     runs-on: ubuntu-latest
