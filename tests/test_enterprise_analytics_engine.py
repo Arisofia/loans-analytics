@@ -7,7 +7,7 @@ from src.enterprise_analytics_engine import LoanAnalyticsConfig, LoanAnalyticsEn
 
 
 @pytest.fixture()
-def sample_frame() -> pd.DataFrame:
+def sample_loan_data() -> pd.DataFrame:
     return pd.DataFrame(
         [
             {
@@ -74,14 +74,14 @@ def sample_frame() -> pd.DataFrame:
     )
 
 
-def test_missing_columns_raise_value_error(sample_frame: pd.DataFrame):
-    truncated = sample_frame.drop(columns=["principal"])
+def test_missing_columns_raise_value_error(sample_loan_data: pd.DataFrame):
+    truncated = sample_loan_data.drop(columns=["principal"])
     with pytest.raises(ValueError):
         LoanAnalyticsEngine(truncated)
 
 
-def test_invalid_origination_dates_raise(sample_frame: pd.DataFrame):
-    invalid = sample_frame.copy()
+def test_invalid_origination_dates_raise(sample_loan_data: pd.DataFrame):
+    invalid = sample_loan_data.copy()
     invalid.loc[0, "origination_date"] = "not-a-date"
     with pytest.raises(ValueError):
         LoanAnalyticsEngine(invalid)
@@ -89,7 +89,13 @@ def test_invalid_origination_dates_raise(sample_frame: pd.DataFrame):
 
 def test_arrears_flag_defaults_to_days_threshold(sample_frame: pd.DataFrame):
     engine = LoanAnalyticsEngine(sample_frame, config=LoanAnalyticsConfig(arrears_threshold=90))
-    arrears = engine.data.loc[engine.data["loan_id"] == "L2", "arrears_flag"].iloc[0]
+    arrears_series = engine.data.loc[engine.data["loan_id"] == "L2", "arrears_flag"]
+    assert len(arrears_series) == 1, "Expected exactly one loan with loan_id 'L2'"
+    arrears = arrears_series.iloc[0]
+    assert bool(arrears) is True
+    arrears_series = engine.data.loc[engine.data["loan_id"] == "L2", "arrears_flag"]
+    assert not arrears_series.empty, "Expected at least one loan with loan_id 'L2'"
+    arrears = arrears_series.iloc[0]
     assert bool(arrears) is True
 
 
@@ -99,7 +105,8 @@ def test_portfolio_kpis(sample_frame: pd.DataFrame):
 
     assert kpis["currency"] == "USD"
     assert kpis["exposure"] == pytest.approx(28_000)
-    assert kpis["weighted_interest_rate"] == pytest.approx((0.1 * 10000 + 0.12 * 5000 + 0.15 * 7000 + 0.08 * 6000) / 28000)
+    expected_weighted_interest_rate = (0.1 * 10000 + 0.12 * 5000 + 0.15 * 7000 + 0.08 * 6000) / 28000
+    assert kpis["weighted_interest_rate"] == pytest.approx(expected_weighted_interest_rate)
     assert kpis["npl_ratio"] == pytest.approx((5000 + 7000) / 28000)
     assert kpis["default_rate"] == pytest.approx(7000 / 28000)
     assert kpis["lgd"] == pytest.approx(2000 / 7000)
@@ -112,7 +119,9 @@ def test_segment_kpis_by_region(sample_frame: pd.DataFrame):
     segment_df = engine.segment_kpis("region")
 
     assert set(segment_df["region"]) == {"NA", "EU", "SA"}
-    na_row = segment_df.loc[segment_df["region"] == "NA"].iloc[0]
+    na_rows = segment_df.loc[segment_df["region"] == "NA"]
+    assert not na_rows.empty
+    na_row = na_rows.iloc[0]
     assert na_row["exposure"] == pytest.approx(17_000)
     assert na_row["default_rate"] == pytest.approx(7000 / 17_000)
 
