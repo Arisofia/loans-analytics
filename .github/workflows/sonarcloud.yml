@@ -42,7 +42,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd apps/web
-          npm ci
+          npm install
 
       - name: Analytics coverage (pytest)
         run: |
