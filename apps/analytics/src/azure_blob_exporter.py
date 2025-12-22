@@ -36,18 +36,21 @@ class AzureBlobKPIExporter:
                 )
         self.container_name = str(container_name).strip()
 
-    def upload_metrics(self, metrics: Dict[str, float], blob_name: Optional[str] = None) -> str:
+    def upload_metrics(self, metrics: Dict[str, Number], blob_name: Optional[str] = None) -> str:
         if not isinstance(metrics, dict) or not metrics:
             raise ValueError("Metrics payload must be a non-empty dictionary.")
 
-        if blob_name is not None and not isinstance(blob_name, str):
-            raise ValueError("blob_name must be a string")
+        if blob_name is not None:
+            if not isinstance(blob_name, str) or not blob_name.strip():
+                raise ValueError("blob_name must be a non-empty string")
+            if ".." in blob_name:
+                raise ValueError("blob_name must not contain path traversal sequences.")
 
         normalized_metrics: Dict[str, float] = {}
         for key, value in metrics.items():
             if not isinstance(key, str) or not key.strip():
                 raise ValueError("Metric keys must be non-empty strings.")
-            if not isinstance(value, Number) or isinstance(value, bool):
+            if isinstance(value, bool) or not isinstance(value, Number):
                 raise ValueError("Metric values must be numeric.")
             normalized_metrics[key] = float(value)
 
@@ -58,7 +61,11 @@ class AzureBlobKPIExporter:
             pass
 
         timestamp = datetime.now(timezone.utc)
-        blob_path = blob_name or f"kpi-dashboard-{timestamp.strftime('%Y%m%dT%H%M%SZ')}.json"
+        blob_path = (
+            blob_name
+            if blob_name is not None
+            else f"kpi-dashboard-{timestamp.strftime('%Y%m%dT%H%M%SZ')}.json"
+        )
         payload = {
             "generated_at": timestamp.isoformat(),
             "metrics": normalized_metrics,

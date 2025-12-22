@@ -64,7 +64,6 @@ class LoanAnalyticsEngine:
         if missing_cols:
             raise ValueError(f"Missing required columns in loan_data: {', '.join(missing_cols)}")
 
-
     def _coerce_numeric_columns_with_report(self, frame: pd.DataFrame):
         coerced = frame.copy()
         report = {}
@@ -106,7 +105,12 @@ class LoanAnalyticsEngine:
         return ltv
 
     def compute_debt_to_income(self) -> pd.Series:
-        """Computes the Debt-to-Income (DTI) ratio for each borrower."""
+        """Computes the Debt-to-Income (DTI) ratio for each borrower.
+
+        This method assumes that the ``borrower_income`` field in ``self.loan_data``
+        represents an annual income amount, which is converted to a monthly value
+        internally by dividing by 12 before computing the DTI.
+        """
         # Assuming borrower_income is annual, convert to monthly
         monthly_income = self.loan_data['borrower_income'] / 12
         # Avoid division by zero
@@ -138,7 +142,13 @@ class LoanAnalyticsEngine:
         duplicate_count = int(self.loan_data.duplicated().sum())
         total_rows = len(self.loan_data)
         duplicate_ratio = (duplicate_count / total_rows) if total_rows > 0 else 0.0
-        quality_score = max(0.0, min(100.0, (1 - ((null_ratio + invalid_numeric_ratio + duplicate_ratio) / 3)) * 100))
+        # Average of the issue ratios (nulls, invalid numerics, duplicates)
+        average_issue_ratio = (null_ratio + invalid_numeric_ratio + duplicate_ratio) / 3
+        # Convert to a quality score where 1.0 means perfect quality
+        raw_quality_score = 1 - average_issue_ratio
+        # The clamping is redundant as raw_quality_score is already in [0, 1].
+        # Express as a percentage in [0.0, 100.0].
+        quality_score = raw_quality_score * 100
 
         return {
             "average_null_ratio": null_ratio,
