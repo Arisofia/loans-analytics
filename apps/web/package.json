@@ -6,9 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "type-check": "tsc --noEmit",
-    "format:check": "prettier --check \"{app,src,public,tests,docs}/**/*.{ts,tsx,js,jsx,json,css,md}\""
+    "lint": "next lint"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.31.0",
@@ -21,7 +19,7 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "server-only": "^0.0.1",
-    "zod": "^4.2.1"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^16.0.3",
