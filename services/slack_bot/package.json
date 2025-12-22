@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@slack/bolt": "4.6.0",
-    "axios": "1.6.8"
+    "axios": "1.13.2"
   },
   "devDependencies": {
     "@types/node": "20.10.6",

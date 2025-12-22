@@ -1,132 +1,61 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 # Node / JavaScript
 node_modules/
+**/node_modules/
 .next/
 .turbo/
 dist/
 coverage/
+out/
 
-=======
->>>>>>> 2fd95134 (Align SonarCloud permissions and web dependencies)
-=======
-
-# Data outputs (NO versionar)
->>>>>>> 2fd95134eebf182095395b6d1572a4d75efa7865
 # Gradle
 .gradle/
-
-# Build / tooling
-build/
 **/.gradle/
+build/
 **/build/
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-# Gradle
-=======
-=======
->>>>>>> 2fd95134eebf182095395b6d1572a4d75efa7865
-
-
-# OS
 # OS
 .DS_Store
-
-# Python
->>>>>>> 2fd95134 (Align SonarCloud permissions and web dependencies)
+Thumbs.db
+apps/.DS_Store
 
 # Python
 .venv/
-
-# IDE / Editor
 venv/
 __pycache__/
 *.pyc
 
-
 # IDE / Editor
 .vscode/
+.vscode/tasks.json
 .idea/
 *.vsix
 
-<<<<<<< HEAD
-
-# OS files
-.DS_Store
-Thumbs.db
-=======
-
-# Data outputs (NO versionar)
+# Data outputs
 data/metrics/
+data_samples/
 data_samples/*.csv
 logs/
 
-
-# Build / tooling
-.next/
-.turbo/
-dist/
-
-coverage/
-out/
-
-# IDE
-.vscode/tasks.json
-node_modules/
-
+# Build / tooling artifacts
 clean_settings.json
-tailwind.config.js
 
 # Coverage
 .coverage
 .coverage.*
 htmlcov/
 
-# Project-specific artifacts
->>>>>>> 2fd95134 (Align SonarCloud permissions and web dependencies)
-apps/.DS_Store
-
-# Project-specific artifacts
-abaco-loans-analytics/
-data_samples/
-gemini-cli/
-<<<<<<< HEAD
-nvm/
-
-<<<<<<< HEAD
-# Environment & platform
-.env
-.env.local
-.env*.local
-.vercel/
-<<<<<<< HEAD
-node_modules
-=======
-=======
-=======
->>>>>>> 2fd95134 (Align SonarCloud permissions and web dependencies)
-=======
-
->>>>>>> 2fd95134eebf182095395b6d1572a4d75efa7865
 # Environment variables
 .env
 .env.local
 .env.*.local
+.env*.local
 .vercel/
 nvm/
 
+# Project-specific artifacts
+abaco-loans-analytics/
+gemini-cli/
+
 # Other
 failed_workflows.csv
-<<<<<<< HEAD
-<<<<<<< HEAD
-failed_workflows.csv
 *.csv
-failed_workflows.csv
-*.csv
-**/node_modules/
->>>>>>> c97a83f4 (Improve loan analytics validation and coverage)
-=======
->>>>>>> 2fd95134 (Align SonarCloud permissions and web dependencies)
-=======
->>>>>>> 2fd95134eebf182095395b6d1572a4d75efa7865

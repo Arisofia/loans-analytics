@@ -1,12 +1,9 @@
 from datetime import datetime
-from pathlib import Path
 
 import pandas as pd
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-
-from src.enterprise_analytics_engine import LoanAnalyticsEngine, LoanAnalyticsConfig
+from src.enterprise_analytics_engine import LoanAnalyticsConfig, LoanAnalyticsEngine
 
 
 @pytest.fixture()
@@ -94,6 +91,7 @@ def test_arrears_flag_defaults_to_days_threshold(sample_frame: pd.DataFrame):
     engine = LoanAnalyticsEngine(sample_frame, config=LoanAnalyticsConfig(arrears_threshold=90))
     arrears = engine.data.loc[engine.data["loan_id"] == "L2", "arrears_flag"].iloc[0]
     assert bool(arrears) is True
+
 
 def test_portfolio_kpis(sample_frame: pd.DataFrame):
     engine = LoanAnalyticsEngine(sample_frame)

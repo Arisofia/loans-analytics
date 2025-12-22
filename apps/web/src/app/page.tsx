@@ -16,7 +16,7 @@ import {
 
 export default function Home() {
   return (
-    <main className={styles.page} id="main-content">
+    <main className={styles.page} id="main-content" role="main" tabIndex={-1}>
       <div className={styles.shell}>
         <header className={styles.hero}>
           <div>
