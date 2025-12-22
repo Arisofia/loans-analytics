@@ -57,6 +57,16 @@ nvm/
 abaco-loans-analytics/
 gemini-cli/
 
+<<<<<<< HEAD
 # Other
 failed_workflows.csv
 *.csv
+=======
+# Environment & platform
+.env
+.env.local
+.env*.local
+.vercel/
+node_modules
+node_modules
+>>>>>>> fix/ci-workflow-codecov

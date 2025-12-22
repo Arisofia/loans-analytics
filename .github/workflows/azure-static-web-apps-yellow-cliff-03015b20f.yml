@@ -27,7 +27,7 @@ jobs:
           node-version: '20'
       - name: Install
         working-directory: apps/web
-        run: npm ci
+        run: npm install
       - name: Build
         working-directory: apps/web
         run: npm run build

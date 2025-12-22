@@ -125,6 +125,7 @@ jobs:
 
   dotnet:
     runs-on: ubuntu-latest
+<<<<<<< HEAD
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -156,4 +157,20 @@ jobs:
         run: |
           dotnet restore
           dotnet test --no-build
+=======
+    if: ${{ hashFiles('**/*.csproj', '**/*.sln', '**/packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+      - name: Test
+        run: dotnet test --configuration Release --no-restore
+>>>>>>> fix/ci-workflow-codecov
 

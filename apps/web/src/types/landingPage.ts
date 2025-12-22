@@ -1,8 +1,11 @@
 import { z } from 'zod'
 
 const metricSchema = z.object({
-  value: z.string(),
   label: z.string(),
+<<<<<<< HEAD
+=======
+  value: z.string(),
+>>>>>>> fix/ci-workflow-codecov
   helper: z.string().optional(),
 })
 
@@ -25,10 +28,10 @@ export const landingPageDataSchema = z.object({
   steps: z.array(stepSchema).default([]),
 })
 
-export type Metric = z.infer<typeof metricSchema>
-export type Product = z.infer<typeof productSchema>
-export type Step = z.infer<typeof stepSchema>
-export type LandingPageData = z.infer<typeof landingPageDataSchema>
+export type Metric = Readonly<z.infer<typeof metricSchema>>
+export type Product = Readonly<z.infer<typeof productSchema>>
+export type Step = Readonly<z.infer<typeof stepSchema>>
+export type LandingPageData = Readonly<z.infer<typeof landingPageDataSchema>>
 
 export const EMPTY_LANDING_PAGE_DATA: LandingPageData = Object.freeze(
   landingPageDataSchema.parse({})

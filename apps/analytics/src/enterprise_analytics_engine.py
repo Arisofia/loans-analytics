@@ -38,6 +38,7 @@ class LoanAnalyticsEngine:
 
         self.loan_data = loan_data.copy()
         self._validate_columns()
+<<<<<<< HEAD
         # Track coercion report: count of invalid entries per numeric column
         self._coercion_report = {}
         coerced, coercion_report = self._coerce_numeric_columns_with_report(self.loan_data)
@@ -49,6 +50,10 @@ class LoanAnalyticsEngine:
     def coercion_report(self) -> dict:
         """Public property exposing the coercion report (invalid entries per numeric column)."""
         return self._coercion_report
+=======
+        self.loan_data = self._coerce_numeric_columns(self.loan_data)
+        self._invalid_numeric_ratio = self._compute_invalid_numeric_ratio(loan_data, self.loan_data)
+>>>>>>> fix/ci-workflow-codecov
 
     @classmethod
     def from_dict(cls, data: Dict[str, list]) -> "LoanAnalyticsEngine":
@@ -64,6 +69,7 @@ class LoanAnalyticsEngine:
         if missing_cols:
             raise ValueError(f"Missing required columns in loan_data: {', '.join(missing_cols)}")
 
+<<<<<<< HEAD
 
     def _coerce_numeric_columns_with_report(self, frame: pd.DataFrame):
         coerced = frame.copy()
@@ -84,6 +90,23 @@ class LoanAnalyticsEngine:
         invalid_count = 0
         total = 0
 
+=======
+    def _coerce_numeric_columns(self, frame: pd.DataFrame) -> pd.DataFrame:
+        coerced = frame.copy()
+        for column in self.NUMERIC_COLUMNS:
+            coerced[column] = pd.to_numeric(coerced[column], errors="coerce")
+        return coerced
+
+    def _compute_invalid_numeric_ratio(
+        self, original: pd.DataFrame, coerced: pd.DataFrame
+    ) -> float:
+        if coerced.empty:
+            return 0.0
+
+        invalid_count = 0
+        total = 0
+
+>>>>>>> fix/ci-workflow-codecov
         for column in self.NUMERIC_COLUMNS:
             orig_series = original[column]
             coerced_series = coerced[column]
@@ -134,16 +157,23 @@ class LoanAnalyticsEngine:
     def data_quality_profile(self) -> Dict[str, float]:
         null_ratio = float(self.loan_data.isna().mean().mean()) if not self.loan_data.empty else 0.0
         invalid_numeric_ratio = float(self._invalid_numeric_ratio)
+<<<<<<< HEAD
         # Duplicate ratio: number of duplicate rows / total rows
         duplicate_count = int(self.loan_data.duplicated().sum())
         total_rows = len(self.loan_data)
         duplicate_ratio = (duplicate_count / total_rows) if total_rows > 0 else 0.0
         quality_score = max(0.0, min(100.0, (1 - ((null_ratio + invalid_numeric_ratio + duplicate_ratio) / 3)) * 100))
+=======
+        quality_score = max(0.0, min(100.0, (1 - ((null_ratio + invalid_numeric_ratio) / 2)) * 100))
+>>>>>>> fix/ci-workflow-codecov
 
         return {
             "average_null_ratio": null_ratio,
             "invalid_numeric_ratio": invalid_numeric_ratio,
+<<<<<<< HEAD
             "duplicate_ratio": duplicate_ratio,
+=======
+>>>>>>> fix/ci-workflow-codecov
             "data_quality_score": quality_score,
         }
 

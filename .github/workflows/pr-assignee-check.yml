@@ -1,6 +1,11 @@
 name: PR Assignee Check
 
 on:
+<<<<<<< HEAD
+=======
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+>>>>>>> fix/ci-workflow-codecov
   workflow_call:
 
 jobs:

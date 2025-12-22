@@ -62,7 +62,11 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+<<<<<<< HEAD
           vercel-args: "--prod --cwd apps/web"
+=======
+          vercel-args: ${{ steps.vercel_args.outputs.args }}
+>>>>>>> fix/ci-workflow-codecov
         env:
           VERCEL_GIT_REPO_OWNER: ${{ github.repository_owner }}
           VERCEL_GIT_REPO_SLUG: ${{ github.event.repository.name }}

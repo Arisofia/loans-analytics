@@ -21,8 +21,16 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
+<<<<<<< HEAD
       - name: Install
         run: npm ci
+=======
+          cache-dependency-path: apps/web/package.json
+      - name: Install
+        run: npm install
+      - name: Type-check
+        run: npm run type-check
+>>>>>>> fix/ci-workflow-codecov
       - name: Lint
         run: npm run lint
       - name: Build

@@ -1,10 +1,18 @@
 # Forced re-index: renamed from ci.yml to ci-main.yml
+<<<<<<< HEAD
 permissions:
   pull-requests: read
   contents: read
 name: CI Main
 
 on:
+=======
+on:
+
+name: CI Main
+
+
+>>>>>>> fix/ci-workflow-codecov
   push:
     branches: [main, develop]
   pull_request:
@@ -12,7 +20,10 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 3 * * *' # Nightly at 3am UTC
+<<<<<<< HEAD
 
+=======
+>>>>>>> fix/ci-workflow-codecov
 jobs:
   pr-hygiene:
     if: github.event_name == 'pull_request'
@@ -139,10 +150,25 @@ jobs:
           name: analytics-coverage
           path: coverage-python.xml
 
+<<<<<<< HEAD
+=======
+  pr-hygiene:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/pr-assignee-check.yml
+    secrets: inherit
+
+  codex-pr-review:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/codex-pull-request-review.yml
+    secrets: inherit
+
+>>>>>>> fix/ci-workflow-codecov
   dotnet:
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('**/*.csproj', '**/*.sln', '**/packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != '' }}
     steps:
       - name: Checkout repository
+<<<<<<< HEAD
         uses: actions/checkout@v6
 
       - name: Detect .NET projects
@@ -161,14 +187,25 @@ jobs:
           printf ' - %s\n' "${files[@]}"
           echo "found=true" >> "$GITHUB_OUTPUT"
 
+=======
+        uses: actions/checkout@v4
+>>>>>>> fix/ci-workflow-codecov
       - name: Set up .NET SDK
-        if: steps.dotnet_detect.outputs.found == 'true'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+<<<<<<< HEAD
 
       - name: Restore and test
         if: steps.dotnet_detect.outputs.found == 'true'
         run: |
           dotnet restore
           dotnet test --no-build
+=======
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+      - name: Test
+        run: dotnet test --configuration Release --no-restore
+>>>>>>> fix/ci-workflow-codecov
