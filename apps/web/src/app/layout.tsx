@@ -8,8 +8,8 @@ import { SkipLink } from './skip-link'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Abaco Loans Analytics',
-  description: 'Customer-centric lending intelligence with governed growth for Abaco clients.',
+  title: 'ABACO — Loan Intelligence',
+  description: 'Growth-ready analytics for credit, collections, finance, and funding teams.',
 }
 
 export default function RootLayout({
