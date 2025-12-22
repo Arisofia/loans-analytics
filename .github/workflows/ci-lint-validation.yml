@@ -1,5 +1,3 @@
-name: Lint & Type Validation (CI)
-
 on:
   push:
     branches: [main, develop]
