@@ -50,10 +50,7 @@ def parse_args():
     parser.add_argument(
         "--workflows",
         nargs="+",
-        help=(
-            "Workflow names or IDs to dispatch. "
-            "If omitted, all workflows will be dispatched."
-        ),
+        help="Workflow names/IDs to dispatch; omit to dispatch all.",
     )
     parser.add_argument(
         "--delay",
@@ -77,19 +74,18 @@ def resolve_workflow_targets(workflows, requested):
         return workflows
     resolved = []
     for item in requested:
+        match = None
         if item.isdigit():
             match = next(
                 (wf for wf in workflows if str(wf.get("id")) == item),
                 None,
             )
         else:
-            match = next(
-                (
-                    wf for wf in workflows
-                    if wf.get("name", "").lower() == item.lower()
-                ),
-                None,
-            )
+            lower_item = item.lower()
+            for workflow in workflows:
+                if workflow.get("name", "").lower() == lower_item:
+                    match = workflow
+                    break
         if not match:
             raise ValueError(f"Workflow '{item}' not found")
         resolved.append(match)
@@ -98,9 +94,7 @@ def resolve_workflow_targets(workflows, requested):
 
 def trigger_workflow(repo, workflow, ref, token):
     identifier = workflow.get("id") or workflow.get("file_name")
-    url = (
-        f"{API_ROOT}/repos/{repo}/actions/workflows/{identifier}/dispatches"
-    )
+    url = f"{API_ROOT}/repos/{repo}/actions/workflows/{identifier}/dispatches"
     request = build_request(url, token, {"ref": ref}, method="POST")
     with urllib.request.urlopen(request) as response:
         return response.status == 204
@@ -124,9 +118,8 @@ def main():
             else:
                 print(f"Failed to dispatch {name} on {args.ref}")
         except urllib.error.HTTPError as error:
-            sys.stderr.write(
-                f"Failed to dispatch {name}: {error.read().decode('utf-8')}\n"
-            )
+            message = error.read().decode("utf-8")
+            sys.stderr.write(f"Dispatch failed for {name}: {message}\n")
         if args.delay:
             time.sleep(args.delay)
     if successes == 0:
