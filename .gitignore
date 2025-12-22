@@ -35,6 +35,7 @@ data/metrics/
 data_samples/
 data_samples/*.csv
 logs/
+logs/runs/*.json
 
 # Build / tooling artifacts
 clean_settings.json
