@@ -1,22 +1,15 @@
 import Link from 'next/link'
-
-import { controls, metrics, products, steps } from './data'
 import styles from './page.module.css'
-import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
-import { logLandingPageDiagnostic } from '../lib/landingPageDiagnostics'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
+import { logLandingPageDiagnostic } from '../lib/landingPageDiagnostics'
 import {
   EMPTY_LANDING_PAGE_DATA,
   landingPageDataSchema,
   type LandingPageData,
+  type Metric,
+  type Product,
+  type Step,
 } from '../types/landingPage'
-
-const fallbackData: LandingPageData = {
-  metrics: metrics.map((item) => ({ ...item })),
-  products: products.map((item) => ({ ...item })),
-  controls: [...controls],
-  steps: steps.map((item) => ({ ...item })),
-}
 
 async function getData(): Promise<LandingPageData> {
   if (!supabase || !isSupabaseConfigured) {
@@ -26,25 +19,30 @@ async function getData(): Promise<LandingPageData> {
       payload: EMPTY_LANDING_PAGE_DATA,
     })
     console.warn('Supabase environment variables are missing; using fallback landing page data')
-    return fallbackData
+    return EMPTY_LANDING_PAGE_DATA
   }
 
   const { data, error } = await supabase.from('landing_page_data').select('*').single()
 
-  if (error || !data) {
+  if (error) {
     logLandingPageDiagnostic({
-      status: error ? 'fetch-error' : 'no-data',
+      status: 'fetch-error',
       supabaseConfigured: true,
-      error: error ?? undefined,
-      payload: fallbackData,
+      error,
+      payload: EMPTY_LANDING_PAGE_DATA,
     })
-    console.error(
-      error
-        ? 'Error fetching landing page data:'
-        : 'Landing page data is missing from Supabase response',
-      error ?? ''
-    )
-    return fallbackData
+    console.error('Error fetching landing page data:', error)
+    return EMPTY_LANDING_PAGE_DATA
+  }
+
+  if (!data) {
+    logLandingPageDiagnostic({
+      status: 'no-data',
+      supabaseConfigured: true,
+      payload: EMPTY_LANDING_PAGE_DATA,
+    })
+    console.error('Landing page data is missing from Supabase response')
+    return EMPTY_LANDING_PAGE_DATA
   }
 
   const parsed = landingPageDataSchema.safeParse(data)
@@ -54,10 +52,10 @@ async function getData(): Promise<LandingPageData> {
       status: 'invalid-shape',
       supabaseConfigured: true,
       error: parsed.error.flatten(),
-      payload: fallbackData,
+      payload: EMPTY_LANDING_PAGE_DATA,
     })
     console.error('Invalid landing page data shape from Supabase:', parsed.error.flatten())
-    return fallbackData
+    return EMPTY_LANDING_PAGE_DATA
   }
 
   logLandingPageDiagnostic({
@@ -65,7 +63,6 @@ async function getData(): Promise<LandingPageData> {
     supabaseConfigured: true,
     payload: parsed.data,
   })
-
   return parsed.data
 }
 
@@ -88,12 +85,9 @@ export default async function Home() {
           <Link href="#products" className={styles.secondaryButton}>
             Explore products
           </Link>
-          <Link href="/settings" className={styles.secondaryButton}>
-            Open settings
-          </Link>
         </div>
         <div className={styles.metrics}>
-          {metrics.map((metric) => (
+          {metrics?.map((metric: Metric) => (
             <div key={metric.label} className={styles.metricCard}>
               <span className={styles.metricValue}>{metric.value}</span>
               <span className={styles.metricLabel}>{metric.label}</span>
@@ -112,7 +106,7 @@ export default async function Home() {
           </p>
         </div>
         <div className={styles.cardGrid}>
-          {products.map((product) => (
+          {products?.map((product: Product) => (
             <div key={product.title} className={styles.card}>
               <h3>{product.title}</h3>
               <p>{product.detail}</p>
@@ -132,7 +126,7 @@ export default async function Home() {
         </div>
         <div className={styles.compliance}>
           <div className={styles.complianceList}>
-            {controls.map((item) => (
+            {controls?.map((item: string) => (
               <div key={item} className={styles.checkItem}>
                 <span className={styles.checkBullet} aria-hidden="true" />
                 <span>{item}</span>
@@ -163,7 +157,7 @@ export default async function Home() {
           </p>
         </div>
         <div className={styles.timeline}>
-          {steps.map((step) => (
+          {steps?.map((step: Step) => (
             <div key={step.label} className={styles.timelineStep}>
               <span className={styles.stepBadge}>{step.label}</span>
               <div>
@@ -173,10 +167,6 @@ export default async function Home() {
             </div>
           ))}
         </div>
-      </section>
-
-      <section className={styles.section} id="analytics">
-        <AnalyticsDashboard />
       </section>
     </div>
   )

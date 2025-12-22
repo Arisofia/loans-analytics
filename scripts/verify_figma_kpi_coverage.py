@@ -15,7 +15,7 @@ from typing import Dict, List, Tuple
 
 def load_kpi_mapping() -> Dict:
     """Load KPI mapping configuration."""
-    mapping_path = Path(__file__).parent.parent / "docs" / "analytics" / "kpi_mapping.json"
+    mapping_path = Path(__file__).parent.parent / "data_samples" / "kpi_mapping.json"
     if not mapping_path.exists():
         raise FileNotFoundError(f"KPI mapping file not found: {mapping_path}")
     

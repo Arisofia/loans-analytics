@@ -39,3 +39,4 @@ nvm/
 .env*.local
 .vercel/
 node_modules
+node_modules
