@@ -14,49 +14,43 @@ jobs:
       matrix:
         node-version: [20.x]
     steps:
-<<<<<<< HEAD
       - uses: actions/checkout@v6
-=======
-      - uses: actions/checkout@v4
->>>>>>> fix/ci-workflow-codecov
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-<<<<<<< HEAD
-=======
           cache-dependency-path: apps/web/package.json
->>>>>>> fix/ci-workflow-codecov
 
       - name: Install dependencies
-        run: npm install --prefix apps/web
+        run: npm install
+        working-directory: apps/web
 
       - name: Run ESLint
-        run: npm --prefix apps/web run lint
+        run: npm run lint
+        working-directory: apps/web
         continue-on-error: false
 
       - name: Run TypeScript type check
-        run: npm --prefix apps/web run type-check
+        run: npm run type-check
+        working-directory: apps/web
         continue-on-error: false
 
       - name: Run Prettier format check
-        run: npm --prefix apps/web run format:check
+        run: npm run format:check
+        working-directory: apps/web
         continue-on-error: false
 
       - name: Verify build succeeds
-        run: npm --prefix apps/web run build
+        run: npm run build
+        working-directory: apps/web
         continue-on-error: false
 
   vercel-config-validation:
     runs-on: ubuntu-latest
     steps:
-<<<<<<< HEAD
       - uses: actions/checkout@v6
-=======
-      - uses: actions/checkout@v4
->>>>>>> fix/ci-workflow-codecov
 
       - name: Validate vercel.json schema
         run: |
@@ -92,11 +86,7 @@ jobs:
   github-workflow-validation:
     runs-on: ubuntu-latest
     steps:
-<<<<<<< HEAD
       - uses: actions/checkout@v6
-=======
-      - uses: actions/checkout@v4
->>>>>>> fix/ci-workflow-codecov
 
       - name: Validate ci-main.yml workflow
         run: |
