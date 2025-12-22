@@ -107,18 +107,6 @@ def test_portfolio_kpis(sample_frame: pd.DataFrame):
     assert kpis["lgd"] == pytest.approx(2000 / 7000)
     assert kpis["prepayment_rate"] == pytest.approx(6000 / 28000)
     assert kpis["repayment_velocity"] == pytest.approx(13_500 / 28_000)
-def test_portfolio_kpis(sample_frame: pd.DataFrame):
-    engine = LoanAnalyticsEngine(sample_frame)
-    kpis = engine.portfolio_kpis()
-
-    assert kpis["currency"] == "USD"
-    assert kpis["exposure"] == pytest.approx(28_000)
-    assert kpis["weighted_interest_rate"] == pytest.approx((0.1 * 10000 + 0.12 * 5000 + 0.15 * 7000 + 0.08 * 6000) / 28000)
-    assert kpis["npl_ratio"] == pytest.approx((5000 + 7000) / 28000)
-    assert kpis["default_rate"] == pytest.approx(7000 / 28000)
-    assert kpis["lgd"] == pytest.approx(2000 / 7000)
-    assert kpis["prepayment_rate"] == pytest.approx(6000 / 28000)
-    assert kpis["repayment_velocity"] == pytest.approx(13_500 / 28_000)
 
 
 def test_segment_kpis_by_region(sample_frame: pd.DataFrame):

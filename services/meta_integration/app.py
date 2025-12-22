@@ -1,9 +1,8 @@
 """
 Meta Integration FastAPI App
----------------------------
 OAuth endpoints and analytics proxy for Meta (Instagram/Facebook).
 """
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 import os
 from meta_client import MetaAPIClient
