@@ -91,24 +91,28 @@ export const initiatives: Initiative[] = [
     title: 'Underwriting refresh',
     owner: 'Risk & Product',
     status: 'In validation',
-    summary: 'Retune policy segments with new bureau + banking signals to lift approval while controlling DPD.',
+    summary:
+      'Retune policy segments with new bureau + banking signals to lift approval while controlling DPD.',
   },
   {
     title: 'Collections automation',
     owner: 'Operations',
     status: 'Live',
-    summary: 'Automated outreach and rescheduling playbooks driving higher cure rates across delinquency buckets.',
+    summary:
+      'Automated outreach and rescheduling playbooks driving higher cure rates across delinquency buckets.',
   },
   {
     title: 'Funding diversification',
     owner: 'Treasury',
     status: 'Planned',
-    summary: 'Blend forward-flow and ABS taps to reduce cost of capital and expand committed capacity.',
+    summary:
+      'Blend forward-flow and ABS taps to reduce cost of capital and expand committed capacity.',
   },
   {
     title: 'Compliance attestations',
     owner: 'Governance',
     status: 'Live',
-    summary: 'Continuous evidence capture for model changes, overrides, and investor reporting exports.',
+    summary:
+      'Continuous evidence capture for model changes, overrides, and investor reporting exports.',
   },
 ]
