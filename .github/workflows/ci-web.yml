@@ -21,7 +21,10 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
+<<<<<<< HEAD
           cache-dependency-path: apps/web/package.json
+=======
+>>>>>>> 5c851b4ed298983c8b181564c45232870bd9274b
       - name: Install
         run: npm install
       - name: Type-check
