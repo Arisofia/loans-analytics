@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --ext .ts,.tsx app src middleware.ts next.config.ts",
-    "type-check": "tsc --noEmit"
+    "lint:fix": "eslint --ext .ts,.tsx app src middleware.ts next.config.ts --fix",
+    "type-check": "tsc --noEmit",
+    "format:check": "prettier --check \"{app,src,public,tests,docs}/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "check-all": "npm run lint && npm run type-check && npm run format:check"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.31.0",
