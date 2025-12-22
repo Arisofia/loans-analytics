@@ -11,6 +11,9 @@ on:
 jobs:
   sonarcloud:
     name: SonarCloud Scan
+    permissions:
+      contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -20,16 +23,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          # Necessary for SonarCloud to analyze history
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -42,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd apps/web
-          npm ci
+          npm install
 
       - name: Analytics coverage (pytest)
         run: |
@@ -69,9 +71,8 @@ jobs:
           # The lcov.info file will be generated at coverage/lcov.info
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
+        uses: SonarSource/sonarcloud-github-action@e44258b109568baa0df60ed515909fc6c72cba92
         with:
           args: >
             -Dsonar.verbose=true
             -Dsonar.python.coverage.reportPaths=coverage-python.xml
-            -Dsonar.javascript.lcov.reportPaths=apps/web/coverage/lcov.info

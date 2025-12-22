@@ -1,0 +1,17 @@
+{
+  "name": "hubspot-sync-service",
+  "version": "1.0.0",
+  "description": "HubSpot synchronization service",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "axios": "1.13.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/node": "20.0.0"
+  }
+}

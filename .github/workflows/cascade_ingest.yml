@@ -1,0 +1,46 @@
+name: Cascade Ingest and KPI Extraction
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'scripts/convert_and_integrate_cascade.py'
+      - 'scripts/ingest_kpis.py'
+      - 'data/raw/*.xls*'
+
+jobs:
+  cascade-to-csv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install pandas and openpyxl
+        run: pip install pandas openpyxl
+      - name: Convert Cascade XLS to CSV
+        run: |
+          XLS_FILE=$(ls data/raw/*.xls* | head -n 1)
+          python scripts/convert_and_integrate_cascade.py "$XLS_FILE" data/raw/cascade_converted.csv
+      - name: Review Cascade CSV columns
+        run: |
+          head -n 5 data/raw/cascade_converted.csv
+
+  kpi-extraction:
+    needs: cascade-to-csv
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install pandas
+        run: pip install pandas
+      - name: Run KPI extraction (with Cascade integration)
+        run: |
+          python scripts/ingest_kpis.py
+      - name: Show extracted KPIs
+        run: |
+          cat exports/kpi_results.json

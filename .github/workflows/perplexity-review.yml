@@ -1,0 +1,70 @@
+name: Perplexity Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  perplexity-review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      
+      - name: Get PR diff
+        id: diff
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD > pr_diff.txt
+          diff_size=$(wc -c < pr_diff.txt)
+          echo "diff_size=$diff_size" >> $GITHUB_OUTPUT
+
+      - name: Review with Perplexity
+        if: ${{ steps.diff.outputs.diff_size != '' && fromJSON(steps.diff.outputs.diff_size) < 50000 }}
+        continue-on-error: true
+        env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -z "$PERPLEXITY_API_KEY" ]; then
+            echo "Warning: PERPLEXITY_API_KEY is not set. Skipping review."
+            exit 0
+          fi
+
+          # Construct JSON payload safely using jq
+          DIFF_TEXT=$(cat pr_diff.txt | head -c 10000)
+          jq -n --arg diff "$DIFF_TEXT" \
+            '{
+              model: "sonar-pro",
+              messages: [
+                {role: "system", content: "You are a code reviewer. Review the following PR diff for data ingestion requirements, security issues, and code quality."},
+                {role: "user", content: $diff}
+              ]
+            }' > request.json
+
+          # Call Perplexity API to review the changes
+          HTTP_CODE=$(curl -s -S -w "%{http_code}" -o review_response.json -X POST "https://api.perplexity.ai/chat/completions" \
+            -H "Authorization: Bearer $PERPLEXITY_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d @request.json)
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Warning: Perplexity API returned status $HTTP_CODE"
+            cat review_response.json
+            exit 0
+          fi
+
+          # Extract review and post as comment
+          review_text=$(jq -r '.choices[0].message.content' review_response.json)
+          if [ -z "$review_text" ] || [ "$review_text" = "null" ]; then
+            echo "Warning: Perplexity API returned an empty review."
+            exit 0
+          fi
+
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "## 🤖 Perplexity AI Review\n\n$review_text"

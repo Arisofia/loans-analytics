@@ -3,16 +3,17 @@ name: Codex pull request review
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_call:
 
 jobs:
   assign_metadata:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == false
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
     permissions:
       pull-requests: write
     steps:
       - name: Assign PR reviewers and assignees
-        uses: actions/github-script@v7
+        uses: actions/github-script@v7.1.0
         with:
           github-token: ${{ github.token }}
           script: |
@@ -20,23 +21,31 @@ jobs:
             const repo = context.repo.repo;
             const pull_number = context.payload.pull_request.number;
 
-            await github.rest.issues.addAssignees({
-              owner,
-              repo,
-              issue_number: pull_number,
-              assignees: ['codex'],
-            });
+            try {
+              await github.rest.issues.addAssignees({
+                owner,
+                repo,
+                issue_number: pull_number,
+                assignees: ['codex'],
+              });
+            } catch (_error) {
+              console.log('Could not add assignee (may not exist as user)');
+            }
 
-            await github.rest.pulls.requestReviewers({
-              owner,
-              repo,
-              pull_number,
-              reviewers: ['sonarqube', 'coderabbit', 'sourcery'],
-            });
+            try {
+              await github.rest.pulls.requestReviewers({
+                owner,
+                repo,
+                pull_number,
+                reviewers: ['sonarqube', 'coderabbit', 'sourcery'],
+              });
+            } catch (_error) {
+              console.log('Could not request reviewers (may not exist as users)');
+            }
 
   codex:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == false
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
     permissions:
       contents: read
       pull-requests: write
@@ -76,10 +85,10 @@ jobs:
       contents: read
       pull-requests: write
     needs: codex
-    if: needs.codex.outputs.final_message != ''
+    if: needs.codex.outputs.final_message != '' && github.event_name == 'pull_request'
     steps:
       - name: Post Codex feedback
-        uses: actions/github-script@v7
+        uses: actions/github-script@v7.1.0
         with:
           github-token: ${{ github.token }}
           script: |

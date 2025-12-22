@@ -1,15 +1,22 @@
 # Node / JavaScript
 node_modules/
+**/node_modules/
 .next/
 .turbo/
 dist/
 coverage/
+out/
 
 # Gradle
 .gradle/
-build/
 **/.gradle/
+build/
 **/build/
+
+# OS
+.DS_Store
+Thumbs.db
+apps/.DS_Store
 
 # Python
 .venv/
@@ -19,22 +26,42 @@ __pycache__/
 
 # IDE / Editor
 .vscode/
+.vscode/tasks.json
 .idea/
 *.vsix
 
-# OS files
-.DS_Store
-Thumbs.db
-apps/.DS_Store
+# Data outputs
+data/metrics/
+data_samples/
+data_samples/*.csv
+logs/
+logs/runs/*.json
+
+# Build / tooling artifacts
+clean_settings.json
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
+# Compiler traces & artifacts
+*.log
+tsc-trace.log
+**/tsc-trace.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env*.local
+.vercel/
+nvm/
 
 # Project-specific artifacts
 abaco-loans-analytics/
-data_samples/
 gemini-cli/
-nvm/
 
-# Environment & platform
-.env
-.env.local
-.env*.local
-.vercel/
+# Other
+failed_workflows.csv
+*.csv

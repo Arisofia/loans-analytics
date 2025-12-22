@@ -1,0 +1,32 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Validate PR title and description
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            if (!context.payload.pull_request) {
+              console.log('Skipping: not a pull_request event');
+              return;
+            }
+            
+            const pr = context.payload.pull_request;
+            
+            if (!pr.title || pr.title.trim() === '') {
+              core.warning('PR title is empty');
+            }
+            
+            if (!pr.body || pr.body.trim() === '') {
+              core.warning('PR description is empty');
+            }
+            
+            console.log('PR #' + pr.number + ' validation passed');

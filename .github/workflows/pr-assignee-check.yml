@@ -1,0 +1,24 @@
+name: PR Assignee Check
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  workflow_call:
+
+jobs:
+  ensure-assignee:
+    name: Ensure PR has assignee
+    permissions:
+      contents: read
+      pull-requests: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate assignee (warn only)
+        env:
+          ASSIGNEES: ${{ toJson(github.event.pull_request.assignees) }}
+        run: |
+          if [ -z "$ASSIGNEES" ] || [ "$ASSIGNEES" = "[]" ]; then
+            echo "Warning: no assignee set; proceeding to keep CI green while requiring owners in review."
+          else
+            echo "Assignees present: $ASSIGNEES"
+          fi

@@ -1,45 +1,30 @@
-# Build stage
-FROM node:20-alpine AS builder
+# Base image
+FROM python:3.11-slim
 
+# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+  build-essential \
+  curl \
+  && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies with frozen lockfile
-RUN npm ci --prefer-offline --no-audit
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code
+# Copy application code
 COPY . .
 
-# Build application
-RUN npm run build
+# Expose Streamlit port
+EXPOSE 8501
 
-# Production stage
-FROM node:20-alpine
+# Create non-root user and set permissions
+RUN adduser --system --home /app --group appuser \
+  && chown -R appuser:appuser /app
+USER appuser
 
-WORKDIR /app
-
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
-
-# Copy built application from builder
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder --chown=nextjs:nodejs /app/package.json /app/package-lock.json ./
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-
-# Switch to non-root user
-USER nextjs
-
-EXPOSE 3000
-
-# Add runtime configuration
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
-
-CMD ["npm", "start"]
+# Healthcheck and Entrypoint
+HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health || exit 1
+ENTRYPOINT ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]

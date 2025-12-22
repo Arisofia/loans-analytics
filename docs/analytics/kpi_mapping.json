@@ -1,0 +1,159 @@
+{
+  "kpi_mapping": [
+    {
+      "kpi_id": "portfolio_delinquency_rate",
+      "name": "Portfolio Delinquency Rate",
+      "display_name": "Delinquency Rate",
+      "definition": "Percentage of outstanding balance 30+ days past due",
+      "category": "Risk",
+      "data_source": "loan_status field",
+      "formula": "(delinquent_count / total_loans) * 100",
+      "computed_in": ["enterprise_analytics_engine.py", "metrics_utils.py"],
+      "displayed_in": ["PortfolioHealthKPIs.tsx", "streamlit_app.py"],
+      "figma_section": "Risk",
+      "unit": "percent",
+      "threshold_warning": 3.0,
+      "threshold_critical": 5.0
+    },
+    {
+      "kpi_id": "portfolio_yield_percent",
+      "name": "Portfolio Yield",
+      "display_name": "Portfolio Yield",
+      "definition": "Weighted average interest rate across portfolio",
+      "category": "Finance",
+      "data_source": "interest_rate, principal_balance fields",
+      "formula": "(sum(interest_rate * principal_balance) / sum(principal_balance)) * 100",
+      "computed_in": ["enterprise_analytics_engine.py", "metrics_utils.py"],
+      "displayed_in": ["PortfolioHealthKPIs.tsx", "streamlit_app.py"],
+      "figma_section": "Finance",
+      "unit": "percent",
+      "threshold_warning": 1.5,
+      "threshold_critical": 1.0
+    },
+    {
+      "kpi_id": "average_ltv_ratio_percent",
+      "name": "Average Loan-to-Value Ratio",
+      "display_name": "Average LTV",
+      "definition": "Mean Loan-to-Value ratio across portfolio",
+      "category": "Risk",
+      "data_source": "loan_amount, appraised_value fields",
+      "formula": "mean((loan_amount / appraised_value) * 100)",
+      "computed_in": ["enterprise_analytics_engine.py", "metrics_utils.py"],
+      "displayed_in": ["PortfolioHealthKPIs.tsx", "streamlit_app.py"],
+      "figma_section": "Risk",
+      "unit": "percent",
+      "threshold_warning": 80.0,
+      "threshold_critical": 85.0
+    },
+    {
+      "kpi_id": "average_dti_ratio_percent",
+      "name": "Average Debt-to-Income Ratio",
+      "display_name": "Average DTI",
+      "definition": "Mean Debt-to-Income ratio of borrowers",
+      "category": "Risk",
+      "data_source": "monthly_debt, borrower_income fields",
+      "formula": "mean((monthly_debt / (borrower_income / 12)) * 100)",
+      "computed_in": ["enterprise_analytics_engine.py", "metrics_utils.py"],
+      "displayed_in": ["PortfolioHealthKPIs.tsx", "streamlit_app.py"],
+      "figma_section": "Risk",
+      "unit": "percent",
+      "threshold_warning": 43.0,
+      "threshold_critical": 50.0
+    },
+    {
+      "kpi_id": "data_quality_score",
+      "name": "Data Quality Score",
+      "display_name": "Data Quality",
+      "definition": "Overall data completeness and validity score",
+      "category": "Operations",
+      "data_source": "loan_data dataframe",
+      "formula": "(1 - ((null_ratio + invalid_ratio) / 2)) * 100",
+      "computed_in": ["enterprise_analytics_engine.py"],
+      "displayed_in": ["streamlit_app.py"],
+      "figma_section": "Compliance",
+      "unit": "percent",
+      "threshold_warning": 80.0,
+      "threshold_critical": 70.0
+    },
+    {
+      "kpi_id": "average_null_ratio_percent",
+      "name": "Average Null Ratio",
+      "display_name": "Null Ratio",
+      "definition": "Percentage of missing values in dataset",
+      "category": "Operations",
+      "data_source": "loan_data dataframe",
+      "formula": "mean(isna()) * 100",
+      "computed_in": ["enterprise_analytics_engine.py"],
+      "displayed_in": ["streamlit_app.py"],
+      "figma_section": "Compliance",
+      "unit": "percent",
+      "threshold_warning": 5.0,
+      "threshold_critical": 10.0
+    },
+    {
+      "kpi_id": "invalid_numeric_ratio_percent",
+      "name": "Invalid Numeric Ratio",
+      "display_name": "Invalid Data",
+      "definition": "Percentage of fields that failed numeric conversion",
+      "category": "Operations",
+      "data_source": "loan_data dataframe",
+      "formula": "(invalid_conversions / total_fields) * 100",
+      "computed_in": ["enterprise_analytics_engine.py"],
+      "displayed_in": ["streamlit_app.py"],
+      "figma_section": "Compliance",
+      "unit": "percent",
+      "threshold_warning": 5.0,
+      "threshold_critical": 10.0
+    },
+    {
+      "kpi_id": "active_loans_count",
+      "name": "Active Loans Count",
+      "display_name": "Active Loans",
+      "definition": "Total number of loans in portfolio",
+      "category": "Traction",
+      "data_source": "loan_data dataframe row count",
+      "formula": "count(loans)",
+      "computed_in": ["PortfolioHealthKPIs.tsx"],
+      "displayed_in": ["PortfolioHealthKPIs.tsx", "streamlit_app.py"],
+      "figma_section": "Traction",
+      "unit": "count",
+      "threshold_warning": null,
+      "threshold_critical": null
+    }
+  ],
+  "expected_figma_sections": {
+    "Traction": ["active_loans_count"],
+    "Risk": ["portfolio_delinquency_rate", "average_ltv_ratio_percent", "average_dti_ratio_percent"],
+    "Finance": ["portfolio_yield_percent"],
+    "Compliance": ["data_quality_score", "average_null_ratio_percent", "invalid_numeric_ratio_percent"]
+  },
+  "figma_export_url": "https://www.figma.com/make/nuVKwuPuLS7VmLFvqzOX1G/Create-Dark-Editable-Slides?node-id=0-1&t=8coqxRUeoQvNvavm-1",
+  "data_exports": [
+    {
+      "export_name": "abaco_fact_table.csv",
+      "exported_from": "streamlit_app.py",
+      "format": "CSV",
+      "contains_kpis": ["loan_amount", "principal_balance", "interest_rate", "loan_status", "ltv_ratio", "dti_ratio", "delinquency_rate"]
+    },
+    {
+      "export_name": "growth-path.html",
+      "exported_from": "export_presentation.py",
+      "format": "Plotly HTML",
+      "contains_metrics": ["yield", "loan_volume"],
+      "contains_kpis": ["portfolio_yield_percent"]
+    },
+    {
+      "export_name": "sales-treemap.html",
+      "exported_from": "export_presentation.py",
+      "format": "Plotly HTML",
+      "contains_metrics": ["principal_balance", "loan_status"],
+      "contains_kpis": []
+    },
+    {
+      "export_name": "presentation-summary.md",
+      "exported_from": "export_presentation.py",
+      "format": "Markdown",
+      "contains_kpis": ["delinquency control", "yield expansion"]
+    }
+  ]
+}

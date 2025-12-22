@@ -1,0 +1,125 @@
+# Departmental Roles & Output Specifications
+# Multi-stakeholder intelligence stacks with explicit output requirements
+
+version: '1.0'
+departments:
+  risk:
+    name: 'Risk Management'
+    primary_agents: [risk_analyst, prediction_engine]
+    kpis: [par_90, rdr_90, portfolio_health, collection_rate]
+    outputs:
+      daily_report:
+        format: 'markdown'
+        distribution: [slack, email]
+        recipients: [risk_team, executives]
+      weekly_summary:
+        format: 'pdf_slides'
+        distribution: [notion, email]
+      monthly_deep_dive:
+        format: 'html_interactive'
+        distribution: [web_dashboard]
+
+  growth:
+    name: 'Growth & Expansion'
+    primary_agents: [growth_optimizer, market_analyzer]
+    kpis: [origination_volume, active_clients, client_retention]
+    outputs:
+      daily_metrics:
+        format: 'json'
+        distribution: [api, slack]
+      weekly_opportunity_brief:
+        format: 'markdown'
+        distribution: [slack, email]
+      monthly_growth_deck:
+        format: 'pdf_slides'
+        distribution: [email, notion]
+
+  finance:
+    name: 'Financial Operations'
+    primary_agents: [finance_controller, arr_optimizer]
+    kpis: [arr, write_off_rate, revenue_forecast]
+    outputs:
+      daily_cash_flow:
+        format: 'csv'
+        distribution: [api, email]
+      weekly_forecast:
+        format: 'excel_interactive'
+        distribution: [email]
+      monthly_board_package:
+        format: 'pdf_comprehensive'
+        distribution: [email, secure_portal]
+
+  compliance:
+    name: 'Compliance & Audit'
+    primary_agents: [audit_enforcer, regulatory_bot]
+    kpis: [audit_flags, data_quality_score]
+    outputs:
+      hourly_alert:
+        format: 'json_alert'
+        distribution: [slack, pagerduty]
+      daily_audit_log:
+        format: 'csv'
+        distribution: [secure_storage, email]
+      monthly_compliance_report:
+        format: 'pdf_legal'
+        distribution: [email, regulatory_agency]
+
+  technology:
+    name: 'Technology & Infrastructure'
+    primary_agents: [system_monitor, performance_optimizer]
+    kpis: [data_quality_score, system_uptime]
+    outputs:
+      realtime_monitoring:
+        format: 'json_metrics'
+        distribution: [datadog, prometheus]
+      daily_tech_digest:
+        format: 'markdown'
+        distribution: [slack]
+      monthly_architecture_review:
+        format: 'html_analysis'
+        distribution: [email]
+
+  marketing:
+    name: 'Marketing & Acquisition'
+    primary_agents: [campaign_optimizer, segment_analyzer]
+    kpis: [origination_volume, client_acquisition_cost]
+    outputs:
+      daily_campaign_metrics:
+        format: 'json'
+        distribution: [api, slack]
+      weekly_marketing_brief:
+        format: 'markdown'
+        distribution: [slack, email]
+      monthly_exec_summary:
+        format: 'pdf_slides'
+        distribution: [email]
+
+  sales:
+    name: 'Sales Operations'
+    primary_agents: [pipeline_tracker, deal_optimizer]
+    kpis: [origination_volume, client_retention, avg_loan_size]
+    outputs:
+      daily_pipeline:
+        format: 'json'
+        distribution: [salesforce_api, slack]
+      weekly_deals_update:
+        format: 'markdown'
+        distribution: [slack]
+      monthly_compensation:
+        format: 'csv'
+        distribution: [email]
+
+  executive:
+    name: 'C-Suite Executive Dashboard'
+    primary_agents: [all_agents]
+    kpis: [par_90, arr, active_clients, data_quality_score]
+    outputs:
+      daily_executive_brief:
+        format: 'html_interactive'
+        distribution: [web_dashboard, email]
+      weekly_board_ready:
+        format: 'pdf_slides_professional'
+        distribution: [email, secure_portal]
+      monthly_investor_package:
+        format: 'pdf_comprehensive'
+        distribution: [email, investor_portal]
