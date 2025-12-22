@@ -13,7 +13,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Assign PR reviewers and assignees
-        uses: actions/github-script@v7.1.0
+        uses: actions/github-script@v8
         with:
           github-token: ${{ github.token }}
           script: |
@@ -88,7 +88,7 @@ jobs:
     if: needs.codex.outputs.final_message != '' && github.event_name == 'pull_request'
     steps:
       - name: Post Codex feedback
-        uses: actions/github-script@v7.1.0
+        uses: actions/github-script@v8
         with:
           github-token: ${{ github.token }}
           script: |
