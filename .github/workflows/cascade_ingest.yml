@@ -23,8 +23,9 @@ jobs:
         run: |
           mkdir -p data/raw
           curl -H "Cookie: connect.sid=${{ secrets.CASCADE_SESSION_COOKIE }}" \
-               -L -o data/raw/cascade_export.xlsx \
+               -L -o data/raw/cascade_export.zip \
                "${{ secrets.CASCADE_EXPORT_URL }}"
+          unzip -o data/raw/cascade_export.zip -d data/raw/
       - name: Convert Cascade XLS to CSV
         run: |
           XLS_FILE=$(ls data/raw/*.xls* | head -n 1)
