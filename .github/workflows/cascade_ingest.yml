@@ -22,7 +22,7 @@ jobs:
       - name: Download Cascade export
         run: |
           mkdir -p data/raw
-          curl -H "Cookie: connect.sid=${{ secrets.CASCADE_SESSION_COOKIE }}" \
+          curl -H "Authorization
                -L -o data/raw/cascade_export.zip \
                "${{ secrets.CASCADE_EXPORT_URL }}"
           unzip -o data/raw/cascade_export.zip -d data/raw/
