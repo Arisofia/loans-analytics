@@ -73,18 +73,25 @@ def resolve_workflow_targets(workflows, requested):
     if not requested:
         return workflows
 
+    def workflow_label(workflow):
+        name = workflow.get("name") or workflow.get("path") or ""
+        workflow_id = workflow.get("id")
+        identifier = workflow.get("file_name") or workflow.get("path")
+        label_id = str(workflow_id) if workflow_id is not None else identifier
+        return name, label_id
+
     id_lookup = {}
     name_lookup = {}
     available = []
 
     for workflow in workflows:
-        workflow_id = workflow.get("id")
-        name = workflow.get("name", "")
-
-        if workflow_id is not None:
-            id_lookup[str(workflow_id)] = workflow
-        name_lookup[name.lower()] = workflow
-        available.append(f"{name} (id={workflow_id})")
+        name, label_id = workflow_label(workflow)
+        if label_id:
+            id_lookup[label_id] = workflow
+        if name:
+            name_lookup[name.lower()] = workflow
+        display = name or label_id or "unknown"
+        available.append(f"{display} (id={label_id})" if label_id else display)
 
     resolved = []
     for item in requested:
