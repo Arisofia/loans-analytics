@@ -19,6 +19,12 @@ jobs:
           python-version: '3.10'
       - name: Install pandas and openpyxl
         run: pip install pandas openpyxl
+      - name: Download Cascade export
+        run: |
+          mkdir -p data/raw
+          curl -H "Cookie: connect.sid=${{ secrets.CASCADE_SESSION_COOKIE }}" \
+               -L -o data/raw/cascade_export.xlsx \
+               "${{ secrets.CASCADE_EXPORT_URL }}"
       - name: Convert Cascade XLS to CSV
         run: |
           XLS_FILE=$(ls data/raw/*.xls* | head -n 1)
