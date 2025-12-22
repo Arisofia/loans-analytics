@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
-   
+  // eslint-disable-next-line @typescript-eslint/require-await
   headers: async () => [
     {
       source: '/:path*',
@@ -33,9 +33,9 @@ const nextConfig: NextConfig = {
       ],
     },
   ],
-   
+  // eslint-disable-next-line @typescript-eslint/require-await
   redirects: async () => [],
-   
+  // eslint-disable-next-line @typescript-eslint/require-await
   rewrites: async () => ({
     beforeFiles: [],
     afterFiles: [],

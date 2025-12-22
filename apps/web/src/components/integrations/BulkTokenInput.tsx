@@ -18,7 +18,7 @@ type BulkTokenInputProps = {
   onProcessItem: (item: BulkTokenItem) => Promise<BulkProcessResult>
 }
 
-type ItemStatus = TokenStatus | 'pending' | 'success' | 'retrying' | 'error'
+type ItemStatus = TokenStatus | 'pending' | 'success' | 'retrying'
 
 const defaultRow = 'platform,token,accountId(optional)'
 

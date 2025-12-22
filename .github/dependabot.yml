@@ -1,5 +1,4 @@
 version: 2
-<<<<<<< HEAD
 updates:
   - package-ecosystem: 'github-actions'
     directory: '/'
@@ -33,39 +32,3 @@ updates:
     groups:
       minor-and-patch:
         update-types: ['minor', 'patch']
-=======
-
-updates:
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    assignees:
-      - "codex"
-    groups:
-      minor-and-patch:
-        update-types: ["minor", "patch"]
-
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    assignees:
-      - "codex"
-    groups:
-      minor-and-patch:
-        update-types: ["minor", "patch"]
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
-    assignees:
-      - "codex"
-    groups:
-      minor-and-patch:
-        update-types: ["minor", "patch"]
->>>>>>> fix/ci-workflow-codecov

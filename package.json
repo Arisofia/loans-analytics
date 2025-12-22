@@ -1,32 +1,12 @@
 {
-  "name": "abaco-loans-analytics",
-  "version": "1.0.0",
-  "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*",
-    "services/*"
-  ],
   "scripts": {
-    "dev": "npm run dev --workspace=web",
-    "build": "npm run build --workspace=web",
-    "start": "npm run start --workspace=web",
-    "lint": "npm run lint --workspace=web",
-    "test:notion": "node scripts/notion-actions.js",
-    "test": "npm run test:notion"
+    "lint": "npm --prefix apps/web run lint"
   },
   "dependencies": {
-    "@notionhq/client": "5.4.0",
     "@openai/codex-sdk": "^0.63.0",
-    "@supabase/supabase-js": "^2.87.1",
-    "@vercel/analytics": "^1.6.1",
-    "@vercel/speed-insights": "^1.3.1",
-    "dotenv": "^17.2.3",
-    "vercel": "^50.1.2"
-  },
-  "rootDirectory": ".",
-  "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "typescript": "^5.9.3"
+    "@supabase/supabase-js": "^2.86.0",
+    "@vercel/analytics": "^1.6.0",
+    "@vercel/speed-insights": "^1.3.0",
+    "dotenv": "^17.2.3"
   }
 }

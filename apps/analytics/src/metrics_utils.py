@@ -36,33 +36,6 @@ def validate_kpi_columns(loan_data: pd.DataFrame) -> None:
         raise ValueError(f"Missing required columns in loan_data: {', '.join(missing_cols)}")
 
 
-def _invalid_numeric_ratio(frame: pd.DataFrame) -> float:
-    total = 0
-    invalid = 0
-
-    for column in REQUIRED_KPI_COLUMNS:
-        if column == "loan_status":
-            continue
-        series = frame[column]
-        coerced = pd.to_numeric(series, errors="coerce")
-        invalid += (coerced.isna() & series.notna()).sum()
-        total += len(series)
-
-    return invalid / total if total else 0.0
-
-
-def _quality_metrics(frame: pd.DataFrame) -> Dict[str, float]:
-    null_ratio = float(frame.isna().mean().mean()) if not frame.empty else 0.0
-    invalid_ratio = float(_invalid_numeric_ratio(frame))
-    score = max(0.0, min(100.0, (1 - ((null_ratio + invalid_ratio) / 2)) * 100))
-
-    return {
-        "average_null_ratio_percent": null_ratio * 100,
-        "invalid_numeric_ratio_percent": invalid_ratio * 100,
-        "data_quality_score": score,
-    }
-
-
 def loan_to_value(loan_amounts: pd.Series, appraised_values: pd.Series) -> pd.Series:
     """Compute LTV as a percentage while avoiding division by zero."""
 
@@ -119,7 +92,8 @@ def portfolio_kpis(loan_data: pd.DataFrame) -> Dict[str, float]:
 
     avg_ltv = ltv_series.mean(skipna=True)
     avg_dti = dti_series.mean(skipna=True)
-    base_metrics = {
+
+    return {
         "portfolio_delinquency_rate_percent": portfolio_delinquency_rate(
             loan_data["loan_status"]
         ),
@@ -129,6 +103,3 @@ def portfolio_kpis(loan_data: pd.DataFrame) -> Dict[str, float]:
         "average_ltv_ratio_percent": float(avg_ltv if not np.isnan(avg_ltv) else 0.0),
         "average_dti_ratio_percent": float(avg_dti if not np.isnan(avg_dti) else 0.0),
     }
-
-    quality = _quality_metrics(loan_data)
-    return {**base_metrics, **quality}
