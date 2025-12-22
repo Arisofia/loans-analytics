@@ -156,5 +156,5 @@ jobs:
         run: |
           dotnet restore
           dotnet build --configuration Release --no-restore
-          dotnet test --no-build
+          dotnet test --configuration Release --no-build
 
