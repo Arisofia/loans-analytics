@@ -131,7 +131,7 @@ class LoanAnalyticsEngine:
         if segment not in self.data.columns:
             raise ValueError(f"Segment column '{segment}' not found")
 
-        rows = []
+        rows: List[dict] = []
         for value, group in self.data.groupby(segment):
             metrics = self._portfolio_kpis_from_df(group)
             metrics[segment] = value
