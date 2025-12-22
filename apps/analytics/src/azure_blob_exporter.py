@@ -55,6 +55,7 @@ class AzureBlobKPIExporter:
         try:
             container_client.create_container()
         except ResourceExistsError:
+            # Container already exists; this is expected and can be safely ignored.
             pass
 
         timestamp = datetime.now(timezone.utc)
