@@ -87,7 +87,9 @@ def run_cascade_ingest(export_url: str, cookie: str, output_prefix: str, user_ag
     csv_path, parquet_path = make_output_paths(output_prefix)
     LOG.info("Starting Cascade ingest run_id=%s", RUN_ID)
 
-    client = CascadeClient(session_cookie=cookie, user_agent=user_agent)
+    cookie_name = os.getenv("CASCADE_COOKIE_NAME", "session")
+    LOG.info("Using cookie name '%s' for Cascade session", cookie_name)
+    client = CascadeClient(session_cookie=cookie, cookie_name=cookie_name, user_agent=user_agent)
     csv_text = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:

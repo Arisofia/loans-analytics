@@ -1,3 +1,5 @@
+![Cascade Ingest](https://github.com/Abaco-Technol/abaco-loans-analytics/actions/workflows/cascade_ingest.yml/badge.svg)
+
 # ABACO — Loan Analytics Platform
 
 ABACO delivers an executive-grade analytics and governance stack for lending teams. The platform pairs a Next.js dashboard with Python risk pipelines, Azure deployment scripts, and traceable KPI governance.

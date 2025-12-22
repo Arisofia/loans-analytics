@@ -1,0 +1,5 @@
+Vibe Solutioning Quality Gate checklist
+- Enforce `black` formatting and `flake8` linting for all Python modules.
+- Run optional `sourcery review` and `sonar-scanner` scans if tokens are configured in secrets.
+- Fail fast: require canonical columns (loan_id, balance, days_past_due) and audit manifests.
+- Log all results so the guardian team can proof traceability.

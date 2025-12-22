@@ -10,8 +10,9 @@ LOG = logging.getLogger("cascade_client")
 
 
 class CascadeClient:
-    def __init__(self, session_cookie: str, user_agent: Optional[str] = None):
+    def __init__(self, session_cookie: str, cookie_name: str = "session", user_agent: Optional[str] = None):
         self.session_cookie = session_cookie
+        self.cookie_name = cookie_name
         self.user_agent = user_agent
         self.domain = ".cascadedebt.com"
 
@@ -62,7 +63,7 @@ class CascadeClient:
             browser = playwright.chromium.launch(headless=True, args=["--no-sandbox"])
             context = browser.new_context(**self._context_args())
             cookie = {
-                "name": "session",
+                "name": self.cookie_name,
                 "value": self.session_cookie,
                 "domain": self.domain,
                 "path": "/",
