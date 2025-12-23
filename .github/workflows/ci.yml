@@ -126,7 +126,6 @@ jobs:
 
   dotnet:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('**/*.csproj', '**/*.sln', '**/packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != '' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
