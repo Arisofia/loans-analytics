@@ -1,5 +1,5 @@
 // Map Meta fields to canonical warehouse schema
-export function transformCampaign(raw: any) {
+export function transformCampaign(raw: { id: string; name: string; status: string; effective_status: string; }) {
   return {
     campaign_id: raw.id,
     campaign_name: raw.name,
