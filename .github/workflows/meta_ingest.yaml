@@ -1,0 +1,48 @@
+name: Meta Marketing Insights Ingest
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Every hour
+  workflow_dispatch:
+
+jobs:
+  meta-ingest:
+    runs-on: ubuntu-latest
+    env:
+      META_SYSTEM_USER_TOKEN: ${{ secrets.META_SYSTEM_USER_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: |
+          cd node/services/meta-connector
+          npm install
+      - name: Build
+        run: |
+          cd node/services/meta-connector
+          npm run build
+      - name: Run ingest
+        run: |
+          cd node/services/meta-connector
+          node dist/ingest.js
+      - name: Upload raw data
+        uses: actions/upload-artifact@v4
+        with:
+          name: meta-raw
+          path: data/raw/meta/
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Load to warehouse
+        run: |
+          pip install pandas pyarrow pyyaml
+          python python/ingestion/meta_to_warehouse.py
+      - name: Upload warehouse parquet
+        uses: actions/upload-artifact@v4
+        with:
+          name: meta-warehouse
+          path: data/warehouse/fact_marketing_spend.parquet

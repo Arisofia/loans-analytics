@@ -8,6 +8,7 @@ AD_ACCOUNT = os.getenv("META_AD_ACCOUNT_ID")  # e.g. act_12345
 def list_ad_accounts():
     url = f"https://graph.facebook.com/{API_VERSION}/me/adaccounts"
     r = requests.get(url, params={"access_token": ACCESS_TOKEN})
+    print("Ad Accounts Response:", r.text)  # Debug print
     r.raise_for_status()
     return r.json()
 
@@ -18,6 +19,7 @@ def fetch_campaigns():
         "fields": "id,name,status,effective_status",
         "limit": 50
     })
+    print("Campaigns Response:", r.text)  # Debug print
     r.raise_for_status()
     return r.json()
 

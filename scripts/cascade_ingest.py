@@ -1,30 +1,29 @@
 #!/usr/bin/env python3
 """
-Production Cascade ingestion script.
+Production Cascade ingestion script using the export ZIP endpoint.
 
-Usage: python3 scripts/cascade_ingest.py --export-url "https://app.cascadedebt.com/analytics/..." \
-    --output-prefix data/raw/cascade/loan_tapes/$(date +%Y%m)/loan_tape_full
+Usage:
+  python3 scripts/cascade_ingest.py --export-url "<zip url>" \
+    --output-prefix "data/raw/cascade/loan_tapes/<yearmonth>/loan_tape_full"
 
-Secrets required (GH Actions set in repo secrets):
-- CASCADE_SESSION_COOKIE (string)   # secure, read-only user session cookie
-- CASCADE_USER_AGENT (optional)     # recommended user-agent string
+Secrets:
+  - CASCADE_SESSION_COOKIE: "Bearer ..." token for the export API (OAuth session)
+  - CASCADE_COOKIE_NAME (optional): cookie name if using cookie auth
 """
 
 import argparse
 import hashlib
-import io
 import json
 import logging
 import os
-import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Tuple
 
+import backoff
 import pandas as pd
-
-from python.ingest.cascade_client import CascadeClient
+import requests
 from python.ingest.transform import canonicalize_loan_tape
 
 LOG = logging.getLogger("cascade_ingest")
@@ -32,40 +31,55 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 
 RUN_ID = uuid.uuid4().hex
 MAX_RETRIES = 3
-RETRY_BACKOFF = 2  # seconds
+DOWNLOAD_TIMEOUT = 120
 AUDIT_DIR = Path("data/audit/runs")
 AUDIT_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _hash_secret(secret: str) -> str:
-    return hashlib.sha256(secret.encode()).hexdigest()
-
-
-
-def make_output_paths(prefix: str) -> Tuple[Path, Path]:
+def make_output_paths(prefix: str) -> Tuple[Path, Path, Path]:
     folder = Path(prefix).parent
     folder.mkdir(parents=True, exist_ok=True)
     csv_path = Path(f"{prefix}.csv")
     parquet_path = Path(f"{prefix}.parquet")
-    return csv_path, parquet_path
+    zip_path = Path(f"{prefix}.zip")
+    return csv_path, parquet_path, zip_path
 
 
-def save_and_validate(df: pd.DataFrame, csv_path: Path, parquet_path: Path):
-    required_cols = ["loan_id", "origination_date", "balance", "days_past_due"]
-    missing = [col for col in required_cols if col not in df.columns]
-    if missing:
-        raise RuntimeError(f"Missing required columns in ingestion output: {missing}")
+@backoff.on_exception(backoff.expo, (requests.RequestException,), max_time=180)
+def fetch_export(export_url: str, headers: dict) -> requests.Response:
+    LOG.info("Requesting Cascade export from %s", export_url)
+    return requests.get(export_url, headers=headers, stream=True, timeout=DOWNLOAD_TIMEOUT)
 
-    df.to_csv(csv_path, index=False)
-    df.to_parquet(parquet_path, index=False)
-    LOG.info("Saved %d rows to %s and %s", len(df), csv_path, parquet_path)
+
+def save_to_path(response: requests.Response, path: Path):
+    with path.open("wb") as fh:
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:
+                fh.write(chunk)
+
+
+def read_dataframe_from_zip(zip_path: Path) -> pd.DataFrame:
+    from zipfile import ZipFile
+
+    valid_ext = (".csv", ".xls", ".xlsx")
+    with ZipFile(zip_path, "r") as zf:
+        candidates = [name for name in zf.namelist() if name.lower().endswith(valid_ext)]
+        if not candidates:
+            raise RuntimeError("ZIP archive does not contain CSV/XLS/XLSX files")
+        target = candidates[0]
+        LOG.info("Extracting %s from %s", target, zip_path)
+        with zf.open(target) as handle:
+            if target.lower().endswith(".csv"):
+                return pd.read_csv(handle)
+            return pd.read_excel(handle)
 
 
 def write_run_manifest(
     export_url: str,
     output_prefix: str,
-    parquet_path: Path,
     csv_path: Path,
+    parquet_path: Path,
+    zip_path: Path,
     secrets_hash: str,
 ):
     manifest = {
@@ -75,6 +89,7 @@ def write_run_manifest(
         "output_prefix": output_prefix,
         "csv_path": str(csv_path),
         "parquet_path": str(parquet_path),
+        "zip_path": str(zip_path),
         "secrets_hash": secrets_hash,
     }
     manifest_path = AUDIT_DIR / f"cascade_ingest_run_{RUN_ID}.json"
@@ -83,42 +98,48 @@ def write_run_manifest(
     LOG.info("Wrote audit manifest %s", manifest_path)
 
 
-def run_cascade_ingest(export_url: str, cookie: str, output_prefix: str, user_agent: Optional[str]):
-    csv_path, parquet_path = make_output_paths(output_prefix)
-    LOG.info("Starting Cascade ingest run_id=%s", RUN_ID)
+def run_cascade_ingest(export_url: str, auth_token: str, output_prefix: str):
+    csv_path, parquet_path, zip_path = make_output_paths(output_prefix)
+    LOG.info("Starting run_id=%s", RUN_ID)
+    cookie_name = os.getenv("CASCADE_COOKIE_NAME")
+    if cookie_name:
+        headers = {"Cookie": f"{cookie_name}={auth_token}"}
+    else:
+        headers = {"Authorization": auth_token}
 
-    cookie_name = os.getenv("CASCADE_COOKIE_NAME", "session")
-    LOG.info("Using cookie name '%s' for Cascade session", cookie_name)
-    client = CascadeClient(session_cookie=cookie, cookie_name=cookie_name, user_agent=user_agent)
-    csv_text = None
+    response = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            LOG.info("Attempt %d to fetch Cascade export", attempt)
-            csv_text = client.fetch_csv(export_url)
-            if csv_text and len(csv_text) > 100:
-                break
+            response = fetch_export(export_url, headers=headers)
+            response.raise_for_status()
+            break
         except Exception as exc:
-            LOG.warning("Attempt %d failed: %s", attempt, exc)
-        time.sleep(RETRY_BACKOFF * attempt)
+            LOG.warning("Attempt %s failed: %s", attempt, exc)
+            if attempt == MAX_RETRIES:
+                raise
+        finally:
+            if response is not None and response.status_code >= 400:
+                response.close()
 
-    if not csv_text:
-        raise RuntimeError("Failed to extract CSV from Cascade after retries")
-
-    try:
-        df = pd.read_csv(io.StringIO(csv_text))
-    except Exception:
-        import re
-
-        matcher = re.search(r"(<pre[^>]*>)(.*?)(</pre>)", csv_text, flags=re.S | re.I)
-        if matcher:
-            df = pd.read_csv(io.StringIO(matcher.group(2)))
-        else:
-            raise
+    if response is None:
+        raise RuntimeError("Failed to download Cascade export after retries")
+    content_type = (response.headers.get("content-type") or "").lower()
+    is_zip = "zip" in content_type or export_url.lower().endswith(".zip")
+    if is_zip:
+        save_to_path(response, zip_path)
+        LOG.info("Saved download to %s", zip_path)
+        df = read_dataframe_from_zip(zip_path)
+    else:
+        save_to_path(response, csv_path)
+        LOG.info("Saved CSV download to %s", csv_path)
+        df = pd.read_csv(csv_path)
+    response.close()
 
     df = canonicalize_loan_tape(df)
-    save_and_validate(df, csv_path, parquet_path)
-    write_run_manifest(export_url, output_prefix, parquet_path, csv_path, _hash_secret(cookie))
-    LOG.info("Cascade ingest completed run_id=%s", RUN_ID)
+    df.to_csv(csv_path, index=False)
+    df.to_parquet(parquet_path, index=False)
+    LOG.info("Saved %d rows to %s and %s", len(df), csv_path, parquet_path)
+    write_run_manifest(export_url, output_prefix, csv_path, parquet_path, zip_path, hashlib.sha256(auth_token.encode()).hexdigest())
 
 
 def parse_args():
@@ -130,12 +151,11 @@ def parse_args():
 
 def main():
     args = parse_args()
-    session_cookie = os.getenv("CASCADE_SESSION_COOKIE")
-    if not session_cookie:
+    auth_token = os.getenv("CASCADE_SESSION_COOKIE")
+    if not auth_token:
         raise RuntimeError("CASCADE_SESSION_COOKIE secret missing")
 
-    user_agent = os.getenv("CASCADE_USER_AGENT")
-    run_cascade_ingest(args.export_url, session_cookie, args.output_prefix, user_agent)
+    run_cascade_ingest(args.export_url, auth_token, args.output_prefix)
 
 
 if __name__ == "__main__":
