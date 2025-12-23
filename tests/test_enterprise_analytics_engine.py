@@ -149,7 +149,7 @@ def test_portfolio_kpis_compute_expected_values_engine():
     assert kpis["repayment_velocity"] > 1
 
 
-def test_prepare_data_validates_inputs():
+def test_prepare_data_validates_structure_and_dates():
     base = sample_frame()
     missing_cols = base.drop(columns=["interest_rate"])
 
