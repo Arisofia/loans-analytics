@@ -3,11 +3,13 @@
 This runbook defines the golden path for contributing to the ABACO Loan Analytics Platform. It covers branch hygiene, quality gates, AI agent coordination, and merge standards to maintain traceable releases.
 
 ## Roles and responsibilities
+
 - **Authors**: Open issues, create branches, write code, and keep documentation (including KPIs and dashboards) current.
 - **Reviewers**: Enforce branching rules, verify quality gates, and request traces/links for analytics changes.
 - **Release managers**: Ensure merge commits stay auditable, tags/releases capture artifacts, and rollback/forward-fix plans exist.
 
 ## Branching strategy
+
 1. Start from `main` and create a topic branch named `feature/<ticket>` (or `fix/<ticket>`, `chore/<ticket>` for maintenance).
    ```bash
    git checkout main
@@ -23,12 +25,15 @@ This runbook defines the golden path for contributing to the ABACO Loan Analytic
 4. If the branch diverges or carries merge markers, clean them before pushing.
 
 ## Commit standards
+
 - Write conventional commits (e.g., `feat: add risk alert thresholds`, `docs: add workflow runbook`).
 - Reference the ticket/issue in the description when applicable.
 - Avoid committing generated artifacts, secrets, or unresolved merge markers.
 
 ## Quality gates (required unless noted)
+
 Run these commands locally before opening or updating a pull request:
+
 - **Lint (JS/TS)**: `npm run lint`
 - **Type-check (if TS changes)**: `npm run type-check` or `npm run lint -- --max-warnings=0`
 - **Formatting**: `npm run format:check`
@@ -37,17 +42,20 @@ Run these commands locally before opening or updating a pull request:
 - **SonarQube**: Ensure no new critical/major issues; review PR Sonar results and address blockers.
 
 Optional but recommended:
+
 - **Playwright/End-to-end**: Run targeted suites when modifying UI flows.
 - **Vercel preview**: Validate preview builds for UI/UX changes and screenshot updates.
 
 Record results in the PR description when gates cannot run (e.g., environment limits) and explain mitigations.
 
 ## AI agent and automation coordination
+
 - Note in the PR when Codex, Sourcery, or other agents assisted; include acceptance of suggested changes.
 - Keep MCP/server configs under version control where documented (see `docs/MCP_CONFIGURATION.md`).
 - Treat agent output like human contributions: review for security, compliance, and KPI accuracy.
 
 ## Pull request expectations
+
 1. Keep PRs scoped to a single concern; link to the tracking issue/ticket.
 2. Include:
    - Summary of changes and intended outcomes.
@@ -56,7 +64,17 @@ Record results in the PR description when gates cannot run (e.g., environment li
 3. Require at least one approving review with write access before merging.
 4. Resolve all comments and failing checks before merge; document exceptions with approvals.
 
+### Automated PR health checks and merges
+
+- Use `scripts/pr_status.py` to review open pull requests and optionally merge clean branches with audit-friendly metadata.
+- Examples:
+  - Report on every open PR in the default repo: `python scripts/pr_status.py --all`
+  - Attempt squash merges for every ready PR (requires `GH_TOKEN`/`GITHUB_TOKEN`): `python scripts/pr_status.py --all --merge --merge-method squash`
+  - Validate a single PR before merging: `python scripts/pr_status.py <pr_number> --merge`
+- The script blocks merges for drafts, dirty mergeable states, or failing checks/statuses and surfaces blockers inline.
+
 ## Merge standards
+
 - Prefer **squash and merge** for traceability; ensure the squash message references the ticket and key impacts.
 - Tag releases with semantic versioning when shipping to production; attach release notes and relevant artifacts.
 - After merge:
@@ -64,11 +82,13 @@ Record results in the PR description when gates cannot run (e.g., environment li
   - Update runbooks and KPI documentation to reflect any operational changes.
 
 ## Traceability checklist for analytics/dashboards
+
 - KPIs updated in `docs/analytics/KPIs.md` with owners, formulas, thresholds, and runbook links.
 - Dashboards documented in `docs/analytics/dashboards.md` with drill-down tables, alert routes, and runbook links.
 - Post-merge artifacts (charts, screenshots, or sample payloads) attached to the PR when UI/alert surfaces change.
 
 ## Golden path: from branch to merge
+
 1. Create and sync your branch (see branching strategy).
 2. Implement the change; keep changeset small and focused.
 3. Run lint, format, type-check, tests, and any package-specific checks.

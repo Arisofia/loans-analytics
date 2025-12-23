@@ -12,8 +12,11 @@ function toNumber(value: string | number): number {
   if (typeof value === 'number') {
     return value
   }
+  // Detectar formato contable negativo (ej: "(1,200.00)") antes de limpiar
+  const isNegative = value.includes('(') && value.includes(')')
   const cleaned = value.replace(currencyRegex, '')
-  return Number(cleaned) || 0
+  const number = Number(cleaned) || 0
+  return isNegative ? -Math.abs(number) : number
 }
 
 type LoanCsvRecord = Record<string, string>
@@ -22,7 +25,12 @@ export function parseLoanCsv(content: string): LoanRow[] {
   const rows = content
     .trim()
     .split(/\r?\n/)
-    .map((line) => line.split(','))
+    .map((line) =>
+      // Split by comma, ignoring commas inside double quotes
+      line
+        .split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
+        .map((val) => val.trim().replace(/^"|"$/g, '').replace(/""/g, '"'))
+    )
     .filter((parts) => parts.length >= 7)
 
   const header = rows.shift()

@@ -1,5 +1,6 @@
-pandas==2.3.3
-numpy==2.3.5
-azure-storage-blob==12.27.1
-azure-identity==1.25.1
+pandas==2.2.1
+numpy==1.26.4
+azure-storage-blob==12.20.0
+azure-identity==1.17.1
 pytest>=8.4,<9.0
+pytest-cov

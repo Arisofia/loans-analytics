@@ -1,0 +1,133 @@
+{
+  "metadata": {
+    "source": "Cascade Debt Analytics",
+    "partner": "Abaco Capital",
+    "extracted_date": "2025-12-04T08:00:00Z",
+    "loan_tape_as_of": "2025-12-02",
+    "last_updated": "2025-12-03",
+    "currency": "USD",
+    "date_range_start": "2023-01-03",
+    "date_range_end": "2025-12-31"
+  },
+  "overview": {
+    "traction": {
+      "total_unique_clients": 327,
+      "total_unique_clients_pct": "100.00%",
+      "total_volume_usd": 55020000,
+      "total_volume_change_usd": 55870,
+      "total_volume_change_pct": "0.10%"
+    },
+    "delinquency": {
+      "par90_latest_pct": 1.61,
+      "par90_change_pct": 0.01,
+      "par90_change_percentage": "0.73%",
+      "rdr90_12m_books_pct": 0.98,
+      "rdr90_change_pct": -0.06,
+      "rdr90_change_percentage": "-6.12%"
+    },
+    "characteristics": {
+      "average_apr_12m_pct": 38.99,
+      "average_apr_change_pct": -0.84,
+      "average_apr_change_percentage": "-2.10%"
+    },
+    "collection": {
+      "collection_rate_latest_pct": 2.57,
+      "collection_rate_change_pct": -104.07,
+      "collection_rate_change_percentage": "-97.59%"
+    }
+  },
+  "key_indicators": {
+    "cumulative_traction": {
+      "total_unique_customers": 327,
+      "total_loans": 17587
+    },
+    "current_traction": {
+      "avg_monthly_volume_3m_usd": 2910558,
+      "avg_monthly_volume_12m_usd": 2789359,
+      "outstanding_portfolio_usd": 7757185,
+      "active_loans": 1191,
+      "active_borrowers": 123
+    },
+    "portfolio_characteristics": {
+      "avg_headline_interest_rate_new_adds_pct": 5130.85,
+      "avg_apr_new_adds_pct": 52.34,
+      "avg_term_new_adds_days": 50,
+      "avg_loan_size_new_adds_usd": 2794,
+      "avg_headline_interest_rate_12m_pct": 3712.33,
+      "avg_apr_12m_pct": 38.99,
+      "avg_term_12m_days": 54,
+      "avg_loan_size_12m_usd": 3654
+    },
+    "portfolio_performance": {
+      "par_30_pct": 3.31,
+      "par_90_pct": 1.61,
+      "bad_90_6m_pct": 1.01,
+      "bad_90_12m_pct": 0.58
+    }
+  },
+  "available_views": [
+    {
+      "name": "Risk Overview",
+      "path": "/analytics/risk/overview",
+      "description": "High-level risk metrics summary"
+    },
+    {
+      "name": "Key Indicators",
+      "path": "/analytics/risk/indicators",
+      "description": "Detailed performance indicators"
+    },
+    {
+      "name": "Traction",
+      "path": "/analytics/risk/traction",
+      "description": "Volume and customer acquisition metrics"
+    },
+    {
+      "name": "Delinquency",
+      "path": "/analytics/risk/delinquency",
+      "description": "Delinquency rate analysis (PAR, RDR)"
+    },
+    {
+      "name": "Collection",
+      "path": "/analytics/risk/collection",
+      "description": "Collection rates and recovery metrics"
+    },
+    {
+      "name": "Curves",
+      "path": "/analytics/risk/curves",
+      "description": "Vintage performance curves"
+    },
+    {
+      "name": "Cohort",
+      "path": "/analytics/risk/cohort",
+      "description": "Cohort analysis by origination period"
+    },
+    {
+      "name": "Characteristics",
+      "path": "/analytics/risk/characteristics",
+      "description": "Loan and borrower characteristics"
+    },
+    {
+      "name": "Cashflow Simulation",
+      "path": "/analytics/risk/cashflow-simulation",
+      "description": "Projected cash flows and scenarios"
+    },
+    {
+      "name": "Financials - Key Indicators",
+      "path": "/analytics/financials/key-indicators",
+      "description": "Financial performance metrics"
+    },
+    {
+      "name": "Financials - Statements",
+      "path": "/analytics/financials/statements",
+      "description": "Detailed financial statements"
+    }
+  ],
+  "integration_notes": {
+    "api_base_url": "https://app.cascadedebt.com",
+    "partner_id": "abaco",
+    "data_refresh_frequency": "Daily",
+    "authentication": "OAuth 2.0 or API Key",
+    "export_formats": ["JSON", "CSV", "PDF"],
+    "recommended_update_frequency_repo": "Daily via scheduled GitHub Actions"
+  }
+}

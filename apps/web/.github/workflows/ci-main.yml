@@ -1,0 +1,3 @@
+# Added Python job to set PYTHONPATH and run tests for apps/analytics
+# Updated Analytics job to export PYTHONPATH to include the project root
+# Ensured Web Linting passes by formatting validation.ts file

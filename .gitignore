@@ -1,15 +1,79 @@
-# Gradle
 .gradle/
 build/
 **/.gradle/
 **/build/
-
 # Node / JavaScript
 node_modules/
+**/node_modules/
 .next/
 .turbo/
 dist/
 coverage/
+out/
+# OS
+.DS_Store
+Thumbs.db
+apps/.DS_Store
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+# Streamlit
+.streamlit/
+# Data outputs (NO versionar)
+data/metrics/
+data_samples/
+data_samples/*.csv
+logs/
+logs/runs/*.json
+# IDE / Editor
+.vscode/
+.vscode/tasks.json
+.idea/
+*.vsix
+# Build / tooling artifacts
+clean_settings.json
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+# Compiler traces & artifacts
+*.log
+tsc-trace.log
+**/tsc-trace.log
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env*.local
+.vercel/
+nvm/
+# Project-specific artifacts
+abaco-loans-analytics/
+gemini-cli/
+# Other
+failed_workflows.csv
+*.csv
+.next/
+.turbo/
+dist/
+coverage/
+out/
+<<<<<<< HEAD
+=======
+
+# Gradle
+.gradle/
+**/.gradle/
+build/
+**/build/
+>>>>>>> 0e7be035429a964f67ca109ba96d605ae89bbc65
+
+# OS
+.DS_Store
+Thumbs.db
+apps/.DS_Store
 
 # Python
 .venv/
@@ -19,13 +83,26 @@ __pycache__/
 
 # IDE / Editor
 .vscode/
+.vscode/tasks.json
 .idea/
 *.vsix
 
-# OS files
-.DS_Store
-Thumbs.db
+# Data outputs
+data/metrics/
+data_samples/
+data_samples/*.csv
+logs/
+logs/runs/*.json
 
+# Build / tooling artifacts
+clean_settings.json
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
+<<<<<<< HEAD
 # Project-specific artifacts
 apps/.DS_Store
 
@@ -34,10 +111,33 @@ abaco-loans-analytics/
 data_samples/
 gemini-cli/
 
-# Environment & platform
-nvm/
+=======
+# Compiler traces & artifacts
+*.log
+tsc-trace.log
+**/tsc-trace.log
+
+>>>>>>> 0e7be035429a964f67ca109ba96d605ae89bbc65
+# Environment variables
 .env
 .env.local
+.env.*.local
+<<<<<<< HEAD
+.vercel/
+nvm/
+
+# Other
+failed_workflows.csv
+=======
 .env*.local
 .vercel/
-eslint.config.js
+nvm/
+
+# Project-specific artifacts
+abaco-loans-analytics/
+gemini-cli/
+
+# Other
+failed_workflows.csv
+*.csv
+>>>>>>> 0e7be035429a964f67ca109ba96d605ae89bbc65

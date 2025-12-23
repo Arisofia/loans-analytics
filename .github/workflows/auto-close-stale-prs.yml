@@ -1,0 +1,29 @@
+name: Auto-close Stale PRs
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  close-stale-prs:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Close stale PRs (5+ days inactive)
+        uses: actions/stale@v10
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-pr-message: |
+            This PR has been inactive for 5 days. 
+            PR will be automatically closed.
+            To reopen, comment or push new changes.
+          close-pr-message: 'Auto-closed due to inactivity (5+ days)'
+          days-before-pr-stale: 5
+          days-before-pr-close: 0
+          # Exclude PRs with labels: do-not-close, important
+          exempt-pr-labels: 'do-not-close,important,blocked'
+          stale-pr-label: 'stale'
+          close-pr-label: 'auto-closed'
+          operations-per-run: 100
