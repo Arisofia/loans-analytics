@@ -1,5 +1,6 @@
 name: Codex pull request review
 on:
+  pull_request:
   workflow_call:
   pull_request:
     types: [opened, synchronize, reopened]
