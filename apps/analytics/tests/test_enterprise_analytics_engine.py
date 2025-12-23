@@ -85,7 +85,7 @@ def test_coerces_invalid_numeric_values_and_reports_quality(sample_portfolio):
     quality = engine.data_quality_profile()
     ltv = engine.compute_loan_to_value()
 
-    assert quality["invalid_numeric_ratio"] > 0
+    assert quality["invalid_numeric_ratio_percent"] > 0
     assert np.isnan(ltv.iloc[0])
 
 

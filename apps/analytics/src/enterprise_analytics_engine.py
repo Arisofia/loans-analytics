@@ -10,9 +10,9 @@ class KPIExporter(Protocol):
         pass
 
 class LoanAnalyticsEngine:
-        @property
-        def coercion_report(self):
-            return self._coercion_report
+    @property
+    def coercion_report(self):
+        return self._coercion_report
     """
     A robust engine for computing critical KPIs for a loan portfolio.
     This system is designed for scalability and provides traceable, actionable insights
@@ -189,8 +189,8 @@ class LoanAnalyticsEngine:
             "average_ltv_ratio_percent": ltv_ratio.mean(),
             "average_dti_ratio_percent": dti_ratio.mean(),
             "data_quality_score": quality["data_quality_score"],
-            "average_null_ratio_percent": quality["average_null_ratio"],
-            "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio"],
+            "average_null_ratio_percent": quality["average_null_ratio_percent"],
+            "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio_percent"],
         }
         # Import and call portfolio_kpis to ensure all expected keys are present
         try:
