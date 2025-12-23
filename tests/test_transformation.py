@@ -87,3 +87,40 @@ def test_validate_transformations_total_mismatch():
     kpi_df["receivable_amount"] = kpi_df["receivable_amount"] + 100
     result = dt.validate_transformations(original, kpi_df)
     assert result is False
+
+
+def test_transform_fuzzy_mapping():
+    dt = DataTransformation()
+    # Create df with columns that need fuzzy matching (e.g. AVG_APR_PCT -> interest_rate)
+    df = pd.DataFrame({
+        "total_receivable_usd": [1000.0],
+        "total_eligible_usd": [900.0],
+        "discounted_balance_usd": [800.0],
+        "dpd_0_7_usd": [100.0],
+        "dpd_7_30_usd": [50.0],
+        "dpd_30_60_usd": [100.0],
+        "dpd_60_90_usd": [50.0],
+        "dpd_90_plus_usd": [25.0],
+        "AVG_APR_PCT": [0.15],  # Case-insensitive match for 'avg_apr_pct' mapping
+    })
+    kpi_df = dt.transform_to_kpi_dataset(df)
+    assert "interest_rate" in kpi_df.columns
+    assert kpi_df["interest_rate"].iloc[0] == 0.15
+
+
+def test_transform_missing_required_columns_raises():
+    dt = DataTransformation()
+    df = pd.DataFrame({
+        "total_receivable_usd": [1000.0],
+        "dpd_0_7_usd": [100.0],
+    })
+    with pytest.raises(ValueError):
+        dt.transform_to_kpi_dataset(df)
+
+
+def test_transform_non_numeric_required_column_raises():
+    dt = DataTransformation()
+    df = sample_df()
+    df["total_receivable_usd"] = ["not-a-number", "also-bad"]
+    with pytest.raises(ValueError):
+        dt.transform_to_kpi_dataset(df)

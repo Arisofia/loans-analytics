@@ -13,6 +13,8 @@ from typing import Any, Dict, Optional
 
 import google.generativeai as genai
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +34,14 @@ class GrokClient:
         self.api_key = api_key or os.getenv("GROK_API_KEY")
         self.model = model
         self.base_url = base_url.rstrip("/")
+        
+        self.session = requests.Session()
+        retries = Retry(
+            total=3,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504]
+        )
+        self.session.mount('https://', HTTPAdapter(max_retries=retries))
 
     def generate_text(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> AIResponse:
         if not self.api_key:
@@ -50,7 +60,7 @@ class GrokClient:
 
         logger.debug("Sending Grok request", extra={"model": self.model})
 
-        response = requests.post(f"{self.base_url}/chat/completions", headers=headers, json=payload, timeout=30)
+        response = self.session.post(f"{self.base_url}/chat/completions", headers=headers, json=payload, timeout=30)
         response.raise_for_status()
         data = response.json()
 

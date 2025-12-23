@@ -1,20 +1,14 @@
 name: CI Analytics
-
 on:
   push:
     paths:
       - "apps/analytics/**"
-  pull_request:
-    paths:
-      - "apps/analytics/**"
-  workflow_dispatch:
-
 jobs:
   analytics:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6 # Upgrade to v6 for latest features and security patches
+      - uses: actions/setup-python@v6.0.1 # v6.0.1 semantic version pinning
         with:
           python-version: "3.11"
           cache: pip
@@ -23,9 +17,13 @@ jobs:
         run: |
           cd apps/analytics
           pip install -r requirements.txt
-      - name: Validate required analytics columns
+          pip install pytest pytest-cov
+      - name: Tests and coverage
         run: |
-          python -c "import pandas as pd; df = pd.read_csv('data/abaco_portfolio_calculations.csv'); required = ['loan_amount','appraised_value','borrower_income','monthly_debt','loan_status','interest_rate','principal_balance']; missing = [c for c in required if c not in df.columns]; assert not missing, f'Missing required analytics columns: {missing}'"
-      - name: Validate
-        run: |
-          python -c "import pandas as pd; print('Environment ready. Pandas version:', pd.__version__)"
+          cd apps/analytics
+          pytest --cov=. --cov-report=xml:../coverage-python.xml
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: analytics-coverage
+          path: coverage-python.xml

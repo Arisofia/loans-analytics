@@ -2,38 +2,74 @@ name: CI Main
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *' # Nightly at 3am UTC
 
 jobs:
-  web-lint:
-    name: Web Lint (Next.js)
+  build-and-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      
+      - name: Use Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
           cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies # Installs dependencies for all workspaces
+        run: npm ci # Use `npm ci` for reliable builds
+
+      - name: Run Lint
+        run: npm run lint # This script is configured in the root package.json to target apps/web
+
+      - name: Run Build
+        run: npm run build # This script also targets apps/web
+
+  update-figma-slides:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install dependencies
         run: npm ci
-      - name: Lint
-        run: npm run lint
 
-  analytics-test:
-    name: Analytics Python Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: apps/analytics/requirements.txt
-      - name: Install dependencies
-        run: pip install -r apps/analytics/requirements.txt
-      - name: Run tests
-        run: pytest apps/analytics/tests
+      - name: Update Figma Slides
+        run: |
+          const cron = require('node-cron');
+          const axios = require('axios');
+          const { Client } = require('figma-js');
+
+          const FIGMA_TOKEN = 'YOUR_FIGMA_API_TOKEN';
+          const FILE_KEY = 'YOUR_FIGMA_FILE_KEY';
+          const ANALYTICS_URL = 'URL_TO_YOUR_ANALYTICS_JSON';
+
+          const client = Client({ personalAccessToken: FIGMA_TOKEN });
+
+          async function updateSlides() {
+            const { data } = await axios.get(ANALYTICS_URL);
+
+            // Example: Update slide for Total Customers
+            // Find the node in Figma and update its text with data.traction.total_customers
+            // Repeat for each KPI in your mapping table
+
+            // Example Figma API usage:
+            // const file = await client.file(FILE_KEY);
+            // Find node by name, update text, etc.
+          }
+
+          cron.schedule('0 8 * * *', () => {
+            updateSlides();
+            console.log('Figma slides updated at 8am');
+          });

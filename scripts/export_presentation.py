@@ -32,9 +32,9 @@ def build_growth_chart(output_dir: Path) -> Path:
         target_yield=2.1,
         current_loan_volume=120,
         target_loan_volume=205,
-        periods=6
+        periods=6,
     )
-    projection["month_label"] = projection["month"].dt.strftime("%b %Y")
+    projection["month_label"] = projection["date"].dt.strftime("%b %Y")
     fig = px.line(
         projection,
         x="month_label",

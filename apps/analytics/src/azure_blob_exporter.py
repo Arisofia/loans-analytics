@@ -1,15 +1,14 @@
 # Azure Blob KPI Exporter module for publishing KPI payloads to Azure Blob Storage.
-# Azure Blob KPI Exporter module for publishing KPI payloads to Azure Blob
-# Storage.
 
 import json
+import logging
 from datetime import datetime, timezone
 from numbers import Number
 from typing import Dict, Optional
 
+from azure.core.exceptions import ResourceExistsError
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, ContentSettings
-from azure.core.exceptions import ResourceExistsError
 
 
 class AzureBlobKPIExporter:
@@ -75,10 +74,8 @@ class AzureBlobKPIExporter:
         try:
             container_client.create_container()
         except ResourceExistsError:
-            import logging
             logging.info(f"Container '{self.container_name}' already exists.")
         except Exception as e:
-            import logging
             logging.error(f"Failed to create container '{self.container_name}': {e}")
             raise
 

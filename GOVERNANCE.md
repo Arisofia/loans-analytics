@@ -303,6 +303,12 @@ KMS_ENCRYPTION_KEY     # Token encryption key
 - Require branches be up to date before merging
 - Include administrators in restrictions
 
+## Ownership & Reviews
+
+- Workflow and secrets ownership is tracked in `docs/workflow-ownership.md`; updates to CI/CD, compliance, or deploy workflows require approval from the documented owners.
+- Data/analytics changes (ingestion, transformation, KPI) must be reviewed by the Data/Analytics owner; security/compliance changes require the Security/Compliance owner; frontend CI changes require the Frontend owner.
+- Secrets usage must be justified in PR descriptions and reviewed by the responsible owner before merge.
+
 ## Monitoring & Alerts
 
 ### Dashboards
@@ -312,12 +318,62 @@ KMS_ENCRYPTION_KEY     # Token encryption key
 - **Audit Trail**: Searchable event log (Ctrl+F by event type)
 - **Agent Status**: Health checks and message queue depth
 
+### Dashboard Stack & Progress
+
+| Component             | Status        | Files                                                                 |
+|----------------------|---------------|-----------------------------------------------------------------------|
+| **Authentication**   | ✅ Production | Auth UI components, Login/SignUp/Password reset forms                 |
+| **Financial Dashboard** | ✅ Live    | `/app/dashboard/financial/` with 4 dashboard cards                    |
+| **API Endpoint**      | ✅ Live       | `/api/financial-intelligence/route.ts` with timing metadata          |
+| **UI Components**     | ✅ Complete   | Radix UI + custom ABACO design system                                 |
+| **Data Visualization**| ✅ Live       | Charts, metrics cards, risk analysis cards                            |
+
+Key Dashboard Components:
+- `FinancialMetrics.tsx` – Live KPI cards with formatting
+- `GrowthChart.tsx` – SVG area chart with 12-month trends
+- `RiskAnalysis.tsx` – VaR, sector exposures, stress scenarios
+- `AIInsights.tsx` – Provider health + confidence scoring
+
 ### Alerts
 
 - Critical compliance violations → Slack #security
 - Failed SonarQube quality gate → Slack #engineering
 - Audit log failures → Slack #devops
 - Agent heartbeat missing → Slack #ops
+
+### ML Stack & Progress
+
+| Layer              | Status        | Details                                                                    |
+|--------------------|---------------|----------------------------------------------------------------------------|
+| **Database Schema** | ✅            | 4 tables: predictions, feedback, weight_adjustments, learning_metrics        |
+| **ML Types**        | ✅            | `types/ml.ts` with Zod schemas for validation                              |
+| **Prediction API**  | ✅            | `/api/ml/predictions/route.ts` (POST + GET)                                 |
+| **Feedback API**    | ✅            | `/api/ml/feedback/route.ts` (POST + GET)                                     |
+| **Integration Layer** | ✅          | Base integration + Grok (xAI) integration with fallbacks                   |
+| **Learning Engine** | ✅            | `lib/ml/continue-learning.ts` with Brier score & accuracy metrics           |
+| **Test Suite**      | ✅            | 16 comprehensive test files covering all layers                            |
+
+### Data & Integration Layer (90% Complete)
+
+| Component                      | Status | Details                                                                        |
+|--------------------------------|--------|--------------------------------------------------------------------------------|
+| **Supabase Client**            | ✅     | SSR-enabled with cookies, auth context                                         |
+| **Financial Intelligence Dataset** | ✅ | Canonical dataset in `lib/data/financial-intelligence.ts`                     |
+| **Risk Indicators**            | ✅     | `lib/risk-indicators.ts` with portfolio analysis                               |
+| **AI Integrations**            | ✅     | xAI Grok + OpenAI with fallback chains                                         |
+| **Base Integrations**          | ✅     | Rate limiting (5 rps), exponential backoff, timeout handling                   |
+
+### Testing Infrastructure (Mature)
+
+**MVP 16 test files covering:**
+- **ML Layer** (`lib/ml/*`)
+- **Integrations** (`lib/integrations/*`)
+- **Supabase clients** (`lib/supabase/*`)
+- **Components** (Auth forms, UI components)
+- **Risk indicators**
+- **API endpoints** (`/app/api/*`)
+
+**Test Framework**: Jest + React Testing Library
 
 ## How to Use
 

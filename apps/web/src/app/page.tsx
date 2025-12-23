@@ -1,92 +1,24 @@
 import Link from 'next/link'
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
-import { logLandingPageDiagnostic } from '../lib/landingPageDiagnostics'
+
+import styles from './page.module.css'
 import {
-  landingPageDataSchema,
-  type LandingPageData,
+  metrics,
+  products,
+  controls,
+  steps,
   type Metric,
   type Product,
   type Step,
-} from '../types/landingPage'
-import styles from './page.module.css'
-import {
-  controls as fallbackControls,
-  metrics as fallbackMetrics,
-  products as fallbackProducts,
-  steps as fallbackSteps,
-} from './data'
+} from './dashboardData'
 
-const FALLBACK_DATA: LandingPageData = {
-  metrics: fallbackMetrics as Metric[],
-  products: fallbackProducts as Product[],
-  controls: fallbackControls as string[],
-  steps: fallbackSteps as Step[],
+export const metadata = {
+  title: 'Abaco Loans Analytics Dashboard',
+  description: 'Financial intelligence dashboard highlighting revenue, risk, liquidity, and compliance insights.',
 }
 
-const mergeWithFallback = (payload: LandingPageData): LandingPageData => ({
-  metrics: payload.metrics.length ? payload.metrics : FALLBACK_DATA.metrics,
-  products: payload.products.length ? payload.products : FALLBACK_DATA.products,
-  controls: payload.controls.length ? payload.controls : FALLBACK_DATA.controls,
-  steps: payload.steps.length ? payload.steps : FALLBACK_DATA.steps,
-})
-
-async function getData(): Promise<LandingPageData> {
-  if (!supabase || !isSupabaseConfigured) {
-    logLandingPageDiagnostic({
-      status: 'missing-config',
-      supabaseConfigured: false,
-      payload: FALLBACK_DATA,
-    })
-    return FALLBACK_DATA
-  }
-
-  const { data, error } = await supabase.from('landing_page_data').select('*').single()
-
-  if (error) {
-    logLandingPageDiagnostic({
-      status: 'fetch-error',
-      supabaseConfigured: true,
-      error,
-      payload: FALLBACK_DATA,
-    })
-    return FALLBACK_DATA
-  }
-
-  if (!data) {
-    logLandingPageDiagnostic({
-      status: 'no-data',
-      supabaseConfigured: true,
-      payload: FALLBACK_DATA,
-    })
-    return FALLBACK_DATA
-  }
-
-  const parsed = landingPageDataSchema.safeParse(data)
-
-  if (!parsed.success) {
-    logLandingPageDiagnostic({
-      status: 'invalid-shape',
-      supabaseConfigured: true,
-      error: parsed.error.flatten(),
-      payload: FALLBACK_DATA,
-    })
-    return FALLBACK_DATA
-  }
-
-  const payload = mergeWithFallback(parsed.data)
-  logLandingPageDiagnostic({
-    status: 'ok',
-    supabaseConfigured: true,
-    payload,
-  })
-  return payload
-}
-
-export default async function Home() {
-  const { metrics, products, controls, steps } = await getData()
-
+export default function Home() {
   return (
-    <div className={styles.page} id="main-content">
+    <main className={styles.page} id="main-content">
       <nav className={styles.nav} aria-label="Primary">
         <div className={styles.brand}>Abaco Loans Analytics</div>
         <div className={styles.navLinks}>
@@ -103,13 +35,13 @@ export default async function Home() {
             Playbook
           </Link>
         </div>
-        <Link className={styles.primaryButton} href="#demo">
+        <Link className={styles.navCta} href="#demo">
           Schedule a demo
         </Link>
       </nav>
 
       <header className={styles.hero}>
-        <div className={styles.pill}>Growth & Risk Intelligence</div>
+        <div className={styles.pill}>Growth &amp; Risk Intelligence</div>
         <h1>Abaco Loans Analytics</h1>
         <p>
           A fintech-grade command center that blends underwriting precision, revenue acceleration,
@@ -122,13 +54,17 @@ export default async function Home() {
           <Link href="#products" className={styles.secondaryButton}>
             Explore products
           </Link>
+          <Link href="/analytics" className={styles.secondaryButton}>
+            Open analytics workspace
+          </Link>
         </div>
         <div className={styles.metrics}>
           {metrics.map((metric: Metric) => (
-            <div key={metric.label} className={styles.metricCard}>
-              <span className={styles.metricValue}>{metric.value}</span>
-              <span className={styles.metricLabel}>{metric.label}</span>
-            </div>
+            <dl key={metric.label} className={styles.metricCard}>
+              <dt className={styles.metricLabel}>{metric.label}</dt>
+              <dd className={styles.metricValue}>{metric.value}</dd>
+              {metric.helper && <dd className={styles.metricHelper}>{metric.helper}</dd>}
+            </dl>
           ))}
         </div>
       </header>
@@ -145,7 +81,10 @@ export default async function Home() {
         <div className={styles.cardGrid}>
           {products.map((product: Product) => (
             <div key={product.title} className={styles.card}>
-              <h3>{product.title}</h3>
+              <div className={styles.cardHeader}>
+                <p className={styles.cardKicker}>Capability</p>
+                <h3>{product.title}</h3>
+              </div>
               <p>{product.detail}</p>
             </div>
           ))}
@@ -163,7 +102,7 @@ export default async function Home() {
         </div>
         <div className={styles.compliance}>
           <div className={styles.complianceList}>
-            {controls.map((item) => (
+            {controls.map((item: string) => (
               <div key={item} className={styles.checkItem}>
                 <span className={styles.checkBullet} aria-hidden="true" />
                 <span>{item}</span>
@@ -197,7 +136,7 @@ export default async function Home() {
           {steps.map((item: Step) => (
             <div key={item.label} className={styles.card}>
               <p className={styles.label}>{item.label}</p>
-              <p className={styles.title}>{item.title}</p>
+              <p className={styles.cardKicker}>{item.title}</p>
               <p>{item.copy}</p>
             </div>
           ))}
@@ -222,6 +161,6 @@ export default async function Home() {
           </Link>
         </div>
       </section>
-    </div>
+    </main>
   )
 }

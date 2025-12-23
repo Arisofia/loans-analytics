@@ -1,8 +1,7 @@
 # KPI Catalog
-
 Each KPI includes owner, agent, source, thresholds, drill-down, runbook, and alert channel.
 
-| KPI                 | Definition                                        | Owner            | Agent         | Source                   | Thresholds                          | Drill-down                                    | Runbook                         | Alert channel               |
+| KPI Name            | Definition                                        | Owner            | Agent         | Source                   | Thresholds                          | Drill-down                                    | Runbook                         | Alert channel               |
 | ------------------- | ------------------------------------------------- | ---------------- | ------------- | ------------------------ | ----------------------------------- | --------------------------------------------- | ------------------------------- | --------------------------- |
 | NPL% / PAR30/60/90  | Outstanding balance 30/60/90+ days past due       | Risk Ops         | RiskAnalyst   | Loans fact + aging view  | Amber >3%, Red >5%                  | Delinquent accounts table with cohort filters | `runbooks/kpi-breach.md`        | Slack `#risk-alerts`, email |
 | LGD / ECL           | Loss given default and expected credit loss       | Risk Modeling    | RiskAnalyst   | Models + write-off table | Red if variance >10% vs plan        | Model version comparison, segment loss curves | `runbooks/kpi-breach.md`        | Slack `#risk-alerts`, email |
@@ -20,7 +19,6 @@ Each KPI includes owner, agent, source, thresholds, drill-down, runbook, and ale
 - Every chart links to a drill-down table and its runbook. Next-best action is documented per KPI (collections playbook, credit tweak, data fix).
 - Owners approve KPI definition changes via PRs; PR template requires “KPI impact” and “data sources touched”.
 - Alerts route to the owner’s channel with SLA and runbook link; MTTR/MTTD tracked in postmortems.
-
 ## Continuous learning
 
 - For KPI breaches or model drift: open postmortem, capture cause/fix/prevention, add tests/alerts, and record MTTR/MTTD. Link postmortem to relevant runbook.

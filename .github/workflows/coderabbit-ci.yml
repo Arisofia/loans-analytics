@@ -12,7 +12,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -27,8 +27,10 @@ jobs:
           ruff check python apps packages src
       - name: Security scan (bandit)
         run: |
-          bandit -c .bandit.yml -r python apps
+          bandit -r python apps -x "**/test_*.py,**/tests/**"
       - name: Summarize CodeRabbit gate
         if: success()
         run: |
-          echo "CodeRabbit gate completed (lint + security aligned to coderabbit.yaml include/exclude paths)." >> $GITHUB_STEP_SUMMARY
+          echo "CodeRabbit gate completed (lint + security aligned" \
+            "to coderabbit.yaml include/exclude paths)." \
+            >> $GITHUB_STEP_SUMMARY

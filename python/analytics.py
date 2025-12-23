@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 from typing import Tuple, Dict
-from python.validation import safe_numeric
+from python.validation import safe_numeric, REQUIRED_ANALYTICS_COLUMNS, validate_dataframe
+from apps.analytics.src.enterprise_analytics_engine import LoanAnalyticsEngine
 
 # Alias for backward compatibility if needed
 standardize_numeric = safe_numeric
@@ -60,28 +61,21 @@ def portfolio_kpis(df: pd.DataFrame) -> Tuple[Dict[str, float], pd.DataFrame]:
     if enriched.empty:
         return metrics, enriched
 
-    required = ["loan_amount", "appraised_value", "borrower_income", "monthly_debt", "principal_balance", "interest_rate", "loan_status"]
-    missing = [c for c in required if c not in enriched.columns]
-    if missing:
-        raise ValueError(f"Missing required columns: {', '.join(missing)}")
+    validate_dataframe(enriched, required_columns=REQUIRED_ANALYTICS_COLUMNS)
 
-    # Enrich with safe division
-    enriched["ltv_ratio"] = np.where(enriched["appraised_value"] > 0, enriched["loan_amount"] / enriched["appraised_value"] * 100, 0.0)
-    enriched["dti_ratio"] = np.where(enriched["borrower_income"] > 0, enriched["monthly_debt"] / (enriched["borrower_income"] / 12) * 100, np.nan)
-
-    # Metrics
-    total_principal = enriched["principal_balance"].sum()
+    # Use Enterprise Engine for standardized calculation
+    engine = LoanAnalyticsEngine(enriched)
     
-    if total_principal > 0:
-        delinquent_principal = enriched.loc[
-            enriched["loan_status"].astype(str).str.lower() == "delinquent",
-            "principal_balance"
-        ].sum()
-        metrics["delinquency_rate"] = (delinquent_principal / total_principal)
-        metrics["portfolio_yield"] = (enriched["principal_balance"] * enriched["interest_rate"]).sum() / total_principal
+    # Enrich DataFrame with calculated ratios
+    enriched["ltv_ratio"] = engine.compute_loan_to_value()
+    enriched["dti_ratio"] = engine.compute_debt_to_income()
 
-    metrics["average_ltv"] = enriched["ltv_ratio"].mean()
-    metrics["average_dti"] = enriched["dti_ratio"].mean()
+    # Get standardized KPIs
+    results = engine.run_full_analysis()
+    metrics["delinquency_rate"] = results["portfolio_delinquency_rate_percent"]
+    metrics["portfolio_yield"] = results["portfolio_yield_percent"]
+    metrics["average_ltv"] = results["average_ltv_ratio_percent"]
+    metrics["average_dti"] = results["average_dti_ratio_percent"]
     
     # Fill NaNs in metrics
     for k in metrics:

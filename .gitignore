@@ -1,3 +1,8 @@
+# Gradle
+.gradle/
+build/
+**/.gradle/
+**/build/
 
 # OS
 .DS_Store
@@ -17,11 +22,11 @@ data_samples/*.csv
 logs/
 
 # Build / tooling
-.gradle/
 .next/
-out/
-build/
+.turbo/
 dist/
+coverage/
+out/
 
 # IDE
 .vscode/tasks.json
@@ -35,7 +40,20 @@ tailwind.config.js
 .coverage.*
 htmlcov/
 
+# Project-specific artifacts
+apps/.DS_Store
+
+# Local repository clones
+abaco-loans-analytics/
+data_samples/
+gemini-cli/
+
 # Environment variables
 .env
 .env.local
 .env.*.local
+.vercel/
+nvm/
+
+# Other
+failed_workflows.csv
