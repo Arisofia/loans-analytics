@@ -56,3 +56,73 @@ nvm/
 .env.local
 .env*.local
 .vercel/
+
+# Node / JavaScript
+node_modules/
+**/node_modules/
+.next/
+.turbo/
+dist/
+coverage/
+out/
+
+# Gradle
+.gradle/
+**/.gradle/
+build/
+**/build/
+
+# OS
+.DS_Store
+Thumbs.db
+apps/.DS_Store
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# IDE / Editor
+.vscode/
+.vscode/tasks.json
+.idea/
+*.vsix
+
+# Data outputs
+data/metrics/
+data_samples/
+data_samples/*.csv
+logs/
+logs/runs/*.json
+
+# Build / tooling artifacts
+clean_settings.json
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
+# Compiler traces & artifacts
+*.log
+tsc-trace.log
+**/tsc-trace.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env*.local
+
+# Vercel and Node
+.vercel/
+nvm/
+
+# Project-specific artifacts
+abaco-loans-analytics/
+gemini-cli/
+
+# Other
+failed_workflows.csv
+*.csv

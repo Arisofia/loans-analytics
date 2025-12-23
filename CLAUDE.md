@@ -53,8 +53,8 @@ pre-commit run eslint --all-files
 git commit --no-verify
 ```
 
-<<<<<<< HEAD
-## CI/CD Validation
+
+## CI/CD Validation & Local Debugging
 
 ### GitHub Actions Workflows
 
@@ -66,43 +66,6 @@ git commit --no-verify
   - `github-workflow-validation`: Checks for workflow issues
 
 **Run locally to debug CI failures:**
-
-=======
-### Linting & Type Checking (Web)
-```bash
-# Run all checks (lint, type-check, format)
-npm run check-all --prefix apps/web
-
-# Lint only (ESLint)
-npm run lint --prefix apps/web
-
-# Auto-fix linting issues
-npm run lint:fix --prefix apps/web
-
-# Type check (TypeScript compiler)
-npm run type-check --prefix apps/web
-
-# Format check (Prettier)
-npm run format:check --prefix apps/web
-
-# Auto-format code
-npm run format --prefix apps/web
-```
-
-### Building & Testing (Web)
-```bash
-# Build Next.js app
-npm run build --prefix apps/web
-
-# Run dev server
-npm run dev --prefix apps/web
-
-# Start production server
-npm start --prefix apps/web
-```
-
-### Data Pipeline
->>>>>>> fix/ci-workflow-codecov
 ```bash
 # Simulate CI lint/type checks
 npm run check-all --prefix apps/web
@@ -124,11 +87,6 @@ try {
 "
 ```
 
-## Common Issues & Solutions
-
-<<<<<<< HEAD
-### ESLint Errors
-=======
 ### Pipeline Jobs
 1. **preflight**: Environment checks (Python, pip, packages, repo sanity)
 2. **python**: Tests on 3.11 + 3.14, 85% coverage threshold, cached pip
@@ -139,7 +97,8 @@ try {
 7. **build**: Java/Gradle (stub, no source currently)
 8. **sonar**: SonarQube (main branch only, skips PRs)
 9. **provision-infra**: Infrastructure deployment (main branch only)
->>>>>>> fix/ci-workflow-codecov
+
+## Common Issues & Solutions
 
 #### Unused Variables
 ```bash
