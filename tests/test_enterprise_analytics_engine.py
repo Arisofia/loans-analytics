@@ -134,7 +134,7 @@ def test_portfolio_kpis_surfaces_weighted_metrics():
     )
 
 
-def test_portfolio_kpis_compute_expected_values():
+def test_portfolio_kpis_compute_expected_values_engine():
     engine = LoanAnalyticsEngine(sample_frame(), config=LoanAnalyticsConfig(currency="EUR"))
     kpis = engine.portfolio_kpis()
 
