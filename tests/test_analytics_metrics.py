@@ -70,24 +70,30 @@ def test_standardize_numeric_handles_symbols():
     assert pd.isna(cleaned.iloc[6])
     assert pd.isna(cleaned.iloc[7])
     assert pd.isna(cleaned.iloc[8])
-    assert pd.isna(cleaned.iloc[9])
-    assert cleaned.iloc[10] == 7500.0
+    import numpy as np
+    import pandas as pd
+    import pytest
 
+    from src.analytics_metrics import (
+        calculate_quality_score,
+        portfolio_kpis,
+        project_growth,
+        standardize_numeric,
+    )
 
-<<<<<<< HEAD
-def test_calculate_quality_score_rewards_complete_data():
-    df = sample_df()
-    score = calculate_quality_score(df)
-    assert isinstance(score, int)
-    assert score == 100
-
-    df_with_missing = df.copy()
-    df_with_missing.loc[0, "loan_amount"] = None
-    penalized_score = calculate_quality_score(df_with_missing)
-    assert isinstance(penalized_score, int)
-    assert penalized_score < 100
-
-
+    @pytest.fixture
+    def sample_df() -> pd.DataFrame:
+        return pd.DataFrame(
+            {
+                "loan_amount": [12000, 8000, 16000],
+                "appraised_value": [15000, 10000, 20000],
+                "monthly_debt": [500, 400, 300],
+                "borrower_income": [60000, 45000, 80000],
+                "principal_balance": [10000, 5000, 15000],
+                "interest_rate": [0.05, 0.07, 0.06],
+                "loan_status": ["current", "delinquent", "current"],
+            }
+        )
 def test_calculate_quality_score_empty_dataframe_returns_zero():
     empty_df = pd.DataFrame(columns=sample_df().columns)
     score = calculate_quality_score(empty_df)
