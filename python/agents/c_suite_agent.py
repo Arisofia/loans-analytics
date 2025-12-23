@@ -4,7 +4,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 from python.agents.orchestrator import AgentOrchestrator
 from python.agents.tools import run_sql_query
