@@ -33,6 +33,10 @@ jobs:
         with:
           name: meta-raw
           path: data/raw/meta/
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       - name: Load to warehouse
         run: |
           pip install pandas pyarrow pyyaml
