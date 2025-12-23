@@ -19,7 +19,9 @@ def _create_session() -> requests.Session:
     session.mount("https://", HTTPAdapter(max_retries=retries))
     return session
 
+
 SESSION = _create_session()
+
 
 def ensure_token():
     token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
