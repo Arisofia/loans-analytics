@@ -10,9 +10,6 @@ name: Export Growth Chart to Figma
       - 'python/analytics/project_growth.py'
       - 'python/theme.py'
       - 'docs/analytics/KPIs.md'
-      - 'python/analytics/project_growth.py'
-      - 'python/theme.py'
-      - 'docs/analytics/KPIs.md'
 
 jobs:
   export-growth-chart:
