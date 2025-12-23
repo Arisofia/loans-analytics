@@ -10,9 +10,9 @@ export function transformCampaign(raw: any) {
 
 export function transformInsight(raw: any) {
   return {
-    impressions: Number(raw.impressions),
-    clicks: Number(raw.clicks),
-    spend: Number(raw.spend),
+    impressions: Number(raw.impressions) || 0,
+    clicks: Number(raw.clicks) || 0,
+    spend: Number(raw.spend) || 0,
     actions: raw.actions || [],
   };
 }
