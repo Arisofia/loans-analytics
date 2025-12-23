@@ -1,0 +1,9 @@
+integration: perplexity_comet
+purpose: "Periodic public crawl of transparency.gob.sv, hacienda, BCR, official news sites to extract leads and public registries."
+mode: paid_or_dedicated
+recommended_plan: "Perplexity / Comet paid plan for structured page crawling and extraction"
+frequency: daily
+outputs:
+  - path: data/raw/public_crawl/
+    format: jsonl
+notes: "If Perplexity paid plan unavailable, fallback to custom headless extractor with polite rate limits."
