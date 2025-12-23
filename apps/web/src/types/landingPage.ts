@@ -2,10 +2,7 @@ import { z } from 'zod'
 
 const metricSchema = z.object({
   label: z.string(),
-<<<<<<< HEAD
-=======
   value: z.string(),
->>>>>>> origin/main
   helper: z.string().optional(),
 })
 

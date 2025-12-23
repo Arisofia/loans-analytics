@@ -30,11 +30,7 @@ export default function AccountForm({ user }: { user: User | null }) {
         setAvatarUrl(data.avatar_url)
       }
     } catch (_error) {
-<<<<<<< HEAD
-      alert('Error loading user data!');
-=======
       alert('Error loading user data!')
->>>>>>> origin/main
     } finally {
       setLoading(false)
     }
@@ -63,19 +59,11 @@ export default function AccountForm({ user }: { user: User | null }) {
         website,
         avatar_url,
         updated_at: new Date().toISOString(),
-<<<<<<< HEAD
-      });
-      if (error) throw error;
-      alert('Profile updated!');
-    } catch (_error) {
-      alert('Error updating the data!');
-=======
       })
       if (error) throw error
       alert('Profile updated!')
     } catch (_error) {
       alert('Error updating the data!')
->>>>>>> origin/main
     } finally {
       setLoading(false)
     }
