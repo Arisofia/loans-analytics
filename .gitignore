@@ -22,13 +22,18 @@ data_samples/*.csv
 logs/
 
 # Build / tooling
-.gradle/
 .next/
 .turbo/
+<<<<<<< HEAD
 out/
 build/
 dist/
 coverage/
+=======
+dist/
+coverage/
+out/
+>>>>>>> main
 
 # IDE
 .vscode/tasks.json
@@ -50,6 +55,7 @@ abaco-loans-analytics/
 data_samples/
 gemini-cli/
 
+<<<<<<< HEAD
 # Environment & platform
 nvm/
 .env
@@ -109,10 +115,13 @@ htmlcov/
 tsc-trace.log
 **/tsc-trace.log
 
+=======
+>>>>>>> main
 # Environment variables
 .env
 .env.local
 .env.*.local
+<<<<<<< HEAD
 .env*.local
 
 # Vercel and Node
@@ -126,3 +135,10 @@ gemini-cli/
 # Other
 failed_workflows.csv
 *.csv
+=======
+.vercel/
+nvm/
+
+# Other
+failed_workflows.csv
+>>>>>>> main
