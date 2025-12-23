@@ -1,7 +1,5 @@
+
 matplotlib
 seaborn
 pyyaml
-<<<<<<< HEAD
-=======
 pyarrow==14.0.1
->>>>>>> origin/main
