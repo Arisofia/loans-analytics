@@ -89,15 +89,7 @@ def test_validate_loans_invalid_numeric():
     df = pd.DataFrame({
         "period": ["2025Q4"],
         "measurement_date": ["2025-12-01"],
-        "total_receivable_usd": ["invalid"],
-        "total_eligible_usd": [1000.0],
-        "discounted_balance_usd": [900.0],
-        "cash_available_usd": [500.0],
-        "dpd_0_7_usd": [800.0],
-        "dpd_7_30_usd": [100.0],
-        "dpd_30_60_usd": [50.0],
-        "dpd_60_90_usd": [30.0],
-        "dpd_90_plus_usd": [20.0],
+        "total_receivable_usd": ["invalid"]
     })
     ingestion = CascadeIngestion()
     validated = ingestion.validate_loans(df)

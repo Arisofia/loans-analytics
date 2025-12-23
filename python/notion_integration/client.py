@@ -7,14 +7,14 @@ Production-ready module for secure Notion API access and data extraction.
 import os
 import requests
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 
 class NotionClient:
-    def __init__(self, token_env: Optional[str] = None, version_env: Optional[str] = None):
+    def __init__(self, token_env: str | None = None, version_env: str | None = None):
         token_key = token_env or "NOTION_META_TOKEN"
         version_key = version_env or "NOTION_VERSION"
         self.token = os.getenv(token_key)
@@ -31,8 +31,6 @@ class NotionClient:
         self.session.mount('https://', HTTPAdapter(max_retries=retries))
 
     def query_database(self, database_id: str) -> List[Dict[str, Any]]:
-        if not database_id or not isinstance(database_id, str):
-            raise ValueError("database_id must be a non-empty string")
         url = f"https://api.notion.com/v1/databases/{database_id}/query"
         headers = {
             "Authorization": f"Bearer {self.token}",
@@ -43,16 +41,11 @@ class NotionClient:
         has_more = True
         start_cursor = None
         while has_more:
-            body = {"start_cursor": start_cursor} if start_cursor else {}
-            try:
-                response = self.session.post(url, headers=headers, json=body, timeout=30)
-                response.raise_for_status()
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Failed to query database {database_id}: {e}")
-                raise
+            body: dict[str, object] = {"start_cursor": start_cursor} if start_cursor else {}
+            response = self.session.post(url, headers=headers, json=body, timeout=30)
+            response.raise_for_status()
             data = response.json()
             results.extend(data.get('results', []))
             has_more = data.get('has_more', False)
             start_cursor = data.get('next_cursor')
-        logger.info(f"Successfully retrieved {len(results)} results from database {database_id}")
         return results

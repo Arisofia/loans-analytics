@@ -27,9 +27,7 @@ export function parseLoanCsv(content: string): LoanRow[] {
     .split(/\r?\n/)
     .map((line) =>
       // Split by comma, ignoring commas inside double quotes
-      line
-        .split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
-        .map((val) => val.trim().replace(/^"|"$/g, '').replace(/""/g, '"'))
+      line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map((val) => val.trim().replace(/^"|"$/g, '').replace(/""/g, '"'))
     )
     .filter((parts) => parts.length >= 7)
 

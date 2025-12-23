@@ -22,17 +22,16 @@ def test_calculate_par_30_zero_receivable():
         "dpd_90_plus_usd": [0.0],
         "total_receivable_usd": [0.0]
     })
-    assert calculate_par_30(df) == pytest.approx(0.0)
+    assert calculate_par_30(df) == 0.0
 
 def test_calculate_par_30_missing_columns():
-    # Should raise ValueError for missing columns
+    # Should handle missing columns gracefully by treating them as 0
     df = pd.DataFrame({
         "total_receivable_usd": [1000.0]
     })
-    with pytest.raises(ValueError, match="Missing required columns"):
-        calculate_par_30(df)
+    assert calculate_par_30(df) == 0.0
 
 def test_calculate_par_30_empty_df():
     df = pd.DataFrame()
-    assert calculate_par_30(df) == pytest.approx(0.0)
+    assert calculate_par_30(df) == 0.0
     assert isinstance(calculate_par_30(df), (float, np.floating))

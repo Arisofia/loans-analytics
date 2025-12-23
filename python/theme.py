@@ -20,7 +20,7 @@ ABACO_THEME = {
         "accent_green": "#22c55e",
         "accent_blue": "#2563eb",
         "text_primary": "#f3f6fb",
-        "text_secondary": "#F3F6FBB8",  # rgba(243, 246, 251, 0.72)
+        "text_secondary": "rgba(243, 246, 251, 0.72)",
     },
     "gradients": {
         "title": "linear-gradient(81.74deg, #C1A6FF 5.91%, #5F4896 79.73%)",

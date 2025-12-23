@@ -23,15 +23,6 @@ function normalizeUserPath(userPath: string): string {
   if (path.isAbsolute(userPath)) {
     throw new Error('Absolute paths are not allowed')
   }
-  // Reject any path segments with .., /, \, or unsafe chars
-  if (userPath.includes('..') || userPath.includes('/') || userPath.includes('\\')) {
-    throw new Error('Path contains forbidden segments')
-  }
-  // Optionally, allowlist known safe paths (example: only allow certain folders/files)
-  // const allowed = ['apps/web', 'apps/analytics', 'infra/azure', 'docs', 'data_samples']
-  // if (!allowed.some((prefix) => userPath.startsWith(prefix))) {
-  //   throw new Error('Path not in allowlist')
-  // }
   const resolved = path.resolve(repoRoot, userPath)
   const relative = path.relative(repoRoot, resolved)
   if (relative === '..' || relative.startsWith('..' + path.sep)) {

@@ -1,1 +1,16 @@
-{"projectId":"prj_AAlTqxAh6QgnKzdeoMeulU0cHlBG","orgId":"team_95uB7AzisrUJsqmhBY1oM6H1","projectName":"web"}
+{
+  "projectId": "prj_AAlTqxAh6QgnKzdeoMeulU0cHlBG",
+  "orgId": "team_95uB7AzisrUJsqmhBY1oM6H1",
+  "projectName": "web",
+  "settings": {
+    "createdAt": 1765544986618,
+    "framework": "nextjs",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

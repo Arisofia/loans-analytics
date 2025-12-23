@@ -144,11 +144,6 @@ class DataTransformation:
             )
             raise ValueError(f"Transformation failed: missing required columns: {missing}")
 
-        # Check for non-numeric required columns and raise ValueError
-        for col in self.REQUIRED_INPUT_COLUMNS:
-            if col in df.columns and not pd.api.types.is_numeric_dtype(df[col]):
-                raise ValueError(f"Transformation failed: must be numeric: {col}")
-
         try:
             assert_dataframe_schema(
                 df,

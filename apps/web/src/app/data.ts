@@ -1,18 +1,4 @@
-export type Metric = Readonly<{
-  label: string
-  value: string
-}>
-
-export type Product = Readonly<{
-  title: string
-  detail: string
-}>
-
-export type Step = Readonly<{
-  label: string
-  title: string
-  copy: string
-}>
+import type { Metric, Product, Step } from '../types/landingPage'
 
 export const metrics: ReadonlyArray<Metric> = [
   { label: 'Approval uplift with governed risk', value: '+18%' },
@@ -23,18 +9,18 @@ export const metrics: ReadonlyArray<Metric> = [
 export const products: ReadonlyArray<Product> = [
   {
     title: 'Portfolio Intelligence',
-    detail:
-      'Daily performance lenses across cohorts, pricing, and liquidity to unlock resilient margins.',
+    detail: 'Daily performance lenses across cohorts, pricing, liquidity, and partner flows.',
+    kicker: 'Capital efficiency, reserve discipline, and covenant readiness.',
   },
   {
     title: 'Risk Orchestration',
-    detail:
-      'Dynamic policy controls, challenger experiments, and guardrails to defend credit quality.',
+    detail: 'Dynamic policy controls, challenger experiments, and guardrails to defend credit quality.',
+    kicker: 'Segregation of duties with sign-offs and immutable change logs.',
   },
   {
     title: 'Growth Enablement',
-    detail:
-      'Pre-approved journeys, partner-ready APIs, and data rooms that accelerate funding decisions.',
+    detail: 'Pre-approved journeys, partner-ready APIs, and data rooms that accelerate funding decisions.',
+    kicker: 'Unified evidence packs for investors, auditors, and strategic partners.',
   },
 ] as const satisfies readonly Product[]
 

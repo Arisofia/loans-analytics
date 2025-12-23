@@ -27,21 +27,19 @@ def project_growth(
     target_yield: float,
     current_loan_volume: float,
     target_loan_volume: float,
-    periods: int = 6,
-    start_date: pd.Timestamp = None
+    periods: int = 6
 ) -> pd.DataFrame:
     """
     Generate a linear projection for yield and loan volume growth.
     """
     if periods < 2:
         raise ValueError("periods must be at least 2")
-    if start_date is None:
-        start_date = pd.Timestamp.now()
-    dates = pd.date_range(start=start_date, periods=periods, freq="MS")
-
+        
+    dates = pd.date_range(start=pd.Timestamp.now(), periods=periods, freq="MS")
+    
     yields = np.linspace(current_yield, target_yield, periods)
     volumes = np.linspace(current_loan_volume, target_loan_volume, periods)
-
+    
     return pd.DataFrame({
         "date": dates,
         "yield": yields,
