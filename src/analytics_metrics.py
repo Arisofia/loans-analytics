@@ -1,11 +1,3 @@
-<<<<<<< HEAD
-=======
-"""Analytics utilities for portfolio KPIs and operational projections."""
-from __future__ import annotations
-
-from typing import Dict, Iterable, Tuple
-
->>>>>>> origin/main
 import numpy as np
 import pandas as pd
 
@@ -13,15 +5,6 @@ CURRENCY_SYMBOLS = r"[₡$€£¥₽%]"
 
 
 def standardize_numeric(series: pd.Series) -> pd.Series:
-<<<<<<< HEAD
-=======
-    """Normalize a Series that may contain currency symbols or commas.
-
-    Numeric dtypes are passed through untouched; otherwise we coerce string-like
-    inputs to floats while preserving ``NaN`` values for auditability.
-    """
-
->>>>>>> origin/main
     if pd.api.types.is_numeric_dtype(series):
         return series
 
@@ -35,91 +18,6 @@ def standardize_numeric(series: pd.Series) -> pd.Series:
     return pd.to_numeric(cleaned, errors="coerce")
 
 
-<<<<<<< HEAD
-=======
-def calculate_quality_score(df: pd.DataFrame) -> int:
-    """Calculate a 0-100 data quality score based on completeness."""
-
-    if df.empty:
-        return 0
-
-    completeness = 1 - df.isna().mean().mean()
-    return int(round(max(0.0, min(1.0, completeness)) * 100))
-
-
-def _assert_required_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
-    missing = set(required) - set(df.columns)
-    if missing:
-        raise ValueError(f"Missing required columns: {', '.join(sorted(missing))}")
-
-
-def portfolio_kpis(df: pd.DataFrame) -> Tuple[Dict[str, float], pd.DataFrame]:
-    """Compute delinquency, yield, and leverage KPIs for a loan portfolio."""
-
-    required = {
-        "loan_amount",
-        "appraised_value",
-        "borrower_income",
-        "monthly_debt",
-        "loan_status",
-        "principal_balance",
-        "interest_rate",
-    }
-
-    if df.empty:
-        empty_metrics: Dict[str, float] = {
-            "delinquency_rate": 0.0,
-            "portfolio_yield": 0.0,
-            "average_ltv": 0.0,
-            "average_dti": 0.0,
-        }
-        return empty_metrics, df
-
-    _assert_required_columns(df, required)
-
-    work = df.copy()
-    work["ltv_ratio"] = np.where(
-        work["appraised_value"] > 0,
-        (work["loan_amount"] / work["appraised_value"]) * 100,
-        np.nan,
-    )
-    monthly_income = work["borrower_income"] / 12
-    work["dti_ratio"] = np.where(
-        monthly_income > 0,
-        (work["monthly_debt"] / monthly_income) * 100,
-        np.nan,
-    )
-
-    delinquent_statuses = {
-        "30-59 days past due",
-        "60-89 days past due",
-        "90+ days past due",
-        "delinquent",
-    }
-    total_loans = len(work)
-    delinquent_count = (
-        work["loan_status"].astype(str).str.lower().isin(delinquent_statuses).sum()
-    )
-    delinquency_rate = (delinquent_count / total_loans) * 100 if total_loans else 0.0
-
-    total_principal = work["principal_balance"].sum()
-    weighted_interest = (work["interest_rate"] * work["principal_balance"]).sum()
-    portfolio_yield = (weighted_interest / total_principal) * 100 if total_principal else 0.0
-
-    metrics = {
-        "delinquency_rate": delinquency_rate,
-        "portfolio_yield": portfolio_yield,
-        "average_ltv": 0.0
-        if work.empty
-        else float(np.nan_to_num(work["ltv_ratio"].mean(), nan=0.0)),
-        "average_dti": 0.0
-        if work.empty
-        else float(np.nan_to_num(work["dti_ratio"].mean(), nan=0.0)),
-    }
-    return metrics, work
-
-
->>>>>>> origin/main
 def project_growth(
     current_yield: float,
     target_yield: float,
@@ -140,7 +38,6 @@ def project_growth(
             "loan_volume": np.linspace(current_loan_volume, target_loan_volume, periods),
         }
     )
-<<<<<<< HEAD
 
     total_principal = enriched["principal_balance"].sum()
     delinquent_principal = enriched.loc[
@@ -162,6 +59,3 @@ def project_growth(
         "average_dti": average_dti,
     }
     return metrics, enriched
-=======
-    return projection.assign(month=lambda d: d["month"].dt.strftime("%b %Y"))
->>>>>>> origin/main

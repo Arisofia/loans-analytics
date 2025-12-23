@@ -1,13 +1,6 @@
 import Link from 'next/link'
-<<<<<<< HEAD
 import styles from './page.module.css'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
-=======
-
-import { controls, metrics, products, steps } from './data'
-import styles from './page.module.css'
-import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
->>>>>>> origin/main
 import { logLandingPageDiagnostic } from '../lib/landingPageDiagnostics'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import {
@@ -70,10 +63,6 @@ async function getData(): Promise<LandingPageData> {
     supabaseConfigured: true,
     payload: parsed.data,
   })
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/main
   return parsed.data
 }
 
@@ -96,7 +85,6 @@ export default async function Home() {
           <Link href="#products" className={styles.secondaryButton}>
             Explore products
           </Link>
-<<<<<<< HEAD
         </div>
         <div className={styles.metrics}>
           {metrics?.map((metric: Metric) => (
@@ -104,18 +92,6 @@ export default async function Home() {
               <dt className={styles.metricLabel}>{metric.label}</dt>
               <dd className={styles.metricValue}>{metric.value}</dd>
             </dl>
-=======
-          <Link href="/settings" className={styles.secondaryButton}>
-            Open settings
-          </Link>
-        </div>
-        <div className={styles.metrics}>
-          {metrics.map((metric) => (
-            <div key={metric.label} className={styles.metricCard}>
-              <span className={styles.metricValue}>{metric.value}</span>
-              <span className={styles.metricLabel}>{metric.label}</span>
-            </div>
->>>>>>> origin/main
           ))}
         </div>
       </header>
@@ -150,11 +126,7 @@ export default async function Home() {
         </div>
         <div className={styles.compliance}>
           <div className={styles.complianceList}>
-<<<<<<< HEAD
             {controls?.map((item: string) => (
-=======
-            {controls.map((item) => (
->>>>>>> origin/main
               <div key={item} className={styles.checkItem}>
                 <span className={styles.checkBullet} aria-hidden="true" />
                 <span>{item}</span>
@@ -196,13 +168,6 @@ export default async function Home() {
           ))}
         </div>
       </section>
-<<<<<<< HEAD
-=======
-
-      <section className={styles.section} id="analytics">
-        <AnalyticsDashboard />
-      </section>
->>>>>>> origin/main
     </div>
   )
 }
