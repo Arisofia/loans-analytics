@@ -140,8 +140,7 @@ jobs:
           path: apps/coverage-python.xml
 
   dotnet:
-    if: ${{ hashFiles('**/*.csproj', '**/*.sln', '**/packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != '' }}
-    runs-on: ubuntu-latest
+    if: hashFiles('**/*.csproj', '**/*.sln', '**/*packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != ''    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
