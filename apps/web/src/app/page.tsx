@@ -18,7 +18,7 @@ export const metadata = {
 
 export default function Home() {
   return (
-    <main className={styles.page} id="main-content">
+    <main className={styles.page} id="main-content" role="main" tabIndex={-1}>
       <nav className={styles.nav} aria-label="Primary">
         <div className={styles.brand}>Abaco Loans Analytics</div>
         <div className={styles.navLinks}>

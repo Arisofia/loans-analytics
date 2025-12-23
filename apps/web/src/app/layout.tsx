@@ -6,6 +6,7 @@ import { Inter } from 'next/font/google'
 
 import './globals.css'
 import { siteMetadata } from './seo'
+import { SkipLink } from './skip-link'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -15,9 +16,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={inter.className}>
       <body>
-        <a className="skip-link" href="#main-content">
-          Skip to main content
-        </a>
+        <SkipLink />
         {children}
         <Analytics />
         <SpeedInsights />
