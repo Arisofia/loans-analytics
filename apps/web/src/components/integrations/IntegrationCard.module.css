@@ -41,12 +41,12 @@
 
 .titleBlock h3 {
   margin: 0;
-  color: var(--text-strong);
+  color: #f8fafc;
   font-size: 18px;
 }
 
 .meta {
-  color: var(--text-strong);
+  color: #cbd5e1;
   font-size: 14px;
 }
 
@@ -72,7 +72,7 @@
   border: none;
   border-radius: 10px;
   padding: 10px 12px;
-  color: var(--button-text, #fff);
+  color: #0b1224;
   font-weight: 700;
   cursor: pointer;
   background: linear-gradient(135deg, #22d3ee, #7c3aed);
@@ -88,7 +88,7 @@
 
 .secondary {
   background: rgba(226, 232, 240, 0.08);
-  color: var(--text-strong);
+  color: #e2e8f0;
   border: 1px solid rgba(226, 232, 240, 0.16);
 }
 
@@ -105,7 +105,7 @@
 }
 
 .inputField label {
-  color: var(--text-strong);
+  color: #cbd5e1;
   font-size: 14px;
 }
 
@@ -114,12 +114,12 @@
   border-radius: 10px;
   border: 1px solid rgba(226, 232, 240, 0.16);
   background: rgba(15, 23, 42, 0.6);
-  color: var(--text-strong);
+  color: #e2e8f0;
 }
 
 .log {
   font-size: 13px;
-  color: var(--text-strong);
+  color: #94a3b8;
   background: rgba(15, 23, 42, 0.5);
   border-radius: 12px;
   padding: 12px;

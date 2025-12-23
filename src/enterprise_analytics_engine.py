@@ -1,11 +1,12 @@
+"""Portfolio analytics utilities for credit KPIs and risk metrics."""
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Iterable, List
+from typing import Iterable, Tuple
 
 
-@dataclass
+@dataclass(frozen=True)
 class LoanPosition:
     principal: float
     annual_interest_rate: float
@@ -14,71 +15,105 @@ class LoanPosition:
 
     def __post_init__(self) -> None:
         if self.principal <= 0:
-            raise ValueError("principal must be positive")
-        if self.annual_interest_rate <= 0:
-            raise ValueError("annual_interest_rate must be positive")
+            raise ValueError("Principal must be greater than zero.")
+        if self.annual_interest_rate < 0:
+            raise ValueError("Annual interest rate cannot be negative.")
         if self.term_months <= 0:
-            raise ValueError("term_months must be positive")
-        if not (0.0 <= self.default_probability <= 1.0):
-            raise ValueError("default_probability must be between 0 and 1")
+            raise ValueError("Term months must be greater than zero.")
+        if not 0 <= self.default_probability <= 1:
+            raise ValueError("Default probability must be between 0 and 1.")
 
 
-@dataclass
+@dataclass(frozen=True)
 class PortfolioKPIs:
     exposure: float
     weighted_rate: float
     weighted_term_months: float
     weighted_default_probability: float
-    expected_monthly_interest: float
     expected_monthly_payment: float
+    expected_monthly_interest: float
     expected_loss: float
     expected_loss_rate: float
     interest_yield_rate: float
     risk_adjusted_return: float
 
 
+def _monthly_interest_rate(loan: LoanPosition) -> float:
+    """Return the monthly interest rate as a decimal."""
+
+    return loan.annual_interest_rate / 12
+
+
 def calculate_monthly_payment(loan: LoanPosition) -> float:
-    monthly_rate = loan.annual_interest_rate / 12
-    return (monthly_rate * loan.principal) / (1 - math.pow(1 + monthly_rate, -loan.term_months))
+    """Return the amortized monthly payment for a fixed-rate loan."""
+    monthly_rate = _monthly_interest_rate(loan)
+    if math.isclose(monthly_rate, 0.0, abs_tol=1e-12):
+        return loan.principal / loan.term_months
+
+    numerator = monthly_rate * loan.principal
+    denominator = 1 - math.pow(1 + monthly_rate, -loan.term_months)
+    return numerator / denominator
 
 
 def expected_loss(loan: LoanPosition, loss_given_default: float) -> float:
-    if not (0.0 <= loss_given_default <= 1.0):
-        raise ValueError("loss_given_default must be between 0 and 1")
-    return loan.principal * loan.default_probability * loss_given_default
+    """Compute expected loss for a single loan position."""
+    if not 0 <= loss_given_default <= 1:
+        raise ValueError("Loss given default must be between 0 and 1.")
+
+    exposure_at_default = loan.principal
+    return exposure_at_default * loan.default_probability * loss_given_default
 
 
-def portfolio_interest_and_risk(loans: Iterable[LoanPosition], loss_given_default: float) -> tuple[float, float]:
-    monthly_interest = sum(loan.principal * (loan.annual_interest_rate / 12) for loan in loans)
-    portfolio_loss = sum(expected_loss(loan, loss_given_default) for loan in loans)
-    return monthly_interest, portfolio_loss
+def portfolio_interest_and_risk(
+    loans: Iterable[LoanPosition], loss_given_default: float
+) -> Tuple[float, float]:
+    """Aggregate expected first-month interest and expected loss across a portfolio."""
+    expected_interest = 0.0
+    aggregated_loss = 0.0
+
+    for loan in loans:
+        expected_interest += loan.principal * _monthly_interest_rate(loan)
+        aggregated_loss += expected_loss(loan, loss_given_default)
+
+    return expected_interest, aggregated_loss
 
 
-def calculate_portfolio_kpis(loans: List[LoanPosition], loss_given_default: float) -> PortfolioKPIs:
-    exposure = sum(loan.principal for loan in loans)
+def calculate_portfolio_kpis(
+    loans: Iterable[LoanPosition], loss_given_default: float
+) -> PortfolioKPIs:
+    """Compute weighted averages and expected cash flows for a loan portfolio."""
+    exposure = 0.0
+    weighted_rate = 0.0
+    weighted_term = 0.0
+    weighted_default_probability = 0.0
+    expected_payment = 0.0
+    expected_interest = 0.0
+    aggregated_loss = 0.0
+
+    for loan in loans:
+        exposure += loan.principal
+        weighted_rate += loan.annual_interest_rate * loan.principal
+        weighted_term += loan.term_months * loan.principal
+        weighted_default_probability += loan.default_probability * loan.principal
+        expected_payment += calculate_monthly_payment(loan)
+        expected_interest += loan.principal * _monthly_interest_rate(loan)
+        aggregated_loss += expected_loss(loan, loss_given_default)
+
     if exposure == 0:
         raise ValueError("Total exposure cannot be zero")
 
-    weighted_rate = sum(loan.annual_interest_rate * loan.principal for loan in loans) / exposure
-    weighted_term = sum(loan.term_months * loan.principal for loan in loans) / exposure
-    weighted_default_probability = (
-        sum(loan.default_probability * loan.principal for loan in loans) / exposure
-    )
-
-    expected_monthly_interest, expected_loss_value = portfolio_interest_and_risk(loans, loss_given_default)
-    expected_monthly_payment = sum(calculate_monthly_payment(loan) for loan in loans)
-    expected_loss_rate = expected_loss_value / exposure
-    interest_yield_rate = expected_monthly_interest / exposure
-    risk_adjusted_return = (expected_monthly_interest - expected_loss_value) / exposure
+    expected_loss_rate = aggregated_loss / exposure
+    interest_yield_rate = expected_interest / exposure
+    risk_adjusted_return = (expected_interest - aggregated_loss) / exposure
 
     return PortfolioKPIs(
         exposure=exposure,
-        weighted_rate=weighted_rate,
-        weighted_term_months=weighted_term,
-        weighted_default_probability=weighted_default_probability,
-        expected_monthly_interest=expected_monthly_interest,
-        expected_monthly_payment=expected_monthly_payment,
-        expected_loss=expected_loss_value,
+        weighted_rate=weighted_rate / exposure,
+        weighted_term_months=weighted_term / exposure,
+        weighted_default_probability=weighted_default_probability / exposure,
+        expected_monthly_payment=expected_payment,
+        expected_monthly_interest=expected_interest,
+        expected_loss=aggregated_loss,
         expected_loss_rate=expected_loss_rate,
         interest_yield_rate=interest_yield_rate,
         risk_adjusted_return=risk_adjusted_return,

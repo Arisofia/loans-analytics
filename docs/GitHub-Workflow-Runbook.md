@@ -64,6 +64,15 @@ Record results in the PR description when gates cannot run (e.g., environment li
 3. Require at least one approving review with write access before merging.
 4. Resolve all comments and failing checks before merge; document exceptions with approvals.
 
+### Automated PR health checks and merges
+
+- Use `scripts/pr_status.py` to review open pull requests and optionally merge clean branches with audit-friendly metadata.
+- Examples:
+  - Report on every open PR in the default repo: `python scripts/pr_status.py --all`
+  - Attempt squash merges for every ready PR (requires `GH_TOKEN`/`GITHUB_TOKEN`): `python scripts/pr_status.py --all --merge --merge-method squash`
+  - Validate a single PR before merging: `python scripts/pr_status.py <pr_number> --merge`
+- The script blocks merges for drafts, dirty mergeable states, or failing checks/statuses and surfaces blockers inline.
+
 ## Merge standards
 
 - Prefer **squash and merge** for traceability; ensure the squash message references the ticket and key impacts.

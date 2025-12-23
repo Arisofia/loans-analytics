@@ -54,11 +54,10 @@ class CascadeIngestion:
 
     def _update_summary(self, count: int, filename: Optional[str] = None) -> None:
         self._summary.setdefault("rows_ingested", 0)
-        self._summary["rows_ingested"] += count
+        self._summary["rows_ingested"] = count
         if filename:
             self._summary.setdefault("files", {})
-            self._summary["files"].setdefault(filename, 0)
-            self._summary["files"][filename] += count
+            self._summary["files"][filename] = count
 
     def _record_raw_file(
         self,
@@ -180,12 +179,23 @@ class CascadeIngestion:
         self._log_step("ingestion:inmemory", "Starting in-memory ingestion", rows=len(df))
         self._update_summary(len(df))
         df = df.copy()
-        assert_dataframe_schema(
-            df,
-            required_columns=NUMERIC_COLUMNS,
-            numeric_columns=NUMERIC_COLUMNS,
-            stage="ingestion_inmemory",
-        )
+        try:
+            assert_dataframe_schema(
+                df,
+                required_columns=NUMERIC_COLUMNS,
+                numeric_columns=NUMERIC_COLUMNS,
+                stage="ingestion_inmemory",
+            )
+        except (ValueError, TypeError) as error:
+            message = str(error)
+            self.record_error("ingestion", message)
+            self._log_step(
+                "ingestion:error",
+                "In-memory ingestion validation failed",
+                error=message,
+                rows=len(df),
+            )
+            return df
         df["_ingest_run_id"] = self.run_id
         df["_ingest_timestamp"] = self.timestamp
         self._record_raw_file(
@@ -197,93 +207,95 @@ class CascadeIngestion:
     def validate_loans(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Validate loan DataFrame and add a '_validation_passed' column.
-        Note: This mutates the input DataFrame by adding a column. Callers should copy if mutation is not desired.
+    
+        WARNING: This function mutates the input DataFrame by adding the '_validation_passed' column.
+        If you do not want the input DataFrame to be changed, pass a copy (e.g., df.copy()) instead.
+    
         Enforces:
-          - Numeric columns are present and non-negative
-          - Percentage columns are between 0 and 100
-          - Date columns are valid ISO 8601
-          - Monotonicity for count/total/cumulative columns
-          - No nulls in required/numeric columns
+            - Numeric columns are present and non-negative
+            - Percentage columns are between 0 and 100
+            - Date columns are valid ISO 8601
+            - Monotonicity for count/total/cumulative columns
+            - No nulls in required/numeric columns
         """
         from python.validation import (validate_iso8601_dates,
                                        validate_monotonic_increasing,
                                        validate_no_nulls,
                                        validate_numeric_bounds,
                                        validate_percentage_bounds)
-
+    
         if df.empty:
             self._log_step("validation:skip", "Skipping validation for empty DataFrame")
             return df
-
+    
         # Ensure chronological order for monotonicity checks
-        if "measurement_date" in df.columns:
-            df = df.sort_values("measurement_date", ascending=True).reset_index(drop=True)
-
-        df["_validation_passed"] = True
-        self._log_step("validation:start", "Validating loan records", rows=len(df))
+        working_df = df.copy()
+        if "measurement_date" in working_df.columns:
+            working_df = working_df.sort_values("measurement_date", ascending=True).reset_index(drop=True)
+    
+        working_df["_validation_passed"] = True
+        self._log_step("validation:start", "Validating loan records", rows=len(working_df))
         try:
             assert_dataframe_schema(
-                df,
+                working_df,
                 required_columns=NUMERIC_COLUMNS,
                 numeric_columns=NUMERIC_COLUMNS,
                 stage="validation",
             )
-            present_cols = [col for col in NUMERIC_COLUMNS if col in df.columns]
-            missing_cols = [col for col in NUMERIC_COLUMNS if col not in df.columns]
+            present_cols = [col for col in NUMERIC_COLUMNS if col in working_df.columns]
+            missing_cols = [col for col in NUMERIC_COLUMNS if col not in working_df.columns]
             if present_cols:
-                validate_dataframe(df, numeric_columns=present_cols)
+                validate_dataframe(working_df, numeric_columns=present_cols)
             if missing_cols:
-                validate_dataframe(df, required_columns=NUMERIC_COLUMNS)
-            numeric_results = validate_numeric_bounds(df, present_cols)
+                validate_dataframe(working_df, required_columns=NUMERIC_COLUMNS)
+            numeric_results = validate_numeric_bounds(working_df, present_cols)
             for col, ok in numeric_results.items():
                 if not ok:
                     raise ValueError(f"Column failed positivity check: {col}")
-            pct_results = validate_percentage_bounds(df)
+            pct_results = validate_percentage_bounds(working_df)
             for col, ok in pct_results.items():
                 if not ok:
                     raise ValueError(f"Column failed percentage bounds check: {col}")
-            iso_results = validate_iso8601_dates(df)
+            iso_results = validate_iso8601_dates(working_df)
             for col, ok in iso_results.items():
                 if not ok:
                     raise ValueError(f"Column failed ISO 8601 date check: {col}")
-            mono_results = validate_monotonic_increasing(df)
+            mono_results = validate_monotonic_increasing(working_df)
             for col, ok in mono_results.items():
                 if not ok:
                     raise ValueError(f"Column failed monotonicity check: {col}")
-            null_results = validate_no_nulls(df)
+            null_results = validate_no_nulls(working_df)
             for col, ok in null_results.items():
                 if not ok:
                     raise ValueError(f"Column failed null check: {col}")
-            self._log_step("validation:success", "Validation succeeded", rows=len(df))
-        except AssertionError as error:
-            message = str(error)
-            self.record_error("validation_schema_assertion", message)
-            df["_validation_passed"] = False
-            self._log_step(
-                "validation:assertion_failed",
-                "Validation schema assertion failed",
-                error=message,
-                rows=len(df),
-            )
-            return df
-        except ValueError as error:
+            self._log_step("validation:success", "Validation succeeded", rows=len(working_df))
+        except (AssertionError, ValueError, TypeError) as error:
             message = str(error)
             found_col = None
             for col in NUMERIC_COLUMNS:
                 if col in message:
                     found_col = col
                     break
-            if found_col:
+            # Always include the column name in the error message if found
+            if found_col and f"'{found_col}'" not in message:
                 message = f"Validation error in column '{found_col}': {message}"
-            else:
+            elif not found_col:
                 for col in NUMERIC_COLUMNS:
-                    if col in df.columns and not pd.api.types.is_numeric_dtype(df[col]):
+                    if col in working_df.columns and not pd.api.types.is_numeric_dtype(working_df[col]):
                         message = f"Validation error in column '{col}': {message}"
                         break
-            self.record_error("validation", message)
-            df["_validation_passed"] = False
-            self._log_step("validation:failure", "Validation failed", error=message, rows=len(df))
-        return df
+            # Use correct error stage for schema/type errors
+            if "schema" in message or "must be numeric" in message or "non-numeric" in message or "missing required" in message:
+                self.record_error("validation_schema_assertion", message)
+            else:
+                self.record_error("validation", message)
+            working_df["_validation_passed"] = False
+            self._log_step("validation:failure", "Validation failed", error=message, rows=len(working_df))
+            # Always set _validation_passed to False on error
+            working_df["_validation_passed"] = False
+            # If exception is raised, still return mutated DataFrame if possible
+            return working_df
+        return working_df
 
     def get_ingest_summary(self) -> Dict[str, Any]:
         summary = self._summary.copy()

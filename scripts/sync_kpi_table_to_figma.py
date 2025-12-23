@@ -1,7 +1,8 @@
-import requests
-import os
 import json
+import os
 from datetime import datetime
+
+import requests
 
 # Figma API settings
 FIGMA_TOKEN = os.getenv("FIGMA_TOKEN")
@@ -23,27 +24,33 @@ payload = {
     "characters": csv_content,
     "style": {
         "fontFamily": "Roboto",
-        "fontSize": 12
-    }
+        "fontSize": 12,
+    },
 }
 
 # Find the node ID for the KPI Table page
 file_url = f"{BASE_URL}/files/{FIGMA_FILE_KEY}"
-resp = requests.get(file_url, headers=HEADERS)
-resp.raise_for_status()
-file_data = resp.json()
+try:
+    resp = requests.get(file_url, headers=HEADERS, timeout=30)
+    resp.raise_for_status()
+    file_data = resp.json()
+except (requests.exceptions.Timeout, requests.exceptions.RequestException) as exc:
+    raise SystemExit(f"Error fetching Figma file metadata: {exc}") from exc
 
 page_node_id = None
-for child in file_data["document"]["children"]:
-    if child["name"] == FIGMA_PAGE_NAME:
-        page_node_id = child["id"]
+for child in file_data.get("document", {}).get("children", []):
+    if child.get("name") == FIGMA_PAGE_NAME:
+        page_node_id = child.get("id")
         break
+
 if not page_node_id:
     raise ValueError(f"Page '{FIGMA_PAGE_NAME}' not found in Figma file.")
 
 # Update the text node (requires Figma plugin or automation)
-# This is a placeholder for actual Figma API update logic
 update_url = f"{BASE_URL}/files/{FIGMA_FILE_KEY}/nodes?ids={page_node_id}"
-update_resp = requests.put(update_url, headers=HEADERS, data=json.dumps(payload))
-update_resp.raise_for_status()
-print(f"KPI table synced to Figma at {datetime.now().isoformat()}")
+try:
+    update_resp = requests.put(update_url, headers=HEADERS, data=json.dumps(payload), timeout=30)
+    update_resp.raise_for_status()
+    print(f"KPI table synced to Figma at {datetime.now().isoformat()}")
+except (requests.exceptions.Timeout, requests.exceptions.RequestException) as exc:
+    raise SystemExit(f"Error updating Figma node: {exc}") from exc

@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle (clean, Java 21)
+        run: ./gradlew clean build --no-daemon
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=python
+      - name: Fail if coverage below 90%
+        run: |
+          coverage report --fail-under=90
+
+  sonar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Skip Sonar on PRs (no cloud project yet)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: echo "Skipping SonarQube scan on pull_request; cloud project not provisioned."
+      - name: Set up JDK 21
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Build with Gradle
+        if: ${{ github.event_name != 'pull_request' }}
+        run: ./gradlew clean build --no-daemon
+      - name: SonarQube Scan
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: SonarSource/sonarcloud-github-action@e44258b109568baa0df60ed515909fc6c72cba92
+        with:
+          projectBaseDir: .
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+      - name: Install
+        run: |
+          cd apps/web
+          npm install
+      - name: Lint
+        run: |
+          cd apps/web
+          npm run lint
+      - name: Build
+        run: |
+          cd apps/web
+          npm run build
+      - name: Type-check
+        run: |
+          cd apps/web
+          npm run type-check
+
+  analytics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          cd apps/analytics
+          pip install -r requirements.txt
+      - name: Validate
+        run: |
+          python -c "import pandas as pd; print('Environment ready. Pandas version:', pd.__version__)"
+      - name: Tests and coverage
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          cd apps/analytics
+          pytest --cov=. --cov-report=xml:../coverage-python.xml
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: analytics-coverage
+          path: apps/coverage-python.xml
+
+  dotnet:
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('**/*.csproj', '**/*.sln', '**/packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+      - name: Test
+        run: dotnet test --configuration Release --no-restore
+

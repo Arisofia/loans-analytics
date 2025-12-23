@@ -239,6 +239,16 @@ def write_outputs(
     return processed_outputs
 
 
+def validate_environment() -> None:
+    """Validate required environment variables are set."""
+    required_vars = []
+    if not DEFAULT_AZURE_CONNECTION_STRING and not DEFAULT_AZURE_ACCOUNT_URL:
+        required_vars.append("PIPELINE_AZURE_CONNECTION_STRING or PIPELINE_AZURE_ACCOUNT_URL")
+    if DEFAULT_AZURE_CONTAINER:
+        if not (DEFAULT_AZURE_CONNECTION_STRING or DEFAULT_AZURE_ACCOUNT_URL):
+            raise ValueError(f"Missing required environment variables: {', '.join(required_vars)}")
+
+
 def run_pipeline(
     input_file: str = DEFAULT_INPUT,
     user: str | None = None,
@@ -254,6 +264,9 @@ def run_pipeline(
     azure_connection_string = azure_connection_string or DEFAULT_AZURE_CONNECTION_STRING
     azure_account_url = azure_account_url or DEFAULT_AZURE_ACCOUNT_URL
     azure_blob_prefix = azure_blob_prefix or DEFAULT_AZURE_BLOB_PREFIX
+    
+    if azure_container and not (azure_connection_string or azure_account_url):
+        raise ValueError("Azure export requires PIPELINE_AZURE_CONNECTION_STRING or PIPELINE_AZURE_ACCOUNT_URL")
 
     input_path = Path(input_file)
     data_dir = str(input_path.parent or ".")

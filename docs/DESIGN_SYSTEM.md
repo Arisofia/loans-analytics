@@ -79,28 +79,28 @@ _Última actualización: Enero 2025_
 ```javascript
 // Jerarquía de texto
 const textColors = {
-  primary: 'text-white', // Títulos principales, números importantes
-  secondary: 'text-gray-300', // Body text, descripciones
-  tertiary: 'text-gray-400', // Subtítulos, labels
-  muted: 'text-gray-500', // Footer, notas, timestamps
+  primary: "text-white", // Títulos principales, números importantes
+  secondary: "text-gray-300", // Body text, descripciones
+  tertiary: "text-gray-400", // Subtítulos, labels
+  muted: "text-gray-500", // Footer, notas, timestamps
 
   // Highlights semánticos
-  success: 'text-green-400', // Métricas positivas, objetivos cumplidos
-  warning: 'text-yellow-300', // Alertas, atención
-  error: 'text-red-400', // Errores, riesgos
-  info: 'text-blue-400', // Información, datos neutrales
-  accent: 'text-purple-400', // KPIs destacados, números clave
-}
+  success: "text-green-400", // Métricas positivas, objetivos cumplidos
+  warning: "text-yellow-300", // Alertas, atención
+  error: "text-red-400", // Errores, riesgos
+  info: "text-blue-400", // Información, datos neutrales
+  accent: "text-purple-400", // KPIs destacados, números clave
+};
 ```
 
 ### Bordes y Divisores
 
 ```javascript
 // Bordes con transparencia
-border - purple - 500 / 20 // Sutil, para cards normales
-border - purple - 400 / 30 // Más visible, para highlights
-border - white / 10 // Divisores internos muy sutiles
-border - white / 20 // Divisores más visibles
+border - purple - 500 / 20; // Sutil, para cards normales
+border - purple - 400 / 30; // Más visible, para highlights
+border - white / 10; // Divisores internos muy sutiles
+border - white / 20; // Divisores más visibles
 ```
 
 ---
@@ -112,17 +112,17 @@ border - white / 20 // Divisores más visibles
 ```javascript
 // Fuentes principales (Google Fonts)
 const fonts = {
-  titles: 'Lato', // Títulos, headers, labels
-  numbers: 'Poppins', // Números, KPIs, datos
-  body: 'Lato', // Texto corrido, descripciones
-}
+  titles: "Lato", // Títulos, headers, labels
+  numbers: "Poppins", // Números, KPIs, datos
+  body: "Lato", // Texto corrido, descripciones
+};
 
 // Pesos de fuente
 const fontWeights = {
   regular: 400,
   semibold: 600,
   bold: 700,
-}
+};
 ```
 
 ### Escala Tipográfica
@@ -142,17 +142,17 @@ const fontWeights = {
 // Ejemplo de jerarquía en un KPI card
 <div>
   <h3 className="text-xs font-semibold text-purple-300">
-    {' '}
+    {" "}
     {/* Label */}
     AUM (Live Portfolio)
   </h3>
   <p className="text-4xl font-bold text-white">
-    {' '}
+    {" "}
     {/* Número principal */}
     $7.28M
   </p>
   <p className="text-[10px] text-gray-400">
-    {' '}
+    {" "}
     {/* Contexto */}
     As of Oct-2025
   </p>
@@ -164,10 +164,10 @@ const fontWeights = {
 ```javascript
 // Interlineado por tipo de texto
 const lineHeight = {
-  tight: 'leading-tight', // Títulos grandes (1.25)
-  normal: 'leading-normal', // Body text (1.5)
-  relaxed: 'leading-relaxed', // Texto largo (1.625)
-}
+  tight: "leading-tight", // Títulos grandes (1.25)
+  normal: "leading-normal", // Body text (1.5)
+  relaxed: "leading-relaxed", // Texto largo (1.625)
+};
 ```
 
 ---
@@ -195,36 +195,36 @@ const lineHeight = {
 ```jsx
 // Card normal (información general)
 className =
-  'bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-purple-500/20'
+  "bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-purple-500/20";
 
 // Card destacada (KPIs importantes)
 className =
-  'bg-gradient-to-r from-purple-900/30 to-blue-900/30 backdrop-blur-sm rounded-lg p-3 border border-purple-400/30'
+  "bg-gradient-to-r from-purple-900/30 to-blue-900/30 backdrop-blur-sm rounded-lg p-3 border border-purple-400/30";
 
 // Card de alerta/warning
 className =
-  'bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-yellow-500/20'
+  "bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-yellow-500/20";
 
 // Card de riesgo
 className =
-  'bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-red-500/20'
+  "bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-red-500/20";
 
 // Card de éxito
 className =
-  'bg-gradient-to-r from-green-900/30 to-blue-900/30 backdrop-blur-sm rounded-lg p-3 border border-green-400/30'
+  "bg-gradient-to-r from-green-900/30 to-blue-900/30 backdrop-blur-sm rounded-lg p-3 border border-green-400/30";
 ```
 
 ### Gradientes para Highlights
 
 ```jsx
 // Gradiente purple-blue (más común)
-className = 'bg-gradient-to-r from-purple-900/30 to-blue-900/30'
+className = "bg-gradient-to-r from-purple-900/30 to-blue-900/30";
 
 // Gradiente green-blue (success)
-className = 'bg-gradient-to-r from-green-900/30 to-blue-900/30'
+className = "bg-gradient-to-r from-green-900/30 to-blue-900/30";
 
 // Gradiente completo de fondo
-className = 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900'
+className = "bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900";
 ```
 
 ### Sombras y Profundidad
@@ -256,7 +256,7 @@ className = 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900'
       • Métrica: <span className="text-green-400 font-bold">Valor</span>
     </p>
     <p>
-      • Otra métrica:{' '}
+      • Otra métrica:{" "}
       <span className="text-blue-400 font-bold">Otro valor</span>
     </p>
   </div>
@@ -275,8 +275,8 @@ className = 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900'
     Título destacado
   </h3>
   <p className="text-[10px] text-gray-300 leading-relaxed">
-    Texto importante con{' '}
-    <span className="text-green-400 font-bold">números</span>y{' '}
+    Texto importante con{" "}
+    <span className="text-green-400 font-bold">números</span>y{" "}
     <span className="text-purple-400">highlights</span>.
   </p>
 </div>
@@ -294,7 +294,7 @@ className = 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900'
     • Item 2: <span className="text-green-400">métrica positiva</span>
   </p>
   <p>
-    • Item 3:{' '}
+    • Item 3:{" "}
     <span className="text-blue-400 font-semibold">dato importante</span>
   </p>
 </div>
@@ -399,8 +399,8 @@ className = 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900'
 ```javascript
 // Aunque el deck es para presentaciones (no responsive),
 // las proporciones están optimizadas para 16:9
-const aspectRatio = '16:9'
-const resolution = '1920x1080' // Full HD estándar
+const aspectRatio = "16:9";
+const resolution = "1920x1080"; // Full HD estándar
 
 // El contenido usa overflow-y-auto para manejar exceso de contenido
 // en lugar de reducir tamaños de fuente
@@ -416,13 +416,13 @@ const resolution = '1920x1080' // Full HD estándar
 // Formato de moneda USD
 const formatCurrency = (value, decimals = 2) => {
   if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(decimals)}M`
+    return `$${(value / 1000000).toFixed(decimals)}M`;
   }
   if (value >= 1000) {
-    return `$${(value / 1000).toFixed(0)}k`
+    return `$${(value / 1000).toFixed(0)}k`;
   }
-  return `$${value.toLocaleString('en-US')}`
-}
+  return `$${value.toLocaleString("en-US")}`;
+};
 
 // Ejemplos:
 // $7,368,000 → "$7.37M"
@@ -435,50 +435,50 @@ const formatCurrency = (value, decimals = 2) => {
 
 ```javascript
 // Formato de porcentajes
-'37.4%' // Con decimal para precisión
-'~20%' // Aproximado (usar tilde ~)
-'≥96%' // Mayor o igual
-'≤4%' // Menor o igual
-'<12%' // Menor que (usar &lt; en JSX)
-'>$50k' // Mayor que (usar &gt; en JSX)
+"37.4%"; // Con decimal para precisión
+"~20%"; // Aproximado (usar tilde ~)
+"≥96%"; // Mayor o igual
+"≤4%"; // Menor o igual
+"<12%"; // Menor que (usar &lt; en JSX)
+">$50k"; // Mayor que (usar &gt; en JSX)
 
 // Cambios y objetivos
-'93.6% → ≥96%' // Estado actual → Objetivo
-'15.6% → <12%' // Mejora esperada
+"93.6% → ≥96%"; // Estado actual → Objetivo
+"15.6% → <12%"; // Mejora esperada
 ```
 
 ### Rangos
 
 ```javascript
 // Rangos numéricos
-'$620–700k' // Usar em dash (–), no guión (-)
-'10–16 clients' // Rango de cantidad
-'$50–150k' // Rango de montos
-'20–30k views' // Vistas o impresiones
+"$620–700k"; // Usar em dash (–), no guión (-)
+"10–16 clients"; // Rango de cantidad
+"$50–150k"; // Rango de montos
+"20–30k views"; // Vistas o impresiones
 ```
 
 ### Multiplicadores y Ratios
 
 ```javascript
-'3.6×' // Rotación de portafolio (usar ×, no x)
-'≥3×' // Pipeline coverage
-'~4.5×/yr' // Por año
+"3.6×"; // Rotación de portafolio (usar ×, no x)
+"≥3×"; // Pipeline coverage
+"~4.5×/yr"; // Por año
 ```
 
 ### Fechas
 
 ```javascript
 // Formato de fechas
-'Oct-25' // Mes-Año (formato corto)
-'Oct-2025' // Mes-Año (formato largo)
-'Oct 17, 2025' // Fecha completa (en contexto)
-'Q4-2025' // Quarter-Año
-'H1-26' // Half (semestre)-Año corto
-'Dec-2026' // Mes-Año objetivo
+"Oct-25"; // Mes-Año (formato corto)
+"Oct-2025"; // Mes-Año (formato largo)
+"Oct 17, 2025"; // Fecha completa (en contexto)
+"Q4-2025"; // Quarter-Año
+"H1-26"; // Half (semestre)-Año corto
+"Dec-2026"; // Mes-Año objetivo
 
 // Rangos de fechas
-'Oct-25 → Dec-26' // Período completo
-'Q4-25 → H1-26' // Quarters/Halfs
+"Oct-25 → Dec-26"; // Período completo
+"Q4-25 → H1-26"; // Quarters/Halfs
 ```
 
 ---
@@ -492,42 +492,42 @@ const formatCurrency = (value, decimals = 2) => {
 ```javascript
 // ✅ Usar inglés para:
 const englishTerms = [
-  'AUM',
-  'KPI',
-  'KAM',
-  'funnel',
-  'leads',
-  'pipeline',
-  'close rate',
-  'churn',
-  'default',
-  'ROI',
-  'CAC',
-  'LTV',
-  'SQL',
-  'MQL',
-  'SLA',
-  'API',
-  'CPL',
-  'ER',
-  'DPD',
-]
+  "AUM",
+  "KPI",
+  "KAM",
+  "funnel",
+  "leads",
+  "pipeline",
+  "close rate",
+  "churn",
+  "default",
+  "ROI",
+  "CAC",
+  "LTV",
+  "SQL",
+  "MQL",
+  "SLA",
+  "API",
+  "CPL",
+  "ER",
+  "DPD",
+];
 
 // ✅ Usar español para:
 const spanishPhrases = [
-  'Objetivo & Oportunidad',
-  'Estrategia por canal',
-  'Cartera viva',
-  'Líneas de crédito',
-  'Flujo de caja',
-  'Desembolsos',
-  'Cobranza',
-]
+  "Objetivo & Oportunidad",
+  "Estrategia por canal",
+  "Cartera viva",
+  "Líneas de crédito",
+  "Flujo de caja",
+  "Desembolsos",
+  "Cobranza",
+];
 
 // ✅ Mezclar naturalmente:
-;('Pipeline coverage: ≥3× (3 anchors futuros por cada cierre mensual)')
-;('Meta Q4-2025: 100–160k impresiones → 225–305 leads')
-;('Convierte tus facturas en cash en <48h')
+("Pipeline coverage: ≥3× (3 anchors futuros por cada cierre mensual)");
+("Meta Q4-2025: 100–160k impresiones → 225–305 leads");
+("Convierte tus facturas en cash en <48h");
 ```
 
 ### Tono y Voz
@@ -544,27 +544,27 @@ const spanishPhrases = [
 
 ```javascript
 // Símbolos matemáticos y lógicos
-'≥' // Mayor o igual (ALT + 242)
-'≤' // Menor o igual (ALT + 243)
-'≈' // Aproximadamente (ALT + 247)
-'~' // Aproximado (tilde)
-'±' // Más/menos (ALT + 241)
-'×' // Multiplicación (ALT + 0215)
+"≥"; // Mayor o igual (ALT + 242)
+"≤"; // Menor o igual (ALT + 243)
+"≈"; // Aproximadamente (ALT + 247)
+"~"; // Aproximado (tilde)
+"±"; // Más/menos (ALT + 241)
+"×"; // Multiplicación (ALT + 0215)
 
 // Flechas y direcciones
-'→' // Flecha derecha (indica cambio, progreso)
-'⇒' // Flecha doble (indica resultado, consecuencia)
+"→"; // Flecha derecha (indica cambio, progreso)
+"⇒"; // Flecha doble (indica resultado, consecuencia)
 
 // Bullets y separadores
-'•' // Bullet point (ALT + 0149)
-'–' // Em dash para rangos (ALT + 0150)
-'|' // Pipe para separar (barra vertical)
-'/' // Slash para fracciones o "por"
+"•"; // Bullet point (ALT + 0149)
+"–"; // Em dash para rangos (ALT + 0150)
+"|"; // Pipe para separar (barra vertical)
+"/"; // Slash para fracciones o "por"
 
 // En JSX, usar HTML entities:
-'&lt;' // <
-'&gt;' // >
-'&amp;' // &
+"&lt;"; // <
+"&gt;"; // >
+"&amp;"; // &
 ```
 
 ---
@@ -697,7 +697,7 @@ const spanishPhrases = [
       • Active clients: <span className="text-blue-400 font-bold">188</span>
     </p>
     <p>
-      • Target (Dec-2026):{' '}
+      • Target (Dec-2026):{" "}
       <span className="text-purple-400 font-bold">$16.276M</span>
     </p>
 
@@ -772,7 +772,7 @@ const spanishPhrases = [
         • Ticket: <span className="text-white">$75–125k</span>
       </p>
       <p>
-        • Net AUM contrib:{' '}
+        • Net AUM contrib:{" "}
         <span className="text-blue-400 font-bold">~$320k/mo</span>
       </p>
     </div>
@@ -788,7 +788,7 @@ const spanishPhrases = [
         • Target: <span className="text-white">8–12 new clients/month</span>
       </p>
       <p>
-        • Net AUM contrib:{' '}
+        • Net AUM contrib:{" "}
         <span className="text-green-400 font-bold">~$180–220k/mo</span>
       </p>
     </div>
@@ -804,7 +804,7 @@ const spanishPhrases = [
         • Target: <span className="text-white">20–30 new clients/month</span>
       </p>
       <p>
-        • Net AUM contrib:{' '}
+        • Net AUM contrib:{" "}
         <span className="text-pink-400 font-bold">~$120–160k/mo</span>
       </p>
     </div>

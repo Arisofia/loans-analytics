@@ -1,0 +1,86 @@
+name: PR Sync Helper
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull request number to sync with the base branch"
+        required: true
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request &&
+        contains(github.event.comment.body, '/pr-sync') &&
+        (
+          github.event.comment.author_association == 'MEMBER' ||
+          github.event.comment.author_association == 'OWNER' ||
+          github.event.comment.author_association == 'COLLABORATOR'
+        )
+      )
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve pull request metadata
+        id: pr
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const prNumber = context.eventName === 'workflow_dispatch'
+              ? Number(core.getInput('pr_number'))
+              : context.payload.issue.number;
+
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+
+            core.setOutput('number', prNumber.toString());
+            core.setOutput('base', pr.data.base.ref);
+            core.setOutput('head', pr.data.head.ref);
+            core.setOutput('head_repo', pr.data.head.repo.full_name);
+            core.setOutput('same_repo', pr.data.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}`);
+
+      - name: Skip forks
+        if: steps.pr.outputs.same_repo != 'true'
+        run: echo "Head branch lives in ${HEAD_REPO}; skipping sync because forks are not writable by the default token."
+        env:
+          HEAD_REPO: ${{ steps.pr.outputs.head_repo }}
+
+      - name: Checkout pull request branch
+        if: steps.pr.outputs.same_repo == 'true'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.pr.outputs.head }}
+          fetch-depth: 0
+
+      - name: Configure git author
+        if: steps.pr.outputs.same_repo == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge base branch into PR
+        if: steps.pr.outputs.same_repo == 'true'
+        env:
+          BASE_REF: ${{ steps.pr.outputs.base }}
+        run: |
+          git fetch origin ${BASE_REF}
+          git merge --no-edit origin/${BASE_REF}
+
+      - name: Push updates back to PR branch
+        if: steps.pr.outputs.same_repo == 'true'
+        env:
+          HEAD_REF: ${{ steps.pr.outputs.head }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: git push origin HEAD:${HEAD_REF}

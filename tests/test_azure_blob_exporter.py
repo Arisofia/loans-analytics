@@ -78,7 +78,8 @@ def test_engine_exports_to_blob(monkeypatch):
     result_path = engine.export_kpis_to_blob(exporter, blob_name="dashboard.json")
 
     upload_spy.assert_called_once()
-    called_payload, called_blob_name = upload_spy.call_args[0][0], upload_spy.call_args[1]["blob_name"]
+    called_payload = upload_spy.call_args[0][0]
+    called_blob_name = upload_spy.call_args[1]["blob_name"]
     assert called_blob_name == "dashboard.json"
     assert "portfolio_delinquency_rate_percent" in called_payload
     assert result_path == "kpis/kpi-dashboard.json"

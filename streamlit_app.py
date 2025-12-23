@@ -1,18 +1,52 @@
+"""Streamlit portal for ABACO loan analytics."""
 import io
 import re
 from typing import Optional
 
 import numpy as np
 import pandas as pd
-try:
-    import plotly.express as px
-except ImportError as e:
-    raise ImportError(
-        "plotly.express could not be imported. Ensure 'plotly' is installed in your environment."
-    ) from e
+import plotly.express as px
 import streamlit as st
 
-from src.analytics_metrics import calculate_quality_score, portfolio_kpis, project_growth, standardize_numeric
+from src.analytics_metrics import (
+    calculate_quality_score,
+    portfolio_kpis,
+    project_growth,
+    standardize_numeric,
+)
+
+ABACO_THEME = {
+    "colors": {
+        "primary_purple": "#C1A6FF",
+        "purple_dark": "#5F4896",
+        "dark_blue": "#0C2742",
+        "light_gray": "#CED4D9",
+        "medium_gray": "#9EA9B3",
+        "dark_gray": "#6D7D8E",
+        "white": "#FFFFFF",
+        "background": "#030E19",
+        "success": "#10B981",
+        "warning": "#FB923C",
+        "error": "#DC2626",
+        "info": "#3B82F6",
+        "info_dark": "#1D4ED8",
+    },
+    "gradients": {
+        "title": "linear-gradient(81.74deg, #C1A6FF 5.91%, #5F4896 79.73%)",
+        "card_primary": "linear-gradient(135deg, rgba(193, 166, 255, 0.2) 0%, rgba(0, 0, 0, 0.5) 100%)",
+        "card_secondary": "linear-gradient(135deg, rgba(34, 18, 72, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%)",
+        "card_highlight": "linear-gradient(135deg, rgba(193, 166, 255, 0.25) 0%, rgba(0, 0, 0, 0.8) 100%)",
+    },
+    "typography": {
+        "primary_font": "Lato",
+        "secondary_font": "Poppins",
+        "title_size": "48px",
+        "metric_size": "32px",
+        "label_size": "16px",
+        "body_size": "14px",
+        "description_size": "12px",
+    },
+}
 
 REQUIRED_COLUMNS = [
     "loan_amount",
@@ -25,13 +59,25 @@ REQUIRED_COLUMNS = [
 ]
 
 
-def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Lowercase and snake-case incoming column names."""
+def apply_theme(fig: px.Figure) -> px.Figure:
+    fig.update_layout(
+        font_family=ABACO_THEME["typography"]["primary_font"],
+        font_color=ABACO_THEME["colors"]["white"],
+        paper_bgcolor=ABACO_THEME["colors"]["background"],
+        plot_bgcolor=ABACO_THEME["colors"]["background"],
+        legend=dict(
+            font=dict(
+                family=ABACO_THEME["typography"]["secondary_font"],
+                color=ABACO_THEME["colors"]["light_gray"],
+            )
+        ),
+        margin=dict(l=0, r=0, t=40, b=0),
+    )
+    fig.update_traces(marker=dict(line=dict(color=ABACO_THEME["colors"]["background"], width=1)))
+    return fig
 
-    clean = df.rename(columns=lambda col: re.sub(r"[^a-z0-9_]+", "_", col.strip().lower()))
-    return clean.loc[:, ~clean.columns.duplicated()]
 
-
+@st.cache_data(show_spinner=False)
 def parse_uploaded_file(uploaded) -> pd.DataFrame:
     if uploaded is None:
         return pd.DataFrame()
@@ -55,6 +101,11 @@ def parse_uploaded_file(uploaded) -> pd.DataFrame:
     return normalize_columns(df)
 
 
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    clean = df.rename(columns=lambda col: re.sub(r"[^a-z0-9_]+", "_", col.strip().lower()))
+    return clean.loc[:, ~clean.columns.duplicated()]
+
+
 def ensure_required_columns(df: pd.DataFrame) -> Optional[pd.DataFrame]:
     missing = [col for col in REQUIRED_COLUMNS if col not in df.columns]
     if missing:
@@ -65,7 +116,14 @@ def ensure_required_columns(df: pd.DataFrame) -> Optional[pd.DataFrame]:
 
 def coerce_numeric(df: pd.DataFrame) -> pd.DataFrame:
     work = df.copy()
-    for col in ["loan_amount", "appraised_value", "borrower_income", "monthly_debt", "interest_rate", "principal_balance"]:
+    for col in [
+        "loan_amount",
+        "appraised_value",
+        "borrower_income",
+        "monthly_debt",
+        "interest_rate",
+        "principal_balance",
+    ]:
         work[col] = standardize_numeric(work[col])
     return work
 
@@ -90,7 +148,8 @@ def render_metrics(df: pd.DataFrame) -> None:
         current_loan_volume=float(df["principal_balance"].sum()),
         target_loan_volume=float(df["principal_balance"].sum() * 1.2),
     )
-    fig = px.line(projection, x="date", y=["yield", "loan_volume"], markers=True)
+    fig = px.line(projection, x="month", y=["yield", "loan_volume"], markers=True)
+    apply_theme(fig)
     st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("Enriched sample")
@@ -99,6 +158,17 @@ def render_metrics(df: pd.DataFrame) -> None:
 
 def main() -> None:
     st.set_page_config(page_title="ABACO Analytics", layout="wide")
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{ background-color: {ABACO_THEME['colors']['background']}; }}
+        .stToolbar {{ border-color: rgba(255, 255, 255, 0.1); }}
+        .stMetricLabel {{ color: {ABACO_THEME['colors']['light_gray']}; }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.title("ABACO Loan Analytics")
     st.write("Upload a portfolio extract to compute governed KPIs and quality signals.")
 

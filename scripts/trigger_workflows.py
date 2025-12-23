@@ -33,9 +33,14 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Trigger GitHub Actions workflows via workflow_dispatch"
     )
-    parser.add_argument("repo", help="Target repository in the format owner/name")
     parser.add_argument(
-        "--ref", default="main", help="Git ref to dispatch (default: main)"
+        "repo",
+        help="Target repository in the format owner/name",
+    )
+    parser.add_argument(
+        "--ref",
+        default="main",
+        help="Git ref to dispatch (default: main)",
     )
     parser.add_argument(
         "--workflows",
@@ -79,13 +84,16 @@ def resolve_workflow_targets(workflows, requested):
     for item in requested:
         if item.isdigit():
             match = next(
-                (wf for wf in workflows if str(wf.get("id")) == item), None
+                (wf for wf in workflows if str(wf.get("id")) == item),
+                None,
             )
         else:
             match = next(
-                (wf for wf in workflows
-                 if wf.get("name", "").lower() == item.lower()),
-                None
+                (
+                    wf for wf in workflows
+                    if wf.get("name", "").lower() == item.lower()
+                ),
+                None,
             )
         if not match:
             raise ValueError(f"Workflow '{item}' not found")

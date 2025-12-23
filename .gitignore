@@ -1,11 +1,8 @@
-<<<<<<< HEAD
 # Gradle
 .gradle/
 build/
 **/.gradle/
 **/build/
-=======
->>>>>>> main
 
 # OS
 .DS_Store
@@ -27,15 +24,11 @@ logs/
 # Build / tooling
 .gradle/
 .next/
-<<<<<<< HEAD
 .turbo/
-dist/
-coverage/
-=======
 out/
 build/
 dist/
->>>>>>> main
+coverage/
 
 # IDE
 .vscode/tasks.json
@@ -49,7 +42,6 @@ tailwind.config.js
 .coverage.*
 htmlcov/
 
-<<<<<<< HEAD
 # Project-specific artifacts
 apps/.DS_Store
 
@@ -64,14 +56,3 @@ nvm/
 .env.local
 .env*.local
 .vercel/
-=======
-# Environment variables
-.env
-.env.local
-.env.*.local
->>>>>>> main
-failed_workflows.csv
-failed_workflows.csv
-*.csv
-failed_workflows.csv
-*.csv
