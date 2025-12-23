@@ -27,14 +27,16 @@ jobs:
           node-version: '20'
       - name: Install
         working-directory: apps/web
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: Build
         working-directory: apps/web
         run: npm run build
       - name: Check SWA token
         id: swa_token
+        env:
+          SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F }}
         run: |
-          if [ -z "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F }}" ]; then
+          if [ -z "$SWA_TOKEN" ]; then
             echo "present=false" >> "$GITHUB_OUTPUT"
             echo "Missing AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F"
           else

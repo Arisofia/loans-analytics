@@ -1,8 +1,6 @@
-on:
-
 name: Cascade Ingest and KPI Extraction
 
-
+on:
   schedule:
     - cron: '0 5,17 * * *'  # Every day at 05:00 and 17:00 UTC
   workflow_dispatch: {}
@@ -11,6 +9,7 @@ name: Cascade Ingest and KPI Extraction
       - 'scripts/convert_and_integrate_cascade.py'
       - 'scripts/ingest_kpis.py'
       - 'data/raw/*.xls*'
+
 jobs:
   cascade-to-csv:
     runs-on: ubuntu-latest

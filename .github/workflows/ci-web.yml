@@ -1,6 +1,4 @@
 name: CI Web
-permissions:
-  contents: read
 
 on:
   workflow_dispatch:
@@ -16,11 +14,17 @@ jobs:
   assignee-check:
     if: github.event_name == 'pull_request'
     uses: ./.github/workflows/pr-assignee-check.yml
+    permissions:
+      contents: read
+    with:
+      assignees: ${{ github.event.pull_request.assignees }}
 
   build-pr:
     needs: assignee-check
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v6
