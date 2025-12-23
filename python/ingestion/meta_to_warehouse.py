@@ -24,17 +24,21 @@ def main():
     if not files:
         print("No raw meta files found.")
         return
+    dfs = []
+    schema = load_schema()
     for file in files:
         path = os.path.join(RAW_DIR, file)
         if file.endswith(".json"):
             df = pd.read_json(path)
         else:
             df = pd.read_csv(path)
-        schema = load_schema()
         validate(df, schema)
-        table = pa.Table.from_pandas(df)
-        pq.write_table(table, OUT_FILE)
-        print(f"Wrote {OUT_FILE}")
+        dfs.append(df)
+    
+    combined_df = pd.concat(dfs, ignore_index=True)
+    table = pa.Table.from_pandas(combined_df)
+    pq.write_table(table, OUT_FILE)
+    print(f"Wrote {OUT_FILE}")
 
 if __name__ == "__main__":
     main()
