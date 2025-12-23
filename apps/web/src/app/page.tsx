@@ -2,18 +2,69 @@ import Link from 'next/link'
 import styles from './page.module.css'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import { logLandingPageDiagnostic } from '../lib/landingPageDiagnostics'
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import {
   EMPTY_LANDING_PAGE_DATA,
   landingPageDataSchema,
   type LandingPageData,
+  type Metric,
+  type Product,
+  type Step,
 } from '../types/landingPage'
 
 const fallbackData: LandingPageData = {
-  metrics: metrics.map((item) => ({ ...item })),
-  products: products.map((item) => ({ ...item })),
-  controls: [...controls],
-  steps: steps.map((item) => ({ ...item })),
+  metrics: [
+    { label: 'Portfolio Coverage', value: '98%' },
+    { label: 'Risk Precision', value: '99.2%' },
+    { label: 'Processing Speed', value: '<24h' },
+    { label: 'Compliance Rate', value: '100%' },
+  ],
+  products: [
+    {
+      title: 'Credit Risk Engine',
+      detail: 'AI-powered scoring with regulatory controls and live debtor monitoring.',
+    },
+    {
+      title: 'Collections Dashboard',
+      detail: 'Real-time visibility into cash position, delinquency, and recovery signals.',
+    },
+    {
+      title: 'Origination Platform',
+      detail: 'End-to-end workflow from intake to funding with embedded compliance.',
+    },
+    {
+      title: 'Portfolio Analytics',
+      detail: 'Executive dashboards, stress testing, and scenario planning for boards.',
+    },
+  ],
+  controls: [
+    'Role-based access controls with audit logging',
+    'Encryption at rest and in transit',
+    'Real-time compliance monitoring and alerts',
+    'Automated SLA reporting and escalations',
+    'Integration with leading KMS solutions',
+  ],
+  steps: [
+    {
+      label: '1',
+      title: 'Assessment',
+      copy: 'Understand your current stack, data maturity, and regulatory requirements.',
+    },
+    {
+      label: '2',
+      title: 'Design',
+      copy: 'Build a tailored architecture with pre-built integrations and governance.',
+    },
+    {
+      label: '3',
+      title: 'Deploy',
+      copy: 'Launch your command center with live data pipelines and dashboards.',
+    },
+    {
+      label: '4',
+      title: 'Scale',
+      copy: 'Expand use cases, optimize performance, and scale workflows autonomously.',
+    },
+  ],
 }
 
 async function getData(): Promise<LandingPageData> {
