@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🧭 Abaco 2026 — North Star Metric Strategy (NSM)
 
 ## 1. Executive summary
@@ -80,7 +79,7 @@ This measures the total processed volume from clients who repeat, reflecting ret
 
 ## 8. Why not use other metrics as the central NSM
 
-- **Invoices originated per month:** Measures acquisition and gross volume only; misses recurrence, quality, and cashflow. Fintechs such as Fundbox, BlueVine, and Kredito24 moved from this to recurrent TPV as they scaled.
+- **Invoices originated per month:** Measures acquisition and gross volume only; misses recurrence, expansion, and real cashflow. Fintechs such as Fundbox, BlueVine, and Kredito24 moved from this to recurrent TPV as they scaled.
 - **LTV/CAC:** Critical for unit economics and investor reporting, but slow and aggregated; it does not govern weekly pulse or portfolio quality. SaaS/fintech leaders use it as a complementary metric, not as the NSM.
 
 ## 9. NSM benchmarks in the industry
@@ -94,7 +93,9 @@ This measures the total processed volume from clients who repeat, reflecting ret
 2. Activate alerts for concentration and rotation/replines drops vs plan.
 3. Link funnels by channel (Digital ≤$10k, Mixed $10–50k, KAM $50–150k) to the NSM to optimize CAC and churn.
 4. Report the NSM and supporting KPIs in the weekly/monthly/QBR cadence.
-=======
+
+---
+
 # 🧭 Abaco 2026 — Estrategia de la Métrica Estrella del Norte (NSM)
 
 ## 1. Resumen ejecutivo
@@ -190,5 +191,3 @@ Esta métrica mide el volumen total procesado por clientes que repiten, reflejan
 2. Activar alertas de concentración y caídas de rotación/replines vs. plan.
 3. Vincular embudos por canal (Digital ≤$10k, Mixto $10–50k, KAM $50–150k) al NSM para optimizar CAC y churn.
 4. Reportar NSM y KPIs de apoyo en la cadencia semanal/mensual/QBR.
-
->>>>>>> origin/main

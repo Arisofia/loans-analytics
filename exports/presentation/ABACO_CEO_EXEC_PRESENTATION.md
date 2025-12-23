@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🚀 ABACO FINTECH — CEO OPERATING SYSTEM v2
 ### Board Presentation — Oct-16, 2025 (Mid-month snapshot)
 
@@ -80,19 +79,19 @@
 ---
 
 ## Slide 8: Board Talking Points & Success Definition
-- "On path to $16.4MM AUM by Dec-26 (+122.8% CAGR) with validated 5.5x rotation."
-- "Non-linear growth: Q4-25 trough, Q1-26 embedded inflection, Q3-26 acceleration, Q4-26 consolidation."
-- "Unit economics improving: CAC $800 → $600, LTV:CAC 3:1 → 6.5:1, payback 18 → 12 months."
-- "Default 0% today, policy ≤4%, target <1.5%; data quality 78% → >95% by Nov-25; concentration under control."
-- "EBITDA path: -$10K/month today → +$100-150K/month by Q4-26; cash-positive by Q2-26; Series B optionality preserved."
+- “On path to $16.4MM AUM by Dec-26 (+122.8% CAGR) with validated 5.5x rotation.”
+- “Non-linear growth: Q4-25 trough, Q1-26 embedded inflection, Q3-26 acceleration, Q4-26 consolidation.”
+- “Unit economics improving: CAC $800 → $600, LTV:CAC 3:1 → 6.5:1, payback 18 → 12 months.”
+- “Default 0% today, policy ≤4%, target <1.5%; data quality 78% → >95% by Nov-25; concentration under control.”
+- “EBITDA path: -$10K/month today → +$100-150K/month by Q4-26; cash-positive by Q2-26; Series B optionality preserved.”
 - **Success by Dec-31-26:** AUM $16.4MM ✓; 500 active customers ✓; EBITDA +$1.2-1.5MM annually ✓; LTV:CAC >4:1 blended ✓; 60% new from embedded ✓; data quality >95% ✓; default <1.5% ✓; Series B closed with upside ✓.
-=======
-# ABACO CEO Exec Presentation
 
+---
+
+## Appendix: Market TAM and Acronym reference
 - **Market TAM (total addressable market) validation (El Salvador, private-sector factoring):** 47,788 formal MSMEs (micro, small, and medium enterprises; BCR 2024 dataset: 34,710 micro, 9,881 small, 3,197 medium). Applying average revenues ($60K / $600K / $3.5M) and a 15% receivables factor yields ~$2.880B of outstanding invoices; subtracting ~$0.141B B2G (business-to-government) exposure (12% PAC 2023 × MIPYME quota) leaves ~$2.739B TAM net. With ~60-day rotation (~6x annually) and 75% eligibility, annualized TAM is ~$12.470B of financeable private-sector invoices.
 
 ## Acronym quick reference
-
 - **AUM:** assets under management
 - **ARPU:** average revenue per user
 - **B2G:** business-to-government
@@ -106,4 +105,3 @@
 - **STP:** straight-through processing
 - **T2F:** time to funding
 - **TAM:** total addressable market
->>>>>>> origin/main
