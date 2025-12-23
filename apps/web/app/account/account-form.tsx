@@ -44,6 +44,7 @@ export default function AccountForm({ user }: { user: User | null }) {
     username,
     website,
     avatar_url,
+    fullname,
   }: {
     username: string | null;
     fullname: string | null;

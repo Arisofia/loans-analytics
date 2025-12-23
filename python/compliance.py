@@ -18,7 +18,7 @@ PII_COLUMN_KEYWORDS = [
 ]
 
 
-def _mask_value(value: Any) -> str:
+def _mask_value(value: Any) -> Any:
     if pd.isnull(value):
         return value
     text = str(value)
