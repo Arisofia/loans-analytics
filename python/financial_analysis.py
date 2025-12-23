@@ -8,6 +8,23 @@ from python.validation import find_column
 logger = logging.getLogger(__name__)
 
 class FinancialAnalyzer:
+        def validate_numeric_columns(self, df: pd.DataFrame, columns: list) -> list:
+            """
+            Batch numeric column validation errors for consistency. Missing columns are logged and set to NaN.
+            Returns a list of errors for programmatic use. Raises ValueError if any errors found.
+            """
+            errors = []
+            for col in columns:
+                if col not in df.columns:
+                    errors.append(f"Missing column: {col}")
+                    df[col] = float('nan')
+                elif not pd.api.types.is_numeric_dtype(df[col]):
+                    errors.append(f"Column {col} is not numeric")
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+            if errors:
+                logger.error(f"Numeric column validation errors: {errors}")
+                raise ValueError(f"Numeric column validation errors: {errors}")
+            return errors
     def __init__(self):
         # Placeholder for payment processor dependency if needed
         pass
@@ -15,16 +32,21 @@ class FinancialAnalyzer:
     def classify_dpd_buckets(self, df: pd.DataFrame, dpd_col: str = 'days_past_due') -> pd.DataFrame:
         """
         Clasifica los días de atraso en buckets estándar.
+        Uses batch numeric validation and logs missing columns. Raises ValueError if validation fails.
         """
         result = df.copy()
         target_col = find_column(result, [dpd_col, 'dpd', 'dias_mora', 'days_late'])
-        
+
         if not target_col:
             logger.warning(f"Columna {dpd_col} no encontrada para buckets DPD")
             return result
-        
-        # Ensure numeric
-        result[target_col] = pd.to_numeric(result[target_col], errors='coerce').fillna(0)
+
+        try:
+            self.validate_numeric_columns(result, [target_col])
+        except ValueError as e:
+            logger.error(f"DPD bucket classification failed: {e}")
+            result['dpd_bucket'] = 'Unknown'
+            return result
 
         conditions = [
             (result[target_col] <= 0),
@@ -37,7 +59,7 @@ class FinancialAnalyzer:
             (result[target_col] > 179)
         ]
         choices = ['Current', '1-29', '30-59', '60-89', '90-119', '120-149', '150-179', '180+']
-        
+
         result['dpd_bucket'] = np.select(conditions, choices, default='Unknown')
         return result
 

@@ -3,11 +3,12 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
 
 import pandas as pd
+
+from python.kpis.collection_rate import calculate_collection_rate
 from python.kpis.par_30 import calculate_par_30
 from python.kpis.par_90 import calculate_par_90
-from python.kpis.collection_rate import calculate_collection_rate
 from python.kpis.portfolio_health import calculate_portfolio_health
-from python.validation import validate_dataframe, NUMERIC_COLUMNS
+from python.validation import NUMERIC_COLUMNS, validate_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,9 @@ class KPIEngine:
         self.warnings.append(payload)
         self._log(logging.WARNING, message, metric=metric, **details)
 
-    def _log_metric(self, metric: str, value: float, method: str = "standard", status: str = "ok", **ctx: Any) -> Dict[str, Any]:
+    def _log_metric(
+        self, metric: str, value: float, method: str = "standard", status: str = "ok", **ctx: Any
+    ) -> Dict[str, Any]:
         entry = {
             "metric": metric,
             "method": method,
@@ -61,7 +64,13 @@ class KPIEngine:
             **ctx,
         }
         self.audit_trail.append(entry)
-        self._log(logging.INFO if status == "ok" else logging.WARNING, f"{metric} computed", status=status, value=value, method=method)
+        self._log(
+            logging.INFO if status == "ok" else logging.WARNING,
+            f"{metric} computed",
+            status=status,
+            value=value,
+            method=method,
+        )
         return entry
 
     def _ensure_columns(self, metric: str, required_cols: List[str]) -> bool:
@@ -75,7 +84,9 @@ class KPIEngine:
 
     def _warn_if_zero(self, metric: str, denominator_name: str, denominator_value: float) -> None:
         if denominator_value == 0:
-            self._record_warning(metric, f"{denominator_name} is zero; returning 0", denominator=denominator_name)
+            self._record_warning(
+                metric, f"{denominator_name} is zero; returning 0", denominator=denominator_name
+            )
 
     def validate_schema(self):
         """Validate that the DataFrame contains required numeric columns for KPI calculation."""
@@ -120,7 +131,9 @@ class KPIEngine:
         ctx = self._log_metric("CollectionRate", val)
         return val, ctx
 
-    def calculate_portfolio_health(self, par_30: float, collection_rate: float) -> Tuple[float, Dict[str, Any]]:
+    def calculate_portfolio_health(
+        self, par_30: float, collection_rate: float
+    ) -> Tuple[float, Dict[str, Any]]:
         val = calculate_portfolio_health(par_30, collection_rate)
         ctx = self._log_metric("HealthScore", val)
         return val, ctx

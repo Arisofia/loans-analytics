@@ -1,6 +1,10 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
+<<<<<<< HEAD
 import { createClient } from '@/lib/supabase/client';
+=======
+import { createClient } from '../../src/lib/supabase/client';
+>>>>>>> origin/main
 import { type User } from '@supabase/supabase-js';
 import Avatar from './avatar';
 
@@ -29,21 +33,34 @@ export default function AccountForm({ user }: { user: User | null }) {
         setWebsite(data.website);
         setAvatarUrl(data.avatar_url);
       }
+<<<<<<< HEAD
     } catch (error) {
       alert('Error loading user data!');
+=======
+    } catch (_error) {
+      alert('Error loading user data!')
+>>>>>>> origin/main
     } finally {
       setLoading(false);
     }
   }, [user, supabase]);
 
   useEffect(() => {
+<<<<<<< HEAD
     getProfile();
+=======
+    void getProfile();
+>>>>>>> origin/main
   }, [user, getProfile]);
 
   async function updateProfile({
     username,
     website,
     avatar_url,
+<<<<<<< HEAD
+=======
+    fullname,
+>>>>>>> origin/main
   }: {
     username: string | null;
     fullname: string | null;
@@ -59,11 +76,19 @@ export default function AccountForm({ user }: { user: User | null }) {
         website,
         avatar_url,
         updated_at: new Date().toISOString(),
+<<<<<<< HEAD
       });
       if (error) throw error;
       alert('Profile updated!');
     } catch (error) {
       alert('Error updating the data!');
+=======
+      })
+      if (error) throw error
+      alert('Profile updated!')
+    } catch (_error) {
+      alert('Error updating the data!')
+>>>>>>> origin/main
     } finally {
       setLoading(false);
     }
@@ -77,7 +102,11 @@ export default function AccountForm({ user }: { user: User | null }) {
         size={150}
         onUpload={(url) => {
           setAvatarUrl(url);
+<<<<<<< HEAD
           updateProfile({ fullname, username, website, avatar_url: url });
+=======
+          void updateProfile({ fullname, username, website, avatar_url: url });
+>>>>>>> origin/main
         }}
       />
       <div>
@@ -114,7 +143,11 @@ export default function AccountForm({ user }: { user: User | null }) {
       <div>
         <button
           className="button primary block"
+<<<<<<< HEAD
           onClick={() => updateProfile({ fullname, username, website, avatar_url })}
+=======
+          onClick={() => void updateProfile({ fullname, username, website, avatar_url })}
+>>>>>>> origin/main
           disabled={loading}
         >
           {loading ? 'Loading ...' : 'Update'}

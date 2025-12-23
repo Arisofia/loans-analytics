@@ -1,5 +1,6 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 
 class FeatureEngineer:
     """A class for performing feature engineering on financial data."""
@@ -8,7 +9,7 @@ class FeatureEngineer:
     def segment_by_revenue(revenue: pd.Series) -> pd.Series:
         """Segments customers into tiers based on revenue."""
         bins = [-np.inf, 50000, 100000, np.inf]
-        labels = ['Bronze', 'Silver', 'Gold']
+        labels = ["Bronze", "Silver", "Gold"]
         return pd.cut(revenue, bins=bins, labels=labels, right=False)
 
     @classmethod
@@ -26,21 +27,21 @@ class FeatureEngineer:
         enriched_df = df.copy()
 
         # Conditionally compute utilization if balance and limit columns exist
-        if 'balance' in enriched_df.columns and 'limit' in enriched_df.columns:
-            enriched_df['utilization'] = np.where(
-                enriched_df['limit'] > 0,
-                enriched_df['balance'] / enriched_df['limit'],
-                0
+        if "balance" in enriched_df.columns and "limit" in enriched_df.columns:
+            enriched_df["utilization"] = np.where(
+                enriched_df["limit"] > 0, enriched_df["balance"] / enriched_df["limit"], 0
             )
 
         # Conditionally create DPD buckets if dpd column exists
-        if 'dpd' in enriched_df.columns:
+        if "dpd" in enriched_df.columns:
             bins = [-np.inf, 0, 30, 60, 90, np.inf]
-            labels = ['Current', '1-30 DPD', '31-60 DPD', '61-90 DPD', '90+ DPD']
-            enriched_df['dpd_bucket'] = pd.cut(enriched_df['dpd'], bins=bins, labels=labels, right=True)
+            labels = ["Current", "1-30 DPD", "31-60 DPD", "61-90 DPD", "90+ DPD"]
+            enriched_df["dpd_bucket"] = pd.cut(
+                enriched_df["dpd"], bins=bins, labels=labels, right=True
+            )
 
         # Always derive segment from revenue if revenue column exists
-        if 'revenue' in enriched_df.columns:
-            enriched_df['segment'] = cls.segment_by_revenue(enriched_df['revenue'])
+        if "revenue" in enriched_df.columns:
+            enriched_df["segment"] = cls.segment_by_revenue(enriched_df["revenue"])
 
         return enriched_df

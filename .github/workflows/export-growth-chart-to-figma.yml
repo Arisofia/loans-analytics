@@ -1,0 +1,37 @@
+name: Export Growth Chart to Figma
+
+      - 'scripts/export_presentation.py'
+  schedule:
+    - cron: '0 6,18 * * *'  # Every day at 06:00 and 18:00 UTC
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/export_presentation.py'
+      - 'python/analytics/project_growth.py'
+      - 'python/theme.py'
+      - 'docs/analytics/KPIs.md'
+
+jobs:
+  export-growth-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Export growth chart HTML
+        run: |
+          python scripts/export_presentation.py
+      - name: Upload growth chart artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: growth-chart
+          path: exports/presentation/growth-path.html
+      - name: Print completion message
+        run: echo "Growth chart export complete."

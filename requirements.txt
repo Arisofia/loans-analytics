@@ -1,9 +1,19 @@
-pandas==2.2.2
-numpy==1.26.4
+pandas==2.3.3
+<<<<<<< HEAD
+numpy==2.3.5
+=======
+numpy==2.4.0
+>>>>>>> origin/main
 azure-storage-blob==12.27.1
 azure-identity==1.25.1
-pytest==9.0.1
+pytest==9.0.2
 pytest-cov==5.0.0
+requests==2.32.3
 scikit-learn
+<<<<<<< HEAD
 google-generativeai
 matplotlib
+=======
+matplotlib
+google-generativeai
+>>>>>>> origin/main

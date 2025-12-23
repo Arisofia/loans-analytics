@@ -1,5 +1,3 @@
-
-
 import re
 from typing import Dict, List, Optional, Tuple
 
@@ -55,7 +53,9 @@ class DataIngestionEngine:
         normalized["source"] = source_name
         return normalized, quality_score if valid else max(0, quality_score - len(missing) * 5)
 
-    def validate_required_columns(self, df: pd.DataFrame, source_type: str) -> Tuple[bool, List[str]]:
+    def validate_required_columns(
+        self, df: pd.DataFrame, source_type: str
+    ) -> Tuple[bool, List[str]]:
         expected = self.REQUIRED_COLUMNS.get(source_type, [])
         missing = [col for col in expected if col not in df.columns]
         return not missing, missing

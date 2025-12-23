@@ -1,0 +1,26 @@
+id: c_suite_agent.v1
+name: C-Suite Agent (Executive Briefing)
+description: |
+  Generates executive briefing slide decks, Notion executive summaries and Slack top-line alerts.
+  Inputs: KPI timeseries, portfolio stress tests, liquidity velocity, liquidity risk, top-5 risks.
+  Output: Figma-ready deck (via Figma API), Notion page (exec summary), Slack message.
+tools:
+  - sql_runner:
+      interface: python.sql_runner.run_query
+  - figma:
+      interface: node.figma.create_from_template
+  - notion:
+      interface: node.notion.create_page
+  - slack:
+      interface: node/slack/post_message
+guardrails:
+  - All numbers MUST be recomputed from base tables (facts) in `data/warehouse` before presentation.
+  - No approximations in executive narrative. If data is not available, explicitly mark "Data unavailable".
+  - For any >10% QoQ change in PD/LGD/EAD, require “root cause” block: top 3 drivers and action items.
+schedule:
+  - daily: 04:30 UTC (after ingest)
+  - weekly: Monday 05:00 UTC (add trend slides + deck distribution)
+outputs:
+  - figma_deck_url
+  - notion_exec_url
+  - slack_summary_ts

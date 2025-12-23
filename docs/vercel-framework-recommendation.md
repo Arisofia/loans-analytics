@@ -8,13 +8,13 @@
 ## Comparative Analysis (Next.js vs Vite/SPA)
 | Dimension | Next.js (App Router) | Vite/SPA (React) |
 | --- | --- | --- |
-| Initial Load (FCP/LCP) | Faster: SSR/SSG + code-splitting; PPR/ISR reduce TTFB and payload | Slower: full client bundle + hydration gate; relies on aggressive caching | 
-| SEO Coverage | Strong: HTML pre-rendered; Metadata API; dynamic routes with ISR | Weak: CSR-first; needs pre-render hacks; bots may miss dynamic content | 
-| Vercel Optimization | Native: Image Optimization, Edge Functions/Middleware, ISR cache, Analytics/Speed Insights | Limited: requires manual CDN/image setup; fewer edge primitives | 
-| Real-time/Data | Server Components stream data; Route Handlers/APIs colocated; Edge auth | Client-only fetching; backend hosted elsewhere; higher latency | 
-| Complexity | Moderate: SSR/RSC patterns, caching strategies, middleware | Low: familiar SPA patterns only | 
-| Scalability | Auto-edge scaling; DB pooling with Route Handlers; multi-region cache | Frontend only; must build/operate separate backend | 
-| Compliance/Observability | Built-in headers, Middleware for auth/A/B testing; Vercel Analytics + Speed Insights; supports logging and tracing | Mostly client-centric; requires extra services for telemetry/compliance | 
+| Initial Load (FCP/LCP) | Faster: SSR/SSG + code-splitting; PPR/ISR reduce TTFB and payload | Slower: full client bundle + hydration gate; relies on aggressive caching |
+| SEO Coverage | Strong: HTML pre-rendered; Metadata API; dynamic routes with ISR | Weak: CSR-first; needs pre-render hacks; bots may miss dynamic content |
+| Vercel Optimization | Native: Image Optimization, Edge Functions/Middleware, ISR cache, Analytics/Speed Insights | Limited: requires manual CDN/image setup; fewer edge primitives |
+| Real-time/Data | Server Components stream data; Route Handlers/APIs colocated; Edge auth | Client-only fetching; backend hosted elsewhere; higher latency |
+| Complexity | Moderate: SSR/RSC patterns, caching strategies, middleware | Low: familiar SPA patterns only |
+| Scalability | Auto-edge scaling; DB pooling with Route Handlers; multi-region cache | Frontend only; must build/operate separate backend |
+| Compliance/Observability | Built-in headers, Middleware for auth/A/B testing; Vercel Analytics + Speed Insights; supports logging and tracing | Mostly client-centric; requires extra services for telemetry/compliance |
 
 ## Deployment Strategy on Vercel (Next.js Preset)
 1. **Project Settings → General**

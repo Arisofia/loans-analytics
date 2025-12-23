@@ -1,5 +1,4 @@
 # Runbook: Model Rollback
-
 Owner: Risk Modeling | SLA: acknowledge 15m, rollback 1h | Escalate to: Risk Lead, Engineering Lead
 
 1. Trigger: Performance degradation (PD/LGD drift >10%), incidents, or failed validation.

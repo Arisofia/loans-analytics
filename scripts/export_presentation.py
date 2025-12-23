@@ -5,13 +5,14 @@ and the supplied Figma visual. Run this script from the repo root; it writes int
 exports/presentation/.
 """
 
-from pathlib import Path
 import textwrap
+from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
-from python.theme import ABACO_THEME
+
 from python.analytics import project_growth
+from python.theme import ABACO_THEME
 
 
 def apply_theme(fig: px.Figure) -> px.Figure:
@@ -21,7 +22,7 @@ def apply_theme(fig: px.Figure) -> px.Figure:
         font_color=ABACO_THEME["colors"]["white"],
         paper_bgcolor=ABACO_THEME["colors"]["background"],
         plot_bgcolor=ABACO_THEME["colors"]["background"],
-        margin=dict(l=0, r=0, t=40, b=0),
+        margin={"l": 0, "r": 0, "t": 40, "b": 0},
     )
     return fig
 
@@ -32,9 +33,9 @@ def build_growth_chart(output_dir: Path) -> Path:
         target_yield=2.1,
         current_loan_volume=120,
         target_loan_volume=205,
-        periods=6
+        periods=6,
     )
-    projection["month_label"] = projection["month"].dt.strftime("%b %Y")
+    projection["month_label"] = projection["date"].dt.strftime("%b %Y")
     fig = px.line(
         projection,
         x="month_label",

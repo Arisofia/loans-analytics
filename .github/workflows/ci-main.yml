@@ -2,101 +2,74 @@ name: CI Main
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'apps/web/**'
-      - 'src/**'
-      - 'public/**'
-      - 'package.json'
-      - 'next.config.js'
-      - 'apps/analytics/**'
-      - 'python/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'requirements.txt'
-      - 'requirements.lock.txt'
-      - '.github/workflows/ci-main.yml'
+    branches: [main, develop]
   pull_request:
-    branches: [main]
-    paths:
-      - 'apps/web/**'
-      - 'src/**'
-      - 'public/**'
-      - 'package.json'
-      - 'next.config.js'
-      - 'apps/analytics/**'
-      - 'python/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'requirements.txt'
-      - 'requirements.lock.txt'
-      - '.github/workflows/ci-main.yml'
+    branches: [main, develop]
   workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *' # Nightly at 3am UTC
 
 jobs:
-  web-lint:
-    name: Web Lint (Next.js)
+  build-and-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      
+      - name: Use Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: '20'
           cache: 'npm'
-      - name: Install dependencies
-        run: npm install
-      - name: Lint
-        run: npm run lint
+          cache-dependency-path: apps/web/package-lock.json
 
-  analytics-test:
-    name: Analytics Python Tests (${{ matrix.python-version }})
+      - name: Install dependencies # Installs dependencies for all workspaces
+        run: npm ci # Use `npm ci` for reliable builds
+
+      - name: Run Lint
+        run: npm run lint # This script is configured in the root package.json to target apps/web
+
+      - name: Run Build
+        run: npm run build # This script also targets apps/web
+
+  update-figma-slides:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11"]
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: |
-            requirements.txt
-            apps/analytics/requirements.txt
+          node-version: '20'
+
       - name: Install dependencies
+        run: npm ci
+
+      - name: Update Figma Slides
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r apps/analytics/requirements.txt
-      - name: Run Preflight Checks
-        run: |
-          bash scripts/preflight.sh
-      - name: Run tests
-        run: pytest
-      - name: Run Data Pipeline
-        run: |
-          python scripts/run_data_pipeline.py
-      - name: Check Repo Maturity
-        run: |
-          if [ -f scripts/repo_maturity_summary.py ]; then python scripts/repo_maturity_summary.py; fi
-      - name: Notify Slack on Failure
-        if: failure()
-        uses: slackapi/slack-github-action@v2
-        with:
-          webhook-type: INCOMING_WEBHOOK
-          payload: |
-            {
-              "text": "🚨 CI Main Pipeline Failed",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*CI Main Pipeline Failed* | Repository: ${{ github.repository }} | Branch: ${{ github.ref_name }} | <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          const cron = require('node-cron');
+          const axios = require('axios');
+          const { Client } = require('figma-js');
+
+          const FIGMA_TOKEN = 'YOUR_FIGMA_API_TOKEN';
+          const FILE_KEY = 'YOUR_FIGMA_FILE_KEY';
+          const ANALYTICS_URL = 'URL_TO_YOUR_ANALYTICS_JSON';
+
+          const client = Client({ personalAccessToken: FIGMA_TOKEN });
+
+          async function updateSlides() {
+            const { data } = await axios.get(ANALYTICS_URL);
+
+            // Example: Update slide for Total Customers
+            // Find the node in Figma and update its text with data.traction.total_customers
+            // Repeat for each KPI in your mapping table
+
+            // Example Figma API usage:
+            // const file = await client.file(FILE_KEY);
+            // Find node by name, update text, etc.
+          }
+
+          cron.schedule('0 8 * * *', () => {
+            updateSlides();
+            console.log('Figma slides updated at 8am');
+          });

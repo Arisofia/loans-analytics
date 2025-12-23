@@ -1,19 +1,31 @@
 import logging
-import pandas as pd
-import numpy as np
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from python.validation import ANALYTICS_NUMERIC_COLUMNS, REQUIRED_ANALYTICS_COLUMNS, assert_dataframe_schema, find_column
+import numpy as np
+import pandas as pd
+
+from python.validation import (
+    ANALYTICS_NUMERIC_COLUMNS,
+    REQUIRED_ANALYTICS_COLUMNS,
+    assert_dataframe_schema,
+    find_column,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class DataTransformation:
     REQUIRED_INPUT_COLUMNS = [
-        "total_receivable_usd", "total_eligible_usd", "discounted_balance_usd",
-        "dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"
+        "total_receivable_usd",
+        "total_eligible_usd",
+        "discounted_balance_usd",
+        "dpd_0_7_usd",
+        "dpd_7_30_usd",
+        "dpd_30_60_usd",
+        "dpd_60_90_usd",
+        "dpd_90_plus_usd",
     ]
 
     REQUIRED_ANALYTICS_COLUMNS = REQUIRED_ANALYTICS_COLUMNS
@@ -38,7 +50,9 @@ class DataTransformation:
 
     def _log_transformation(self, step: str, message: str, **details: Any) -> None:
         detail_parts = [f"{key}={value!r}" for key, value in details.items() if value is not None]
-        context_parts = [f"{key}={value!r}" for key, value in self.context.items() if value is not None]
+        context_parts = [
+            f"{key}={value!r}" for key, value in self.context.items() if value is not None
+        ]
         segments = [f"[transformation:{step}]", message]
         if detail_parts:
             segments.append(", ".join(detail_parts))
@@ -76,7 +90,9 @@ class DataTransformation:
         }
 
     def calculate_receivables_metrics(self, df: pd.DataFrame) -> Dict[str, float]:
-        self._log_transformation("calculate_receivables_metrics", "Calculating receivables metrics", rows=len(df))
+        self._log_transformation(
+            "calculate_receivables_metrics", "Calculating receivables metrics", rows=len(df)
+        )
         metrics = {
             "total_receivable": df["total_receivable_usd"].sum(),
             "total_eligible": df["total_eligible_usd"].sum(),
@@ -102,7 +118,13 @@ class DataTransformation:
             )
             return {}
         ratios: Dict[str, float] = {}
-        for col in ["dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"]:
+        for col in [
+            "dpd_0_7_usd",
+            "dpd_7_30_usd",
+            "dpd_30_60_usd",
+            "dpd_60_90_usd",
+            "dpd_90_plus_usd",
+        ]:
             if col in df.columns:
                 ratios[col] = (df[col].sum() / total) * 100.0
         self._record_lineage(
@@ -115,10 +137,14 @@ class DataTransformation:
 
     def transform_to_kpi_dataset(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform raw loan data into a KPI-ready dataset with ratios, analytics columns, and metadata."""
-        self._log_transformation("transform_to_kpi_dataset", "Starting KPI dataset transformation", rows=len(df))
+        self._log_transformation(
+            "transform_to_kpi_dataset", "Starting KPI dataset transformation", rows=len(df)
+        )
         missing = [c for c in self.REQUIRED_INPUT_COLUMNS if c not in df.columns]
         if missing:
-            self._log_transformation("transform_to_kpi_dataset", "Missing required columns", missing_columns=missing)
+            self._log_transformation(
+                "transform_to_kpi_dataset", "Missing required columns", missing_columns=missing
+            )
             raise ValueError(f"Transformation failed: missing required columns: {missing}")
 
         try:
@@ -130,18 +156,25 @@ class DataTransformation:
             )
         except AssertionError as error:
             message = str(error)
-            self._log_transformation("transform_to_kpi_dataset", "Input schema assertion failed", error=message)
+            self._log_transformation(
+                "transform_to_kpi_dataset", "Input schema assertion failed", error=message
+            )
             raise ValueError(f"Transformation failed: {message}") from error
 
         kpi_df = df.copy()
-        kpi_df = kpi_df.rename(columns={
-            "total_receivable_usd": "receivable_amount",
-            "total_eligible_usd": "eligible_amount",
-            "discounted_balance_usd": "discounted_amount",
-        })
+        # Create aliases for clarity but keep original names for compatibility with KPI engine
+        kpi_df["receivable_amount"] = kpi_df["total_receivable_usd"]
+        kpi_df["eligible_amount"] = kpi_df["total_eligible_usd"]
+        kpi_df["discounted_amount"] = kpi_df["discounted_balance_usd"]
 
         receivable = kpi_df["receivable_amount"].replace(0, np.nan)
-        for col in ["dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"]:
+        for col in [
+            "dpd_0_7_usd",
+            "dpd_7_30_usd",
+            "dpd_30_60_usd",
+            "dpd_60_90_usd",
+            "dpd_90_plus_usd",
+        ]:
             if col in df.columns:
                 kpi_df[f"{col}_pct"] = (df[col] / receivable).fillna(0.0) * 100
 
@@ -171,7 +204,9 @@ class DataTransformation:
             )
         except AssertionError as error:
             message = str(error)
-            self._log_transformation("transform_to_kpi_dataset", "Output schema assertion failed", error=message)
+            self._log_transformation(
+                "transform_to_kpi_dataset", "Output schema assertion failed", error=message
+            )
             raise ValueError(f"Transformation output invalid: {message}") from error
         self._record_lineage(
             "transform_to_kpi_dataset",
@@ -180,7 +215,9 @@ class DataTransformation:
             {
                 "rows": len(kpi_df),
                 "required_columns": self.REQUIRED_INPUT_COLUMNS,
-                "analytics_columns": [col for col in self.REQUIRED_ANALYTICS_COLUMNS if col in kpi_df.columns],
+                "analytics_columns": [
+                    col for col in self.REQUIRED_ANALYTICS_COLUMNS if col in kpi_df.columns
+                ],
             },
         )
         self.transformations_count += 1
@@ -195,7 +232,10 @@ class DataTransformation:
         )
         if len(original) != len(transformed):
             return False
-        if "total_receivable_usd" in original.columns and "receivable_amount" in transformed.columns:
+        if (
+            "total_receivable_usd" in original.columns
+            and "receivable_amount" in transformed.columns
+        ):
             orig_sum = original["total_receivable_usd"].sum()
             trans_sum = transformed["receivable_amount"].sum()
             if not np.isclose(orig_sum, trans_sum):

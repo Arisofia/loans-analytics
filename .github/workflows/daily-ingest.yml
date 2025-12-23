@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -26,6 +26,18 @@ jobs:
           if [ -f apps/analytics/requirements.txt ]; then
             pip install -r apps/analytics/requirements.txt
           fi
+
+                - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install chromium
+      
+      - name: Run Cascade scraper
+        run: python scripts/scrape_cascade.py --loan-tape
+        env:
+          CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
+          CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}
+          CASCADE_PID: abaco
       - name: Run data ingestion pipeline
         run: |
           python scripts/run_data_pipeline.py

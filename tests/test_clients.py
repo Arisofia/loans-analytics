@@ -1,7 +1,9 @@
+import os
 import unittest
 from unittest.mock import MagicMock, patch
-import os
-from scripts.clients import GrokClient, GeminiClient, AIResponse
+
+from scripts.clients import AIResponse, GeminiClient, GrokClient
+
 
 class TestGrokClient(unittest.TestCase):
     def setUp(self):
@@ -20,14 +22,15 @@ class TestGrokClient(unittest.TestCase):
     def test_session_configuration(self, mock_session_cls):
         mock_session = mock_session_cls.return_value
         _ = GrokClient()
-        
+
         # Verify adapter mount
         self.assertTrue(mock_session.mount.called)
         args, _ = mock_session.mount.call_args
         self.assertEqual(args[0], "https://")
-        
+
         # Verify retry configuration
         from requests.adapters import HTTPAdapter
+
         self.assertIsInstance(args[1], HTTPAdapter)
         self.assertEqual(args[1].max_retries.total, 3)
 
@@ -35,19 +38,17 @@ class TestGrokClient(unittest.TestCase):
     def test_generate_text_calls_api(self, mock_session_cls):
         mock_session = mock_session_cls.return_value
         mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "choices": [{"message": {"content": "Test response"}}]
-        }
+        mock_response.json.return_value = {"choices": [{"message": {"content": "Test response"}}]}
         mock_response.raise_for_status.return_value = None
         mock_session.post.return_value = mock_response
-        
+
         client = GrokClient()
         result = client.generate_text("Test prompt")
-        
+
         self.assertIsInstance(result, AIResponse)
         self.assertEqual(result.text, "Test response")
         mock_session.post.assert_called_once()
-        
+
         # Verify URL and headers
         args, kwargs = mock_session.post.call_args
         self.assertEqual(args[0], "https://api.groq.com/v1/chat/completions")
@@ -83,7 +84,7 @@ class TestGeminiClient(unittest.TestCase):
     def test_generate_text_calls_model(self, mock_genai):
         mock_model = MagicMock()
         mock_genai.GenerativeModel.return_value = mock_model
-        
+
         mock_response = MagicMock()
         mock_response.text = "Gemini response"
         mock_response.to_json.return_value = '{"candidates": []}'

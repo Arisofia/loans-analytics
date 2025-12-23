@@ -1,8 +1,11 @@
-
-
 import pytest
 
-from streamlit_app.utils.business_rules import ApprovalDecision, IndustryType, MYPEBusinessRules, RiskLevel
+from streamlit_app.utils.business_rules import (
+    ApprovalDecision,
+    IndustryType,
+    MYPEBusinessRules,
+    RiskLevel,
+)
 
 
 def test_high_risk_classification_flags_multiple_reasons():
@@ -88,14 +91,18 @@ def test_classify_npl_below_threshold_is_not_npl():
 
 
 def test_rotation_target_message():
-    rotation, meets, message = MYPEBusinessRules.check_rotation_target(total_revenue=500000, avg_balance=100000)
+    rotation, meets, message = MYPEBusinessRules.check_rotation_target(
+        total_revenue=500000, avg_balance=100000
+    )
     assert pytest.approx(rotation, rel=1e-3) == 5
     assert meets is True
     assert "meets" in message.lower()
 
 
 def test_rotation_target_below_threshold():
-    rotation, meets, message = MYPEBusinessRules.check_rotation_target(total_revenue=390000, avg_balance=100000)
+    rotation, meets, message = MYPEBusinessRules.check_rotation_target(
+        total_revenue=390000, avg_balance=100000
+    )
 
     assert rotation < MYPEBusinessRules.TARGET_ROTATION
     assert meets is False
@@ -113,7 +120,9 @@ def test_rotation_target_boundary_condition():
 
 
 def test_check_rotation_target_zero_average_balance():
-    rotation, meets, message = MYPEBusinessRules.check_rotation_target(total_revenue=100000, avg_balance=0.0)
+    rotation, meets, message = MYPEBusinessRules.check_rotation_target(
+        total_revenue=100000, avg_balance=0.0
+    )
 
     assert rotation == 0.0
     assert meets is False

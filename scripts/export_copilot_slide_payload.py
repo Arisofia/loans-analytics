@@ -5,6 +5,7 @@ build dark presentation slides consistent with the ABACO design tokens.
 
 import json
 from pathlib import Path
+
 from python.theme import ABACO_THEME
 
 SLIDE_TOPICS = [

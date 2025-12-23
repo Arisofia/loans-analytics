@@ -1,12 +1,13 @@
-
 """
 Unit tests for LoanAnalyticsEngine and related analytics logic.
 """
 
-import pytest
-import pandas as pd
-import numpy as np
 from unittest.mock import MagicMock, Mock
+
+import numpy as np
+import pandas as pd
+import pytest
+
 from apps.analytics.src.azure_blob_exporter import AzureBlobKPIExporter
 from apps.analytics.src.enterprise_analytics_engine import LoanAnalyticsEngine
 
@@ -20,6 +21,7 @@ def test_engine_from_dict():
     the expected data length.
     """
     from apps.analytics.tests.test_data_shared import SAMPLE_LOAN_DATA
+
     engine = LoanAnalyticsEngine.from_dict(SAMPLE_LOAN_DATA)
     assert isinstance(engine, LoanAnalyticsEngine)
     assert len(engine.loan_data) == 1
@@ -40,11 +42,11 @@ def test_engine_coercion_report_tracking():
         "monthly_debt": [1500, 2000],
         "loan_status": ["current", "current"],
         "interest_rate": [0.035, 0.04],
-        "principal_balance": [240000, 390000]
+        "principal_balance": [240000, 390000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     # Prefer public API for test validation
-    coercion_report = getattr(engine, '_coercion_report', None)
+    coercion_report = getattr(engine, "_coercion_report", None)
     assert coercion_report is not None
     assert coercion_report["loan_amount"] == 1
 
@@ -76,7 +78,7 @@ def test_engine_ltv_with_infinity():
         "monthly_debt": [1500, 2500],
         "loan_status": ["current", "current"],
         "interest_rate": [0.035, 0.042],
-        "principal_balance": [240000, 440000]
+        "principal_balance": [240000, 440000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     ltv = engine.compute_loan_to_value()
@@ -94,7 +96,7 @@ def test_engine_dti_with_negative_income():
         "monthly_debt": [1500, 2500],
         "loan_status": ["current", "current"],
         "interest_rate": [0.035, 0.042],
-        "principal_balance": [240000, 440000]
+        "principal_balance": [240000, 440000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     dti = engine.compute_debt_to_income()
@@ -112,7 +114,7 @@ def test_engine_data_quality_with_duplicates():
         "monthly_debt": [1500, 1500, 1000],
         "loan_status": ["current", "current", "current"],
         "interest_rate": [0.035, 0.035, 0.038],
-        "principal_balance": [240000, 240000, 145000]
+        "principal_balance": [240000, 240000, 145000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     quality = engine.data_quality_profile()
@@ -130,7 +132,7 @@ def test_engine_data_quality_with_null_values():
         "monthly_debt": [1500, 2500, 1000],
         "loan_status": ["current", "current", "current"],
         "interest_rate": [0.035, 0.042, 0.038],
-        "principal_balance": [240000, 440000, 145000]
+        "principal_balance": [240000, 440000, 145000],
     }
     df = pd.DataFrame(data)
     engine = LoanAnalyticsEngine(df)
@@ -149,7 +151,7 @@ def test_engine_data_quality_score_calculation():
         "monthly_debt": [1500, 2500, 1000],
         "loan_status": ["current", "current", "current"],
         "interest_rate": [0.035, 0.042, 0.038],
-        "principal_balance": [240000, 440000, 145000]
+        "principal_balance": [240000, 440000, 145000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     quality = engine.data_quality_profile()
@@ -167,7 +169,7 @@ def test_engine_risk_alerts_empty_result():
         "monthly_debt": [1500, 2500, 1000],
         "loan_status": ["current", "current", "current"],
         "interest_rate": [0.035, 0.042, 0.038],
-        "principal_balance": [240000, 440000, 145000]
+        "principal_balance": [240000, 440000, 145000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     alerts = engine.risk_alerts(ltv_threshold=100.0, dti_threshold=100.0)
@@ -183,11 +185,11 @@ def test_engine_risk_alerts_risk_score_calculation():
         "monthly_debt": [3000],
         "loan_status": ["current"],
         "interest_rate": [0.035],
-        "principal_balance": [290000]
+        "principal_balance": [290000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     alerts = engine.risk_alerts(ltv_threshold=90.0, dti_threshold=40.0)
-    
+
     if not alerts.empty:
         assert "risk_score" in alerts.columns
         assert 0 <= alerts["risk_score"].iloc[0] <= 1
@@ -202,11 +204,11 @@ def test_engine_risk_alerts_with_nan_values():
         "monthly_debt": [3000, 1500],
         "loan_status": ["current", "current"],
         "interest_rate": [0.035, 0.035],
-        "principal_balance": [290000, 390000]
+        "principal_balance": [290000, 390000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     alerts = engine.risk_alerts()
-    
+
     if not alerts.empty:
         assert not np.isnan(alerts["risk_score"]).any()
 
@@ -222,14 +224,11 @@ def test_export_kpis_to_blob_invalid_blob_name_type():
         "monthly_debt": [1500],
         "loan_status": ["current"],
         "interest_rate": [0.035],
-        "principal_balance": [240000]
+        "principal_balance": [240000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
-    exporter = AzureBlobKPIExporter(
-        container_name="test-container",
-        blob_service_client=Mock()
-    )
-    
+    exporter = AzureBlobKPIExporter(container_name="test-container", blob_service_client=Mock())
+
     with pytest.raises(ValueError, match="blob_name must be a string"):
         engine.export_kpis_to_blob(exporter, blob_name=123)  # type: ignore
     data = {
@@ -239,15 +238,12 @@ def test_export_kpis_to_blob_invalid_blob_name_type():
         "monthly_debt": [1500],
         "loan_status": ["current"],
         "interest_rate": [0.035],
-        "principal_balance": [240000]
+        "principal_balance": [240000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     mock_exporter = MagicMock()
     with pytest.raises(ValueError, match="blob_name must be a string"):
-        engine.export_kpis_to_blob(
-            mock_exporter,
-            blob_name=123  # type: ignore
-        )
+        engine.export_kpis_to_blob(mock_exporter, blob_name=123)  # type: ignore
 
 
 def test_engine_export_kpis_to_blob_valid():
@@ -259,14 +255,14 @@ def test_engine_export_kpis_to_blob_valid():
         "monthly_debt": [1500],
         "loan_status": ["current"],
         "interest_rate": [0.035],
-        "principal_balance": [240000]
+        "principal_balance": [240000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     mock_exporter = MagicMock()
     mock_exporter.upload_metrics.return_value = "container/blob.json"
-    
+
     result = engine.export_kpis_to_blob(mock_exporter, blob_name="test.json")
-    
+
     assert result == "container/blob.json"
     mock_exporter.upload_metrics.assert_called_once()
 
@@ -280,14 +276,14 @@ def test_engine_source_df_not_modified():
         "monthly_debt": [1500, 2500],
         "loan_status": ["current", "current"],
         "interest_rate": [0.035, 0.042],
-        "principal_balance": [240000, 440000]
+        "principal_balance": [240000, 440000],
     }
     original_df = pd.DataFrame(data)
     original_values = original_df.copy()
-    
+
     engine = LoanAnalyticsEngine(original_df)
     engine.run_full_analysis()
-    
+
     pd.testing.assert_frame_equal(original_df, original_values)
 
 
@@ -302,7 +298,7 @@ def test_engine_coercion_preserves_all_nan_columns():
         "monthly_debt": [1500],
         "loan_status": ["current"],
         "interest_rate": ["invalid"],
-        "principal_balance": [240000]
+        "principal_balance": [240000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     assert engine.coercion_report["interest_rate"] == 1
@@ -320,11 +316,11 @@ def test_engine_run_full_analysis_returns_all_keys():
         "monthly_debt": [1500, 2500],
         "loan_status": ["current", "30-59 days past due"],
         "interest_rate": [0.035, 0.042],
-        "principal_balance": [240000, 440000]
+        "principal_balance": [240000, 440000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
     kpis = engine.run_full_analysis()
-    
+
     expected_keys = [
         "portfolio_delinquency_rate_percent",
         "portfolio_yield_percent",
@@ -332,9 +328,9 @@ def test_engine_run_full_analysis_returns_all_keys():
         "average_dti_ratio_percent",
         "data_quality_score",
         "average_null_ratio_percent",
-        "invalid_numeric_ratio_percent"
+        "invalid_numeric_ratio_percent",
     ]
-    
+
     for key in expected_keys:
         assert key in kpis
 
@@ -351,7 +347,7 @@ def test_engine_handles_all_nan_numeric_columns():
         "monthly_debt": [1500, 2500],
         "loan_status": ["current", "current"],
         "interest_rate": [0.035, 0.042],
-        "principal_balance": [240000, 440000]
+        "principal_balance": [240000, 440000],
     }
     df = pd.DataFrame(data)
     engine = LoanAnalyticsEngine(df)

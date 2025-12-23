@@ -1,10 +1,12 @@
 name: PR Assignee Check
 
 on:
-  pull_request:
-    branches: [main]
-    types: [opened, reopened, synchronize, ready_for_review]
   workflow_call:
+    inputs:
+      assignees:
+        description: JSON list of PR assignees
+        required: true
+        type: string
 
 jobs:
   ensure-assignee:
@@ -16,7 +18,7 @@ jobs:
     steps:
       - name: Validate assignee (warn only)
         env:
-          ASSIGNEES: ${{ toJson(github.event.pull_request.assignees) }}
+          ASSIGNEES: ${{ inputs.assignees }}
         run: |
           if [ -z "$ASSIGNEES" ] || [ "$ASSIGNEES" = "[]" ]; then
             echo "Warning: no assignee set; proceeding to keep CI green while requiring owners in review."

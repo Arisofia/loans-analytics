@@ -7,10 +7,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import pandas as pd
 from azure.core.exceptions import ResourceExistsError
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, ContentSettings
-import pandas as pd
 
 # Add project root to path for python/ modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -38,13 +38,19 @@ METRICS_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 DEFAULT_AZURE_CONTAINER = os.getenv("PIPELINE_AZURE_CONTAINER")
-DEFAULT_AZURE_CONNECTION_STRING = os.getenv("PIPELINE_AZURE_CONNECTION_STRING") or os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-DEFAULT_AZURE_ACCOUNT_URL = os.getenv("PIPELINE_AZURE_ACCOUNT_URL") or os.getenv("AZURE_STORAGE_ACCOUNT_URL")
+DEFAULT_AZURE_CONNECTION_STRING = os.getenv("PIPELINE_AZURE_CONNECTION_STRING") or os.getenv(
+    "AZURE_STORAGE_CONNECTION_STRING"
+)
+DEFAULT_AZURE_ACCOUNT_URL = os.getenv("PIPELINE_AZURE_ACCOUNT_URL") or os.getenv(
+    "AZURE_STORAGE_ACCOUNT_URL"
+)
 DEFAULT_AZURE_BLOB_PREFIX = os.getenv("PIPELINE_AZURE_BLOB_PREFIX", "pipeline-runs")
 
 
 def log_stage(stage: str, message: str, **details: Any) -> None:
-    detail_str = ", ".join(f"{key}={value!r}" for key, value in details.items() if value is not None)
+    detail_str = ", ".join(
+        f"{key}={value!r}" for key, value in details.items() if value is not None
+    )
     payload = f"{stage}: {message}"
     if detail_str:
         payload = f"{payload} | {detail_str}"
@@ -65,6 +71,8 @@ def _guess_content_type(path: Path) -> str:
         ".csv": "text/csv",
         ".json": "application/json",
         ".parquet": "application/octet-stream",
+        ".html": "text/html",
+        ".md": "text/markdown",
     }
     return mapping.get(path.suffix.lower(), "application/octet-stream")
 
@@ -94,14 +102,20 @@ def upload_outputs_to_azure(
     prefix_parts = [blob_prefix.rstrip("/") if blob_prefix else None, run_id]
     prefix = "/".join([part for part in prefix_parts if part])
     uploaded: Dict[str, str] = {}
-    for key in ("metrics_file", "csv_file", "manifest_file", "compliance_report_file"):
-        file_path = processed_outputs.get(key)
+
+    # Upload all files in processed_outputs that point to existing files
+    for key, file_path in processed_outputs.items():
+        if key == "generated_at":
+            continue
+
         if not file_path:
             continue
+
         path_obj = Path(file_path)
         if not path_obj.exists():
             logger.warning("Azure export skipped missing file %s", path_obj)
             continue
+
         blob_name = f"{prefix}/{path_obj.name}" if prefix else path_obj.name
         with path_obj.open("rb") as handle:
             container_client.upload_blob(
@@ -111,6 +125,7 @@ def upload_outputs_to_azure(
                 content_settings=ContentSettings(content_type=_guess_content_type(path_obj)),
             )
         uploaded[key] = f"{container_client.container_name}/{blob_name}"
+
     return uploaded
 
 
@@ -138,6 +153,46 @@ def rewrite_manifest(
         json.dump(manifest, handle, indent=2, default=str)
 
 
+def generate_presentation_assets(run_id: str) -> Dict[str, str]:
+    """
+    Run presentation export scripts and return paths to generated assets.
+    """
+    import subprocess
+
+    assets = {}
+    try:
+        # Run export_presentation.py
+        subprocess.run(
+            [sys.executable, "scripts/export_presentation.py"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        # Run export_copilot_slide_payload.py
+        subprocess.run(
+            [sys.executable, "scripts/export_copilot_slide_payload.py"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        # Collect generated files
+        presentation_dir = Path("exports/presentation")
+        if presentation_dir.exists():
+            for item in presentation_dir.glob("*"):
+                if item.is_file():
+                    assets[f"presentation_{item.stem}"] = str(item)
+
+        log_stage("pipeline:presentation", "Generated presentation assets", count=len(assets))
+
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to generate presentation assets: {e.stderr}")
+        log_stage("pipeline:presentation", "Failed to generate assets", error=str(e))
+
+    return assets
+
+
 def write_outputs(
     run_id: str,
     kpi_df: pd.DataFrame,
@@ -153,12 +208,16 @@ def write_outputs(
     kpi_df.to_parquet(metrics_path, index=False)
     kpi_df.to_csv(csv_path, index=False)
 
+    # Generate presentation assets
+    presentation_assets = generate_presentation_assets(run_id)
+
     processed_outputs = {
         "metrics_file": str(metrics_path),
         "csv_file": str(csv_path),
         "manifest_file": str(manifest_path),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "compliance_report_file": str(compliance_path),
+        **presentation_assets,
     }
 
     manifest = {
@@ -204,7 +263,9 @@ def run_pipeline(
     ingestion = CascadeIngestion(data_dir=data_dir)
     ingestion.set_context(user=user, action=action, input_file=str(input_path))
     transformer = DataTransformation()
-    transformer.set_context(user=user, action=action, ingest_run_id=ingestion.run_id, source_file=str(input_path))
+    transformer.set_context(
+        user=user, action=action, ingest_run_id=ingestion.run_id, source_file=str(input_path)
+    )
 
     compliance_log: List[Dict[str, Any]] = []
 
@@ -303,12 +364,19 @@ def run_pipeline(
     mask_stage = "not_run"
     try:
         if not _is_dataframe_empty(df) and validation_passed:
-            log_stage("pipeline:transformation", "Transforming to KPI dataset", run_id=ingestion.run_id)
+            log_stage(
+                "pipeline:transformation", "Transforming to KPI dataset", run_id=ingestion.run_id
+            )
             kpi_df = transformer.transform_to_kpi_dataset(df)
             kpi_df, masked_columns = mask_pii_in_dataframe(kpi_df)
             mask_stage = "post_transformation"
             record_access("compliance", "pii_masked", f"columns={masked_columns}")
-            log_stage("pipeline:transformation", "Transformation completed", rows=len(kpi_df), run_id=ingestion.run_id)
+            log_stage(
+                "pipeline:transformation",
+                "Transformation completed",
+                rows=len(kpi_df),
+                run_id=ingestion.run_id,
+            )
             record_access("transformation", "completed", f"rows={len(kpi_df)}")
         else:
             mask_stage = "transformation_skipped"
@@ -336,7 +404,9 @@ def run_pipeline(
             par_30, par_ctx = kpi_engine.calculate_par_30()
             par_90, par90_ctx = kpi_engine.calculate_par_90()
             collection_rate, coll_ctx = kpi_engine.calculate_collection_rate()
-            health_score, health_ctx = kpi_engine.calculate_portfolio_health(par_30, collection_rate)
+            health_score, health_ctx = kpi_engine.calculate_portfolio_health(
+                par_30, collection_rate
+            )
             audit["kpis"] = {
                 "par_30": {"value": par_30, **par_ctx},
                 "par_90": {"value": par_90, **par90_ctx},
@@ -407,7 +477,9 @@ def run_pipeline(
             raise ValueError("No KPI dataset generated; cannot persist outputs.")
         log_stage("pipeline:output", "Writing outputs", run_id=ingestion.run_id)
         record_access("output", "started", "persisting metrics/csv/manifest")
-        processed_outputs = write_outputs(ingestion.run_id, kpi_df, audit, metadata_payload, compliance_path)
+        processed_outputs = write_outputs(
+            ingestion.run_id, kpi_df, audit, metadata_payload, compliance_path
+        )
         record_access("output", "completed", "metrics/csv/manifest persisted")
         record_access("compliance_report", "started", f"path={compliance_path}")
         compliance_report = build_compliance_report(
@@ -455,7 +527,9 @@ def run_pipeline(
                         metadata_payload,
                         compliance_path,
                     )
-                    record_access("azure_export", "completed", f"uploaded={list(azure_uploads.keys())}")
+                    record_access(
+                        "azure_export", "completed", f"uploaded={list(azure_uploads.keys())}"
+                    )
                 else:
                     record_access("azure_export", "skipped", "no files uploaded")
     except Exception as exc:
@@ -485,8 +559,13 @@ if __name__ == "__main__":
     parser.add_argument("--action", help="Action context (e.g., github-action, manual-run)")
     parser.add_argument("--azure-container", help="Azure Blob container to upload cleaned outputs")
     parser.add_argument("--azure-connection-string", help="Azure Blob Storage connection string")
-    parser.add_argument("--azure-account-url", help="Azure Blob Storage account URL (used with DefaultAzureCredential)")
-    parser.add_argument("--azure-blob-prefix", help="Prefix for blob paths (default: pipeline-runs/<run_id>)")
+    parser.add_argument(
+        "--azure-account-url",
+        help="Azure Blob Storage account URL (used with DefaultAzureCredential)",
+    )
+    parser.add_argument(
+        "--azure-blob-prefix", help="Prefix for blob paths (default: pipeline-runs/<run_id>)"
+    )
     args = parser.parse_args()
     run_pipeline(
         input_file=args.input,

@@ -4,7 +4,7 @@
 
 This document records the complete extraction process of Cascade Debt platform data for Abaco Capital's loan analytics repository.
 
-**Extraction Date**: December 4, 2025, 8:00 AM CST  
+**Extraction Date**: December 4, 2025, 8:00 AM CST
 **Data Freshness**: Current as of December 3, 2025 UTC
 **Platform**: Cascade Debt (https://app.cascadedebt.com)
 **Project**: Abaco Capital
@@ -159,5 +159,5 @@ docs/
 - This extraction represents a point-in-time snapshot
 - Real-time monitoring continues via Cascade native dashboards
 
-**Last Updated**: 2025-12-04 08:30 AM CST  
+**Last Updated**: 2025-12-04 08:30 AM CST
 **Next Scheduled Extraction**: TBD

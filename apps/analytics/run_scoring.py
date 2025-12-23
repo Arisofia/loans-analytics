@@ -16,15 +16,15 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from apps.analytics.src.azure_blob_exporter import AzureBlobKPIExporter  # noqa: E402
-from apps.analytics.src.enterprise_analytics_engine import LoanAnalyticsEngine  # noqa: E402
+from apps.analytics.src.enterprise_analytics_engine import (  # noqa: E402
+    LoanAnalyticsEngine,
+)
 
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments for KPI and risk alert computation."""
     parser = argparse.ArgumentParser(
-        description=(
-            "Compute loan KPIs and optional risk alerts from a CSV dataset."
-        )
+        description=("Compute loan KPIs and optional risk alerts from a CSV dataset.")
     )
     parser.add_argument(
         "--data",
@@ -115,8 +115,7 @@ def main() -> None:
         risk_alert_count = 0
         if args.include_risk_alerts:
             risk_alerts = engine.risk_alerts(
-                ltv_threshold=args.ltv_threshold,
-                dti_threshold=args.dti_threshold
+                ltv_threshold=args.ltv_threshold, dti_threshold=args.dti_threshold
             )
             risk_alert_count = len(risk_alerts)
             if args.output:
@@ -131,7 +130,7 @@ def main() -> None:
             exporter = AzureBlobKPIExporter(
                 container_name=args.container_name,
                 connection_string=args.connection_string,
-                account_url=args.account_url
+                account_url=args.account_url,
             )
             blob_name = args.blob_name or "kpi_results.json"
             exporter.upload_metrics(kpi_results, blob_name)

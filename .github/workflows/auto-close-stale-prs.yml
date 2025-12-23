@@ -16,7 +16,7 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           stale-pr-message: |
-            This PR has been inactive for 5 days. 
+            This PR has been inactive for 5 days.
             PR will be automatically closed.
             To reopen, comment or push new changes.
           close-pr-message: 'Auto-closed due to inactivity (5+ days)'
