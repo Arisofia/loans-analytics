@@ -7,7 +7,7 @@ from typing import Iterable, List, Optional
 import pandas as pd
 
 
-@dataclass
+@dataclass(frozen=True)
 class LoanAnalyticsConfig:
     arrears_threshold: int = 90
     currency: str = "USD"
