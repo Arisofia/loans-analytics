@@ -1,33 +1,21 @@
-from __future__ import annotations
-
-from typing import Dict, Tuple
-
+import numpy as np
 import pandas as pd
-
-from python.analytics import (
-  calculate_quality_score as _calculate_quality_score,
-  portfolio_kpis as _portfolio_kpis,
-  project_growth as _project_growth,
-  standardize_numeric as _standardize_numeric,
-)
-
 
 CURRENCY_SYMBOLS = r"[₡$€£¥₽%]"
 
 
 def standardize_numeric(series: pd.Series) -> pd.Series:
-    """Compatibility wrapper around python.analytics.safe_numeric."""
-    return _standardize_numeric(series)
+    if pd.api.types.is_numeric_dtype(series):
+        return series
 
-
-def calculate_quality_score(df: pd.DataFrame) -> float:
-    """Return completeness score between 0 and 100."""
-    return _calculate_quality_score(df)
-
-
-def portfolio_kpis(df: pd.DataFrame) -> Tuple[Dict[str, float], pd.DataFrame]:
-    """Delegate KPI calculation to the consolidated analytics module."""
-    return _portfolio_kpis(df)
+    cleaned = (
+        series.astype(str)
+        .str.strip()
+        .str.replace(CURRENCY_SYMBOLS, "", regex=True)
+        .str.replace(",", "", regex=False)
+        .replace({"": np.nan, "nan": np.nan})
+    )
+    return pd.to_numeric(cleaned, errors="coerce")
 
 
 def project_growth(
@@ -37,11 +25,18 @@ def project_growth(
     target_loan_volume: float,
     periods: int = 6,
 ) -> pd.DataFrame:
-    """Generate a simple growth projection for dashboard visualizations."""
-    return _project_growth(
-        current_yield=current_yield,
-        target_yield=target_yield,
-        current_loan_volume=current_loan_volume,
-        target_loan_volume=target_loan_volume,
-        periods=periods,
+    """Project portfolio yield and loan volume over a monthly horizon."""
+
+    if periods < 2:
+        raise ValueError("periods must be at least 2 to create a projection range")
+
+    schedule = pd.date_range(pd.Timestamp.now().normalize(), periods=periods, freq="MS")
+    projection = pd.DataFrame(
+        {
+            "month": schedule,
+            "yield": np.linspace(current_yield, target_yield, periods),
+            "loan_volume": np.linspace(current_loan_volume, target_loan_volume, periods),
+        }
     )
+
+    return projection
