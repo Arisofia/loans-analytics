@@ -1,9 +1,3 @@
-
-"""
-Placeholder test module for pytest compliance.
-"""
-
-
 def test_placeholder_smoke():
-    """Placeholder test to keep pytest passing."""
-    assert 1 == 0 + 1
+    # Basic sanity check placeholder to keep pytest happy until real tests land.
+    assert True

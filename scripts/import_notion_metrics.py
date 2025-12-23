@@ -1,4 +1,3 @@
-
 """
 Notion Metrics Importer
 ----------------------
@@ -21,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from python.notion_integration.client import NotionClient
 
 # Configure logging
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logging.basicConfig(level=getattr(logging, os.getenv("LOG_LEVEL", "INFO"), logging.INFO))
 logger = logging.getLogger(__name__)
 
 
@@ -64,12 +63,11 @@ def extraer_propiedades_fila(fila: Dict[str, Any]) -> Dict[str, Any]:
 
 def calcular_estadisticas_metricas(todas_filas: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Calcula estadísticas globales de las métricas."""
-    metrics = ['visualizaciones', 'alcance', 'engagement']
+    metrics = ['visualizaciones', 'alcance', 'engagement', 'ctr']
     stats = {}
 
     for metric in metrics:
-        values = [f[metric] for f in todas_filas if f.get(metric) is not None]
-        
+        values = [f[metric] for f in todas_filas if f.get(metric) is not None and f[metric] > 0]
         if values:
             stats[metric] = {
                 'promedio': statistics.mean(values),
@@ -78,11 +76,20 @@ def calcular_estadisticas_metricas(todas_filas: List[Dict[str, Any]]) -> Dict[st
                 'min': min(values),
                 'count': len(values)
             }
-            if len(values) >= 2:
+            # Quartiles are only meaningful for n >= 4
+            if len(values) >= 4:
                 quantiles = statistics.quantiles(values, n=4)
                 stats[metric].update({
                     'p25': quantiles[0],
                     'p75': quantiles[2]
+                })
+            elif len(values) >= 2:
+                # Warn if quantiles are computed with too few data points
+                logger.warning(f"Quartiles for '{metric}' computed with only {len(values)} data points; results may not be meaningful.")
+                quantiles = statistics.quantiles(values, n=4)
+                stats[metric].update({
+                    'p25': quantiles[0] if len(quantiles) > 0 else None,
+                    'p75': quantiles[2] if len(quantiles) > 2 else None
                 })
         else:
             stats[metric] = None

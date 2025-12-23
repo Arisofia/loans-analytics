@@ -1,3 +1,7 @@
+# Forced re-index: renamed from ci.yml to ci-main.yml
+permissions:
+  pull-requests: read
+  contents: read
 name: CI Main
 
 on:
@@ -8,68 +12,146 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 3 * * *' # Nightly at 3am UTC
-
 jobs:
-  build-and-lint:
+  pr-hygiene:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/pr-assignee-check.yml
+    secrets: inherit
+
+  codex-pr-review:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/codex-pull-request-review.yml
+    secrets: inherit
+
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: apps/web/package-lock.json
-
-      - name: Install dependencies # Installs dependencies for all workspaces
-        run: npm ci # Use `npm ci` for reliable builds
-
-      - name: Run Lint
-        run: npm run lint # This script is configured in the root package.json to target apps/web
-
-      - name: Run Build
-        run: npm run build # This script also targets apps/web
-
-  update-figma-slides:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [17, 21]
     steps:
       - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+          cache: 'gradle'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Build with Gradle (clean, Java ${{ matrix.java-version }})
+        run: ./gradlew clean build --no-daemon
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=python
+      - name: Fail if coverage below 90%
+        run: |
+          coverage report --fail-under=90
+
+  sonar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Skip Sonar on PRs (no cloud project yet)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: echo "Skipping SonarQube scan on pull_request; cloud project not provisioned."
+      - name: Set up JDK 21
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Build with Gradle
+        if: ${{ github.event_name != 'pull_request' }}
+        run: ./gradlew clean build --no-daemon
+      - name: SonarQube Scan
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: SonarSource/sonarcloud-github-action@v5.0.0
+        with:
+          projectBaseDir: .
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+      - name: Install
+        run: |
+          cd apps/web
+          npm install
+      - name: Lint
+        run: |
+          cd apps/web
+          npm run lint
+      - name: Build
+        run: |
+          cd apps/web
+          npm run build
+      - name: Type-check
+        run: |
+          cd apps/web
+          npm run type-check
+  analytics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          cd apps/analytics
+          pip install -r requirements.txt
+      - name: Validate
+        run: |
+          python -c "import pandas as pd; print('Environment ready. Pandas version:', pd.__version__)"
+      - name: Tests and coverage
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          cd apps/analytics
+          pytest --cov=. --cov-report=xml:../coverage-python.xml
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: analytics-coverage
+          path: apps/coverage-python.xml
+
+  dotnet:
+    if: ${{ hashFiles('**/*.csproj', '**/*.sln', '**/packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
         with:
-          node-version: '20'
+          dotnet-version: '8.0.x'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Update Figma Slides
+      - name: Restore and test
         run: |
-          const cron = require('node-cron');
-          const axios = require('axios');
-          const { Client } = require('figma-js');
-
-          const FIGMA_TOKEN = 'YOUR_FIGMA_API_TOKEN';
-          const FILE_KEY = 'YOUR_FIGMA_FILE_KEY';
-          const ANALYTICS_URL = 'URL_TO_YOUR_ANALYTICS_JSON';
-
-          const client = Client({ personalAccessToken: FIGMA_TOKEN });
-
-          async function updateSlides() {
-            const { data } = await axios.get(ANALYTICS_URL);
-
-            // Example: Update slide for Total Customers
-            // Find the node in Figma and update its text with data.traction.total_customers
-            // Repeat for each KPI in your mapping table
-
-            // Example Figma API usage:
-            // const file = await client.file(FILE_KEY);
-            // Find node by name, update text, etc.
-          }
-
-          cron.schedule('0 8 * * *', () => {
-            updateSlides();
-            console.log('Figma slides updated at 8am');
-          });
+          dotnet restore
+          dotnet test --no-build

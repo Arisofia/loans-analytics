@@ -95,7 +95,7 @@ class CascadeScraper:
             await self.page.wait_for_selector('input[type="email"], input[name="email"]', timeout=10000)
             
             # Fill in credentials
-            logger.info(f"Logging in as {self.username}")
+            logger.info("Logging in with provided credentials")
             await self.page.fill('input[type="email"], input[name="email"]', self.username)
             await self.page.fill('input[type="password"], input[name="password"]', self.password)
             

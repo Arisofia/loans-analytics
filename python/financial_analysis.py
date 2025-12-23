@@ -211,7 +211,7 @@ class FinancialAnalyzer:
         
         # Basic validation
         if 'outstanding_balance' not in result.columns:
-             logger.warning("Missing outstanding_balance, skipping some enrichments")
+            logger.warning("Missing outstanding_balance, skipping some enrichments")
 
         # 1. Buckets DPD
         result = self.classify_dpd_buckets(result)

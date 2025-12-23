@@ -1,2 +1,0 @@
-period,measurement_date,total_receivable_usd,total_eligible_usd,discounted_balance_usd,dpd_0_7_usd,dpd_7_30_usd,dpd_30_60_usd,dpd_60_90_usd,dpd_90_plus_usd,_ingest_run_id,_ingest_timestamp,_ingest_actor,_ingest_action
-2025Q1,2025-03-31,not-a-number,1000.0,900.0,800.0,100.0,50.0,30.0,20.0,run_9811ccd0,2025-12-15T09:23:50.846312+00:00,system,ingestion

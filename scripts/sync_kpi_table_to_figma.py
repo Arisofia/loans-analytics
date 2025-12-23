@@ -29,14 +29,19 @@ payload = {
 
 # Find the node ID for the KPI Table page
 file_url = f"{BASE_URL}/files/{FIGMA_FILE_KEY}"
-resp = requests.get(file_url, headers=HEADERS)
-resp.raise_for_status()
-file_data = resp.json()
+import requests.exceptions
+try:
+    resp = requests.get(file_url, headers=HEADERS, timeout=30)
+    resp.raise_for_status()
+    file_data = resp.json()
+except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
+    print(f"Error: HTTP request to Figma API timed out or failed: {e}")
+    file_data = {}
 
 page_node_id = None
 for child in file_data["document"]["children"]:
-    if child["name"] == FIGMA_PAGE_NAME:
-        page_node_id = child["id"]
+    if child.get("name") == FIGMA_PAGE_NAME:
+        page_node_id = child.get("id")
         break
 if not page_node_id:
     raise ValueError(f"Page '{FIGMA_PAGE_NAME}' not found in Figma file.")
@@ -44,6 +49,9 @@ if not page_node_id:
 # Update the text node (requires Figma plugin or automation)
 # This is a placeholder for actual Figma API update logic
 update_url = f"{BASE_URL}/files/{FIGMA_FILE_KEY}/nodes?ids={page_node_id}"
-update_resp = requests.put(update_url, headers=HEADERS, data=json.dumps(payload))
-update_resp.raise_for_status()
-print(f"KPI table synced to Figma at {datetime.now().isoformat()}")
+try:
+    update_resp = requests.put(update_url, headers=HEADERS, data=json.dumps(payload), timeout=30)
+    update_resp.raise_for_status()
+    print(f"KPI table synced to Figma at {datetime.now().isoformat()}")
+except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
+    print(f"Error: HTTP request to update Figma node timed out or failed: {e}")

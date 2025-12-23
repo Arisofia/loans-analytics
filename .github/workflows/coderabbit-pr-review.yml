@@ -11,9 +11,9 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run CodeRabbit PR Review
-        uses: coderabbitai/ai-pr-reviewer@v1
+        uses: coderabbitai/ai-pr-reviewer@1.16.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CODERABBIT_TOKEN: ${{ secrets.CODERABBIT_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

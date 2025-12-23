@@ -33,7 +33,7 @@ def test_calculate_dpd_ratios():
     ratios = dt.calculate_dpd_ratios(sample_df())
     for key in ["dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"]:
         assert key in ratios
-    total = 3000.0
+    total = sample_df()["total_receivable_usd"].sum()
     assert ratios["dpd_0_7_usd"] == pytest.approx((100 + 200) / total * 100)
     assert ratios["dpd_7_30_usd"] == pytest.approx((50 + 100) / total * 100)
     assert ratios["dpd_30_60_usd"] == pytest.approx((100 + 200) / total * 100)
@@ -105,7 +105,7 @@ def test_transform_fuzzy_mapping():
     })
     kpi_df = dt.transform_to_kpi_dataset(df)
     assert "interest_rate" in kpi_df.columns
-    assert kpi_df["interest_rate"].iloc[0] == 0.15
+    assert kpi_df["interest_rate"].iloc[0] == pytest.approx(0.15)
 
 
 def test_transform_missing_required_columns_raises():
@@ -121,6 +121,6 @@ def test_transform_missing_required_columns_raises():
 def test_transform_non_numeric_required_column_raises():
     dt = DataTransformation()
     df = sample_df()
-    df["total_receivable_usd"] = ["not-a-number", "also-bad"]
+    df["total_receivable_usd"] = ["invalid_string", "non_numeric_value"]
     with pytest.raises(ValueError):
         dt.transform_to_kpi_dataset(df)

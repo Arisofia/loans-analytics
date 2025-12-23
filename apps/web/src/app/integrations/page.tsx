@@ -1,4 +1,5 @@
-import { IntegrationSettings, SlideShell } from '@/components/integrations'
+import { IntegrationSettings } from '@/components/integrations/IntegrationSettings'
+import { SlideShell } from '@/components/integrations/SlideShell'
 
 export default function IntegrationsPage() {
   return (

@@ -121,8 +121,15 @@ class KPIEngine:
         return val, ctx
 
     def calculate_portfolio_health(self, par_30: float, collection_rate: float) -> Tuple[float, Dict[str, Any]]:
+        # Input validation
+        if not isinstance(par_30, (int, float)) or pd.isna(par_30):
+            self._record_error("HealthScore", f"Invalid par_30 value: {par_30}")
+            return 0.0, {"metric": "HealthScore", "status": "error", "value": 0.0, "method": "standard"}
+        if not isinstance(collection_rate, (int, float)) or pd.isna(collection_rate):
+            self._record_error("HealthScore", f"Invalid collection_rate value: {collection_rate}")
+            return 0.0, {"metric": "HealthScore", "status": "error", "value": 0.0, "method": "standard"}
         val = calculate_portfolio_health(par_30, collection_rate)
-        ctx = self._log_metric("HealthScore", val)
+        ctx = self._log_metric("HealthScore", val, method="standard")
         return val, ctx
 
     def get_audit_trail(self) -> pd.DataFrame:
