@@ -2,12 +2,11 @@ name: Codex Pull Request Review
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
   workflow_call:
     secrets:
       OPENAI_API_KEY:
         required: true
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 jobs:
   assign_metadata:

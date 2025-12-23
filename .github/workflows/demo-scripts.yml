@@ -39,8 +39,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run Financial Analysis Demo
+        env:
+          DATA_FILE: ${{ inputs.DATA_FILE }}
         run: |
-          ARGS=$([ -n "${{ inputs.DATA_FILE }}" ] && echo "--data ${{ inputs.DATA_FILE }}" || echo "")
+          # Only allow .csv files in the data/ directory
+          if [ -n "$DATA_FILE" ]; then
+            case "$DATA_FILE" in
+              data/*.csv) ARGS="--data $DATA_FILE" ;;
+              *) echo "Invalid DATA_FILE path"; exit 1 ;;
+            esac
+          else
+            ARGS=""
+          fi
           python scripts/demo_financial_analysis.py $ARGS > demo_output.txt
       - name: Generate Report
         if: always()
