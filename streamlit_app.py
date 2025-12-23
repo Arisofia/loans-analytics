@@ -84,6 +84,7 @@ def coerce_numeric(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def render_metrics(df: pd.DataFrame) -> None:
+    # Compute portfolio KPIs and get enriched DataFrame
     metrics, enriched = portfolio_kpis(df)
     quality = calculate_quality_score(df)
 
@@ -96,6 +97,7 @@ def render_metrics(df: pd.DataFrame) -> None:
 
     st.metric("Data quality score", f"{quality:.0f}/100")
 
+    # Projection logic is independent of enrichment/metrics
     st.subheader("Projection")
     projection = project_growth(
         current_yield=float(metrics["portfolio_yield"]),
@@ -106,6 +108,7 @@ def render_metrics(df: pd.DataFrame) -> None:
     fig = px.line(projection, x="date", y=["yield", "loan_volume"], markers=True)
     st.plotly_chart(fig, use_container_width=True)
 
+    # Show a sample of the enriched DataFrame
     st.subheader("Enriched sample")
     st.dataframe(enriched.head())
 
