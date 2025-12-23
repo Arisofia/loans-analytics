@@ -10,6 +10,9 @@ class KPIExporter(Protocol):
         pass
 
 class LoanAnalyticsEngine:
+        @property
+        def coercion_report(self):
+            return self._coercion_report
     """
     A robust engine for computing critical KPIs for a loan portfolio.
     This system is designed for scalability and provides traceable, actionable insights
@@ -133,9 +136,9 @@ class LoanAnalyticsEngine:
 
         return {
             "row_count": float(row_count),
-            "average_null_ratio": round(null_ratio * 100, 2),
+            "average_null_ratio_percent": round(null_ratio * 100, 2),
             "duplicate_ratio": round(duplicate_ratio * 100, 2),
-            "invalid_numeric_ratio": round(invalid_numeric_ratio * 100, 2),
+            "invalid_numeric_ratio_percent": round(invalid_numeric_ratio * 100, 2),
             "data_quality_score": round(data_quality_score, 2),
         }
 
@@ -174,13 +177,13 @@ class LoanAnalyticsEngine:
     def run_full_analysis(self) -> Dict[str, float]:
         """
         Runs a comprehensive analysis and returns a dictionary of portfolio-level KPIs.
+        Ensures all keys from portfolio_kpis are included in the output.
         """
+        # Compute the original dashboard
         ltv_ratio = self.compute_loan_to_value()
         dti_ratio = self.compute_debt_to_income()
-
         quality = self.data_quality_profile()
-
-        return {
+        dashboard = {
             "portfolio_delinquency_rate_percent": self.compute_delinquency_rate(),
             "portfolio_yield_percent": self.compute_portfolio_yield(),
             "average_ltv_ratio_percent": ltv_ratio.mean(),
@@ -189,6 +192,14 @@ class LoanAnalyticsEngine:
             "average_null_ratio_percent": quality["average_null_ratio"],
             "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio"],
         }
+        # Import and call portfolio_kpis to ensure all expected keys are present
+        try:
+            from apps.analytics.src.metrics_utils import portfolio_kpis
+        except ImportError:
+            from .metrics_utils import portfolio_kpis
+        kpi_results = portfolio_kpis(self.loan_data)
+        dashboard.update(kpi_results)
+        return dashboard
 
     def export_kpis_to_blob(
         self, exporter: KPIExporter, blob_name: Optional[str] = None
