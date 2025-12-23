@@ -15,7 +15,10 @@ def canonicalize_loan_tape(df: pd.DataFrame) -> pd.DataFrame:
                 df = df.rename(columns={candidate: "loan_id"})
                 break
 
-    df["balance"] = pd.to_numeric(df.get("balance", 0), errors="coerce").fillna(0.0)
+    if "balance" in df.columns:
+        df["balance"] = pd.to_numeric(df["balance"], errors="coerce").fillna(0.0)
+    else:
+        df["balance"] = 0.0
 
     for col in ["origination_date", "maturity_date"]:
         if col in df.columns:
