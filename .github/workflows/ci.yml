@@ -124,20 +124,7 @@ jobs:
           name: analytics-coverage
           path: apps/coverage-python.xml
 
-  dotnet:
-    runs-on: ubuntu-latest
-    if: ${{ hashFiles('**/*.csproj', '**/*.sln', '**/packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != '' }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-      - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-      - name: Restore dependencies
-        run: dotnet restore
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
+
       - name: Test
         run: dotnet test --configuration Release --no-restore
 
