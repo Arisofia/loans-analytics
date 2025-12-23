@@ -13,7 +13,7 @@ assignees: ''
 
 ## Details
 - Agent name / spec: (e.g., C-suite Agent v1)
-- Trigger cadence: (e.g., daily after cascade ingest)
+- Trigger cadence: (e.g., daily after Cascade ingest)
 - Inputs / data sources: (list tables, KPIs, APIs)
 - Tools & guardrails: (SQL runners, API integrations, tone constraints)
 
