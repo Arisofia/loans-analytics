@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.repo_maturity_summary import determine_level, LEVEL_CRITERIA
+from scripts.repo_maturity_summary import determine_level
 
 class TestRepoMaturitySummary(unittest.TestCase):
     def setUp(self):

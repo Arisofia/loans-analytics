@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -27,11 +27,11 @@ jobs:
             pip install -r apps/analytics/requirements.txt
           fi
 
-                - name: Install Playwright
+      - name: Install Playwright
         run: |
           pip install playwright
           playwright install chromium
-      
+
       - name: Run Cascade scraper
         run: python scripts/scrape_cascade.py --loan-tape
         env:
@@ -43,9 +43,8 @@ jobs:
           python scripts/run_data_pipeline.py
       - name: Notify Slack on Success
         if: success()
-        uses: slackapi/slack-github-action@v2
+        uses: slackapi/slack-github-action@b6f4640825302dc9b85bd5ffbe34dfc7a762e404
         with:
-          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": ":tada: Daily data ingestion completed successfully!",
@@ -54,6 +53,23 @@ jobs:
                   "title": "Workflow Run",
                   "title_link": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
                   "color": "#36a64f"
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack on Failure
+        if: failure()
+        uses: slackapi/slack-github-action@b6f4640825302dc9b85bd5ffbe34dfc7a762e404
+        with:
+          payload: |
+            {
+              "text": ":warning: Daily data ingestion failed!",
+              "attachments": [
+                {
+                  "title": "Workflow Run",
+                  "title_link": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                  "color": "#ff0000"
                 }
               ]
             }

@@ -1,4 +1,5 @@
-
+"""Business rules governing MYPE facility approvals and risk classification."""
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum

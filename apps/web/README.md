@@ -4,31 +4,64 @@ This is the web application for the Abaco Loans Analytics project, built with Ne
 
 ## Getting Started
 
-1.  **Install dependencies:**
-    Navigate to this directory (`apps/web`) and run:
+1. **Install dependencies:**
+   Navigate to this directory (`apps/web`) and run:
+<<<<<<< HEAD
+   ```bash
+   npm install
+   ```
 
-    ```bash
-    npm install
-    ```
+2. **Set up environment variables:**
+   Copy the example environment file:
+   ```bash
+   cp .env.example .env.local
+   ```
+   Then fill in the required values in `.env.local`.
 
-2.  **Set up environment variables:**
-    Copy the example environment file:
+3. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+   Open http://localhost:3000 with your browser to see the result.
 
-    ```bash
-    cp .env.example .env.local
-    ```
+## Available Scripts
 
-    Then, fill in the required values in `.env.local`.
+<<<<<<< HEAD
+=======
+- npm run dev          # Starts the development server.
+- npm run build        # Builds the application for production.
+- npm run start        # Starts a production server.
+- npm run lint         # Runs ESLint to find and fix problems.
+- npm run type-check   # Runs the TypeScript compiler to check for type errors.
+- npm run test         # Runs Jest tests.
 
-3.  **Run the development server:**
-    ```bash
-    npm run dev
-    ```
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+=======
+
+   ```bash
+   npm install
+   ```
+
+2. **Set up environment variables:**
+   Copy the example environment file:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   Then, fill in the required values in `.env.local`.
+
+3. **Run the development server:**
+
+   ```bash
+   npm run dev
+   ```
 
 Open http://localhost:3000 with your browser to see the result.
 
 ## Available Scripts
 
+>>>>>>> origin/main
 ```bash
 npm run dev          # Starts the development server.
 npm run build        # Builds the application for production.
@@ -37,3 +70,7 @@ npm run lint         # Runs ESLint to find and fix problems.
 npm run type-check   # Runs the TypeScript compiler to check for type errors.
 npm run test         # Runs Jest tests.
 ```
+<<<<<<< HEAD
+=======
+>>>>>>> fix/ci-workflow-codecov
+>>>>>>> origin/main

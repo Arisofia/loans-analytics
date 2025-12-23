@@ -18,7 +18,7 @@ type BulkTokenInputProps = {
   onProcessItem: (item: BulkTokenItem) => Promise<BulkProcessResult>
 }
 
-type ItemStatus = TokenStatus | 'pending' | 'success' | 'retrying' | 'error'
+type ItemStatus = TokenStatus | 'pending' | 'success' | 'retrying'
 
 const defaultRow = 'platform,token,accountId(optional)'
 
@@ -208,29 +208,31 @@ export function BulkTokenInput({ open, onClose, onProcessItem }: BulkTokenInputP
 }
 
 function parseInput(input: string): BulkTokenItem[] {
-  const rows = input
+  const items: Array<BulkTokenItem | null> = input
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => line.split(',').map((segment) => segment.trim()))
     .filter((parts) => parts.length >= 2)
+    .map((parts) => {
+      const [rawPlatform, token, accountIdRaw] = parts
+      const normalizedPlatform = rawPlatform?.toLowerCase()
 
-  const validItems: BulkTokenItem[] = []
+      if (!normalizedPlatform || !PLATFORMS.includes(normalizedPlatform as Platform)) {
+        return null
+      }
 
-  for (const [rawPlatform, token, accountId] of rows) {
-    const normalizedPlatform = rawPlatform?.toLowerCase() as Platform | undefined
-    if (!normalizedPlatform || !PLATFORMS.includes(normalizedPlatform)) continue
-
-    validItems.push({
-      platform: normalizedPlatform,
-      token: token ?? '',
-      accountId: accountId ?? '',
-      status: 'pending',
-      attempts: 0,
+      const item: BulkTokenItem = {
+        platform: normalizedPlatform as Platform,
+        token: token ?? '',
+        accountId: accountIdRaw ?? '',
+        status: 'pending' as ItemStatus,
+        attempts: 0,
+      }
+      return item
     })
-  }
 
-  return validItems
+  return items.filter((item): item is BulkTokenItem => !!item)
 }
 
 function waitForDelay(attempt: number) {

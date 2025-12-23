@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.lock
 COPY . .
 
 # Default command: run the pipeline
-RUN adduser --system --home /app appuser && chown -R appuser:appuser /app
+RUN adduser --system --home /app appuser && chown -R appuser /app
 
 USER appuser
 

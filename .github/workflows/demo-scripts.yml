@@ -29,8 +29,8 @@ jobs:
   run-demos:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -40,8 +40,12 @@ jobs:
           pip install -r requirements.txt
       - name: Run Financial Analysis Demo
         run: |
-          ARGS=$([ -n "${{ inputs.DATA_FILE }}" ] && echo "--data ${{ inputs.DATA_FILE }}" || echo "")
-          python scripts/demo_financial_analysis.py $ARGS > demo_output.txt
+          DATA_FILE="${{ inputs.DATA_FILE }}"
+          if [ -n "$DATA_FILE" ]; then
+            python scripts/demo_financial_analysis.py --data "$DATA_FILE" > demo_output.txt
+          else
+            python scripts/demo_financial_analysis.py > demo_output.txt
+          fi
       - name: Generate Report
         if: always()
         run: |
@@ -58,9 +62,8 @@ jobs:
             demo_report.md
       - name: Notify Slack on Failure
         if: failure()
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@fcfb566f8b0aab22203f066d80ca1d7e4b5d05b3
         with:
-          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": "🚨 Demo Scripts Workflow Failed",
