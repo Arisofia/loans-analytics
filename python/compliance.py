@@ -29,11 +29,12 @@ def _mask_value(value: Any) -> Any:
 def mask_pii_in_dataframe(
     df: pd.DataFrame,
     pii_columns: Optional[Iterable[str]] = None,
-    keywords: Iterable[str] = PII_COLUMN_KEYWORDS,
+    keywords: Optional[Iterable[str]] = None,
 ) -> Tuple[pd.DataFrame, List[str]]:
     columns = list(pii_columns) if pii_columns is not None else []
+    keyword_source = list(keywords) if keywords is not None else PII_COLUMN_KEYWORDS
     if not columns:
-        lowered = [keyword.lower() for keyword in keywords]
+        lowered = [keyword.lower() for keyword in keyword_source]
         columns = [col for col in df.columns if any(keyword in col.lower() for keyword in lowered)]
     masked = df.copy()
     for column in columns:

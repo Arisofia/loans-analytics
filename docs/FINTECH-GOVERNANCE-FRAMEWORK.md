@@ -140,6 +140,6 @@ gh pr merge --rebase
 
 ---
 
-**Last Updated**: December 2025  
-**Owner**: Engineering Excellence Team  
+**Last Updated**: December 2025
+**Owner**: Engineering Excellence Team
 **Review Cadence**: Quarterly

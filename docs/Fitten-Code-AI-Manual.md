@@ -42,12 +42,12 @@ deployment script generation, and more across local and cloud environments. This
    is tracked to closure.
 ## FAQ
 
-- **Q: Do Fitten models have to live in the repo?**  
+- **Q: Do Fitten models have to live in the repo?**
   A: No. Do not commit model files. Just store the path in `fitten.config.toml` and download or mount in CI if needed.
-- **Q: How do I debug Fitten’s suggestions?**  
+- **Q: How do I debug Fitten’s suggestions?**
   A: Run `fitten explain <file>` locally, use `--preview` to inspect context, and mark whether suggestions are accepted
   in the PR.
-- **Q: How does Fitten work with SonarCloud or OpenAI?**  
+- **Q: How does Fitten work with SonarCloud or OpenAI?**
   A: Use Fitten as the first review layer, then run SonarCloud for static analysis. OpenAI can handle more complex
   generation; they complement one another.
 ## Contact

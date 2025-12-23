@@ -3,9 +3,9 @@ repo_maturity_summary.py
 
 Analyzes the repository for maturity level and generates a summary report.
 """
+
 import os
 from pathlib import Path
-
 
 # Constants for repeated string literals
 README = "README.md"
@@ -22,6 +22,7 @@ LEVEL_CRITERIA = {
     4: [README, REQUIREMENTS, TESTS_DIR, WORKFLOWS_DIR, DOCS_DIR, DOCKERFILE],
 }
 
+
 def check_criteria(base_path, criteria):
     for item in criteria:
         if item.endswith("/"):
@@ -31,6 +32,7 @@ def check_criteria(base_path, criteria):
             if not (base_path / item).exists():
                 return False
     return True
+
 
 def determine_level(base_path):
     for level in sorted(LEVEL_CRITERIA.keys(), reverse=True):
@@ -53,11 +55,16 @@ def main():
     print(NEXT_LEVEL_MSG)
     next_level = level + 1
     if next_level in LEVEL_CRITERIA:
-        missing = [item for item in LEVEL_CRITERIA[next_level] if not (base_path / item).exists() and not (base_path / item[:-1]).is_dir()]
+        missing = [
+            item
+            for item in LEVEL_CRITERIA[next_level]
+            if not (base_path / item).exists() and not (base_path / item[:-1]).is_dir()
+        ]
         for item in missing:
             print(f"- {item}")
     else:
         print(ALL_MET_MSG)
+
 
 if __name__ == "__main__":
     main()

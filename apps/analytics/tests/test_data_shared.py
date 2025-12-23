@@ -9,7 +9,7 @@ SAMPLE_LOAN_DATA = {
     "monthly_debt": [1500],
     "loan_status": ["current"],
     "interest_rate": [0.035],
-    "principal_balance": [240000]
+    "principal_balance": [240000],
 }
 
 SAMPLE_LOAN_DATA_MULTI = {
@@ -19,5 +19,5 @@ SAMPLE_LOAN_DATA_MULTI = {
     "monthly_debt": [1500, 2500, 1000],
     "loan_status": ["current", "current", "current"],
     "interest_rate": [0.035, 0.042, 0.038],
-    "principal_balance": [240000, 440000, 145000]
+    "principal_balance": [240000, 440000, 145000],
 }

@@ -64,10 +64,11 @@ export function ExportControls({ analytics }: Props) {
       }
 
       download(filename, content, mime)
-    } catch (err: any) {
-      const msg = `Export failed: ${err.message || 'Unknown error'}`
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      const msg = `Export failed: ${errorMessage}`
       setError(msg)
-      Sentry.captureException(err, {
+      Sentry.captureException(err instanceof Error ? err : new Error(errorMessage), {
         contexts: { export: { format, loanCount: analytics.loans.length } },
       })
     }

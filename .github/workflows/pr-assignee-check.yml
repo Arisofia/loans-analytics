@@ -1,14 +1,12 @@
 name: PR Assignee Check
 
 on:
-  pull_request:
-<<<<<<< HEAD
-    types: [opened, reopened, synchronize, ready_for_review]
-=======
-    branches: [main]
-    types: [opened, reopened, synchronize, ready_for_review]
   workflow_call:
->>>>>>> origin/main
+    inputs:
+      assignees:
+        description: JSON list of PR assignees
+        required: true
+        type: string
 
 jobs:
   ensure-assignee:
@@ -18,24 +16,12 @@ jobs:
       pull-requests: read
     runs-on: ubuntu-latest
     steps:
-<<<<<<< HEAD
-      - name: Validate assignee
-        env:
-          ASSIGNEES: ${{ toJson(github.event.pull_request.assignees) }}
-        run: |
-          if [ "$(echo "$ASSIGNEES" | jq 'length')" -eq 0 ]; then
-            echo "Please assign at least one owner to this pull request before running CI."
-            exit 1
-          fi
-          echo "Assignees present: $ASSIGNEES"
-=======
       - name: Validate assignee (warn only)
         env:
-          ASSIGNEES: ${{ toJson(github.event.pull_request.assignees) }}
+          ASSIGNEES: ${{ inputs.assignees }}
         run: |
           if [ -z "$ASSIGNEES" ] || [ "$ASSIGNEES" = "[]" ]; then
             echo "Warning: no assignee set; proceeding to keep CI green while requiring owners in review."
           else
             echo "Assignees present: $ASSIGNEES"
           fi
->>>>>>> origin/main

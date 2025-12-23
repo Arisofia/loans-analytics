@@ -352,7 +352,7 @@ className = 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900'
 ```jsx
 // Estructura estándar de un slide
 <div
-  className="h-screen w-full bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 
+  className="h-screen w-full bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900
                 flex flex-col justify-between p-8 overflow-hidden"
 >
   {/* Header - Siempre centrado */}
@@ -713,7 +713,7 @@ const spanishPhrases = [
 
 ```jsx
 <div
-  className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 
+  className="bg-gradient-to-r from-purple-900/30 to-blue-900/30
                 backdrop-blur-sm rounded-lg p-3 border border-purple-400/30"
 >
   {/* Título */}

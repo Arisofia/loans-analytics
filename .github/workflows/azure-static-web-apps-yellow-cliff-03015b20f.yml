@@ -51,9 +51,6 @@ jobs:
           app_location: 'apps/web'
           output_location: .next
           api_location: ''
-          config_file_location: apps/web
-          skip_app_build: true
-          skip_api_build: true
       - name: Skip deploy (missing token)
         if: steps.swa_token.outputs.present != 'true'
         run: |

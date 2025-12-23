@@ -13,7 +13,7 @@ WITH base_loans AS (
     original_balance,
     current_balance,
     interest_rate,
-    CASE 
+    CASE
       WHEN EXTRACT(DAY FROM CURRENT_DATE()) - EXTRACT(DAY FROM last_payment_date) > 90 THEN '90+'
       WHEN EXTRACT(DAY FROM CURRENT_DATE()) - EXTRACT(DAY FROM last_payment_date) > 60 THEN '60-89'
       WHEN EXTRACT(DAY FROM CURRENT_DATE()) - EXTRACT(DAY FROM last_payment_date) > 30 THEN '30-59'

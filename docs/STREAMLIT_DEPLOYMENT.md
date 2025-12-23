@@ -408,6 +408,6 @@ The Streamlit dashboard complements the Next.js application:
 
 ---
 
-**Last Updated**: 2025-01-06  
-**Environment**: Debian 12 (bookworm), Node.js 20.x, npm, Python 3.11+  
+**Last Updated**: 2025-01-06
+**Environment**: Debian 12 (bookworm), Node.js 20.x, npm, Python 3.11+
 **Deployment Options**: Streamlit Cloud, Railway, Docker Compose

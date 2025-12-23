@@ -1,15 +1,16 @@
-import unittest
-import tempfile
-from pathlib import Path
 import os
 import sys
+import tempfile
+import unittest
+from pathlib import Path
 
 # Ensure root is in path to import repo_maturity_summary
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.repo_maturity_summary import determine_level, LEVEL_CRITERIA
+from scripts.repo_maturity_summary import determine_level
+
 
 class TestRepoMaturitySummary(unittest.TestCase):
     def setUp(self):
@@ -47,12 +48,16 @@ class TestRepoMaturitySummary(unittest.TestCase):
 
     def test_level_3_docs_and_workflows(self):
         """Test that adding docs/ and workflows/ reaches level 3."""
-        self.create_structure(["README.md", "requirements.txt", "tests/", ".github/workflows/", "docs/"])
+        self.create_structure(
+            ["README.md", "requirements.txt", "tests/", ".github/workflows/", "docs/"]
+        )
         level = determine_level(self.base_path)
         self.assertEqual(level, 3)
 
     def test_level_4_full_maturity(self):
         """Test that adding Dockerfile reaches level 4."""
-        self.create_structure(["README.md", "requirements.txt", "tests/", ".github/workflows/", "docs/", "Dockerfile"])
+        self.create_structure(
+            ["README.md", "requirements.txt", "tests/", ".github/workflows/", "docs/", "Dockerfile"]
+        )
         level = determine_level(self.base_path)
         self.assertEqual(level, 4)

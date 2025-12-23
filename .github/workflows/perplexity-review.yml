@@ -10,19 +10,19 @@ jobs:
     permissions:
       pull-requests: write
       contents: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Get PR diff
         id: diff
         run: |
           git diff origin/${{ github.base_ref }}...HEAD > pr_diff.txt
           echo "diff_size=$(wc -c < pr_diff.txt)" >> $GITHUB_OUTPUT
-      
+
       - name: Review with Perplexity
         if: fromJSON(steps.diff.outputs.diff_size) < 50000
         env:
@@ -56,9 +56,9 @@ jobs:
             cat review_response.json
             exit 1
           fi
-          
+
           # Extract review and post as comment
           review_text=$(jq -r '.choices[0].message.content' review_response.json)
-          
+
           gh pr comment ${{ github.event.pull_request.number }} \
             --body "## 🤖 Perplexity AI Review\n\n$review_text"

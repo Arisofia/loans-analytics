@@ -36,56 +36,54 @@ export function BulkTokenInput({ open, onClose, onProcessItem }: BulkTokenInputP
     )
   }, [])
 
+  // Helper to process a single item with retry logic
+  const processSingleItem = async (
+    entry: BulkTokenItem,
+    index: number
+  ): Promise<BulkProcessResult> => {
+    let attempts = 0
+    while (attempts < 3) {
+      attempts += 1
+      updateItem(index, {
+        status: attempts > 1 ? ('retrying' as ItemStatus) : ('pending' as ItemStatus),
+        attempts,
+        message: `${new Date().toLocaleTimeString()} • attempt ${attempts}`,
+      })
+      try {
+        const result = await onProcessItem(entry)
+        updateItem(index, {
+          status: result.status === 'success' ? ('success' as ItemStatus) : ('error' as ItemStatus),
+          message: result.detail,
+          resultId: result.tokenId,
+        })
+        if (result.status === 'success') {
+          return result
+        }
+        if (attempts < 3) {
+          await waitForDelay(attempts)
+        }
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : 'Unable to connect'
+        updateItem(index, {
+          status: attempts >= 3 ? ('error' as ItemStatus) : ('retrying' as ItemStatus),
+          attempts,
+          message: `${new Date().toLocaleTimeString()} • ${detail}`,
+        })
+        if (attempts < 3) {
+          await waitForDelay(attempts)
+        }
+      }
+    }
+    return { item: entry, status: 'error', detail: 'Max retries reached' }
+  }
+
   const processItems = async (list: BulkTokenItem[]) => {
     const results: BulkProcessResult[] = []
     for (let index = 0; index < list.length; index++) {
       const entry = list[index]
-      let attempts = 0
-      let success = false
-
-      while (attempts < 3 && !success) {
-        attempts += 1
-        updateItem(index, {
-          status: attempts > 1 ? ('retrying' as ItemStatus) : ('pending' as ItemStatus),
-          attempts,
-          message: `${new Date().toLocaleTimeString()} • attempt ${attempts}`,
-        })
-        try {
-          const result = await onProcessItem(entry)
-          success = result.status === 'success'
-          updateItem(index, {
-            status:
-              result.status === 'success' ? ('success' as ItemStatus) : ('error' as ItemStatus),
-            message: result.detail,
-            resultId: result.tokenId,
-          })
-          if (result.status === 'success') {
-            results.push(result)
-          } else if (attempts >= 3) {
-            results.push({ ...result, status: 'error' })
-          } else {
-            await waitForDelay(attempts)
-          }
-        } catch (error) {
-          const detail = error instanceof Error ? error.message : 'Unable to connect'
-          updateItem(index, {
-            status: attempts >= 3 ? ('error' as ItemStatus) : ('retrying' as ItemStatus),
-            attempts,
-            message: `${new Date().toLocaleTimeString()} • ${detail}`,
-          })
-          if (attempts >= 3) {
-            results.push({ item: entry, status: 'error', detail })
-          } else {
-            await waitForDelay(attempts)
-          }
-        }
-      }
-
-      if (!success && !results.find((result) => result.item === entry)) {
-        results.push({ item: entry, status: 'error', detail: 'Max retries reached' })
-      }
+      const result = await processSingleItem(entry, index)
+      results.push(result)
     }
-
     return results
   }
 
@@ -110,7 +108,7 @@ export function BulkTokenInput({ open, onClose, onProcessItem }: BulkTokenInputP
 
   const retryFailures = async () => {
     const failures = items.filter((item) => item.status === 'error')
-    if (!failures.length) return
+    if (!items.some((item) => item.status === 'error')) return
     setProcessing(true)
     setSummary('')
     const refreshed = failures.map((item) => ({
@@ -208,29 +206,27 @@ export function BulkTokenInput({ open, onClose, onProcessItem }: BulkTokenInputP
 }
 
 function parseInput(input: string): BulkTokenItem[] {
-  const rows = input
+  return input
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => line.split(',').map((segment) => segment.trim()))
     .filter((parts) => parts.length >= 2)
-
-  const validItems: BulkTokenItem[] = []
-
-  for (const [rawPlatform, token, accountId] of rows) {
-    const normalizedPlatform = rawPlatform?.toLowerCase() as Platform | undefined
-    if (!normalizedPlatform || !PLATFORMS.includes(normalizedPlatform)) continue
-
-    validItems.push({
-      platform: normalizedPlatform,
-      token: token ?? '',
-      accountId: accountId ?? '',
-      status: 'pending',
-      attempts: 0,
+    .map((parts) => {
+      const [rawPlatform, token, accountId] = parts
+      const normalizedPlatform = rawPlatform?.toLowerCase() as Platform | undefined
+      if (!normalizedPlatform || !PLATFORMS.includes(normalizedPlatform)) {
+        return null
+      }
+      return {
+        platform: normalizedPlatform,
+        token: token ?? '',
+        accountId: accountId ?? '',
+        status: 'pending' as ItemStatus,
+        attempts: 0,
+      } as BulkTokenItem
     })
-  }
-
-  return validItems
+    .filter((item): item is BulkTokenItem => item !== null)
 }
 
 function waitForDelay(attempt: number) {

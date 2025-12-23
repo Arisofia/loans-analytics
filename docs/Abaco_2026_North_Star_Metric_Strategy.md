@@ -258,4 +258,3 @@ Esta métrica mide el volumen total procesado por clientes que repiten, reflejan
 2. Activar alertas de concentración y caídas de rotación/replines vs. plan.
 3. Vincular embudos por canal (Digital ≤$10k, Mixto $10–50k, KAM $50–150k) al NSM para optimizar CAC y churn.
 4. Reportar NSM y KPIs de apoyo en la cadencia semanal/mensual/QBR.
-

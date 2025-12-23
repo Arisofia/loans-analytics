@@ -6,9 +6,12 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from python.validation import (ANALYTICS_NUMERIC_COLUMNS,
-                               REQUIRED_ANALYTICS_COLUMNS,
-                               assert_dataframe_schema, find_column)
+from python.validation import (
+    ANALYTICS_NUMERIC_COLUMNS,
+    REQUIRED_ANALYTICS_COLUMNS,
+    assert_dataframe_schema,
+    find_column,
+)
 
 logger = logging.getLogger(__name__)
 

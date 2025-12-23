@@ -14,9 +14,12 @@ from azure.storage.blob import BlobServiceClient, ContentSettings
 
 # Add project root to path for python/ modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from python.compliance import (build_compliance_report,
-                               create_access_log_entry, mask_pii_in_dataframe,
-                               write_compliance_report)
+from python.compliance import (
+    build_compliance_report,
+    create_access_log_entry,
+    mask_pii_in_dataframe,
+    write_compliance_report,
+)
 from python.ingestion import CascadeIngestion
 from python.kpi_engine import KPIEngine
 from python.transformation import DataTransformation

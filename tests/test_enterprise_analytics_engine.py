@@ -23,15 +23,23 @@ def test_monthly_payment_matches_finance_formula():
     payment = calculate_monthly_payment(loan)
 
     monthly_rate = loan.annual_interest_rate / 12
-    expected_payment = (monthly_rate * loan.principal) / (1 - math.pow(1 + monthly_rate, -loan.term_months))
+    expected_payment = (monthly_rate * loan.principal) / (
+        1 - math.pow(1 + monthly_rate, -loan.term_months)
+    )
 
     assert payment == pytest.approx(expected_payment, rel=1e-8)
 
 
 def test_portfolio_interest_and_risk_tracks_defaults():
-    prime = LoanPosition(principal=50_000, annual_interest_rate=0.08, term_months=24, default_probability=0.01)
-    near_prime = LoanPosition(principal=75_000, annual_interest_rate=0.14, term_months=36, default_probability=0.05)
-    subprime = LoanPosition(principal=40_000, annual_interest_rate=0.2, term_months=18, default_probability=0.12)
+    prime = LoanPosition(
+        principal=50_000, annual_interest_rate=0.08, term_months=24, default_probability=0.01
+    )
+    near_prime = LoanPosition(
+        principal=75_000, annual_interest_rate=0.14, term_months=36, default_probability=0.05
+    )
+    subprime = LoanPosition(
+        principal=40_000, annual_interest_rate=0.2, term_months=18, default_probability=0.12
+    )
 
     monthly_interest, portfolio_loss = portfolio_interest_and_risk(
         loans=[prime, near_prime, subprime], loss_given_default=0.45
@@ -60,7 +68,9 @@ def test_invalid_inputs_raise_value_errors():
         LoanPosition(principal=10_000, annual_interest_rate=0.05, term_months=0)
 
     with pytest.raises(ValueError):
-        LoanPosition(principal=10_000, annual_interest_rate=0.05, term_months=12, default_probability=1.5)
+        LoanPosition(
+            principal=10_000, annual_interest_rate=0.05, term_months=12, default_probability=1.5
+        )
 
     valid_loan = LoanPosition(principal=10_000, annual_interest_rate=0.05, term_months=12)
     with pytest.raises(ValueError):
@@ -70,21 +80,27 @@ def test_invalid_inputs_raise_value_errors():
 def test_portfolio_kpis_surfaces_weighted_metrics():
     loss_given_default = 0.4
     loans = [
-        LoanPosition(principal=100_000, annual_interest_rate=0.09, term_months=24, default_probability=0.02),
-        LoanPosition(principal=50_000, annual_interest_rate=0.12, term_months=36, default_probability=0.04),
+        LoanPosition(
+            principal=100_000, annual_interest_rate=0.09, term_months=24, default_probability=0.02
+        ),
+        LoanPosition(
+            principal=50_000, annual_interest_rate=0.12, term_months=36, default_probability=0.04
+        ),
     ]
 
     kpis = calculate_portfolio_kpis(loans, loss_given_default=loss_given_default)
 
     expected_exposure = sum(loan.principal for loan in loans)
     weighted_rate = (
-        loans[0].annual_interest_rate * loans[0].principal + loans[1].annual_interest_rate * loans[1].principal
+        loans[0].annual_interest_rate * loans[0].principal
+        + loans[1].annual_interest_rate * loans[1].principal
     ) / expected_exposure
     weighted_term = (
         loans[0].term_months * loans[0].principal + loans[1].term_months * loans[1].principal
     ) / expected_exposure
     weighted_default_probability = (
-        loans[0].default_probability * loans[0].principal + loans[1].default_probability * loans[1].principal
+        loans[0].default_probability * loans[0].principal
+        + loans[1].default_probability * loans[1].principal
     ) / expected_exposure
     expected_interest = sum(loan.principal * (loan.annual_interest_rate / 12) for loan in loans)
     expected_loss_value = sum(expected_loss(loan, loss_given_default) for loan in loans)

@@ -46,9 +46,11 @@ export function LoanUploader({ onData }: Props) {
           // Parse and pass data
           const parsed = parseLoanCsv(csvResult.data.lines.join('\n'))
           onData(parsed)
-        } catch (err: any) {
+        } catch (err: unknown) {
           setError('Unexpected error during file processing')
-          Sentry.captureException(err)
+          Sentry.captureException(
+            err instanceof Error ? err : new Error('Unexpected error during file processing')
+          )
         }
       }
       reader.onerror = (e) => {

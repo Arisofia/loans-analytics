@@ -1,11 +1,14 @@
-import requests
-import os
 import json
+import os
 from datetime import datetime
+
+import requests
 
 # Figma API settings
 FIGMA_TOKEN = os.getenv("FIGMA_TOKEN")
 FIGMA_FILE_KEY = os.getenv("FIGMA_FILE_KEY")
+if not FIGMA_TOKEN or not FIGMA_FILE_KEY:
+    raise RuntimeError("FIGMA_TOKEN and FIGMA_FILE_KEY must be set before syncing to Figma")
 FIGMA_PAGE_NAME = "KPI Table"
 CSV_EXPORT_PATH = "exports/KPI_Mapping_Table.csv"
 
@@ -21,10 +24,7 @@ with open(CSV_EXPORT_PATH, "r") as f:
 payload = {
     "type": "TEXT",
     "characters": csv_content,
-    "style": {
-        "fontFamily": "Roboto",
-        "fontSize": 12
-    }
+    "style": {"fontFamily": "Roboto", "fontSize": 12},
 }
 
 # Find the node ID for the KPI Table page

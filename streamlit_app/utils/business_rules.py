@@ -1,5 +1,3 @@
-
-
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Tuple
@@ -50,7 +48,9 @@ class MYPEBusinessRules:
         "npl_ratio": 0.05,
         "collection_rate": 0.85,
     }
-    INDUSTRY_GDP_CONTRIBUTION: Dict[IndustryType, float] = {industry: industry.value for industry in IndustryType}
+    INDUSTRY_GDP_CONTRIBUTION: Dict[IndustryType, float] = {
+        industry: industry.value for industry in IndustryType
+    }
     EINVOICE_THRESHOLD = 10000
     TARGET_ROTATION = 4.0
     NPL_DAYS_THRESHOLD = 90
@@ -104,15 +104,21 @@ class MYPEBusinessRules:
     ) -> ApprovalDecision:
         is_high_risk, reasons = cls.classify_high_risk(customer_metrics)
         dpd = customer_metrics.get("dpd", 0)
-        pod = min(1.0, (dpd / cls.NPL_DAYS_THRESHOLD) * 0.8 + customer_metrics.get("npl_ratio", 0.02))
+        pod = min(
+            1.0, (dpd / cls.NPL_DAYS_THRESHOLD) * 0.8 + customer_metrics.get("npl_ratio", 0.02)
+        )
 
         risk_level = cls.calculate_risk_level(pod)
         if dpd >= cls.NPL_DAYS_THRESHOLD:
             risk_level = RiskLevel.CRITICAL
         elif is_high_risk:
-            risk_level = max(risk_level, RiskLevel.HIGH, key=lambda level: list(RiskLevel).index(level))
+            risk_level = max(
+                risk_level, RiskLevel.HIGH, key=lambda level: list(RiskLevel).index(level)
+            )
         elif customer_metrics.get("utilization", 0) > 0.75:
-            risk_level = max(risk_level, RiskLevel.MEDIUM, key=lambda level: list(RiskLevel).index(level))
+            risk_level = max(
+                risk_level, RiskLevel.MEDIUM, key=lambda level: list(RiskLevel).index(level)
+            )
 
         industry = customer_metrics.get("industry", cls.default_industry())
         adjustment = cls.calculate_industry_adjustment(industry)
@@ -126,7 +132,9 @@ class MYPEBusinessRules:
             reasons.append(rotation_message)
             recommended_amount *= 0.8
 
-        approved = risk_level in {RiskLevel.LOW, RiskLevel.MEDIUM} and not is_high_risk and meets_rotation
+        approved = (
+            risk_level in {RiskLevel.LOW, RiskLevel.MEDIUM} and not is_high_risk and meets_rotation
+        )
         required_collateral = max(0.0, facility_amount - collateral_value - recommended_amount)
         if not approved:
             required_collateral = max(required_collateral, facility_amount * 0.1)
@@ -152,7 +160,9 @@ class MYPEBusinessRules:
         return 1.0 + (contribution - 0.1) * 0.5
 
     @classmethod
-    def check_rotation_target(cls, total_revenue: float, avg_balance: float) -> Tuple[float, bool, str]:
+    def check_rotation_target(
+        cls, total_revenue: float, avg_balance: float
+    ) -> Tuple[float, bool, str]:
         if avg_balance <= 0:
             return 0.0, False, "Average balance unavailable"
         rotation = total_revenue / avg_balance
@@ -169,7 +179,9 @@ class MYPEBusinessRules:
     @classmethod
     def get_industry_benchmarks(cls, industry: IndustryType) -> Dict:
         return {
-            "gdp_contribution": cls.INDUSTRY_GDP_CONTRIBUTION.get(industry, IndustryType.OTHER.value),
+            "gdp_contribution": cls.INDUSTRY_GDP_CONTRIBUTION.get(
+                industry, IndustryType.OTHER.value
+            ),
             "rotation_target": cls.TARGET_ROTATION,
             "collection_target": cls.TARGET_COLLECTION_RATE,
         }

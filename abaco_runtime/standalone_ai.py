@@ -1,5 +1,3 @@
-
-
 import json
 import logging
 import os
@@ -7,10 +5,11 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from requests.exceptions import RequestException
+
 from scripts.clients import GrokClient
 
-
 logger = logging.getLogger(__name__)
+
 
 class StandaloneAIEngine:
     """Persona-driven AI engine with optional Grok backend."""
@@ -69,7 +68,9 @@ class StandaloneAIEngine:
         ]
         knowledge = context.get("knowledge_id")
         if knowledge and knowledge in self.knowledge_base:
-            kb_payload = self._truncate_content(json.dumps(self.knowledge_base[knowledge], ensure_ascii=False))
+            kb_payload = self._truncate_content(
+                json.dumps(self.knowledge_base[knowledge], ensure_ascii=False)
+            )
             lines.append(f"Knowledge Base: {kb_payload}")
         return "\n".join(lines)
 

@@ -208,7 +208,7 @@ class LoanPosition:
             raise ValueError("annual_interest_rate must be positive")
         if self.term_months <= 0:
             raise ValueError("term_months must be positive")
-        if not (0.0 <= self.default_probability <= 1.0):
+        if not 0.0 <= self.default_probability <= 1.0:
             raise ValueError("default_probability must be between 0 and 1")
 
 
@@ -232,12 +232,14 @@ def calculate_monthly_payment(loan: LoanPosition) -> float:
 
 
 def expected_loss(loan: LoanPosition, loss_given_default: float) -> float:
-    if not (0.0 <= loss_given_default <= 1.0):
+    if not 0.0 <= loss_given_default <= 1.0:
         raise ValueError("loss_given_default must be between 0 and 1")
     return loan.principal * loan.default_probability * loss_given_default
 
 
-def portfolio_interest_and_risk(loans: Iterable[LoanPosition], loss_given_default: float) -> tuple[float, float]:
+def portfolio_interest_and_risk(
+    loans: Iterable[LoanPosition], loss_given_default: float
+) -> tuple[float, float]:
     monthly_interest = sum(loan.principal * (loan.annual_interest_rate / 12) for loan in loans)
     portfolio_loss = sum(expected_loss(loan, loss_given_default) for loan in loans)
     return monthly_interest, portfolio_loss
@@ -254,7 +256,9 @@ def calculate_portfolio_kpis(loans: List[LoanPosition], loss_given_default: floa
         sum(loan.default_probability * loan.principal for loan in loans) / exposure
     )
 
-    expected_monthly_interest, expected_loss_value = portfolio_interest_and_risk(loans, loss_given_default)
+    expected_monthly_interest, expected_loss_value = portfolio_interest_and_risk(
+        loans, loss_given_default
+    )
     expected_monthly_payment = sum(calculate_monthly_payment(loan) for loan in loans)
     expected_loss_rate = expected_loss_value / exposure
     interest_yield_rate = expected_monthly_interest / exposure

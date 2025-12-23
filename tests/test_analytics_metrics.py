@@ -122,20 +122,28 @@ def test_calculate_quality_score_counts_completeness():
 
 def test_portfolio_kpis_returns_expected_metrics(sample_df: pd.DataFrame):
     metrics, enriched = portfolio_kpis(sample_df)
-    assert set(metrics.keys()) == {"delinquency_rate", "portfolio_yield", "average_ltv", "average_dti"}
+    assert set(metrics.keys()) == {
+        "delinquency_rate",
+        "portfolio_yield",
+        "average_ltv",
+        "average_dti",
+    }
     assert "ltv_ratio" in enriched.columns
     assert "dti_ratio" in enriched.columns
 
     expected_delinquency_rate = (1 / len(sample_df)) * 100
     expected_portfolio_yield = (
-        (sample_df["principal_balance"] * sample_df["interest_rate"]).sum() / sample_df["principal_balance"].sum()
+        (sample_df["principal_balance"] * sample_df["interest_rate"]).sum()
+        / sample_df["principal_balance"].sum()
     ) * 100
     expected_average_ltv = (sample_df["loan_amount"] / sample_df["appraised_value"]).mean() * 100
     expected_average_dti = (
         sample_df["monthly_debt"] / (sample_df["borrower_income"] / 12)
     ).mean() * 100
 
-    assert metrics["delinquency_rate"] == pytest.approx(expected_delinquency_rate, rel=1e-6, abs=1e-9)
+    assert metrics["delinquency_rate"] == pytest.approx(
+        expected_delinquency_rate, rel=1e-6, abs=1e-9
+    )
     assert metrics["portfolio_yield"] == pytest.approx(expected_portfolio_yield, rel=1e-6, abs=1e-9)
     assert metrics["average_ltv"] == pytest.approx(expected_average_ltv, rel=1e-6, abs=1e-9)
     assert metrics["average_dti"] == pytest.approx(expected_average_dti, rel=1e-6, abs=1e-9)

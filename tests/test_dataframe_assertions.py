@@ -16,10 +16,12 @@ def test_assert_dataframe_schema_detects_missing_columns():
 
 
 def test_assert_dataframe_schema_detects_non_numeric_columns():
-    df = pd.DataFrame({
-        "total_receivable_usd": [100.0],
-        "total_eligible_usd": ["invalid"],
-    })
+    df = pd.DataFrame(
+        {
+            "total_receivable_usd": [100.0],
+            "total_eligible_usd": ["invalid"],
+        }
+    )
     with pytest.raises(AssertionError, match="non-numeric columns"):
         assert_dataframe_schema(
             df,

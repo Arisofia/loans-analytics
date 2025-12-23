@@ -1,13 +1,16 @@
+import os
 import unittest
 from unittest.mock import MagicMock, patch
-import os
+
 import requests
+
 from scripts.trigger_workflows import (
+    ensure_token,
     fetch_workflows,
     resolve_workflow_targets,
     trigger_workflow,
-    ensure_token
 )
+
 
 class TestTriggerWorkflows(unittest.TestCase):
     def setUp(self):
@@ -47,7 +50,7 @@ class TestTriggerWorkflows(unittest.TestCase):
             {"id": 123, "name": "CI Pipeline"},
             {"id": 456, "name": "Deploy"},
         ]
-        
+
         # Test ID matching
         resolved = resolve_workflow_targets(workflows, ["123"])
         self.assertEqual(len(resolved), 1)
@@ -76,7 +79,7 @@ class TestTriggerWorkflows(unittest.TestCase):
     @patch("scripts.trigger_workflows.SESSION")
     def test_trigger_workflow_failure(self, mock_session):
         mock_session.post.side_effect = requests.exceptions.RequestException("Boom")
-        
+
         wf = {"id": 123, "name": "CI"}
         success = trigger_workflow("owner/repo", wf, "main", "token")
         self.assertFalse(success)

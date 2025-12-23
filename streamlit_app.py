@@ -4,6 +4,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+
 try:
     import plotly.express as px
 except ImportError as e:
@@ -12,7 +13,12 @@ except ImportError as e:
     ) from e
 import streamlit as st
 
-from src.analytics_metrics import calculate_quality_score, portfolio_kpis, project_growth, standardize_numeric
+from src.analytics_metrics import (
+    calculate_quality_score,
+    portfolio_kpis,
+    project_growth,
+    standardize_numeric,
+)
 
 REQUIRED_COLUMNS = [
     "loan_amount",
@@ -65,7 +71,14 @@ def ensure_required_columns(df: pd.DataFrame) -> Optional[pd.DataFrame]:
 
 def coerce_numeric(df: pd.DataFrame) -> pd.DataFrame:
     work = df.copy()
-    for col in ["loan_amount", "appraised_value", "borrower_income", "monthly_debt", "interest_rate", "principal_balance"]:
+    for col in [
+        "loan_amount",
+        "appraised_value",
+        "borrower_income",
+        "monthly_debt",
+        "interest_rate",
+        "principal_balance",
+    ]:
         work[col] = standardize_numeric(work[col])
     return work
 

@@ -1,7 +1,7 @@
-import os
-import requests
 import json
+import os
 
+import requests
 
 FIGMA_FILE_ID = "nuVKwuPuLS7VmLFvqzOX1G"
 FIGMA_TOKEN = os.environ.get("FIGMA_TOKEN")

@@ -1,9 +1,14 @@
-name: Codex pull request review
+name: Codex Pull Request Review
+
 on:
   pull_request:
   workflow_call:
+    secrets:
+      OPENAI_API_KEY:
+        required: true
   pull_request:
     types: [opened, synchronize, reopened]
+
 jobs:
   assign_metadata:
     runs-on: ubuntu-latest
@@ -18,23 +23,25 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const pull_number = context.payload.pull_request.number;
+            const pullNumber = context.payload.pull_request.number;
             await github.rest.issues.addAssignees({
               owner,
               repo,
-              issue_number: pull_number,
+              issue_number: pullNumber,
               assignees: ['codex'],
             });
-  codex:
+  codex_review:
+    name: Run Codex Review
+    needs: assign_metadata
     runs-on: ubuntu-latest
     if: github.event.pull_request.head.repo.fork == false
     permissions:
       contents: read
       pull-requests: write
     outputs:
-      final_message: ${{ steps.run_codex.outputs.final-message }}
+      final_message: ${{ steps.run_codex.outputs.final_message }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
       - name: Run Codex
@@ -47,24 +54,26 @@ jobs:
           output-file: codex-output.md
           safety-strategy: drop-sudo
           sandbox: workspace-write
+
   post_feedback:
+    name: Post Codex Feedback
+    needs: codex_review
     runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.fork == false && needs.codex_review.outputs.final_message != ''
     permissions:
       pull-requests: write
-    needs: codex
-    if: github.event.pull_request.head.repo.fork == false
     steps:
       - name: Post feedback to PR
         uses: actions/github-script@v7
         with:
           github-token: ${{ github.token }}
           script: |
-            const finalMessage = '${{ needs.codex.outputs.final_message }}';
+            const finalMessage = `${{ needs.codex_review.outputs.final_message }}`;
             if (finalMessage) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.payload.pull_request.number,
-                body: finalMessage
+                body: finalMessage,
               });
             }

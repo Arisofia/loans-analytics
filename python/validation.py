@@ -1,6 +1,4 @@
-"""
-Module for data validation utilities and functions.
-"""
+"""Module for data validation utilities and functions."""
 
 import re
 from datetime import datetime
@@ -60,8 +58,7 @@ def validate_dataframe(
         if missing:
             if len(missing) == 1:
                 raise ValueError(f"Missing required column: {missing[0]}")
-            else:
-                raise ValueError(f"Missing required columns: {', '.join(missing)}")
+            raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
     if numeric_columns:
         # Convert columns to numeric, coercing errors to NaN
@@ -226,9 +223,6 @@ def validate_no_nulls(df: pd.DataFrame, columns: Optional[List[str]] = None) -> 
     """
     if columns is None:
         # Heuristic: all columns in REQUIRED_ANALYTICS_COLUMNS and NUMERIC_COLUMNS
-        from python.validation import (NUMERIC_COLUMNS,
-                                       REQUIRED_ANALYTICS_COLUMNS)
-
         columns = list(set(REQUIRED_ANALYTICS_COLUMNS + NUMERIC_COLUMNS))
     validation: Dict[str, bool] = {}
     for col in columns:

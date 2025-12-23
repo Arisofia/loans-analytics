@@ -1,6 +1,14 @@
 import numpy as np
 import pandas as pd
 
+<<<<<<< HEAD
+from python.analytics import calculate_quality_score as _calculate_quality_score
+from python.analytics import portfolio_kpis as _portfolio_kpis
+from python.analytics import project_growth as _project_growth
+from python.analytics import standardize_numeric as _standardize_numeric
+
+=======
+>>>>>>> origin/main
 CURRENCY_SYMBOLS = r"[₡$€£¥₽%]"
 
 

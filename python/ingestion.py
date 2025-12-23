@@ -6,8 +6,11 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from python.validation import (NUMERIC_COLUMNS, assert_dataframe_schema,
-                               validate_dataframe)
+from python.validation import (
+    NUMERIC_COLUMNS,
+    assert_dataframe_schema,
+    validate_dataframe,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -205,11 +208,13 @@ class CascadeIngestion:
           - Monotonicity for count/total/cumulative columns
           - No nulls in required/numeric columns
         """
-        from python.validation import (validate_iso8601_dates,
-                                       validate_monotonic_increasing,
-                                       validate_no_nulls,
-                                       validate_numeric_bounds,
-                                       validate_percentage_bounds)
+        from python.validation import (
+            validate_iso8601_dates,
+            validate_monotonic_increasing,
+            validate_no_nulls,
+            validate_numeric_bounds,
+            validate_percentage_bounds,
+        )
 
         if df.empty:
             self._log_step("validation:skip", "Skipping validation for empty DataFrame")

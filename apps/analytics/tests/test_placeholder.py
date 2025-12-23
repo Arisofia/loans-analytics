@@ -1,4 +1,3 @@
-
 """
 Placeholder test module for pytest compliance.
 """

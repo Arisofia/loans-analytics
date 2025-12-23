@@ -10,7 +10,7 @@ echo "✅ GitHub: Already authenticated"
 echo "   Account: JenineferDeras"
 echo ""
 
-# Vercel  
+# Vercel
 echo "✅ Vercel: Already authenticated"
 echo "   Account: jeninefer"
 echo ""
@@ -40,7 +40,7 @@ echo ""
 
 echo "📝 Token-based services (configured via .env.local):"
 echo "   ✓ FIGMA_TOKEN"
-echo "   ✓ GEMINI_API_KEY" 
+echo "   ✓ GEMINI_API_KEY"
 echo "   ✓ GROK_API_KEY"
 echo "   ✓ HUBSPOT_TOKEN"
 echo "   ✓ HUGGING_TOKEN"
@@ -58,4 +58,3 @@ echo "📋 To set up local environment:"
 echo "   1. Copy .env.example to .env.local"
 echo "   2. Add your API keys to .env.local"
 echo "   3. Never commit .env.local (already in .gitignore)"
-

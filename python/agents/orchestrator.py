@@ -5,9 +5,18 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import yaml
-from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, Numeric, String, Text, create_engine
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    create_engine,
+)
 from sqlalchemy.orm import declarative_base, sessionmaker
-
 
 Base = declarative_base()
 
@@ -67,7 +76,8 @@ class AgentOrchestrator:
         input_data: Dict[str, Any],
         output: Dict[str, Any],
     ) -> None:
-        if not self.session_local:
+        session_factory = self.session_local
+        if session_factory is None:
             return
 
         record = AgentRun(
@@ -84,7 +94,7 @@ class AgentOrchestrator:
             kpi_snapshot_id=output.get("kpi_snapshot_id"),
         )
 
-        with self.session_local() as session:
+        with session_factory() as session:
             session.add(record)
             session.commit()
 
