@@ -25,6 +25,7 @@ import backoff
 import pandas as pd
 import requests
 from python.ingest.transform import canonicalize_loan_tape
+from playwright import chromium
 
 LOG = logging.getLogger("cascade_ingest")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -98,7 +99,7 @@ def write_run_manifest(
     LOG.info("Wrote audit manifest %s", manifest_path)
 
 
-def run_cascade_ingest(export_url: str, auth_token: str, output_prefix: str):
+async def run_cascade_ingest(export_url: str, auth_token: str, output_prefix: str):
     csv_path, parquet_path, zip_path = make_output_paths(output_prefix)
     LOG.info("Starting run_id=%s", RUN_ID)
     cookie_name = os.getenv("CASCADE_COOKIE_NAME")
@@ -149,14 +150,16 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
+async def main():
     args = parse_args()
     auth_token = os.getenv("CASCADE_SESSION_COOKIE")
     if not auth_token:
         raise RuntimeError("CASCADE_SESSION_COOKIE secret missing")
 
-    run_cascade_ingest(args.export_url, auth_token, args.output_prefix)
+    await run_cascade_ingest(args.export_url, auth_token, args.output_prefix)
 
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+
+    asyncio.run(main())

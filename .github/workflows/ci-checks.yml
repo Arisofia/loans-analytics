@@ -22,15 +22,12 @@ on:
         required: false
         default: ''
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
   run-demos:
     name: Run Demo Scripts
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     steps:
       - uses: actions/checkout@v4

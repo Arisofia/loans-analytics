@@ -19,8 +19,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from python.notion_integration.client import NotionClient
 
-# Configure logging
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+ # Configure logging
+logging.basicConfig(level=getattr(logging, os.getenv("LOG_LEVEL", "INFO"), logging.INFO))
 logger = logging.getLogger(__name__)
 
 
@@ -64,7 +64,7 @@ def extraer_propiedades_fila(fila: Dict[str, Any]) -> Dict[str, Any]:
 
 def calcular_estadisticas_metricas(todas_filas: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Calcula estadísticas globales de las métricas."""
-    metrics = ["visualizaciones", "alcance", "engagement"]
+    metrics = ["visualizaciones", "alcance", "engagement", "ctr"]
     stats = {}
 
     for metric in metrics:

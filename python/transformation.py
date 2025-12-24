@@ -37,6 +37,7 @@ class DataTransformation:
     }
 
     def __init__(self):
+        # run_id uses 16 hex chars (64 bits entropy) to minimize collision risk
         self.run_id = f"tx_{uuid.uuid4().hex[:16]}"
         self.transformations_count = 0
         self.timestamp: Optional[str] = None

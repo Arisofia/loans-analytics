@@ -12,7 +12,6 @@ jobs:
       - name: Send Slack notification
         uses: slackapi/slack-github-action@v1.24.0
         with:
-          webhook-type: incoming-webhook
           payload: '{"text":"A new push to main branch!"}'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

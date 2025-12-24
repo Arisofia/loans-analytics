@@ -58,7 +58,19 @@ jobs:
           fi
 
           # Extract review and post as comment
+          if ! jq empty review_response.json; then
+            echo "❌ Invalid JSON response from Perplexity API"
+            exit 1
+          fi
+          
           review_text=$(jq -r '.choices[0].message.content' review_response.json)
-
+          if [ -z "$review_text" ] || [ "$review_text" = "null" ]; then
+            echo "❌ No review content in API response"
+            exit 1
+          fi
+          
           gh pr comment ${{ github.event.pull_request.number }} \
-            --body "## 🤖 Perplexity AI Review\n\n$review_text"
+            --body "## 🤖 Perplexity AI Review\n\n$review_text" || {
+              echo "❌ Failed to post comment to PR"
+              exit 1
+            }
