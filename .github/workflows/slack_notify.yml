@@ -1,9 +1,10 @@
 name: Slack Notification
 on:
   workflow_run:
-    workflows: ['Run KPI regression and statistical tests']
+    workflows: ['CI']
     types:
       - completed
+
 jobs:
   notify:
     runs-on: ubuntu-latest
@@ -16,7 +17,7 @@ jobs:
           payload: |
             {
               "channel": "${{ secrets.SLACK_CHANNEL }}",
-              "text": "*KPI Regression & Statistical Tests Completed*\nRepository: ${{ github.repository }}\nWorkflow: ${{ github.workflow }}\nStatus: ${{ github.event.workflow_run.conclusion }}\nRun: ${{ github.run_id }}"
+              "text": "*CI Workflow Completed*\nRepository: ${{ github.repository }}\nWorkflow: ${{ github.workflow }}\nStatus: ${{ github.event.workflow_run.conclusion }}\nRun: ${{ github.run_id }}"
             }
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

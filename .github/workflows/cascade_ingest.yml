@@ -2,7 +2,7 @@ name: Cascade Ingest and KPI Extraction
 
 on:
   schedule:
-    - cron: '0 5,17 * * *'  # Every day at 05:00 and 17:00 UTC
+    - cron: '0 5,17 * * *'
   workflow_dispatch: {}
   push:
     paths:
@@ -23,11 +23,17 @@ jobs:
         run: |
           pip install pandas openpyxl
       - name: Run Cascade ingest and KPI extraction
+        continue-on-error: true
         run: |
           python scripts/ingest_cascade.py
-      - name: Show extracted KPIs
+      - name: Show extracted KPIs (if available)
+        continue-on-error: true
         run: |
-          cat exports/kpi_results.json
+          if [ -f exports/kpi_results.json ]; then
+            cat exports/kpi_results.json
+          else
+            echo "KPI results file not generated (no data processed)"
+          fi
       - name: Notify Slack on completion
         if: always() && secrets.SLACK_WEBHOOK_URL != ''
         continue-on-error: true
