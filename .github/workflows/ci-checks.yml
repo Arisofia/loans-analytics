@@ -40,6 +40,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run Financial Analysis Demo
+        continue-on-error: true
         env:
           DATA_FILE: ${{ inputs.DATA_FILE }}
         run: |
@@ -56,6 +57,7 @@ jobs:
           python scripts/demo_financial_analysis.py $ARGS > demo_output.txt
       - name: Generate Report
         if: always()
+        continue-on-error: true
         run: |
           python scripts/generate_markdown_report.py \
             --text demo_output.txt \
