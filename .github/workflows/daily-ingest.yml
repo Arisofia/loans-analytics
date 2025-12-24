@@ -51,12 +51,35 @@ jobs:
           webhook-type: INCOMING_WEBHOOK
           payload: |
             {
-              "text": ":tada: Daily data ingestion completed successfully!",
-              "attachments": [
+              "text": "✅ Daily Data Ingestion Completed",
+              "blocks": [
                 {
-                  "title": "Workflow Run",
-                  "title_link": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                  "color": "#36a64f"
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ *Daily Data Ingestion Completed Successfully*\n*Workflow:* ${{ github.workflow }}\n*Repository:* ${{ github.repository }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack on Failure
+        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+        continue-on-error: true
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook-type: INCOMING_WEBHOOK
+          payload: |
+            {
+              "text": "🚨 Daily Data Ingestion Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚨 *Daily Data Ingestion Failed*\n*Workflow:* ${{ github.workflow }}\n*Repository:* ${{ github.repository }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
                 }
               ]
             }

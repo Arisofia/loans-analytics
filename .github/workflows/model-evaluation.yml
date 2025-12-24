@@ -87,46 +87,61 @@ jobs:
             const fs = require('fs');
             let body = '## 📊 Model Evaluation Results\n\n';
 
-            if (fs.existsSync('reports/evaluation-metrics.json')) {
-              const metrics = JSON.parse(fs.readFileSync('reports/evaluation-metrics.json'));
-              body += '### Metrics Summary\n' +
-                `- **Accuracy**: ${metrics.accuracy || 'N/A'}\n` +
-                `- **Precision**: ${metrics.precision || 'N/A'}\n` +
-                `- **Recall**: ${metrics.recall || 'N/A'}\n` +
-                `- **F1 Score**: ${metrics.f1_score || 'N/A'}\n\n`;
-            } else {
-              body += '### Metrics Summary\nNo metrics generated in this run.\n\n';
+            try {
+              if (fs.existsSync('reports/evaluation-metrics.json')) {
+                const metricsData = fs.readFileSync('reports/evaluation-metrics.json', 'utf8');
+                const metrics = JSON.parse(metricsData);
+                body += '### Metrics Summary\n' +
+                  `- **Accuracy**: ${metrics.accuracy || 'N/A'}\n` +
+                  `- **Precision**: ${metrics.precision || 'N/A'}\n` +
+                  `- **Recall**: ${metrics.recall || 'N/A'}\n` +
+                  `- **F1 Score**: ${metrics.f1_score || 'N/A'}\n\n`;
+              } else {
+                body += '### Metrics Summary\n⚠️ No metrics file generated. Tests may not have run.\n\n';
+              }
+            } catch (e) {
+              body += '### Metrics Summary\n⚠️ Failed to parse metrics: ' + e.message + '\n\n';
             }
 
-            if (fs.existsSync('threshold-results.json')) {
-              const thresholds = JSON.parse(fs.readFileSync('threshold-results.json'));
-              body += '### Threshold Status\n' +
-                `${thresholds.passed ? '✅ All thresholds passed' : '❌ Some thresholds failed'}\n\n`;
+            try {
+              if (fs.existsSync('threshold-results.json')) {
+                const thresholdData = fs.readFileSync('threshold-results.json', 'utf8');
+                const thresholds = JSON.parse(thresholdData);
+                body += '### Threshold Status\n' +
+                  `${thresholds.passed ? '✅ All thresholds passed' : '❌ Some thresholds failed'}\n\n`;
+              }
+            } catch (e) {
+              body += '### Threshold Status\n⚠️ Could not verify thresholds\n\n';
             }
 
             body += `[View detailed report](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})`;
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-            });
+            try {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            } catch (e) {
+              console.log('Could not post comment: ' + e.message);
+            }
 
       - name: Send Slack notification on failure
-        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+        if: always() && failure() && secrets.SLACK_WEBHOOK_URL != ''
         continue-on-error: true
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@v2
         with:
+          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
-              "text": "🚨 Model Evaluation Failed",
+              "text": "🚨 Model Evaluation Pipeline Failed",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Model Evaluation Pipeline Failed* | Repository: ${{ github.repository }} | Branch: ${{ github.ref_name }} | <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                    "text": "*Model Evaluation Pipeline Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
                   }
                 }
               ]
