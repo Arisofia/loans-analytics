@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Callable
 
 import pandas as pd
 
@@ -13,7 +13,46 @@ from python.validation import NUMERIC_COLUMNS, validate_dataframe
 logger = logging.getLogger(__name__)
 
 
+class MetricDefinition:
+    """Define a KPI metric configuration."""
+    
+    def __init__(
+        self,
+        name: str,
+        calculator: Callable,
+        required_columns: List[str],
+        denominator_field: str = None
+    ):
+        self.name = name
+        self.calculator = calculator
+        self.required_columns = required_columns
+        self.denominator_field = denominator_field
+
+
 class KPIEngine:
+    """Orchestrate KPI calculations with audit trail and error handling."""
+    
+    METRICS = {
+        'PAR30': MetricDefinition(
+            'PAR30',
+            calculate_par_30,
+            ['dpd_30_60_usd', 'dpd_60_90_usd', 'dpd_90_plus_usd', 'total_receivable_usd'],
+            'total_receivable_usd'
+        ),
+        'PAR90': MetricDefinition(
+            'PAR90',
+            calculate_par_90,
+            ['dpd_90_plus_usd', 'total_receivable_usd'],
+            'total_receivable_usd'
+        ),
+        'CollectionRate': MetricDefinition(
+            'CollectionRate',
+            calculate_collection_rate,
+            ['cash_available_usd', 'total_eligible_usd'],
+            'total_eligible_usd'
+        ),
+    }
+
     def __init__(self, df: pd.DataFrame, actor: str = "system", action: str = "kpi"):
         self.df = df
         self.audit_trail: List[Dict[str, Any]] = []
@@ -88,6 +127,45 @@ class KPIEngine:
                 metric, f"{denominator_name} is zero; returning 0", denominator=denominator_name
             )
 
+    def calculate_metric(self, metric_key: str) -> Tuple[float, Dict[str, Any]]:
+        """Calculate a KPI metric using its definition."""
+        if metric_key not in self.METRICS:
+            raise ValueError(f"Unknown metric: {metric_key}")
+        
+        metric_def = self.METRICS[metric_key]
+        
+        if not self._ensure_columns(metric_def.name, metric_def.required_columns):
+            return 0.0, {"metric": metric_def.name, "status": "error", "value": 0.0}
+        
+        val = float(metric_def.calculator(self.df))
+        
+        if val == 0.0 and metric_def.denominator_field:
+            denom_value = float(self.df.get(metric_def.denominator_field, pd.Series()).sum())
+            self._warn_if_zero(metric_def.name, metric_def.denominator_field, denom_value)
+        
+        ctx = self._log_metric(metric_def.name, val)
+        return val, ctx
+
+    def calculate_par_30(self) -> Tuple[float, Dict[str, Any]]:
+        """Calculate PAR30 metric."""
+        return self.calculate_metric('PAR30')
+
+    def calculate_par_90(self) -> Tuple[float, Dict[str, Any]]:
+        """Calculate PAR90 metric."""
+        return self.calculate_metric('PAR90')
+
+    def calculate_collection_rate(self) -> Tuple[float, Dict[str, Any]]:
+        """Calculate Collection Rate metric."""
+        return self.calculate_metric('CollectionRate')
+
+    def calculate_portfolio_health(
+        self, par_30: float, collection_rate: float
+    ) -> Tuple[float, Dict[str, Any]]:
+        """Calculate portfolio health score."""
+        val = calculate_portfolio_health(par_30, collection_rate)
+        ctx = self._log_metric("HealthScore", val)
+        return val, ctx
+
     def validate_schema(self):
         """Validate that the DataFrame contains required numeric columns for KPI calculation."""
         try:
@@ -98,45 +176,6 @@ class KPIEngine:
             self._record_error("schema", message)
             raise
 
-    def calculate_par_30(self) -> Tuple[float, Dict[str, Any]]:
-        required = ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
-        if not self._ensure_columns("PAR30", required):
-            return 0.0, {"metric": "PAR30", "status": "error", "value": 0.0}
-        val = float(calculate_par_30(self.df))
-        if val == 0.0:
-            total = float(self.df.get("total_receivable_usd", pd.Series()).sum())
-            self._warn_if_zero("PAR30", "total_receivable_usd", total)
-        ctx = self._log_metric("PAR30", val)
-        return val, ctx
-
-    def calculate_par_90(self) -> Tuple[float, Dict[str, Any]]:
-        required = ["dpd_90_plus_usd", "total_receivable_usd"]
-        if not self._ensure_columns("PAR90", required):
-            return 0.0, {"metric": "PAR90", "status": "error", "value": 0.0}
-        val = float(calculate_par_90(self.df))
-        if val == 0.0:
-            total = float(self.df.get("total_receivable_usd", pd.Series()).sum())
-            self._warn_if_zero("PAR90", "total_receivable_usd", total)
-        ctx = self._log_metric("PAR90", val)
-        return val, ctx
-
-    def calculate_collection_rate(self) -> Tuple[float, Dict[str, Any]]:
-        required = ["cash_available_usd", "total_eligible_usd"]
-        if not self._ensure_columns("CollectionRate", required):
-            return 0.0, {"metric": "CollectionRate", "status": "error", "value": 0.0}
-        val = float(calculate_collection_rate(self.df))
-        if val == 0.0:
-            eligible = float(self.df.get("total_eligible_usd", pd.Series()).sum())
-            self._warn_if_zero("CollectionRate", "total_eligible_usd", eligible)
-        ctx = self._log_metric("CollectionRate", val)
-        return val, ctx
-
-    def calculate_portfolio_health(
-        self, par_30: float, collection_rate: float
-    ) -> Tuple[float, Dict[str, Any]]:
-        val = calculate_portfolio_health(par_30, collection_rate)
-        ctx = self._log_metric("HealthScore", val)
-        return val, ctx
-
     def get_audit_trail(self) -> pd.DataFrame:
+        """Return audit trail as DataFrame."""
         return pd.DataFrame(self.audit_trail)

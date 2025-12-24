@@ -16,15 +16,15 @@ logger = logging.getLogger(__name__)
 
 
 class CascadeIngestion:
+    """CSV ingestion with validation, error tracking, and audit logging."""
+
     def __init__(self, data_dir: str = ".", strict_validation: bool = False):
         """
-        CascadeIngestion handles CSV ingestion and validation.
+        Initialize ingestion engine.
+        
         Args:
-            data_dir (str): Directory for input files. Defaults to current directory.
-            strict_validation (bool): If True, fail ingestion on schema/type issues instead of warning.
-        Notes:
-            - DataFrame returned by validate_loans will be mutated (adds _validation_passed column).
-            - ingest_csv returns an empty DataFrame on error; check self.errors for details.
+            data_dir: Directory for input files. Defaults to current directory.
+            strict_validation: If True, fail on schema/type issues instead of warning.
         """
         self.data_dir = Path(data_dir)
         self.run_id = f"run_{uuid.uuid4().hex[:8]}"
@@ -36,15 +36,15 @@ class CascadeIngestion:
         self.context: Dict[str, Any] = {}
 
     def set_context(self, **context: Any) -> None:
+        """Set contextual metadata for logging."""
         for key, value in context.items():
             if value is not None:
                 self.context[key] = value
 
     def _log_step(self, stage: str, message: str, **details: Any) -> None:
-        detail_parts = [f"{key}={value!r}" for key, value in details.items() if value is not None]
-        context_parts = [
-            f"{key}={value!r}" for key, value in self.context.items() if value is not None
-        ]
+        """Log a processing step with context."""
+        detail_parts = [f"{k}={v!r}" for k, v in details.items() if v is not None]
+        context_parts = [f"{k}={v!r}" for k, v in self.context.items() if v is not None]
         segments = [f"[{stage}]", message]
         if detail_parts:
             segments.append(", ".join(detail_parts))
@@ -53,9 +53,11 @@ class CascadeIngestion:
         logger.info(" | ".join(segments))
 
     def _collect_context(self) -> Dict[str, Any]:
-        return {key: value for key, value in self.context.items() if value is not None}
+        """Return non-None context values."""
+        return {k: v for k, v in self.context.items() if v is not None}
 
     def _update_summary(self, count: int, filename: Optional[str] = None) -> None:
+        """Update processing summary."""
         self._summary.setdefault("rows_ingested", 0)
         self._summary["rows_ingested"] += count
         if filename:
@@ -70,6 +72,7 @@ class CascadeIngestion:
         status: str = "ingested",
         message: Optional[str] = None,
     ) -> None:
+        """Track raw file processing."""
         entry: Dict[str, Any] = {
             "file": str(file_path.resolve()),
             "status": status,
@@ -83,105 +86,111 @@ class CascadeIngestion:
         entry.update(self._collect_context())
         self.raw_files.append(entry)
 
-    def _validate_input_schema(self, df: pd.DataFrame, file_path: Path) -> bool:
-        missing = [col for col in NUMERIC_COLUMNS if col not in df.columns]
-        if missing:
-            message = f"Missing required numeric columns: {missing}"
-            self.record_error(
-                "ingestion_validation", message, file=str(file_path), missing_columns=missing
-            )
-            self._record_raw_file(file_path, rows=len(df), status="invalid_schema", message=message)
-            self._log_step(
-                (
-                    "ingestion:validation_failed"
-                    if self.strict_validation
-                    else "ingestion:validation_warning"
-                ),
-                (
-                    "Input schema validation failed"
-                    if self.strict_validation
-                    else "Input schema missing columns (warning)"
-                ),
-                file=str(file_path),
-                missing_columns=missing,
-            )
-            return not self.strict_validation
+    def _handle_ingestion_error(
+        self,
+        file_path: Path,
+        filename: str,
+        status: str,
+        message: str,
+        rows: int = 0,
+        **log_details
+    ) -> pd.DataFrame:
+        """Centralized error handling for ingestion failures."""
+        self.record_error("ingestion", message, file=filename)
+        self._record_raw_file(file_path, rows=rows, status=status, message=message)
         self._log_step(
-            "ingestion:validation", "Required numeric columns present", file=str(file_path)
+            f"ingestion:{status}",
+            f"Ingestion {status.replace('_', ' ')}",
+            file=str(file_path),
+            error=message,
+            **log_details
         )
-        return True
+        return pd.DataFrame()
+
+    def _validate_schema(self, df: pd.DataFrame, file_path: Path) -> bool:
+        """Validate required columns present and numeric."""
+        missing = [col for col in NUMERIC_COLUMNS if col not in df.columns]
+        if not missing:
+            self._log_step("ingestion:validation", "Required columns present", file=str(file_path))
+            return True
+        
+        message = f"Missing required numeric columns: {missing}"
+        level = "validation_failed" if self.strict_validation else "validation_warning"
+        self._record_raw_file(file_path, rows=len(df), status="invalid_schema", message=message)
+        self._log_step(
+            f"ingestion:{level}",
+            f"Schema validation {'failed' if self.strict_validation else 'warning'}",
+            file=str(file_path),
+            missing_columns=missing,
+        )
+        return not self.strict_validation
 
     def ingest_csv(self, filename: str) -> pd.DataFrame:
         """
-        Ingest a CSV file. Returns an empty DataFrame on error, but details are always appended to self.errors.
-        Callers should check self.errors to distinguish between missing file, empty file, or parse error.
+        Ingest CSV file with validation.
+        
+        Returns empty DataFrame on error; check self.errors for details.
         """
         file_path = self.data_dir / filename
         self._log_step("ingestion:start", "Starting CSV ingestion", file=str(file_path))
-        try:
-            if not file_path.exists():
-                message = f"No such file or directory: {filename}"
-                self.record_error("ingestion", message, file=filename)
-                self._record_raw_file(file_path, rows=0, status="missing", message=message)
-                self._log_step(
-                    "ingestion:missing", "File not found", file=str(file_path), error=message
-                )
-                return pd.DataFrame()
-            df = pd.read_csv(file_path)
-            self._log_step(
-                "ingestion:file_read", "Parsed CSV file", file=str(file_path), rows=len(df)
+
+        if not file_path.exists():
+            return self._handle_ingestion_error(
+                file_path,
+                filename,
+                "missing",
+                f"No such file or directory: {filename}"
             )
+
+        try:
+            df = pd.read_csv(file_path)
+            self._log_step("ingestion:file_read", "CSV parsed", file=str(file_path), rows=len(df))
             self._update_summary(len(df), filename)
-            if not self._validate_input_schema(df, file_path):
+            
+            if not self._validate_schema(df, file_path):
                 return pd.DataFrame()
-            try:
-                assert_dataframe_schema(
-                    df,
-                    required_columns=NUMERIC_COLUMNS,
-                    numeric_columns=NUMERIC_COLUMNS,
-                    stage="ingestion",
-                )
-            except AssertionError as error:
-                message = str(error)
-                self.record_error("ingestion_schema_assertion", message, file=str(file_path))
-                self._record_raw_file(
-                    file_path, rows=len(df), status="invalid_schema", message=message
-                )
-                self._log_step(
-                    "ingestion:assertion_failed",
-                    "Schema assertion failed",
-                    file=str(file_path),
-                    error=message,
-                )
-                return pd.DataFrame()
+
+            assert_dataframe_schema(
+                df,
+                required_columns=NUMERIC_COLUMNS,
+                numeric_columns=NUMERIC_COLUMNS,
+                stage="ingestion",
+            )
+            
             df["_ingest_run_id"] = self.run_id
             df["_ingest_timestamp"] = self.timestamp
             self._record_raw_file(file_path, rows=len(df), status="ingested")
-            self._log_step(
-                "ingestion:completed", "CSV ingestion complete", file=str(file_path), rows=len(df)
-            )
+            self._log_step("ingestion:completed", "CSV ingestion complete", file=str(file_path), rows=len(df))
             return df
+
         except pd.errors.EmptyDataError:
-            message = "File is empty or malformed"
-            self.record_error("ingestion", message, file=filename)
-            self._record_raw_file(file_path, rows=0, status="empty", message=message)
-            self._log_step(
-                "ingestion:empty", "Empty or malformed CSV", file=str(file_path), error=message
+            return self._handle_ingestion_error(
+                file_path,
+                filename,
+                "empty",
+                "File is empty or malformed"
             )
-            return pd.DataFrame()
-        except Exception as error:
-            message = str(error)
-            self.record_error("ingestion", message, file=filename)
-            self._record_raw_file(file_path, rows=0, status="error", message=message)
-            self._log_step(
-                "ingestion:error", "Unexpected ingestion error", file=str(file_path), error=message
+        except AssertionError as e:
+            return self._handle_ingestion_error(
+                file_path,
+                filename,
+                "invalid_schema",
+                str(e),
+                rows=len(df) if 'df' in locals() else 0
             )
-            return pd.DataFrame()
+        except Exception as e:
+            return self._handle_ingestion_error(
+                file_path,
+                filename,
+                "error",
+                str(e)
+            )
 
     def ingest_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Ingest a DataFrame directly (e.g. from tests or memory)."""
-        self._log_step("ingestion:inmemory", "Starting in-memory ingestion", rows=len(df))
+        """Ingest DataFrame directly."""
+        self._log_step("ingestion:inmemory", "In-memory ingestion", rows=len(df))
         self._update_summary(len(df))
+        
         df = df.copy()
         assert_dataframe_schema(
             df,
@@ -189,25 +198,28 @@ class CascadeIngestion:
             numeric_columns=NUMERIC_COLUMNS,
             stage="ingestion_inmemory",
         )
+        
         df["_ingest_run_id"] = self.run_id
         df["_ingest_timestamp"] = self.timestamp
-        self._record_raw_file(
-            Path("<dataframe>"), rows=len(df), status="ingested", message="in-memory ingestion"
-        )
+        self._record_raw_file(Path("<dataframe>"), rows=len(df), status="ingested")
         self._log_step("ingestion:completed", "In-memory ingestion recorded", rows=len(df))
         return df
 
     def validate_loans(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Validate loan DataFrame and add a '_validation_passed' column.
-        Note: This mutates the input DataFrame by adding a column. Callers should copy if mutation is not desired.
-        Enforces:
-          - Numeric columns are present and non-negative
-          - Percentage columns are between 0 and 100
-          - Date columns are valid ISO 8601
-          - Monotonicity for count/total/cumulative columns
-          - No nulls in required/numeric columns
+        Validate loan DataFrame and add '_validation_passed' column.
+        
+        Validates:
+        - Numeric columns are present and non-negative
+        - Percentage columns are between 0 and 100
+        - Date columns are valid ISO 8601
+        - Monotonic increasing for count/cumulative columns
+        - No nulls in required columns
         """
+        if df.empty:
+            self._log_step("validation:skip", "Skipping empty DataFrame")
+            return df
+
         from python.validation import (
             validate_iso8601_dates,
             validate_monotonic_increasing,
@@ -216,16 +228,12 @@ class CascadeIngestion:
             validate_percentage_bounds,
         )
 
-        if df.empty:
-            self._log_step("validation:skip", "Skipping validation for empty DataFrame")
-            return df
-
-        # Ensure chronological order for monotonicity checks
         if "measurement_date" in df.columns:
             df = df.sort_values("measurement_date", ascending=True).reset_index(drop=True)
 
         df["_validation_passed"] = True
         self._log_step("validation:start", "Validating loan records", rows=len(df))
+        
         try:
             assert_dataframe_schema(
                 df,
@@ -233,78 +241,55 @@ class CascadeIngestion:
                 numeric_columns=NUMERIC_COLUMNS,
                 stage="validation",
             )
+            
             present_cols = [col for col in NUMERIC_COLUMNS if col in df.columns]
-            missing_cols = [col for col in NUMERIC_COLUMNS if col not in df.columns]
-            if present_cols:
-                validate_dataframe(df, numeric_columns=present_cols)
-            if missing_cols:
-                validate_dataframe(df, required_columns=NUMERIC_COLUMNS)
-            numeric_results = validate_numeric_bounds(df, present_cols)
-            for col, ok in numeric_results.items():
+            validate_dataframe(df, numeric_columns=present_cols)
+            
+            for col, ok in validate_numeric_bounds(df, present_cols).items():
                 if not ok:
                     raise ValueError(f"Column failed positivity check: {col}")
-            pct_results = validate_percentage_bounds(df)
-            for col, ok in pct_results.items():
+            
+            for col, ok in validate_percentage_bounds(df).items():
                 if not ok:
-                    raise ValueError(f"Column failed percentage bounds check: {col}")
-            iso_results = validate_iso8601_dates(df)
-            for col, ok in iso_results.items():
+                    raise ValueError(f"Column failed percentage bounds: {col}")
+            
+            for col, ok in validate_iso8601_dates(df).items():
                 if not ok:
-                    raise ValueError(f"Column failed ISO 8601 date check: {col}")
-            mono_results = validate_monotonic_increasing(df)
-            for col, ok in mono_results.items():
+                    raise ValueError(f"Column failed ISO 8601 check: {col}")
+            
+            for col, ok in validate_monotonic_increasing(df).items():
                 if not ok:
                     raise ValueError(f"Column failed monotonicity check: {col}")
-            null_results = validate_no_nulls(df)
-            for col, ok in null_results.items():
+            
+            for col, ok in validate_no_nulls(df).items():
                 if not ok:
                     raise ValueError(f"Column failed null check: {col}")
-            self._log_step("validation:success", "Validation succeeded", rows=len(df))
-        except AssertionError as error:
-            message = str(error)
-            self.record_error("validation_schema_assertion", message)
-            df["_validation_passed"] = False
-            self._log_step(
-                "validation:assertion_failed",
-                "Validation schema assertion failed",
-                error=message,
-                rows=len(df),
-            )
-            return df
-        except ValueError as error:
-            message = str(error)
-            found_col = None
-            for col in NUMERIC_COLUMNS:
-                if col in message:
-                    found_col = col
-                    break
-            if found_col:
-                message = f"Validation error in column '{found_col}': {message}"
-            else:
-                for col in NUMERIC_COLUMNS:
-                    if col in df.columns and not pd.api.types.is_numeric_dtype(df[col]):
-                        message = f"Validation error in column '{col}': {message}"
-                        break
+            
+            self._log_step("validation:success", "Validation passed", rows=len(df))
+
+        except (AssertionError, ValueError) as e:
+            message = str(e)
             self.record_error("validation", message)
             df["_validation_passed"] = False
             self._log_step("validation:failure", "Validation failed", error=message, rows=len(df))
+
         return df
 
     def get_ingest_summary(self) -> Dict[str, Any]:
+        """Get processing summary."""
         summary = self._summary.copy()
-        summary.update(
-            {
-                "run_id": self.run_id,
-                "timestamp": self.timestamp,
-                "total_errors": len(self.errors),
-                "errors": self.errors,
-                "raw_files": self.raw_files,
-                "context": self.context.copy(),
-            }
-        )
+        summary.update({
+            "run_id": self.run_id,
+            "timestamp": self.timestamp,
+            "total_errors": len(self.errors),
+            "errors": self.errors,
+            "raw_files": self.raw_files,
+            "context": self.context.copy(),
+        })
         return summary
 
     def record_error(self, stage: str, message: str, **details: Any) -> None:
+        """Record an error event."""
         entry: Dict[str, Any] = {
             "stage": stage,
             "error": message,
