@@ -2,11 +2,10 @@
 
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-# Unified required columns for both ingestion and analytics
 REQUIRED_ANALYTICS_COLUMNS: List[str] = [
     "loan_amount",
     "appraised_value",
@@ -38,30 +37,82 @@ NUMERIC_COLUMNS: List[str] = [
     "cash_available_usd",
 ]
 
-# Simplified ISO8601 regex: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS(.sss)?(Z|±HH:MM)?
 ISO8601_REGEX = re.compile(
     r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$"
 )
 
 
+class ColumnValidator:
+    """Validate columns with specific type/format constraints."""
+    
+    @staticmethod
+    def is_numeric(df: pd.DataFrame, col: str) -> bool:
+        """Check if column is numeric."""
+        return pd.api.types.is_numeric_dtype(df[col])
+    
+    @staticmethod
+    def is_iso8601(val: Any) -> bool:
+        """Check if value is ISO 8601 date."""
+        if pd.isnull(val):
+            return True
+        if isinstance(val, (pd.Timestamp, datetime)):
+            return True
+        return isinstance(val, str) and ISO8601_REGEX.fullmatch(val) is not None
+    
+    @staticmethod
+    def coerce_numeric(df: pd.DataFrame, col: str) -> None:
+        """Coerce column to numeric, filling errors with NaN."""
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+
+class ColumnFinder:
+    """Find columns by exact match, case-insensitive, or substring."""
+    
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+        self.columns = list(df.columns)
+        self.columns_lower = {col.lower(): col for col in self.columns}
+    
+    def find(self, candidates: List[str]) -> Optional[str]:
+        """Find first matching column from candidates."""
+        for col in self._exact_match(candidates):
+            return col
+        for col in self._case_insensitive_match(candidates):
+            return col
+        for col in self._substring_match(candidates):
+            return col
+        return None
+    
+    def _exact_match(self, candidates: List[str]) -> List[str]:
+        """Get exact matches from candidates."""
+        return [c for c in candidates if c in self.columns]
+    
+    def _case_insensitive_match(self, candidates: List[str]) -> List[str]:
+        """Get case-insensitive matches."""
+        return [self.columns_lower[c.lower()] for c in candidates if c.lower() in self.columns_lower]
+    
+    def _substring_match(self, candidates: List[str]) -> List[str]:
+        """Get substring matches (case-insensitive)."""
+        result = []
+        for candidate in candidates:
+            for col in self.columns:
+                if candidate.lower() in col.lower():
+                    result.append(col)
+                    break
+        return result
+
+
+def find_column(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
+    """Find column in DataFrame matching one of the candidates."""
+    finder = ColumnFinder(df)
+    return finder.find(candidates)
+
+
 def is_missing_columns(df: pd.DataFrame, required: Optional[List[str]]) -> List[str]:
+    """Get list of missing required columns."""
     if not required:
         return []
     return [col for col in required if col not in df.columns]
-
-
-def is_numeric_column(df: pd.DataFrame, col: str) -> bool:
-    return pd.api.types.is_numeric_dtype(df[col])
-
-
-def is_iso8601(val: Any) -> bool:
-    if pd.isnull(val):
-        return True
-    if isinstance(val, (pd.Timestamp, datetime)):
-        return True
-    if isinstance(val, str) and ISO8601_REGEX.fullmatch(val):
-        return True
-    return False
 
 
 def validate_dataframe(
@@ -70,25 +121,24 @@ def validate_dataframe(
     numeric_columns: Optional[List[str]] = None,
     date_columns: Optional[List[str]] = None,
 ) -> None:
+    """Validate DataFrame schema and column types."""
     missing = is_missing_columns(df, required_columns)
     if missing:
-        raise ValueError(
-            f"Missing required column(s): {', '.join(missing)}"
-        )
+        raise ValueError(f"Missing required column(s): {', '.join(missing)}")
 
     if numeric_columns:
         for col in numeric_columns:
             if col not in df.columns:
                 raise ValueError(f"Missing required numeric column: {col}")
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-            if not is_numeric_column(df, col):
-                raise ValueError(f"Column '{col}' must be numeric (column: {col})")
+            ColumnValidator.coerce_numeric(df, col)
+            if not ColumnValidator.is_numeric(df, col):
+                raise ValueError(f"Column '{col}' must be numeric")
 
     if date_columns:
         for col in date_columns:
             if col not in df.columns:
                 raise ValueError(f"Missing required date column: {col}")
-            if not all(is_iso8601(val) for val in df[col]):
+            if not all(ColumnValidator.is_iso8601(val) for val in df[col]):
                 raise ValueError(f"Column '{col}' must contain ISO 8601 dates")
 
 
@@ -100,7 +150,7 @@ def assert_dataframe_schema(
     date_columns: Optional[List[str]] = None,
     stage: str = "DataFrame",
 ) -> None:
-    """Raise AssertionError when the DataFrame schema deviates from expectations."""
+    """Raise AssertionError if schema validation fails."""
     try:
         validate_dataframe(
             df,
@@ -110,29 +160,3 @@ def assert_dataframe_schema(
         )
     except ValueError as e:
         raise AssertionError(f"{stage} schema validation failed: {e}")
-
-
-def find_column(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
-    """
-    Helper to find a column in the DataFrame matching one of the candidates.
-    Prioritizes:
-    1. Exact match
-    2. Case-insensitive exact match
-    3. Substring match
-    """
-    columns = list(df.columns)
-    # 1. Exact match
-    for candidate in candidates:
-        if candidate in columns:
-            return candidate
-    # 2. Case-insensitive exact match
-    lowered = {col.lower(): col for col in columns}
-    for candidate in candidates:
-        if candidate.lower() in lowered:
-            return lowered[candidate.lower()]
-    # 3. Substring match (case-insensitive)
-    for candidate in candidates:
-        for col in columns:
-            if candidate.lower() in col.lower():
-                return col
-    return None
