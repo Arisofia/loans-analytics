@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class ColumnDefinition:
     """Define source and target columns for transformation."""
-    
+
     DPD_COLUMNS = ["dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"]
     ALIAS_MAPPINGS = {
         "loan_amount": ["receivable_amount"],
@@ -126,12 +126,12 @@ class DataTransformation:
         """Calculate DPD buckets as percentage of total receivable."""
         total = df["total_receivable_usd"].sum()
         ratios = {}
-        
+
         if total > 0:
             for col in ColumnDefinition.DPD_COLUMNS:
                 if col in df.columns:
                     ratios[col] = (df[col].sum() / total) * 100.0
-        
+
         self._log_and_record(
             "calculate_dpd_ratios",
             "Calculating DPD ratios",
@@ -154,29 +154,29 @@ class DataTransformation:
         """Add DPD columns as percentages of total receivable."""
         result = df.copy()
         receivable = result["receivable_amount"].replace(0, np.nan)
-        
+
         for col in ColumnDefinition.DPD_COLUMNS:
             if col in result.columns:
                 result[f"{col}_pct"] = (result[col] / receivable).fillna(0.0) * 100
-        
+
         return result
 
     def _add_analytics_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Fill missing analytics columns from mappings or defaults."""
         result = df.copy()
-        
+
         for col in self.REQUIRED_ANALYTICS_COLUMNS:
             if col not in result.columns:
                 candidates = ColumnDefinition.ALIAS_MAPPINGS.get(col, [])
                 source_col = find_column(result, candidates)
-                
+
                 if source_col:
                     result[col] = result[source_col]
                 elif col == "loan_status":
                     result[col] = "unknown"
                 else:
                     result[col] = float("nan")
-        
+
         return result
 
     def _validate_schema(self, df: pd.DataFrame, schema_type: str, stage: str) -> None:
@@ -238,7 +238,7 @@ class DataTransformation:
             },
             rows=len(kpi_df)
         )
-        
+
         self.transformations_count += 1
         return kpi_df
 
@@ -246,13 +246,13 @@ class DataTransformation:
         """Validate transformation preserves data integrity."""
         if len(original) != len(transformed):
             return False
-        
+
         if "total_receivable_usd" in original.columns and "receivable_amount" in transformed.columns:
             orig_sum = original["total_receivable_usd"].sum()
             trans_sum = transformed["receivable_amount"].sum()
             if not np.isclose(orig_sum, trans_sum):
                 return False
-        
+
         self._log_and_record(
             "validate_transformations",
             "Transformation validation passed",
@@ -260,5 +260,5 @@ class DataTransformation:
             [],
             {"original_rows": len(original), "transformed_rows": len(transformed)}
         )
-        
+
         return True

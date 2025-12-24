@@ -117,6 +117,7 @@ class CascadeIngestion:
         message = f"Missing required numeric columns: {missing}"
         level = "validation_failed" if self.strict_validation else "validation_warning"
         self._record_raw_file(file_path, rows=len(df), status="invalid_schema", message=message)
+        self.record_error("ingestion_validation", message, file=str(file_path), missing_columns=missing)
         self._log_step(
             f"ingestion:{level}",
             f"Schema validation {'failed' if self.strict_validation else 'warning'}",
@@ -269,7 +270,18 @@ class CascadeIngestion:
 
         except (AssertionError, ValueError) as e:
             message = str(e)
-            self.record_error("validation", message)
+            found_col = None
+            for col in NUMERIC_COLUMNS:
+                if col in df.columns and not pd.api.types.is_numeric_dtype(df[col]):
+                    found_col = col
+                    break
+            if found_col and f"'{found_col}'" not in message:
+                message = f"Validation error in column '{found_col}': {message}"
+            
+            if "schema" in message.lower() or "must be numeric" in message.lower() or "missing required" in message.lower():
+                self.record_error("validation_schema_assertion", message)
+            else:
+                self.record_error("validation", message)
             df["_validation_passed"] = False
             self._log_step("validation:failure", "Validation failed", error=message, rows=len(df))
 
