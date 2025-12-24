@@ -21,14 +21,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: npm
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: pnpm install --frozen-lockfile
         working-directory: ${{ inputs.working-directory }}
 
       - name: Run ESLint
-        run: npm run lint
+        run: pnpm lint
         working-directory: ${{ inputs.working-directory }}
 
   type-check:
@@ -41,12 +44,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: npm
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: pnpm install --frozen-lockfile
         working-directory: ${{ inputs.working-directory }}
 
       - name: Run TypeScript type-check
-        run: npm run type-check
+        run: pnpm type-check
         working-directory: ${{ inputs.working-directory }}

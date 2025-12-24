@@ -46,22 +46,26 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 20
+          cache: 'pnpm'
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - name: Install pnpm
+        run: npm install -g pnpm
       - name: Install
         run: |
           cd apps/web
-          npm install --ignore-scripts
+          pnpm install --frozen-lockfile
       - name: Lint
         run: |
           cd apps/web
-          npm run lint
+          pnpm lint
       - name: Build
         run: |
           cd apps/web
-          npm run build
+          pnpm build
       - name: Type-check
         run: |
           cd apps/web
-          npm run type-check
+          pnpm type-check
 
   analytics:
     runs-on: ubuntu-latest
