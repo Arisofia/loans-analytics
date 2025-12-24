@@ -32,7 +32,6 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-<<<<<<< HEAD
 
 import pandas as pd
 
@@ -263,6 +262,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-=======
-i
->>>>>>> origin/main
