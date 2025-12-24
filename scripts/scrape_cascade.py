@@ -21,9 +21,7 @@ Environment Variables:
 """
 
 import argparse
-<<<<<<< HEAD
 import asyncio
-=======
 >>>>>>> origin/main
 import logging
 import os
@@ -32,9 +30,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-<<<<<<< HEAD
-from playwright.async_api import Browser, Page, async_playwright
-=======
+from playwright.async_api import async_playwright, Browser, Page
 import asyncio
 from playwright.async_api import async_playwright, Browser, Page
 >>>>>>> origin/main
@@ -44,9 +40,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Configure logging
 logging.basicConfig(
-<<<<<<< HEAD
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-=======
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 >>>>>>> origin/main
@@ -61,9 +56,7 @@ CASCADE_ANALYTICS_URL = f"{CASCADE_BASE_URL}/analytics/risk/overview"
 
 class CascadeScraper:
     """Automated scraper for Cascade Debt platform."""
-<<<<<<< HEAD
-
-=======
+    
     
 >>>>>>> origin/main
     def __init__(self, username: str, password: str, pid: str = "abaco"):
@@ -81,13 +74,11 @@ class CascadeScraper:
         """Async context manager entry."""
         await self.initialize()
         return self
-<<<<<<< HEAD
-
+    
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self.cleanup()
-
-=======
+    
     
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
@@ -100,9 +91,7 @@ class CascadeScraper:
         playwright = await async_playwright().start()
         self.browser = await playwright.chromium.launch(headless=True)
         self.page = await self.browser.new_page()
-<<<<<<< HEAD
-
-=======
+    
     
 >>>>>>> origin/main
     async def cleanup(self):
