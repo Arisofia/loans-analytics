@@ -12,21 +12,8 @@ jobs:
     steps:
       - name: Send Slack notification
         continue-on-error: true
-        uses: slackapi/slack-github-action@v2
+        uses: slackapi/slack-github-action@v1.24.0
         with:
-          webhook-type: INCOMING_WEBHOOK
-          payload: |
-            {
-              "text": "Push to Main Branch",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "🔔 *New Push to Main Branch*\n*Repository:* ${{ github.repository }}\n*Commit:* `${{ github.sha }}`\n*Author:* ${{ github.actor }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
-                  }
-                }
-              ]
-            }
+          payload: '{"text":"A new push to main branch!"}'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

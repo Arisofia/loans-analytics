@@ -37,21 +37,14 @@ jobs:
       - name: Notify Slack on completion
         if: always() && secrets.SLACK_WEBHOOK_URL != ''
         continue-on-error: true
-        uses: slackapi/slack-github-action@v2
-        with:
-          webhook-type: INCOMING_WEBHOOK
-          payload: |
-            {
-              "text": "Cascade Ingest Workflow Complete",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Cascade Ingest Workflow Completed*\n*Workflow:* ${{ github.workflow }}\n*Status:* ${{ job.status }}\n*Repository:* ${{ github.repository }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
-                  }
-                }
-              ]
-            }
+        uses: rtCamp/action-slack-notify@v2
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          status: ${{ job.status }}
+          fields: workflow,job,commit,repo,author
+          msg: |
+            Cascade ingest workflow completed with status: ${{ job.status }}
+            Workflow: ${{ github.workflow }}
+            Commit: ${{ github.sha }}
+            See details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
