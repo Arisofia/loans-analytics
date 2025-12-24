@@ -32,12 +32,15 @@ jobs:
           playwright install chromium
       
       - name: Run Cascade scraper
+        if: secrets.CASCADE_USERNAME != '' && secrets.CASCADE_PASSWORD != ''
+        continue-on-error: true
         run: python scripts/scrape_cascade.py --loan-tape
         env:
           CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
           CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}
           CASCADE_PID: abaco
       - name: Run data ingestion pipeline
+        continue-on-error: true
         run: |
           python scripts/run_data_pipeline.py
       - name: Notify Slack on Success
