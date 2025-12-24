@@ -10,8 +10,6 @@ function resolveSupabaseConfig() {
   return { url, anonKey };
 }
 
-const { url: supabaseUrl, anonKey: supabaseAnonKey } = resolveSupabaseConfig();
-
 type ServerCookie = {
   name: string;
   value: string;
@@ -19,6 +17,7 @@ type ServerCookie = {
 };
 
 export async function createClient() {
+  const { url: supabaseUrl, anonKey: supabaseAnonKey } = resolveSupabaseConfig();
   const cookieStore = await cookies();
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {

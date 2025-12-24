@@ -19,4 +19,3 @@ export async function GET(request: NextRequest) {
   }
   return NextResponse.redirect(new URL('/auth/auth-code-error', request.url));
 }
-}
