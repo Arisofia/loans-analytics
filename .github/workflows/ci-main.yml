@@ -15,6 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       
+      - name: Install pnpm
+        run: npm install -g pnpm
+      
       - name: Use Node.js
         uses: actions/setup-node@v6
         with:
@@ -22,8 +25,6 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: apps/web/pnpm-lock.yaml
 
-      - name: Install pnpm
-        run: npm install -g pnpm
 
       - name: Install dependencies # Installs dependencies for all workspaces
         run: pnpm install --frozen-lockfile
@@ -39,6 +40,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -47,8 +51,6 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: apps/web/pnpm-lock.yaml
 
-      - name: Install pnpm
-        run: npm install -g pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
