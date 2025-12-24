@@ -39,11 +39,13 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+      - name: Install pnpm
+        run: npm install -g pnpm
       - name: Install dependencies
         run: |
           cd apps/web
-          npm ci
-          npm run lint -- --version >/dev/null
+          pnpm install --frozen-lockfile
+          pnpm lint --version >/dev/null
       - name: Analytics coverage (pytest)
         run: |
           python -m pip install -r apps/analytics/requirements.txt pytest pytest-cov
