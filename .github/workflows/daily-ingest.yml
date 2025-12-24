@@ -41,7 +41,8 @@ jobs:
         run: |
           python scripts/run_data_pipeline.py
       - name: Notify Slack on Success
-        if: success()
+        if: success() && secrets.SLACK_WEBHOOK_URL != ''
+        continue-on-error: true
         uses: slackapi/slack-github-action@v2
         with:
           webhook-type: INCOMING_WEBHOOK

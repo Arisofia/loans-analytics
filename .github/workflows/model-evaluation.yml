@@ -96,7 +96,8 @@ jobs:
             });
 
       - name: Send Slack notification on failure
-        if: failure() || (steps.threshold-check.outcome == 'failure')
+        if: (failure() || (steps.threshold-check.outcome == 'failure')) && secrets.SLACK_WEBHOOK_URL != ''
+        continue-on-error: true
         uses: slackapi/slack-github-action@v1
         with:
           payload: |

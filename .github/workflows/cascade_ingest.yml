@@ -47,7 +47,8 @@ jobs:
         run: |
           cat exports/kpi_results.json
       - name: Notify Slack on completion
-        if: always()
+        if: always() && secrets.SLACK_WEBHOOK_URL != ''
+        continue-on-error: true
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
