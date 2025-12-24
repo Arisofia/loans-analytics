@@ -10,70 +10,30 @@ on:
       - 'scripts/ingest_cascade.py'
       - 'data/raw/*.xls*'
 
-concurrency:
-  group: cascade-ingest-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   kpi-extraction:
-    name: Extract KPIs from Cascade
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    outputs:
-      status: ${{ job.status }}
-      kpi-generated: ${{ steps.kpi-step.outputs.generated }}
-
     steps:
       - uses: actions/checkout@v3
-
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.10'
-          cache: 'pip'
-
-      - name: Log environment
-        run: |
-          python --version
-          pip --version
-
       - name: Install dependencies
-        timeout-minutes: 10
         run: |
           pip install pandas openpyxl
-
       - name: Run Cascade ingest and KPI extraction
-        id: kpi-step
         continue-on-error: true
-        timeout-minutes: 35
         run: |
           python scripts/ingest_cascade.py
-          if [ -f exports/kpi_results.json ]; then
-            echo "generated=true" >> $GITHUB_OUTPUT
-          else
-            echo "generated=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Show extracted KPIs (if available)
         continue-on-error: true
         run: |
           if [ -f exports/kpi_results.json ]; then
-            echo "✓ KPI results generated:"
             cat exports/kpi_results.json
           else
-            echo "⚠️ KPI results file not generated (no data processed or credentials missing)"
+            echo "KPI results file not generated (no data processed)"
           fi
-
-      - name: Upload KPI results
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: cascade-kpi-results
-          path: exports/kpi_results.json
-          retention-days: 30
-          if-no-files-found: ignore
-
       - name: Notify Slack on completion
         if: always() && secrets.SLACK_WEBHOOK_URL != ''
         continue-on-error: true
@@ -88,7 +48,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Cascade Ingest Workflow Completed*\n*Workflow:* ${{ github.workflow }}\n*Status:* ${{ job.status }}\n*KPI Generated:* ${{ steps.kpi-step.outputs.generated }}\n*Repository:* ${{ github.repository }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                    "text": "*Cascade Ingest Workflow Completed*\n*Workflow:* ${{ github.workflow }}\n*Status:* ${{ job.status }}\n*Repository:* ${{ github.repository }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
                   }
                 }
               ]

@@ -5,16 +5,10 @@ on:
     types:
       - completed
 
-concurrency:
-  group: slack-notify-${{ github.event.workflow_run.name }}
-  cancel-in-progress: false
-
 jobs:
   notify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     if: secrets.SLACK_WEBHOOK_URL != ''
-
     steps:
       - name: Send Slack notification
         continue-on-error: true
@@ -29,7 +23,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*CI Workflow Completed*\n*Repository:* ${{ github.repository }}\n*Status:* ${{ github.event.workflow_run.conclusion }}\n*Commit:* `${{ github.event.workflow_run.head_sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}|View Details>"
+                    "text": "*CI Workflow Completed*\n*Repository:* ${{ github.repository }}\n*Status:* ${{ github.event.workflow_run.conclusion }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}|View Details>"
                   }
                 }
               ]

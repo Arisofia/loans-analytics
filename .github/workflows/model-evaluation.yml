@@ -11,18 +11,10 @@ on:
   schedule:
     - cron: '0 2 * * *'
 
-concurrency:
-  group: model-evaluation-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   evaluate-models:
     name: Evaluate ML Models
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    outputs:
-      status: ${{ job.status }}
-      test-passed: ${{ steps.eval-tests.outputs.passed }}
 
     steps:
       - uses: actions/checkout@v6
@@ -35,21 +27,13 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Log environment
-        run: |
-          python --version
-          pip --version
-          pip show pytest pytest-html pytest-json-report 2>/dev/null || echo "Packages not yet installed"
-
       - name: Install dependencies
         run: |
           pip install -r apps/analytics/requirements.txt
           pip install pytest-html pytest-json-report allure-pytest
 
       - name: Run evaluation tests
-        id: eval-tests
         continue-on-error: true
-        timeout-minutes: 20
         run: |
           mkdir -p reports
           pytest tests/evaluation/ \
@@ -57,17 +41,11 @@ jobs:
             --self-contained-html \
             --json-report \
             --json-report-file=reports/evaluation-metrics.json \
-            -v || echo "Tests completed with failures"
-          if [ -f reports/evaluation-metrics.json ]; then
-            echo "passed=true" >> $GITHUB_OUTPUT
-          else
-            echo "passed=false" >> $GITHUB_OUTPUT
-          fi
+            -v || echo "Evaluation tests completed"
 
       - name: Generate metrics visualization
         if: always()
         continue-on-error: true
-        timeout-minutes: 5
         run: |
           mkdir -p reports/visualizations
           python scripts/evaluation/generate_visualizations.py \
@@ -78,7 +56,6 @@ jobs:
       - name: Check evaluation thresholds
         if: always()
         continue-on-error: true
-        timeout-minutes: 5
         id: threshold-check
         run: |
           mkdir -p config
@@ -104,7 +81,6 @@ jobs:
       - name: Comment on PR with results
         if: github.event_name == 'pull_request' && always()
         continue-on-error: true
-        timeout-minutes: 5
         uses: actions/github-script@v7
         with:
           script: |

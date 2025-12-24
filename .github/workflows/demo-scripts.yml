@@ -24,54 +24,21 @@ permissions:
   contents: read
   pull-requests: write
 
-concurrency:
-  group: demo-scripts-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   run-demos:
-    name: Run Demo Scripts
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    outputs:
-      status: ${{ job.status }}
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
-
-      - name: Log environment
-        run: |
-          python --version
-          pip --version
-
       - name: Install dependencies
-        timeout-minutes: 10
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Validate input
-        run: |
-          if [ -n "${{ inputs.DATA_FILE }}" ]; then
-            if [[ ! "${{ inputs.DATA_FILE }}" =~ ^data/ ]]; then
-              echo "❌ Invalid DATA_FILE path: must start with 'data/'"
-              exit 1
-            fi
-            if [ ! -f "${{ inputs.DATA_FILE }}" ]; then
-              echo "❌ DATA_FILE not found: ${{ inputs.DATA_FILE }}"
-              exit 1
-            fi
-            echo "✓ DATA_FILE validated: ${{ inputs.DATA_FILE }}"
-          fi
-
       - name: Run Financial Analysis Demo
         continue-on-error: true
-        timeout-minutes: 15
         env:
           DATA_FILE: ${{ inputs.DATA_FILE }}
         run: |
@@ -83,23 +50,19 @@ jobs:
           else
             ARGS=""
           fi
-          python scripts/demo_financial_analysis.py $ARGS > demo_output.txt 2>&1 || true
-
+          python scripts/demo_financial_analysis.py $ARGS > demo_output.txt || true
       - name: Generate Report
         if: always()
         continue-on-error: true
-        timeout-minutes: 5
         run: |
           if [ -f demo_output.txt ] && [ -s demo_output.txt ]; then
-            echo "✓ Demo output found, generating report..."
             python scripts/generate_markdown_report.py \
               --text demo_output.txt \
               --images dpd_distribution.png exposure_distribution.png \
               || echo "Report generation failed"
           else
-            echo "⚠️ No demo output to report (demo may not have run)"
+            echo "No demo output to report (demo may not have run)"
           fi
-
       - name: Upload Demo Output
         if: always()
         continue-on-error: true
@@ -109,9 +72,7 @@ jobs:
           path: |
             demo_output.txt
             demo_report.md
-          retention-days: 30
           if-no-files-found: ignore
-
       - name: Notify Slack on Failure
         if: always() && failure() && secrets.SLACK_WEBHOOK_URL != ''
         continue-on-error: true

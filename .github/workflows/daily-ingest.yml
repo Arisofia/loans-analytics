@@ -5,23 +5,12 @@ on:
     - cron: '0 5 * * *'
   workflow_dispatch:
 
-concurrency:
-  group: daily-ingest-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   ingest-data:
-    name: Ingest Daily Data
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    outputs:
-      status: ${{ job.status }}
-      data-ingested: ${{ steps.ingest-step.outputs.success }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -30,23 +19,14 @@ jobs:
           cache-dependency-path: |
             requirements.txt
             apps/analytics/requirements.txt
-
-      - name: Log environment
-        run: |
-          python --version
-          pip --version
-
       - name: Install dependencies
-        timeout-minutes: 15
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           if [ -f apps/analytics/requirements.txt ]; then
             pip install -r apps/analytics/requirements.txt
           fi
-
       - name: Install Playwright
-        timeout-minutes: 10
         run: |
           pip install playwright
           playwright install chromium
@@ -54,32 +34,15 @@ jobs:
       - name: Run Cascade scraper
         if: secrets.CASCADE_USERNAME != '' && secrets.CASCADE_PASSWORD != ''
         continue-on-error: true
-        timeout-minutes: 25
         run: python scripts/scrape_cascade.py --loan-tape
         env:
           CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
           CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}
           CASCADE_PID: abaco
-
       - name: Run data ingestion pipeline
-        id: ingest-step
         continue-on-error: true
-        timeout-minutes: 25
         run: |
-          python scripts/run_data_pipeline.py && echo "success=true" >> $GITHUB_OUTPUT || echo "success=false" >> $GITHUB_OUTPUT
-
-      - name: Upload ingestion logs
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: ingestion-logs
-          path: |
-            logs/
-            *.log
-          retention-days: 30
-          if-no-files-found: ignore
-
+          python scripts/run_data_pipeline.py
       - name: Notify Slack on Success
         if: success() && secrets.SLACK_WEBHOOK_URL != ''
         continue-on-error: true
@@ -94,14 +57,13 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "✅ *Daily Data Ingestion Completed Successfully*\n*Workflow:* ${{ github.workflow }}\n*Data Ingested:* ${{ steps.ingest-step.outputs.success }}\n*Repository:* ${{ github.repository }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                    "text": "✅ *Daily Data Ingestion Completed Successfully*\n*Workflow:* ${{ github.workflow }}\n*Repository:* ${{ github.repository }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
                   }
                 }
               ]
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
       - name: Notify Slack on Failure
         if: failure() && secrets.SLACK_WEBHOOK_URL != ''
         continue-on-error: true

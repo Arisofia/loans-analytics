@@ -5,16 +5,10 @@ on:
     branches:
       - main
 
-concurrency:
-  group: notify-slack-push
-  cancel-in-progress: false
-
 jobs:
   notify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     if: secrets.SLACK_WEBHOOK_URL != ''
-
     steps:
       - name: Send Slack notification
         continue-on-error: true
@@ -29,7 +23,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "🔔 *New Push to Main Branch*\n*Repository:* ${{ github.repository }}\n*Author:* ${{ github.actor }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                    "text": "🔔 *New Push to Main Branch*\n*Repository:* ${{ github.repository }}\n*Commit:* `${{ github.sha }}`\n*Author:* ${{ github.actor }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
                   }
                 }
               ]
