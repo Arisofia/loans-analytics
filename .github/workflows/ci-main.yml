@@ -1,11 +1,11 @@
 name: CI Main
 
 on:
+  workflow_dispatch:
   push:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
-  workflow_dispatch:
   schedule:
     - cron: '0 3 * * *' # Nightly at 3am UTC
 

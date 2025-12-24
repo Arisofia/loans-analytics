@@ -1,6 +1,7 @@
 name: Deploy to Vercel
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -10,7 +11,6 @@ on:
       - 'apps/web/package.json'
       - 'apps/web/next.config.js'
       - 'package.json'
-  workflow_dispatch:
 
 jobs:
   deploy:
