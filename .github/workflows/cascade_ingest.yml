@@ -6,8 +6,8 @@ on:
   workflow_dispatch: {}
   push:
     paths:
-      - 'scripts/convert_and_integrate_cascade.py'
-      - 'scripts/ingest_kpis.py'
+      - 'scripts/cascade_ingest.py'
+      - 'scripts/ingest_cascade.py'
       - 'data/raw/*.xls*'
 
 jobs:
@@ -42,7 +42,7 @@ jobs:
         run: pip install pandas
       - name: Run KPI extraction (with Cascade integration)
         run: |
-          python scripts/ingest_kpis.py
+          python scripts/ingest_cascade.py
       - name: Show extracted KPIs
         run: |
           cat exports/kpi_results.json
