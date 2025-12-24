@@ -1,11 +1,16 @@
 import logging
-import pandas as pd
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from python.validation import validate_dataframe, NUMERIC_COLUMNS, assert_dataframe_schema
+import pandas as pd
+
+from python.validation import (
+    NUMERIC_COLUMNS,
+    assert_dataframe_schema,
+    validate_dataframe,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +42,9 @@ class CascadeIngestion:
 
     def _log_step(self, stage: str, message: str, **details: Any) -> None:
         detail_parts = [f"{key}={value!r}" for key, value in details.items() if value is not None]
-        context_parts = [f"{key}={value!r}" for key, value in self.context.items() if value is not None]
+        context_parts = [
+            f"{key}={value!r}" for key, value in self.context.items() if value is not None
+        ]
         segments = [f"[{stage}]", message]
         if detail_parts:
             segments.append(", ".join(detail_parts))
@@ -80,16 +87,28 @@ class CascadeIngestion:
         missing = [col for col in NUMERIC_COLUMNS if col not in df.columns]
         if missing:
             message = f"Missing required numeric columns: {missing}"
-            self.record_error("ingestion_validation", message, file=str(file_path), missing_columns=missing)
+            self.record_error(
+                "ingestion_validation", message, file=str(file_path), missing_columns=missing
+            )
             self._record_raw_file(file_path, rows=len(df), status="invalid_schema", message=message)
             self._log_step(
-                "ingestion:validation_failed" if self.strict_validation else "ingestion:validation_warning",
-                "Input schema validation failed" if self.strict_validation else "Input schema missing columns (warning)",
+                (
+                    "ingestion:validation_failed"
+                    if self.strict_validation
+                    else "ingestion:validation_warning"
+                ),
+                (
+                    "Input schema validation failed"
+                    if self.strict_validation
+                    else "Input schema missing columns (warning)"
+                ),
                 file=str(file_path),
                 missing_columns=missing,
             )
             return not self.strict_validation
-        self._log_step("ingestion:validation", "Required numeric columns present", file=str(file_path))
+        self._log_step(
+            "ingestion:validation", "Required numeric columns present", file=str(file_path)
+        )
         return True
 
     def ingest_csv(self, filename: str) -> pd.DataFrame:
@@ -104,10 +123,14 @@ class CascadeIngestion:
                 message = f"No such file or directory: {filename}"
                 self.record_error("ingestion", message, file=filename)
                 self._record_raw_file(file_path, rows=0, status="missing", message=message)
-                self._log_step("ingestion:missing", "File not found", file=str(file_path), error=message)
+                self._log_step(
+                    "ingestion:missing", "File not found", file=str(file_path), error=message
+                )
                 return pd.DataFrame()
             df = pd.read_csv(file_path)
-            self._log_step("ingestion:file_read", "Parsed CSV file", file=str(file_path), rows=len(df))
+            self._log_step(
+                "ingestion:file_read", "Parsed CSV file", file=str(file_path), rows=len(df)
+            )
             self._update_summary(len(df), filename)
             if not self._validate_input_schema(df, file_path):
                 return pd.DataFrame()
@@ -121,25 +144,38 @@ class CascadeIngestion:
             except AssertionError as error:
                 message = str(error)
                 self.record_error("ingestion_schema_assertion", message, file=str(file_path))
-                self._record_raw_file(file_path, rows=len(df), status="invalid_schema", message=message)
-                self._log_step("ingestion:assertion_failed", "Schema assertion failed", file=str(file_path), error=message)
+                self._record_raw_file(
+                    file_path, rows=len(df), status="invalid_schema", message=message
+                )
+                self._log_step(
+                    "ingestion:assertion_failed",
+                    "Schema assertion failed",
+                    file=str(file_path),
+                    error=message,
+                )
                 return pd.DataFrame()
             df["_ingest_run_id"] = self.run_id
             df["_ingest_timestamp"] = self.timestamp
             self._record_raw_file(file_path, rows=len(df), status="ingested")
-            self._log_step("ingestion:completed", "CSV ingestion complete", file=str(file_path), rows=len(df))
+            self._log_step(
+                "ingestion:completed", "CSV ingestion complete", file=str(file_path), rows=len(df)
+            )
             return df
         except pd.errors.EmptyDataError:
             message = "File is empty or malformed"
             self.record_error("ingestion", message, file=filename)
             self._record_raw_file(file_path, rows=0, status="empty", message=message)
-            self._log_step("ingestion:empty", "Empty or malformed CSV", file=str(file_path), error=message)
+            self._log_step(
+                "ingestion:empty", "Empty or malformed CSV", file=str(file_path), error=message
+            )
             return pd.DataFrame()
         except Exception as error:
             message = str(error)
             self.record_error("ingestion", message, file=filename)
             self._record_raw_file(file_path, rows=0, status="error", message=message)
-            self._log_step("ingestion:error", "Unexpected ingestion error", file=str(file_path), error=message)
+            self._log_step(
+                "ingestion:error", "Unexpected ingestion error", file=str(file_path), error=message
+            )
             return pd.DataFrame()
 
     def ingest_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -155,7 +191,9 @@ class CascadeIngestion:
         )
         df["_ingest_run_id"] = self.run_id
         df["_ingest_timestamp"] = self.timestamp
-        self._record_raw_file(Path("<dataframe>"), rows=len(df), status="ingested", message="in-memory ingestion")
+        self._record_raw_file(
+            Path("<dataframe>"), rows=len(df), status="ingested", message="in-memory ingestion"
+        )
         self._log_step("ingestion:completed", "In-memory ingestion recorded", rows=len(df))
         return df
 
@@ -171,15 +209,21 @@ class CascadeIngestion:
           - No nulls in required/numeric columns
         """
         from python.validation import (
-            validate_numeric_bounds,
-            validate_percentage_bounds,
             validate_iso8601_dates,
             validate_monotonic_increasing,
             validate_no_nulls,
+            validate_numeric_bounds,
+            validate_percentage_bounds,
         )
+
         if df.empty:
             self._log_step("validation:skip", "Skipping validation for empty DataFrame")
             return df
+
+        # Ensure chronological order for monotonicity checks
+        if "measurement_date" in df.columns:
+            df = df.sort_values("measurement_date", ascending=True).reset_index(drop=True)
+
         df["_validation_passed"] = True
         self._log_step("validation:start", "Validating loan records", rows=len(df))
         try:
@@ -220,7 +264,12 @@ class CascadeIngestion:
             message = str(error)
             self.record_error("validation_schema_assertion", message)
             df["_validation_passed"] = False
-            self._log_step("validation:assertion_failed", "Validation schema assertion failed", error=message, rows=len(df))
+            self._log_step(
+                "validation:assertion_failed",
+                "Validation schema assertion failed",
+                error=message,
+                rows=len(df),
+            )
             return df
         except ValueError as error:
             message = str(error)
@@ -243,14 +292,16 @@ class CascadeIngestion:
 
     def get_ingest_summary(self) -> Dict[str, Any]:
         summary = self._summary.copy()
-        summary.update({
-            "run_id": self.run_id,
-            "timestamp": self.timestamp,
-            "total_errors": len(self.errors),
-            "errors": self.errors,
-            "raw_files": self.raw_files,
-            "context": self.context.copy(),
-        })
+        summary.update(
+            {
+                "run_id": self.run_id,
+                "timestamp": self.timestamp,
+                "total_errors": len(self.errors),
+                "errors": self.errors,
+                "raw_files": self.raw_files,
+                "context": self.context.copy(),
+            }
+        )
         return summary
 
     def record_error(self, stage: str, message: str, **details: Any) -> None:

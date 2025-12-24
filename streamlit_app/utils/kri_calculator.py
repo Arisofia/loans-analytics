@@ -1,5 +1,3 @@
-
-
 from dataclasses import dataclass
 from typing import Dict, Optional
 
@@ -43,9 +41,7 @@ class KRICalculator:
         """
 
         exposure_col = _first_present_column(df, ["outstanding_loan_value", "balance"])
-        portfolio_exposure = (
-            df[exposure_col].sum(min_count=1) if exposure_col else np.nan
-        )
+        portfolio_exposure = df[exposure_col].sum(min_count=1) if exposure_col else np.nan
 
         if "dpd" in df.columns:
             dpd_series = df["dpd"].clip(lower=0)
@@ -82,7 +78,8 @@ class KRICalculator:
             return None
 
         return (
-            df.groupby(["segment", "dpd_bucket"]).size()
+            df.groupby(["segment", "dpd_bucket"])
+            .size()
             .groupby(level=0)
             .apply(lambda s: s / s.sum())
             .unstack(fill_value=0)

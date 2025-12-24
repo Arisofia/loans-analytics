@@ -1,0 +1,43 @@
+name: KPI CSV Sync to Figma
+
+description: >
+  Export the KPI mapping table to CSV and sync it to the Figma KPI Table page automatically.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * *' # Every day at 7:00 AM UTC
+  push:
+    paths:
+      - 'docs/analytics/KPIs.md'
+      - 'scripts/export_kpi_table_to_csv.py'
+      - 'scripts/sync_kpi_table_to_figma.py'
+
+jobs:
+  export-and-sync-kpi-csv:
+    runs-on: ubuntu-latest
+    env:
+      FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+      FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Export KPI table to CSV
+        run: |
+          python scripts/export_kpi_table_to_csv.py
+      - name: Sync KPI CSV to Figma
+        run: |
+          python scripts/sync_kpi_table_to_figma.py
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+      - name: Print completion message
+        run: echo "KPI CSV export and Figma sync complete."

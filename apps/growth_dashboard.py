@@ -1,8 +1,10 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
+
 
 def load_growth_data():
-    return pd.read_csv('data/abaco_portfolio_calculations.csv')
+    return pd.read_csv("data/abaco_portfolio_calculations.csv")
+
 
 def main():
     """
@@ -14,10 +16,11 @@ def main():
     Returns:
         None. Renders the dashboard UI in the Streamlit app.
     """
-    st.title('Growth Dashboard')
+    st.title("Growth Dashboard")
     data = load_growth_data()
-    st.line_chart(data['Growth'])
+    st.line_chart(data["Growth"])
     st.dataframe(data)
+
 
 if __name__ == "__main__":
     main()

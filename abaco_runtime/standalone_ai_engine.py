@@ -1,5 +1,3 @@
-
-
 import json
 from typing import Any, Dict, Optional, Union
 
@@ -34,7 +32,9 @@ class StandaloneAIEngine:
             return self.gemini_client
         return self.grok_client
 
-    def generate_response(self, personality: str, context: Dict[str, Any], data: Dict[str, Any]) -> str:
+    def generate_response(
+        self, personality: str, context: Dict[str, Any], data: Dict[str, Any]
+    ) -> str:
         """Generate a response after sanitizing the payload size."""
 
         sanitized_payload = self._truncate_payload(data)

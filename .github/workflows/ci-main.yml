@@ -1,24 +1,85 @@
-name: CI
+name: CI Main
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [main, develop]
   pull_request:
-    branches: [ "main" ]
+    branches: [main, develop]
+  schedule:
+    - cron: '0 3 * * *' # Nightly at 3am UTC
 
 jobs:
-  lint:
+  build-and-lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+      
+      - name: Install pnpm
+        run: npm install -g pnpm
+      
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '18'
-      - name: Install dependencies
-        run: npm install
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+
+      - name: Install dependencies # Installs dependencies for all workspaces
+        run: pnpm install --frozen-lockfile
+
       - name: Run Lint
-        run: npm run lint
+        run: pnpm lint
+
+      - name: Run Build
+        run: pnpm build
+
+  update-figma-slides:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Update Figma Slides
+        run: |
+          const cron = require('node-cron');
+          const axios = require('axios');
+          const { Client } = require('figma-js');
+
+          const FIGMA_TOKEN = 'YOUR_FIGMA_API_TOKEN';
+          const FILE_KEY = 'YOUR_FIGMA_FILE_KEY';
+          const ANALYTICS_URL = 'URL_TO_YOUR_ANALYTICS_JSON';
+
+          const client = Client({ personalAccessToken: FIGMA_TOKEN });
+
+          async function updateSlides() {
+            const { data } = await axios.get(ANALYTICS_URL);
+
+            // Example: Update slide for Total Customers
+            // Find the node in Figma and update its text with data.traction.total_customers
+            // Repeat for each KPI in your mapping table
+
+            // Example Figma API usage:
+            // const file = await client.file(FILE_KEY);
+            // Find node by name, update text, etc.
+          }
+
+          cron.schedule('0 8 * * *', () => {
+            updateSlides();
+            console.log('Figma slides updated at 8am');
+          });

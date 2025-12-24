@@ -5,7 +5,6 @@ import styles from './analytics.module.css'
 import type { LoanRow } from '@/types/analytics'
 import { processLoanRows } from '@/lib/analyticsProcessor'
 import { validateAnalytics } from '@/lib/validation'
-import * as Sentry from '@sentry/react'
 import { LoanUploader } from './LoanUploader'
 import { PortfolioHealthKPIs } from './PortfolioHealthKPIs'
 import { TreemapVisualization } from './TreemapVisualization'
@@ -57,9 +56,7 @@ export function AnalyticsDashboard() {
       const result = validateAnalytics(processLoanRows(loanData))
       if (!result.success) {
         setAnalyticsError(result.error)
-        Sentry.captureException(new Error(result.error), {
-          contexts: { validation: result.details },
-        })
+        console.error('Analytics validation error:', result.error, result.details)
         return null
       }
       if (result.warnings.length > 0) {
@@ -68,7 +65,7 @@ export function AnalyticsDashboard() {
       return result.data
     } catch (err: unknown) {
       setAnalyticsError('Unexpected error during analytics processing')
-      Sentry.captureException(err)
+      console.error('Analytics processing error:', err)
       return null
     }
   }, [loanData])

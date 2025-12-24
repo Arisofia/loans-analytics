@@ -1,5 +1,3 @@
-
-
 import argparse
 import os
 import sys
@@ -19,13 +17,13 @@ class GitHubRequestError(RuntimeError):
 
 def _create_session() -> requests.Session:
     session = requests.Session()
-    retries = Retry(
-        total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504]
-    )
+    retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
     session.mount("https://", HTTPAdapter(max_retries=retries))
     return session
 
+
 SESSION = _create_session()
+
 
 def _token() -> Optional[str]:
     return os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
@@ -43,9 +41,7 @@ def _get(url: str, params: Optional[Dict[str, str]] = None) -> Any:
     if response.status_code == 401:
         raise GitHubRequestError("Authentication failed; set GITHUB_TOKEN or GH_TOKEN.")
     if not response.ok:
-        raise GitHubRequestError(
-            f"GitHub request failed ({response.status_code}): {response.text}"
-        )
+        raise GitHubRequestError(f"GitHub request failed ({response.status_code}): {response.text}")
     return response.json()
 
 
@@ -76,9 +72,7 @@ def summarize_checks(checks: List[Dict]) -> str:
     for check in sorted(checks, key=lambda c: c.get("name", "")):
         status = check.get("status", "unknown")
         conclusion = check.get("conclusion") or "pending"
-        lines.append(
-            f"- {check.get('name')}: {status}/{conclusion} (url={check.get('html_url')})"
-        )
+        lines.append(f"- {check.get('name')}: {status}/{conclusion} (url={check.get('html_url')})")
     return "\n".join(lines)
 
 
@@ -139,7 +133,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             if not pr_numbers:
                 print(f"No open PRs found for {args.repo}.")
                 return 0
-            
+
             for num in pr_numbers:
                 print(f"--- Checking PR #{num} ---")
                 try:

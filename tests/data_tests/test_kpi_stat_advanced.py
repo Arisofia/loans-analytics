@@ -1,4 +1,5 @@
 import pandas as pd
+
 from python.kpi_engine import calculate_collection_rate, calculate_par_90
 
 SAMPLE_PATH = "data_samples/abaco_portfolio_sample.csv"
@@ -8,7 +9,9 @@ def test_par_90_is_weighted_by_segment():
     df = pd.read_csv(SAMPLE_PATH)
     overall = calculate_par_90(df)
     weighted = sum(
-        calculate_par_90(group) * group["total_receivable_usd"].sum() / df["total_receivable_usd"].sum()
+        calculate_par_90(group)
+        * group["total_receivable_usd"].sum()
+        / df["total_receivable_usd"].sum()
         for _, group in df.groupby("segment")
     )
     assert overall == weighted

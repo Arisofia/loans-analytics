@@ -1,5 +1,4 @@
 # Runbook: Ingestion Failure
-
 Owner: Data Engineering | SLA: acknowledge 15m, resolve 2h | Escalate to: Data Lead, Ops
 
 1. Detect: Alert on failed pipeline step, freshness lag >1h, or 5xx from source.

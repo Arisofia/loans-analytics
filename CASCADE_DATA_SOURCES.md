@@ -16,7 +16,7 @@ This document contains the URLs and instructions for downloading current data fr
 **Description:** Complete loan-level data export
 **URL:** `https://app.cascadedebt.com/data/exports/loan-tape?pid=abaco`
 **Format:** CSV/XLSX
-**Contents:** 
+**Contents:**
 - Individual loan details
 - Borrower information
 - Payment history

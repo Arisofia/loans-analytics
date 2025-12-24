@@ -8,7 +8,6 @@ import {
 } from '@/lib/exportHelpers'
 import styles from './analytics.module.css'
 import type { ProcessedAnalytics } from '@/types/analytics'
-import * as Sentry from '@sentry/react'
 
 type Props = {
   analytics: ProcessedAnalytics
@@ -64,12 +63,11 @@ export function ExportControls({ analytics }: Props) {
       }
 
       download(filename, content, mime)
-    } catch (err: any) {
-      const msg = `Export failed: ${err.message || 'Unknown error'}`
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      const msg = `Export failed: ${errorMessage}`
       setError(msg)
-      Sentry.captureException(err, {
-        contexts: { export: { format, loanCount: analytics.loans.length } },
-      })
+      console.error('Export error:', errorMessage, { format, loanCount: analytics.loans.length })
     }
   }
 

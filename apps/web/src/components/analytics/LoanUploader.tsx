@@ -4,7 +4,6 @@ import { ChangeEvent, useCallback, useState } from 'react'
 import styles from './analytics.module.css'
 import { parseLoanCsv } from '@/lib/analyticsProcessor'
 import { validateCsvInput } from '@/lib/validation'
-import * as Sentry from '@sentry/react'
 import type { LoanRow } from '@/types/analytics'
 
 type Props = {
@@ -35,9 +34,7 @@ export function LoanUploader({ onData }: Props) {
           const csvResult = validateCsvInput(text)
           if (!csvResult.success) {
             setError(csvResult.error)
-            Sentry.captureException(new Error(csvResult.error), {
-              contexts: { validation: csvResult.details },
-            })
+            console.error('CSV validation error:', csvResult.error, csvResult.details)
             return
           }
           if (csvResult.warnings.length > 0) {
@@ -46,14 +43,14 @@ export function LoanUploader({ onData }: Props) {
           // Parse and pass data
           const parsed = parseLoanCsv(csvResult.data.lines.join('\n'))
           onData(parsed)
-        } catch (err: any) {
+        } catch (err: unknown) {
           setError('Unexpected error during file processing')
-          Sentry.captureException(err)
+          console.error('File processing error:', err)
         }
       }
       reader.onerror = (e) => {
         setError('Failed to read file')
-        Sentry.captureException(e)
+        console.error('File read error:', e)
       }
       reader.readAsText(file)
     },

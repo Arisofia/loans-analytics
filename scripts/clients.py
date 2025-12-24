@@ -4,7 +4,6 @@ These lightweight wrappers keep network concerns isolated from the business
 logic while providing minimal ergonomics for invoking Grok or Gemini models.
 """
 
-
 import json
 import logging
 import os
@@ -30,18 +29,19 @@ class AIResponse:
 class GrokClient:
     """Simple HTTP client for Grok/X.ai text generation."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "grok-beta", base_url: str = "https://api.groq.com/v1"):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: str = "grok-beta",
+        base_url: str = "https://api.groq.com/v1",
+    ):
         self.api_key = api_key or os.getenv("GROK_API_KEY")
         self.model = model
         self.base_url = base_url.rstrip("/")
-        
+
         self.session = requests.Session()
-        retries = Retry(
-            total=3,
-            backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504]
-        )
-        self.session.mount('https://', HTTPAdapter(max_retries=retries))
+        retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
+        self.session.mount("https://", HTTPAdapter(max_retries=retries))
 
     def generate_text(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> AIResponse:
         if not self.api_key:
@@ -60,7 +60,9 @@ class GrokClient:
 
         logger.debug("Sending Grok request", extra={"model": self.model})
 
-        response = self.session.post(f"{self.base_url}/chat/completions", headers=headers, json=payload, timeout=30)
+        response = self.session.post(
+            f"{self.base_url}/chat/completions", headers=headers, json=payload, timeout=30
+        )
         response.raise_for_status()
         data = response.json()
 
@@ -85,5 +87,9 @@ class GeminiClient:
         response = self.model.generate_content(prompt, generation_config=gen_context)
 
         text = getattr(response, "text", None) or "".join(getattr(response, "candidates", []) or [])
-        raw = json.loads(response.to_json()) if hasattr(response, "to_json") else {"response": str(response)}
+        raw = (
+            json.loads(response.to_json())
+            if hasattr(response, "to_json")
+            else {"response": str(response)}
+        )
         return AIResponse(text=text, raw=raw)

@@ -33,6 +33,9 @@ model_stability:
   prediction_distribution_ks:
     max: 0.15
     warning: 0.10
+  drift_detection:
+    method: "psi"
+    frequency: "daily"
 
 fairness_compliance:
   demographic_parity_difference:
@@ -55,33 +58,6 @@ business_kpis:
   cross_sell_prediction:
     min: 0.68
     warning: 0.75
-
-model_stability:
-  psi_threshold:
-    max: 0.10
-    warning: 0.05
-
-  drift_detection:
-    method: "psi"
-    frequency: "daily"
-  psi_score:
-    max: 0.10
-    warning: 0.05
-
-
-fairness_compliance:
-  demographic_parity:
-    max: 0.10
-    warning: 0.05
-
-  disparate_impact_ratio:
-    min: 0.80
-    warning: 0.90
-  demographic_parity_difference:
-    max: 0.10
-    warning: 0.05
-
-business_kpis:
   customer_ltv_prediction:
     min: 0.72
     warning: 0.80
@@ -94,7 +70,3 @@ business_kpis:
   fraud_detection:
     min: 0.92
     warning: 0.96
-  # keep existing ones if needed
-  ltv_prediction_accuracy:
-    min: 0.72
-    warning: 0.80

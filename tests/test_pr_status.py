@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from scripts.pr_status import render_report, GitHubRequestError
+
+from scripts.pr_status import GitHubRequestError, render_report
+
 
 class TestPRStatus(unittest.TestCase):
     @patch("scripts.pr_status.SESSION")
@@ -15,25 +17,27 @@ class TestPRStatus(unittest.TestCase):
             "draft": False,
             "mergeable_state": "clean",
             "rebaseable": True,
-            "head": {"sha": "sha123"}
+            "head": {"sha": "sha123"},
         }
-        
+
         # Mock check runs response
         mock_checks_resp = MagicMock()
         mock_checks_resp.ok = True
         mock_checks_resp.json.return_value = {
             "check_runs": [
-                {"name": "ci", "status": "completed", "conclusion": "success", "html_url": "http://ci"}
+                {
+                    "name": "ci",
+                    "status": "completed",
+                    "conclusion": "success",
+                    "html_url": "http://ci",
+                }
             ]
         }
 
         # Mock commit status response
         mock_status_resp = MagicMock()
         mock_status_resp.ok = True
-        mock_status_resp.json.return_value = {
-            "state": "success",
-            "statuses": []
-        }
+        mock_status_resp.json.return_value = {"state": "success", "statuses": []}
 
         mock_session.get.side_effect = [mock_pr_resp, mock_checks_resp, mock_status_resp]
 
@@ -47,7 +51,7 @@ class TestPRStatus(unittest.TestCase):
         mock_resp = MagicMock()
         mock_resp.status_code = 401
         mock_session.get.return_value = mock_resp
-        
+
         with self.assertRaises(GitHubRequestError) as cm:
             render_report("owner/repo", 1)
         self.assertIn("Authentication failed", str(cm.exception))
@@ -58,7 +62,8 @@ class TestPRStatus(unittest.TestCase):
         mock_resp.ok = True
         mock_resp.json.return_value = [{"number": 1}, {"number": 2}]
         mock_session.get.return_value = mock_resp
-        
+
         from scripts.pr_status import list_open_prs
+
         prs = list_open_prs("owner/repo")
         self.assertEqual(prs, [1, 2])

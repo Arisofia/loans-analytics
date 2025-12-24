@@ -1,5 +1,4 @@
 # Runbook: KPI Breach
-
 Owner: KPI Owner (per catalog) | SLA: acknowledge 15m, action plan 2h | Escalate to: Product/Risk Lead
 
 1. Detect: Alert with KPI, threshold, current value, segment, owner, next-best action link.

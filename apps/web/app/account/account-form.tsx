@@ -1,6 +1,7 @@
+
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { createClient } from '../../src/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { type User } from '@supabase/supabase-js';
 import Avatar from './avatar';
 
@@ -29,19 +30,22 @@ export default function AccountForm({ user }: { user: User | null }) {
         setWebsite(data.website);
         setAvatarUrl(data.avatar_url);
       }
-    } catch (error) {
+    } catch (_error) {
       alert('Error loading user data!');
     } finally {
       setLoading(false);
     }
   }, [user, supabase]);
 
+
   useEffect(() => {
-    getProfile();
+    void getProfile();
   }, [user, getProfile]);
+
 
   async function updateProfile({
     username,
+    fullname,
     website,
     avatar_url,
   }: {
@@ -62,7 +66,7 @@ export default function AccountForm({ user }: { user: User | null }) {
       });
       if (error) throw error;
       alert('Profile updated!');
-    } catch (error) {
+    } catch (_error) {
       alert('Error updating the data!');
     } finally {
       setLoading(false);
@@ -77,7 +81,7 @@ export default function AccountForm({ user }: { user: User | null }) {
         size={150}
         onUpload={(url) => {
           setAvatarUrl(url);
-          updateProfile({ fullname, username, website, avatar_url: url });
+          void updateProfile({ fullname, username, website, avatar_url: url });
         }}
       />
       <div>
@@ -114,7 +118,7 @@ export default function AccountForm({ user }: { user: User | null }) {
       <div>
         <button
           className="button primary block"
-          onClick={() => updateProfile({ fullname, username, website, avatar_url })}
+          onClick={() => void updateProfile({ fullname, username, website, avatar_url })}
           disabled={loading}
         >
           {loading ? 'Loading ...' : 'Update'}

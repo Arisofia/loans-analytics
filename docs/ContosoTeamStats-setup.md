@@ -7,7 +7,6 @@ This service-oriented API is built with .NET 6, backed by SQL Server, containeri
 ### Prerequisites
 
 Install the following on your workstation:
-
 - **.NET 6 SDK** – required to build and run the ContosoTeamStats Web API. Download from the [.NET 6.0 download page](https://dotnet.microsoft.com/download/dotnet/6.0).
 - **IDE** – Visual Studio 2022 (Community is fine) or VS Code with the C# Dev Kit extension for editing, debugging, and working with solution files.
 - **Docker Desktop** – builds and runs the containerized app, and it can also host a SQL Server container if you prefer not to install SQL Server locally.
@@ -29,7 +28,6 @@ For parity with the cloud workflow and GitHub Actions deployment (.github/workfl
 #### 1. Fill in `appsettings.Development.json`
 
 Populate the configuration file with the services you plan to consume. Example snippet:
-
 ```json
 {
   "Logging": {
@@ -41,7 +39,6 @@ Populate the configuration file with the services you plan to consume. Example s
   "ConnectionStrings": {
     // Option A: Local SQL Server
     "SqlConnectionString": "Server=localhost\\SQLEXPRESS;Database=ContosoTeamStats;Trusted_Connection=True;MultipleActiveResultSets=true"
-
     // Option B: Azure SQL Database (swap the URI shown in the Azure portal)
     // "SqlConnectionString": "Server=tcp:your-server-name.database.windows.net,1433;Initial Catalog=your-db-name;..."
   },
@@ -54,32 +51,25 @@ Populate the configuration file with the services you plan to consume. Example s
   "StorageConnectionString": "YOUR_AZURE_STORAGE_CONNECTION_STRING"
 }
 ```
-
 Use secrets or environment variables in your IDE to keep API keys and connection strings out of source control.
 
 #### 2. Prepare the Database
 
 From the repo root, run:
-
 ```bash
 dotnet ef database update
 ```
-
 This applies the Entity Framework Core migrations against the configured `SqlConnectionString` and creates the needed schema.
-
 If you prefer Docker for SQL Server, start a container such as:
-
 ```bash
 docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=Your@Passw0rd" -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2019-latest
 ```
-
 Then point `SqlConnectionString` to `Server=localhost,1433;User Id=sa;Password=Your@Passw0rd;...`.
 
 #### 3. Run the API Locally
 
 - In Visual Studio, hit the Run button (select the ContosoTeamStats project or Docker profile as needed).
 - From the terminal: `dotnet run` from the project directory.
-
 Swagger will be available at `https://localhost:<port>/swagger`, which you can use to play with endpoints and verify that data flows to/from SQL Server, SendGrid, Twilio, and Azure Storage.
 
 #### 4. Container and Azure Validation
@@ -109,27 +99,21 @@ docker build -t contoso-team-stats .
 ### Reproducible Validation Steps
 
 Run these commands sequentially to confirm the documentation works:
-
 ```bash
 # Ensure env vars are loaded (adjust for your shell if not bash/zsh)
 set -a && . .env && set +a
-
 # Confirm Entity Framework migrations apply cleanly
 dotnet ef database update
-
 # Start the API as described earlier
 dotnet run
-
 # While the API runs, hit a Swagger endpoint (substitute the port from the console)
 curl -k https://localhost:5001/swagger/index.html
 ```
-
 Leave `dotnet run` running while you manually explore the Swagger UI or Postman to confirm SQL Server, SendGrid, Twilio, and Storage interactions behave as expected.
 
 ### Container Diligence and GitHub Actions Verification
 
 Use the commands below to build the Docker image, push it to Azure Container Registry, and run the GitHub workflow tied to that image. Replace placeholders with your actual ACR name and workflow branch.
-
 ```bash
 # Build locally
 docker build -t contoso-team-stats:local .
@@ -146,7 +130,6 @@ git checkout -b validation/contoso-team-stats
 git add docs/ContosoTeamStats-setup.md README.md
 git commit -m "docs: document ContosoTeamStats validation"
 git push -u origin validation/contoso-team-stats
-
 # Trigger GitHub Actions workflow (GH CLI or portal)
 gh workflow run main --ref validation/contoso-team-stats
 ```

@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: List root directory contents
+        run: ls -l
+
+      - name: Build with Gradle (clean, Java 21)
+        run: ./gradlew clean build --no-daemon
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+
+      - name: Coverage report
+        run: coverage report --fail-under=85
+
+  sonar:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
+    steps:
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2.2.0
+        with:
+          projectBaseDir: .
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: 'pnpm'
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - name: Install
+        run: |
+          cd apps/web
+          pnpm install --frozen-lockfile
+      - name: Lint
+        run: |
+          cd apps/web
+          pnpm lint
+      - name: Build
+        run: |
+          cd apps/web
+          pnpm build
+      - name: Type-check
+        run: |
+          cd apps/web
+          pnpm type-check
+
+  analytics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          cd apps/analytics
+          pip install -r requirements.txt
+      - name: Validate
+        run: |
+          python -c "import pandas as pd; print('Environment ready. Pandas version:', pd.__version__)"
+      - name: Tests and coverage
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          cd apps/analytics
+          pytest --cov=. --cov-report=xml:../coverage-python.xml
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: analytics-coverage
+          path: apps/coverage-python.xml
+
+
+      - name: Test
+        run: dotnet test --configuration Release --no-restore
+

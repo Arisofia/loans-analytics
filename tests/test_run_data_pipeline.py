@@ -13,14 +13,24 @@ class TestRunDataPipeline(unittest.TestCase):
     @patch("scripts.run_data_pipeline.KPIEngine")
     @patch("scripts.run_data_pipeline.DataTransformation")
     @patch("scripts.run_data_pipeline.CascadeIngestion")
-    def test_run_pipeline_success(self, mock_ingest_cls, mock_transform_cls, mock_kpi_cls, mock_write_outputs, mock_build_report, mock_write_report):
+    def test_run_pipeline_success(
+        self,
+        mock_ingest_cls,
+        mock_transform_cls,
+        mock_kpi_cls,
+        mock_write_outputs,
+        mock_build_report,
+        mock_write_report,
+    ):
         mock_ingest = mock_ingest_cls.return_value
         mock_ingest.run_id = "test_run"
         ingest_df = pd.DataFrame({"period": ["2025Q4"], "_validation_passed": [True]})
         mock_ingest.ingest_csv.return_value = ingest_df.copy()
         mock_ingest.validate_loans.return_value = ingest_df.copy()
         mock_ingest.errors = []
-        mock_ingest.raw_files = [{"file": "dummy.csv", "status": "ingested", "rows": 1, "timestamp": "now"}]
+        mock_ingest.raw_files = [
+            {"file": "dummy.csv", "status": "ingested", "rows": 1, "timestamp": "now"}
+        ]
         mock_ingest.get_ingest_summary.return_value = {"rows": 1}
 
         mock_transform = mock_transform_cls.return_value
@@ -61,7 +71,9 @@ class TestRunDataPipeline(unittest.TestCase):
         mock_ingest.ingest_csv.return_value = failing_df.copy()
         mock_ingest.validate_loans.return_value = failing_df.copy()
         mock_ingest.errors = [{"stage": "validation", "error": "failed"}]
-        mock_ingest.raw_files = [{"file": "dummy.csv", "status": "ingested", "rows": 1, "timestamp": "now"}]
+        mock_ingest.raw_files = [
+            {"file": "dummy.csv", "status": "ingested", "rows": 1, "timestamp": "now"}
+        ]
         mock_ingest.get_ingest_summary.return_value = {"rows": 1}
 
         result = run_pipeline("dummy.csv")
@@ -93,7 +105,9 @@ class TestRunDataPipeline(unittest.TestCase):
         mock_ingest.ingest_csv.return_value = df.copy()
         mock_ingest.validate_loans.return_value = df.copy()
         mock_ingest.errors = []
-        mock_ingest.raw_files = [{"file": "dummy.csv", "status": "ingested", "rows": 1, "timestamp": "now"}]
+        mock_ingest.raw_files = [
+            {"file": "dummy.csv", "status": "ingested", "rows": 1, "timestamp": "now"}
+        ]
         mock_ingest.get_ingest_summary.return_value = {"rows": 1}
 
         mock_transform = mock_transform_cls.return_value

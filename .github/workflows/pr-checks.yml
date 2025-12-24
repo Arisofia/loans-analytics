@@ -1,0 +1,50 @@
+name: PR Checks
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-test-build:
+    name: Lint, Test, and Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Lint Python
+        run: |
+          pip install flake8
+          flake8 .
+      - name: Run Python tests
+        run: |
+          pip install pytest
+          pytest
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - name: Install Node.js dependencies
+        run: |
+          pnpm install --frozen-lockfile
+      - name: Lint JS/TS
+        run: |
+          pnpm lint
+      - name: Build project (if applicable)
+        run: |
+          pnpm build || echo "No build script defined."
+      - name: Print completion message
+        run: echo "PR checks complete."

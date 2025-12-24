@@ -1,16 +1,18 @@
 """Tests for ML model evaluation functionality."""
-import pytest
+
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
+import pytest
+import yaml
 from sklearn.metrics import (
     accuracy_score,
+    f1_score,
     precision_score,
     recall_score,
-    f1_score,
     roc_auc_score,
 )
-import yaml
-from pathlib import Path
 
 
 class TestModelEvaluation:
@@ -84,9 +86,7 @@ class TestModelEvaluation:
             pytest.skip("Configuration file not found")
 
         # Check for financial metrics section
-        assert "financial_metrics" in evaluation_config, (
-            "Financial metrics not configured"
-        )
+        assert "financial_metrics" in evaluation_config, "Financial metrics not configured"
 
         financial_metrics = evaluation_config["financial_metrics"]
         expected_metrics = [
@@ -104,32 +104,22 @@ class TestModelEvaluation:
         if evaluation_config is None:
             pytest.skip("Configuration file not found")
 
-        assert "model_stability" in evaluation_config, (
-            "Model stability metrics not configured"
-        )
+        assert "model_stability" in evaluation_config, "Model stability metrics not configured"
 
         stability_metrics = evaluation_config["model_stability"]
         assert "psi_threshold" in stability_metrics, "PSI threshold not configured"
-        assert "drift_detection" in stability_metrics, (
-            "Drift detection not configured"
-        )
+        assert "drift_detection" in stability_metrics, "Drift detection not configured"
 
     def test_fairness_compliance_metrics(self, evaluation_config):
         """Test fairness and compliance monitoring configuration."""
         if evaluation_config is None:
             pytest.skip("Configuration file not found")
 
-        assert "fairness_compliance" in evaluation_config, (
-            "Fairness metrics not configured"
-        )
+        assert "fairness_compliance" in evaluation_config, "Fairness metrics not configured"
 
         fairness_metrics = evaluation_config["fairness_compliance"]
-        assert "demographic_parity" in fairness_metrics, (
-            "Demographic parity not configured"
-        )
-        assert "disparate_impact_ratio" in fairness_metrics, (
-            "Disparate impact ratio not configured"
-        )
+        assert "demographic_parity" in fairness_metrics, "Demographic parity not configured"
+        assert "disparate_impact_ratio" in fairness_metrics, "Disparate impact ratio not configured"
 
     def test_business_kpis_structure(self, evaluation_config):
         """Test business KPIs configuration structure."""
@@ -165,9 +155,7 @@ class TestModelEvaluation:
         metric_value = np.random.rand()
         min_val, max_val = expected_range
 
-        assert min_val <= metric_value <= max_val, (
-            f"{metric_name} outside expected range"
-        )
+        assert min_val <= metric_value <= max_val, f"{metric_name} outside expected range"
 
     def test_evaluation_pipeline_integration(self, sample_predictions):
         """Test end-to-end evaluation pipeline."""
@@ -187,9 +175,7 @@ class TestModelEvaluation:
         # Validate pipeline output
         assert isinstance(results, dict), "Results should be a dictionary"
         assert len(results) == 5, "Expected 5 evaluation metrics"
-        assert all(0 <= v <= 1 for v in results.values()), (
-            "All metrics should be in [0, 1]"
-        )
+        assert all(0 <= v <= 1 for v in results.values()), "All metrics should be in [0, 1]"
 
 
 class TestThresholdConfiguration:
@@ -230,9 +216,7 @@ class TestThresholdConfiguration:
                     new_path = f"{path}.{key}" if path else key
                     if key in ["min", "max", "threshold", "critical", "warning"]:
                         if isinstance(value, (int, float)):
-                            assert 0 <= value <= 1, (
-                                f"Threshold {new_path} outside [0,1]: {value}"
-                            )
+                            assert 0 <= value <= 1, f"Threshold {new_path} outside [0,1]: {value}"
                     else:
                         check_thresholds(value, new_path)
             elif isinstance(obj, list):

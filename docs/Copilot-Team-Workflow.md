@@ -1,22 +1,18 @@
 # Copilot and Enterprise Trial Workflow
-
 Documenting GitHub Copilot usage under the Enterprise trial keeps the team aligned, the security practices auditable, and the outcomes professional.
 
 ## 1. Copilot invitations
-
 - Go to **Enterprise Settings > GitHub Copilot**.
 - Under **Copilot for Business**, add the teammates who will contribute to `abaco-loans-analytics` (backend, analytics, docs, security).
 - Share the invitation link; once accepted, confirm they can use Copilot suggestions in VS Code or Cursor.
 - Track adoption per sprint (mention it in the Copilot section of the README) so you can compare productivity KPIs.
 
 ## 2. Copilot + workflow integration
-
 - Onboarding doc `docs/ContosoTeamStats-setup.md` already points to the main validation steps—mention Copilot there so people know to ask it to summarize SQL migrations, Docker builds, and workflow triggers.
 - Ask Copilot to inspect files by referencing them (e.g., “Use @docs/ContosoTeamStats-setup.md to explain how we run `dotnet ef database update`).
 - Log any Copilot-assisted code/commands in your project board to keep traceability for audits.
 
 ## 3. Advance security while Copilot learns
-
 - Enable code scanning + Dependabot under `Security > Code security`.
 - When a security issue appears, assign it via the Dependabot alerts page (link). Note the remediation plan in a README or Jira ticket; if Copilot suggests a fix, mention it in the comment for that alert.
 - Keep the security score link near the doc (https://github.com/Abaco-Technol/abaco-loans-analytics/security/dependabot) so anyone can see the 2 high/1 low alerts.

@@ -11,7 +11,7 @@ export async function login(formData: FormData) {
   };
   const { error } = await supabase.auth.signInWithPassword(data);
   if (error) {
-    redirect('/error');
+    redirect('/login?error=Could not authenticate user');
   }
   revalidatePath('/', 'layout');
   redirect('/account');
@@ -25,8 +25,8 @@ export async function signup(formData: FormData) {
   };
   const { error } = await supabase.auth.signUp(data);
   if (error) {
-    redirect('/error');
+    redirect('/login?error=Could not authenticate user');
   }
   revalidatePath('/', 'layout');
-  redirect('/account');
+  redirect('/login?message=Check email to continue sign in process');
 }

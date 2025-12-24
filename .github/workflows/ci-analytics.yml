@@ -1,0 +1,29 @@
+name: CI Analytics
+on:
+  push:
+    paths:
+      - "apps/analytics/**"
+jobs:
+  analytics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6 # Upgrade to v6 for latest features and security patches
+      - uses: actions/setup-python@v6 # v6.0.1 semantic version pinning
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: apps/analytics/requirements.txt
+      - name: Install
+        run: |
+          cd apps/analytics
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      - name: Tests and coverage
+        run: |
+          cd apps/analytics
+          pytest --cov=. --cov-report=xml:../coverage-python.xml
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: analytics-coverage
+          path: coverage-python.xml

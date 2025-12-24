@@ -1,0 +1,25 @@
+fields:
+  - name: campaign_id
+    type: string
+    required: true
+  - name: campaign_name
+    type: string
+    required: true
+  - name: adset_id
+    type: string
+    required: false
+  - name: adset_name
+    type: string
+    required: false
+  - name: impressions
+    type: integer
+    required: false
+  - name: clicks
+    type: integer
+    required: false
+  - name: spend
+    type: float
+    required: false
+  - name: actions
+    type: list
+    required: false

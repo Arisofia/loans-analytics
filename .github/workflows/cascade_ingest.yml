@@ -1,0 +1,44 @@
+name: Cascade Ingest and KPI Extraction
+
+on:
+  schedule:
+    - cron: '0 5,17 * * *'  # Every day at 05:00 and 17:00 UTC
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'scripts/cascade_ingest.py'
+      - 'scripts/ingest_cascade.py'
+      - 'data/raw/*.xls*'
+
+jobs:
+  kpi-extraction:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          pip install pandas openpyxl
+      - name: Run Cascade ingest and KPI extraction
+        run: |
+          python scripts/ingest_cascade.py
+      - name: Show extracted KPIs
+        run: |
+          cat exports/kpi_results.json
+      - name: Notify Slack on completion
+        if: always() && secrets.SLACK_WEBHOOK_URL != ''
+        continue-on-error: true
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          status: ${{ job.status }}
+          fields: workflow,job,commit,repo,author
+          msg: |
+            Cascade ingest workflow completed with status: ${{ job.status }}
+            Workflow: ${{ github.workflow }}
+            Commit: ${{ github.sha }}
+            See details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

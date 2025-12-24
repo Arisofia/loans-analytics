@@ -5,19 +5,21 @@ from python.kpi_engine import KPIEngine
 
 
 def sample_portfolio():
-    return pd.DataFrame({
-        "segment": ["Consumer", "SME"],
-        "measurement_date": ["2025-01-31", "2025-01-31"],
-        "total_receivable_usd": [1000.0, 2000.0],
-        "total_eligible_usd": [900.0, 1800.0],
-        "cash_available_usd": [900.0, 1800.0],
-        "discounted_balance_usd": [800.0, 1600.0],
-        "dpd_0_7_usd": [100.0, 200.0],
-        "dpd_7_30_usd": [50.0, 100.0],
-        "dpd_30_60_usd": [100.0, 200.0],
-        "dpd_60_90_usd": [50.0, 50.0],
-        "dpd_90_plus_usd": [25.0, 25.0],
-    })
+    return pd.DataFrame(
+        {
+            "segment": ["Consumer", "SME"],
+            "measurement_date": ["2025-01-31", "2025-01-31"],
+            "total_receivable_usd": [1000.0, 2000.0],
+            "total_eligible_usd": [900.0, 1800.0],
+            "cash_available_usd": [900.0, 1800.0],
+            "discounted_balance_usd": [800.0, 1600.0],
+            "dpd_0_7_usd": [100.0, 200.0],
+            "dpd_7_30_usd": [50.0, 100.0],
+            "dpd_30_60_usd": [100.0, 200.0],
+            "dpd_60_90_usd": [50.0, 50.0],
+            "dpd_90_plus_usd": [25.0, 25.0],
+        }
+    )
 
 
 def test_calculate_par_30():
@@ -56,7 +58,7 @@ def test_calculate_portfolio_health():
     par_30, _ = engine.calculate_par_30()
     rate, _ = engine.calculate_collection_rate()
     health, details = engine.calculate_portfolio_health(par_30, rate)
-    
+
     # PAR30 = 15.0, Collection = 100.0
     # Health = (10 - 1.5) * (100 / 10) = 8.5 * 10 = 85
     # Capped at 10
