@@ -21,7 +21,7 @@ class CascadeIngestion:
     def __init__(self, data_dir: str = ".", strict_validation: bool = False):
         """
         Initialize ingestion engine.
-        
+
         Args:
             data_dir: Directory for input files. Defaults to current directory.
             strict_validation: If True, fail on schema/type issues instead of warning.
@@ -113,11 +113,13 @@ class CascadeIngestion:
         if not missing:
             self._log_step("ingestion:validation", "Required columns present", file=str(file_path))
             return True
-        
+
         message = f"Missing required numeric columns: {missing}"
         level = "validation_failed" if self.strict_validation else "validation_warning"
         self._record_raw_file(file_path, rows=len(df), status="invalid_schema", message=message)
-        self.record_error("ingestion_validation", message, file=str(file_path), missing_columns=missing)
+        self.record_error(
+            "ingestion_validation", message, file=str(file_path), missing_columns=missing
+        )
         self._log_step(
             f"ingestion:{level}",
             f"Schema validation {'failed' if self.strict_validation else 'warning'}",
@@ -129,7 +131,7 @@ class CascadeIngestion:
     def ingest_csv(self, filename: str) -> pd.DataFrame:
         """
         Ingest CSV file with validation.
-        
+
         Returns empty DataFrame on error; check self.errors for details.
         """
         file_path = self.data_dir / filename
@@ -147,7 +149,7 @@ class CascadeIngestion:
             df = pd.read_csv(file_path)
             self._log_step("ingestion:file_read", "CSV parsed", file=str(file_path), rows=len(df))
             self._update_summary(len(df), filename)
-            
+
             if not self._validate_schema(df, file_path):
                 return pd.DataFrame()
 
@@ -157,11 +159,16 @@ class CascadeIngestion:
                 numeric_columns=NUMERIC_COLUMNS,
                 stage="ingestion",
             )
-            
+
             df["_ingest_run_id"] = self.run_id
             df["_ingest_timestamp"] = self.timestamp
             self._record_raw_file(file_path, rows=len(df), status="ingested")
-            self._log_step("ingestion:completed", "CSV ingestion complete", file=str(file_path), rows=len(df))
+            self._log_step(
+                "ingestion:completed",
+                "CSV ingestion complete",
+                file=str(file_path),
+                rows=len(df),
+            )
             return df
 
         except pd.errors.EmptyDataError:
@@ -191,7 +198,7 @@ class CascadeIngestion:
         """Ingest DataFrame directly."""
         self._log_step("ingestion:inmemory", "In-memory ingestion", rows=len(df))
         self._update_summary(len(df))
-        
+
         df = df.copy()
         assert_dataframe_schema(
             df,
@@ -199,7 +206,7 @@ class CascadeIngestion:
             numeric_columns=NUMERIC_COLUMNS,
             stage="ingestion_inmemory",
         )
-        
+
         df["_ingest_run_id"] = self.run_id
         df["_ingest_timestamp"] = self.timestamp
         self._record_raw_file(Path("<dataframe>"), rows=len(df), status="ingested")
@@ -209,7 +216,7 @@ class CascadeIngestion:
     def validate_loans(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Validate loan DataFrame and add '_validation_passed' column.
-        
+
         Validates:
         - Numeric columns are present and non-negative
         - Percentage columns are between 0 and 100
@@ -234,7 +241,7 @@ class CascadeIngestion:
 
         df["_validation_passed"] = True
         self._log_step("validation:start", "Validating loan records", rows=len(df))
-        
+
         try:
             assert_dataframe_schema(
                 df,
@@ -242,30 +249,30 @@ class CascadeIngestion:
                 numeric_columns=NUMERIC_COLUMNS,
                 stage="validation",
             )
-            
+
             present_cols = [col for col in NUMERIC_COLUMNS if col in df.columns]
             validate_dataframe(df, numeric_columns=present_cols)
-            
+
             for col, ok in validate_numeric_bounds(df, present_cols).items():
                 if not ok:
                     raise ValueError(f"Column failed positivity check: {col}")
-            
+
             for col, ok in validate_percentage_bounds(df).items():
                 if not ok:
                     raise ValueError(f"Column failed percentage bounds: {col}")
-            
+
             for col, ok in validate_iso8601_dates(df).items():
                 if not ok:
                     raise ValueError(f"Column failed ISO 8601 check: {col}")
-            
+
             for col, ok in validate_monotonic_increasing(df).items():
                 if not ok:
                     raise ValueError(f"Column failed monotonicity check: {col}")
-            
+
             for col, ok in validate_no_nulls(df).items():
                 if not ok:
                     raise ValueError(f"Column failed null check: {col}")
-            
+
             self._log_step("validation:success", "Validation passed", rows=len(df))
 
         except (AssertionError, ValueError) as e:
@@ -277,8 +284,13 @@ class CascadeIngestion:
                     break
             if found_col and f"'{found_col}'" not in message:
                 message = f"Validation error in column '{found_col}': {message}"
-            
-            if "schema" in message.lower() or "must be numeric" in message.lower() or "missing required" in message.lower():
+
+            is_schema_error = (
+                "schema" in message.lower()
+                or "must be numeric" in message.lower()
+                or "missing required" in message.lower()
+            )
+            if is_schema_error:
                 self.record_error("validation_schema_assertion", message)
             else:
                 self.record_error("validation", message)

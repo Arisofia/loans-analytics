@@ -74,7 +74,7 @@ class ColumnFinder:
         self.columns_lower = {col.lower(): col for col in self.columns}
 
     def find(self, candidates: List[str]) -> Optional[str]:
-        """Find first matching column from candidates."""
+        """Find matching column from candidates."""
         for col in self._exact_match(candidates):
             return col
         for col in self._case_insensitive_match(candidates):
@@ -89,7 +89,8 @@ class ColumnFinder:
 
     def _case_insensitive_match(self, candidates: List[str]) -> List[str]:
         """Get case-insensitive matches."""
-        return [self.columns_lower[c.lower()] for c in candidates if c.lower() in self.columns_lower]
+        lower_cands = [c.lower() for c in candidates]
+        return [self.columns_lower[lc] for lc in lower_cands if lc in self.columns_lower]
 
     def _substring_match(self, candidates: List[str]) -> List[str]:
         """Get substring matches (case-insensitive)."""
@@ -127,8 +128,7 @@ def validate_dataframe(
         if missing:
             if len(missing) == 1:
                 raise ValueError(f"Missing required column: {missing[0]}")
-            else:
-                raise ValueError(f"Missing required columns: {', '.join(missing)}")
+            raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
     if numeric_columns:
         for col in numeric_columns:
@@ -167,7 +167,7 @@ def assert_dataframe_schema(
             date_columns=date_columns,
         )
     except ValueError as e:
-        raise AssertionError(f"{stage} schema validation failed: {e}")
+        raise AssertionError(f"{stage} schema validation failed: {e}") from e
 
 
 def safe_numeric(series: pd.Series) -> pd.Series:

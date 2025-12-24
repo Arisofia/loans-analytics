@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class MetricDefinition:
     """Define a KPI metric configuration."""
-    
+
     def __init__(
         self,
         name: str,
@@ -31,7 +31,7 @@ class MetricDefinition:
 
 class KPIEngine:
     """Orchestrate KPI calculations with audit trail and error handling."""
-    
+
     METRICS = {
         'PAR30': MetricDefinition(
             'PAR30',
@@ -131,18 +131,18 @@ class KPIEngine:
         """Calculate a KPI metric using its definition."""
         if metric_key not in self.METRICS:
             raise ValueError(f"Unknown metric: {metric_key}")
-        
+
         metric_def = self.METRICS[metric_key]
-        
+
         if not self._ensure_columns(metric_def.name, metric_def.required_columns):
             return 0.0, {"metric": metric_def.name, "status": "error", "value": 0.0}
-        
+
         val = float(metric_def.calculator(self.df))
-        
+
         if val == 0.0 and metric_def.denominator_field:
             denom_value = float(self.df.get(metric_def.denominator_field, pd.Series()).sum())
             self._warn_if_zero(metric_def.name, metric_def.denominator_field, denom_value)
-        
+
         ctx = self._log_metric(metric_def.name, val)
         return val, ctx
 

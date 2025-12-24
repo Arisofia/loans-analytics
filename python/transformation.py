@@ -19,7 +19,10 @@ logger = logging.getLogger(__name__)
 class ColumnDefinition:
     """Define source and target columns for transformation."""
 
-    DPD_COLUMNS = ["dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"]
+    DPD_COLUMNS = [
+        "dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd",
+        "dpd_60_90_usd", "dpd_90_plus_usd"
+    ]
     ALIAS_MAPPINGS = {
         "loan_amount": ["receivable_amount"],
         "principal_balance": ["discounted_amount"],
@@ -247,7 +250,8 @@ class DataTransformation:
         if len(original) != len(transformed):
             return False
 
-        if "total_receivable_usd" in original.columns and "receivable_amount" in transformed.columns:
+        if ("total_receivable_usd" in original.columns
+                and "receivable_amount" in transformed.columns):
             orig_sum = original["total_receivable_usd"].sum()
             trans_sum = transformed["receivable_amount"].sum()
             if not np.isclose(orig_sum, trans_sum):
