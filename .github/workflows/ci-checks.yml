@@ -58,10 +58,7 @@ jobs:
         continue-on-error: true
         run: |
           touch demo_output.txt
-          python scripts/generate_markdown_report.py \
-            --text demo_output.txt \
-            --images dpd_distribution.png exposure_distribution.png \
-            || echo "Report generation skipped (demo may not have run)"
+          python scripts/generate_markdown_report.py             --text demo_output.txt             --images dpd_distribution.png exposure_distribution.png             || echo "Report generation skipped (demo may not have run)"
       - name: Upload Demo Output
         if: always()
         continue-on-error: true
@@ -91,12 +88,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p reports
-          pytest tests/evaluation/ \
-            --html=reports/evaluation-report.html \
-            --self-contained-html \
-            --json-report \
-            --json-report-file=reports/evaluation-metrics.json \
-            -v || echo "Evaluation tests completed with status $?"
+          pytest tests/evaluation/             --html=reports/evaluation-report.html             --self-contained-html             --json-report             --json-report-file=reports/evaluation-metrics.json             -v || echo "Evaluation tests completed with status $?"
       - name: Upload evaluation reports
         if: always()
         continue-on-error: true
@@ -117,13 +109,18 @@ jobs:
         continue-on-error: true
         uses: slackapi/slack-github-action@v2
         with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": "🚨 CI Checks Workflow Failed",
               "blocks": [
-                { "type": "section", "text": { "type": "mrkdwn", "text": "*CI Checks Workflow Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>" } }
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*CI Checks Workflow Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* `${{ github.sha }}` \n<${{ github.server_url }}>/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
               ]
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

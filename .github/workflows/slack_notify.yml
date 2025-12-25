@@ -8,16 +8,24 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
-    if: secrets.SLACK_BOT_TOKEN != '' && secrets.SLACK_CHANNEL != ''
+    if: secrets.SLACK_WEBHOOK_URL != ''
     steps:
       - name: Send Slack notification
         continue-on-error: true
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v2
         with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
-              "channel": "${{ secrets.SLACK_CHANNEL }}",
-              "text": "*CI Workflow Completed*\nRepository: ${{ github.repository }}\nWorkflow: ${{ github.workflow }}\nStatus: ${{ github.event.workflow_run.conclusion }}\nRun: ${{ github.run_id }}"
+              "text": "CI Workflow ${{ github.event.workflow_run.conclusion }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*CI Workflow Completed*\n*Status:* ${{ github.event.workflow_run.conclusion }}\n*Repository:* ${{ github.repository }}\n*Workflow:* ${{ github.event.workflow_run.name }}\n*Run ID:* ${{ github.event.workflow_run.id }}\n<${{ github.event.workflow_run.html_url }}|View Details>"
+                  }
+                }
+              ]
             }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

@@ -48,17 +48,18 @@ jobs:
         continue-on-error: true
         uses: slackapi/slack-github-action@v2
         with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": ":tada: Daily data ingestion completed successfully!",
-              "attachments": [
+              "blocks": [
                 {
-                  "title": "Workflow Run",
-                  "title_link": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                  "color": "#36a64f"
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Daily Data Ingestion Successful*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n<${{ github.server_url }}>/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
                 }
               ]
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
