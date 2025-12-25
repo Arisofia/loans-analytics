@@ -87,31 +87,46 @@ jobs:
             const fs = require('fs');
             let body = '## 📊 Model Evaluation Results\n\n';
 
-            if (fs.existsSync('reports/evaluation-metrics.json')) {
-              const metrics = JSON.parse(fs.readFileSync('reports/evaluation-metrics.json'));
-              body += '### Metrics Summary\n' +
-                `- **Accuracy**: ${metrics.accuracy || 'N/A'}\n` +
-                `- **Precision**: ${metrics.precision || 'N/A'}\n` +
-                `- **Recall**: ${metrics.recall || 'N/A'}\n` +
-                `- **F1 Score**: ${metrics.f1_score || 'N/A'}\n\n`;
-            } else {
-              body += '### Metrics Summary\nNo metrics generated in this run.\n\n';
+            try {
+              if (fs.existsSync('reports/evaluation-metrics.json')) {
+                try {
+                  const metricsContent = fs.readFileSync('reports/evaluation-metrics.json', 'utf8');
+                  const metrics = JSON.parse(metricsContent);
+                  body += '### Metrics Summary\n' +
+                    `- **Accuracy**: ${metrics.accuracy || 'N/A'}\n` +
+                    `- **Precision**: ${metrics.precision || 'N/A'}\n` +
+                    `- **Recall**: ${metrics.recall || 'N/A'}\n` +
+                    `- **F1 Score**: ${metrics.f1_score || 'N/A'}\n\n`;
+                } catch (parseError) {
+                  body += '### Metrics Summary\nFailed to parse metrics file.\n\n';
+                  console.error('JSON parse error:', parseError.message);
+                }
+              } else {
+                body += '### Metrics Summary\nNo metrics generated in this run.\n\n';
+              }
+
+              if (fs.existsSync('threshold-results.json')) {
+                try {
+                  const thresholdContent = fs.readFileSync('threshold-results.json', 'utf8');
+                  const thresholds = JSON.parse(thresholdContent);
+                  body += '### Threshold Status\n' +
+                    `${thresholds.passed ? '✅ All thresholds passed' : '❌ Some thresholds failed'}\n\n`;
+                } catch (parseError) {
+                  console.error('Threshold parse error:', parseError.message);
+                }
+              }
+
+              body += `[View detailed report](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})`;
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            } catch (error) {
+              console.error('Comment creation error:', error.message);
             }
-
-            if (fs.existsSync('threshold-results.json')) {
-              const thresholds = JSON.parse(fs.readFileSync('threshold-results.json'));
-              body += '### Threshold Status\n' +
-                `${thresholds.passed ? '✅ All thresholds passed' : '❌ Some thresholds failed'}\n\n`;
-            }
-
-            body += `[View detailed report](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-            });
 
       - name: Send Slack notification on failure
         if: failure() && secrets.SLACK_WEBHOOK_URL != ''
