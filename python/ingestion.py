@@ -2,7 +2,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional  # <-- FIX: Use typing.Dict, typing.List, etc.
 
 import pandas as pd
 
@@ -10,6 +10,10 @@ from python.validation import (
     NUMERIC_COLUMNS,
     assert_dataframe_schema,
     validate_dataframe,
+    validate_numeric_bounds,
+    validate_percentage_bounds,
+    validate_iso8601_dates,
+    validate_monotonic_increasing,
 )
 
 logger = logging.getLogger(__name__)
@@ -30,7 +34,7 @@ class CascadeIngestion:
         self.run_id = f"run_{uuid.uuid4().hex[:8]}"
         self.timestamp = datetime.now(timezone.utc).isoformat()
         self.strict_validation = strict_validation
-        self.errors: List[Dict[str, Any]] = []
+        self.errors: List[Dict[str, Any]] = []  # FIX: Use typing.List/Dict
         self._summary: Dict[str, Any] = {}
         self.raw_files: List[Dict[str, Any]] = []
         self.context: Dict[str, Any] = {}
@@ -228,14 +232,6 @@ class CascadeIngestion:
             self._log_step("validation:skip", "Skipping empty DataFrame")
             return df
 
-        from python.validation import (
-            validate_iso8601_dates,
-            validate_monotonic_increasing,
-            validate_no_nulls,
-            validate_numeric_bounds,
-            validate_percentage_bounds,
-        )
-
         if "measurement_date" in df.columns:
             df = df.sort_values("measurement_date", ascending=True).reset_index(drop=True)
 
@@ -324,3 +320,33 @@ class CascadeIngestion:
         entry.update(self._collect_context())
         self.errors.append(entry)
         logger.error("%s error (run=%s): %s", stage, self.run_id, message)
+
+def _raise_for_failed_columns(results, error_message):
+    """Raise ValueError for any failed validation in results dict."""
+    for col, ok in results.items():
+        if not ok:
+            raise ValueError(f"{error_message}: {col}")
+
+def _run_validations(df):
+    present_cols = [col for col in NUMERIC_COLUMNS if col in df.columns]
+    validate_dataframe(df, numeric_columns=present_cols)
+    validations = [
+        (validate_numeric_bounds, present_cols, "Column failed positivity check"),
+        (validate_percentage_bounds, None, "Column failed percentage bounds"),
+        (validate_iso8601_dates, None, "Column failed ISO 8601 check"),
+        (validate_monotonic_increasing, None, "Column failed monotonicity check"),
+        (validate_no_nulls, None, "Column contains nulls"),
+    ]
+    for func, cols, msg in validations:
+        args = (df, cols) if cols is not None else (df,)
+        _raise_for_failed_columns(func(*args), msg)
+
+def validate_loans(df):
+    """
+    Validate the loans DataFrame for schema, numeric, percentage, date, monotonicity, and null checks.
+    Raises ValueError on first failure.
+    """
+    _run_validations(df)
+    if len(df) == 0:
+        raise ValueError("DataFrame is empty")
+    return df

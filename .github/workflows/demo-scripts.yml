@@ -72,8 +72,9 @@ jobs:
       - name: Notify Slack on Failure
         if: failure() && secrets.SLACK_WEBHOOK_URL != ''
         continue-on-error: true
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@v2
         with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: INCOMING_WEBHOOK
           payload: |
             {
@@ -88,5 +89,3 @@ jobs:
                 }
               ]
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
