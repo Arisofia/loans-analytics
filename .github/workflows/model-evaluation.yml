@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -36,22 +36,14 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p reports
-          pytest tests/evaluation/ \
-            --html=reports/evaluation-report.html \
-            --self-contained-html \
-            --json-report \
-            --json-report-file=reports/evaluation-metrics.json \
-            -v || echo "Evaluation tests completed"
+          pytest tests/evaluation/             --html=reports/evaluation-report.html             --self-contained-html             --json-report             --json-report-file=reports/evaluation-metrics.json             -v || echo "Evaluation tests completed"
 
       - name: Generate metrics visualization
         if: always()
         continue-on-error: true
         run: |
           mkdir -p reports/visualizations
-          python scripts/evaluation/generate_visualizations.py \
-            --metrics-file reports/evaluation-metrics.json \
-            --output-dir reports/visualizations/ \
-            || echo "Visualization generation skipped"
+          python scripts/evaluation/generate_visualizations.py             --metrics-file reports/evaluation-metrics.json             --output-dir reports/visualizations/             || echo "Visualization generation skipped"
 
       - name: Check evaluation thresholds
         if: always()
@@ -60,11 +52,7 @@ jobs:
         run: |
           mkdir -p config
           touch config/evaluation-thresholds.yml
-          python scripts/evaluation/check_thresholds.py \
-            --metrics-file reports/evaluation-metrics.json \
-            --config config/evaluation-thresholds.yml \
-            --output threshold-results.json \
-            || echo "Threshold check skipped"
+          python scripts/evaluation/check_thresholds.py             --metrics-file reports/evaluation-metrics.json             --config config/evaluation-thresholds.yml             --output threshold-results.json             || echo "Threshold check skipped"
 
       - name: Upload evaluation reports
         if: always()
@@ -131,8 +119,10 @@ jobs:
       - name: Send Slack notification on failure
         if: failure() && secrets.SLACK_WEBHOOK_URL != ''
         continue-on-error: true
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@v2
         with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": "🚨 Model Evaluation Failed",
@@ -141,10 +131,8 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Model Evaluation Pipeline Failed* | Repository: ${{ github.repository }} | Branch: ${{ github.ref_name }} | <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                    "text": "*Model Evaluation Pipeline Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* `${{ github.sha }}` \n<${{ github.server_url }}>/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
                   }
                 }
               ]
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
