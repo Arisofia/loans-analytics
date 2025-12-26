@@ -32,5 +32,30 @@
         "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_TOKEN>"
       }
     }
-  }
+  },
+  "inlineChat.notebookAgent": true,
+  "inlineChat.finishOnType": true,
+  "inlineChat.enableV2": true,
+  "chat.useNestedAgentsMdFiles": true,
+  "chat.useClaudeSkills": true,
+  "chat.tools.terminal.ignoreDefaultAutoApproveRules": true,
+  "chat.tools.terminal.autoReplyToPrompts": true,
+  "chat.todoListTool.writeOnly": true,
+  "chat.todoListTool.descriptionField": true,
+  "chat.renderRelatedFiles": true,
+  "chat.restoreLastPanelSession": true,
+  "chat.mcp.gallery.enabled": true,
+  "chat.mcp.discovery.enabled": {
+    "claude-desktop": true,
+    "windsurf": true,
+    "cursor-global": true,
+    "cursor-workspace": true
+  },
+  "chat.mcp.assisted.nuget.enabled": true,
+  "chat.edits2.enabled": true,
+  "chat.editor.wordWrap": "on",
+  "chat.disableAIFeatures": false,
+  "chat.checkpoints.showFileChanges": true,
+  "chat.customAgentInSubagent.enabled": true,
+  "chat.allowAnonymousAccess": true
 }

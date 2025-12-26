@@ -2,7 +2,7 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 
-from python.kpis.base import KPICalculator, KPIMetadata, safe_numeric, create_context
+from python.kpis.base import KPICalculator, KPIMetadata, create_context, safe_numeric
 
 
 class CollectionRateCalculator(KPICalculator):

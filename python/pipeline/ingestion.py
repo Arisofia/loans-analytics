@@ -12,8 +12,8 @@ import pandas as pd
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel, Field, ValidationError
 
-from python.validation import validate_dataframe
 from python.pipeline.utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
+from python.validation import validate_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -216,7 +216,9 @@ class UnifiedIngestion:
             }
 
             self._log_event("complete", "success", row_count=len(validated_df))
-            return IngestionResult(validated_df, self.run_id, metadata, source_hash=checksum, raw_path=archived)
+            return IngestionResult(
+                validated_df, self.run_id, metadata, source_hash=checksum, raw_path=archived
+            )
 
         except Exception as exc:
             self._record_error("fatal_error", exc)
@@ -283,4 +285,6 @@ class UnifiedIngestion:
         }
 
         self._log_event("http_complete", "success", row_count=len(validated_df))
-        return IngestionResult(validated_df, self.run_id, metadata, source_hash=checksum, raw_path=None)
+        return IngestionResult(
+            validated_df, self.run_id, metadata, source_hash=checksum, raw_path=None
+        )

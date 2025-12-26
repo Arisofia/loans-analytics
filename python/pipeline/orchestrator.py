@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from python.compliance import build_compliance_report, write_compliance_report
-from python.pipeline.calculation_v2 import UnifiedCalculationV2
+from python.pipeline.calculation import UnifiedCalculationV2
 from python.pipeline.ingestion import UnifiedIngestion
 from python.pipeline.output import UnifiedOutput
 from python.pipeline.transformation import UnifiedTransformation
@@ -54,7 +54,9 @@ class PipelineConfig:
             base_config = _deep_merge(base_config, env_config)
             logger.info("Merged environment config from %s", env_config_path)
         else:
-            logger.warning("Environment config not found: %s, using base config only", env_config_path)
+            logger.warning(
+                "Environment config not found: %s, using base config only", env_config_path
+            )
 
         context = {
             "portfolio_id": base_config.get("cascade", {}).get("portfolio_id", ""),
@@ -110,10 +112,14 @@ class UnifiedPipeline:
             return f"run_{timestamp}_{source_hash[:6]}"
         return f"run_{timestamp}"
 
-    def _load_previous_metrics(self, artifacts_dir: Path, current_run_id: str) -> Optional[Dict[str, Any]]:
+    def _load_previous_metrics(
+        self, artifacts_dir: Path, current_run_id: str
+    ) -> Optional[Dict[str, Any]]:
         if not artifacts_dir.exists():
             return None
-        manifests = sorted(artifacts_dir.glob("*/**/*_manifest.json"), key=lambda p: p.stat().st_mtime)
+        manifests = sorted(
+            artifacts_dir.glob("*/**/*_manifest.json"), key=lambda p: p.stat().st_mtime
+        )
         for manifest_path in reversed(manifests):
             if current_run_id in manifest_path.as_posix():
                 continue
@@ -124,7 +130,9 @@ class UnifiedPipeline:
                 continue
         return None
 
-    def execute(self, input_file: Path, user: str = "system", action: str = "manual") -> Dict[str, Any]:
+    def execute(
+        self, input_file: Path, user: str = "system", action: str = "manual"
+    ) -> Dict[str, Any]:
         logger.info("Starting unified pipeline execution")
         run_started = utc_now()
         run_cfg = self.config.get("run", default={}) or {}

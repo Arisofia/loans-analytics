@@ -64,7 +64,9 @@ class UnifiedCalculationV2:
             **context,
         }
 
-    def _compute_composite(self, base_metrics: Dict[str, Any], metric_cfg: Dict[str, Any]) -> Dict[str, Any]:
+    def _compute_composite(
+        self, base_metrics: Dict[str, Any], metric_cfg: Dict[str, Any]
+    ) -> Dict[str, Any]:
         name = metric_cfg.get("name")
         func_path = metric_cfg.get("function")
         if not func_path:
@@ -84,7 +86,9 @@ class UnifiedCalculationV2:
             **context,
         }
 
-    def _compute_timeseries(self, df: pd.DataFrame, metrics_cfg: List[Dict[str, Any]]) -> Dict[str, pd.DataFrame]:
+    def _compute_timeseries(
+        self, df: pd.DataFrame, metrics_cfg: List[Dict[str, Any]]
+    ) -> Dict[str, pd.DataFrame]:
         ts_cfg = self.config.get("timeseries", {})
         if not ts_cfg.get("enabled", False):
             return {}
@@ -114,14 +118,16 @@ class UnifiedCalculationV2:
                 row = {"period_start": period}
                 for metric in metrics_cfg:
                     name = metric.get("name")
-                    if name in {"PortfolioHealth", "HealthScore"}:
+                    if not name or name in {"PortfolioHealth", "HealthScore"}:
                         continue
                     try:
                         metric_result = self._compute_metric(group, metric)
                         row[name] = metric_result.get("value")
                     except Exception as exc:
                         row[name] = None
-                        self._log_event("timeseries_metric_failed", "error", metric=name, error=str(exc))
+                        self._log_event(
+                            "timeseries_metric_failed", "error", metric=name, error=str(exc)
+                        )
                 rows.append(row)
             results[rollup] = pd.DataFrame(rows)
         return results

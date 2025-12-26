@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 
@@ -8,7 +8,6 @@ from python.kpis.collection_rate import calculate_collection_rate
 from python.kpis.par_30 import calculate_par_30
 from python.kpis.par_90 import calculate_par_90
 from python.kpis.portfolio_health import calculate_portfolio_health
-from python.validation import validate_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -97,4 +96,4 @@ class KPIEngineV2:
             **details,
         }
         self.audit_trail.append(entry)
-        logger.info(f"[KPI:{event}] {status} | {details}")
+        logger.info("[KPI:%s] %s | %s", event, status, details)

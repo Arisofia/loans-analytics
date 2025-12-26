@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Optional
 
 import pandas as pd
 import yaml
@@ -81,7 +81,9 @@ class RetryPolicy:
     backoff_seconds: float = 1.0
     jitter_seconds: float = 0.0
 
-    def execute(self, func: Callable[[], Any], on_retry: Optional[Callable[[int, Exception], None]] = None) -> Any:
+    def execute(
+        self, func: Callable[[], Any], on_retry: Optional[Callable[[int, Exception], None]] = None
+    ) -> Any:
         attempt = 0
         while True:
             try:

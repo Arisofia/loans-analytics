@@ -18,6 +18,7 @@
     "test": "echo \"Root test placeholder (per CodeQL traceability check)\""
   },
   "dependencies": {
+    "@hubspot/cli": "^7.11.2",
     "@notionhq/client": "5.6.0",
     "@supabase/sentry-js-integration": "^0.3.0",
     "@supabase/ssr": "^0.8.0",

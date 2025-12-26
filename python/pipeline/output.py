@@ -1,4 +1,3 @@
-import json
 import logging
 import uuid
 from dataclasses import dataclass
@@ -7,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from python.pipeline.utils import ensure_dir, hash_file, write_json, utc_now
+from python.pipeline.utils import ensure_dir, hash_file, utc_now, write_json
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,11 @@ class UnifiedOutput:
         logger.info("[Output:%s] %s | %s", event, status, details)
 
     def _guess_content_type(self, path: Path) -> str:
-        mapping = {".csv": "text/csv", ".json": "application/json", ".parquet": "application/octet-stream"}
+        mapping = {
+            ".csv": "text/csv",
+            ".json": "application/json",
+            ".parquet": "application/octet-stream",
+        }
         return mapping.get(path.suffix.lower(), "application/octet-stream")
 
     def upload_to_azure(self, file_paths: List[Path], run_id: str) -> Dict[str, str]:
@@ -48,6 +51,7 @@ class UnifiedOutput:
             return {}
 
         import os
+
         from azure.core.exceptions import ResourceExistsError
         from azure.storage.blob import BlobServiceClient, ContentSettings
 
@@ -151,11 +155,15 @@ class UnifiedOutput:
 
         write_json(manifest_path, manifest)
 
-        azure_blobs = self.upload_to_azure([parquet_path, csv_path, metrics_path, manifest_path], master_run_id)
+        azure_blobs = self.upload_to_azure(
+            [parquet_path, csv_path, metrics_path, manifest_path], master_run_id
+        )
         if azure_blobs:
             manifest["azure_blobs"] = azure_blobs
             write_json(manifest_path, manifest)
 
         self._log_event("complete", "success", manifest=str(manifest_path))
 
-        return OutputResult(manifest=manifest, manifest_path=manifest_path, output_paths=output_paths)
+        return OutputResult(
+            manifest=manifest, manifest_path=manifest_path, output_paths=output_paths
+        )

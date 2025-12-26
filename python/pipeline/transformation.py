@@ -1,19 +1,19 @@
 import logging
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
 from python.compliance import create_access_log_entry, mask_pii_in_dataframe
+from python.pipeline.utils import hash_dataframe, utc_now
 from python.validation import (
     validate_iso8601_dates,
-    validate_numeric_bounds,
     validate_no_nulls,
+    validate_numeric_bounds,
     validate_percentage_bounds,
 )
-from python.pipeline.utils import hash_dataframe, utc_now
 
 logger = logging.getLogger(__name__)
 

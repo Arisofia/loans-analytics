@@ -1,10 +1,10 @@
 from typing import Any, Dict, Tuple
 
-from python.kpis.base import KPICalculator, KPIMetadata, create_context
+from python.kpis.base import KPIMetadata, create_context
 
 
-class PortfolioHealthCalculator(KPICalculator):
-    """Portfolio Health Score - Composite KPI."""
+class PortfolioHealthCalculator:
+    """Portfolio Health Score - Composite KPI (not derived from DataFrame)."""
 
     METADATA = KPIMetadata(
         name="PortfolioHealth",
@@ -32,7 +32,9 @@ class PortfolioHealthCalculator(KPICalculator):
         )
 
 
-def calculate_portfolio_health(par_30: float, collection_rate: float) -> Tuple[float, Dict[str, Any]]:
+def calculate_portfolio_health(
+    par_30: float, collection_rate: float
+) -> Tuple[float, Dict[str, Any]]:
     """Legacy interface for portfolio health calculation."""
     calculator = PortfolioHealthCalculator()
     return calculator.calculate(par_30, collection_rate)

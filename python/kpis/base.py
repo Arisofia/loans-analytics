@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import pandas as pd
 
@@ -33,9 +33,9 @@ class KPIMetadata:
         formula: str,
         unit: str,
         data_sources: list,
-        threshold_warning: float = None,
-        threshold_critical: float = None,
-        owner: str = None,
+        threshold_warning: Optional[float] = None,
+        threshold_critical: Optional[float] = None,
+        owner: Optional[str] = None,
     ):
         self.name = name
         self.description = description
