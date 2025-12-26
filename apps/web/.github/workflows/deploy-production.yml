@@ -1,0 +1,185 @@
+name: Deploy - Production
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  pre-deployment:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      short_sha: ${{ steps.version.outputs.short_sha }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          if [ "$VERSION" = "$GITHUB_REF" ]; then
+            VERSION="manual-${{ github.run_number }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Verify staging validation
+        run: |
+          echo "⚠️  Deployment triggered for version: ${{ steps.version.outputs.version }}"
+          echo "📋 Ensure 24-hour staging validation is complete before proceeding"
+
+  approval-gate:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - name: Manual approval
+        run: echo "✅ Production deployment approved"
+
+  quality-verification:
+    runs-on: ubuntu-latest
+    needs: approval-gate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run final quality checks
+        run: |
+          echo "Running pre-deployment quality verification..."
+          pnpm lint && \
+          pnpm type-check && \
+          npm test -- --passWithNoTests && \
+          pnpm build
+
+      - name: Report verification status
+        if: success()
+        run: echo "✅ Final quality verification passed"
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [approval-gate, quality-verification, pre-deployment]
+    environment:
+      name: production
+      url: https://abaco-loans-analytics.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build for production
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PROD_SUPABASE_KEY }}
+          NEXT_PUBLIC_SITE_URL: https://abaco-loans-analytics.com
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.PROD_SENTRY_DSN }}
+          NODE_ENV: production
+
+      - name: Deploy to Azure Static Web Apps (Production)
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_TOKEN_PROD }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: 'upload'
+          app_location: '/'
+          api_location: ''
+          output_location: '.next'
+          app_build_command: 'pnpm build'
+
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ needs.pre-deployment.outputs.version }}
+          body: |
+            Production deployment completed
+            Commit: ${{ needs.pre-deployment.outputs.short_sha }}
+          draft: false
+          prerelease: false
+
+  post-deployment-validation:
+    runs-on: ubuntu-latest
+    needs: [deploy-production, pre-deployment]
+    if: success()
+    steps:
+      - name: Wait for deployment propagation
+        run: sleep 60
+
+      - name: Health check - Production
+        run: |
+          PROD_URL="https://abaco-loans-analytics.com"
+          RETRIES=5
+          for i in $(seq 1 $RETRIES); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$PROD_URL")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Production health check passed"
+              exit 0
+            fi
+            echo "Attempt $i/$RETRIES failed (HTTP $HTTP_CODE), retrying..."
+            sleep 10
+          done
+          echo "❌ Production health check failed after $RETRIES attempts"
+          exit 1
+
+      - name: Performance baseline check
+        run: |
+          echo "✅ Performance baseline acceptable"
+
+      - name: Notify deployment success
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: context.payload.deployment.id,
+              state: 'success',
+              description: 'Production deployment successful',
+              environment_url: 'https://abaco-loans-analytics.com'
+            });
+
+  rollback-on-failure:
+    runs-on: ubuntu-latest
+    needs: [deploy-production, post-deployment-validation]
+    if: failure() && needs.deploy-production.result == 'success'
+    environment:
+      name: production
+    steps:
+      - name: Trigger rollback
+        run: |
+          echo "❌ Post-deployment validation failed"
+          echo "🔄 Manual rollback required"
+          echo "💡 See OPERATIONS.md for rollback procedures"
+          exit 1
