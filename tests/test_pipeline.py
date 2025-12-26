@@ -1,9 +1,9 @@
 import pandas as pd
 import pytest
 
-from python.ingestion import CascadeIngestion
+from python.pipeline.ingestion import UnifiedIngestion
 from python.kpi_engine import KPIEngine
-from python.transformation import DataTransformation
+from python.pipeline.transformation import UnifiedTransformation
 
 
 def sample_df():
@@ -29,14 +29,14 @@ def test_ingest_data(tmp_path):
     df = sample_df()
     csv_file = tmp_path / "sample.csv"
     df.to_csv(csv_file, index=False)
-    ingestion = CascadeIngestion(data_dir=tmp_path)
+    ingestion = UnifiedIngestion(data_dir=tmp_path)
     ingested = ingestion.ingest_csv("sample.csv")
     assert not ingested.empty
 
 
 def test_transform_data():
     df = sample_df()
-    transformer = DataTransformation()
+    transformer = UnifiedTransformation()
     kpi_df = transformer.transform_to_kpi_dataset(df)
     assert isinstance(kpi_df, pd.DataFrame)
 
@@ -45,14 +45,14 @@ def test_validate_loans():
     df = pd.DataFrame(
         {"period": ["2025Q4"], "measurement_date": ["2025-12-01"], "total_receivable_usd": [1000.0]}
     )
-    ingestion = CascadeIngestion(data_dir=".")
+    ingestion = UnifiedIngestion(data_dir=".")
     validated = ingestion.validate_loans(df)
     assert "_validation_passed" in validated.columns
 
 
 def test_calculate_kpis():
     df = sample_df()
-    transformer = DataTransformation()
+    transformer = UnifiedTransformation()
     kpi_df = transformer.transform_to_kpi_dataset(df)
     kpi_engine = KPIEngine(kpi_df)
     par_30, _ = kpi_engine.calculate_par_30()

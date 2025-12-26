@@ -10,10 +10,10 @@ from typing import Any, Dict, Optional
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from python.compliance import build_compliance_report, write_compliance_report
-from python.ingestion import CascadeIngestion
+from python.pipeline.ingestion import UnifiedIngestion
 from python.kpi_engine import KPIEngine
 from python.pipeline.orchestrator import UnifiedPipeline
-from python.transformation import DataTransformation
+from python.pipeline.transformation import UnifiedTransformation
 
 logging.basicConfig(
     level=logging.INFO,
@@ -72,14 +72,14 @@ def run_pipeline(
     azure_connection_string: Optional[str] = None,
     azure_blob_prefix: Optional[str] = None,
 ) -> bool:
-    ingestion = CascadeIngestion(data_dir=str(Path(input_file).parent))
+    ingestion = UnifiedIngestion(data_dir=str(Path(input_file).parent))
     ingested = ingestion.ingest_csv(Path(input_file).name)
     validated = ingestion.validate_loans(ingested)
 
     if validated.empty or not bool(validated.get("_validation_passed", True).all()):
         return False
 
-    transformer = DataTransformation()
+    transformer = UnifiedTransformation()
     kpi_df = transformer.transform_to_kpi_dataset(validated)
 
     kpi_engine = KPIEngine(kpi_df)

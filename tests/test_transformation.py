@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from python.transformation import DataTransformation
+from python.pipeline.transformation import UnifiedTransformation
 
 
 def sample_df():
@@ -20,7 +20,7 @@ def sample_df():
 
 
 def test_calculate_receivables_metrics():
-    dt = DataTransformation()
+    dt = UnifiedTransformation()
     metrics = dt.calculate_receivables_metrics(sample_df())
     for key in ["total_receivable", "total_eligible", "discounted_balance"]:
         assert key in metrics
@@ -33,7 +33,7 @@ def test_calculate_receivables_metrics():
 
 
 def test_calculate_dpd_ratios():
-    dt = DataTransformation()
+    dt = UnifiedTransformation()
     ratios = dt.calculate_dpd_ratios(sample_df())
     for key in ["dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"]:
         assert key in ratios
@@ -46,7 +46,7 @@ def test_calculate_dpd_ratios():
 
 
 def test_transform_to_kpi_dataset():
-    dt = DataTransformation()
+    dt = UnifiedTransformation()
     kpi_df = dt.transform_to_kpi_dataset(sample_df())
     for col in [
         "receivable_amount",
@@ -68,7 +68,7 @@ def test_transform_to_kpi_dataset():
 
 
 def test_validate_transformations():
-    dt = DataTransformation()
+    dt = UnifiedTransformation()
     original = sample_df()
     kpi_df = dt.transform_to_kpi_dataset(original)
     result = dt.validate_transformations(original, kpi_df)
@@ -76,7 +76,7 @@ def test_validate_transformations():
 
 
 def test_validate_transformations_row_mismatch():
-    dt = DataTransformation()
+    dt = UnifiedTransformation()
     original = sample_df()
     kpi_df = dt.transform_to_kpi_dataset(original)
     kpi_df = kpi_df.iloc[:-1]
@@ -85,7 +85,7 @@ def test_validate_transformations_row_mismatch():
 
 
 def test_validate_transformations_total_mismatch():
-    dt = DataTransformation()
+    dt = UnifiedTransformation()
     original = sample_df()
     kpi_df = dt.transform_to_kpi_dataset(original)
     kpi_df["receivable_amount"] = kpi_df["receivable_amount"] + 100
@@ -94,7 +94,7 @@ def test_validate_transformations_total_mismatch():
 
 
 def test_transform_fuzzy_mapping():
-    dt = DataTransformation()
+    dt = UnifiedTransformation()
     # Create df with columns that need fuzzy matching (e.g. AVG_APR_PCT -> interest_rate)
     df = pd.DataFrame(
         {
@@ -115,7 +115,7 @@ def test_transform_fuzzy_mapping():
 
 
 def test_transform_missing_required_columns_raises():
-    dt = DataTransformation()
+    dt = UnifiedTransformation()
     df = pd.DataFrame(
         {
             "total_receivable_usd": [1000.0],
@@ -127,7 +127,7 @@ def test_transform_missing_required_columns_raises():
 
 
 def test_transform_non_numeric_required_column_raises():
-    dt = DataTransformation()
+    dt = UnifiedTransformation()
     df = sample_df()
     df["total_receivable_usd"] = ["not-a-number", "also-bad"]
     with pytest.raises(ValueError):
