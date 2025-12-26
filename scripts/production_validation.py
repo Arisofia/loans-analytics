@@ -35,23 +35,36 @@ class ProductionValidator:
             "issues": []
         }
     
+    def _generate_realistic_test_data(self, n_rows: int) -> pd.DataFrame:
+        """Generate realistic test data with valid KPI ranges"""
+        np.random.seed(42)
+        
+        total_receivable = np.random.lognormal(9, 2, n_rows)
+        
+        par_dpd_0_7 = total_receivable * np.random.uniform(0, 0.03, n_rows)
+        par_dpd_7_30 = total_receivable * np.random.uniform(0, 0.03, n_rows)
+        par_dpd_30_60 = total_receivable * np.random.uniform(0, 0.08, n_rows)
+        par_dpd_60_90 = total_receivable * np.random.uniform(0, 0.05, n_rows)
+        par_dpd_90_plus = total_receivable * np.random.uniform(0, 0.10, n_rows)
+        
+        return pd.DataFrame({
+            'loan_id': [f'loan_{i}' for i in range(n_rows)],
+            'total_receivable_usd': total_receivable,
+            'dpd_0_7_usd': par_dpd_0_7,
+            'dpd_7_30_usd': par_dpd_7_30,
+            'dpd_30_60_usd': par_dpd_30_60,
+            'dpd_60_90_usd': par_dpd_60_90,
+            'dpd_90_plus_usd': par_dpd_90_plus,
+            'cash_available_usd': np.random.uniform(0, 50000, n_rows),
+            'total_eligible_usd': total_receivable * 0.95,
+        })
+    
     def check_kpi_calculations(self) -> Dict[str, Any]:
         """Validate KPI calculations on test dataset"""
         logger.info("Checking KPI calculations...")
         
         try:
-            np.random.seed(42)
-            df = pd.DataFrame({
-                'loan_id': [f'loan_{i}' for i in range(500)],
-                'total_receivable_usd': np.random.lognormal(9, 2, 500),
-                'dpd_0_7_usd': np.random.uniform(0, 10000, 500),
-                'dpd_7_30_usd': np.random.uniform(0, 10000, 500),
-                'dpd_30_60_usd': np.random.uniform(0, 50000, 500),
-                'dpd_60_90_usd': np.random.uniform(0, 50000, 500),
-                'dpd_90_plus_usd': np.random.uniform(0, 100000, 500),
-                'cash_available_usd': np.random.uniform(0, 50000, 500),
-                'total_eligible_usd': np.random.lognormal(9, 2, 500),
-            })
+            df = self._generate_realistic_test_data(500)
             
             engine = KPIEngineV2(df)
             metrics = engine.calculate_all(include_composite=True)
@@ -116,18 +129,7 @@ class ProductionValidator:
         logger.info("Checking performance...")
         
         try:
-            np.random.seed(42)
-            df = pd.DataFrame({
-                'loan_id': [f'loan_{i}' for i in range(1000)],
-                'total_receivable_usd': np.random.lognormal(9, 2, 1000),
-                'dpd_0_7_usd': np.random.uniform(0, 10000, 1000),
-                'dpd_7_30_usd': np.random.uniform(0, 10000, 1000),
-                'dpd_30_60_usd': np.random.uniform(0, 50000, 1000),
-                'dpd_60_90_usd': np.random.uniform(0, 50000, 1000),
-                'dpd_90_plus_usd': np.random.uniform(0, 100000, 1000),
-                'cash_available_usd': np.random.uniform(0, 50000, 1000),
-                'total_eligible_usd': np.random.lognormal(9, 2, 1000),
-            })
+            df = self._generate_realistic_test_data(1000)
             
             import time
             start = time.time()
@@ -169,7 +171,6 @@ class ProductionValidator:
                 "null_values": "PASS",
             }
             
-            # Test empty DataFrame
             try:
                 engine = KPIEngineV2(pd.DataFrame())
                 metrics = engine.calculate_all()
@@ -201,9 +202,9 @@ class ProductionValidator:
                 'total_receivable_usd': [1000],
                 'dpd_0_7_usd': [0],
                 'dpd_7_30_usd': [0],
-                'dpd_30_60_usd': [100],
+                'dpd_30_60_usd': [80],
                 'dpd_60_90_usd': [50],
-                'dpd_90_plus_usd': [25],
+                'dpd_90_plus_usd': [50],
                 'cash_available_usd': [100],
                 'total_eligible_usd': [1000],
             })
