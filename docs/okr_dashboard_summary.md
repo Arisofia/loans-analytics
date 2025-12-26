@@ -1,3 +1,18 @@
+⚠️ **STRATEGIC PLANNING DOCUMENT - OKR TARGETS ONLY**
+
+**DO NOT USE THESE NUMBERS IN PRODUCTION WORKFLOWS**
+
+This document outlines strategic OKR targets and planning assumptions. All growth projections, revenue targets, and metric goals are aspirational planning documents, not current state data.
+
+**For current OKR status, query:**
+- OKR tracking system: Internal dashboard (requires access)
+- Production metrics: See production validation reports
+- Current customer count: `SELECT COUNT(DISTINCT client_id) FROM fact_loans WHERE status='active'`
+
+**Document Status:** Strategic Planning (Last Updated: 2025-10-16)
+
+---
+
 # CEO Operating System OKR Overview (English)
 This document summarizes the provided OKRs, risk guardrails, and near-term actions for the Abaco platform. It keeps the original content but structures it for quick reference.
 ## Data Model & Measurement Rules

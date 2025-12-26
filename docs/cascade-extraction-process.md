@@ -1,3 +1,18 @@
+⚠️ **HISTORICAL DATA EXTRACTION - POINT-IN-TIME SNAPSHOT**
+
+**DO NOT USE FOR CURRENT METRICS**
+
+This document records a single extraction event (December 4, 2025) from Cascade Debt. All dollar amounts and metrics represent a historical snapshot only. Current data may have changed significantly.
+
+**For current live metrics, use:**
+- Real-time dashboard: See production validation reports
+- Database query: `SELECT * FROM kpi_timeseries_daily ORDER BY date DESC LIMIT 1`
+
+**Document Status:** Historical Archive (Extraction Date: 2025-12-04)  
+**Data Freshness:** As of December 3, 2025 UTC (ARCHIVED)
+
+---
+
 # Cascade Debt Data Extraction Process
 
 ## Overview
@@ -98,66 +113,3 @@ Extracted covenant monitoring and facility-level data:
    - Disbursement Requests: Multiple tranches
    - Status tracking for each document
    - URL: https://app.cascadedebt.com/manage/monitor/actions?pid=abaco&tab=document-centre
-
-## Data Quality Assurance
-
-### Extraction Methodology
-
-- **Source**: Cascade Debt Platform UI (direct page access)
-- **Extraction Technique**: Automated page text extraction
-- **Validation**: All numbers verified as actual extracted values (not calculated)
-- **Timestamp**: Data extraction completed at 2025-12-04 08:15 AM CST
-- **Data Freshness**: Platform last updated 2025-12-03 UTC
-
-### Compliance Markers
-
-All extracted data includes:
-
-- ✅ Extraction timestamp (ISO 8601)
-- ✅ Data source URL (original Cascade page)
-- ✅ "Extracted directly from Cascade" marker
-- ✅ Actual measured values (not calculated estimates)
-- ✅ Complete audit trail
-
-## Integration with Repository
-
-### Files Created
-
-- `exports/cascade/abaco_monitoring_covenants.json` (PR #204)
-- `exports/cascade/abaco_complete_analytics.json` (PR #203 pending)
-- `docs/cascade-integration-guide.md` (PR #203)
-
-### Repository Structure
-
-```
-exports/
-├── cascade/
-│   ├── abaco_monitoring_covenants.json
-│   ├── abaco_complete_analytics.json
-│   └── README.md
-docs/
-├── cascade-extraction-process.md (this file)
-├── cascade-integration-guide.md
-└── analytics/
-    ├── KPIs.md
-    └── covenant-framework.md
-```
-
-## Next Steps
-
-1. ✅ Complete Phase 1 & 2 extractions
-2. ✅ Document extraction process (this file)
-3. ⏳ Merge PR #203 & #204 to main
-4. ⏳ Activate automated Cascade data refresh (if scheduled)
-5. ⏳ Set up monitoring dashboard for covenant compliance
-
-## Notes
-
-- All data represent the Abaco Capital facility
-- Cascade platform operates in USD
-- Measurement dates vary by data type (see specific records)
-- This extraction represents a point-in-time snapshot
-- Real-time monitoring continues via Cascade native dashboards
-
-**Last Updated**: 2025-12-04 08:30 AM CST
-**Next Scheduled Extraction**: TBD

@@ -1,3 +1,18 @@
+⚠️ **EXECUTIVE STRATEGY DOCUMENT - PLANNING ASSUMPTIONS ONLY**
+
+**DO NOT USE THESE NUMBERS AS CURRENT STATE**
+
+This document outlines strategic direction and 2026 targets presented to executive leadership. All projections, timelines, and numerical targets are planning assumptions subject to market conditions and business execution.
+
+**For current executive reporting:**
+- Use production validation reports for current metrics
+- See OKR tracking system for progress against targets
+- Query `SELECT * FROM kpi_timeseries_daily ORDER BY date DESC LIMIT 7` for weekly trends
+
+**Document Status:** Strategic Direction (Presentation Date: 2025-10-16)
+
+---
+
 # CEO Operating System v2 — Executive Presentation (Oct-16, 2025)
 ## Scale confirmation
 
