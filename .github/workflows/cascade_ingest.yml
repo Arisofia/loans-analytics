@@ -35,12 +35,12 @@ jobs:
             echo "KPI results file not generated (no data processed)"
           fi
       - name: Notify Slack on completion
-        if: always() && secrets.SLACK_WEBHOOK_URL != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         continue-on-error: true
-        uses: slackapi/slack-github-action@v2
+        uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": "Cascade Ingest Pipeline ${{ job.status }}",
