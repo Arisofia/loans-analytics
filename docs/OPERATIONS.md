@@ -1,68 +1,71 @@
-# Operational Runbook: Abaco Data Pipeline
+# Operational Runbook: Abaco Unified Pipeline
 
-## Deployment Procedures
+## Purpose
+This runbook covers deployment, execution, monitoring, incident response, and recovery for the unified data pipeline.
 
-### Environment Setup
-Ensure the Python virtual environment is active and all dependencies are installed.
+## Prerequisites
+- Python 3.10+
+- `pip install -r requirements.lock.txt` (or the project-standard install)
+- Environment variables:
+  - `META_SYSTEM_USER_TOKEN` (Cascade token)
+  - `AZURE_STORAGE_CONNECTION_STRING` (optional)
+
+## Execution
+
+### Manual Run (Canonical)
 ```bash
-# Activate virtual environment
-source .venv/bin/activate
-
-# Install required dependencies
-pip install pydantic pyarrow pandas pyyaml azure-storage-blob
+python scripts/run_data_pipeline.py --input data/raw/cascade/loan_tape.csv
 ```
 
-### Configuration
-The pipeline is driven by `config/pipeline.yml`. Ensure this file is updated with correct endpoints and target settings.
+### Configuration Override
+```bash
+python scripts/run_data_pipeline.py \
+  --input data/raw/cascade/loan_tape.csv \
+  --config config/pipeline.yml
+```
+
+### HTTP Ingestion (Cascade)
+Set in `config/pipeline.yml`:
 ```yaml
-# config/pipeline.yml
-cascade:
-  portfolio_id: abaco
-outputs:
-  azure:
-    enabled: true
-    container: pipeline-runs
+pipeline:
+  phases:
+    ingestion:
+      source: cascade_http
 ```
 
-## Execution Procedures
+## Run Artifacts
+- `logs/runs/<run_id>/<run_id>_summary.json`
+- `logs/runs/<run_id>/<run_id>_manifest.json`
+- `logs/runs/<run_id>/<run_id>_compliance.json`
+- `data/metrics/<run_id>.parquet`
+- `data/metrics/<run_id>.csv`
 
-### Manual Pipeline Run
-Run the end-to-end pipeline using the unified CLI script.
-```bash
-python scripts/run_data_pipeline.py --input data/abaco_portfolio_calculations_fixed.csv
-```
+## Monitoring
+- Validate `summary.json` status is `success`.
+- Check `manifest.json` for `file_hashes` and `quality_checks`.
+- Review anomaly flags in `manifest.json`.
 
-### Options
-- `--input`: Path to the raw CSV file from Cascade.
-- `--user`: Identifier for the operator (e.g., your name).
-- `--action`: Context for the run (e.g., `manual-adhoc`).
-- `--config`: Path to a custom YAML config if needed.
+## Incident Response
+1. **Triage**: Check `logs/runs/<run_id>_summary.json` for phase failure.
+2. **Validate Input**: Confirm schema and column availability.
+3. **Rollback**: Re-run previous manifest outputs if latest run failed validation.
+4. **Escalate**: Notify data engineering if schema drift or data contract issues detected.
 
-## Monitoring & Observability
+## Backup and Recovery
+- Raw inputs are archived under `data/raw/cascade`.
+- Manifests and compliance reports are stored under `logs/runs/`.
+- To restore a prior run, rehydrate outputs from `data/metrics/<run_id>` and manifest.
 
-### Logs
-The pipeline outputs structured logs to `stdout`. Monitor for:
-- `[Ingestion:raw_read] success`: File successfully loaded and checksummed.
-- `[Transformation:pii_masking] completed`: Sensitive data has been secured.
-- `[Calculation:metric_computed] success`: KPIs have been computed with formula traceability.
-- `[Output:complete] success`: Manifest generated and cloud export finished.
-
-### Run Artifacts
-Every run generates a unique set of artifacts in `data/metrics/` (or your configured output dir):
-- `{run_id}.parquet`: High-performance data file.
-- `{run_id}.csv`: Compatibility data file.
-- `{run_id}_manifest.json`: Comprehensive execution summary (metadata, metrics, lineage).
-
-## Troubleshooting
-
-### Schema Validation Failures
-**Symptom**: `ValueError: Schema validation failed for X rows.`
-- **Action**: Inspect the raw input CSV. Ensure columns match the expected fields in `python/pipeline/ingestion.py` (e.g., `total_receivable_usd`, `total_eligible_usd`).
-
-### Missing Dependencies
-**Symptom**: `ImportError: Unable to find a usable engine; tried using: 'pyarrow'`.
-- **Action**: Run `pip install pyarrow`.
-
-### Azure Export Failures
-**Symptom**: `[Output:azure_upload] skipped | {'reason': 'No connection string found'}`
-- **Action**: Ensure `AZURE_STORAGE_CONNECTION_STRING` is set in your environment.
+## Ready-to-Execute Commands
+1. Run pipeline with file input:
+   ```bash
+   python scripts/run_data_pipeline.py --input data/raw/cascade/loan_tape.csv
+   ```
+2. Run tests:
+   ```bash
+   pytest tests/ -v
+   ```
+3. Validate config:
+   ```bash
+   python -c "from python.pipeline.orchestrator import PipelineConfig; PipelineConfig()"
+   ```

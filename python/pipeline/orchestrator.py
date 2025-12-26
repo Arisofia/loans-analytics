@@ -40,7 +40,14 @@ class PipelineConfig:
         return {
             "version": "1.0",
             "name": "abaco_unified_pipeline",
-            "pipeline": {"phases": {}},
+            "pipeline": {
+                "phases": {
+                    "ingestion": {},
+                    "transformation": {},
+                    "calculation": {},
+                    "outputs": {},
+                }
+            },
             "run": {"id_strategy": "timestamp"},
         }
 
@@ -65,7 +72,8 @@ class UnifiedPipeline:
 
     def __init__(self, config_path: Optional[Path] = None):
         self.config = PipelineConfig(config_path)
-        self.run_id: Optional[str] = None
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        self.run_id: Optional[str] = f"pipeline_{timestamp}"
 
     def _generate_run_id(self, source_hash: Optional[str]) -> str:
         strategy = self.config.get("run", "id_strategy", default="timestamp")

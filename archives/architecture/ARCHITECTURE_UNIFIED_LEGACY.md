@@ -1,3 +1,6 @@
+# DO NOT USE IN PRODUCTION
+# Legacy architecture draft. Superseded by docs/ARCHITECTURE.md.
+
 # Abaco Loans Analytics - Unified Architecture
 
 ## Executive Summary

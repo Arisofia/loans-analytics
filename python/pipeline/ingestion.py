@@ -188,6 +188,8 @@ class UnifiedIngestion:
             schema_errors = self._validate_schema(df)
             validated_df, record_errors = self._validate_records(df)
             errors = schema_errors + record_errors
+            if errors:
+                self._log_event("validation", "completed", error_count=len(errors))
 
             self._validate_dataframe(validated_df)
 
@@ -210,6 +212,7 @@ class UnifiedIngestion:
                 "deduped_count": deduped_count,
                 "audit_log": self.audit_log,
                 "archived_path": str(archived) if archived else None,
+                "validation_errors": errors,
             }
 
             self._log_event("complete", "success", row_count=len(validated_df))
@@ -257,6 +260,8 @@ class UnifiedIngestion:
         schema_errors = self._validate_schema(df)
         validated_df, record_errors = self._validate_records(df)
         errors = schema_errors + record_errors
+        if errors:
+            self._log_event("validation", "completed", error_count=len(errors))
 
         self._validate_dataframe(validated_df)
 
@@ -274,6 +279,7 @@ class UnifiedIngestion:
             "error_count": len(errors),
             "deduped_count": deduped_count,
             "audit_log": self.audit_log,
+            "validation_errors": errors,
         }
 
         self._log_event("http_complete", "success", row_count=len(validated_df))

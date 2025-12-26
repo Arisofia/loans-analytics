@@ -1,3 +1,6 @@
+# DO NOT USE IN PRODUCTION
+# Legacy operations snapshot. Superseded by docs/OPERATIONS.md.
+
 # Abaco Loans Analytics - Operations Runbook
 
 ## Table of Contents

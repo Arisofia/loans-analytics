@@ -1,3 +1,6 @@
+# DO NOT USE IN PRODUCTION
+# Legacy architecture snapshot. Superseded by docs/ARCHITECTURE.md.
+
 # Fintech Factory - Complete Architecture Specification
 
 ## Executive Summary

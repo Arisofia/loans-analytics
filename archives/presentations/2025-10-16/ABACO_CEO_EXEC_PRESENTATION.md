@@ -1,3 +1,6 @@
+# DO NOT USE IN PRODUCTION
+# Historical presentation snapshot retained for archival purposes.
+
 # 🚀 ABACO FINTECH — CEO OPERATING SYSTEM v2
 ### Board Presentation — Oct-16, 2025 (Mid-month snapshot)
 
