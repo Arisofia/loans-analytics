@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-26T01:59:56.178523",
+  "timestamp": "2025-12-26T02:05:21.117785",
   "checks": {
     "kpi_calculations": {
       "status": "PASS",
@@ -28,9 +28,9 @@
     "performance": {
       "status": "PASS",
       "metrics": {
-        "latency_ms": 0.6542205810546875,
+        "latency_ms": 0.6978511810302734,
         "latency_acceptable": true,
-        "throughput_rows_per_sec": 1528536.443148688
+        "throughput_rows_per_sec": 1432970.276733857
       }
     },
     "error_handling": {
