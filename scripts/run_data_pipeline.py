@@ -6,12 +6,12 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-# Add project root to path for python/ modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from python.compliance import build_compliance_report, write_compliance_report
 from python.pipeline.ingestion import UnifiedIngestion
-from python.kpi_engine import KPIEngine
+from python.kpi_engine_v2 import KPIEngineV2
+from python.kpis.portfolio_health import calculate_portfolio_health
 from python.pipeline.orchestrator import UnifiedPipeline
 from python.pipeline.transformation import UnifiedTransformation
 
@@ -56,7 +56,6 @@ def upload_outputs_to_azure(
     azure_container: str,
     azure_blob_prefix: str,
 ) -> Dict[str, str]:
-    # Placeholder for legacy pipeline tests; upload handled by UnifiedOutput.
     return {}
 
 
@@ -82,11 +81,11 @@ def run_pipeline(
     transformer = UnifiedTransformation()
     kpi_df = transformer.transform_to_kpi_dataset(validated)
 
-    kpi_engine = KPIEngine(kpi_df)
+    kpi_engine = KPIEngineV2(kpi_df)
     par_30, par_30_ctx = kpi_engine.calculate_par_30()
     par_90, par_90_ctx = kpi_engine.calculate_par_90()
     collection_rate, coll_ctx = kpi_engine.calculate_collection_rate()
-    health_score, health_ctx = kpi_engine.calculate_portfolio_health(par_30, collection_rate)
+    health_score, health_ctx = calculate_portfolio_health(par_30, collection_rate)
 
     metrics = {
         "PAR30": {"value": par_30, **par_30_ctx},
