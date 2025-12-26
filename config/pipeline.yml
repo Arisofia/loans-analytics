@@ -1,0 +1,66 @@
+# Unified Pipeline Configuration (Single Source of Truth)
+version: 1.0
+name: abaco_unified_pipeline
+
+cascade:
+  base_url: https://app.cascadedebt.com
+  portfolio_id: abaco
+  auth:
+    token_secret: META_SYSTEM_USER_TOKEN
+    refresh_threshold_hours: 24
+
+pipeline:
+  phases:
+    ingestion:
+      retry_policy:
+        max_retries: 3
+        backoff_factor: 2
+      validation:
+        strict: true
+        schema_path: config/data_schemas/loan_tape.json
+    
+    transformation:
+      pii_masking:
+        enabled: true
+        method: sha256_short
+      normalization:
+        lowercase_columns: true
+        strip_whitespace: true
+
+    calculation:
+      metrics:
+        - name: PAR30
+          formula: "calculate_par_30"
+          source: "python.kpis.par_30"
+        - name: PAR90
+          formula: "calculate_par_90"
+          source: "python.kpis.par_90"
+        - name: CollectionRate
+          formula: "calculate_collection_rate"
+          source: "python.kpis.collection_rate"
+        - name: HealthScore
+          formula: "calculate_portfolio_health"
+          source: "python.kpis.portfolio_health"
+
+    outputs:
+      storage:
+        local_dir: data/metrics
+        archive_dir: data/raw
+      azure:
+        enabled: true
+        container: pipeline-runs
+        prefix: analytics
+      supabase:
+        enabled: true
+        schema: analytics
+        tables:
+          - fact_loans
+          - kpi_timeseries_daily
+
+observability:
+  logging:
+    format: json
+    level: INFO
+  lineage:
+    enabled: true
+    capture_input_hash: true

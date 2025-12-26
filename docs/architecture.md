@@ -1,39 +1,56 @@
-# System Architecture
+# Abaco Unified Pipeline Architecture
 
-## Overview
-The ABACO Financial Intelligence Platform is designed as a modular, Python-based analytics engine that processes loan portfolio data to generate actionable KPIs and visualizations.
+## Executive Overview
+The Abaco Unified Pipeline is a production-grade, four-phase data engineering system designed for high-integrity fintech analytics. It replaces a fragmented ecosystem of scripts with a single, canonical, configuration-driven workflow.
 
-## Components
+## Core Philosophy: Vibe Solutioning
+- **Build Integrity**: Every metric is recomputed from raw data with zero reliance on upstream state.
+- **Traceability**: Full audit logs and SHA-256 checksums for every run.
+- **Stability**: Pydantic-driven schema enforcement at the point of ingestion.
 
-### 1. Core Logic (`python/`)
-The business logic is isolated from the presentation layer to ensure testability and reusability.
-- **Ingestion**: `ingestion.py` handles loading data from CSVs, applying timestamps, and tracking run IDs.
-- **Validation**: `validation.py` enforces schema constraints (required columns, numeric types).
-- **Transformation**: `transformation.py` normalizes data structures for KPI calculation.
-- **KPI Engine**: `kpi_engine.py` orchestrates the calculation of PAR30, PAR90, Collection Rate, and Portfolio Health.
-- **Financial Analysis**: `financial_analysis.py` provides advanced metrics like HHI (concentration risk) and weighted averages.
+## High-Level Data Flow
+The pipeline operates in four distinct, sequential phases:
 
-### 2. Data Pipeline (`scripts/run_data_pipeline.py`)
-A linear pipeline that executes the following stages:
-1.  **Ingest**: Load raw CSV data.
-2.  **Validate**: Check for critical data quality issues.
-3.  **Transform**: Prepare data for calculation.
-4.  **Calculate**: Compute KPIs using the Engine.
-5.  **Output**: Save results to `data/metrics/` (Parquet/CSV) and logs to `logs/runs/`.
+### Phase 1: Ingestion (Cascade → Raw Storage)
+- **Role**: Validates and ingests raw CSV exports.
+- **Components**: `python.pipeline.ingestion.UnifiedIngestion`
+- **Features**: 
+  - SHA-256 checksum verification for data integrity.
+  - Pydantic schema enforcement (LoanRecord model).
+  - Resilient handling of both granular loan tapes and aggregate portfolio files.
 
-### 3. Dashboard (`streamlit_app.py`)
-A Streamlit application that serves as the frontend for:
-- Interactive data exploration.
-- Visualizing growth projections.
-- Exporting reports and slide payloads.
+### Phase 2: Transformation (Raw → Clean)
+- **Role**: Normalizes data and protects sensitive information.
+- **Components**: `python.pipeline.transformation.UnifiedTransformation`
+- **Features**:
+  - Automatic PII masking using SHA-256 hashing.
+  - Column normalization (lowercase, whitespace stripping).
+  - Transformation audit logging (lineage tracking).
 
-## Data Flow
-```mermaid
-graph LR
-    A[Raw CSV] --> B(Ingestion)
-    B --> C{Validation}
-    C -- Pass --> D(Transformation)
-    D --> E(KPI Engine)
-    E --> F[Metrics & Audit Logs]
-    F --> G[Dashboard]
-```
+### Phase 3: Calculation & Enrichment (Clean → Analytics-Ready)
+- **Role**: Computes business-critical KPIs using validated logic.
+- **Components**: `python.pipeline.calculation.UnifiedCalculation` wrapping `KPIEngine`.
+- **Features**:
+  - Formula traceability: every metric is linked to its source definition.
+  - Metrics: PAR30, PAR90, Collection Rate, Portfolio Health Score.
+
+### Phase 4: Output & Distribution (Analytics-Ready → Consumption)
+- **Role**: Transactional persistence and cloud synchronization.
+- **Components**: `python.pipeline.output.UnifiedOutput`
+- **Features**:
+  - Multi-format exports: Parquet (high-perf) and CSV (compatibility).
+  - Execution manifest: A single JSON file summarizing the entire run.
+  - Azure Blob Storage integration for cloud-native distribution.
+
+## Technology Stack
+- **Runtime**: Python 3.11+
+- **Data Handling**: Pandas, PyArrow (Parquet)
+- **Validation**: Pydantic
+- **Configuration**: YAML
+- **Cloud**: Azure Blob Storage
+
+## Component Boundaries
+The system is designed with strict separation of concerns:
+- `python.pipeline`: Core orchestration and phase logic.
+- `config/pipeline.yml`: Single source of truth for configuration.
+- `scripts/run_data_pipeline.py`: Thin CLI wrapper for execution.
