@@ -15,31 +15,57 @@ from python.pipeline.utils import ensure_dir, load_yaml, resolve_placeholders, u
 logger = logging.getLogger(__name__)
 
 
+def _deep_merge(base_dict: Dict[str, Any], override_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Deep merge override_dict into base_dict, with override taking precedence."""
+    result = base_dict.copy()
+    for key, value in override_dict.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
 class PipelineConfig:
-    """Configuration management with validation and defaults."""
+    """Configuration management with validation, environment overrides, and defaults."""
 
     DEFAULT_CONFIG_PATH = Path("config/pipeline.yml")
+    ENVIRONMENTS_DIR = Path("config/environments")
 
     def __init__(self, config_path: Optional[Path] = None):
         self.config_path = config_path or self.DEFAULT_CONFIG_PATH
+        self.environment = os.getenv("PIPELINE_ENV", "development")
         self.config = self._load_config()
         self._validate_config()
+        logger.info("Pipeline configured for environment: %s", self.environment)
 
     def _load_config(self) -> Dict[str, Any]:
+        """Load base config and merge with environment-specific overrides."""
         if not self.config_path.exists():
             logger.warning("Config file not found: %s, using minimal defaults", self.config_path)
             return self._default_config()
 
-        config = load_yaml(self.config_path)
+        base_config = load_yaml(self.config_path)
+        logger.info("Loaded base configuration from %s", self.config_path)
+
+        env_config_path = self.ENVIRONMENTS_DIR / f"{self.environment}.yml"
+        if env_config_path.exists():
+            env_config = load_yaml(env_config_path)
+            base_config = _deep_merge(base_config, env_config)
+            logger.info("Merged environment config from %s", env_config_path)
+        else:
+            logger.warning("Environment config not found: %s, using base config only", env_config_path)
+
         context = {
-            "portfolio_id": config.get("cascade", {}).get("portfolio_id", ""),
+            "portfolio_id": base_config.get("cascade", {}).get("portfolio_id", ""),
         }
-        return resolve_placeholders(config, context)
+        return resolve_placeholders(base_config, context)
 
     def _default_config(self) -> Dict[str, Any]:
         return {
-            "version": "1.0",
+            "version": "2.0",
             "name": "abaco_unified_pipeline",
+            "environment": self.environment,
             "pipeline": {
                 "phases": {
                     "ingestion": {},
