@@ -1,61 +1,158 @@
 # Unified Pipeline Configuration (Single Source of Truth)
-version: 1.0
+version: 1.1
 name: abaco_unified_pipeline
+
+run:
+  id_strategy: deterministic
+  timezone: UTC
+  idempotent: true
+  artifacts_dir: logs/runs
+  raw_archive_dir: data/raw/cascade
+  dead_letter_dir: data/dead_letters
 
 cascade:
   base_url: https://app.cascadedebt.com
   portfolio_id: abaco
+  endpoints:
+    loan_tape: /data/exports/loan-tape?pid=${portfolio_id}
+    risk_analytics: /analytics/risk/overview?pid=${portfolio_id}
   auth:
     token_secret: META_SYSTEM_USER_TOKEN
+    auth_type: bearer
     refresh_threshold_hours: 24
+  http:
+    timeout_seconds: 30
+    retry:
+      max_retries: 3
+      backoff_seconds: 1.5
+      jitter_seconds: 0.3
+    rate_limit:
+      max_requests_per_minute: 60
+    circuit_breaker:
+      failure_threshold: 3
+      reset_seconds: 120
 
 pipeline:
   phases:
     ingestion:
-      retry_policy:
-        max_retries: 3
-        backoff_factor: 2
+      source: file
+      file:
+        default_path: data/raw/cascade/loan_tape.csv
       validation:
         strict: true
         schema_path: config/data_schemas/loan_tape.json
-    
-    transformation:
-      pii_masking:
+        required_columns:
+          - total_receivable_usd
+          - total_eligible_usd
+          - discounted_balance_usd
+          - cash_available_usd
+        numeric_columns:
+          - dpd_0_7_usd
+          - dpd_7_30_usd
+          - dpd_30_60_usd
+          - dpd_60_90_usd
+          - dpd_90_plus_usd
+          - total_receivable_usd
+          - total_eligible_usd
+          - discounted_balance_usd
+          - cash_available_usd
+        date_columns:
+          - measurement_date
+      deduplication:
         enabled: true
-        method: sha256_short
+        key_columns:
+          - loan_id
+          - measurement_date
+
+    transformation:
+      null_handling:
+        strategy: fill_zero
+        columns:
+          - dpd_0_7_usd
+          - dpd_7_30_usd
+          - dpd_30_60_usd
+          - dpd_60_90_usd
+          - dpd_90_plus_usd
+          - total_receivable_usd
+          - total_eligible_usd
+          - discounted_balance_usd
+          - cash_available_usd
+      outlier_detection:
+        enabled: true
+        zscore_threshold: 4.0
+        clip: false
       normalization:
         lowercase_columns: true
         strip_whitespace: true
+      pii_masking:
+        enabled: true
+        keywords:
+          - name
+          - email
+          - phone
+          - address
+          - ssn
+          - tin
+          - identifier
+          - id_number
 
     calculation:
       metrics:
         - name: PAR30
-          formula: "calculate_par_30"
-          source: "python.kpis.par_30"
+          function: python.kpis.par_30.calculate_par_30
+          formula: "SUM(dpd_30_60 + dpd_60_90 + dpd_90_plus) / SUM(total_receivable) * 100"
+          source_table: fact_loans
+          precision: 2
+          validation_range: [0, 100]
         - name: PAR90
-          formula: "calculate_par_90"
-          source: "python.kpis.par_90"
+          function: python.kpis.par_90.calculate_par_90
+          formula: "SUM(dpd_90_plus) / SUM(total_receivable) * 100"
+          source_table: fact_loans
+          precision: 2
+          validation_range: [0, 100]
         - name: CollectionRate
-          formula: "calculate_collection_rate"
-          source: "python.kpis.collection_rate"
-        - name: HealthScore
-          formula: "calculate_portfolio_health"
-          source: "python.kpis.portfolio_health"
+          function: python.kpis.collection_rate.calculate_collection_rate
+          formula: "SUM(cash_available) / SUM(total_eligible) * 100"
+          source_table: fact_loans
+          precision: 2
+          validation_range: [0, 100]
+        - name: PortfolioHealth
+          function: python.kpis.portfolio_health.calculate_portfolio_health
+          formula: "(10 - PAR30/10) * (CollectionRate/10)"
+          source_table: metrics
+          precision: 2
+          validation_range: [0, 10]
+      timeseries:
+        enabled: true
+        time_column: measurement_date
+        rollups:
+          - daily
+          - weekly
+          - monthly
+      anomaly_detection:
+        enabled: true
+        max_change_pct: 0.2
 
     outputs:
       storage:
         local_dir: data/metrics
-        archive_dir: data/raw
+        manifest_dir: logs/runs
+      formats:
+        - parquet
+        - csv
+        - json
       azure:
-        enabled: true
+        enabled: false
         container: pipeline-runs
         prefix: analytics
       supabase:
-        enabled: true
+        enabled: false
         schema: analytics
         tables:
           - fact_loans
           - kpi_timeseries_daily
+      dashboard_triggers:
+        enabled: false
 
 observability:
   logging:
@@ -64,3 +161,4 @@ observability:
   lineage:
     enabled: true
     capture_input_hash: true
+    capture_output_hash: true

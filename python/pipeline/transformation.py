@@ -1,30 +1,42 @@
 import logging
 import uuid
-import hashlib
-from datetime import datetime, timezone
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+
+from python.compliance import create_access_log_entry, mask_pii_in_dataframe
+from python.validation import (
+    validate_iso8601_dates,
+    validate_numeric_bounds,
+    validate_no_nulls,
+    validate_percentage_bounds,
+)
+from python.pipeline.utils import hash_dataframe, utc_now
 
 logger = logging.getLogger(__name__)
 
+
+@dataclass
 class TransformationResult:
     """Container for transformation outputs and lineage."""
-    def __init__(self, df: pd.DataFrame, run_id: str, lineage: List[Dict[str, Any]]):
-        self.df = df
-        self.run_id = run_id
-        self.lineage = lineage
-        self.timestamp = datetime.now(timezone.utc).isoformat()
+
+    df: pd.DataFrame
+    run_id: str
+    lineage: List[Dict[str, Any]]
+    quality_checks: Dict[str, Any]
+    masked_columns: List[str]
+    access_log: List[Dict[str, Any]]
+    timestamp: str
+
 
 class UnifiedTransformation:
-    """Phase 2: Data Transformation and PII Masking."""
+    """Phase 2: Data transformation, normalization, and compliance masking."""
 
-    PII_KEYWORDS = ["name", "email", "phone", "address", "ssn", "tin", "identifier", "id_number"]
-
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any], run_id: Optional[str] = None):
         self.config = config.get("pipeline", {}).get("phases", {}).get("transformation", {})
-        self.run_id = f"tx_{uuid.uuid4().hex[:12]}"
+        self.run_id = run_id or f"tx_{uuid.uuid4().hex[:12]}"
         self.lineage: List[Dict[str, Any]] = []
 
     def _log_step(self, step: str, status: str, **details: Any) -> None:
@@ -32,62 +44,111 @@ class UnifiedTransformation:
             "run_id": self.run_id,
             "step": step,
             "status": status,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            **details
+            "timestamp": utc_now(),
+            **details,
         }
         self.lineage.append(entry)
-        logger.info(f"[Transformation:{step}] {status} | {details}")
+        logger.info("[Transformation:%s] %s | %s", step, status, details)
 
-    def _mask_value(self, value: Any) -> str:
-        if pd.isnull(value):
-            return value
-        text = str(value)
-        digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
-        return f"MASKED:{digest[:8]}"
+    def _handle_nulls(self, df: pd.DataFrame) -> pd.DataFrame:
+        null_cfg = self.config.get("null_handling", {})
+        strategy = null_cfg.get("strategy", "fill_zero")
+        columns = null_cfg.get("columns", [])
+        if not columns:
+            return df
+        updated = df.copy()
+        if strategy == "fill_zero":
+            updated[columns] = updated[columns].fillna(0)
+        elif strategy == "drop_rows":
+            updated = updated.dropna(subset=columns)
+        return updated
 
-    def _apply_pii_masking(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
-        """Identify and mask PII columns based on keywords."""
-        if not self.config.get("pii_masking", {}).get("enabled", True):
-            return df, []
+    def _detect_outliers(self, df: pd.DataFrame) -> Dict[str, Any]:
+        outlier_cfg = self.config.get("outlier_detection", {})
+        if not outlier_cfg.get("enabled", False):
+            return {}
 
-        masked_df = df.copy()
-        lowered_cols = [c.lower() for c in masked_df.columns]
-        pii_cols = []
+        threshold = float(outlier_cfg.get("zscore_threshold", 4.0))
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        result: Dict[str, Any] = {}
 
-        for col in masked_df.columns:
-            if any(key in col.lower() for key in self.PII_KEYWORDS):
-                masked_df[col] = masked_df[col].apply(self._mask_value)
-                pii_cols.append(col)
+        for col in numeric_cols:
+            series = df[col].dropna()
+            if series.empty:
+                continue
+            mean = series.mean()
+            std = series.std()
+            if std == 0 or np.isnan(std):
+                continue
+            zscores = (series - mean) / std
+            outlier_count = int((zscores.abs() > threshold).sum())
+            if outlier_count:
+                result[col] = {"outliers": outlier_count, "threshold": threshold}
+        return result
 
-        return masked_df, pii_cols
-
-    def transform(self, df: pd.DataFrame) -> TransformationResult:
-        """Execute the transformation phase."""
+    def transform(self, df: pd.DataFrame, user: str = "system") -> TransformationResult:
         self._log_step("start", "initiated", input_rows=len(df))
+        access_log: List[Dict[str, Any]] = []
+        access_log.append(create_access_log_entry("transformation", user, "read", "success"))
 
         try:
-            # Phase 2.1: Normalization
             clean_df = df.copy()
-            if self.config.get("normalization", {}).get("lowercase_columns", True):
-                clean_df.columns = [c.lower().strip() for c in clean_df.columns]
-            
+            normalization = self.config.get("normalization", {})
+            if normalization.get("lowercase_columns", True):
+                clean_df.columns = [str(c).lower().strip() for c in clean_df.columns]
+            if normalization.get("strip_whitespace", True):
+                clean_df = clean_df.applymap(
+                    lambda val: val.strip() if isinstance(val, str) else val
+                )
             self._log_step("normalization", "success", columns=list(clean_df.columns))
 
-            # Phase 2.2: PII Masking
-            clean_df, masked_cols = self._apply_pii_masking(clean_df)
-            self._log_step("pii_masking", "completed", masked_columns=masked_cols)
+            clean_df = self._handle_nulls(clean_df)
+            self._log_step("null_handling", "success")
 
-            # Phase 2.3: Derived Columns (Initial Ratios)
-            # Add placeholders for future derived logic if needed
-            
+            outliers = self._detect_outliers(clean_df)
+            if outliers:
+                self._log_step("outlier_detection", "flagged", details=outliers)
+            else:
+                self._log_step("outlier_detection", "clean")
+
+            masked_columns: List[str] = []
+            pii_cfg = self.config.get("pii_masking", {})
+            if pii_cfg.get("enabled", True):
+                clean_df, masked_columns = mask_pii_in_dataframe(
+                    clean_df, keywords=pii_cfg.get("keywords")
+                )
+            self._log_step("pii_masking", "completed", masked_columns=masked_columns)
+            access_log.append(
+                create_access_log_entry("transformation", user, "mask_pii", "success")
+            )
+
+            input_hash = hash_dataframe(df)
+            output_hash = hash_dataframe(clean_df)
+            self._log_step("lineage", "captured", input_hash=input_hash, output_hash=output_hash)
+
             clean_df["_tx_run_id"] = self.run_id
-            clean_df["_tx_timestamp"] = datetime.now(timezone.utc).isoformat()
+            clean_df["_tx_timestamp"] = utc_now()
 
-            self._log_event = self._log_step # Compatibility with existing audit log patterns
+            quality_checks: Dict[str, Any] = {}
+            quality_checks.update(validate_numeric_bounds(clean_df))
+            quality_checks.update(validate_percentage_bounds(clean_df))
+            quality_checks.update(validate_iso8601_dates(clean_df))
+            quality_checks.update(validate_no_nulls(clean_df))
+
+            self._log_step("quality_checks", "completed", checks=len(quality_checks))
             self._log_step("complete", "success", output_rows=len(clean_df))
-            
-            return TransformationResult(clean_df, self.run_id, self.lineage)
 
-        except Exception as e:
-            self._log_step("fatal_error", "failed", error=str(e))
+            return TransformationResult(
+                df=clean_df,
+                run_id=self.run_id,
+                lineage=self.lineage,
+                quality_checks=quality_checks,
+                masked_columns=masked_columns,
+                access_log=access_log,
+                timestamp=utc_now(),
+            )
+
+        except Exception as exc:
+            access_log.append(create_access_log_entry("transformation", user, "error", "failed"))
+            self._log_step("fatal_error", "failed", error=str(exc))
             raise

@@ -1,0 +1,8 @@
+{
+  "test_date": "2025-12-26T01:38:12.889648",
+  "dataset_rows": 500,
+  "v1_success": false,
+  "v2_success": true,
+  "v1_execution_ms": null,
+  "v2_execution_ms": 1.0919570922851562
+}

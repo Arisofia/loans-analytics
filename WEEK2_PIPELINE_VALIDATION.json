@@ -1,0 +1,8 @@
+{
+  "test_date": "2025-12-26T01:38:26.382102",
+  "dataset_rows": 1000,
+  "pipeline_orchestrator_success": false,
+  "kpi_engine_success": true,
+  "tests_passed": 1,
+  "tests_total": 2
+}
