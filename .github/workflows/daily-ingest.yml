@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -32,7 +32,7 @@ jobs:
           playwright install chromium
       
       - name: Run Cascade scraper
-        if: secrets.CASCADE_USERNAME != '' && secrets.CASCADE_PASSWORD != ''
+        if: ${{ secrets.CASCADE_USERNAME != '' && secrets.CASCADE_PASSWORD != '' }}
         continue-on-error: true
         run: python scripts/scrape_cascade.py --loan-tape
         env:
@@ -44,12 +44,12 @@ jobs:
         run: |
           python scripts/run_data_pipeline.py
       - name: Notify Slack on Success
-        if: success() && secrets.SLACK_WEBHOOK_URL != ''
+        if: ${{ success() && secrets.SLACK_WEBHOOK_URL != '' }}
         continue-on-error: true
-        uses: slackapi/slack-github-action@v2
+        uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": ":tada: Daily data ingestion completed successfully!",

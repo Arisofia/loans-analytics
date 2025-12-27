@@ -8,14 +8,14 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
-    if: secrets.SLACK_WEBHOOK_URL != ''
+    if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
     steps:
       - name: Send Slack notification
         continue-on-error: true
-        uses: slackapi/slack-github-action@v2
+        uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": "A new push to main branch!",

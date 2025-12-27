@@ -7,8 +7,8 @@ jobs:
   analytics:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6 # Upgrade to v6 for latest features and security patches
-      - uses: actions/setup-python@v6 # v6.0.1 semantic version pinning
+      - uses: actions/checkout@v4 # Upgrade to v6 for latest features and security patches
+      - uses: actions/setup-python@v5 # v6.0.1 semantic version pinning
         with:
           python-version: "3.11"
           cache: pip
@@ -23,7 +23,7 @@ jobs:
           cd apps/analytics
           pytest --cov=. --cov-report=xml:../coverage-python.xml
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: analytics-coverage
           path: coverage-python.xml
