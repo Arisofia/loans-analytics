@@ -1,0 +1,105 @@
+name: Unified Multi-Agent Data Pipeline
+
+on:
+  schedule:
+    # Run daily at 4:00 AM CET (3:00 AM UTC) - before agent workflows
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+env:
+  SUPABASESERVICEROLE: ${{ secrets.SUPABASESERVICEROLE }}
+  CASCADEUSERNAME: ${{ secrets.CASCADEUSERNAME }}
+  CASCADEPASSWORD: ${{ secrets.CASCADEPASSWORD }}
+  HUBSPOTTOKEN: ${{ secrets.HUBSPOTTOKEN }}
+  OPIKTOKEN: ${{ secrets.OPIKTOKEN }}
+  SLACKBOTTOKEN: ${{ secrets.SLACKBOTTOKEN }}
+
+jobs:
+  ingest-all-sources:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install supabase requests python-dotenv opik
+
+      - name: Ingest Cascade Data
+        id: cascade
+        continue-on-error: true
+        run: |
+          echo "Fetching loan data from Cascade..."
+          python scripts/ingest_cascade.py
+        env:
+          CASCADE_USERNAME: ${{ secrets.CASCADEUSERNAME }}
+          CASCADE_PASSWORD: ${{ secrets.CASCADEPASSWORD }}
+
+      - name: Ingest HubSpot CRM Data
+        id: hubspot
+        continue-on-error: true
+        run: |
+          echo "Fetching deals, contacts, and pipeline data from HubSpot..."
+          python scripts/ingest_hubspot.py
+        env:
+          HUBSPOT_TOKEN: ${{ secrets.HUBSPOTTOKEN }}
+
+      - name: Refresh Supabase Views
+        id: supabase
+        run: |
+          echo "Refreshing materialized views for agent consumption..."
+          python scripts/refresh_supabase_views.py
+        env:
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASESERVICEROLE }}
+
+      - name: Validate Data Quality
+        run: |
+          echo "Running data quality checks..."
+          python scripts/validate_data_quality.py
+
+      - name: Generate Data Manifest
+        run: |
+          echo "Creating manifest with data freshness timestamps..."
+          python scripts/generate_data_manifest.py
+
+      - name: Signal Agents Data Ready
+        run: |
+          echo "Broadcasting data-ready signal to agent workflows..."
+          curl -X POST ${{ secrets.SLACKBOTTOKEN }} \
+            -H 'Content-Type: application/json' \
+            -d '{"text":"✅ Data pipeline completed at $(date). All agents can now run."}'
+
+      - name: Log to Opik
+        if: always()
+        run: |
+          python scripts/log_pipeline_metrics.py \
+            --cascade-status ${{ steps.cascade.outcome }} \
+            --hubspot-status ${{ steps.hubspot.outcome }} \
+            --supabase-status ${{ steps.supabase.outcome }}
+        env:
+          OPIK_TOKEN: ${{ secrets.OPIKTOKEN }}
+
+      - name: Alert on Critical Failure
+        if: failure()
+        run: |
+          curl -X POST ${{ secrets.SLACKBOTTOKEN }} \
+            -H 'Content-Type: application/json' \
+            -d '{"text":"🚨 CRITICAL: Data pipeline failed. Agent workflows may operate on stale data."}'
+
+      - name: Upload Pipeline Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: data-pipeline-logs
+          path: |
+            logs/
+            data/manifest.json
+          retention-days: 7
