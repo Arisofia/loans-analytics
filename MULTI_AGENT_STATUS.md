@@ -67,7 +67,14 @@ python/agents/
 ├── c_suite_agent.py         # CLI harness, no logic
 ├── growth_agent.py          # Mock recommendations only
 ├── tools.py                 # SQL query runner
-└── [output_storage.py]      # Output formatting helper
+├── agent_output_storage.py  # Output formatting helper
+└── [additional stubs]
+
+scripts/agents/
+└── hubspot/                 # HubSpot integration (stubs)
+    ├── __init__.py
+    ├── list_manager.py      # Contact list management (stub)
+    └── segment_manager.py   # Segment creation (stub)
 ```
 
 #### What Works
