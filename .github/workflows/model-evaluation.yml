@@ -36,14 +36,22 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p reports
-          pytest tests/evaluation/             --html=reports/evaluation-report.html             --self-contained-html             --json-report             --json-report-file=reports/evaluation-metrics.json             -v || echo "Evaluation tests completed"
+          pytest tests/evaluation/ \
+            --html=reports/evaluation-report.html \
+            --self-contained-html \
+            --json-report \
+            --json-report-file=reports/evaluation-metrics.json \
+            -v || echo "Evaluation tests completed"
 
       - name: Generate metrics visualization
         if: always()
         continue-on-error: true
         run: |
           mkdir -p reports/visualizations
-          python scripts/evaluation/generate_visualizations.py             --metrics-file reports/evaluation-metrics.json             --output-dir reports/visualizations/             || echo "Visualization generation skipped"
+          python scripts/evaluation/generate_visualizations.py \
+            --metrics-file reports/evaluation-metrics.json \
+            --output-dir reports/visualizations/ \
+            || echo "Visualization generation skipped"
 
       - name: Check evaluation thresholds
         if: always()
@@ -52,7 +60,11 @@ jobs:
         run: |
           mkdir -p config
           touch config/evaluation-thresholds.yml
-          python scripts/evaluation/check_thresholds.py             --metrics-file reports/evaluation-metrics.json             --config config/evaluation-thresholds.yml             --output threshold-results.json             || echo "Threshold check skipped"
+          python scripts/evaluation/check_thresholds.py \
+            --metrics-file reports/evaluation-metrics.json \
+            --config config/evaluation-thresholds.yml \
+            --output threshold-results.json \
+            || echo "Threshold check skipped"
 
       - name: Upload evaluation reports
         if: always()
@@ -131,7 +143,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Model Evaluation Pipeline Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* `${{ github.sha }}` \n<${{ github.server_url }}>/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                    "text": "*Model Evaluation Pipeline Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
                   }
                 }
               ]
