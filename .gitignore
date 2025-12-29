@@ -58,3 +58,5 @@ nvm/
 # Other
 failed_workflows.csv
 scripts/test_hubspot_simple.py
+
+.env

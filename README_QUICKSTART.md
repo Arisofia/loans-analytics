@@ -1,3 +1,16 @@
+# Abaco Loans Analytics - Quickstart
+
+This guide provides the essential first steps to verify that your local environment is correctly configured to run the project.
+
+## Step 1: Verify API Key Configuration
+
+Run the following command to ensure your environment variables are loaded correctly.
+
+```bash
+python scripts/test_hubspot_simple.py
+
+C# Step 1: Create the main README.md file
+cat > README.md << 'EOF'
 # Abaco Loans Analytics - MVP
 
 Este proyecto implementa un sistema multi-agente para análisis de préstamos, conectándose a servicios externos y utilizando un pipeline de datos definido.
