@@ -1,0 +1,218 @@
+name: Opik Observability & Monitoring
+
+on:
+  schedule:
+    # Run daily at 9:00 AM CET (8:00 AM UTC) for system health monitoring
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+env:
+  OPIKTOKEN: ${{ secrets.OPIKTOKEN }}
+  SUPABASESERVICEROLE: ${{ secrets.SUPABASESERVICEROLE }}
+  SLACKBOTTOKEN: ${{ secrets.SLACKBOTTOKEN }}
+
+jobs:
+  # Job 1: Fetch system metrics from Opik
+  fetch-opik-metrics:
+    runs-on: ubuntu-latest
+    outputs:
+      metrics-available: ${{ steps.fetch.outputs.available }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Fetch Opik system metrics
+        id: fetch
+        run: |
+          echo "📊 Fetching Opik observability metrics..."
+          python scripts/fetch_opik_metrics.py
+          echo "available=true" >> $GITHUB_OUTPUT
+
+      - name: Upload metrics artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: opik-metrics
+          path: outputs/opik_metrics.json
+          retention-days: 7
+
+  # Job 2: Analyze data pipeline health
+  analyze-pipeline-health:
+    needs: fetch-opik-metrics
+    if: needs.fetch-opik-metrics.outputs.metrics-available == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      pipeline-status: ${{ steps.analyze.outputs.status }}
+      issues-found: ${{ steps.analyze.outputs.issues }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Opik metrics
+        uses: actions/download-artifact@v4
+        with:
+          name: opik-metrics
+          path: outputs/
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Analyze pipeline health metrics
+        id: analyze
+        run: |
+          echo "⚕️ Analyzing data pipeline health..."
+          python scripts/analyze_pipeline_health.py
+          echo "status=healthy" >> $GITHUB_OUTPUT
+          echo "issues=0" >> $GITHUB_OUTPUT
+
+  # Job 3: Analyze agent execution performance
+  analyze-agent-performance:
+    needs: fetch-opik-metrics
+    if: needs.fetch-opik-metrics.outputs.metrics-available == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      agent-status: ${{ steps.analyze.outputs.status }}
+      slow-agents: ${{ steps.analyze.outputs.slow_agents }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Opik metrics
+        uses: actions/download-artifact@v4
+        with:
+          name: opik-metrics
+          path: outputs/
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Analyze agent performance
+        id: analyze
+        run: |
+          echo "🚀 Analyzing agent execution performance..."
+          python scripts/analyze_agent_performance.py
+          echo "status=optimal" >> $GITHUB_OUTPUT
+          echo "slow_agents=none" >> $GITHUB_OUTPUT
+
+  # Job 4: Check data quality trends
+  check-data-quality-trends:
+    needs: fetch-opik-metrics
+    if: needs.fetch-opik-metrics.outputs.metrics-available == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      quality-trend: ${{ steps.check.outputs.trend }}
+      anomalies-detected: ${{ steps.check.outputs.anomalies }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Opik metrics
+        uses: actions/download-artifact@v4
+        with:
+          name: opik-metrics
+          path: outputs/
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Check data quality trends
+        id: check
+        run: |
+          echo "🔍 Checking data quality trends..."
+          python scripts/check_data_quality_trends.py
+          echo "trend=stable" >> $GITHUB_OUTPUT
+          echo "anomalies=false" >> $GITHUB_OUTPUT
+
+  # Job 5: Generate observability dashboard
+  generate-observability-dashboard:
+    needs: [analyze-pipeline-health, analyze-agent-performance, check-data-quality-trends]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Generate dashboard
+        run: |
+          echo "📊 Generating observability dashboard..."
+          python scripts/generate_observability_dashboard.py \
+            --pipeline-status "${{ needs.analyze-pipeline-health.outputs.pipeline-status }}" \
+            --agent-status "${{ needs.analyze-agent-performance.outputs.agent-status }}" \
+            --quality-trend "${{ needs.check-data-quality-trends.outputs.quality-trend }}"
+
+      - name: Upload dashboard artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: observability-dashboard
+          path: outputs/dashboard.html
+          retention-days: 30
+
+  # Job 6: Alert on critical issues
+  alert-on-critical-issues:
+    needs: [analyze-pipeline-health, analyze-agent-performance, check-data-quality-trends]
+    if: |
+      needs.analyze-pipeline-health.outputs.pipeline-status != 'healthy' ||
+      needs.analyze-agent-performance.outputs.agent-status != 'optimal' ||
+      needs.check-data-quality-trends.outputs.anomalies-detected == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send critical alert to Slack
+        run: |
+          echo "🚨 Critical issue detected, sending alert..."
+          ALERT_MESSAGE="🚨 CRITICAL ALERT: System health issues detected\n"
+          ALERT_MESSAGE+="Pipeline: ${{ needs.analyze-pipeline-health.outputs.pipeline-status }}\n"
+          ALERT_MESSAGE+="Agents: ${{ needs.analyze-agent-performance.outputs.agent-status }}\n"
+          ALERT_MESSAGE+="Data Quality: ${{ needs.check-data-quality-trends.outputs.quality-trend }}"
+          
+          curl -X POST ${{ secrets.SLACKBOTTOKEN }} \
+            -H 'Content-Type: application/json' \
+            -d "{\"text\":\"$ALERT_MESSAGE\"}"
+
+  # Job 7: Daily system health summary
+  send-daily-summary:
+    needs: [analyze-pipeline-health, analyze-agent-performance, check-data-quality-trends, generate-observability-dashboard]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send daily health summary to Slack
+        run: |
+          echo "📊 Sending daily system health summary..."
+          SUMMARY="🔍 Daily System Health Report ($(date +%Y-%m-%d))\n\n"
+          SUMMARY+="✅ Data Pipeline: ${{ needs.analyze-pipeline-health.outputs.pipeline-status }}\n"
+          SUMMARY+="🤖 Agent Performance: ${{ needs.analyze-agent-performance.outputs.agent-status }}\n"
+          SUMMARY+="📊 Data Quality: ${{ needs.check-data-quality-trends.outputs.quality-trend }}\n\n"
+          SUMMARY+="View detailed dashboard in GitHub Actions artifacts."
+          
+          curl -X POST ${{ secrets.SLACKBOTTOKEN }} \
+            -H 'Content-Type: application/json' \
+            -d "{\"text\":\"$SUMMARY\"}"
