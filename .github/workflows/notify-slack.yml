@@ -24,7 +24,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*New push to main branch*\n*Repository:* ${{ github.repository }}\n*Commit:* `${{ github.sha }}` \n<${{ github.server_url }}>/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                    "text": "*New push to main branch*\n*Repository:* ${{ github.repository }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
                   }
                 }
               ]
