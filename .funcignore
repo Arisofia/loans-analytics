@@ -1,5 +1,5 @@
 .git*
-.vscode
+.vscode/
 __pycache__/
 *.pyc
 .python_version
@@ -9,3 +9,9 @@ test/
 tests/
 .venv/
 venv/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info
