@@ -1,6 +1,6 @@
 import os
 import sys
-import hubspot
+from hubspot import HubSpot
 from hubspot.crm.owners import ApiException
 from dotenv import load_dotenv
 
@@ -28,10 +28,11 @@ def verify_hubspot_connectivity():
     
     print("\nStep 2: Verifying HubSpot API connectivity and authentication...")
     try:
-        client = hubspot.Client.create(api_key=hubspot_api_key)
+        # CORRECTED: Instantiate the HubSpot client directly for robust endpoint mapping.
+        client = HubSpot(api_key=hubspot_api_key)
         
-        # CORRECTED: Restored the .basic_api attribute required for the owners endpoint.
-        client.crm.owners.basic_api.get_page(limit=1)
+        # CORRECTED: The get_page method is called directly on the owners api object.
+        client.crm.owners.get_page(limit=1)
         
         print("✅ HubSpot API Verification: SUCCESS")
         print("   Successfully authenticated and connected to the HubSpot API.")
