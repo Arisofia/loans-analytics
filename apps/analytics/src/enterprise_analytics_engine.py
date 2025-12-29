@@ -8,6 +8,7 @@ class KPIExporter(Protocol):
     def upload_metrics(self, metrics: Dict[str, float], blob_name: Optional[str] = None) -> str:
         pass
 
+
 class LoanAnalyticsEngine:
     """
     A robust engine for computing critical KPIs for a loan portfolio.
@@ -26,24 +27,13 @@ class LoanAnalyticsEngine:
         Args:
             loan_data (pd.DataFrame): A DataFrame containing loan records.
                 Expected columns: 'loan_amount', 'appraised_value', 'borrower_income',
-                                  'monthly_debt', 'loan_status', 'interest_rate', 'principal_balance'.
+                'monthly_debt', 'loan_status', 'interest_rate', 'principal_balance'.
         """
         if not isinstance(loan_data, pd.DataFrame) or loan_data.empty:
             raise ValueError("Input loan_data must be a non-empty pandas DataFrame.")
 
         self.loan_data = loan_data.copy()
-        35
-                
-        # Initialize attributes required by tests
-        self.risk_alerts = None
-        self.data_quality_profile = None
-    
-        self._coercion_report = None
-                # Calculate ltv_ratio if columns exist
-        if 'loan_amount' in self.loan_data.columns and 'appraised_value' in self.loan_data.columns:
-            self.loan_data['ltv_ratio'] = self.loan_data['loan_amount'] / self.loan_data['appraised_value']
-        
-        ()
+        self._validate_columns()
 
     @classmethod
     def from_dict(cls, data: Dict[str, list]) -> "LoanAnalyticsEngine":
@@ -100,7 +90,6 @@ class LoanAnalyticsEngine:
         total_principal = self.loan_data['principal_balance'].sum()
         if total_principal == 0:
             return 0.0
-
         weighted_interest = (self.loan_data['interest_rate'] * self.loan_data['principal_balance']).sum()
         return (weighted_interest / total_principal) * 100
 
@@ -110,20 +99,22 @@ class LoanAnalyticsEngine:
         Ensures all keys from portfolio_kpis are included in the output.
         """
         # Compute the original dashboard
-
         dashboard = {
             "portfolio_delinquency_rate_percent": self.compute_delinquency_rate(),
             "portfolio_yield_percent": self.compute_portfolio_yield(),
             "average_ltv_ratio_percent": self.loan_data['ltv_ratio'].mean(),
             "average_dti_ratio_percent": self.loan_data['dti_ratio'].mean(),
         }
+
         # Import and call portfolio_kpis to ensure all expected keys are present
         try:
             from apps.analytics.src.metrics_utils import portfolio_kpis
         except ImportError:
             from .metrics_utils import portfolio_kpis
+
         kpi_results = portfolio_kpis(self.loan_data)
         dashboard.update(kpi_results)
+
         return dashboard
 
     def export_kpis_to_blob(
@@ -131,9 +122,9 @@ class LoanAnalyticsEngine:
     ) -> str:
         if blob_name is not None and not isinstance(blob_name, str):
             raise ValueError("blob_name must be a string if provided.")
-
         kpis = self.run_full_analysis()
         return exporter.upload_metrics(kpis, blob_name=blob_name)
+
 
 if __name__ == '__main__':
     # Example usage demonstrating the engine's capabilities
@@ -149,6 +140,7 @@ if __name__ == '__main__':
         'interest_rate': [0.035, 0.042, 0.038, 0.045],
         'principal_balance': [240000, 440000, 145000, 590000]
     }
+
     portfolio_df = pd.DataFrame(data)
 
     # Initialize and run the analytics engine
