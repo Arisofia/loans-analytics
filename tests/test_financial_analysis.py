@@ -1,7 +1,6 @@
 import unittest
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
-import numpy as np
 import pandas as pd
 
 from python.financial_analysis import FinancialAnalyzer

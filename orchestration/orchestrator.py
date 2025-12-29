@@ -1,16 +1,15 @@
 """Enhanced Orchestrator - Manages multiple agents and coordinates workflows."""
 
-from typing import Dict, List, Any, Optional, Callable
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
 from datetime import datetime
-import asyncio
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
 import sys
 sys.path.append('../agents')
-from base_agent import BaseAgent, AgentConfig, AgentContext
+from base_agent import BaseAgent
 
 
 logger = logging.getLogger(__name__)

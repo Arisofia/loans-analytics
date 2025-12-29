@@ -2,8 +2,6 @@
 
 import os
 from typing import Dict, List, Optional
-import requests
-from datetime import datetime
 
 
 class SegmentManager:

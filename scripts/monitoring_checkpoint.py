@@ -5,11 +5,9 @@ Executes validation and records metrics for each checkpoint
 """
 
 import sys
-import os
 import json
 import subprocess
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, '/Users/jenineferderas/Documents/abaco-loans-analytics')
@@ -135,7 +133,7 @@ class MonitoringCheckpoint:
         
         if self.metrics['validation'].get('checks', {}).get('performance'):
             perf = self.metrics['validation']['checks']['performance'].get('metrics', {})
-            print(f"\nPerformance:")
+            print("\nPerformance:")
             print(f"  Latency: {perf.get('latency_ms', 'N/A')} ms (threshold: 100 ms)")
             print(f"  Throughput: {perf.get('throughput_rows_per_sec', 'N/A')} rows/sec")
         

@@ -11,9 +11,8 @@ import pandas as pd
 import numpy as np
 import json
 import logging
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Dict, List, Any
+from datetime import datetime
+from typing import Dict, Any
 
 from python.kpi_engine_v2 import KPIEngineV2
 
@@ -179,7 +178,7 @@ class ProductionValidator:
             except Exception:
                 results["empty_dataframe"] = "FAIL"
             
-            logger.info(f"Error Handling: PASS")
+            logger.info("Error Handling: PASS")
             return {
                 "status": "PASS",
                 "checks": results

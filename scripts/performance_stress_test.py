@@ -14,7 +14,6 @@ import time
 import psutil
 import os
 from datetime import datetime
-from pathlib import Path
 import logging
 
 from python.kpi_engine_v2 import KPIEngineV2
@@ -235,10 +234,10 @@ class PerformanceStressTest:
         print("=" * 70)
         print(f"\nOverall Status: {summary['overall_status']}")
         print(f"Tests Executed: {summary['tests_passed']}")
-        print(f"\nPerformance Assessment:")
+        print("\nPerformance Assessment:")
         for aspect, rating in summary["performance_assessment"].items():
             print(f"  {aspect}: {rating}")
-        print(f"\nRecommendations:")
+        print("\nRecommendations:")
         for rec in summary["recommendations"]:
             print(f"  • {rec}")
         print("=" * 70)

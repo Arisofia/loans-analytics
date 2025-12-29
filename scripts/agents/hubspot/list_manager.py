@@ -2,7 +2,6 @@
 
 import os
 from typing import Dict, List, Optional
-import requests
 
 
 class ListManager:

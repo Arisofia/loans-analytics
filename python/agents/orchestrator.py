@@ -19,7 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from python.agents.agent import Agent
-from python.agents.llm_provider import MockLLM, OpenAIProvider, AnthropicProvider
+from python.agents.llm_provider import MockLLM
 from python.agents.tools import registry as global_registry
 
 Base = declarative_base()  # type: ignore[misc]

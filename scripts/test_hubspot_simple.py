@@ -1,23 +1,56 @@
 import os
+import sys
+import hubspot
+from hubspot.crm.owners import ApiException
 from dotenv import load_dotenv
 
-load_dotenv()
+def mask_value(value: str) -> str:
+    """Masks a sensitive value, showing only the first and last few characters."""
+    if not isinstance(value, str) or len(value) <= 8:
+        return "********"
+    return f"{value[:4]}...{value[-4:]}"
 
-print("=" * 60)
-print("Testing API Keys from .env")
-print("=" * 60)
+def verify_hubspot_connectivity():
+    """
+    Checks for the HubSpot API key and verifies it by making a live,
+    read-only API call to fetch account owners.
+    """
+    print("=" * 60)
+    print("Step 1: Checking for HubSpot API Key presence...")
+    
+    hubspot_api_key = os.getenv("HUBSPOT_API_KEY")
+    if not hubspot_api_key:
+        print("❌ HUBSPOT_API_KEY: NOT FOUND in environment.")
+        print("   Please ensure HUBSPOT_API_KEY is set in your .env file.")
+        sys.exit(1)
 
-keys = {
-    "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
-    "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
-    "HUBSPOT_API_KEY": os.getenv("HUBSPOT_API_KEY"),
-}
+    print(f"✅ HUBSPOT_API_KEY: Found. (Value: {mask_value(hubspot_api_key)})")
+    
+    print("\nStep 2: Verifying HubSpot API connectivity and authentication...")
+    try:
+        client = hubspot.Client.create(api_key=hubspot_api_key)
+        
+        # CORRECTED: The get_page method is inside the 'basic_api' attribute.
+        client.crm.owners.basic_api.get_page(limit=1)
+        
+        print("✅ HubSpot API Verification: SUCCESS")
+        print("   Successfully authenticated and connected to the HubSpot API.")
 
-for name, value in keys.items():
-    if value:
-        masked = value[:10] + "..." + value[-10:] if len(value) > 20 else value
-        print(f"✅ {name}: {masked}")
-    else:
-        print(f"❌ {name}: NOT FOUND")
+    except ApiException as e:
+        print("❌ HubSpot API Verification: FAILED")
+        if e.status == 401:
+            print("   Reason: Authentication error. The API key is likely invalid, expired, or lacks permissions.")
+        else:
+            print(f"   Reason: An API error occurred (Status: {e.status}): {e.reason}")
+        sys.exit(1)
+        
+    except Exception as e:
+        print("❌ HubSpot API Verification: FAILED")
+        print(f"   An unexpected error occurred: {e}")
+        sys.exit(1)
 
-print("=" * 60)
+    print("=" * 60)
+
+if __name__ == "__main__":
+    load_dotenv()
+    verify_hubspot_connectivity()

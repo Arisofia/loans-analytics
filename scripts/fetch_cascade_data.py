@@ -11,8 +11,6 @@ import json
 import logging
 from datetime import datetime
 from azure.storage.blob import BlobServiceClient
-from azure.identity import DefaultAzureCredential
-import requests
 
 # Configure logging
 logging.basicConfig(

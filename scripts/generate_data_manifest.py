@@ -4,7 +4,7 @@ import os
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 
 def generate_manifest(data_dir: str = "data") -> Dict:

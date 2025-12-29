@@ -1,7 +1,6 @@
 """Fetch data from HubSpot API."""
 
 import os
-import json
 from typing import Dict, List
 
 

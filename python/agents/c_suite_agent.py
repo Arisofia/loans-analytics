@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Dict
 
 from python.agents.orchestrator import AgentOrchestrator
-from python.agents.tools import run_sql_query
 
 LOG = logging.getLogger("c_suite_agent")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")

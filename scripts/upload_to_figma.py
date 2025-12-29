@@ -1,4 +1,3 @@
-import requests
 import os
 
 FIGMA_TOKEN = os.getenv("FIGMA_TOKEN")  # Set this in your environment or .env file

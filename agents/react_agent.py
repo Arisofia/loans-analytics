@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import re
 
-from .llm_provider import LLMManager, LLMResponse
+from .llm_provider import LLMManager
 
 logger = logging.getLogger(__name__)
 

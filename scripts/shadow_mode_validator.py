@@ -11,7 +11,6 @@ import pandas as pd
 import numpy as np
 import json
 from datetime import datetime
-from pathlib import Path
 import logging
 
 from python.kpi_engine_v2 import KPIEngineV2
@@ -218,14 +217,14 @@ class ShadowModeValidator:
         
         if "v2_validation" in self.results:
             v2_val = self.results["v2_validation"]
-            print(f"✓ V2 Validation:")
+            print("✓ V2 Validation:")
             print(f"  Format Valid: {v2_val['format_valid']}")
             print(f"  Value Ranges: {v2_val['value_ranges_valid']}")
             print(f"  Audit Trail: {v2_val['audit_trail_complete']}")
         
         if "comparison" in self.results:
             comp = self.results["comparison"]
-            print(f"✓ V1 vs V2 Comparison:")
+            print("✓ V1 vs V2 Comparison:")
             print(f"  KPIs Within Tolerance: {comp['all_within_tolerance']}")
             for kpi, analysis in comp["variance_analysis"].items():
                 status = "✓" if analysis["acceptable"] else "✗"

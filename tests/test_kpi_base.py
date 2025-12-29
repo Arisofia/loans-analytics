@@ -1,4 +1,3 @@
-import pytest
 import pandas as pd
 from python.kpis.base import safe_numeric, create_context, KPIMetadata
 

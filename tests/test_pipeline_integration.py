@@ -2,7 +2,6 @@ import pandas as pd
 import pytest
 
 from python.pipeline.ingestion import UnifiedIngestion
-from python.kpi_engine import KPIEngine
 from python.pipeline.transformation import UnifiedTransformation
 
 
