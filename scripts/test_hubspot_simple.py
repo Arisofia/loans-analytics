@@ -30,8 +30,8 @@ def verify_hubspot_connectivity():
     try:
         client = hubspot.Client.create(api_key=hubspot_api_key)
         
-        # CORRECTED: The get_page method is called directly on the owners object in this version.
-        client.crm.owners.get_page(limit=1)
+        # CORRECTED: The get_page method is inside the 'basic_api' attribute for this endpoint.
+        client.crm.owners.basic_api.get_page(limit=1)
         
         print("✅ HubSpot API Verification: SUCCESS")
         print("   Successfully authenticated and connected to the HubSpot API.")
