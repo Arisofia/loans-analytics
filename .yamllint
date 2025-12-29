@@ -1,0 +1,6 @@
+extends: default
+ignore: |
+  .github/workflows/
+rules:
+  comments-indentation: disable
+  comments: disable

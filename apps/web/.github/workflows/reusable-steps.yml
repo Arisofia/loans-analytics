@@ -34,6 +34,10 @@ jobs:
         run: pnpm lint
         working-directory: ${{ inputs.working-directory }}
 
+      - name: Check formatting
+        run: pnpm format:check
+        working-directory: ${{ inputs.working-directory }}
+
   type-check:
     runs-on: ubuntu-latest
     steps:
@@ -56,3 +60,64 @@ jobs:
       - name: Run TypeScript type-check
         run: pnpm type-check
         working-directory: ${{ inputs.working-directory }}
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ${{ inputs.working-directory }}
+
+      - name: Run tests with coverage
+        run: npm test -- --coverage --passWithNoTests
+        working-directory: ${{ inputs.working-directory }}
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ${{ inputs.working-directory }}/coverage/coverage-final.json
+          flags: unittests
+          name: codecov-${{ inputs.working-directory }}
+          fail_ci_if_error: false
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ${{ inputs.working-directory }}
+
+      - name: Build application
+        run: pnpm build
+        working-directory: ${{ inputs.working-directory }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ inputs.working-directory }}
+          path: ${{ inputs.working-directory }}/.next
+          retention-days: 1

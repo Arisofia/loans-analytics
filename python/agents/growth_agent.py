@@ -5,7 +5,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 from python.agents.tools import run_sql_query
 
@@ -16,19 +16,21 @@ RUNS_DIR = Path("data/agents/growth")
 RUNS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def build_input(args: argparse.Namespace) -> Dict[str, object]:
+def build_input(args: argparse.Namespace) -> Dict[str, Any]:
     return {
         "run_id": args.run_id,
         "date_range": args.date_range,
         "lead_budget": args.lead_budget,
         "trace": {
-            "sql_queries": ["SELECT * FROM analytics.v_loans_overview WHERE days_past_due > 30 LIMIT 5"],
+            "sql_queries": [
+                "SELECT * FROM analytics.v_loans_overview WHERE days_past_due > 30 LIMIT 5"
+            ],
             "data_sources": ["analytics.v_loans_overview", "analytics.kpi_timeseries"],
         },
     }
 
 
-def write_result(run_id: str, payload: Dict[str, object]) -> Path:
+def write_result(run_id: str, payload: Dict[str, Any]) -> Path:
     target = RUNS_DIR / f"growth_agent_{run_id}.json"
     with target.open("w", encoding="utf-8") as fh:
         json.dump(payload, fh, indent=2)

@@ -1,14 +1,14 @@
 import pandas as pd
 import pytest
 
-from python.ingestion import CascadeIngestion
+from python.pipeline.ingestion import UnifiedIngestion
 
 
 def test_ingest_csv(tmp_path):
     csv_content = "period,measurement_date,total_receivable_usd,dpd_0_7_usd,dpd_7_30_usd,dpd_30_60_usd,dpd_60_90_usd,dpd_90_plus_usd,total_eligible_usd,discounted_balance_usd,cash_available_usd\n2025Q4,2025-12-01,1000.0,100,100,100,100,100,800,700,500\n2025Q4,2025-12-02,2000.0,200,200,200,200,200,1600,1400,1000"
     csv_file = tmp_path / "sample.csv"
     csv_file.write_text(csv_content)
-    ingestion = CascadeIngestion(data_dir=tmp_path)
+    ingestion = UnifiedIngestion(data_dir=tmp_path)
     df = ingestion.ingest_csv("sample.csv")
     assert not df.empty
     for col in [
@@ -30,7 +30,7 @@ def test_ingest_csv(tmp_path):
 
 
 def test_ingest_csv_error(tmp_path):
-    ingestion = CascadeIngestion(data_dir=tmp_path)
+    ingestion = UnifiedIngestion(data_dir=tmp_path)
     df = ingestion.ingest_csv("nonexistent.csv")
     assert df.empty
     assert len(ingestion.errors) == 1
@@ -44,7 +44,7 @@ def test_ingest_csv_error(tmp_path):
 def test_ingest_csv_empty_file(tmp_path):
     csv_file = tmp_path / "empty.csv"
     csv_file.touch()
-    ingestion = CascadeIngestion(data_dir=tmp_path)
+    ingestion = UnifiedIngestion(data_dir=tmp_path)
     df = ingestion.ingest_csv("empty.csv")
     assert df.empty
     assert len(ingestion.errors) == 1
@@ -55,7 +55,7 @@ def test_ingest_csv_strict_schema_failure(tmp_path):
     csv_content = "period,measurement_date,total_receivable_usd\n2025Q4,2025-12-01,1000.0"
     csv_file = tmp_path / "sample.csv"
     csv_file.write_text(csv_content)
-    ingestion = CascadeIngestion(data_dir=tmp_path, strict_validation=True)
+    ingestion = UnifiedIngestion(data_dir=tmp_path, strict_validation=True)
     df = ingestion.ingest_csv("sample.csv")
     assert df.empty  # strict mode aborts on schema issues
     assert ingestion.errors
@@ -68,7 +68,7 @@ def test_validate_loans():
     df = pd.DataFrame(
         {"period": ["2025Q4"], "measurement_date": ["2025-12-01"], "total_receivable_usd": [1000.0]}
     )
-    ingestion = CascadeIngestion(data_dir=".")
+    ingestion = UnifiedIngestion(data_dir=".")
     validated = ingestion.validate_loans(df)
     assert "_validation_passed" in validated.columns
     # With hardened required fields, minimal rows fail validation
@@ -79,7 +79,7 @@ def test_validate_loans():
 
 def test_validate_loans_missing_field():
     df = pd.DataFrame({"period": ["2025Q4"], "measurement_date": ["2025-12-01"]})
-    ingestion = CascadeIngestion()
+    ingestion = UnifiedIngestion()
     validated = ingestion.validate_loans(df)
     assert "_validation_passed" in validated.columns
     assert bool(validated["_validation_passed"].iloc[0]) is False
@@ -96,7 +96,7 @@ def test_validate_loans_invalid_numeric():
             "total_receivable_usd": ["invalid"],
         }
     )
-    ingestion = CascadeIngestion()
+    ingestion = UnifiedIngestion()
     validated = ingestion.validate_loans(df)
     assert "_validation_passed" in validated.columns
     assert bool(validated["_validation_passed"].iloc[0]) is False
@@ -109,7 +109,7 @@ def test_validate_loans_invalid_numeric():
 
 
 def test_get_ingest_summary():
-    ingestion = CascadeIngestion()
+    ingestion = UnifiedIngestion()
     summary = ingestion.get_ingest_summary()
     for key in ["run_id", "timestamp", "total_errors", "errors"]:
         assert key in summary
@@ -120,7 +120,7 @@ def test_get_ingest_summary():
 
 
 def test_update_summary_tracks_counts():
-    ingestion = CascadeIngestion()
+    ingestion = UnifiedIngestion()
     ingestion._update_summary(10, "file1.csv")
     ingestion._update_summary(5, "file2.csv")
     ingestion._update_summary(20)  # No filename (e.g. dataframe ingest)

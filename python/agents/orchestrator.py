@@ -18,10 +18,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-Base = declarative_base()
+Base = declarative_base()  # type: ignore[misc]
 
 
-class AgentRun(Base):
+class AgentRun(Base):  # type: ignore[valid-type,misc]
     __tablename__ = "agent_runs"
 
     id = Column(Integer, primary_key=True)

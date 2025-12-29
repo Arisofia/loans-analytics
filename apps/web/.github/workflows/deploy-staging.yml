@@ -1,0 +1,130 @@
+name: Deploy - Staging
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/deploy-staging.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      passed: ${{ steps.check.outputs.passed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run quality checks
+        id: quality
+        run: |
+          pnpm lint && \
+          pnpm type-check && \
+          npm test -- --passWithNoTests && \
+          pnpm build
+
+      - name: Report quality status
+        id: check
+        if: success()
+        run: echo "passed=true" >> $GITHUB_OUTPUT
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: quality-gate
+    if: needs.quality-gate.outputs.passed == 'true'
+    environment:
+      name: staging
+      url: https://staging.abaco-loans-analytics.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build for staging
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_KEY }}
+          NEXT_PUBLIC_SITE_URL: https://staging.abaco-loans-analytics.com
+          NODE_ENV: production
+
+      - name: Deploy to Azure Static Web Apps (Staging)
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_TOKEN_STAGING }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: 'upload'
+          app_location: '/'
+          api_location: ''
+          output_location: '.next'
+          app_build_command: 'pnpm build'
+
+  validation-start:
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    steps:
+      - name: Create GitHub deployment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.ref,
+              environment: 'staging-validation',
+              description: 'Staging 24-hour validation period started',
+              auto_merge: false,
+              required_contexts: []
+            });
+
+      - name: Notify validation period
+        run: |
+          echo "✅ Staging deployment complete"
+          echo "🔔 24-hour validation period started"
+          echo "📋 Review logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+  smoke-tests:
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    steps:
+      - name: Wait for deployment
+        run: sleep 30
+
+      - name: Health check
+        run: |
+          STAGING_URL="https://staging.abaco-loans-analytics.com"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$STAGING_URL")
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Health check failed: HTTP $HTTP_CODE"
+            exit 1
+          fi
+          echo "✅ Health check passed"

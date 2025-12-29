@@ -37,9 +37,7 @@ NUMERIC_COLUMNS: List[str] = [
     "cash_available_usd",
 ]
 
-ISO8601_REGEX = re.compile(
-    r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$"
-)
+ISO8601_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$")
 
 
 class ColumnValidator:

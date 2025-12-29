@@ -1,0 +1,88 @@
+{
+  "v1_metrics": {},
+  "v2_metrics": {},
+  "variance_analysis": {},
+  "discrepancies": [],
+  "timestamp": "2025-12-26T01:41:14.506859",
+  "v2_result": {
+    "status": "success",
+    "metrics": {
+      "PAR30": {
+        "value": 2.21,
+        "formula": "SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100",
+        "rows_processed": 1000,
+        "null_count": 0,
+        "timestamp": "2025-12-26T00:41:14.509008+00:00",
+        "dpd_30_60_sum": 9805131.066402672,
+        "dpd_60_90_sum": 5070173.051792037,
+        "dpd_90_plus_sum": 2512028.6305179494,
+        "total_receivable_sum": 786525066.9024527
+      },
+      "PAR90": {
+        "value": 0.32,
+        "formula": "SUM(dpd_90_plus_usd) / SUM(total_receivable_usd) * 100",
+        "rows_processed": 1000,
+        "null_count": 0,
+        "timestamp": "2025-12-26T00:41:14.509236+00:00",
+        "dpd_sum": 2512028.6305179494,
+        "total_receivable_sum": 786525066.9024527
+      },
+      "CollectionRate": {
+        "value": 11.97,
+        "formula": "SUM(cash_available) / SUM(total_eligible) * 100",
+        "rows_processed": 1000,
+        "null_count": 0,
+        "timestamp": "2025-12-26T00:41:14.509458+00:00",
+        "cash_sum": 74621693.06169644,
+        "eligible_sum": 623234162.5668628
+      },
+      "PortfolioHealth": {
+        "value": 10.0,
+        "formula": "(10 - PAR30/10) * (CollectionRate/10)",
+        "rows_processed": 2,
+        "null_count": 0,
+        "timestamp": "2025-12-26T00:41:14.509496+00:00",
+        "par_30_input": 2.21,
+        "collection_rate_input": 11.97,
+        "par_component": 9.779,
+        "coll_component": 1.197
+      }
+    },
+    "audit_trail": 6,
+    "execution_time_ms": 1.09
+  },
+  "v2_validation": {
+    "format_valid": true,
+    "value_ranges_valid": true,
+    "audit_trail_complete": true,
+    "issues": []
+  },
+  "comparison": {
+    "variance_analysis": {
+      "CollectionRate": {
+        "v1_value": 12.0,
+        "v2_value": 11.97,
+        "variance_pct": 0.24999999999999467,
+        "acceptable": false
+      },
+      "PAR30": {
+        "v1_value": 2.2,
+        "v2_value": 2.21,
+        "variance_pct": 0.4545454545454448,
+        "acceptable": false
+      },
+      "PAR90": {
+        "v1_value": 0.31,
+        "v2_value": 0.32,
+        "variance_pct": 3.2258064516129057,
+        "acceptable": false
+      }
+    },
+    "discrepancies": [
+      "CollectionRate: 0.25% variance (V1=12.0, V2=11.97)",
+      "PAR30: 0.45% variance (V1=2.2, V2=2.21)",
+      "PAR90: 3.23% variance (V1=0.31, V2=0.32)"
+    ],
+    "all_within_tolerance": false
+  }
+}

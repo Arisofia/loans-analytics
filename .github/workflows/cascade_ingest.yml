@@ -14,9 +14,9 @@ jobs:
   kpi-extraction:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       - name: Install dependencies
@@ -35,16 +35,22 @@ jobs:
             echo "KPI results file not generated (no data processed)"
           fi
       - name: Notify Slack on completion
-        if: always() && secrets.SLACK_WEBHOOK_URL != ''
+        if: always() && env.SLACK_WEBHOOK_URL != ''
         continue-on-error: true
-        uses: rtCamp/action-slack-notify@v2
+        uses: slackapi/slack-github-action@v1.24.0
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         with:
-          status: ${{ job.status }}
-          fields: workflow,job,commit,repo,author
-          msg: |
-            Cascade ingest workflow completed with status: ${{ job.status }}
-            Workflow: ${{ github.workflow }}
-            Commit: ${{ github.sha }}
-            See details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          payload: |
+            {
+              "text": "Cascade Ingest Pipeline ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Cascade Ingest Workflow*\n*Status:* ${{ job.status }}\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }

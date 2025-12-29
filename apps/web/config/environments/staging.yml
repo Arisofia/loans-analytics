@@ -1,0 +1,34 @@
+# Staging Environment Configuration
+# Version: 2.0
+# Purpose: Configuration for staging deployment environment
+# Note: All secrets are injected via GitHub Actions at build time
+
+environment: staging
+
+cascade:
+  base_url: https://app.cascadedebt.com
+  portfolio_id: abaco
+
+supabase:
+  url: ${NEXT_PUBLIC_SUPABASE_URL}
+  anon_key: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+  
+sentry:
+  enabled: false
+  dsn: null
+
+azure:
+  enabled: true
+  environment: staging
+  deployment_url: https://staging.abaco-loans-analytics.com
+
+features:
+  debug: true
+  verbose_logging: true
+  validation_strict: true
+
+deployment:
+  branch: develop
+  auto_deploy: true
+  validation_period_hours: 24
+  health_check_url: https://staging.abaco-loans-analytics.com

@@ -1,9 +1,9 @@
 import pandas as pd
 import pytest
 
-from python.ingestion import CascadeIngestion
+from python.pipeline.ingestion import UnifiedIngestion
 from python.kpi_engine import KPIEngine
-from python.transformation import DataTransformation
+from python.pipeline.transformation import UnifiedTransformation
 
 
 def test_pipeline_missing_required_column():
@@ -24,11 +24,11 @@ def test_pipeline_missing_required_column():
             "dpd_90_plus_usd": [20.0],
         }
     )
-    ingestion = CascadeIngestion(data_dir=".")
+    ingestion = UnifiedIngestion(data_dir=".")
     df = ingestion.ingest_dataframe(df)
     validated = ingestion.validate_loans(df)
     assert not validated["_validation_passed"].iloc[0]
-    transformer = DataTransformation()
+    transformer = UnifiedTransformation()
     with pytest.raises(ValueError, match="missing required columns"):
         transformer.transform_to_kpi_dataset(validated)
 
@@ -50,11 +50,11 @@ def test_pipeline_invalid_numeric_type():
             "dpd_90_plus_usd": [20.0],
         }
     )
-    ingestion = CascadeIngestion()
+    ingestion = UnifiedIngestion()
     df = ingestion.ingest_dataframe(df)
     validated = ingestion.validate_loans(df)
     assert not validated["_validation_passed"].iloc[0]
-    transformer = DataTransformation()
+    transformer = UnifiedTransformation()
     with pytest.raises(ValueError):
         transformer.transform_to_kpi_dataset(validated)
 
@@ -73,6 +73,6 @@ def test_pipeline_kpi_engine_missing_column():
             "dpd_7_30_usd": [100.0],
         }
     )
-    transformer = DataTransformation()
+    transformer = UnifiedTransformation()
     with pytest.raises(ValueError, match="missing required columns"):
         transformer.transform_to_kpi_dataset(df)

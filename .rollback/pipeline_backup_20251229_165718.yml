@@ -1,0 +1,526 @@
+# Unified Pipeline Configuration (Single Source of Truth)
+# Version 2.0 - Consolidated from 18 config files into single master config
+# Environment-specific overrides in config/environments/
+
+version: 2.0
+name: abaco_unified_pipeline
+environment: ${PIPELINE_ENV:-development}
+
+run:
+  id_strategy: deterministic
+  timezone: UTC
+  idempotent: true
+  artifacts_dir: logs/runs
+  raw_archive_dir: data/raw/cascade
+  dead_letter_dir: data/dead_letters
+
+cascade:
+  base_url: https://app.cascadedebt.com
+  portfolio_id: abaco
+  endpoints:
+    loan_tape: /data/exports/loan-tape?pid=${portfolio_id}
+    risk_analytics: /analytics/risk/overview?pid=${portfolio_id}
+  auth:
+    token_secret: CASCADE_SESSION_COOKIE
+    export_url_secret: CASCADE_EXPORT_URL
+    auth_type: session_cookie
+    refresh_threshold_hours: 24
+  http:
+    timeout_seconds: 30
+    retry:
+      max_retries: 3
+      backoff_seconds: 1.5
+      jitter_seconds: 0.3
+    rate_limit:
+      max_requests_per_minute: 60
+    circuit_breaker:
+      failure_threshold: 3
+      reset_seconds: 120
+
+pipeline:
+  phases:
+    ingestion:
+      source: file
+      file:
+        default_path: data/raw/cascade/loan_tape.csv
+      validation:
+        strict: true
+        schema_path: config/data_schemas/loan_tape.json
+        required_columns:
+          - total_receivable_usd
+          - total_eligible_usd
+          - discounted_balance_usd
+          - cash_available_usd
+        numeric_columns:
+          - dpd_0_7_usd
+          - dpd_7_30_usd
+          - dpd_30_60_usd
+          - dpd_60_90_usd
+          - dpd_90_plus_usd
+          - total_receivable_usd
+          - total_eligible_usd
+          - discounted_balance_usd
+          - cash_available_usd
+        date_columns:
+          - measurement_date
+      deduplication:
+        enabled: true
+        key_columns:
+          - loan_id
+          - measurement_date
+
+    transformation:
+      null_handling:
+        strategy: fill_zero
+        columns:
+          - dpd_0_7_usd
+          - dpd_7_30_usd
+          - dpd_30_60_usd
+          - dpd_60_90_usd
+          - dpd_90_plus_usd
+          - total_receivable_usd
+          - total_eligible_usd
+          - discounted_balance_usd
+          - cash_available_usd
+      outlier_detection:
+        enabled: true
+        zscore_threshold: 4.0
+        clip: false
+      normalization:
+        lowercase_columns: true
+        strip_whitespace: true
+      pii_masking:
+        enabled: true
+        keywords:
+          - name
+          - email
+          - phone
+          - address
+          - ssn
+          - tin
+          - identifier
+          - id_number
+
+    calculation:
+      metrics:
+        - name: PAR30
+          function: python.kpis.par_30.calculate_par_30
+          formula: "SUM(dpd_30_60 + dpd_60_90 + dpd_90_plus) / SUM(total_receivable) * 100"
+          source_table: fact_loans
+          precision: 2
+          validation_range: [0, 100]
+        - name: PAR90
+          function: python.kpis.par_90.calculate_par_90
+          formula: "SUM(dpd_90_plus) / SUM(total_receivable) * 100"
+          source_table: fact_loans
+          precision: 2
+          validation_range: [0, 100]
+        - name: CollectionRate
+          function: python.kpis.collection_rate.calculate_collection_rate
+          formula: "SUM(cash_available) / SUM(total_eligible) * 100"
+          source_table: fact_loans
+          precision: 2
+          validation_range: [0, 100]
+        - name: PortfolioHealth
+          function: python.kpis.portfolio_health.calculate_portfolio_health
+          formula: "(10 - PAR30/10) * (CollectionRate/10)"
+          source_table: metrics
+          precision: 2
+          validation_range: [0, 10]
+      timeseries:
+        enabled: true
+        time_column: measurement_date
+        rollups:
+          - daily
+          - weekly
+          - monthly
+      anomaly_detection:
+        enabled: true
+        max_change_pct: 0.2
+
+    outputs:
+      storage:
+        local_dir: data/metrics
+        manifest_dir: logs/runs
+      formats:
+        - parquet
+        - csv
+        - json
+      azure:
+        enabled: false
+        container: pipeline-runs
+        prefix: analytics
+      supabase:
+        enabled: false
+        schema: analytics
+        tables:
+          - fact_loans
+          - kpi_timeseries_daily
+      dashboard_triggers:
+        enabled: false
+
+observability:
+  logging:
+    format: json
+    level: INFO
+  lineage:
+    enabled: true
+    capture_input_hash: true
+    capture_output_hash: true
+
+integrations:
+  cascade:
+    enabled: true
+    type: data_source
+    mode: read_only
+    owner: data-engineering
+    auth:
+      token_secret: CASCADE_SESSION_COOKIE
+      export_url_secret: CASCADE_EXPORT_URL
+      auth_type: session_cookie
+    connection:
+      method: csv_export
+      frequency: daily
+      schedule: '03:00 UTC'
+    provider: cascade_debt
+    export_formats:
+      - csv
+      - json
+    data_mappings:
+      loan_id:
+        source_field: loan_id
+        target_field: loan_id
+        required: true
+      client_id:
+        source_field: client_id
+        target_field: client_id
+        required: true
+      current_balance:
+        source_field: outstanding_balance
+        target_field: current_balance
+        data_type: numeric
+        required: true
+      original_balance:
+        source_field: original_amount
+        target_field: original_balance
+        data_type: numeric
+        required: true
+      last_payment_date:
+        source_field: last_payment_date
+        target_field: last_payment_date
+        data_type: date
+    validation_rules:
+      - rule: non_negative_balance
+        field: current_balance
+        check: '>= 0'
+      - rule: balance_not_exceeds_original
+        field: current_balance
+        check: '<= original_balance'
+      - rule: valid_client_id
+        field: client_id
+        check: 'not_null & numeric'
+    data_retention:
+      raw_data: 90 days
+      processed_data: 2 years
+      archive: true
+    error_handling:
+      retry_policy: exponential_backoff
+      max_retries: 3
+      on_failure: alert_and_skip_record
+
+  meta:
+    enabled: false
+    type: marketing_analytics
+    app_id: "${META_APP_ID}"
+    business_id: "${META_BUSINESS_ID}"
+    auth:
+      system_user_token_secret: META_SYSTEM_USER_TOKEN
+    default_ad_accounts:
+      - "act_${META_AD_ACCOUNT_ID_1}"
+      - "act_${META_AD_ACCOUNT_ID_2}"
+    polling_interval_minutes: 60
+    fields:
+      - campaign.name
+      - campaign.id
+      - adset.id
+      - adset.name
+      - insights.impressions
+      - insights.clicks
+      - insights.spend
+      - insights.actions
+
+  slack:
+    enabled: true
+    type: communication
+    method: webhook_api
+    auth_type: bearer_token
+    webhook_secret: SLACK_WEBHOOK_TOKEN
+    endpoint: "https://hooks.slack.com/services/${SLACK_WORKSPACE}/${SLACK_CHANNEL}/${SLACK_TOKEN}"
+    alert_channels:
+      risk_alerts: '#risk-monitoring'
+      compliance_updates: '#compliance-team'
+      executive_briefing: '#executive-briefing'
+      daily_summary: '#fintech-reports'
+    message_templates:
+      par_90_alert:
+        trigger: 'par_90_pct > 3.0'
+        severity: warning
+        icon: ':warning:'
+        format: 'Portfolio PAR_90 Risk Alert: {{par_90_pct}}%'
+      collection_rate:
+        trigger: 'daily_06:00 UTC'
+        severity: info
+        icon: ':chart_with_upwards_trend:'
+        format: 'Daily Collection Rate: {{collection_rate_pct}}%'
+      compliance_breach:
+        trigger: 'compliance_check_failed'
+        severity: critical
+        icon: ':rotating_light:'
+        format: 'COMPLIANCE BREACH: {{issue_type}} - {{details}}'
+    throttling:
+      alert_cooldown_minutes: 15
+      max_daily_alerts: 50
+      batch_reports: daily
+
+  perplexity_comet:
+    enabled: false
+    type: web_crawling
+    purpose: 'Periodic public crawl of transparency.gob.sv, hacienda, BCR, official news sites'
+    mode: paid_or_dedicated
+    recommended_plan: 'Perplexity / Comet paid plan for structured page crawling'
+    frequency: daily
+    outputs:
+      - path: data/raw/public_crawl/
+        format: jsonl
+
+agents:
+  kpi_analytics:
+    name: KPIAnalyticsAgent
+    version: '1.0'
+    namespace: fintech.factory.agents
+    role: 'kpi_analyst'
+    requires_human_approval: false
+    description: 'Autonomous agent responsible for ingesting, transforming, and calculating KPIs'
+    primary_responsibilities:
+      - Ingest raw portfolio and loan data from trusted sources
+      - Transform and clean data for analysis
+      - Calculate KPIs with robust error handling and validation
+      - Generate dashboards and visualizations with full traceability
+    knowledge_sources:
+      - data.abaco_portfolio_calculations: Portfolio metrics CSV
+      - config.kpis.kpi_definitions: KPI definitions and formulas
+      - historical.snapshots: Historical KPI snapshots
+      - docs/analytics: Analytics documentation and standards
+    output_formats:
+      - dashboard: Interactive HTML/Markdown
+      - kpi_report: PDF/CSV for stakeholders
+      - audit_log: JSON for compliance
+    refresh_schedule:
+      dashboard: '0 7 * * *'
+      kpi_report: '0 8 * * 1'
+      continuous_monitoring: '*/30 * * * *'
+
+  risk_analysis:
+    name: RiskAnalysisAgent
+    version: '1.0'
+    namespace: fintech.factory.agents
+    role: 'risk_analyst'
+    requires_human_approval: false
+    description: 'Autonomous agent for continuous portfolio risk monitoring'
+    primary_responsibilities:
+      - Monitor PAR_90 and RDR_90 metrics continuously
+      - Predict collection rate trends using historical data
+      - Generate portfolio health scores
+      - Alert on risk threshold breaches
+    knowledge_sources:
+      - cascade.loan_status: Live loan performance data
+      - cascade.collections: Collection activity tracking
+      - cascade.recovery_tracking: Recovery metrics by cohort
+      - historical.risk_snapshots: Historical snapshots for trend analysis
+    output_formats:
+      - daily_risk_report: Markdown for Slack/email
+      - weekly_summary: PDF slides for stakeholders
+      - alerts: JSON for alerting systems
+    refresh_schedule:
+      daily_report: '0 8 * * *'
+      weekly_report: '0 9 * * 1'
+      continuous_monitoring: '*/15 * * * *'
+    thresholds:
+      par_90_warning: 3.0
+      par_90_critical: 5.0
+      collection_rate_warning: 1.5
+      rdr_90_below_threshold: 25.0
+
+  data_ingestion_transformation:
+    name: DataIngestionTransformationAgent
+    version: '1.0'
+    namespace: fintech.factory.agents
+    role: 'data_engineer'
+    requires_human_approval: false
+    description: 'Autonomous agent for data ingestion and transformation'
+
+  c_level_executive:
+    name: CLevelExecutiveAgent
+    version: '1.0'
+    namespace: fintech.factory.agents
+    role: 'c_level_executive'
+    requires_human_approval: true
+    description: 'Autonomous agent for C-level dashboards and executive summaries'
+    primary_responsibilities:
+      - Aggregate and visualize North Star metrics and KPIs
+      - Generate executive summaries and board-ready presentations
+      - Track OKRs, AUM, customer growth, and risk metrics
+    knowledge_sources:
+      - docs/CEO_OPERATING_SYSTEM_v2_EXECUTIVE.md: CEO operating system and strategy
+      - data.abaco_portfolio_calculations: Portfolio metrics CSV
+      - config.kpis.kpi_definitions: KPI definitions and formulas
+      - docs/okr_dashboard_summary.md: OKR and dashboard summaries
+    output_formats:
+      - executive_dashboard: Interactive HTML/Markdown
+      - board_presentation: PDF/Slides
+      - executive_summary: Markdown/PDF
+      - compliance_report: Markdown/CSV
+    refresh_schedule:
+      executive_dashboard: '0 8 * * 1'
+      board_presentation: '0 9 1 * *'
+      continuous_monitoring: '*/60 * * * *'
+
+kpi_definitions:
+  version: '1.0'
+  namespace: fintech.factory
+  audit_required: true
+  risk_stack:
+    par_90:
+      name: 'Portfolio at Risk (90+ days)'
+      description: 'Percentage of portfolio delinquent beyond 90 days'
+      formula: 'SUM(loans.balance WHERE days_past_due >= 90) / SUM(loans.balance)'
+      unit: '%'
+      threshold_warning: 3.0
+      threshold_critical: 5.0
+      refresh_frequency: 'daily'
+      data_source: 'cascade.loan_status'
+    rdr_90:
+      name: 'Recovered Default Rate (90+ days)'
+      formula: 'SUM(recovered_90_day_balances) / SUM(peak_90_day_balances)'
+      unit: '%'
+      threshold_warning: 50.0
+      threshold_critical: 25.0
+      refresh_frequency: 'daily'
+      data_source: 'cascade.recovery_tracking'
+    collection_rate:
+      name: 'Effective Collection Rate'
+      formula: 'SUM(collections) / SUM(receivables_outstanding)'
+      unit: '%'
+      threshold_warning: 1.5
+      threshold_critical: 1.0
+      refresh_frequency: 'daily'
+      data_source: 'cascade.collections'
+    portfolio_health:
+      name: 'Portfolio Health Score'
+      formula: '(10 - PAR_90) * (RDR_90/100) * (CollectionRate * 10)'
+      unit: 'score'
+      threshold_warning: 5.0
+      threshold_critical: 3.0
+      refresh_frequency: 'daily'
+      data_source: 'computed'
+  growth_stack:
+    origination_volume:
+      name: 'Monthly Origination Volume'
+      formula: 'SUM(new_loans.principal_amount WHERE date_approved IN current_month)'
+      unit: 'USD'
+      refresh_frequency: 'daily'
+      data_source: 'cascade.loan_origination'
+    active_clients:
+      name: 'Active Client Count'
+      formula: 'COUNT(DISTINCT clients WHERE last_activity >= 30_days_ago)'
+      unit: 'count'
+      refresh_frequency: 'weekly'
+      data_source: 'cascade.client_activity'
+    client_retention:
+      name: 'Client Retention Rate'
+      formula: 'COUNT(active_current_period INTERSECT active_prior_period) / COUNT(active_prior_period)'
+      unit: '%'
+      threshold_warning: 75.0
+      threshold_critical: 50.0
+      refresh_frequency: 'monthly'
+      data_source: 'cascade.client_lifecycle'
+  finance_stack:
+    arr:
+      name: 'Annualized Recurring Revenue'
+      formula: 'SUM(loans.interest_rate * loans.balance * 12)'
+      unit: 'USD'
+      refresh_frequency: 'daily'
+      data_source: 'cascade.loan_performance'
+    write_off_rate:
+      name: 'Write-Off Rate'
+      formula: 'SUM(written_off_balances) / SUM(beginning_balance)'
+      unit: '%'
+      threshold_warning: 2.0
+      threshold_critical: 3.5
+      refresh_frequency: 'monthly'
+      data_source: 'cascade.write_offs'
+  compliance_stack:
+    audit_flags:
+      name: 'Active Audit Flags'
+      formula: "COUNT(audit_events WHERE status = 'open')"
+      unit: 'count'
+      threshold_warning: 5
+      threshold_critical: 10
+      refresh_frequency: 'hourly'
+      data_source: 'compliance.audit_log'
+    data_quality_score:
+      name: 'Data Quality Score'
+      formula: 'SUM(validation_passed) / SUM(validation_total)'
+      unit: '%'
+      threshold_warning: 95.0
+      threshold_critical: 90.0
+      refresh_frequency: 'hourly'
+      data_source: 'data.validation_results'
+  cascade_specific:
+    loan_tape_balance:
+      name: 'Cascade Loan Tape Balance'
+      formula: 'SUM(v_loans_overview.balance)'
+      unit: 'USD'
+      refresh_frequency: 'daily'
+      data_source: 'analytics.v_loans_overview'
+    loan_tape_count:
+      name: 'Cascade Loan Count'
+      formula: 'COUNT(DISTINCT v_loans_overview.loan_id)'
+      unit: 'count'
+      refresh_frequency: 'daily'
+      data_source: 'analytics.v_loans_overview'
+    roll_rate_30:
+      name: '30-Day Roll Rate'
+      formula: '(SUM(v_loans_overview.days_past_due >= 30) - SUM(v_loans_overview.days_past_due >= 60)) / SUM(v_loans_overview.loan_id)'
+      unit: '%'
+      threshold_warning: 5.0
+      threshold_critical: 8.0
+      refresh_frequency: 'daily'
+      data_source: 'analytics.v_loans_overview'
+  departmental_mappings:
+    risk:
+      - risk.par_90
+      - risk.rdr_90
+      - risk.collection_rate
+      - risk.portfolio_health
+      - cascade.loan_tape_balance
+      - cascade.loan_tape_count
+      - cascade.roll_rate_30
+    growth:
+      - growth.origination_volume
+      - growth.active_clients
+      - growth.client_retention
+    finance:
+      - finance.arr
+      - finance.write_off_rate
+    compliance:
+      - compliance.audit_flags
+      - compliance.data_quality_score
+    technology:
+      - compliance.data_quality_score
+    marketing:
+      - growth.origination_volume
+      - growth.active_clients
+    sales:
+      - growth.origination_volume
+      - growth.client_retention

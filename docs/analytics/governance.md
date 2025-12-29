@@ -2,10 +2,7 @@
 Goal: every KPI, dashboard, and alert is auditable, reproducible, and mapped to accountable owners with clear decision
 rights. Each change leaves a clear GitHub trail, and every dashboard element can be tied to a playbook, owner, and
 rollback plan.
-<<<<<<< HEAD
-=======
 
->>>>>>> main
 ## Roles and decision rights (RACI-style)
 
 - **Data Engineering (Integrator):** owns data contracts, lineage, SLAs, and PII controls; approves schema changes and incident closures related to data quality; accountable for freshness monitors.

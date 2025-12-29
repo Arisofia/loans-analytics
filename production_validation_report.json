@@ -1,0 +1,52 @@
+{
+  "timestamp": "2025-12-29T16:57:25.417627",
+  "checks": {
+    "kpi_calculations": {
+      "status": "PASS",
+      "metrics": {
+        "par30": 11.58,
+        "par90": 6.08,
+        "collection_rate": 29.11,
+        "portfolio_health": 10.0
+      },
+      "validation": {
+        "par30_in_range": true,
+        "par90_in_range": true,
+        "collection_rate_in_range": true,
+        "portfolio_health_in_range": true
+      }
+    },
+    "data_integrity": {
+      "status": "PASS",
+      "checks": {
+        "no_nulls": true,
+        "no_duplicates": true,
+        "valid_schema": true,
+        "data_quality": "PASS"
+      }
+    },
+    "performance": {
+      "status": "PASS",
+      "metrics": {
+        "latency_ms": 0.7197856903076172,
+        "latency_acceptable": true,
+        "throughput_rows_per_sec": 1389302.4180192116
+      }
+    },
+    "error_handling": {
+      "status": "PASS",
+      "checks": {
+        "empty_dataframe": "PASS",
+        "missing_columns": "PASS",
+        "null_values": "PASS"
+      }
+    },
+    "audit_trail": {
+      "status": "PASS",
+      "event_count": 6,
+      "has_events": true
+    }
+  },
+  "status": "PASS",
+  "issues": []
+}
