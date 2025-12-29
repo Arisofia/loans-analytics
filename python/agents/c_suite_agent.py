@@ -66,8 +66,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    prompt = load_prompt(PROMPT_PATH)
-    input_data = build_input_data(args, prompt)
+    prompt_template = load_prompt(PROMPT_PATH)
+    
+    # Simple template replacement for demonstration
+    prompt = prompt_template.replace("{{ run_id }}", args.run_id).replace("{{ date_range }}", args.date_range)
 
     try:
         orchestrator = AgentOrchestrator(str(SPEC_PATH))
@@ -76,13 +78,21 @@ def main() -> None:
         raise
 
     LOG.info("Executing C-suite agent run_id=%s", args.run_id)
-    # Demonstrate tool usage in trace
-    sample_query = "SELECT * FROM analytics.v_loans_overview LIMIT 5"
-    query_result = run_sql_query(sample_query)
-    input_data["trace"]["sql_queries"].append(sample_query)
-    input_data["trace"]["sample_query_result"] = query_result
+    
+    agent_config = {
+        "name": "C-Suite Agent",
+        "role": "Executive Briefing Specialist",
+        "goal": "Generate precise, numeric, and traceable executive briefings for Abaco Capital"
+    }
+    
+    input_data = {
+        "query": prompt,
+        "run_id": args.run_id,
+        "date_range": args.date_range
+    }
 
-    result = orchestrator.run(input_data)
+    result = orchestrator.run(input_data, agent_config)
+    
     output = {
         "input": input_data,
         "result": result,

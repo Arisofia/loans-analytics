@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
 
-from python.agents.tools import run_sql_query
+from python.agents.orchestrator import AgentOrchestrator
 
 LOG = logging.getLogger("growth_agent")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -21,12 +21,7 @@ def build_input(args: argparse.Namespace) -> Dict[str, Any]:
         "run_id": args.run_id,
         "date_range": args.date_range,
         "lead_budget": args.lead_budget,
-        "trace": {
-            "sql_queries": [
-                "SELECT * FROM analytics.v_loans_overview WHERE days_past_due > 30 LIMIT 5"
-            ],
-            "data_sources": ["analytics.v_loans_overview", "analytics.kpi_timeseries"],
-        },
+        "query": f"Surface and score leads for the SDR desk with a budget of {args.lead_budget} leads for {args.date_range}."
     }
 
 
@@ -48,24 +43,28 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     inputs = build_input(args)
-    sample_query = "SELECT product_id, SUM(balance) AS exposure FROM analytics.v_loans_overview GROUP BY product_id"
-    query_result = run_sql_query(sample_query)
-    inputs["trace"]["sql_queries"].append(sample_query)
-    inputs["trace"]["sample_query_result"] = query_result
+    
+    orchestrator = AgentOrchestrator()
+    
+    agent_config = {
+        "name": "GrowthAgent",
+        "role": "SDR Lead Specialist",
+        "goal": "Score and surface high-quality leads for the SDR desk"
+    }
+    
+    LOG.info("Executing Growth agent run_id=%s", args.run_id)
+    result = orchestrator.run(inputs, agent_config)
 
     payload = {
-        "status": "draft",
+        "status": "completed",
         "run_id": args.run_id,
         "lead_budget": args.lead_budget,
-        "trace": inputs["trace"],
-        "recommendations": [
-            {"company": "TBD", "reason": "Placeholder"},
-        ],
+        "result": result,
         "launched_at": datetime.utcnow().isoformat() + "Z",
     }
 
     output_path = write_result(args.run_id, payload)
-    LOG.info("Growth agent created run %s -> %s", args.run_id, output_path)
+    LOG.info("Growth agent completed run %s -> %s", args.run_id, output_path)
     print(json.dumps(payload, indent=2))
 
 

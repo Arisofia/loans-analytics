@@ -18,6 +18,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from python.agents.agent import Agent
+from python.agents.llm_provider import MockLLM, OpenAIProvider, AnthropicProvider
+from python.agents.tools import registry as global_registry
+
 Base = declarative_base()  # type: ignore[misc]
 
 
@@ -34,7 +38,7 @@ class AgentRun(Base):  # type: ignore[valid-type,misc]
     citations = Column(JSON)
     accuracy_score = Column(Numeric)
     requires_human_review = Column(Boolean)
-    metadata = Column(JSON)
+    run_metadata = Column(JSON)
     kpi_snapshot_id = Column(Integer)
 
 
@@ -42,29 +46,59 @@ def _hash_input(payload: Dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
 
-# Example: Main agent orchestrator using LangChain/ReAct pattern
 class AgentOrchestrator:
-    def __init__(self, spec_path: str, db_url: Optional[str] = None):
-        with open(spec_path, "r") as f:
-            self.spec = yaml.safe_load(f)
+    def __init__(self, spec_path: Optional[str] = None, db_url: Optional[str] = None):
+        if spec_path:
+            with open(spec_path, "r") as f:
+                self.spec = yaml.safe_load(f)
+        else:
+            self.spec = {}
+            
         self.db_url = db_url or os.getenv("DATABASE_URL")
         self.engine = create_engine(self.db_url) if self.db_url else None
         self.session_local = sessionmaker(bind=self.engine) if self.engine else None
-        # Load tools, prompts, etc.
+        
+        # Default LLM provider (Mock for now)
+        self.llm = MockLLM()
+        self.registry = global_registry
 
-    def run(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        # Placeholder for agent reasoning logic
-        # Integrate with tools, prompts, and input data
+    def run(self, input_data: Dict[str, Any], agent_config: Optional[Dict[str, str]] = None, max_retries: int = 3) -> Dict[str, Any]:
         start_time = datetime.now(timezone.utc)
+        
+        # Configure the agent
+        name = agent_config.get("name", "DefaultAgent") if agent_config else "DefaultAgent"
+        role = agent_config.get("role", "General Assistant") if agent_config else "General Assistant"
+        goal = agent_config.get("goal", "Help the user with their request") if agent_config else "Help the user with their request"
+        
+        agent = Agent(
+            name=name,
+            role=role,
+            goal=goal,
+            llm=self.llm,
+            registry=self.registry
+        )
+        
+        user_query = input_data.get("query", str(input_data))
+        
+        agent_output = "Error: Failed to generate output."
+        for attempt in range(max_retries):
+            try:
+                agent_output = agent.run(user_query)
+                if not agent_output.startswith("Error:"):
+                    break
+            except Exception as e:
+                print(f"[Orchestrator] Attempt {attempt + 1} failed for {name}: {str(e)}")
+        
         output = {
-            "output": "Agent reasoning result",
+            "output": agent_output,
             "input": input_data,
-            "prompt_version": self.spec.get("version", "draft"),
-            "model_used": self.spec.get("model", "gpt-4.1"),
-            "citations": self.spec.get("citations", []),
+            "prompt_version": self.spec.get("version", "v2.0"),
+            "model_used": "mock-llm",
+            "citations": [],
             "accuracy_score": None,
-            "requires_human_review": False,
+            "requires_human_review": agent_output.startswith("Error:"),
         }
+        
         completed_at = datetime.now(timezone.utc)
         self._log_agent_run(start_time, completed_at, input_data, output)
         return output
@@ -90,7 +124,7 @@ class AgentOrchestrator:
             citations=output.get("citations", []),
             accuracy_score=output.get("accuracy_score"),
             requires_human_review=output.get("requires_human_review", False),
-            metadata={"input": input_data},
+            run_metadata={"input": input_data},
             kpi_snapshot_id=output.get("kpi_snapshot_id"),
         )
 
