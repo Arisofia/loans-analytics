@@ -37,8 +37,8 @@ class LoanAnalyticsEngine:
         # Initialize attributes required by tests
         self.risk_alerts = None
         self.data_quality_profile = None
-        self._coercion_report = None42
-
+    
+        self._coercion_report = None
                 # Calculate ltv_ratio if columns exist
         if 'loan_amount' in self.loan_data.columns and 'appraised_value' in self.loan_data.columns:
             self.loan_data['ltv_ratio'] = self.loan_data['loan_amount'] / self.loan_data['appraised_value']
