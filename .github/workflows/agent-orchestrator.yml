@@ -1,0 +1,239 @@
+name: Multi-Agent Orchestrator
+
+on:
+  workflow_dispatch:
+  # Triggered after unified data pipeline completes
+  workflow_run:
+    workflows: ["Unified Multi-Agent Data Pipeline"]
+    types:
+      - completed
+
+env:
+  SUPABASESERVICEROLE: ${{ secrets.SUPABASESERVICEROLE }}
+  OPIKTOKEN: ${{ secrets.OPIKTOKEN }}
+  SLACKBOTTOKEN: ${{ secrets.SLACKBOTTOKEN }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+jobs:
+  # Job 1: Check data manifest freshness
+  check-data-manifest:
+    runs-on: ubuntu-latest
+    outputs:
+      data-ready: ${{ steps.check.outputs.ready }}
+      manifest-timestamp: ${{ steps.check.outputs.timestamp }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Validate data manifest
+        id: check
+        run: |
+          echo "Checking data manifest freshness..."
+          python scripts/check_data_manifest.py
+          echo "ready=true" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+
+  # Job 2: Run Risk Assessment Agent
+  risk-assessment-agent:
+    needs: check-data-manifest
+    if: needs.check-data-manifest.outputs.data-ready == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run risk assessment on new loans
+        run: |
+          echo "🎯 Running Risk Assessment Agent..."
+          python agents/risk_assessment_agent.py
+
+      - name: Upload risk scores
+        uses: actions/upload-artifact@v4
+        with:
+          name: risk-scores
+          path: outputs/risk_scores.json
+          retention-days: 7
+
+  # Job 3: Run Credit Scoring Agent
+  credit-scoring-agent:
+    needs: check-data-manifest
+    if: needs.check-data-manifest.outputs.data-ready == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Calculate credit scores
+        run: |
+          echo "💳 Running Credit Scoring Agent..."
+          python agents/credit_scoring_agent.py
+
+      - name: Upload credit scores
+        uses: actions/upload-artifact@v4
+        with:
+          name: credit-scores
+          path: outputs/credit_scores.json
+          retention-days: 7
+
+  # Job 4: Run Fraud Detection Agent
+  fraud-detection-agent:
+    needs: check-data-manifest
+    if: needs.check-data-manifest.outputs.data-ready == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Detect fraudulent applications
+        run: |
+          echo "🔍 Running Fraud Detection Agent..."
+          python agents/fraud_detection_agent.py
+
+      - name: Upload fraud alerts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fraud-alerts
+          path: outputs/fraud_alerts.json
+          retention-days: 7
+
+  # Job 5: Run Customer Outreach Agent
+  customer-outreach-agent:
+    needs: [risk-assessment-agent, credit-scoring-agent]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download risk scores
+        uses: actions/download-artifact@v4
+        with:
+          name: risk-scores
+          path: outputs/
+
+      - name: Download credit scores
+        uses: actions/download-artifact@v4
+        with:
+          name: credit-scores
+          path: outputs/
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Generate personalized outreach
+        run: |
+          echo "📧 Running Customer Outreach Agent..."
+          python agents/customer_outreach_agent.py
+
+      - name: Upload outreach campaigns
+        uses: actions/upload-artifact@v4
+        with:
+          name: outreach-campaigns
+          path: outputs/outreach_campaigns.json
+          retention-days: 7
+
+  # Job 6: Aggregate and sync agent results to Supabase
+  sync-agent-results:
+    needs: [risk-assessment-agent, credit-scoring-agent, fraud-detection-agent, customer-outreach-agent]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all agent outputs
+        uses: actions/download-artifact@v4
+        with:
+          path: outputs/
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Sync results to Supabase
+        run: |
+          echo "💾 Syncing agent results to Supabase..."
+          python scripts/sync_agent_results.py
+
+  # Job 7: Log agent execution metrics to Opik
+  log-agent-metrics:
+    needs: sync-agent-results
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Log agent metrics to Opik
+        run: |
+          echo "📊 Logging agent execution metrics..."
+          python scripts/log_agent_metrics.py \
+            --risk-agent-status ${{ needs.risk-assessment-agent.result }} \
+            --credit-agent-status ${{ needs.credit-scoring-agent.result }} \
+            --fraud-agent-status ${{ needs.fraud-detection-agent.result }} \
+            --outreach-agent-status ${{ needs.customer-outreach-agent.result }}
+
+  # Job 8: Send completion notification to Slack
+  send-completion-notification:
+    needs: [sync-agent-results, log-agent-metrics]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack notification
+        run: |
+          if [ "${{ needs.sync-agent-results.result }}" == "success" ]; then
+            MESSAGE="✅ Multi-Agent Orchestration completed successfully. All agents executed and results synced."
+          else
+            MESSAGE="⚠️ Multi-Agent Orchestration completed with issues. Check workflow logs."
+          fi
+          curl -X POST ${{ secrets.SLACKBOTTOKEN }} \
+            -H 'Content-Type: application/json' \
+            -d "{\"text\":\"$MESSAGE\"}"
