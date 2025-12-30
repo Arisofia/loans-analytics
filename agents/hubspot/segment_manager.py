@@ -4,10 +4,7 @@ from typing import Dict, List, Any, Optional
 import os
 import requests
 from datetime import datetime
-import sys
-sys.path.append('../..')
-
-from base_agent import BaseAgent, AgentConfig, AgentContext
+from ..base_agent import BaseAgent, AgentConfig, AgentContext
 
 
 class SegmentManagerAgent(BaseAgent):
