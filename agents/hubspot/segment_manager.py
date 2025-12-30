@@ -1,9 +1,9 @@
 """HubSpot Segment Manager Agent - Creates and manages contact segments."""
 
 from typing import Dict, List, Any, Optional
+from datetime import datetime
 import os
 import requests
-from datetime import datetime
 from agents.base_agent import BaseAgent, AgentConfig, AgentContext
 
 
@@ -38,11 +38,11 @@ class SegmentManagerAgent(BaseAgent):
             )
         
         super().__init__(config, context)
-        
+
         # Get HubSpot API key from environment
         self.api_key = os.getenv("HUBSPOT_API_KEY")
         self.base_url = "https://api.hubapi.com"
-        
+
         if not self.api_key:
             raise ValueError("HUBSPOT_API_KEY environment variable not set")
     
@@ -161,7 +161,7 @@ class SegmentManagerAgent(BaseAgent):
                 return {"error": f"Unknown tool: {tool_name}"}
         
         except Exception as e:
-            return {"error": f"Tool execution failed: {str(e)}"}
+                return {"error": f"Tool execution failed: {str(e)}"}
     
     def _get_auth_headers_and_params(
         self
@@ -217,10 +217,7 @@ class SegmentManagerAgent(BaseAgent):
                 "success": True,
                 "list_id": data.get("listId"),
                 "name": data.get("name"),
-                "url": (
-                    f"https://app.hubspot.com/contacts/lists/"
-                    f"{data.get('listId')}"
-                ),
+                "url": f"https://app.hubspot.com/contacts/lists/{data.get('listId')}",
                 "filters": data.get("filters")
             }
         else:
@@ -245,16 +242,14 @@ class SegmentManagerAgent(BaseAgent):
         segment_name = f"Fecha de creación = Hoy ({today})"
         if name_suffix:
             segment_name += f" - {name_suffix}"
-        
+
         # Filter for contacts created today
-        filters = [[
-            {
-                "property": "createdate",
-                "operator": "EQ",
-                "value": "TODAY"
-            }
-        ]]
-        
+        filters = [[{
+            "property": "createdate",
+            "operator": "EQ",
+            "value": "TODAY"
+        }]]
+
         return self._create_segment(name=segment_name, filters=filters)
     
     def _list_segments(self) -> Dict[str, Any]:
@@ -307,11 +302,11 @@ class SegmentManagerAgent(BaseAgent):
             Segment contacts
         """
         url = f"{self.base_url}/contacts/v1/lists/{list_id}/contacts/all"
-        
+
         headers, params = self._get_auth_headers_and_params()
-        
+
         params["count"] = 100  # Max per page
-        
+
         response = requests.get(
             url,
             headers=headers,
@@ -330,11 +325,7 @@ class SegmentManagerAgent(BaseAgent):
                 "contacts": [
                     {
                         "id": contact.get("vid"),
-                        "email": (
-                            contact.get("identity-profiles", [{}])[0]
-                            .get("identities", [{}])[0]
-                            .get("value")
-                        ),
+                        "email": contact.get("identity-profiles", [{}])[0].get("identities", [{}])[0].get("value"),
                         "properties": contact.get("properties", {})
                     }
                     for contact in contacts

@@ -1,59 +1,26 @@
-# Core ignores
-.git*
+# Git and version control
+git*
 .vscode/
+.venv*/
 __pycache__/
 *.pyc
-.python_version
-.env
-local.settings.json
-.funcignore
-.DS_Store
-.coverage
 
-# Big folders
 apps/
 node_modules/
-.venv/
-.venv*/
-venv/
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
-.sonarqube/
-.rollback/
-.gradle/
-.mvn/
-.vercel/
-build/
 node/
 services/
-org.eclipse.*/
-org.eclipse.osgi/
-
-# Code and data to ignore
+data/
+tests/
+htmlcov/
 python/
 scripts/
-sql/
-src/
 streamlit_app/
-supabase/
-data/
-exports/
+org.eclipse.*/
 archives/
-data_samples/
-demo_bak_2025-12-26/
-tests/
-test/
-packages/
-orchestration/
-abaco_runtime/
-htmlcov/
-infra/
-logs/
+exports/
 
-# Build artifacts
-dist/
-*.egg-info
-tsconfig.tsbuildinfo
+local.settings.json
+.env*
+*.md
 package-lock.json
-pnpm-lock.yaml
+tsconfig.tsbuildinfo
