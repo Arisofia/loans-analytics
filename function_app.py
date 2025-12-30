@@ -9,8 +9,6 @@ import logging
 import os
 from datetime import datetime
 
-# The Azure Functions runtime should handle the path correctly.
-# If module resolution issues persist, structuring as an installable package is the next step.
 from agents.hubspot.segment_manager import SegmentManagerAgent
 from agents.base_agent import AgentConfig, AgentContext
 
@@ -21,7 +19,6 @@ def _initialize_and_run_agent(trigger_type: str, user_id: str, name_suffix: str)
     Initializes the SegmentManagerAgent, executes the tool, and returns the result.
     This helper function centralizes agent logic to avoid code duplication.
     """
-    # Configuration can be externalized via environment variables for flexibility.
     model_name = os.getenv("AGENT_MODEL", "gpt-4")
     temperature = float(os.getenv("AGENT_TEMPERATURE", 0.3))
 
@@ -52,8 +49,9 @@ def _initialize_and_run_agent(trigger_type: str, user_id: str, name_suffix: str)
     run_on_startup=False,
     use_monitor=True
 )
-def hubspot_daily_segment(timer: func.TimerRequest) -> None:
-    """Create daily HubSpot segment for contacts created today."""
+@app.function_name(name="hubspot_daily_segment")
+def hubspot_daily_segment_trigger(timer: func.TimerRequest) -> None:
+    """Timer-triggered function for daily HubSpot segment creation."""
     timestamp = datetime.utcnow().isoformat()
     
     if timer.past_due:
@@ -83,9 +81,9 @@ def hubspot_daily_segment(timer: func.TimerRequest) -> None:
     logging.info(f"Completed HubSpot daily segment creation at {datetime.utcnow().isoformat()}")
 
 
-@app.function_name(name="HttpTriggerManualSegment")
 @app.route(route="create-segment", methods=["POST"], auth_level=func.AuthLevel.FUNCTION)
-def manual_segment_creation(req: func.HttpRequest) -> func.HttpResponse:
+@app.function_name(name="HttpTriggerManualSegment")
+def manual_segment_creation_trigger(req: func.HttpRequest) -> func.HttpResponse:
     """HTTP-triggered function for manual segment creation."""
     logging.info('HTTP trigger: Manual HubSpot segment creation requested.')
     
