@@ -4,7 +4,7 @@ from typing import Dict, List, Any, Optional
 import os
 import requests
 from datetime import datetime
-from ..base_agent import BaseAgent, AgentConfig, AgentContext
+from agents.base_agent import BaseAgent, AgentConfig, AgentContext
 
 
 class SegmentManagerAgent(BaseAgent):
@@ -18,7 +18,11 @@ class SegmentManagerAgent(BaseAgent):
     - Create "Fecha de creación = Hoy" segments
     """
     
-    def __init__(self, config: Optional[AgentConfig] = None, context: Optional[AgentContext] = None):
+    def __init__(
+        self,
+        config: Optional[AgentConfig] = None,
+        context: Optional[AgentContext] = None
+    ):
         """Initialize HubSpot Segment Manager Agent.
         
         Args:
@@ -30,7 +34,7 @@ class SegmentManagerAgent(BaseAgent):
                 name="HubSpotSegmentManager",
                 description="Manages HubSpot contact segments and lists",
                 model="gpt-4",
-                temperature=0.3  # Lower temperature for more deterministic API operations
+                temperature=0.3
             )
         
         super().__init__(config, context)
@@ -48,32 +52,30 @@ class SegmentManagerAgent(BaseAgent):
         Returns:
             System prompt string
         """
-        return """You are a HubSpot Segment Manager agent specialized in creating and managing contact segments.
-
-Your capabilities:
-1. Create new contact segments with specific criteria
-2. Update existing segment filters
-3. Query contacts in segments
-4. Create date-based segments (e.g., "Fecha de creación = Hoy")
-5. Manage segment membership
-
-When creating segments:
-- Use clear, descriptive names
-- Set appropriate filter criteria
-- Validate filter logic before creation
-- Handle API rate limits gracefully
-
-For "Fecha de creación = Hoy" segments:
-- Use "createdate" property
-- Set filter to "TODAY" or current date
-- Name segment appropriately with date
-
-Always:
-- Verify segment creation was successful
-- Return segment IDs and URLs
-- Log all operations
-- Handle errors with clear messages
-"""
+        return (
+            "You are a HubSpot Segment Manager agent specialized in "
+            "creating and managing contact segments.\n"
+            "Your capabilities:\n"
+            "1. Create new contact segments with specific criteria\n"
+            "2. Update existing segment filters\n"
+            "3. Query contacts in segments\n"
+            "4. Create date-based segments (e.g., 'Fecha de creación = Hoy')\n"
+            "5. Manage segment membership\n"
+            "When creating segments:\n"
+            "- Use clear, descriptive names\n"
+            "- Set appropriate filter criteria\n"
+            "- Validate filter logic before creation\n"
+            "- Handle API rate limits gracefully\n"
+            "For 'Fecha de creación = Hoy' segments:\n"
+            "- Use 'createdate' property\n"
+            "- Set filter to 'TODAY' or current date\n"
+            "- Name segment appropriately with date\n"
+            "Always:\n"
+            "- Verify segment creation was successful\n"
+            "- Return segment IDs and URLs\n"
+            "- Log all operations\n"
+            "- Handle errors with clear messages\n"
+        )
     
     def get_available_tools(self) -> List[Dict[str, Any]]:
         """Return list of available HubSpot tools.
@@ -161,7 +163,9 @@ Always:
         except Exception as e:
             return {"error": f"Tool execution failed: {str(e)}"}
     
-    def _get_auth_headers_and_params(self) -> tuple[Dict[str, str], Dict[str, str]]:
+    def _get_auth_headers_and_params(
+        self
+    ) -> tuple[Dict[str, str], Dict[str, str]]:
         """Get authentication headers and parameters based on API key type."""
         headers = {"Content-Type": "application/json"}
         params = {}
@@ -175,7 +179,11 @@ Always:
             
         return headers, params
 
-    def _create_segment(self, name: str, filters: List[Dict]) -> Dict[str, Any]:
+    def _create_segment(
+        self,
+        name: str,
+        filters: List[Dict]
+    ) -> Dict[str, Any]:
         """Create a new contact segment.
         
         Args:
@@ -195,7 +203,13 @@ Always:
         
         headers, params = self._get_auth_headers_and_params()
         
-        response = requests.post(url, json=payload, headers=headers, params=params)
+        response = requests.post(
+            url,
+            json=payload,
+            headers=headers,
+            params=params,
+            timeout=10
+        )
         
         if response.status_code == 200:
             data = response.json()
@@ -203,13 +217,19 @@ Always:
                 "success": True,
                 "list_id": data.get("listId"),
                 "name": data.get("name"),
-                "url": f"https://app.hubspot.com/contacts/lists/{data.get('listId')}",
+                "url": (
+                    f"https://app.hubspot.com/contacts/lists/"
+                    f"{data.get('listId')}"
+                ),
                 "filters": data.get("filters")
             }
         else:
             return {
                 "success": False,
-                "error": f"Failed to create segment: {response.status_code} - {response.text}"
+                "error": (
+                    f"Failed to create segment: {response.status_code} - "
+                    f"{response.text}"
+                )
             }
     
     def _create_today_segment(self, name_suffix: str = "") -> Dict[str, Any]:
@@ -247,7 +267,12 @@ Always:
         
         headers, params = self._get_auth_headers_and_params()
         
-        response = requests.get(url, headers=headers, params=params)
+        response = requests.get(
+            url,
+            headers=headers,
+            params=params,
+            timeout=10
+        )
         
         if response.status_code == 200:
             data = response.json()
@@ -287,7 +312,12 @@ Always:
         
         params["count"] = 100  # Max per page
         
-        response = requests.get(url, headers=headers, params=params)
+        response = requests.get(
+            url,
+            headers=headers,
+            params=params,
+            timeout=10
+        )
         
         if response.status_code == 200:
             data = response.json()
@@ -300,9 +330,11 @@ Always:
                 "contacts": [
                     {
                         "id": contact.get("vid"),
-                        "email": contact.get("identity-profiles", [{}])[0]
+                        "email": (
+                            contact.get("identity-profiles", [{}])[0]
                             .get("identities", [{}])[0]
-                            .get("value"),
+                            .get("value")
+                        ),
                         "properties": contact.get("properties", {})
                     }
                     for contact in contacts
@@ -314,7 +346,11 @@ Always:
                 "error": f"Failed to get contacts: {response.status_code}"
             }
     
-    def _update_segment(self, list_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+    def _update_segment(
+        self,
+        list_id: str,
+        updates: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Update segment properties.
         
         Args:
@@ -328,7 +364,7 @@ Always:
         
         headers, params = self._get_auth_headers_and_params()
         
-        response = requests.post(url, json=updates, headers=headers, params=params)
+        response = requests.post(url, json=updates, headers=headers, params=params, timeout=10)
         
         if response.status_code == 200:
             return {
