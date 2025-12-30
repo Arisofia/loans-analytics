@@ -13,8 +13,9 @@ from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field
 from enum import Enum
 import re
+from datetime import datetime
 
-from .llm_provider import LLMManager
+from .llm_provider import LLMManager, LLMProvider
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,14 @@ class StepType(Enum):
     ANSWER = "answer"
 
 
+class TaskStatus(Enum):
+    """Status of a task."""
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 @dataclass
 class ReasoningStep:
     """A single step in the reasoning chain."""
@@ -37,6 +46,18 @@ class ReasoningStep:
     tool_output: Optional[Any] = None
     confidence: float = 0.0
     metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class Task:
+    """Task definition for agent execution."""
+    id: str
+    description: str
+    context: Dict[str, Any] = field(default_factory=dict)
+    status: TaskStatus = TaskStatus.PENDING
+    result: Optional[Any] = None
+    iterations: int = 0
+    reasoning_trace: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -67,7 +88,7 @@ Available tools:
 Use this format:
 Thought: [your reasoning about what to do next]
 Action: [tool name]
-Action Input: {"param": "value"}
+Action Input: {{"param": "value"}}
 Observation: [result will be provided]
 ... (repeat Thought/Action/Observation as needed)
 Thought: I now know the final answer
@@ -80,17 +101,20 @@ Begin!
     
     def __init__(
         self,
-        name: str,
         llm_manager: LLMManager,
-        tools: List[Tool] = None,
+        provider: LLMProvider = LLMProvider.OPENAI,
+        model: str = "gpt-4",
         max_iterations: int = 10,
-        temperature: float = 0.7
+        temperature: float = 0.7,
+        name: str = "ReActAgent"
     ):
-        self.name = name
         self.llm_manager = llm_manager
-        self.tools = {tool.name: tool for tool in (tools or [])}
+        self.provider = provider
+        self.model = model
         self.max_iterations = max_iterations
         self.temperature = temperature
+        self.name = name
+        self.tools = {}
         self.reasoning_chain: List[ReasoningStep] = []
     
     def register_tool(self, tool: Tool):
@@ -98,8 +122,18 @@ Begin!
         self.tools[tool.name] = tool
         logger.info(f"Registered tool: {tool.name}")
     
-    def _format_tools_description(self) -> str:
+    def _format_tools_description(self, tools: Optional[List[Dict]] = None) -> str:
         """Format tools for prompt."""
+        if tools:
+            # Format from list of dicts (as passed by BaseAgent)
+            descriptions = []
+            for tool in tools:
+                name = tool.get("name")
+                desc = tool.get("description")
+                params = tool.get("parameters", {})
+                descriptions.append(f"- {name}: {desc}\n  Parameters: {json.dumps(params, indent=2)}")
+            return "\n".join(descriptions)
+            
         if not self.tools:
             return "No tools available."
         
@@ -135,7 +169,13 @@ Begin!
                 
                 if input_match:
                     try:
-                        tool_input = json.loads(input_match.group(1).strip())
+                        # Try to find JSON in the input match
+                        input_text = input_match.group(1).strip()
+                        json_match = re.search(r"(\{.*\})", input_text, re.DOTALL)
+                        if json_match:
+                            tool_input = json.loads(json_match.group(1))
+                        else:
+                            tool_input = json.loads(input_text)
                     except json.JSONDecodeError:
                         logger.warning(f"Failed to parse action input: {input_match.group(1)}")
                 
@@ -154,132 +194,108 @@ Begin!
             step_type=StepType.THOUGHT,
             content=content
         )
-    
-    def _execute_tool(self, step: ReasoningStep) -> str:
-        """Execute a tool and return observation."""
-        if not step.tool_name or step.tool_name not in self.tools:
-            return f"Error: Tool '{step.tool_name}' not found"
+
+    def solve(
+        self,
+        task: Task,
+        system_prompt: str,
+        tools: List[Dict[str, Any]],
+        tool_executor: Callable
+    ) -> Task:
+        """Solve a task using the ReAct framework.
         
-        tool = self.tools[step.tool_name]
-        try:
-            result = tool.execute(**(step.tool_input or {}))
-            step.tool_output = result
-            return f"Observation: {str(result)}"
-        except Exception as e:
-            error_msg = f"Tool execution failed: {str(e)}"
-            logger.error(error_msg)
-            return f"Error: {error_msg}"
-    
-    def run(self, task: str, context: Optional[Dict] = None) -> Dict[str, Any]:
-        """Run the ReAct agent on a task."""
+        Matches the interface expected by BaseAgent.
+        """
+        task.status = TaskStatus.IN_PROGRESS
         self.reasoning_chain = []
         
         # Build initial prompt
-        tools_desc = self._format_tools_description()
-        prompt = self.REACT_PROMPT.format(
-            tools_description=tools_desc,
-            task=task
-        )
+        tools_desc = self._format_tools_description(tools)
+        full_system_prompt = f"{system_prompt}\n\n{self.REACT_PROMPT.format(tools_description=tools_desc, task=task.description)}"
         
-        if context:
-            prompt += f"\n\nContext:\n{json.dumps(context, indent=2)}"
+        if task.context:
+            full_system_prompt += f"\n\nContext:\n{json.dumps(task.context, indent=2)}"
         
-        messages = [{"role": "system", "content": prompt}]
-        conversation_history = []
+        messages = [{"role": "system", "content": full_system_prompt}]
         
         for iteration in range(self.max_iterations):
-            logger.info(f"Iteration {iteration + 1}/{self.max_iterations}")
+            task.iterations = iteration + 1
+            logger.info(f"Iteration {task.iterations}/{self.max_iterations}")
             
             try:
                 # Get LLM response
                 llm_response = self.llm_manager.complete(
                     messages=messages,
+                    provider=self.provider.value,
+                    model=self.model,
                     temperature=self.temperature
                 )
                 
                 # Parse response
                 step = self._parse_llm_response(llm_response.content)
-                step.confidence = llm_response.confidence
                 self.reasoning_chain.append(step)
-                
-                conversation_history.append(llm_response.content)
+                task.reasoning_trace.append(llm_response.content)
                 
                 # Check if done
                 if step.step_type == StepType.ANSWER:
-                    logger.info(f"Agent completed task in {iteration + 1} iterations")
-                    return {
-                        "success": True,
-                        "answer": step.content,
-                        "reasoning_chain": self.reasoning_chain,
-                        "iterations": iteration + 1,
-                        "conversation_history": conversation_history
-                    }
+                    logger.info(f"Agent completed task in {task.iterations} iterations")
+                    task.status = TaskStatus.COMPLETED
+                    task.result = step.content
+                    return task
                 
                 # Execute action if needed
                 if step.step_type == StepType.ACTION:
-                    observation = self._execute_tool(step)
+                    observation_result = tool_executor(step.tool_name, step.tool_input)
+                    observation = f"Observation: {json.dumps(observation_result)}"
                     
                     # Add observation to chain
                     obs_step = ReasoningStep(
                         step_type=StepType.OBSERVATION,
-                        content=observation
+                        content=observation,
+                        tool_output=observation_result
                     )
                     self.reasoning_chain.append(obs_step)
-                    conversation_history.append(observation)
+                    task.reasoning_trace.append(observation)
                     
-                    # Add observation to messages
-                    messages.append({
-                        "role": "assistant",
-                        "content": llm_response.content
-                    })
-                    messages.append({
-                        "role": "user",
-                        "content": observation
-                    })
+                    # Add to messages
+                    messages.append({"role": "assistant", "content": llm_response.content})
+                    messages.append({"role": "user", "content": observation})
                 else:
                     # Continue reasoning
-                    messages.append({
-                        "role": "assistant",
-                        "content": llm_response.content
-                    })
-                    messages.append({
-                        "role": "user",
-                        "content": "Continue..."
-                    })
+                    messages.append({"role": "assistant", "content": llm_response.content})
+                    messages.append({"role": "user", "content": "Please continue with your next Thought or Action."})
             
             except Exception as e:
                 logger.error(f"Error in iteration {iteration}: {e}")
-                return {
-                    "success": False,
-                    "error": str(e),
-                    "reasoning_chain": self.reasoning_chain,
-                    "iterations": iteration + 1
-                }
+                task.status = TaskStatus.FAILED
+                task.result = str(e)
+                return task
         
-        # Max iterations reached
-        logger.warning(f"Max iterations ({self.max_iterations}) reached without answer")
+        task.status = TaskStatus.FAILED
+        task.result = "Max iterations reached without answer"
+        return task
+
+    def run(self, task_description: str, context: Optional[Dict] = None) -> Dict[str, Any]:
+        """Legacy run method for backward compatibility."""
+        task = Task(
+            id=f"task_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            description=task_description,
+            context=context or {}
+        )
+        
+        # We need a system prompt and tools for solve()
+        # This is a bit tricky if called via run() directly without those
+        # For now, let's assume it's mostly called via BaseAgent.execute()
+        result_task = self.solve(
+            task=task,
+            system_prompt="You are a helpful assistant.",
+            tools=[],
+            tool_executor=lambda name, input: {"error": "Tool executor not provided"}
+        )
+        
         return {
-            "success": False,
-            "error": "Max iterations reached",
+            "success": result_task.status == TaskStatus.COMPLETED,
+            "answer": result_task.result,
             "reasoning_chain": self.reasoning_chain,
-            "iterations": self.max_iterations,
-            "partial_answer": self.reasoning_chain[-1].content if self.reasoning_chain else None
+            "iterations": result_task.iterations
         }
-    
-    def get_reasoning_summary(self) -> str:
-        """Get a human-readable summary of the reasoning chain."""
-        if not self.reasoning_chain:
-            return "No reasoning chain available."
-        
-        summary = []
-        for i, step in enumerate(self.reasoning_chain, 1):
-            if step.step_type == StepType.THOUGHT:
-                summary.append(f"{i}. Thought: {step.content}")
-            elif step.step_type == StepType.ACTION:
-                summary.append(f"{i}. Action: {step.tool_name} with {step.tool_input}")
-            elif step.step_type == StepType.OBSERVATION:
-                summary.append(f"{i}. Observation: {step.content}")
-            elif step.step_type == StepType.ANSWER:
-                summary.append(f"{i}. Final Answer: {step.content}")
-        
-        return "\n".join(summary)

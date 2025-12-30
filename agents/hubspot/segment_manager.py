@@ -161,6 +161,20 @@ Always:
         except Exception as e:
             return {"error": f"Tool execution failed: {str(e)}"}
     
+    def _get_auth_headers_and_params(self) -> tuple[Dict[str, str], Dict[str, str]]:
+        """Get authentication headers and parameters based on API key type."""
+        headers = {"Content-Type": "application/json"}
+        params = {}
+        
+        if self.api_key.startswith("pat-"):
+            # Private App Access Token
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        else:
+            # Legacy API Key
+            params["hapikey"] = self.api_key
+            
+        return headers, params
+
     def _create_segment(self, name: str, filters: List[Dict]) -> Dict[str, Any]:
         """Create a new contact segment.
         
@@ -179,12 +193,9 @@ Always:
             "filters": filters
         }
         
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
+        headers, params = self._get_auth_headers_and_params()
         
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(url, json=payload, headers=headers, params=params)
         
         if response.status_code == 200:
             data = response.json()
@@ -234,11 +245,9 @@ Always:
         """
         url = f"{self.base_url}/contacts/v1/lists"
         
-        headers = {
-            "Authorization": f"Bearer {self.api_key}"
-        }
+        headers, params = self._get_auth_headers_and_params()
         
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, params=params)
         
         if response.status_code == 200:
             data = response.json()
@@ -274,13 +283,9 @@ Always:
         """
         url = f"{self.base_url}/contacts/v1/lists/{list_id}/contacts/all"
         
-        headers = {
-            "Authorization": f"Bearer {self.api_key}"
-        }
+        headers, params = self._get_auth_headers_and_params()
         
-        params = {
-            "count": 100  # Max per page
-        }
+        params["count"] = 100  # Max per page
         
         response = requests.get(url, headers=headers, params=params)
         
@@ -321,12 +326,9 @@ Always:
         """
         url = f"{self.base_url}/contacts/v1/lists/{list_id}"
         
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
+        headers, params = self._get_auth_headers_and_params()
         
-        response = requests.post(url, json=updates, headers=headers)
+        response = requests.post(url, json=updates, headers=headers, params=params)
         
         if response.status_code == 200:
             return {

@@ -9,6 +9,13 @@ import logging
 from typing import Dict, List, Optional, Any, Literal
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from enum import Enum
+
+
+class LLMProvider(Enum):
+    """Supported LLM providers."""
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
 
 try:
     import openai

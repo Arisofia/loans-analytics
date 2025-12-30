@@ -67,7 +67,9 @@ class BaseAgent(ABC):
             llm_manager=self.llm_manager,
             provider=config.llm_provider,
             model=config.model,
-            max_iterations=config.max_iterations
+            max_iterations=config.max_iterations,
+            temperature=config.temperature,
+            name=config.name
         )
         
         # Agent state
