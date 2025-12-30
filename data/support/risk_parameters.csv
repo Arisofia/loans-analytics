@@ -1,0 +1,8 @@
+segment,subcategoria_linea,pd,lgd,ead_factor
+Nimal,<10K,0.05,0.40,1.0
+Nimal,10K-25K,0.04,0.35,1.0
+Nimal,25K-50K,0.03,0.35,1.0
+Gob,<10K,0.02,0.25,1.0
+Gob,10K-25K,0.015,0.20,1.0
+OC,>100K,0.03,0.45,1.0
+Top,>100K,0.02,0.35,1.0

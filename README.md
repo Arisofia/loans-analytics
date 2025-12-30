@@ -1,21 +1,10 @@
-# Abaco Loans Analytics - MVP
+# AI-MultiAgent-Ecosystem – Abaco Analytics
 
-Este proyecto implementa un sistema multi-agente para análisis de préstamos, conectándose a servicios externos y utilizando un pipeline de datos definido.
+This repository hosts the Abaco Financial Intelligence Platform, including:
+- Raw Abaco CSV loan tapes under data/abaco
+- Synthetic support tables under data/support
+- SQL definitions for core views and KPIs under sql/
+- Python/Streamlit dashboard under dashboard/
 
-### 🏗️ Arquitectura y Componentes
-
-- **Agentes Disponibles**:
-  - `scripts/agents/hubspot/segment_manager.py`: Para crear segmentos de contactos con filtros.
-  - `scripts/agents/hubspot/list_manager.py`: Para gestionar listas de marketing.
-- **Datos**:
-  - `data/raw/looker_exports/`: Contiene 3 CSVs con más de 55,000 líneas de datos de "loan tape".
-- **Orquestación**:
-  - `orchestration/`: Lógica para coordinar la ejecución de agentes y pipelines.
-- **Código Base**:
-  - `python/`: Módulos principales de la aplicación.
-
-### 🚀 Quickstart
-
-Para configurar y verificar tu entorno local, por favor sigue la guía en `README_QUICKSTART.md`.
-
-*Última actualización del MVP: 29 de Diciembre de 2025*
+See docs/DATA_DICTIONARY.md for table documentation.
+See docs/KPI_CATALOG.md for KPI definitions and SQL.
