@@ -99,7 +99,7 @@ def minimal_config() -> Dict[str, Any]:
 
 
 # === Database fixtures for backend tests ===
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def db_setup():
     """Session-scoped fixture that ensures a clean, deterministic DB baseline.
 

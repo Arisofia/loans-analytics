@@ -91,6 +91,8 @@ Notes:
 - The scripts and TestDataManager use the Supabase Service Role key; never commit this key into the repository or .env files.
 - If your table has a different primary key name, adjust the scripts or TestDataManager accordingly to capture and delete inserted rows by the appropriate column.
 
+For backend-focused tests (pytest + Postgres), see `docs/backend-testing.md` which documents the Python `DBManager`, `DATABASE_URL` usage, and pytest fixtures.
+
 ## CI secrets
 
 Add these repository secrets in GitHub Settings → Secrets → Actions:
