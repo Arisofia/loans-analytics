@@ -59,7 +59,7 @@ export const TestDataManager = {
         .from('loans')
         .delete()
         .eq('user_id', userId);
-      if (loansError) console.error('Error deleting loans:', loansError.message || loansError);
+      if (loansError) throw loansError;
 
       // Add more tables to clean as needed
       // await supabaseAdmin.from('notifications').delete().eq('user_id', userId);
