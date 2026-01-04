@@ -18,10 +18,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.financial_analysis import FinancialAnalyzer
+# Project import moved into main() to avoid heavy imports during pytest collection.
+# (Importing src modules at import-time can cause side-effects like telemetry threads.)
+# No sys.path manipulation at module import time.
+# (FinancialAnalyzer will be imported inside main.)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -67,6 +67,9 @@ def main():
         print("No data file provided. Generating sample data...")
         df = generate_sample_data()
         print(f"Generated {len(df)} sample loans.")
+
+    # Import here to avoid import-time side-effects during pytest collection.
+    from src.financial_analysis import FinancialAnalyzer
 
     analyzer = FinancialAnalyzer()
 
