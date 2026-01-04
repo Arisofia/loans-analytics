@@ -11,6 +11,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+PYTHON_ROOT = ROOT / "python"
+if str(PYTHON_ROOT) not in sys.path:
+    sys.path.insert(0, str(PYTHON_ROOT))
+
 # Change working directory to repository root so relative file paths work
 os.chdir(ROOT)
 
@@ -98,6 +102,10 @@ def minimal_config() -> Dict[str, Any]:
     }
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "db: requires database")
+
+
 # === Database fixtures for backend tests ===
 @pytest.fixture(scope="session")
 def db_setup():
@@ -106,6 +114,9 @@ def db_setup():
     - Requires `DATABASE_URL` to be set in the environment (use .env for local dev)
     - Wipes tables and seeds deterministic KPI rows used by sync tests
     """
+    if not os.getenv("DATABASE_URL"):
+        pytest.skip("DATABASE_URL not set")
+
     manager = DBManager()
     manager.wipe_database()
     manager.seed_kpi_data()

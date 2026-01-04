@@ -85,7 +85,7 @@ function computeKPIs(rows: LoanRow[]) {
     (sum, row) => sum + row.interest_rate * row.principal_balance,
     0
   )
-  const portfolioYield = totalPrincipal ? (weightedInterest / totalPrincipal) * 100 : 0
+  const portfolioYield = totalPrincipal ? weightedInterest / totalPrincipal : 0
 
   const averageLTV = rows.reduce(
     (sum, row) => sum + row.loan_amount / Math.max(row.appraised_value, 1),
