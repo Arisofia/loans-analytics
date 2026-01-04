@@ -94,4 +94,13 @@ AzuriteConfig
 __azurite_db_*.json
 __azurite_db_*_extent__.json
 scripts/setup_azure.sh
+
+# Playwright artifacts and test caches
+apps/web/playwright-report/
+playwright/.e2e
+playwright/.auth
+.pytest_cache/
+.mypy_cache/
+pytest-report/
+
 .azure

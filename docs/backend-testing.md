@@ -60,3 +60,22 @@ pytest -q
 - The `tables_to_clear` list in `tests/db_manager.py` is intentionally small — please extend it as you identify other tables that need deterministic cleanup (e.g., `users`, `loans`, `transactions`).
 - If your DB uses a different schema or column names, update the insert statements in `seed_kpi_data()` to match.
 - If you prefer `psycopg2` instead of `psycopg` (psycopg3), a drop-in rewrite is straightforward — I used `psycopg` because this repo already lists `psycopg[binary]` in `requirements.txt`.
+
+### CI: Ephemeral Postgres (recommended)
+
+To run backend tests in CI without relying on a remote DB, use an ephemeral Postgres service container in your GitHub Actions workflow. Example tips:
+
+- Use `postgres:15` service container and add a `--health-cmd pg_isready` options block so the job waits until Postgres is ready.
+- Export `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db` in the job environment before applying migrations and running tests.
+- Apply SQL migrations with `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/<file>.sql` in order.
+
+Locally you can use Docker:
+
+```bash
+docker run --name abaco-test-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=test_db -p 5432:5432 -d postgres:15
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/test_db"
+pip install -r requirements.txt -r dev-requirements.txt
+pytest -q
+```
+
+This keeps CI deterministic, fast, and isolated from shared/staging DBs.
