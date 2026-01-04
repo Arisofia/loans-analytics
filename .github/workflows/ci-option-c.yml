@@ -68,6 +68,27 @@ jobs:
             python -m pip install -r requirements.txt
             python -m pip install pytest
           fi
+
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Waiting for postgres..."
+            sleep 1
+          done
+
+      - name: Apply Supabase Migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/abaco_test
+        run: |
+          if [ -d "supabase/migrations" ]; then
+            for f in supabase/migrations/*.sql; do
+              echo "Applying migration: $f"
+              psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"
+            done
+          else
+            echo "No migrations folder found in supabase/migrations"
+          fi
+
       - name: Run pytest (db)
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/abaco_test
@@ -98,6 +119,20 @@ jobs:
 
       - name: Lint
         run: npm run lint --if-present
+
+      - name: Create .env.local for E2E
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        run: |
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+          SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+          E2E_TEST_EMAIL=${E2E_TEST_EMAIL}
+          E2E_TEST_PASSWORD=${E2E_TEST_PASSWORD}
+          EOF
 
       - name: Build (gate before E2E)
         env:

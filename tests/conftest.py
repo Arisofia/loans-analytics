@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from pathlib import Path
@@ -17,6 +18,69 @@ if str(PYTHON_ROOT) not in sys.path:
 
 # Change working directory to repository root so relative file paths work
 os.chdir(ROOT)
+
+
+@pytest.fixture(scope="session")
+def analytics_test_env(tmp_path_factory):
+    """Analytics test environment with mocked integrations."""
+    output_dir = tmp_path_factory.mktemp("output")
+    
+    dataset_path = ROOT / "tests" / "data" / "archives" / "sample_small.csv"
+    
+    return {
+        "output_dir": output_dir,
+        "dataset_path": dataset_path,
+    }
+
+
+@pytest.fixture(scope="session")
+def run_analytics_pipeline(analytics_test_env):
+    """Run the analytics pipeline once and return the output directory."""
+    import subprocess
+    import sys
+    
+    dataset = analytics_test_env["dataset_path"]
+    output_dir = analytics_test_env["output_dir"]
+    
+    # Ensure dataset exists (create if missing - should be there from previous step)
+    if not dataset.exists():
+        dataset.parent.mkdir(parents=True, exist_ok=True)
+        dataset.write_text("segment,measurement_date,total_receivable_usd,total_eligible_usd,cash_available_usd\nConsumer,2024-01-31,1000,1000,970")
+
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "src.analytics.run_pipeline",
+            "--dataset",
+            str(dataset),
+            "--output",
+            str(output_dir),
+        ],
+        check=True,
+        capture_output=True,
+    )
+    return output_dir
+
+
+@pytest.fixture
+def analytics_baseline_kpis():
+    """Load baseline KPI values for comparison."""
+    baseline_path = ROOT / "tests" / "fixtures" / "baseline_kpis.json"
+    if not baseline_path.exists():
+        return {}
+    with open(baseline_path) as f:
+        return json.load(f)
+
+
+@pytest.fixture
+def kpi_schema():
+    """Load KPI results JSON schema."""
+    schema_path = ROOT / "tests" / "fixtures" / "schemas" / "kpi_results_schema.json"
+    if not schema_path.exists():
+        return {}
+    with open(schema_path) as f:
+        return json.load(f)
 
 
 @pytest.fixture(scope="session", autouse=True)

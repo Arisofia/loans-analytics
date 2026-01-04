@@ -19,7 +19,7 @@ class TestKPICorrectness:
 
     def test_b01_kpi_baseline_match(
         self,
-        analytics_test_env: Dict[str, Any],
+        run_analytics_pipeline: Path,
         analytics_baseline_kpis: Dict[str, float],
     ) -> None:
         """
@@ -35,7 +35,7 @@ class TestKPICorrectness:
         - Error deltas logged
         - No NaN or infinite values
         """
-        output_dir = analytics_test_env["output_dir"]
+        output_dir = run_analytics_pipeline
         kpi_json_path = output_dir / "kpi_results.json"
 
         with open(kpi_json_path) as f:
@@ -83,9 +83,9 @@ class TestKPICorrectness:
                 + "\n".join(failures)
             )
 
-    def test_b01_no_nan_or_inf_values(self, analytics_test_env: Dict[str, Any]) -> None:
+    def test_b01_no_nan_or_inf_values(self, run_analytics_pipeline: Path) -> None:
         """Verify no NaN or infinite values in computed KPIs."""
-        output_dir = analytics_test_env["output_dir"]
+        output_dir = run_analytics_pipeline
         kpi_json_path = output_dir / "kpi_results.json"
 
         with open(kpi_json_path) as f:
