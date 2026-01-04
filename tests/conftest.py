@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 import pytest
+from tests.db_manager import DBManager
 
 # Ensure repository modules can be imported when tests run from the repo root.
 ROOT = Path(__file__).resolve().parents[1]
@@ -95,3 +96,28 @@ def minimal_config() -> Dict[str, Any]:
             },
         },
     }
+
+
+# === Database fixtures for backend tests ===
+@pytest.fixture(scope="session", autouse=True)
+def db_setup():
+    """Session-scoped fixture that ensures a clean, deterministic DB baseline.
+
+    - Requires `DATABASE_URL` to be set in the environment (use .env for local dev)
+    - Wipes tables and seeds deterministic KPI rows used by sync tests
+    """
+    manager = DBManager()
+    manager.wipe_database()
+    manager.seed_kpi_data()
+    yield manager
+    # Optional teardown after the full test session. Uncomment if desired:
+    # manager.wipe_database()
+
+
+@pytest.fixture(scope="function")
+def db_reset(db_setup):
+    """Reset DB between tests when a test needs a fresh state."""
+    db_setup.wipe_database()
+    db_setup.seed_kpi_data()
+    yield
+    db_setup.wipe_database()
