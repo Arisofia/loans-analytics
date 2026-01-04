@@ -28,7 +28,11 @@ jobs:
       - name: Install python deps
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r dev-requirements.txt 2>/dev/null || python -m pip install -r requirements.txt
+          if [ -f dev-requirements.txt ]; then
+            python -m pip install -r requirements.txt -r dev-requirements.txt
+          else
+            python -m pip install -r requirements.txt
+          fi
 
       - name: Run pytest
         env:
@@ -51,11 +55,26 @@ jobs:
 
       - name: Install deps
         working-directory: apps/web
-        run: npm install
+        run: npm ci
 
       - name: Install Playwright browsers
         working-directory: apps/web
         run: npx playwright install --with-deps
+
+      - name: Create .env.local for E2E
+        working-directory: apps/web
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        run: |
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+          SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+          E2E_TEST_EMAIL=${E2E_TEST_EMAIL}
+          E2E_TEST_PASSWORD=${E2E_TEST_PASSWORD}
+          EOF
 
       - name: Run Playwright tests
         working-directory: apps/web

@@ -8,7 +8,7 @@ SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "sync_kpi_table_to
 
 
 def load_fixture(name: str):
-    p = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "figma" / name
+    p = Path(__file__).resolve().parent.parent / "fixtures" / "figma" / name
     return json.loads(p.read_text())
 
 

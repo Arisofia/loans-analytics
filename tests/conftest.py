@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from pathlib import Path
@@ -17,6 +18,39 @@ if str(PYTHON_ROOT) not in sys.path:
 
 # Change working directory to repository root so relative file paths work
 os.chdir(ROOT)
+
+
+@pytest.fixture(scope="session")
+def analytics_test_env(tmp_path_factory):
+    """Analytics test environment with mocked integrations."""
+    output_dir = tmp_path_factory.mktemp("output")
+    
+    dataset_path = ROOT / "tests" / "data" / "archives" / "sample_small.csv"
+    
+    return {
+        "output_dir": output_dir,
+        "dataset_path": dataset_path,
+    }
+
+
+@pytest.fixture
+def analytics_baseline_kpis():
+    """Load baseline KPI values for comparison."""
+    baseline_path = ROOT / "tests" / "fixtures" / "baseline_kpis.json"
+    if not baseline_path.exists():
+        return {}
+    with open(baseline_path) as f:
+        return json.load(f)
+
+
+@pytest.fixture
+def kpi_schema():
+    """Load KPI results JSON schema."""
+    schema_path = ROOT / "tests" / "fixtures" / "schemas" / "kpi_results_schema.json"
+    if not schema_path.exists():
+        return {}
+    with open(schema_path) as f:
+        return json.load(f)
 
 
 @pytest.fixture(scope="session", autouse=True)
