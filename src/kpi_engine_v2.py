@@ -4,19 +4,16 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from src.kpis.collection_rate import (
-    calculate_collection_rate as calculate_collection_rate_logic,
-)
+from src.kpis.collection_rate import \
+    calculate_collection_rate as calculate_collection_rate_logic
 from src.kpis.dti import calculate_dti as calculate_dti_logic
 from src.kpis.ltv import calculate_ltv as calculate_ltv_logic
 from src.kpis.par_30 import calculate_par_30 as calculate_par_30_logic
 from src.kpis.par_90 import calculate_par_90 as calculate_par_90_logic
-from src.kpis.portfolio_health import (
-    calculate_portfolio_health as calculate_portfolio_health_logic,
-)
-from src.kpis.portfolio_yield import (
-    calculate_portfolio_yield as calculate_portfolio_yield_logic,
-)
+from src.kpis.portfolio_health import \
+    calculate_portfolio_health as calculate_portfolio_health_logic
+from src.kpis.portfolio_yield import \
+    calculate_portfolio_yield as calculate_portfolio_yield_logic
 
 logger = logging.getLogger(__name__)
 
