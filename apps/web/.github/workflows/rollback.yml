@@ -71,6 +71,8 @@ jobs:
     needs: [pre-rollback, approval-gate]
     environment:
       name: ${{ github.event.inputs.environment }}
+    env:
+      ENV_PREFIX: ${{ github.event.inputs.environment == 'production' && 'PROD' || 'STAGING' }}
     steps:
       - name: Checkout target version
         uses: actions/checkout@v4
