@@ -92,11 +92,20 @@ jobs:
       - name: Install dependencies (apps/web)
         run: pnpm -C apps/web install --frozen-lockfile
 
-      - name: Build target version
+      - name: Build target version (staging)
+        if: github.event.inputs.environment == 'staging'
         run: pnpm -C apps/web build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets[format('{0}_SUPABASE_URL', github.event.inputs.environment == 'production' && 'PROD' || 'STAGING')] }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets[format('{0}_SUPABASE_KEY', github.event.inputs.environment == 'production' && 'PROD' || 'STAGING')] }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_KEY }}
+          NODE_ENV: production
+
+      - name: Build target version (production)
+        if: github.event.inputs.environment == 'production'
+        run: pnpm -C apps/web build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PROD_SUPABASE_KEY }}
           NODE_ENV: production
 
       - name: Deploy rolled-back version
