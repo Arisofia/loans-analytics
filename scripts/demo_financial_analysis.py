@@ -11,11 +11,31 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import matplotlib
+try:
+    import matplotlib
+    # Use non-interactive backend for scripts/tests to avoid GUI/display-related errors
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+except Exception:
+    # Matplotlib may not be installed in lightweight CI/test environments.
+    # Provide a minimal stub that exposes the attributes used by this script so tests can patch `plt`.
+    class _StubPlt:
+        def figure(self, *args, **kwargs):
+            return None
+        def title(self, *args, **kwargs):
+            pass
+        def xlabel(self, *args, **kwargs):
+            pass
+        def ylabel(self, *args, **kwargs):
+            pass
+        def xticks(self, *args, **kwargs):
+            pass
+        def tight_layout(self, *args, **kwargs):
+            pass
+        def savefig(self, *args, **kwargs):
+            pass
+    plt = _StubPlt()
 
-# Use non-interactive backend for scripts/tests to avoid GUI/display-related errors
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import pandas as pd
 
 # Project import moved into main() to avoid heavy imports during pytest collection.
