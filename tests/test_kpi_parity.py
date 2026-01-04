@@ -7,8 +7,7 @@ import pandas as pd
 import psycopg
 import pytest
 
-# Explicitly import built-ins for Pylance/Flake8 compatibility
-
+pytestmark = pytest.mark.db
 
 if os.getenv("RUN_KPI_PARITY_TESTS") not in {"1", "true", "yes"}:
     pytest.skip(
