@@ -54,3 +54,6 @@ azure-storage-blob>=12.27.0
 azure-mgmt-portal>=1.0
 psycopg[binary]>=3.1.0
 supabase>=2.0
+
+# Testing utilities
+Faker>=18.0

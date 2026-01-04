@@ -1,0 +1,13 @@
+{
+  "document": {
+    "id": "0:0",
+    "name": "Document",
+    "children": [
+      {
+        "id": "page123",
+        "name": "KPI Table",
+        "children": []
+      }
+    ]
+  }
+}

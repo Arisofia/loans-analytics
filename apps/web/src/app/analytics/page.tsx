@@ -6,7 +6,7 @@ import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
 
 export default function AnalyticsPage() {
   return (
-    <main className={styles.page}>
+    <main className={styles.page} data-testid="dashboard-analytics">
       <header className={styles.header}>
         <div className={styles.copy}>
           <p className={styles.eyebrow}>Analytics workspace</p>
