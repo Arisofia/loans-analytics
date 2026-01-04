@@ -1,8 +1,8 @@
 import os
 import runpy
-import json
 import pytest
 import requests
+
 
 # The tests use requests-mock fixture provided by requests-mock plugin
 
@@ -34,7 +34,7 @@ def test_figma_sync_success(requests_mock, tmp_path, monkeypatch, capsys):
 
     # Intercept PUT (update) requests
     update_url = f"{api_url}/nodes?ids=page123"
-    
+
     def put_callback(request, context):
         assert request.headers.get("X-Figma-Token") == "dummy_token"
         context.status_code = 200
