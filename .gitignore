@@ -102,5 +102,6 @@ playwright/.auth
 .pytest_cache/
 .mypy_cache/
 pytest-report/
+coverage.xml
 
 .azure
