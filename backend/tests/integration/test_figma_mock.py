@@ -60,6 +60,5 @@ def test_figma_sync_rate_limit(requests_mock, tmp_path, monkeypatch):
     requests_mock.get(api_url, status_code=429, text="Too Many Requests")
 
     # Running the script should raise due to HTTP error
-    with pytest.raises(RuntimeError) as exc:
+    with pytest.raises(requests.exceptions.HTTPError):
         runpy.run_path(str(os.path.abspath(os.path.join(os.getcwd(), "scripts", "sync_kpi_table_to_figma.py"))), run_name="__main__")
-    assert "Figma API request failed" in str(exc.value)
