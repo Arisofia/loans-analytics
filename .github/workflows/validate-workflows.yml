@@ -93,7 +93,7 @@ jobs:
         needs.dependency-validation.result == 'failure' ||
         needs.trigger-validation.result == 'failure' ||
         needs.secrets-validation.result == 'failure' ||
-        needs.secrets-presence.outputs.all_secrets_present == 'false'
+        needs.secrets-presence.outputs.all_secrets_present == false
       )
     steps:
       - name: Fail on validation error

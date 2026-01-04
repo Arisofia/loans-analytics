@@ -47,7 +47,7 @@ jobs:
               print(f"Skipping: missing secrets: {', '.join(missing)}")
           if script_missing:
               print("Skipping: missing script scripts/ingest_cascade.py")
-          if slack_available == "false":
+          if slack_available == false:
               print("SLACK_WEBHOOK_OPS not configured - notifications will be skipped")
 
           run = "false" if missing or script_missing else "true"
@@ -59,7 +59,7 @@ jobs:
 
   kpi-extraction:
     needs: validate-secrets
-    if: needs.validate-secrets.outputs.run == 'true'
+    if: needs.validate-secrets.outputs.run == true
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -109,7 +109,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.24.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_OPS }}
-        if: failure() && needs.validate-secrets.outputs.slack_available == 'true'
+        if: failure() && needs.validate-secrets.outputs.slack_available == true
         with:
           payload: |
             {
@@ -129,7 +129,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.24.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_OPS }}
-        if: success() && needs.validate-secrets.outputs.slack_available == 'true'
+        if: success() && needs.validate-secrets.outputs.slack_available == true
         with:
           payload: |
             {

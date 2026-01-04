@@ -84,20 +84,20 @@ jobs:
           fi
 
       - name: Login to Azure
-        if: steps.check_secrets.outputs.has_creds == 'true'
+        if: steps.check_secrets.outputs.has_creds == true
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy to Azure Web App (Azure login)
-        if: steps.check_secrets.outputs.has_creds == 'true'
+        if: steps.check_secrets.outputs.has_creds == true
         uses: azure/webapps-deploy@v3
         with:
           app-name: abaco-analytics-dashboard
           package: ./python-app
 
       - name: Deploy to Azure Web App (publish profile)
-        if: steps.check_secrets.outputs.has_creds != 'true' && steps.check_secrets.outputs.has_publish_profile == 'true'
+        if: steps.check_secrets.outputs.has_creds != 'true' && steps.check_secrets.outputs.has_publish_profile == true
         uses: azure/webapps-deploy@v3
         with:
           app-name: abaco-analytics-dashboard

@@ -52,7 +52,7 @@ jobs:
   deploy-staging:
     runs-on: ubuntu-latest
     needs: quality-gate
-    if: ${{ needs.quality-gate.outputs.passed == 'true' }}
+    if: ${{ needs.quality-gate.outputs.passed == true }}
     environment:
       name: staging
       url: https://staging.abaco-loans-analytics.com

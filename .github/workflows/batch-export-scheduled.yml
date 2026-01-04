@@ -51,7 +51,7 @@ jobs:
 
   batch-export:
     needs: check-secrets
-    if: needs.check-secrets.outputs.can_run == 'true'
+    if: needs.check-secrets.outputs.can_run == true
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -105,7 +105,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Notify on success
-        if: success() && needs.check-secrets.outputs.slack_ops_available == 'true'
+        if: success() && needs.check-secrets.outputs.slack_ops_available == true
         uses: 8398a7/action-slack@v3
         with:
           status: success
@@ -115,7 +115,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_OPS }}
 
       - name: Notify on failure
-        if: failure() && needs.check-secrets.outputs.slack_ops_available == 'true'
+        if: failure() && needs.check-secrets.outputs.slack_ops_available == true
         uses: 8398a7/action-slack@v3
         with:
           status: failure
@@ -132,7 +132,7 @@ jobs:
           echo "- **Export Type**: ${{ github.event.inputs.export_type || 'full' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.check-secrets.outputs.slack_ops_available }}" == "true" ]; then
+          if [ "${{ needs.check-secrets.outputs.slack_ops_available }}" == true ]; then
             echo "- **Notifications**: ✅ Configured" >> $GITHUB_STEP_SUMMARY
           else
             echo "- **Notifications**: ⚠️ Not configured" >> $GITHUB_STEP_SUMMARY

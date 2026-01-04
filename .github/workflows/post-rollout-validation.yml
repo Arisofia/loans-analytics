@@ -58,7 +58,7 @@ jobs:
           print("Cascade records:", len(df), "file:", latest)
           PY
       - name: Validate Figma Dashboard Images
-        if: steps.check-secrets.outputs.aws_available == 'true'
+        if: steps.check-secrets.outputs.aws_available == true
         env:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
         run: |
@@ -79,7 +79,7 @@ jobs:
               print(f"Image OK: {url}")
           PY
       - name: Validate Figma API Node Update
-        if: steps.check-secrets.outputs.figma_available == 'true'
+        if: steps.check-secrets.outputs.figma_available == true
         env:
           FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
           FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}

@@ -41,19 +41,19 @@ jobs:
             echo "::warning::SLACK_BOT_TOKEN not configured - skipping Slack notification"
           fi
       - name: Install Dependencies
-        if: steps.check-secrets.outputs.can_run == 'true'
+        if: steps.check-secrets.outputs.can_run == true
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run Brand Monitoring
-        if: steps.check-secrets.outputs.can_run == 'true' && hashFiles('scripts/brand_monitoring.py') != ''
+        if: steps.check-secrets.outputs.can_run == true && hashFiles('scripts/brand_monitoring.py') != ''
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           META_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
         run: |
           python scripts/brand_monitoring.py
       - name: Post to Slack
-        if: steps.check-secrets.outputs.can_run == 'true' && steps.check-secrets.outputs.slack_available == 'true' && hashFiles('scripts/post_to_slack.py') != ''
+        if: steps.check-secrets.outputs.can_run == true && steps.check-secrets.outputs.slack_available == true && hashFiles('scripts/post_to_slack.py') != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: |
@@ -63,12 +63,12 @@ jobs:
         run: |
           echo "## Brand Monitoring Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.check-secrets.outputs.can_run }}" == "true" ]; then
+          if [ "${{ steps.check-secrets.outputs.can_run }}" == true ]; then
             echo "- **Monitoring**: ✅ Executed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- **Monitoring**: ⚠️ Skipped (missing required secrets)" >> $GITHUB_STEP_SUMMARY
           fi
-          if [ "${{ steps.check-secrets.outputs.slack_available }}" == "true" ]; then
+          if [ "${{ steps.check-secrets.outputs.slack_available }}" == true ]; then
             echo "- **Slack Notification**: ✅ Configured" >> $GITHUB_STEP_SUMMARY
           else
             echo "- **Slack Notification**: ⚠️ Not configured" >> $GITHUB_STEP_SUMMARY
