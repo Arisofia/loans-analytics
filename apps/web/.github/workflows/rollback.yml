@@ -95,8 +95,8 @@ jobs:
       - name: Build target version
         run: pnpm -C apps/web build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets[format({0}_SUPABASE_URL, github.event.inputs.environment == production && PROD || STAGING)] }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets[format({0}_SUPABASE_KEY, github.event.inputs.environment == production && PROD || STAGING)] }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets[format('{0}_SUPABASE_URL', github.event.inputs.environment == 'production' && 'PROD' || 'STAGING')] }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets[format('{0}_SUPABASE_KEY', github.event.inputs.environment == 'production' && 'PROD' || 'STAGING')] }}
           NODE_ENV: production
 
       - name: Deploy rolled-back version
