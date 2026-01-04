@@ -18,7 +18,7 @@ def test_figma_sync_success(requests_mock, tmp_path, monkeypatch, capsys):
     # Arrange: prepare exports and env
     exports_dir = write_dummy_csv(tmp_path)
     monkeypatch.setenv("EXPORTS_PATH", str(exports_dir))
-    monkeypatch.setenv("FIGMA_ACCESS_TOKEN", "dummy_token")
+    monkeypatch.setenv("FIGMA_TOKEN", "dummy_token")
     monkeypatch.setenv("FIGMA_FILE_KEY", "dummy_key")
 
     # Mock Figma GET response
@@ -51,7 +51,7 @@ def test_figma_sync_success(requests_mock, tmp_path, monkeypatch, capsys):
 def test_figma_sync_rate_limit(requests_mock, tmp_path, monkeypatch):
     exports_dir = write_dummy_csv(tmp_path)
     monkeypatch.setenv("EXPORTS_PATH", str(exports_dir))
-    monkeypatch.setenv("FIGMA_ACCESS_TOKEN", "dummy_token")
+    monkeypatch.setenv("FIGMA_TOKEN", "dummy_token")
     monkeypatch.setenv("FIGMA_FILE_KEY", "bad_key")
 
     api_url = "https://api.figma.com/v1/files/bad_key"
