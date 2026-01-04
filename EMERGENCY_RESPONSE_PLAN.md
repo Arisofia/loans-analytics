@@ -27,7 +27,7 @@
 **Fix Applied**:
 
 - Replaced invalid `if: ${{ secrets.AZURE_CREDENTIALS != '' }}` syntax
-- Added proper GitHub Actions output check: `steps.check_creds.outputs.has_creds == 'true'`
+- Added proper GitHub Actions output check: `steps.check_creds.outputs.has_creds == true`
 - Added health check validation after deployment
 - Added failure notifications
 

@@ -189,7 +189,7 @@ class SlackBotService {
 
 const slackBot = new SlackBotService()
 
-if (process.env.SLACK_BOT_AUTOSTART !== 'false') {
+if (process.env.SLACK_BOT_AUTOSTART !== false) {
   slackBot.start().catch(console.error)
 }
 
