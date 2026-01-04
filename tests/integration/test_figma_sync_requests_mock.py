@@ -4,7 +4,7 @@ from pathlib import Path
 
 import requests
 
-SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "sync_kpi_table_to_figma.py"
+SCRIPT = Path(__file__).resolve().parent.parent.parent / "scripts" / "sync_kpi_table_to_figma.py"
 
 
 def load_fixture(name: str):
