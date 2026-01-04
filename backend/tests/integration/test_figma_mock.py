@@ -1,8 +1,8 @@
 import os
 import runpy
-import json
 import pytest
 import requests
+
 
 # The tests use requests-mock fixture provided by requests-mock plugin
 
@@ -33,12 +33,14 @@ def test_figma_sync_success(requests_mock, tmp_path, monkeypatch, capsys):
     requests_mock.get(api_url, json=mock_file, status_code=200)
 
     # Intercept PUT (update) requests
+    update_url = f"{api_url}/nodes?ids=page123"
+
     def put_callback(request, context):
         assert request.headers.get("X-Figma-Token") == "dummy_token"
         context.status_code = 200
         return {"ok": True}
 
-    requests_mock.put(api_url, json=put_callback)
+    requests_mock.put(update_url, json=put_callback)
 
     # Act: run the script (script reads env vars and uses requests)
     runpy.run_path(str(os.path.abspath(os.path.join(os.getcwd(), "scripts", "sync_kpi_table_to_figma.py"))), run_name="__main__")
@@ -58,5 +60,5 @@ def test_figma_sync_rate_limit(requests_mock, tmp_path, monkeypatch):
     requests_mock.get(api_url, status_code=429, text="Too Many Requests")
 
     # Running the script should raise due to HTTP error
-    with pytest.raises(requests.exceptions.RequestException):
+    with pytest.raises(requests.exceptions.HTTPError):
         runpy.run_path(str(os.path.abspath(os.path.join(os.getcwd(), "scripts", "sync_kpi_table_to_figma.py"))), run_name="__main__")

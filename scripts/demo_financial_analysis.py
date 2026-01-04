@@ -16,9 +16,11 @@ try:
     # Use non-interactive backend for scripts/tests to avoid GUI/display-related errors
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    HAS_MATPLOTLIB = True
 except Exception:
     # Matplotlib may not be installed in lightweight CI/test environments.
     # Provide a minimal stub that exposes the attributes used by this script so tests can patch `plt`.
+    HAS_MATPLOTLIB = False
     class _StubPlt:
         def figure(self, *args, **kwargs):
             return None
@@ -120,7 +122,7 @@ def main():
     print(f"HHI Score: {hhi:.2f} (Scale 0-10,000)")
 
     # 5. Visualization
-    if "dpd_bucket" in enriched_df.columns:
+    if HAS_MATPLOTLIB and "dpd_bucket" in enriched_df.columns:
         print("\n[4] Generating DPD Distribution Chart...")
         counts = enriched_df["dpd_bucket"].value_counts()
         order = ["Current", "1-29", "30-59", "60-89", "90-119", "120-149", "150-179", "180+"]
@@ -147,7 +149,7 @@ def main():
             if saved_ipy is not None:
                 sys.modules["IPython"] = saved_ipy
 
-    if "exposure_segment" in enriched_df.columns:
+    if HAS_MATPLOTLIB and "exposure_segment" in enriched_df.columns:
         print("\n[5] Generating Exposure Segment Chart...")
         counts = enriched_df["exposure_segment"].value_counts()
 

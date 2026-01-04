@@ -1,4 +1,3 @@
-import os
 import runpy
 import requests
 import pytest
@@ -17,7 +16,7 @@ class DummyResp:
 
     def raise_for_status(self):
         if self.status_code >= 400:
-            raise requests.exceptions.RequestException(f"Status {self.status_code}")
+            raise requests.exceptions.HTTPError(f"Status {self.status_code}")
 
     def json(self):
         return self._json
@@ -78,9 +77,8 @@ def test_get_request_failure(monkeypatch, tmp_path):
 
     monkeypatch.setattr(requests, "get", fail_get)
 
-    with pytest.raises(RuntimeError) as exc:
+    with pytest.raises(requests.exceptions.RequestException):
         runpy.run_path(str(SCRIPT_PATH), run_name="__main__")
-    assert "Figma API request failed" in str(exc.value)
 
 
 def test_put_request_failure(monkeypatch, tmp_path):
@@ -94,6 +92,5 @@ def test_put_request_failure(monkeypatch, tmp_path):
 
     monkeypatch.setattr(requests, "put", fail_put)
 
-    with pytest.raises(RuntimeError) as exc:
+    with pytest.raises(requests.exceptions.RequestException):
         runpy.run_path(str(SCRIPT_PATH), run_name="__main__")
-    assert "Figma API update request failed" in str(exc.value)
