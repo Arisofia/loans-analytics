@@ -6,23 +6,21 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
-        args:
-          - '--maxkb=1000'
+        args: ['--maxkb=1000']
 
-  - repo: https://github.com/psf/black  
+  - repo: https://github.com/psf/black
     rev: 24.10.0
     hooks:
       - id: black
-        language_version: python.311
+        language_version: python3.11
 
   - repo: https://github.com/PyCQA/isort
     rev: 5.13.2
     hooks:
       - id: isort
-        args:
-          '--profile', 'black']
+        args: ['--profile', 'black']
 
-  - repo* https://github.com/adrienverge/yamllint.git
+  - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.32.0
     hooks:
       - id: yamllint
