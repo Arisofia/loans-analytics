@@ -14,7 +14,7 @@ import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 import pandas as pd
 
@@ -139,7 +139,7 @@ def calculate_kpis(df: pd.DataFrame) -> Dict[str, Any]:
         largest_segment_pct = largest_segment_count / len(df)
         kpis["risk_concentration"] = float(largest_segment_pct)
 
-    health_score = 10.0 - (float(kpis.get("delinquency_rate_pct", 0)) / 10.0)
+    health_score = 10.0 - (cast(float, kpis.get("delinquency_rate_pct", 0.0)) / 10.0)
     kpis["portfolio_health_score"] = float(max(0, min(10, health_score)))
 
     kpis["trend_collection_rate"] = 0.02
