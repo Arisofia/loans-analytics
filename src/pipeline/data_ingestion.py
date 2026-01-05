@@ -85,6 +85,13 @@ class UnifiedIngestion:
         """High-performance CSV ingestion using Polars."""
 
         path = self.data_dir / filename
+        
+        # Security: Size check
+        max_size_mb = self.config.get("max_file_size_mb", 50)
+        if path.exists() and path.stat().st_size > max_size_mb * 1024 * 1024:
+            self._record_error("ingestion_read", Exception(f"File size exceeds limit of {max_size_mb}MB"), file=filename)
+            return pd.DataFrame()
+
         try:
             # Polars for high-speed reading
             lf = pl.scan_csv(path)
@@ -143,6 +150,13 @@ class UnifiedIngestion:
     def ingest_parquet(self, filename: str) -> pd.DataFrame:
         """High-performance Parquet ingestion using Polars."""
         path = self.data_dir / filename
+        
+        # Security: Size check
+        max_size_mb = self.config.get("max_file_size_mb", 50)
+        if path.exists() and path.stat().st_size > max_size_mb * 1024 * 1024:
+            self._record_error("ingestion_read_parquet", Exception(f"File size exceeds limit of {max_size_mb}MB"), file=filename)
+            return pd.DataFrame()
+
         try:
             df_polars = pl.read_parquet(path)
             df = df_polars.to_pandas()
@@ -154,6 +168,13 @@ class UnifiedIngestion:
     def ingest_excel(self, filename: str) -> pd.DataFrame:
         """High-performance Excel ingestion using Polars."""
         path = self.data_dir / filename
+        
+        # Security: Size check
+        max_size_mb = self.config.get("max_file_size_mb", 50)
+        if path.exists() and path.stat().st_size > max_size_mb * 1024 * 1024:
+            self._record_error("ingestion_read_excel", Exception(f"File size exceeds limit of {max_size_mb}MB"), file=filename)
+            return pd.DataFrame()
+
         try:
             df_polars = pl.read_excel(path)
             df = df_polars.to_pandas()

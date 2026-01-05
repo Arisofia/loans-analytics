@@ -1,57 +1,34 @@
 name: Unified Multi-Agent Data Pipeline
 
-"on":
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "data/**"
+      - "src/**"
+      - "scripts/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "data/**"
+      - "src/**"
+      - "scripts/**"
   schedule:
     # Run daily at 4:00 AM CET (3:00 AM UTC) - before agent workflows
     - cron: "0 3 * * *"
   workflow_dispatch:
 
 jobs:
-  ingest-all-sources:
+  run-pipeline:
+    name: Execute Unified Pipeline
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      - name: Check secrets availability
-        id: check-secrets
-        env:
-          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-          CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
-          CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}
-          HUBSPOT_TOKEN: ${{ secrets.HUBSPOT_API_TOKEN }}
-          OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        run: |
-          if [ -n "$CASCADE_USERNAME" ] && [ -n "$CASCADE_PASSWORD" ]; then
-            echo "cascade_available=true" >> $GITHUB_OUTPUT
-          else
-            echo "cascade_available=false" >> $GITHUB_OUTPUT
-          fi
-          if [ -n "$HUBSPOT_TOKEN" ]; then
-            echo "hubspot_available=true" >> $GITHUB_OUTPUT
-          else
-            echo "hubspot_available=false" >> $GITHUB_OUTPUT
-          fi
-          if [ -n "$SUPABASE_SERVICE_ROLE" ]; then
-            echo "supabase_available=true" >> $GITHUB_OUTPUT
-          else
-            echo "supabase_available=false" >> $GITHUB_OUTPUT
-          fi
-          if [ -n "$SLACK_WEBHOOK_URL" ] || [ -n "$SLACK_BOT_TOKEN" ]; then
-            echo "slack_available=true" >> $GITHUB_OUTPUT
-          else
-            echo "slack_available=false" >> $GITHUB_OUTPUT
-          fi
-          if [ -n "$OPIK_TOKEN" ]; then
-            echo "opik_available=true" >> $GITHUB_OUTPUT
-          else
-            echo "opik_available=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Python Environment
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -62,83 +39,66 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Ingest Cascade Data
-        id: cascade
-        if: hashFiles('scripts/ingest_cascade.py') != '' && steps.check-secrets.outputs.cascade_available == true
-        continue-on-error: true
+      - name: Execute Unified Data Pipeline
+        id: pipeline
         env:
           CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
           CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}
-        run: |
-          echo "Fetching loan data from Cascade..."
-          python scripts/ingest_cascade.py
-
-      - name: Ingest HubSpot CRM Data
-        id: hubspot
-        if: hashFiles('scripts/ingest_hubspot.py') != '' && steps.check-secrets.outputs.hubspot_available == true
-        continue-on-error: true
-        env:
           HUBSPOT_TOKEN: ${{ secrets.HUBSPOT_API_TOKEN }}
-        run: |
-          echo "Fetching deals, contacts, and pipeline data from HubSpot..."
-          python scripts/ingest_hubspot.py
-
-      - name: Refresh Supabase Views
-        id: supabase
-        if: hashFiles('scripts/refresh_supabase_views.py') != '' && steps.check-secrets.outputs.supabase_available == true
-        env:
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-        run: |
-          echo "Refreshing materialized views for agent consumption..."
-          python scripts/refresh_supabase_views.py
-
-      - name: Validate Data Quality
-        if: hashFiles('scripts/validate_data_quality.py') != ''
-        run: |
-          echo "Running data quality checks..."
-          python scripts/validate_data_quality.py
-
-      - name: Generate Data Manifest
-        if: hashFiles('scripts/generate_data_manifest.py') != ''
-        run: |
-          echo "Creating manifest with data freshness timestamps..."
-          python scripts/generate_data_manifest.py
-
-      - name: Signal Agents Data Ready
-        if: steps.check-secrets.outputs.slack_available == true
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL || secrets.SLACK_BOT_TOKEN }}
-        run: |
-          echo "Broadcasting data-ready signal to agent workflows..."
-          curl -X POST "$SLACK_WEBHOOK_URL" \
-            -H 'Content-Type: application/json' \
-            -d "{\"text\":\"✅ Data pipeline completed at $(date). All agents can now run.\"}"
-
-      - name: Log to Opik
-        if: always() && steps.check-secrets.outputs.opik_available == true && hashFiles('scripts/log_pipeline_metrics.py') != ''
-        env:
           OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
         run: |
-          python scripts/log_pipeline_metrics.py \
-            --cascade-status ${{ steps.cascade.outcome || 'skipped' }} \
-            --hubspot-status ${{ steps.hubspot.outcome || 'skipped' }} \
-            --supabase-status ${{ steps.supabase.outcome || 'skipped' }}
+          echo "Running unified data pipeline (orchestrator)..."
+          python scripts/run_data_pipeline.py --action github-action
 
-      - name: Alert on Critical Failure
-        if: failure() && steps.check-secrets.outputs.slack_available == true
+      - name: Notify Slack on Success
+        if: success() && secrets.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "✅ Unified Data Pipeline completed successfully",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Status:* SUCCESS\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>"
+                  }
+                }
+              ]
+            }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL || secrets.SLACK_BOT_TOKEN }}
-        run: |
-          curl -X POST "$SLACK_WEBHOOK_URL" \
-            -H 'Content-Type: application/json' \
-            -d '{"text":"🚨 CRITICAL: Data pipeline failed. Agent workflows may operate on stale data."}'
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on Failure
+        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "🚨 Unified Data Pipeline FAILED",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Status:* FAILED\n*Workflow:* `${{ github.workflow }}`\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Upload Pipeline Artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: data-pipeline-logs
+          name: data-pipeline-results
           path: |
             logs/
             data/manifest.json
-          retention-days: 7
+            exports/
+          retention-days: 14
