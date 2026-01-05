@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import json
 import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Union, Optional
 import os
 import subprocess
 
@@ -49,6 +51,32 @@ def _find_repo_root(start: Path | None | Callable[[], Path] = None) -> Path:
 repo_root = _find_repo_root()
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
+
+
+# Backwards-compatible helper to validate and sanitize input file paths.
+# Tests and other call sites may rely on the historical name `_sanitize_and_resolve`.
+# Provide a stable module-level function to avoid import-time surprises.
+from typing import Any
+
+def _sanitize_and_resolve(path_str: str, allowed_dir: Path) -> Path:
+    """Resolve a candidate path under `allowed_dir` and reject traversal/absolute paths.
+
+    Raises ValueError on invalid paths to make the helper straightforward to use
+    in tests and non-FastAPI code (the route converts to HTTPException as needed).
+    """
+    candidate = Path(path_str)
+    if candidate.is_absolute():
+        raise ValueError("Absolute paths are not allowed")
+    
+    # Use allowed_dir as the base for resolution to support relative paths
+    # and testing with arbitrary directories.
+    resolved = (allowed_dir / candidate).resolve()
+    
+    try:
+        resolved.relative_to(allowed_dir.resolve())
+    except Exception:
+        raise ValueError("Invalid input file; must be under data/archives/")
+    return resolved
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException  # noqa: E402
 
@@ -122,22 +150,11 @@ async def trigger_pipeline(
     # Validate input_file to avoid path traversal and ensure files are under data/archives
     ALLOWED_DATA_DIR = (repo_root / "data" / "archives").resolve()
 
-    def _validate_input_file(path_str: str) -> Path:
-        candidate = Path(path_str)
-        # disallow absolute paths
-        if candidate.is_absolute():
-            raise HTTPException(status_code=400, detail="Absolute paths are not allowed")
-        resolved = (repo_root / candidate).resolve()
-        try:
-            resolved.relative_to(ALLOWED_DATA_DIR)
-        except Exception:
-            raise HTTPException(
-                status_code=400, detail="Invalid input file; must be under data/archives/"
-            )
-        return resolved
-
     # perform validation; will raise HTTPException on invalid input
-    validated_input_path = _validate_input_file(input_file)
+    try:
+        validated_input_path = _sanitize_and_resolve(input_file, ALLOWED_DATA_DIR)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     mode = os.getenv("PIPELINE_EXECUTION_MODE", "subprocess")
 
