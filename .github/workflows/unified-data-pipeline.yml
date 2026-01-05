@@ -53,7 +53,7 @@ jobs:
           python scripts/run_data_pipeline.py --action github-action
 
       - name: Notify Slack on Success
-        if: success() && secrets.SLACK_WEBHOOK_URL != ''
+        if: success() && env.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |
@@ -73,7 +73,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack on Failure
-        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |
@@ -98,7 +98,7 @@ jobs:
         with:
           name: data-pipeline-results
           path: |
-            logs/
+            logs
             data/manifest.json
-            exports/
+            exports
           retention-days: 14

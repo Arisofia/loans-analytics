@@ -21,12 +21,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies (apps/web)
-        working-directory: apps/web
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Cache node modules
         uses: actions/cache@v4
         with:
