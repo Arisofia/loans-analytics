@@ -81,7 +81,7 @@ jobs:
   assignee-check:
     if: github.event_name == 'pull_request' && needs.changes.outputs.web == 'true'
     needs: changes
-    uses: Arisofia/abaco-loans-analytics/.github/workflows/pr-assignee-check.yml@main
+    uses: ./.github/workflows/pr-assignee-check.yml
     permissions:
       contents: read
       pull-requests: read
