@@ -65,14 +65,22 @@ def _sanitize_and_resolve(path_str: str, allowed_dir: Path) -> Path:
     Raises ValueError on invalid paths to make the helper straightforward to use
     in tests and non-FastAPI code (the route converts to HTTPException as needed).
     """
-    candidate = Path(path_str)
-    if candidate.is_absolute():
+    # Normalize the raw string to eliminate redundant separators like "./".
+    normalized = os.path.normpath(path_str)
+    candidate = Path(normalized)
+
+    # Reject absolute paths or paths with an explicit root/drive.
+    if candidate.is_absolute() or candidate.anchor:
         raise ValueError("Absolute paths are not allowed")
-    
+
+    # Reject any attempt to traverse upwards out of the allowed directory.
+    if ".." in candidate.parts:
+        raise ValueError("Parent directory segments are not allowed")
+
     # Use allowed_dir as the base for resolution to support relative paths
     # and testing with arbitrary directories.
     resolved = (allowed_dir / candidate).resolve()
-    
+
     try:
         resolved.relative_to(allowed_dir.resolve())
     except Exception:
