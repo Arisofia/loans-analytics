@@ -29,7 +29,7 @@ REPORT_FILE="CI_DIAGNOSIS_REPORT.md"
     echo "## 2. WORKFLOW SYNTAX CHECK"
     echo "### YAML Validation"
     if command -v yamllint &> /dev/null; then
-        yamllint .github/workflows/ci.yml && echo "✓ ci.yml: VALID" || echo "✗ ci.yml: INVALID"
+        yamllint -c .yamllint .github/workflows/ci.yml && echo "✓ ci.yml: VALID" || echo "✗ ci.yml: INVALID"
     else
         echo "⚠ yamllint not installed, skipping"
     fi

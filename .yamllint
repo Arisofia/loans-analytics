@@ -4,8 +4,11 @@ ignore: |
   apps/web/pnpm-lock.yaml
 rules:
   line-length:
-    max: 200
+    max: 120
+    allow-non-breakable-words: true
     level: warning
+  quoted-strings:
+    required: false
   indentation: disable
   braces: disable
   brackets: disable
@@ -16,4 +19,3 @@ rules:
   truthy:
     level: warning
     check-keys: false
-
