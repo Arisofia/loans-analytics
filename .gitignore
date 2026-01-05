@@ -88,6 +88,7 @@ scripts/test_hubspot_simple.py
 # Python virtual environments
 .venv/
 .venv-1/
+.lint-venv/
 
 # Azurite local storage state
 AzuriteConfig
