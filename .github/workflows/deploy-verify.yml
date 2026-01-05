@@ -1,0 +1,42 @@
+name: Deploy verify
+
+on:
+    workflow_dispatch:
+        inputs:
+            target_url:
+                required: true
+                description: "URL to probe for the middleware"
+
+jobs:
+    verify:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Verify target rejects requests without secret (expect 403)
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  TARGET_URL="${{ github.event.inputs.target_url }}"
+                  echo "Probing without secret: $TARGET_URL"
+                  status=$(curl -sS -o /dev/null -w "%{http_code}" "$TARGET_URL") || true
+                  echo "HTTP status: $status"
+                  if [ "$status" -ne 403 ]; then
+                    echo "Expected 403 but got $status" >&2
+                    exit 1
+                  fi
+            - name: Verify target accepts requests with MIDDLEWARE_SHARED_SECRET
+              shell: bash
+              env:
+                  MIDDLEWARE_SHARED_SECRET: ${{ secrets.MIDDLEWARE_SHARED_SECRET }}
+              run: |
+                  set -euo pipefail
+                  TARGET_URL="${{ github.event.inputs.target_url }}"
+                  echo "Probing with secret: $TARGET_URL"
+                  status=$(curl -sS -o /dev/null -w "%{http_code}" -H "x-middleware-secret: $MIDDLEWARE_SHARED_SECRET" "$TARGET_URL") || true
+                  echo "HTTP status: $status"
+                  if [ "$status" -eq 403 ]; then
+                    echo "Requests are still rejected when auth secret provided (got 403)" >&2
+                    exit 1
+                  fi
+            - name: Emit confirmation
+              run: |
+                  echo "Deploy verify succeeded for ${{ github.event.inputs.target_url }}"
