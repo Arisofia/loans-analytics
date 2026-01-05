@@ -8,7 +8,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 import pandas as pd
 
-from src.pipeline.schema import LoanTapeConstants, LoanTapeSchema
+from src.pipeline.schema import LoanTapeConstants
 
 
 @dataclass
