@@ -129,7 +129,8 @@ def main():
         counts = counts.reindex(order).fillna(0)
 
         # Ensure non-interactive backend is enforced immediately before plotting.
-        matplotlib.use("Agg")
+        if HAS_MATPLOTLIB:
+            matplotlib.use("Agg")
 
         # Temporarily remove IPython from sys.modules to avoid a matplotlib bug
         # where it references a misspelled variable when IPython is present.
@@ -154,7 +155,8 @@ def main():
         counts = enriched_df["exposure_segment"].value_counts()
 
         # Ensure non-interactive backend is enforced immediately before plotting.
-        matplotlib.use("Agg")
+        if HAS_MATPLOTLIB:
+            matplotlib.use("Agg")
 
         # Temporarily remove IPython from sys.modules to avoid a matplotlib bug
         # where it references a misspelled variable when IPython is present.

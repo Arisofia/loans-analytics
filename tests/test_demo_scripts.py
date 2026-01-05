@@ -29,6 +29,8 @@ class TestDemoScripts(unittest.TestCase):
             patch("scripts.demo_financial_analysis.Path.exists", return_value=True),
             patch("scripts.demo_financial_analysis.pd.read_csv") as mock_read,
             patch("scripts.demo_financial_analysis.plt") as mock_plt,
+            patch("scripts.demo_financial_analysis.matplotlib", create=True) as mock_matplotlib,
+            patch("scripts.demo_financial_analysis.HAS_MATPLOTLIB", True),
             patch("builtins.print"),
         ):
 
@@ -59,6 +61,8 @@ class TestDemoScripts(unittest.TestCase):
             patch("scripts.demo_financial_analysis.Path.exists", return_value=True),
             patch("scripts.demo_financial_analysis.pd.read_csv") as mock_read,
             patch("scripts.demo_financial_analysis.plt") as mock_plt,
+            patch("scripts.demo_financial_analysis.matplotlib", create=True) as mock_matplotlib,
+            patch("scripts.demo_financial_analysis.HAS_MATPLOTLIB", True),
             patch("builtins.print"),
         ):
 
