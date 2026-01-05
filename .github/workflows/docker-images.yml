@@ -29,9 +29,9 @@ jobs:
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
-      ACR_USERNAME: ${{ secrets.AZURE_ACR_USERNAME }}
-      ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
+      AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
+      AZURE_ACR_USERNAME: ${{ secrets.AZURE_ACR_USERNAME }}
+      AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
 
   build-and-push:
     runs-on: ubuntu-latest
@@ -122,8 +122,6 @@ jobs:
           password: ${{ env.ACR_PASSWORD }}
 
       - name: Tag & push to ACR (optional)
-        env:
-          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
         run: |
           set -euo pipefail
           if [ -z "$ACR_LOGIN_SERVER" ]; then
