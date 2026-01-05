@@ -1,5 +1,5 @@
 name: Risk Monitoring
-on:
+"on":
     schedule:
         - cron: "0 6 * * *" # 7:00 AM CET daily
     workflow_dispatch:

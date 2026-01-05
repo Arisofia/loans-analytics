@@ -1,6 +1,6 @@
 name: Backend Integration
 
-on:
+"on":
   push:
     branches: [ main, develop, "feat/*" ]
     paths:

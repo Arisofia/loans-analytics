@@ -1,6 +1,6 @@
 name: Brand Monitoring
 
-on:
+"on":
   schedule:
     - cron: "0 9 * * *" # 10:00 AM CET daily
   workflow_dispatch:

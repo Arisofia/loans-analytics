@@ -1,6 +1,6 @@
 name: Supabase to Figma Integration
 
-on:
+"on":
   workflow_dispatch: {}
   schedule:
     - cron: "0 6 * * *" # Runs every day at 6:00 AM UTC

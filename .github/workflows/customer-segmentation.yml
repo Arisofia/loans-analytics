@@ -1,5 +1,5 @@
 name: Customer Segmentation
-on:
+"on":
     schedule:
         - cron: "0 10 * * *" # 11:00 AM CET daily
     workflow_dispatch:

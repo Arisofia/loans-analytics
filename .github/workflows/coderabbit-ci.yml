@@ -1,5 +1,5 @@
 name: CodeRabbit Lint & Security Gate
-on:
+"on":
   pull_request:
     types: [opened, synchronize, reopened]
   push:

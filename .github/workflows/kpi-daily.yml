@@ -1,6 +1,6 @@
 name: KPI Daily Calculation
 
-on:
+"on":
     schedule:
         - cron: "0 5 * * *" # 6:00 AM CET (5:00 UTC)
     workflow_dispatch:

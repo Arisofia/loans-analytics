@@ -1,5 +1,5 @@
 name: Investor Reporting
-on:
+"on":
     schedule:
         - cron: "0 9 1 * *" # 10:00 AM CET, 1st of month
     workflow_dispatch:

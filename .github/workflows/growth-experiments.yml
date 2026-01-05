@@ -1,5 +1,5 @@
 name: Growth Experiments
-on:
+"on":
   schedule:
     - cron: "0 13 * * *" # 2:00 PM CET daily
   workflow_dispatch:

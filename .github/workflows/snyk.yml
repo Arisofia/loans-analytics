@@ -1,5 +1,5 @@
 name: Snyk Security Scan
-on:
+"on":
   push:
     branches:
       - main

@@ -1,6 +1,6 @@
 name: Dependency validate
 
-on:
+"on":
   pull_request:
   push:
     branches: [ main ]

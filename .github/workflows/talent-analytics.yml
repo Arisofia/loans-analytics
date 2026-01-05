@@ -1,5 +1,5 @@
 name: Talent Analytics
-on:
+"on":
     schedule:
         - cron: "0 12 * * *" # 1:00 PM CET daily
     workflow_dispatch:

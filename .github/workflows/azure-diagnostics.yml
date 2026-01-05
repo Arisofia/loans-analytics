@@ -1,6 +1,6 @@
 name: Azure Diagnostics (dispatchable)
 
-on:
+"on":
   workflow_dispatch:
 
 permissions:

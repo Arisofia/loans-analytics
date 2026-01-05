@@ -1,5 +1,5 @@
 name: Product Analytics
-on:
+"on":
     schedule:
         - cron: "0 11 * * *" # 12:00 PM CET daily
     workflow_dispatch:

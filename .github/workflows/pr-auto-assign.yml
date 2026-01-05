@@ -1,5 +1,5 @@
 name: PR Auto Assign
-on:
+"on":
   pull_request:
     types: [opened, ready_for_review, reopened]
 # This permissions block is the key fix for "Resource not accessible"
