@@ -2,12 +2,8 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  experimental: {},
   typescript: {
     tsconfigPath: './tsconfig.json',
-  },
-  turbopack: {
-    root: __dirname,
   },
   headers: async () => [
     {

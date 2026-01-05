@@ -1,0 +1,14 @@
+*** Begin Patch
+*** Add File: constraints/opentelemetry-constraints.txt
++ # OpenTelemetry pinned set to avoid resolver conflicts
++ opentelemetry-api==1.39.0
++ opentelemetry-sdk==1.39.0
++ opentelemetry-semantic-conventions==0.60b0
++ opentelemetry-instrumentation==0.60b0
++ opentelemetry-instrumentation-requests==0.60b0
++ opentelemetry-instrumentation-urllib3==0.60b0
++ opentelemetry-instrumentation-dbapi==0.60b0
++ opentelemetry-instrumentation-httpx==0.60b0
++ opentelemetry-exporter-prometheus==0.60b0
++ azure-monitor-opentelemetry-exporter==1.0.0b46
+*** End Patch

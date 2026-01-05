@@ -1,0 +1,12 @@
+*** Begin Patch
+*** Update File: requirements.txt
+@@
+-langchain==0.3.13
+-langchain-openai==0.2.14
+-langchain-anthropic==0.3.7
+-langchain-core==0.3.28
++langchain
++langchain-openai
++langchain-anthropic
++langchain-core
+*** End Patch

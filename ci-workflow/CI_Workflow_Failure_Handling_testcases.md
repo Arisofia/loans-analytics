@@ -435,7 +435,7 @@ Test Steps - Data - Expected Result: [Detailed execution]
 | 1 | Unset all Vercel secrets in GitHub | Secrets not available |
 | 2 | Run secret check step | Step executes without error |
 | 3 | Check output variable `present` | Output: `present=false` |
-| 4 | Verify deployment step is skipped | Deploy step has `if: steps.vercel_secrets.outputs.present == 'true'` |
+| 4 | Verify deployment step is skipped | Deploy step has `if: steps.vercel_secrets.outputs.present == true` |
 | 5 | Set one secret, unset others | Check again | Output: `present=false` (all required) |
 
 ---

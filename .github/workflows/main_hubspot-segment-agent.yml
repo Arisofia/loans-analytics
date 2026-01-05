@@ -110,7 +110,7 @@ jobs:
           fi
 
       - name: Login to Azure
-        if: steps.check_oidc.outputs.present == 'true'
+        if: steps.check_oidc.outputs.present == true
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F6607BB65D034140A480784B481B338B }}
@@ -118,7 +118,7 @@ jobs:
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_09482FCEC83B4AD880614EFC42AD11AD }}
 
       - name: 'Deploy to Azure Functions'
-        if: steps.check_oidc.outputs.present == 'true'
+        if: steps.check_oidc.outputs.present == true
         uses: Azure/functions-action@v1
         id: deploy-to-function
         with:

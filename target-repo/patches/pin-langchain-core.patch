@@ -1,0 +1,6 @@
+*** Begin Patch
+*** Update File: requirements.txt
+@@
+ # other deps...
++langchain-core>=0.3.34,<0.4.0
+*** End Patch

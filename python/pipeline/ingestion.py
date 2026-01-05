@@ -11,9 +11,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 from jsonschema import Draft202012Validator
-from pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
+from .utils import (CircuitBreaker, RateLimiter, RetryPolicy,
                             hash_file, utc_now)
-from pipeline.validation import DataQualityReport, DataQualityReporter, validate_dataframe
+from .validation import DataQualityReport, DataQualityReporter, validate_dataframe
 from pydantic import BaseModel, Field, ValidationError
 
 logger = logging.getLogger("abaco.ingestion")
