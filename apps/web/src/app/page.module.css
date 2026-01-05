@@ -413,28 +413,6 @@
   .kpiValue {
     font-size: 28px;
   }
-
-  /* The following block appears to be a root-level or page-level style. Place it outside the media query if needed, or adjust selector as appropriate. */
-  display: flex;
-  flex-direction: column;
-  gap: 80px;
-  padding: 32px 24px 96px;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.12), transparent 30%),
-    radial-gradient(circle at 80% 0%, rgba(34, 197, 94, 0.14), transparent 28%), var(--color-bg);
-  background:
-    radial-gradient(
-      circle at 20% 20%,
-      color-mix(in srgb, var(--color-accent-blue) 12%, transparent),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 80% 0%,
-      color-mix(in srgb, var(--color-accent-green) 14%, transparent),
-      transparent 28%
-    ),
-    var(--color-bg);
-  color: var(--color-text-primary);
 }
 
 .nav {

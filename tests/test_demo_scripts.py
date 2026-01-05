@@ -21,7 +21,7 @@ class TestDemoScripts(unittest.TestCase):
             except Exception as e:
                 self.fail(f"demo_financial_analysis.main() raised {e} unexpectedly!")
 
-    @patch("scripts.demo_financial_analysis.FinancialAnalyzer")
+    @patch("src.financial_analysis.FinancialAnalyzer")
     def test_demo_financial_analysis_with_file(self, mock_analyzer_cls):
         """Test that the script attempts to load a file if provided."""
         with (
@@ -29,6 +29,8 @@ class TestDemoScripts(unittest.TestCase):
             patch("scripts.demo_financial_analysis.Path.exists", return_value=True),
             patch("scripts.demo_financial_analysis.pd.read_csv") as mock_read,
             patch("scripts.demo_financial_analysis.plt") as mock_plt,
+            patch("scripts.demo_financial_analysis.matplotlib", create=True) as mock_matplotlib,
+            patch("scripts.demo_financial_analysis.HAS_MATPLOTLIB", True),
             patch("builtins.print"),
         ):
 
@@ -51,7 +53,7 @@ class TestDemoScripts(unittest.TestCase):
             self.assertEqual(mock_plt.figure.call_count, 2)
             self.assertEqual(mock_plt.savefig.call_count, 2)
 
-    @patch("scripts.demo_financial_analysis.FinancialAnalyzer")
+    @patch("src.financial_analysis.FinancialAnalyzer")
     def test_demo_financial_analysis_skips_plots_if_columns_missing(self, mock_analyzer_cls):
         """Test that the script skips plotting if columns are missing."""
         with (
@@ -59,6 +61,8 @@ class TestDemoScripts(unittest.TestCase):
             patch("scripts.demo_financial_analysis.Path.exists", return_value=True),
             patch("scripts.demo_financial_analysis.pd.read_csv") as mock_read,
             patch("scripts.demo_financial_analysis.plt") as mock_plt,
+            patch("scripts.demo_financial_analysis.matplotlib", create=True) as mock_matplotlib,
+            patch("scripts.demo_financial_analysis.HAS_MATPLOTLIB", True),
             patch("builtins.print"),
         ):
 

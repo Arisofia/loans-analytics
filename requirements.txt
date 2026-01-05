@@ -2,7 +2,7 @@
 openai==1.58.1
 # anthropic==0.39.0  # removed to avoid conflict with later minimum requirement (anthropic>=0.7.0)
 hubspot-api-client==12.0.0
-python-dotenv==1.0.1
+python-dotenv==1.2.1
 langchain==0.3.13
 langchain-openai==0.2.14
 langchain-anthropic==0.3.7
@@ -54,3 +54,6 @@ azure-storage-blob>=12.27.0
 azure-mgmt-portal>=1.0
 psycopg[binary]>=3.1.0
 supabase>=2.0
+
+# Testing utilities
+Faker>=18.0

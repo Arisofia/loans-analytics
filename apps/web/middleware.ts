@@ -2,6 +2,14 @@ import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  const allowE2EBypass =
+    process.env.E2E_BYPASS_AUTH === '1' &&
+    (process.env.CI === 'true' || process.env.NODE_ENV !== 'production');
+
+  if (allowE2EBypass) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,

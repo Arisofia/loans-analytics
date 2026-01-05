@@ -68,7 +68,7 @@ class TestAnalyticsSmoke:
             pytest.fail("Pipeline execution exceeded 60 second timeout")
 
     def test_a02_artifact_existence_and_schema(
-        self, analytics_test_env: Dict[str, Any], kpi_schema: Dict[str, Any]
+        self, run_analytics_pipeline: Path, kpi_schema: Dict[str, Any]
     ) -> None:
         """
         A-02: Output artifacts existence and schema validation.
@@ -80,7 +80,7 @@ class TestAnalyticsSmoke:
         - Required fields present (run_id, timestamp, KPI values)
         - File sizes > 100 bytes
         """
-        output_dir = analytics_test_env["output_dir"]
+        output_dir = run_analytics_pipeline
 
         kpi_json_path = output_dir / "kpi_results.json"
         metrics_csv_path = output_dir / "metrics.csv"
@@ -111,9 +111,9 @@ class TestAnalyticsSmoke:
         assert "metric_name" in df_metrics.columns, "metric_name column missing"
         assert "value" in df_metrics.columns, "value column missing"
 
-    def test_a02_json_required_fields(self, analytics_test_env: Dict[str, Any]) -> None:
+    def test_a02_json_required_fields(self, run_analytics_pipeline: Path) -> None:
         """Verify all required KPI fields are present in output."""
-        output_dir = analytics_test_env["output_dir"]
+        output_dir = run_analytics_pipeline
         kpi_json_path = output_dir / "kpi_results.json"
 
         with open(kpi_json_path) as f:
@@ -134,9 +134,9 @@ class TestAnalyticsSmoke:
                 f"Field '{field}' must be numeric, got {type(kpi_data[field])}"
             )
 
-    def test_a02_csv_valid_structure(self, analytics_test_env: Dict[str, Any]) -> None:
+    def test_a02_csv_valid_structure(self, run_analytics_pipeline: Path) -> None:
         """Verify metrics.csv has valid structure and data types."""
-        output_dir = analytics_test_env["output_dir"]
+        output_dir = run_analytics_pipeline
         metrics_csv_path = output_dir / "metrics.csv"
 
         df = pd.read_csv(metrics_csv_path)
