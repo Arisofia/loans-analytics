@@ -19,12 +19,6 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Ensure required secret
-              uses: ./.github/workflows/reusable-secret-check.yml
-              with:
-                  secrets: "MIDDLEWARE_SHARED_SECRET"
-              secrets: inherit
-
             - name: Dispatch Deploy verification workflow
               id: dispatch
               uses: actions/github-script@v6
