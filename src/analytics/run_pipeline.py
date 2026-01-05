@@ -112,6 +112,18 @@ def create_metrics_csv(df: pd.DataFrame, output_path: Path) -> None:
             for k, v in seg_kpis.items():
                 metrics.append({"metric_name": k, "value": v, "segment": seg})
 
+    # Add a 'unit' column expected by downstream consumers/tests
+    def _unit_for_name(name: str) -> str:
+        n = name.lower()
+        if "usd" in n or "receivable" in n or "cash" in n:
+            return "USD"
+        if "rate" in n or n.endswith("pct") or "percent" in n:
+            return "pct"
+        return ""
+
+    for row in metrics:
+        row.setdefault("unit", _unit_for_name(str(row.get("metric_name", ""))))
+
     out_df = pd.DataFrame(metrics)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     out_df.to_csv(output_path, index=False)
@@ -141,14 +153,35 @@ def main(argv: Optional[List[str]] = None) -> int:
         logger.exception("Failed to read dataset: %s", dataset_path)
         return 1
 
+    # Signal start (tests look for this string in logs)
+    print("Pipeline start")
+
     kpis = calculate_kpis(df)
+
+    # Add run metadata expected by smoke tests and JSON schema
+    from uuid import uuid4
+    from datetime import datetime, timezone
+
+    kpis_enriched = dict(kpis)
+    kpis_enriched.setdefault("run_id", str(uuid4()))
+    kpis_enriched.setdefault("timestamp", datetime.now(timezone.utc).isoformat())
+    kpis_enriched.setdefault("pipeline_status", "success")
+    kpis_enriched.setdefault("num_segments", len(df.get("segment").unique()) if "segment" in df.columns else 1)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     kpi_file = out_dir / "kpi_results.json"
     with open(kpi_file, "w") as fh:
-        json.dump(kpis, fh)
+        json.dump(kpis_enriched, fh)
 
     metrics_file = out_dir / "metrics.csv"
     create_metrics_csv(df, metrics_file)
 
     return 0
+
+
+if __name__ == "__main__":
+    # Allow `python -m src.analytics.run_pipeline --dataset ...` to execute the
+    # pipeline in subprocess-based tests and local runs.
+    import sys
+
+    raise SystemExit(main(sys.argv[1:]))

@@ -14,7 +14,7 @@
 
 ## Critical Fixes Applied
 
-1. **Import Path Resolution** - Fixed relative imports in `python/pipeline/ingestion.py`
+1. **Import Path Resolution** - Fixed relative imports in `src/pipeline/data_ingestion.py`
    - Changed: `from pipeline.utils import ...` 
    - To: `from .utils import ...`
    - Impact: All tests can now import pipeline modules correctly
@@ -23,8 +23,8 @@
    - Fixed line 136: Proper type casting for delinquency rate calculation
    - Impact: mypy now passes 100% with zero errors
 
-3. **Test Configuration** - Updated conftest.py to add python/ directory to sys.path
-   - Impact: Enables tests to import both root-level and python-level modules
+3. **Test Configuration** - Updated conftest.py to add src/ directory to sys.path
+   - Impact: Enables tests to import both root-level and src-level modules
 
 ## E2E Test Coverage
 
@@ -38,7 +38,7 @@
 
 ## Deployment Artifacts
 
-- **Source Code**: `src/`, `python/` - Production code with fixes
+- **Source Code**: `src/` - Production code with fixes
 - **Tests**: `tests/test_deployment_e2e.py` - Comprehensive E2E validation
 - **Configuration**: `pytest.ini`, `pyproject.toml` - Test & lint configuration
 - **Documentation**: This report

@@ -8,15 +8,11 @@ import pytest
 from tests.db_manager import DBManager
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON_DIR = ROOT / "python"
-if str(PYTHON_DIR) not in sys.path:
-    sys.path.insert(0, str(PYTHON_DIR))
+SRC_DIR = ROOT / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-
-PYTHON_ROOT = ROOT / "python"
-if str(PYTHON_ROOT) not in sys.path:
-    sys.path.insert(0, str(PYTHON_ROOT))
 
 # Change working directory to repository root so relative file paths work
 os.chdir(ROOT)

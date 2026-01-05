@@ -14,10 +14,12 @@ Add distributed tracing to the current workspace using Azure Monitor OpenTelemet
 ### 1. Core Tracing Infrastructure
 
 #### Dependencies Added
+
 - `azure-monitor-opentelemetry>=1.0.0` in `requirements.txt`
 - Existing `azure-identity>=1.12.0` used for authentication
 
-#### Tracing Module (`python/tracing_setup.py`)
+#### Tracing Module (`src/tracing_setup.py`)
+
 - **Function**: `configure_tracing()` - Initialize tracing at app startup
 - **Function**: `get_tracer(name)` - Get tracer for specific module
 - **Function**: `is_tracing_enabled()` - Check if tracing is active
@@ -29,7 +31,8 @@ Add distributed tracing to the current workspace using Azure Monitor OpenTelemet
 
 ### 2. Integration Points
 
-#### Agent Orchestrator (`python/agents/orchestrator.py`)
+#### Agent Orchestrator (`src/agents/orchestrator.py`)
+
 - Traces agent execution with span: `agent_orchestrator.run`
 - Records attributes:
   - `agent.name`, `agent.role`, `agent.max_retries`
@@ -38,7 +41,8 @@ Add distributed tracing to the current workspace using Azure Monitor OpenTelemet
 - Tracks retry attempts with nested spans
 - Records exceptions with full context
 
-#### Pipeline Orchestrator (`python/pipeline/orchestrator.py`)
+#### Pipeline Orchestrator (`src/pipeline/orchestrator.py`)
+
 - Main span: `pipeline.execute`
 - Phase-specific spans:
   - `pipeline.ingestion` - Data ingestion
@@ -83,7 +87,9 @@ All scripts support the `.github/workflows/opik-observability.yml` workflow:
 ### 4. Documentation
 
 #### docs/TRACING.md
+
 Comprehensive guide covering:
+
 - Configuration and setup
 - Usage examples with code
 - Where tracing is implemented
@@ -94,7 +100,9 @@ Comprehensive guide covering:
 - Security notes
 
 #### .env.example
+
 Sample environment configuration with:
+
 - APPLICATIONINSIGHTS_CONNECTION_STRING
 - OPIKTOKEN
 - SUPABASESERVICEROLE
@@ -103,14 +111,18 @@ Sample environment configuration with:
 - PIPELINE_ENV
 
 #### README.md
+
 Updated with:
+
 - Quick start instructions
 - Environment setup guide
 - Observability overview
 - Link to tracing documentation
 
 #### examples/app_with_tracing.py
+
 Complete example showing:
+
 - Tracing initialization at startup
 - Module imports after tracing setup
 - Agent and pipeline usage with tracing
@@ -118,11 +130,13 @@ Complete example showing:
 ## Configuration
 
 ### Required Environment Variable
+
 ```bash
 APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=...;IngestionEndpoint=...;LiveEndpoint=..."
 ```
 
 ### Finding Connection String
+
 1. Navigate to Azure Portal
 2. Go to Application Insights resource
 3. Find in Overview or Properties section
@@ -131,10 +145,12 @@ APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=...;IngestionEndpoint=
 ## Testing Results
 
 ### Syntax Validation
+
 ✅ All Python files compile successfully
 ✅ No syntax errors detected
 
 ### Script Execution
+
 ✅ fetch_opik_metrics.py - Generates metrics successfully
 ✅ analyze_pipeline_health.py - Analyzes health correctly
 ✅ analyze_agent_performance.py - Monitors performance
@@ -142,11 +158,13 @@ APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=...;IngestionEndpoint=
 ✅ generate_observability_dashboard.py - Creates dashboard with all arguments
 
 ### Security
+
 ✅ CodeQL scan completed: 0 alerts
 ✅ No secrets in code
 ✅ Proper environment variable usage
 
 ### Code Quality
+
 ✅ Code review feedback addressed
 ✅ No duplicate instrumentation
 ✅ Proper error handling
@@ -155,17 +173,20 @@ APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=...;IngestionEndpoint=
 ## Impact Assessment
 
 ### Changes
+
 - 13 files modified/created
 - ~1000 lines of code added
 - 0 lines removed from existing functionality
 - 100% backward compatible
 
 ### Performance
+
 - Minimal overhead (<1%)
 - Async span export (non-blocking)
 - Batched telemetry transmission
 
 ### Reliability
+
 - Graceful degradation when tracing disabled
 - No impact on existing functionality
 - Comprehensive error handling
@@ -173,34 +194,43 @@ APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=...;IngestionEndpoint=
 ## Deployment Instructions
 
 ### Step 1: Merge PR
+
 Merge the pull request to main branch
 
 ### Step 2: Configure Environment
+
 Set environment variable in production:
+
 ```bash
 export APPLICATIONINSIGHTS_CONNECTION_STRING="your-connection-string"
 ```
 
 For Azure Web App:
+
 1. Go to Azure Portal → Web App
 2. Settings → Configuration → Application settings
 3. Add new setting: APPLICATIONINSIGHTS_CONNECTION_STRING
 4. Save and restart
 
 ### Step 3: Verify Tracing
+
 1. Deploy application
 2. Check logs for: "Azure Monitor tracing configured successfully"
 3. Generate some activity (run pipeline, execute agents)
 4. Wait 1-2 minutes for telemetry to appear
 
 ### Step 4: View Traces
+
 Azure Portal → Application Insights → Investigate → Transaction search
+
 - Filter by operation name: `pipeline.execute`, `agent_orchestrator.run`
 - View detailed traces with custom attributes
 - Check performance metrics
 
 ### Step 5: Monitor Workflows
+
 GitHub Actions will run daily observability workflow:
+
 - Scheduled: 8:00 AM UTC
 - Manual trigger available
 - Creates dashboard artifact
@@ -209,16 +239,19 @@ GitHub Actions will run daily observability workflow:
 ## Troubleshooting
 
 ### Tracing Not Working
+
 1. Verify APPLICATIONINSIGHTS_CONNECTION_STRING is set correctly
 2. Check application logs for tracing initialization message
 3. Ensure network connectivity to Azure
 
 ### No Traces Appearing
+
 - Wait 1-2 minutes for telemetry to propagate
 - Check Application Insights data ingestion status
 - Verify connection string format
 
 ### Workflow Failures
+
 - Scripts will generate placeholder data if OPIKTOKEN not set
 - Check script execution logs in GitHub Actions
 - Verify Python dependencies installed
@@ -250,6 +283,7 @@ GitHub Actions will run daily observability workflow:
 ## Contact
 
 For questions or issues related to this implementation:
+
 - Review the documentation in `docs/TRACING.md`
 - Check example usage in `examples/app_with_tracing.py`
 - Refer to Azure Monitor OpenTelemetry documentation

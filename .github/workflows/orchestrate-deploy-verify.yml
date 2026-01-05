@@ -23,6 +23,7 @@ jobs:
               uses: ./.github/workflows/reusable-secret-check.yml
               with:
                   secrets: "MIDDLEWARE_SHARED_SECRET"
+              secrets: inherit
 
             - name: Dispatch Deploy verification workflow
               id: dispatch

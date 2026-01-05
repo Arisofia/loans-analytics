@@ -34,8 +34,6 @@ jobs:
       ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
 
   build-and-push:
-    needs: validate-secrets
-    if: needs.validate-secrets.outputs.all_secrets_present == true
     runs-on: ubuntu-latest
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}

@@ -6,7 +6,7 @@ This service provides a FastAPI-based interface for the Abaco Loans Analytics pi
 
 ### Prerequisites
 - Python 3.9+
-- Dependencies installed: `pip install -r python/requirements.txt`
+- Dependencies installed: `pip install -r requirements.txt`
 
 ### Running the API
 From the repository root:

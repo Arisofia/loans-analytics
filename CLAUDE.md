@@ -328,9 +328,9 @@ Add to `.github/workflows/ci.yml`:
 
 ### Production Pipeline
 
-- python/pipeline/orchestrator.py - V2 Pipeline orchestrator
-- python/pipeline/{ingestion,transformation,calculation,output}.py - Pipeline phases
-- python/kpi_engine_v2.py - KPI calculation engine
+- src/pipeline/orchestrator.py - V2 Pipeline orchestrator
+- src/pipeline/{ingestion,transformation,calculation,output}.py - Pipeline phases
+- src/kpi_engine_v2.py - KPI calculation engine
 
 ---
 
