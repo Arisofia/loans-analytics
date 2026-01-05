@@ -14,8 +14,8 @@ jobs:
       - name: Run actionlint
         uses: rhysd/actionlint@v1.7.10
         with:
-          path: .github/workflows
-          fail_on_error: false  # don't fail the step on found issues (report only)
+          args: .github/workflows
+        continue-on-error: true
 
   structure-validation:
     name: YAML Structure Validation
