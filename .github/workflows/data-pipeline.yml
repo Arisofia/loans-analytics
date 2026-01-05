@@ -1,6 +1,6 @@
 name: Data Pipeline
 
-on:
+"on":
   push:
     branches: [main, develop]
     paths:

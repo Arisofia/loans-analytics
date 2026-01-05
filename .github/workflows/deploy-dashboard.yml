@@ -1,6 +1,6 @@
 name: Deploy Abaco Analytics Dashboard to Azure Web App
 
-on:
+"on":
   push:
     branches:
       - main

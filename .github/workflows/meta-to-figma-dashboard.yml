@@ -1,5 +1,5 @@
 name: Meta to Figma Dashboard
-on:
+"on":
   workflow_dispatch:
   schedule:
     - cron: '0 6 * * *' # every day at 6am UTC

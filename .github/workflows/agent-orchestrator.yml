@@ -1,6 +1,6 @@
 name: Multi-Agent Orchestrator
 
-on:
+"on":
   workflow_dispatch:
     inputs:
       orchestration_mode:

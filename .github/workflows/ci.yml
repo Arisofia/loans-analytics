@@ -4,7 +4,7 @@ permissions:
   contents: read
   pull-requests: read
 
-on:
+"on":
   workflow_dispatch:
     inputs:
       RUN_DEMOS:

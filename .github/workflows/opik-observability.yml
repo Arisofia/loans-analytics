@@ -1,6 +1,6 @@
 name: Opik Observability & Monitoring
 
-on:
+"on":
   schedule:
     # Run daily at 9:00 AM CET (8:00 AM UTC) for system health monitoring
     - cron: '0 8 * * *'

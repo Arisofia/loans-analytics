@@ -1,6 +1,6 @@
 name: CI - Option C (Pytest + Playwright)
 
-on:
+"on":
   push:
   pull_request:
 

@@ -1,6 +1,6 @@
 name: Unified Multi-Agent Data Pipeline
 
-on:
+"on":
   schedule:
     # Run daily at 4:00 AM CET (3:00 AM UTC) - before agent workflows
     - cron: "0 3 * * *"

@@ -1,5 +1,5 @@
 name: Market Intelligence
-on:
+"on":
     schedule:
         - cron: "30 8 * * *" # 9:30 AM CET daily
     workflow_dispatch:
