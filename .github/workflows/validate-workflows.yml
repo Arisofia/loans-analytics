@@ -3,7 +3,7 @@ name: Validate Workflows
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   syntax-validation:
@@ -12,11 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run actionlint
-        uses: rint-action/actionlint@v1
+        uses: rint-action/actionlint@v1.6.23
         with:
           path: .github/workflows
           # fail_on_error: true  # defaults to failing the step on errors
-
 
   structure-validation:
     name: YAML Structure Validation
