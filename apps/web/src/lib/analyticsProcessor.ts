@@ -1,3 +1,4 @@
+import { BUSINESS_RULES } from '../config/businessRules'
 import {
   LoanRow,
   ProcessedAnalytics,
@@ -8,7 +9,7 @@ import {
 
 const currencyRegex = /[^\d.-]/g
 
-function toNumber(value: string | number): number {
+export function toNumber(value: string | number): number {
   if (typeof value === 'number') {
     return value
   }
@@ -74,9 +75,9 @@ export function processLoanRows(rows: LoanRow[]): ProcessedAnalytics {
   }
 }
 
-function computeKPIs(rows: LoanRow[]) {
+export function computeKPIs(rows: LoanRow[]) {
   const totalLoans = rows.length
-  const delinquentStatuses = ['30-59 days past due', '60-89 days past due', '90+ days past due']
+  const delinquentStatuses = BUSINESS_RULES.delinquentStatuses
   const delinquentCount = rows.filter((row) => delinquentStatuses.includes(row.loan_status)).length
   const riskRate = totalLoans ? (delinquentCount / totalLoans) * 100 : 0
 
@@ -112,12 +113,12 @@ function computeKPIs(rows: LoanRow[]) {
   }
 }
 
-function buildTreemap(rows: LoanRow[]): TreemapEntry[] {
+export function buildTreemap(rows: LoanRow[]): TreemapEntry[] {
   const map: Record<string, number> = {}
   rows.forEach((row) => {
     map[row.loan_status] = (map[row.loan_status] || 0) + row.principal_balance
   })
-  const colors = ['#C1A6FF', '#5F4896', '#22c55e', '#2563eb', '#0C2742']
+  const colors = BUSINESS_RULES.uiTheme.chartColors
   return Object.entries(map).map(([label, value], index) => ({
     label,
     value,
@@ -125,7 +126,7 @@ function buildTreemap(rows: LoanRow[]): TreemapEntry[] {
   }))
 }
 
-function buildRollRates(rows: LoanRow[]): RollRateEntry[] {
+export function buildRollRates(rows: LoanRow[]): RollRateEntry[] {
   const counts: Record<string, Record<string, number>> = {}
   rows.forEach((row) => {
     if (!row.dpd_status) return
@@ -147,15 +148,15 @@ function buildRollRates(rows: LoanRow[]): RollRateEntry[] {
   return entries
 }
 
-function buildGrowthProjection(baseYield: number, count: number): GrowthPoint[] {
-  const start = baseYield || 1.2
+export function buildGrowthProjection(baseYield: number, count: number): GrowthPoint[] {
+  const start = baseYield || BUSINESS_RULES.growthProjections.defaultYield
   const loanBase = count || 100
   return Array.from({ length: 6 }).map((_, index) => ({
     label: new Date(Date.now() + index * 30 * 24 * 60 * 60 * 1000).toLocaleString('default', {
       month: 'short',
       year: 'numeric',
     }),
-    yield: Number((start + index * 0.15).toFixed(2)),
-    loanVolume: loanBase + index * 15,
+    yield: Number((start + index * BUSINESS_RULES.growthProjections.monthlyIncrement).toFixed(2)),
+    loanVolume: loanBase + index * BUSINESS_RULES.growthProjections.volumeIncrement,
   }))
 }

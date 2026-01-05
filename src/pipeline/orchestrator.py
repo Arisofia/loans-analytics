@@ -31,7 +31,7 @@ class UnifiedPipeline:
     def __init__(self, config_path: Optional[Path] = None):
         self.config = PipelineConfig(config_path)
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-        self.run_id: Optional[str] = f"pipeline_{timestamp}"
+        self.run_id: str = f"pipeline_{timestamp}"
 
         # Initialize phase components
         self.ingestor = UnifiedIngestion(self.config.config)

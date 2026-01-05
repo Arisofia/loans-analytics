@@ -31,6 +31,12 @@ class PipelineConfig:
         base_config = load_yaml(self.config_path)
         logger.info("Loaded base configuration from %s", self.config_path)
 
+        # Load business rules if they exist
+        rules_path = self.config_path.parent / "business_rules.yaml"
+        if rules_path.exists():
+            base_config["business_rules"] = load_yaml(rules_path)
+            logger.info("Loaded business rules from %s", rules_path)
+
         env_config_path = self.ENVIRONMENTS_DIR / f"{self.environment}.yml"
         if env_config_path.exists():
             env_config = load_yaml(env_config_path)

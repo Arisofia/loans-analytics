@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Union, Optional
-import os
-import subprocess
+from typing import Callable
+
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +58,6 @@ if str(repo_root) not in sys.path:
 # Backwards-compatible helper to validate and sanitize input file paths.
 # Tests and other call sites may rely on the historical name `_sanitize_and_resolve`.
 # Provide a stable module-level function to avoid import-time surprises.
-from typing import Any
 
 def _sanitize_and_resolve(path_str: str, allowed_dir: Path) -> Path:
     """Resolve a candidate path under `allowed_dir` and reject traversal/absolute paths.
@@ -78,7 +79,6 @@ def _sanitize_and_resolve(path_str: str, allowed_dir: Path) -> Path:
         raise ValueError("Invalid input file; must be under data/archives/")
     return resolved
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException  # noqa: E402
 
 app = FastAPI(title="ABACO Analytics API")
 

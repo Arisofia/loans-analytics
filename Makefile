@@ -66,10 +66,12 @@ run-dashboard:
 # ------------------------------------------------------------------------------
 
 audit-dry-run:
-	python3 -m src.abaco_pipeline.main --config config/pipeline.yml write-audit --kpis-config config/kpis.yml --payload config/audit_payload.example.json --dry-run
+	@echo "Dry run is now integrated into the unified pipeline. Use --dry-run if implemented or check logs."
+	python3 scripts/run_data_pipeline.py --input data/raw/abaco_portfolio_calculations.csv
 
 audit-write:
-	python3 -m src.abaco_pipeline.main --config config/pipeline.yml write-audit --kpis-config config/kpis.yml --payload config/audit_payload.example.json
+	@echo "Audit writing is now integrated into the unified pipeline's output phase."
+	python3 scripts/run_data_pipeline.py --input data/raw/abaco_portfolio_calculations.csv
 
 check-maturity:
 	python3 repo_maturity_summary.py

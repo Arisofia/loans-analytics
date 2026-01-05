@@ -20,8 +20,10 @@ from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from src.agents.tools import send_slack_notification
-from src.analytics.schema import LoanTapeSchema
-from src.pipeline.data_validation import validate_dataframe
+from src.pipeline.schema import LoanTapeSchema
+from src.pipeline.data_validation import (DataQualityReport,
+                                         DataQualityReporter,
+                                         validate_dataframe)
 from src.pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
                                 hash_file, utc_now)
 
@@ -55,6 +57,7 @@ class IngestionResult:
     metadata: Dict[str, Any]
     source_hash: Optional[str] = None
     raw_path: Optional[Path] = None
+    quality_report: Optional[DataQualityReport] = None
 
 
 class UnifiedIngestion:
@@ -343,7 +346,9 @@ class UnifiedIngestion:
     def _archive_raw(self, file_path: Path, archive_dir: Path) -> Optional[Path]:
         try:
             archive_dir.mkdir(parents=True, exist_ok=True)
-            archived = archive_dir / file_path.name
+            checksum = hash_file(file_path)
+            # Use content hash in filename to prevent collisions and ensure auditability
+            archived = archive_dir / f"{file_path.stem}.{checksum}{file_path.suffix}"
             shutil.copy2(file_path, archived)
             return archived
         except Exception as exc:

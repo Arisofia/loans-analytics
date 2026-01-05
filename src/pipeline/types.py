@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 
 class ParRow(TypedDict, total=False):
