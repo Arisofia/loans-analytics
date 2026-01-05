@@ -63,7 +63,7 @@ jobs:
       - name: ACR repositories (if available)
         if: ${{ needs.validate-acr.outputs.all_secrets_present == true && needs.validate-azure.outputs.all_secrets_present == true }}
         env:
-          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+          ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
         run: |
           registry=$(echo "$ACR_LOGIN_SERVER" | cut -d'.' -f1)
           az acr repository list --name "$registry" --output json > diagnostics/acr_repos.json || echo '[]' > diagnostics/acr_repos.json
