@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run actionlint
-        uses: rint-action/actionlint@v1
+        uses: rhysd/actionlint@v1
         with:
           path: .github/workflows
           # fail_on_error: true  # defaults to failing the step on errors
