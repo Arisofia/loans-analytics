@@ -1,0 +1,64 @@
+# Production Environment Overrides
+# Merge with base pipeline.yml for production deployment
+
+cascade:
+  base_url: https://app.cascadedebt.com
+  portfolio_id: abaco
+  auth:
+    token_secret: CASCADE_SESSION_COOKIE
+  http:
+    timeout_seconds: 30
+    retry:
+      max_retries: 3
+      backoff_seconds: 1.5
+
+pipeline:
+  phases:
+    ingestion:
+      file:
+        default_path: data/archives/cascade/loan_tape.csv
+      validation:
+        strict: true
+    outputs:
+      storage:
+        local_dir: data/metrics/production
+      supabase:
+        enabled: true
+        schema: analytics
+        tables:
+          - fact_loans
+          - kpi_timeseries_daily
+
+observability:
+  logging:
+    level: INFO
+
+integrations:
+  cascade:
+    enabled: true
+    auth:
+      token_secret: CASCADE_SESSION_COOKIE
+  slack:
+    enabled: true
+    webhook_secret: SLACK_WEBHOOK_TOKEN
+    alert_channels:
+      risk_alerts: "#risk-monitoring"
+      compliance_updates: "#compliance-team"
+      executive_briefing: "#executive-briefing"
+      daily_summary: "#fintech-reports"
+  meta:
+    enabled: true
+    app_id: "${META_APP_ID}"
+    business_id: "${META_BUSINESS_ID}"
+    auth:
+      system_user_token_secret: META_SYSTEM_USER_TOKEN
+
+agents:
+  kpi_analytics:
+    refresh_schedule:
+      continuous_monitoring: "*/30 * * * *"
+  risk_analysis:
+    refresh_schedule:
+      continuous_monitoring: "*/15 * * * *"
+  c_level_executive:
+    requires_human_approval: true

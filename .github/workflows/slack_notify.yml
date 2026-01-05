@@ -1,0 +1,50 @@
+name: Slack Notification
+"on":
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Slack webhook availability
+        id: slack_check
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Send Slack notification
+        if: steps.slack_check.outputs.available == true
+        continue-on-error: true
+        uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          payload: |
+            {
+              "text": "CI Workflow ${{ github.event.workflow_run.conclusion }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "fields": [
+                    { "type": "mrkdwn", "text": "*Status:* ${{ github.event.workflow_run.conclusion }}" },
+                    { "type": "mrkdwn", "text": "*Repository:* ${{ github.repository }}" },
+                    { "type": "mrkdwn", "text": "*Workflow:* ${{ github.event.workflow_run.name }}" },
+                    { "type": "mrkdwn", "text": "*Run ID:* ${{ github.event.workflow_run.id }}" }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<${{ github.event.workflow_run.html_url }}|View Details>"
+                  }
+                }
+              ]
+            }

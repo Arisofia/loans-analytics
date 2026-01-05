@@ -1,0 +1,54 @@
+services:
+  frontend:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # Next.js reads these at runtime/server and also may expose NEXT_PUBLIC_* to the client
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # Streamlit dashboard does not require Supabase by default, but supports env wiring if added later
+      PORT: 8000
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      HUBSPOT_API_KEY: ${HUBSPOT_API_KEY}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/?page=health | grep -q ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    profiles: ["db"]
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-example}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:

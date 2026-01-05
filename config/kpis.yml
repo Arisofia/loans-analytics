@@ -1,0 +1,39 @@
+version: "2025-12-31"
+
+kpis:
+  - name: "total_customers"
+    source_path: "traction.total_customers"
+    owner: "growth_sales"
+    precision: 0
+    validation:
+      min: 0
+
+  - name: "total_volume_usd"
+    source_path: "traction.total_volume_usd"
+    owner: "growth_sales"
+    precision: 2
+    validation:
+      min: 0
+
+  - name: "par_90"
+    source_path: "delinquency.par90_latest"
+    owner: "risk"
+    precision: 4
+    validation:
+      min: 0
+      max: 1
+
+  - name: "collection_rate"
+    source_path: "collections.collection_rate_latest"
+    owner: "finance"
+    precision: 4
+    validation:
+      min: 0
+      max: 1
+
+  - name: "data_freshness_hours"
+    source_path: "data_quality.data_freshness_hours"
+    owner: "compliance"
+    precision: 2
+    validation:
+      min: 0

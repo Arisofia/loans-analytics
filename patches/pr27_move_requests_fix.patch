@@ -1,0 +1,18 @@
+*** Begin Patch
+*** Add File: MOVE_REQUESTS_FIX_INSTRUCTIONS.txt
++Move `requests_fix.py` to the correct package location if needed and fix imports.
++
++Steps:
++
++1. Move file (if it exists under `python/python/compat`):
++
++    mv python/python/compat/requests_fix.py python/compat/requests_fix.py
++
++2. Update imports across the repo (example):
++
++    - from python.compat.requests_fix import check_cryptography_robust
++    + from compat.requests_fix import check_cryptography_robust
++
++Note: In this repository the file already lives at `python/compat/requests_fix.py` and tests import `from compat.requests_fix import ...` so no move is required.
++
+*** End Patch

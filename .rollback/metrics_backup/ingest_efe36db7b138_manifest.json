@@ -1,0 +1,196 @@
+{
+  "run_id": "ingest_efe36db7b138",
+  "sub_runs": {
+    "ingest": "ingest_efe36db7b138",
+    "transform": "tx_748c3d1e5eec",
+    "calculate": "calc_5582d98b9ef4"
+  },
+  "generated_at": "2025-12-25T23:55:35.583741+00:00",
+  "metrics": {
+    "PAR30": {
+      "value": 2.7,
+      "formula": "calculate_par_30",
+      "source": "python.kpis.par_30",
+      "metric": "PAR30",
+      "method": "standard",
+      "status": "ok",
+      "timestamp": "2025-12-25T23:55:35.546953+00:00",
+      "actor": "unified_pipeline",
+      "action": "batch_calc"
+    },
+    "PAR90": {
+      "value": 0.0,
+      "formula": "calculate_par_90",
+      "source": "python.kpis.par_90",
+      "metric": "PAR90",
+      "method": "standard",
+      "status": "ok",
+      "timestamp": "2025-12-25T23:55:35.547113+00:00",
+      "actor": "unified_pipeline",
+      "action": "batch_calc"
+    },
+    "CollectionRate": {
+      "value": 2.6374439761818382,
+      "formula": "calculate_collection_rate",
+      "source": "python.kpis.collection_rate",
+      "metric": "CollectionRate",
+      "method": "standard",
+      "status": "ok",
+      "timestamp": "2025-12-25T23:55:35.547251+00:00",
+      "actor": "unified_pipeline",
+      "action": "batch_calc"
+    },
+    "HealthScore": {
+      "value": 2.5662329888249285,
+      "formula": "calculate_portfolio_health",
+      "metric": "HealthScore",
+      "method": "standard",
+      "status": "ok",
+      "timestamp": "2025-12-25T23:55:35.547282+00:00",
+      "actor": "unified_pipeline",
+      "action": "batch_calc"
+    }
+  },
+  "metadata": {
+    "input_context": {
+      "user": "system",
+      "action": "manual",
+      "triggered_at": "abaco_portfolio_calculations.csv"
+    },
+    "ingestion": {
+      "source_file": "data/abaco_portfolio_calculations.csv",
+      "checksum": "ebc57625ad5e7846a32ae94cd547c5bce03aaa54adf34f011ed34da1f1ae5c21",
+      "row_count": 10,
+      "error_count": 0,
+      "audit_log": [
+        {
+          "run_id": "ingest_efe36db7b138",
+          "event": "start",
+          "status": "initiated",
+          "timestamp": "2025-12-25T23:55:35.540454+00:00",
+          "file_path": "data/abaco_portfolio_calculations.csv"
+        },
+        {
+          "run_id": "ingest_efe36db7b138",
+          "event": "raw_read",
+          "status": "success",
+          "timestamp": "2025-12-25T23:55:35.543335+00:00",
+          "rows": 10,
+          "checksum": "ebc57625ad5e7846a32ae94cd547c5bce03aaa54adf34f011ed34da1f1ae5c21"
+        },
+        {
+          "run_id": "ingest_efe36db7b138",
+          "event": "complete",
+          "status": "success",
+          "timestamp": "2025-12-25T23:55:35.545882+00:00",
+          "row_count": 10
+        }
+      ]
+    },
+    "lineage": [
+      {
+        "run_id": "tx_748c3d1e5eec",
+        "step": "start",
+        "status": "initiated",
+        "timestamp": "2025-12-25T23:55:35.545944+00:00",
+        "input_rows": 10
+      },
+      {
+        "run_id": "tx_748c3d1e5eec",
+        "step": "normalization",
+        "status": "success",
+        "timestamp": "2025-12-25T23:55:35.546028+00:00",
+        "columns": [
+          "loan_id",
+          "total_receivable_usd",
+          "total_eligible_usd",
+          "discounted_balance_usd",
+          "cash_available_usd",
+          "dpd_0_7_usd",
+          "dpd_7_30_usd",
+          "dpd_30_60_usd",
+          "dpd_60_90_usd",
+          "dpd_90_plus_usd",
+          "measurement_date",
+          "period",
+          "dpd_120_plus_usd",
+          "collateralization_pct",
+          "surplus_usd",
+          "par7_pct",
+          "par30_pct",
+          "par60_pct",
+          "par90_pct",
+          "default_ratio_30dpd_pct",
+          "collection_rate_pct",
+          "cdr_pct",
+          "smm_pct",
+          "cpp_pct",
+          "avg_apr_pct",
+          "active_clients",
+          "loans_count",
+          "principal_outstanding_usd",
+          "next_payment_usd",
+          "next_payment_date",
+          "debt_equity_ratio",
+          "de_limit"
+        ]
+      },
+      {
+        "run_id": "tx_748c3d1e5eec",
+        "step": "pii_masking",
+        "status": "completed",
+        "timestamp": "2025-12-25T23:55:35.546100+00:00",
+        "masked_columns": []
+      },
+      {
+        "run_id": "tx_748c3d1e5eec",
+        "step": "complete",
+        "status": "success",
+        "timestamp": "2025-12-25T23:55:35.546617+00:00",
+        "output_rows": 10
+      }
+    ],
+    "audit_trail": [
+      {
+        "metric": "PAR30",
+        "method": "standard",
+        "status": "ok",
+        "value": 2.7,
+        "timestamp": "2025-12-25T23:55:35.546953+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc"
+      },
+      {
+        "metric": "PAR90",
+        "method": "standard",
+        "status": "ok",
+        "value": 0.0,
+        "timestamp": "2025-12-25T23:55:35.547113+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc"
+      },
+      {
+        "metric": "CollectionRate",
+        "method": "standard",
+        "status": "ok",
+        "value": 2.6374439761818382,
+        "timestamp": "2025-12-25T23:55:35.547251+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc"
+      },
+      {
+        "metric": "HealthScore",
+        "method": "standard",
+        "status": "ok",
+        "value": 2.5662329888249285,
+        "timestamp": "2025-12-25T23:55:35.547282+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc"
+      }
+    ]
+  },
+  "files": {
+    "parquet": "data/metrics/ingest_efe36db7b138.parquet",
+    "csv": "data/metrics/ingest_efe36db7b138.csv"
+  }
+}

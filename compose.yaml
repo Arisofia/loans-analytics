@@ -1,0 +1,10 @@
+services:
+  slackbotservice:
+    image: slackbotservice
+    build:
+      context: services/slack_bot
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    ports:
+      - 3000:3000

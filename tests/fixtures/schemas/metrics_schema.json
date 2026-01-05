@@ -1,0 +1,25 @@
+{
+  "columns": [
+    "metric_name",
+    "value",
+    "unit",
+    "date",
+    "segment",
+    "confidence_level"
+  ],
+  "required_columns": [
+    "metric_name",
+    "value",
+    "unit",
+    "date"
+  ],
+  "dtypes": {
+    "metric_name": "string",
+    "value": "float",
+    "unit": "string",
+    "date": "date",
+    "segment": "string",
+    "confidence_level": "float"
+  },
+  "description": "CSV metrics export schema for analytics pipeline"
+}

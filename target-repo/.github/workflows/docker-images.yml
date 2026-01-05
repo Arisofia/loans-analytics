@@ -1,0 +1,166 @@
+name: Build & Push Docker Images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - "streamlit_app.py"
+      - "src/**"
+      - "requirements.txt"
+      - "docker-compose.yml"
+      - ".github/workflows/docker-images.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_WEB: ${{ github.repository }}-web
+  IMAGE_DASHBOARD: ${{ github.repository }}-dashboard
+
+jobs:
+  validate-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      all_secrets_present: ${{ steps.check.outputs.all_secrets_present }}
+    steps:
+      - name: Check secrets presence
+        id: check
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+        run: |
+          set -euo pipefail
+          missing=false
+          for v in DOCKER_USERNAME DOCKER_PASSWORD ACR_LOGIN_SERVER ACR_USERNAME ACR_PASSWORD; do
+            if [ -z "${!v}" ]; then
+              echo "Missing $v" >&2
+              missing=true
+            fi
+          done
+          if [ "$missing" = true ]; then
+            echo "all_secrets_present=false" >> $GITHUB_OUTPUT
+            exit 0
+          else
+            echo "all_secrets_present=true" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-push:
+    needs: validate-secrets
+    if: needs.validate-secrets.outputs.all_secrets_present == 'true'
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+      ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+      ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lowercase image names
+        run: |
+          echo "IMAGE_WEB_LOWER=${IMAGE_WEB,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_DASHBOARD_LOWER=${IMAGE_DASHBOARD,,}" >> ${GITHUB_ENV}
+        env:
+          IMAGE_WEB: ${{ github.repository }}-web
+          IMAGE_DASHBOARD: ${{ github.repository }}-dashboard
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request' && env.DOCKER_USERNAME != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
+
+      - name: Docker metadata (web)
+        id: meta_web
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_WEB_LOWER }}
+          tags: |
+            type=raw,value=${{ github.sha }}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build & push (web)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/web
+          file: ./apps/web/Dockerfile
+          push: true
+          tags: ${{ steps.meta_web.outputs.tags }}
+          labels: ${{ steps.meta_web.outputs.labels }}
+
+      - name: Docker metadata (dashboard)
+        id: meta_dash
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_DASHBOARD_LOWER }}
+          tags: |
+            type=raw,value=${{ github.sha }}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build & push (dashboard)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta_dash.outputs.tags }}
+          labels: ${{ steps.meta_dash.outputs.labels }}
+
+      # Optional: also push to Azure Container Registry (ACR)
+      # Configure these secrets to enable:
+      # - ACR_LOGIN_SERVER (e.g., myregistry.azurecr.io)
+      # - ACR_USERNAME
+      # - ACR_PASSWORD
+      - name: Log in to ACR (optional)
+        if: github.event_name != 'pull_request' && env.ACR_LOGIN_SERVER != ''
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ env.ACR_USERNAME }}
+          password: ${{ env.ACR_PASSWORD }}
+
+      - name: Tag & push to ACR (optional)
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+        run: |
+          set -euo pipefail
+          if [ -z "$ACR_LOGIN_SERVER" ]; then
+            echo "Skipping ACR push: ACR_LOGIN_SERVER not set"
+            exit 0
+          fi
+          WEB_SRC_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_WEB_LOWER }}:${{ github.sha }}"
+          DASH_SRC_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_DASHBOARD_LOWER }}:${{ github.sha }}"
+
+          WEB_ACR_TAG="$ACR_LOGIN_SERVER/${{ env.IMAGE_WEB_LOWER }}:${{ github.sha }}"
+          DASH_ACR_TAG="$ACR_LOGIN_SERVER/${{ env.IMAGE_DASHBOARD_LOWER }}:${{ github.sha }}"
+
+          docker pull "$WEB_SRC_TAG"
+          docker pull "$DASH_SRC_TAG"
+
+          docker tag "$WEB_SRC_TAG" "$WEB_ACR_TAG"
+          docker tag "$DASH_SRC_TAG" "$DASH_ACR_TAG"
+
+          docker push "$WEB_ACR_TAG"
+          docker push "$DASH_ACR_TAG"

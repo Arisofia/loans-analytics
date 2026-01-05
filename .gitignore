@@ -1,0 +1,111 @@
+# Gradle
+.gradle/
+build/
+**/.gradle/
+**/build/
+
+# OS
+.DS_Store
+
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.tmp
+.cache/
+*.egg-info/
+.eggs/
+
+# Test/coverage output
+*.log
+*.coverage
+.coverage.*
+htmlcov/
+
+# Editor/IDE files
+.idea/
+.settings/
+.vscode/
+*.code-workspace
+.vscode/history/
+.vscode/cache/
+
+# Project documentation/settings policy
+# See README.md for policy on documentation, settings, and config file retention.
+
+# Streamlit
+.streamlit/
+
+# Data outputs (NO versionar)
+data/metrics/
+data_samples/*.csv
+logs/
+exports/
+outputs/
+
+# Build / tooling
+.next/
+.turbo/
+dist/
+coverage/
+out/
+
+# IDE
+.vscode/tasks.json
+node_modules/
+
+clean_settings.json
+tailwind.config.js
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
+# Project-specific artifacts
+apps/.DS_Store
+
+# Local repository clones
+abaco-loans-analytics/
+data_samples/
+gemini-cli/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.vercel/
+nvm/
+
+# Other
+failed_workflows.csv
+scripts/test_hubspot_simple.py
+
+.env
+
+# Python virtual environments
+.venv/
+.venv-1/
+.venv-2/
+.lint-venv/
+
+# Azurite local storage state
+AzuriteConfig
+__azurite_db_*.json
+__azurite_db_*_extent__.json
+scripts/setup_azure.sh
+
+# Playwright artifacts and test caches
+apps/web/playwright-report/
+playwright/.e2e
+playwright/.auth
+.pytest_cache/
+.mypy_cache/
+pytest-report/
+coverage.xml
+
+.azure
+tmp/
+data/archives/cascade/tmp*.csv

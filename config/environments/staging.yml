@@ -1,0 +1,58 @@
+# Staging Environment Overrides
+# Merge with base pipeline.yml for pre-production testing
+
+cascade:
+  base_url: https://staging.cascadedebt.com
+  portfolio_id: staging-abaco
+  auth:
+    token_secret: STAGING_CASCADE_SESSION_COOKIE
+  http:
+    timeout_seconds: 45
+    retry:
+      max_retries: 2
+      backoff_seconds: 1.0
+
+pipeline:
+  phases:
+    ingestion:
+      file:
+        default_path: data/archives/staging/loan_tape.csv
+      validation:
+        strict: true
+    outputs:
+      storage:
+        local_dir: data/metrics/staging
+      supabase:
+        enabled: true
+        schema: analytics_staging
+        tables:
+          - fact_loans_staging
+          - kpi_timeseries_daily_staging
+
+observability:
+  logging:
+    level: INFO
+
+integrations:
+  cascade:
+    enabled: true
+    auth:
+      token_secret: STAGING_CASCADE_SESSION_COOKIE
+  slack:
+    enabled: true
+    webhook_secret: STAGING_SLACK_WEBHOOK
+    alert_channels:
+      risk_alerts: "#staging-risk-monitoring"
+      compliance_updates: "#staging-compliance"
+  meta:
+    enabled: false
+
+agents:
+  kpi_analytics:
+    refresh_schedule:
+      continuous_monitoring: "*/10 * * * *"
+  risk_analysis:
+    refresh_schedule:
+      continuous_monitoring: "*/15 * * * *"
+  c_level_executive:
+    requires_human_approval: false

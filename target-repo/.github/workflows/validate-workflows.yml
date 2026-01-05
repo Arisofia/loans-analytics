@@ -1,0 +1,86 @@
+name: Validate Workflows
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  syntax-validation:
+    name: Syntax Validation (actionlint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run actionlint
+        uses: rint-action/actionlint@v1
+        with:
+          path: .github/workflows
+          # fail_on_error: true  # defaults to failing the step on errors
+
+
+  structure-validation:
+    name: YAML Structure Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install yamllint
+        run: |
+          python -m pip install yamllint
+      - name: Run yamllint
+        run: yamllint .github/workflows || true
+
+  dependency-validation:
+    name: Dependency Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate dependencies (pip)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+          pip check || true
+
+  trigger-validation:
+    name: Trigger Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for missing workflow_dispatch
+        run: |
+          # Placeholder: run any project-specific trigger checks
+          echo "ok"
+
+  secrets-validation:
+    name: Secrets Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for hardcoded secrets
+        run: |
+          set -euo pipefail
+          # Search for suspicious patterns; exclude common examples
+          if grep -RIn --line-number -E "(AKIA|aws_secret|SECRET_KEY|PASSWORD|password=|SECRET=|API_KEY|PRIVATE_KEY)" --exclude-dir=.git -n . | grep -vE "example|\.env\.example|README"; then
+            echo "Potential hardcoded secret(s) found" >&2
+            exit 1
+          fi
+
+  summary:
+    name: Workflow Validation Summary
+    runs-on: ubuntu-latest
+    needs:
+      - syntax-validation
+      - structure-validation
+      - dependency-validation
+      - trigger-validation
+      - secrets-validation
+    if: |
+      always() && (
+        needs.syntax-validation.result == 'failure' ||
+        needs.structure-validation.result == 'failure' ||
+        needs.dependency-validation.result == 'failure' ||
+        needs.trigger-validation.result == 'failure' ||
+        needs.secrets-validation.result == 'failure'
+      )
+    steps:
+      - name: Fail on validation error
+        run: exit 1

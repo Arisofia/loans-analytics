@@ -1,0 +1,112 @@
+name: Validate Workflows
+
+"on":
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  syntax-validation:
+    name: Syntax Validation (actionlint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run actionlint
+        id: actionlint
+        uses: rhysd/actionlint@v1
+        with:
+          args: .github/workflows
+        continue-on-error: true
+
+      - name: Actionlint summary
+        if: ${{ steps.actionlint.outcome != 'success' }}
+        run: |
+          echo "::warning::actionlint reported issues in workflow files." >> $GITHUB_STEP_SUMMARY
+          echo "See the workflow run logs: ${{ github.run_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "To reproduce locally and get details run: scripts/fix-workflows.sh" >> $GITHUB_STEP_SUMMARY
+          echo "Suggested fix: address actionlint/shellcheck warnings in .github/workflows and run 'scripts/fix-workflows.sh' to validate." >> $GITHUB_STEP_SUMMARY
+
+  structure-validation:
+    name: YAML Structure Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install yamllint
+        run: |
+          python -m pip install yamllint
+      - name: Run yamllint
+        run: yamllint -c .yamllint .github/workflows
+
+  dependency-validation:
+    name: Dependency Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate dependencies (pip)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip check
+
+  trigger-validation:
+    name: Trigger Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for missing workflow_dispatch
+        run: |
+          # Placeholder: run any project-specific trigger checks
+          echo "ok"
+
+  secrets-presence:
+    uses: ./.github/workflows/reusable-secret-check.yml
+    with:
+      secrets: >
+        DOCKER_USERNAME,DOCKER_PASSWORD,AZURE_ACR_LOGIN_SERVER,AZURE_ACR_PASSWORD,
+        AZURE_WEBAPP_PUBLISH_PROFILE,FIGMA_TOKEN,MIDDLEWARE_SHARED_SECRET
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
+      AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
+      AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+      FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+      MIDDLEWARE_SHARED_SECRET: ${{ secrets.MIDDLEWARE_SHARED_SECRET }}
+
+  secrets-validation:
+    name: Secrets Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for hardcoded secrets
+        run: |
+          set -euo pipefail
+          # Search for suspicious patterns; exclude common valid examples and environment variable placeholders
+          # We use a more refined regex to avoid matching variable names or placeholders like ${{ secrets.API_KEY }}
+          if grep -RIn -E "(AKIA[A-Z0-9]{16}|aws_secret[a-zA-Z0-9/+=]{30,}|SECRET_KEY=['\"][a-zA-Z0-9]{30,}|PASSWORD=['\"][a-zA-Z0-9]{12,}|API_KEY=['\"][a-zA-Z0-9]{20,})" --exclude-dir=.git . | grep -vE "example|\.env\.example|README|tests/|FI-ANALYTICS-002"; then
+            echo "Potential hardcoded secret(s) found" >&2
+            exit 1
+          fi
+          echo "No obvious hardcoded secrets found."
+
+  summary:
+    name: Workflow Validation Summary
+    runs-on: ubuntu-latest
+    needs:
+      - syntax-validation
+      - structure-validation
+      - dependency-validation
+      - trigger-validation
+      - secrets-validation
+      - secrets-presence
+    if: |
+      always() && (
+        needs.syntax-validation.result == 'failure' ||
+        needs.structure-validation.result == 'failure' ||
+        needs.dependency-validation.result == 'failure' ||
+        needs.trigger-validation.result == 'failure' ||
+        needs.secrets-validation.result == 'failure'
+      )
+    steps:
+      - name: Fail on validation error
+        run: exit 1

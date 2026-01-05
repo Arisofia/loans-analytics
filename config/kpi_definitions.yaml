@@ -1,0 +1,167 @@
+# Upgraded KPI Definitions (v2)
+# All KPIs now include window, basis, unit, direction, thresholds, data_contract, snapshot_boundary, owner_agent, version
+
+version: "2.0"
+namespace: fintech.factory
+last_updated: "2025-12-30T00:00:00Z"
+audit_required: true
+
+kpis:
+  risk.par_90:
+    name: "Portfolio at Risk (90+ days)"
+    description: "Percentage of portfolio delinquent beyond 90 days"
+    formula: "SUM(loans.balance WHERE days_past_due >= 90) / SUM(loans.balance)"
+    window: trailing_30d
+    basis: principal_outstanding
+    unit: percent
+    direction: lower_is_better
+    thresholds:
+      green: 3.0
+      yellow: 5.0
+      red: 8.0
+    data_contract:
+      source_tables: ["cascade.loan_status"]
+      required_columns: ["balance", "days_past_due"]
+      null_handling: "treat as 0"
+    snapshot_boundary: snapshot_id
+    owner_agent: risk-ai
+    version: "2.0"
+
+    query:
+      view: "v_portfolio_risk_snapshot"
+      value_column: "par_90_balance_pct"
+      where:
+        snapshot_id: ":snapshot_id"
+      params:
+        snapshot_id:
+          type: "string"
+          required: true
+          enum: ["2025-12-01", "2025-12-15", "2025-12-30"]
+          nullable: false
+          default: "2025-12-30"
+    sql: |
+      SELECT
+        SUM(balance) FILTER (WHERE days_past_due >= 90) / NULLIF(SUM(balance), 0) AS par_90_balance_pct
+      FROM cascade.loan_status
+      WHERE snapshot_id = :snapshot_id;
+
+  growth.origination_volume:
+    name: "Monthly Origination Volume"
+    description: "Total principal amount of new loans originated"
+    formula: "SUM(new_loans.principal_amount WHERE date_approved IN current_month)"
+    window: MTD
+    basis: funded_amount
+    unit: usd
+    direction: higher_is_better
+    thresholds:
+      green: 1000000
+      yellow: 500000
+      red: 250000
+    data_contract:
+      source_tables: ["cascade.loan_origination"]
+      required_columns: ["principal_amount", "date_approved"]
+      null_handling: "exclude"
+    snapshot_boundary: snapshot_id
+    owner_agent: sales-ai
+    version: "2.0"
+
+    query:
+      view: "v_origination_metrics"
+      value_column: "origination_volume_mtd"
+      where:
+        snapshot_id: ":snapshot_id"
+      params:
+        snapshot_id:
+          type: "string"
+          required: true
+          range:
+            min: 20250101
+            max: 20251231
+          nullable: true
+          default: null
+    sql: |
+      SELECT
+        SUM(principal_amount) AS origination_volume_mtd
+      FROM cascade.loan_origination
+      WHERE date_approved >= DATE_TRUNC('month', CURRENT_DATE)
+        AND snapshot_id = :snapshot_id;
+
+  finance.arr:
+    name: "Annualized Recurring Revenue"
+    description: "Expected annual revenue from current outstanding loans"
+    formula: "SUM(loans.interest_rate * loans.balance * 12)"
+    window: point_in_time
+    basis: revenue
+    unit: usd
+    direction: higher_is_better
+    thresholds:
+      green: 500000
+      yellow: 250000
+      red: 100000
+    data_contract:
+      source_tables: ["cascade.loan_performance"]
+      required_columns: ["interest_rate", "balance"]
+      null_handling: "treat as 0"
+    snapshot_boundary: snapshot_id
+    owner_agent: finance-ai
+    version: "2.0"
+
+    query:
+      view: "v_profitability_metrics"
+      value_column: "arr_usd"
+      where:
+        snapshot_id: ":snapshot_id"
+      params:
+        snapshot_id:
+          type: "string"
+          required: true
+    sql: |
+      SELECT
+        SUM(interest_rate * balance * 12) AS arr_usd
+      FROM cascade.loan_performance
+      WHERE snapshot_id = :snapshot_id;
+
+  compliance.data_quality_score:
+    name: "Data Quality Score"
+    description: "Percentage of data passing validation checks"
+    formula: "SUM(validation_passed) / SUM(validation_total)"
+    window: trailing_30d
+    basis: count
+    unit: percent
+    direction: higher_is_better
+    thresholds:
+      green: 98.0
+      yellow: 95.0
+      red: 90.0
+    data_contract:
+      source_tables: ["data.validation_results"]
+      required_columns: ["validation_passed", "validation_total"]
+      null_handling: "exclude"
+    snapshot_boundary: snapshot_id
+    owner_agent: compliance-ai
+    version: "2.0"
+
+    query:
+      view: "v_data_quality_metrics"
+      value_column: "data_quality_score_pct"
+      where:
+        snapshot_id: ":snapshot_id"
+      params:
+        snapshot_id:
+          type: "string"
+          required: true
+    sql: |
+      SELECT
+        SUM(validation_passed)::float / NULLIF(SUM(validation_total), 0) * 100 AS data_quality_score_pct
+      FROM data.validation_results
+      WHERE snapshot_id = :snapshot_id;
+
+departmental_kpi_mappings:
+  risk:
+    - risk.par_90
+  growth:
+    - growth.origination_volume
+  finance:
+    - finance.arr
+  compliance:
+    - compliance.data_quality_score
