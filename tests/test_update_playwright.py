@@ -28,17 +28,24 @@ jobs:
     def fake_run(cmd, check, capture_output, text):
         # Record the command and return a dummy successful CompletedProcess
         called["cmd"] = cmd
-        return subprocess.CompletedProcess(cmd, 0, stdout="{""ok"":""true""}", stderr="")
+        return subprocess.CompletedProcess(cmd, 0, stdout="{\"ok\":true}", stderr="")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    # Import the script as a module from its temp location and run main()
-    spec = importlib.util.spec_from_file_location("update_playwright", "/tmp/update_playwright.py")
+    # Import the updated script and run main() with explicit args (use --input and --output)
+    spec = importlib.util.spec_from_file_location("update_playwright", "scripts/update_playwright.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
     # Execute main (should read /tmp/ari_playwright.json and call gh api)
-    module.main()
+    # Use args to avoid depending on hard-coded paths inside the script
+    ret = module.main(["--input", str(input_path), "--output", "/tmp/playwright_fixed.yml", "--dry-run"])
+    # In dry-run we expect exit code 0
+    assert ret == 0
+
+    # Run again without dry-run to exercise the gh API call path
+    ret2 = module.main(["--input", str(input_path), "--output", "/tmp/playwright_fixed.yml", "--retries", "1", "--backoff", "0.01"])  # fast retry settings
+    assert ret2 == 0
 
     # Verify that the output file was written and contains the unquoted key
     out_path = Path("/tmp/playwright_fixed.yml")
@@ -55,7 +62,6 @@ jobs:
     assert "gh" in cmd[0] or cmd[0].endswith("gh")
     assert "-X" in cmd and "PUT" in cmd
     assert any("branch=chore/ci-pipeline-integrity" in s for s in cmd)
-
     # Cleanup
     try:
         input_path.unlink()
