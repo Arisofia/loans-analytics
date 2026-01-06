@@ -52,9 +52,11 @@ jobs:
         id: force
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
-          echo "web=true" >> $GITHUB_OUTPUT
-          echo "analytics=true" >> $GITHUB_OUTPUT
-          echo "checks=true" >> $GITHUB_OUTPUT
+          {
+            echo "web=true"
+            echo "analytics=true"
+            echo "checks=true"
+          } >> "$GITHUB_OUTPUT"
       - name: Filter paths
         id: filter
         if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
@@ -147,13 +149,13 @@ jobs:
         run: |
           if [ -n "$DATA_FILE" ]; then
             case "$DATA_FILE" in
-              data/*.csv) ARGS="--data $DATA_FILE" ;;
+              data/*.csv) ARGS=(--data "$DATA_FILE") ;;
               *) echo "Invalid DATA_FILE path"; exit 1 ;;
             esac
           else
-            ARGS=""
+            ARGS=()
           fi
-          python scripts/demo_financial_analysis.py $ARGS > demo_output.txt || true
+          python scripts/demo_financial_analysis.py "${ARGS[@]}" > demo_output.txt || true
       - name: Generate Report
         if: always()
         continue-on-error: true
@@ -207,7 +209,7 @@ jobs:
       - name: Generate placeholder coverage (lcov)
         run: |
           mkdir -p apps/web/coverage
-          echo "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record" > apps/web/coverage/lcov.info
+          printf 'TN:\nSF:placeholder.js\nDA:1,0\nend_of_record\n' > apps/web/coverage/lcov.info
 
   analytics:
     name: Analytics Tests
@@ -253,9 +255,9 @@ jobs:
           ANALYTICS_URL: ${{ secrets.ANALYTICS_URL }}
         run: |
           if [ -n "$FIGMA_TOKEN" ] && [ -n "$FIGMA_FILE_KEY" ] && [ -n "$ANALYTICS_URL" ]; then
-            echo "secrets_available=true" >> $GITHUB_OUTPUT
+            echo "secrets_available=true" >> "$GITHUB_OUTPUT"
           else
-            echo "secrets_available=false" >> $GITHUB_OUTPUT
+            echo "secrets_available=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Checkout code
         if: steps.check-secrets.outputs.secrets_available == true

@@ -45,10 +45,10 @@ jobs:
             fi
           done
           if [ "$missing" = true ]; then
-            echo "all_secrets_present=false" >> $GITHUB_OUTPUT
+            echo "all_secrets_present=false" >> "$GITHUB_OUTPUT"
             exit 0
           else
-            echo "all_secrets_present=true" >> $GITHUB_OUTPUT
+            echo "all_secrets_present=true" >> "$GITHUB_OUTPUT"
           fi
 
   build-and-push:
@@ -67,8 +67,8 @@ jobs:
 
       - name: Lowercase image names
         run: |
-          echo "IMAGE_WEB_LOWER=${IMAGE_WEB,,}" >> ${GITHUB_ENV}
-          echo "IMAGE_DASHBOARD_LOWER=${IMAGE_DASHBOARD,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_WEB_LOWER=${IMAGE_WEB,,}" >> "$GITHUB_ENV"
+          echo "IMAGE_DASHBOARD_LOWER=${IMAGE_DASHBOARD,,}" >> "$GITHUB_ENV"
         env:
           IMAGE_WEB: ${{ github.repository }}-web
           IMAGE_DASHBOARD: ${{ github.repository }}-dashboard
