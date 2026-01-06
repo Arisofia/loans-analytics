@@ -27,8 +27,8 @@ jobs:
           if [ "$VERSION" = "$GITHUB_REF" ]; then
             VERSION="manual-${{ github.run_number }}"
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Verify staging validation
         run: |

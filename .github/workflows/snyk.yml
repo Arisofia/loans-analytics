@@ -46,5 +46,5 @@ jobs:
       - name: Skip (missing token)
         if: steps.snyk_token.outputs.available != 'true'
         run: |
-          echo "SNYK_TOKEN not configured; skipping Snyk scan" >> $GITHUB_STEP_SUMMARY
+          echo "SNYK_TOKEN not configured; skipping Snyk scan" >> "$GITHUB_STEP_SUMMARY"
           exit 0

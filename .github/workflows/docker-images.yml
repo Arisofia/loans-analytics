@@ -20,22 +20,19 @@ env:
   REGISTRY: ghcr.io
   IMAGE_WEB: ${{ github.repository }}-web
   IMAGE_DASHBOARD: ${{ github.repository }}-dashboard
+  IMAGE_WEB_LOWER: ""
+  IMAGE_DASHBOARD_LOWER: ""
 
 jobs:
   validate-secrets:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secrets: DOCKER_USERNAME,DOCKER_PASSWORD,ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-      ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-      ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+    secrets: inherit
 
   build-and-push:
     needs: validate-secrets
-    if: needs.validate-secrets.outputs.all_secrets_present == true
+    if: needs.validate-secrets.outputs.all_secrets_present == 'true'
     runs-on: ubuntu-latest
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -49,8 +46,8 @@ jobs:
 
       - name: Lowercase image names
         run: |
-          echo "IMAGE_WEB_LOWER=${IMAGE_WEB,,}" >> ${GITHUB_ENV}
-          echo "IMAGE_DASHBOARD_LOWER=${IMAGE_DASHBOARD,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_WEB_LOWER=${IMAGE_WEB,,}" >> "${GITHUB_ENV}"
+          echo "IMAGE_DASHBOARD_LOWER=${IMAGE_DASHBOARD,,}" >> "${GITHUB_ENV}"
         env:
           IMAGE_WEB: ${{ github.repository }}-web
           IMAGE_DASHBOARD: ${{ github.repository }}-dashboard

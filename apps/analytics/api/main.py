@@ -98,6 +98,25 @@ def get_latest_kpis():
         raise HTTPException(status_code=500, detail=f"Error reading manifest: {str(e)}") from e
 
 
+def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
+    """Sanitize a candidate path string and resolve it under `allowed_dir`.
+
+    Raises ValueError for any invalid input (absolute paths, escaping the allowed dir).
+    """
+    candidate_path = Path(candidate)
+    if candidate_path.is_absolute():
+        raise ValueError("Absolute paths are not allowed")
+
+    # Interpret candidate as relative to the allowed directory, then resolve
+    resolved = (allowed_dir / candidate_path).resolve()
+    allowed_resolved = allowed_dir.resolve()
+    try:
+        resolved.relative_to(allowed_resolved)
+    except Exception:
+        raise ValueError("Invalid input file; must be under data/archives/")
+    return resolved
+
+
 @app.post("/api/pipeline/trigger")
 async def trigger_pipeline(
     background_tasks: BackgroundTasks,
@@ -117,35 +136,16 @@ async def trigger_pipeline(
     handling. Input file paths are validated to be under `data/archives/` to
     prevent path traversal and unauthorized file access.
     """
-    logger = logging.getLogger(__name__)
-
     # Validate input_file to avoid path traversal and ensure files are under data/archives
-    ALLOWED_DATA_DIR = (repo_root / "data" / "archives").resolve()
-
-
-def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
-    """Sanitize a candidate path string and resolve it under `allowed_dir`.
-
-    Raises ValueError for any invalid input (absolute paths, escaping the allowed dir).
-    """
-    candidate_path = Path(candidate)
-    if candidate_path.is_absolute():
-        raise ValueError("Absolute paths are not allowed")
-
-    # Interpret candidate as relative to the allowed directory, then resolve
-    resolved = (allowed_dir / candidate_path).resolve()
-    allowed_resolved = allowed_dir.resolve()
-    try:
-        resolved.relative_to(allowed_resolved)
-    except Exception:
-        raise ValueError("Invalid input file; must be under data/archives/")
-    return resolved
+    allowed_data_dir = (repo_root / "data" / "archives").resolve()
 
     def _validate_input_file(path_str: str) -> Path:
         try:
-            return _sanitize_and_resolve(path_str, ALLOWED_DATA_DIR)
+            return _sanitize_and_resolve(path_str, allowed_data_dir)
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid input file; must be under data/archives/")
+            raise HTTPException(
+                status_code=400, detail="Invalid input file; must be under data/archives/"
+            )
 
     # perform validation; will raise HTTPException on invalid input
     validated_input_path = _validate_input_file(input_file)

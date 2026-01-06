@@ -47,7 +47,7 @@ jobs:
       - name: Report quality status
         id: check
         if: success()
-        run: echo "passed=true" >> $GITHUB_OUTPUT
+        run: echo "passed=true" >> "$GITHUB_OUTPUT"
 
   deploy-staging:
     runs-on: ubuntu-latest

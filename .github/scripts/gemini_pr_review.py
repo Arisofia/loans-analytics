@@ -4,15 +4,23 @@ This is moved out of the workflow to avoid YAML parsing issues with large inline
 import os
 import sys
 import subprocess
+import logging
+from typing import Optional
 import requests
+from requests.exceptions import RequestException
 
 try:
-    import google.generativeai as genai
-except Exception:
+    import google.generativeai as genai  # type: ignore
+except ImportError:
     genai = None
+
+logger = logging.getLogger(__name__)
 
 
 def main() -> int:
+    """Run Gemini PR review and post a comment on the PR. Returns exit code."""
+    exit_code = 0
+
     github_token = os.getenv("GITHUB_TOKEN")
     gemini_key = os.getenv("GEMINI_API_KEY")
     pr_number = os.getenv("PR_NUMBER")
@@ -21,37 +29,62 @@ def main() -> int:
     model_override = os.getenv("GEMINI_MODEL")
 
     if not github_token or not pr_number or not repo:
-        print("Missing GitHub context; skipping Gemini review.")
+        logger.info("Missing GitHub context; skipping Gemini review.")
         return 0
 
     if not gemini_key:
-        print("GEMINI_API_KEY not configured; skipping AI review.")
+        logger.info("GEMINI_API_KEY not configured; skipping AI review.")
         return 0
 
     if genai is None:
-        print("google-generativeai not installed; skipping Gemini review.")
+        logger.info("google.generativeai not installed; skipping Gemini review.")
         return 0
 
-    genai.configure(api_key=gemini_key)
+    # Configure the SDK if available (guard for multiple SDK versions)
+    try:
+        configure_fn = getattr(genai, "configure", None)
+        if callable(configure_fn):
+            configure_fn(api_key=gemini_key)
+        else:
+            logger.warning("google.generativeai.configure not available; skipping Gemini review.")
+            return 0
+    except Exception:
+        logger.exception("Failed to configure Gemini API")
+        return 1
 
-    model_name = None
+    # Discover model
+    model_name: Optional[str] = None
     if model_override:
         model_name = model_override
     else:
         try:
-            for model in genai.list_models():
-                if hasattr(model, "supported_generation_methods") and "generateContent" in model.supported_generation_methods:
-                    model_name = model.name
-                    break
-        except Exception as e:
-            print(f"Could not list Gemini models: {e}")
+            list_models_fn = getattr(genai, "list_models", None)
+            if callable(list_models_fn):
+                for model in list_models_fn():
+                    supported = getattr(model, "supported_generation_methods", None)
+                    if supported and "generateContent" in supported:
+                        model_name = getattr(model, "name", None)
+                        break
+            else:
+                logger.warning("google.generativeai.list_models not available; cannot auto-detect model")
+        except Exception:
+            logger.exception("Could not list Gemini models")
             model_name = None
 
     if not model_name:
-        print("No compatible Gemini model found; skipping review.")
+        logger.info("No compatible Gemini model found; skipping review.")
         return 0
 
-    model = genai.GenerativeModel(model_name)
+    GenModel = getattr(genai, "GenerativeModel", None)
+    if GenModel is None:
+        logger.error("google.generativeai.GenerativeModel not available; skipping review.")
+        return 0
+
+    try:
+        model = GenModel(model_name)
+    except Exception:
+        logger.exception("Failed to create GenerativeModel")
+        return 1
 
     # Get diff using git
     try:
@@ -62,12 +95,12 @@ def main() -> int:
             check=True,
         )
         diff = result.stdout
-    except subprocess.CalledProcessError as e:
-        print(f"Error getting diff: {e}")
+    except subprocess.CalledProcessError:
+        logger.exception("Error getting diff from git")
         return 1
 
     if not diff.strip():
-        print("No changes to review")
+        logger.info("No changes to review")
         return 0
 
     # Create prompt for Gemini
@@ -85,11 +118,11 @@ Diff:
     try:
         response = model.generate_content(prompt)
         review_comment = getattr(response, "text", str(response))
-    except Exception as e:
-        print(f"Error calling Gemini API: {e}")
-        return 0
+    except Exception:
+        logger.exception("Error calling Gemini API")
+        return 1
 
-    # Post comment to PR
+    # Post comment to PR (use a short timeout to avoid hanging)
     api_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
     headers = {
         "Authorization": f"token {github_token}",
@@ -97,14 +130,17 @@ Diff:
     }
     data = {"body": f"## 🤖 Gemini AI Review\n\n{review_comment}"}
 
-    response = requests.post(api_url, headers=headers, json=data)
-    if response.status_code == 201:
-        print("Review posted successfully")
-        return 0
-    else:
-        print(f"Failed to post review: {response.status_code} {response.text}")
-        return 0
+    try:
+        resp = requests.post(api_url, headers=headers, json=data, timeout=10)
+        resp.raise_for_status()
+        logger.info("Review posted successfully")
+    except RequestException:
+        logger.exception("Failed to post review")
+        exit_code = 1
+
+    return exit_code
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     sys.exit(main())
