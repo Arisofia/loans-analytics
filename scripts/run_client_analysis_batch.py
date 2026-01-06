@@ -6,6 +6,7 @@ import argparse
 import json
 import logging
 import os
+import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
@@ -55,24 +56,37 @@ def _setup_logger(level: str) -> logging.Logger:
     return logger
 
 
-def _env(name: str) -> str:
+def _env(name: str, required: bool = True) -> Optional[str]:
     v = os.getenv(name)
-    if not v:
+    if not v and required:
         raise RuntimeError(f"Missing env var: {name}")
     return v
 
 
-SUPABASE_URL = _env("SUPABASE_URL").rstrip("/")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-if not SUPABASE_KEY:
-    raise RuntimeError("Missing SUPABASE_ANON_KEY " "(or NEXT_PUBLIC_SUPABASE_ANON_KEY).")
+def _supabase_available() -> bool:
+    """Check if Supabase credentials and environment are properly configured."""
+    return bool(
+        os.getenv("SUPABASE_URL")
+        and (os.getenv("SUPABASE_ANON_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
+    )
 
-HEADERS = {
-    "apikey": SUPABASE_KEY,
-    "Authorization": f"Bearer {SUPABASE_KEY}",
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-}
+
+SUPABASE_URL: Optional[str] = None
+SUPABASE_KEY: Optional[str] = None
+HEADERS: dict[str, str] = {}
+
+if _supabase_available():
+    SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+    SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    HEADERS = {
+        "apikey": SUPABASE_KEY or "",
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+else:
+    SUPABASE_URL = None
+    SUPABASE_KEY = None
 
 
 def _rest_get(
@@ -229,6 +243,15 @@ def main() -> None:
     args = ap.parse_args()
 
     logger = _setup_logger(args.log_level)
+
+    if not _supabase_available():
+        logger.error(
+            "[SKIP] Supabase credentials not configured (SUPABASE_URL and "
+            "SUPABASE_ANON_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY required). "
+            "Batch runner will not execute in 'no static files' mode."
+        )
+        sys.exit(0)
+
     run_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
 
     # Record run header in DB
