@@ -21,39 +21,46 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
-  kpi-tests:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        test-path:
-          - "tests/test_kpis*"
-          - "tests/test_manifest_segmentation.py"
-          - "tests/test_api_kpis.py"
-      fail-fast: false
-    timeout-minutes: 20
+    kpi-tests:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                test-path:
+                    - "tests/test_kpis*"
+                    - "tests/test_manifest_segmentation.py"
+                    - "tests/test_api_kpis.py"
+            fail-fast: false
+        timeout-minutes: 20
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 1
+
+            - name: Show changed files (debug)
+              run: |
+                  echo "Event: $GITHUB_EVENT_NAME"
+                  git --no-pager diff --name-only ${{ github.sha }}^ ${{ github.sha }} || true
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "3.11"
+
+- name: Cache pip
+        uses: actions/cache@v4
         with:
-          fetch-depth: 1
-
-      - name: Show changed files (debug)
-        run: |
-          echo "Event: $GITHUB_EVENT_NAME"
-          git --no-pager diff --name-only ${{ github.sha }}^ ${{ github.sha }} || true
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install -r requirements.txt
 
-      - name: Run KPI tests (matrix)
-        run: |
-          echo "Running test: ${{ matrix.test-path }}"
-          pytest -q ${{ matrix.test-path }}
+            - name: Run KPI tests (matrix)
+              run: |
+                  echo "Running test: ${{ matrix.test-path }}"
+                  pytest -q ${{ matrix.test-path }}
