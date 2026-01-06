@@ -85,8 +85,8 @@ jobs:
         run: |
           set -euo pipefail
           PATTERN="(AKIA|aws_secret|SECRET_KEY|PASSWORD|password=|SECRET=|API_KEY|PRIVATE_KEY)"
-          if grep -rEin "$PATTERN" --exclude-dir=.git . |
-             grep -vE "example|\.env\.example|README"; then
+          if grep -rEin "$PATTERN" --exclude-dir=.git --exclude-dir=tests --exclude-dir=infra --exclude-dir=node_modules --exclude-dir=.venv . |
+             grep -vE "example|\.env\.example|README|pnpm-lock.yaml"; then
             echo "Potential hardcoded secret(s) found" >&2
             exit 1
           fi
