@@ -1,6 +1,6 @@
 name: Playwright E2E Tests
 
-"on":
+on:
   pull_request:
     paths:
       - 'apps/web/**'
