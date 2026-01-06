@@ -81,7 +81,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Post KPI summary comment on PR
+      - name: Post KPI summary comment on PR (with durations)
         uses: actions/github-script@v6
         with:
           script: |
@@ -93,8 +93,34 @@ jobs:
             const prNumber = pr.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const body = `<!-- KPI_TEST_SUMMARY -->\n**KPI tests** ran in *parallel (matrix)* with pip + .venv caching enabled. Expected speedup per job: **~30–60s**.\n\nTests executed: \`tests/test_kpis*\`, \`tests/test_manifest_segmentation.py\`, \`tests/test_api_kpis.py\`.\n\nIf you'd like further CI optimizations (wheelhouse caching, split unit/integration jobs), reply here or request changes.`;
 
+            // Determine current run ID
+            const runId = context.runId || parseInt(process.env.GITHUB_RUN_ID, 10);
+
+            // Fetch jobs for this workflow run and compute durations for kpi-tests matrix jobs
+            const jobsResp = await github.rest.actions.listJobsForWorkflowRun({ owner, repo, run_id: runId });
+            const jobs = jobsResp.data.jobs || [];
+
+            // Filter kpi-tests jobs (matrix runs) and compute durations
+            const kpiJobs = jobs.filter(j => j.name && j.name.toLowerCase().includes('kpi-tests'));
+
+            const durationEntries = kpiJobs.map(j => {
+              const start = j.started_at ? new Date(j.started_at) : null;
+              const end = j.completed_at ? new Date(j.completed_at) : null;
+              const durationSec = start && end ? Math.round((end - start) / 1000) : null;
+              return { name: j.name, conclusion: j.conclusion, durationSec };
+            });
+
+            const durationsTable = durationEntries
+              .map(d => `- ${d.name}: ${d.durationSec !== null ? d.durationSec + 's' : 'N/A'} (${d.conclusion || 'unknown'})`)
+              .join('\n');
+
+            const totalSec = durationEntries.reduce((acc, d) => acc + (d.durationSec || 0), 0);
+            const avgSec = durationEntries.length ? Math.round(totalSec / durationEntries.length) : 0;
+
+            const body = `<!-- KPI_TEST_SUMMARY -->\n**KPI tests** ran in *parallel (matrix)* with pip + .venv caching enabled. Expected speedup per job: **~30–60s**.\n\n**Job durations:**\n${durationsTable}\n\n**Avg duration per matrix job:** ${avgSec}s | **Total of reported jobs:** ${totalSec}s\n\nTests executed: \`tests/test_kpis*\`, \`tests/test_manifest_segmentation.py\`, \`tests/test_api_kpis.py\`.\n\nIf you'd like further CI optimizations (wheelhouse caching, split unit/integration jobs), reply here or request changes.`;
+
+            // Update or create single comment
             const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number: prNumber });
             const existing = comments.find(c => c.body && c.body.includes('<!-- KPI_TEST_SUMMARY -->'));
             if (existing) {
