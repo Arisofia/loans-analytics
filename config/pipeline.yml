@@ -203,6 +203,15 @@ pipeline:
           source_table: metrics
           precision: 2
           validation_range: [0, 10]
+
+        - name: SegmentationSummary
+          function: src.kpis.segmentation_summary.calculate_segmentation_summary
+          formula: "GROUP BY client_segment: clients, portfolio_value, avg_loan. Primary metric: total unique clients (2025)"
+          source_table: fact_loans
+          precision: 0
+          output_type: table
+          owner: Commercial
+          expose_on_dashboard: true
       timeseries:
         enabled: true
         time_column: measurement_date
