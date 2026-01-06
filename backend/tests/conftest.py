@@ -3,7 +3,8 @@
 # TODO: Temporary shim - remove once `requests-mock` is available in the
 # developer environment and added to `requirements.txt`. The shim mirrors a
 # subset of the plugin's behavior so backend tests run reliably in broken
-# venvs or during local development.import requests
+# venvs or during local development.
+import requests
 from types import SimpleNamespace
 import pytest
 
