@@ -1,3 +1,4 @@
+# CI: validation touch - no-op fix
 name: Playwright E2E Tests
 
 on:
