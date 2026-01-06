@@ -404,21 +404,37 @@ with st.sidebar:
                     dfs[file.name] = pd.read_excel(file, sheet_name=None)
 
             if dfs:
+                # Map uploaded filenames to required internal keys
+                mapped_dfs = {}
                 for name, df in dfs.items():
+                    name_lower = name.lower()
                     if isinstance(df, dict):
                         for sheet, sdf in df.items():
                             dfs[name][sheet] = normalize_dataframe(sdf)
                     else:
-                        dfs[name] = normalize_dataframe(df)
+                        normalized_df = normalize_dataframe(df)
+                        dfs[name] = normalized_df
+                        
+                        # Apply fuzzy mapping to identify core tables
+                        if "loan" in name_lower and "data" in name_lower:
+                            mapped_dfs["loan_data"] = normalized_df
+                        elif "customer" in name_lower and "data" in name_lower:
+                            mapped_dfs["customer_data"] = normalized_df
+                        elif ("payment" in name_lower and "historic" in name_lower) or ("real" in name_lower and "payment" in name_lower):
+                            mapped_dfs["historic_payment_data"] = normalized_df
+                        elif "schedule" in name_lower:
+                            mapped_dfs["schedule_data"] = normalized_df
 
-                st.session_state["data"] = dfs
+                # Merge mapped data into session state while keeping original filenames for UI
+                final_data = {**dfs, **mapped_dfs}
+                st.session_state["data"] = final_data
                 st.session_state["loaded"] = True
                 st.success("Data ingested successfully.")
 
-                # Auto-generate KPI exports from uploaded data
+                # Auto-generate KPI exports from mapped data
                 with st.spinner("Generating KPI exports from uploaded data..."):
                     try:
-                        output_path = generate_kpi_exports(dfs)
+                        output_path = generate_kpi_exports(final_data)
                         st.cache_data.clear()
                         st.info(f"✅ KPI exports generated: {output_path}")
                     except Exception as exc:
@@ -505,15 +521,17 @@ if not st.session_state["loaded"]:
 
 data = st.session_state["data"]
 
-# Core Tables Identification
-loan_data = None
-customer_data = pd.DataFrame()
+# Core Tables Identification (prioritize internal keys from auto-mapping)
+loan_data = data.get("loan_data")
+customer_data = data.get("customer_data", pd.DataFrame())
 
-for name, df in data.items():
-    if "loan" in name.lower() and "data" in name.lower():
-        loan_data = df
-    elif "customer" in name.lower():
-        customer_data = df
+if loan_data is None:
+    # Fallback to original filename search if mapping failed
+    for name, df in data.items():
+        if "loan" in name.lower() and "data" in name.lower():
+            loan_data = df
+        elif "customer" in name.lower() and customer_data.empty:
+            customer_data = df
 
 if loan_data is None:
     st.error("Core loan data missing in uploads.")
