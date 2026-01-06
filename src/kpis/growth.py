@@ -1,4 +1,5 @@
 """KPI helpers for growth calculations."""
+
 from typing import Dict, Tuple
 
 

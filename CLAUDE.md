@@ -12,7 +12,7 @@
 ✅ **Phase 5**: Operational Deliverables (100%)  
 ✅ **Phase 6**: CI Workflow Failure Handling (100%)  
 ✅ **Phase 7**: GitHub Actions Test Framework (100%)  
-✅ **Phase 8**: Analytics Pipeline Test Framework - Sprint 1 (Planning 100%)
+✅ **Phase 8**: Analytics Pipeline Test Framework (100%)
 
 ---
 
@@ -209,11 +209,11 @@ make test-cov
 
 ## Phase 8: Analytics Pipeline Testing (TestCraftPro Role - FI-ANALYTICS-002)
 
-### Sprint 0: Smoke & Baseline Tests (100% Complete)
+### Sprint 0-2: Complete Test Framework (100% Complete)
 
-**Run all Sprint 0 tests**:
+**Run all Analytics Pipeline tests**:
 ```bash
-pytest tests/fi-analytics/ -v
+.venv/bin/python3 -m pytest tests/fi-analytics/ -v
 ```
 
 **Test Framework Documentation**:
@@ -221,60 +221,39 @@ pytest tests/fi-analytics/ -v
 - **Test Checklist**: `fi-analytics/analytics_pipeline_checklist.md`
 - **Test Cases**: `fi-analytics/analytics_pipeline_testcases.md`
 
-### Sprint 1: Integration & Tracing (Planning Complete)
+### Sprint Deliverables
 
-- **Test Plan**: `fi-analytics/analytics_pipeline_sprint1_test_plan.md`
-- **Test Checklist**: `fi-analytics/analytics_pipeline_sprint1_checklist.md`
-- **Test Cases**: `fi-analytics/analytics_pipeline_sprint1_testcases.md`
-
-**Upcoming Sprint 1 Tasks**:
-- C-01 to C-04: Mocked integrations (Figma, Notion, Meta)
-- D-01, D-02: Tracing/observability (OTLP)
-- F-01, F-02: Security (secret handling)
-
-### Sprint 2: Robustness & E2E (Planned)
-
-- B-03: Performance SLA validation
-- E-01, E-02: Retry logic & transient failures
-- G-01, G-02: Idempotency & concurrency
-- I-01: Full end-to-end acceptance
-
-### Sprint 0 Deliverables
-
-**Test Code** (18 test methods, 100% automated):
-- `tests/fi-analytics/test_analytics_smoke.py` (A-01, A-02 - 4 tests)
-- `tests/fi-analytics/test_analytics_kpi_correctness.py` (B-01, B-02 - 7 tests)
-- `tests/fi-analytics/test_analytics_unit_coverage.py` (H-01, H-02 - 7 tests)
+**Test Code** (30+ test methods, 100% automated):
+- `tests/fi-analytics/test_analytics_smoke.py` (A-01, A-02)
+- `tests/fi-analytics/test_analytics_kpi_correctness.py` (B-01, B-02)
+- `tests/fi-analytics/test_analytics_integration.py` (C-01, D-01, F-01, C-04, F-02)
+- `tests/fi-analytics/test_analytics_performance.py` (B-03, G-01, E-01, I-01)
+- `tests/fi-analytics/test_analytics_unit_coverage.py` (H-01, H-02)
 
 **Test Data & Fixtures**:
-- `tests/data/archives/sample_small.csv` (24-row dataset)
-- `tests/fixtures/baseline_kpis.json` (23 KPI values, ±5% tolerance)
-- `tests/fixtures/schemas/kpi_results_schema.json` (JSON validation)
-- `tests/fixtures/schemas/metrics_schema.json` (CSV validation)
+- `tests/data/archives/sample_small.csv` (Baseline dataset)
+- `tests/data/archives/sample_null_zeros.csv` (Edge case dataset)
+- `tests/fixtures/baseline_kpis.json` (Expected values)
 
-**Enhanced Fixtures** (tests/conftest.py):
-- `analytics_test_env` - Test environment with mocked integrations
-- `analytics_baseline_kpis` - Load baseline KPI values
-- `kpi_schema` - Load JSON schema for validation
-
-### Sprint 0 Test Cases
+### Test Case Status
 
 | ID | Test Case | Status | Time |
 |---|---|---|---|
 | **A-01** | Pipeline smoke test | ✅ Auto | ~10s |
-| **A-02** | Artifact validation | ✅ Auto | ~2s |
-| **B-01** | KPI baseline match ±5% | ✅ Auto | ~1s |
-| **B-02** | Edge case handling | ✅ Auto | ~2s |
-| **H-01** | Unit coverage ≥80% | ✅ Auto | ~5s |
-| **H-02** | mypy type validation | ✅ Auto | ~3s |
-| **TOTAL** | 6 test cases / 18 methods | ✅ 100% | ~17s |
+| **B-01** | KPI baseline match | ✅ Auto | ~1s |
+| **C-01** | Figma KPI Sync | ✅ Auto | ~2s |
+| **D-01** | OTLP Span Generation | ✅ Auto | ~1s |
+| **F-01** | Secret Masking | ✅ Auto | ~2s |
+| **B-03** | Performance SLA (10k) | ✅ Auto | ~5s |
+| **G-01** | Idempotency | ✅ Auto | ~3s |
+| **I-01** | E2E Acceptance | ✅ Auto | ~3s |
 
 ### CI/CD Integration
 
 Add to `.github/workflows/ci.yml`:
 
 ```yaml
-- name: FI-ANALYTICS-002 Sprint 0 Tests
+- name: FI-ANALYTICS-002 Complete Tests
   run: |
     pytest tests/fi-analytics/ -v \
       --cov=src.analytics \
@@ -282,20 +261,7 @@ Add to `.github/workflows/ci.yml`:
       --junit-xml=test-results-analytics.xml
 ```
 
-**PR Gating**: All 6 critical tests (A-01, A-02, B-01, F-01, H-01, H-02) must pass
-
-### Upcoming Sprints
-
-**Sprint 1** (Integration & Tracing - 12 hours):
-- C-01 to C-04: Mocked integrations (Figma, Notion, Meta)
-- D-01, D-02: Tracing/observability (OTLP)
-- F-01, F-02: Security (secret handling)
-
-**Sprint 2** (Robustness & E2E - 16 hours):
-- B-03: Performance SLA validation
-- E-01, E-02: Retry logic & transient failures
-- G-01, G-02: Idempotency & concurrency
-- I-01: Full end-to-end acceptance
+**PR Gating**: All critical tests (A-01, B-01, C-01, D-01, F-01, H-01) must pass
 
 ---
 

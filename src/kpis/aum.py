@@ -26,7 +26,11 @@ class AUMCalculator(KPICalculator):
 
         # Handle both raw and normalized column names
         status_col = "loan_status" if "loan_status" in df.columns else "status"
-        balance_col = "outstanding_loan_value" if "outstanding_loan_value" in df.columns else "outstanding_balance_usd"
+        balance_col = (
+            "outstanding_loan_value"
+            if "outstanding_loan_value" in df.columns
+            else "outstanding_balance_usd"
+        )
 
         if status_col not in df.columns or balance_col not in df.columns:
             # Fallback to sum of all outstanding balance if status not available

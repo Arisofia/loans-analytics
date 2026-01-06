@@ -2,8 +2,7 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 
-from src.kpis.base import (KPICalculator, KPIMetadata, create_context,
-                           safe_numeric)
+from src.kpis.base import KPICalculator, KPIMetadata, create_context
 
 
 class ConcentrationCalculator(KPICalculator):
@@ -25,11 +24,15 @@ class ConcentrationCalculator(KPICalculator):
             )
 
         cust_col = "customer_id" if "customer_id" in df.columns else "Customer ID"
-        disb_col = "disbursement_amount" if "disbursement_amount" in df.columns else "Disbursement Amount"
+        disb_col = (
+            "disbursement_amount" if "disbursement_amount" in df.columns else "Disbursement Amount"
+        )
 
         if cust_col not in df.columns or disb_col not in df.columns:
-             if "customer_id" not in df.columns: cust_col = "client_id"
-             if "disburse_principal" in df.columns: disb_col = "disburse_principal"
+            if "customer_id" not in df.columns:
+                cust_col = "client_id"
+            if "disburse_principal" in df.columns:
+                disb_col = "disburse_principal"
 
         if cust_col not in df.columns or disb_col not in df.columns:
             raise ValueError(f"Missing columns for Concentration: {cust_col}, {disb_col}")

@@ -2,7 +2,7 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 
-from src.kpis.base import (KPICalculator, KPIMetadata, create_context)
+from src.kpis.base import KPICalculator, KPIMetadata, create_context
 
 
 class ActiveClientsCalculator(KPICalculator):
@@ -27,7 +27,8 @@ class ActiveClientsCalculator(KPICalculator):
         cust_col = "customer_id" if "customer_id" in df.columns else "Customer ID"
 
         if status_col not in df.columns or cust_col not in df.columns:
-             if "customer_id" not in df.columns: cust_col = "client_id"
+            if "customer_id" not in df.columns:
+                cust_col = "client_id"
 
         if status_col not in df.columns or cust_col not in df.columns:
             raise ValueError(f"Missing columns for ActiveClients: {status_col}, {cust_col}")

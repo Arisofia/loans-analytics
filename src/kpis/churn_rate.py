@@ -2,7 +2,7 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 
-from src.kpis.base import (KPICalculator, KPIMetadata, create_context)
+from src.kpis.base import KPICalculator, KPIMetadata, create_context
 
 
 class ChurnRateCalculator(KPICalculator):
@@ -29,8 +29,8 @@ class ChurnRateCalculator(KPICalculator):
         if date_col not in df.columns or cust_col not in df.columns:
             raise ValueError(f"Missing columns for ChurnRate: {date_col}, {cust_col}")
 
-        df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
-        
+        df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+
         cust_2024 = set(df[df[date_col].dt.year == 2024][cust_col].unique())
         cust_2025 = set(df[df[date_col].dt.year == 2025][cust_col].unique())
 

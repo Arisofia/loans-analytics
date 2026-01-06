@@ -42,7 +42,7 @@ echo "Step 3: Running v2 test suite..."
 python -m pytest tests/test_kpi_base.py tests/test_kpi_calculators_v2.py tests/test_kpi_engine_v2.py tests/test_pipeline_orchestrator.py -q --tb=line > "$STAGING_DIR/test_results.txt" 2>&1
 TEST_EXIT=$?
 
-if [ $TEST_EXIT -eq 0 ]; then
+if [ "$TEST_EXIT" -eq 0 ]; then
     TEST_COUNT=$(grep -c "passed" "$STAGING_DIR/test_results.txt" || echo "0")
     echo "✓ All tests passed ($TEST_COUNT tests)" | tee -a "$LOG_FILE"
 else
@@ -111,19 +111,13 @@ echo "✓ Staging directories created" | tee -a "$LOG_FILE"
 # 6. Verify Python version
 echo ""
 echo "Step 6: Verifying Python environment..."
-PYTHON_VERSION=$($STAGING_ENV/bin/python --version 2>&1)
+PYTHON_VERSION=$("$STAGING_ENV/bin/python" --version 2>&1)
 echo "✓ Python version: $PYTHON_VERSION" | tee -a "$LOG_FILE"
 
 # 7. Verify key modules
 echo ""
 echo "Step 7: Verifying module imports..."
-$STAGING_ENV/bin/python -c "
-import pandas as pd
-import numpy as np
-from src.kpi_engine_v2 import KPIEngineV2
-from src.pipeline.orchestrator import UnifiedPipeline, PipelineConfig
-print('✓ All key modules imported successfully')
-" 2>&1 | tee -a "$LOG_FILE"
+"$STAGING_ENV/bin/python" -c "import pandas as pd; import numpy as np; from src.kpi_engine_v2 import KPIEngineV2; from src.pipeline.orchestrator import UnifiedPipeline, PipelineConfig; print('✓ All key modules imported successfully')" 2>&1 | tee -a "$LOG_FILE"
 
 # 8. Generate deployment summary
 echo ""

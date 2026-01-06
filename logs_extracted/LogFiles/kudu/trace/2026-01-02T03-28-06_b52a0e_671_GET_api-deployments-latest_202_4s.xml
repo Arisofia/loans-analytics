@@ -1,0 +1,11 @@
+<step title="Incoming Request" date="2026-01-02T03:28:06.625" instance="b52a0e" url="/api/deployments/latest?deployer=OneDeploy&amp;time=2026-01-02_03-19-37Z" method="GET" type="request" pid="768,1,22" Host="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_b331d4c441121f33da0f8476235474cf2ed43174776f44c9c3bb512e436c79b1" Authorization="Bea..." Content-Type="application/json; charset=utf-8" Cookie="ARRAffinity=b52a0e95239a69ec1d51e27f609b0a5686f7c63777a6973635d661be711de39f;Path=/;HttpOnly;Secure;Domain=abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net; ARRAffinitySameSite=b52a0e95239a69ec1d51e27f609b0a5686f7c63777a6973635d661be711de39f;Path=/;HttpOnly;SameSite=None;Secure;Domain=abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" Content-Length="0" X-ARR-LOG-ID="28deb3f5-951f-41fa-8700-d366006517b7" CLIENT-IP="172.184.209.112:11201" X-SITE-DEPLOYMENT-ID="abaco-analytics-dashboard" WAS-DEFAULT-HOSTNAME="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/latest?deployer=OneDeploy&amp;time=2026-01-02_03-19-37Z" X-Client-IP="172.184.209.112" X-Client-Port="11201" >
+  <step title="Cleanup Xml Logs" date="2026-01-02T03:28:06.668" >
+    <step title="Cleanup Infos" date="2026-01-02T03:28:07.067" totalFiles="2647" totalCleanup="2487" /><!-- duration: 213ms -->
+  </step><!-- duration: 623ms -->
+  <step title="DeploymentService.GetResult" date="2026-01-02T03:28:07.422" >
+    <step title="DeploymentService.GetLatestDeployment" date="2026-01-02T03:28:07.479" >
+      <step title="DeploymentManager.GetResults" date="2026-01-02T03:28:07.489" /><!-- duration: 2461ms -->
+    </step><!-- duration: 2652ms -->
+  </step><!-- duration: 2751ms -->
+  <step title="Outgoing response" date="2026-01-02T03:28:10.223" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 269ms -->
+</step><!-- duration: 3901ms -->

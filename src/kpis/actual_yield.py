@@ -24,12 +24,22 @@ class ActualYieldCalculator(KPICalculator):
                 self.METADATA.formula, rows_processed=0, reason="Empty DataFrame"
             )
 
-        interest_paid_col = "true_interest_payment" if "true_interest_payment" in df.columns else "True Interest Payment"
-        aum_col = "outstanding_loan_value" if "outstanding_loan_value" in df.columns else "Outstanding Loan Value"
-        
+        interest_paid_col = (
+            "true_interest_payment"
+            if "true_interest_payment" in df.columns
+            else "True Interest Payment"
+        )
+        aum_col = (
+            "outstanding_loan_value"
+            if "outstanding_loan_value" in df.columns
+            else "Outstanding Loan Value"
+        )
+
         # Fallback to normalized columns if needed
-        if interest_paid_col not in df.columns: interest_paid_col = "cash_interest_usd"
-        if aum_col not in df.columns: aum_col = "outstanding_balance_usd"
+        if interest_paid_col not in df.columns:
+            interest_paid_col = "cash_interest_usd"
+        if aum_col not in df.columns:
+            aum_col = "outstanding_balance_usd"
 
         if interest_paid_col not in df.columns or aum_col not in df.columns:
             raise ValueError(f"Missing columns for ActualYield: {interest_paid_col}, {aum_col}")

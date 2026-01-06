@@ -7,7 +7,7 @@ echo "=========================================="
 echo ""
 
 REPORT_FILE="CI_DIAGNOSIS_REPORT.md"
-> "$REPORT_FILE"
+: > "$REPORT_FILE"
 
 {
     echo "# CI Workflow Failure Diagnosis Report"

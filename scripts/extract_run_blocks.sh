@@ -10,13 +10,12 @@ mkdir -p "$OUT_DIR"
 rm -f "$OUT_DIR"/*.sh || true
 
 shopt -s nullglob
-count=0
 for f in .github/workflows/*.{yml,yaml}; do
   [ -f "$f" ] || continue
   base=$(basename "$f")
   # Use awk to find 'run:' lines and capture following indented lines
   awk -v outdir="$OUT_DIR" -v base="$base" '
-    /^\	*run:\s*(\||$)/ { inside=1; c++; file = outdir "/" base ".run." c ".sh"; next }
+    /^[[:space:]]*-\s*run:\s*(\||$)/ { inside=1; c++; file = outdir "/" base ".run." c ".sh"; next }
     inside {
       # If line is empty, keep it
       if ($0 ~ /^[[:space:]]*$/) { print "" >> file; next }
@@ -42,10 +41,15 @@ echo "Extracted run blocks to $OUT_DIR"
 #  - Ensure we keep at most KEEP most recent files
 if compgen -G "$OUT_DIR/*.sh" > /dev/null; then
   echo "Pruning extracted files older than ${MAX_AGE_DAYS} days..."
-  find "$OUT_DIR" -type f -mtime +${MAX_AGE_DAYS} -print -delete || true
+  find "$OUT_DIR" -type f -mtime +"${MAX_AGE_DAYS}" -print -delete || true
 
   # Enforce KEEP limit (delete oldest files beyond KEEP)
-  files=( $(ls -1tr "$OUT_DIR"/*.sh 2>/dev/null || true) )
+  # Use mapfile if available for robust splitting, otherwise fallback to POSIX-compatible array
+  if command -v mapfile >/dev/null 2>&1; then
+    mapfile -t files < <(ls -1tr "$OUT_DIR"/*.sh 2>/dev/null || true)
+  else
+    files=( $(ls -1tr "$OUT_DIR"/*.sh 2>/dev/null || true) )
+  fi
   total=${#files[@]}
   if [ "$total" -gt "$KEEP" ]; then
     to_delete_count=$((total - KEEP))
@@ -55,5 +59,12 @@ if compgen -G "$OUT_DIR/*.sh" > /dev/null; then
 fi
 
 # Summarize
-remaining_count=$(ls -1 "$OUT_DIR"/*.sh 2>/dev/null | wc -l || true)
+if command -v mapfile >/dev/null 2>&1; then
+  mapfile -t remaining_files < <(ls -1 "$OUT_DIR"/*.sh 2>/dev/null || true)
+  remaining_count=${#remaining_files[@]}
+else
+  remaining_files=( $(ls -1 "$OUT_DIR"/*.sh 2>/dev/null || true) )
+  remaining_count=${#remaining_files[@]}
+fi
+
 echo "Extraction complete. Remaining extracted run scripts: ${remaining_count}"

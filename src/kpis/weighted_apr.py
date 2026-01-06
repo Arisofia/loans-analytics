@@ -25,12 +25,16 @@ class WeightedAPRCalculator(KPICalculator):
             )
 
         apr_col = "interest_rate_apr" if "interest_rate_apr" in df.columns else "Interest Rate APR"
-        disb_col = "disbursement_amount" if "disbursement_amount" in df.columns else "Disbursement Amount"
+        disb_col = (
+            "disbursement_amount" if "disbursement_amount" in df.columns else "Disbursement Amount"
+        )
 
         if apr_col not in df.columns or disb_col not in df.columns:
-             # Try other common names
-             if "interest_rate" in df.columns: apr_col = "interest_rate"
-             if "disburse_principal" in df.columns: disb_col = "disburse_principal"
+            # Try other common names
+            if "interest_rate" in df.columns:
+                apr_col = "interest_rate"
+            if "disburse_principal" in df.columns:
+                disb_col = "disburse_principal"
 
         if apr_col not in df.columns or disb_col not in df.columns:
             raise ValueError(f"Missing columns for WeightedAPR: {apr_col}, {disb_col}")
@@ -45,7 +49,7 @@ class WeightedAPRCalculator(KPICalculator):
             )
 
         weighted_apr = (apr * disb).sum() / total_disb
-        
+
         # If APR is already in decimal (e.g. 0.15 for 15%), and we want %, we might need to multiply by 100
         # The snippet says * 100 at the end, implying it expects result in percentage points.
         value = float(weighted_apr * 100.0)
