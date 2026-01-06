@@ -238,6 +238,11 @@ pipeline:
           - kpi_timeseries_daily
       dashboard_triggers:
         enabled: false
+        # When enabled the pipeline will trigger an export to external dashboards
+        # and design tools after the run completes. Use outputs to limit platforms.
+        # Valid outputs: ['figma', 'azure', 'supabase', 'meta', 'notion']
+        outputs: ["figma", "azure"]
+        mode: "kpi-only" # options: 'kpi-only' | 'dashboard' | 'full'
 
 observability:
   logging:

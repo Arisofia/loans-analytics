@@ -191,6 +191,29 @@ class UnifiedOutput:
             manifest["azure_blobs"] = azure_blobs
             write_json(manifest_path, manifest)
 
+        # If configured, trigger dashboard/export notifications to external platforms
+        triggers_cfg = self.config.get("dashboard_triggers", {})
+        if triggers_cfg.get("enabled"):
+            try:
+                # Lazy import to avoid pulling integration deps unless needed
+                from src.integrations.unified_output_manager import UnifiedOutputManager
+
+                outputs = triggers_cfg.get("outputs", ["figma", "azure"])
+                manager = UnifiedOutputManager()
+                # Allow basic client configuration via triggers cfg if provided
+                manager.configure_clients(triggers_cfg.get("clients", {}))
+
+                # Use a lightweight export that only pushes KPI metrics by default
+                trigger_results = manager.export_kpi_metrics_only(metrics, master_run_id, enabled_outputs=outputs)
+
+                # Record trigger results in manifest and persist
+                manifest.setdefault("triggers", {})["dashboard_trigger"] = trigger_results
+                write_json(manifest_path, manifest)
+
+                self._log_event("dashboard_trigger", "success", result_summary=str(trigger_results))
+            except Exception as exc:  # pragma: no cover - defensive logging
+                self._log_event("dashboard_trigger", "failed", error=str(exc))
+
         self._log_event("complete", "success", manifest=str(manifest_path))
 
         return OutputResult(
