@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from dashboard_utils import compute_cat_agg
 
 # Theme definition (as per design system)
 ABACO_THEME = {
@@ -603,27 +604,25 @@ with g_col1:
     st.plotly_chart(apply_theme(fig_growth), use_container_width=True)
 
 with g_col2:
-    if "categoria" in merged.columns and "outstanding_loan_value" in merged.columns:
-        try:
-            # Ensure numeric and handle NaNs
-            temp_df = merged.copy()
-            temp_df["outstanding_loan_value"] = pd.to_numeric(temp_df["outstanding_loan_value"], errors="coerce").fillna(0)
-            cat_agg = temp_df.groupby("categoria")["outstanding_loan_value"].sum().reset_index()
-            
-            if not cat_agg.empty and cat_agg["outstanding_loan_value"].sum() > 0:
-                fig_cat = px.pie(
-                    cat_agg,
-                    values="outstanding_loan_value",
-                    names="categoria",
-                    title="Portfolio by Category",
-                )
-                st.plotly_chart(apply_theme(fig_cat), use_container_width=True)
+    try:
+        cat_agg = compute_cat_agg(merged)
+
+        if not cat_agg.empty and cat_agg["outstanding_loan_value"].sum() > 0:
+            fig_cat = px.pie(
+                cat_agg,
+                values="outstanding_loan_value",
+                names="categoria",
+                title="Portfolio by Category",
+            )
+            st.plotly_chart(apply_theme(fig_cat), use_container_width=True)
+        else:
+            # If categoria exists but no outstanding value column, show explicit message
+            if "categoria" in merged.columns and "outstanding_loan_value" not in merged.columns:
+                st.info("Outstanding loan value column missing. Category breakdown unavailable.")
             else:
                 st.info("No outstanding balance data found for category breakdown.")
-        except Exception as exc:
-            st.warning(f"Could not generate category breakdown: {exc}")
-    elif "categoria" in merged.columns:
-        st.info("Outstanding loan value column missing. Category breakdown unavailable.")
+    except Exception as exc:
+        st.warning(f"Could not generate category breakdown: {exc}")
 
 # --- 3. Marketing & Sales ---
 st.header("🎯 Sales Performance")
