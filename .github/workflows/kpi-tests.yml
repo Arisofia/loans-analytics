@@ -5,6 +5,7 @@ on:
         paths:
             - "src/kpis/**"
             - "tests/test_kpis_*.py"
+            - "tests/test_manifest_segmentation.py"
             - "tests/test_api_kpis.py"
     pull_request:
         paths:
@@ -46,4 +47,4 @@ jobs:
 
             - name: Run KPI tests
               run: |
-                  pytest -q tests/test_kpis* tests/test_api_kpis.py
+                  pytest -q tests/test_kpis* tests/test_manifest_segmentation.py tests/test_api_kpis.py
