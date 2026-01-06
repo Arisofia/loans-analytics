@@ -1,79 +1,77 @@
 name: KPI tests
 
 on:
-    push:
-        paths:
-            - "src/kpis/**"
-            - "tests/test_kpis_*.py"
-            - "tests/test_manifest_segmentation.py"
-            - "tests/test_api_kpis.py"
-    pull_request:
-        paths:
-            - "src/kpis/**"
-            - "tests/test_kpis_*.py"
-            - "tests/test_api_kpis.py"
+  push:
+    paths:
+      - "src/kpis/**"
+      - "tests/test_kpis_*.py"
+      - "tests/test_manifest_segmentation.py"
+      - "tests/test_api_kpis.py"
+  pull_request:
+    paths:
+      - "src/kpis/**"
+      - "tests/test_kpis_*.py"
+      - "tests/test_api_kpis.py"
 
 permissions:
-    contents: read
-    issues: write
+  contents: read
+  issues: write
 
 concurrency:
-    group: kpi-tests-${{ github.ref }}
-    cancel-in-progress: true
+  group: kpi-tests-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    kpi-tests:
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                test-path:
-                    - "tests/test_kpis*"
-                    - "tests/test_manifest_segmentation.py"
-                    - "tests/test_api_kpis.py"
-            fail-fast: false
-        timeout-minutes: 20
+  kpi-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-path:
+          - "tests/test_kpis*"
+          - "tests/test_manifest_segmentation.py"
+          - "tests/test_api_kpis.py"
+      fail-fast: false
+    timeout-minutes: 20
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-            - name: Show changed files (debug)
-              run: |
-                  echo "Event: $GITHUB_EVENT_NAME"
-                  git --no-pager diff --name-only ${{ github.sha }}^ ${{ github.sha }} || true
+      - name: Show changed files (debug)
+        run: |
+          echo "Event: $GITHUB_EVENT_NAME"
+          git --no-pager diff --name-only ${{ github.sha }}^ ${{ github.sha }} || true
 
-            - name: Set up Python
-              uses: actions/setup-python@v4
-              with:
-                  python-version: "3.11"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-            - name: Cache pip
-              uses: actions/cache@v4
-              with:
-                  path: ~/.cache/pip
-                  key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-                  restore-keys: ${{ runner.os }}-pip-
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
 
-            - name: Cache venv
-              uses: actions/cache@v4
-              with:
-                  path: .venv
-                  key: ${{ runner.os }}-venv-${{ hashFiles('requirements.txt') }}
-                  restore-keys: ${{ runner.os }}-venv-
+      - name: Cache venv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-venv-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-venv-
 
-            - name: Install dependencies (create venv)
-              run: |
-                  python -m venv .venv
-                  . .venv/bin/activate
-                  python -m pip install --upgrade pip
-                  pip install -r requirements.txt
+      - name: Install dependencies (create venv)
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-            - name: Run KPI tests (matrix)
-              run: |
-                  echo "Running test: ${{ matrix.test-path }}"
-                  . .venv/bin/activate
-                  pytest -q ${{ matrix.test-path }}
-
-
+      - name: Run KPI tests (matrix)
+        run: |
+          echo "Running test: ${{ matrix.test-path }}"
+          . .venv/bin/activate
+          pytest -q ${{ matrix.test-path }}
