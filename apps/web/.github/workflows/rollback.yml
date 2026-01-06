@@ -33,7 +33,7 @@ jobs:
           echo "✅ Target environment: ${{ github.event.inputs.environment }}"
 
       - name: Create incident issue
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           TARGET_VERSION: ${{ github.event.inputs.target_version }}
           ENVIRONMENT: ${{ github.event.inputs.environment }}
@@ -142,7 +142,7 @@ jobs:
           fi
 
       - name: Notify completion
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             github.rest.issues.createComment({
@@ -158,7 +158,7 @@ jobs:
     if: failure()
     steps:
       - name: Create failure alert
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           TARGET_VERSION: ${{ github.event.inputs.target_version }}
           ENVIRONMENT: ${{ github.event.inputs.environment }}

@@ -14,15 +14,142 @@ if str(PYTHON_DIR) not in sys.path:
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-<<<<<<< HEAD
 PYTHON_ROOT = ROOT / "python"
 if str(PYTHON_ROOT) not in sys.path:
     sys.path.insert(0, str(PYTHON_ROOT))
 
 # Change working directory to repository root so relative file paths work
-=======
->>>>>>> fix/workflows-lint-fix2
 os.chdir(ROOT)
+
+# Pytest compatibility shim: some pytest internal helpers expect `_pytest.src` to be
+# available (older/alternative pytest distributions). Ensure the attribute is
+# present so older-style internal references do not raise AttributeError during
+# fixture resolution.
+try:
+    import _pytest
+    import _pytest.python as _pytest_python
+
+    if not hasattr(_pytest, "src"):
+        _pytest.src = _pytest_python
+except Exception:
+    # Best-effort shim only; tests may still fail when running in exotic envs.
+    pass
+
+
+# Lightweight requests_mock fixture for environments where the requests-mock
+# plugin is not installed (CI and some dev venvs). It provides a minimal
+# subset of the plugin's API used by our tests: `.get(url, ...)` and
+# `.put(url, ...)` registrations and returns `requests.Response` objects.
+#
+# TODO: This shim is a temporary compatibility layer to support broken or
+# missing local `requests-mock` installs. Once the dev venvs / CI include
+# `requests-mock` (see commit that adds it to `requirements.txt`), remove
+# this shim and rely on the upstream plugin's fixture instead. See PR: TBD.
+
+import requests
+from types import SimpleNamespace
+
+
+class _SimpleRequestsMock:
+    def __init__(self):
+        # support exact and regex-based route matching; store as list of tuples
+        # (method, matcher, kwargs) where matcher is either a string or compiled regex
+        self._routes = []
+
+    def register(self, method: str, url, **kwargs):
+        # url may be a string or a compiled regex pattern
+        self._routes.append((method.upper(), url, kwargs))
+
+    def get(self, url, **kwargs):
+        self.register("GET", url, **kwargs)
+
+    def put(self, url, **kwargs):
+        self.register("PUT", url, **kwargs)
+
+    def _handle(self, method: str, url: str, **kwargs) -> requests.Response:
+        # Find first matching route (exact match or regex)
+        for mth, matcher, route_kwargs in self._routes:
+            if mth != method.upper():
+                continue
+            if hasattr(matcher, "match"):
+                # Regex-like object
+                if matcher.match(url):
+                    route = route_kwargs
+                    break
+            else:
+                if matcher == url:
+                    route = route_kwargs
+                    break
+        else:
+            resp = requests.Response()
+            resp.status_code = 404
+            resp._content = b"Not Found"
+            return resp
+        # callback-style JSON handler
+        if "json" in route and callable(route["json"]):
+            ctx = SimpleNamespace()
+            ctx.status_code = 200
+            # provide a request-like object with .json() and .text for callbacks
+            class _Req:
+                def __init__(self, method, url, headers, body):
+                    self.method = method
+                    self.url = url
+                    self.headers = headers or {}
+                    self.body = body
+
+                @property
+                def text(self):
+                    if self.body is None:
+                        return ""
+                    if isinstance(self.body, bytes):
+                        return self.body.decode("utf-8")
+                    return str(self.body)
+
+                def json(self_inner):
+                    import json as _json
+                    return _json.loads(self_inner.text)
+
+            req_obj = _Req(method=method, url=url, headers=kwargs.get("headers", {}), body=kwargs.get("data"))
+            res = route["json"](req_obj, ctx)
+            resp = requests.Response()
+            resp.status_code = getattr(ctx, "status_code", 200)
+            if isinstance(res, dict):
+                import json as _json
+
+                resp._content = _json.dumps(res).encode("utf-8")
+                resp.headers["Content-Type"] = "application/json"
+            elif isinstance(res, str):
+                resp._content = res.encode("utf-8")
+            return resp
+
+        resp = requests.Response()
+        resp.status_code = int(route.get("status_code", 200))
+        if "json" in route:
+            import json as _json
+
+            resp._content = _json.dumps(route["json"]).encode("utf-8")
+            resp.headers["Content-Type"] = "application/json"
+        elif "text" in route:
+            resp._content = str(route["text"]).encode("utf-8")
+        else:
+            resp._content = b""
+        return resp
+
+
+@pytest.fixture
+def requests_mock(monkeypatch):
+    stub = _SimpleRequestsMock()
+    orig = requests.Session.request
+
+    def _patched(self, method, url, *args, **kwargs):
+        resp = stub._handle(method, url, **kwargs)
+        # If we return a Response here, requests.get() / requests.post() will
+        # not raise for 4xx/5xx by default (requests does not raise by default),
+        # which matches the plugin behavior; tests handle raising when needed.
+        return resp
+
+    monkeypatch.setattr(requests.Session, "request", _patched)
+    return stub
 
 
 @pytest.fixture(scope="session")

@@ -31,7 +31,7 @@ jobs:
             echo "can_run=true" >> "$GITHUB_OUTPUT"
           else
             echo "can_run=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Missing required secrets:$missing_required - skipping monitoring"
+            echo "::warning::Missing required secrets:${missing_required} - skipping monitoring"
           fi
 
           if [ -n "$SLACK_BOT_TOKEN" ]; then
@@ -61,15 +61,17 @@ jobs:
       - name: Monitoring Summary
         if: always()
         run: |
-          echo "## Brand Monitoring Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.check-secrets.outputs.can_run }}" == "true" ]; then
-            echo "- **Monitoring**: ✅ Executed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- **Monitoring**: ⚠️ Skipped (missing required secrets)" >> $GITHUB_STEP_SUMMARY
-          fi
-          if [ "${{ steps.check-secrets.outputs.slack_available }}" == "true" ]; then
-            echo "- **Slack Notification**: ✅ Configured" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- **Slack Notification**: ⚠️ Not configured" >> $GITHUB_STEP_SUMMARY
-          fi
+          {
+            echo "## Brand Monitoring Summary"
+            echo ""
+            if [ "${{ steps.check-secrets.outputs.can_run }}" == "true" ]; then
+              echo "- **Monitoring**: ✅ Executed"
+            else
+              echo "- **Monitoring**: ⚠️ Skipped (missing required secrets)"
+            fi
+            if [ "${{ steps.check-secrets.outputs.slack_available }}" == "true" ]; then
+              echo "- **Slack Notification**: ✅ Configured"
+            else
+              echo "- **Slack Notification**: ⚠️ Not configured"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

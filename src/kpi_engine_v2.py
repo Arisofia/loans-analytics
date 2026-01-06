@@ -4,6 +4,17 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
+from src.kpis.active_clients import \
+    calculate_active_clients as calculate_active_clients_logic
+from src.kpis.actual_yield import \
+    calculate_actual_yield as calculate_actual_yield_logic
+from src.kpis.aum import calculate_aum as calculate_aum_logic
+from src.kpis.churn_rate import \
+    calculate_churn_rate as calculate_churn_rate_logic
+from src.kpis.concentration import \
+    calculate_concentration_top10 as calculate_concentration_top10_logic
+from src.kpis.default_rate import \
+    calculate_default_rate as calculate_default_rate_logic
 from src.kpis.collection_rate import \
     calculate_collection_rate as calculate_collection_rate_logic
 from src.kpis.dti import calculate_dti as calculate_dti_logic
@@ -14,6 +25,10 @@ from src.kpis.portfolio_health import \
     calculate_portfolio_health as calculate_portfolio_health_logic
 from src.kpis.portfolio_yield import \
     calculate_portfolio_yield as calculate_portfolio_yield_logic
+from src.kpis.recurrence import \
+    calculate_recurrence as calculate_recurrence_logic
+from src.kpis.weighted_apr import \
+    calculate_weighted_apr as calculate_weighted_apr_logic
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +43,14 @@ class KPIEngineV2:
         "PAR30": calculate_par_30_logic,
         "PAR90": calculate_par_90_logic,
         "CollectionRate": calculate_collection_rate_logic,
+        "AUM": calculate_aum_logic,
+        "WeightedAPR": calculate_weighted_apr_logic,
+        "ActualYield": calculate_actual_yield_logic,
+        "Recurrence": calculate_recurrence_logic,
+        "ConcentrationTop10": calculate_concentration_top10_logic,
+        "DefaultRate": calculate_default_rate_logic,
+        "ActiveClients": calculate_active_clients_logic,
+        "ChurnRate": calculate_churn_rate_logic,
     }
 
     ON_DEMAND_KPI_FUNCTIONS = {
@@ -53,6 +76,37 @@ class KPIEngineV2:
     def calculate_all(self, include_composite: bool = True) -> Dict[str, Any]:
         """Calculate all configured KPIs with full audit trail."""
         self._log_event("calculate_all", "started", kpi_count=len(self.KPI_FUNCTIONS))
+
+        # Short-circuit for empty DataFrame: only compute minimal KPIs and the composite PortfolioHealth
+        if self.df is None or self.df.empty:
+            self._log_event("calculate_all", "skipped_empty_dataframe")
+            minimal = ["PAR30", "PAR90", "CollectionRate"]
+            for kpi_name in minimal:
+                calculator = self.KPI_FUNCTIONS.get(kpi_name)
+                if calculator:
+                    try:
+                        value, context = calculator(self.df)
+                        context.setdefault("metric", kpi_name)
+                        self.metrics[kpi_name] = {"value": float(value), **context}
+                        self._log_event("kpi_calculated", "success", kpi=kpi_name, value=value)
+                    except Exception as e:
+                        self._log_event(
+                            "kpi_calculation_failed", "error", kpi=kpi_name, error=str(e)
+                        )
+                        self.metrics[kpi_name] = {"value": None, "error": str(e)}
+
+            # compute composite PortfolioHealth using the minimal results
+            try:
+                par30_val = self.metrics["PAR30"]["value"]
+                collection_val = self.metrics["CollectionRate"]["value"]
+                health_val, health_ctx = calculate_portfolio_health_logic(par30_val, collection_val)
+                self.metrics["PortfolioHealth"] = {"value": float(health_val), **health_ctx}
+                self._log_event("composite_kpi_calculated", "success", kpi="PortfolioHealth")
+            except Exception as e:
+                self._log_event("composite_kpi_failed", "error", error=str(e))
+
+            self._log_event("calculate_all", "completed", kpi_count=len(self.metrics))
+            return self.metrics
 
         try:
             for kpi_name, calculator in self.KPI_FUNCTIONS.items():

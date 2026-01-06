@@ -53,9 +53,9 @@ jobs:
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
         run: |
           if [ -z "$AZURE_CREDENTIALS" ]; then
-            echo "has_creds=false" >> $GITHUB_OUTPUT
+            echo "has_creds=false" >> "$GITHUB_OUTPUT"
           else
-            echo "has_creds=true" >> $GITHUB_OUTPUT
+            echo "has_creds=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Check Azure publish profile availability
@@ -64,9 +64,9 @@ jobs:
           AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         run: |
           if [ -z "$AZURE_WEBAPP_PUBLISH_PROFILE" ]; then
-            echo "has_publish_profile=false" >> $GITHUB_OUTPUT
+            echo "has_publish_profile=false" >> "$GITHUB_OUTPUT"
           else
-            echo "has_publish_profile=true" >> $GITHUB_OUTPUT
+            echo "has_publish_profile=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Azure login (for health check path)
@@ -90,9 +90,9 @@ jobs:
         run: |
           host_name=$(az webapp show --resource-group "$RESOURCE_GROUP" --name "$WEBAPP_NAME" --query defaultHostName -o tsv)
           if [ -z "$host_name" ]; then
-            echo "host_name=${WEBAPP_NAME}.azurewebsites.net" >> $GITHUB_OUTPUT
+            echo "host_name=${WEBAPP_NAME}.azurewebsites.net" >> "$GITHUB_OUTPUT"
           else
-            echo "host_name=$host_name" >> $GITHUB_OUTPUT
+            echo "host_name=$host_name" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Deploy to Azure Web App

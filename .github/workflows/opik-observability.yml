@@ -3,7 +3,7 @@ name: Opik Observability & Monitoring
 on:
   schedule:
     # Run daily at 9:00 AM CET (8:00 AM UTC) for system health monitoring
-    - cron: '0 8 * * *'
+    - cron: "0 8 * * *"
   workflow_dispatch:
 
 env:
@@ -14,7 +14,6 @@ env:
 jobs:
   # Job 1: Fetch system metrics from Opik
   fetch-opik-metrics:
-
     runs-on: ubuntu-latest
     outputs:
       metrics-available: ${{ steps.fetch.outputs.available }}
@@ -24,7 +23,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -36,11 +35,11 @@ jobs:
           echo "📊 Fetching Opik observability metrics..."
           if [ ! -f scripts/fetch_opik_metrics.py ]; then
             echo "Missing scripts/fetch_opik_metrics.py; skipping."
-            echo "available=false" >> $GITHUB_OUTPUT
+            echo "available=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           python scripts/fetch_opik_metrics.py
-          echo "available=true" >> $GITHUB_OUTPUT
+          echo "available=true" >> "$GITHUB_OUTPUT"
 
       - name: Upload metrics artifact
         if: steps.fetch.outputs.available == true
@@ -71,7 +70,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -83,13 +82,13 @@ jobs:
           echo "⚕️ Analyzing data pipeline health..."
           if [ ! -f scripts/analyze_pipeline_health.py ]; then
             echo "Missing scripts/analyze_pipeline_health.py; skipping."
-            echo "status=unknown" >> $GITHUB_OUTPUT
-            echo "issues=0" >> $GITHUB_OUTPUT
+            echo "status=unknown" >> "$GITHUB_OUTPUT"
+            echo "issues=0" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           python scripts/analyze_pipeline_health.py
-          echo "status=healthy" >> $GITHUB_OUTPUT
-          echo "issues=0" >> $GITHUB_OUTPUT
+          echo "status=healthy" >> "$GITHUB_OUTPUT"
+          echo "issues=0" >> "$GITHUB_OUTPUT"
 
   # Job 3: Analyze agent execution performance
   analyze-agent-performance:
@@ -111,7 +110,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -123,13 +122,13 @@ jobs:
           echo "🚀 Analyzing agent execution performance..."
           if [ ! -f scripts/analyze_agent_performance.py ]; then
             echo "Missing scripts/analyze_agent_performance.py; skipping."
-            echo "status=unknown" >> $GITHUB_OUTPUT
-            echo "slow_agents=unknown" >> $GITHUB_OUTPUT
+            echo "status=unknown" >> "$GITHUB_OUTPUT"
+            echo "slow_agents=unknown" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           python scripts/analyze_agent_performance.py
-          echo "status=optimal" >> $GITHUB_OUTPUT
-          echo "slow_agents=none" >> $GITHUB_OUTPUT
+          echo "status=optimal" >> "$GITHUB_OUTPUT"
+          echo "slow_agents=none" >> "$GITHUB_OUTPUT"
 
   # Job 4: Check data quality trends
   check-data-quality-trends:
@@ -151,7 +150,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -163,17 +162,22 @@ jobs:
           echo "🔍 Checking data quality trends..."
           if [ ! -f scripts/check_data_quality_trends.py ]; then
             echo "Missing scripts/check_data_quality_trends.py; skipping."
-            echo "trend=unknown" >> $GITHUB_OUTPUT
-            echo "anomalies=false" >> $GITHUB_OUTPUT
+            echo "trend=unknown" >> "$GITHUB_OUTPUT"
+            echo "anomalies=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           python scripts/check_data_quality_trends.py
-          echo "trend=stable" >> $GITHUB_OUTPUT
-          echo "anomalies=false" >> $GITHUB_OUTPUT
+          echo "trend=stable" >> "$GITHUB_OUTPUT"
+          echo "anomalies=false" >> "$GITHUB_OUTPUT"
 
   # Job 5: Generate observability dashboard
   generate-observability-dashboard:
-    needs: [analyze-pipeline-health, analyze-agent-performance, check-data-quality-trends]
+    needs:
+      [
+        analyze-pipeline-health,
+        analyze-agent-performance,
+        check-data-quality-trends,
+      ]
     if: needs.analyze-pipeline-health.result == 'success' && needs.analyze-agent-performance.result == 'success' && needs.check-data-quality-trends.result == 'success'
     runs-on: ubuntu-latest
     steps:
@@ -182,7 +186,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -210,7 +214,12 @@ jobs:
 
   # Job 6: Alert on critical issues
   alert-on-critical-issues:
-    needs: [analyze-pipeline-health, analyze-agent-performance, check-data-quality-trends]
+    needs:
+      [
+        analyze-pipeline-health,
+        analyze-agent-performance,
+        check-data-quality-trends,
+      ]
 
     runs-on: ubuntu-latest
     steps:
@@ -228,7 +237,13 @@ jobs:
 
   # Job 7: Daily system health summary
   send-daily-summary:
-    needs: [analyze-pipeline-health, analyze-agent-performance, check-data-quality-trends, generate-observability-dashboard]
+    needs:
+      [
+        analyze-pipeline-health,
+        analyze-agent-performance,
+        check-data-quality-trends,
+        generate-observability-dashboard,
+      ]
 
     runs-on: ubuntu-latest
     steps:

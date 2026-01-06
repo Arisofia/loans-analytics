@@ -27,8 +27,8 @@ jobs:
           if [ "$VERSION" = "$GITHUB_REF" ]; then
             VERSION="manual-${{ github.run_number }}"
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Verify staging validation
         run: |
@@ -162,7 +162,7 @@ jobs:
           echo "✅ Performance baseline acceptable"
 
       - name: Notify deployment success
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             github.rest.repos.createDeploymentStatus({

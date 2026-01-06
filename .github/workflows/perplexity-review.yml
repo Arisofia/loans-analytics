@@ -18,9 +18,9 @@ jobs:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
         run: |
           if [ -n "$PERPLEXITY_API_KEY" ]; then
-            echo "secrets_available=true" >> $GITHUB_OUTPUT
+            echo "secrets_available=true" >> "$GITHUB_OUTPUT"
           else
-            echo "secrets_available=false" >> $GITHUB_OUTPUT
+            echo "secrets_available=false" >> "$GITHUB_OUTPUT"
             echo "::warning::PERPLEXITY_API_KEY not configured - skipping review"
           fi
 
@@ -35,7 +35,7 @@ jobs:
         id: diff
         run: |
           git diff origin/${{ github.base_ref }}...HEAD > pr_diff.txt
-          echo "diff_size=$(wc -c < pr_diff.txt)" >> $GITHUB_OUTPUT
+          echo "diff_size=$(wc -c < pr_diff.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Review with Perplexity
         if: steps.check-secrets.outputs.secrets_available == true && fromJSON(steps.diff.outputs.diff_size || '0') < 50000
