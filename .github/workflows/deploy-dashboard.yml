@@ -23,6 +23,7 @@ env:
   RESOURCE_GROUP: AI-MultiAgent-Ecosystem-RG
   HEALTH_CHECK_PATH: /?page=health
   STARTUP_CMD: bash startup.sh
+  SCM_DO_BUILD_DURING_DEPLOYMENT: "true"
 
 jobs:
   build-and-deploy:
