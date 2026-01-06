@@ -44,8 +44,8 @@ jobs:
       - name: Run shellcheck on scripts + extracted run blocks
         uses: koalaman/shellcheck-action@v1
         with:
-          shellcheck_version: 'v0.9.0'
-          files: 'scripts/**/*.sh .github/workflows/extracted_runs/**/*.sh'
+          shellcheck_version: "v0.9.0"
+          files: "scripts/**/*.sh .github/workflows/extracted_runs/**/*.sh"
 
   dependency-validation:
     name: Dependency Validation
