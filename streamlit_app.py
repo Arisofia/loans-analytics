@@ -104,6 +104,33 @@ def normalize_dataframe(df):
         .str.replace(" ", "_")
         .str.replace(r"[^a-z0-9_]", "", regex=True)
     )
+    
+    # Proactive column mapping for common variations
+    col_mappings = {
+        "outstanding_loan_value": [
+            "outstanding_amount",
+            "outstanding_principal",
+            "current_outstanding_principal",
+            "total_pendiente",
+            "saldo_pendiente",
+            "current_balance",
+            "aum",
+        ],
+        "interest_rate_apr": ["apr", "interest_rate", "tasa_interes", "annual_percentage_rate"],
+        "loan_status": ["status", "estado", "loan_state"],
+        "loan_id": ["id", "loan_number", "contrato"],
+        "customer_id": ["client_id", "customer_number", "id_cliente"],
+        "sales_agent": ["agent", "vendedor", "kam", "sales_person"],
+        "categoria": ["category", "segment", "segmento", "product_category"],
+    }
+    
+    for target, variations in col_mappings.items():
+        if target not in df.columns:
+            for var in variations:
+                if var in df.columns:
+                    df[target] = df[var]
+                    break
+
     for col in df.columns:
         df[col] = clean_numeric(df[col])
     return df
@@ -541,7 +568,7 @@ with g_col1:
     st.plotly_chart(apply_theme(fig_growth), use_container_width=True)
 
 with g_col2:
-    if "categoria" in merged.columns:
+    if "categoria" in merged.columns and "outstanding_loan_value" in merged.columns:
         cat_agg = merged.groupby("categoria")["outstanding_loan_value"].sum().reset_index()
         fig_cat = px.pie(
             cat_agg,
@@ -550,23 +577,39 @@ with g_col2:
             title="Portfolio by Category",
         )
         st.plotly_chart(apply_theme(fig_cat), use_container_width=True)
+    elif "categoria" in merged.columns:
+        st.info("Outstanding loan value column missing. Category breakdown unavailable.")
 
 # --- 3. Marketing & Sales ---
 st.header("🎯 Sales Performance")
 if "sales_agent" in merged.columns:
+    agg_map = {"loan_id": "count"}
+    if "outstanding_loan_value" in merged.columns:
+        agg_map["outstanding_loan_value"] = "sum"
+    
     sales_agg = (
         merged.groupby("sales_agent")
-        .agg({"outstanding_loan_value": "sum", "loan_id": "count"})
+        .agg(agg_map)
         .reset_index()
-        .rename(columns={"outstanding_loan_value": "Volume", "loan_id": "Count"})
     )
-    fig_sales = px.treemap(
-        sales_agg,
-        path=["sales_agent"],
-        values="Volume",
-        color="Count",
-        title="Sales Agent Volume Distribution",
-    )
+    
+    if "outstanding_loan_value" in merged.columns:
+        sales_agg = sales_agg.rename(columns={"outstanding_loan_value": "Volume", "loan_id": "Count"})
+        fig_sales = px.treemap(
+            sales_agg,
+            path=["sales_agent"],
+            values="Volume",
+            color="Count",
+            title="Sales Agent Volume Distribution",
+        )
+    else:
+        sales_agg = sales_agg.rename(columns={"loan_id": "Count"})
+        fig_sales = px.bar(
+            sales_agg,
+            x="sales_agent",
+            y="Count",
+            title="Sales Agent Loan Count",
+        )
     st.plotly_chart(apply_theme(fig_sales), use_container_width=True)
 else:
     headcount_df = load_agent_headcount()
