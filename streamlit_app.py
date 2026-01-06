@@ -436,7 +436,8 @@ with st.sidebar:
                     try:
                         output_path = generate_kpi_exports(final_data)
                         st.cache_data.clear()
-                        st.info(f"✅ KPI exports generated: {output_path}")
+                        st.success(f"✅ KPI exports generated and UI updated!")
+                        st.rerun()
                     except Exception as exc:
                         st.warning(f"⚠️ KPI auto-generation skipped: {exc}")
 
