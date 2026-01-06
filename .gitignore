@@ -105,3 +105,14 @@ pytest-report/
 coverage.xml
 
 .azure
+
+# Local venvs used by developers - ignore
+.lint-venv/
+.venv-2/
+
+# Local test/data artifacts
+data/archives/
+tmp/
+
+# CI notes (local)
+ci/
