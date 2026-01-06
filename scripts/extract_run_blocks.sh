@@ -2,6 +2,9 @@
 set -euo pipefail
 
 OUT_DIR=${1:-.github/workflows/extracted_runs}
+KEEP=${2:-20}          # number of recent extracted files to keep
+MAX_AGE_DAYS=${3:-7}   # delete files older than this number of days
+
 mkdir -p "$OUT_DIR"
 # Clean existing extracted files for idempotency
 rm -f "$OUT_DIR"/*.sh || true
@@ -33,3 +36,24 @@ if compgen -G "$OUT_DIR/*.sh" > /dev/null; then
 fi
 
 echo "Extracted run blocks to $OUT_DIR"
+
+# Prune older extracted files to avoid buildup
+#  - Remove files older than MAX_AGE_DAYS
+#  - Ensure we keep at most KEEP most recent files
+if compgen -G "$OUT_DIR/*.sh" > /dev/null; then
+  echo "Pruning extracted files older than ${MAX_AGE_DAYS} days..."
+  find "$OUT_DIR" -type f -mtime +${MAX_AGE_DAYS} -print -delete || true
+
+  # Enforce KEEP limit (delete oldest files beyond KEEP)
+  files=( $(ls -1tr "$OUT_DIR"/*.sh 2>/dev/null || true) )
+  total=${#files[@]}
+  if [ "$total" -gt "$KEEP" ]; then
+    to_delete_count=$((total - KEEP))
+    echo "More than ${KEEP} files found (${total}). Deleting ${to_delete_count} oldest files..."
+    ls -1tr "$OUT_DIR"/*.sh | head -n "${to_delete_count}" | xargs -r rm -f || true
+  fi
+fi
+
+# Summarize
+remaining_count=$(ls -1 "$OUT_DIR"/*.sh 2>/dev/null | wc -l || true)
+echo "Extraction complete. Remaining extracted run scripts: ${remaining_count}"
