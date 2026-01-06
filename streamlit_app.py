@@ -164,7 +164,7 @@ def kpi_label(name):
     return KPI_LABEL_OVERRIDES.get(name, name.replace("_", " ").title())
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=300)
 def load_looker_exports():
     candidates = {
         "loan_data": [
@@ -199,7 +199,7 @@ def load_looker_exports():
     return data
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=300)
 def load_analytics_facts():
     facts_path = EXPORTS_DIR / "analytics_facts.csv"
     if not facts_path.exists():
@@ -210,7 +210,7 @@ def load_analytics_facts():
     return df
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=300)
 def load_kpi_dashboard():
     dashboard_path = EXPORTS_DIR / "complete_kpi_dashboard.json"
     if not dashboard_path.exists():

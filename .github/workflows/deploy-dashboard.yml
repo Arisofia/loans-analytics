@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "streamlit_app.py"
+      - "pages/**"
       - "src/**"
       - "config/**"
       - "requirements.txt"

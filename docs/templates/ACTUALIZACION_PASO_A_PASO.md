@@ -75,6 +75,7 @@ PASO 1 CSV → PASO 2 Cálculos → PASO 3 Slides 1–6 → PASO 4 Slide 13 → 
 Total estimado: ~45 minutos.
 
 📝 COMMIT MESSAGE SUGERIDO
+
 ```
 feat: Update deck data for [MES] 2025
 - Update title and all date references to [MES] 2025

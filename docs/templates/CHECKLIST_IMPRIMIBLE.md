@@ -10,25 +10,25 @@ Mes: ____________ 2025 · Fecha: //2025 · Por: ____________
 
  AUM Total $____M · Clientes ____ · Líneas ___
 
- Performing/Late/Default: ___% / ___% / ___%
+ Performing/Late/Default: ___% /___% / ___%
 
  TPV $____M · Operaciones ____
 
  Top 10 Clientes · Top 10 Pagadores
 
-2) SLIDE 1 — PORTADA (deck1.title, ~641)
+1) SLIDE 1 — PORTADA (deck1.title, ~641)
 
  subtitle: "Reporte Ejecutivo ______ 2025"
 
  year: "_______ 2025"
 
-3) SLIDE 3 — MARKET OPPORTUNITY (~699)
+1) SLIDE 3 — MARKET OPPORTUNITY (~699)
 
  amount: "$____M"
 
  label: "AUM Actual (_-)"
 
-4) SLIDE 4 — KPIS (~720–740)
+1) SLIDE 4 — KPIS (~720–740)
 
  aumGrowth.metric / subtext
 
@@ -38,7 +38,7 @@ Mes: ____________ 2025 · Fecha: //2025 · Por: ____________
 
  debtorConcentration.metric / subtext
 
-5) SLIDE 5 — PORTFOLIO DIAGNOSTICS (~745–767)
+1) SLIDE 5 — PORTFOLIO DIAGNOSTICS (~745–767)
 
  subtitle actualizado
 
@@ -50,7 +50,7 @@ Mes: ____________ 2025 · Fecha: //2025 · Por: ____________
 
  footer fecha de corte
 
-6) SLIDE 6 — RISK CONCENTRATION (~773–820)
+1) SLIDE 6 — RISK CONCENTRATION (~773–820)
 
  subtitle actualizado
 
@@ -60,27 +60,27 @@ Mes: ____________ 2025 · Fecha: //2025 · Por: ____________
 
  footer
 
-7) SLIDE 13 — MONTHLY GROWTH (~1200)
+1) SLIDE 13 — MONTHLY GROWTH (~1200)
 
  Agregar objeto al FINAL de monthlyData
 
-8) SLIDE 28 — PORTFOLIO HISTORICAL (~1967)
+1) SLIDE 28 — PORTFOLIO HISTORICAL (~1967)
 
  Agregar objeto al FINAL de historicalData
 
-9) SLIDE 29 — AUM LIVE PORTFOLIO (~2012)
+1) SLIDE 29 — AUM LIVE PORTFOLIO (~2012)
 
  date · totalAUM · activeClients · avgClientAUM
 
-10) SLIDE 30 — AVG OPERATION AMOUNT (~2030)
+1) SLIDE 30 — AVG OPERATION AMOUNT (~2030)
 
  Agregar objeto al FINAL de monthlyAvgData
 
-11) SLIDE 31 — MONTHLY OPERATIONS METRICS (~2052)
+1) SLIDE 31 — MONTHLY OPERATIONS METRICS (~2052)
 
  Agregar objeto al FINAL de metricsData
 
-12) VERIFICACIONES MATEMÁTICAS
+1) VERIFICACIONES MATEMÁTICAS
 
  Performing% + Late% + Default% = 100%
 
@@ -94,7 +94,7 @@ Mes: ____________ 2025 · Fecha: //2025 · Por: ____________
 
  Top 10 clientes y pagadores ≈ totales
 
-13) CONSISTENCIA
+1) CONSISTENCIA
 
  AUM igual en Slides 3, 5, 29
 
@@ -106,7 +106,7 @@ Mes: ____________ 2025 · Fecha: //2025 · Por: ____________
 
  Todas las fechas con el mismo mes
 
-14) FORMATO
+1) FORMATO
 
  Montos $X.XXM o $XXXk
 

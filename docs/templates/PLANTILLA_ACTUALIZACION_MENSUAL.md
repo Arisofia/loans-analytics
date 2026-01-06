@@ -1,9 +1,11 @@
 # 📋 PLANTILLA DE ACTUALIZACIÓN MENSUAL - DECKDATA.TS
 
 ## 🎯 INSTRUCCIONES DE USO
+
 **Propósito**: Este documento lista TODOS los campos que debes actualizar cada mes en `/utils/deckData.ts` cuando recibas nuevos datos del CSV.
 
 **Cómo usar**:
+
 1. Copia esta plantilla.
 2. Llena los campos con los nuevos datos del mes.
 3. Actualiza el archivo `/utils/deckData.ts` siguiendo la ubicación exacta indicada.
@@ -12,7 +14,8 @@
 ---
 
 ## 📅 MES A ACTUALIZAR: [_______]
-**Fecha de corte de datos**: [___/___/2025]  
+
+**Fecha de corte de datos**: [_**/**_/2025]  
 **Archivo fuente CSV**: [nombre_archivo.csv]
 
 ---
@@ -20,7 +23,9 @@
 ## 🔴 DECK 1: Portfolio Analysis & Strategy
 
 ### 📌 SLIDE 1: Title (Portada)
+
 **Ubicación**: `deck1.title`
+
 ```typescript
 title: {
   mainTitle: "Abaco",
@@ -28,7 +33,6 @@ title: {
   year: "[MES] 2025" // ← ACTUALIZAR MES
 }
 ```
-
 
 Campos a llenar:
 
@@ -52,7 +56,6 @@ currentAUM: {
   label: "AUM Actual ([MES-YY])" // ← ACTUALIZAR MES
 }
 
-
 Campos a llenar:
 
  amount: "$_____M"
@@ -73,12 +76,10 @@ aumGrowth: {
   subtext: "$___M actual vs $___M mes anterior" // ← ACTUALIZAR ambos valores
 }
 
-
 Cálculo
 
 Always show details
 % Growth = ((AUM_actual - AUM_mes_anterior) / AUM_mes_anterior) × 100
-
 
 Campos a llenar
 
@@ -91,36 +92,32 @@ Always show details
 portfolioQuality: {
   metric: "_____%", // ← 100% - Default Rate
   description: "Performing Portfolio",
-  subtext: "Default rate ___%, Late ___%" // ← ACTUALIZAR ambos %
+  subtext: "Default rate ___%, Late___%" // ← ACTUALIZAR ambos %
 }
-
 
 Cálculo
 
 Always show details
 Portfolio Quality % = 100% - Default Rate (90+ DPD)
 
-
 Campos a llenar
 
  metric: "______%"
 
- subtext: "Default rate ___%, Late ___%"
+ subtext: "Default rate ___%, Late___%"
 
 KPI 3: Client Concentration
 Always show details
 clientConcentration: {
-  metric: "_____%", // ← % suma del Top 10 Clientes
+  metric: "___**%", // ← % suma del Top 10 Clientes
   description: "Top 10 Clients",
-  subtext: "___% de AUM en top 10 clientes" // ← ACTUALIZAR
+  subtext: "**_% de AUM en top 10 clientes" // ← ACTUALIZAR
 }
-
 
 Cálculo
 
 Always show details
 Concentración = Suma de % de los 10 clientes más grandes
-
 
 Campos a llenar
 
@@ -131,17 +128,15 @@ Campos a llenar
 KPI 4: Debtor Concentration
 Always show details
 debtorConcentration: {
-  metric: "_____%", // ← % suma del Top 10 Pagadores
+  metric: "___**%", // ← % suma del Top 10 Pagadores
   description: "Top 10 Debtors",
-  subtext: "___% de receivables en top 10 pagadores" // ← ACTUALIZAR
+  subtext: "**_% de receivables en top 10 pagadores" // ← ACTUALIZAR
 }
-
 
 Cálculo
 
 Always show details
 Concentración = Suma de % de los 10 pagadores más grandes
-
 
 Campos a llenar
 
@@ -157,7 +152,6 @@ Subtitle (Fecha de corte)
 Always show details
 subtitle: "Análisis detallado de AUM, calidad y estructura operativa - [MES] 2025"
 
-
 Campos a llenar
 
  subtitle: "Análisis detallado de AUM, calidad y estructura operativa - _____ 2025"
@@ -166,10 +160,9 @@ Top KPIs
 Always show details
 topKPIs: {
   totalAUM: { value: "$___M", label: "Assets Under Management" },
-  activeClients: { value: ___, label: "Clientes activos con líneas abiertas" },
+  activeClients: { value:___, label: "Clientes activos con líneas abiertas" },
   creditLines: { value: ___, label: "Líneas de crédito totales activas" }
 }
-
 
 Campos a llenar
 
@@ -184,23 +177,21 @@ Fuente: CSV Base Activa
 Portfolio Breakdown
 Always show details
 portfolioBreakdown: {
-  performing: { percent: "_____%", amount: "$___M" },
-  latePayment: { percent: "_____%", amount: "$___M" },
-  default: { percent: "_____%", amount: "$___M" }
+  performing: { percent: "___**%", amount: "$___M" },
+  latePayment: { percent: "_____%", amount: "$_**M" },
+  default: { percent: "**_**%", amount: "$___M" }
 }
-
 
 Verificación: performing% + late% + default% = 100%
 
 Bottom Stats
 Always show details
 bottomStats: {
-  aprAverage: { value: "_____%", label: "Tasa promedio anual" },
+  aprAverage: { value: "_****%", label: "Tasa promedio anual" },
   avgClientAUM: { value: "$_____," label: "Promedio por cliente" },
-  avgLineSize: { value: "$_____," label: "Promedio por línea" },
+  avgLineSize: { value: "$****_," label: "Promedio por línea" },
   defaultRate: { value: "_____%", label: "Tasa de mora > 90 días" }
 }
-
 
 Cálculos
 
@@ -224,9 +215,9 @@ subtitle: "Concentración en top clientes y pagadores - [MES] 2025"
 Top 10 Clientes
 Always show details
 topClients: {
-  total: "____% of AUM",
+  total: "__**% of AUM",
   list: [
-    { name: "___", amount: "$___k", percent: "___%" },
+    { name: "**_", amount: "$_**k", percent: "**_%" },
     ...
   ]
 }
@@ -234,9 +225,9 @@ topClients: {
 Top 10 Pagadores
 Always show details
 topDebtors: {
-  total: "____% of receivables",
+  total: "__**% of receivables",
   list: [
-    { name: "___", amount: "$___k", percent: "___%" },
+    { name: "**_", amount: "$_**k", percent: "**_%" },
     ...
   ]
 }
@@ -254,11 +245,10 @@ Always show details
 {
   month: "[MES] 2025",
   aum: "$___M",
-  netChange: "$___M",
-  percentGrowth: "_____%",
+  netChange: "$_**M",
+  percentGrowth: "**___%",
   newClients: ___
 }
-
 
 Cálculos
 
@@ -277,9 +267,9 @@ Always show details
   month: "[MES]-25",
   aum: "$___M",
   activeClients: ___,
-  avgTicket: "$___k",
-  tpv: "$___M",
-  defaultRate: "_____%"
+  avgTicket: "$_**k",
+  tpv: "$_**M",
+  defaultRate: "**_**%"
 }
 
 📌 SLIDE 29: AUM Live Portfolio
