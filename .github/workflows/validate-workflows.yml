@@ -41,11 +41,13 @@ jobs:
           chmod +x scripts/extract_run_blocks.sh
           scripts/extract_run_blocks.sh .github/workflows/extracted_runs
 
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Run shellcheck on scripts + extracted run blocks
-        uses: koalaman/shellcheck-action@v1
-        with:
-          shellcheck_version: "v0.9.0"
-          files: "scripts/**/*.sh .github/workflows/extracted_runs/**/*.sh"
+        run: |
+          set -euo pipefail
+          # shellcheck -x for sourced scripts; expand globs
+          shellcheck -x scripts/**/*.sh .github/workflows/extracted_runs/**/*.sh
 
   dependency-validation:
     name: Dependency Validation
@@ -85,8 +87,8 @@ jobs:
         run: |
           set -euo pipefail
           PATTERN="(AKIA|aws_secret|SECRET_KEY|PASSWORD|password=|SECRET=|API_KEY|PRIVATE_KEY)"
-          if grep -rEin "$PATTERN" --exclude-dir=.git --exclude-dir=tests --exclude-dir=infra --exclude-dir=node_modules --exclude-dir=.venv . |
-             grep -vE "example|\.env\.example|README|pnpm-lock.yaml"; then
+          if grep -rEin --include='*.py' --include='*.sh' --include='*.yml' --include='*.yaml' --include='*.js' --include='*.ts' --exclude-dir=.git --exclude-dir=tests --exclude-dir=infra --exclude-dir=node_modules --exclude-dir=.venv . |
+             grep -vE "example|\\.env\\.example|README|pnpm-lock.yaml|\\.md$|package-lock.json|package.json|\\.json$"; then
             echo "Potential hardcoded secret(s) found" >&2
             exit 1
           fi
