@@ -54,7 +54,9 @@ jobs:
   secrets-presence:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secrets: DOCKER_USERNAME,DOCKER_PASSWORD,AZURE_ACR_LOGIN_SERVER,AZURE_ACR_PASSWORD,AZURE_WEBAPP_PUBLISH_PROFILE,FIGMA_TOKEN
+      secrets: >-
+        DOCKER_USERNAME,DOCKER_PASSWORD,AZURE_ACR_LOGIN_SERVER,
+        AZURE_ACR_PASSWORD,AZURE_WEBAPP_PUBLISH_PROFILE,FIGMA_TOKEN
     secrets: inherit
 
   secrets-validation:
@@ -65,8 +67,9 @@ jobs:
       - name: Check for hardcoded secrets
         run: |
           set -euo pipefail
-          # Search for suspicious patterns; exclude common examples
-          if grep -RIn --line-number -E "(AKIA|aws_secret|SECRET_KEY|PASSWORD|password=|SECRET=|API_KEY|PRIVATE_KEY)" --exclude-dir=.git -n . | grep -vE "example|\.env\.example|README"; then
+          PATTERN="(AKIA|aws_secret|SECRET_KEY|PASSWORD|password=|SECRET=|API_KEY|PRIVATE_KEY)"
+          if grep -rEin "$PATTERN" --exclude-dir=.git . |
+             grep -vE "example|\.env\.example|README"; then
             echo "Potential hardcoded secret(s) found" >&2
             exit 1
           fi

@@ -1,6 +1,5 @@
 extends: default
 ignore: |
-  .github/workflows/
   pnpm-lock.yaml
   apps/web/pnpm-lock.yaml
 rules:
@@ -11,3 +10,5 @@ rules:
   comments: disable
   document-start: disable
   new-line-at-end-of-file: disable
+  truthy:
+    allowed-values: ['true', 'false', 'on', 'off']
