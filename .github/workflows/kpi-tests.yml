@@ -12,12 +12,27 @@ on:
       - 'tests/test_kpis_*.py'
       - 'tests/test_api_kpis.py'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: kpi-tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   kpi-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Show changed files (debug)
+        run: |
+          echo "Event: $GITHUB_EVENT_NAME"
+          git --no-pager diff --name-only ${{ github.sha }}^ ${{ github.sha }} || true
 
       - name: Set up Python
         uses: actions/setup-python@v4
