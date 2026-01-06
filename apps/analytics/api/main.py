@@ -103,17 +103,34 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
 
     Raises ValueError for any invalid input (absolute paths, escaping the allowed dir).
     """
-    candidate_path = Path(candidate)
+    if not candidate or not isinstance(candidate, str):
+        raise ValueError("Invalid path: must be a non-empty string")
+
+    if ".." in candidate or candidate.startswith("/"):
+        raise ValueError("Absolute paths and parent directory references are not allowed")
+
+    normalized = os.path.normpath(candidate)
+    if ".." in normalized or normalized.startswith("/"):
+        raise ValueError("Path traversal attempts are not allowed")
+
+    candidate_path = Path(normalized)
     if candidate_path.is_absolute():
         raise ValueError("Absolute paths are not allowed")
 
-    # Interpret candidate as relative to the allowed directory, then resolve
-    resolved = (allowed_dir / candidate_path).resolve()
     allowed_resolved = allowed_dir.resolve()
+    resolved = (allowed_resolved / candidate_path).resolve()
+
     try:
         resolved.relative_to(allowed_resolved)
-    except Exception:
-        raise ValueError("Invalid input file; must be under data/archives/")
+    except ValueError as exc:
+        raise ValueError("Invalid input file; must be under data/archives/") from exc
+
+    if not resolved.exists():
+        raise ValueError("Input file does not exist")
+
+    if not resolved.is_file():
+        raise ValueError("Input path must be a file, not a directory")
+
     return resolved
 
 
@@ -142,10 +159,10 @@ async def trigger_pipeline(
     def _validate_input_file(path_str: str) -> Path:
         try:
             return _sanitize_and_resolve(path_str, allowed_data_dir)
-        except ValueError:
+        except ValueError as exc:
             raise HTTPException(
                 status_code=400, detail="Invalid input file; must be under data/archives/"
-            )
+            ) from exc
 
     # perform validation; will raise HTTPException on invalid input
     validated_input_path = _validate_input_file(input_file)
@@ -207,8 +224,6 @@ async def trigger_pipeline(
 
 
 if __name__ == "__main__":
-    import os
-
     import uvicorn
 
     host = os.getenv("UVICORN_HOST", "127.0.0.1")
