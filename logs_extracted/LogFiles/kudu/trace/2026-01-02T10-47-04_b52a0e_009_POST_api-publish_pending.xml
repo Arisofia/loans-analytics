@@ -1,0 +1,17 @@
+<step title="Incoming Request" date="2026-01-02T10:47:04.850" instance="b52a0e" url="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%226283d15f1a8f417280e68051208e509f111e2666%22%2C%22repoName%22%3A%22Arisofia%2Fabaco-loans-analytics%22%2C%22actor%22%3A%22Arisofia%22%2C%22slotName%22%3A%22production%22%2C%22commitMessage%22%3A%22merge%3A%20workflow%20YAML%20fixes%20into%20main%20(assignees%20toJSON%2C%20job%20dependencies%2C%20slack%20check)%22%7D" method="POST" type="request" pid="767,1,3" Host="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_b331d4c441121f33da0f8476235474cf2ed43174776f44c9c3bb512e436c79b1" Authorization="Bea..." Content-Type="application/octet-stream" Cookie="ARRAffinity=b52a0e95239a69ec1d51e27f609b0a5686f7c63777a6973635d661be711de39f;Path=/;HttpOnly;Secure;Domain=abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net; ARRAffinitySameSite=b52a0e95239a69ec1d51e27f609b0a5686f7c63777a6973635d661be711de39f;Path=/;HttpOnly;SameSite=None;Secure;Domain=abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" Transfer-Encoding="chunked" X-ARR-LOG-ID="20c44dd2-01f6-4cb1-b16f-920f0bc98494" CLIENT-IP="13.83.166.241:57352" X-SITE-DEPLOYMENT-ID="abaco-analytics-dashboard" WAS-DEFAULT-HOSTNAME="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%226283d15f1a8f417280e68051208e509f111e2666%22%2C%22repoName%22%3A%22Arisofia%2Fabaco-loans-analytics%22%2C%22actor%22%3A%22Arisofia%22%2C%22slotName%22%3A%22production%22%2C%22commitMessage%22%3A%22merge%3A%20workflow%20YAML%20fixes%20into%20main%20(assignees%20toJSON%2C%20job%20dependencies%2C%20slack%20check)%22%7D" X-Client-IP="13.83.166.241" X-Client-Port="57352" >
+  <step title="OneDeploy" date="2026-01-02T10:47:05.011" >
+    <step title="None repository commit" date="2026-01-02T10:47:05.027" >
+      <step title="Commit id: c419b655-fdeb-453d-af20-2cd228517dcd" date="2026-01-02T10:47:05.029" Message="N/A" AuthorName="N/A" AuthorEmail="N/A" /><!-- duration: 2ms -->
+    </step><!-- duration: 5ms -->
+    <step title="Starting PushDeployAsync" date="2026-01-02T10:47:05.034" /><!-- duration: 1ms -->
+    <step title="Writing artifact to /tmp/zipdeploy/128349ec-5877-41a3-88dc-41e08e73dbcd.zip" date="2026-01-02T10:47:05.057" >
+      <step title="Writing multipart request body to /tmp/zipdeploy/128349ec-5877-41a3-88dc-41e08e73dbcd.zip" date="2026-01-02T10:47:05.067" /><!-- duration: 9ms -->
+    </step><!-- duration: 110ms -->
+    <step title="Removing previous build artifact&apos;s manifest file" date="2026-01-02T10:47:05.187" >
+      <step title="Start deployment in the background" date="2026-01-02T10:47:05.277" >
+        <step title="Acquiring Deployment Lock" date="2026-01-02T10:47:05.356" /><!-- duration: 10ms -->
+        <step title="Acquired Deployment Lock" date="2026-01-02T10:47:06.033" /><!-- duration: 12ms -->
+      </step><!-- duration: 1010ms -->
+    </step><!-- duration: 1126ms -->
+    <step title="Outgoing response" date="2026-01-02T10:47:06.326" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 8ms -->
+  </step><!-- duration: 1326ms -->

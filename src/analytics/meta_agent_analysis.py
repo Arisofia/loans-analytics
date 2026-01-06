@@ -8,6 +8,7 @@ Meta Agent Analysis Script
 """
 
 import os
+import sys
 from datetime import datetime
 
 import matplotlib.pyplot as plt
@@ -22,7 +23,7 @@ try:
     df = pd.read_parquet(INSIGHTS_PATH)
 except Exception as e:
     print(f"Error loading {INSIGHTS_PATH}: {e}")
-    exit(1)
+    sys.exit(1)
 
 os.makedirs(EXPORT_DIR, exist_ok=True)
 

@@ -1,0 +1,11 @@
+<step title="Incoming Request" date="2026-01-01T23:02:39.325" instance="b52a0e" url="/api/deployments/latest?deployer=OneDeploy&amp;time=2026-01-01_22-51-43Z" method="GET" type="request" pid="768,1,23" Host="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_b331d4c441121f33da0f8476235474cf2ed43174776f44c9c3bb512e436c79b1" Authorization="Bea..." Content-Type="application/json; charset=utf-8" Cookie="ARRAffinity=b52a0e95239a69ec1d51e27f609b0a5686f7c63777a6973635d661be711de39f;Path=/;HttpOnly;Secure;Domain=abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net; ARRAffinitySameSite=b52a0e95239a69ec1d51e27f609b0a5686f7c63777a6973635d661be711de39f;Path=/;HttpOnly;SameSite=None;Secure;Domain=abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" Content-Length="0" X-ARR-LOG-ID="0cfc9fd9-4f85-42db-80f6-75062639cb25" CLIENT-IP="20.42.42.214:1024" X-SITE-DEPLOYMENT-ID="abaco-analytics-dashboard" WAS-DEFAULT-HOSTNAME="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/latest?deployer=OneDeploy&amp;time=2026-01-01_22-51-43Z" X-Client-IP="20.42.42.214" X-Client-Port="1024" >
+  <step title="Cleanup Xml Logs" date="2026-01-01T23:02:39.326" >
+    <step title="Cleanup Infos" date="2026-01-01T23:02:39.404" totalFiles="1256" totalCleanup="1096" /><!-- duration: 23ms -->
+  </step><!-- duration: 109ms -->
+  <step title="DeploymentService.GetResult" date="2026-01-01T23:02:39.456" >
+    <step title="DeploymentService.GetLatestDeployment" date="2026-01-01T23:02:39.474" >
+      <step title="DeploymentManager.GetResults" date="2026-01-01T23:02:39.476" /><!-- duration: 1075ms -->
+    </step><!-- duration: 1115ms -->
+  </step><!-- duration: 1142ms -->
+  <step title="Outgoing response" date="2026-01-01T23:02:40.608" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 11ms -->
+</step><!-- duration: 1303ms -->

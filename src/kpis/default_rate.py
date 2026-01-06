@@ -2,7 +2,7 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 
-from src.kpis.base import (KPICalculator, KPIMetadata, create_context)
+from src.kpis.base import KPICalculator, KPIMetadata, create_context
 
 
 class DefaultRateCalculator(KPICalculator):

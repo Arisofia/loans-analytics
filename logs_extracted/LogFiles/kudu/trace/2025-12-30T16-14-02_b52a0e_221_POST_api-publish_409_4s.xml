@@ -1,0 +1,17 @@
+<step title="Incoming Request" date="2025-12-30T16:14:02.439" instance="b52a0e" url="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%22631855828de5deb84a05b0d60e68c75a69e02a33%22%2C%22repoName%22%3A%22Arisofia%2Fabaco-loans-analytics%22%2C%22actor%22%3A%22Arisofia%22%2C%22slotName%22%3A%22Production%22%2C%22commitMessage%22%3A%22chore%3A%20update%20dependencies%20and%20lockfile%22%7D" method="POST" type="request" pid="768,1,30" Host="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_b331d4c441121f33da0f8476235474cf2ed43174776f44c9c3bb512e436c79b1" Authorization="Bea..." Content-Type="application/octet-stream" Cookie="ARRAffinity=b52a0e95239a69ec1d51e27f609b0a5686f7c63777a6973635d661be711de39f;Path=/;HttpOnly;Secure;Domain=abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net; ARRAffinitySameSite=b52a0e95239a69ec1d51e27f609b0a5686f7c63777a6973635d661be711de39f;Path=/;HttpOnly;SameSite=None;Secure;Domain=abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" Transfer-Encoding="chunked" X-ARR-LOG-ID="8f79257d-c320-4eab-95dd-d9add6a0749c" CLIENT-IP="13.83.167.55:33857" X-SITE-DEPLOYMENT-ID="abaco-analytics-dashboard" WAS-DEFAULT-HOSTNAME="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%22631855828de5deb84a05b0d60e68c75a69e02a33%22%2C%22repoName%22%3A%22Arisofia%2Fabaco-loans-analytics%22%2C%22actor%22%3A%22Arisofia%22%2C%22slotName%22%3A%22Production%22%2C%22commitMessage%22%3A%22chore%3A%20update%20dependencies%20and%20lockfile%22%7D" X-Client-IP="13.83.167.55" X-Client-Port="33857" >
+  <step title="Cleanup Xml Logs" date="2025-12-30T16:14:02.448" >
+    <step title="Cleanup Infos" date="2025-12-30T16:14:02.567" totalFiles="225" totalCleanup="65" /><!-- duration: 122ms -->
+  </step><!-- duration: 320ms -->
+  <step title="OneDeploy" date="2025-12-30T16:14:02.821" >
+    <step title="Starting PushDeployAsync" date="2025-12-30T16:14:02.879" /><!-- duration: 21ms -->
+    <step title="Writing artifact to /tmp/zipdeploy/c29db5a9-375e-4e51-958e-0383aa0e73a1.zip" date="2025-12-30T16:14:02.961" >
+      <step title="Writing multipart request body to /tmp/zipdeploy/c29db5a9-375e-4e51-958e-0383aa0e73a1.zip" date="2025-12-30T16:14:02.971" /><!-- duration: 2ms -->
+    </step><!-- duration: 2831ms -->
+    <step title="Start deployment in the background" date="2025-12-30T16:14:05.805" >
+      <step title="Acquiring Deployment Lock" date="2025-12-30T16:14:05.995" /><!-- duration: 20ms -->
+      <step title="Cannot Acquire Deployment Lock already held" date="2025-12-30T16:14:06.045" /><!-- duration: 9ms -->
+    </step><!-- duration: 359ms -->
+    <step title="There is a deployment currently in progress. Please try again when it completes." date="2025-12-30T16:14:06.166" /><!-- duration: 19ms -->
+  </step><!-- duration: 3376ms -->
+  <step title="Outgoing response" date="2025-12-30T16:14:06.224" type="response" statusCode="409" statusText="Conflict" /><!-- duration: 11ms -->
+</step><!-- duration: 3818ms -->

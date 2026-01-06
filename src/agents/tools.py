@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 
 class Tool:
-    def __init__(self, name: str, func: Callable[..., Any], description: str):
+    def __init__(self, name: str, func: Callable[..., Any], description: str) -> None:
         self.name = name
         self.func = func
         self.description = description
@@ -20,7 +20,7 @@ class Tool:
 
 
 class ToolRegistry:
-    def __init__(self):
+    def __init__(self) -> None:
         self.tools: Dict[str, Tool] = {}
 
     def register(

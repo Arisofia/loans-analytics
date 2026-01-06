@@ -11,12 +11,12 @@ from src.kpis.actual_yield import \
 from src.kpis.aum import calculate_aum as calculate_aum_logic
 from src.kpis.churn_rate import \
     calculate_churn_rate as calculate_churn_rate_logic
+from src.kpis.collection_rate import \
+    calculate_collection_rate as calculate_collection_rate_logic
 from src.kpis.concentration import \
     calculate_concentration_top10 as calculate_concentration_top10_logic
 from src.kpis.default_rate import \
     calculate_default_rate as calculate_default_rate_logic
-from src.kpis.collection_rate import \
-    calculate_collection_rate as calculate_collection_rate_logic
 from src.kpis.dti import calculate_dti as calculate_dti_logic
 from src.kpis.ltv import calculate_ltv as calculate_ltv_logic
 from src.kpis.par_30 import calculate_par_30 as calculate_par_30_logic

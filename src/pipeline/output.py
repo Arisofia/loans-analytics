@@ -169,7 +169,7 @@ class UnifiedOutput:
             if path_obj.exists():
                 file_hashes[f"timeseries_{key}"] = hash_file(path_obj)
 
-        manifest = {
+        manifest: Dict[str, Any] = {
             "run_id": master_run_id,
             "sub_runs": run_ids,
             "generated_at": utc_now(),
@@ -196,7 +196,8 @@ class UnifiedOutput:
         if triggers_cfg.get("enabled"):
             try:
                 # Lazy import to avoid pulling integration deps unless needed
-                from src.integrations.unified_output_manager import UnifiedOutputManager
+                from src.integrations.unified_output_manager import \
+                    UnifiedOutputManager
 
                 outputs = triggers_cfg.get("outputs", ["figma", "azure"])
                 manager = UnifiedOutputManager()
@@ -204,10 +205,19 @@ class UnifiedOutput:
                 manager.configure_clients(triggers_cfg.get("clients", {}))
 
                 # Use a lightweight export that only pushes KPI metrics by default
-                trigger_results = manager.export_kpi_metrics_only(metrics, master_run_id, enabled_outputs=outputs)
+                trigger_results = manager.export_kpi_metrics_only(
+                    metrics, master_run_id, enabled_outputs=outputs
+                )
 
                 # Record trigger results in manifest and persist
-                manifest.setdefault("triggers", {})["dashboard_trigger"] = trigger_results
+                if "triggers" not in manifest:
+                    manifest["triggers"] = {}
+
+                # Check for dictionary type for mypy safety
+                manifest_triggers = manifest["triggers"]
+                if isinstance(manifest_triggers, dict):
+                    manifest_triggers["dashboard_trigger"] = trigger_results
+
                 write_json(manifest_path, manifest)
 
                 self._log_event("dashboard_trigger", "success", result_summary=str(trigger_results))

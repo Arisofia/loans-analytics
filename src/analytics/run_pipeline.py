@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import uuid
 from datetime import datetime
@@ -18,15 +19,77 @@ from typing import Any, Dict, Optional, cast
 
 import pandas as pd
 
+# OpenTelemetry optional imports
+try:
+    from opentelemetry import trace
+    from opentelemetry.trace import Status, StatusCode
+
+    OTEL_AVAILABLE = True
+except ImportError:
+    OTEL_AVAILABLE = False
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 
+def get_tracer():
+    if OTEL_AVAILABLE:
+        return trace.get_tracer(__name__)
+    return None
+
+
+def mask_secret(secret: Optional[str]) -> str:
+    """Mask sensitive strings for logging."""
+    if not secret:
+        return ""
+    if len(secret) <= 8:
+        return "****"
+    return f"{secret[:4]}...{secret[-4:]}"
+
+
+def sync_to_figma(kpis: Dict[str, Any], token: Optional[str] = None) -> bool:
+    """Placeholder for Figma KPI Sync (C-01)."""
+    tracer = get_tracer()
+    span = tracer.start_span("sync_to_figma") if tracer else None
+    try:
+        if not token or token == "invalid_token":
+            logger.error(f"Authentication failed (token hidden: {mask_secret(token)})")
+            if span:
+                span.set_status(Status(StatusCode.ERROR, "Auth failed"))
+            return False
+
+        logger.info(
+            f"Syncing KPIs to Figma: {kpis.get('total_receivable_usd', 0)} (token: {mask_secret(token)})"
+        )
+        if span:
+            span.set_attribute("figma.sync_status", "success")
+        return True
+    except Exception as e:
+        logger.warning(f"Figma sync failed: {e}")
+        return False
+    finally:
+        if span:
+            span.end()
+
+
+def sync_to_notion(kpis: Dict[str, Any]) -> bool:
+    """Placeholder for Notion Integration (C-04)."""
+    try:
+        # Simulate potential timeout
+        logger.info("Syncing to Notion...")
+        return True
+    except Exception as e:
+        logger.warning(f"Notion sync failed: {e}")
+        return False
+
+
 def calculate_kpis(df: pd.DataFrame) -> Dict[str, Any]:
     """Calculate KPIs from the portfolio dataframe."""
-    logger.info("Pipeline start")
+    tracer = get_tracer()
+    with tracer.start_as_current_span("calculate_kpis") if tracer else cast(Any, open(os.devnull)):
+        logger.info("Pipeline start")
 
     # If a per-row `collection_rate` column is not present in the dataset,
     # compute a reasonable approximation so downstream KPI calculations
@@ -201,47 +264,58 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--user", help="Identifier for the user or system triggering the pipeline")
     parser.add_argument("--action", help="Action context (e.g., github-action, manual-run)")
     parser.add_argument("--config", help="Path to pipeline config (unused)")
+    parser.add_argument("--figma-token", help="Token for Figma integration")
+    parser.add_argument("--sync-figma", action="store_true", help="Sync results to Figma")
+    parser.add_argument("--sync-notion", action="store_true", help="Sync results to Notion")
 
     args = parser.parse_args(argv)
 
-    try:
-        dataset_path = Path(args.dataset)
-        output_dir = Path(args.output)
+    tracer = get_tracer()
+    with tracer.start_as_current_span("run_pipeline") if tracer else cast(Any, open(os.devnull)):
+        try:
+            dataset_path = Path(args.dataset)
+            output_dir = Path(args.output)
 
-        if not dataset_path.exists():
-            logger.error(f"Dataset not found: {dataset_path}")
+            if not dataset_path.exists():
+                logger.error(f"Dataset not found: {dataset_path}")
+                return 1
+
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            logger.info(f"Reading dataset from {dataset_path}")
+            df = pd.read_csv(dataset_path)
+
+            # Validate critical columns
+            required_cols = ["total_receivable_usd", "total_eligible_usd", "cash_available_usd"]
+            missing_cols = [c for c in required_cols if c not in df.columns]
+            if missing_cols:
+                logger.error(f"Missing required columns: {missing_cols}")
+                return 1
+
+            logger.info(f"Calculating KPIs from {len(df)} records")
+            kpis = calculate_kpis(df)
+
+            kpi_output_path = output_dir / "kpi_results.json"
+            with open(kpi_output_path, "w") as f:
+                json.dump(kpis, f, indent=2)
+            logger.info(f"KPI results written to {kpi_output_path}")
+
+            metrics_output_path = output_dir / "metrics.csv"
+            create_metrics_csv(df, metrics_output_path)
+
+            # Integration Syncs
+            if args.sync_figma:
+                sync_to_figma(kpis, args.figma_token)
+
+            if args.sync_notion:
+                sync_to_notion(kpis)
+
+            logger.info("Pipeline execution completed successfully")
+            return 0
+
+        except Exception as e:
+            logger.error(f"Pipeline execution failed: {e}", exc_info=True)
             return 1
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        logger.info(f"Reading dataset from {dataset_path}")
-        df = pd.read_csv(dataset_path)
-
-        # Validate critical columns
-        required_cols = ["total_receivable_usd", "total_eligible_usd", "cash_available_usd"]
-        missing_cols = [c for c in required_cols if c not in df.columns]
-        if missing_cols:
-            logger.error(f"Missing required columns: {missing_cols}")
-            # Try to fix using script if available, or fail
-            return 1
-
-        logger.info(f"Calculating KPIs from {len(df)} records")
-        kpis = calculate_kpis(df)
-
-        kpi_output_path = output_dir / "kpi_results.json"
-        with open(kpi_output_path, "w") as f:
-            json.dump(kpis, f, indent=2)
-        logger.info(f"KPI results written to {kpi_output_path}")
-
-        metrics_output_path = output_dir / "metrics.csv"
-        create_metrics_csv(df, metrics_output_path)
-
-        logger.info("Pipeline execution completed successfully")
-        return 0
-
-    except Exception as e:
-        logger.error(f"Pipeline execution failed: {e}", exc_info=True)
-        return 1
 
 
 if __name__ == "__main__":

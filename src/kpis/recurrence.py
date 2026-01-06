@@ -24,9 +24,15 @@ class RecurrenceCalculator(KPICalculator):
                 self.METADATA.formula, rows_processed=0, reason="Empty DataFrame"
             )
 
-        int_col = "true_interest_payment" if "true_interest_payment" in df.columns else "True Interest Payment"
+        int_col = (
+            "true_interest_payment"
+            if "true_interest_payment" in df.columns
+            else "True Interest Payment"
+        )
         fee_col = "true_fee_payment" if "true_fee_payment" in df.columns else "True Fee Payment"
-        oth_col = "true_other_payment" if "true_other_payment" in df.columns else "True Other Payment"
+        oth_col = (
+            "true_other_payment" if "true_other_payment" in df.columns else "True Other Payment"
+        )
 
         if int_col not in df.columns:
             # Try normalized

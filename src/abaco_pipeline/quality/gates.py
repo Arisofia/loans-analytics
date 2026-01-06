@@ -54,18 +54,18 @@ def check_referential_integrity(df, key_columns: list[str] | None = None) -> boo
     if not hasattr(df, "columns") or any(col not in df.columns for col in cols):
         return False
 
+    result = True
     try:
-        if len(df) == 0:
-            return True
-        subset = df[cols]
-        if hasattr(subset, "isna") and bool(subset.isna().any().any()):
-            return False
-        if hasattr(df, "duplicated") and bool(df.duplicated(subset=cols).any()):
-            return False
+        if len(df) > 0:
+            subset = df[cols]
+            if hasattr(subset, "isna") and bool(subset.isna().any().any()):
+                result = False
+            elif hasattr(df, "duplicated") and bool(df.duplicated(subset=cols).any()):
+                result = False
     except Exception:
-        return False
+        result = False
 
-    return True
+    return result
 
 
 def compute_freshness_hours(as_of: datetime, now: datetime | None = None) -> float:
