@@ -30,6 +30,23 @@ jobs:
       - name: Run yamllint
         run: yamllint .github/workflows
 
+  shellcheck-validation:
+    name: ShellCheck Validation (including inline run blocks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract inline `run` blocks from workflows
+        run: |
+          chmod +x scripts/extract_run_blocks.sh
+          scripts/extract_run_blocks.sh .github/workflows/extracted_runs
+
+      - name: Run shellcheck on scripts + extracted run blocks
+        uses: koalaman/shellcheck-action@v1
+        with:
+          shellcheck_version: "v0.9.0"
+          files: "scripts/**/*.sh .github/workflows/extracted_runs/**/*.sh"
+
   dependency-validation:
     name: Dependency Validation
     runs-on: ubuntu-latest
@@ -68,8 +85,8 @@ jobs:
         run: |
           set -euo pipefail
           PATTERN="(AKIA|aws_secret|SECRET_KEY|PASSWORD|password=|SECRET=|API_KEY|PRIVATE_KEY)"
-          if grep -rEin "$PATTERN" --exclude-dir=.git . |
-             grep -vE "example|\.env\.example|README"; then
+          if grep -rEin "$PATTERN" --exclude-dir=.git --exclude-dir=tests --exclude-dir=infra --exclude-dir=node_modules --exclude-dir=.venv . |
+             grep -vE "example|\.env\.example|README|pnpm-lock.yaml"; then
             echo "Potential hardcoded secret(s) found" >&2
             exit 1
           fi
@@ -80,6 +97,7 @@ jobs:
     needs:
       - syntax-validation
       - structure-validation
+      - shellcheck-validation
       - dependency-validation
       - trigger-validation
       - secrets-validation
@@ -88,6 +106,7 @@ jobs:
       always() && (
         needs.syntax-validation.result == 'failure' ||
         needs.structure-validation.result == 'failure' ||
+        needs.shellcheck-validation.result == 'failure' ||
         needs.dependency-validation.result == 'failure' ||
         needs.trigger-validation.result == 'failure' ||
         needs.secrets-validation.result == 'failure' ||

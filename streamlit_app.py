@@ -86,11 +86,13 @@ def styled_df(df):
 def clean_numeric(col):
     if col.dtype == "object":
         sample = col.dropna().astype(str).head(50)
-        cleaned = sample.str.replace(r"[$,€%₡,]", "", regex=True)
+        # Remove currency symbols, commas, and handle accounting negative numbers (parentheses)
+        cleaned = sample.str.replace(r"[$,€%₡,]", "", regex=True).str.replace(r"\((.*)\)", r"-\1", regex=True)
         numeric_ratio = pd.to_numeric(cleaned, errors="coerce").notna().mean()
-        if numeric_ratio >= 0.6:
+        if numeric_ratio >= 0.5:  # Slightly more lenient ratio
             col = pd.to_numeric(
-                col.astype(str).str.replace(r"[$,€%₡,]", "", regex=True), errors="coerce"
+                col.astype(str).str.replace(r"[$,€%₡,]", "", regex=True).str.replace(r"\((.*)\)", r"-\1", regex=True), 
+                errors="coerce"
             )
     return col
 
@@ -114,14 +116,16 @@ def normalize_dataframe(df):
             "total_pendiente",
             "saldo_pendiente",
             "current_balance",
+            "outstanding_balance",
+            "outstanding_balance_usd",
             "aum",
         ],
         "interest_rate_apr": ["apr", "interest_rate", "tasa_interes", "annual_percentage_rate"],
         "loan_status": ["status", "estado", "loan_state"],
-        "loan_id": ["id", "loan_number", "contrato"],
+        "loan_id": ["id", "loan_number", "contrato", "loan_id_raw"],
         "customer_id": ["client_id", "customer_number", "id_cliente"],
         "sales_agent": ["agent", "vendedor", "kam", "sales_person"],
-        "categoria": ["category", "segment", "segmento", "product_category"],
+        "categoria": ["category", "segment", "segmento", "product_category", "product_type"],
     }
     
     for target, variations in col_mappings.items():
@@ -416,11 +420,11 @@ with st.sidebar:
                         dfs[name] = normalized_df
                         
                         # Apply fuzzy mapping to identify core tables
-                        if "loan" in name_lower and "data" in name_lower:
+                        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith("loans"):
                             mapped_dfs["loan_data"] = normalized_df
-                        elif "customer" in name_lower and "data" in name_lower:
+                        elif ("customer" in name_lower and "data" in name_lower) or name_lower.startswith("customer"):
                             mapped_dfs["customer_data"] = normalized_df
-                        elif ("payment" in name_lower and "historic" in name_lower) or ("real" in name_lower and "payment" in name_lower):
+                        elif ("payment" in name_lower and "historic" in name_lower) or ("real" in name_lower and "payment" in name_lower) or name_lower.startswith("transaction"):
                             mapped_dfs["historic_payment_data"] = normalized_df
                         elif "schedule" in name_lower:
                             mapped_dfs["schedule_data"] = normalized_df
@@ -473,6 +477,7 @@ else:
     st.info("KPI snapshot not available. Export analytics to populate KPI tiles.")
 
 if not analytics_facts.empty:
+    st.markdown('<div data-testid="dashboard-cfo">', unsafe_allow_html=True)
     st.header("💸 Cashflow")
     cash_cols = [
         "recv_revenue_for_month",
@@ -491,7 +496,9 @@ if not analytics_facts.empty:
             title="Cashflow Trends",
             markers=True,
         )
+        st.markdown('<div data-testid="chart-revenue">', unsafe_allow_html=True)
         st.plotly_chart(apply_theme(fig_cash), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
         latest_cash = cash_df.sort_values("month").iloc[-1]
         c1, c2, c3, c4 = st.columns(4)
@@ -515,6 +522,7 @@ if not analytics_facts.empty:
                 "Revenue (Scheduled)",
                 format_kpi_value("sched_revenue", latest_cash["sched_revenue"]),
             )
+        st.markdown('</div>', unsafe_allow_html=True)
 
 if not st.session_state["loaded"]:
     st.info("Upload data files in the sidebar to unlock loan-level diagnostics.")
@@ -529,10 +537,12 @@ customer_data = data.get("customer_data", pd.DataFrame())
 if loan_data is None:
     # Fallback to original filename search if mapping failed
     for name, df in data.items():
-        if "loan" in name.lower() and "data" in name.lower():
+        name_lower = name.lower()
+        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith("loans"):
             loan_data = df
-        elif "customer" in name.lower() and customer_data.empty:
-            customer_data = df
+        elif ("customer" in name_lower and "data" in name_lower) or name_lower.startswith("customer"):
+            if customer_data.empty:
+                customer_data = df
 
 if loan_data is None:
     st.error("Core loan data missing in uploads.")
@@ -543,6 +553,7 @@ if not customer_data.empty and "loan_id" in merged.columns and "loan_id" in cust
     merged = merged.merge(customer_data, on="loan_id", how="left", suffixes=("", "_cust"))
 
 # --- 1. Portfolio Overview ---
+st.markdown('<div data-testid="dashboard-board">', unsafe_allow_html=True)
 st.header("📊 Executive Summary")
 col1, col2, col3, col4 = st.columns(4)
 
@@ -564,11 +575,16 @@ else:
 default_rate = (merged["loan_status"] == "Default").mean() * 100 if "loan_status" in merged else 0
 
 col1.metric("Total Loans", f"{total_loans:,}")
+st.markdown('<div data-testid="kpi-total-loans">', unsafe_allow_html=True)
 col2.metric("Total Outstanding", f"${total_outstanding:,.2f}")
+st.markdown('</div>', unsafe_allow_html=True)
 col3.metric("Average APR", f"{avg_apr:.2%}")
 col4.metric("Default Rate", f"{default_rate:.2f}%")
 
+st.markdown('</div>', unsafe_allow_html=True)
+
 # --- 2. Growth Analysis ---
+st.markdown('<div data-testid="dashboard-growth">', unsafe_allow_html=True)
 st.header("📈 Growth & Projections")
 g_col1, g_col2 = st.columns(2)
 
@@ -588,14 +604,24 @@ with g_col1:
 
 with g_col2:
     if "categoria" in merged.columns and "outstanding_loan_value" in merged.columns:
-        cat_agg = merged.groupby("categoria")["outstanding_loan_value"].sum().reset_index()
-        fig_cat = px.pie(
-            cat_agg,
-            values="outstanding_loan_value",
-            names="categoria",
-            title="Portfolio by Category",
-        )
-        st.plotly_chart(apply_theme(fig_cat), use_container_width=True)
+        try:
+            # Ensure numeric and handle NaNs
+            temp_df = merged.copy()
+            temp_df["outstanding_loan_value"] = pd.to_numeric(temp_df["outstanding_loan_value"], errors="coerce").fillna(0)
+            cat_agg = temp_df.groupby("categoria")["outstanding_loan_value"].sum().reset_index()
+            
+            if not cat_agg.empty and cat_agg["outstanding_loan_value"].sum() > 0:
+                fig_cat = px.pie(
+                    cat_agg,
+                    values="outstanding_loan_value",
+                    names="categoria",
+                    title="Portfolio by Category",
+                )
+                st.plotly_chart(apply_theme(fig_cat), use_container_width=True)
+            else:
+                st.info("No outstanding balance data found for category breakdown.")
+        except Exception as exc:
+            st.warning(f"Could not generate category breakdown: {exc}")
     elif "categoria" in merged.columns:
         st.info("Outstanding loan value column missing. Category breakdown unavailable.")
 
@@ -649,7 +675,10 @@ else:
             "Sales agent data not found. Provide agent performance data to populate this section."
         )
 
+st.markdown('</div>', unsafe_allow_html=True)
+
 # --- 4. Risk Analysis ---
+st.markdown('<div data-testid="dashboard-risk">', unsafe_allow_html=True)
 st.header("⚠️ Risk Analysis")
 r_col1, r_col2 = st.columns(2)
 
@@ -679,7 +708,10 @@ with r_col2:
         score -= 20
     st.metric("Quality Score", f"{score:.1f}%")
 
+st.markdown('</div>', unsafe_allow_html=True)
+
 # --- 5. Advanced Analytics ---
+st.markdown('<div data-testid="dashboard-analytics">', unsafe_allow_html=True)
 st.header("🔬 Advanced Intelligence")
 adv_tabs = st.tabs(["Segmentation", "Churn & Retention", "Unit Economics"])
 
@@ -803,3 +835,4 @@ st.divider()
 st.caption(
     f"Abaco Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 )
+st.markdown('</div>', unsafe_allow_html=True)

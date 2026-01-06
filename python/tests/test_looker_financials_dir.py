@@ -1,3 +1,4 @@
+import time
 from pipeline.ingestion import UnifiedIngestion
 
 
@@ -7,6 +8,7 @@ def test_load_looker_financials_selects_latest(tmp_path):
     d.mkdir()
     # older file
     (d / "old.csv").write_text("reporting_date,cash_balance_usd\n2023-01-01,10\n")
+    time.sleep(0.1)
     # newer file
     (d / "new.csv").write_text("reporting_date,cash_balance_usd\n2023-02-01,20\n")
 
