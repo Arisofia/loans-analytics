@@ -1367,6 +1367,17 @@ class KPICatalogProcessor:
             kpis["unit_economics"] = self.get_unit_economics().to_dict("records")
         except Exception:
             pass
+        
+        # Segmentation Summary (Commercial KPI)
+        try:
+            from src.kpis.segmentation_summary import SegmentationSummaryCalculator
+            seg_calc = SegmentationSummaryCalculator()
+            _, seg_ctx = seg_calc.calculate(self.loans)
+            if "segmentation_data" in seg_ctx:
+                kpis["segmentation_summary"] = seg_ctx["segmentation_data"]
+        except Exception as e:
+            logger.error(f"Error in segmentation_summary: {e}")
+
         try:
             kpis["figma_dashboard"] = self.get_figma_dashboard_df().to_dict("records")
         except Exception as e:
