@@ -31,15 +31,21 @@ jobs:
         run: yamllint .github/workflows
 
   shellcheck-validation:
-    name: ShellCheck Validation
+    name: ShellCheck Validation (including inline run blocks)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run shellcheck on scripts
+
+      - name: Extract inline `run` blocks from workflows
+        run: |
+          chmod +x scripts/extract_run_blocks.sh
+          scripts/extract_run_blocks.sh .github/workflows/extracted_runs
+
+      - name: Run shellcheck on scripts + extracted run blocks
         uses: koalaman/shellcheck-action@v1
         with:
           shellcheck_version: 'v0.9.0'
-          files: 'scripts/**/*.sh'
+          files: 'scripts/**/*.sh .github/workflows/extracted_runs/**/*.sh'
 
   dependency-validation:
     name: Dependency Validation
