@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from src.kpis.aum import calculate_aum
 from src.kpis.par_90 import calculate_par_90
