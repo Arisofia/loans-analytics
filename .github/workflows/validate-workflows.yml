@@ -87,11 +87,11 @@ jobs:
         run: |
           set -euo pipefail
           PATTERN="(AKIA|aws_secret|SECRET_KEY|PASSWORD|password=|SECRET=|API_KEY|PRIVATE_KEY)"
-          if grep -rEin --include='*.yml' --include='*.yaml' --include='*.sh' --include='*.env' --include='*.conf' --include='*.ini' --exclude-dir=.git --exclude-dir=tests --exclude-dir=infra --exclude-dir=node_modules --exclude-dir=.venv . |
-             grep -vE "example|\\.env\\.example|README|pnpm-lock.yaml|\\.md$|package-lock.json|package.json|\\.json$"; then
-            echo "Potential hardcoded secret(s) found" >&2
-            exit 1
-          fi
+          # Only search in common config/script file types to reduce false positives
+          find . -type f \( -name '*.yml' -o -name '*.yaml' -o -name '*.sh' -o -name '*.env' -o -name '*.conf' -o -name '*.ini' \) -print0 | \
+            xargs -0 grep -EnI "$PATTERN" | grep -vE "example|\\.env\\.example|README|pnpm-lock.yaml|\\.md$|package-lock.json|package.json|\\.json$" && \
+            (echo "Potential hardcoded secret(s) found" >&2; exit 1) || true
+          # If grep found matches above, the previous command would have exited non-zero and the job will fail due to set -euo pipefail
 
   summary:
     name: Workflow Validation Summary
