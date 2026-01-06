@@ -30,6 +30,17 @@ jobs:
       - name: Run yamllint
         run: yamllint .github/workflows
 
+  shellcheck-validation:
+    name: ShellCheck Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck on scripts
+        uses: koalaman/shellcheck-action@v1
+        with:
+          shellcheck_version: 'v0.9.0'
+          files: 'scripts/**/*.sh'
+
   dependency-validation:
     name: Dependency Validation
     runs-on: ubuntu-latest
@@ -80,6 +91,7 @@ jobs:
     needs:
       - syntax-validation
       - structure-validation
+      - shellcheck-validation
       - dependency-validation
       - trigger-validation
       - secrets-validation
@@ -88,6 +100,7 @@ jobs:
       always() && (
         needs.syntax-validation.result == 'failure' ||
         needs.structure-validation.result == 'failure' ||
+        needs.shellcheck-validation.result == 'failure' ||
         needs.dependency-validation.result == 'failure' ||
         needs.trigger-validation.result == 'failure' ||
         needs.secrets-validation.result == 'failure' ||
