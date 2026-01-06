@@ -5,6 +5,7 @@
 1. Playwright workflow ( .github/workflows/playwright.yml )
    - Root cause: malformed workflow content in failing PRs (top-level quoting issue)
    - Fix action: unquote the top-level keys and add validation test
+   - Status: ✅ FIXED in d4b24a76
    - Owner: @engineering-lead
    - ETA: Week 1
 
