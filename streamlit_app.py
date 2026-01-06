@@ -543,6 +543,7 @@ if not customer_data.empty and "loan_id" in merged.columns and "loan_id" in cust
     merged = merged.merge(customer_data, on="loan_id", how="left", suffixes=("", "_cust"))
 
 # --- 1. Portfolio Overview ---
+st.markdown('<div data-testid="dashboard-board">', unsafe_allow_html=True)
 st.header("📊 Executive Summary")
 col1, col2, col3, col4 = st.columns(4)
 
@@ -568,7 +569,10 @@ col2.metric("Total Outstanding", f"${total_outstanding:,.2f}")
 col3.metric("Average APR", f"{avg_apr:.2%}")
 col4.metric("Default Rate", f"{default_rate:.2f}%")
 
+st.markdown('</div>', unsafe_allow_html=True)
+
 # --- 2. Growth Analysis ---
+st.markdown('<div data-testid="dashboard-growth">', unsafe_allow_html=True)
 st.header("📈 Growth & Projections")
 g_col1, g_col2 = st.columns(2)
 
@@ -649,7 +653,10 @@ else:
             "Sales agent data not found. Provide agent performance data to populate this section."
         )
 
+st.markdown('</div>', unsafe_allow_html=True)
+
 # --- 4. Risk Analysis ---
+st.markdown('<div data-testid="dashboard-risk">', unsafe_allow_html=True)
 st.header("⚠️ Risk Analysis")
 r_col1, r_col2 = st.columns(2)
 
@@ -679,7 +686,10 @@ with r_col2:
         score -= 20
     st.metric("Quality Score", f"{score:.1f}%")
 
+st.markdown('</div>', unsafe_allow_html=True)
+
 # --- 5. Advanced Analytics ---
+st.markdown('<div data-testid="dashboard-analytics">', unsafe_allow_html=True)
 st.header("🔬 Advanced Intelligence")
 adv_tabs = st.tabs(["Segmentation", "Churn & Retention", "Unit Economics"])
 
@@ -803,3 +813,4 @@ st.divider()
 st.caption(
     f"Abaco Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 )
+st.markdown('</div>', unsafe_allow_html=True)
