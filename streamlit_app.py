@@ -473,6 +473,7 @@ else:
     st.info("KPI snapshot not available. Export analytics to populate KPI tiles.")
 
 if not analytics_facts.empty:
+    st.markdown('<div data-testid="dashboard-cfo">', unsafe_allow_html=True)
     st.header("💸 Cashflow")
     cash_cols = [
         "recv_revenue_for_month",
@@ -491,7 +492,9 @@ if not analytics_facts.empty:
             title="Cashflow Trends",
             markers=True,
         )
+        st.markdown('<div data-testid="chart-revenue">', unsafe_allow_html=True)
         st.plotly_chart(apply_theme(fig_cash), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
         latest_cash = cash_df.sort_values("month").iloc[-1]
         c1, c2, c3, c4 = st.columns(4)
@@ -515,6 +518,7 @@ if not analytics_facts.empty:
                 "Revenue (Scheduled)",
                 format_kpi_value("sched_revenue", latest_cash["sched_revenue"]),
             )
+        st.markdown('</div>', unsafe_allow_html=True)
 
 if not st.session_state["loaded"]:
     st.info("Upload data files in the sidebar to unlock loan-level diagnostics.")
@@ -565,7 +569,9 @@ else:
 default_rate = (merged["loan_status"] == "Default").mean() * 100 if "loan_status" in merged else 0
 
 col1.metric("Total Loans", f"{total_loans:,}")
+st.markdown('<div data-testid="kpi-total-loans">', unsafe_allow_html=True)
 col2.metric("Total Outstanding", f"${total_outstanding:,.2f}")
+st.markdown('</div>', unsafe_allow_html=True)
 col3.metric("Average APR", f"{avg_apr:.2%}")
 col4.metric("Default Rate", f"{default_rate:.2f}%")
 
