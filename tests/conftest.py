@@ -14,14 +14,11 @@ if str(PYTHON_DIR) not in sys.path:
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-<<<<<<< HEAD
 PYTHON_ROOT = ROOT / "python"
 if str(PYTHON_ROOT) not in sys.path:
     sys.path.insert(0, str(PYTHON_ROOT))
 
 # Change working directory to repository root so relative file paths work
-=======
->>>>>>> fix/workflows-lint-fix2
 os.chdir(ROOT)
 
 
