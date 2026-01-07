@@ -52,23 +52,40 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
+          AZURE_ACR_USERNAME: ${{ secrets.AZURE_ACR_USERNAME }}
+          AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
         run: |
           set -euo pipefail
-          echo "Starting Docker login check (secret values are not printed)"
-          # Try token first (if present), then password. Do not print secrets.
+          echo "Starting login check (secrets not printed)"
+
+          # Try ACR first if credentials are present
+          if [ -n "${AZURE_ACR_LOGIN_SERVER:-}" ] && [ -n "${AZURE_ACR_PASSWORD:-}" ]; then
+            echo "Attempting login to ACR ${AZURE_ACR_LOGIN_SERVER}"
+            if printf '%s' "$AZURE_ACR_PASSWORD" | docker login "$AZURE_ACR_LOGIN_SERVER" -u "$AZURE_ACR_USERNAME" --password-stdin >/dev/null 2>&1; then
+              echo "ACR login succeeded"
+              docker logout "$AZURE_ACR_LOGIN_SERVER" || true
+              exit 0
+            else
+              echo "ACR login failed"
+            fi
+          fi
+
+          # Try Docker Hub: token first (if present), then password. Do not print secrets.
           attempt_login() {
             local secret="$1"
             if [ -z "${secret:-}" ]; then
               return 1
             fi
             if printf '%s' "$secret" | docker login -u "$DOCKER_USERNAME" --password-stdin >/dev/null 2>&1; then
-              echo "Docker login succeeded"
+              echo "Docker Hub login succeeded"
               docker logout || true
               return 0
             else
               return 1
             fi
           }
+
           if [ -n "${DOCKER_TOKEN:-}" ]; then
             echo "Attempting login with DOCKER_TOKEN"
             if attempt_login "$DOCKER_TOKEN"; then exit 0; fi
@@ -79,5 +96,6 @@ jobs:
             if attempt_login "$DOCKER_PASSWORD"; then exit 0; fi
             echo "Login with DOCKER_PASSWORD failed"
           fi
-          echo "Docker login failed (token and password attempts unsuccessful)"
+
+          echo "All login attempts failed"
           exit 1
