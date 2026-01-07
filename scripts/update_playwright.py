@@ -64,12 +64,12 @@ def safe_replace_on_key(content: str) -> tuple[str, int]:
     return new, n
 
 
-def fix_content(content_b64: str) -> str:
+def fix_content(content_b64: str) -> tuple[str, int]:
     content = base64.b64decode(content_b64).decode("utf-8")
     new, n = safe_replace_on_key(content)
     if n == 0:
         logger.info('Pattern "\"on\":" not found at top-level key positions; nothing to change')
-    return new
+    return new, n
 
 
 def write_preview(out_path: Path, content: str) -> None:
@@ -134,11 +134,11 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         logger.error('Input JSON missing "content" or "sha" key')
         return 3
 
-    new = fix_content(content_b64)
+    new, replacements = fix_content(content_b64)
     write_preview(Path(args.output), new)
 
-    if '"on":' not in base64.b64decode(content_b64).decode('utf-8'):
-        logger.info('No change required; exiting')
+    if replacements == 0:
+        logger.info('No top-level quoted "on" keys found; exiting without calling GH')
         return 0
 
     # Prepare API payload
