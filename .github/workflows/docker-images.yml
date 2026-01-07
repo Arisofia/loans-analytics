@@ -24,15 +24,15 @@ env:
   IMAGE_DASHBOARD_LOWER: ""
 
 jobs:
-  validate-secrets:
+  # Validate ACR secrets separately so a missing ACR secret doesn't prevent
+  # building and pushing images to GHCR (which uses the GITHUB_TOKEN).
+  validate-acr:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secret_names: DOCKER_USERNAME,DOCKER_PASSWORD,ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD
+      secret_names: ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD
     secrets: inherit
 
   build-and-push:
-    needs: validate-secrets
-    if: needs.validate-secrets.outputs.all_secrets_present == 'true'
     runs-on: ubuntu-latest
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -112,23 +112,49 @@ jobs:
       # - ACR_LOGIN_SERVER (e.g., myregistry.azurecr.io)
       # - ACR_USERNAME
       # - ACR_PASSWORD
-      - name: Log in to ACR (optional)
-        if: github.event_name != 'pull_request' && env.ACR_LOGIN_SERVER != ''
+
+  push-to-acr:
+    needs: [build-and-push, validate-acr]
+    if: needs.validate-acr.outputs.all_secrets_present == 'true'
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_WEB: ${{ github.repository }}-web
+      IMAGE_DASHBOARD: ${{ github.repository }}-dashboard
+      IMAGE_WEB_LOWER: ""
+      IMAGE_DASHBOARD_LOWER: ""
+      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+      ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+      ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lowercase image names
+        run: |
+          echo "IMAGE_WEB_LOWER=${IMAGE_WEB,,}" >> "${GITHUB_ENV}"
+          echo "IMAGE_DASHBOARD_LOWER=${IMAGE_DASHBOARD,,}" >> "${GITHUB_ENV}"
+        env:
+          IMAGE_WEB: ${{ github.repository }}-web
+          IMAGE_DASHBOARD: ${{ github.repository }}-dashboard
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to ACR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.ACR_LOGIN_SERVER }}
           username: ${{ env.ACR_USERNAME }}
           password: ${{ env.ACR_PASSWORD }}
 
-      - name: Tag & push to ACR (optional)
-        env:
-          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+      - name: Tag & push to ACR
         run: |
           set -euo pipefail
-          if [ -z "$ACR_LOGIN_SERVER" ]; then
-            echo "Skipping ACR push: ACR_LOGIN_SERVER not set"
-            exit 0
-          fi
           WEB_SRC_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_WEB_LOWER }}:${{ github.sha }}"
           DASH_SRC_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_DASHBOARD_LOWER }}:${{ github.sha }}"
 
