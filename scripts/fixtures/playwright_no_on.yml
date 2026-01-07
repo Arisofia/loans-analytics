@@ -3,4 +3,5 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - run: echo 'this contains "on": in a string and should not trigger an update'
+      - run: |
+          echo 'this contains "on": in a string and should not trigger an update'
