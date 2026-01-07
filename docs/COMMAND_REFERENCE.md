@@ -5,6 +5,7 @@ This document collects common commands and workflows used by the project.
 ## 🔧 Core Setup Commands
 
 ### Initial Setup (First Time Only)
+
 ```bash
 # Clone and enter the repository
 git clone https://github.com/Arisofia/abaco-loans-analytics.git
@@ -19,6 +20,7 @@ nano .env  # or your preferred editor
 ```
 
 ### Virtual Environment Setup
+
 ```bash
 # Option 1: Fresh venv with all dependencies
 make venv-install
@@ -36,6 +38,7 @@ source .venv/bin/activate
 ## 📊 Code Quality Commands (Quality Gate)
 
 ### Quick Quality Checks
+
 ```bash
 # Fast linting (non-blocking, exits with 0)
 make lint
@@ -48,6 +51,7 @@ make type-check
 ```
 
 ### Full Quality Audit (Comprehensive)
+
 ```bash
 # Complete audit: lint + type-check + coverage
 make audit-code
@@ -57,6 +61,7 @@ make quality
 ```
 
 ## Testing Commands
+
 ```bash
 # Run all tests
 make test
@@ -71,6 +76,7 @@ start htmlcov/index.html  # Windows
 ```
 
 ### Specific Test Suites
+
 ```bash
 # KPI Parity Tests (Python vs SQL dual-engine validation)
 make test-kpi-parity
@@ -91,6 +97,7 @@ pytest -k "quality" -v
 ## 🚀 Data Pipeline Commands
 
 ### Run Analytics Pipeline
+
 ```bash
 # Complete analytics pipeline execution
 make analytics-run
@@ -106,6 +113,7 @@ make audit-write
 ```
 
 ### Run Data Ingestion
+
 ```bash
 # Execute the data pipeline
 make run-pipeline
@@ -117,6 +125,7 @@ python3 scripts/run_data_pipeline.py --config custom_config.yml
 ## 📈 Dashboard & Observability
 
 ### Run Streamlit Dashboard
+
 ```bash
 # Launch the Streamlit dashboard
 make run-dashboard
@@ -125,6 +134,7 @@ make run-dashboard
 ```
 
 ### Check Repository Maturity
+
 ```bash
 # Scan repo for maturity metrics
 make check-maturity
@@ -133,6 +143,7 @@ make check-maturity
 ## 🔍 Development Workflow Commands
 
 ### Git Workflow
+
 ```bash
 # Create a feature branch
 git checkout -b feature/your-feature-name
@@ -149,6 +160,7 @@ gh pr create --title "Your PR Title" --body "Description"
 ```
 
 ### Environment Management
+
 ```bash
 # Clean up old virtualenvs
 make env-clean
@@ -164,6 +176,7 @@ make vscode-envfile-info
 ```
 
 ## 📋 Complete Makefile Target Reference
+
 | Command | Purpose | Time |
 |---|---:|---:|
 | make install | Install production dependencies | ~2m |
@@ -192,6 +205,7 @@ make vscode-envfile-info
 ## 🎬 Recommended Development Workflows
 
 ### Daily Workflow (Start of Day)
+
 ```bash
 # Activate environment
 source .venv/bin/activate
@@ -207,6 +221,7 @@ make install-dev
 ```
 
 ### Before Committing
+
 ```bash
 # Format code
 make format
@@ -223,6 +238,7 @@ git commit -m "feat: your message"
 ```
 
 ### Before Creating PR
+
 ```bash
 # Full quality audit
 make audit-code
@@ -238,6 +254,7 @@ open htmlcov/index.html
 ```
 
 ## Production Deployment
+
 ```bash
 # Full quality gate (MUST PASS)
 make quality
@@ -256,6 +273,7 @@ git push origin v1.0.0
 ## 🔐 Environment Variables Setup
 
 ### Required for Full Operations
+
 ```bash
 # Azure
 export APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=...;IngestionEndpoint=..."
@@ -278,7 +296,7 @@ export META_APP_ID="..."
 
 # Figma
 export FIGMA_TOKEN="..."
-export FIGMA_FILE_ID="..."
+export FIGMA_FILE_KEY="..."
 
 # Slack Notifications
 export SLACK_WEBHOOK_URL="https://hooks.slack.com/..."
@@ -290,6 +308,7 @@ Store these in `.env` (git-ignored).
 ## 🐛 Troubleshooting Commands
 
 ### Test Execution Issues
+
 ```bash
 # Run with verbose output
 pytest -vv
@@ -311,6 +330,7 @@ pytest --junit-xml=test-results.xml
 ```
 
 ### Type Checking Issues
+
 ```bash
 # Run mypy with verbose output
 mypy src --show-traceback
@@ -323,6 +343,7 @@ mypy src --ignore-missing-imports
 ```
 
 ### Linting Issues
+
 ```bash
 # Show pylint details
 pylint src --verbose
@@ -352,6 +373,7 @@ pip freeze > requirements.txt
 ```
 
 ### Update Dependencies
+
 ```bash
 # Update specific package
 pip install --upgrade package-name
@@ -367,6 +389,7 @@ pip freeze | grep new-package >> requirements.txt
 ## 🚨 CI/CD Integration
 
 ### Local CI Simulation
+
 ```bash
 # Run the same checks as GitHub CI
 make quality
@@ -380,6 +403,7 @@ yamllint .github/workflows/ci.yml
 ```
 
 ### Debugging Failed CI
+
 ```bash
 # Check workflow syntax
 actionlint .github/workflows/*.yml
@@ -406,6 +430,7 @@ python3 -m sys
 | Tracing Guide | docs/TRACING.md |
 
 ## ⚡ Quick Command Cheatsheet
+
 ```bash
 # Setup
 make venv-install && source .venv/bin/activate
