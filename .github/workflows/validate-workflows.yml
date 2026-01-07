@@ -61,8 +61,7 @@ jobs:
             echo "No shell scripts found to lint"
           else
             echo "Running shellcheck on ${#matches[@]} file(s)..."
-            # If shellcheck returns non-zero (warnings/errors), don't fail the CI run here — treat results as annotations
-            shellcheck -x "${matches[@]}" || true
+            shellcheck -x "${matches[@]}"
           fi
 
   dependency-validation:
@@ -121,7 +120,6 @@ jobs:
       - dependency-validation
       - trigger-validation
       - secrets-validation
-      - secrets-presence
     if: |
       always() && (
         needs.syntax-validation.result == 'failure' ||
