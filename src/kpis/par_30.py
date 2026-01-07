@@ -57,7 +57,8 @@ class PAR30Calculator(KPICalculator):
                 dpd_90_plus_sum=float(dpd_90_plus),
                 total_receivable_sum=float(total_receivable),
             )
-        elif "loan_status" in df.columns:
+
+        if "loan_status" in df.columns:
             # Fallback for datasets like the one in tests/test_analytics_metrics.py
             delinquent_statuses = [
                 "30-59 days past due",
@@ -73,8 +74,8 @@ class PAR30Calculator(KPICalculator):
                 delinquent_count=int(delinquent_count),
                 method="loan_status_fallback",
             )
-        else:
-            raise ValueError(f"Missing required columns: {', '.join(required)} or 'loan_status'")
+
+        raise ValueError(f"Missing required columns: {', '.join(required)} or 'loan_status'")
 
 
 def calculate_par_30(df: pd.DataFrame) -> Tuple[float, Dict[str, Any]]:

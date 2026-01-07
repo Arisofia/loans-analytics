@@ -10,12 +10,16 @@ import logging
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any, Dict
+
+plt: Any
 
 try:
     import matplotlib
     # Use non-interactive backend for scripts/tests to avoid GUI/display-related errors
     matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as _plt
+    plt = _plt
     HAS_MATPLOTLIB = True
 except Exception:
     # Matplotlib may not be installed in lightweight CI/test environments.

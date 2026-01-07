@@ -113,19 +113,13 @@ class UnifiedOutput:
         metadata: Dict[str, Any],
         run_ids: Dict[str, str],
         context: Optional[PersistContext] = None,
-        **kwargs: Any,
     ) -> OutputResult:
         self._log_event("start", "initiated", run_ids=run_ids)
 
-        # Backward compatibility for positional or keyword arguments
-        quality_checks = kwargs.get("quality_checks")
-        compliance_report_path = kwargs.get("compliance_report_path")
-        timeseries = kwargs.get("timeseries")
-
-        if context:
-            quality_checks = quality_checks or context.quality_checks
-            compliance_report_path = compliance_report_path or context.compliance_report_path
-            timeseries = timeseries or context.timeseries
+        ctx = context or PersistContext()
+        quality_checks = ctx.quality_checks
+        compliance_report_path = ctx.compliance_report_path
+        timeseries = ctx.timeseries
 
         storage_cfg = self.config.get("storage", {})
         base_dir = ensure_dir(Path(storage_cfg.get("local_dir", str(Paths.metrics_dir()))))

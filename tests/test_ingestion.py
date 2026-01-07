@@ -85,7 +85,7 @@ def test_looker_par_balances_to_loan_tape(tmp_path, minimal_config):
     ingestion = UnifiedIngestion(minimal_config)
     df = pd.read_csv(csv_file)
     cash_by_date = {}
-    result = ingestion._looker_par_balances_to_loan_tape(df, cash_by_date)
+    result = ingestion.looker_converter.convert_par_balances(df, cash_by_date)
 
     assert "measurement_date" in result.columns
     assert "total_receivable_usd" in result.columns
@@ -113,7 +113,7 @@ def test_looker_dpd_to_loan_tape(tmp_path, minimal_config):
     ingestion = UnifiedIngestion(minimal_config)
     df = pd.read_csv(csv_file)
     cash_by_date = {}
-    result = ingestion._looker_dpd_to_loan_tape(df, cash_by_date)
+    result = ingestion.looker_converter.convert_dpd_loans(df, cash_by_date)
 
     assert "dpd_0_7_usd" in result.columns
     assert "dpd_7_30_usd" in result.columns

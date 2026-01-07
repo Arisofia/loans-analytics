@@ -10,8 +10,8 @@ import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
-from datetime import datetime
-from typing import Any, Optional
+from datetime import datetime, timezone
+from typing import Any, Callable, Optional
 
 # Third-Party Imports
 import pandas as pd
@@ -25,8 +25,10 @@ try:
 except ImportError:
     AZURE_TRACING_ENABLED = False
 
-    def trace_analytics_job(job_name: str, client_id: str, run_id: str):
-        def decorator(func):
+    def trace_analytics_job(
+        job_name: str, client_id: str, run_id: str
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             return func
 
         return decorator

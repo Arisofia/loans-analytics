@@ -58,6 +58,14 @@ jobs:
           path: |
             .
             !antenv/
+            !.venv/
+            !node_modules/
+            !__pycache__/
+            !tests/
+            !.git/
+            !.github/
+            !.pytest_cache/
+            !.mypy_cache/
 
   deploy:
     runs-on: ubuntu-latest

@@ -13,7 +13,7 @@ from src.config.paths import Paths
 from src.pipeline.data_ingestion import UnifiedIngestion
 from src.pipeline.data_transformation import UnifiedTransformation
 from src.pipeline.kpi_calculation import UnifiedCalculationV2
-from src.pipeline.output import UnifiedOutput
+from src.pipeline.output import PersistContext, UnifiedOutput
 from src.pipeline.utils import (ensure_dir, load_yaml, resolve_placeholders,
                                 utc_now, write_json)
 from src.tracing_setup import get_tracer
@@ -279,6 +279,11 @@ class UnifiedPipeline:
                     write_compliance_report(compliance_report, compliance_path)
 
                 with tracer.start_as_current_span("pipeline.output"):
+                    output_ctx = PersistContext(
+                        quality_checks=transformation_result.quality_checks,
+                        compliance_report_path=compliance_path,
+                        timeseries=calculation_result.timeseries
+                    )
                     output_result = self.output.persist(
                         transformation_result.df,
                         calculation_result.metrics,
@@ -295,9 +300,7 @@ class UnifiedPipeline:
                             "transformation": transformation_result.run_id,
                             "calculation": calculation_result.run_id,
                         },
-                        quality_checks=transformation_result.quality_checks,
-                        compliance_report_path=compliance_path,
-                        timeseries=calculation_result.timeseries,
+                        context=output_ctx
                     )
 
                 summary = {

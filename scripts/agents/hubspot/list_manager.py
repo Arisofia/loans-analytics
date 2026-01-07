@@ -31,6 +31,7 @@ class ListManager:
             Dictionary containing list creation response.
         """
         # Implementation for creating lists
+        return {}
 
     def add_contacts_to_list(self, list_id: str, contact_ids: List[str]) -> Dict:
         """Add contacts to a specific list.
@@ -43,6 +44,7 @@ class ListManager:
             Dictionary containing operation response.
         """
         # Implementation for adding contacts to lists
+        return {}
 
     def get_list_contacts(self, list_id: str) -> List[Dict]:
         """Get all contacts from a specific list.
@@ -54,3 +56,4 @@ class ListManager:
             List of contact dictionaries.
         """
         # Implementation for retrieving list contacts
+        return []

@@ -6,6 +6,9 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
+from src.kpis.base import safe_numeric
+
+
 REQUIRED_ANALYTICS_COLUMNS: List[str] = [
     "loan_amount",
     "appraised_value",
@@ -177,14 +180,6 @@ def assert_dataframe_schema(
         ):
             msg = f"non-numeric columns: {msg}"
         raise AssertionError(f"{stage} schema validation failed: {msg}") from e
-
-
-def safe_numeric(series: pd.Series) -> pd.Series:
-    """Coerce a series to numeric, handling currency symbols and commas."""
-    if series.dtype == "object":
-        clean = series.astype(str).str.replace(r"[$€£¥₽₡,%]", "", regex=True).str.strip()
-        return pd.to_numeric(clean, errors="coerce")
-    return pd.to_numeric(series, errors="coerce")
 
 
 def validate_numeric_bounds(

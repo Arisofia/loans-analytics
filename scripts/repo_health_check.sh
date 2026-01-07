@@ -23,7 +23,7 @@ print_header "RECENT COMMITS"
 git log --oneline --decorate --graph -n 10
 
 print_header "REQUIREMENTS CONSISTENCY"
-python - <<'PY'
+python3 - <<'PY'
 from collections import Counter
 from pathlib import Path
 
@@ -41,10 +41,16 @@ print("Requirements file is free of duplicates.")
 PY
 
 print_header "LINT"
-npm run lint || echo "Lint failed"
+if [ -f "package.json" ]; then
+  npm run lint || echo "Lint failed (non-blocking)"
+else
+  echo "package.json not found, skipping lint"
+fi
 
 print_header "PYTHON TESTS"
-pytest || echo "Pytest failed"
+# Use PYTHONPATH to ensure imports work correctly during health check
+export PYTHONPATH=$(pwd)/python:$(pwd)
+.venv/bin/pytest --maxfail=5 || echo "Pytest failed (non-blocking)"
 
 print_header "ENV FILES AUDIT"
 ls -la .env* || echo "No env files found"

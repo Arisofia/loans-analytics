@@ -79,7 +79,7 @@ class ProductionValidator:
             engine = KPIEngineV2(df)
             metrics = engine.calculate_all(include_composite=True)
 
-            result = {
+            result: Dict[str, Any] = {
                 "status": "PASS",
                 "metrics": {
                     "par30": float(metrics["PAR30"]["value"]),

@@ -144,8 +144,8 @@ def main(
     action: Optional[str] = None,
     config_path: str = "config/pipeline.yml",
 ) -> bool:
-    effective_user: str = user or os.getenv("PIPELINE_RUN_USER", "system")
-    effective_action: str = action or os.getenv("PIPELINE_RUN_ACTION", "manual")
+    effective_user: str = str(user or os.getenv("PIPELINE_RUN_USER", "system"))
+    effective_action: str = str(action or os.getenv("PIPELINE_RUN_ACTION", "manual"))
 
     logger.info(
         "--- ABACO UNIFIED PIPELINE START --- user=%s action=%s input=%s",

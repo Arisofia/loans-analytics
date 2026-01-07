@@ -57,6 +57,22 @@ class FigmaClient:
             return {}
         return self._request("GET", f"/files/{self.file_key}")
 
+    def create_file(self, name: str, project_id: Optional[str] = None) -> Optional[str]:
+        """Create a new Figma file and return its key."""
+        payload = {"name": name}
+        if project_id:
+            payload["project_id"] = project_id
+
+        result = self._request("POST", "/files", json=payload)
+        file_key = result.get("key")
+
+        if file_key:
+            logger.info(f"Created new Figma file: {name} (key: {file_key})")
+            return file_key
+
+        logger.error(f"Failed to create Figma file: {name}")
+        return None
+
     def update_text_node(self, node_id: str, new_text: str, run_id: str) -> bool:
         """Update a text node in Figma with new metric value."""
         if not self.file_key:

@@ -32,8 +32,6 @@ def _coerce_numeric(series: pd.Series, field_name: str) -> pd.Series:
     """
 
     numeric = safe_numeric(series)
-    if numeric.isna().all() and not series.empty:
-        raise ValueError(f"Field '{field_name}' must contain at least one numeric value")
     return numeric
 
 
