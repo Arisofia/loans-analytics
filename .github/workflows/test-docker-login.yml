@@ -16,6 +16,37 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Docker & ACR diagnostics
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
+          AZURE_ACR_USERNAME: ${{ secrets.AZURE_ACR_USERNAME }}
+          AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
+        run: |
+          set -euo pipefail
+          echo "Docker and ACR diagnostics (secrets not printed)"
+          docker --version || true
+          for var in DOCKER_USERNAME DOCKER_TOKEN DOCKER_PASSWORD AZURE_ACR_LOGIN_SERVER AZURE_ACR_USERNAME AZURE_ACR_PASSWORD; do
+            if [ -n "${!var:-}" ]; then
+              echo "$var: present"
+            else
+              echo "$var: missing"
+            fi
+          done
+          if [ -n "${AZURE_ACR_LOGIN_SERVER:-}" ] && [ -n "${AZURE_ACR_PASSWORD:-}" ]; then
+            echo "Attempting login to ACR $AZURE_ACR_LOGIN_SERVER"
+            if printf '%s' "$AZURE_ACR_PASSWORD" | docker login "$AZURE_ACR_LOGIN_SERVER" -u "$AZURE_ACR_USERNAME" --password-stdin >/dev/null 2>&1; then
+              echo "ACR login succeeded"
+              docker logout "$AZURE_ACR_LOGIN_SERVER" || true
+            else
+              echo "ACR login failed"
+            fi
+          else
+            echo "Skipping ACR login (missing creds)"
+          fi
+
       - name: Docker login test
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
