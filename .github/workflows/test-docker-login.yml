@@ -24,11 +24,29 @@ jobs:
         run: |
           set -euo pipefail
           echo "Starting Docker login check (secret values are not printed)"
-          # Prefer token if present
+          # Try token first (if present), then password. Do not print secrets.
+          attempt_login() {
+            local secret="$1"
+            if [ -z "${secret:-}" ]; then
+              return 1
+            fi
+            if printf '%s' "$secret" | docker login -u "$DOCKER_USERNAME" --password-stdin >/dev/null 2>&1; then
+              echo "Docker login succeeded"
+              docker logout || true
+              return 0
+            else
+              return 1
+            fi
+          }
           if [ -n "${DOCKER_TOKEN:-}" ]; then
-            echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin
-          else
-            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            echo "Attempting login with DOCKER_TOKEN"
+            if attempt_login "$DOCKER_TOKEN"; then exit 0; fi
+            echo "Login with DOCKER_TOKEN failed"
           fi
-          echo "Docker login succeeded"
-          docker logout || true
+          if [ -n "${DOCKER_PASSWORD:-}" ]; then
+            echo "Attempting login with DOCKER_PASSWORD"
+            if attempt_login "$DOCKER_PASSWORD"; then exit 0; fi
+            echo "Login with DOCKER_PASSWORD failed"
+          fi
+          echo "Docker login failed (token and password attempts unsuccessful)"
+          exit 1
