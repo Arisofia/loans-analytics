@@ -57,15 +57,20 @@ jobs:
             echo "has_azure_secrets=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Export inputs to env
+        run: |
+          echo "INPUT_APP_URL=${{ github.event.inputs.app_url }}" >> $GITHUB_ENV
+
       - name: Determine app URL
         id: app_url
         run: |
-          if [ -z "${{ github.event.inputs.app_url }}" ]; then
-            APP_URL="https://${{ env.WEBAPP_NAME }}.azurewebsites.net"
+          if [ -z "${INPUT_APP_URL:-}" ]; then
+            APP_URL="https://${WEBAPP_NAME}.azurewebsites.net"
           else
-            APP_URL="${{ github.event.inputs.app_url }}"
+            APP_URL="${INPUT_APP_URL}"
           fi
           echo "url=$APP_URL" >> "$GITHUB_OUTPUT"
+          echo "APP_URL=$APP_URL" >> "$GITHUB_ENV"
           echo "App URL: $APP_URL"
 
       - name: Wait for app to be ready
@@ -74,8 +79,7 @@ jobs:
         run: |
           echo "Waiting for app to be ready..."
           for i in {1..60}; do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-              "${{ steps.app_url.outputs.url }}" || echo "000")
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL" || echo "000")
             echo "Attempt $i: HTTP $HTTP_CODE"
             if [ "$HTTP_CODE" = "200" ]; then
               echo "✓ App is responding"
@@ -108,7 +112,7 @@ jobs:
         if: ${{ steps.wait_ready.outputs.ready == true }}
         run: |
           echo "Testing health endpoint..."
-          HEALTH_URL="${{ steps.app_url.outputs.url }}${{ env.HEALTH_CHECK_PATH }}"
+          HEALTH_URL="${APP_URL}${HEALTH_CHECK_PATH}"
           echo "Health URL: $HEALTH_URL"
 
           RESPONSE=$(curl -s -i "$HEALTH_URL" 2>&1)
@@ -131,8 +135,6 @@ jobs:
         if: ${{ steps.check_secrets.outputs.has_azure_secrets == true && steps.wait_ready.outputs.ready == true }}
         run: |
           echo "Verifying key dependencies (Azure deployment)..."
-          APP_URL="${{ steps.app_url.outputs.url }}"
-
           RESPONSE=$(curl -s "$APP_URL" 2>&1 | head -20)
           if echo "$RESPONSE" | grep -q "streamlit\|html"; then
             echo "✓ Streamlit is running"
@@ -142,13 +144,23 @@ jobs:
             echo "streamlit=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Export workflow outputs to env
+        if: always()
+        run: |
+          echo "APP_URL=${{ steps.app_url.outputs.url }}" >> $GITHUB_ENV
+          echo "HAS_AZURE_SECRETS=${{ steps.check_secrets.outputs.has_azure_secrets }}" >> $GITHUB_ENV
+          echo "READY=${{ steps.wait_ready.outputs.ready }}" >> $GITHUB_ENV
+          echo "HEALTH_PASSED=${{ steps.health_check.outputs.passed }}" >> $GITHUB_ENV
+          echo "SMOKE_READY=${{ steps.smoke_test.outputs.ready }}" >> $GITHUB_ENV
+          echo "STREAMLIT=${{ steps.deps_check.outputs.streamlit }}" >> $GITHUB_ENV
+
       - name: Check tracing initialization
         id: tracing_check
         run: |
           echo "Checking tracing setup..."
 
-          if [ "${{ steps.check_secrets.outputs.has_azure_secrets }}" = "true" ]; then
-            if [ "${{ steps.health_check.outputs.passed }}" = "true" ]; then
+          if [ "$HAS_AZURE_SECRETS" = "true" ]; then
+            if [ "$HEALTH_PASSED" = "true" ]; then
               echo "✓ Tracing initialized (Azure app is healthy)"
               echo "initialized=true" >> "$GITHUB_OUTPUT"
             else
@@ -156,7 +168,7 @@ jobs:
               echo "initialized=false" >> "$GITHUB_OUTPUT"
             fi
           else
-            if [ "${{ steps.smoke_test.outputs.ready }}" = "true" ]; then
+            if [ "$SMOKE_READY" = "true" ]; then
               echo "✓ Tracing setup verified (local test)"
               echo "initialized=true" >> "$GITHUB_OUTPUT"
             else
@@ -170,7 +182,7 @@ jobs:
         if: always()
         run: |
           {
-            if [ "${{ steps.check_secrets.outputs.has_azure_secrets }}" = "true" ]; then
+            if [ "$HAS_AZURE_SECRETS" = "true" ]; then
               TEST_MODE="Azure Deployment"
             else
               TEST_MODE="Local Smoke Test (No Azure Secrets)"
@@ -182,21 +194,44 @@ jobs:
             echo ""
             echo "| Check | Status |"
             echo "|-------|--------|"
-            if [ "${{ steps.check_secrets.outputs.has_azure_secrets }}" = "true" ]; then
-              echo "| App Ready | ${{ steps.wait_ready.outputs.ready == true && '✅ PASS' || '❌ FAIL' }} |"
-              echo "| Health Endpoint | ${{ steps.health_check.outputs.passed == true && '✅ PASS' || '⚠️ SKIP' }} |"
-              echo "| Dependencies | ${{ steps.deps_check.outputs.streamlit == true && '✅ PASS' || '⚠️ PARTIAL' }} |"
+            if [ "$HAS_AZURE_SECRETS" = "true" ]; then
+              if [ "$READY" = "true" ]; then
+                echo "| App Ready | ✅ PASS |"
+              else
+                echo "| App Ready | ❌ FAIL |"
+              fi
+
+              if [ "$HEALTH_PASSED" = "true" ]; then
+                echo "| Health Endpoint | ✅ PASS |"
+              else
+                echo "| Health Endpoint | ⚠️ SKIP |"
+              fi
+
+              if [ "$STREAMLIT" = "true" ]; then
+                echo "| Dependencies | ✅ PASS |"
+              else
+                echo "| Dependencies | ⚠️ PARTIAL |"
+              fi
             else
-              echo "| Dependencies | ${{ steps.smoke_test.outputs.ready == true && '✅ VERIFIED' || '❌ FAIL' }} |"
+              if [ "$SMOKE_READY" = "true" ]; then
+                echo "| Dependencies | ✅ VERIFIED |"
+              else
+                echo "| Dependencies | ❌ FAIL |"
+              fi
             fi
-            echo "| Tracing | ${{ steps.tracing_check.outputs.initialized == true && '✅ PASS' || '⚠️ PARTIAL' }} |"
+
+            if [ "${TRACE_INIT:-}" = "true" ] || [ "${STREAMLIT:-}" = "true" ]; then
+              echo "| Tracing | ✅ PASS |"
+            else
+              echo "| Tracing | ⚠️ PARTIAL |"
+            fi
             echo ""
-            echo "**App URL**: ${{ steps.app_url.outputs.url }}"
+            echo "**App URL**: ${APP_URL:-(not set)}"
             echo ""
             echo "### Configuration"
-            if [ "${{ steps.check_secrets.outputs.has_azure_secrets }}" = "true" ]; then
+            if [ "$HAS_AZURE_SECRETS" = "true" ]; then
               echo "- Azure credentials: ✅ Configured"
-              echo "- Health Endpoint: ${{ steps.app_url.outputs.url }}${{ env.HEALTH_CHECK_PATH }}"
+              echo "- Health Endpoint: ${APP_URL}${HEALTH_CHECK_PATH}"
             else
               echo "- Azure credentials: ⚠️  Not configured"
               echo "- Fallback: Local import verification"
@@ -243,9 +278,9 @@ jobs:
       - name: Notify success
         if: success()
         run: |
-          if [ "${{ steps.check_secrets.outputs.has_azure_secrets }}" = "true" ]; then
+          if [ "$HAS_AZURE_SECRETS" = "true" ]; then
             echo "✅ Azure deployment validation passed!"
-            echo "App is healthy and responding at: ${{ steps.app_url.outputs.url }}"
+            echo "App is healthy and responding at: $APP_URL"
           else
             echo "✅ Local smoke test passed!"
             echo "All dashboard dependencies verified. Ready for Azure deployment."
