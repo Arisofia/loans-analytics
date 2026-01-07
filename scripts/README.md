@@ -11,6 +11,7 @@ Usage examples:
   python scripts/update_playwright.py --input /tmp/ari_playwright.json --output /tmp/playwright_fixed.yml
 
 Notes:
+
 - Prefer the `--dry-run` first to verify the preview output before making changes.
 - The script performs retries with exponential backoff for the `gh api` call; adjust `--retries` and `--backoff` if needed.
 - For testing, import `safe_replace_on_key` from the script module to verify behavior programmatically.

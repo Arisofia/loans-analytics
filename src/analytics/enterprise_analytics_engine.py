@@ -230,28 +230,26 @@ class LoanAnalyticsEngine:
             KPIEngineV2  # pylint: disable=import-outside-toplevel
 
         engine_v2 = KPIEngineV2(self.loan_data, actor="enterprise_engine")
+        # Ensure consistent KPI keys/structure by leveraging the canonical portfolio_kpis
+        # so that tests and callers expecting the same set of keys remain stable.
+        from src.analytics.metrics_utils import portfolio_kpis  # local import to avoid cycles
+
         results = engine_v2.calculate_all()
 
-        dashboard = {
-            "portfolio_delinquency_rate_percent": results.get("PAR30", {}).get("value", 0.0),
-            "portfolio_yield_percent": engine_v2.get_metric("PortfolioYield") or 0.0,
-            "average_ltv_ratio_percent": engine_v2.get_metric("LTV") or 0.0,
-            "average_dti_ratio_percent": engine_v2.get_metric("DTI") or 0.0,
-            # Short keys for backward compatibility
-            "delinquency_rate": results.get("PAR30", {}).get("value", 0.0),
-            "portfolio_yield": engine_v2.get_metric("PortfolioYield") or 0.0,
-            "average_ltv": engine_v2.get_metric("LTV") or 0.0,
-            "average_dti": engine_v2.get_metric("DTI") or 0.0,
-        }
+        # Start from canonical kpi set
+        dashboard = portfolio_kpis(self.loan_data)
 
-        quality = self.data_quality_profile()
-        dashboard.update(
-            {
-                "data_quality_score": quality["data_quality_score"],
-                "average_null_ratio_percent": quality["average_null_ratio"],
-                "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio"],
-            }
-        )
+        # Prefer engine_v2 computed values where available for numeric accuracy
+        dashboard["portfolio_delinquency_rate_percent"] = results.get("PAR30", {}).get("value", dashboard.get("portfolio_delinquency_rate_percent", 0.0))
+        dashboard["portfolio_yield_percent"] = engine_v2.get_metric("PortfolioYield") or dashboard.get("portfolio_yield_percent", 0.0)
+        dashboard["average_ltv_ratio_percent"] = engine_v2.get_metric("LTV") or dashboard.get("average_ltv_ratio_percent", 0.0)
+        dashboard["average_dti_ratio_percent"] = engine_v2.get_metric("DTI") or dashboard.get("average_dti_ratio_percent", 0.0)
+
+        # Maintain short-key backward compatibility
+        dashboard["delinquency_rate"] = dashboard.get("portfolio_delinquency_rate_percent", 0.0)
+        dashboard["portfolio_yield"] = dashboard.get("portfolio_yield_percent", 0.0)
+        dashboard["average_ltv"] = dashboard.get("average_ltv_ratio_percent", 0.0)
+        dashboard["average_dti"] = dashboard.get("average_dti_ratio_percent", 0.0)
 
         return dashboard
 
