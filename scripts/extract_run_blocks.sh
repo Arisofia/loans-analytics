@@ -13,19 +13,52 @@ shopt -s nullglob
 for f in .github/workflows/*.{yml,yaml}; do
   [ -f "$f" ] || continue
   base=$(basename "$f")
-  # Use awk to find 'run:' lines and capture following indented lines
+  # Use awk to find multiline 'run: |' blocks and capture following indented lines
   awk -v outdir="$OUT_DIR" -v base="$base" '
-    /^[[:space:]]*-\s*run:\s*(\||$)/ { inside=1; c++; file = outdir "/" base ".run." c ".sh"; next }
+    # Match multiline "run: |" lines (possibly starting with a dash)
+    /^[[:space:]]*(-[[:space:]]*)?run:[[:space:]]*\|/ {
+      # If we were already inside a block, close it
+      if (inside) {
+        close(file);
+      }
+      inside = 1;
+      indent = 0;
+      c++;
+      file = outdir "/" base ".run." c ".sh";
+      # Prepend a bash shebang so ShellCheck knows the target shell
+      print "#!/usr/bin/env bash" > file;
+      next;
+    }
     inside {
-      # If line is empty, keep it
-      if ($0 ~ /^[[:space:]]*$/) { print "" >> file; next }
-      # If line starts with non-space and looks like a YAML key (a: or key:), then end block
-      if ($0 ~ /^[^[:space:]]+[[:space:]]*:[^:]/) { inside=0; close(file); next }
-      # Strip leading indentation up to the content
-      sub(/^[ \t]*/, "", $0)
+      # If the line is purely whitespace, just append a newline
+      if ($0 ~ /^[[:space:]]*$/) {
+        print "" >> file;
+        next;
+      }
+
+      # Calculate current line indentation
+      match($0, /^[[:space:]]*/);
+      current_indent = RLENGTH;
+
+      # The first non-empty line after "run: |" determines the block indentation
+      if (indent == 0) {
+        indent = current_indent;
+      }
+
+      # If this line is less indented than the block started, the block has ended
+      if (current_indent < indent) {
+        if ($0 ~ /^[[:space:]]*[^[:space:]]+[[:space:]]*:/ || $0 ~ /^[[:space:]]*-\s*[^:]+:\s*/) {
+          inside = 0;
+          close(file);
+          next;
+        }
+      }
+
+      # Strip leading indentation based on the first line of the block
+      content = substr($0, indent + 1);
       # Remove GitHub expressions like ${{ ... }} to avoid invalid Bash after extraction
-      gsub(/\$\{\{[^}]+\}\}/, "")
-      print $0 >> file
+      gsub(/\$\{\{[^}]+\}\}/, "", content);
+      print content >> file;
     }
     END { if (inside) close(file) }
   ' "$f"
