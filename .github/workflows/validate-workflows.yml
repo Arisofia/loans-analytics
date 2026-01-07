@@ -85,6 +85,8 @@ jobs:
           echo "ok"
 
   secrets-presence:
+    # Skip secrets-presence on pull_request events (secrets are unavailable for forks/PR checks)
+    if: ${{ github.event_name != 'pull_request' }}
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secrets: >-
