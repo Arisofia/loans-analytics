@@ -46,8 +46,22 @@ jobs:
       - name: Run shellcheck on scripts + extracted run blocks
         run: |
           set -euo pipefail
-          # shellcheck -x for sourced scripts; expand globs
-          shellcheck -x scripts/**/*.sh .github/workflows/extracted_runs/**/*.sh
+          # Ensure recursive globstar works for ** pattern and expand globs safely
+          shopt -s globstar || true
+          files=(scripts/**/*.sh .github/workflows/extracted_runs/**/*.sh)
+          matches=()
+          for p in "${files[@]}"; do
+            for f in $p; do
+              if [ -e "$f" ]; then
+                matches+=("$f")
+              fi
+            done
+          done
+          if [ ${#matches[@]} -eq 0 ]; then
+            echo "No shell scripts found to lint"
+          else
+            shellcheck -x "${matches[@]}"
+          fi
 
   dependency-validation:
     name: Dependency Validation
