@@ -1,0 +1,14 @@
+# Repository markdownlint configuration
+# Ignore third-party files and large directories we don't want to lint
+ignore:
+  - "**/node_modules/**"
+  - "services/**/node_modules/**"
+  - "**/dist/**"
+  - "**/.venv-1/**"
+
+# Optionally enable/disable specific rules here
+# Keep defaults otherwise to surface real issues
+# Example: set max line length to 120
+MD013:
+  line_length: 120
+  code_blocks: false
