@@ -19,8 +19,8 @@ import json
 import logging
 import subprocess
 import sys
-import tempfile
 import time
+import re
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
@@ -46,13 +46,29 @@ def load_input(input_path: Path) -> Dict:
         return json.load(fh)
 
 
+def safe_replace_on_key(content: str) -> tuple[str, int]:
+    """Replace only quoted "on" keys that appear at the start of a YAML key line.
+
+    Returns a tuple of (new_content, replacements_count).
+    Uses a multiline regex anchored to line starts to avoid accidental matches inside
+    strings or values.
+    """
+    pattern = re.compile(r'(?m)^[ \t]*"on"\s*:')
+
+    def _repl(m: re.Match) -> str:
+        text = m.group(0)
+        # Replace the quoted key with an unquoted key while preserving indentation and colon
+        return text.replace('"on"', 'on')
+
+    new, n = pattern.subn(_repl, content)
+    return new, n
+
+
 def fix_content(content_b64: str) -> str:
     content = base64.b64decode(content_b64).decode("utf-8")
-    if '"on":' not in content:
-        logger.info('Pattern "\"on\":" not found; nothing to change')
-        return content
-    # Replace first occurrence; keep replacement minimal
-    new = content.replace('"on":', 'on:')
+    new, n = safe_replace_on_key(content)
+    if n == 0:
+        logger.info('Pattern "\"on\":" not found at top-level key positions; nothing to change')
     return new
 
 
@@ -111,28 +127,22 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         return 2
 
     payload = load_input(input_path)
-
     content_b64 = payload.get('content')
-    if not content_b64:
-        logger.error('Input JSON missing "content" key')
-        return 3
-
     sha = payload.get('sha')
-    if not sha:
-        logger.error('Input JSON missing "sha" key')
-        return 4
+
+    if not content_b64 or not sha:
+        logger.error('Input JSON missing "content" or "sha" key')
+        return 3
 
     new = fix_content(content_b64)
     write_preview(Path(args.output), new)
 
     if '"on":' not in base64.b64decode(content_b64).decode('utf-8'):
-        # Nothing to change
         logger.info('No change required; exiting')
         return 0
 
     # Prepare API payload
     b64new = base64.b64encode(new.encode('utf-8')).decode('ascii')
-
     cmd = build_gh_command(b64new, sha, args.message, args.branch)
 
     logger.info('Prepared gh api command (dry_run=%s)', args.dry_run)
@@ -143,10 +153,11 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     try:
         run_with_retries(cmd, retries=args.retries, backoff=args.backoff)
         logger.info('Update completed successfully')
-        return 0
+        exit_code = 0
     except Exception as exc:  # noqa: BLE001 - log and exit non-zero
         logger.exception('Update failed: %s', exc)
-        return 1
+        exit_code = 1
+    return exit_code
 
 
 if __name__ == '__main__':
