@@ -8,6 +8,13 @@ from typing import Any, Dict, Iterable, List, Optional
 
 import pandas as pd
 
+from src.kpis.base import safe_numeric
+
+
+def safe_numeric(series: pd.Series) -> pd.Series:
+    """Safely convert series to numeric, replacing errors with 0.0."""
+    return pd.to_numeric(series, errors="coerce").fillna(0.0)
+
 
 @dataclass
 class DataQualityReport:
