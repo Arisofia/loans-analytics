@@ -64,7 +64,7 @@ make quality
 make test
 ```
 
-**Tests with coverage report**
+#### Tests with coverage report
 
 ```bash
 make test-cov

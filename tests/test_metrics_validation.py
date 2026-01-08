@@ -1,9 +1,6 @@
 import json
 import logging
-import os
-from pathlib import Path
 
-import pytest
 
 
 def test_batch_export_load_latest_metrics_invalid_json(tmp_path, caplog, monkeypatch):
@@ -15,6 +12,12 @@ def test_batch_export_load_latest_metrics_invalid_json(tmp_path, caplog, monkeyp
 
     # Run from tmp_path so relative paths in the implementation resolve there
     monkeypatch.chdir(tmp_path)
+
+    # Mock Azure credentials to avoid validation errors during init
+    monkeypatch.setenv("AZURE_TENANT_ID", "00000000-0000-0000-0000-000000000000")
+    monkeypatch.setenv("AZURE_CLIENT_ID", "00000000-0000-0000-0000-000000000000")
+    monkeypatch.setenv("AZURE_CLIENT_SECRET", "dummy-secret")
+    monkeypatch.setenv("AZURE_SUBSCRIPTION_ID", "00000000-0000-0000-0000-000000000000")
 
     from src.integrations.batch_export_runner import BatchExportRunner
 

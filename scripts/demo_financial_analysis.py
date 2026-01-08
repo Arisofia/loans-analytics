@@ -10,12 +10,16 @@ import logging
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
+
+plt: Any
 
 try:
     import matplotlib
     # Use non-interactive backend for scripts/tests to avoid GUI/display-related errors
     matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as _plt
+    plt = _plt
     HAS_MATPLOTLIB = True
 except Exception:
     # Matplotlib may not be installed in lightweight CI/test environments.
@@ -91,7 +95,7 @@ def main():
         print(f"Generated {len(df)} sample loans.")
 
     # Import here to avoid import-time side-effects during pytest collection.
-    from src.financial_analysis import FinancialAnalyzer
+    from src.analytics.financial_analysis import FinancialAnalyzer
 
     analyzer = FinancialAnalyzer()
 

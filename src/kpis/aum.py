@@ -2,8 +2,8 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 
-from src.kpis.base import (KPICalculator, KPIMetadata, create_context,
-                           safe_numeric)
+from src.kpis.base import KPICalculator, KPIMetadata, create_context
+from src.utils.numeric import safe_numeric
 
 
 class AUMCalculator(KPICalculator):
@@ -30,6 +30,10 @@ class AUMCalculator(KPICalculator):
             "outstanding_loan_value"
             if "outstanding_loan_value" in df.columns
             else "outstanding_balance_usd"
+            if "outstanding_balance_usd" in df.columns
+            else "total_receivable_usd"
+            if "total_receivable_usd" in df.columns
+            else "balance"
         )
 
         if status_col not in df.columns or balance_col not in df.columns:

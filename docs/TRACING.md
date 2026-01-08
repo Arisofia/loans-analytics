@@ -183,7 +183,7 @@ Wrap your own code with spans:
 
 ```python
 from tracing_setup import get_tracer  # dashboard (dashboard/tracing_setup.py)
-# from src.tracing_setup import get_tracer  # pipeline modules
+# from src.utils.tracing.setup import get_tracer  # pipeline modules
 
 tracer = get_tracer(__name__)
 
@@ -215,7 +215,7 @@ def my_business_logic():
 In `src/tracing_setup.py`:
 
 ```python
-from src.tracing_setup import init_tracing
+from src.utils.tracing.setup import init_tracing
 
 # Initialize with custom endpoint
 init_tracing(
@@ -239,7 +239,7 @@ init_tracing(
 2. **Verify tracing initialization**:
 
    ```bash
-   python -c "from src.tracing_setup import init_tracing; init_tracing(); print('OK')"
+   python -c "from src.utils.tracing.setup import init_tracing; init_tracing(); print('OK')"
    ```
 
 3. **Enable debug logging**:
@@ -282,7 +282,7 @@ If HTTP or database calls aren't traced:
 3. Check that imports happen **after** instrumentation:
 
    ```python
-   from src.tracing_setup import init_tracing, enable_auto_instrumentation
+   from src.utils.tracing.setup import init_tracing, enable_auto_instrumentation
    init_tracing()
    enable_auto_instrumentation()
 
@@ -294,7 +294,7 @@ If HTTP or database calls aren't traced:
 ### Trace an HTTP call to Cascade API
 
 ```python
-from src.tracing_setup import get_tracer
+from src.utils.tracing.setup import get_tracer
 import httpx
 
 tracer = get_tracer(__name__)
@@ -320,7 +320,7 @@ The HTTP call will be automatically instrumented with attributes like:
 ### Trace a database query
 
 ```python
-from src.tracing_setup import get_tracer
+from src.utils.tracing.setup import get_tracer
 import psycopg
 
 tracer = get_tracer(__name__)

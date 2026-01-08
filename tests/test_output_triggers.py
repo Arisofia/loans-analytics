@@ -1,11 +1,15 @@
-import json
 import pandas as pd
-from pathlib import Path
 
-from src.pipeline.output import UnifiedOutput, PersistContext
+from src.pipeline.output import UnifiedOutput
 
 
 def test_dashboard_trigger_on_persist(monkeypatch, tmp_path):
+    # Mock Azure credentials to avoid validation errors during UnifiedOutputManager init
+    monkeypatch.setenv("AZURE_TENANT_ID", "00000000-0000-0000-0000-000000000000")
+    monkeypatch.setenv("AZURE_CLIENT_ID", "00000000-0000-0000-0000-000000000000")
+    monkeypatch.setenv("AZURE_CLIENT_SECRET", "dummy-secret")
+    monkeypatch.setenv("AZURE_SUBSCRIPTION_ID", "00000000-0000-0000-0000-000000000000")
+
     # Arrange: create a simple df and metrics
     df = pd.DataFrame({"a": [1, 2, 3]})
     metrics = {"AUM": {"current_value": 100.0, "status": "ok"}}
@@ -33,6 +37,11 @@ def test_dashboard_trigger_on_persist(monkeypatch, tmp_path):
     monkeypatch.setattr("src.integrations.unified_output_manager.UnifiedOutputManager.export_kpi_metrics_only", fake_export)
 
     # Note: UnifiedOutput expects the 'outputs' dict directly under pipeline.phases.outputs
+    # Wait, looking at src/pipeline/output.py:35:
+    # self.config = config.get("pipeline", {}).get("phases", {}).get("outputs", {})
+    # So the test's structure {"pipeline": {"phases": {"outputs": config["outputs"]}}} should work.
+    
+    # Let's verify the config structure in the test
     uo = UnifiedOutput({"pipeline": {"phases": {"outputs": config["outputs"]}}}, run_id=run_ids["pipeline"])
 
     # Act

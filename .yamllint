@@ -2,6 +2,10 @@ extends: default
 ignore: |
   pnpm-lock.yaml
   apps/web/pnpm-lock.yaml
+  node_modules/
+  .venv/
+  dist/
+  build/
 rules:
   line-length:
     max: 120

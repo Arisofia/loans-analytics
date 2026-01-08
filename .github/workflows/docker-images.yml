@@ -28,7 +28,7 @@ jobs:
     uses: ./.github/workflows/reusable-secret-check.yml
     # Require ACR secrets as primary registry; Docker Hub is now optional
     with:
-      secrets: ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD
+      secret_names: ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD
     secrets: inherit
 
   build-and-push:

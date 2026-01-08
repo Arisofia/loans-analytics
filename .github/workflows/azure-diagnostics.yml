@@ -9,27 +9,27 @@ permissions:
 
 jobs:
   validate-azure:
-    uses: Abaco-Technol/abaco-loans-analytics/.github/workflows/reusable-secret-check.yml@main
+    uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secrets: "AZURE_CREDENTIALS"
+      secret_names: "AZURE_CREDENTIALS"
     secrets: inherit
 
   validate-acr:
-    uses: Abaco-Technol/abaco-loans-analytics/.github/workflows/reusable-secret-check.yml@main
+    uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secrets: "ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD"
+      secret_names: "ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD"
     secrets: inherit
 
   validate-storage:
-    uses: Abaco-Technol/abaco-loans-analytics/.github/workflows/reusable-secret-check.yml@main
+    uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secrets: "AZURE_STORAGE_ACCOUNT_NAME,AZURE_STORAGE_CONNECTION_STRING"
+      secret_names: "AZURE_STORAGE_ACCOUNT_NAME,AZURE_STORAGE_CONNECTION_STRING"
     secrets: inherit
 
   validate-swa:
-    uses: Abaco-Technol/abaco-loans-analytics/.github/workflows/reusable-secret-check.yml@main
+    uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secrets: "AZURE_STATIC_WEB_APPS_API_TOKEN"
+      secret_names: "AZURE_STATIC_WEB_APPS_API_TOKEN"
     secrets: inherit
 
   diagnostics:
@@ -45,11 +45,11 @@ jobs:
           echo "diagnostics start: $(date -u)" > diagnostics/README.txt
 
       - name: Set up Azure CLI
-        uses: azure/CLI@v1
+        uses: azure/cli@v2
         with:
+          azcliversion: '2.49.0'
           inlineScript: |
             az --version
-          azcliversion: "2.49.0"
 
       - name: Azure login (service principal)
         if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}
@@ -88,7 +88,7 @@ jobs:
             echo "validate-acr: ${{ needs.validate-acr.outputs.all_secrets_present }}"
             echo "validate-storage: ${{ needs.validate-storage.outputs.all_secrets_present }}"
             echo "validate-swa: ${{ needs.validate-swa.outputs.all_secrets_present }}"
-            ls -lah diagnostics || true
+            ls -lah diagnostics
           } > diagnostics/summary.txt
 
       - name: Upload diagnostics artifact

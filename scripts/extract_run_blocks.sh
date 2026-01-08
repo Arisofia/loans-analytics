@@ -23,6 +23,8 @@ for f in .github/workflows/*.{yml,yaml}; do
       if ($0 ~ /^[^[:space:]]+[[:space:]]*:[^:]/) { inside=0; close(file); next }
       # Strip leading indentation up to the content
       sub(/^[ \t]*/, "", $0)
+      # Remove GitHub expressions like ${{ ... }} to avoid invalid Bash after extraction
+      gsub(/\$\{\{[^}]+\}\}/, "")
       print $0 >> file
     }
     END { if (inside) close(file) }

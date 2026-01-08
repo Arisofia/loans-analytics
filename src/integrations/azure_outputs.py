@@ -110,6 +110,39 @@ class AzureStorageClient:
             logger.error(f"Failed to upload DataFrame to Azure: {e}")
             return None
 
+    def upload_files(
+        self,
+        file_paths: List[Path],
+        prefix: str,
+        max_workers: int = 10,
+    ) -> Dict[str, str]:
+        """Upload multiple files to Azure Blob Storage in parallel."""
+        if not self.client:
+            logger.warning("Azure Storage client not initialized")
+            return {}
+
+        from concurrent.futures import ThreadPoolExecutor
+        
+        uploaded: Dict[str, str] = {}
+        
+        def _upload_single(path: Path):
+            if not path.exists():
+                return None
+            blob_name = f"{prefix}/{path.name}"
+            url = self.upload_file(path, blob_name)
+            if url:
+                return path.name, url
+            return None
+
+        with ThreadPoolExecutor(max_workers=min(len(file_paths), max_workers)) as executor:
+            results = list(executor.map(_upload_single, file_paths))
+
+        for res in results:
+            if res:
+                uploaded[res[0]] = res[1]
+
+        return uploaded
+
     def upload_batch_exports(
         self,
         export_dir: Path,
@@ -122,16 +155,15 @@ class AzureStorageClient:
             return {}
 
         patterns = patterns or ["*.csv", "*.json", "*.parquet"]
-        uploaded = {}
-
+        file_paths = []
         for pattern in patterns:
-            for file_path in export_dir.glob(pattern):
-                blob_name = f"exports/{run_id}/{file_path.name}"
-                url = self.upload_file(file_path, blob_name)
-                if url:
-                    uploaded[file_path.name] = url
+            file_paths.extend(list(export_dir.glob(pattern)))
 
-        return uploaded
+        if not file_paths:
+            return {}
+
+        prefix = f"exports/{run_id}"
+        return self.upload_files(file_paths, prefix)
 
     @staticmethod
     def _guess_content_type(file_path: Path) -> str:
@@ -265,33 +297,23 @@ class AzureDashboardClient:
             return False
 
     def sync_batch_export(self, export_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Sync batch export data to Azure (storage + dashboards)."""
+        """Sync batch export data to Azure Dashboards."""
         results = {
-            "storage_uploaded": {},
             "dashboard_updated": False,
             "success": False,
         }
 
         try:
-            export_dir = export_data.get("export_dir", Path("data/exports"))
-            if isinstance(export_dir, str):
-                export_dir = Path(export_dir)
-
-            storage_client = AzureStorageClient()
-            if storage_client.client:
-                run_id = export_data.get("run_id", "unknown")
-                results["storage_uploaded"] = storage_client.upload_batch_exports(
-                    export_dir, run_id
-                )
-
             if "kpi_metrics" in export_data:
-                self.update_dashboard(export_data["kpi_metrics"])
-                results["dashboard_updated"] = True
-
-            results["success"] = True
+                success = self.update_dashboard(export_data["kpi_metrics"])
+                results["dashboard_updated"] = success
+                results["success"] = success
+            else:
+                logger.warning("No kpi_metrics found in export_data for Azure Dashboard")
+                results["success"] = True # Nothing to do, but not a failure
 
         except Exception as e:
-            logger.error(f"Azure batch sync failed: {e}")
+            logger.error(f"Azure Dashboard sync failed: {e}")
             results["error"] = str(e)
 
         return results

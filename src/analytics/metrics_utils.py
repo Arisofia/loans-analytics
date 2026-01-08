@@ -8,7 +8,8 @@ import pandas as pd
 
 from src.pipeline.data_validation import (ANALYTICS_NUMERIC_COLUMNS,
                                           REQUIRED_ANALYTICS_COLUMNS,
-                                          safe_numeric, validate_dataframe)
+                                          validate_dataframe)
+from src.utils.numeric import safe_numeric
 
 # Alias for backward compatibility and clarity within this module
 REQUIRED_KPI_COLUMNS = REQUIRED_ANALYTICS_COLUMNS
@@ -32,8 +33,6 @@ def _coerce_numeric(series: pd.Series, field_name: str) -> pd.Series:
     """
 
     numeric = safe_numeric(series)
-    if numeric.isna().all() and not series.empty:
-        raise ValueError(f"Field '{field_name}' must contain at least one numeric value")
     return numeric
 
 

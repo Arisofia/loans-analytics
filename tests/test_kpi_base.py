@@ -1,5 +1,6 @@
 import pandas as pd
-from src.kpis.base import KPIMetadata, create_context, safe_numeric
+from src.kpis.base import KPIMetadata, create_context
+from src.utils.numeric import safe_numeric
 
 
 class TestSafeNumeric:
@@ -19,11 +20,12 @@ class TestSafeNumeric:
         assert result[1] == 10.0
 
     def test_safe_numeric_coercion(self):
+        import numpy as np
         series = pd.Series(["1.5", "2.5", "invalid"])
         result = safe_numeric(series)
         assert result[0] == 1.5
         assert result[1] == 2.5
-        assert result[2] == 0.0
+        assert np.isnan(result[2])
 
 
 class TestCreateContext:

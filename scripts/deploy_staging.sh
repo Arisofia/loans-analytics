@@ -117,7 +117,7 @@ echo "✓ Python version: $PYTHON_VERSION" | tee -a "$LOG_FILE"
 # 7. Verify key modules
 echo ""
 echo "Step 7: Verifying module imports..."
-"$STAGING_ENV/bin/python" -c "import pandas as pd; import numpy as np; from src.kpi_engine_v2 import KPIEngineV2; from src.pipeline.orchestrator import UnifiedPipeline, PipelineConfig; print('✓ All key modules imported successfully')" 2>&1 | tee -a "$LOG_FILE"
+"$STAGING_ENV/bin/python" -c "import pandas as pd; import numpy as np; from src.kpis import KPIEngineV2; from src.pipeline.orchestrator import UnifiedPipeline, PipelineConfig; print('✓ All key modules imported successfully')" 2>&1 | tee -a "$LOG_FILE"
 
 # 8. Generate deployment summary
 echo ""

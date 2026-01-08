@@ -91,7 +91,7 @@ jobs:
     if: ${{ github.event_name != 'pull_request' }}
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secrets: >-
+      secret_names: >-
         DOCKER_USERNAME,DOCKER_PASSWORD|DOCKER_TOKEN,AZURE_ACR_LOGIN_SERVER,
         AZURE_ACR_PASSWORD,AZURE_WEBAPP_PUBLISH_PROFILE,FIGMA_TOKEN
     secrets: inherit
@@ -130,7 +130,7 @@ jobs:
         needs.dependency-validation.result == 'failure' ||
         needs.trigger-validation.result == 'failure' ||
         needs.secrets-validation.result == 'failure' ||
-        needs.secrets-presence.outputs.all_secrets_present == 'false'
+        (needs.secrets-presence.result != 'skipped' && needs.secrets-presence.outputs.all_secrets_present == 'false')
       )
     steps:
       - name: Fail on validation error

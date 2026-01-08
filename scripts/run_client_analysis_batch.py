@@ -11,7 +11,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 # Third-Party Imports
 import pandas as pd
@@ -19,14 +19,16 @@ import requests
 
 # Optional: Azure Application Insights tracing
 try:
-    from src.azure_tracing import setup_azure_tracing, trace_analytics_job
+    from src.utils.tracing.azure import setup_azure_tracing, trace_analytics_job
 
     AZURE_TRACING_ENABLED = True
 except ImportError:
     AZURE_TRACING_ENABLED = False
 
-    def trace_analytics_job(job_name: str, client_id: str, run_id: str):
-        def decorator(func):
+    def trace_analytics_job(
+        job_name: str, client_id: str, run_id: str
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             return func
 
         return decorator

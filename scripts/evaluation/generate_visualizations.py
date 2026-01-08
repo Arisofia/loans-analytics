@@ -57,7 +57,7 @@ def plot_classification_metrics(metrics: Dict, output_dir: Path):
             bar.get_x() + bar.get_width() / 2.0, height, f"{height:.3f}", ha="center", va="bottom"
         )
 
-    ax.set_ylim([0, 1.1])
+    ax.set_ylim(0, 1.1)
     ax.set_ylabel("Score")
     ax.set_title("Classification Metrics")
     ax.axhline(y=0.8, color="r", linestyle="--", alpha=0.3, label="Target Threshold")
@@ -111,8 +111,8 @@ def plot_roc_curve(metrics: Dict, output_dir: Path):
     ax.plot(fpr, tpr, color="darkorange", lw=2, label=f"ROC curve (AUC = {roc_auc:.3f})")
     ax.plot([0, 1], [0, 1], color="navy", lw=2, linestyle="--", label="Random Classifier")
 
-    ax.set_xlim([0.0, 1.0])
-    ax.set_ylim([0.0, 1.05])
+    ax.set_xlim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.05)
     ax.set_xlabel("False Positive Rate")
     ax.set_ylabel("True Positive Rate")
     ax.set_title("Receiver Operating Characteristic (ROC) Curve")
@@ -135,8 +135,8 @@ def plot_financial_metrics(metrics: Dict, output_dir: Path):
 
     _, ax = plt.subplots(figsize=(12, 6))
     bars = ax.bar(
-        financial_metrics.keys(),
-        financial_metrics.values(),
+        list(financial_metrics.keys()),
+        list(financial_metrics.values()),
         color=["#1abc9c", "#9b59b6", "#34495e", "#e67e22"],
     )
 
@@ -152,7 +152,7 @@ def plot_financial_metrics(metrics: Dict, output_dir: Path):
             fontweight="bold",
         )
 
-    ax.set_ylim([0, 1.1])
+    ax.set_ylim(0, 1.1)
     ax.set_ylabel("Score", fontsize=12)
     ax.set_title("Financial Domain-Specific Metrics", fontsize=14, fontweight="bold")
     ax.axhline(y=0.85, color="g", linestyle="--", alpha=0.5, label="Excellence Threshold")

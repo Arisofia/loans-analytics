@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.config.secrets import get_secrets_manager
 
 try:
-    from src.azure_tracing import setup_azure_tracing
+    from src.utils.tracing.azure import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for validate_azure_connection")

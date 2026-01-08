@@ -20,10 +20,10 @@ try:
         url = f"https://api.figma.com/v1/files/{FIGMA_FILE_ID}"
         response = requests.get(url, headers=headers, timeout=30)
         data = response.json()
-except requests.exceptions.Timeout:
-    raise RuntimeError("Figma API request timed out.")
+except requests.exceptions.Timeout as exc:
+    raise RuntimeError("Figma API request timed out.") from exc
 except requests.exceptions.RequestException as e:
-    raise RuntimeError(f"Figma API request failed: {e}")
+    raise RuntimeError(f"Figma API request failed: {e}") from e
 
 # Save the file data to a local JSON for inspection
 output_path = "exports/presentation/figma_file_data.json"

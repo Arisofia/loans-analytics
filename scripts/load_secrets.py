@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.config.secrets import get_secrets_manager
+from src.config.secrets import get_secrets_manager  # noqa: E402
 
 load_dotenv()
 

@@ -39,6 +39,7 @@ jobs:
         run: npx wait-on http://localhost:3000
 
       - name: Seed E2E test data
+        if: ${{ secrets.SUPABASE_URL && secrets.SUPABASE_SERVICE_ROLE_KEY && secrets.E2E_TEST_EMAIL && secrets.E2E_TEST_PASSWORD }}
         working-directory: apps/web
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -50,6 +51,7 @@ jobs:
         run: npm run e2e:seed
 
       - name: Run Playwright tests (CI)
+        if: ${{ secrets.E2E_TEST_EMAIL && secrets.E2E_TEST_PASSWORD }}
         working-directory: apps/web
         env:
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
@@ -57,7 +59,7 @@ jobs:
         run: npm run test:e2e:ci
 
       - name: Teardown E2E test data
-        if: always()
+        if: ${{ always() && (secrets.SUPABASE_URL && secrets.SUPABASE_SERVICE_ROLE_KEY) }}
         working-directory: apps/web
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

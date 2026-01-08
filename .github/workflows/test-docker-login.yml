@@ -21,6 +21,9 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
           AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
           AZURE_ACR_USERNAME: ${{ secrets.AZURE_ACR_USERNAME }}
           AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
@@ -28,18 +31,23 @@ jobs:
           set -euo pipefail
           echo "Docker and ACR diagnostics (secrets not printed)"
           docker --version || true
-          for var in DOCKER_USERNAME DOCKER_TOKEN DOCKER_PASSWORD AZURE_ACR_LOGIN_SERVER AZURE_ACR_USERNAME AZURE_ACR_PASSWORD; do
+          for var in DOCKER_USERNAME DOCKER_TOKEN DOCKER_PASSWORD ACR_LOGIN_SERVER ACR_USERNAME ACR_PASSWORD AZURE_ACR_LOGIN_SERVER AZURE_ACR_USERNAME AZURE_ACR_PASSWORD; do
             if [ -n "${!var:-}" ]; then
               echo "$var: present"
             else
               echo "$var: missing"
             fi
           done
-          if [ -n "${AZURE_ACR_LOGIN_SERVER:-}" ] && [ -n "${AZURE_ACR_PASSWORD:-}" ]; then
-            echo "Attempting login to ACR $AZURE_ACR_LOGIN_SERVER"
-            if printf '%s' "$AZURE_ACR_PASSWORD" | docker login "$AZURE_ACR_LOGIN_SERVER" -u "$AZURE_ACR_USERNAME" --password-stdin >/dev/null 2>&1; then
+          # Prefer ACR_* then AZURE_ACR_*
+          TARGET_ACR_SERVER="${ACR_LOGIN_SERVER:-$AZURE_ACR_LOGIN_SERVER}"
+          TARGET_ACR_USER="${ACR_USERNAME:-$AZURE_ACR_USERNAME}"
+          TARGET_ACR_PASS="${ACR_PASSWORD:-$AZURE_ACR_PASSWORD}"
+
+          if [ -n "$TARGET_ACR_SERVER" ] && [ -n "$TARGET_ACR_PASS" ]; then
+            echo "Attempting login to ACR $TARGET_ACR_SERVER"
+            if printf '%s' "$TARGET_ACR_PASS" | docker login "$TARGET_ACR_SERVER" -u "$TARGET_ACR_USER" --password-stdin >/dev/null 2>&1; then
               echo "ACR login succeeded"
-              docker logout "$AZURE_ACR_LOGIN_SERVER" || true
+              docker logout "$TARGET_ACR_SERVER" || true
             else
               echo "ACR login failed"
             fi
@@ -52,6 +60,9 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
           AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
           AZURE_ACR_USERNAME: ${{ secrets.AZURE_ACR_USERNAME }}
           AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
@@ -59,12 +70,17 @@ jobs:
           set -euo pipefail
           echo "Starting login check (secrets not printed)"
 
+          # Prefer ACR_* then AZURE_ACR_*
+          TARGET_ACR_SERVER="${ACR_LOGIN_SERVER:-$AZURE_ACR_LOGIN_SERVER}"
+          TARGET_ACR_USER="${ACR_USERNAME:-$AZURE_ACR_USERNAME}"
+          TARGET_ACR_PASS="${ACR_PASSWORD:-$AZURE_ACR_PASSWORD}"
+
           # Try ACR first if credentials are present
-          if [ -n "${AZURE_ACR_LOGIN_SERVER:-}" ] && [ -n "${AZURE_ACR_PASSWORD:-}" ]; then
-            echo "Attempting login to ACR ${AZURE_ACR_LOGIN_SERVER}"
-            if printf '%s' "$AZURE_ACR_PASSWORD" | docker login "$AZURE_ACR_LOGIN_SERVER" -u "$AZURE_ACR_USERNAME" --password-stdin >/dev/null 2>&1; then
+          if [ -n "$TARGET_ACR_SERVER" ] && [ -n "$TARGET_ACR_PASS" ]; then
+            echo "Attempting login to ACR ${TARGET_ACR_SERVER}"
+            if printf '%s' "$TARGET_ACR_PASS" | docker login "$TARGET_ACR_SERVER" -u "$TARGET_ACR_USER" --password-stdin >/dev/null 2>&1; then
               echo "ACR login succeeded"
-              docker logout "$AZURE_ACR_LOGIN_SERVER" || true
+              docker logout "$TARGET_ACR_SERVER" || true
               exit 0
             else
               echo "ACR login failed"

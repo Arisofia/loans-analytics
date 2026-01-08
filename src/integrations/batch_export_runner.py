@@ -181,10 +181,9 @@ class BatchExportRunner:
         try:
             if export_type == "kpi-only":
                 return self.export_kpi_only()
-            elif export_type == "dashboard":
+            if export_type == "dashboard":
                 return self.export_dashboard()
-            else:
-                return self.export_full()
+            return self.export_full()
 
         except Exception as e:
             logger.error(f"Batch export failed: {e}", exc_info=True)

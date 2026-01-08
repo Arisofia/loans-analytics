@@ -1,10 +1,127 @@
 """Module for data validation utilities and functions."""
 
+import json
 import re
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
+from typing import Any, Dict, Iterable, List, Optional
 
 import pandas as pd
+
+from src.utils.numeric import safe_numeric
+from src.utils.date_utils import ISO8601_REGEX
+
+
+@dataclass
+class DataQualityReport:
+    """Structured data quality audit report."""
+
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    status: str = "passed"
+    score: float = 100.0
+    total_rows: int = 0
+    missing_columns: List[str] = field(default_factory=list)
+    type_errors: List[str] = field(default_factory=list)
+    null_counts: Dict[str, int] = field(default_factory=dict)
+    summary: Dict[str, Any] = field(default_factory=dict)
+
+    def to_json(self) -> str:
+        return json.dumps(asdict(self), indent=2)
+
+    def to_markdown(self) -> str:
+        lines = [
+            "# DATA QUALITY REPORT",
+            f"**Status**: {'🟢 PASSED' if self.status == 'passed' else '🔴 FAILED'}",
+            f"**Score**: {self.score}%",
+            f"**Timestamp**: {self.timestamp}",
+            f"**Total Rows**: {self.total_rows}",
+            "",
+        ]
+        if self.missing_columns:
+            lines.append("## ❌ Missing Columns")
+            for col in self.missing_columns:
+                lines.append(f"- {col}")
+            lines.append("")
+
+        if self.type_errors:
+            lines.append("## ⚠️ Type Errors")
+            for err in self.type_errors:
+                lines.append(f"- {err}")
+            lines.append("")
+
+        if self.null_counts:
+            lines.append("## 🔍 Null Value Analysis")
+            for col, count in self.null_counts.items():
+                if count > 0:
+                    lines.append(f"- **{col}**: {count} nulls")
+            lines.append("")
+
+        return "\n".join(lines)
+
+
+class DataQualityReporter:
+    """Automated data quality analysis and reporting."""
+
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+        self.report = DataQualityReport(total_rows=len(df))
+
+    def run_audit(
+        self,
+        required_columns: Optional[Iterable[str]] = None,
+        numeric_columns: Optional[Iterable[str]] = None,
+        date_columns: Optional[Iterable[str]] = None,
+    ) -> DataQualityReport:
+        """Execute full quality audit and return the report."""
+        cols_lower = {str(c).lower(): c for c in self.df.columns}
+
+        # 1. Check required columns
+        if required_columns:
+            for col in required_columns:
+                if col.lower() not in cols_lower:
+                    self.report.missing_columns.append(col)
+
+        # 2. Check nulls for important columns
+        check_cols = list(required_columns or []) + list(numeric_columns or [])
+        for col in set(check_cols):
+            resolved = cols_lower.get(col.lower())
+            if resolved:
+                null_count = self.df[resolved].isnull().sum()
+                self.report.null_counts[col] = int(null_count)
+
+        # 3. Type validation
+        if numeric_columns:
+            for col in numeric_columns:
+                resolved = cols_lower.get(col.lower())
+                if resolved:
+                    original_nulls = self.df[resolved].isnull().sum()
+                    coerced = safe_numeric(self.df[resolved])
+                    coerced_nulls = coerced.isnull().sum()
+                    if coerced_nulls > original_nulls:
+                        self.report.type_errors.append(f"Column '{col}' contains non-numeric values")
+
+        if date_columns:
+            for col in date_columns:
+                resolved = cols_lower.get(col.lower())
+                if resolved:
+                    original_nulls = self.df[resolved].isnull().sum()
+                    coerced = pd.to_datetime(self.df[resolved], errors="coerce")
+                    coerced_nulls = coerced.isnull().sum()
+                    if coerced_nulls > original_nulls:
+                        self.report.type_errors.append(f"Column '{col}' contains invalid date values")
+
+        # 4. Final scoring
+        deductions = (
+            (len(self.report.missing_columns) * 20)
+            + (len(self.report.type_errors) * 10)
+            + (sum(1 for c, n in self.report.null_counts.items() if n > 0) * 2)
+        )
+        self.report.score = max(0.0, 100.0 - deductions)
+        if self.report.missing_columns or self.report.score < 70:
+            self.report.status = "failed"
+
+        return self.report
+
 
 REQUIRED_ANALYTICS_COLUMNS: List[str] = [
     "loan_amount",
@@ -36,8 +153,6 @@ NUMERIC_COLUMNS: List[str] = [
     "discounted_balance_usd",
     "cash_available_usd",
 ]
-
-ISO8601_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$")
 
 
 class ColumnValidator:
@@ -179,14 +294,6 @@ def assert_dataframe_schema(
         raise AssertionError(f"{stage} schema validation failed: {msg}") from e
 
 
-def safe_numeric(series: pd.Series) -> pd.Series:
-    """Coerce a series to numeric, handling currency symbols and commas."""
-    if series.dtype == "object":
-        clean = series.astype(str).str.replace(r"[$€£¥₽₡,%]", "", regex=True).str.strip()
-        return pd.to_numeric(clean, errors="coerce")
-    return pd.to_numeric(series, errors="coerce")
-
-
 def validate_numeric_bounds(
     df: pd.DataFrame, columns: Optional[List[str]] = None
 ) -> Dict[str, bool]:
@@ -272,3 +379,48 @@ def validate_no_nulls(df: pd.DataFrame, columns: Optional[List[str]] = None) -> 
         if col in df.columns:
             validation[f"{col}_no_nulls"] = not df[col].isnull().any()
     return validation
+
+
+def check_referential_integrity(df: pd.DataFrame, key_columns: Optional[List[str]] = None) -> bool:
+    """Check that key columns have no nulls and no duplicates."""
+    cols = key_columns or ["loan_id"]
+    if any(col not in df.columns for col in cols):
+        return False
+
+    try:
+        if len(df) > 0:
+            subset = df[cols]
+            if subset.isna().any().any():
+                return False
+            if df.duplicated(subset=cols).any():
+                return False
+        return True
+    except Exception:
+        return False
+
+
+def compute_freshness_hours(as_of: datetime, now: Optional[datetime] = None) -> float:
+    """Compute hours since the as_of date."""
+    now_dt = now or datetime.now(timezone.utc)
+    # Ensure as_of is timezone-aware for comparison
+    if as_of.tzinfo is None:
+        as_of = as_of.replace(tzinfo=timezone.utc)
+    delta = now_dt - as_of
+    return delta.total_seconds() / 3600.0
+
+
+def compute_completeness(df: pd.DataFrame, required_columns: Optional[List[str]] = None) -> float:
+    """Compute the percentage of non-null values in required columns."""
+    required = required_columns or []
+    if not required or df.empty:
+        return 1.0
+
+    missing = 0
+    for col in required:
+        if col not in df.columns:
+            missing += len(df)
+        else:
+            missing += int(df[col].isna().sum())
+
+    total = len(df) * len(required)
+    return max(0.0, min(1.0, 1.0 - (missing / total)))

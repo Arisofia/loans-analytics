@@ -92,7 +92,7 @@ def clean_numeric(col):
         numeric_ratio = pd.to_numeric(cleaned, errors="coerce").notna().mean()
         if numeric_ratio >= 0.5:  # Slightly more lenient ratio
             col = pd.to_numeric(
-                col.astype(str).str.replace(r"[$,€%₡,]", "", regex=True).str.replace(r"\((.*)\)", r"-\1", regex=True), 
+                col.astype(str).str.replace(r"[$,€%₡,]", "", regex=True).str.replace(r"\((.*)\)", r"-\1", regex=True),
                 errors="coerce"
             )
     return col
@@ -107,7 +107,7 @@ def normalize_dataframe(df):
         .str.replace(" ", "_")
         .str.replace(r"[^a-z0-9_]", "", regex=True)
     )
-    
+
     # Proactive column mapping for common variations
     col_mappings = {
         "outstanding_loan_value": [
@@ -128,7 +128,7 @@ def normalize_dataframe(df):
         "sales_agent": ["agent", "vendedor", "kam", "sales_person"],
         "categoria": ["category", "segment", "segmento", "product_category", "product_type"],
     }
-    
+
     for target, variations in col_mappings.items():
         if target not in df.columns:
             for var in variations:
@@ -419,7 +419,7 @@ with st.sidebar:
                     else:
                         normalized_df = normalize_dataframe(df)
                         dfs[name] = normalized_df
-                        
+
                         # Apply fuzzy mapping to identify core tables
                         if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith("loans"):
                             mapped_dfs["loan_data"] = normalized_df
@@ -630,13 +630,13 @@ if "sales_agent" in merged.columns:
     agg_map = {"loan_id": "count"}
     if "outstanding_loan_value" in merged.columns:
         agg_map["outstanding_loan_value"] = "sum"
-    
+
     sales_agg = (
         merged.groupby("sales_agent")
         .agg(agg_map)
         .reset_index()
     )
-    
+
     if "outstanding_loan_value" in merged.columns:
         sales_agg = sales_agg.rename(columns={"outstanding_loan_value": "Volume", "loan_id": "Count"})
         fig_sales = px.treemap(
@@ -727,28 +727,28 @@ with adv_tabs[0]:
             "Avg_Loan": "Avg Loan Size ($)",
             "Delinquency_Rate": "Delinquency (%)"
         })
-        
+
         c1, c2 = st.columns([1, 1])
         with c1:
             fig_seg_aum = px.bar(
-                df_seg_display, 
-                x="Segment", 
-                y="Portfolio Value ($)", 
+                df_seg_display,
+                x="Segment",
+                y="Portfolio Value ($)",
                 title="AUM by Segment",
                 text_auto='.2s'
             )
             st.plotly_chart(apply_theme(fig_seg_aum), use_container_width=True)
         with c2:
             fig_seg_risk = px.bar(
-                df_seg_display, 
-                x="Segment", 
-                y="Delinquency (%)", 
+                df_seg_display,
+                x="Segment",
+                y="Delinquency (%)",
                 title="Risk by Segment",
                 color="Delinquency (%)",
                 color_continuous_scale="Reds"
             )
             st.plotly_chart(apply_theme(fig_seg_risk), use_container_width=True)
-            
+
         st.dataframe(styled_df(df_seg_display), use_container_width=True)
     else:
         st.info("Segmentation data not found. Ensure 'Client Segment' column is present in loans data.")
@@ -760,16 +760,16 @@ with adv_tabs[1]:
         df_churn = pd.DataFrame(churn_data)
         if "month" in df_churn.columns:
             df_churn["month"] = pd.to_datetime(df_churn["month"])
-            
+
             fig_churn = px.line(
-                df_churn, 
-                x="month", 
-                y=["churn90d_pct"], 
+                df_churn,
+                x="month",
+                y=["churn90d_pct"],
                 title="90-Day Churn Rate Trend",
                 markers=True
             )
             st.plotly_chart(apply_theme(fig_churn), use_container_width=True)
-            
+
             st.write("**Churn Metrics Summary:**")
             latest_churn = df_churn.sort_values("month").iloc[-1]
             ch_c1, ch_c2, ch_c3 = st.columns(3)
@@ -787,9 +787,9 @@ with adv_tabs[2]:
         if "month" in df_ue.columns:
             df_ue["month"] = pd.to_datetime(df_ue["month"])
             fig_ue = px.line(
-                df_ue, 
-                x="month", 
-                y="ltv_cac_ratio", 
+                df_ue,
+                x="month",
+                y="ltv_cac_ratio",
                 title="LTV/CAC Ratio Trend",
                 markers=True
             )
@@ -809,10 +809,10 @@ with st.expander("View all computed KPIs"):
         for k, v in all_kpis.items():
             if isinstance(v, (int, float, str)):
                 flat_kpis.append({"KPI": kpi_label(k), "Value": format_kpi_value(k, v)})
-        
+
         if flat_kpis:
             st.table(pd.DataFrame(flat_kpis))
-        
+
         st.write("**Detailed Data Tables:**")
         table_keys = [k for k, v in all_kpis.items() if isinstance(v, list) and v]
         selected_table = st.selectbox("Select table to view", table_keys)

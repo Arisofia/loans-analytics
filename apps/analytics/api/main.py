@@ -3,7 +3,7 @@ import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 import os
 import subprocess
 
@@ -21,14 +21,15 @@ def _find_repo_root(start: Optional[Union[Path, Callable[[], Path]]] = None) -> 
     avoid type-checker issues when using the `/` operator on union types.
     """
     # If a callable was provided (e.g., a thunk that returns a Path), call it.
+    start_val: Optional[Path] = None
     if callable(start):
-        start_value = start()
+        start_val = start()
     else:
-        start_value = start
+        start_val = start
 
-    # Ensure `start_value` is a Path instance and resolved before use.
+    # Ensure `start_val` is a Path instance and resolved before use.
     start_path = (
-        Path(start_value).resolve() if start_value is not None else Path(__file__).resolve()
+        start_val.resolve() if start_val is not None else Path(__file__).resolve()
     )
     p = start_path
 
@@ -196,6 +197,7 @@ async def trigger_pipeline(
         # failures are recorded for later investigation.
         log_path = Path("logs/pipeline_subprocess.log")
         log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_file: Any
         try:
             log_file = log_path.open("a")
         except Exception:

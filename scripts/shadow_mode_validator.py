@@ -9,16 +9,17 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis import KPIEngineV2
 
 try:
-    from src.azure_tracing import setup_azure_tracing
+    from src.utils.tracing.azure import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for shadow_mode_validator")
@@ -71,7 +72,7 @@ class ShadowModeValidator:
         """Validate V2 output format and values"""
         logger.info("Validating V2 output format...")
 
-        validation_results = {
+        validation_results: Dict[str, Any] = {
             "format_valid": True,
             "value_ranges_valid": True,
             "audit_trail_complete": False,
@@ -175,7 +176,7 @@ class ShadowModeValidator:
             "all_within_tolerance": len(discrepancies) == 0,
         }
 
-    def run_validation_suite(self, test_data: pd.DataFrame, v1_metrics_sample: dict = None) -> dict:
+    def run_validation_suite(self, test_data: pd.DataFrame, v1_metrics_sample: Optional[dict] = None) -> dict:
         """Run complete validation suite"""
         logger.info("=" * 70)
         logger.info("SHADOW MODE VALIDATION SUITE")
@@ -189,10 +190,10 @@ class ShadowModeValidator:
         v2_validation = self.validate_v2_outputs(v2_result)
         self.results["v2_validation"] = v2_validation
 
-        # Simulate comparison (V1 would run in parallel)
-        if v1_metrics_sample is None:
-            # Use synthetic V1 metrics for comparison
-            v1_metrics_sample = {
+        # Use synthetic V1 metrics for comparison if none provided
+        v1_metrics_to_use = v1_metrics_sample
+        if v1_metrics_to_use is None:
+            v1_metrics_to_use = {
                 "PAR30": {"value": 2.20},  # ~0.5% variance
                 "PAR90": {"value": 0.31},  # ~3% variance
                 "CollectionRate": {"value": 12.0},  # ~0.25% variance
@@ -200,7 +201,7 @@ class ShadowModeValidator:
 
         # Compare outputs if both succeeded
         if v2_result["status"] == "success":
-            comparison = self.compare_outputs(v1_metrics_sample, v2_result["metrics"])
+            comparison = self.compare_outputs(v1_metrics_to_use, v2_result["metrics"])
             self.results["comparison"] = comparison
 
         logger.info("=" * 70)

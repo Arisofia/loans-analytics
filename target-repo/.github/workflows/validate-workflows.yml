@@ -17,7 +17,6 @@ jobs:
           path: .github/workflows
           # fail_on_error: true  # defaults to failing the step on errors
 
-
   structure-validation:
     name: YAML Structure Validation
     runs-on: ubuntu-latest

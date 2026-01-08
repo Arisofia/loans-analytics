@@ -34,43 +34,78 @@ class UnifiedOutputManager:
     """
 
     def __init__(self):
-        self.figma_client = FigmaClient()
-        self.azure_storage_client = AzureStorageClient()
-        self.azure_dashboard_client = AzureDashboardClient()
-        self.supabase_client = SupabaseOutputClient()
-        self.meta_client = MetaOutputClient()
-        self.notion_client = NotionOutputClient()
-
+        self._figma_client = None
+        self._azure_storage_client = None
+        self._azure_dashboard_client = None
+        self._supabase_client = None
+        self._meta_client = None
+        self._notion_client = None
         self.results = {}
+
+    @property
+    def figma_client(self) -> FigmaClient:
+        if self._figma_client is None:
+            self._figma_client = FigmaClient()
+        return self._figma_client
+
+    @property
+    def azure_storage_client(self) -> AzureStorageClient:
+        if self._azure_storage_client is None:
+            self._azure_storage_client = AzureStorageClient()
+        return self._azure_storage_client
+
+    @property
+    def azure_dashboard_client(self) -> AzureDashboardClient:
+        if self._azure_dashboard_client is None:
+            self._azure_dashboard_client = AzureDashboardClient()
+        return self._azure_dashboard_client
+
+    @property
+    def supabase_client(self) -> SupabaseOutputClient:
+        if self._supabase_client is None:
+            self._supabase_client = SupabaseOutputClient()
+        return self._supabase_client
+
+    @property
+    def meta_client(self) -> MetaOutputClient:
+        if self._meta_client is None:
+            self._meta_client = MetaOutputClient()
+        return self._meta_client
+
+    @property
+    def notion_client(self) -> NotionOutputClient:
+        if self._notion_client is None:
+            self._notion_client = NotionOutputClient()
+        return self._notion_client
 
     def configure_clients(self, config: Dict[str, Any]) -> None:
         """Configure output clients from config dict."""
         figma_cfg = config.get("figma", {})
         if figma_cfg.get("enabled"):
-            self.figma_client = FigmaClient(
+            self._figma_client = FigmaClient(
                 api_token=figma_cfg.get("token"),
                 file_key=figma_cfg.get("file_key"),
             )
 
         azure_cfg = config.get("azure", {})
         if azure_cfg.get("enabled"):
-            self.azure_storage_client = AzureStorageClient(
+            self._azure_storage_client = AzureStorageClient(
                 connection_string=azure_cfg.get("storage_connection_string")
             )
-            self.azure_dashboard_client = AzureDashboardClient(
+            self._azure_dashboard_client = AzureDashboardClient(
                 subscription_id=azure_cfg.get("subscription_id")
             )
 
         supabase_cfg = config.get("supabase", {})
         if supabase_cfg.get("enabled"):
-            self.supabase_client = SupabaseOutputClient(
+            self._supabase_client = SupabaseOutputClient(
                 url=supabase_cfg.get("url"),
                 service_role_key=supabase_cfg.get("service_role_key"),
             )
 
         meta_cfg = config.get("meta", {})
         if meta_cfg.get("enabled"):
-            self.meta_client = MetaOutputClient(
+            self._meta_client = MetaOutputClient(
                 pixel_id=meta_cfg.get("pixel_id"),
                 access_token=meta_cfg.get("access_token"),
                 ad_account_id=meta_cfg.get("ad_account_id"),
@@ -78,7 +113,7 @@ class UnifiedOutputManager:
 
         notion_cfg = config.get("notion", {})
         if notion_cfg.get("enabled"):
-            self.notion_client = NotionOutputClient(
+            self._notion_client = NotionOutputClient(
                 api_token=notion_cfg.get("api_token"),
                 database_id=notion_cfg.get("database_id"),
             )
@@ -107,48 +142,41 @@ class UnifiedOutputManager:
             "outputs": {},
         }
 
-        enabled_outputs = enabled_outputs or [
-            "figma",
-            "azure",
-            "supabase",
-            "meta",
-            "notion",
-        ]
-
-        if "figma" in enabled_outputs:
-            logger.info("Exporting to Figma...")
-            results["outputs"]["figma"] = self.figma_client.sync_batch_export(export_data, run_id)
-
-        if "azure" in enabled_outputs:
-            logger.info("Exporting to Azure...")
-            azure_results = {
+        # Define handlers for each platform
+        handlers = {
+            "figma": lambda: self.figma_client.sync_batch_export(export_data, run_id),
+            "azure": lambda: {
                 "storage": self.azure_storage_client.upload_batch_exports(
                     export_data.get("export_dir", Path("data/exports")),
                     run_id,
                 ),
                 "dashboard": self.azure_dashboard_client.sync_batch_export(export_data),
-            }
-            results["outputs"]["azure"] = azure_results
+                "success": True # Azure aggregate success is handled per-component
+            },
+            "supabase": lambda: self.supabase_client.sync_batch_export(export_data, run_id),
+            "meta": lambda: self.meta_client.sync_batch_export(export_data),
+            "notion": lambda: self.notion_client.sync_batch_export(export_data, run_id),
+        }
 
-        if "supabase" in enabled_outputs:
-            logger.info("Exporting to Supabase...")
-            results["outputs"]["supabase"] = self.supabase_client.sync_batch_export(
-                export_data, run_id
-            )
+        requested_outputs = enabled_outputs or list(handlers.keys())
 
-        if "meta" in enabled_outputs:
-            logger.info("Exporting to Meta...")
-            results["outputs"]["meta"] = self.meta_client.sync_batch_export(export_data)
+        for platform in requested_outputs:
+            if platform in handlers:
+                logger.info(f"Exporting to {platform.capitalize()}...")
+                try:
+                    results["outputs"][platform] = handlers[platform]()
+                except Exception as e:
+                    logger.error(f"Failed to export to {platform}: {e}")
+                    results["outputs"][platform] = {"success": False, "error": str(e)}
 
-        if "notion" in enabled_outputs:
-            logger.info("Exporting to Notion...")
-            results["outputs"]["notion"] = self.notion_client.sync_batch_export(export_data, run_id)
+        success_flags = []
+        for output in results["outputs"].values():
+            if isinstance(output, dict):
+                if "success" in output:
+                    success_flags.append(output["success"])
+                elif "dashboard_updated" in output: # Special case for azure dashboard
+                     success_flags.append(output.get("dashboard_updated", False))
 
-        success_flags = [
-            output.get("success")
-            for output in results["outputs"].values()
-            if isinstance(output, dict) and "success" in output
-        ]
         results["success"] = all(success_flags) if success_flags else True
 
         self._log_results(results)
