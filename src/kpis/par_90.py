@@ -3,6 +3,9 @@ from typing import Any, Dict, Tuple
 import pandas as pd
 
 from src.kpis.base import KPICalculator, KPIMetadata, create_context
+from src.utils.data_normalization import (COL_DPD_90_PLUS,
+                                          COL_OUTSTANDING_AMOUNT,
+                                          normalize_columns)
 from src.utils.numeric import safe_numeric
 
 
@@ -28,10 +31,15 @@ class PAR90Calculator(KPICalculator):
                 reason="Empty DataFrame",
             )
 
-        null_count = df["dpd_90_plus_usd"].isnull().sum() if "dpd_90_plus_usd" in df else 0
+        # Standardize columns
+        working_df = normalize_columns(df)
 
-        dpd = safe_numeric(df.get("dpd_90_plus_usd", pd.Series())).sum()
-        total_receivable = safe_numeric(df.get("total_receivable_usd", pd.Series())).sum()
+        null_count = (
+            working_df[COL_DPD_90_PLUS].isnull().sum() if COL_DPD_90_PLUS in working_df else 0
+        )
+
+        dpd = safe_numeric(working_df.get(COL_DPD_90_PLUS, pd.Series())).sum()
+        total_receivable = safe_numeric(working_df.get(COL_OUTSTANDING_AMOUNT, pd.Series())).sum()
 
         if total_receivable == 0:
             return 0.0, create_context(

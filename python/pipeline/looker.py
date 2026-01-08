@@ -7,6 +7,16 @@ from .utils import select_column
 
 logger = logging.getLogger("abaco.looker")
 
+# Constants for column names and strategies
+STRATEGY_TODAY = "today"
+STRATEGY_MAX_DISBURSE = "max_disburse_date"
+STRATEGY_MAX_MATURITY = "max_maturity_date"
+
+DEFAULT_DATE_CANDIDATES = ["reporting_date", "as_of_date", "date", "fecha", "fecha_corte"]
+DEFAULT_CASH_CANDIDATES = ["cash_balance_usd", "cash_balance", "cash_usd", "cash"]
+DEFAULT_DISBURSE_CANDIDATES = ["disburse_date", "disbursement_date"]
+DEFAULT_MATURITY_CANDIDATES = ["maturity_date", "loan_end_date"]
+
 # DPD (Days Past Due) threshold constants aligned with loan tape bucket definitions
 DPD_THRESHOLD_7 = 7
 DPD_THRESHOLD_30 = 30
@@ -49,11 +59,11 @@ class LookerConverter:
 
         date_candidates = self.config.get(
             "date_column_candidates",
-            ["reporting_date", "as_of_date", "date", "fecha", "fecha_corte"],
+            DEFAULT_DATE_CANDIDATES,
         )
         cash_candidates = self.config.get(
             "cash_column_candidates",
-            ["cash_balance_usd", "cash_balance", "cash_usd", "cash"],
+            DEFAULT_CASH_CANDIDATES,
         )
         date_col = select_column(list(financials_df.columns), date_candidates)
         cash_col = select_column(list(financials_df.columns), cash_candidates)
@@ -139,7 +149,7 @@ class LookerConverter:
             raise ValueError("Missing Looker loan columns: dpd, outstanding_balance")
 
         measurement_col = self.config.get("measurement_date_column")
-        strategy = self.config.get("measurement_date_strategy", "today")
+        strategy = self.config.get("measurement_date_strategy", STRATEGY_TODAY)
 
         measurement_date = None
         if measurement_col:
@@ -149,12 +159,12 @@ class LookerConverter:
                     "%Y-%m-%d"
                 )
         if measurement_date is None:
-            if strategy == "max_disburse_date":
+            if strategy == STRATEGY_MAX_DISBURSE:
                 resolved = select_column(
-                    list(df.columns), ["disburse_date", "disbursement_date"]
+                    list(df.columns), DEFAULT_DISBURSE_CANDIDATES
                 )
-            elif strategy == "max_maturity_date":
-                resolved = select_column(list(df.columns), ["maturity_date", "loan_end_date"])
+            elif strategy == STRATEGY_MAX_MATURITY:
+                resolved = select_column(list(df.columns), DEFAULT_MATURITY_CANDIDATES)
             else:
                 resolved = None
             if resolved:

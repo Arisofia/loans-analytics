@@ -5,9 +5,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-
 from src.agents.tools import send_slack_notification
-from src.pipeline.compliance import build_compliance_report, write_compliance_report
+from src.pipeline.compliance import (build_compliance_report,
+                                     write_compliance_report)
 from src.pipeline.config_manager import PipelineConfig
 from src.pipeline.data_ingestion import UnifiedIngestion
 from src.pipeline.data_transformation import UnifiedTransformation
@@ -110,7 +110,7 @@ class UnifiedPipeline:
                 headers = {"Authorization": f"Bearer {token_value}"} if token_value else {}
                 url = f"{base_url}{endpoint}"
                 return self.ingestor.ingest_http(url, headers=headers)
-            
+
             if ingest_source == "looker":
                 looker_cfg = ingest_cfg.get("looker", {}) or {}
                 loans_par_path = looker_cfg.get("loans_par_path")
@@ -130,7 +130,7 @@ class UnifiedPipeline:
                     financials_path=Path(financials_path) if financials_path else None,
                     archive_dir=raw_archive_dir,
                 )
-            
+
             return self.ingestor.ingest_file(input_file, archive_dir=raw_archive_dir)
 
     def _run_transformation(self, df: Any, user: str) -> Any:
@@ -149,7 +149,9 @@ class UnifiedPipeline:
             span.set_attribute("calculation.metric_count", len(result.metrics))
             return result
 
-    def _run_compliance(self, tx_result: Any, ingestion_result: Any, run_dir: Path, user: str, action: str) -> Path:
+    def _run_compliance(
+        self, tx_result: Any, ingestion_result: Any, run_dir: Path, user: str, action: str
+    ) -> Path:
         with tracer.start_as_current_span("pipeline.compliance"):
             report = build_compliance_report(
                 run_id=self.run_id,
@@ -167,13 +169,21 @@ class UnifiedPipeline:
             write_compliance_report(report, compliance_path)
             return compliance_path
 
-    def _run_output(self, tx_result: Any, calc_result: Any, ingestion_result: Any, compliance_path: Path, user: str, action: str) -> Any:
+    def _run_output(
+        self,
+        tx_result: Any,
+        calc_result: Any,
+        ingestion_result: Any,
+        compliance_path: Path,
+        user: str,
+        action: str,
+    ) -> Any:
         with tracer.start_as_current_span("pipeline.output"):
             self.output.run_id = self.run_id
             output_ctx = PersistContext(
                 quality_checks=tx_result.quality_checks,
                 compliance_report_path=compliance_path,
-                timeseries=calc_result.timeseries
+                timeseries=calc_result.timeseries,
             )
             return self.output.persist(
                 tx_result.df,
@@ -191,7 +201,7 @@ class UnifiedPipeline:
                     "transformation": tx_result.run_id,
                     "calculation": calc_result.run_id,
                 },
-                context=output_ctx
+                context=output_ctx,
             )
 
     def execute(
@@ -200,7 +210,7 @@ class UnifiedPipeline:
         with tracer.start_as_current_span("pipeline.execute") as span:
             logger.info("Starting unified pipeline execution")
             run_started = utc_now()
-            
+
             run_cfg = self.config.get("run", default={}) or {}
             artifacts_dir = Path(run_cfg.get("artifacts_dir", "logs/runs"))
             raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/cascade"))
@@ -211,7 +221,7 @@ class UnifiedPipeline:
             try:
                 # 1. Ingestion
                 ingestion_result = self._run_ingestion(input_file, raw_archive_dir)
-                
+
                 # 2. Run ID Setup
                 self.run_id = self._generate_run_id(ingestion_result.source_hash)
                 span.set_attribute("pipeline.run_id", self.run_id)
@@ -228,10 +238,14 @@ class UnifiedPipeline:
                 self._handle_alerts(self.ingestor.get_ingest_summary(), calc_result)
 
                 # 6. Compliance
-                compliance_path = self._run_compliance(tx_result, ingestion_result, run_dir, user, action)
+                compliance_path = self._run_compliance(
+                    tx_result, ingestion_result, run_dir, user, action
+                )
 
                 # 7. Output
-                output_result = self._run_output(tx_result, calc_result, ingestion_result, compliance_path, user, action)
+                output_result = self._run_output(
+                    tx_result, calc_result, ingestion_result, compliance_path, user, action
+                )
 
                 # 8. Summary
                 summary = {

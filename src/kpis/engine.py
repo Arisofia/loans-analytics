@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from src.utils.data_normalization import normalize_columns
 from src.kpis.active_clients import \
     calculate_active_clients as calculate_active_clients_logic
 from src.kpis.actual_yield import \
@@ -30,6 +29,7 @@ from src.kpis.recurrence import \
     calculate_recurrence as calculate_recurrence_logic
 from src.kpis.weighted_apr import \
     calculate_weighted_apr as calculate_weighted_apr_logic
+from src.utils.data_normalization import normalize_columns
 
 logger = logging.getLogger(__name__)
 
@@ -75,11 +75,11 @@ class KPIEngineV2:
         self.run_id = run_id or f"kpi_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.audit_trail: List[Dict[str, Any]] = []
         self.metrics: Dict[str, Dict[str, Any]] = {}
-        
+
         # Use instance-level copies of the KPI function maps
         self.kpi_functions = self.KPI_FUNCTIONS.copy()
         self.on_demand_kpi_functions = self.ON_DEMAND_KPI_FUNCTIONS.copy()
-        
+
         # Merge custom KPIs if provided
         if custom_kpis:
             self.kpi_functions.update(custom_kpis)
@@ -104,7 +104,9 @@ class KPIEngineV2:
         if p30 is None or cr is None:
             return 0.0, {"error": "Missing inputs for PortfolioHealth", "metric": "PortfolioHealth"}
 
-        return self._calculate_single("PortfolioHealth", lambda _: calculate_portfolio_health_logic(p30, cr))
+        return self._calculate_single(
+            "PortfolioHealth", lambda _: calculate_portfolio_health_logic(p30, cr)
+        )
 
     # Facade methods for common KPIs (Backward Compatibility)
     def calculate_par_30(self) -> Tuple[float, Dict[str, Any]]:
@@ -123,7 +125,9 @@ class KPIEngineV2:
         return self._calculate_single("DTI", self.on_demand_kpi_functions["DTI"])
 
     def calculate_portfolio_yield(self) -> Tuple[float, Dict[str, Any]]:
-        return self._calculate_single("PortfolioYield", self.on_demand_kpi_functions["PortfolioYield"])
+        return self._calculate_single(
+            "PortfolioYield", self.on_demand_kpi_functions["PortfolioYield"]
+        )
 
     def calculate_all(self, include_composite: bool = True) -> Dict[str, Any]:
         """Calculate all configured KPIs with full audit trail."""
@@ -140,7 +144,7 @@ class KPIEngineV2:
             calculator = self.kpi_functions.get(kpi_name)
             if not calculator:
                 continue
-            
+
             val, context = self._calculate_single(kpi_name, calculator)
             self.metrics[kpi_name] = {"value": val, **context}
             if "error" not in context:
@@ -150,7 +154,7 @@ class KPIEngineV2:
         if include_composite:
             par30_val = self.get_metric("PAR30")
             collection_val = self.get_metric("CollectionRate")
-            
+
             if par30_val is not None and collection_val is not None:
                 val, context = self.calculate_portfolio_health(par30_val, collection_val)
                 self.metrics["PortfolioHealth"] = {"value": val, **context}

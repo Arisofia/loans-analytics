@@ -1,13 +1,18 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
+
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field
+
 from src.pipeline.data_validation import DataQualityReport
+
 
 class LoanRecord(BaseModel):
     """Schema enforcement for individual loan or portfolio records."""
+
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     loan_id: Optional[str] = Field(None, alias="loan_id")
@@ -22,9 +27,11 @@ class LoanRecord(BaseModel):
     dpd_90_plus_usd: float = Field(default=0.0, ge=0)
     measurement_date: Optional[str] = None
 
+
 @dataclass
 class IngestionResult:
     """Container for ingestion outputs and metadata."""
+
     df: pd.DataFrame
     run_id: str
     metadata: Dict[str, Any]
@@ -36,6 +43,7 @@ class IngestionResult:
 @dataclass
 class TransformationResult:
     """Container for transformation outputs and metadata."""
+
     df: pd.DataFrame
     run_id: str
     masked_columns: list[str]
@@ -48,6 +56,7 @@ class TransformationResult:
 @dataclass
 class CalculationResultV2:
     """Container for KPI calculation outputs and audit trail."""
+
     metrics: Dict[str, Any]
     audit_trail: list[Dict[str, Any]]
     run_id: str
@@ -59,6 +68,7 @@ class CalculationResultV2:
 @dataclass
 class OutputResult:
     """Container for output persistence and manifest generation."""
+
     manifest: Dict[str, Any]
     manifest_path: Path
     output_paths: Dict[str, str]
@@ -67,6 +77,7 @@ class OutputResult:
 @dataclass
 class PersistContext:
     """Context for output persistence including quality checks and reports."""
+
     quality_checks: Optional[Dict[str, Any]] = None
     compliance_report_path: Optional[Path] = None
     timeseries: Optional[Dict[str, pd.DataFrame]] = None

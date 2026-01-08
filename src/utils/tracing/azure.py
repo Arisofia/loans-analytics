@@ -13,6 +13,22 @@ from opencensus.trace.samplers import ProbabilitySampler
 from opencensus.trace.tracer import Tracer
 
 
+def _env_flag(name: str) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return False
+    return value.strip().lower() not in ("", "0", "false", "no")
+
+
+def _telemetry_disabled() -> bool:
+    return (
+        _env_flag("DISABLE_TELEMETRY")
+        or _env_flag("DISABLE_AZURE_TRACING")
+        or _env_flag("CI")
+        or bool(os.getenv("PYTEST_CURRENT_TEST"))
+    )
+
+
 def setup_azure_tracing() -> Tuple[logging.Logger, Tracer]:
     """Initialize Azure Application Insights tracing.
 
@@ -22,8 +38,14 @@ def setup_azure_tracing() -> Tuple[logging.Logger, Tracer]:
     `(logger, tracer)` pair rather than invoking this repeatedly.
     """
 
+    if _telemetry_disabled():
+        logger = logging.getLogger()
+        if not logger.handlers:
+            logging.basicConfig(level=logging.INFO)
+        return logger, Tracer(sampler=ProbabilitySampler(rate=0.0))
+
     connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
-    
+
     if not connection_string or "00000000-0000-0000-0000-000000000000" in connection_string:
         # Fallback to standard logging if no valid connection string is provided
         logger = logging.getLogger()

@@ -15,10 +15,9 @@ REPO_ROOT = tuple(Path(__file__).resolve().parents)[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.integrations.azure_outputs import \
-    AzureStorageClient  # noqa: E402
 from src.analytics.enterprise_analytics_engine import \
     LoanAnalyticsEngine  # noqa: E402
+from src.integrations.azure_outputs import AzureStorageClient  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -128,7 +127,10 @@ def main() -> None:
 
         if args.container_name:
             if not args.connection_string and not args.account_url:
-                print("❌ Error: Azure export requires --connection-string or --account-url", file=sys.stderr)
+                print(
+                    "❌ Error: Azure export requires --connection-string or --account-url",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
 
             exporter = AzureStorageClient(
@@ -141,7 +143,7 @@ def main() -> None:
             if success:
                 print(f"✅ KPI results exported to Azure Blob: {blob_name}")
             else:
-                print(f"❌ Failed to export KPI results to Azure Blob", file=sys.stderr)
+                print("❌ Failed to export KPI results to Azure Blob", file=sys.stderr)
                 sys.exit(1)
 
         summarize_results(kpi_results, risk_alert_count)

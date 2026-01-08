@@ -40,7 +40,9 @@ class PAR30Calculator(KPICalculator):
         has_dpd_cols = all(col in working_df.columns for col in required)
 
         if has_dpd_cols:
-            null_count = sum(working_df[col].isnull().sum() for col in required if col in working_df)
+            null_count = sum(
+                working_df[col].isnull().sum() for col in required if col in working_df
+            )
             dpd_30_60 = safe_numeric(working_df[COL_DPD_30_60]).sum()
             dpd_60_90 = safe_numeric(working_df[COL_DPD_60_90]).sum()
             dpd_90_plus = safe_numeric(working_df[COL_DPD_90_PLUS]).sum()

@@ -5,7 +5,8 @@ from typing import Optional
 from requests.exceptions import RequestsDependencyWarning
 
 try:
-    from packaging.version import InvalidVersion, Version as PackagingVersion
+    from packaging.version import InvalidVersion
+    from packaging.version import Version as PackagingVersion
 except ImportError:
     PackagingVersion = None  # type: ignore
 

@@ -10,11 +10,11 @@ engine consolidation (Phase 3) is 100% complete.
 
 | Component      | Legacy Location                   | Unified Location (v2.0)               |
 | -------------- | --------------------------------- | ------------------------------------- |
-| Ingestion      | `src/ingest/`                     | `src/pipeline/data_ingestion.py`     |
+| Ingestion      | `src/ingest/`                     | `src/pipeline/data_ingestion.py`      |
 | Transformation | `src/analytics/transformation.py` | `src/pipeline/data_transformation.py` |
-| KPI Engine     | `src/kpi_engine.py`               | `src/pipeline/kpi_calculation.py`    |
-| Orchestrator   | `scripts/run_data_pipeline.py`    | `src/pipeline/orchestrator.py`       |
-| Entry Point    | Multiple scripts                  | `apps/analytics/run_report.py`       |
+| KPI Engine     | `src/kpi_engine.py`               | `src/pipeline/kpi_calculation.py`     |
+| Orchestrator   | `scripts/run_data_pipeline.py`    | `src/pipeline/orchestrator.py`        |
+| Entry Point    | Multiple scripts                  | `apps/analytics/run_report.py`        |
 
 ## 3. Mandatory Cutover Actions
 
@@ -89,4 +89,4 @@ If the Unified Pipeline fails due to unforeseen environmental issues:
 
 ---
 
-*Migration Lead: Zencoder Agent*
+_Migration Lead: Zencoder Agent_

@@ -43,7 +43,9 @@ class SegmentationSummaryCalculator(KPICalculator):
 
         # Ensure datetime for filtering
         if COL_ORIGINATION_DATE in working_df.columns:
-            working_df[COL_ORIGINATION_DATE] = pd.to_datetime(working_df[COL_ORIGINATION_DATE], errors="coerce")
+            working_df[COL_ORIGINATION_DATE] = pd.to_datetime(
+                working_df[COL_ORIGINATION_DATE], errors="coerce"
+            )
             # Prepare 2025 filtered dataset
             df_2025 = working_df[working_df[COL_ORIGINATION_DATE].dt.year == 2025].copy()
             if df_2025.empty:
@@ -55,7 +57,9 @@ class SegmentationSummaryCalculator(KPICalculator):
 
         if df_2025.empty:
             return 0.0, create_context(
-                self.METADATA.formula, rows_processed=len(df), reason="DataFrame empty after preprocessing"
+                self.METADATA.formula,
+                rows_processed=len(df),
+                reason="DataFrame empty after preprocessing",
             )
 
         # Required columns check with defaults
@@ -90,7 +94,9 @@ class SegmentationSummaryCalculator(KPICalculator):
             # Map back to summary
             total_clients = summary.set_index(COL_CLIENT_SEGMENT)["Clients"]
             delinquency_rate = (delinquency_counts / total_clients).fillna(0).round(3) * 100
-            summary["Delinquency_Rate"] = summary[COL_CLIENT_SEGMENT].map(delinquency_rate).fillna(0)
+            summary["Delinquency_Rate"] = (
+                summary[COL_CLIENT_SEGMENT].map(delinquency_rate).fillna(0)
+            )
 
         # Main metric: Total Clients 2025
         total_active_clients = float(df_2025[COL_CUSTOMER_ID].nunique())

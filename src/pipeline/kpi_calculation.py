@@ -103,7 +103,7 @@ class UnifiedCalculationV2:
     ) -> Dict[str, Any]:
         name = metric_cfg.get("name")
         func_path = metric_cfg.get("function")
-        
+
         if not func_path:
             # Fallback to engine's portfolio health if it's the specific health metric
             if name in {"PortfolioHealth", "HealthScore"}:
@@ -114,7 +114,7 @@ class UnifiedCalculationV2:
                     "value": float(val) if val is not None else None,
                     "formula": "PortfolioHealth(PAR30, CollectionRate)",
                     "source_table": "composite",
-                    **context
+                    **context,
                 }
             raise ValueError(f"Missing function for composite metric {name}")
 
@@ -164,7 +164,9 @@ class UnifiedCalculationV2:
                     continue
                 row = {"period_start": period}
                 # Create a temporary engine for the group to maintain audit trail per period
-                group_engine = KPIEngineV2(group, actor="unified_pipeline", action="timeseries_calc")
+                group_engine = KPIEngineV2(
+                    group, actor="unified_pipeline", action="timeseries_calc"
+                )
                 for metric in metrics_cfg:
                     name = metric.get("name")
                     if not name or name in {"PortfolioHealth", "HealthScore"}:

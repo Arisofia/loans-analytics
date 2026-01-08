@@ -1,8 +1,9 @@
-from typing import TypedDict, Optional
-from datetime import date
+from typing import Optional, TypedDict
+
 
 class FinancialRow(TypedDict):
     """Typed representation of a financial row for PAR/Portfolio analysis."""
+
     loan_id: str
     measurement_date: str
     total_receivable_usd: float
@@ -16,8 +17,10 @@ class FinancialRow(TypedDict):
     dpd_90_plus_usd: float
     currency: str
 
+
 class TransactionRow(TypedDict):
     """Typed representation of a financial transaction with IBAN."""
+
     transaction_id: str
     amount: float
     currency: str

@@ -84,16 +84,16 @@ make test-cov
 
 ### Tools Configured
 
-| Tool | Purpose | Config |
-|------|---------|--------|
-| pylint | Static code analysis | pyproject.toml |
-| flake8 | Style enforcement | pyproject.toml |
-| ruff | Fast Python linter | Built-in |
-| black | Code formatter | pyproject.toml |
-| isort | Import sorting | Built-in |
-| mypy | Type checking | TBD |
-| pytest | Testing | Built-in |
-| coverage | Test coverage | Built-in |
+| Tool     | Purpose              | Config         |
+| -------- | -------------------- | -------------- |
+| pylint   | Static code analysis | pyproject.toml |
+| flake8   | Style enforcement    | pyproject.toml |
+| ruff     | Fast Python linter   | Built-in       |
+| black    | Code formatter       | pyproject.toml |
+| isort    | Import sorting       | Built-in       |
+| mypy     | Type checking        | TBD            |
+| pytest   | Testing              | Built-in       |
+| coverage | Test coverage        | Built-in       |
 
 ---
 
@@ -169,7 +169,7 @@ make test-cov
 1. **Post-Phase 6 Tasks**:
    - Execute test suite: `make quality`
    - Run diagnostic script: `bash scripts/ci_full_fix.sh`
-   - Review test results in CI_FIX_REPORT_*.md
+   - Review test results in CI*FIX_REPORT*\*.md
    - Address any identified failures
 
 2. **Phase 6 Completion**:
@@ -241,16 +241,16 @@ make test-cov
 
 ### Test Case Status
 
-| ID | Test Case | Status | Time |
-|---|---|---|---|
-| **A-01** | Pipeline smoke test | ✅ Auto | ~10s |
-| **B-01** | KPI baseline match | ✅ Auto | ~1s |
-| **C-01** | Figma KPI Sync | ✅ Auto | ~2s |
-| **D-01** | OTLP Span Generation | ✅ Auto | ~1s |
-| **F-01** | Secret Masking | ✅ Auto | ~2s |
-| **B-03** | Performance SLA (10k) | ✅ Auto | ~5s |
-| **G-01** | Idempotency | ✅ Auto | ~3s |
-| **I-01** | E2E Acceptance | ✅ Auto | ~3s |
+| ID       | Test Case             | Status  | Time |
+| -------- | --------------------- | ------- | ---- |
+| **A-01** | Pipeline smoke test   | ✅ Auto | ~10s |
+| **B-01** | KPI baseline match    | ✅ Auto | ~1s  |
+| **C-01** | Figma KPI Sync        | ✅ Auto | ~2s  |
+| **D-01** | OTLP Span Generation  | ✅ Auto | ~1s  |
+| **F-01** | Secret Masking        | ✅ Auto | ~2s  |
+| **B-03** | Performance SLA (10k) | ✅ Auto | ~5s  |
+| **G-01** | Idempotency           | ✅ Auto | ~3s  |
+| **I-01** | E2E Acceptance        | ✅ Auto | ~3s  |
 
 ### CI/CD Integration
 

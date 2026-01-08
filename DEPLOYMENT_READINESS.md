@@ -5,12 +5,12 @@
 
 ## Code Quality Metrics
 
-| Metric | Score | Status |
-|--------|-------|--------|
-| **Pylint** | 9.98/10 | ✅ Excellent |
-| **MyPy Type Check** | 100% Pass | ✅ Pass |
-| **E2E Tests** | 7/7 | ✅ Pass |
-| **Core Pipeline Tests** | 4/4 | ✅ Pass |
+| Metric                  | Score     | Status       |
+| ----------------------- | --------- | ------------ |
+| **Pylint**              | 9.98/10   | ✅ Excellent |
+| **MyPy Type Check**     | 100% Pass | ✅ Pass      |
+| **E2E Tests**           | 7/7       | ✅ Pass      |
+| **Core Pipeline Tests** | 4/4       | ✅ Pass      |
 
 ## Critical Fixes Applied
 

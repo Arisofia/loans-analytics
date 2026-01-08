@@ -37,12 +37,14 @@ class UnifiedOutput:
             return {}
 
         from src.integrations.azure_outputs import AzureStorageClient
-        
+
         connection_string = self.azure_config.get("storage_connection_string")
         client = AzureStorageClient(connection_string=connection_string)
-        
+
         if not client.client:
-            self._log_event("azure_upload", "skipped", reason="Client not initialized (check credentials)")
+            self._log_event(
+                "azure_upload", "skipped", reason="Client not initialized (check credentials)"
+            )
             return {}
 
         prefix = f"{self.azure_config.get('prefix', 'analytics')}/{run_id}"
@@ -51,24 +53,28 @@ class UnifiedOutput:
         self._log_event("azure_upload", "success", uploaded_count=len(uploaded))
         return uploaded
 
-    def upload_to_supabase(self, df: pd.DataFrame, metrics: Dict[str, Any], run_id: str) -> Dict[str, Any]:
+    def upload_to_supabase(
+        self, df: pd.DataFrame, metrics: Dict[str, Any], run_id: str
+    ) -> Dict[str, Any]:
         supabase_cfg = self.config.get("supabase", {})
         if not supabase_cfg.get("enabled"):
             return {}
 
         from src.integrations.supabase_client import SupabaseOutputClient
-        
+
         client = SupabaseOutputClient()
         if not client.client:
-            self._log_event("supabase_upload", "skipped", reason="Client not initialized (check credentials)")
+            self._log_event(
+                "supabase_upload", "skipped", reason="Client not initialized (check credentials)"
+            )
             return {}
 
         results: Dict[str, Any] = {}
-        
+
         # 1. Insert metrics
         kpi_results = client.insert_kpi_metrics(metrics, run_id)
         results["kpi_metrics"] = kpi_results
-        
+
         # 2. Insert raw data if configured
         tables = supabase_cfg.get("tables", [])
         if "fact_loans" in tables:

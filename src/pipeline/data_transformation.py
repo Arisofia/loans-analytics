@@ -7,8 +7,9 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from src.pipeline.compliance import create_access_log_entry, mask_pii_in_dataframe
 from src.analytics.financial_analysis import FinancialAnalyzer
+from src.pipeline.compliance import (create_access_log_entry,
+                                     mask_pii_in_dataframe)
 from src.pipeline.models import TransformationResult
 from src.pipeline.utils import hash_dataframe, utc_now
 
@@ -26,6 +27,7 @@ class UnifiedTransformation:
         self.transformations_count = 0
         self.pii_config = self._load_pii_config()
         from src.pipeline.ingestion_validator import IngestionValidator
+
         self.validator = IngestionValidator(root_cfg)
         self.analyzer = FinancialAnalyzer()
 
@@ -58,9 +60,13 @@ class UnifiedTransformation:
             "total_receivable_usd",
             "total_eligible_usd",
             "discounted_balance_usd",
-            "dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"
+            "dpd_0_7_usd",
+            "dpd_7_30_usd",
+            "dpd_30_60_usd",
+            "dpd_60_90_usd",
+            "dpd_90_plus_usd",
         ]
-        
+
         out = pd.DataFrame(index=df.index)
         for col in core_cols:
             out[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
@@ -71,7 +77,13 @@ class UnifiedTransformation:
         out["discounted_amount"] = out["discounted_balance_usd"]
 
         denom = out["receivable_amount"].replace({0: np.nan})
-        for col in ["dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd"]:
+        for col in [
+            "dpd_0_7_usd",
+            "dpd_7_30_usd",
+            "dpd_30_60_usd",
+            "dpd_60_90_usd",
+            "dpd_90_plus_usd",
+        ]:
             out[f"{col}_pct"] = (out[col] / denom).fillna(0.0) * 100.0
 
         apr_col = self._select_column_case_insensitive(df, "avg_apr_pct")
@@ -164,7 +176,9 @@ class UnifiedTransformation:
             if enrich_cfg.get("enabled", True):
                 try:
                     clean_df = self.analyzer.enrich_master_dataframe(clean_df)
-                    self._log_step("financial_enrichment", "success", columns=list(clean_df.columns))
+                    self._log_step(
+                        "financial_enrichment", "success", columns=list(clean_df.columns)
+                    )
                 except Exception as e:
                     logger.warning("Financial enrichment partially failed: %s", e)
                     self._log_step("financial_enrichment", "partial_failure", error=str(e))
@@ -198,10 +212,10 @@ class UnifiedTransformation:
 
             quality_checks: Dict[str, Any] = {}
             # Use unified validator logic if available, otherwise fallback to local utils
-            from src.pipeline.data_validation import (validate_iso8601_dates,
-                                                     validate_no_nulls,
-                                                     validate_numeric_bounds,
-                                                     validate_percentage_bounds)
+            from src.pipeline.data_validation import (
+                validate_iso8601_dates, validate_no_nulls,
+                validate_numeric_bounds, validate_percentage_bounds)
+
             quality_checks.update(validate_numeric_bounds(clean_df))
             quality_checks.update(validate_percentage_bounds(clean_df))
             quality_checks.update(validate_iso8601_dates(clean_df))

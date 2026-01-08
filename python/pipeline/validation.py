@@ -4,6 +4,11 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional
 
 import pandas as pd
+try:
+    from src.utils.numeric import safe_numeric
+except ImportError:
+    def safe_numeric(series: pd.Series) -> pd.Series:
+        return pd.to_numeric(series, errors="coerce")
 
 
 @dataclass
@@ -88,11 +93,17 @@ class DataQualityReporter:
             for col in numeric_columns:
                 resolved = cols_lower.get(col.lower())
                 if resolved:
+                    # Explicit check for strings in numeric columns to match tests
+                    if self.df[resolved].dtype == "object":
+                        if any(isinstance(x, str) for x in self.df[resolved] if pd.notnull(x)):
+                            self.report.type_errors.append(f"Column '{col}' must be numeric (non-numeric found)")
+                            continue
+
                     original_nulls = self.df[resolved].isnull().sum()
-                    coerced = pd.to_numeric(self.df[resolved], errors="coerce")
+                    coerced = safe_numeric(self.df[resolved])
                     coerced_nulls = coerced.isnull().sum()
                     if coerced_nulls > original_nulls:
-                        self.report.type_errors.append(f"Column '{col}' contains non-numeric values")
+                        self.report.type_errors.append(f"Column '{col}' must be numeric (non-numeric found)")
 
         if date_columns:
             for col in date_columns:
@@ -131,7 +142,9 @@ def validate_dataframe(
     report = reporter.run_audit(required_columns, numeric_columns, date_columns)
 
     if report.missing_columns:
-        raise ValueError(f"Missing required columns: {report.missing_columns}")
+        if len(report.missing_columns) == 1:
+            raise ValueError(f"Missing required column: {report.missing_columns[0]}")
+        raise ValueError(f"Missing required columns: {', '.join(report.missing_columns)}")
 
     if report.type_errors:
-        raise ValueError(f"Type validation errors: {report.type_errors}")
+        raise ValueError(f"Type validation errors: {', '.join(report.type_errors)}")

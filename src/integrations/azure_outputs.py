@@ -18,10 +18,10 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 try:
+    from azure.core.exceptions import ResourceExistsError
     from azure.identity import DefaultAzureCredential
     from azure.mgmt.portal import Portal
     from azure.storage.blob import BlobServiceClient, ContentSettings
-    from azure.core.exceptions import ResourceExistsError
 
     HAS_AZURE = True
 except ImportError:
@@ -44,7 +44,8 @@ class AzureStorageClient:
             return
 
         self.connection_string = connection_string or os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-        self.container_name = container_name or os.getenv("AZURE_STORAGE_CONTAINER", "analytics-exports")
+        container_env = os.getenv("AZURE_STORAGE_CONTAINER", "analytics-exports")
+        self.container_name: str = container_name or container_env
         self.account_url = account_url or os.getenv("AZURE_STORAGE_ACCOUNT_URL")
 
         if self.connection_string:
@@ -62,7 +63,7 @@ class AzureStorageClient:
         """Ensure the container exists."""
         if not self.client:
             return
-        
+
         try:
             container_client = self.client.get_container_client(self.container_name)
             container_client.create_container()
@@ -76,14 +77,15 @@ class AzureStorageClient:
         """Construct the blob URL."""
         if not self.client:
             return ""
-        
+
         account_name = getattr(self.client, "account_name", None)
         if not account_name and self.account_url:
             # Try to extract account name from URL if not directly available
             from urllib.parse import urlparse
+
             parsed = urlparse(self.account_url)
             account_name = parsed.netloc.split(".")[0]
-            
+
         if not account_name:
             return f"{self.container_name}/{blob_name}"
 
@@ -207,9 +209,9 @@ class AzureStorageClient:
             return {}
 
         from concurrent.futures import ThreadPoolExecutor
-        
+
         uploaded: Dict[str, str] = {}
-        
+
         def _upload_single(path: Path):
             if not path.exists():
                 return None
@@ -280,7 +282,9 @@ class AzureDashboardClient:
         if self.subscription_id and self.resource_group:
             self.credential = DefaultAzureCredential()
         else:
-            logger.warning("Azure Dashboard credentials (subscription/resource group) not fully configured")
+            logger.warning(
+                "Azure Dashboard credentials (subscription/resource group) not fully configured"
+            )
             self.credential = None
 
     def create_kpi_tile(
@@ -340,8 +344,10 @@ class AzureDashboardClient:
 
         tiles = []
         # Filter and sort KPIs for display
-        display_kpis = {k: v for k, v in kpi_metrics.items() if isinstance(v, dict) and "current_value" in v}
-        
+        display_kpis = {
+            k: v for k, v in kpi_metrics.items() if isinstance(v, dict) and "current_value" in v
+        }
+
         for idx, (kpi_name, metric_data) in enumerate(display_kpis.items()):
             tile = self.create_kpi_tile(
                 kpi_name=kpi_name,
@@ -418,7 +424,7 @@ class AzureDashboardClient:
                 results["success"] = success
             else:
                 logger.warning("No kpi_metrics found in export_data for Azure Dashboard")
-                results["success"] = True # Nothing to do, but not a failure
+                results["success"] = True  # Nothing to do, but not a failure
 
         except Exception as e:
             logger.error(f"Azure Dashboard sync failed: {e}")

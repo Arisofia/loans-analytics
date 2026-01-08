@@ -1,9 +1,10 @@
-from pathlib import Path
 import logging
+from pathlib import Path
 from typing import Any
 
 try:
     from fastapi import FastAPI, HTTPException
+
     app: Any = FastAPI(title="Abaco Analytics API")
 except ImportError:
     # Lightweight fallback for environments without FastAPI
@@ -11,12 +12,14 @@ except ImportError:
         def __init__(self, status_code: int, detail: str):
             self.status_code = status_code
             self.detail = detail
+
     app = None
 
 logger = logging.getLogger("abaco.api")
 
 # Directory that contains allowed data files
 ALLOWED_DATA_DIR = Path("/data/archives").resolve()
+
 
 def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     """Safely join and resolve a user-provided path candidate under allowed_dir."""
@@ -40,7 +43,9 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
 
     return resolved
 
+
 if app:
+
     @app.get("/health")
     def health_check():
         return {"status": "ok"}
@@ -61,5 +66,5 @@ if app:
             "status": "ok",
             "path": str(resolved),
             "size": resolved.stat().st_size,
-            "modified": resolved.stat().st_mtime
+            "modified": resolved.stat().st_mtime,
         }

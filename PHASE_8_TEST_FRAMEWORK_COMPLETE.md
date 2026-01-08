@@ -60,27 +60,27 @@ tests/fixtures/
 
 ## Test Case Coverage
 
-| ID | Test Case | Category | Status | Priority |
-|---|---|---|---|---|
-| **A-01** | Pipeline smoke test | Smoke | ✅ Auto | Critical |
-| **B-01** | KPI baseline match | Functional | ✅ Auto | Critical |
-| **C-01** | Figma KPI Sync | Integration | ✅ Auto | Critical |
-| **D-01** | OTLP Span Generation | Observability | ✅ Auto | High |
-| **F-01** | Secret Masking | Security | ✅ Auto | Critical |
-| **B-03** | Performance SLA (10k) | Performance | ✅ Auto | High |
-| **G-01** | Idempotency | Robustness | ✅ Auto | High |
-| **I-01** | E2E Acceptance | Acceptance | ✅ Auto | Critical |
+| ID       | Test Case             | Category      | Status  | Priority |
+| -------- | --------------------- | ------------- | ------- | -------- |
+| **A-01** | Pipeline smoke test   | Smoke         | ✅ Auto | Critical |
+| **B-01** | KPI baseline match    | Functional    | ✅ Auto | Critical |
+| **C-01** | Figma KPI Sync        | Integration   | ✅ Auto | Critical |
+| **D-01** | OTLP Span Generation  | Observability | ✅ Auto | High     |
+| **F-01** | Secret Masking        | Security      | ✅ Auto | Critical |
+| **B-03** | Performance SLA (10k) | Performance   | ✅ Auto | High     |
+| **G-01** | Idempotency           | Robustness    | ✅ Auto | High     |
+| **I-01** | E2E Acceptance        | Acceptance    | ✅ Auto | Critical |
 
 ---
 
 ## Key Metrics
 
-| Metric | Target | Actual | Status |
-|---|---|---|---|
-| **Automation Coverage** | 100% | 100% (22/22) | ✅ Met |
-| **Execution Time** | <30s | ~21s (Total) | ✅ Met |
-| **Test Methods** | 20+ | 30+ | ✅ Met |
-| **Code Coverage** | ≥80% | Verified | ✅ Met |
+| Metric                  | Target | Actual       | Status |
+| ----------------------- | ------ | ------------ | ------ |
+| **Automation Coverage** | 100%   | 100% (22/22) | ✅ Met |
+| **Execution Time**      | <30s   | ~21s (Total) | ✅ Met |
+| **Test Methods**        | 20+    | 30+          | ✅ Met |
+| **Code Coverage**       | ≥80%   | Verified     | ✅ Met |
 
 ---
 

@@ -15,18 +15,47 @@ from .utils import (CircuitBreaker, RateLimiter, RetryPolicy,
                             hash_file, utc_now, select_column)
 from .validation import DataQualityReport, DataQualityReporter, validate_dataframe
 from .looker import LookerConverter
+try:
+    from src.compliance import mask_pii_in_dataframe
+except ImportError:
+    mask_pii_in_dataframe = None
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 logger = logging.getLogger("abaco.ingestion")
+
+class PipelineComponentFactory:
+    """Factory for building pipeline components like RateLimiters and RetryPolicies."""
+
+    @staticmethod
+    def build_retry_policy(config: Dict[str, Any]) -> RetryPolicy:
+        retry_cfg = config.get("cascade", {}).get("http", {}).get("retry", {})
+        return RetryPolicy(
+            max_retries=retry_cfg.get("max_retries", 3),
+            backoff_seconds=retry_cfg.get("backoff_seconds", 1.0),
+            jitter_seconds=retry_cfg.get("jitter_seconds", 0.0),
+        )
+
+    @staticmethod
+    def build_rate_limiter(config: Dict[str, Any]) -> RateLimiter:
+        rate_cfg = config.get("cascade", {}).get("http", {}).get("rate_limit", {})
+        return RateLimiter(max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60))
+
+    @staticmethod
+    def build_circuit_breaker(config: Dict[str, Any]) -> CircuitBreaker:
+        cb_cfg = config.get("cascade", {}).get("http", {}).get("circuit_breaker", {})
+        return CircuitBreaker(
+            failure_threshold=cb_cfg.get("failure_threshold", 3),
+            reset_seconds=cb_cfg.get("reset_seconds", 60),
+        )
 
 class LoanRecord(BaseModel):
     """Schema enforcement for individual loan or portfolio records."""
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     loan_id: Optional[str] = Field(None, alias="loan_id")
-    total_receivable_usd: float = Field(ge=0)
-    total_eligible_usd: float = Field(ge=0)
-    discounted_balance_usd: float = Field(ge=0)
+    total_receivable_usd: float = Field(default=0.0, ge=0)
+    total_eligible_usd: float = Field(default=0.0, ge=0)
+    discounted_balance_usd: float = Field(default=0.0, ge=0)
     cash_available_usd: float = Field(default=0.0, ge=0)
     dpd_0_7_usd: float = Field(default=0.0, ge=0)
     dpd_7_30_usd: float = Field(default=0.0, ge=0)
@@ -53,33 +82,15 @@ class UnifiedIngestion:
 
     def __init__(self, config: Dict[str, Any], run_id: Optional[str] = None):
         self.config = config.get("pipeline", {}).get("phases", {}).get("ingestion", {})
+        self.full_config = config
         self.run_id = run_id or f"ingest_{uuid.uuid4().hex[:12]}"
         self.audit_log: List[Dict[str, Any]] = []
         self.errors: List[Dict[str, Any]] = []
         self.schema_validator = self._load_schema_validator()
-        self.rate_limiter = self._build_rate_limiter(config)
-        self.retry_policy = self._build_retry_policy(config)
-        self.circuit_breaker = self._build_circuit_breaker(config)
-        self.looker_converter = LookerConverter(config)
-
-    def _build_retry_policy(self, config: Dict[str, Any]) -> RetryPolicy:
-        retry_cfg = config.get("cascade", {}).get("http", {}).get("retry", {})
-        return RetryPolicy(
-            max_retries=retry_cfg.get("max_retries", 3),
-            backoff_seconds=retry_cfg.get("backoff_seconds", 1.0),
-            jitter_seconds=retry_cfg.get("jitter_seconds", 0.0),
-        )
-
-    def _build_rate_limiter(self, config: Dict[str, Any]) -> RateLimiter:
-        rate_cfg = config.get("cascade", {}).get("http", {}).get("rate_limit", {})
-        return RateLimiter(max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60))
-
-    def _build_circuit_breaker(self, config: Dict[str, Any]) -> CircuitBreaker:
-        cb_cfg = config.get("cascade", {}).get("http", {}).get("circuit_breaker", {})
-        return CircuitBreaker(
-            failure_threshold=cb_cfg.get("failure_threshold", 3),
-            reset_seconds=cb_cfg.get("reset_seconds", 60),
-        )
+        self.rate_limiter = PipelineComponentFactory.build_rate_limiter(config)
+        self.retry_policy = PipelineComponentFactory.build_retry_policy(config)
+        self.circuit_breaker = PipelineComponentFactory.build_circuit_breaker(config)
+        self.looker_converter = LookerConverter(self.config)
 
     def _load_schema_validator(self) -> Optional[Draft202012Validator]:
         schema_path = self.config.get("validation", {}).get("schema_path")
@@ -190,6 +201,24 @@ class UnifiedIngestion:
         deduped = df.drop_duplicates(subset=keys)
         return deduped, before - len(deduped)
 
+    def _apply_compliance(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
+        compliance_cfg = self.config.get("compliance", {})
+        if not compliance_cfg.get("enabled", False) or mask_pii_in_dataframe is None:
+            return df, []
+        
+        pii_cols = compliance_cfg.get("pii_columns")
+        keywords = compliance_cfg.get("keywords")
+        action = compliance_cfg.get("action", "mask")
+        
+        masked_df, processed_cols = mask_pii_in_dataframe(
+            df, pii_columns=pii_cols, keywords=keywords, action=action
+        )
+        
+        if processed_cols:
+            self._log_event("compliance", "masked", columns=processed_cols, action=action)
+            
+        return masked_df, processed_cols
+
     # --- Compatibility Shims for Legacy Tests ---
     def _select_column(self, columns: List[str], candidates: List[str]) -> Optional[str]:
         return select_column(columns, candidates)
@@ -211,7 +240,7 @@ class UnifiedIngestion:
     def _process_dataframe(
         self, df: pd.DataFrame, allow_fallback: bool = False
     ) -> Tuple[pd.DataFrame, List[str], int, DataQualityReport]:
-        """Consolidate validation, deduplication, and quality audit."""
+        """Consolidate validation, deduplication, compliance, and quality audit."""
         schema_errors = self._validate_schema(df)
         validated_df, record_errors = self._validate_records(df)
         
@@ -234,10 +263,15 @@ class UnifiedIngestion:
         if errors and not allow_fallback and self.config.get("validation", {}).get("strict", True):
             raise ValueError(f"Schema validation failed for {len(errors)} rows")
 
+        # Deduplication
         processed_df, deduped_count = self._apply_deduplication(validated_df)
         if deduped_count:
             self._log_event("deduplication", "completed", removed=deduped_count)
 
+        # Compliance / PII Masking
+        processed_df, masked_cols = self._apply_compliance(processed_df)
+
+        # Quality Audit
         quality_report = self._run_quality_audit(processed_df)
         return processed_df, errors, deduped_count, quality_report
 

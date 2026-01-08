@@ -9,14 +9,14 @@
 
 ## Quick Facts
 
-| Metric | Status |
-|--------|--------|
-| **Production Status** | ✅ LIVE |
-| **Cutover Time** | 4 seconds (negligible downtime) |
-| **Test Suite** | 29/29 passing (100%) |
-| **Hour 1 Validation** | ✅ ALL CHECKS PASS |
-| **Risk Level** | 🟢 VERY LOW |
-| **Operations Ready** | ✅ YES |
+| Metric                | Status                          |
+| --------------------- | ------------------------------- |
+| **Production Status** | ✅ LIVE                         |
+| **Cutover Time**      | 4 seconds (negligible downtime) |
+| **Test Suite**        | 29/29 passing (100%)            |
+| **Hour 1 Validation** | ✅ ALL CHECKS PASS              |
+| **Risk Level**        | 🟢 VERY LOW                     |
+| **Operations Ready**  | ✅ YES                          |
 
 ---
 
@@ -207,14 +207,14 @@ systemctl start abaco-pipeline-v1
 
 ## Key Metrics You'll Track
 
-| Metric | Baseline | Target | Alert |
-|--------|----------|--------|-------|
-| Latency (1k rows) | 0.65ms | <100ms | >100ms |
-| Error Rate | 0% | 0% | >0.1% |
-| Memory Peak | 105MB | <200MB | >200MB |
-| CPU Util | <50% | <80% | >80% sustained |
-| Audit Events | 6+ | Present | 0 events |
-| KPI Variance | <5% | Stable | >5% |
+| Metric            | Baseline | Target  | Alert          |
+| ----------------- | -------- | ------- | -------------- |
+| Latency (1k rows) | 0.65ms   | <100ms  | >100ms         |
+| Error Rate        | 0%       | 0%      | >0.1%          |
+| Memory Peak       | 105MB    | <200MB  | >200MB         |
+| CPU Util          | <50%     | <80%    | >80% sustained |
+| Audit Events      | 6+       | Present | 0 events       |
+| KPI Variance      | <5%      | Stable  | >5%            |
 
 ---
 
