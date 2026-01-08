@@ -1,5 +1,5 @@
 # Production Readiness Summary
-### 
+###
 **Last Updated**: 2025-12-14
 **Commit**: `3612fa20` (feat: add data pipeline validation)
 
@@ -87,7 +87,7 @@ VERCEL_ORG_ID                    (required)
 VERCEL_PROJECT_ID                (required)
 NEXT_PUBLIC_SENTRY_DSN           (optional, for error tracking)
 ```
-### 
+###
 1. **Vercel**: <https://vercel.com/account/tokens> (VERCEL_TOKEN)
 2. **Vercel dashboard**: <https://vercel.com/dashboard> (ORG_ID, PROJECT_ID)
 3. **Supabase**: <https://supabase.com/dashboard> (SUPABASE_URL, ANON_KEY)
@@ -116,6 +116,7 @@ This automatically:
 ### Step 3: Verify
 
 ```bash
+
 # Check CI/CD status
 https://github.com/your-org/abaco-loans-analytics/actions
 
@@ -185,12 +186,14 @@ npm run build
 
 # Test locally
 npm run start
+
 # Open http://localhost:3000
 ```
 
 ### Testing with Staging
 
 ```bash
+
 # Create staging branch (if not exists)
 git checkout -b staging origin/staging
 
@@ -260,16 +263,16 @@ if (analyticsResult.warnings.length > 0) {
 ## Rollback Procedures
 
 ### If Deployment Fails
-### 
+###
 ```bash
 git revert <commit-hash>
 git push origin main
 ```
-### 
+###
 1. Go to <https://vercel.com> → abaco-loans-analytics → Deployments
 2. Find last known-good deployment
 3. Click "..." → "Promote to Production"
-### 
+###
 ```bash
 git reset --hard <good-commit>
 git push --force origin main
@@ -328,6 +331,7 @@ git push --force origin main
 These are mostly in dev dependencies and should be addressed:
 
 ```bash
+
 # View vulnerabilities
 https://github.com/Abaco-Technol/abaco-loans-analytics/security/dependabot
 
