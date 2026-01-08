@@ -26,7 +26,12 @@ Example:
 For a live Figma embed (internal use, requires Figma access):
 
 ```html
-<iframe width="800" height="450" src="https://www.figma.com/embed?embed_host=share&url=FIGMA_URL" allowfullscreen></iframe>
+<iframe
+  width="800"
+  height="450"
+  src="https://www.figma.com/embed?embed_host=share&url=FIGMA_URL"
+  allowfullscreen
+></iframe>
 ```
 
 ## Permissions & Collaboration

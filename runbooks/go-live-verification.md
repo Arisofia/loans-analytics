@@ -9,6 +9,7 @@
   ```
 
   - **Expected**: 403 Forbidden
+
 - **Internal Secret Check**:
 
   ```bash

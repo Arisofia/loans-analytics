@@ -40,22 +40,22 @@ Notes:
 
 ## Quick triage (5-10 minutes)
 
-1) **Confirm scope and baseline**
+1. **Confirm scope and baseline**
 
 - App name, resource group, region, plan, and default domain.
 - Current status (Running/Stopped).
 - Last deployment time and commit.
 
-1) **Check Availability and Performance**
+1. **Check Availability and Performance**
 
 - Open **Overview** or **App Down / Web App Down**.
 - Review the diagnostic report and top indicators.
 
-1) **Review risk alerts**
+1. **Review risk alerts**
 
 - Open **Risk Assessments** and capture any recommendations.
 
-1) **Check logs for first error**
+1. **Check logs for first error**
 
 - App Service -> **Log stream**.
 - If containerized, verify container logs and startup output.
@@ -148,9 +148,9 @@ Safe actions:
   - Repeated crashes after rollback.
   - Network or DNS requires infra-level changes.
 - Recovery options (in order of safety):
-  1) Redeploy last known good.
-  2) Restart app (approved only).
-  3) Scale up or out (approved only).
+  1. Redeploy last known good.
+  2. Restart app (approved only).
+  3. Scale up or out (approved only).
 
 ## Post-incident
 

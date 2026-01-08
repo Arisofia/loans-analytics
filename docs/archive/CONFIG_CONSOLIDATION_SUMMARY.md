@@ -141,13 +141,13 @@ Created `config/LEGACY/README.md` with:
 
 ## Configuration Statistics
 
-| Metric | Before | After | Reduction |
-|--------|--------|-------|-----------|
-| Config files | 18 | 4 | 78% fewer |
-| Directories | 6 | 2 | 67% fewer |
-| Total lines | ~2,000 | ~700 | 65% less |
-| Settings duplication | High | None | 100% |
-| Environment support | Manual | Automatic | Complete |
+| Metric               | Before | After     | Reduction |
+| -------------------- | ------ | --------- | --------- |
+| Config files         | 18     | 4         | 78% fewer |
+| Directories          | 6      | 2         | 67% fewer |
+| Total lines          | ~2,000 | ~700      | 65% less  |
+| Settings duplication | High   | None      | 100%      |
+| Environment support  | Manual | Automatic | Complete  |
 
 ## Testing
 

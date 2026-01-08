@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This policy governs the use, content, retention, and organization of all project-level documentation and configuration in the repository—including, but not limited to, README.md, CONTRIBUTING.md, .vscode/, .github/, .env*, .settings/, and any project or settings files across the codebase.
+This policy governs the use, content, retention, and organization of all project-level documentation and configuration in the repository—including, but not limited to, README.md, CONTRIBUTING.md, .vscode/, .github/, .env\*, .settings/, and any project or settings files across the codebase.
 
 The intent is to ensure clarity, minimize duplication, keep documentation concise and actionable, and prevent repository bloat.
 

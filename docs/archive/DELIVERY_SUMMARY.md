@@ -14,6 +14,7 @@
   These tests require `streamlit_app.utils` to be a proper package. This is tracked as tech debt and will be addressed in a future refactor.
 
 ---
+
 # 📊 ABACO Loans Analytics - Delivery Summary
 
 **Date**: December 30, 2025
@@ -64,12 +65,12 @@ Outstanding Balance:       $7.0M USD
 
 **Key Findings:**
 
-| Metric | Value | Status |
-|--------|-------|--------|
-| Collection Rate | 87.5% | ✓ Healthy |
-| 30+ DPD Rate | 1.24% | ✓ Low |
-| 90+ DPD Rate | 1.12% | ✓ Acceptable |
-| PAR 90 Ratio | 5.46% | ⚠️ Monitor |
+| Metric          | Value | Status       |
+| --------------- | ----- | ------------ |
+| Collection Rate | 87.5% | ✓ Healthy    |
+| 30+ DPD Rate    | 1.24% | ✓ Low        |
+| 90+ DPD Rate    | 1.12% | ✓ Acceptable |
+| PAR 90 Ratio    | 5.46% | ⚠️ Monitor   |
 
 ### 3. **Portfolio Metrics (JSON)**
 
@@ -131,12 +132,12 @@ curl file:///Users/jenineferderas/Documents/abaco-loans-analytics/exports/portfo
 
 ### Risk Assessment
 
-| Risk Category | Count | Rate | Assessment |
-|---|---|---|---|
-| Current (0-30 DPD) | 17,472 | 98.76% | ✓ Excellent |
-| 30+ Days Past Due | 219 | 1.24% | ✓ Low |
-| 90+ Days Past Due (PAR 90) | 198 | 1.12% | ✓ Acceptable |
-| **PAR 90 Balance** | **$380,842** | **5.46%** | ⚠️ **Monitor** |
+| Risk Category              | Count        | Rate      | Assessment     |
+| -------------------------- | ------------ | --------- | -------------- |
+| Current (0-30 DPD)         | 17,472       | 98.76%    | ✓ Excellent    |
+| 30+ Days Past Due          | 219          | 1.24%     | ✓ Low          |
+| 90+ Days Past Due (PAR 90) | 198          | 1.12%     | ✓ Acceptable   |
+| **PAR 90 Balance**         | **$380,842** | **5.46%** | ⚠️ **Monitor** |
 
 ### Product Distribution
 
@@ -209,14 +210,14 @@ curl file:///Users/jenineferderas/Documents/abaco-loans-analytics/exports/portfo
 
 ## 🎯 Project Status
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Data Ingestion | ✅ Complete | 17,688 loans loaded |
-| Dashboard | ✅ Live | Running on localhost:8501 |
+| Component        | Status       | Notes                          |
+| ---------------- | ------------ | ------------------------------ |
+| Data Ingestion   | ✅ Complete  | 17,688 loans loaded            |
+| Dashboard        | ✅ Live      | Running on localhost:8501      |
 | Executive Report | ✅ Generated | HTML format, ready for sharing |
-| Metrics Export | ✅ Complete | JSON format for integration |
-| Risk Analysis | ✅ Complete | All KRIs calculated |
-| Documentation | ✅ Complete | This summary document |
+| Metrics Export   | ✅ Complete  | JSON format for integration    |
+| Risk Analysis    | ✅ Complete  | All KRIs calculated            |
+| Documentation    | ✅ Complete  | This summary document          |
 
 ---
 

@@ -23,13 +23,13 @@ Refactored the Abaco dual-engine KPI stack (Python side) to eliminate pandas Fut
 
 ### Methods Refactored
 
-| Method | Pattern Changed | Benefit |
-|--------|-----------------|---------|
-| `get_monthly_pricing()` | `groupby().apply(weighted_avg)` → `groupby().agg() + vectorized division` | Eliminates FutureWarning; 5–10x faster on large portfolios |
-| `get_dpd_buckets()` | `groupby().apply(calc_buckets)` → `groupby().agg() + threshold merges` | Pure vectorization; clearer DPD threshold logic |
-| `get_weighted_apr()` | `groupby().apply(lambda)` → `groupby().agg() + post-calculation` | Vectorized rate computation; pandas 2.0+ safe |
-| `get_weighted_fee_rate()` | `groupby().apply(lambda)` → `groupby().agg() + post-calculation` | Consistent with APR pattern; warning-free |
-| `get_concentration()` | `groupby().apply(calc_top_pct)` → Explicit loop + sorted exposures | Clearer intent; direct DataFrame construction |
+| Method                    | Pattern Changed                                                           | Benefit                                                    |
+| ------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `get_monthly_pricing()`   | `groupby().apply(weighted_avg)` → `groupby().agg() + vectorized division` | Eliminates FutureWarning; 5–10x faster on large portfolios |
+| `get_dpd_buckets()`       | `groupby().apply(calc_buckets)` → `groupby().agg() + threshold merges`    | Pure vectorization; clearer DPD threshold logic            |
+| `get_weighted_apr()`      | `groupby().apply(lambda)` → `groupby().agg() + post-calculation`          | Vectorized rate computation; pandas 2.0+ safe              |
+| `get_weighted_fee_rate()` | `groupby().apply(lambda)` → `groupby().agg() + post-calculation`          | Consistent with APR pattern; warning-free                  |
+| `get_concentration()`     | `groupby().apply(calc_top_pct)` → Explicit loop + sorted exposures        | Clearer intent; direct DataFrame construction              |
 
 ### Code Quality Improvements
 

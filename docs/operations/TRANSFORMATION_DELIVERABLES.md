@@ -534,7 +534,7 @@ name: Notify on Workflow Failures
 
 on:
   workflow_run:
-    workflows: ["Pipeline", "Deploy"]
+    workflows: ['Pipeline', 'Deploy']
     types: [completed]
 
 jobs:
@@ -557,33 +557,33 @@ jobs:
 
 ### Week 2: Stabilization & Observability
 
-| Task | Owner | Effort | Acceptance Criteria |
-|------|-------|--------|-------------------|
-| Deploy Azure Monitor alerts | DevOps | 1 day | All 3 alert rules active, test notifications working |
-| Set up GitHub workflow notifications | DevOps | 4 hours | Slack messages on pipeline failures |
-| Document all required GitHub secrets | Engineering | 4 hours | README lists every secret, no missing values |
-| Create runbook testing procedure | SRE | 8 hours | At least 1 runbook tested with real incident |
-| Review & harden branch protection rules | Engineering | 4 hours | Main branch requires all critical checks to pass |
+| Task                                    | Owner       | Effort  | Acceptance Criteria                                  |
+| --------------------------------------- | ----------- | ------- | ---------------------------------------------------- |
+| Deploy Azure Monitor alerts             | DevOps      | 1 day   | All 3 alert rules active, test notifications working |
+| Set up GitHub workflow notifications    | DevOps      | 4 hours | Slack messages on pipeline failures                  |
+| Document all required GitHub secrets    | Engineering | 4 hours | README lists every secret, no missing values         |
+| Create runbook testing procedure        | SRE         | 8 hours | At least 1 runbook tested with real incident         |
+| Review & harden branch protection rules | Engineering | 4 hours | Main branch requires all critical checks to pass     |
 
 ### Week 3: Performance & Reliability
 
-| Task | Owner | Effort | Acceptance Criteria |
-|------|-------|--------|-------------------|
-| Implement data pipeline retry logic | Data Eng | 2 days | Failed jobs automatically retry up to 3x with backoff |
-| Add health check endpoints | Backend | 1 day | `/health` returns 200 with status JSON |
-| Optimize slow KPI calculations | Data Eng | 2 days | P95 pipeline time < 10 minutes |
-| Scale App Service to Standard tier | DevOps | 4 hours | Always On enabled, auto-scaling configured |
-| Load testing on dashboard | QA | 1 day | Supports 100 concurrent users without degradation |
+| Task                                | Owner    | Effort  | Acceptance Criteria                                   |
+| ----------------------------------- | -------- | ------- | ----------------------------------------------------- |
+| Implement data pipeline retry logic | Data Eng | 2 days  | Failed jobs automatically retry up to 3x with backoff |
+| Add health check endpoints          | Backend  | 1 day   | `/health` returns 200 with status JSON                |
+| Optimize slow KPI calculations      | Data Eng | 2 days  | P95 pipeline time < 10 minutes                        |
+| Scale App Service to Standard tier  | DevOps   | 4 hours | Always On enabled, auto-scaling configured            |
+| Load testing on dashboard           | QA       | 1 day   | Supports 100 concurrent users without degradation     |
 
 ### Week 4: Automation & Self-Healing
 
-| Task | Owner | Effort | Acceptance Criteria |
-|------|-------|--------|-------------------|
-| Auto-rollback on failed health check | DevOps | 1 day | Dashboard auto-recovers from bad deployments |
-| Automated secrets rotation script | DevOps | 1 day | Script runs monthly, updates GitHub secrets |
-| Database backup automation | DevOps | 1 day | Daily backups, 30-day retention, tested restore |
-| Cost optimization review | FinOps | 1 day | Identify 20%+ cost reduction opportunities |
-| Knowledge transfer & documentation | All | 4 hours | Wiki updated, team trained on runbooks |
+| Task                                 | Owner  | Effort  | Acceptance Criteria                             |
+| ------------------------------------ | ------ | ------- | ----------------------------------------------- |
+| Auto-rollback on failed health check | DevOps | 1 day   | Dashboard auto-recovers from bad deployments    |
+| Automated secrets rotation script    | DevOps | 1 day   | Script runs monthly, updates GitHub secrets     |
+| Database backup automation           | DevOps | 1 day   | Daily backups, 30-day retention, tested restore |
+| Cost optimization review             | FinOps | 1 day   | Identify 20%+ cost reduction opportunities      |
+| Knowledge transfer & documentation   | All    | 4 hours | Wiki updated, team trained on runbooks          |
 
 ---
 
@@ -593,14 +593,14 @@ jobs:
 
 Add these to GitHub → Settings → Secrets and variables → Actions:
 
-| Secret Name | Source | Rotation Frequency | Test Method |
-|-------------|--------|-------------------|------------|
-| `DATABASE_URL` | Supabase → Project Settings → Connection Strings | 90 days | Try `psql $DATABASE_URL -c "SELECT 1"` |
-| `META_ACCESS_TOKEN` | Meta Business Suite → Settings → API Tokens | 90 days | Call `/me` endpoint |
-| `HUBSPOT_API_KEY` | HubSpot → Settings → API Key | 90 days | Call `hubspot.crm.contacts.basicApi.getPage()` |
-| `OPENAI_API_KEY` | OpenAI → API Keys → Create New | 90 days | Call `openai.ChatCompletion.create()` |
-| `SLACK_WEBHOOK_URL` | Slack → Apps → Incoming Webhooks | 180 days | Post test message |
-| `AZURE_CREDENTIALS` | Azure → Service Principals | 90 days | `az login --service-principal` |
+| Secret Name         | Source                                           | Rotation Frequency | Test Method                                    |
+| ------------------- | ------------------------------------------------ | ------------------ | ---------------------------------------------- |
+| `DATABASE_URL`      | Supabase → Project Settings → Connection Strings | 90 days            | Try `psql $DATABASE_URL -c "SELECT 1"`         |
+| `META_ACCESS_TOKEN` | Meta Business Suite → Settings → API Tokens      | 90 days            | Call `/me` endpoint                            |
+| `HUBSPOT_API_KEY`   | HubSpot → Settings → API Key                     | 90 days            | Call `hubspot.crm.contacts.basicApi.getPage()` |
+| `OPENAI_API_KEY`    | OpenAI → API Keys → Create New                   | 90 days            | Call `openai.ChatCompletion.create()`          |
+| `SLACK_WEBHOOK_URL` | Slack → Apps → Incoming Webhooks                 | 180 days           | Post test message                              |
+| `AZURE_CREDENTIALS` | Azure → Service Principals                       | 90 days            | `az login --service-principal`                 |
 
 ### Secrets Rotation Procedure
 
@@ -684,4 +684,4 @@ This deliverables package provides:
 
 ---
 
-*For questions or clarifications, refer to the specific runbook or contact the DevOps team.*
+_For questions or clarifications, refer to the specific runbook or contact the DevOps team._

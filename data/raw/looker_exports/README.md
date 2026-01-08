@@ -38,11 +38,11 @@ Looker Studio exports may use tool-generated filenames following the pattern:
 
 These export names are artifacts of Looker Studio and may change if the report is modified. The table below documents the mapping between the export filenames and the standardized filenames used in this repository:
 
-| Looker export filename                               | Standardized filename         |
-| ---------------------------------------------------- | ----------------------------- |
-| `Abaco-Loan-Tape_Loan-Data_Table-6.csv`              | `loan_data.csv`               |
-| `Abaco-Loan-Tape_Customer-Data_Table-6.csv`          | `customer_data.csv`           |
-| `Abaco-Loan-Tape_Historic-Real-Payment_Table-6.csv`  | `historic_payment_data.csv`   |
+| Looker export filename                              | Standardized filename       |
+| --------------------------------------------------- | --------------------------- |
+| `Abaco-Loan-Tape_Loan-Data_Table-6.csv`             | `loan_data.csv`             |
+| `Abaco-Loan-Tape_Customer-Data_Table-6.csv`         | `customer_data.csv`         |
+| `Abaco-Loan-Tape_Historic-Real-Payment_Table-6.csv` | `historic_payment_data.csv` |
 
 When adding data to this directory, you may need to rename the exported CSVs from their Looker names to the standardized filenames above.
 

@@ -81,7 +81,7 @@
   - Health checks
 
 - [x] **deploy-production.yml** (185 lines)
-  - Triggers: git tags (v*.*.*)
+  - Triggers: git tags (v*.*.\*)
   - Jobs: pre-deployment, approval-gate, quality-verification, deploy-production, post-deployment-validation, rollback-on-failure
   - Manual approval gates
   - Health checks
@@ -423,11 +423,11 @@
 
 ### Week-by-Week Completion Status
 
-| Week | Phase | Duration | Materials | Status |
-|------|-------|----------|-----------|--------|
-| **1** | Setup & Configuration | 2-4 hrs | 4 guides, 2 config files, 5 workflows, 1 script | ✅ COMPLETE |
-| **2** | Dry-Runs & Validation | 4-6 hrs | 4 detailed procedures, 4 checklists, role guides | ✅ COMPLETE |
-| **3** | Production Readiness | 2-4 hrs | 5 verification procedures, 35+ checklist items | ✅ COMPLETE |
+| Week  | Phase                 | Duration | Materials                                        | Status      |
+| ----- | --------------------- | -------- | ------------------------------------------------ | ----------- |
+| **1** | Setup & Configuration | 2-4 hrs  | 4 guides, 2 config files, 5 workflows, 1 script  | ✅ COMPLETE |
+| **2** | Dry-Runs & Validation | 4-6 hrs  | 4 detailed procedures, 4 checklists, role guides | ✅ COMPLETE |
+| **3** | Production Readiness  | 2-4 hrs  | 5 verification procedures, 35+ checklist items   | ✅ COMPLETE |
 
 ### Success Metrics by Week
 

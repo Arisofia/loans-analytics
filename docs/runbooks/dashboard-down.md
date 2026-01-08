@@ -13,20 +13,20 @@
 
 ## Triage (5–10 minutes)
 
-1) **Confirm the correct URL**
+1. **Confirm the correct URL**
 
 - Azure Portal → App Service → Overview → copy **Default domain**.
 - Test:
   - `https://<default-domain>/?page=health` (should return `ok`)
   - `https://<default-domain>/` (should render Streamlit)
 
-1) **Confirm the App Service is running**
+1. **Confirm the App Service is running**
 
 - Azure Portal → App Service → Overview
   - Status: Running
 - Azure Portal → App Service → Diagnose and solve problems → Availability and Performance checks
 
-1) **Check app logs (fastest signal)**
+1. **Check app logs (fastest signal)**
 
 - Azure Portal → App Service → Log stream
 - Look for:

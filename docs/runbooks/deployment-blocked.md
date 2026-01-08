@@ -13,20 +13,20 @@
 
 ## Triage (5–15 minutes)
 
-1) **Confirm which deploy path is failing**
+1. **Confirm which deploy path is failing**
 
 - Streamlit dashboard deploy: `.github/workflows/deploy-dashboard.yml`
 - Web deploy: `apps/web/.github/workflows/deploy-*.yml`
 
-1) **Check the failure category**
+1. **Check the failure category**
 
 - Workflow syntax / action reference errors
 - Missing secrets (publish profile / Azure creds)
 - Azure auth failures
 - Health check aimed at wrong host/path
 
-1) **Confirm required secrets exist**
-Typical deploy secrets:
+1. **Confirm required secrets exist**
+   Typical deploy secrets:
 
 - `AZURE_WEBAPP_PUBLISH_PROFILE` (App Service deploy)
 - `AZURE_CREDENTIALS` (Azure CLI config steps)

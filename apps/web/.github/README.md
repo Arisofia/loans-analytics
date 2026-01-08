@@ -71,7 +71,7 @@
 ### Production Deployment
 
 - **File**: `deploy-production.yml`
-- **Trigger**: Git tag (v*.*.*)
+- **Trigger**: Git tag (v*.*.\*)
 - **Duration**: 5-10 minutes total
 - **Validation**: Manual approval gate + health checks
 - **Gates**: All quality checks + staging validation
