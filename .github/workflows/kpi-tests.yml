@@ -69,6 +69,8 @@ jobs:
                   . .venv/bin/activate
                   python -m pip install --upgrade pip
                   pip install -r requirements.txt
+                  # Ensure testing tools are available in the venv
+                  pip install -U pytest
 
             - name: Run KPI tests (matrix)
               run: |
