@@ -36,8 +36,15 @@ jobs:
 
       - name: Lint Markdown
         run: |
-          # Use the YAML config explicitly and ignore node_modules, virtualenvs and large/auto-generated docs
-          markdownlint-cli2 '**/*.md' --config .markdownlint.yml --ignore node_modules --ignore .venv --ignore 'CI_FIX_REPORT_*.md' --ignore 'CI_DIAGNOSIS_REPORT.md' --ignore 'ci-workflow/**' --ignore 'docs/**'
+          # Use the YAML config explicitly, respect .markdownlintignore, and ignore node_modules, virtualenvs and large/auto-generated docs
+          markdownlint-cli2 '**/*.md' --config .markdownlint.yml --ignore-path .markdownlintignore \
+            --ignore 'node_modules/**' \
+            --ignore '.venv/**' \
+            --ignore 'CI_FIX_REPORT_*.md' \
+            --ignore 'CI_DIAGNOSIS_REPORT.md' \
+            --ignore 'ci-workflow/**' \
+            --ignore 'docs/**' \
+            --ignore 'fi-analytics/**'
 
       - name: Lint Python (pylint, flake8, ruff)
         run: |
