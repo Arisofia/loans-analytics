@@ -1,6 +1,5 @@
 import logging
 import uuid
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -8,23 +7,12 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from src.compliance import create_access_log_entry, mask_pii_in_dataframe
+from src.pipeline.compliance import create_access_log_entry, mask_pii_in_dataframe
+from src.analytics.financial_analysis import FinancialAnalyzer
+from src.pipeline.models import TransformationResult
 from src.pipeline.utils import hash_dataframe, utc_now
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class TransformationResult:
-    """Container for transformation outputs and lineage."""
-
-    df: pd.DataFrame
-    run_id: str
-    lineage: List[Dict[str, Any]]
-    quality_checks: Dict[str, Any]
-    masked_columns: List[str]
-    access_log: List[Dict[str, Any]]
-    timestamp: str
 
 
 class UnifiedTransformation:
@@ -37,8 +25,9 @@ class UnifiedTransformation:
         self.lineage: List[Dict[str, Any]] = []
         self.transformations_count = 0
         self.pii_config = self._load_pii_config()
-        from src.pipeline.data_ingestion import IngestionValidator
+        from src.pipeline.ingestion_validator import IngestionValidator
         self.validator = IngestionValidator(root_cfg)
+        self.analyzer = FinancialAnalyzer()
 
     def _load_pii_config(self) -> Dict[str, Any]:
         config_path = Path("config/pii_fields.yaml")
@@ -170,6 +159,15 @@ class UnifiedTransformation:
 
             clean_df = self._handle_nulls(clean_df)
             self._log_step("null_handling", "success")
+
+            enrich_cfg = self.config.get("enrichment", {})
+            if enrich_cfg.get("enabled", True):
+                try:
+                    clean_df = self.analyzer.enrich_master_dataframe(clean_df)
+                    self._log_step("financial_enrichment", "success", columns=list(clean_df.columns))
+                except Exception as e:
+                    logger.warning("Financial enrichment partially failed: %s", e)
+                    self._log_step("financial_enrichment", "partial_failure", error=str(e))
 
             outliers = self._detect_outliers(clean_df)
             if outliers:

@@ -95,7 +95,7 @@ def main():
         print(f"Generated {len(df)} sample loans.")
 
     # Import here to avoid import-time side-effects during pytest collection.
-    from src.financial_analysis import FinancialAnalyzer
+    from src.analytics.financial_analysis import FinancialAnalyzer
 
     analyzer = FinancialAnalyzer()
 

@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 
 from src.pipeline.data_validation import validate_dataframe
-from src.kpis.base import safe_numeric
-from src.kpi_engine_v2 import KPIEngineV2
+from src.utils.numeric import safe_numeric
+from src.kpis import KPIEngineV2
 
 logger = logging.getLogger(__name__)
 

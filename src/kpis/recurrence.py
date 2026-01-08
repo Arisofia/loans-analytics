@@ -2,8 +2,8 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 
-from src.kpis.base import (KPICalculator, KPIMetadata, create_context,
-                           safe_numeric)
+from src.kpis.base import KPICalculator, KPIMetadata, create_context
+from src.utils.numeric import safe_numeric
 
 
 class RecurrenceCalculator(KPICalculator):

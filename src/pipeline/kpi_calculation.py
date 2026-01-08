@@ -1,29 +1,17 @@
 import importlib
 import logging
 import uuid
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import yaml
 
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis import KPIEngineV2
+from src.pipeline.models import CalculationResultV2
 from src.pipeline.utils import utc_now
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class CalculationResultV2:
-    """Container for KPI calculation outputs and audit trail."""
-
-    metrics: Dict[str, Any]
-    audit_trail: List[Dict[str, Any]]
-    run_id: str
-    timeseries: Dict[str, pd.DataFrame]
-    anomalies: Dict[str, Any]
-    timestamp: str
 
 
 class UnifiedCalculationV2:

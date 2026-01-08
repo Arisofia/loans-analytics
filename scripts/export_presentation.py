@@ -12,7 +12,7 @@ import pandas as pd
 import plotly.express as px
 
 from src.analytics import project_growth
-from src.theme import ABACO_THEME
+from src.utils.theme import ABACO_THEME
 
 
 def apply_theme(fig: px.Figure) -> px.Figure:

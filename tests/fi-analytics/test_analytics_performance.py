@@ -42,10 +42,8 @@ class TestAnalyticsPerformanceRobustness:
         result = subprocess.run(
             [
                 sys.executable,
-                "-m",
-                "src.analytics.run_pipeline",
-                "--dataset", str(large_dataset_path),
-                "--output", str(output_dir)
+                "scripts/run_data_pipeline.py",
+                "--input", str(large_dataset_path),
             ],
             capture_output=True,
             text=True,
@@ -56,7 +54,7 @@ class TestAnalyticsPerformanceRobustness:
 
         assert result.returncode == 0
         assert duration < 30.0, f"Pipeline took too long: {duration:.2f}s"
-        assert "Pipeline execution completed successfully" in (result.stdout + result.stderr)
+        assert "Pipeline completed: success" in (result.stdout + result.stderr)
 
     def test_g01_idempotency(self, analytics_test_env: Dict[str, Any]) -> None:
         """
@@ -65,56 +63,103 @@ class TestAnalyticsPerformanceRobustness:
         """
         dataset = analytics_test_env["dataset_path"]
         
+        import re
         results = []
         for i in range(2):
-            out_dir = analytics_test_env["output_dir"] / f"idemp_{i}"
-            subprocess.run(
+            result = subprocess.run(
                 [
                     sys.executable,
-                    "-m",
-                    "src.analytics.run_pipeline",
-                    "--dataset", str(dataset),
-                    "--output", str(out_dir)
+                    "scripts/run_data_pipeline.py",
+                    "--input", str(dataset),
                 ],
+                capture_output=True,
+                text=True,
                 env={**os.environ, "OTEL_SDK_DISABLED": "true"},
                 check=True
             )
-            with open(out_dir / "kpi_results.json") as f:
+            
+            match = re.search(r"RUN_ID: ([\w_]+)", result.stdout)
+            assert match, f"RUN_ID not found in output: {result.stdout}"
+            run_id = match.group(1)
+            
+            metrics_file = Path("data/metrics") / f"{run_id}_metrics.json"
+            with open(metrics_file) as f:
                 data = json.load(f)
-                # Remove run-specific fields
-                data.pop("run_id", None)
-                data.pop("timestamp", None)
+                
+                # Recursively remove run-specific fields
+                def clean_data(obj):
+                    if isinstance(obj, dict):
+                        obj.pop("run_id", None)
+                        obj.pop("timestamp", None)
+                        obj.pop("pipeline_status", None)
+                        for v in obj.values():
+                            clean_data(v)
+                    elif isinstance(obj, list):
+                        for item in obj:
+                            clean_data(item)
+                
+                clean_data(data)
                 results.append(data)
 
         assert results[0] == results[1], "Idempotency failure: results differ between runs"
-
-    def test_e01_retry_placeholder(self, analytics_test_env: Dict[str, Any]) -> None:
-        """
-        E-01: Retry logic placeholder.
-        Verify that pipeline continues even if simulated transient failure happens.
-        """
-        # This is partially covered by integration tests (soft-fail)
-        # In a real implementation, we'd check logs for "retry" attempts.
-        pass
 
     def test_i01_e2e_acceptance(self, analytics_test_env: Dict[str, Any]) -> None:
         """
         I-01: Full End-to-End Acceptance.
         Smoke test for a full run with all features enabled (mocked).
         """
+        import yaml
+        import re
         dataset = analytics_test_env["dataset_path"]
-        output_dir = analytics_test_env["output_dir"] / "e2e_out"
+        
+        # Load base config
+        base_config_path = Path("config/pipeline.yml")
+        with open(base_config_path) as f:
+            config = yaml.safe_load(f)
+            
+        # Update with test-specific overrides
+        def deep_update(source, overrides):
+            for key, value in overrides.items():
+                if isinstance(value, dict) and key in source and isinstance(source[key], dict):
+                    deep_update(source[key], value)
+                else:
+                    source[key] = value
+            return source
+
+        test_overrides = {
+            "pipeline": {
+                "phases": {
+                    "ingestion": {
+                        "validation": {
+                            "strict": False,
+                            "required_columns": ["total_receivable_usd"]
+                        }
+                    },
+                    "outputs": {
+                        "dashboard_triggers": {
+                            "enabled": True,
+                            "outputs": ["figma", "notion"],
+                            "clients": {
+                                "figma": {"enabled": True, "token": "test_token"},
+                                "notion": {"enabled": True, "api_token": "test_token"}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        deep_update(config, test_overrides)
+        
+        config_path = analytics_test_env["output_dir"] / "test_pipeline_config_full.yml"
+        with open(config_path, "w") as f:
+            yaml.dump(config, f)
 
         result = subprocess.run(
             [
                 sys.executable,
-                "-m",
-                "src.analytics.run_pipeline",
-                "--dataset", str(dataset),
-                "--output", str(output_dir),
-                "--sync-figma",
-                "--figma-token", "test_token",
-                "--sync-notion"
+                "scripts/run_data_pipeline.py",
+                "--input", str(dataset),
+                "--config", str(config_path)
             ],
             capture_output=True,
             text=True,
@@ -122,9 +167,27 @@ class TestAnalyticsPerformanceRobustness:
             env={**os.environ, "OTEL_SDK_DISABLED": "true"}
         )
 
-        assert result.returncode == 0
-        combined = result.stdout + result.stderr
-        assert "Syncing KPIs to Figma" in combined
-        assert "Syncing to Notion" in combined
-        assert (output_dir / "kpi_results.json").exists()
-        assert (output_dir / "metrics.csv").exists()
+        assert result.returncode == 0, f"Pipeline failed with stderr: {result.stderr}"
+        
+        match = re.search(r"RUN_ID: ([\w_]+)", result.stdout)
+        assert match, f"RUN_ID not found in output: {result.stdout}"
+        run_id = match.group(1)
+        
+        # Check manifest for trigger results instead of logs which can be finicky
+        manifest_path = Path("logs/runs") / run_id / f"{run_id}_manifest.json"
+        assert manifest_path.exists()
+        with open(manifest_path) as f:
+            manifest = json.load(f)
+            if "triggers" not in manifest:
+                print(f"DEBUG: Manifest keys: {list(manifest.keys())}")
+                print(f"DEBUG: result.stdout: {result.stdout}")
+                print(f"DEBUG: result.stderr: {result.stderr}")
+            assert "triggers" in manifest
+            assert "dashboard_trigger" in manifest["triggers"]
+            trigger_res = manifest["triggers"]["dashboard_trigger"]
+            assert "outputs" in trigger_res
+            assert "figma" in trigger_res["outputs"]
+            assert "notion" in trigger_res["outputs"]
+        
+        assert (Path("data/metrics") / f"{run_id}_metrics.json").exists()
+        assert (Path("data/metrics") / f"{run_id}.csv").exists()

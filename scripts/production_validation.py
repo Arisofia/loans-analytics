@@ -17,10 +17,10 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis import KPIEngineV2
 
 try:
-    from src.azure_tracing import setup_azure_tracing
+    from src.utils.tracing.azure import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for production_validation")

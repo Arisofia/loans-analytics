@@ -41,12 +41,9 @@ class TestAnalyticsSmoke:
             result = subprocess.run(
                 [
                     sys.executable,
-                    "-m",
-                    "src.analytics.run_pipeline",
-                    "--dataset",
+                    "scripts/run_data_pipeline.py",
+                    "--input",
                     str(dataset),
-                    "--output",
-                    str(output_dir),
                 ],
                 capture_output=True,
                 text=True,
@@ -60,7 +57,7 @@ class TestAnalyticsSmoke:
                 f"stderr: {result.stderr}"
             )
 
-            assert "Pipeline start" in result.stderr or "Pipeline start" in result.stdout, (
+            assert "ABACO UNIFIED PIPELINE START" in (result.stdout + result.stderr), (
                 "Pipeline start message not found in logs"
             )
 

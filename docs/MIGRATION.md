@@ -12,7 +12,24 @@ Move all ingestion, transformation, and KPI computation to the unified pipeline 
 
 ## Step-by-Step Migration
 
-### 1. Update Entry Points
+### 1. KPI Engine v1 to v2
+Replace direct function calls with the `KPIEngineV2` orchestrator for consistent interfaces and audit trails.
+
+**Old (v1):**
+```python
+from src.kpis.par_30 import calculate_par_30
+par30_val = calculate_par_30(df)
+```
+
+**New (v2):**
+```python
+from src.kpis import KPIEngineV2
+engine = KPIEngineV2(df, actor="reporting_service")
+metrics = engine.calculate_all()
+par30_val = metrics["PAR30"]["value"]
+```
+
+### 2. Update Entry Points
 
 **Old**
 

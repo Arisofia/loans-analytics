@@ -2,7 +2,7 @@ import unittest
 from datetime import date, timedelta
 
 import pandas as pd
-from src.financial_analysis import FinancialAnalyzer
+from src.analytics.financial_analysis import FinancialAnalyzer
 
 
 class TestFinancialAnalyzer(unittest.TestCase):

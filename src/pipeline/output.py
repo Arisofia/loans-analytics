@@ -1,31 +1,15 @@
 import logging
 import uuid
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
 from src.config.paths import Paths
+from src.pipeline.models import OutputResult, PersistContext
 from src.pipeline.utils import ensure_dir, hash_file, utc_now, write_json
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class OutputResult:
-    manifest: Dict[str, Any]
-    manifest_path: Path
-    output_paths: Dict[str, str]
-
-
-@dataclass
-class PersistContext:
-    """Context for output persistence including quality checks and reports."""
-
-    quality_checks: Optional[Dict[str, Any]] = None
-    compliance_report_path: Optional[Path] = None
-    timeseries: Optional[Dict[str, pd.DataFrame]] = None
 
 
 class UnifiedOutput:
@@ -48,63 +32,51 @@ class UnifiedOutput:
         self.audit_log.append(entry)
         logger.info("[Output:%s] %s | %s", event, status, details)
 
-    def _guess_content_type(self, path: Path) -> str:
-        mapping = {
-            ".csv": "text/csv",
-            ".json": "application/json",
-            ".parquet": "application/octet-stream",
-        }
-        return mapping.get(path.suffix.lower(), "application/octet-stream")
-
     def upload_to_azure(self, file_paths: List[Path], run_id: str) -> Dict[str, str]:
         if not self.azure_config.get("enabled"):
             return {}
 
-        import os
-        from concurrent.futures import ThreadPoolExecutor
-
-        from azure.core.exceptions import ResourceExistsError
-        from azure.storage.blob import BlobServiceClient, ContentSettings
-
-        connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-        if not connection_string:
-            self._log_event("azure_upload", "skipped", reason="No connection string found")
+        from src.integrations.azure_outputs import AzureStorageClient
+        
+        connection_string = self.azure_config.get("storage_connection_string")
+        client = AzureStorageClient(connection_string=connection_string)
+        
+        if not client.client:
+            self._log_event("azure_upload", "skipped", reason="Client not initialized (check credentials)")
             return {}
 
-        container_name = self.azure_config.get("container", "pipeline-runs")
-        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-        container_client = blob_service_client.get_container_client(container_name)
-
-        try:
-            container_client.create_container()
-        except ResourceExistsError:
-            pass
-
         prefix = f"{self.azure_config.get('prefix', 'analytics')}/{run_id}"
-        uploaded: Dict[str, str] = {}
-
-        def _upload_single_file(path: Path):
-            if not path.exists():
-                return None
-            blob_name = f"{prefix}/{path.name}"
-            with path.open("rb") as data:
-                container_client.upload_blob(
-                    name=blob_name,
-                    data=data,
-                    overwrite=True,
-                    content_settings=ContentSettings(content_type=self._guess_content_type(path)),
-                )
-            return path.name, f"{container_name}/{blob_name}"
-
-        with ThreadPoolExecutor(max_workers=min(len(file_paths), 10)) as executor:
-            results = list(executor.map(_upload_single_file, file_paths))
-
-        for res in results:
-            if res:
-                uploaded[res[0]] = res[1]
+        uploaded = client.upload_files(file_paths, prefix)
 
         self._log_event("azure_upload", "success", uploaded_count=len(uploaded))
         return uploaded
+
+    def upload_to_supabase(self, df: pd.DataFrame, metrics: Dict[str, Any], run_id: str) -> Dict[str, Any]:
+        supabase_cfg = self.config.get("supabase", {})
+        if not supabase_cfg.get("enabled"):
+            return {}
+
+        from src.integrations.supabase_client import SupabaseOutputClient
+        
+        client = SupabaseOutputClient()
+        if not client.client:
+            self._log_event("supabase_upload", "skipped", reason="Client not initialized (check credentials)")
+            return {}
+
+        results = {}
+        
+        # 1. Insert metrics
+        kpi_results = client.insert_kpi_metrics(metrics, run_id)
+        results["kpi_metrics"] = kpi_results
+        
+        # 2. Insert raw data if configured
+        tables = supabase_cfg.get("tables", [])
+        if "fact_loans" in tables:
+            inserted_count = client.insert_raw_data(df, "fact_loans", run_id)
+            results["fact_loans_inserted"] = inserted_count
+
+        self._log_event("supabase_upload", "success", results=results)
+        return results
 
     def persist(
         self,
@@ -142,7 +114,14 @@ class UnifiedOutput:
             df.to_csv(csv_path, index=False)
             output_paths["csv"] = str(csv_path)
         if "json" in formats:
-            write_json(metrics_path, metrics)
+            # Include metadata for legacy compatibility and self-documentation
+            metrics_to_write = {
+                **metrics,
+                "run_id": master_run_id,
+                "timestamp": utc_now(),
+                "pipeline_status": "success",
+            }
+            write_json(metrics_path, metrics_to_write)
             output_paths["metrics_json"] = str(metrics_path)
 
         timeseries_paths: Dict[str, str] = {}
@@ -183,6 +162,11 @@ class UnifiedOutput:
         )
         if azure_blobs:
             manifest["azure_blobs"] = azure_blobs
+            write_json(manifest_path, manifest)
+
+        supabase_results = self.upload_to_supabase(df, metrics, master_run_id)
+        if supabase_results:
+            manifest["supabase"] = supabase_results
             write_json(manifest_path, manifest)
 
         # If configured, trigger dashboard/export notifications to external platforms

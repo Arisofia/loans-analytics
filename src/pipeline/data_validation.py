@@ -8,12 +8,8 @@ from typing import Any, Dict, Iterable, List, Optional
 
 import pandas as pd
 
-from src.kpis.base import safe_numeric
-
-
-def safe_numeric(series: pd.Series) -> pd.Series:
-    """Safely convert series to numeric, replacing errors with 0.0."""
-    return pd.to_numeric(series, errors="coerce").fillna(0.0)
+from src.utils.numeric import safe_numeric
+from src.utils.date_utils import ISO8601_REGEX
 
 
 @dataclass
@@ -99,7 +95,7 @@ class DataQualityReporter:
                 resolved = cols_lower.get(col.lower())
                 if resolved:
                     original_nulls = self.df[resolved].isnull().sum()
-                    coerced = pd.to_numeric(self.df[resolved], errors="coerce")
+                    coerced = safe_numeric(self.df[resolved])
                     coerced_nulls = coerced.isnull().sum()
                     if coerced_nulls > original_nulls:
                         self.report.type_errors.append(f"Column '{col}' contains non-numeric values")
@@ -157,8 +153,6 @@ NUMERIC_COLUMNS: List[str] = [
     "discounted_balance_usd",
     "cash_available_usd",
 ]
-
-ISO8601_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$")
 
 
 class ColumnValidator:
@@ -385,3 +379,48 @@ def validate_no_nulls(df: pd.DataFrame, columns: Optional[List[str]] = None) -> 
         if col in df.columns:
             validation[f"{col}_no_nulls"] = not df[col].isnull().any()
     return validation
+
+
+def check_referential_integrity(df: pd.DataFrame, key_columns: Optional[List[str]] = None) -> bool:
+    """Check that key columns have no nulls and no duplicates."""
+    cols = key_columns or ["loan_id"]
+    if any(col not in df.columns for col in cols):
+        return False
+
+    try:
+        if len(df) > 0:
+            subset = df[cols]
+            if subset.isna().any().any():
+                return False
+            if df.duplicated(subset=cols).any():
+                return False
+        return True
+    except Exception:
+        return False
+
+
+def compute_freshness_hours(as_of: datetime, now: Optional[datetime] = None) -> float:
+    """Compute hours since the as_of date."""
+    now_dt = now or datetime.now(timezone.utc)
+    # Ensure as_of is timezone-aware for comparison
+    if as_of.tzinfo is None:
+        as_of = as_of.replace(tzinfo=timezone.utc)
+    delta = now_dt - as_of
+    return delta.total_seconds() / 3600.0
+
+
+def compute_completeness(df: pd.DataFrame, required_columns: Optional[List[str]] = None) -> float:
+    """Compute the percentage of non-null values in required columns."""
+    required = required_columns or []
+    if not required or df.empty:
+        return 1.0
+
+    missing = 0
+    for col in required:
+        if col not in df.columns:
+            missing += len(df)
+        else:
+            missing += int(df[col].isna().sum())
+
+    total = len(df) * len(required)
+    return max(0.0, min(1.0, 1.0 - (missing / total)))
