@@ -41,7 +41,8 @@ class TransformationResult:
     masked_columns: list[str]
     access_log: list[Dict[str, Any]]
     quality_checks: Dict[str, Any]
-    lineage: Dict[str, Any]
+    lineage: list[Dict[str, Any]]
+    timestamp: str
 
 
 @dataclass

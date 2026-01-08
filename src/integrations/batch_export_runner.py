@@ -30,12 +30,16 @@ logging.basicConfig(
 class BatchExportRunner:
     """Run complete batch exports to all output platforms."""
 
-    def __init__(self, output_dir: Optional[Path] = None):
+    DEFAULT_OUTPUTS = ["figma", "azure", "supabase", "meta", "notion"]
+
+    def __init__(self, output_dir: Optional[Path] = None, metrics_dir: Optional[Path] = None):
         self.output_dir = Path(output_dir or "data/exports")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
+        self.metrics_dir = Path(metrics_dir or "data/metrics")
+
         self.manager = UnifiedOutputManager()
-        self.run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
     def load_latest_metrics(self) -> Dict[str, Any]:
         """Load latest KPI metrics from local storage or database.
@@ -43,7 +47,7 @@ class BatchExportRunner:
         Performs runtime validation to ensure the metrics file contains a
         JSON object; malformed or unexpected types are logged and ignored.
         """
-        metrics_file = Path("data/metrics") / "latest_metrics.json"
+        metrics_file = self.metrics_dir / "latest_metrics.json"
 
         if metrics_file.exists():
             try:
@@ -69,7 +73,7 @@ class BatchExportRunner:
 
     def load_raw_data(self) -> Optional[pd.DataFrame]:
         """Load raw analytics data from local storage or database."""
-        data_file = Path("data/metrics") / "latest_data.parquet"
+        data_file = self.metrics_dir / "latest_data.parquet"
 
         if data_file.exists():
             return pd.read_parquet(data_file)
@@ -116,7 +120,7 @@ class BatchExportRunner:
         results = self.manager.export_kpi_metrics_only(
             metrics,
             self.run_id,
-            enabled_outputs=["figma", "azure", "supabase", "meta", "notion"],
+            enabled_outputs=self.DEFAULT_OUTPUTS,
         )
 
         self._save_results(results, "kpi_only")
@@ -133,7 +137,7 @@ class BatchExportRunner:
             metrics,
             summary,
             self.run_id,
-            enabled_outputs=["figma", "azure", "supabase", "meta", "notion"],
+            enabled_outputs=self.DEFAULT_OUTPUTS,
         )
 
         self._save_results(results, "dashboard")
@@ -158,7 +162,7 @@ class BatchExportRunner:
             summary,
             findings,
             self.run_id,
-            enabled_outputs=["figma", "azure", "supabase", "meta", "notion"],
+            enabled_outputs=self.DEFAULT_OUTPUTS,
         )
 
         self._save_results(results, "full")
@@ -209,6 +213,12 @@ def main():
         help="Output directory for export results",
     )
     parser.add_argument(
+        "--metrics-dir",
+        type=str,
+        default="data/metrics",
+        help="Directory containing source metrics",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable verbose logging",
@@ -219,7 +229,10 @@ def main():
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    runner = BatchExportRunner(output_dir=args.output_dir)
+    runner = BatchExportRunner(
+        output_dir=args.output_dir,
+        metrics_dir=args.metrics_dir,
+    )
     results = runner.run(export_type=args.type)
 
     print(json.dumps(results, indent=2, default=str))

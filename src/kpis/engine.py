@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
+from src.utils.data_normalization import normalize_columns
 from src.kpis.active_clients import \
     calculate_active_clients as calculate_active_clients_logic
 from src.kpis.actual_yield import \
@@ -66,8 +67,9 @@ class KPIEngineV2:
         action: str = "kpi",
         run_id: Optional[str] = None,
         custom_kpis: Optional[Dict[str, Any]] = None,
+        normalize: bool = True,
     ):
-        self.df = df
+        self.df = normalize_columns(df) if normalize else df
         self.actor = actor
         self.action = action
         self.run_id = run_id or f"kpi_{datetime.now().strftime('%Y%m%d_%H%M%S')}"

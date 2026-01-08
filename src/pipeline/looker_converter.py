@@ -115,12 +115,14 @@ class LookerConverter:
                             financials_by_date.setdefault(str(date_series[idx]), {})[metric_key] = float(metric_value)
 
         for metrics in financials_by_date.values():
-            assets, liabilities = metrics.get("total_assets_usd"), metrics.get("total_liabilities_usd")
+            assets = metrics.get("total_assets_usd")
+            liabilities = metrics.get("total_liabilities_usd")
             if metrics.get("net_worth_usd") is None and assets is not None and liabilities is not None:
-                metrics["net_worth_usd"] = float(assets) - float(liabilities)
+                metrics["net_worth_usd"] = assets - liabilities
             net_worth = metrics.get("net_worth_usd")
-            if metrics.get("debt_to_equity_ratio") is None and liabilities is not None and net_worth not in (None, 0):
-                metrics["debt_to_equity_ratio"] = float(liabilities) / float(net_worth)
+            if metrics.get("debt_to_equity_ratio") is None and liabilities is not None and net_worth not in (None, 0.0):
+                # We know net_worth is float and not 0.0 here
+                metrics["debt_to_equity_ratio"] = liabilities / net_worth  # type: ignore[operator]
 
         return financials_by_date, {"files": [str(p) for p in files], "dates": len(financials_by_date), "metrics": sorted({k for v in financials_by_date.values() for k in v})}
 

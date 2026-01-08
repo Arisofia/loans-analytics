@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 
 from src.kpis.base import KPICalculator, KPIMetadata, create_context
+from src.utils.data_normalization import (COL_APPRAISED_VALUE, COL_LOAN_AMOUNT,
+                                          normalize_columns)
 from src.utils.numeric import safe_numeric
 
 
@@ -27,13 +29,16 @@ class LTVCalculator(KPICalculator):
                 self.METADATA.formula, rows_processed=0, reason="Empty DataFrame"
             )
 
-        required = ["loan_amount", "appraised_value"]
-        missing = [col for col in required if col not in df.columns]
+        # Standardize columns
+        working_df = normalize_columns(df)
+
+        required = [COL_LOAN_AMOUNT, COL_APPRAISED_VALUE]
+        missing = [col for col in required if col not in working_df.columns]
         if missing:
             raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
-        loan_amount = safe_numeric(df["loan_amount"])
-        appraised_value = safe_numeric(df["appraised_value"])
+        loan_amount = safe_numeric(working_df[COL_LOAN_AMOUNT])
+        appraised_value = safe_numeric(working_df[COL_APPRAISED_VALUE])
 
         # Element-wise LTV
         ltv_values = np.where(

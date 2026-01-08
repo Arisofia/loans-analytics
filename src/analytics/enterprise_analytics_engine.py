@@ -5,8 +5,9 @@ import numpy as np
 import pandas as pd
 
 from src.pipeline.data_validation import validate_dataframe
-from src.utils.numeric import safe_numeric
 from src.kpis import KPIEngineV2
+from src.utils.data_normalization import normalize_columns
+from src.utils.numeric import safe_numeric
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,8 @@ class LoanAnalyticsEngine:
         if not isinstance(loan_data, pd.DataFrame) or loan_data.empty:
             raise ValueError("Input loan_data must be a non-empty pandas DataFrame.")
 
-        self.loan_data = loan_data.copy()
+        # Normalize column names before processing
+        self.loan_data = normalize_columns(loan_data.copy())
         self._coercion_report: Dict[str, int] = {}
         
         self._validate_columns()

@@ -63,7 +63,7 @@ class UnifiedOutput:
             self._log_event("supabase_upload", "skipped", reason="Client not initialized (check credentials)")
             return {}
 
-        results = {}
+        results: Dict[str, Any] = {}
         
         # 1. Insert metrics
         kpi_results = client.insert_kpi_metrics(metrics, run_id)

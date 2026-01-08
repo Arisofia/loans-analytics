@@ -67,6 +67,8 @@ class UnifiedCalculationV2:
         func_path = metric_cfg.get("function") or ext_def.get("function")
         if not func_path:
             # Use engine for direct calculation if function path is missing
+            if not name or not isinstance(name, str):
+                raise ValueError(f"Invalid or missing metric name in config: {name}")
             try:
                 val = engine.get_metric(name)
                 context = {"source": "KPIEngineV2"}

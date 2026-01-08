@@ -34,6 +34,12 @@ class SecretsManager:
         "FIGMA_TOKEN",
         "FIGMA_FILE_KEY",
         "CASCADE_TOKEN",
+        "AZURE_STORAGE_CONNECTION_STRING",
+        "AZURE_TENANT_ID",
+        "AZURE_CLIENT_ID",
+        "AZURE_CLIENT_SECRET",
+        "AZURE_SUBSCRIPTION_ID",
+        "AZURE_KEY_VAULT_NAME",
     ]
 
     AZURE_KEYS = [

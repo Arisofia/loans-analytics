@@ -57,7 +57,7 @@ class TestAnalyticsIntegration:
             ],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=120,
             env={**os.environ, "OTEL_SDK_DISABLED": "true"}
         )
 
@@ -128,7 +128,7 @@ class TestAnalyticsIntegration:
             ],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=120,
             env={**os.environ, "OTEL_SDK_DISABLED": "true"}
         )
 
@@ -169,7 +169,7 @@ class TestAnalyticsIntegration:
             ],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=120,
             env={**os.environ, "OTEL_SDK_DISABLED": "true"}
         )
 

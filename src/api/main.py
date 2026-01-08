@@ -1,12 +1,13 @@
 from pathlib import Path
 import logging
+from typing import Any
 
 try:
     from fastapi import FastAPI, HTTPException
-    app = FastAPI(title="Abaco Analytics API")
+    app: Any = FastAPI(title="Abaco Analytics API")
 except ImportError:
     # Lightweight fallback for environments without FastAPI
-    class HTTPException(Exception):
+    class HTTPException(Exception):  # type: ignore[no-redef]
         def __init__(self, status_code: int, detail: str):
             self.status_code = status_code
             self.detail = detail
@@ -34,8 +35,8 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
 
     try:
         resolved.relative_to(allowed_dir)
-    except (ValueError, RuntimeError):
-        raise ValueError("path resolves outside the allowed data directory")
+    except (ValueError, RuntimeError) as exc:
+        raise ValueError("path resolves outside the allowed data directory") from exc
 
     return resolved
 
@@ -51,7 +52,7 @@ if app:
             resolved = _sanitize_and_resolve(file_path, ALLOWED_DATA_DIR)
         except ValueError as exc:
             logger.warning("Invalid data path requested: %s (%s)", file_path, exc)
-            raise HTTPException(status_code=400, detail=str(exc))
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
         if not resolved.exists() or not resolved.is_file():
             raise HTTPException(status_code=404, detail="file not found")
