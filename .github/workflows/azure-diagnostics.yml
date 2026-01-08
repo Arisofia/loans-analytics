@@ -9,25 +9,25 @@ permissions:
 
 jobs:
   validate-azure:
-    uses: Abaco-Technol/abaco-loans-analytics/.github/workflows/reusable-secret-check.yml@main
+    uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secrets: "AZURE_CREDENTIALS"
     secrets: inherit
 
   validate-acr:
-    uses: Abaco-Technol/abaco-loans-analytics/.github/workflows/reusable-secret-check.yml@main
+    uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secrets: "ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD"
     secrets: inherit
 
   validate-storage:
-    uses: Abaco-Technol/abaco-loans-analytics/.github/workflows/reusable-secret-check.yml@main
+    uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secrets: "AZURE_STORAGE_ACCOUNT_NAME,AZURE_STORAGE_CONNECTION_STRING"
     secrets: inherit
 
   validate-swa:
-    uses: Abaco-Technol/abaco-loans-analytics/.github/workflows/reusable-secret-check.yml@main
+    uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secrets: "AZURE_STATIC_WEB_APPS_API_TOKEN"
     secrets: inherit
@@ -52,18 +52,18 @@ jobs:
           azcliversion: "2.49.0"
 
       - name: Azure login (service principal)
-        if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}
+        if: ${{ needs.validate-azure.result != 'skipped' && needs.validate-azure.outputs.all_secrets_present == 'true' }}
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Capture Azure account
-        if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}
+        if: ${{ needs.validate-azure.result != 'skipped' && needs.validate-azure.outputs.all_secrets_present == 'true' }}
         run: |
           az account show --output json > diagnostics/az_account.json || echo '{}' > diagnostics/az_account.json
 
       - name: ACR repositories (if available)
-        if: ${{ needs.validate-acr.outputs.all_secrets_present == 'true' && needs.validate-azure.outputs.all_secrets_present == 'true' }}
+        if: ${{ needs.validate-acr.result != 'skipped' && needs.validate-acr.outputs.all_secrets_present == 'true' && needs.validate-azure.result != 'skipped' && needs.validate-azure.outputs.all_secrets_present == 'true' }}
         env:
           ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
         run: |
@@ -71,23 +71,39 @@ jobs:
           az acr repository list --name "$registry" --output json > diagnostics/acr_repos.json || echo '[]' > diagnostics/acr_repos.json
 
       - name: Storage containers (if available)
-        if: ${{ needs.validate-storage.outputs.all_secrets_present == 'true' }}
+        if: ${{ needs.validate-storage.result != 'skipped' && needs.validate-storage.outputs.all_secrets_present == 'true' }}
         run: |
           echo "Listing containers using AZURE_STORAGE_CONNECTION_STRING"
           az storage container list --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --output json > diagnostics/storage_containers.json || echo '[]' > diagnostics/storage_containers.json
 
       - name: SWA token check
-        if: ${{ needs.validate-swa.outputs.all_secrets_present == 'true' }}
+        if: ${{ needs.validate-swa.result != 'skipped' && needs.validate-swa.outputs.all_secrets_present == 'true' }}
         run: echo "SWA token present" > diagnostics/swa_status.txt
 
       - name: Summarize diagnostics
         run: |
           {
             echo "Diagnostics summary:"
-            echo "validate-azure: ${{ needs.validate-azure.outputs.all_secrets_present }}"
-            echo "validate-acr: ${{ needs.validate-acr.outputs.all_secrets_present }}"
-            echo "validate-storage: ${{ needs.validate-storage.outputs.all_secrets_present }}"
-            echo "validate-swa: ${{ needs.validate-swa.outputs.all_secrets_present }}"
+            if [ "${{ needs.validate-azure.result }}" != "skipped" ]; then
+              echo "validate-azure: ${{ needs.validate-azure.outputs.all_secrets_present }}"
+            else
+              echo "validate-azure: skipped"
+            fi
+            if [ "${{ needs.validate-acr.result }}" != "skipped" ]; then
+              echo "validate-acr: ${{ needs.validate-acr.outputs.all_secrets_present }}"
+            else
+              echo "validate-acr: skipped"
+            fi
+            if [ "${{ needs.validate-storage.result }}" != "skipped" ]; then
+              echo "validate-storage: ${{ needs.validate-storage.outputs.all_secrets_present }}"
+            else
+              echo "validate-storage: skipped"
+            fi
+            if [ "${{ needs.validate-swa.result }}" != "skipped" ]; then
+              echo "validate-swa: ${{ needs.validate-swa.outputs.all_secrets_present }}"
+            else
+              echo "validate-swa: skipped"
+            fi
             ls -lah diagnostics || true
           } > diagnostics/summary.txt
 
@@ -99,7 +115,23 @@ jobs:
 
       - name: Output availability as job summary
         run: |
-          echo "Azure available: ${{ needs.validate-azure.outputs.all_secrets_present }}"
-          echo "ACR available: ${{ needs.validate-acr.outputs.all_secrets_present }}"
-          echo "Storage available: ${{ needs.validate-storage.outputs.all_secrets_present }}"
-          echo "SWA available: ${{ needs.validate-swa.outputs.all_secrets_present }}"
+          if [ "${{ needs.validate-azure.result }}" != "skipped" ]; then
+            echo "Azure available: ${{ needs.validate-azure.outputs.all_secrets_present }}"
+          else
+            echo "Azure available: skipped"
+          fi
+          if [ "${{ needs.validate-acr.result }}" != "skipped" ]; then
+            echo "ACR available: ${{ needs.validate-acr.outputs.all_secrets_present }}"
+          else
+            echo "ACR available: skipped"
+          fi
+          if [ "${{ needs.validate-storage.result }}" != "skipped" ]; then
+            echo "Storage available: ${{ needs.validate-storage.outputs.all_secrets_present }}"
+          else
+            echo "Storage available: skipped"
+          fi
+          if [ "${{ needs.validate-swa.result }}" != "skipped" ]; then
+            echo "SWA available: ${{ needs.validate-swa.outputs.all_secrets_present }}"
+          else
+            echo "SWA available: skipped"
+          fi
