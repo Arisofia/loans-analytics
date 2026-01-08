@@ -23,7 +23,8 @@ jobs:
                   python -m pip install --upgrade pip
                   pip install -r requirements.txt -r dev-requirements.txt
                   pip install jsonlint
-                  npm install -g markdownlint-cli
+                  # Use markdownlint-cli2 which supports YAML config files (.markdownlint.yml)
+                  npm install -g markdownlint-cli2
 
             - name: Lint YAML
               run: |
@@ -35,7 +36,8 @@ jobs:
 
             - name: Lint Markdown
               run: |
-                  markdownlint '**/*.md' --ignore node_modules --ignore .venv
+                  # Use the YAML config explicitly and ignore node_modules and virtualenvs
+                  markdownlint-cli2 '**/*.md' --config .markdownlint.yml --ignore node_modules --ignore .venv
 
             - name: Lint Python (pylint, flake8, ruff)
               run: |
