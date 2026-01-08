@@ -9,15 +9,11 @@ Test Cases:
   - F-02: Unauthorized Access Handling (403 Forbidden)
 """
 
-import json
-import logging
 import os
 import subprocess
 import sys
-from pathlib import Path
 from typing import Any, Dict
 
-import pytest
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
@@ -74,8 +70,6 @@ class TestAnalyticsIntegration:
         Verify that spans are generated with consistent Trace IDs.
         """
         from src.pipeline.orchestrator import UnifiedPipeline
-        import pandas as pd
-        from opentelemetry.sdk.trace import TracerProvider
 
         # Get existing provider or create new if not set
         provider = trace.get_tracer_provider()

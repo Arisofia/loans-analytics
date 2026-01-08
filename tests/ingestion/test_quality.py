@@ -1,5 +1,4 @@
 import pandas as pd
-import pytest
 from src.pipeline.data_validation import DataQualityReporter
 
 def test_data_quality_report_passed():

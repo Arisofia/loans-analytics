@@ -27,7 +27,7 @@ jobs:
   validate-secrets:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secrets: DOCKER_USERNAME,DOCKER_PASSWORD,ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD
+      secret_names: DOCKER_USERNAME,DOCKER_PASSWORD,ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD
     secrets: inherit
 
   build-and-push:

@@ -9,7 +9,6 @@ Test Cases:
 """
 
 import json
-import logging
 import os
 import subprocess
 import sys
@@ -18,7 +17,6 @@ from pathlib import Path
 from typing import Any, Dict
 
 import pandas as pd
-import pytest
 
 
 class TestAnalyticsPerformanceRobustness:

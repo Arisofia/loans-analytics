@@ -139,7 +139,7 @@ class _SimpleRequestsMock:
 @pytest.fixture
 def requests_mock(monkeypatch):
     stub = _SimpleRequestsMock()
-    orig = requests.Session.request
+    # Keep reference to original method if needed in future; not used now
 
     def _patched(self, method, url, *args, **kwargs):
         resp = stub._handle(method, url, **kwargs)
@@ -170,7 +170,6 @@ def run_analytics_pipeline(analytics_test_env):
     """Run the analytics pipeline once and return the output directory."""
     import subprocess
     import sys
-    import shutil
     import re
     
     dataset = analytics_test_env["dataset_path"]

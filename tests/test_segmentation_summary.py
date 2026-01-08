@@ -1,5 +1,4 @@
 import pandas as pd
-import pytest
 from src.kpis.segmentation_summary import SegmentationSummaryCalculator
 
 def test_segmentation_summary_calculation():

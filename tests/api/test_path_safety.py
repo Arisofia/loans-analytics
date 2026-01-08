@@ -1,6 +1,5 @@
 import pytest
 from src.api import main as api_main
-from pathlib import Path
 
 
 def test_sanitize_and_resolve_valid(tmp_path):

@@ -1,9 +1,6 @@
 import json
 import logging
-import os
-from pathlib import Path
 
-import pytest
 
 
 def test_batch_export_load_latest_metrics_invalid_json(tmp_path, caplog, monkeypatch):
