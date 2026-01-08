@@ -22,7 +22,7 @@ def validate_iban(iban: Optional[str]) -> bool:
     try:
         return is_valid_iban(clean_iban)
     except Exception as e:
-        # Avoid logging IBAN directly; use a non-reversible identifier instead
-        iban_id = hashlib.sha256(clean_iban.encode("utf-8")).hexdigest()[:8] if clean_iban else "unknown"
-        logger.error(f"Error validating IBAN (id={iban_id}): {e}")
+        # Avoid logging IBAN or any derived identifier; log only generic error information
+        logger.error("Error validating IBAN", exc_info=e)
         return False
+
