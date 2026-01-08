@@ -1,151 +1,156 @@
 name: KPI tests
 
 on:
-    push:
-        paths:
-            - "src/kpis/**"
-            - "tests/test_kpis_*.py"
-            - "tests/test_manifest_segmentation.py"
-            - "tests/test_api_kpis.py"
-    pull_request:
-        paths:
-            - "src/kpis/**"
-            - "tests/test_kpis_*.py"
-            - "tests/test_api_kpis.py"
+  push:
+    paths:
+      - "src/kpis/**"
+      - "tests/test_kpis_*.py"
+      - "tests/test_manifest_segmentation.py"
+      - "tests/test_api_kpis.py"
+  pull_request:
+    paths:
+      - "src/kpis/**"
+      - "tests/test_kpis_*.py"
+      - "tests/test_api_kpis.py"
 
 permissions:
-    contents: read
-    issues: write
+  contents: read
+  issues: write
 
 concurrency:
-    group: kpi-tests-${{ github.ref }}
-    cancel-in-progress: true
+  group: kpi-tests-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    kpi-tests:
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                test-path:
-                    - "tests/test_kpis*"
-                    - "tests/test_manifest_segmentation.py"
-                    - "tests/test_api_kpis.py"
-            fail-fast: false
-        timeout-minutes: 20
+  kpi-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-path:
+          - "tests/test_kpis*"
+          - "tests/test_manifest_segmentation.py"
+          - "tests/test_api_kpis.py"
+      fail-fast: false
+    timeout-minutes: 20
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-            - name: Show changed files (debug)
-              run: |
-                  echo "Event: $GITHUB_EVENT_NAME"
-                  git --no-pager diff --name-only ${{ github.sha }}^ ${{ github.sha }} || true
+      - name: Show changed files (debug)
+        run: |
+          echo "Event: $GITHUB_EVENT_NAME"
+          git --no-pager diff --name-only ${{ github.sha }}^ ${{ github.sha }} || true
 
-            - name: Set up Python
-              uses: actions/setup-python@v4
-              with:
-                  python-version: "3.11"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-            - name: Cache pip
-              uses: actions/cache@v4
-              with:
-                  path: ~/.cache/pip
-                  key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-                  restore-keys: ${{ runner.os }}-pip-
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
 
-            - name: Cache venv
-              uses: actions/cache@v4
-              with:
-                  path: .venv
-                  key: ${{ runner.os }}-venv-${{ hashFiles('requirements.txt') }}
-                  restore-keys: ${{ runner.os }}-venv-
+      - name: Cache venv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-venv-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-venv-
 
-            - name: Install dependencies (create venv)
-              run: |
-                  python -m venv .venv
-                  . .venv/bin/activate
-                  python -m pip install --upgrade pip
-                  pip install -r requirements.txt
-                  # Ensure testing tools are available in the venv
-                  pip install -U pytest
+      - name: Install dependencies (create venv)
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # Ensure testing tools are available in the venv
+          pip install -U pytest
 
-            - name: Run KPI tests (matrix)
-              run: |
-                  echo "Running test: ${{ matrix.test-path }}"
-                  . .venv/bin/activate
-                  pytest -q ${{ matrix.test-path }}
-    kpi-summary:
-        needs: kpi-tests
-        if: github.event_name == 'pull_request'
-        runs-on: ubuntu-latest
-        steps:
-            - name: Post KPI summary comment on PR (with durations)
-              uses: actions/github-script@v6
-              with:
-                  script: |
-                      const pr = context.payload.pull_request;
-                      if (!pr) {
-                        core.info('No pull_request context; skipping comment');
-                        return;
-                      }
-                      const prNumber = pr.number;
-                      const owner = context.repo.owner;
-                      const repo = context.repo.repo;
+      - name: Run KPI tests (matrix)
+        run: |
+          echo "Running test: ${{ matrix.test-path }}"
+          . .venv/bin/activate
+          pytest -q ${{ matrix.test-path }}
+  kpi-summary:
+    needs: kpi-tests
+    # Only run the summary step for PRs opened against the same repository (skip forks where the token may be restricted)
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post KPI summary comment on PR (with durations)
+        uses: actions/github-script@v6
+        with:
+          script: |
+            try {
+              const pr = context.payload.pull_request;
+              if (!pr) {
+                core.info('No pull_request context; skipping comment');
+                return;
+              }
+              const prNumber = pr.number;
+              const owner = context.repo.owner;
+              const repo = context.repo.repo;
 
-                      // Determine current run ID
-                      const runId = context.runId || parseInt(process.env.GITHUB_RUN_ID, 10);
+              // Determine current run ID
+              const runId = context.runId || parseInt(process.env.GITHUB_RUN_ID, 10);
 
-                      // Fetch jobs for this workflow run and compute durations for kpi-tests matrix jobs
-                      const jobsResp = await github.rest.actions.listJobsForWorkflowRun({ owner, repo, run_id: runId });
-                      const jobs = jobsResp.data.jobs || [];
-                      const kpiJobs = jobs.filter(j => j.name && j.name.toLowerCase().includes('kpi-tests'));
+              // Fetch jobs for this workflow run and compute durations for kpi-tests matrix jobs
+              const jobsResp = await github.rest.actions.listJobsForWorkflowRun({ owner, repo, run_id: runId });
+              const jobs = jobsResp.data.jobs || [];
+              const kpiJobs = jobs.filter(j => j.name && j.name.toLowerCase().includes('kpi-tests'));
 
-                      const durationEntries = kpiJobs.map(j => {
-                        const start = j.started_at ? new Date(j.started_at) : null;
-                        const end = j.completed_at ? new Date(j.completed_at) : null;
-                        const durationSec = start && end ? Math.round((end - start) / 1000) : null;
-                        return { name: j.name, conclusion: j.conclusion, durationSec };
-                      });
+              const durationEntries = kpiJobs.map(j => {
+                const start = j.started_at ? new Date(j.started_at) : null;
+                const end = j.completed_at ? new Date(j.completed_at) : null;
+                const durationSec = start && end ? Math.round((end - start) / 1000) : null;
+                return { name: j.name, conclusion: j.conclusion, durationSec };
+              });
 
-                      const durationsTable = durationEntries
-                      .map(d => {
-                      const durationText = d.durationSec !== null ? d.durationSec + 's' : 'N/A';
-                      const conclusion = d.conclusion || 'unknown';
-                      return `- ${d.name}: ${durationText} (${conclusion})`;
-                      })
-                      .join('\n');
+              const durationsTable = durationEntries
+              .map(d => {
+              const durationText = d.durationSec !== null ? d.durationSec + 's' : 'N/A';
+              const conclusion = d.conclusion || 'unknown';
+              return `- ${d.name}: ${durationText} (${conclusion})`;
+              })
+              .join('\n');
 
-                      const totalSec = durationEntries.reduce((acc, d) => acc + (d.durationSec || 0), 0);
-                      const avgSec = durationEntries.length ? Math.round(totalSec / durationEntries.length) : 0;
+              const totalSec = durationEntries.reduce((acc, d) => acc + (d.durationSec || 0), 0);
+              const avgSec = durationEntries.length ? Math.round(totalSec / durationEntries.length) : 0;
 
-                      const body = [
-                      '<!-- KPI_TEST_SUMMARY -->',
-                      '**KPI tests** ran in *parallel (matrix)* with pip + .venv caching enabled.',
-                      '',
-                      '**Job durations:**',
-                      durationsTable,
-                      '',
-                      '**Avg duration per matrix job:** ' + avgSec + 's',
-                      '**Total of reported jobs:** ' + totalSec + 's',
-                      '',
-                      'Tests executed:',
-                      '`tests/test_kpis*`',
-                      '`tests/test_manifest_segmentation.py`',
-                      '`tests/test_api_kpis.py`',
-                      ].join('\n');
+              const body = [
+              '<!-- KPI_TEST_SUMMARY -->',
+              '**KPI tests** ran in *parallel (matrix)* with pip + .venv caching enabled.',
+              '',
+              '**Job durations:**',
+              durationsTable,
+              '',
+              '**Avg duration per matrix job:** ' + avgSec + 's',
+              '**Total of reported jobs:** ' + totalSec + 's',
+              '',
+              'Tests executed:',
+              '`tests/test_kpis*`',
+              '`tests/test_manifest_segmentation.py`',
+              '`tests/test_api_kpis.py`',
+              ].join('\n');
 
-                      // Update or create single comment
-                        const { data: comments } = await github.rest.issues.listComments({
-                          owner,
-                          repo,
-                          issue_number: prNumber
-                        });
-                      const existing = comments.find(c => c.body && c.body.includes('<!-- KPI_TEST_SUMMARY -->'));
-                      if (existing) {
-                      await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-                      } else {
-                      await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
-                      }
+              // Update or create single comment
+                const { data: comments } = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: prNumber
+                });
+              const existing = comments.find(c => c.body && c.body.includes('<!-- KPI_TEST_SUMMARY -->'));
+              if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+              } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+              }
+            } catch (err) {
+              core.warning('Could not post KPI summary comment: ' + err.message);
+            }
