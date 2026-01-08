@@ -77,3 +77,12 @@ def hash_file(path: Path) -> str:
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def select_column(columns: list[str], candidates: list[str]) -> Optional[str]:
+    column_map = {col.lower(): col for col in columns}
+    for candidate in candidates:
+        key = candidate.lower()
+        if key in column_map:
+            return column_map[key]
+    return None

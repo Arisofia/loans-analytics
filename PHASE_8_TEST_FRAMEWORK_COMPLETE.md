@@ -87,11 +87,13 @@ tests/fixtures/
 ## How to Execute
 
 ### Full Suite
+
 ```bash
 .venv/bin/python3 -m pytest tests/fi-analytics/ -v
 ```
 
 ### With Coverage
+
 ```bash
 .venv/bin/python3 -m pytest tests/fi-analytics/ -v --cov=src.analytics --cov-fail-under=80
 ```

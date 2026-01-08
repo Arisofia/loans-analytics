@@ -206,3 +206,12 @@ def test_data_quality_report_type_error():
 
     assert report.score < 100.0
     assert any("non-numeric" in err for err in report.type_errors)
+
+
+def test_iban_validation():
+    from src.utils.validation import validate_iban
+    # These are not necessarily real IBANs but follow patterns or basic checks
+    assert validate_iban("ES1234567890123456789012") is True
+    assert validate_iban("invalid") is False
+    assert validate_iban("") is False
+    assert validate_iban(None) is False

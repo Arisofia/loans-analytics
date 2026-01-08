@@ -1,5 +1,5 @@
 import pytest
-from pipeline.ingestion import UnifiedIngestion
+from python.pipeline.ingestion import UnifiedIngestion
 
 
 def test_ingest_file_strict_raises(tmp_path):

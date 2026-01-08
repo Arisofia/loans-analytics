@@ -39,7 +39,12 @@ jobs:
       - name: Validate Meta Insights Data
         if: hashFiles('data/warehouse/meta_insights.parquet') != ''
         run: |
-          python -c "import pandas as pd; df = pd.read_parquet('data/warehouse/meta_insights.parquet'); assert not df.empty, 'Meta insights data is empty!'; print('Meta insights records:', len(df))"
+          python -c "
+          import pandas as pd
+          df = pd.read_parquet('data/warehouse/meta_insights.parquet')
+          assert not df.empty, 'Meta insights data is empty!'
+          print('Meta insights records:', len(df))
+          "
       - name: Validate Cascade Data
         if: hashFiles('data/metrics/*.csv') != ''
         run: |
@@ -85,4 +90,5 @@ jobs:
           FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
           FIGMA_NODE_ID: ${{ secrets.FIGMA_NODE_ID }}
         run: |
-          curl -H "X-Figma-Token: $FIGMA_TOKEN" "https://api.figma.com/v1/files/$FIGMA_FILE_KEY/nodes?ids=$FIGMA_NODE_ID"
+          curl -H "X-Figma-Token: $FIGMA_TOKEN" \
+            "https://api.figma.com/v1/files/$FIGMA_FILE_KEY/nodes?ids=$FIGMA_NODE_ID"

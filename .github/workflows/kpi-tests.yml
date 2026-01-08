@@ -72,12 +72,15 @@ jobs:
           .venv/bin/python -m pip install -U pytest
 
       - name: Run KPI tests (matrix)
+        env:
+          PYTHONPATH: .
         run: |
           echo "Running test: ${{ matrix.test-path }}"
           .venv/bin/python -m pytest -q ${{ matrix.test-path }}
   kpi-summary:
     needs: kpi-tests
-    # Only run the summary step for PRs opened against the same repository (skip forks where the token may be restricted)
+    # Only run the summary step for PRs opened against the same repository
+    # (skip forks where the token may be restricted)
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:

@@ -33,16 +33,19 @@ python src/transformation.py --input raw.csv
 **Unified Commands:**
 
 For analytics pipeline and KPI calculation:
+
 ```bash
 python run_complete_analytics.py
 ```
 
 For executive report generation:
+
 ```bash
 python generate_executive_report.py
 ```
 
 For pipeline orchestration (programmatic):
+
 ```bash
 from src.pipeline.orchestrator import PipelineOrchestrator
 orchestrator = PipelineOrchestrator(config)

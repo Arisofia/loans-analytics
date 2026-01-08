@@ -52,5 +52,10 @@ ls -la .env* || echo "No env files found"
 print_header "SECURITY AUDIT"
 ls -la SECURITY.md || echo "SECURITY.md missing"
 
+print_header "HARDENING AUDIT"
+ls -la src/models/financial.py || echo "financial.py missing"
+ls -la src/utils/validation.py || echo "validation.py missing"
+grep -q "iban" requirements.txt && echo "IBAN requirement present" || echo "IBAN requirement missing"
+
 print_header "COMPLIANCE AUDIT"
 ls -la COMPLIANCE_VALIDATION_SUMMARY.md || echo "COMPLIANCE_VALIDATION_SUMMARY.md missing"

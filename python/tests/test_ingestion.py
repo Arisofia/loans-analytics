@@ -2,7 +2,7 @@ import json
 
 import pandas as pd
 import pytest
-from pipeline.ingestion import UnifiedIngestion
+from python.pipeline.ingestion import UnifiedIngestion
 
 
 @pytest.fixture
@@ -23,7 +23,7 @@ def test_looker_par_balances_to_loan_tape(base_config):
         }
     )
     cash_by_date = {"2024-01-01": 15.0}
-    out = ui._looker_par_balances_to_loan_tape(df, cash_by_date)
+    out = ui.looker_converter.convert_par_balances(df, cash_by_date)
     assert "measurement_date" in out.columns
     assert out["total_receivable_usd"].sum() == pytest.approx(150.0)
     # locate the row by the measurement date for robustness
@@ -36,7 +36,7 @@ def test_looker_dpd_to_loan_tape(base_config):
     df = pd.DataFrame(
         {"dpd": [0, 5, 10, 40, 75, 120], "outstanding_balance": [10, 10, 10, 10, 10, 10]}
     )
-    out = ui._looker_dpd_to_loan_tape(df, {})
+    out = ui.looker_converter.convert_dpd_loans(df, {})
     # dpd buckets
     assert out["dpd_0_7_usd"].sum() >= 10.0
     assert out["dpd_7_30_usd"].sum() >= 10.0

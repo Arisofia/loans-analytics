@@ -129,7 +129,11 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Orchestrator:* `${{ github.event.inputs.orchestration_mode }}`\n*Status:* ✅ SUCCESS\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>"
+                    "text": |
+                      *Orchestrator:* `${{ github.event.inputs.orchestration_mode }}`
+                      *Status:* ✅ SUCCESS
+                      *Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>
+
                   }
                 }
               ]
@@ -149,7 +153,12 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Orchestrator:* `${{ github.event.inputs.orchestration_mode }}`\n*Status:* ❌ FAILED\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>\n*Branch:* `${{ github.ref_name }}`"
+                    "text": |
+                      *Orchestrator:* `${{ github.event.inputs.orchestration_mode }}`
+                      *Status:* ❌ FAILED
+                      *Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>
+                      *Branch:* `${{ github.ref_name }}`
+
                   }
                 }
               ]

@@ -248,7 +248,20 @@ jobs:
         with:
           script: |
             const title = "Azure Deployment Validation Failed";
-            const body = "Deployment validation failed for ${{ env.WEBAPP_NAME }}.\n\nMode: Azure Deployment Test\nDetails:\n- App Ready: ${{ steps.wait_ready.outputs.ready }}\n- Health Check: ${{ steps.health_check.outputs.passed }}\n\nApp URL: ${{ steps.app_url.outputs.url }}\n\nTroubleshooting:\n1. Check Azure App Service status and logs\n2. Verify all secrets are configured correctly\n3. Ensure requirements.txt has all dependencies\n4. Re-run validation after fix";
+            const body = `Deployment validation failed for ${{ env.WEBAPP_NAME }}.
+
+            Mode: Azure Deployment Test
+            Details:
+            - App Ready: ${{ steps.wait_ready.outputs.ready }}
+            - Health Check: ${{ steps.health_check.outputs.passed }}
+
+            App URL: ${{ steps.app_url.outputs.url }}
+
+            Troubleshooting:
+            1. Check Azure App Service status and logs
+            2. Verify all secrets are configured correctly
+            3. Ensure requirements.txt has all dependencies
+            4. Re-run validation after fix`;
 
             github.rest.issues.create({
               owner: context.repo.owner,
@@ -265,7 +278,18 @@ jobs:
         with:
           script: |
             const title = "Dashboard Dependency Test Failed";
-            const body = "Local smoke test failed for dashboard dependencies.\n\nMode: Local Verification (No Azure Secrets)\nIssue: One or more required Python dependencies failed to import\n\nTo fix:\n1. Run: pip install -r requirements.txt\n2. Test: python scripts/validate_dashboard_imports.py\n3. Check streamlit_app.py for import errors\n\nTo enable Azure validation:\nConfigure secrets: AZURE_CREDENTIALS or AZURE_WEBAPP_PUBLISH_PROFILE";
+            const body = `Local smoke test failed for dashboard dependencies.
+
+            Mode: Local Verification (No Azure Secrets)
+            Issue: One or more required Python dependencies failed to import
+
+            To fix:
+            1. Run: pip install -r requirements.txt
+            2. Test: python scripts/validate_dashboard_imports.py
+            3. Check streamlit_app.py for import errors
+
+            To enable Azure validation:
+            Configure secrets: AZURE_CREDENTIALS or AZURE_WEBAPP_PUBLISH_PROFILE`;
 
             github.rest.issues.create({
               owner: context.repo.owner,

@@ -1,6 +1,7 @@
 # AUDIT_REPORT
 
 ## Summary
+
 This report documents the Phase 2 Hardening convergence and QA additions applied to branch `feat/qa-infrastructure-arisofia`.
 
 - Commit SHA: `9f958bfbe18356a46bdf985f9a284a4ce8fa54a1`
@@ -11,6 +12,7 @@ This report documents the Phase 2 Hardening convergence and QA additions applied
   - Aligned `python-dotenv` to `1.2.1` in `requirements.txt` to match `requirements.lock.txt`.
 
 ## Diff summary vs origin/main
+
 (Selected files changed)
 
 ```
@@ -31,6 +33,7 @@ This report documents the Phase 2 Hardening convergence and QA additions applied
 ```
 
 ## Verification steps
+
 - Local Python unit/integration tests:
   - .venv/bin/pytest tests/ backend/tests - expected: all pass locally
 - Linting:
@@ -39,6 +42,7 @@ This report documents the Phase 2 Hardening convergence and QA additions applied
   - npx playwright test -c playwright.smoke.config.ts
 
 ## Notes & Recommendations
+
 - Ensure `E2E_BYPASS_AUTH` is gated in CI and stripped in production artifacts.
 - Continue to fix any `yamllint` failures in `.github/workflows` to clear the `Lint & Policy` job.
 - The canonical SHA reported above should match across the PRS, canonical, and remote copies as described in the hardening protocol.

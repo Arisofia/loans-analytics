@@ -74,7 +74,8 @@ jobs:
         if: ${{ needs.validate-storage.outputs.all_secrets_present == 'true' }}
         run: |
           echo "Listing containers using AZURE_STORAGE_CONNECTION_STRING"
-          az storage container list --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --output json > diagnostics/storage_containers.json || echo '[]' > diagnostics/storage_containers.json
+          az storage container list --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+            --output json > diagnostics/storage_containers.json || echo '[]' > diagnostics/storage_containers.json
 
       - name: SWA token check
         if: ${{ needs.validate-swa.outputs.all_secrets_present == 'true' }}

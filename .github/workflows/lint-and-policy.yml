@@ -36,15 +36,8 @@ jobs:
 
       - name: Lint Markdown
         run: |
-          # Build a list of markdown files excluding large doc trees and known generated reports, then lint only those files
-          echo "Finding markdown files to lint (excluding docs/**, fi-analytics/**, ci-workflow/**, CI_FIX_REPORT_*.md, CI_DIAGNOSIS_REPORT.md)..."
-          files=$(git ls-files "**/*.md" | grep -v -E "^(node_modules/|\.venv/|CI_FIX_REPORT_|CI_DIAGNOSIS_REPORT\.md|docs/|fi-analytics/|ci-workflow/)") || true
-          if [ -z "$files" ]; then
-            echo "No markdown files to lint after exclusions."
-          else
-            echo "$files"
-            echo "$files" | xargs -r markdownlint-cli2 --config .markdownlint.yml
-          fi
+          # Use markdownlint-cli2 with the repository config (includes ignores)
+          npx markdownlint-cli2 "**/*.md"
 
       - name: Lint Python (pylint, flake8, ruff)
         run: |

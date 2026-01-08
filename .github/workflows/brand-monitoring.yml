@@ -53,7 +53,10 @@ jobs:
         run: |
           python scripts/brand_monitoring.py
       - name: Post to Slack
-        if: steps.check-secrets.outputs.can_run == true && steps.check-secrets.outputs.slack_available == true && hashFiles('scripts/post_to_slack.py') != ''
+        if: |
+          steps.check-secrets.outputs.can_run == true &&
+          steps.check-secrets.outputs.slack_available == true &&
+          hashFiles('scripts/post_to_slack.py') != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: |
