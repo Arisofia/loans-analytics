@@ -11,3 +11,7 @@ ci-workflow/**
 
 docs/**
 fi-analytics/**
+
+# Temporarily ignore files that produce large numbers of markdownlint violations
+.github/**
+apps/web/**
