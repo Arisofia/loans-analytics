@@ -1,5 +1,6 @@
 # Production Readiness Summary
 ###
+
 **Last Updated**: 2025-12-14
 **Commit**: `3612fa20` (feat: add data pipeline validation)
 
@@ -87,7 +88,9 @@ VERCEL_ORG_ID                    (required)
 VERCEL_PROJECT_ID                (required)
 NEXT_PUBLIC_SENTRY_DSN           (optional, for error tracking)
 ```
-###
+
+### (continued)
+
 1. **Vercel**: <https://vercel.com/account/tokens> (VERCEL_TOKEN)
 2. **Vercel dashboard**: <https://vercel.com/dashboard> (ORG_ID, PROJECT_ID)
 3. **Supabase**: <https://supabase.com/dashboard> (SUPABASE_URL, ANON_KEY)
@@ -263,16 +266,20 @@ if (analyticsResult.warnings.length > 0) {
 ## Rollback Procedures
 
 ### If Deployment Fails
-###
+### (continued)
+
 ```bash
 git revert <commit-hash>
 git push origin main
 ```
-###
+
+### (continued)
+
 1. Go to <https://vercel.com> → abaco-loans-analytics → Deployments
 2. Find last known-good deployment
 3. Click "..." → "Promote to Production"
-###
+### (continued)
+
 ```bash
 git reset --hard <good-commit>
 git push --force origin main

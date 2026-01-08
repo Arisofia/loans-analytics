@@ -67,17 +67,20 @@ git rev-parse --git-dir
 ###
 
 #### Staging Secrets (3)
-###
+### (continued)
+
 - Go to <https://supabase.com/dashboard>
 - Select **staging** project
 - Click **Settings** → **API**
 - Copy **Project URL** (example: `https://xxxxxxxxxxxx.supabase.co`)
 - Paste: `_______________________________________`
-###
+### (continued)
+
 - Same location: **Settings** → **API**
 - Copy **anon public key** (starts with `eyJ`)
 - Paste: `_______________________________________`
-###
+### (continued)
+
 - Go to <https://portal.azure.com>
 - Find **Static Web App** (staging)
 - Click **Manage deployment token**
@@ -85,22 +88,27 @@ git rev-parse --git-dir
 - Paste: `_______________________________________`
 
 #### Production Secrets (4)
-###
+### (continued)
+
 - Same as staging, but select **production** project
 - Paste: `_______________________________________`
-###
+### (continued)
+
 - Same as staging, but from **production** project
 - Paste: `_______________________________________`
-###
+### (continued)
+
 - Go to <https://sentry.io>
 - Navigate to **Settings** → **Projects** → Your Project → **Settings** → **Client Keys (DSN)**
 - Copy DSN (example: `https://xxxx@xxxx.ingest.sentry.io/xxxx`)
 - Or use placeholder if not using Sentry: `https://placeholder@placeholder.ingest.sentry.io/0`
 - Paste: `_______________________________________`
-###
+### (continued)
+
 - Same as staging, but for **production** Static Web App
 - Paste: `_______________________________________`
-###
+### (continued)
+
 ---
 
 ### Step 3: Run Setup Script (30 min)
@@ -112,14 +120,17 @@ cd /Users/jenineferderas/Documents/abaco-loans-analytics/apps/web
 chmod +x .github/setup-secrets.sh
 .github/setup-secrets.sh
 ```
-###
+
+### (continued)
+
 1. Verifies you're in a git repository
 2. Checks GitHub CLI is installed and authenticated
 3. Collects staging secrets (3)
 4. Collects production secrets (4)
 5. Creates all 7 secrets in GitHub
 6. Verifies successful creation
-###
+### (continued)
+
 ```
 ✅ Git repository verified
 ✅ GitHub CLI installed
@@ -139,7 +150,8 @@ chmod +x .github/setup-secrets.sh
 ---
 
 ### Step 4: Verify Secrets Created (10 min)
-###
+### (continued)
+
 ```bash
 gh secret list -R owner/repo
 ```
@@ -155,11 +167,14 @@ PROD_SUPABASE_KEY
 PROD_SENTRY_DSN
 AZURE_STATIC_WEB_APPS_TOKEN_PROD
 ```
-###
+
+### (continued)
+
 1. Go to: <https://github.com/owner/repo/settings/secrets/actions>
 2. Verify you see all 7 secrets listed
 3. (Values are hidden for security - you won't see them)
-###
+### (continued)
+
 ---
 
 ### Step 5: Create GitHub Environments (30 min)
@@ -167,13 +182,15 @@ AZURE_STATIC_WEB_APPS_TOKEN_PROD
 GitHub needs to know what deployment environments exist. Create them in repository settings.
 
 **Go to**: <https://github.com/owner/repo/settings/environments>
-###
+### (continued)
+
 1. Click **New environment**
 2. Name: `staging`
 3. Click **Configure environment**
 4. Under "Deployment branches and tags" → Select "All branches and tags"
 5. Click **Save protection rules**
-###
+### (continued)
+
 1. Click **New environment**
 2. Name: `production`
 3. Click **Configure environment**
@@ -183,19 +200,22 @@ GitHub needs to know what deployment environments exist. Create them in reposito
    - Pattern: `v*` (version tags only)
 5. (Optional) Under "Reviewers": Add team leads for approval
 6. Click **Save protection rules**
-###
+### (continued)
+
 1. Click **New environment**
 2. Name: `production-rollback`
 3. Click **Configure environment**
 4. Same settings as production
 5. Click **Save protection rules**
-###
+### (continued)
+
 Go to <https://github.com/owner/repo/settings/environments> and confirm:
 
 - [ ] staging (visible)
 - [ ] production (with v* tag rule)
 - [ ] production-rollback (with v* tag rule)
-###
+### (continued)
+
 ---
 
 ### Step 6: Verify Configuration Files (10 min)
@@ -211,7 +231,9 @@ ls -la config/environments/
 
 # production.yml
 ```
-###
+
+### (continued)
+
 ```bash
 cat config/environments/staging.yml
 cat config/environments/production.yml
@@ -223,7 +245,8 @@ Both files should contain:
 - service URLs and keys (as ${VARIABLE} placeholders)
 - feature flags
 - deployment configuration
-###
+### (continued)
+
 ---
 
 ### Step 7: Verify Workflows Exist (10 min)
@@ -245,28 +268,35 @@ ls -la .github/workflows/
 
 # reusable-steps.yml
 ```
-###
+
+### (continued)
+
 1. Go to: <https://github.com/owner/repo/actions>
 2. You should see 5 workflows listed in the left sidebar
 3. Each should have a green checkmark (or pending if not triggered yet)
-###
+### (continued)
+
 ---
 
 ### Step 8: Team Onboarding (30 min)
 
 Ensure all team members understand the new workflow. Share these documents:
-###
+### (continued)
+
 - [ ] Share: `.github/README.md` - Overview of all workflows
 - [ ] Share: `.github/DEPLOYMENT_COORDINATION.md` - Slack communication guide
-###
+### (continued)
+
 - [ ] Share: `.github/QUICK_START.md` - Daily workflow and CI commands
 - [ ] Explain: Branch naming (feature/, bugfix/, chore/)
 - [ ] Explain: How to run local checks: `pnpm check-all`
-###
+### (continued)
+
 - [ ] Share: `.github/TEAM_RUNBOOKS.md` (QA section) - Validation process
 - [ ] Explain: 24-hour validation window after staging deploy
 - [ ] Explain: Validation checklist procedures
-###
+### (continued)
+
 - [ ] Share: `.github/DEPLOYMENT_CONFIG.md` - Technical reference
 - [ ] Share: `.github/TEAM_RUNBOOKS.md` (DevOps section) - Deployment procedures
 - [ ] Explain: Production approval gates
@@ -313,7 +343,8 @@ git status .github/
 ---
 
 ### Step 10: Week 1 Sign-Off
-###
+### (continued)
+
 - [x] GitHub CLI installed and authenticated
 - [x] All 7 secrets created and verified
 - [x] 3 GitHub environments created (staging, production, production-rollback)
@@ -332,7 +363,8 @@ git status .github/
 ### Overview
 
 Week 2 validates that all systems work correctly through practice deployments.
-###
+### (continued)
+
 - Developer practice: 1.5 hours
 - QA validation: 1.5 hours
 - Production deployment practice: 2 hours
@@ -341,7 +373,8 @@ Week 2 validates that all systems work correctly through practice deployments.
 ### 2.1: Developer Dry-Run (1.5 hours)
 
 **Objective**: Practice CI pipeline with actual feature branch
-###
+### (continued)
+
 ```bash
 cd /Users/jenineferderas/Documents/abaco-loans-analytics/apps/web
 git fetch origin
@@ -349,11 +382,15 @@ git checkout develop
 git pull origin develop
 pnpm install
 ```
-###
+
+### (continued)
+
 ```bash
 git checkout -b feature/ci-test-week2
 ```
-###
+
+### (continued)
+
 Edit any file, e.g., add a comment to package.json:
 
 ```bash
@@ -361,7 +398,9 @@ echo '# CI test branch - safe to delete' > CI_TEST.md
 git add CI_TEST.md
 git commit -m "test: CI pipeline validation for week 2 dry-run"
 ```
-###
+
+### (continued)
+
 ```bash
 pnpm check-all
 npm test
@@ -369,7 +408,8 @@ pnpm build
 ```
 
 **Expected**: All checks pass locally before pushing
-###
+### (continued)
+
 ```bash
 git push origin feature/ci-test-week2
 ```
@@ -381,7 +421,8 @@ Then on GitHub:
 3. Add title: "TEST: Week 2 CI dry-run"
 4. Add description: "Dry-run testing for CI pipeline validation"
 5. Click **Create pull request**
-###
+### (continued)
+
 1. Go to <https://github.com/owner/repo/pull/NEW_PR_NUMBER>
 2. Scroll to "Checks" section
 3. Watch as each check runs:
@@ -392,17 +433,20 @@ Then on GitHub:
    - [ ] quality-summary (final pass/fail)
 
 **Expected**: All checks should complete and show ✅ Pass
-###
+### (continued)
+
 - Read the error message
 - Fix the issue locally
 - Push again to same branch (PR auto-updates)
 - CI re-runs automatically
-###
+### (continued)
+
 1. Request review from a team member
 2. After approval, click **Merge pull request**
 3. Choose "Create a merge commit" (or your preferred merge strategy)
 4. Confirm merge
-###
+### (continued)
+
 After merging to develop:
 
 1. Go to <https://github.com/owner/repo/actions>
@@ -415,37 +459,46 @@ After merging to develop:
    🔔 24-hour validation period started
    ✅ Health check passed
    ```
-###
+
+### (continued)
+
 Visit: <https://staging.abaco-loans-analytics.com>
 
 - [ ] Page loads (no 404 or 500 errors)
 - [ ] Application appears functional
 - [ ] No JavaScript console errors (check browser console)
-###
+### (continued)
+
 ---
 
 ### 2.2: QA Validation Dry-Run (1.5 hours)
 
 **Objective**: Practice QA validation procedures
-###
+### (continued)
+
 ```
 https://staging.abaco-loans-analytics.com
 ```
-###
+
+### (continued)
+
 Run through these QA checks:
-###
+### (continued)
+
 - [ ] Application loads without errors
 - [ ] Navigation works (if applicable)
 - [ ] Forms submit successfully (if applicable)
 - [ ] Database queries return data (if applicable)
 - [ ] Third-party integrations work (Supabase, etc.)
-###
+### (continued)
+
 - [ ] No layout shifts or visual glitches
 - [ ] Responsive design works (test mobile view)
 - [ ] All buttons/links functional
 - [ ] Text displays correctly
 - [ ] Images load properly
-###
+### (continued)
+
 - [ ] Page load time acceptable (< 3 seconds)
 - [ ] No console errors
 - [ ] No memory leaks on extended use
@@ -457,18 +510,21 @@ Run through these QA checks:
 - [ ] Firefox
 - [ ] Safari
 - [ ] Mobile browsers
-###
+### (continued)
+
 - [ ] No sensitive data in console logs
 - [ ] HTTPS/SSL certificate valid
 - [ ] No CORS errors
-###
+### (continued)
+
 Create a test report with:
 
 - Date/time tested
 - Issues found (if any)
 - Screenshots (if issues found)
 - Pass/fail status
-###
+### (continued)
+
 In **#dev-alerts** channel, post:
 
 ```
@@ -492,7 +548,9 @@ Next Steps:
 
 See attached validation report.
 ```
-###
+
+### (continued)
+
 If you found problems:
 
 1. Go to <https://github.com/owner/repo/issues>
@@ -502,7 +560,8 @@ If you found problems:
 5. Label: `bug` or `needs-review`
 6. Assign to relevant team
 7. Click **Submit new issue**
-###
+### (continued)
+
 ---
 
 ### 2.3: Production Deployment Practice (2 hours)
@@ -510,6 +569,7 @@ If you found problems:
 **Objective**: Practice production deployment workflow with test tag
 
 ### ###
+
 ```bash
 cd /Users/jenineferderas/Documents/abaco-loans-analytics/apps/web
 git fetch origin
@@ -522,14 +582,17 @@ git tag -a v0.1.0-test -m "Week 2 production dry-run test"
 # Push tag to GitHub
 git push origin v0.1.0-test
 ```
-###
+
+### (continued)
+
 1. Go to <https://github.com/owner/repo/actions>
 2. Look for new workflow run of `deploy-production.yml`
 3. Watch it run through:
    - [ ] pre-deployment (version extraction)
    - [ ] quality-verification (full CI re-run)
    - [ ] approval-gate (waiting for approval)
-###
+### (continued)
+
 When you see "Waiting for approval" in the workflow:
 
 1. Click the workflow run
@@ -538,42 +601,51 @@ When you see "Waiting for approval" in the workflow:
 4. Click **Approve and deploy**
 
 **Expected**: Workflow continues with deployment
-###
+### (continued)
+
 The workflow should now run:
 
 - [ ] deploy-production (builds and deploys)
 - [ ] post-deployment-validation (health checks)
-###
+### (continued)
+
 ```
 ✅ Production health check passed
 ✅ Performance baseline acceptable
 ✅ Automatic GitHub release created
 ```
-###
+
+### (continued)
+
 Visit: <https://abaco-loans-analytics.com>
 
 - [ ] Page loads
 - [ ] No errors in console
 - [ ] Application appears functional
-###
+### (continued)
+
 Keep the application open and:
 
 - [ ] Navigate through pages
 - [ ] Check browser console for errors
 - [ ] Monitor for any issues
 - [ ] Check application logs (if accessible)
-###
+### (continued)
+
 Clean up the test tag (don't leave it):
 
 ```bash
 git tag -d v0.1.0-test
 git push origin :refs/tags/v0.1.0-test
 ```
-###
+
+### (continued)
+
 - Delete local tag
 - Delete remote tag on GitHub
 - Not affect the deployment (deployment is already done)
-###
+### (continued)
+
 ---
 
 ### 2.4: Rollback Practice (1 hour)
@@ -581,7 +653,8 @@ git push origin :refs/tags/v0.1.0-test
 **Objective**: Practice emergency rollback procedure
 
 **Only do this if:** The production test deployment from 2.3 was successful
-###
+### (continued)
+
 1. Go to <https://github.com/owner/repo/actions>
 2. Click **Workflows** → **rollback**
 3. Click **Run workflow**
@@ -589,35 +662,43 @@ git push origin :refs/tags/v0.1.0-test
    - **target_version**: `v0.1.0` (the previous version, or any old tag)
    - **environment**: `staging` (do this in staging first, not production!)
 5. Click **Run workflow**
-###
+### (continued)
+
 The workflow will run:
 
 - [ ] pre-rollback (validate inputs)
 - [ ] approval-gate (waiting for approval)
-###
+### (continued)
+
 1. Click the workflow run
 2. Click **Review deployments**
 3. Select **staging-rollback** environment
 4. Click **Approve and deploy**
-###
+### (continued)
+
 Watch these jobs complete:
 
 - [ ] execute-rollback (checks out old version and deploys)
 - [ ] post-rollback-validation (health checks)
-###
+### (continued)
+
 ```
 ✅ Rollback successful - Service is healthy
 ```
-###
+
+### (continued)
+
 Visit: <https://staging.abaco-loans-analytics.com>
 
 - [ ] Site loads
 - [ ] Old version is deployed (if you can detect version)
-###
+### (continued)
+
 ---
 
 ### Week 2 Sign-Off
-###
+### (continued)
+
 - [x] Developer created feature branch, pushed, and created PR
 - [x] CI pipeline ran successfully on PR
 - [x] Merge to develop triggered automatic staging deployment
@@ -635,12 +716,13 @@ Visit: <https://staging.abaco-loans-analytics.com>
 
 ## WEEK 3: PRODUCTION READINESS (2-4 hours)
 
-### Overview
+### Overview (continued)
 
 Week 3 performs final verification and ensures the team is ready for production.
 
 ### 3.1: Final Configuration Review (1 hour)
-###
+### (continued)
+
 ```bash
 
 # Check secrets exist
@@ -648,7 +730,9 @@ gh secret list -R owner/repo
 
 # Should show all 7 secrets
 ```
-###
+
+### (continued)
+
 In a staging deployment workflow, add this diagnostic step:
 
 ```bash
@@ -658,7 +742,8 @@ env | grep STAGING
 ```
 
 **Check GitHub Actions logs** to confirm staging secrets were injected correctly.
-###
+### (continued)
+
 Go to: <https://github.com/owner/repo/settings/environments>
 
 Confirm all 3 environments exist:
@@ -666,7 +751,8 @@ Confirm all 3 environments exist:
 - [ ] staging
 - [ ] production (with v* tag rule)
 - [ ] production-rollback (with v* tag rule)
-###
+### (continued)
+
 Check all 5 workflows exist and have correct content:
 
 ```bash
@@ -687,7 +773,8 @@ ls -1 .github/workflows/*.yml | wc -l
 ---
 
 ### 3.2: Documentation Review (45 min)
-###
+### (continued)
+
 Review these files:
 
 - [ ] `.github/README.md` - Overview accurate
@@ -696,21 +783,26 @@ Review these files:
 - [ ] `.github/DEPLOYMENT_CONFIG.md` - Technical details correct
 - [ ] `.github/DEPLOYMENT_COORDINATION.md` - Slack procedures ready
 - [ ] `.github/POST_IMPLEMENTATION_CHECKLIST.md` - All tasks match reality
-###
+### (continued)
+
 - [ ] Read through completely
 - [ ] Check for typos or unclear sections
 - [ ] Update with company-specific details
 - [ ] Verify all links work
 - [ ] Verify command examples are correct
-###
+### (continued)
+
 Email or Slack each team with final docs:
-###
+### (continued)
+
 - `.github/QUICK_START.md`
 - `.github/README.md`
-###
+### (continued)
+
 - `.github/TEAM_RUNBOOKS.md` (QA section)
 - `.github/DEPLOYMENT_COORDINATION.md`
-###
+### (continued)
+
 - `.github/DEPLOYMENT_CONFIG.md`
 - `.github/TEAM_RUNBOOKS.md` (DevOps section)
 - `.github/POST_IMPLEMENTATION_CHECKLIST.md`
@@ -718,7 +810,8 @@ Email or Slack each team with final docs:
 ---
 
 ### 3.3: Team Preparation (45 min)
-###
+### (continued)
+
 Send checklist to each team:
 
 ```
@@ -729,7 +822,9 @@ Send checklist to each team:
 
 Please confirm you've read your assigned materials.
 ```
-###
+
+### (continued)
+
 Create a time for Q&A (30 minutes):
 
 **In #dev-help Slack channel**, ask:
@@ -739,7 +834,8 @@ Create a time for Q&A (30 minutes):
 - "Any edge cases we should plan for?"
 
 **Create GitHub issues** for common questions that need documentation updates.
-###
+### (continued)
+
 Document procedures for:
 
 - [ ] "A test failed - how do I fix it?"
@@ -751,59 +847,76 @@ Document procedures for:
 ---
 
 ### 3.4: Slack Channel Setup (30 min)
-###
+### (continued)
+
 In Slack workspace settings, create:
 
 - [ ] #dev-alerts (development notifications)
 - [ ] #prod-alerts (production notifications)
 - [ ] #incidents (incident tracking)
 - [ ] #dev-help (team questions)
-###
+### (continued)
+
 For each channel, set the topic/description:
-###
+### (continued)
+
 ```
 Notifications for staging deployments and development alerts
 Read notifications here before checking GitHub Actions
 ```
-###
+
+### (continued)
+
 ```
 Notifications for production deployments
 CRITICAL: Check immediately for production issues
 ```
-###
+
+### (continued)
+
 ```
 P1-P4 incident tracking and post-mortems
 Follow incident response procedures in DEPLOYMENT_COORDINATION.md
 ```
-###
+
+### (continued)
+
 ```
 Questions about CI/CD workflows, deployments, or procedures
 Ask anything here - no stupid questions!
 ```
-###
+
+### (continued)
+
 For each channel, pin relevant documentation:
-###
+### (continued)
+
 - Pin: `.github/README.md`
 - Pin: `.github/DEPLOYMENT_COORDINATION.md`
-###
+### (continued)
+
 - Pin: `.github/DEPLOYMENT_COORDINATION.md`
 - Pin: `.github/TEAM_RUNBOOKS.md` (DevOps section)
-###
+### (continued)
+
 - Pin: `.github/TEAM_RUNBOOKS.md` (Incident Response section)
 - Pin: `OPERATIONS.md`
-###
+### (continued)
+
 - Pin: `.github/QUICK_START.md`
 - Pin: `.github/README.md`
 
 ---
 
 ### 3.5: Pre-Production Verification Checklist (30 min)
-###
+### (continued)
+
 - [ ] Run locally: `pnpm check-all` → All pass
 - [ ] Run tests: `npm test` → All pass
 - [ ] Check coverage: ≥ 85%
 - [ ] No console warnings in production build
-###
+### (continued)
+
 - [ ] Go to Actions tab
 - [ ] Verify all 5 workflows visible:
   - [ ] ci.yml
@@ -811,25 +924,30 @@ For each channel, pin relevant documentation:
   - [ ] deploy-production.yml
   - [ ] rollback.yml
   - [ ] reusable-steps.yml
-###
+### (continued)
+
 - [ ] Verify 7 secrets exist: `gh secret list -R owner/repo`
 - [ ] All secrets contain valid values (checked in week 1)
-###
+### (continued)
+
 - [ ] Go to Settings → Environments
 - [ ] Verify 3 environments:
   - [ ] staging
   - [ ] production (with v* tag rule)
   - [ ] production-rollback
-###
+### (continued)
+
 - [ ] Staging config exists: `config/environments/staging.yml`
 - [ ] Production config exists: `config/environments/production.yml`
 - [ ] Both contain correct settings
-###
+### (continued)
+
 - [ ] All developers read QUICK_START.md
 - [ ] All QA read validation procedures
 - [ ] All DevOps read deployment procedures
 - [ ] All teams know Slack channels to use
-###
+### (continued)
+
 - [ ] Team understands: Develop → Staging (auto) → 24h validation → Tag → Approval → Production
 - [ ] Team knows: Rollback can happen anytime (< 5 min)
 - [ ] Team knows: Health checks validate each deployment
@@ -837,7 +955,8 @@ For each channel, pin relevant documentation:
 ---
 
 ### Week 3 Final Sign-Off
-###
+### (continued)
+
 - [x] All configuration reviewed and verified
 - [x] All documentation reviewed and updated
 - [x] All team members confirmed understanding
@@ -853,7 +972,7 @@ For each channel, pin relevant documentation:
 ---
 
 ## PRODUCTION READINESS CHECKLIST
-###
+### (continued)
 
 ### Code Quality
 
@@ -905,22 +1024,28 @@ For each channel, pin relevant documentation:
 ## METRICS TO TRACK
 
 Once in production, monitor these metrics:
-###
+### (continued)
+
 - Target: 2-5 deployments to staging per week
 - Track: Count in #dev-alerts
-###
+### (continued)
+
 - Target: 24 hours
 - Track: Time from deploy to QA sign-off
-###
+### (continued)
+
 - Target: < 5 minutes
 - Track: Time from tag to approval click
-###
+### (continued)
+
 - Target: 5-10 minutes
 - Track: Time from approval to health check pass
-###
+### (continued)
+
 - Target: < 5 minutes
 - Track: Time from trigger to complete
-###
+### (continued)
+
 - Target: < 5 minutes
 - Track: Time from detection to fix deployed
 
