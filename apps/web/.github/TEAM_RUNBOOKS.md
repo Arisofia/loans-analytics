@@ -63,9 +63,7 @@ git push origin v1.0.0
 ### Frontend Developer
 
 #### Daily Workflow
-
-**1. Start Your Day**
-
+### 
 ```bash
 cd apps/web
 git fetch origin
@@ -74,16 +72,12 @@ git pull origin develop
 pnpm install
 pnpm dev
 ```
-
-**2. Create Feature Branch**
-
+### 
 ```bash
 git checkout -b feature/feature-name
 # Follow: feature/, bugfix/, or chore/ prefixes
 ```
-
-**3. Before Pushing**
-
+### 
 ```bash
 # Run all checks locally
 pnpm check-all
@@ -93,24 +87,18 @@ npm test
 pnpm lint:fix
 pnpm format
 ```
-
-**4. Create Pull Request**
-
+### 
 - Push to your feature branch
 - Open PR against `develop` branch
 - Link any related issues
 - Add description of changes
 - Request review from team
-
-**5. During Code Review**
-
+### 
 - Address review comments
 - Push fixes to same branch
 - CI runs automatically on each push
 - Wait for approval before merge
-
-**6. After Merge**
-
+### 
 - Delete feature branch
 - Monitor staging deployment (auto)
 - Participate in 24-hour validation
@@ -172,9 +160,7 @@ You don't deploy directly. Production deployments follow this process:
 **When**: Immediately after develop branch merge
 **Duration**: 24 hours
 **Environment**: <https://staging.abaco-loans-analytics.com>
-
-**1. Validation Checklist**
-
+### 
 - [ ] Application loads without errors
 - [ ] All links and navigation work
 - [ ] Data displays correctly
@@ -184,11 +170,7 @@ You don't deploy directly. Production deployments follow this process:
 - [ ] Mobile responsiveness works
 - [ ] No console errors (F12 → Console tab)
 - [ ] No visual regressions vs. previous version
-
-**2. Testing Scenarios**
-
-**User Authentication**
-
+### ### 
 ```
 1. Navigate to login page
 2. Try invalid credentials → Error displays
@@ -196,9 +178,7 @@ You don't deploy directly. Production deployments follow this process:
 4. Session persists on page reload
 5. Logout works correctly
 ```
-
-**Data Display**
-
+### 
 ```
 1. View portfolio dashboard
 2. Verify all KPI cards display
@@ -206,18 +186,14 @@ You don't deploy directly. Production deployments follow this process:
 4. Verify numbers are reasonable
 5. Export functionality works
 ```
-
-**Error Handling**
-
+### 
 ```
 1. Try network disconnect (DevTools → Offline)
 2. Verify error message displays
 3. Reconnect network
 4. Verify recovery works
 ```
-
-**3. Document Findings**
-
+### 
 **If issues found**:
 
 ```
@@ -245,9 +221,7 @@ Post comment on GitHub Actions:
 - Performance acceptable
 - Ready for production
 ```
-
-**4. Sign-off Process**
-
+### 
 When validation is complete:
 
 1. Post ✅ approval in GitHub Actions
@@ -262,9 +236,7 @@ When validation is complete:
 
 **Timeline**: After 24-hour staging validation
 **Responsibility**: Coordinate and execute release
-
-**1. Pre-Release Checklist**
-
+### 
 - [ ] 24-hour staging validation complete
 - [ ] All QA issues resolved (none blocking)
 - [ ] Security scan passed
@@ -272,9 +244,7 @@ When validation is complete:
 - [ ] Team notifications sent
 - [ ] Deployment window scheduled
 - [ ] Rollback plan documented
-
-**2. Create Release**
-
+### 
 ```bash
 # Ensure local repo is up-to-date
 git fetch origin
@@ -291,9 +261,7 @@ git pull origin main
 git tag -a v1.3.0 -m "Release v1.3.0: Add feature X, fix bug Y"
 git push origin v1.3.0
 ```
-
-**3. Monitor CI/CD Pipeline**
-
+### 
 Go to: <https://github.com/[owner]/[repo]/actions>
 
 **When deploy-production workflow starts**:
@@ -301,9 +269,7 @@ Go to: <https://github.com/[owner]/[repo]/actions>
 - ✅ Pre-deployment checks
 - ✅ Quality verification
 - ⏳ Awaiting approval (manual step)
-
-**4. Approve Production Deployment**
-
+### 
 In GitHub Actions:
 
 1. Find `deploy-production` workflow run
@@ -311,17 +277,13 @@ In GitHub Actions:
 3. Select `production` environment
 4. Click "Approve and deploy"
 5. Monitor deployment progress
-
-**5. Post-Deployment Validation**
-
+### 
 Workflow automatically runs health checks. If they pass:
 
 - ✅ Deployment successful
 - ✅ Health checks passed
 - ✅ GitHub release created
-
-**6. Notify Team**
-
+### 
 Post to Slack #prod-alerts:
 
 ```
@@ -349,9 +311,7 @@ Rollback procedure: See OPERATIONS.md
 - Critical functionality broken
 - Major performance degradation
 - Data integrity issues
-
-**1. Rollback Procedure**
-
+### 
 Go to: <https://github.com/[owner]/[repo]/actions>
 
 1. Click "Workflows" → "Rollback - Emergency Recovery"
@@ -363,18 +323,14 @@ Go to: <https://github.com/[owner]/[repo]/actions>
 5. Click "Review deployments" when prompted
 6. Select `production-rollback`
 7. Click "Approve and deploy"
-
-**2. Monitor Rollback**
-
+### 
 Expected timeline:
 
 - 0-2 min: Version checkout and build
 - 2-4 min: Deployment to Azure
 - 4-5 min: Health checks
 - 5+ min: Complete
-
-**3. Post-Rollback**
-
+### 
 Post to Slack #incidents:
 
 ```
@@ -734,23 +690,17 @@ git push origin develop
 ---
 
 ## Getting Help
-
-**Questions?**
-
+### 
 1. Check this guide and related docs
 2. Ask in #dev-help Slack
 3. Create GitHub issue with `question` label
 4. Contact team lead
-
-**Documentation**
-
+### 
 - `.github/DEPLOYMENT_CONFIG.md`: CI/CD configuration
 - `OPERATIONS.md`: Operational procedures
 - `ENGINEERING_STANDARDS.md`: Code standards
 - `MIGRATION.md`: Migration procedures
-
-**On-Call**
-
+### 
 - During incidents: Follow incident response procedures
 - Escalate P1 issues immediately
 - Page on-call engineer if service down

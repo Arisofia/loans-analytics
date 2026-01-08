@@ -13,9 +13,7 @@ To begin the 3-week implementation, follow these steps in order:
 ### Week 1: Setup (2-4 hours)
 
 📖 **Guide**: `.github/COMPLETE_IMPLEMENTATION_GUIDE.md` - **WEEK 1** section
-
-**Key Tasks:**
-
+### 
 1. Gather 7 GitHub secrets from Supabase, Azure, Sentry
 2. Run `.github/setup-secrets.sh` to create secrets
 3. Create 3 GitHub environments (staging, production, production-rollback)
@@ -27,9 +25,7 @@ To begin the 3-week implementation, follow these steps in order:
 ### Week 2: Dry-Runs (4-6 hours)
 
 📖 **Guide**: `.github/COMPLETE_IMPLEMENTATION_GUIDE.md` - **WEEK 2** section
-
-**Key Tasks:**
-
+### 
 1. Developer creates feature branch → PR → merge (tests CI pipeline)
 2. QA validates staging deployment (24-hour validation window)
 3. DevOps practices production deployment with test tag
@@ -40,9 +36,7 @@ To begin the 3-week implementation, follow these steps in order:
 ### Week 3: Production Readiness (2-4 hours)
 
 📖 **Guide**: `.github/COMPLETE_IMPLEMENTATION_GUIDE.md` - **WEEK 3** section
-
-**Key Tasks:**
-
+### 
 1. Final configuration review (secrets, environments, workflows)
 2. Documentation review and team confirmation
 3. Team preparation and Q&A
@@ -171,9 +165,7 @@ Execute weeks as different teams become available.
 ## Step-by-Step Execution (Week 1 Example)
 
 Here's exactly how to execute Week 1:
-
-**Day 1: Secrets & Setup (2 hours)**
-
+### 
 ```bash
 # Step 1: Navigate to repo
 cd /Users/jenineferderas/Documents/abaco-loans-analytics/apps/web
@@ -199,9 +191,7 @@ gh secret list -R owner/repo
 ls -la config/environments/
 # Should show staging.yml, production.yml
 ```
-
-**Day 2: GitHub Environments & Team Onboarding (1.5-2 hours)**
-
+### 
 ```bash
 # Step 1: Create GitHub environments
 # [Go to GitHub web UI → Settings → Environments]
@@ -260,16 +250,12 @@ After completing Week 3, you should be able to:
 ## Common Issues & Solutions
 
 ### Week 1 Issues
-
-**GitHub CLI not authenticated**
-
+### 
 ```bash
 gh auth login
 # Follow prompts to authenticate
 ```
-
-**Secrets not visible after creation**
-
+### 
 ```bash
 # Wait 30 seconds, then check again
 gh secret list -R owner/repo
@@ -277,49 +263,35 @@ gh secret list -R owner/repo
 # If still not visible, manually create one
 gh secret set STAGING_SUPABASE_URL -b "value" -R owner/repo
 ```
-
-**Can't create GitHub environments**
-
+### 
 - Verify you have admin access to repository
 - Check: Settings → Environments → New environment
-
-**Config files don't exist**
-
+### 
 ```bash
 mkdir -p config/environments
 # Then create files manually with content from SETUP_GUIDE.md
 ```
 
 ### Week 2 Issues
-
-**CI pipeline not running on PR**
-
+### 
 - Check: Repository → Actions → Workflows → ci.yml
 - Verify: Workflow is on main/develop branch
 - Check: Workflow has correct triggers (on: push, pull_request)
-
-**Staging deployment not auto-running**
-
+### 
 - Verify: Merged to develop branch (not main)
 - Check: Workflow file: deploy-staging.yml
 - Wait: 1-2 minutes for GitHub to detect merge
-
-**Production approval gate not appearing**
-
+### 
 - Verify: GitHub environment "production" exists
 - Check: Environment has approval requirement (Settings → Environments → production)
 - Create: v*.*.* tag (must use semantic versioning)
 
 ### Week 3 Issues
-
-**Team members don't understand workflow**
-
+### 
 - Share: QUICK_START.md for daily workflow
 - Share: TEAM_RUNBOOKS.md for their role
 - Schedule: 30-minute Q&A session in #dev-help
-
-**Slack channels not created**
-
+### 
 - Go to: Slack workspace → Create new channel
 - Create: #dev-alerts, #prod-alerts, #incidents, #dev-help
 
