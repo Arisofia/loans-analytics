@@ -36,15 +36,15 @@ jobs:
 
       - name: Lint Markdown
         run: |
-          # Use the YAML config explicitly, respect .markdownlintignore, and ignore node_modules, virtualenvs and large/auto-generated docs
-          markdownlint-cli2 '**/*.md' --config .markdownlint.yml --ignore-path .markdownlintignore \
-            --ignore 'node_modules/**' \
-            --ignore '.venv/**' \
-            --ignore 'CI_FIX_REPORT_*.md' \
-            --ignore 'CI_DIAGNOSIS_REPORT.md' \
-            --ignore 'ci-workflow/**' \
-            --ignore 'docs/**' \
-            --ignore 'fi-analytics/**'
+          # Build a list of markdown files excluding large doc trees and known generated reports, then lint only those files
+          echo "Finding markdown files to lint (excluding docs/**, fi-analytics/**, ci-workflow/**, CI_FIX_REPORT_*.md, CI_DIAGNOSIS_REPORT.md)..."
+          files=$(git ls-files "**/*.md" | grep -v -E "^(node_modules/|\.venv/|CI_FIX_REPORT_|CI_DIAGNOSIS_REPORT\.md|docs/|fi-analytics/|ci-workflow/)") || true
+          if [ -z "$files" ]; then
+            echo "No markdown files to lint after exclusions."
+          else
+            echo "$files"
+            echo "$files" | xargs -r markdownlint-cli2 --config .markdownlint.yml
+          fi
 
       - name: Lint Python (pylint, flake8, ruff)
         run: |
