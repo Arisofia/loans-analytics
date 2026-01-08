@@ -1,5 +1,6 @@
 import logging
 from typing import Optional
+import hashlib
 try:
     from iban import is_valid as is_valid_iban
 except ImportError:
@@ -21,7 +22,7 @@ def validate_iban(iban: Optional[str]) -> bool:
     try:
         return is_valid_iban(clean_iban)
     except Exception as e:
-        # Redact IBAN in logs for security
-        redacted = f"{clean_iban[:4]}...{clean_iban[-4:]}" if clean_iban else "unknown"
-        logger.error(f"Error validating IBAN {redacted}: {e}")
+        # Avoid logging IBAN directly; use a non-reversible identifier instead
+        iban_id = hashlib.sha256(clean_iban.encode("utf-8")).hexdigest()[:8] if clean_iban else "unknown"
+        logger.error(f"Error validating IBAN (id={iban_id}): {e}")
         return False
