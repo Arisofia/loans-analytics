@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from dashboard_utils import compute_cat_agg
 
 # Theme definition (as per design system)
 ABACO_THEME = {
@@ -86,11 +87,13 @@ def styled_df(df):
 def clean_numeric(col):
     if col.dtype == "object":
         sample = col.dropna().astype(str).head(50)
-        cleaned = sample.str.replace(r"[$,€%₡,]", "", regex=True)
+        # Remove currency symbols, commas, and handle accounting negative numbers (parentheses)
+        cleaned = sample.str.replace(r"[$,€%₡,]", "", regex=True).str.replace(r"\((.*)\)", r"-\1", regex=True)
         numeric_ratio = pd.to_numeric(cleaned, errors="coerce").notna().mean()
-        if numeric_ratio >= 0.6:
+        if numeric_ratio >= 0.5:  # Slightly more lenient ratio
             col = pd.to_numeric(
-                col.astype(str).str.replace(r"[$,€%₡,]", "", regex=True), errors="coerce"
+                col.astype(str).str.replace(r"[$,€%₡,]", "", regex=True).str.replace(r"\((.*)\)", r"-\1", regex=True),
+                errors="coerce"
             )
     return col
 
@@ -104,6 +107,35 @@ def normalize_dataframe(df):
         .str.replace(" ", "_")
         .str.replace(r"[^a-z0-9_]", "", regex=True)
     )
+
+    # Proactive column mapping for common variations
+    col_mappings = {
+        "outstanding_loan_value": [
+            "outstanding_amount",
+            "outstanding_principal",
+            "current_outstanding_principal",
+            "total_pendiente",
+            "saldo_pendiente",
+            "current_balance",
+            "outstanding_balance",
+            "outstanding_balance_usd",
+            "aum",
+        ],
+        "interest_rate_apr": ["apr", "interest_rate", "tasa_interes", "annual_percentage_rate"],
+        "loan_status": ["status", "estado", "loan_state"],
+        "loan_id": ["id", "loan_number", "contrato", "loan_id_raw"],
+        "customer_id": ["client_id", "customer_number", "id_cliente"],
+        "sales_agent": ["agent", "vendedor", "kam", "sales_person"],
+        "categoria": ["category", "segment", "segmento", "product_category", "product_type"],
+    }
+
+    for target, variations in col_mappings.items():
+        if target not in df.columns:
+            for var in variations:
+                if var in df.columns:
+                    df[target] = df[var]
+                    break
+
     for col in df.columns:
         df[col] = clean_numeric(df[col])
     return df
@@ -164,7 +196,7 @@ def kpi_label(name):
     return KPI_LABEL_OVERRIDES.get(name, name.replace("_", " ").title())
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=300)
 def load_looker_exports():
     candidates = {
         "loan_data": [
@@ -199,7 +231,7 @@ def load_looker_exports():
     return data
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=300)
 def load_analytics_facts():
     facts_path = EXPORTS_DIR / "analytics_facts.csv"
     if not facts_path.exists():
@@ -210,7 +242,7 @@ def load_analytics_facts():
     return df
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=300)
 def load_kpi_dashboard():
     dashboard_path = EXPORTS_DIR / "complete_kpi_dashboard.json"
     if not dashboard_path.exists():
@@ -377,23 +409,40 @@ with st.sidebar:
                     dfs[file.name] = pd.read_excel(file, sheet_name=None)
 
             if dfs:
+                # Map uploaded filenames to required internal keys
+                mapped_dfs = {}
                 for name, df in dfs.items():
+                    name_lower = name.lower()
                     if isinstance(df, dict):
                         for sheet, sdf in df.items():
                             dfs[name][sheet] = normalize_dataframe(sdf)
                     else:
-                        dfs[name] = normalize_dataframe(df)
+                        normalized_df = normalize_dataframe(df)
+                        dfs[name] = normalized_df
 
-                st.session_state["data"] = dfs
+                        # Apply fuzzy mapping to identify core tables
+                        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith("loans"):
+                            mapped_dfs["loan_data"] = normalized_df
+                        elif ("customer" in name_lower and "data" in name_lower) or name_lower.startswith("customer"):
+                            mapped_dfs["customer_data"] = normalized_df
+                        elif ("payment" in name_lower and "historic" in name_lower) or ("real" in name_lower and "payment" in name_lower) or name_lower.startswith("transaction"):
+                            mapped_dfs["historic_payment_data"] = normalized_df
+                        elif "schedule" in name_lower:
+                            mapped_dfs["schedule_data"] = normalized_df
+
+                # Merge mapped data into session state while keeping original filenames for UI
+                final_data = {**dfs, **mapped_dfs}
+                st.session_state["data"] = final_data
                 st.session_state["loaded"] = True
                 st.success("Data ingested successfully.")
 
-                # Auto-generate KPI exports from uploaded data
+                # Auto-generate KPI exports from mapped data
                 with st.spinner("Generating KPI exports from uploaded data..."):
                     try:
-                        output_path = generate_kpi_exports(dfs)
+                        output_path = generate_kpi_exports(final_data)
                         st.cache_data.clear()
-                        st.info(f"✅ KPI exports generated: {output_path}")
+                        st.success("✅ KPI exports generated and UI updated!")
+                        st.rerun()
                     except Exception as exc:
                         st.warning(f"⚠️ KPI auto-generation skipped: {exc}")
 
@@ -429,6 +478,7 @@ else:
     st.info("KPI snapshot not available. Export analytics to populate KPI tiles.")
 
 if not analytics_facts.empty:
+    st.markdown('<div data-testid="dashboard-cfo">', unsafe_allow_html=True)
     st.header("💸 Cashflow")
     cash_cols = [
         "recv_revenue_for_month",
@@ -447,7 +497,9 @@ if not analytics_facts.empty:
             title="Cashflow Trends",
             markers=True,
         )
+        st.markdown('<div data-testid="chart-revenue">', unsafe_allow_html=True)
         st.plotly_chart(apply_theme(fig_cash), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
         latest_cash = cash_df.sort_values("month").iloc[-1]
         c1, c2, c3, c4 = st.columns(4)
@@ -471,6 +523,7 @@ if not analytics_facts.empty:
                 "Revenue (Scheduled)",
                 format_kpi_value("sched_revenue", latest_cash["sched_revenue"]),
             )
+        st.markdown('</div>', unsafe_allow_html=True)
 
 if not st.session_state["loaded"]:
     st.info("Upload data files in the sidebar to unlock loan-level diagnostics.")
@@ -478,15 +531,19 @@ if not st.session_state["loaded"]:
 
 data = st.session_state["data"]
 
-# Core Tables Identification
-loan_data = None
-customer_data = pd.DataFrame()
+# Core Tables Identification (prioritize internal keys from auto-mapping)
+loan_data = data.get("loan_data")
+customer_data = data.get("customer_data", pd.DataFrame())
 
-for name, df in data.items():
-    if "loan" in name.lower() and "data" in name.lower():
-        loan_data = df
-    elif "customer" in name.lower():
-        customer_data = df
+if loan_data is None:
+    # Fallback to original filename search if mapping failed
+    for name, df in data.items():
+        name_lower = name.lower()
+        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith("loans"):
+            loan_data = df
+        elif ("customer" in name_lower and "data" in name_lower) or name_lower.startswith("customer"):
+            if customer_data.empty:
+                customer_data = df
 
 if loan_data is None:
     st.error("Core loan data missing in uploads.")
@@ -497,6 +554,7 @@ if not customer_data.empty and "loan_id" in merged.columns and "loan_id" in cust
     merged = merged.merge(customer_data, on="loan_id", how="left", suffixes=("", "_cust"))
 
 # --- 1. Portfolio Overview ---
+st.markdown('<div data-testid="dashboard-board">', unsafe_allow_html=True)
 st.header("📊 Executive Summary")
 col1, col2, col3, col4 = st.columns(4)
 
@@ -518,11 +576,16 @@ else:
 default_rate = (merged["loan_status"] == "Default").mean() * 100 if "loan_status" in merged else 0
 
 col1.metric("Total Loans", f"{total_loans:,}")
+st.markdown('<div data-testid="kpi-total-loans">', unsafe_allow_html=True)
 col2.metric("Total Outstanding", f"${total_outstanding:,.2f}")
+st.markdown('</div>', unsafe_allow_html=True)
 col3.metric("Average APR", f"{avg_apr:.2%}")
 col4.metric("Default Rate", f"{default_rate:.2f}%")
 
+st.markdown('</div>', unsafe_allow_html=True)
+
 # --- 2. Growth Analysis ---
+st.markdown('<div data-testid="dashboard-growth">', unsafe_allow_html=True)
 st.header("📈 Growth & Projections")
 g_col1, g_col2 = st.columns(2)
 
@@ -541,32 +604,56 @@ with g_col1:
     st.plotly_chart(apply_theme(fig_growth), use_container_width=True)
 
 with g_col2:
-    if "categoria" in merged.columns:
-        cat_agg = merged.groupby("categoria")["outstanding_loan_value"].sum().reset_index()
-        fig_cat = px.pie(
-            cat_agg,
-            values="outstanding_loan_value",
-            names="categoria",
-            title="Portfolio by Category",
-        )
-        st.plotly_chart(apply_theme(fig_cat), use_container_width=True)
+    try:
+        cat_agg = compute_cat_agg(merged)
+
+        if not cat_agg.empty and cat_agg["outstanding_loan_value"].sum() > 0:
+            fig_cat = px.pie(
+                cat_agg,
+                values="outstanding_loan_value",
+                names="categoria",
+                title="Portfolio by Category",
+            )
+            st.plotly_chart(apply_theme(fig_cat), use_container_width=True)
+        else:
+            # If categoria exists but no outstanding value column, show explicit message
+            if "categoria" in merged.columns and "outstanding_loan_value" not in merged.columns:
+                st.info("Outstanding loan value column missing. Category breakdown unavailable.")
+            else:
+                st.info("No outstanding balance data found for category breakdown.")
+    except Exception as exc:
+        st.warning(f"Could not generate category breakdown: {exc}")
 
 # --- 3. Marketing & Sales ---
 st.header("🎯 Sales Performance")
 if "sales_agent" in merged.columns:
+    agg_map = {"loan_id": "count"}
+    if "outstanding_loan_value" in merged.columns:
+        agg_map["outstanding_loan_value"] = "sum"
+
     sales_agg = (
         merged.groupby("sales_agent")
-        .agg({"outstanding_loan_value": "sum", "loan_id": "count"})
+        .agg(agg_map)
         .reset_index()
-        .rename(columns={"outstanding_loan_value": "Volume", "loan_id": "Count"})
     )
-    fig_sales = px.treemap(
-        sales_agg,
-        path=["sales_agent"],
-        values="Volume",
-        color="Count",
-        title="Sales Agent Volume Distribution",
-    )
+
+    if "outstanding_loan_value" in merged.columns:
+        sales_agg = sales_agg.rename(columns={"outstanding_loan_value": "Volume", "loan_id": "Count"})
+        fig_sales = px.treemap(
+            sales_agg,
+            path=["sales_agent"],
+            values="Volume",
+            color="Count",
+            title="Sales Agent Volume Distribution",
+        )
+    else:
+        sales_agg = sales_agg.rename(columns={"loan_id": "Count"})
+        fig_sales = px.bar(
+            sales_agg,
+            x="sales_agent",
+            y="Count",
+            title="Sales Agent Loan Count",
+        )
     st.plotly_chart(apply_theme(fig_sales), use_container_width=True)
 else:
     headcount_df = load_agent_headcount()
@@ -587,7 +674,10 @@ else:
             "Sales agent data not found. Provide agent performance data to populate this section."
         )
 
+st.markdown('</div>', unsafe_allow_html=True)
+
 # --- 4. Risk Analysis ---
+st.markdown('<div data-testid="dashboard-risk">', unsafe_allow_html=True)
 st.header("⚠️ Risk Analysis")
 r_col1, r_col2 = st.columns(2)
 
@@ -617,7 +707,121 @@ with r_col2:
         score -= 20
     st.metric("Quality Score", f"{score:.1f}%")
 
-# --- 5. Export ---
+st.markdown('</div>', unsafe_allow_html=True)
+
+# --- 5. Advanced Analytics ---
+st.markdown('<div data-testid="dashboard-analytics">', unsafe_allow_html=True)
+st.header("🔬 Advanced Intelligence")
+adv_tabs = st.tabs(["Segmentation", "Churn & Retention", "Unit Economics"])
+
+with adv_tabs[0]:
+    st.subheader("Client Segment Distribution (2025)")
+    seg_data = dashboard_metrics.get("extended_kpis", {}).get("segmentation_summary", [])
+    if seg_data:
+        df_seg = pd.DataFrame(seg_data)
+        # Rename columns for display
+        df_seg_display = df_seg.rename(columns={
+            "client_segment": "Segment",
+            "Clients": "Active Clients",
+            "Portfolio_Value": "Portfolio Value ($)",
+            "Avg_Loan": "Avg Loan Size ($)",
+            "Delinquency_Rate": "Delinquency (%)"
+        })
+
+        c1, c2 = st.columns([1, 1])
+        with c1:
+            fig_seg_aum = px.bar(
+                df_seg_display,
+                x="Segment",
+                y="Portfolio Value ($)",
+                title="AUM by Segment",
+                text_auto='.2s'
+            )
+            st.plotly_chart(apply_theme(fig_seg_aum), use_container_width=True)
+        with c2:
+            fig_seg_risk = px.bar(
+                df_seg_display,
+                x="Segment",
+                y="Delinquency (%)",
+                title="Risk by Segment",
+                color="Delinquency (%)",
+                color_continuous_scale="Reds"
+            )
+            st.plotly_chart(apply_theme(fig_seg_risk), use_container_width=True)
+
+        st.dataframe(styled_df(df_seg_display), use_container_width=True)
+    else:
+        st.info("Segmentation data not found. Ensure 'Client Segment' column is present in loans data.")
+
+with adv_tabs[1]:
+    st.subheader("90-Day Churn Analysis")
+    churn_data = dashboard_metrics.get("extended_kpis", {}).get("churn_90d_metrics", [])
+    if churn_data:
+        df_churn = pd.DataFrame(churn_data)
+        if "month" in df_churn.columns:
+            df_churn["month"] = pd.to_datetime(df_churn["month"])
+
+            fig_churn = px.line(
+                df_churn,
+                x="month",
+                y=["churn90d_pct"],
+                title="90-Day Churn Rate Trend",
+                markers=True
+            )
+            st.plotly_chart(apply_theme(fig_churn), use_container_width=True)
+
+            st.write("**Churn Metrics Summary:**")
+            latest_churn = df_churn.sort_values("month").iloc[-1]
+            ch_c1, ch_c2, ch_c3 = st.columns(3)
+            ch_c1.metric("Active (90d)", f"{latest_churn['active_90d']:,}")
+            ch_c2.metric("Inactive (90d)", f"{latest_churn['inactive_90d']:,}")
+            ch_c3.metric("Churn Rate", f"{latest_churn['churn90d_pct']:.2%}")
+    else:
+        st.info("Churn analytics requires historical disbursement data.")
+
+with adv_tabs[2]:
+    st.subheader("LTV / CAC Efficiency")
+    ue_data = dashboard_metrics.get("extended_kpis", {}).get("unit_economics", [])
+    if ue_data:
+        df_ue = pd.DataFrame(ue_data)
+        if "month" in df_ue.columns:
+            df_ue["month"] = pd.to_datetime(df_ue["month"])
+            fig_ue = px.line(
+                df_ue,
+                x="month",
+                y="ltv_cac_ratio",
+                title="LTV/CAC Ratio Trend",
+                markers=True
+            )
+            # Add target line
+            fig_ue.add_hline(y=3.0, line_dash="dash", line_color="green", annotation_text="Target (3.0x)")
+            st.plotly_chart(apply_theme(fig_ue), use_container_width=True)
+    else:
+        st.info("Unit economics requires marketing spend data (data/support/marketing_spend.csv).")
+
+# --- 6. KPI Catalog ---
+st.header("📋 KPI Catalog")
+with st.expander("View all computed KPIs"):
+    all_kpis = dashboard_metrics.get("extended_kpis", {})
+    if all_kpis:
+        # Flatten simple key-value pairs
+        flat_kpis = []
+        for k, v in all_kpis.items():
+            if isinstance(v, (int, float, str)):
+                flat_kpis.append({"KPI": kpi_label(k), "Value": format_kpi_value(k, v)})
+
+        if flat_kpis:
+            st.table(pd.DataFrame(flat_kpis))
+
+        st.write("**Detailed Data Tables:**")
+        table_keys = [k for k, v in all_kpis.items() if isinstance(v, list) and v]
+        selected_table = st.selectbox("Select table to view", table_keys)
+        if selected_table:
+            st.dataframe(pd.DataFrame(all_kpis[selected_table]))
+    else:
+        st.info("No extended KPIs found.")
+
+# --- 7. Export ---
 st.header("📤 Export")
 if st.button("Prepare Export"):
     export_df = merged.head(100)
@@ -630,3 +834,4 @@ st.divider()
 st.caption(
     f"Abaco Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 )
+st.markdown('</div>', unsafe_allow_html=True)

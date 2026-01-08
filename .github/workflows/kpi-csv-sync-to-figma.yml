@@ -1,7 +1,7 @@
 name: KPI CSV Sync to Figma
 # Export the KPI mapping table to CSV and sync it to the Figma KPI Table page automatically.
 
-"on":
+on:
   workflow_dispatch:
   schedule:
     - cron: '0 7 * * *' # Every day at 7:00 AM UTC

@@ -1,14 +1,14 @@
 name: Scheduled Batch Export
 
-"on":
+on:
   schedule:
-    - cron: '0 */6 * * *' # Every 6 hours
+    - cron: "0 */6 * * *" # Every 6 hours
   workflow_dispatch:
     inputs:
       export_type:
-        description: 'Type of export'
+        description: "Type of export"
         required: false
-        default: 'full'
+        default: "full"
         type: choice
         options:
           - kpi-only
@@ -28,12 +28,14 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SLACK_WEBHOOK_OPS: ${{ secrets.SLACK_WEBHOOK_OPS }}
         run: |
           missing=""
           [ -z "$DATABASE_URL" ] && missing="$missing DATABASE_URL"
           [ -z "$SUPABASE_URL" ] && missing="$missing SUPABASE_URL"
           [ -z "$SUPABASE_SERVICE_ROLE" ] && missing="$missing SUPABASE_SERVICE_ROLE"
+          [ -z "$SUPABASE_ANON_KEY" ] && missing="$missing SUPABASE_ANON_KEY"
 
           if [ -z "$missing" ]; then
             echo "can_run=true" >> "$GITHUB_OUTPUT"
@@ -62,8 +64,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -109,7 +111,7 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: success
-          text: 'Batch export workflow completed successfully'
+          text: "Batch export workflow completed successfully"
           fields: repo,message,commit
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_OPS }}
@@ -119,7 +121,7 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: failure
-          text: 'Batch export workflow failed'
+          text: "Batch export workflow failed"
           fields: repo,message,commit,author
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_OPS }}
@@ -127,13 +129,15 @@ jobs:
       - name: Export Summary
         if: always()
         run: |
-          echo "## Batch Export Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Export Type**: ${{ github.event.inputs.export_type || 'full' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.check-secrets.outputs.slack_ops_available }}" == "true" ]; then
-            echo "- **Notifications**: ✅ Configured" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- **Notifications**: ⚠️ Not configured" >> $GITHUB_STEP_SUMMARY
-          fi
+          {
+            echo "## Batch Export Summary"
+            echo ""
+            echo "- **Export Type**: ${{ github.event.inputs.export_type || 'full' }}"
+            echo "- **Status**: ${{ job.status }}"
+            echo "- **Run ID**: ${{ github.run_id }}"
+            if [ "${{ needs.check-secrets.outputs.slack_ops_available }}" == "true" ]; then
+              echo "- **Notifications**: ✅ Configured"
+            else
+              echo "- **Notifications**: ⚠️ Not configured"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -104,4 +104,18 @@ playwright/.auth
 pytest-report/
 coverage.xml
 
+# Extracted inline workflow run blocks
+.github/workflows/extracted_runs/
+
 .azure
+
+# Local venvs used by developers - ignore
+.lint-venv/
+.venv-2/
+
+# Local test/data artifacts
+data/archives/
+tmp/
+
+# CI notes (local)
+ci/

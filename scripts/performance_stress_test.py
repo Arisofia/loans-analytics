@@ -18,10 +18,10 @@ import psutil
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis import KPIEngineV2
 
 try:
-    from src.azure_tracing import setup_azure_tracing
+    from src.utils.tracing.azure import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for performance_stress_test")

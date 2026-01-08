@@ -1,0 +1,11 @@
+<step title="Incoming Request" date="2026-01-01T23:20:25.673" instance="b52a0e" url="/api/deployments/latest?deployer=OneDeploy&amp;time=2026-01-01_23-19-07Z" method="GET" type="request" pid="768,1,37" Host="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_b331d4c441121f33da0f8476235474cf2ed43174776f44c9c3bb512e436c79b1" Authorization="Bea..." Content-Type="application/json; charset=utf-8" Cookie="ARRAffinity=b52a0e95239a69ec1d51e27f609b0a5686f7c63777a6973635d661be711de39f;Path=/;HttpOnly;Secure;Domain=abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net; ARRAffinitySameSite=b52a0e95239a69ec1d51e27f609b0a5686f7c63777a6973635d661be711de39f;Path=/;HttpOnly;SameSite=None;Secure;Domain=abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" Content-Length="0" X-ARR-LOG-ID="8a66b032-4289-48b3-aa06-e4a1f8c3fd6c" CLIENT-IP="135.119.38.48:31744" X-SITE-DEPLOYMENT-ID="abaco-analytics-dashboard" WAS-DEFAULT-HOSTNAME="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/latest?deployer=OneDeploy&amp;time=2026-01-01_23-19-07Z" X-Client-IP="135.119.38.48" X-Client-Port="31744" >
+  <step title="Cleanup Xml Logs" date="2026-01-01T23:20:25.691" >
+    <step title="Cleanup Infos" date="2026-01-01T23:20:25.792" totalFiles="1433" totalCleanup="1273" /><!-- duration: 12ms -->
+  </step><!-- duration: 130ms -->
+  <step title="DeploymentService.GetResult" date="2026-01-01T23:20:25.832" >
+    <step title="DeploymentService.GetLatestDeployment" date="2026-01-01T23:20:25.842" >
+      <step title="DeploymentManager.GetResults" date="2026-01-01T23:20:25.843" /><!-- duration: 833ms -->
+    </step><!-- duration: 846ms -->
+  </step><!-- duration: 875ms -->
+  <step title="Outgoing response" date="2026-01-01T23:20:26.717" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 20ms -->
+</step><!-- duration: 1065ms -->

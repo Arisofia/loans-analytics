@@ -47,12 +47,12 @@ jobs:
       - name: Report quality status
         id: check
         if: success()
-        run: echo "passed=true" >> $GITHUB_OUTPUT
+        run: echo "passed=true" >> "$GITHUB_OUTPUT"
 
   deploy-staging:
     runs-on: ubuntu-latest
     needs: quality-gate
-    if: ${{ needs.quality-gate.outputs.passed == 'true' }}
+    if: ${{ needs.quality-gate.outputs.passed == true }}
     environment:
       name: staging
       url: https://staging.abaco-loans-analytics.com
@@ -99,7 +99,7 @@ jobs:
     needs: deploy-staging
     steps:
       - name: Create GitHub deployment
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const deployment = await github.rest.repos.createDeployment({

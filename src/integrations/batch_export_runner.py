@@ -11,6 +11,7 @@ Orchestrates the complete export pipeline:
 import argparse
 import json
 import logging
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -180,10 +181,9 @@ class BatchExportRunner:
         try:
             if export_type == "kpi-only":
                 return self.export_kpi_only()
-            elif export_type == "dashboard":
+            if export_type == "dashboard":
                 return self.export_dashboard()
-            else:
-                return self.export_full()
+            return self.export_full()
 
         except Exception as e:
             logger.error(f"Batch export failed: {e}", exc_info=True)
@@ -228,4 +228,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

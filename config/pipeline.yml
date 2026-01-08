@@ -197,12 +197,26 @@ pipeline:
           source_table: fact_loans
           precision: 2
           validation_range: [0, 100]
+        - name: AUM
+          function: src.kpis.aum.calculate_aum
+          formula: "SUM(outstanding_loan_value WHERE loan_status == 'Current')"
+          source_table: fact_loans
+          precision: 2
         - name: PortfolioHealth
           function: src.kpis.portfolio_health.calculate_portfolio_health
           formula: "(10 - PAR30/10) * (CollectionRate/10)"
           source_table: metrics
           precision: 2
           validation_range: [0, 10]
+
+        - name: SegmentationSummary
+          function: src.kpis.segmentation_summary.calculate_segmentation_summary
+          formula: "GROUP BY client_segment: clients, portfolio_value, avg_loan. Primary metric: total unique clients (2025)"
+          source_table: fact_loans
+          precision: 0
+          output_type: table
+          owner: Commercial
+          expose_on_dashboard: true
       timeseries:
         enabled: true
         time_column: measurement_date
@@ -238,6 +252,11 @@ pipeline:
           - kpi_timeseries_daily
       dashboard_triggers:
         enabled: false
+        # When enabled the pipeline will trigger an export to external dashboards
+        # and design tools after the run completes. Use outputs to limit platforms.
+        # Valid outputs: ['figma', 'azure', 'supabase', 'meta', 'notion']
+        outputs: ["figma", "azure"]
+        mode: "kpi-only" # options: 'kpi-only' | 'dashboard' | 'full'
 
 observability:
   logging:

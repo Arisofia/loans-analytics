@@ -1,6 +1,6 @@
 name: CodeRabbit PR Review
 
-"on":
+on:
   pull_request:
     types: [opened, synchronize, reopened]
 

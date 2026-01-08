@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 try:
-    from src.azure_tracing import setup_azure_tracing
+    from src.utils.tracing.azure import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for generate_executive_report")

@@ -1,29 +1,17 @@
 import importlib
 import logging
 import uuid
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import yaml
 
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis import KPIEngineV2
+from src.pipeline.models import CalculationResultV2
 from src.pipeline.utils import utc_now
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class CalculationResultV2:
-    """Container for KPI calculation outputs and audit trail."""
-
-    metrics: Dict[str, Any]
-    audit_trail: List[Dict[str, Any]]
-    run_id: str
-    timeseries: Dict[str, pd.DataFrame]
-    anomalies: Dict[str, Any]
-    timestamp: str
 
 
 class UnifiedCalculationV2:
@@ -69,25 +57,23 @@ class UnifiedCalculationV2:
         module = importlib.import_module(module_path)
         return getattr(module, func_name)
 
-    def _compute_metric(self, df: pd.DataFrame, metric_cfg: Dict[str, Any]) -> Dict[str, Any]:
+    def _compute_metric(
+        self, df: pd.DataFrame, metric_cfg: Dict[str, Any], engine: KPIEngineV2
+    ) -> Dict[str, Any]:
         name = metric_cfg.get("name")
         # Overlay with external definitions if available
         ext_def = self.kpi_definitions.get("kpis", {}).get(name, {})
 
         func_path = metric_cfg.get("function") or ext_def.get("function")
         if not func_path:
-            # Fallback to KPIEngineV2 direct calculation if function path is missing but name exists
+            # Use engine for direct calculation if function path is missing
             try:
-                engine = KPIEngineV2(df)
-                # Map names to engine methods if needed
-                if not isinstance(name, str):
-                    raise ValueError(f"Invalid metric name: {name}")
                 val = engine.get_metric(name)
                 context = {"source": "KPIEngineV2"}
             except Exception as exc:
                 raise ValueError(
-                    f"Missing function for metric {name} and engine fallback failed: {exc}"
-                )
+                    f"Missing function for metric {name} and engine lookup failed: {exc}"
+                ) from exc
         else:
             func = self._import_function(func_path)
             val, context = func(df)
@@ -111,12 +97,25 @@ class UnifiedCalculationV2:
         }
 
     def _compute_composite(
-        self, base_metrics: Dict[str, Any], metric_cfg: Dict[str, Any]
+        self, base_metrics: Dict[str, Any], metric_cfg: Dict[str, Any], engine: KPIEngineV2
     ) -> Dict[str, Any]:
         name = metric_cfg.get("name")
         func_path = metric_cfg.get("function")
+        
         if not func_path:
+            # Fallback to engine's portfolio health if it's the specific health metric
+            if name in {"PortfolioHealth", "HealthScore"}:
+                par_val = base_metrics.get("PAR30", {}).get("value")
+                coll_val = base_metrics.get("CollectionRate", {}).get("value")
+                val, context = engine.calculate_portfolio_health(par_val, coll_val)
+                return {
+                    "value": float(val) if val is not None else None,
+                    "formula": "PortfolioHealth(PAR30, CollectionRate)",
+                    "source_table": "composite",
+                    **context
+                }
             raise ValueError(f"Missing function for composite metric {name}")
+
         func = self._import_function(func_path)
         par_val = base_metrics.get("PAR30", {}).get("value")
         coll_val = base_metrics.get("CollectionRate", {}).get("value")
@@ -133,7 +132,7 @@ class UnifiedCalculationV2:
         }
 
     def _compute_timeseries(
-        self, df: pd.DataFrame, metrics_cfg: List[Dict[str, Any]]
+        self, df: pd.DataFrame, metrics_cfg: List[Dict[str, Any]], engine: KPIEngineV2
     ) -> Dict[str, pd.DataFrame]:
         ts_cfg = self.config.get("timeseries", {})
         if not ts_cfg.get("enabled", False):
@@ -162,12 +161,14 @@ class UnifiedCalculationV2:
                 if pd.isna(period):
                     continue
                 row = {"period_start": period}
+                # Create a temporary engine for the group to maintain audit trail per period
+                group_engine = KPIEngineV2(group, actor="unified_pipeline", action="timeseries_calc")
                 for metric in metrics_cfg:
                     name = metric.get("name")
                     if not name or name in {"PortfolioHealth", "HealthScore"}:
                         continue
                     try:
-                        metric_result = self._compute_metric(group, metric)
+                        metric_result = self._compute_metric(group, metric, group_engine)
                         row[name] = metric_result.get("value")
                     except Exception as exc:
                         row[name] = None
@@ -215,32 +216,32 @@ class UnifiedCalculationV2:
         if not metrics_cfg:
             metrics = kpi_engine.calculate_all(include_composite=True)
         else:
+            # First pass: base metrics
             for metric_cfg in metrics_cfg:
                 name = metric_cfg.get("name")
                 if name in {"PortfolioHealth", "HealthScore"}:
                     continue
                 try:
-                    metrics[name] = self._compute_metric(df, metric_cfg)
+                    metrics[name] = self._compute_metric(df, metric_cfg, kpi_engine)
                     self._log_event("metric_computed", "success", metric=name)
                 except Exception as exc:
                     self._log_event("metric_failed", "error", metric=name, error=str(exc))
                     metrics[name] = {"value": None, "error": str(exc)}
 
+            # Second pass: composite metrics
             for metric_cfg in metrics_cfg:
                 name = metric_cfg.get("name")
                 if name not in {"PortfolioHealth", "HealthScore"}:
                     continue
                 try:
-                    metrics[name] = self._compute_composite(metrics, metric_cfg)
+                    metrics[name] = self._compute_composite(metrics, metric_cfg, kpi_engine)
                     self._log_event("metric_computed", "success", metric=name)
                 except Exception as exc:
                     self._log_event("metric_failed", "error", metric=name, error=str(exc))
                     metrics[name] = {"value": None, "error": str(exc)}
 
-            kpi_engine.calculate_all(include_composite=True)
         audit_trail = kpi_engine.get_audit_trail().to_dict(orient="records")
-
-        timeseries = self._compute_timeseries(df, metrics_cfg)
+        timeseries = self._compute_timeseries(df, metrics_cfg, kpi_engine)
         anomalies = self._detect_anomalies(metrics, baseline_metrics)
 
         self._log_event(

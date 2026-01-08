@@ -1,0 +1,146 @@
+name: Cascade Ingest and KPI Extraction
+
+on:
+  schedule:
+    # UTC times: 05:00 and 17:00 UTC = 06:00 and 18:00 CET (winter) / 07:00 and 19:00 CEST (summer)
+    - cron: "0 5,17 * * *"
+  workflow_dispatch: {}
+  push:
+    paths:
+      - "scripts/cascade_ingest.py"
+      - "scripts/ingest_cascade.py"
+      - "data/raw/*.xls*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cascade-ingest
+  cancel-in-progress: false
+
+jobs:
+  validate-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.gate.outputs.run }}
+      slack_available: ${{ steps.gate.outputs.slack_available }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gate execution on secrets and scripts
+        id: gate
+        env:
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
+          CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}
+          SLACK_WEBHOOK_OPS: ${{ secrets.SLACK_WEBHOOK_OPS }}
+        run: |
+          python3 << 'VALIDATION'
+          import os
+          from pathlib import Path
+
+          required = ["SUPABASE_SERVICE_ROLE", "CASCADE_USERNAME", "CASCADE_PASSWORD"]
+          missing = [k for k in required if not os.getenv(k)]
+          script_missing = not Path("scripts/ingest_cascade.py").exists()
+          slack_available = "true" if os.getenv("SLACK_WEBHOOK_OPS") else "false"
+
+          if missing:
+              print(f"Skipping: missing secrets: {', '.join(missing)}")
+          if script_missing:
+              print("Skipping: missing script scripts/ingest_cascade.py")
+          if slack_available == "false":
+              print("SLACK_WEBHOOK_OPS not configured - notifications will be skipped")
+
+          run = "false" if missing or script_missing else "true"
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as handle:
+              handle.write(f"run={run}\n")
+              handle.write(f"slack_available={slack_available}\n")
+          VALIDATION
+
+  kpi-extraction:
+    needs: validate-secrets
+    if: needs.validate-secrets.outputs.run == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ]; then pip install .; fi
+
+      - name: Run Cascade ingest and KPI extraction
+        id: ingest
+        env:
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
+          CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python scripts/ingest_cascade.py
+
+      - name: Verify KPI output
+        if: success()
+        run: |
+          if [ -f exports/kpi_results.json ]; then
+            echo "✅ KPI results generated"
+            head -20 exports/kpi_results.json
+          else
+            echo "⚠️  No KPI results file (may be expected if no data)"
+          fi
+
+      - name: Upload KPI artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kpi_results
+          path: exports/kpi_results.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Notify Ops on failure
+        uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_OPS }}
+        if: failure() && needs.validate-secrets.outputs.slack_available == true
+        with:
+          payload: |
+            {
+              "text": "🚨 Cascade ingest FAILED",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Cascade Ingest FAILED*\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Run ${{ github.run_id }}>\n*Branch:* `${{ github.ref_name }}`\n*Commit:* `${{ github.sha }}`"
+                  }
+                }
+              ]
+            }
+
+      - name: Notify Ops on success
+        uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_OPS }}
+        if: success() && needs.validate-secrets.outputs.slack_available == true
+        with:
+          payload: |
+            {
+              "text": "✅ Cascade ingest completed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Cascade Ingest SUCCESS*\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Run ${{ github.run_id }}>\n*Branch:* `${{ github.ref_name }}`"
+                  }
+                }
+              ]
+            }

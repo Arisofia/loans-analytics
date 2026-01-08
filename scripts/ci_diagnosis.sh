@@ -1,13 +1,15 @@
 #!/bin/bash
 set -e
 
+OVERALL_SUCCESS=true
+
 echo "=========================================="
 echo "CI WORKFLOW FAILURE DIAGNOSIS"
 echo "=========================================="
 echo ""
 
 REPORT_FILE="CI_DIAGNOSIS_REPORT.md"
-> "$REPORT_FILE"
+: > "$REPORT_FILE"
 
 {
     echo "# CI Workflow Failure Diagnosis Report"
@@ -46,6 +48,7 @@ if python3 -m pytest tests/ -v --tb=short 2>&1 | tee -a "$REPORT_FILE"; then
     TEST_RESULT="✓ PASSED"
 else
     TEST_RESULT="✗ FAILED"
+    OVERALL_SUCCESS=false
 fi
 
 {
@@ -115,3 +118,8 @@ PYTHONPATH=src python3 -m mypy src --ignore-missing-imports 2>&1 | tee -a "$REPO
 cat "$REPORT_FILE"
 echo ""
 echo "✅ Diagnosis complete. Report saved to: $REPORT_FILE"
+
+if [ "$OVERALL_SUCCESS" = false ]; then
+    echo "❌ Some critical CI checks failed."
+    exit 1
+fi

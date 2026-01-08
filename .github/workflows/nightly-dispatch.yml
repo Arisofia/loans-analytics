@@ -1,6 +1,6 @@
 name: Nightly Dispatch
 
-"on":
+on:
   schedule:
     - cron: '0 2 * * *' # 2 AM UTC
   workflow_dispatch:

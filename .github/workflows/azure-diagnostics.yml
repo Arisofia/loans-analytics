@@ -1,6 +1,6 @@
 name: Azure Diagnostics (dispatchable)
 
-"on":
+on:
   workflow_dispatch:
 
 permissions:
@@ -45,13 +45,15 @@ jobs:
           echo "diagnostics start: $(date -u)" > diagnostics/README.txt
 
       - name: Set up Azure CLI
-        uses: azure/CLI@v1
+        uses: azure/cli@v2
         with:
           azcliversion: '2.49.0'
+          inlineScript: |
+            az --version
 
       - name: Azure login (service principal)
         if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -80,15 +82,17 @@ jobs:
 
       - name: Summarize diagnostics
         run: |
-          echo "Diagnostics summary:" > diagnostics/summary.txt
-          echo "validate-azure: ${{ needs.validate-azure.outputs.all_secrets_present }}" >> diagnostics/summary.txt
-          echo "validate-acr: ${{ needs.validate-acr.outputs.all_secrets_present }}" >> diagnostics/summary.txt
-          echo "validate-storage: ${{ needs.validate-storage.outputs.all_secrets_present }}" >> diagnostics/summary.txt
-          echo "validate-swa: ${{ needs.validate-swa.outputs.all_secrets_present }}" >> diagnostics/summary.txt
-          ls -lah diagnostics >> diagnostics/summary.txt || true
+          {
+            echo "Diagnostics summary:"
+            echo "validate-azure: ${{ needs.validate-azure.outputs.all_secrets_present }}"
+            echo "validate-acr: ${{ needs.validate-acr.outputs.all_secrets_present }}"
+            echo "validate-storage: ${{ needs.validate-storage.outputs.all_secrets_present }}"
+            echo "validate-swa: ${{ needs.validate-swa.outputs.all_secrets_present }}"
+            ls -lah diagnostics
+          } > diagnostics/summary.txt
 
       - name: Upload diagnostics artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: azure-diagnostics
           path: diagnostics

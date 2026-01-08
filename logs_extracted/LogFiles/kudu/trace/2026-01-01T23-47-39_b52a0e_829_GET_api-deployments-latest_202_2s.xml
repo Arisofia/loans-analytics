@@ -1,0 +1,11 @@
+<step title="Incoming Request" date="2026-01-01T23:47:39.761" instance="b52a0e" url="/api/deployments/latest?deployer=OneDeploy&amp;time=2026-01-01_23-46-26Z" method="GET" type="request" pid="768,1,40" Host="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_b331d4c441121f33da0f8476235474cf2ed43174776f44c9c3bb512e436c79b1" Authorization="Bea..." Content-Type="application/json; charset=utf-8" Cookie="ARRAffinity=b52a0e95239a69ec1d51e27f609b0a5686f7c63777a6973635d661be711de39f;Path=/;HttpOnly;Secure;Domain=abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net; ARRAffinitySameSite=b52a0e95239a69ec1d51e27f609b0a5686f7c63777a6973635d661be711de39f;Path=/;HttpOnly;SameSite=None;Secure;Domain=abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" Content-Length="0" X-ARR-LOG-ID="8e0ad748-1483-4a24-a9cd-d46e94a0531c" CLIENT-IP="128.24.160.241:63424" X-SITE-DEPLOYMENT-ID="abaco-analytics-dashboard" WAS-DEFAULT-HOSTNAME="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/latest?deployer=OneDeploy&amp;time=2026-01-01_23-46-26Z" X-Client-IP="128.24.160.241" X-Client-Port="63424" >
+  <step title="Cleanup Xml Logs" date="2026-01-01T23:47:39.770" >
+    <step title="Cleanup Infos" date="2026-01-01T23:47:40.025" totalFiles="1699" totalCleanup="1539" /><!-- duration: 151ms -->
+  </step><!-- duration: 415ms -->
+  <step title="DeploymentService.GetResult" date="2026-01-01T23:47:40.223" >
+    <step title="DeploymentService.GetLatestDeployment" date="2026-01-01T23:47:40.226" >
+      <step title="DeploymentManager.GetResults" date="2026-01-01T23:47:40.255" /><!-- duration: 1629ms -->
+    </step><!-- duration: 1676ms -->
+  </step><!-- duration: 1689ms -->
+  <step title="Outgoing response" date="2026-01-01T23:47:41.923" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 9ms -->
+</step><!-- duration: 2182ms -->

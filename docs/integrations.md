@@ -7,7 +7,7 @@ This guide explains how to set up and use the official SDKs for Figma, Notion, a
 Export these values before running the examples:
 
 - `FIGMA_PERSONAL_ACCESS_TOKEN`: Figma personal access token with file read access.
-- `FIGMA_FILE_ID`: Figma file ID used for figma-export or SDK reads.
+- `FIGMA_FILE_KEY`: Figma file key used by CI and scripts (set this to the Figma file ID).
 - `NOTION_TOKEN`: Internal integration token for Notion.
 - `NOTION_DATABASE_ID`: Database ID for querying Notion content.
 - `SLACK_BOT_TOKEN`: Slack bot token (starts with `xoxb-`).
@@ -16,7 +16,7 @@ Export these values before running the examples:
 ```bash
 # Mac/Linux shell examples
 export FIGMA_PERSONAL_ACCESS_TOKEN="<token>"
-export FIGMA_FILE_ID="<file_id>"
+export FIGMA_FILE_KEY="<file_id>"
 export NOTION_TOKEN="<token>"
 export NOTION_DATABASE_ID="<database_id>"
 export SLACK_BOT_TOKEN="<token>"
@@ -54,7 +54,7 @@ const figma = Client({
 })
 
 async function getFileNodes() {
-  const fileId = process.env.FIGMA_FILE_ID!
+  const fileId = process.env.FIGMA_FILE_KEY!
   const response = await figma.file(fileId)
   return response.data.document.children
 }
@@ -70,7 +70,7 @@ const figma = new Figma({
 })
 
 async function getFileName() {
-  const fileId = process.env.FIGMA_FILE_ID!
+  const fileId = process.env.FIGMA_FILE_KEY!
   const file = await figma.getFile(fileId)
   return file.name
 }
@@ -110,7 +110,7 @@ async function postHealthCheck(channelId: string) {
 Use [`figma-export`](https://github.com/marcomontalbano/figma-export) to pull design tokens from a Figma file:
 
 ```bash
-npx figma-export --file-id "$FIGMA_FILE_ID" \
+npx figma-export --file-id "$FIGMA_FILE_KEY" \
   --figma-token "$FIGMA_PERSONAL_ACCESS_TOKEN" \
   --output-dir ./exports/tokens \
   --format json
@@ -134,7 +134,7 @@ import os
 
 figma = Figma(os.environ["FIGMA_PERSONAL_ACCESS_TOKEN"])
 
-file_id = os.environ["FIGMA_FILE_ID"]
+file_id = os.environ["FIGMA_FILE_KEY"]
 file = figma.get_file(file_id)
 print(file["name"])
 ```
@@ -198,7 +198,7 @@ flowchart TD
   NodeSetup --> Env["Export env vars\nFIGMA_PERSONAL_ACCESS_TOKEN, NOTION_TOKEN, SLACK_BOT_TOKEN, etc."]
   PySetup --> Env
   Env --> Choice{Need tokens?}
-  Choice -->|Design tokens| FigmaExport["Run figma-export CLI\nwith FIGMA_FILE_ID"]
+  Choice -->|Design tokens| FigmaExport["Run figma-export CLI\nwith FIGMA_FILE_KEY"]
   Choice -->|API data| SDKUse["Call SDKs\n(Figma file read, Notion query, Slack message)"]
   SDKUse --> Done([Integrations ready])
   FigmaExport --> Done

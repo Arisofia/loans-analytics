@@ -1,5 +1,5 @@
 name: CodeRabbit Lint & Security Gate
-"on":
+on:
   pull_request:
     types: [opened, synchronize, reopened]
   push:
@@ -39,6 +39,6 @@ jobs:
       - name: Summarize CodeRabbit gate
         if: success()
         run: |
-          echo "CodeRabbit gate completed (lint + security aligned" \
-            "to coderabbit.yaml include/exclude paths)." \
-            >> $GITHUB_STEP_SUMMARY
+          {
+            printf 'CodeRabbit gate completed (lint + security aligned to coderabbit.yaml include/exclude paths).\n'
+          } >> "$GITHUB_STEP_SUMMARY"

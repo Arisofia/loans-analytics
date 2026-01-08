@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -10,7 +11,7 @@ from scipy.optimize import newton
 logger = logging.getLogger(__name__)
 
 
-class KPICatalogProcessor:
+class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
     """Processor for the unified KPI command catalog for ABACO."""
 
     def __init__(
@@ -125,7 +126,7 @@ class KPICatalogProcessor:
         def xnpv(rate, cashflows, dates):
             d0 = dates[0]
             return sum(
-                [cf / (1 + rate) ** ((d - d0).days / 365.0) for cf, d in zip(cashflows, dates)]
+                cf / (1 + rate) ** ((d - d0).days / 365.0) for cf, d in zip(cashflows, dates)
             )
 
         try:
@@ -1367,6 +1368,19 @@ class KPICatalogProcessor:
             kpis["unit_economics"] = self.get_unit_economics().to_dict("records")
         except Exception:
             pass
+
+        # Segmentation Summary (Commercial KPI)
+        try:
+            from src.kpis.segmentation_summary import \
+                SegmentationSummaryCalculator
+
+            seg_calc = SegmentationSummaryCalculator()
+            _, seg_ctx = seg_calc.calculate(self.loans)
+            if "segmentation_data" in seg_ctx:
+                kpis["segmentation_summary"] = seg_ctx["segmentation_data"]
+        except Exception as e:
+            logger.error(f"Error in segmentation_summary: {e}")
+
         try:
             kpis["figma_dashboard"] = self.get_figma_dashboard_df().to_dict("records")
         except Exception as e:
