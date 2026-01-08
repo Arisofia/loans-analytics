@@ -66,17 +66,15 @@ jobs:
       - name: Install dependencies (create venv)
         run: |
           python -m venv .venv
-          source .venv/bin/activate
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -r requirements.txt
           # Ensure testing tools are available in the venv
-          pip install -U pytest
+          .venv/bin/python -m pip install -U pytest
 
       - name: Run KPI tests (matrix)
         run: |
           echo "Running test: ${{ matrix.test-path }}"
-          source .venv/bin/activate
-          pytest -q ${{ matrix.test-path }}
+          .venv/bin/python -m pytest -q ${{ matrix.test-path }}
   kpi-summary:
     needs: kpi-tests
     # Only run the summary step for PRs opened against the same repository (skip forks where the token may be restricted)
