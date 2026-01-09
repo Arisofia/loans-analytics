@@ -138,8 +138,8 @@ jobs:
       #     docker pull "$WEB_SRC_TAG"
       #     docker pull "$DASH_SRC_TAG"
 
-          docker tag "$WEB_SRC_TAG" "$WEB_ACR_TAG"
-          docker tag "$DASH_SRC_TAG" "$DASH_ACR_TAG"
+      #     docker tag "$WEB_SRC_TAG" "$WEB_ACR_TAG"
+      #     docker tag "$DASH_SRC_TAG" "$DASH_ACR_TAG"
 
-          docker push "$WEB_ACR_TAG"
-          docker push "$DASH_ACR_TAG"
+      #     docker push "$WEB_ACR_TAG"
+      #     docker push "$DASH_ACR_TAG"

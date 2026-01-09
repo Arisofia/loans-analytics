@@ -2,6 +2,7 @@ import logging
 import re
 from typing import Optional
 
+
 def _preprocess_iban(iban: str) -> str:
     return iban.replace(" ", "").upper()
 

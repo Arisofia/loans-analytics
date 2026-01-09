@@ -148,7 +148,7 @@ class LoanAnalyticsEngine:
             }
 
         duplicate_rows = df.duplicated().sum()
-        duplicate_ratio = (duplicate_rows / total_rows * 100)
+        duplicate_ratio = duplicate_rows / total_rows * 100
 
         null_counts = df.isnull().sum().sum()
         total_cells = df.size
@@ -161,7 +161,9 @@ class LoanAnalyticsEngine:
             (invalid_count / total_numeric_cells * 100) if total_numeric_cells > 0 else 0.0
         )
 
-        data_quality_score = max(0, min(100, 100.0 - (duplicate_ratio + average_null_ratio + invalid_numeric_ratio) / 3))
+        data_quality_score = max(
+            0, min(100, 100.0 - (duplicate_ratio + average_null_ratio + invalid_numeric_ratio) / 3)
+        )
 
         return {
             "duplicate_ratio": duplicate_ratio,
@@ -187,7 +189,9 @@ class LoanAnalyticsEngine:
         if "dti_ratio" not in self.loan_data.columns:
             self.compute_debt_to_income()
 
-        risk_mask = (self.loan_data["ltv_ratio"] > ltv_threshold) | (self.loan_data["dti_ratio"] > dti_threshold)
+        risk_mask = (self.loan_data["ltv_ratio"] > ltv_threshold) | (
+            self.loan_data["dti_ratio"] > dti_threshold
+        )
         risk_loans = self.loan_data[risk_mask].copy()
 
         if not risk_loans.empty:

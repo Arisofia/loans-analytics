@@ -165,7 +165,7 @@ class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
             "loan_end_date": ["maturity_date"],
             "days_past_due": ["days_in_default", "dpd"],
         }
-        
+
         for canonical, aliases in mapping_groups.items():
             for alias in aliases:
                 if alias in df.columns and canonical not in df.columns:
@@ -1455,11 +1455,15 @@ class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
 
             # Disbursement amount from same group
             disb_pivot = cust_types.groupby("year_month")["disbursement_amount"].sum().reset_index()
-            base = self._merge_metrics(base, disb_pivot, {"year_month": "month", "disbursement_amount": "disbursement"})
+            base = self._merge_metrics(
+                base, disb_pivot, {"year_month": "month", "disbursement_amount": "disbursement"}
+            )
 
         # 4. Concentration
         conc = self.get_concentration()
-        base = self._merge_metrics(base, conc, {"month_end": "month", "top10_concentration": "top10_concentration"})
+        base = self._merge_metrics(
+            base, conc, {"month_end": "month", "top10_concentration": "top10_concentration"}
+        )
 
         # 5. Payment Timing (Pivoted)
         timing = self.get_payment_timing()
@@ -1480,7 +1484,9 @@ class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
 
         # 6. Collection Rate
         coll = self.get_collection_rate()
-        base = self._merge_metrics(base, coll, {"year_month": "month", "collection_rate": "collection_rate_due_month"})
+        base = self._merge_metrics(
+            base, coll, {"year_month": "month", "collection_rate": "collection_rate_due_month"}
+        )
 
         # 7. Throughput Metrics
         throughput = self.get_throughput_metrics()
@@ -1514,7 +1520,9 @@ class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
 
         # 10. Placeholders and Final Cleanup
         base["outstanding_proj"] = base["outstanding"] * 1.05
-        base["planned_disbursement"] = base["disbursement"].shift(-1).fillna(base["disbursement"] * 1.1)
+        base["planned_disbursement"] = (
+            base["disbursement"].shift(-1).fillna(base["disbursement"] * 1.1)
+        )
         base["remaining_capital"] = 10000000 - base["outstanding"]
         base["recv_interest_for_month"] = base["recv_interest_paid_month"]
         base["recv_fee_for_month"] = base["recv_fee_paid_month"]

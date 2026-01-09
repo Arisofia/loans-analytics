@@ -19,8 +19,10 @@ except ImportError:
     # Fallback for different import structures
     try:
         from python.pipeline.ingestion import UnifiedIngestion as DataLoader
-        from python.pipeline.transformation import UnifiedTransformation as Transformer
+        from python.pipeline.transformation import \
+            UnifiedTransformation as Transformer
     except ImportError:
+
         class DataLoader:  # type: ignore
             def __init__(self, *args, **kwargs):
                 raise ImportError("UnifiedIngestion not found in python.pipeline")
@@ -36,6 +38,7 @@ def canonicalize_loan_tape(df):
     """Legacy wrapper for UnifiedTransformation."""
     try:
         from pipeline.transformation import UnifiedTransformation
+
         # Initialize without assigning to variable to avoid lint error if just checking import
         UnifiedTransformation({})
         return df

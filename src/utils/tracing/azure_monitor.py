@@ -14,6 +14,7 @@ try:
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
     from opentelemetry.sdk.trace.sampling import ParentBasedTraceIdRatio
+
     HAS_OTEL_AZURE = True
 except (ImportError, Exception):
     HAS_OTEL_AZURE = False
@@ -56,7 +57,9 @@ def setup_azure_tracing(service_name: str = "abaco-analytics") -> Optional[trace
     connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
 
     if not connection_string or "00000000-0000-0000-0000-000000000000" in connection_string:
-        logger.warning("Azure Application Insights connection string is missing or invalid. Tracing disabled.")
+        logger.warning(
+            "Azure Application Insights connection string is missing or invalid. Tracing disabled."
+        )
         return trace.get_tracer(__name__)
 
     try:
