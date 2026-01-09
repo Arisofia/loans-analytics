@@ -37,9 +37,9 @@ jobs:
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-      ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-      ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+      # ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}  # Commented out to prevent workflow error
+      # ACR_USERNAME: ${{ secrets.ACR_USERNAME }}  # Commented out to prevent workflow error
+      # ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}  # Commented out to prevent workflow error
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -122,7 +122,7 @@ jobs:
 
       - name: Tag & push to ACR (optional)
         env:
-          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+          # ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}  # Commented out to prevent workflow error
         run: |
           set -euo pipefail
           if [ -z "$ACR_LOGIN_SERVER" ]; then

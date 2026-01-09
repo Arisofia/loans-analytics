@@ -4,7 +4,11 @@ name: abaco-loans-analytics
 metadata:
     template: azd-init@1.22.5
 services:
-    abaco-loans-analytics:
-        project: .
-        host: function
+    web:
+        project: apps/web
+        host: staticweb
+        language: ts
+    analytics:
+        project: apps/analytics
+        host: appservice
         language: python

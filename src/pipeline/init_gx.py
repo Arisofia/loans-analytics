@@ -1,6 +1,4 @@
 import great_expectations as gx
-from great_expectations.core.expectation_configuration import \
-    ExpectationConfiguration
 
 
 def init_gx_project() -> None:
@@ -8,7 +6,8 @@ def init_gx_project() -> None:
     context = gx.get_context()
 
     suite_name = "loan_tape_ingestion"
-    suite = context.add_or_update_expectation_suite(expectation_suite_name=suite_name)  # type: ignore
+    suite = gx.ExpectationSuite(name=suite_name)
+    suite = context.suites.add(suite)
 
     # 1. Schema Integrity: Required Columns
     required_columns = [
@@ -20,32 +19,21 @@ def init_gx_project() -> None:
         "outstanding_loan_value",
     ]
     for col in required_columns:
-        suite.add_expectation(
-            ExpectationConfiguration(
-                expectation_type="expect_column_to_exist", kwargs={"column": col}
-            )
-        )
+        suite.add_expectation(gx.expectations.ExpectColumnToExist(column=col))
 
     # 2. Nullity Constraints
-    suite.add_expectation(
-        ExpectationConfiguration(
-            expectation_type="expect_column_values_to_not_be_null", kwargs={"column": "loan_id"}
-        )
-    )
+    suite.add_expectation(gx.expectations.ExpectColumnValuesToNotBeNull(column="loan_id"))
 
     # 3. Numeric Bounds
     suite.add_expectation(
-        ExpectationConfiguration(
-            expectation_type="expect_column_values_to_be_between",
-            kwargs={
-                "column": "interest_rate_apr",
-                "min_value": 0,
-                "max_value": 1.5,  # 150% APR limit
-            },
+        gx.expectations.ExpectColumnValuesToBeBetween(
+            column="interest_rate_apr",
+            min_value=0,
+            max_value=1.5,  # 150% APR limit
         )
     )
 
-    context.save_expectation_suite(suite)  # type: ignore
+    suite.save()
     print(f"Great Expectations suite '{suite_name}' initialized successfully.")
 
 

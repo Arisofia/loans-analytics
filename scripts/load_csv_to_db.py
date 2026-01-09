@@ -12,7 +12,7 @@ from src.config.paths import Paths
 DB_DSN = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres")
 
 try:
-    from src.utils.tracing.azure import setup_azure_tracing
+    from src.utils.tracing.azure_monitor import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for load_csv_to_db")

@@ -54,7 +54,7 @@ jobs:
     needs: quality-gate
     if: ${{ needs.quality-gate.outputs.passed == true }}
     environment:
-      name: staging
+      # name: staging  # FIXED: Commented out invalid value
       url: https://staging.abaco-loans-analytics.com
     steps:
       - name: Checkout code

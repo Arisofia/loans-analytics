@@ -27,7 +27,7 @@ var firewallRules = concat(
   sqlFirewallRules
 )
 
-resource storage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
+resource storage 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   name: storageAccountName
   location: location
   sku: {
@@ -36,6 +36,19 @@ resource storage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   kind: 'StorageV2'
   properties: {
     minimumTlsVersion: 'TLS1_2'
+    supportsHttpsTrafficOnly: true
+    allowBlobPublicAccess: false
+  }
+}
+
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+  name: '${webAppName}-logs'
+  location: location
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+    retentionInDays: 30
   }
 }
 
@@ -45,6 +58,11 @@ resource webapp 'Microsoft.Web/sites@2022-09-01' = {
   kind: 'app'
   properties: {
     serverFarmId: appserviceplan.id
+    httpsOnly: true
+    siteConfig: {
+      minTlsVersion: '1.2'
+      ftpsState: 'Disabled'
+    }
   }
 }
 
@@ -57,18 +75,21 @@ resource appserviceplan 'Microsoft.Web/serverfarms@2022-09-01' = {
   }
 }
 
-resource sqlserver 'Microsoft.Sql/servers@2022-02-01-preview' = {
+resource sqlserver 'Microsoft.Sql/servers@2022-05-01-preview' = {
   name: sqlServerName
   location: location
   properties: {
     administratorLogin: sqlAdminLogin
     administratorLoginPassword: sqlAdminPassword
+    version: '12.0'
+    publicNetworkAccess: 'Enabled'
   }
 }
 
-resource sqlFirewall 'Microsoft.Sql/servers/firewallRules@2022-02-01-preview' = [
+resource sqlFirewall 'Microsoft.Sql/servers/firewallRules@2022-05-01-preview' = [
   for rule in firewallRules: {
     name: rule.name
+    parent: sqlserver
     properties: {
       startIpAddress: rule.startIpAddress
       endIpAddress: rule.endIpAddress
@@ -76,13 +97,13 @@ resource sqlFirewall 'Microsoft.Sql/servers/firewallRules@2022-02-01-preview' = 
   }
 ]
 
-resource sqldb 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
+resource sqldb 'Microsoft.Sql/servers/databases@2022-05-01-preview' = {
   name: sqlDbName
+  parent: sqlserver
   location: location
   properties: {
     collation: 'SQL_Latin1_General_CP1_CI_AS'
     maxSizeBytes: 2147483648
-    sampleName: 'AdventureWorksLT'
   }
   sku: {
     name: 'Basic'
@@ -112,6 +133,7 @@ resource appinsights 'Microsoft.Insights/components@2020-02-02' = {
   properties: {
     Application_Type: 'web'
     RetentionInDays: 90
+    WorkspaceResourceId: logAnalyticsWorkspace.id
   }
 }
 
@@ -129,4 +151,4 @@ output webAppUrl string = webapp.properties.defaultHostName
 output storageAccount string = storage.name
 output sqlDb string = sqldb.name
 output keyVaultUrl string = keyvault.properties.vaultUri
-output appInsightsKey string = appinsights.properties.InstrumentationKey
+output appInsightsConnectionString string = appinsights.properties.ConnectionString
