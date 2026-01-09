@@ -1,9 +1,10 @@
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
 try:
-    from fastapi import FastAPI, HTTPException
+    from fastapi import FastAPI, HTTPException, Header
 
     app: Any = FastAPI(title="Abaco Analytics API")
 except ImportError:
@@ -51,8 +52,17 @@ if app:
         return {"status": "ok"}
 
     @app.get("/data/{file_path:path}")
-    def get_data(file_path: str):
+    def get_data(
+        file_path: str,
+        x_internal_shared_secret: str = Header(None, alias="x-internal-shared-secret")
+    ):
         """Return file metadata and path for a sanitized path under ALLOWED_DATA_DIR."""
+        # Optional: enforce shared secret if configured
+        shared_secret = os.environ.get("MIDDLEWARE_SHARED_SECRET")
+        if shared_secret and x_internal_shared_secret != shared_secret:
+            logger.warning("Blocked unauthorized API access attempt")
+            raise HTTPException(status_code=403, detail="Forbidden")
+
         try:
             resolved = _sanitize_and_resolve(file_path, ALLOWED_DATA_DIR)
         except ValueError as exc:
