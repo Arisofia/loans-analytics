@@ -14,7 +14,6 @@ def set_github_secret(secret_name, secret_value, repo):
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     proc.communicate(input=secret_value.encode())
     proc.wait()
-    print("Set GitHub secret.")
 
 if __name__ == "__main__":
     repo = "Abaco-Technol/abaco-loans-analytics"  # Update if needed

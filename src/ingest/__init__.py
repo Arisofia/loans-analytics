@@ -21,24 +21,26 @@ except ImportError:
         from python.pipeline.ingestion import UnifiedIngestion as DataLoader
         from python.pipeline.transformation import UnifiedTransformation as Transformer
     except ImportError:
-        class DataLoader: # type: ignore
+        class DataLoader:  # type: ignore
             def __init__(self, *args, **kwargs):
                 raise ImportError("UnifiedIngestion not found in python.pipeline")
-        
-        class Transformer: # type: ignore
+
+        class Transformer:  # type: ignore
             def __init__(self, *args, **kwargs):
                 raise ImportError("UnifiedTransformation not found in python.pipeline")
 
-# Mapping legacy name if needed, though canonicalize_loan_tape 
+
+# Mapping legacy name if needed, though canonicalize_loan_tape
 # might need a specific implementation or mapping to a method in UnifiedTransformation.
 def canonicalize_loan_tape(df):
     """Legacy wrapper for UnifiedTransformation."""
     try:
         from pipeline.transformation import UnifiedTransformation
-        transformer = UnifiedTransformation({})
-        # Assuming there is a similar method or just returning df if not
+        # Initialize without assigning to variable to avoid lint error if just checking import
+        UnifiedTransformation({})
         return df
     except ImportError:
         return df
+
 
 __all__ = ["DataLoader", "Transformer", "canonicalize_loan_tape"]

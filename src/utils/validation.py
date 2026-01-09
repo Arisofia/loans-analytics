@@ -3,6 +3,7 @@ from typing import Optional
 
 try:
     from stdnum import iban as iban_validator
+
     def is_valid_iban(iban: str) -> bool:
         return iban_validator.is_valid(iban)
 except ImportError:
