@@ -24,28 +24,28 @@ jobs:
       - name: Check Gemini key
         id: gemini_key
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_SIMPLE }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           if [ -n "$GEMINI_API_KEY" ]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "GEMINI_API_KEY_SIMPLE not configured; skipping Gemini review." >> "$GITHUB_STEP_SUMMARY"
+            echo "GEMINI_API_KEY not configured; skipping Gemini review." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Install dependencies
+      - name: Install Gemini dependencies
         if: steps.gemini_key.outputs.available == true
         run: |
           python -m pip install --upgrade pip
           pip install google-generativeai requests
 
-      - name: Run Gemini review
+      - name: Run Gemini PR review
         if: steps.gemini_key.outputs.available == true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_SIMPLE }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO_FULL_NAME: ${{ github.repository }}
-          BASE_REF: ${{ github.base_ref }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: python .github/scripts/gemini_pr_review.py

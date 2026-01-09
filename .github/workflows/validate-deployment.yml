@@ -59,7 +59,7 @@ jobs:
 
       - name: Export inputs to env
         run: |
-          echo "INPUT_APP_URL=${{ github.event.inputs.app_url }}" >> $GITHUB_ENV
+          echo "INPUT_APP_URL=${{ github.event.inputs.app_url }}" >> "$GITHUB_ENV"
 
       - name: Determine app URL
         id: app_url
@@ -147,12 +147,14 @@ jobs:
       - name: Export workflow outputs to env
         if: always()
         run: |
-          echo "APP_URL=${{ steps.app_url.outputs.url }}" >> $GITHUB_ENV
-          echo "HAS_AZURE_SECRETS=${{ steps.check_secrets.outputs.has_azure_secrets }}" >> $GITHUB_ENV
-          echo "READY=${{ steps.wait_ready.outputs.ready }}" >> $GITHUB_ENV
-          echo "HEALTH_PASSED=${{ steps.health_check.outputs.passed }}" >> $GITHUB_ENV
-          echo "SMOKE_READY=${{ steps.smoke_test.outputs.ready }}" >> $GITHUB_ENV
-          echo "STREAMLIT=${{ steps.deps_check.outputs.streamlit }}" >> $GITHUB_ENV
+          {
+            echo "APP_URL=${{ steps.app_url.outputs.url }}"
+            echo "HAS_AZURE_SECRETS=${{ steps.check_secrets.outputs.has_azure_secrets }}"
+            echo "READY=${{ steps.wait_ready.outputs.ready }}"
+            echo "HEALTH_PASSED=${{ steps.health_check.outputs.passed }}"
+            echo "SMOKE_READY=${{ steps.smoke_test.outputs.ready }}"
+            echo "STREAMLIT=${{ steps.deps_check.outputs.streamlit }}"
+          } >> "$GITHUB_ENV"
 
       - name: Check tracing initialization
         id: tracing_check

@@ -64,8 +64,8 @@ jobs:
 
       - name: Export check-secrets outputs
         run: |
-          echo "CAN_RUN=${{ steps.check-secrets.outputs.can_run }}" >> $GITHUB_ENV
-          echo "SLACK_AVAILABLE=${{ steps.check-secrets.outputs.slack_available }}" >> $GITHUB_ENV
+          echo "CAN_RUN=${{ steps.check-secrets.outputs.can_run }}" >> "$GITHUB_ENV"
+          echo "SLACK_AVAILABLE=${{ steps.check-secrets.outputs.slack_available }}" >> "$GITHUB_ENV"
 
       - name: Monitoring Summary
         if: always()
