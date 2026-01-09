@@ -2,9 +2,11 @@ import logging
 from typing import Optional
 
 try:
-    from iban import is_valid as is_valid_iban
+    from stdnum import iban as iban_validator
+    def is_valid_iban(iban: str) -> bool:
+        return iban_validator.is_valid(iban)
 except ImportError:
-    # Fallback for environments where iban package is not yet installed
+    # Fallback for environments where python-stdnum package is not yet installed
     def is_valid_iban(iban: str) -> bool:
         return len(iban) > 15  # Very basic check if package is missing
 
