@@ -25,6 +25,17 @@ class LoanAnalyticsEngine:
     to drive financial intelligence and commercial growth.
     """
 
+    NUMERIC_COLS = [
+        "loan_amount",
+        "appraised_value",
+        "borrower_income",
+        "monthly_debt",
+        "interest_rate",
+        "principal_balance",
+    ]
+
+    REQUIRED_COLS = NUMERIC_COLS + ["loan_status"]
+
     @property
     def coercion_report(self):
         return self._coercion_report
@@ -56,28 +67,11 @@ class LoanAnalyticsEngine:
 
     def _validate_columns(self):
         """Ensures the DataFrame contains the necessary columns for KPI computation."""
-        required_cols = [
-            "loan_amount",
-            "appraised_value",
-            "borrower_income",
-            "monthly_debt",
-            "loan_status",
-            "interest_rate",
-            "principal_balance",
-        ]
-        validate_dataframe(self.loan_data, required_columns=required_cols)
+        validate_dataframe(self.loan_data, required_columns=self.REQUIRED_COLS)
 
     def _coerce_numeric_columns(self):
         """Coerce numeric columns to float and track invalid conversions."""
-        numeric_cols = [
-            "loan_amount",
-            "appraised_value",
-            "borrower_income",
-            "monthly_debt",
-            "interest_rate",
-            "principal_balance",
-        ]
-        for col in numeric_cols:
+        for col in self.NUMERIC_COLS:
             if col in self.loan_data.columns:
                 before_nulls = self.loan_data[col].isna().sum()
                 self.loan_data[col] = safe_numeric(self.loan_data[col])
@@ -144,34 +138,30 @@ class LoanAnalyticsEngine:
             data_quality_score, invalid_numeric_ratio
         """
         df = self.loan_data
+        total_rows = len(df)
+        if total_rows == 0:
+            return {
+                "duplicate_ratio": 0.0,
+                "average_null_ratio": 0.0,
+                "invalid_numeric_ratio": 0.0,
+                "data_quality_score": 0.0,
+            }
 
         duplicate_rows = df.duplicated().sum()
-        total_rows = len(df)
-        duplicate_ratio = (duplicate_rows / total_rows * 100) if total_rows > 0 else 0.0
+        duplicate_ratio = (duplicate_rows / total_rows * 100)
 
         null_counts = df.isnull().sum().sum()
         total_cells = df.size
         average_null_ratio = (null_counts / total_cells * 100) if total_cells > 0 else 0.0
 
         invalid_count = sum(self._coercion_report.values())
-        numeric_cols = [
-            "loan_amount",
-            "appraised_value",
-            "borrower_income",
-            "monthly_debt",
-            "interest_rate",
-            "principal_balance",
-        ]
-        numeric_col_count = len([col for col in numeric_cols if col in df.columns])
-        total_numeric_cells = total_rows * numeric_col_count
+        present_numeric_cols = [col for col in self.NUMERIC_COLS if col in df.columns]
+        total_numeric_cells = total_rows * len(present_numeric_cols)
         invalid_numeric_ratio = (
             (invalid_count / total_numeric_cells * 100) if total_numeric_cells > 0 else 0.0
         )
 
-        data_quality_score = (
-            100.0 - (duplicate_ratio + average_null_ratio + invalid_numeric_ratio) / 3
-        )
-        data_quality_score = max(0, min(100, data_quality_score))
+        data_quality_score = max(0, min(100, 100.0 - (duplicate_ratio + average_null_ratio + invalid_numeric_ratio) / 3))
 
         return {
             "duplicate_ratio": duplicate_ratio,
@@ -191,21 +181,17 @@ class LoanAnalyticsEngine:
         Returns:
             DataFrame with high-risk loans and their risk scores
         """
+        # Ensure ratios are computed
         if "ltv_ratio" not in self.loan_data.columns:
             self.compute_loan_to_value()
         if "dti_ratio" not in self.loan_data.columns:
             self.compute_debt_to_income()
 
-        ltv = self.loan_data["ltv_ratio"]
-        dti = self.loan_data["dti_ratio"]
-
-        high_risk = (ltv > ltv_threshold) | (dti > dti_threshold)
-        risk_loans = self.loan_data[high_risk].copy()
+        risk_mask = (self.loan_data["ltv_ratio"] > ltv_threshold) | (self.loan_data["dti_ratio"] > dti_threshold)
+        risk_loans = self.loan_data[risk_mask].copy()
 
         if not risk_loans.empty:
-            risk_loans["ltv_ratio"] = ltv[high_risk]
-            risk_loans["dti_ratio"] = dti[high_risk]
-
+            # Normalized risk score (0 to 1)
             ltv_norm = (risk_loans["ltv_ratio"].fillna(0) / 100).clip(0, 1)
             dti_norm = (risk_loans["dti_ratio"].fillna(0) / 100).clip(0, 1)
             risk_loans["risk_score"] = (ltv_norm + dti_norm) / 2

@@ -3,7 +3,7 @@ platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0
 rootdir: /Users/jenineferderas/Documents/abaco-loans-analytics
 configfile: pytest.ini
 plugins: mock-3.15.1, anyio-4.12.0, hypothesis-6.141.1, timeout-2.4.0, typeguard-4.4.4, Faker-37.12.0, requests-mock-1.12.1, cov-7.0.0
-collected 401 items / 3 skipped
+collected 411 items / 3 skipped
 
 tests/api/test_path_safety.py ....                                       [  0%]
 tests/data_tests/test_kpi_contracts.py ...                               [  1%]
@@ -12,7 +12,7 @@ tests/data_tests/test_kpi_stat_advanced.py ...                           [  3%]
 tests/data_tests/test_kpi_stat_extra.py ..                               [  3%]
 tests/evaluation/test_model_evaluation.py .sssss.......ss                [  7%]
 tests/fi-analytics/test_analytics_integration.py .....                   [  8%]
-tests/fi-analytics/test_analytics_kpi_correctness.py s.....              [ 10%]
+tests/fi-analytics/test_analytics_kpi_correctness.py s.....              [  9%]
 tests/fi-analytics/test_analytics_performance.py ...                     [ 10%]
 tests/fi-analytics/test_analytics_smoke.py ....                          [ 11%]
 tests/fi-analytics/test_analytics_unit_coverage.py ss.....               [ 13%]
@@ -23,63 +23,66 @@ tests/ingestion/test_formats.py ...                                      [ 16%]
 tests/ingestion/test_looker.py .....                                     [ 17%]
 tests/ingestion/test_quality.py ...                                      [ 18%]
 tests/integration/test_figma_sync_requests_mock.py ..                    [ 18%]
-tests/scripts/test_load_secrets.py .                                     [ 19%]
-tests/test_analytics_metrics.py ................                         [ 23%]
-tests/test_api_kpis.py .                                                 [ 23%]
-tests/test_aum_growth.py ...                                             [ 24%]
+tests/scripts/test_load_secrets.py .                                     [ 18%]
+tests/test_analytics_metrics.py ................                         [ 22%]
+tests/test_api_kpis.py .                                                 [ 22%]
+tests/test_aum_growth.py ...                                             [ 23%]
 tests/test_clients.py .......                                            [ 25%]
 tests/test_collection_rate.py ....                                       [ 26%]
 tests/test_compliance.py ....                                            [ 27%]
-tests/test_dashboard_utils.py ..                                         [ 28%]
+tests/test_dashboard_utils.py ..                                         [ 27%]
 tests/test_dataframe_assertions.py ..                                    [ 28%]
-tests/test_demo_scripts.py ...                                           [ 29%]
-tests/test_deployment_e2e.py ...                                         [ 30%]
-tests/test_enterprise_analytics_engine.py ............                   [ 33%]
-tests/test_enterprise_analytics_engine_extended.py ..................    [ 37%]
-tests/test_export_scripts.py .                                           [ 38%]
-tests/test_feedback_and_tracing.py ..                                    [ 38%]
-tests/test_financial_analysis.py ..........                              [ 41%]
-tests/test_generate_markdown_report.py ..                                [ 41%]
-tests/test_ingestion.py ............                                     [ 44%]
-tests/test_kpi_base.py .........                                         [ 46%]
-tests/test_kpi_calculators_v2.py ..........                              [ 49%]
-tests/test_kpi_edge_cases.py ....                                        [ 50%]
-tests/test_kpi_engine.py .....                                           [ 51%]
-tests/test_kpi_engine_v2.py .....                                        [ 52%]
-tests/test_kpis_integration.py .                                         [ 53%]
-tests/test_manifest_segmentation.py .                                    [ 53%]
-tests/test_metrics_utils.py ....                                         [ 54%]
-tests/test_metrics_utils_extended.py ..............                      [ 57%]
-tests/test_metrics_validation.py ..                                      [ 58%]
-tests/test_output_triggers.py .                                          [ 58%]
-tests/test_par_30.py ....                                                [ 59%]
-tests/test_par_90.py ....                                                [ 60%]
-tests/test_paths.py ..................                                   [ 65%]
-tests/test_pipeline.py ....                                              [ 66%]
-tests/test_pipeline_integration.py ...                                   [ 66%]
-tests/test_pipeline_orchestrator.py ......                               [ 68%]
-tests/test_pr_status.py ...                                              [ 69%]
-tests/test_repo_maturity_summary.py .....                                [ 70%]
-tests/test_requests_compat.py .                                          [ 70%]
-tests/test_run_data_pipeline.py ....                                     [ 71%]
-tests/test_run_scoring.py ..............                                 [ 75%]
-tests/test_secrets_manager.py .............                              [ 78%]
-tests/test_segmentation_summary.py ..                                    [ 78%]
-tests/test_standalone_ai.py ..                                           [ 79%]
-tests/test_standalone_ai_engine.py ...                                   [ 80%]
-tests/test_sync_kpi_table_to_figma.py ....                               [ 81%]
-tests/test_tracing_setup.py ....                                         [ 82%]
-tests/test_transformation.py ..........                                  [ 84%]
-tests/test_trigger_workflows.py .......                                  [ 86%]
-tests/test_update_playwright.py .                                        [ 86%]
-tests/test_update_playwright_idempotency.py ..                           [ 87%]
-tests/test_update_playwright_integration.py ..                           [ 87%]
-tests/test_update_playwright_safe.py ..                                  [ 88%]
-tests/test_validation.py ....................                            [ 93%]
-tests/unit/test_abaco_pipeline_cli_write_audit.py ..                     [ 93%]
-tests/unit/test_abaco_pipeline_output.py .                               [ 93%]
-tests/unit/test_abaco_pipeline_quality.py ..                             [ 94%]
-tests/unit/test_abaco_pipeline_supabase_writer.py ..                     [ 94%]
+tests/test_demo_scripts.py ...                                           [ 28%]
+tests/test_deployment_e2e.py ...                                         [ 29%]
+tests/test_enterprise_analytics_engine.py ............                   [ 32%]
+tests/test_enterprise_analytics_engine_extended.py ..................    [ 36%]
+tests/test_export_scripts.py .                                           [ 37%]
+tests/test_feedback_and_tracing.py ..                                    [ 37%]
+tests/test_financial_analysis.py ..........                              [ 40%]
+tests/test_generate_markdown_report.py ..                                [ 40%]
+tests/test_ingestion.py ............                                     [ 43%]
+tests/test_kpi_base.py .........                                         [ 45%]
+tests/test_kpi_calculators_v2.py ..........                              [ 48%]
+tests/test_kpi_edge_cases.py ....                                        [ 49%]
+tests/test_kpi_engine.py .....                                           [ 50%]
+tests/test_kpi_engine_v2.py .....                                        [ 51%]
+tests/test_kpis_integration.py .                                         [ 51%]
+tests/test_manifest_segmentation.py .                                    [ 52%]
+tests/test_metrics_utils.py ....                                         [ 53%]
+tests/test_metrics_utils_extended.py ..............                      [ 56%]
+tests/test_metrics_validation.py ..                                      [ 56%]
+tests/test_output_triggers.py .                                          [ 57%]
+tests/test_par_30.py ....                                                [ 58%]
+tests/test_par_90.py ....                                                [ 59%]
+tests/test_paths.py ..................                                   [ 63%]
+tests/test_pipeline.py ....                                              [ 64%]
+tests/test_pipeline_integration.py ...                                   [ 65%]
+tests/test_pipeline_orchestrator.py ......                               [ 66%]
+tests/test_pr_status.py ...                                              [ 67%]
+tests/test_repo_maturity_summary.py .....                                [ 68%]
+tests/test_requests_compat.py .                                          [ 68%]
+tests/test_run_data_pipeline.py ....                                     [ 69%]
+tests/test_run_scoring.py ..............                                 [ 73%]
+tests/test_secrets_manager.py .............                              [ 76%]
+tests/test_segmentation_summary.py ..                                    [ 76%]
+tests/test_standalone_ai.py ..                                           [ 77%]
+tests/test_standalone_ai_engine.py ...                                   [ 78%]
+tests/test_sync_kpi_table_to_figma.py ....                               [ 79%]
+tests/test_tracing_setup.py ....                                         [ 80%]
+tests/test_transformation.py ..........                                  [ 82%]
+tests/test_trigger_workflows.py .......                                  [ 84%]
+tests/test_update_playwright.py .                                        [ 84%]
+tests/test_update_playwright_idempotency.py ..                           [ 84%]
+tests/test_update_playwright_integration.py ..                           [ 85%]
+tests/test_update_playwright_safe.py ..                                  [ 85%]
+tests/test_validation.py ....................                            [ 90%]
+tests/unit/test_abaco_pipeline_cli_write_audit.py ..                     [ 91%]
+tests/unit/test_abaco_pipeline_output.py .                               [ 91%]
+tests/unit/test_abaco_pipeline_quality.py ..                             [ 91%]
+tests/unit/test_abaco_pipeline_supabase_writer.py ..                     [ 92%]
+tests/unit/test_ingest_init.py ...                                       [ 93%]
+tests/unit/test_ingestion_extended.py .....                              [ 94%]
+tests/unit/test_validation_extended.py ..                                [ 94%]
 python/tests/test_archive_failure.py .                                   [ 95%]
 python/tests/test_data_quality_report.py ...                             [ 95%]
 python/tests/test_ingest_behavior.py ....                                [ 96%]
@@ -89,7 +92,7 @@ python/tests/test_ingestion_extra.py ...                                 [ 98%]
 python/tests/test_looker_financials_dir.py .                             [ 99%]
 python/tests/test_looker_strategies.py ...                               [ 99%]
 python/tests/test_requests_compat.py .
-ERROR: Coverage failure: total of 47 is less than fail-under=85
+ERROR: Coverage failure: total of 48 is less than fail-under=85
                                                                          [100%]
 
 =============================== warnings summary ===============================
@@ -317,7 +320,7 @@ src/compliance.py                                   43     30     12      0    2
 src/config/paths.py                                 75      7     20      3    89%   17, 36, 55, 59, 78, 88, 105
 src/config/secrets.py                               81     12     30      5    83%   78->exit, 83, 103, 113-120, 171, 190
 src/financial_analysis.py                          155    155     54      0     0%   1-287
-src/ingest/__init__.py                              28     28      2      0     0%   6-46
+src/ingest/__init__.py                              28     11      2      1    60%   13, 17, 23-30, 40-41
 src/integrations/__init__.py                         6      0      0      0   100%
 src/integrations/azure_outputs.py                  206    166     52      2    16%   27-28, 42-44, 53-60, 64-74, 78-92, 101-129, 138-160, 164-166, 175-198, 207-231, 240-253, 258-265, 272-288, 298-301, 322, 337, 341-365, 389-411, 415-433
 src/integrations/batch_export_runner.py            111     74     22      2    29%   63-72, 76-82, 86, 100-112, 116-127, 131-144, 148-169, 173-178, 182-194, 202-240
@@ -349,7 +352,7 @@ src/kpis/weighted_apr.py                            28     10     12      4    6
 src/pipeline/__init__.py                             6      0      0      0   100%
 src/pipeline/compliance.py                          43      5     12      2    84%   23, 30-32, 61
 src/pipeline/config_manager.py                      44      4     12      2    89%   36-38, 69
-src/pipeline/data_ingestion.py                     256     59     52     13    75%   55-62, 66-72, 76-83, 87-92, 95-98, 186, 194-195, 201-202, 208-209, 222, 226-227, 240->261, 249-255, 268, 315-316, 327, 361, 367, 372, 376, 446, 452
+src/pipeline/data_ingestion.py                     256     31     52     14    85%   58-59, 69, 98, 186, 194-195, 201-202, 208-209, 222, 226-227, 240->261, 249-255, 268, 315-316, 327, 361, 367, 372, 376, 446, 452
 src/pipeline/data_transformation.py                148     59     38      7    53%   40-42, 45-46, 50-96, 100, 109, 128-133, 140-156, 166->168, 168->170, 176->186, 182-184, 188, 237-240
 src/pipeline/data_validation.py                    150     46     72      5    65%   52, 57-61, 66, 134, 172->171, 189->188, 195, 207-217, 222->224, 233-246, 251-256, 261-273
 src/pipeline/data_validation_gx.py                  55     55     10      0     0%   3-113
@@ -373,8 +376,8 @@ src/utils/tracing/setup.py                          60     28     10      5    5
 src/utils/validation.py                             32     11     12      1    64%   8-16, 22, 48-51
 src/validate_kpi_formulas.py                        34     34     14      0     0%   6-85
 --------------------------------------------------------------------------------------------
-TOTAL                                             7661   3847   1884    235    47%
+TOTAL                                             7661   3802   1884    237    48%
 
 13 empty files skipped.
-FAIL Required test coverage of 85.0% not reached. Total coverage: 47.07%
-=========== 391 passed, 13 skipped, 36 warnings in 140.79s (0:02:20) ===========
+FAIL Required test coverage of 85.0% not reached. Total coverage: 47.59%
+=========== 401 passed, 13 skipped, 36 warnings in 121.61s (0:02:01) ===========

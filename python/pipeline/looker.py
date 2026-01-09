@@ -33,9 +33,24 @@ class LookerConverter:
         if not financials_path:
             return {}
         path = Path(financials_path)
-        files = []
+        files = self._get_financial_files(path)
+
+        if not files:
+            return {}
+
+        results: Dict[str, float] = {}
+        date_candidates = self.config.get("date_column_candidates", DEFAULT_DATE_CANDIDATES)
+        cash_candidates = self.config.get("cash_column_candidates", DEFAULT_CASH_CANDIDATES)
+
+        for file_path in files:
+            self._process_financial_file(file_path, date_candidates, cash_candidates, results)
+        
+        return results
+
+    def _get_financial_files(self, path: Path) -> List[Path]:
+        """Collect and sort financial files from a directory or single path."""
         if path.is_dir():
-            files = sorted(
+            return sorted(
                 [
                     *path.glob("*.csv"),
                     *path.glob("*.xlsx"),
@@ -44,48 +59,55 @@ class LookerConverter:
                 key=lambda p: p.stat().st_mtime,
             )
         elif path.exists():
-            files = [path]
+            return [path]
+        return []
 
-        if not files:
-            return {}
+    def _process_financial_file(
+        self,
+        file_path: Path,
+        date_candidates: List[str],
+        cash_candidates: List[str],
+        results: Dict[str, float],
+    ) -> None:
+        """Read a single financial file and update the results dictionary."""
+        try:
+            if file_path.suffix.lower() in {".xlsx", ".xls"}:
+                financials_df = pd.read_excel(file_path)
+            else:
+                financials_df = pd.read_csv(file_path)
+        except Exception as exc:
+            logger.error("Failed to read Looker financials file %s: %s", file_path, exc)
+            return
 
-        results: Dict[str, float] = {}
+        date_col = select_column(list(financials_df.columns), date_candidates)
+        cash_col = select_column(list(financials_df.columns), cash_candidates)
+        if not date_col or not cash_col:
+            return
+
+        parsed = financials_df[[date_col, cash_col]].copy()
+        parsed[date_col] = pd.to_datetime(parsed[date_col], errors="coerce").dt.strftime("%Y-%m-%d")
+        parsed[cash_col] = pd.to_numeric(parsed[cash_col], errors="coerce")
+        parsed = parsed.dropna(subset=[date_col])
         
-        date_candidates = self.config.get(
-            "date_column_candidates",
-            DEFAULT_DATE_CANDIDATES,
+        # Aggregating: later files (by mtime) will overwrite earlier ones for the same date
+        for _, row in parsed.iterrows():
+            if pd.notna(row[cash_col]):
+                results[str(row[date_col])] = float(row[cash_col])
+
+    def _finalize_results(
+        self, frame: pd.DataFrame, cash_by_date: Dict[str, float]
+    ) -> pd.DataFrame:
+        """Shared logic to aggregate and finalize Looker conversion results."""
+        grouped = (
+            frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
         )
-        cash_candidates = self.config.get(
-            "cash_column_candidates",
-            DEFAULT_CASH_CANDIDATES,
+        grouped["total_eligible_usd"] = grouped["total_receivable_usd"]
+        grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
+        grouped["cash_available_usd"] = grouped["measurement_date"].map(cash_by_date).fillna(0.0)
+        grouped["loan_id"] = grouped["measurement_date"].apply(
+            lambda date: f"looker_snapshot_{str(date).replace('-', '')}"
         )
-
-        for file_path in files:
-            try:
-                if file_path.suffix.lower() in {".xlsx", ".xls"}:
-                    financials_df = pd.read_excel(file_path)
-                else:
-                    financials_df = pd.read_csv(file_path)
-            except Exception as exc:
-                logger.error("Failed to read Looker financials file %s: %s", file_path, exc)
-                continue
-
-            date_col = select_column(list(financials_df.columns), date_candidates)
-            cash_col = select_column(list(financials_df.columns), cash_candidates)
-            if not date_col or not cash_col:
-                continue
-
-            parsed = financials_df[[date_col, cash_col]].copy()
-            parsed[date_col] = pd.to_datetime(parsed[date_col], errors="coerce").dt.strftime("%Y-%m-%d")
-            parsed[cash_col] = pd.to_numeric(parsed[cash_col], errors="coerce")
-            parsed = parsed.dropna(subset=[date_col])
-            
-            # Aggregating: later files (by mtime) will overwrite earlier ones for the same date
-            for idx, row in parsed.iterrows():
-                if pd.notna(row[cash_col]):
-                    results[str(row[date_col])] = float(row[cash_col])
-        
-        return results
+        return grouped
 
     def convert_par_balances(
         self, df: pd.DataFrame, cash_by_date: Dict[str, float]
@@ -136,16 +158,7 @@ class LookerConverter:
             }
         ).dropna(subset=["measurement_date"])
 
-        grouped = (
-            frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
-        )
-        grouped["total_eligible_usd"] = grouped["total_receivable_usd"]
-        grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
-        grouped["cash_available_usd"] = grouped["measurement_date"].map(cash_by_date).fillna(0.0)
-        grouped["loan_id"] = grouped["measurement_date"].apply(
-            lambda date: f"looker_snapshot_{str(date).replace('-', '')}"
-        )
-        return grouped
+        return self._finalize_results(frame, cash_by_date)
 
     def convert_dpd_loans(
         self, df: pd.DataFrame, cash_by_date: Dict[str, float]
@@ -207,13 +220,4 @@ class LookerConverter:
             }
         ).dropna(subset=["measurement_date"])
 
-        grouped = (
-            frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
-        )
-        grouped["total_eligible_usd"] = grouped["total_receivable_usd"]
-        grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
-        grouped["cash_available_usd"] = grouped["measurement_date"].map(cash_by_date).fillna(0.0)
-        grouped["loan_id"] = grouped["measurement_date"].apply(
-            lambda date: f"looker_snapshot_{str(date).replace('-', '')}"
-        )
-        return grouped
+        return self._finalize_results(frame, cash_by_date)

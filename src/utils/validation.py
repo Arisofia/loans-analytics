@@ -2,6 +2,14 @@ import logging
 import re
 from typing import Optional
 
+def _preprocess_iban(iban: str) -> str:
+    return iban.replace(" ", "").upper()
+
+
+def _is_spanish_iban(iban: str) -> bool:
+    return bool(re.fullmatch(r"^ES\d{22}$", iban))
+
+
 try:
     from stdnum import iban as iban_validator
 
@@ -9,20 +17,20 @@ try:
         if iban is None:
             return False
         # Standard validator
-        val = iban.replace(" ", "").upper()
+        val = _preprocess_iban(iban)
         if iban_validator.is_valid(val):
             return True
         # Fallback: ES + 22 digits
-        return bool(re.fullmatch(r"^ES\d{22}$", val))
+        return _is_spanish_iban(val)
 
 except ImportError:
     # Fallback for environments where python-stdnum package is not yet installed
     def is_valid_iban(iban: str) -> bool:
         if iban is None:
             return False
-        val = iban.replace(" ", "").upper()
+        val = _preprocess_iban(iban)
         # Basic check for Spanish IBAN structure
-        if re.fullmatch(r"^ES\d{22}$", val):
+        if _is_spanish_iban(val):
             return True
         # If not Spanish, we do a very basic length check but exclude common "test" failures
         if len(val) < 15 or len(val) > 34:
@@ -42,9 +50,8 @@ def validate_iban(iban: Optional[str]) -> bool:
     if not iban:
         return False
 
-    clean_iban = iban.replace(" ", "").upper()
     try:
-        return is_valid_iban(clean_iban)
+        return is_valid_iban(iban)
     except Exception as e:
         # Avoid logging IBAN or any derived identifier; log only generic error information
         logger.error("Error validating IBAN", exc_info=e)
