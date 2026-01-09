@@ -26,9 +26,9 @@ jobs:
       contents: read
       pull-requests: read
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_GITHUB }}
+    # env block commented out to prevent workflow errors due to missing secrets
+    # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_GITHUB }}
     steps:
       - name: Check secrets availability
         id: check-secrets

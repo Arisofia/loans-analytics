@@ -8,6 +8,7 @@
 - **PII Masked Columns**: None detected in last run
 
 ## Access Log
+
 | Stage | User | Action | Status | Timestamp |
 |-------|------|--------|--------|-----------|
 | transformation | system | read | success | 2026-01-08T15:47:43.902500+00:00 |

@@ -1,0 +1,18 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /Users/jenineferderas/Documents/abaco-loans-analytics
+configfile: pytest.ini
+plugins: mock-3.15.1, anyio-4.12.0, hypothesis-6.141.1, timeout-2.4.0, typeguard-4.4.4, Faker-37.12.0, requests-mock-1.12.1, cov-7.0.0
+collected 401 items / 3 skipped
+
+tests/api/test_path_safety.py ....                                       [  0%]
+tests/data_tests/test_kpi_contracts.py ...                               [  1%]
+tests/data_tests/test_kpi_regression_robust.py ...                       [  2%]
+tests/data_tests/test_kpi_stat_advanced.py ...                           [  3%]
+tests/data_tests/test_kpi_stat_extra.py ..                               [  3%]
+tests/evaluation/test_model_evaluation.py .sssss.......ss                [  7%]
+tests/fi-analytics/test_analytics_integration.py .....                   [  8%]
+tests/fi-analytics/test_analytics_kpi_correctness.py s.....              [ 10%]
+tests/fi-analytics/test_analytics_performance.py ...                     [ 10%]
+tests/fi-analytics/test_analytics_smoke.py ....                          [ 11%]
+tests/fi-analytics/test_analytics_unit_coverage.py ss..

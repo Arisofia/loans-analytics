@@ -33,8 +33,9 @@ class LookerConverter:
         if not financials_path:
             return {}
         path = Path(financials_path)
+        files = []
         if path.is_dir():
-            candidates = sorted(
+            files = sorted(
                 [
                     *path.glob("*.csv"),
                     *path.glob("*.xlsx"),
@@ -42,21 +43,14 @@ class LookerConverter:
                 ],
                 key=lambda p: p.stat().st_mtime,
             )
-            if not candidates:
-                return {}
-            path = candidates[-1]
-        if not path.exists():
+        elif path.exists():
+            files = [path]
+
+        if not files:
             return {}
 
-        try:
-            if path.suffix.lower() in {".xlsx", ".xls"}:
-                financials_df = pd.read_excel(path)
-            else:
-                financials_df = pd.read_csv(path)
-        except Exception as exc:
-            logger.error("Failed to read Looker financials: %s", exc)
-            return {}
-
+        results: Dict[str, float] = {}
+        
         date_candidates = self.config.get(
             "date_column_candidates",
             DEFAULT_DATE_CANDIDATES,
@@ -65,17 +59,33 @@ class LookerConverter:
             "cash_column_candidates",
             DEFAULT_CASH_CANDIDATES,
         )
-        date_col = select_column(list(financials_df.columns), date_candidates)
-        cash_col = select_column(list(financials_df.columns), cash_candidates)
-        if not date_col or not cash_col:
-            return {}
 
-        parsed = financials_df[[date_col, cash_col]].copy()
-        parsed[date_col] = pd.to_datetime(parsed[date_col], errors="coerce").dt.strftime("%Y-%m-%d")
-        parsed[cash_col] = pd.to_numeric(parsed[cash_col], errors="coerce")
-        parsed = parsed.dropna(subset=[date_col])
-        grouped = parsed.groupby(date_col, dropna=False)[cash_col].last()
-        return {str(idx): float(val) for idx, val in grouped.items() if pd.notna(val)}
+        for file_path in files:
+            try:
+                if file_path.suffix.lower() in {".xlsx", ".xls"}:
+                    financials_df = pd.read_excel(file_path)
+                else:
+                    financials_df = pd.read_csv(file_path)
+            except Exception as exc:
+                logger.error("Failed to read Looker financials file %s: %s", file_path, exc)
+                continue
+
+            date_col = select_column(list(financials_df.columns), date_candidates)
+            cash_col = select_column(list(financials_df.columns), cash_candidates)
+            if not date_col or not cash_col:
+                continue
+
+            parsed = financials_df[[date_col, cash_col]].copy()
+            parsed[date_col] = pd.to_datetime(parsed[date_col], errors="coerce").dt.strftime("%Y-%m-%d")
+            parsed[cash_col] = pd.to_numeric(parsed[cash_col], errors="coerce")
+            parsed = parsed.dropna(subset=[date_col])
+            
+            # Aggregating: later files (by mtime) will overwrite earlier ones for the same date
+            for idx, row in parsed.iterrows():
+                if pd.notna(row[cash_col]):
+                    results[str(row[date_col])] = float(row[cash_col])
+        
+        return results
 
     def convert_par_balances(
         self, df: pd.DataFrame, cash_by_date: Dict[str, float]

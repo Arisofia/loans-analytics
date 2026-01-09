@@ -319,12 +319,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": |
-                      *CI Workflow Failed*
-                      Repository: ${{ github.repository }}
-                      Branch: ${{ github.ref_name }}
-                      Commit: ${{ github.sha }}
-                      <${{ github.event.head_commit.url }}|View Commit>
+                    "text": "*CI Workflow Failed*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\n<${{ github.event.head_commit.url }}|View Commit>"
                   }
                 }
               ]
