@@ -1,9 +1,7 @@
+
 name: Export Growth Chart to Figma
 
 on:
-  schedule:
-    - cron: '0 6,18 * * *'  # Every day at 06:00 and 18:00 UTC
-  workflow_dispatch:
   push:
     paths:
       - 'scripts/export_presentation.py'
@@ -11,9 +9,8 @@ on:
       - 'src/theme.py'
       - 'docs/analytics/KPIs.md'
   schedule:
-    - cron: '0 6,18 * * *'
+    - cron: '0 6,18 * * *'  # Every day at 06:00 and 18:00 UTC
   workflow_dispatch:
-
 jobs:
   export-growth-chart:
     runs-on: ubuntu-latest
