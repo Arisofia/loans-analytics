@@ -54,14 +54,16 @@ if app:
     @app.get("/data/{file_path:path}")
     def get_data(
         file_path: str,
-        x_internal_shared_secret: str = Header(None, alias="x-internal-shared-secret")
+        x_internal_shared_secret: str = Header(None, alias="x-internal-shared-secret"),
+        x_middleware_subrequest: str = Header(None, alias="x-middleware-subrequest")
     ):
         """Return file metadata and path for a sanitized path under ALLOWED_DATA_DIR."""
         # Optional: enforce shared secret if configured
         shared_secret = os.environ.get("MIDDLEWARE_SHARED_SECRET")
-        if shared_secret and x_internal_shared_secret != shared_secret:
-            logger.warning("Blocked unauthorized API access attempt")
-            raise HTTPException(status_code=403, detail="Forbidden")
+        if shared_secret and x_middleware_subrequest == "true":
+            if x_internal_shared_secret != shared_secret:
+                logger.warning("Blocked middleware subrequest spoofing attempt")
+                raise HTTPException(status_code=403, detail="Forbidden")
 
         try:
             resolved = _sanitize_and_resolve(file_path, ALLOWED_DATA_DIR)

@@ -95,44 +95,38 @@
 ## 📋 Common Tasks
 
 ### I want to
-
-**Deploy a new feature**
+###
 
 1. Follow QUICK_START.md → "Your Daily Workflow"
 2. Create feature branch
 3. Push code → PR → Code review → Merge
 4. Auto-deploy to staging (24h validation)
 5. Create tag for production (DevOps role)
-
-**Fix a CI failure**
+### (continued)
 
 1. Go to QUICK_START.md → "CI Check Failures"
 2. See specific fix for your error type
 3. Run locally, fix, and push
-
-**Test in staging**
+### (continued)
 
 1. Follow TEAM_RUNBOOKS.md → "QA" section
 2. Use staging URL provided in workflow
 3. Run 24-hour validation checklist
 4. Post results in #dev-alerts
-
-**Deploy to production**
+### (continued)
 
 1. Follow TEAM_RUNBOOKS.md → "DevOps" section
 2. Verify 24-hour staging validation complete
 3. Create version tag
 4. Approve production deployment
 5. Monitor health checks
-
-**Emergency rollback**
+### (continued)
 
 1. Follow TEAM_RUNBOOKS.md → "DevOps / Emergency Rollback"
 2. Workflow dispatch → Enter previous version
 3. Approve rollback
 4. Monitor health checks
-
-**Report an issue during deployment**
+### (continued)
 
 1. Go to DEPLOYMENT_COORDINATION.md
 2. Find appropriate severity level (P1/P2/P3)
