@@ -1,5 +1,13 @@
 """Streamlit dashboard for Abaco Loans Analytics - Engineering Excellence Edition."""
 
+import sys
+from pathlib import Path
+
+# Add repository root to sys.path to ensure correct module resolution
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 import json
 import logging
 from datetime import datetime
@@ -55,7 +63,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-ROOT_DIR = Path(__file__).resolve().parent
+ROOT_DIR = Path(__file__).resolve().parent.parent
 LOOKER_DIR = ROOT_DIR / "data" / "raw" / "looker_exports"
 EXPORTS_DIR = ROOT_DIR / "exports"
 SUPPORT_DIR = ROOT_DIR / "data" / "support"

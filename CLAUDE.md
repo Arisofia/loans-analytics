@@ -300,7 +300,7 @@ Add to `.github/workflows/ci.yml`:
 
 - python/pipeline/orchestrator.py - V2 Pipeline orchestrator
 - python/pipeline/{ingestion,transformation,calculation,output}.py - Pipeline phases
-- python/kpi_engine_v2.py - KPI calculation engine
+- src/kpis/engine.py - KPI calculation engine (Unified v2)
 
 ---
 
