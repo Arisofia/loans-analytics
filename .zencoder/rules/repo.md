@@ -50,6 +50,7 @@ Located in `apps/web` (and root configuration).
 #### Build & Installation
 
 ```bash
+
 # Install dependencies
 npm install --prefix apps/web
 
@@ -70,12 +71,12 @@ npm start --prefix apps/web
 
 Located in `apps/analytics`.
 
-#### Language & Runtime
+#### Language & Runtime (continued)
 
 **Language**: Python
 **Version**: 3.9+ (implied by `pyproject.toml`)
 
-#### Dependencies
+#### Dependencies (continued)
 
 **Main Dependencies**:
 
@@ -105,11 +106,11 @@ pytest apps/analytics/tests
 
 Located in `streamlit_app` and root.
 
-#### Language & Runtime
+#### Language & Runtime (continued) (continued)
 
 **Language**: Python
 
-#### Dependencies
+#### Dependencies (continued) (continued)
 
 **Main Dependencies** (from root `requirements.txt`):
 

@@ -41,6 +41,7 @@ Health checks + monitoring
 ### Key Commands
 
 ```bash
+
 # Local development
 pnpm install           # Install dependencies
 pnpm dev               # Start dev server (localhost:3000)
@@ -63,8 +64,7 @@ git push origin v1.0.0
 ### Frontend Developer
 
 #### Daily Workflow
-
-**1. Start Your Day**
+###
 
 ```bash
 cd apps/web
@@ -75,16 +75,18 @@ pnpm install
 pnpm dev
 ```
 
-**2. Create Feature Branch**
+### (continued)
 
 ```bash
 git checkout -b feature/feature-name
+
 # Follow: feature/, bugfix/, or chore/ prefixes
 ```
 
-**3. Before Pushing**
+### (continued)
 
 ```bash
+
 # Run all checks locally
 pnpm check-all
 npm test
@@ -94,22 +96,20 @@ pnpm lint:fix
 pnpm format
 ```
 
-**4. Create Pull Request**
+### (continued)
 
 - Push to your feature branch
 - Open PR against `develop` branch
 - Link any related issues
 - Add description of changes
 - Request review from team
-
-**5. During Code Review**
+### (continued)
 
 - Address review comments
 - Push fixes to same branch
 - CI runs automatically on each push
 - Wait for approval before merge
-
-**6. After Merge**
+### (continued)
 
 - Delete feature branch
 - Monitor staging deployment (auto)
@@ -130,6 +130,7 @@ git push
 
 ```bash
 pnpm type-check        # Show errors
+
 # Edit files to fix TypeScript errors
 git add .
 git commit -m "fix: resolve type errors"
@@ -141,6 +142,7 @@ git push
 ```bash
 npm test               # Run tests locally
 npm test -- --watch   # Debug specific test
+
 # Fix code to pass tests
 git add .
 git commit -m "fix: resolve test failures"
@@ -172,8 +174,7 @@ You don't deploy directly. Production deployments follow this process:
 **When**: Immediately after develop branch merge
 **Duration**: 24 hours
 **Environment**: <https://staging.abaco-loans-analytics.com>
-
-**1. Validation Checklist**
+### (continued)
 
 - [ ] Application loads without errors
 - [ ] All links and navigation work
@@ -185,9 +186,7 @@ You don't deploy directly. Production deployments follow this process:
 - [ ] No console errors (F12 → Console tab)
 - [ ] No visual regressions vs. previous version
 
-**2. Testing Scenarios**
-
-**User Authentication**
+### ###
 
 ```
 1. Navigate to login page
@@ -197,7 +196,7 @@ You don't deploy directly. Production deployments follow this process:
 5. Logout works correctly
 ```
 
-**Data Display**
+### (continued)
 
 ```
 1. View portfolio dashboard
@@ -207,7 +206,7 @@ You don't deploy directly. Production deployments follow this process:
 5. Export functionality works
 ```
 
-**Error Handling**
+### (continued)
 
 ```
 1. Try network disconnect (DevTools → Offline)
@@ -216,7 +215,7 @@ You don't deploy directly. Production deployments follow this process:
 4. Verify recovery works
 ```
 
-**3. Document Findings**
+### (continued)
 
 **If issues found**:
 
@@ -246,7 +245,7 @@ Post comment on GitHub Actions:
 - Ready for production
 ```
 
-**4. Sign-off Process**
+### (continued)
 
 When validation is complete:
 
@@ -262,8 +261,7 @@ When validation is complete:
 
 **Timeline**: After 24-hour staging validation
 **Responsibility**: Coordinate and execute release
-
-**1. Pre-Release Checklist**
+### (continued)
 
 - [ ] 24-hour staging validation complete
 - [ ] All QA issues resolved (none blocking)
@@ -272,19 +270,23 @@ When validation is complete:
 - [ ] Team notifications sent
 - [ ] Deployment window scheduled
 - [ ] Rollback plan documented
-
-**2. Create Release**
+### (continued)
 
 ```bash
+
 # Ensure local repo is up-to-date
 git fetch origin
 git checkout main
 git pull origin main
 
 # Determine version number
+
 # Current: v1.2.3 (check git tags)
+
 # New feature: v1.3.0 (minor bump)
+
 # Bug fix: v1.2.4 (patch bump)
+
 # Breaking change: v2.0.0 (major bump)
 
 # Create and push tag
@@ -292,7 +294,7 @@ git tag -a v1.3.0 -m "Release v1.3.0: Add feature X, fix bug Y"
 git push origin v1.3.0
 ```
 
-**3. Monitor CI/CD Pipeline**
+### (continued)
 
 Go to: <https://github.com/[owner]/[repo]/actions>
 
@@ -301,8 +303,7 @@ Go to: <https://github.com/[owner]/[repo]/actions>
 - ✅ Pre-deployment checks
 - ✅ Quality verification
 - ⏳ Awaiting approval (manual step)
-
-**4. Approve Production Deployment**
+### (continued)
 
 In GitHub Actions:
 
@@ -311,16 +312,14 @@ In GitHub Actions:
 3. Select `production` environment
 4. Click "Approve and deploy"
 5. Monitor deployment progress
-
-**5. Post-Deployment Validation**
+### (continued)
 
 Workflow automatically runs health checks. If they pass:
 
 - ✅ Deployment successful
 - ✅ Health checks passed
 - ✅ GitHub release created
-
-**6. Notify Team**
+### (continued)
 
 Post to Slack #prod-alerts:
 
@@ -349,8 +348,7 @@ Rollback procedure: See OPERATIONS.md
 - Critical functionality broken
 - Major performance degradation
 - Data integrity issues
-
-**1. Rollback Procedure**
+### (continued)
 
 Go to: <https://github.com/[owner]/[repo]/actions>
 
@@ -363,8 +361,7 @@ Go to: <https://github.com/[owner]/[repo]/actions>
 5. Click "Review deployments" when prompted
 6. Select `production-rollback`
 7. Click "Approve and deploy"
-
-**2. Monitor Rollback**
+### (continued)
 
 Expected timeline:
 
@@ -372,8 +369,7 @@ Expected timeline:
 - 2-4 min: Deployment to Azure
 - 4-5 min: Health checks
 - 5+ min: Complete
-
-**3. Post-Rollback**
+### (continued)
 
 Post to Slack #incidents:
 
@@ -484,6 +480,7 @@ NODE_ENV=production
 **Steps**:
 
 ```bash
+
 # 1. Pull latest develop
 git fetch origin
 git rebase origin/develop
@@ -492,6 +489,7 @@ git rebase origin/develop
 npm test
 
 # 3. Fix the test or code
+
 # Edit failing test or implementation
 
 # 4. Verify fix locally
@@ -503,6 +501,7 @@ git commit -m "fix: resolve test failure in [component]"
 git push
 
 # 6. Monitor CI in GitHub
+
 # Watch Actions tab for green ✅
 ```
 
@@ -547,12 +546,14 @@ git push
 **Process**:
 
 ```bash
+
 # 1. Create hotfix branch from main
 git checkout main
 git pull origin main
 git checkout -b hotfix/critical-bug-fix
 
 # 2. Fix the bug
+
 # Edit files to resolve issue
 pnpm lint:fix
 npm test
@@ -561,7 +562,9 @@ npm test
 git push origin hotfix/critical-bug-fix
 
 # 4. Create PR to main
+
 # Title: [HOTFIX] Brief description
+
 # Mark as URGENT in description
 
 # 5. Fast-track code review (team lead approval)
@@ -734,22 +737,19 @@ git push origin develop
 ---
 
 ## Getting Help
-
-**Questions?**
+### (continued)
 
 1. Check this guide and related docs
 2. Ask in #dev-help Slack
 3. Create GitHub issue with `question` label
 4. Contact team lead
-
-**Documentation**
+### (continued)
 
 - `.github/DEPLOYMENT_CONFIG.md`: CI/CD configuration
 - `OPERATIONS.md`: Operational procedures
 - `ENGINEERING_STANDARDS.md`: Code standards
 - `MIGRATION.md`: Migration procedures
-
-**On-Call**
+### (continued)
 
 - During incidents: Follow incident response procedures
 - Escalate P1 issues immediately
