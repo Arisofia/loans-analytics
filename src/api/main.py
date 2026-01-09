@@ -62,9 +62,12 @@ if app:
         if not resolved.exists() or not resolved.is_file():
             raise HTTPException(status_code=404, detail="file not found")
 
+        # Expose a normalized path relative to the allowed data directory
+        safe_rel_path = resolved.relative_to(ALLOWED_DATA_DIR)
+
         return {
             "status": "ok",
-            "path": str(resolved),
+            "path": str(safe_rel_path),
             "size": resolved.stat().st_size,
             "modified": resolved.stat().st_mtime,
         }
