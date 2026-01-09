@@ -212,11 +212,13 @@ make test-cov
 ### Sprint 0-2: Complete Test Framework (100% Complete)
 
 **Run all Analytics Pipeline tests**:
+
 ```bash
 .venv/bin/python3 -m pytest tests/fi-analytics/ -v
 ```
 
 **Test Framework Documentation**:
+
 - **Test Plan**: `fi-analytics/analytics_pipeline_test_plan.md`
 - **Test Checklist**: `fi-analytics/analytics_pipeline_checklist.md`
 - **Test Cases**: `fi-analytics/analytics_pipeline_testcases.md`
@@ -224,6 +226,7 @@ make test-cov
 ### Sprint Deliverables
 
 **Test Code** (30+ test methods, 100% automated):
+
 - `tests/fi-analytics/test_analytics_smoke.py` (A-01, A-02)
 - `tests/fi-analytics/test_analytics_kpi_correctness.py` (B-01, B-02)
 - `tests/fi-analytics/test_analytics_integration.py` (C-01, D-01, F-01, C-04, F-02)
@@ -231,6 +234,7 @@ make test-cov
 - `tests/fi-analytics/test_analytics_unit_coverage.py` (H-01, H-02)
 
 **Test Data & Fixtures**:
+
 - `tests/data/archives/sample_small.csv` (Baseline dataset)
 - `tests/data/archives/sample_null_zeros.csv` (Edge case dataset)
 - `tests/fixtures/baseline_kpis.json` (Expected values)
