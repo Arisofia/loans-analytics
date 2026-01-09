@@ -49,7 +49,7 @@ jobs:
         uses: azure/cli@v2
         with:
           azcliversion: '2.49.0'
-            inlineScript: az --version
+          inlineScript: az --version
 
       - name: Azure login (service principal)
         if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}
