@@ -151,7 +151,7 @@ class UnifiedOutputManager:
                     run_id,
                 ),
                 "dashboard": self.azure_dashboard_client.sync_batch_export(export_data),
-                "success": True # Azure aggregate success is handled per-component
+                "success": True,  # Azure aggregate success is handled per-component
             },
             "supabase": lambda: self.supabase_client.sync_batch_export(export_data, run_id),
             "meta": lambda: self.meta_client.sync_batch_export(export_data),
@@ -174,8 +174,8 @@ class UnifiedOutputManager:
             if isinstance(output, dict):
                 if "success" in output:
                     success_flags.append(output["success"])
-                elif "dashboard_updated" in output: # Special case for azure dashboard
-                     success_flags.append(output.get("dashboard_updated", False))
+                elif "dashboard_updated" in output:  # Special case for azure dashboard
+                    success_flags.append(output.get("dashboard_updated", False))
 
         results["success"] = all(success_flags) if success_flags else True
 

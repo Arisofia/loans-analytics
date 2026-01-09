@@ -1,11 +1,15 @@
 from __future__ import annotations
+
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
 import pandas as pd
 from jsonschema import Draft202012Validator
 from pydantic import ValidationError
+
 from src.pipeline.models import LoanRecord
+
 
 class IngestionValidator:
     """Consolidated validation engine for ingestion data quality."""
@@ -36,14 +40,16 @@ class IngestionValidator:
         try:
             # Deferred import to avoid circular dependency with analytics.schema
             from src.analytics.schema import LoanTapeSchema
-            
+
             # Only validate if required columns for schema are present
             schema_cols = ["loan_id", "outstanding_balance", "dpd"]
             present = [c for c in schema_cols if c in df.columns]
-            
+
             if len(present) < len(schema_cols):
-                if not any(c in df.columns for c in ["outstanding_balance", "total_receivable_usd"]):
-                     return df, []
+                if not any(
+                    c in df.columns for c in ["outstanding_balance", "total_receivable_usd"]
+                ):
+                    return df, []
 
             validated_df = LoanTapeSchema.validate(df)
             return validated_df, []
@@ -65,12 +71,16 @@ class IngestionValidator:
                 clean_record = {str(k).strip().lower(): v for k, v in record.items()}
                 if "loan_id" not in clean_record:
                     clean_record["loan_id"] = f"agg_{idx}"
-                
+
                 # Ensure core numeric fields exist for LoanRecord if missing from input
-                for field in ["total_receivable_usd", "total_eligible_usd", "discounted_balance_usd"]:
+                for field in [
+                    "total_receivable_usd",
+                    "total_eligible_usd",
+                    "discounted_balance_usd",
+                ]:
                     if field not in clean_record:
                         clean_record[field] = 0.0
-                
+
                 validated_records.append(LoanRecord(**clean_record).model_dump(by_alias=True))
             except ValidationError as exc:
                 errors.append(f"row {idx}: {exc}")
@@ -91,7 +101,7 @@ class IngestionValidator:
         dpd_alt_two = {"days_past_due", "outstanding_balance"}
 
         lower_columns = {c.lower() for c in columns}
-        
+
         if lower_columns.issuperset(par_required):
             return {"missing": [], "unexpected": []}
         if (

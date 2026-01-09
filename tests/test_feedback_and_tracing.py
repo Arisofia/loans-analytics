@@ -3,7 +3,7 @@ import logging
 
 import pytest
 
-import src.azure_tracing as azure_tracing
+import src.utils.tracing.azure as azure_tracing
 from src.agents.learning import FeedbackStore
 
 

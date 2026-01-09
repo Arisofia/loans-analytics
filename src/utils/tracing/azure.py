@@ -23,7 +23,7 @@ def setup_azure_tracing() -> Tuple[logging.Logger, Tracer]:
     """
 
     connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
-    
+
     if not connection_string or "00000000-0000-0000-0000-000000000000" in connection_string:
         # Fallback to standard logging if no valid connection string is provided
         logger = logging.getLogger()

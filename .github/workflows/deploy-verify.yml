@@ -31,7 +31,7 @@ jobs:
                   set -euo pipefail
                   TARGET_URL="${{ github.event.inputs.target_url }}"
                   echo "Probing with secret: $TARGET_URL"
-                  status=$(curl -sS -o /dev/null -w "%{http_code}" -H "x-middleware-secret: $MIDDLEWARE_SHARED_SECRET" "$TARGET_URL") || true
+                  status=$(curl -sS -o /dev/null -w "%{http_code}" -H "x-internal-shared-secret: $MIDDLEWARE_SHARED_SECRET" -H "x-middleware-subrequest: true" "$TARGET_URL") || true
                   echo "HTTP status: $status"
                   if [ "$status" -eq 403 ]; then
                     echo "Requests are still rejected when auth secret provided (got 403)" >&2

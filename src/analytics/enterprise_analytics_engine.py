@@ -4,9 +4,9 @@ from typing import Dict, Optional, Protocol, runtime_checkable
 import numpy as np
 import pandas as pd
 
+from src.kpis import KPIEngineV2
 from src.pipeline.data_validation import validate_dataframe
 from src.utils.numeric import safe_numeric
-from src.kpis import KPIEngineV2
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class LoanAnalyticsEngine:
 
         self.loan_data = loan_data.copy()
         self._coercion_report: Dict[str, int] = {}
-        
+
         self._validate_columns()
         self._coerce_numeric_columns()
         self._check_data_sanity()
@@ -99,7 +99,7 @@ class LoanAnalyticsEngine:
         """Computes the Loan-to-Value (LTV) ratio for each loan."""
         loan_amount = self.loan_data["loan_amount"]
         appraised_value = self.loan_data["appraised_value"]
-        
+
         ltv_values = np.where(
             appraised_value > 0,
             (loan_amount / appraised_value) * 100,
@@ -216,7 +216,7 @@ class LoanAnalyticsEngine:
         Delegates core computations to KPIEngineV2 for consistency.
         """
         engine_v2 = KPIEngineV2(self.loan_data, actor="enterprise_engine")
-        
+
         # Consistent KPI keys via canonical portfolio_kpis
         from src.analytics.metrics_utils import portfolio_kpis
 
@@ -251,7 +251,6 @@ class LoanAnalyticsEngine:
 
         kpis = self.run_full_analysis()
         return exporter.upload_metrics(kpis, blob_name=blob_name)
-
 
 
 if __name__ == "__main__":

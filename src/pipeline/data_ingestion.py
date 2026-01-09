@@ -15,11 +15,11 @@ from src.agents.tools import send_slack_notification
 from src.pipeline.data_validation import (DataQualityReport,
                                           DataQualityReporter,
                                           validate_dataframe)
-from src.pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
-                                hash_file, utc_now)
-from src.pipeline.models import IngestionResult
 from src.pipeline.ingestion_validator import IngestionValidator
 from src.pipeline.looker_converter import LookerConverter
+from src.pipeline.models import IngestionResult
+from src.pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
+                                hash_file, utc_now)
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class UnifiedIngestion:
 
         self.validator = IngestionValidator(self.config)
         self.looker_converter = LookerConverter(self.config)
-        
+
         self.rate_limiter = self._build_rate_limiter(config)
         self.retry_policy = self._build_retry_policy(config)
         self.circuit_breaker = self._build_circuit_breaker(config)
@@ -194,15 +194,20 @@ class UnifiedIngestion:
         res, _ = self.looker_converter.load_financials(path)
         return {d: m.get("cash_balance_usd", 0.0) for d, m in res.items()}
 
-    def _looker_par_balances_to_loan_tape(self, df: pd.DataFrame, cash_by_date: Dict[str, float]) -> pd.DataFrame:
+    def _looker_par_balances_to_loan_tape(
+        self, df: pd.DataFrame, cash_by_date: Dict[str, float]
+    ) -> pd.DataFrame:
         """Shim for legacy tests."""
         nested_cash = {d: {"cash_balance_usd": v} for d, v in cash_by_date.items()}
         return self.looker_converter.convert_par_balances(df, nested_cash)
 
-    def _looker_dpd_to_loan_tape(self, df: pd.DataFrame, cash_by_date: Dict[str, float]) -> pd.DataFrame:
+    def _looker_dpd_to_loan_tape(
+        self, df: pd.DataFrame, cash_by_date: Dict[str, float]
+    ) -> pd.DataFrame:
         """Shim for legacy tests."""
         nested_cash = {d: {"cash_balance_usd": v} for d, v in cash_by_date.items()}
         return self.looker_converter.convert_dpd_loans(df, nested_cash)
+
     # ----------------------------------------------
 
     def ingest_file(self, file_path: Path, archive_dir: Optional[Path] = None) -> IngestionResult:
@@ -224,7 +229,7 @@ class UnifiedIngestion:
                 df = pd.read_excel(file_path)
             else:
                 df = pd.read_csv(file_path)
-            
+
             self._log_event("raw_read", "success", rows=len(df), checksum=checksum)
 
             schema_errors = self.validator.validate_schema(df)
@@ -247,7 +252,11 @@ class UnifiedIngestion:
                         send_slack_notification(msg, channel="#data-engineering-alerts")
                     except Exception as slack_err:
                         logger.error("Failed to send Slack alert: %s", slack_err)
-                    return IngestionResult(pd.DataFrame(), self.run_id, {"status": "halted", "error": "critical_violation"})
+                    return IngestionResult(
+                        pd.DataFrame(),
+                        self.run_id,
+                        {"status": "halted", "error": "critical_violation"},
+                    )
 
             self._validate_dataframe(validated_df)
 
@@ -277,14 +286,31 @@ class UnifiedIngestion:
             }
 
             self._log_event("complete", "success", row_count=len(validated_df))
-            return IngestionResult(validated_df, self.run_id, metadata, source_hash=checksum, raw_path=archived, quality_report=quality_report)
+            return IngestionResult(
+                validated_df,
+                self.run_id,
+                metadata,
+                source_hash=checksum,
+                raw_path=archived,
+                quality_report=quality_report,
+            )
 
         except Exception as exc:
             self._record_error("fatal_error", exc)
             raise
 
-    def ingest_looker(self, loans_path: Path, financials_path: Optional[Path] = None, archive_dir: Optional[Path] = None) -> IngestionResult:
-        self._log_event("looker_start", "initiated", loans_path=str(loans_path), financials_path=str(financials_path) if financials_path else None)
+    def ingest_looker(
+        self,
+        loans_path: Path,
+        financials_path: Optional[Path] = None,
+        archive_dir: Optional[Path] = None,
+    ) -> IngestionResult:
+        self._log_event(
+            "looker_start",
+            "initiated",
+            loans_path=str(loans_path),
+            financials_path=str(financials_path) if financials_path else None,
+        )
         if not loans_path.exists():
             self._log_event("looker_file_check", "failed", error="Loans file not found")
             raise FileNotFoundError(f"Looker loans file not found: {loans_path}")
@@ -292,19 +318,33 @@ class UnifiedIngestion:
         checksum = hash_file(loans_path)
         try:
             df = pd.read_csv(loans_path)
-            
+
             # Detect schema drift
             schema_diff = self.validator.detect_looker_schema_drift(set(df.columns))
             if schema_diff.get("missing"):
                 self._log_event("looker_schema_drift", "warning", missing=schema_diff["missing"])
                 if self.config.get("validation", {}).get("strict", True):
-                    raise ValueError(f"Looker schema drift detected. Missing columns: {schema_diff['missing']}")
+                    raise ValueError(
+                        f"Looker schema drift detected. Missing columns: {schema_diff['missing']}"
+                    )
 
-            financials_by_date, financials_meta = self.looker_converter.load_financials(financials_path)
+            financials_by_date, financials_meta = self.looker_converter.load_financials(
+                financials_path
+            )
 
             columns_lower = {col.lower() for col in df.columns}
-            has_par = {"reporting_date", "par_7_balance_usd", "par_30_balance_usd", "par_60_balance_usd", "par_90_balance_usd"}.issubset(columns_lower)
-            has_dpd = ({"dpd", "outstanding_balance"}.issubset(columns_lower) or {"dpd", "outstanding_balance_usd"}.issubset(columns_lower) or {"days_past_due", "outstanding_balance"}.issubset(columns_lower))
+            has_par = {
+                "reporting_date",
+                "par_7_balance_usd",
+                "par_30_balance_usd",
+                "par_60_balance_usd",
+                "par_90_balance_usd",
+            }.issubset(columns_lower)
+            has_dpd = (
+                {"dpd", "outstanding_balance"}.issubset(columns_lower)
+                or {"dpd", "outstanding_balance_usd"}.issubset(columns_lower)
+                or {"days_past_due", "outstanding_balance"}.issubset(columns_lower)
+            )
 
             if has_par:
                 normalized_df = self.looker_converter.convert_par_balances(df, financials_by_date)
@@ -313,8 +353,10 @@ class UnifiedIngestion:
                 normalized_df = self.looker_converter.convert_dpd_loans(df, financials_by_date)
                 source_mode = "looker_loans"
             else:
-                raise ValueError("Looker loans file missing required PAR or DPD columns for conversion")
-            
+                raise ValueError(
+                    "Looker loans file missing required PAR or DPD columns for conversion"
+                )
+
             if normalized_df.empty:
                 raise ValueError("Looker loan tape conversion produced no rows")
 
@@ -355,7 +397,14 @@ class UnifiedIngestion:
             }
 
             self._log_event("looker_complete", "success", row_count=len(validated_df))
-            return IngestionResult(validated_df, self.run_id, metadata, source_hash=checksum, raw_path=archived, quality_report=quality_report)
+            return IngestionResult(
+                validated_df,
+                self.run_id,
+                metadata,
+                source_hash=checksum,
+                raw_path=archived,
+                quality_report=quality_report,
+            )
 
         except Exception as exc:
             self._record_error("looker_fatal_error", exc)
@@ -363,6 +412,7 @@ class UnifiedIngestion:
 
     def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
         import requests
+
         headers = headers or {}
         self._log_event("http_start", "initiated", url=url)
 
@@ -375,7 +425,12 @@ class UnifiedIngestion:
             return response
 
         try:
-            response = self.retry_policy.execute(_do_request, on_retry=lambda attempt, exc: self._log_event("http_retry", "retrying", attempt=attempt, error=str(exc)))
+            response = self.retry_policy.execute(
+                _do_request,
+                on_retry=lambda attempt, exc: self._log_event(
+                    "http_retry", "retrying", attempt=attempt, error=str(exc)
+                ),
+            )
             self.circuit_breaker.record_success()
         except Exception as exc:
             self.circuit_breaker.record_failure()
@@ -395,7 +450,7 @@ class UnifiedIngestion:
         errors = schema_errors + record_errors
         if errors:
             self._log_event("validation", "completed", error_count=len(errors))
-        
+
         quality_report = self._run_quality_audit(validated_df)
 
         metadata = {
@@ -409,4 +464,6 @@ class UnifiedIngestion:
         }
 
         self._log_event("http_complete", "success", row_count=len(validated_df))
-        return IngestionResult(validated_df, self.run_id, metadata, source_hash=checksum, quality_report=quality_report)
+        return IngestionResult(
+            validated_df, self.run_id, metadata, source_hash=checksum, quality_report=quality_report
+        )

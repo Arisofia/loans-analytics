@@ -71,6 +71,7 @@ def archive_file(archive_dir: Path, src: Path) -> Path:
     checksum = hash_file(src)
     dest = archive_dir / f"{src.stem}.{checksum}{src.suffix}"
     import shutil
+
     shutil.copy2(src, dest)
     return dest
 

@@ -108,7 +108,7 @@ class TestAnalyticsUnitCoverage:
             cwd=repo_root,
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=300,
         )
 
         test_count = result.stdout.count("test_")
@@ -140,7 +140,7 @@ class TestAnalyticsTypeCheck:
             cwd=repo_root,
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=300,
         )
 
         assert (

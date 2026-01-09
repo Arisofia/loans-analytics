@@ -6,8 +6,10 @@ from requests.exceptions import RequestsDependencyWarning
 
 try:
     from packaging.version import InvalidVersion, Version
+
+    HAS_VERSION = True
 except Exception:
-    Version = None
+    HAS_VERSION = False
 
 
 def check_cryptography_robust(cryptography_version: Optional[str]) -> None:
@@ -19,7 +21,7 @@ def check_cryptography_robust(cryptography_version: Optional[str]) -> None:
     if not cryptography_version:
         return
 
-    if Version:
+    if HAS_VERSION:
         try:
             ver = Version(cryptography_version)
         except InvalidVersion:
