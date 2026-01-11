@@ -1,8 +1,6 @@
-on:
-
 name: Cascade Ingest and KPI Extraction
 
-
+on:
   schedule:
     - cron: '0 5,17 * * *'  # Every day at 05:00 and 17:00 UTC
   workflow_dispatch: {}

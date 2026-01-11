@@ -70,12 +70,12 @@ npm start --prefix apps/web
 
 Located in `apps/analytics`.
 
-#### Language & Runtime
+#### Analytics Language & Runtime
 
 **Language**: Python
 **Version**: 3.9+ (implied by `pyproject.toml`)
 
-#### Dependencies
+#### Analytics Dependencies
 
 **Main Dependencies**:
 
@@ -105,11 +105,11 @@ pytest apps/analytics/tests
 
 Located in `streamlit_app` and root.
 
-#### Language & Runtime
+#### Streamlit Language & Runtime
 
 **Language**: Python
 
-#### Dependencies
+#### Streamlit Dependencies
 
 **Main Dependencies** (from root `requirements.txt`):
 

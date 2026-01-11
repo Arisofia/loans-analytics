@@ -1,7 +1,7 @@
 # Data Pipeline Validation — Quick Start
 
-**Status**: Production-ready with optional hardening  
-**Last Updated**: 2025-12-14
+- **Status**: Production-ready with optional hardening
+- **Last Updated**: 2025-12-14
 
 ## Overview
 
@@ -196,6 +196,7 @@ if (result.success) {
   ```
 
 - [ ] **Monitoring**: Set up alerts for export failures
+
   ```typescript
   // Sentry will track exceptions automatically
   // Go to https://sentry.io → abaco-loans-analytics → Alerts

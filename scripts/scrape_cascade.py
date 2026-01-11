@@ -70,7 +70,10 @@ class CascadeScraper:
         """Initialize browser and page."""
         logger.info("Initializing Playwright browser")
         playwright = await async_playwright().start()
-        self.browser = await playwright.chromium.launch(headless=True)
+        launch_args = []
+        if os.getenv("CI"):
+            launch_args = ["--no-sandbox", "--disable-dev-shm-usage"]
+        self.browser = await playwright.chromium.launch(headless=True, args=launch_args)
         self.page = await self.browser.new_page()
     
     async def cleanup(self):

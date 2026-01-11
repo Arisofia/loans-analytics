@@ -1,20 +1,29 @@
+# Abaco Loans Analytics Web App
+
 This is the web application for the Abaco Loans Analytics project, built with Next.js, TypeScript, and Tailwind CSS.
 
 ## Getting Started
 
 1. **Install dependencies:**
+
    ```bash
    npm install
    ```
+
 2. **Set up environment variables:**
+
    ```bash
    cp .env.example .env.local
    ```
+
    Then fill in the required values in `.env.local`.
+
 3. **Run the development server:**
+
    ```bash
    npm run dev
    ```
+
    Visit `http://localhost:3000` to see the app.
 
 ## Available Scripts

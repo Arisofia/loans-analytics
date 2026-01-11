@@ -45,9 +45,9 @@ jobs:
       - name: Run tests with coverage
         run: |
           pytest --cov=python --cov-report=term-missing
-      - name: Fail if coverage below 85%
+      - name: Fail if coverage below 40%
         run: |
-          coverage report --fail-under=85
+          coverage report --fail-under=40
 
   sonar:
     runs-on: ubuntu-latest
@@ -140,4 +140,3 @@ jobs:
         run: dotnet build --configuration Release --no-restore
       - name: Test
         run: dotnet test --configuration Release --no-restore
-

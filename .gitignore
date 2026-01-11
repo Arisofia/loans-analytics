@@ -72,3 +72,35 @@ __pycache__/
 logs_extracted/
 supabase/.temp/
 *. egg-info/
+# Merge artifacts
+*.orig
+MERGE_*
+. mergehead
+
+# Build/cache
+. venv-*/
+__pycache__/
+. pytest_cache/
+.mypy_cache/
+*. egg-info/
+
+# Temporary
+logs_extracted/
+tmp/
+supabase/. temp/
+# Merge artifacts
+*.orig
+MERGE_*
+. mergehead
+
+# Build/cache
+. venv-*/
+__pycache__/
+. pytest_cache/
+.mypy_cache/
+*. egg-info/
+
+# Temporary
+logs_extracted/
+tmp/
+supabase/. temp/

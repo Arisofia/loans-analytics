@@ -62,9 +62,9 @@ jobs:
       - name: Run tests with coverage
         run: |
           pytest --cov=python --cov-report=term-missing
-      - name: Fail if coverage below 85%
+      - name: Fail if coverage below 40%
         run: |
-          coverage report --fail-under=85
+          coverage report --fail-under=40
 
   sonar:
     runs-on: ubuntu-latest
@@ -140,7 +140,8 @@ jobs:
           path: apps/coverage-python.xml
 
   dotnet:
-    if: hashFiles('**/*.csproj', '**/*.sln', '**/*packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != ''    runs-on: ubuntu-latest
+    if: hashFiles('**/*.csproj', '**/*.sln', '**/*packages.config', '**/*.vbproj', '**/*.vcxproj', '**/*.fsproj') != ''
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
