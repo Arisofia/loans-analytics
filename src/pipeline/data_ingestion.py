@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import re
 import shutil
 import uuid
@@ -19,8 +20,9 @@ from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from src.agents.tools import send_slack_notification
-from src.analytics.schema import LoanTapeSchema
-from src.pipeline.data_validation import validate_dataframe
+from src.pipeline.schema import LoanTapeSchema
+from src.pipeline.data_validation import (DataQualityReport,
+                                         validate_dataframe)
 from src.pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
                                 hash_file, utc_now)
 
@@ -54,6 +56,7 @@ class IngestionResult:
     metadata: Dict[str, Any]
     source_hash: Optional[str] = None
     raw_path: Optional[Path] = None
+    quality_report: Optional[DataQualityReport] = None
 
 
 class UnifiedIngestion:
@@ -85,6 +88,17 @@ class UnifiedIngestion:
         """High-performance CSV ingestion using Polars."""
 
         path = self.data_dir / filename
+
+        # Security: Size check
+        max_size_mb = self.config.get("max_file_size_mb", 50)
+        if path.exists() and path.stat().st_size > max_size_mb * 1024 * 1024:
+            self._record_error(
+                "ingestion_read",
+                Exception(f"File size exceeds limit of {max_size_mb}MB"),
+                file=filename,
+            )
+            return pd.DataFrame()
+
         try:
             # Polars for high-speed reading
             lf = pl.scan_csv(path)
@@ -143,6 +157,17 @@ class UnifiedIngestion:
     def ingest_parquet(self, filename: str) -> pd.DataFrame:
         """High-performance Parquet ingestion using Polars."""
         path = self.data_dir / filename
+
+        # Security: Size check
+        max_size_mb = self.config.get("max_file_size_mb", 50)
+        if path.exists() and path.stat().st_size > max_size_mb * 1024 * 1024:
+            self._record_error(
+                "ingestion_read_parquet",
+                Exception(f"File size exceeds limit of {max_size_mb}MB"),
+                file=filename,
+            )
+            return pd.DataFrame()
+
         try:
             df_polars = pl.read_parquet(path)
             df = df_polars.to_pandas()
@@ -154,6 +179,17 @@ class UnifiedIngestion:
     def ingest_excel(self, filename: str) -> pd.DataFrame:
         """High-performance Excel ingestion using Polars."""
         path = self.data_dir / filename
+
+        # Security: Size check
+        max_size_mb = self.config.get("max_file_size_mb", 50)
+        if path.exists() and path.stat().st_size > max_size_mb * 1024 * 1024:
+            self._record_error(
+                "ingestion_read_excel",
+                Exception(f"File size exceeds limit of {max_size_mb}MB"),
+                file=filename,
+            )
+            return pd.DataFrame()
+
         try:
             df_polars = pl.read_excel(path)
             df = df_polars.to_pandas()
@@ -309,7 +345,9 @@ class UnifiedIngestion:
     def _archive_raw(self, file_path: Path, archive_dir: Path) -> Optional[Path]:
         try:
             archive_dir.mkdir(parents=True, exist_ok=True)
-            archived = archive_dir / file_path.name
+            checksum = hash_file(file_path)
+            # Use content hash in filename to prevent collisions and ensure auditability
+            archived = archive_dir / f"{file_path.stem}.{checksum}{file_path.suffix}"
             shutil.copy2(file_path, archived)
             return archived
         except Exception as exc:
@@ -759,6 +797,49 @@ class UnifiedIngestion:
         )
         grouped = self._apply_financials_to_snapshot(grouped, financials_by_date)
         return grouped
+
+    def ingest(
+        self,
+        input_file: Path,
+        archive_dir: Optional[Path] = None,
+        cascade_config: Optional[Dict[str, Any]] = None,
+    ) -> IngestionResult:
+        """Execute ingestion based on configuration source."""
+        source = self.config.get("source", "file")
+        logger.info("Starting ingestion from source: %s", source)
+
+        if source == "cascade_http":
+            cascade_cfg = cascade_config or {}
+            base_url = cascade_cfg.get("base_url", "")
+            endpoint = cascade_cfg.get("endpoints", {}).get("loan_tape", "")
+            token_env = cascade_cfg.get("auth", {}).get("token_secret")
+            token_value = os.getenv(token_env, "") if token_env else ""
+            headers = {"Authorization": f"Bearer {token_value}"} if token_value else {}
+            url = f"{base_url}{endpoint}"
+            return self.ingest_http(url, headers=headers)
+
+        if source == "looker":
+            looker_cfg = self.config.get("looker", {}) or {}
+            loans_par_path = looker_cfg.get("loans_par_path")
+            loans_fallback_path = looker_cfg.get("loans_path")
+            selected_path = None
+            if loans_par_path:
+                candidate = Path(loans_par_path)
+                if candidate.exists():
+                    selected_path = candidate
+            if selected_path is None and loans_fallback_path:
+                selected_path = Path(loans_fallback_path)
+            if selected_path is None:
+                selected_path = input_file
+            financials_path = looker_cfg.get("financials_path")
+            return self.ingest_looker(
+                selected_path,
+                financials_path=Path(financials_path) if financials_path else None,
+                archive_dir=archive_dir,
+            )
+
+        # Default: File source
+        return self.ingest_file(input_file, archive_dir=archive_dir)
 
     def ingest_file(self, file_path: Path, archive_dir: Optional[Path] = None) -> IngestionResult:
         self._log_event("start", "initiated", file_path=str(file_path))

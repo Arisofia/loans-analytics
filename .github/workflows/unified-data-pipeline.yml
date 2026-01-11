@@ -4,15 +4,15 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'data/**'
-      - 'src/**'
-      - 'scripts/**'
+      - "data/**"
+      - "src/**"
+      - "scripts/**"
   pull_request:
     branches: [main]
     paths:
-      - 'data/**'
-      - 'src/**'
-      - 'scripts/**'
+      - "data/**"
+      - "src/**"
+      - "scripts/**"
   schedule:
     # Run daily at 4:00 AM CET (3:00 AM UTC) - before agent workflows
     - cron: "0 3 * * *"
@@ -23,6 +23,8 @@ jobs:
     name: Execute Unified Pipeline
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
 
     steps:
       - name: Checkout Repository
@@ -41,6 +43,7 @@ jobs:
 
       - name: Execute Unified Data Pipeline
         id: pipeline
+        if: env.SUPABASE_SERVICE_ROLE != ''
         env:
           CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
           CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}
@@ -53,7 +56,7 @@ jobs:
           python scripts/run_data_pipeline.py --action github-action
 
       - name: Notify Slack on Success
-        if: success() && secrets.SLACK_WEBHOOK_URL != ''
+        if: success() && env.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |
@@ -73,7 +76,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack on Failure
-        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |
@@ -98,7 +101,7 @@ jobs:
         with:
           name: data-pipeline-results
           path: |
-            logs/
+            logs
             data/manifest.json
-            exports/
+            exports
           retention-days: 14

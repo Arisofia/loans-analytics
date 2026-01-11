@@ -62,6 +62,11 @@ class AgentOrchestrator:
         agent_config: Optional[Dict[str, str]] = None,
         max_retries: int = 3,
     ) -> Dict[str, Any]:
+        """
+        Run the agent orchestrator.
+        NOTE: This is currently in PROTOTYPE/EXPERIMENTAL state.
+        It uses MockLLM by default and may return placeholder results.
+        """
         with tracer.start_as_current_span("agent_orchestrator.run") as span:
             start_time = datetime.now(timezone.utc)
 

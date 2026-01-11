@@ -7,14 +7,12 @@ from typing import Any, Dict
 import pytest
 from tests.db_manager import DBManager
 
-# Ensure repository modules can be imported when tests run from the repo root.
 ROOT = Path(__file__).resolve().parents[1]
+SRC_DIR = ROOT / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-
-PYTHON_ROOT = ROOT / "python"
-if str(PYTHON_ROOT) not in sys.path:
-    sys.path.insert(0, str(PYTHON_ROOT))
 
 # Change working directory to repository root so relative file paths work
 os.chdir(ROOT)
@@ -91,7 +89,6 @@ def ensure_sample_csv():
     if not csv_path.exists():
         csv_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Create sample data matching test expectations
         csv_content = """segment,measurement_date,dpd_90_plus_usd,total_receivable_usd,total_eligible_usd,cash_available_usd,par_90,collection_rate,delinquency_flag
 Consumer,2025-01-31,32500,1000000,1000000,972000,3.25,97.2,1
 Consumer,2025-02-28,32500,1000000,1000000,972000,3.25,97.2,1

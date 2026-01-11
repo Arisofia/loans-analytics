@@ -70,13 +70,13 @@ jobs:
           fi
 
       - name: Azure login (for health check path)
-        if: steps.check_creds.outputs.has_creds == 'true'
+        if: steps.check_creds.outputs.has_creds == true
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Configure App Service health check path
-        if: steps.check_creds.outputs.has_creds == 'true'
+        if: steps.check_creds.outputs.has_creds == true
         run: |
           az resource update \
             --resource-group "$RESOURCE_GROUP" \
@@ -85,7 +85,7 @@ jobs:
             --set properties.siteConfig.healthCheckPath="$HEALTH_CHECK_PATH"
 
       - name: Resolve App Service hostname
-        if: steps.check_creds.outputs.has_creds == 'true'
+        if: steps.check_creds.outputs.has_creds == true
         id: resolve_host
         run: |
           host_name=$(az webapp show --resource-group "$RESOURCE_GROUP" --name "$WEBAPP_NAME" --query defaultHostName -o tsv)
@@ -96,7 +96,7 @@ jobs:
           fi
 
       - name: Deploy to Azure Web App
-        if: steps.check_creds.outputs.has_creds == 'true'
+        if: steps.check_creds.outputs.has_creds == true
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.WEBAPP_NAME }}
@@ -104,7 +104,7 @@ jobs:
           startup-command: ${{ env.STARTUP_CMD }}
 
       - name: Deploy to Azure Web App (publish profile)
-        if: steps.check_creds.outputs.has_creds != 'true' && steps.check_publish_profile.outputs.has_publish_profile == 'true'
+        if: steps.check_creds.outputs.has_creds != 'true' && steps.check_publish_profile.outputs.has_publish_profile == true
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.WEBAPP_NAME }}
@@ -113,7 +113,7 @@ jobs:
           startup-command: ${{ env.STARTUP_CMD }}
 
       - name: Post-deployment health check
-        if: steps.check_creds.outputs.has_creds == 'true' || steps.check_publish_profile.outputs.has_publish_profile == 'true'
+        if: steps.check_creds.outputs.has_creds == true || steps.check_publish_profile.outputs.has_publish_profile == true
         run: |
           echo "Deployment completed. Monitoring health check..."
           host_name="${{ steps.resolve_host.outputs.host_name }}"

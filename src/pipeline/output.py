@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 from src.config.paths import Paths
+from src.integrations.supabase_client import SupabaseOutputClient
 from src.pipeline.utils import ensure_dir, hash_file, utc_now, write_json
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ class UnifiedOutput:
     def __init__(self, config: Dict[str, Any], run_id: Optional[str] = None):
         self.config = config.get("pipeline", {}).get("phases", {}).get("outputs", {})
         self.azure_config = self.config.get("azure", {})
+        self.supabase_config = self.config.get("supabase", {})
         self.run_id = run_id or f"out_{uuid.uuid4().hex[:12]}"
         self.audit_log: List[Dict[str, Any]] = []
 
@@ -105,6 +107,76 @@ class UnifiedOutput:
 
         self._log_event("azure_upload", "success", uploaded_count=len(uploaded))
         return uploaded
+
+    def publish_to_supabase(
+        self,
+        manifest: Dict[str, Any],
+        run_id: str,
+        df: Optional[pd.DataFrame] = None,
+        timeseries: Optional[Dict[str, pd.DataFrame]] = None,
+    ) -> Dict[str, Any]:
+        """Publish results to Supabase for dashboards and audit trail."""
+        if not self.supabase_config.get("enabled", True):
+            self._log_event("supabase_publish", "skipped", reason="Disabled in config")
+            return {}
+
+        client = SupabaseOutputClient()
+        if not client.client:
+            self._log_event("supabase_publish", "skipped", reason="Client not initialized")
+            return {}
+
+        results = {}
+        try:
+            # 1. Pipeline Run
+            run_data = {
+                "run_id": run_id,
+                "status": "completed",
+                "metadata": manifest.get("metadata", {}),
+                "sub_runs": manifest.get("sub_runs", {}),
+                "generated_at": manifest.get("generated_at"),
+            }
+            # The client doesn't have upsert_pipeline_run, we can use the low-level table access
+            client.client.table("analytics_pipeline_runs").upsert(
+                run_data, on_conflict="run_id"
+            ).execute()
+            results["pipeline_run"] = True
+
+            # 2. KPI Metrics
+            if "metrics" in manifest:
+                results["kpi_metrics"] = client.insert_kpi_metrics(
+                    manifest["metrics"], run_id
+                )
+
+            # 3. Data Quality Results
+            if "quality_checks" in manifest:
+                dq_data = {
+                    "run_id": run_id,
+                    "score": manifest["quality_checks"].get("score", 0),
+                    "status": manifest["quality_checks"].get("status", "unknown"),
+                    "details": manifest["quality_checks"],
+                    "timestamp": utc_now(),
+                }
+                client.client.table("analytics_data_quality_results").upsert(
+                    dq_data, on_conflict="run_id"
+                ).execute()
+                results["data_quality"] = True
+
+            # 4. Raw Data (Optional)
+            if df is not None and self.supabase_config.get("publish_raw_data"):
+                table_name = self.supabase_config.get("raw_data_table", "analytics_raw_data")
+                results["raw_data_rows"] = client.insert_raw_data(df, table_name, run_id)
+
+            # 5. Timeseries (Optional)
+            if timeseries:
+                results["timeseries"] = client.upsert_timeseries(timeseries, run_id)
+
+            self._log_event("supabase_publish", "success", results=results)
+        except Exception as e:
+            self._log_event("supabase_publish", "failed", error=str(e))
+            logger.error(f"Supabase publication failed: {e}")
+            results["error"] = str(e)
+
+        return results
 
     def persist(
         self,
@@ -189,6 +261,14 @@ class UnifiedOutput:
         )
         if azure_blobs:
             manifest["azure_blobs"] = azure_blobs
+            write_json(manifest_path, manifest)
+
+        # 4. Supabase Publication
+        supabase_results = self.publish_to_supabase(
+            manifest, master_run_id, df=df, timeseries=timeseries
+        )
+        if supabase_results:
+            manifest["supabase"] = supabase_results
             write_json(manifest_path, manifest)
 
         self._log_event("complete", "success", manifest=str(manifest_path))

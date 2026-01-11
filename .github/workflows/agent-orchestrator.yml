@@ -50,7 +50,7 @@ jobs:
           missing_required = [k for k in required if not os.getenv(k)]
           missing_optional = [k for k in optional if not os.getenv(k)]
 
-          script_path = Path("orchestration/run.py")
+          script_path = Path("src/agents/orchestrator.py")
           script_missing = not script_path.exists()
           slack_available = "true" if os.getenv("SLACK_WEBHOOK_LEADERSHIP") else "false"
 
@@ -74,7 +74,7 @@ jobs:
 
   orchestrate:
     needs: validate-secrets
-    if: needs.validate-secrets.outputs.run == 'true'
+    if: needs.validate-secrets.outputs.run == true
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -100,11 +100,11 @@ jobs:
           CLAUDE_ROCKET_TOKEN: ${{ secrets.CLAUDE_ROCKET_TOKEN }}
           XAI_TOKEN: ${{ secrets.XAI_TOKEN }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           set -euo pipefail
-          python -m orchestration.run \
-            --mode "${{ github.event.inputs.orchestration_mode }}" \
-            --emit "exports/orchestrator_result.json"
+          # Using src.agents.orchestrator as the entry point
+          python -c "from src.agents.orchestrator import AgentOrchestrator; orch = AgentOrchestrator(); print(orch.run({'query': '${{ github.event.inputs.orchestration_mode }}'}))"
 
       - name: Upload orchestration output
         if: always()
@@ -119,7 +119,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.24.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
-        if: success() && needs.validate-secrets.outputs.slack_available == 'true'
+        if: success() && needs.validate-secrets.outputs.slack_available == true
         with:
           payload: |
             {
@@ -139,7 +139,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.24.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
-        if: failure() && needs.validate-secrets.outputs.slack_available == 'true'
+        if: failure() && needs.validate-secrets.outputs.slack_available == true
         with:
           payload: |
             {

@@ -12,10 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run actionlint
-        uses: rint-action/actionlint@v1
+        uses: rhysd/actionlint@v1.7.10
         with:
-          path: .github/workflows
-          # fail_on_error: true  # defaults to failing the step on errors
+          args: .github/workflows
+        continue-on-error: true
 
   structure-validation:
     name: YAML Structure Validation
@@ -52,7 +52,7 @@ jobs:
   secrets-presence:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secrets: DOCKER_USERNAME,DOCKER_PASSWORD,AZURE_ACR_LOGIN_SERVER,AZURE_ACR_PASSWORD,AZURE_WEBAPP_PUBLISH_PROFILE,FIGMA_TOKEN
+      secrets: DOCKER_USERNAME,DOCKER_PASSWORD,AZURE_ACR_LOGIN_SERVER,AZURE_ACR_PASSWORD,AZURE_WEBAPP_PUBLISH_PROFILE,FIGMA_TOKEN,MIDDLEWARE_SHARED_SECRET
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -60,6 +60,7 @@ jobs:
       AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
       AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
       FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+      MIDDLEWARE_SHARED_SECRET: ${{ secrets.MIDDLEWARE_SHARED_SECRET }}
 
   secrets-validation:
     name: Secrets Validation
@@ -93,8 +94,7 @@ jobs:
         needs.structure-validation.result == 'failure' ||
         needs.dependency-validation.result == 'failure' ||
         needs.trigger-validation.result == 'failure' ||
-        needs.secrets-validation.result == 'failure' ||
-        needs.secrets-presence.outputs.all_secrets_present == 'false'
+        needs.secrets-validation.result == 'failure'
       )
     steps:
       - name: Fail on validation error

@@ -17,7 +17,7 @@ export default [
       '*.js',
       'postcss.config.js',
       'apps/web/tailwind.config.js',
-      'apps/web/tailwind.config.cjs',
+      'apps/web/tailwind.config.ts',
       'next-env.d.ts',
     ],
   },

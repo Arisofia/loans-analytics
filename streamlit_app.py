@@ -227,14 +227,22 @@ def generate_kpi_exports(looker_data):
     exports_dir = EXPORTS_DIR
     exports_dir.mkdir(parents=True, exist_ok=True)
 
-    from src.analytics.kpi_calculator_complete import ABACOKPICalculator
+    from src.pipeline.orchestrator import UnifiedPipeline
+    from src.pipeline.types import PipelineConfig
 
-    calc = ABACOKPICalculator(
-        looker_data["loan_data"],
-        looker_data["historic_payment_data"],
-        looker_data["customer_data"],
-    )
-    dashboard = calc.get_complete_kpi_dashboard(cac_usd=350)
+    # Run the unified pipeline on the loan data
+    temp_loan_path = Path("data/raw/temp_dashboard_input.csv")
+    temp_loan_path.parent.mkdir(parents=True, exist_ok=True)
+    looker_data["loan_data"].to_csv(temp_loan_path, index=False)
+
+    pipeline = UnifiedPipeline()
+    pipeline_res = pipeline.execute(temp_loan_path, user="streamlit", action="dashboard-refresh")
+
+    # Build the dashboard object expected by the UI
+    # We'll pull metrics from the latest manifest if available, or from pipeline_res
+    manifest_path = Path(pipeline_res["phases"]["output"]["manifest"])
+    manifest = json.loads(manifest_path.read_text())
+    dashboard = manifest.get("metrics", {})
     dashboard["timestamp"] = datetime.now().isoformat()
 
     try:
@@ -258,6 +266,10 @@ def generate_kpi_exports(looker_data):
 
     output_path = exports_dir / "complete_kpi_dashboard.json"
     output_path.write_text(json.dumps(dashboard, indent=2, default=str), encoding="utf-8")
+
+    # Clean up temp file
+    if temp_loan_path.exists():
+        temp_loan_path.unlink()
 
     return output_path
 

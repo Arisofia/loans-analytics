@@ -1,9 +1,11 @@
-"""Abaco canonical pipeline (v2) package.
+"""Compatibility shim for historical `src.abaco_pipeline` package.
 
-This is a scaffold for the config-driven, auditable pipeline architecture.
-Implementation is intentionally minimal to avoid breaking existing workflows.
+This package provides a minimal `__version__` attribute used by tests and
+legacy imports. It intentionally keeps a tiny surface area to avoid
+reintroducing historical application logic here.
 """
 
 __all__ = ["__version__"]
 
+# Historical package version used in coverage artifacts and tests
 __version__ = "0.1.0"

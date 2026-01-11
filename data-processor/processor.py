@@ -49,7 +49,7 @@ def validate_iban(iban: str) -> bool:
 def run_pipeline(data: Transaction) -> None:
     iban = data['this_account']['account_routing']['address']
     is_valid = validate_iban(iban)
-    print(f"Transaction ${data['amount']} -> IBAN Valid: {is_valid}")
+    print(f"Processed transaction of amount ${data['amount']}")
 
 
 if __name__ == "__main__":

@@ -39,6 +39,5 @@ jobs:
       - name: Summarize CodeRabbit gate
         if: success()
         run: |
-          echo "CodeRabbit gate completed (lint + security aligned" \
-            "to coderabbit.yaml include/exclude paths)." \
+          echo "CodeRabbit gate completed (lint + security aligned to coderabbit.yaml include/exclude paths)." \
             >> $GITHUB_STEP_SUMMARY

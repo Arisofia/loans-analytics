@@ -2,13 +2,5 @@
   "default": true,
   "MD013": false,
   "MD040": false,
-  "MD060": false,
-  "ignores": [
-    "apps/web/.github/TEAM_RUNBOOKS.md",
-    "apps/web/.github/WEEK4_PRODUCTION_DEPLOYMENT.md",
-    "apps/web/.github/WEEKS_COMPLETION_VERIFICATION.md",
-    "apps/web/PRODUCTION_READINESS.md",
-    "figma/README.md",
-    "patches/pr_pin_langchain_core.md"
-  ]
+  "MD060": false
 }

@@ -88,6 +88,8 @@ scripts/test_hubspot_simple.py
 # Python virtual environments
 .venv/
 .venv-1/
+.venv-2/
+.lint-venv/
 
 # Azurite local storage state
 AzuriteConfig
@@ -105,3 +107,5 @@ pytest-report/
 coverage.xml
 
 .azure
+tmp/
+data/archives/cascade/tmp*.csv

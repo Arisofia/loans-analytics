@@ -1,25 +1,25 @@
-"""Manifest model + writer helpers (v2 scaffold)."""
-
+"""Helpers for writing run manifests and other output artifacts."""
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict
 
 
-@dataclass(frozen=True)
+@dataclass
 class RunManifest:
     run_id: str
     created_at: datetime
-    inputs: dict[str, str]
-    outputs: dict[str, str]
+    inputs: Dict[str, Any]
+    outputs: Dict[str, Any]
 
 
-def write_manifest(path: str | Path, manifest: RunManifest) -> Path:
-    p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
+def write_manifest(path: Path, manifest: RunManifest) -> Path:
     payload = asdict(manifest)
+    # Convert datetime to ISO format
     payload["created_at"] = manifest.created_at.isoformat()
-    p.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return p
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path

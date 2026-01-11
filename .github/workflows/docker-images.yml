@@ -25,24 +25,22 @@ jobs:
   validate-secrets:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secrets: DOCKER_USERNAME,DOCKER_PASSWORD,ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD
+      secrets: DOCKER_USERNAME,DOCKER_PASSWORD,AZURE_ACR_LOGIN_SERVER,AZURE_ACR_USERNAME,AZURE_ACR_PASSWORD
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-      ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-      ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+      AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
+      AZURE_ACR_USERNAME: ${{ secrets.AZURE_ACR_USERNAME }}
+      AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
 
   build-and-push:
-    needs: validate-secrets
-    if: needs.validate-secrets.outputs.all_secrets_present == 'true'
     runs-on: ubuntu-latest
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-      ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-      ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+      ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
+      ACR_USERNAME: ${{ secrets.AZURE_ACR_USERNAME }}
+      ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -124,8 +122,6 @@ jobs:
           password: ${{ env.ACR_PASSWORD }}
 
       - name: Tag & push to ACR (optional)
-        env:
-          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
         run: |
           set -euo pipefail
           if [ -z "$ACR_LOGIN_SERVER" ]; then

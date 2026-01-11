@@ -9,6 +9,5 @@
 - [ ] PR merged
 
 Notes:
-
 - If a label does not exist, it will be created with a descriptive color.
 - If you prefer different labels or reviewer handles, update this file before running the setup script.

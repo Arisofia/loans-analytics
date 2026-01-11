@@ -7,7 +7,10 @@ dotenv.config({ path: path.resolve(__dirname, '.env.local') });
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
-  reporter: 'html',
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: process.env.CI ? 'line' : 'html',
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
