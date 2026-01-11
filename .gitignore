@@ -65,3 +65,10 @@ gemini-cli/
 # Other
 failed_workflows.csv
 *.csv
+. venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+logs_extracted/
+supabase/.temp/
+*. egg-info/
