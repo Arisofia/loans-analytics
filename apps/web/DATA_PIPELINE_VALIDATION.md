@@ -1,7 +1,7 @@
 # Data Pipeline Validation Report
 
-**Status**: ⚠️ **PRODUCTION-READY WITH RECOMMENDATIONS**  
-**Last Updated**: 2025-12-14
+- **Status**: ⚠️ **PRODUCTION-READY WITH RECOMMENDATIONS**
+- **Last Updated**: 2025-12-14
 
 ## Executive Summary
 

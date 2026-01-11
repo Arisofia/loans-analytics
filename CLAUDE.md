@@ -90,7 +90,7 @@ try {
 
 ### Pipeline Jobs
 1. **preflight**: Environment checks (Python, pip, packages, repo sanity)
-2. **python**: Tests on 3.11 + 3.14, 85% coverage threshold, cached pip
+2. **python**: Tests on 3.11 + 3.14, 40% coverage threshold (temporary), cached pip
 3. **data-contracts**: KPI formula validation (collection_rate, par_90)
 4. **analytics**: apps/analytics tests, coverage enforcement
 5. **web**: Next.js lint/build/type-check
@@ -227,6 +227,6 @@ target-version = ['py311']
 
 1. **Local development**: Use the quick start commands above, especially `npm run check-all --prefix apps/web`, before committing any change.
 2. **Pre-commit hooks**: Run `pre-commit install` once per clone and trigger `pre-commit run --all-files` after large refactors.
-3. **CI & coverage**: Monitor `.github/workflows/ci-lint-validation.yml` logs and review coverage artifacts to ensure the 85% threshold remains in place.
+3. **CI & coverage**: Monitor `.github/workflows/ci-lint-validation.yml` logs and review coverage artifacts; the current gate is 40% with a target of 85%.
 4. **Documentation & traceability**: Keep `docs/LINTING_STANDARDS.md` and `CLAUDE.md` updated, capture Copilot-assisted fixes in your sprint board, and reference KPI contracts when adjusting analytics logic.
 5. **Iterate with confidence**: Commit, push, watch CI, and iterate on features → tests → coverage → merge while keeping pipelines green.

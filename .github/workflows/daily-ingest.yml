@@ -29,8 +29,7 @@ jobs:
 
       - name: Install Playwright
         run: |
-          pip install playwright
-          playwright install chromium
+          python -m playwright install --with-deps chromium
 
       - name: Run Cascade scraper
         run: python scripts/scrape_cascade.py --loan-tape
