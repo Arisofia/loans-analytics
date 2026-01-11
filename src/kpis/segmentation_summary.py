@@ -1,9 +1,18 @@
+import logging
 from typing import Any, Dict, Tuple
 
 import pandas as pd
 
 from src.kpis.base import KPICalculator, KPIMetadata, create_context
+from src.utils.data_normalization import (COL_APPROVED_AMOUNT,
+                                          COL_CLIENT_SEGMENT, COL_CUSTOMER_ID,
+                                          COL_DAYS_PAST_DUE,
+                                          COL_ORIGINATION_DATE,
+                                          COL_OUTSTANDING_AMOUNT,
+                                          normalize_columns)
 from src.utils.numeric import safe_numeric
+
+logger = logging.getLogger(__name__)
 
 
 class SegmentationSummaryCalculator(KPICalculator):
@@ -29,79 +38,68 @@ class SegmentationSummaryCalculator(KPICalculator):
                 self.METADATA.formula, rows_processed=0, reason="Empty DataFrame"
             )
 
-        # Standardize column names (mapping from user request to common internal names)
-        # User: 'Origination Date', 'Customer ID', 'Client Segment', 'Outstanding Amount', 'Approved Amount'
-        col_map = {
-            "Origination Date": "origination_date",
-            "Customer ID": "customer_id",
-            "Client Segment": "client_segment",
-            "Outstanding Amount": "outstanding_amount",
-            "Approved Amount": "approved_amount",
-            "Payment Date": "payment_date",
-            "Days Past Due": "days_past_due",
-        }
-
-        working_df = df.copy()
-        for old_col, new_col in col_map.items():
-            if old_col in working_df.columns:
-                working_df[new_col] = working_df[old_col]
+        # Standardize column names
+        working_df = normalize_columns(df)
 
         # Ensure datetime for filtering
-        date_col = (
-            "origination_date" if "origination_date" in working_df.columns else "Origination Date"
-        )
-        if date_col in working_df.columns:
-            working_df[date_col] = pd.to_datetime(working_df[date_col], errors="coerce")
+        if COL_ORIGINATION_DATE in working_df.columns:
+            working_df[COL_ORIGINATION_DATE] = pd.to_datetime(
+                working_df[COL_ORIGINATION_DATE], errors="coerce"
+            )
             # Prepare 2025 filtered dataset
-            df_2025 = working_df[working_df[date_col].dt.year == 2025].copy()
+            df_2025 = working_df[working_df[COL_ORIGINATION_DATE].dt.year == 2025].copy()
+            if df_2025.empty:
+                logger.warning("No data found for year 2025 in column %s", COL_ORIGINATION_DATE)
+                # Fallback to all data if 2025 filter yields nothing but date col exists
+                df_2025 = working_df.copy()
         else:
             df_2025 = working_df.copy()
 
         if df_2025.empty:
             return 0.0, create_context(
-                self.METADATA.formula, rows_processed=len(df), reason="No data for 2025"
+                self.METADATA.formula,
+                rows_processed=len(df),
+                reason="DataFrame empty after preprocessing",
             )
 
-        # Required columns check
-        segment_col = "client_segment" if "client_segment" in df_2025.columns else "Client Segment"
-        cust_col = "customer_id" if "customer_id" in df_2025.columns else "Customer ID"
-        outstanding_col = (
-            "outstanding_amount"
-            if "outstanding_amount" in df_2025.columns
-            else "Outstanding Amount"
-        )
-        approved_col = (
-            "approved_amount" if "approved_amount" in df_2025.columns else "Approved Amount"
-        )
+        # Required columns check with defaults
+        if COL_CLIENT_SEGMENT not in df_2025.columns:
+            df_2025[COL_CLIENT_SEGMENT] = "Unsegmented"
 
-        if segment_col not in df_2025.columns:
-            # Default to 'Unsegmented' if missing
-            df_2025[segment_col] = "Unsegmented"
+        if COL_CUSTOMER_ID not in df_2025.columns:
+            df_2025[COL_CUSTOMER_ID] = df_2025.index.astype(str)
+
+        if COL_OUTSTANDING_AMOUNT not in df_2025.columns:
+            df_2025[COL_OUTSTANDING_AMOUNT] = 0.0
+
+        if COL_APPROVED_AMOUNT not in df_2025.columns:
+            df_2025[COL_APPROVED_AMOUNT] = df_2025[COL_OUTSTANDING_AMOUNT]
 
         # KPIs per segment
         summary = (
-            df_2025.groupby(segment_col)
+            df_2025.groupby(COL_CLIENT_SEGMENT)
             .agg(
-                Clients=(cust_col, "nunique"),
-                Portfolio_Value=(outstanding_col, "sum"),
-                Avg_Loan=(approved_col, "mean"),
+                Clients=(COL_CUSTOMER_ID, "nunique"),
+                Portfolio_Value=(COL_OUTSTANDING_AMOUNT, "sum"),
+                Avg_Loan=(COL_APPROVED_AMOUNT, "mean"),
             )
             .reset_index()
         )
 
         # Join with delinquency if present
-        dpd_col = "days_past_due" if "days_past_due" in df_2025.columns else "Days Past Due"
-        if dpd_col in df_2025.columns:
-            delinquent = df_2025[safe_numeric(df_2025[dpd_col]) > 30]
-            delinquency_counts = delinquent.groupby(segment_col).size()
+        if COL_DAYS_PAST_DUE in df_2025.columns:
+            delinquent = df_2025[safe_numeric(df_2025[COL_DAYS_PAST_DUE]) > 30]
+            delinquency_counts = delinquent.groupby(COL_CLIENT_SEGMENT).size()
 
             # Map back to summary
-            total_clients = summary.set_index(segment_col)["Clients"]
+            total_clients = summary.set_index(COL_CLIENT_SEGMENT)["Clients"]
             delinquency_rate = (delinquency_counts / total_clients).fillna(0).round(3) * 100
-            summary["Delinquency_Rate"] = summary[segment_col].map(delinquency_rate).fillna(0)
+            summary["Delinquency_Rate"] = (
+                summary[COL_CLIENT_SEGMENT].map(delinquency_rate).fillna(0)
+            )
 
         # Main metric: Total Clients 2025
-        total_active_clients = float(df_2025[cust_col].nunique())
+        total_active_clients = float(df_2025[COL_CUSTOMER_ID].nunique())
 
         return total_active_clients, create_context(
             self.METADATA.formula,

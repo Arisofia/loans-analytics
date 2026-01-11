@@ -3,7 +3,7 @@ import logging
 
 import pytest
 
-import src.utils.tracing.azure as azure_tracing
+import src.utils.tracing.azure_monitor as azure_tracing
 from src.agents.learning import FeedbackStore
 
 
@@ -63,7 +63,8 @@ def test_trace_analytics_job_wraps_and_logs(monkeypatch, caplog):
     class FakeSpan:
         def __init__(self, name):
             self.name = name
-            self.attrs = []
+            self.attrs = {}
+            self.status = None
 
         def __enter__(self):
             return self
@@ -71,14 +72,17 @@ def test_trace_analytics_job_wraps_and_logs(monkeypatch, caplog):
         def __exit__(self, exc_type, exc, tb):
             return False
 
-        def add_attribute(self, k, v):
-            self.attrs.append((k, v))
+        def set_attribute(self, k, v):
+            self.attrs[k] = v
+
+        def set_status(self, status):
+            self.status = status
 
     class FakeTracer:
         def __init__(self):
             self.spans = []
 
-        def span(self, name):
+        def start_as_current_span(self, name):
             s = FakeSpan(name)
             self.spans.append(s)
             return s
@@ -97,7 +101,9 @@ def test_trace_analytics_job_wraps_and_logs(monkeypatch, caplog):
 
     assert len(fake.spans) == 1
     assert fake.spans[0].name == "jobY.r2"
+    assert fake.spans[0].attrs["client_id"] == "client2"
+    assert fake.spans[0].attrs["job_name"] == "jobY"
     assert any(
-        "TRACE] Starting job: jobY" in r.message or "TRACE-MOCK" in r.message
+        "[TRACE] Starting job: jobY" in r.message
         for r in caplog.records
     )

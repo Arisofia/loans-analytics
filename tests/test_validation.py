@@ -206,3 +206,25 @@ def test_data_quality_report_type_error():
 
     assert report.score < 100.0
     assert any("non-numeric" in err for err in report.type_errors)
+
+
+def test_iban_validation():
+    from src.utils.validation import validate_iban
+    # Spanish IBAN (regex fallback)
+    assert validate_iban("ES1234567890123456789012") is True
+    # Valid-looking but shorter
+    assert validate_iban("ES12345") is False
+    # Valid length but clearly invalid characters
+    assert validate_iban("ES!!!!567890123456789012") is False
+    # Real-looking German IBAN (python-stdnum should handle if installed)
+    # DE89 3704 0044 0532 0130 00 -> DE89370400440532013000
+    # Note: stdnum.iban.is_valid might fail if check digits are invalid, 
+    # but we want to test our wrapper.
+    assert validate_iban("invalid") is False
+    assert validate_iban("") is False
+    assert validate_iban(None) is False
+
+def test_iban_validation_cleaning():
+    from src.utils.validation import validate_iban
+    # Should handle spaces and lowercase
+    assert validate_iban("es 1234567890123456789012") is True

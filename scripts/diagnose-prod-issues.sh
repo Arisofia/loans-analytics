@@ -18,7 +18,8 @@ echo "========================================"
 
 echo -e "\n1️⃣ Checking Azure App Service status..."
 if command -v az &> /dev/null; then
-    if APP_STATUS=$(az webapp show --name "$WEBAPP_NAME" --resource-group "$RESOURCE_GROUP" --query "state" -o tsv 2>/dev/null); then
+    APP_STATUS=$(az webapp show --name $WEBAPP_NAME --resource-group $RESOURCE_GROUP --query "state" -o tsv 2>/dev/null)
+    if [ $? -eq 0 ]; then
         if [ "$APP_STATUS" = "Running" ]; then
             echo -e "${GREEN}✅ App Service Status: $APP_STATUS${NC}"
         else
@@ -44,21 +45,21 @@ else
 fi
 
 echo -e "\n3️⃣ Checking dashboard requirements..."
-if [ -f "dashboard/requirements.txt" ]; then
-    echo -e "${GREEN}✅ Found dashboard/requirements.txt${NC}"
+if [ -f "requirements.txt" ]; then
+    echo -e "${GREEN}✅ Found requirements.txt${NC}"
     echo "   Dependencies:"
-    head -10 dashboard/requirements.txt | sed 's/^/   - /'
+    head -10 requirements.txt | sed 's/^/   - /'
 else
-    echo -e "${RED}❌ Missing dashboard/requirements.txt${NC}"
+    echo -e "${RED}❌ Missing requirements.txt${NC}"
 fi
 
 echo -e "\n4️⃣ Checking for database connection configuration..."
-if [ -f "dashboard/app.py" ]; then
-    if grep -q "DATABASE\|database\|DB_\|sqlalchemy\|psycopg" dashboard/app.py; then
-        echo -e "${GREEN}✅ Database references found in dashboard/app.py${NC}"
-        grep -i "DATABASE\|DB_\|sqlalchemy\|psycopg" dashboard/app.py | head -5 | sed 's/^/   /'
+if [ -f "streamlit_app.py" ]; then
+    if grep -q "DATABASE\|database\|DB_\|sqlalchemy\|psycopg" streamlit_app.py; then
+        echo -e "${GREEN}✅ Database references found in streamlit_app.py${NC}"
+        grep -i "DATABASE\|DB_\|sqlalchemy\|psycopg" streamlit_app.py | head -5 | sed 's/^/   /'
     else
-        echo -e "${YELLOW}⚠️ No obvious database references in dashboard/app.py${NC}"
+        echo -e "${YELLOW}⚠️ No obvious database references in streamlit_app.py${NC}"
     fi
 fi
 
@@ -87,7 +88,7 @@ if [ -f "src/pipeline/orchestrator.py" ] || [ -f "src/abaco_pipeline/main.py" ];
     for file in src/pipeline/*.py src/abaco_pipeline/*.py; do
         if [ -f "$file" ]; then
             if grep -q "HUBSPOT\|OPENAI\|API_KEY\|api_key" "$file" 2>/dev/null; then
-                echo -e "   ${GREEN}✅ $(basename "$file")${NC} - API key references found"
+                echo -e "   ${GREEN}✅ $(basename $file)${NC} - API key references found"
             fi
         fi
     done
@@ -97,7 +98,7 @@ echo -e "\n7️⃣ Checking Python dependencies for pipelines..."
 if [ -f "requirements.txt" ]; then
     DEPS=("polars" "pandas" "requests" "azure" "hubspot" "sqlalchemy")
     for dep in "${DEPS[@]}"; do
-        if grep -q "^${dep}\|^${dep}[><=\-]" requirements.txt 2>/dev/null; then
+        if grep -q "^$dep\|^$dep[><=\-]" requirements.txt 2>/dev/null; then
             echo -e "${GREEN}✅ $dep${NC} - installed"
         fi
     done
@@ -108,10 +109,10 @@ echo "========================================"
 
 echo -e "\n8️⃣ Searching for database connection strings..."
 echo "   Checking environment variable patterns..."
-find . \( -name "*.py" -o -name "*.yml" -o -name "*.yaml" -o -name "*.sh" \) -print0 2>/dev/null | xargs -0 grep -l "DATABASE_URL\|DB_HOST\|DB_NAME\|SQLALCHEMY" 2>/dev/null | head -10 | sed 's/^/   Found: /'
+find . -name "*.py" -o -name "*.yml" -o -name "*.yaml" -o -name "*.sh" 2>/dev/null | xargs grep -l "DATABASE_URL\|DB_HOST\|DB_NAME\|SQLALCHEMY" 2>/dev/null | head -10 | sed 's/^/   Found: /'
 
 echo -e "\n9️⃣ Checking for data storage references..."
-find . -name "*.py" -path "*/pipeline/*" -print0 2>/dev/null | xargs -0 grep -l "\.csv\|\.parquet\|blob\|storage\|adls" 2>/dev/null | head -5 | sed 's/^/   /'
+find . -name "*.py" -path "*/pipeline/*" 2>/dev/null | xargs grep -l "\.csv\|\.parquet\|blob\|storage\|adls" 2>/dev/null | head -5 | sed 's/^/   /'
 
 echo -e "\n\n${YELLOW}NEXT ACTIONS${NC}"
 echo "========================================"

@@ -177,30 +177,30 @@ make vscode-envfile-info
 
 ## 📋 Complete Makefile Target Reference
 
-| Command | Purpose | Time |
-|---|---:|---:|
-| make install | Install production dependencies | ~2m |
-| make install-dev | Install all dependencies (dev + prod) | ~3m |
-| make venv | Create clean virtual environment | ~30s |
-| make venv-install | Create venv + install all deps | ~3m |
-| make test | Run all unit tests | ~30s |
-| make test-cov | Tests + coverage report (HTML) | ~1m |
-| make lint | Pylint + Flake8 + Ruff | ~15s |
-| make format | Black + isort auto-format | ~10s |
-| make type-check | mypy type validation | ~10s |
-| make audit-code | Lint + type-check + coverage | ~1m |
-| make quality | Format + lint + type + test (FULL) | ~2m |
-| make run-pipeline | Execute data pipeline | ~5-10m |
-| make run-dashboard | Start Streamlit dashboard | ~5s |
-| make analytics-run | Run complete analytics | ~15m |
-| make analytics-sync | Validate KPI health | ~2m |
-| make test-kpi-parity | KPI v1 vs v2 validation | ~3m |
-| make audit-dry-run | Preview audit (no write) | ~30s |
-| make audit-write | Write audit to Supabase | ~2m |
-| make check-maturity | Repo maturity scan | ~1m |
-| make clean | Clean cache/temp files | ~5s |
-| make env-clean | Remove virtualenvs | ~5s |
-| make help | Show all available targets | ~1s |
+| Command              |                               Purpose |   Time |
+| -------------------- | ------------------------------------: | -----: |
+| make install         |       Install production dependencies |    ~2m |
+| make install-dev     | Install all dependencies (dev + prod) |    ~3m |
+| make venv            |      Create clean virtual environment |   ~30s |
+| make venv-install    |        Create venv + install all deps |    ~3m |
+| make test            |                    Run all unit tests |   ~30s |
+| make test-cov        |        Tests + coverage report (HTML) |    ~1m |
+| make lint            |                Pylint + Flake8 + Ruff |   ~15s |
+| make format          |             Black + isort auto-format |   ~10s |
+| make type-check      |                  mypy type validation |   ~10s |
+| make audit-code      |          Lint + type-check + coverage |    ~1m |
+| make quality         |    Format + lint + type + test (FULL) |    ~2m |
+| make run-pipeline    |                 Execute data pipeline | ~5-10m |
+| make run-dashboard   |             Start Streamlit dashboard |    ~5s |
+| make analytics-run   |                Run complete analytics |   ~15m |
+| make analytics-sync  |                   Validate KPI health |    ~2m |
+| make test-kpi-parity |               KPI v1 vs v2 validation |    ~3m |
+| make audit-dry-run   |              Preview audit (no write) |   ~30s |
+| make audit-write     |               Write audit to Supabase |    ~2m |
+| make check-maturity  |                    Repo maturity scan |    ~1m |
+| make clean           |                Clean cache/temp files |    ~5s |
+| make env-clean       |                    Remove virtualenvs |    ~5s |
+| make help            |            Show all available targets |    ~1s |
 
 ## 🎬 Recommended Development Workflows
 
@@ -418,16 +418,16 @@ python3 -m sys
 
 ## 📚 Additional Resources
 
-| Resource | Location |
-|---|---|
-| Architecture | docs/ARCHITECTURE.md |
+| Resource              | Location                      |
+| --------------------- | ----------------------------- |
+| Architecture          | docs/ARCHITECTURE.md          |
 | Engineering Standards | docs/ENGINEERING_STANDARDS.md |
-| Operations Runbook | docs/OPERATIONS.md |
-| Migration Guide | docs/MIGRATION.md |
-| API Documentation | docs/API.md |
-| KPI Catalog | docs/KPI_CATALOG.md |
-| Data Dictionary | docs/DATA_DICTIONARY.md |
-| Tracing Guide | docs/TRACING.md |
+| Operations Runbook    | docs/OPERATIONS.md            |
+| Migration Guide       | docs/MIGRATION.md             |
+| API Documentation     | docs/API.md                   |
+| KPI Catalog           | docs/KPI_CATALOG.md           |
+| Data Dictionary       | docs/DATA_DICTIONARY.md       |
+| Tracing Guide         | docs/TRACING.md               |
 
 ## ⚡ Quick Command Cheatsheet
 
@@ -448,5 +448,5 @@ make analytics-sync && make analytics-run
 git add . && git commit -m "feat: message" && git push
 
 # Deploy
-make audit-write  # Write audit trail before deploy 
+make audit-write  # Write audit trail before deploy
 ```

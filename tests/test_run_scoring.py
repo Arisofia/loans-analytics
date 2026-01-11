@@ -239,7 +239,7 @@ def test_main_blob_export_requires_credentials(mock_load, mock_engine_class, tmp
 
 
 @patch("src.analytics.run_scoring.LoanAnalyticsEngine")
-@patch("src.analytics.run_scoring.AzureBlobKPIExporter")
+@patch("src.analytics.run_scoring.AzureStorageClient")
 @patch("src.analytics.run_scoring.load_portfolio")
 def test_main_blob_export_with_connection_string(
     mock_load, mock_exporter_class, mock_engine_class, tmp_path
@@ -287,7 +287,7 @@ def test_main_blob_export_with_connection_string(
     ):
         main()
 
-    mock_exporter.upload_metrics.assert_called_once()
+    mock_exporter.upload_json.assert_called_once()
 
 
 @patch("src.analytics.run_scoring.parse_args")

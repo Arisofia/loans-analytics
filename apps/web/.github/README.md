@@ -71,7 +71,7 @@
 ### Production Deployment
 
 - **File**: `deploy-production.yml`
-- **Trigger**: Git tag (v*.*.*)
+- **Trigger**: Git tag (v*.*.\*)
 - **Duration**: 5-10 minutes total
 - **Validation**: Manual approval gate + health checks
 - **Gates**: All quality checks + staging validation
@@ -95,38 +95,44 @@
 ## 📋 Common Tasks
 
 ### I want to
-###
+
+**Deploy a new feature**
 
 1. Follow QUICK_START.md → "Your Daily Workflow"
 2. Create feature branch
 3. Push code → PR → Code review → Merge
 4. Auto-deploy to staging (24h validation)
 5. Create tag for production (DevOps role)
-### (continued)
+
+**Fix a CI failure**
 
 1. Go to QUICK_START.md → "CI Check Failures"
 2. See specific fix for your error type
 3. Run locally, fix, and push
-### (continued)
+
+**Test in staging**
 
 1. Follow TEAM_RUNBOOKS.md → "QA" section
 2. Use staging URL provided in workflow
 3. Run 24-hour validation checklist
 4. Post results in #dev-alerts
-### (continued)
+
+**Deploy to production**
 
 1. Follow TEAM_RUNBOOKS.md → "DevOps" section
 2. Verify 24-hour staging validation complete
 3. Create version tag
 4. Approve production deployment
 5. Monitor health checks
-### (continued)
+
+**Emergency rollback**
 
 1. Follow TEAM_RUNBOOKS.md → "DevOps / Emergency Rollback"
 2. Workflow dispatch → Enter previous version
 3. Approve rollback
 4. Monitor health checks
-### (continued)
+
+**Report an issue during deployment**
 
 1. Go to DEPLOYMENT_COORDINATION.md
 2. Find appropriate severity level (P1/P2/P3)

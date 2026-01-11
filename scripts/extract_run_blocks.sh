@@ -15,7 +15,7 @@ for f in .github/workflows/*.{yml,yaml}; do
   base=$(basename "$f")
   # Use awk to find 'run:' lines and capture following indented lines
   awk -v outdir="$OUT_DIR" -v base="$base" '
-    /^[[:space:]]*(-[[:space:]]*)?run:\s*(\||$)/ { inside=1; c++; file = outdir "/" base ".run." c ".sh"; next }
+    /^[[:space:]]*-\s*run:\s*(\||$)/ { inside=1; c++; file = outdir "/" base ".run." c ".sh"; next }
     inside {
       # If line is empty, keep it
       if ($0 ~ /^[[:space:]]*$/) { print "" >> file; next }

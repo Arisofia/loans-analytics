@@ -119,7 +119,11 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Cascade Ingest FAILED*\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Run ${{ github.run_id }}>\n*Branch:* `${{ github.ref_name }}`\n*Commit:* `${{ github.sha }}`"
+                    "text": |
+                      *Cascade Ingest FAILED*
+                      *Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Run ${{ github.run_id }}>
+                      *Branch:* `${{ github.ref_name }}`
+                      *Commit:* `${{ github.sha }}`
                   }
                 }
               ]
@@ -139,7 +143,10 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Cascade Ingest SUCCESS*\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Run ${{ github.run_id }}>\n*Branch:* `${{ github.ref_name }}`"
+                    "text": |
+                      *Cascade Ingest SUCCESS*
+                      *Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Run ${{ github.run_id }}>
+                      *Branch:* `${{ github.ref_name }}`
                   }
                 }
               ]

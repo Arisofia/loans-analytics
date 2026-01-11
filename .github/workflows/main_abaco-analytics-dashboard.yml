@@ -99,13 +99,13 @@ jobs:
           fi
 
       - name: Login to Azure
-        if: steps.check_secrets.outputs.has_creds == true
+        if: steps.check_secrets.outputs.has_creds == 'true'
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Configure App Service health check path
-        if: steps.check_secrets.outputs.has_creds == true
+        if: steps.check_secrets.outputs.has_creds == 'true'
         run: |
           az resource update \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
@@ -114,7 +114,7 @@ jobs:
             --set properties.siteConfig.healthCheckPath="${{ env.HEALTH_CHECK_PATH }}"
 
       - name: Deploy to Azure Web App (Azure login)
-        if: steps.check_secrets.outputs.has_creds == true
+        if: steps.check_secrets.outputs.has_creds == 'true'
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.WEBAPP_NAME }}
@@ -122,7 +122,7 @@ jobs:
           startup-command: ${{ env.STARTUP_CMD }}
 
       - name: Deploy to Azure Web App (publish profile)
-        if: steps.check_secrets.outputs.has_creds != 'true' && steps.check_secrets.outputs.has_publish_profile == true
+        if: steps.check_secrets.outputs.has_creds != 'true' && steps.check_secrets.outputs.has_publish_profile == 'true'
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.WEBAPP_NAME }}
@@ -136,7 +136,7 @@ jobs:
           echo "Skipping deployment: AZURE_CREDENTIALS or AZURE_WEBAPP_PUBLISH_PROFILE is required."
 
       - name: Post-deployment health check
-        if: steps.check_secrets.outputs.has_creds == true || steps.check_secrets.outputs.has_publish_profile == true
+        if: steps.check_secrets.outputs.has_creds == 'true' || steps.check_secrets.outputs.has_publish_profile == 'true'
         run: |
           app_url="https://${{ env.WEBAPP_NAME }}.azurewebsites.net${{ env.HEALTH_CHECK_PATH }}"
           echo "Checking health: $app_url"

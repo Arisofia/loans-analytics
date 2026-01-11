@@ -1,120 +1,120 @@
 ✅ CHECKLIST ACTUALIZACIÓN MENSUAL
 
-Mes: ____________ 2025 · Fecha: //2025 · Por: ____________
+Mes: ****\_\_\_\_**** 2025 · Fecha: //2025 · Por: ****\_\_\_\_****
 
-1) PREPARACIÓN
+1. PREPARACIÓN
 
- Base Activa (último día)
+Base Activa (último día)
 
- Desembolsos (mes completo)
+Desembolsos (mes completo)
 
- AUM Total $____M · Clientes ____ · Líneas ___
+AUM Total $\_**\_M · Clientes \_\_** · Líneas \_\_\_
 
- Performing/Late/Default: ___% /___% / ___%
+Performing/Late/Default: **_% /_**% / \_\_\_%
 
- TPV $____M · Operaciones ____
+TPV $\_**\_M · Operaciones \_\_**
 
- Top 10 Clientes · Top 10 Pagadores
+Top 10 Clientes · Top 10 Pagadores
 
-1) SLIDE 1 — PORTADA (deck1.title, ~641)
+1. SLIDE 1 — PORTADA (deck1.title, ~641)
 
- subtitle: "Reporte Ejecutivo ______ 2025"
+subtitle: "Reporte Ejecutivo **\_\_** 2025"
 
- year: "_______ 2025"
+year: "**\_\_\_** 2025"
 
-1) SLIDE 3 — MARKET OPPORTUNITY (~699)
+1. SLIDE 3 — MARKET OPPORTUNITY (~699)
 
- amount: "$____M"
+amount: "$\_\_\_\_M"
 
- label: "AUM Actual (_-)"
+label: "AUM Actual (\_-)"
 
-1) SLIDE 4 — KPIS (~720–740)
+1. SLIDE 4 — KPIS (~720–740)
 
- aumGrowth.metric / subtext
+aumGrowth.metric / subtext
 
- portfolioQuality.metric / subtext
+portfolioQuality.metric / subtext
 
- clientConcentration.metric / subtext
+clientConcentration.metric / subtext
 
- debtorConcentration.metric / subtext
+debtorConcentration.metric / subtext
 
-1) SLIDE 5 — PORTFOLIO DIAGNOSTICS (~745–767)
+1. SLIDE 5 — PORTFOLIO DIAGNOSTICS (~745–767)
 
- subtitle actualizado
+subtitle actualizado
 
- totalAUM / activeClients / creditLines
+totalAUM / activeClients / creditLines
 
- performing / latePayment / default (% y $)
+performing / latePayment / default (% y $)
 
- aprAverage / avgClientAUM / avgLineSize / defaultRate
+aprAverage / avgClientAUM / avgLineSize / defaultRate
 
- footer fecha de corte
+footer fecha de corte
 
-1) SLIDE 6 — RISK CONCENTRATION (~773–820)
+1. SLIDE 6 — RISK CONCENTRATION (~773–820)
 
- subtitle actualizado
+subtitle actualizado
 
- topClients.total + 10 items
+topClients.total + 10 items
 
- topDebtors.total + 10 items
+topDebtors.total + 10 items
 
- footer
+footer
 
-1) SLIDE 13 — MONTHLY GROWTH (~1200)
+1. SLIDE 13 — MONTHLY GROWTH (~1200)
 
- Agregar objeto al FINAL de monthlyData
+Agregar objeto al FINAL de monthlyData
 
-1) SLIDE 28 — PORTFOLIO HISTORICAL (~1967)
+1. SLIDE 28 — PORTFOLIO HISTORICAL (~1967)
 
- Agregar objeto al FINAL de historicalData
+Agregar objeto al FINAL de historicalData
 
-1) SLIDE 29 — AUM LIVE PORTFOLIO (~2012)
+1. SLIDE 29 — AUM LIVE PORTFOLIO (~2012)
 
- date · totalAUM · activeClients · avgClientAUM
+date · totalAUM · activeClients · avgClientAUM
 
-1) SLIDE 30 — AVG OPERATION AMOUNT (~2030)
+1. SLIDE 30 — AVG OPERATION AMOUNT (~2030)
 
- Agregar objeto al FINAL de monthlyAvgData
+Agregar objeto al FINAL de monthlyAvgData
 
-1) SLIDE 31 — MONTHLY OPERATIONS METRICS (~2052)
+1. SLIDE 31 — MONTHLY OPERATIONS METRICS (~2052)
 
- Agregar objeto al FINAL de metricsData
+Agregar objeto al FINAL de metricsData
 
-1) VERIFICACIONES MATEMÁTICAS
+1. VERIFICACIONES MATEMÁTICAS
 
- Performing% + Late% + Default% = 100%
+Performing% + Late% + Default% = 100%
 
- Portfolio Quality% = 100% - Default%
+Portfolio Quality% = 100% - Default%
 
- avgClientAUM = AUM / Clientes
+avgClientAUM = AUM / Clientes
 
- avgLineSize = AUM / Líneas
+avgLineSize = AUM / Líneas
 
- avgTicket = TPV / Operaciones
+avgTicket = TPV / Operaciones
 
- Top 10 clientes y pagadores ≈ totales
+Top 10 clientes y pagadores ≈ totales
 
-1) CONSISTENCIA
+1. CONSISTENCIA
 
- AUM igual en Slides 3, 5, 29
+AUM igual en Slides 3, 5, 29
 
- Default% igual en Slides 4 y 5
+Default% igual en Slides 4 y 5
 
- Clientes igual en Slides 5, 28, 29
+Clientes igual en Slides 5, 28, 29
 
- TPV igual en Slides 28, 30, 31
+TPV igual en Slides 28, 30, 31
 
- Todas las fechas con el mismo mes
+Todas las fechas con el mismo mes
 
-1) FORMATO
+1. FORMATO
 
- Montos $X.XXM o $XXXk
+Montos $X.XXM o $XXXk
 
- Porcentajes X.X%
+Porcentajes X.X%
 
- Fechas "Mes YYYY" o "DD de Mes YYYY"
+Fechas "Mes YYYY" o "DD de Mes YYYY"
 
- Enteros sin separadores
+Enteros sin separadores
 
-Aprobación: ____________________ · Fecha: //2025
-Notas: ________________________________________________
+Aprobación: ********\_\_\_\_******** · Fecha: //2025
+Notas: **********************\_\_\_\_**********************

@@ -22,7 +22,6 @@ jobs:
 
   validate-storage:
     uses: ./.github/workflows/reusable-secret-check.yml
-
     with:
       secret_names: "AZURE_STORAGE_ACCOUNT_NAME,AZURE_STORAGE_CONNECTION_STRING"
     secrets: inherit
@@ -48,8 +47,9 @@ jobs:
       - name: Set up Azure CLI
         uses: azure/cli@v2
         with:
-          azcliversion: '2.49.0'
-          inlineScript: az --version
+          azcliversion: "2.49.0"
+          inlineScript: |
+            az --version
 
       - name: Azure login (service principal)
         if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}
@@ -62,19 +62,20 @@ jobs:
         run: |
           az account show --output json > diagnostics/az_account.json || echo '{}' > diagnostics/az_account.json
 
-      - name: ACR repositories (if available)
-        if: ${{ needs.validate-acr.outputs.all_secrets_present == 'true' && needs.validate-azure.outputs.all_secrets_present == 'true' }}
-        env:
-          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-        run: |
-          registry=$(echo "$ACR_LOGIN_SERVER" | cut -d'.' -f1)
-          az acr repository list --name "$registry" --output json > diagnostics/acr_repos.json || echo '[]' > diagnostics/acr_repos.json
+      # - name: ACR repositories (if available)
+      #   if: ${{ needs.validate-acr.outputs.all_secrets_present == 'true' && needs.validate-azure.outputs.all_secrets_present == 'true' }}
+      #   env:
+      #     ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+      #   run: |
+      #     registry=$(echo "$ACR_LOGIN_SERVER" | cut -d'.' -f1)
+      #     az acr repository list --name "$registry" --output json > diagnostics/acr_repos.json || echo '[]' > diagnostics/acr_repos.json
 
       - name: Storage containers (if available)
         if: ${{ needs.validate-storage.outputs.all_secrets_present == 'true' }}
         run: |
           echo "Listing containers using AZURE_STORAGE_CONNECTION_STRING"
-          az storage container list --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --output json > diagnostics/storage_containers.json || echo '[]' > diagnostics/storage_containers.json
+          az storage container list --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+            --output json > diagnostics/storage_containers.json || echo '[]' > diagnostics/storage_containers.json
 
       - name: SWA token check
         if: ${{ needs.validate-swa.outputs.all_secrets_present == 'true' }}

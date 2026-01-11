@@ -34,16 +34,24 @@ def _find_repo_root(start: Optional[Union[Path, Callable[[], Path]]] = None) -> 
     p = start_path
 
     for _ in range(12):
-        if (p / "pyproject.toml").exists() or (p / ".git").exists() or (p / "README.md").exists():
+        if any((p / marker).exists() for marker in ["pyproject.toml", ".git", "README.md"]):
             return p
         parent = p.parent
         if parent == p:
             break
         p = parent
-    # Fallback to previous heuristic (legacy behavior)
-    # Converting .parents to a tuple avoids certain type-checker issues where
-    # `.parents` can be treated as a non-subscriptable callable/type.
-    return tuple(Path(__file__).resolve().parents)[3]
+    
+    # Fallback: find the furthest parent that contains 'abaco-loans-analytics' in its name
+    # or just return the current file's parent's parent's parent (previous heuristic)
+    try:
+        curr = Path(__file__).resolve()
+        for parent in curr.parents:
+            if parent.name == "abaco-loans-analytics":
+                return parent
+    except Exception:
+        pass
+
+    return Path(__file__).resolve().parents[3]
 
 
 # Ensure repository root is on sys.path for local/script runs (idempotent)
@@ -157,16 +165,12 @@ async def trigger_pipeline(
     # Validate input_file to avoid path traversal and ensure files are under data/archives
     allowed_data_dir = (repo_root / "data" / "archives").resolve()
 
-    def _validate_input_file(path_str: str) -> Path:
-        try:
-            return _sanitize_and_resolve(path_str, allowed_data_dir)
-        except ValueError as exc:
-            raise HTTPException(
-                status_code=400, detail="Invalid input file; must be under data/archives/"
-            ) from exc
-
-    # perform validation; will raise HTTPException on invalid input
-    validated_input_path = _validate_input_file(input_file)
+    try:
+        validated_input_path = _sanitize_and_resolve(input_file, allowed_data_dir)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400, detail=f"Invalid input file: {str(exc)}"
+        ) from exc
 
     mode = os.getenv("PIPELINE_EXECUTION_MODE", "subprocess")
 

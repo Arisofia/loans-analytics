@@ -1,5 +1,3 @@
-# Update Playwright workflow fixer
-
 Update Playwright workflow fixer
 
 Usage examples:

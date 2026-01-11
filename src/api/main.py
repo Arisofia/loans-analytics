@@ -1,15 +1,14 @@
 import logging
-import os
 from pathlib import Path
 from typing import Any
 
 try:
-    from fastapi import FastAPI, HTTPException, Header
+    from fastapi import FastAPI, HTTPException
 
     app: Any = FastAPI(title="Abaco Analytics API")
 except ImportError:
     # Lightweight fallback for environments without FastAPI
-    class HTTPException(Exception):  # type: ignore
+    class HTTPException(Exception):  # type: ignore[no-redef]
         def __init__(self, status_code: int, detail: str):
             self.status_code = status_code
             self.detail = detail
@@ -52,19 +51,8 @@ if app:
         return {"status": "ok"}
 
     @app.get("/data/{file_path:path}")
-    def get_data(
-        file_path: str,
-        x_internal_shared_secret: str = Header(None, alias="x-internal-shared-secret"),
-        x_middleware_subrequest: str = Header(None, alias="x-middleware-subrequest")
-    ):
+    def get_data(file_path: str):
         """Return file metadata and path for a sanitized path under ALLOWED_DATA_DIR."""
-        # Optional: enforce shared secret if configured
-        shared_secret = os.environ.get("MIDDLEWARE_SHARED_SECRET")
-        if shared_secret and x_middleware_subrequest == "true":
-            if x_internal_shared_secret != shared_secret:
-                logger.warning("Blocked middleware subrequest spoofing attempt")
-                raise HTTPException(status_code=403, detail="Forbidden")
-
         try:
             resolved = _sanitize_and_resolve(file_path, ALLOWED_DATA_DIR)
         except ValueError as exc:
@@ -74,9 +62,12 @@ if app:
         if not resolved.exists() or not resolved.is_file():
             raise HTTPException(status_code=404, detail="file not found")
 
+        # Expose a normalized path relative to the allowed data directory
+        safe_rel_path = resolved.relative_to(ALLOWED_DATA_DIR)
+
         return {
             "status": "ok",
-            "path": str(resolved),
+            "path": str(safe_rel_path),
             "size": resolved.stat().st_size,
             "modified": resolved.stat().st_mtime,
         }

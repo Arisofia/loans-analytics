@@ -29,6 +29,7 @@ from src.kpis.recurrence import \
     calculate_recurrence as calculate_recurrence_logic
 from src.kpis.weighted_apr import \
     calculate_weighted_apr as calculate_weighted_apr_logic
+from src.utils.data_normalization import normalize_columns
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +67,9 @@ class KPIEngineV2:
         action: str = "kpi",
         run_id: Optional[str] = None,
         custom_kpis: Optional[Dict[str, Any]] = None,
+        normalize: bool = True,
     ):
-        self.df = df
+        self.df = normalize_columns(df) if normalize else df
         self.actor = actor
         self.action = action
         self.run_id = run_id or f"kpi_{datetime.now().strftime('%Y%m%d_%H%M%S')}"

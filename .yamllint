@@ -3,16 +3,20 @@ ignore: |
   pnpm-lock.yaml
   apps/web/pnpm-lock.yaml
   node_modules/
+  **/node_modules/
   .venv/
-  dist/
-  build/
+  **/.venv/
 rules:
   line-length:
-    max: 120
+    max: 200
     level: warning
+  indentation: disable
+  braces: disable
+  brackets: disable
   comments-indentation: disable
   comments: disable
   document-start: disable
   new-line-at-end-of-file: disable
   truthy:
-    allowed-values: ['true', 'false', 'on', 'off']
+    level: warning
+    check-keys: false

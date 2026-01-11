@@ -4,7 +4,7 @@
 
 This change constrains `langchain-core` to a range known to be compatible with our usage and downstream consumers:
 
-  langchain-core>=0.3.34,<0.4.0
+langchain-core>=0.3.34,<0.4.0
 
 ## Why
 

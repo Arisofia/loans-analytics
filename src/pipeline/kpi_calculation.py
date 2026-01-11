@@ -60,13 +60,15 @@ class UnifiedCalculationV2:
     def _compute_metric(
         self, df: pd.DataFrame, metric_cfg: Dict[str, Any], engine: KPIEngineV2
     ) -> Dict[str, Any]:
-        name = str(metric_cfg.get("name", "unknown"))
+        name = metric_cfg.get("name")
         # Overlay with external definitions if available
         ext_def = self.kpi_definitions.get("kpis", {}).get(name, {})
 
         func_path = metric_cfg.get("function") or ext_def.get("function")
         if not func_path:
             # Use engine for direct calculation if function path is missing
+            if not name or not isinstance(name, str):
+                raise ValueError(f"Invalid or missing metric name in config: {name}")
             try:
                 val = engine.get_metric(name)
                 context = {"source": "KPIEngineV2"}

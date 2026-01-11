@@ -13,7 +13,8 @@ To begin the 3-week implementation, follow these steps in order:
 ### Week 1: Setup (2-4 hours)
 
 📖 **Guide**: `.github/COMPLETE_IMPLEMENTATION_GUIDE.md` - **WEEK 1** section
-###
+
+**Key Tasks:**
 
 1. Gather 7 GitHub secrets from Supabase, Azure, Sentry
 2. Run `.github/setup-secrets.sh` to create secrets
@@ -26,7 +27,8 @@ To begin the 3-week implementation, follow these steps in order:
 ### Week 2: Dry-Runs (4-6 hours)
 
 📖 **Guide**: `.github/COMPLETE_IMPLEMENTATION_GUIDE.md` - **WEEK 2** section
-### (continued)
+
+**Key Tasks:**
 
 1. Developer creates feature branch → PR → merge (tests CI pipeline)
 2. QA validates staging deployment (24-hour validation window)
@@ -38,7 +40,8 @@ To begin the 3-week implementation, follow these steps in order:
 ### Week 3: Production Readiness (2-4 hours)
 
 📖 **Guide**: `.github/COMPLETE_IMPLEMENTATION_GUIDE.md` - **WEEK 3** section
-### (continued)
+
+**Key Tasks:**
 
 1. Final configuration review (secrets, environments, workflows)
 2. Documentation review and team confirmation
@@ -95,18 +98,18 @@ To begin the 3-week implementation, follow these steps in order:
 **Participants**: DevOps, Infrastructure, Tech Lead
 **Deliverables**: 7 secrets, 3 environments, 2 config files, team onboarded
 
-| Step | Task | Duration | Checklist |
-|------|------|----------|-----------|
-| 1 | Prerequisites verification | 10 min | GitHub CLI, auth, git repo |
-| 2 | Gather 7 secrets | 20 min | Supabase URL/key (2), Azure tokens (2), Sentry DSN (1) |
-| 3 | Run setup script | 30 min | `.github/setup-secrets.sh` creates secrets |
-| 4 | Verify secrets | 10 min | All 7 visible in GitHub UI or CLI |
-| 5 | Create GitHub environments | 30 min | staging, production, production-rollback |
-| 6 | Verify config files | 10 min | staging.yml, production.yml exist |
-| 7 | Verify workflows | 10 min | All 5 .yml files in .github/workflows/ |
-| 8 | Team onboarding | 30 min | Share docs with each role |
-| 9 | Final verification | 15 min | Run all verification checks |
-| 10 | Sign-off | - | Get approval from team |
+| Step | Task                       | Duration | Checklist                                              |
+| ---- | -------------------------- | -------- | ------------------------------------------------------ |
+| 1    | Prerequisites verification | 10 min   | GitHub CLI, auth, git repo                             |
+| 2    | Gather 7 secrets           | 20 min   | Supabase URL/key (2), Azure tokens (2), Sentry DSN (1) |
+| 3    | Run setup script           | 30 min   | `.github/setup-secrets.sh` creates secrets             |
+| 4    | Verify secrets             | 10 min   | All 7 visible in GitHub UI or CLI                      |
+| 5    | Create GitHub environments | 30 min   | staging, production, production-rollback               |
+| 6    | Verify config files        | 10 min   | staging.yml, production.yml exist                      |
+| 7    | Verify workflows           | 10 min   | All 5 .yml files in .github/workflows/                 |
+| 8    | Team onboarding            | 30 min   | Share docs with each role                              |
+| 9    | Final verification         | 15 min   | Run all verification checks                            |
+| 10   | Sign-off                   | -        | Get approval from team                                 |
 
 **Result**: System ready for dry-runs
 
@@ -117,29 +120,29 @@ To begin the 3-week implementation, follow these steps in order:
 **Participants**: Developers, QA, DevOps
 **Deliverables**: All workflows tested, team confident in procedures
 
-| Phase | Task | Duration | Checklist |
-|-------|------|----------|-----------|
-| 2.1 | Developer practice | 1.5 hrs | Feature branch → PR → CI → merge → staging deploy |
-| 2.2 | QA validation | 1.5 hrs | Staging validation checklist, Slack post |
-| 2.3 | Production practice | 2 hrs | Test tag → CI → approval → deploy → health checks |
-| 2.4 | Rollback practice | 1 hr | Trigger rollback → approval → verify |
+| Phase | Task                | Duration | Checklist                                         |
+| ----- | ------------------- | -------- | ------------------------------------------------- |
+| 2.1   | Developer practice  | 1.5 hrs  | Feature branch → PR → CI → merge → staging deploy |
+| 2.2   | QA validation       | 1.5 hrs  | Staging validation checklist, Slack post          |
+| 2.3   | Production practice | 2 hrs    | Test tag → CI → approval → deploy → health checks |
+| 2.4   | Rollback practice   | 1 hr     | Trigger rollback → approval → verify              |
 
 **Result**: All workflows confirmed working, team practiced procedures
 
 ---
 
-### Week 3: Production Readiness (2-4 hours) (continued)
+### Week 3: Production Readiness (2-4 hours)
 
 **Participants**: All teams
 **Deliverables**: Final verification, team ready, Slack ready
 
-| Step | Task | Duration | Checklist |
-|------|------|----------|-----------|
-| 3.1 | Configuration review | 1 hr | Secrets, environments, workflows verified |
-| 3.2 | Documentation review | 45 min | All docs reviewed, updated, shared |
-| 3.3 | Team preparation | 45 min | Team reads docs, Q&A session, questions resolved |
-| 3.4 | Slack setup | 30 min | 4 channels created, docs pinned |
-| 3.5 | Pre-production checklist | 30 min | All 35+ items verified |
+| Step | Task                     | Duration | Checklist                                        |
+| ---- | ------------------------ | -------- | ------------------------------------------------ |
+| 3.1  | Configuration review     | 1 hr     | Secrets, environments, workflows verified        |
+| 3.2  | Documentation review     | 45 min   | All docs reviewed, updated, shared               |
+| 3.3  | Team preparation         | 45 min   | Team reads docs, Q&A session, questions resolved |
+| 3.4  | Slack setup              | 30 min   | 4 channels created, docs pinned                  |
+| 3.5  | Pre-production checklist | 30 min   | All 35+ items verified                           |
 
 **Result**: System and team ready for production use
 
@@ -168,10 +171,10 @@ Execute weeks as different teams become available.
 ## Step-by-Step Execution (Week 1 Example)
 
 Here's exactly how to execute Week 1:
-### (continued)
+
+**Day 1: Secrets & Setup (2 hours)**
 
 ```bash
-
 # Step 1: Navigate to repo
 cd /Users/jenineferderas/Documents/abaco-loans-analytics/apps/web
 
@@ -181,50 +184,38 @@ gh auth status
 git rev-parse --git-dir
 
 # Step 3: Gather secrets (20 min)
-
 # [Collect 7 secrets from Supabase, Azure, Sentry]
 
 # Step 4: Run setup script (30 min)
 chmod +x .github/setup-secrets.sh
 .github/setup-secrets.sh
-
 # [Follow prompts, enter each of 7 secrets]
 
 # Step 5: Verify secrets were created (10 min)
 gh secret list -R owner/repo
-
 # Should show 7 secrets
 
 # Step 6: Check configuration files (5 min)
 ls -la config/environments/
-
 # Should show staging.yml, production.yml
 ```
 
-### (continued)
+**Day 2: GitHub Environments & Team Onboarding (1.5-2 hours)**
 
 ```bash
-
 # Step 1: Create GitHub environments
-
 # [Go to GitHub web UI → Settings → Environments]
-
 # [Create: staging, production (v* rule), production-rollback]
 
 # Step 2: Team onboarding
-
 # [Share README.md with everyone]
-
 # [Share QUICK_START.md with developers]
-
 # [Share TEAM_RUNBOOKS.md with QA and DevOps]
-
 # [Share DEPLOYMENT_COORDINATION.md with all]
 
 # Step 3: Final verification
 git status
 ls -la .github/workflows/*.yml
-
 # Verify all 5 workflows exist
 ```
 
@@ -269,18 +260,17 @@ After completing Week 3, you should be able to:
 ## Common Issues & Solutions
 
 ### Week 1 Issues
-### (continued)
+
+**GitHub CLI not authenticated**
 
 ```bash
 gh auth login
-
 # Follow prompts to authenticate
 ```
 
-### (continued)
+**Secrets not visible after creation**
 
 ```bash
-
 # Wait 30 seconds, then check again
 gh secret list -R owner/repo
 
@@ -288,42 +278,47 @@ gh secret list -R owner/repo
 gh secret set STAGING_SUPABASE_URL -b "value" -R owner/repo
 ```
 
-### (continued)
+**Can't create GitHub environments**
 
 - Verify you have admin access to repository
 - Check: Settings → Environments → New environment
-### (continued)
+
+**Config files don't exist**
 
 ```bash
 mkdir -p config/environments
-
 # Then create files manually with content from SETUP_GUIDE.md
 ```
 
 ### Week 2 Issues
-### (continued)
+
+**CI pipeline not running on PR**
 
 - Check: Repository → Actions → Workflows → ci.yml
 - Verify: Workflow is on main/develop branch
 - Check: Workflow has correct triggers (on: push, pull_request)
-### (continued)
+
+**Staging deployment not auto-running**
 
 - Verify: Merged to develop branch (not main)
 - Check: Workflow file: deploy-staging.yml
 - Wait: 1-2 minutes for GitHub to detect merge
-### (continued)
+
+**Production approval gate not appearing**
 
 - Verify: GitHub environment "production" exists
 - Check: Environment has approval requirement (Settings → Environments → production)
-- Create: v*.*.* tag (must use semantic versioning)
+- Create: v*.*.\* tag (must use semantic versioning)
 
 ### Week 3 Issues
-### (continued)
+
+**Team members don't understand workflow**
 
 - Share: QUICK_START.md for daily workflow
 - Share: TEAM_RUNBOOKS.md for their role
 - Schedule: 30-minute Q&A session in #dev-help
-### (continued)
+
+**Slack channels not created**
 
 - Go to: Slack workspace → Create new channel
 - Create: #dev-alerts, #prod-alerts, #incidents, #dev-help

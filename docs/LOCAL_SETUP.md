@@ -232,6 +232,8 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 LOG_LEVEL=DEBUG
 ```
 
+Tracing export is disabled unless `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
+
 ### 7.3 Restart Dashboard
 
 Stop dashboard (Ctrl+C) and restart:

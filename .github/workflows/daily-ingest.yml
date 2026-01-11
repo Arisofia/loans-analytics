@@ -72,7 +72,11 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Daily Data Ingestion Successful*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                    "text": |
+                      *Daily Data Ingestion Successful*
+                      *Repository:* ${{ github.repository }}
+                      *Branch:* ${{ github.ref_name }}
+                      <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>
                   }
                 }
               ]

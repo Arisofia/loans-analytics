@@ -16,92 +16,28 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Docker & ACR diagnostics
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
-          AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
-          AZURE_ACR_USERNAME: ${{ secrets.AZURE_ACR_USERNAME }}
-          AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
-        run: |
-          set -euo pipefail
-          echo "Docker and ACR diagnostics (secrets not printed)"
-          docker --version || true
-          for var in DOCKER_USERNAME DOCKER_TOKEN DOCKER_PASSWORD ACR_LOGIN_SERVER ACR_USERNAME ACR_PASSWORD AZURE_ACR_LOGIN_SERVER AZURE_ACR_USERNAME AZURE_ACR_PASSWORD; do
-            if [ -n "${!var:-}" ]; then
-              echo "$var: present"
-            else
-              echo "$var: missing"
-            fi
-          done
-          # Prefer ACR_* then AZURE_ACR_*
-          TARGET_ACR_SERVER="${ACR_LOGIN_SERVER:-$AZURE_ACR_LOGIN_SERVER}"
-          TARGET_ACR_USER="${ACR_USERNAME:-$AZURE_ACR_USERNAME}"
-          TARGET_ACR_PASS="${ACR_PASSWORD:-$AZURE_ACR_PASSWORD}"
-
-          if [ -n "$TARGET_ACR_SERVER" ] && [ -n "$TARGET_ACR_PASS" ]; then
-            echo "Attempting login to ACR $TARGET_ACR_SERVER"
-            if printf '%s' "$TARGET_ACR_PASS" | docker login "$TARGET_ACR_SERVER" -u "$TARGET_ACR_USER" --password-stdin >/dev/null 2>&1; then
-              echo "ACR login succeeded"
-              docker logout "$TARGET_ACR_SERVER" || true
-            else
-              echo "ACR login failed"
-            fi
-          else
-            echo "Skipping ACR login (missing creds)"
-          fi
-
       - name: Docker login test
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
-          AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
-          AZURE_ACR_USERNAME: ${{ secrets.AZURE_ACR_USERNAME }}
-          AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
         run: |
           set -euo pipefail
-          echo "Starting login check (secrets not printed)"
-
-          # Prefer ACR_* then AZURE_ACR_*
-          TARGET_ACR_SERVER="${ACR_LOGIN_SERVER:-$AZURE_ACR_LOGIN_SERVER}"
-          TARGET_ACR_USER="${ACR_USERNAME:-$AZURE_ACR_USERNAME}"
-          TARGET_ACR_PASS="${ACR_PASSWORD:-$AZURE_ACR_PASSWORD}"
-
-          # Try ACR first if credentials are present
-          if [ -n "$TARGET_ACR_SERVER" ] && [ -n "$TARGET_ACR_PASS" ]; then
-            echo "Attempting login to ACR ${TARGET_ACR_SERVER}"
-            if printf '%s' "$TARGET_ACR_PASS" | docker login "$TARGET_ACR_SERVER" -u "$TARGET_ACR_USER" --password-stdin >/dev/null 2>&1; then
-              echo "ACR login succeeded"
-              docker logout "$TARGET_ACR_SERVER" || true
-              exit 0
-            else
-              echo "ACR login failed"
-            fi
-          fi
-
-          # Try Docker Hub: token first (if present), then password. Do not print secrets.
+          echo "Starting Docker login check (secret values are not printed)"
+          # Try token first (if present), then password. Do not print secrets.
           attempt_login() {
             local secret="$1"
             if [ -z "${secret:-}" ]; then
               return 1
             fi
             if printf '%s' "$secret" | docker login -u "$DOCKER_USERNAME" --password-stdin >/dev/null 2>&1; then
-              echo "Docker Hub login succeeded"
+              echo "Docker login succeeded"
               docker logout || true
               return 0
             else
               return 1
             fi
           }
-
           if [ -n "${DOCKER_TOKEN:-}" ]; then
             echo "Attempting login with DOCKER_TOKEN"
             if attempt_login "$DOCKER_TOKEN"; then exit 0; fi
@@ -112,6 +48,5 @@ jobs:
             if attempt_login "$DOCKER_PASSWORD"; then exit 0; fi
             echo "Login with DOCKER_PASSWORD failed"
           fi
-
-          echo "All login attempts failed"
+          echo "Docker login failed (token and password attempts unsuccessful)"
           exit 1

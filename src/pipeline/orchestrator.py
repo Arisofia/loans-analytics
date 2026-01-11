@@ -32,7 +32,7 @@ class UnifiedPipeline:
     def __init__(self, config_path: Optional[Path] = None):
         self.config = PipelineConfig(config_path)
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-        self.run_id: Optional[str] = f"pipeline_{timestamp}"
+        self.run_id: str = f"pipeline_{timestamp}"
         # Initialize phase components
         self.ingestor = UnifiedIngestion(self.config.config)
         self.transformer = UnifiedTransformation(self.config.config, run_id=self.run_id)
@@ -135,8 +135,7 @@ class UnifiedPipeline:
 
     def _run_transformation(self, df: Any, user: str) -> Any:
         with tracer.start_as_current_span("pipeline.transformation") as span:
-            if self.run_id:
-                self.transformer.run_id = self.run_id
+            self.transformer.run_id = self.run_id
             result = self.transformer.transform(df, user=user)
             span.set_attribute("transformation.row_count", len(result.df))
             span.set_attribute("transformation.masked_columns", len(result.masked_columns))
@@ -144,9 +143,8 @@ class UnifiedPipeline:
 
     def _run_calculation(self, df: Any, artifacts_dir: Path) -> Any:
         with tracer.start_as_current_span("pipeline.calculation") as span:
-            if self.run_id:
-                self.calculator.run_id = self.run_id
-            baseline_metrics = self._load_previous_metrics(artifacts_dir, self.run_id or "unknown")
+            self.calculator.run_id = self.run_id
+            baseline_metrics = self._load_previous_metrics(artifacts_dir, self.run_id)
             result = self.calculator.calculate(df, baseline_metrics)
             span.set_attribute("calculation.metric_count", len(result.metrics))
             return result
@@ -156,7 +154,7 @@ class UnifiedPipeline:
     ) -> Path:
         with tracer.start_as_current_span("pipeline.compliance"):
             report = build_compliance_report(
-                run_id=self.run_id or "unknown",
+                run_id=self.run_id,
                 access_log=tx_result.access_log,
                 masked_columns=tx_result.masked_columns,
                 mask_stage="transformation",
@@ -181,8 +179,7 @@ class UnifiedPipeline:
         action: str,
     ) -> Any:
         with tracer.start_as_current_span("pipeline.output"):
-            if self.run_id:
-                self.output.run_id = self.run_id
+            self.output.run_id = self.run_id
             output_ctx = PersistContext(
                 quality_checks=tx_result.quality_checks,
                 compliance_report_path=compliance_path,
@@ -199,7 +196,7 @@ class UnifiedPipeline:
                     "context": {"user": user, "action": action},
                 },
                 run_ids={
-                    "pipeline": self.run_id or "unknown",
+                    "pipeline": self.run_id,
                     "ingestion": ingestion_result.run_id,
                     "transformation": tx_result.run_id,
                     "calculation": calc_result.run_id,

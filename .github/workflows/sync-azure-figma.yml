@@ -45,7 +45,10 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add exports/analytics_facts.csv exports/complete_kpi_dashboard.json exports/quarterly_scorecard.csv
-          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(data): automated KPI and facts update [skip ci]" && git push)
+          if ! git diff --quiet || ! git diff --staged --quiet; then
+            git commit -m "chore(data): automated KPI and facts update [skip ci]"
+            git push
+          fi
         # Note: [skip ci] is used to avoid recursive workflow triggers,
         # but deploy-dashboard.yml should still trigger on main pushes unless configured otherwise.
         # Actually, standard push to main from GHA might not trigger other workflows.
@@ -67,6 +70,8 @@ jobs:
 
       - name: Summary
         run: |
-          echo "### 🚀 Analytics Sync Complete" >> $GITHUB_STEP_SUMMARY
-          echo "- **Azure Dashboard**: Files updated and pushed to main" >> $GITHUB_STEP_SUMMARY
-          echo "- **Figma**: Metrics synced to design file" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "### 🚀 Analytics Sync Complete"
+            echo "- **Azure Dashboard**: Files updated and pushed to main"
+            echo "- **Figma**: Metrics synced to design file"
+          } >> "$GITHUB_STEP_SUMMARY"

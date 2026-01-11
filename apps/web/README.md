@@ -5,26 +5,26 @@ This is the web application for the Abaco Loans Analytics project, built with Ne
 ## Getting Started
 
 1. **Install dependencies:**
-    Navigate to this directory (`apps/web`) and run:
+   Navigate to this directory (`apps/web`) and run:
 
-    ```bash
-    npm install
-    ```
+   ```bash
+   npm install
+   ```
 
 2. **Set up environment variables:**
-    Copy the example environment file:
+   Copy the example environment file:
 
-    ```bash
-    cp .env.example .env.local
-    ```
+   ```bash
+   cp .env.example .env.local
+   ```
 
-    Then, fill in the required values in `.env.local`.
+   Then, fill in the required values in `.env.local`.
 
 3. **Run the development server:**
 
-    ```bash
-    npm run dev
-    ```
+   ```bash
+   npm run dev
+   ```
 
 Open <http://localhost:3000> with your browser to see the result.
 

@@ -192,7 +192,7 @@ class TestAnalyticsIntegration:
             ],
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=60,
             env={**os.environ, "OTEL_SDK_DISABLED": "true"}
         )
 

@@ -95,14 +95,14 @@ This document establishes the golden rules for how data is documented, stored, a
 
 **How to identify static data in .md files:**
 
-| Pattern | Example | Verdict | Action |
-|---------|---------|---------|--------|
-| Dollar amount with context | "Current AUM is $7.4M" | 🔴 STATIC | Remove or move to /docs/planning/ + add warning |
-| Customer count | "We have 56 customers" | 🔴 STATIC | Replace with query: "SELECT COUNT(DISTINCT client_id)" |
-| Date-specific metric | "As of December 2025, NPL is 3.8%" | 🔴 STATIC | Move to query or to /archives/ |
-| Target labeled "TARGET" | "TARGET AUM: $16.3M for 2026" | 🟢 OK if in /docs/planning/ | Keep with warning label |
-| Process description | "Sum outstanding_principal from fact_loans" | 🟢 OK | Keep in operational docs |
-| Timestamp of doc update | "Last Updated: 2025-12-26" | 🟢 OK | Keep (meta-information) |
+| Pattern                    | Example                                     | Verdict                     | Action                                                 |
+| -------------------------- | ------------------------------------------- | --------------------------- | ------------------------------------------------------ |
+| Dollar amount with context | "Current AUM is $7.4M"                      | 🔴 STATIC                   | Remove or move to /docs/planning/ + add warning        |
+| Customer count             | "We have 56 customers"                      | 🔴 STATIC                   | Replace with query: "SELECT COUNT(DISTINCT client_id)" |
+| Date-specific metric       | "As of December 2025, NPL is 3.8%"          | 🔴 STATIC                   | Move to query or to /archives/                         |
+| Target labeled "TARGET"    | "TARGET AUM: $16.3M for 2026"               | 🟢 OK if in /docs/planning/ | Keep with warning label                                |
+| Process description        | "Sum outstanding_principal from fact_loans" | 🟢 OK                       | Keep in operational docs                               |
+| Timestamp of doc update    | "Last Updated: 2025-12-26"                  | 🟢 OK                       | Keep (meta-information)                                |
 
 ---
 
@@ -119,6 +119,7 @@ This document contains {planning targets / OKRs / strategic goals} for {year}.
 All dollar amounts, metrics, and targets are planning hypotheses, not current state data.
 
 **For current metrics, query live data sources:**
+
 - AUM: `SELECT SUM(outstanding_principal) FROM fact_loans WHERE status='active'`
 - NPL: `SELECT * FROM kpi_timeseries_daily WHERE metric='npl_180' ORDER BY date DESC LIMIT 1`
 
@@ -178,13 +179,13 @@ fi
 
 ### 8. Roles & Responsibilities
 
-| Role | Responsibility |
-|------|-----------------|
-| **Data Team** | Maintain live data sources; generate exports; keep dashboards fresh |
-| **Product/Engineering** | Update operational docs in `/docs/`; keep ADRs current |
-| **Executive/Strategy** | Maintain planning docs in `/docs/planning/`; review quarterly |
-| **Compliance** | Archive audit reports to `/archives/compliance/` with dates |
-| **DevOps/Infrastructure** | Enforce pre-commit hooks and CI/CD checks |
+| Role                      | Responsibility                                                      |
+| ------------------------- | ------------------------------------------------------------------- |
+| **Data Team**             | Maintain live data sources; generate exports; keep dashboards fresh |
+| **Product/Engineering**   | Update operational docs in `/docs/`; keep ADRs current              |
+| **Executive/Strategy**    | Maintain planning docs in `/docs/planning/`; review quarterly       |
+| **Compliance**            | Archive audit reports to `/archives/compliance/` with dates         |
+| **DevOps/Infrastructure** | Enforce pre-commit hooks and CI/CD checks                           |
 
 ---
 
@@ -206,7 +207,7 @@ fi
 
 #### ✅ Good: Process Documentation
 
-```markdown
+````markdown
 # How to Calculate AUM
 
 To determine current Assets Under Management:
@@ -219,6 +220,7 @@ To determine current Assets Under Management:
    WHERE status = 'active'
      AND created_at <= NOW();
    ```
+````
 
 1. Group by client for portfolio breakdown:
 
@@ -234,7 +236,7 @@ To determine current Assets Under Management:
 
 Last Updated: 2025-12-26
 
-```text
+````text
 
 #### ❌ Bad: Static Data in Operational Docs
 
@@ -243,7 +245,7 @@ Last Updated: 2025-12-26
 
 Our current AUM is $7.4M with 56 active customers.
 Our NPL rate is currently 3.8%.
-```
+````
 
 #### ✅ Good: Strategic Planning Document
 
@@ -252,11 +254,11 @@ Our NPL rate is currently 3.8%.
 
 # 2026 North Star Metrics
 
-| Metric | 2025 Current | 2026 Target |
-|--------|--------------|-------------|
-| AUM    | $7.4M        | $16.3M      |
-| Customers | 56        | 500         |
-| NPL Rate  | 3.8%     | <4.0%      |
+| Metric    | 2025 Current | 2026 Target |
+| --------- | ------------ | ----------- |
+| AUM       | $7.4M        | $16.3M      |
+| Customers | 56           | 500         |
+| NPL Rate  | 3.8%         | <4.0%       |
 ```
 
 ---
@@ -272,6 +274,6 @@ Our NPL rate is currently 3.8%.
 
 ## Document History
 
-| Date | Author | Changes |
-|------|--------|---------|
+| Date       | Author          | Changes                 |
+| ---------- | --------------- | ----------------------- |
 | 2025-12-26 | Data Governance | Initial policy document |

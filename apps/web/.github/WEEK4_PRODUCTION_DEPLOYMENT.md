@@ -67,7 +67,6 @@ Before starting Week 4 deployment, verify:
 Before creating the version tag:
 
 ```bash
-
 # Ensure you're on main branch
 cd /Users/jenineferderas/Documents/abaco-loans-analytics/apps/web
 git checkout main
@@ -81,7 +80,6 @@ git diff develop..main
 
 # Verify no uncommitted changes
 git status
-
 # Should show: "On branch main" with no changes
 ```
 
@@ -92,10 +90,8 @@ git status
 Create a release notes file for reference:
 
 ```bash
-
 # Create release notes (optional but recommended)
 cat > RELEASE_NOTES_v1.0.0.md << 'EOF'
-
 # Release v1.0.0 - First Production Deployment
 
 **Date**: 2025-12-26
@@ -150,7 +146,8 @@ cat RELEASE_NOTES_v1.0.0.md
 ### 1.3 Notify Team
 
 Post in Slack channels:
-###
+
+**#prod-alerts**
 
 ```
 🚀 PRODUCTION DEPLOYMENT STARTING
@@ -189,10 +186,8 @@ Team: Standing by
 ### 2.1 Create Git Tag
 
 ```bash
-
 # Verify main branch
 git branch
-
 # Should show: * main
 
 # Create annotated tag (required for releases)
@@ -249,15 +244,12 @@ When workflow reaches "approval-gate":
 Before clicking approval, verify:
 
 ```bash
-
 # Double-check we tagged the right commit
 git show v1.0.0
-
 # Should show your release notes message and correct commit
 
 # Check staging is stable (optional)
 curl -s https://staging.abaco-loans-analytics.com | head -20
-
 # Should return HTML (no 404/500)
 ```
 
@@ -298,49 +290,43 @@ This takes 5-10 minutes.
 ### 4.1 Manual Health Check
 
 ```bash
-
 # Wait 2 minutes for deployment to propagate
 sleep 120
 
 # Test production URL
 curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" https://abaco-loans-analytics.com
-
 # Expected: HTTP Status: 200
 
 # Check page loads
 curl -s https://abaco-loans-analytics.com | head -30
-
 # Should see HTML content (not error page)
 
 # Test with browser (recommended)
-
 # Open: https://abaco-loans-analytics.com
-
 # Check:
-
 # - Page loads without errors
-
 # - No red error messages
-
 # - Can navigate (if applicable)
-
 # - Check browser console (F12) for errors
 ```
 
 ### 4.2 Check Monitoring Systems
-### (continued)
+
+**Sentry (Error Tracking)**
 
 1. Go to: <https://sentry.io>
 2. Navigate to your organization/project
 3. Verify no new errors appeared
 4. Check "Last 30 minutes" filter
-### (continued)
+
+**Azure Portal (Deployment Status)**
 
 1. Go to: <https://portal.azure.com>
 2. Find Static Web App
 3. Check deployment status shows latest
 4. Verify HTTP 200 responses in logs
-### (continued)
+
+**GitHub Releases**
 
 1. Go to: <https://github.com/owner/repo/releases>
 2. You should see: "Release v1.0.0"
@@ -538,7 +524,8 @@ Next Steps:
 ---
 
 ## Rollback Procedures (If Needed)
-### (continued)
+
+**Use only if critical issues found immediately after deployment**
 
 ### Automatic Triggers for Rollback
 
@@ -560,21 +547,13 @@ Rollback should be considered if:
 ### Execute Rollback
 
 ```bash
-
 # Open GitHub Actions
-
 # Go to: https://github.com/owner/repo/actions
-
 # Click: Workflows → rollback
-
 # Click: Run workflow
-
 # Fill in:
-
 #   - target_version: v0.9.0 (or previous stable)
-
 #   - environment: production
-
 # Click: Run workflow
 ```
 
@@ -631,28 +610,20 @@ Next Steps:
 **Every morning**:
 
 ```bash
-
 # Check production is healthy
 curl -s https://abaco-loans-analytics.com | head -10
 
 # Check Sentry for errors (last 24h)
-
 # Go to: https://sentry.io/projects/[your-project]
-
 # Filter: "last 24 hours"
-
 # Expected: No critical errors
 
 # Check deployment history
-
 # Go to: https://github.com/owner/repo/releases
-
 # Verify latest version is v1.0.0
 
 # Check workflow status
-
 # Go to: https://github.com/owner/repo/actions
-
 # Expected: All recent runs green
 ```
 
@@ -977,7 +948,8 @@ If you've completed Week 4 following this guide, you've successfully:
 ✅ Established monitoring
 ✅ Communicated status to team
 ✅ Prepared rollback procedures
-### (continued)
+
+**You now have a production-grade CI/CD pipeline!**
 
 Next: Plan Week 5 and future releases following established procedures.
 

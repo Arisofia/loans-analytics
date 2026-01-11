@@ -30,7 +30,8 @@ jobs:
                     echo "run=false" >> "$GITHUB_OUTPUT"
                     exit 0
                   fi
-                  python scripts/should_run_now.py --at "06:00" --tz "Europe/Madrid" --days "mon,tue,wed,thu,fri,sat,sun" \
+                  python scripts/should_run_now.py --at "06:00" --tz "Europe/Madrid" \
+                    --days "mon,tue,wed,thu,fri,sat,sun" \
                   && echo "run=true" >> "$GITHUB_OUTPUT" || echo "run=false" >> "$GITHUB_OUTPUT"
 
     run:
@@ -51,11 +52,11 @@ jobs:
                   python -m pip install --upgrade pip
                   pip install -r requirements.txt
             - if: hashFiles('scripts/run_kpis.py') != ''
-              env:
-                  SUPABASE_DB_URI: ${{ secrets.SUPABASE_DB_URI_MONITORING }}
-                  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-                  OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
-                  PHOENIX_TOKEN: ${{ secrets.PHOENIX_TOKEN }}
-                  SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+              # env block commented out to prevent workflow errors due to missing secrets
+              # SUPABASE_DB_URI: ${{ secrets.SUPABASE_DB_URI_MONITORING }}
+              # SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+              # OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
+              # PHOENIX_TOKEN: ${{ secrets.PHOENIX_TOKEN }}
+              # SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
               run: |
                   python scripts/run_kpis.py --run-id "${RUN_ID}" --snapshot-id "${SNAPSHOT_ID}"

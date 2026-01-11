@@ -159,7 +159,12 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Model Evaluation Pipeline Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                    "text": |
+                      *Model Evaluation Pipeline Failed*
+                      *Repository:* ${{ github.repository }}
+                      *Branch:* ${{ github.ref_name }}
+                      *Commit:* `${{ github.sha }}`
+                      <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>
                   }
                 }
               ]

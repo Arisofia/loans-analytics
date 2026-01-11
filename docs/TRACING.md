@@ -22,7 +22,7 @@ OpenTelemetry (OTEL) distributed tracing captures HTTP requests, database querie
 │  - Auto-instrumentation             │
 └──────────┬──────────────────────────┘
            │
-           ├─→ Dev: OTLP HTTP to localhost:4318
+           ├─→ Dev: OTLP HTTP when OTEL_EXPORTER_OTLP_ENDPOINT is set
            └─→ Prod: OTLP HTTP to Azure Monitor (via endpoint)
 ```
 
@@ -87,6 +87,8 @@ docker run --rm \
 ```
 
 ### 2. Set Environment Variables
+
+Tracing export is disabled unless `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
 
 ```bash
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
@@ -203,12 +205,16 @@ def my_business_logic():
 
 ### Environment Variables
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318` | OTLP exporter endpoint |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | (unset) | Azure App Insights connection |
-| `LOG_LEVEL` | `INFO` | Logging verbosity |
-| `OTEL_SDK_DISABLED` | `false` | Disable tracing globally |
+| Variable                                | Default                 | Purpose                       |
+| --------------------------------------- | ----------------------- | ----------------------------- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`           | (unset)                 | OTLP exporter endpoint        |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | (unset)                 | Azure App Insights connection |
+| `LOG_LEVEL`                             | `INFO`                  | Logging verbosity             |
+| `OTEL_SDK_DISABLED`                     | `false`                 | Disable tracing globally      |
+| `DISABLE_TELEMETRY`                     | (unset)                 | Skip tracing setup entirely   |
+| `DISABLE_AZURE_TRACING`                 | (unset)                 | Skip Azure tracing setup      |
+
+Azure tracing setup is skipped automatically when `CI` or `PYTEST_CURRENT_TEST` is set.
 
 ### Code Configuration
 

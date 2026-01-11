@@ -36,9 +36,9 @@ title: {
 
 Campos a llenar:
 
- subtitle: "Reporte Ejecutivo _________ 2025"
+subtitle: "Reporte Ejecutivo ****\_**** 2025"
 
- year: "_________ 2025"
+year: "****\_**** 2025"
 
 📌 SLIDE 2: TAM Funnel (No requiere actualización mensual)
 
@@ -52,15 +52,15 @@ Ubicación: deck1.marketOpportunity.currentAUM
 
 Always show details
 currentAUM: {
-  amount: "$___M", // ← AUM actual del mes
-  label: "AUM Actual ([MES-YY])" // ← ACTUALIZAR MES
+amount: "$\_\_\_M", // ← AUM actual del mes
+label: "AUM Actual ([MES-YY])" // ← ACTUALIZAR MES
 }
 
 Campos a llenar:
 
- amount: "$_____M"
+amount: "$**\_**M"
 
- label: "AUM Actual (_-)"
+label: "AUM Actual (\_-)"
 
 Fuente de datos: Total Pendiente en Base Activa
 
@@ -71,9 +71,9 @@ Ubicación: deck1.kpis.mainKPIs
 KPI 1: AUM Growth
 Always show details
 aumGrowth: {
-  metric: "_____%", // ← % de crecimiento MoM (puede ser negativo)
-  description: "MoM Growth Rate",
-  subtext: "$___M actual vs $___M mes anterior" // ← ACTUALIZAR ambos valores
+metric: "**\_**%", // ← % de crecimiento MoM (puede ser negativo)
+description: "MoM Growth Rate",
+subtext: "$***M actual vs $***M mes anterior" // ← ACTUALIZAR ambos valores
 }
 
 Cálculo
@@ -83,16 +83,16 @@ Always show details
 
 Campos a llenar
 
- metric: "______%"
+metric: "**\_\_**%"
 
- subtext: "$____M actual vs $____M mes anterior"
+subtext: "$\_**\_M actual vs $\_\_**M mes anterior"
 
 KPI 2: Portfolio Quality
 Always show details
 portfolioQuality: {
-  metric: "_____%", // ← 100% - Default Rate
-  description: "Performing Portfolio",
-  subtext: "Default rate ___%, Late___%" // ← ACTUALIZAR ambos %
+metric: "**\_**%", // ← 100% - Default Rate
+description: "Performing Portfolio",
+subtext: "Default rate **_%, Late_**%" // ← ACTUALIZAR ambos %
 }
 
 Cálculo
@@ -102,16 +102,16 @@ Portfolio Quality % = 100% - Default Rate (90+ DPD)
 
 Campos a llenar
 
- metric: "______%"
+metric: "**\_\_**%"
 
- subtext: "Default rate ___%, Late___%"
+subtext: "Default rate **_%, Late_**%"
 
 KPI 3: Client Concentration
 Always show details
 clientConcentration: {
-  metric: "___**%", // ← % suma del Top 10 Clientes
-  description: "Top 10 Clients",
-  subtext: "**_% de AUM en top 10 clientes" // ← ACTUALIZAR
+metric: "_\_\_**%", // ← % suma del Top 10 Clientes
+description: "Top 10 Clients",
+subtext: "**_% de AUM en top 10 clientes" // ← ACTUALIZAR
 }
 
 Cálculo
@@ -121,16 +121,16 @@ Concentración = Suma de % de los 10 clientes más grandes
 
 Campos a llenar
 
- metric: "______%"
+metric: "**\_\_**%"
 
- subtext: "___% de AUM en top 10 clientes"
+subtext: "\_\_\_% de AUM en top 10 clientes"
 
 KPI 4: Debtor Concentration
 Always show details
 debtorConcentration: {
-  metric: "___**%", // ← % suma del Top 10 Pagadores
-  description: "Top 10 Debtors",
-  subtext: "**_% de receivables en top 10 pagadores" // ← ACTUALIZAR
+metric: "_\_\_**%", // ← % suma del Top 10 Pagadores
+description: "Top 10 Debtors",
+subtext: "**_% de receivables en top 10 pagadores" // ← ACTUALIZAR
 }
 
 Cálculo
@@ -140,9 +140,9 @@ Concentración = Suma de % de los 10 pagadores más grandes
 
 Campos a llenar
 
- metric: "______%"
+metric: "**\_\_**%"
 
- subtext: "___% de receivables en top 10 pagadores"
+subtext: "\_\_\_% de receivables en top 10 pagadores"
 
 📌 SLIDE 5: Portfolio Diagnostics
 
@@ -154,32 +154,32 @@ subtitle: "Análisis detallado de AUM, calidad y estructura operativa - [MES] 20
 
 Campos a llenar
 
- subtitle: "Análisis detallado de AUM, calidad y estructura operativa - _____ 2025"
+subtitle: "Análisis detallado de AUM, calidad y estructura operativa - **\_** 2025"
 
 Top KPIs
 Always show details
 topKPIs: {
-  totalAUM: { value: "$___M", label: "Assets Under Management" },
-  activeClients: { value:___, label: "Clientes activos con líneas abiertas" },
-  creditLines: { value: ___, label: "Líneas de crédito totales activas" }
+totalAUM: { value: "$**_M", label: "Assets Under Management" },
+activeClients: { value:_**, label: "Clientes activos con líneas abiertas" },
+creditLines: { value: \_\_\_, label: "Líneas de crédito totales activas" }
 }
 
 Campos a llenar
 
- totalAUM.value: "$______M"
+totalAUM.value: "$**\_\_**M"
 
- activeClients.value: _____
+activeClients.value: **\_**
 
- creditLines.value: _____
+creditLines.value: **\_**
 
 Fuente: CSV Base Activa
 
 Portfolio Breakdown
 Always show details
 portfolioBreakdown: {
-  performing: { percent: "___**%", amount: "$___M" },
-  latePayment: { percent: "_____%", amount: "$_**M" },
-  default: { percent: "**_**%", amount: "$___M" }
+performing: { percent: "***\*\*%", amount: "$***M" },
+latePayment: { percent: "**\_**%", amount: "$_**M" },
+  default: { percent: "**_**%", amount: "$\_\_\_M" }
 }
 
 Verificación: performing% + late% + default% = 100%
@@ -187,10 +187,10 @@ Verificación: performing% + late% + default% = 100%
 Bottom Stats
 Always show details
 bottomStats: {
-  aprAverage: { value: "_****%", label: "Tasa promedio anual" },
-  avgClientAUM: { value: "$_____," label: "Promedio por cliente" },
-  avgLineSize: { value: "$****_," label: "Promedio por línea" },
-  defaultRate: { value: "_____%", label: "Tasa de mora > 90 días" }
+aprAverage: { value: "\_\***\*%", label: "Tasa promedio anual" },
+avgClientAUM: { value: "$_____," label: "Promedio por cliente" },
+  avgLineSize: { value: "$\*\***\_," label: "Promedio por línea" },
+defaultRate: { value: "**\_**%", label: "Tasa de mora > 90 días" }
 }
 
 Cálculos
@@ -202,7 +202,7 @@ defaultRate = Default % (de portfolioBreakdown)
 
 Footer
 Always show details
-footer: "Datos actualizados al ___ de _______ 2025. Default calculado como % del AUM total con mora > 90 días."
+footer: "Datos actualizados al **\_ de **\_**** 2025. Default calculado como % del AUM total con mora > 90 días."
 
 📌 SLIDE 6: Risk Concentration
 
@@ -215,26 +215,26 @@ subtitle: "Concentración en top clientes y pagadores - [MES] 2025"
 Top 10 Clientes
 Always show details
 topClients: {
-  total: "__**% of AUM",
-  list: [
-    { name: "**_", amount: "$_**k", percent: "**_%" },
-    ...
-  ]
+total: "\__**% of AUM",
+list: [
+{ name: "**_", amount: "$_**k", percent: "**_%" },
+...
+]
 }
 
 Top 10 Pagadores
 Always show details
 topDebtors: {
-  total: "__**% of receivables",
-  list: [
-    { name: "**_", amount: "$_**k", percent: "**_%" },
-    ...
-  ]
+total: "\__**% of receivables",
+list: [
+{ name: "**_", amount: "$_**k", percent: "**_%" },
+...
+]
 }
 
 Footer
 Always show details
-footer: "Datos de concentración al ___ de _______ 2025. Ordenados por exposure de AUM."
+footer: "Datos de concentración al **\_ de **\_**** 2025. Ordenados por exposure de AUM."
 
 📌 SLIDE 13: Monthly Growth
 
@@ -243,11 +243,11 @@ Ubicación: deck1.monthlyGrowth.monthlyData
 
 Always show details
 {
-  month: "[MES] 2025",
-  aum: "$___M",
-  netChange: "$_**M",
-  percentGrowth: "**___%",
-  newClients: ___
+month: "[MES] 2025",
+aum: "$___M",
+  netChange: "$\_**M",
+percentGrowth: "****_%",
+newClients: _**
 }
 
 Cálculos
@@ -264,21 +264,21 @@ Ubicación: deck3.portfolioHistorical.historicalData
 
 Always show details
 {
-  month: "[MES]-25",
-  aum: "$___M",
+month: "[MES]-25",
+aum: "$___M",
   activeClients: ___,
-  avgTicket: "$_**k",
-  tpv: "$_**M",
-  defaultRate: "**_**%"
+  avgTicket: "$_\*\*k",
+tpv: "$_**M",
+defaultRate: "**\_\*\*%"
 }
 
 📌 SLIDE 29: AUM Live Portfolio
 Always show details
 currentSnapshot: {
-  date: "___ de ________ 2025",
-  totalAUM: "$___M",
+date: "**\_ de **\_\_**** 2025",
+totalAUM: "$___M",
   activeClients: ___,
-  avgClientAUM: "$_____"
+  avgClientAUM: "$**\_**"
 }
 
 Cálculo: avgClientAUM = totalAUM / activeClients
@@ -290,10 +290,10 @@ Ubicación: deck3.avgOperationAmount.monthlyAvgData
 
 Always show details
 {
-  month: "[MES]-25",
-  avgAmount: "$___k",
+month: "[MES]-25",
+avgAmount: "$___k",
   operationsCount: ___,
-  totalVolume: "$___M"
+  totalVolume: "$\_\_\_M"
 }
 
 📌 SLIDE 31: Monthly Operations Metrics
@@ -303,12 +303,12 @@ Ubicación: deck3.monthlyOperationsMetrics.metricsData
 
 Always show details
 {
-  month: "[MES]-25",
-  operations: ___,
-  volume: "$___M",
-  avgTicket: "$___k",
-  conversionRate: "N/D",
-  timeToFund: "N/D"
+month: "[MES]-25",
+operations: ***,
+volume: "$***M",
+avgTicket: "$\_\_\_k",
+conversionRate: "N/D",
+timeToFund: "N/D"
 }
 
 ✅ CHECKLIST FINAL DE ACTUALIZACIÓN

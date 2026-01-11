@@ -1,13 +1,11 @@
-# :bug: Playwright E2E Test Failure: Analytics Dashboard
-
+---
 name: Playwright workflow fix
 about: Fix failing Playwright workflow that produced runs with no jobs
+---
 
-### Summary
-
-
-### Root Cause
+**Summary**
 The Playwright workflow used in a failing PR contains a malformed top-level key which caused GitHub to spawn runs with `jobs: []` and no logs. This issue will replace the malformed key and add a workflow validation job.
+
 **Tasks**
 
 - [ ] Replace the quoted top-level key with a valid key

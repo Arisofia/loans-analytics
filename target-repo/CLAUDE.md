@@ -83,16 +83,16 @@ make test-cov
 
 ### Tools Configured
 
-| Tool | Purpose | Config |
-|------|---------|--------|
-| pylint | Static code analysis | pyproject.toml |
-| flake8 | Style enforcement | pyproject.toml |
-| ruff | Fast Python linter | Built-in |
-| black | Code formatter | pyproject.toml |
-| isort | Import sorting | Built-in |
-| mypy | Type checking | TBD |
-| pytest | Testing | Built-in |
-| coverage | Test coverage | Built-in |
+| Tool     | Purpose              | Config         |
+| -------- | -------------------- | -------------- |
+| pylint   | Static code analysis | pyproject.toml |
+| flake8   | Style enforcement    | pyproject.toml |
+| ruff     | Fast Python linter   | Built-in       |
+| black    | Code formatter       | pyproject.toml |
+| isort    | Import sorting       | Built-in       |
+| mypy     | Type checking        | TBD            |
+| pytest   | Testing              | Built-in       |
+| coverage | Test coverage        | Built-in       |
 
 ---
 

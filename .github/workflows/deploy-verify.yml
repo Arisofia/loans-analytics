@@ -1,42 +1,45 @@
-name: Deploy verify
+name: Deploy verification (manual)
 
 on:
-    workflow_dispatch:
-        inputs:
-            target_url:
-                required: true
-                description: "URL to probe for the middleware"
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Full URL to verify (e.g., https://app.example.com)'
+        required: true
+        default: 'https://your-prod.example.com'
 
 jobs:
-    verify:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Verify target rejects requests without secret (expect 403)
-              shell: bash
-              run: |
-                  set -euo pipefail
-                  TARGET_URL="${{ github.event.inputs.target_url }}"
-                  echo "Probing without secret: $TARGET_URL"
-                  status=$(curl -sS -o /dev/null -w "%{http_code}" "$TARGET_URL") || true
-                  echo "HTTP status: $status"
-                  if [ "$status" -ne 403 ]; then
-                    echo "Expected 403 but got $status" >&2
-                    exit 1
-                  fi
-            - name: Verify target accepts requests with MIDDLEWARE_SHARED_SECRET
-              shell: bash
-              env:
-                  MIDDLEWARE_SHARED_SECRET: ${{ secrets.MIDDLEWARE_SHARED_SECRET }}
-              run: |
-                  set -euo pipefail
-                  TARGET_URL="${{ github.event.inputs.target_url }}"
-                  echo "Probing with secret: $TARGET_URL"
-                  status=$(curl -sS -o /dev/null -w "%{http_code}" -H "x-internal-shared-secret: $MIDDLEWARE_SHARED_SECRET" -H "x-middleware-subrequest: true" "$TARGET_URL") || true
-                  echo "HTTP status: $status"
-                  if [ "$status" -eq 403 ]; then
-                    echo "Requests are still rejected when auth secret provided (got 403)" >&2
-                    exit 1
-                  fi
-            - name: Emit confirmation
-              run: |
-                  echo "Deploy verify succeeded for ${{ github.event.inputs.target_url }}"
+  verify:
+    name: Verify deployed middleware mitigation
+    runs-on: ubuntu-latest
+    env:
+      TARGET_URL: ${{ github.event.inputs.target_url }}
+    steps:
+      - name: Run quick header spoofing and secret checks
+        run: |
+          set -euo pipefail
+          echo "Verifying middleware mitigation against $TARGET_URL"
+
+          echo "1) Spoof header without secret (expect 403)"
+          resp=$(curl -s -o /dev/null -w "%{http_code}" -H 'x-middleware-subrequest: 1' "$TARGET_URL") || true
+          echo "status: $resp"
+          if [ "$resp" != "403" ]; then
+            echo "ERROR: Expected 403 for spoofed header without secret (got $resp)"
+            exit 2
+          fi
+
+          echo "2) Spoof header WITH secret (expect non-403)"
+          if [ -z "${MIDDLEWARE_SHARED_SECRET:-}" ]; then
+            echo "MIDDLEWARE_SHARED_SECRET not set in repo secrets; please add and re-run"
+            exit 3
+          fi
+          resp2=$(curl -s -o /dev/null -w "%{http_code}" -H 'x-middleware-subrequest: 1' -H "x-internal-shared-secret: ${MIDDLEWARE_SHARED_SECRET}" "$TARGET_URL") || true
+          echo "status: $resp2"
+          if [ "$resp2" = "403" ]; then
+            echo "ERROR: Secret did not allow request (received 403)"
+            exit 4
+          fi
+
+          echo "Verification succeeded (spoof blocked, secret allowed)"
+        env:
+          MIDDLEWARE_SHARED_SECRET: ${{ secrets.MIDDLEWARE_SHARED_SECRET }}

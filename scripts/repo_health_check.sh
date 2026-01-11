@@ -4,7 +4,7 @@
 set -euo pipefail
 
 # Ensure the script runs from the repo root
-cd "$(dirname "$0")/.." || exit
+cd "$(dirname "$0")/.."
 
 print_header() {
   echo "==== $1 ===="
@@ -41,22 +41,21 @@ print("Requirements file is free of duplicates.")
 PY
 
 print_header "LINT"
-if [ -f "package.json" ]; then
-  npm run lint || echo "Lint failed (non-blocking)"
-else
-  echo "package.json not found, skipping lint"
-fi
+make lint || echo "Lint failed"
 
 print_header "PYTHON TESTS"
-# Use PYTHONPATH to ensure imports work correctly during health check
-export PYTHONPATH=$(pwd)/python:$(pwd)
-.venv/bin/pytest --maxfail=5 || echo "Pytest failed (non-blocking)"
+make test || echo "Pytest failed"
 
 print_header "ENV FILES AUDIT"
 ls -la .env* || echo "No env files found"
 
 print_header "SECURITY AUDIT"
 ls -la SECURITY.md || echo "SECURITY.md missing"
+
+print_header "HARDENING AUDIT"
+ls -la src/models/financial.py || echo "financial.py missing"
+ls -la src/utils/validation.py || echo "validation.py missing"
+grep -q "iban" requirements.txt && echo "IBAN requirement present" || echo "IBAN requirement missing"
 
 print_header "COMPLIANCE AUDIT"
 ls -la COMPLIANCE_VALIDATION_SUMMARY.md || echo "COMPLIANCE_VALIDATION_SUMMARY.md missing"

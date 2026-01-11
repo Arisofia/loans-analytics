@@ -1,25 +1,36 @@
 """Script to run Gemini review for PRs.
 This is moved out of the workflow to avoid YAML parsing issues with large inline scripts.
 """
+
 import os
 import sys
 import subprocess
 import logging
 from typing import Optional
-import requests
-from requests.exceptions import RequestException
-
-try:
-    import google.generativeai as genai  # type: ignore
-except ImportError:
-    genai = None
 
 logger = logging.getLogger(__name__)
+
+def require_env_vars(*vars):
+    missing = [v for v in vars if not os.getenv(v)]
+    if missing:
+        logger.error(f"Missing required environment variables: {', '.join(missing)}")
+        return False
+    return True
+
+def require_module(modname):
+    try:
+        return __import__(modname)
+    except ImportError:
+        logger.error(f"Required module '{modname}' not installed; skipping Gemini review.")
+        return None
+
 
 
 def main() -> int:
     """Run Gemini PR review and post a comment on the PR. Returns exit code."""
-    exit_code = 0
+    # Validate required environment variables
+    if not require_env_vars("GITHUB_TOKEN", "GEMINI_API_KEY", "PR_NUMBER", "REPO_FULL_NAME", "BASE_REF"):
+        return 0
 
     github_token = os.getenv("GITHUB_TOKEN")
     gemini_key = os.getenv("GEMINI_API_KEY")
@@ -28,19 +39,16 @@ def main() -> int:
     base_ref = os.getenv("BASE_REF")
     model_override = os.getenv("GEMINI_MODEL")
 
-    if not github_token or not pr_number or not repo:
-        logger.info("Missing GitHub context; skipping Gemini review.")
-        return 0
-
-    if not gemini_key:
-        logger.info("GEMINI_API_KEY not configured; skipping AI review.")
-        return 0
-
+    # Dependency checks
+    genai = require_module("google.generativeai")
     if genai is None:
-        logger.info("google.generativeai not installed; skipping Gemini review.")
         return 0
+    requests_mod = require_module("requests")
+    if requests_mod is None:
+        return 0
+    RequestException = getattr(requests_mod, "exceptions", requests_mod).__dict__.get("RequestException", Exception)
 
-    # Configure the SDK if available (guard for multiple SDK versions)
+    # Configure Gemini API
     try:
         configure_fn = getattr(genai, "configure", None)
         if callable(configure_fn):
@@ -53,10 +61,8 @@ def main() -> int:
         return 1
 
     # Discover model
-    model_name: Optional[str] = None
-    if model_override:
-        model_name = model_override
-    else:
+    model_name: Optional[str] = model_override
+    if not model_name:
         try:
             list_models_fn = getattr(genai, "list_models", None)
             if callable(list_models_fn):
@@ -103,17 +109,19 @@ def main() -> int:
         logger.info("No changes to review")
         return 0
 
-    # Create prompt for Gemini
-    prompt = f"""Review this pull request diff and provide feedback on:
-1. Code quality and best practices
-2. Potential bugs or issues
-3. Security concerns
-4. Performance improvements
-5. General suggestions
+    # Limit diff size for Gemini API
+    max_diff_len = 8000
+    safe_diff = diff[:max_diff_len]
 
-Diff:
-{diff[:8000]}
-"""
+    prompt = (
+        "Review this pull request diff and provide feedback on:\n"
+        "1. Code quality and best practices\n"
+        "2. Potential bugs or issues\n"
+        "3. Security concerns\n"
+        "4. Performance improvements\n"
+        "5. General suggestions\n\n"
+        f"Diff:\n{safe_diff}\n"
+    )
 
     try:
         response = model.generate_content(prompt)
@@ -131,14 +139,15 @@ Diff:
     data = {"body": f"## 🤖 Gemini AI Review\n\n{review_comment}"}
 
     try:
-        resp = requests.post(api_url, headers=headers, json=data, timeout=10)
+        resp = requests_mod.post(api_url, headers=headers, json=data, timeout=10)
         resp.raise_for_status()
         logger.info("Review posted successfully")
     except RequestException:
         logger.exception("Failed to post review")
-        exit_code = 1
+        return 1
 
-    return exit_code
+    return 0
+
 
 
 if __name__ == "__main__":

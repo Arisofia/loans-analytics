@@ -8,8 +8,8 @@ on:
 jobs:
   meta-ingest:
     runs-on: ubuntu-latest
-    env:
-      META_SYSTEM_USER_TOKEN: ${{ secrets.META_SYSTEM_USER_TOKEN }}
+    # env block commented out to prevent workflow errors due to missing secrets
+    # META_SYSTEM_USER_TOKEN: ${{ secrets.META_SYSTEM_USER_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - name: Check Meta system user token
@@ -29,17 +29,17 @@ jobs:
       - name: Install dependencies
         if: steps.meta_token.outputs.run == true
         run: |
-          cd node/services/meta-connector || exit
+          cd node/services/meta-connector
           npm install
       - name: Build
         if: steps.meta_token.outputs.run == true
         run: |
-          cd node/services/meta-connector || exit
+          cd node/services/meta-connector
           npm run build
       - name: Run ingest
         if: steps.meta_token.outputs.run == true
         run: |
-          cd node/services/meta-connector || exit
+          cd node/services/meta-connector
           node dist/ingest.js
       - name: Upload raw data
         if: steps.meta_token.outputs.run == true
