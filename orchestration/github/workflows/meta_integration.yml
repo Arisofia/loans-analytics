@@ -27,10 +27,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd node/services/meta-connector
+          cd node/services/meta-connector || exit
           npm install
 
       - name: Execute Meta connector tests
         run: |
-          cd node/services/meta-connector
+          cd node/services/meta-connector || exit
           npm test

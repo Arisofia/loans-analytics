@@ -33,7 +33,6 @@
     "typeRoots": [
       "./node_modules/@types"
     ],
-    // Removed invalid ignoreDeprecations
     "baseUrl": ".",
     "paths": {
       "@/*": [

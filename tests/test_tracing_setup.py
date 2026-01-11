@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from opentelemetry.sdk.trace import TracerProvider
 
-from src import tracing_setup
+from src.utils.tracing import setup as tracing_setup
 
 
 class TestTracingSetup(unittest.TestCase):
@@ -21,8 +21,8 @@ class TestTracingSetup(unittest.TestCase):
 
     def test_init_tracing_returns_provider(self) -> None:
         with (
-            patch("src.tracing_setup.OTLPSpanExporter"),
-            patch("src.tracing_setup.BatchSpanProcessor"),
+            patch("src.utils.tracing.setup.OTLPSpanExporter"),
+            patch("src.utils.tracing.setup.BatchSpanProcessor"),
         ):
             provider = tracing_setup.init_tracing(
                 service_name="test-service",
@@ -35,8 +35,8 @@ class TestTracingSetup(unittest.TestCase):
     def test_init_tracing_uses_env_endpoint(self) -> None:
         os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://example.com:4318"
         with (
-            patch("src.tracing_setup.OTLPSpanExporter") as mock_exporter,
-            patch("src.tracing_setup.BatchSpanProcessor"),
+            patch("src.utils.tracing.setup.OTLPSpanExporter") as mock_exporter,
+            patch("src.utils.tracing.setup.BatchSpanProcessor"),
         ):
             tracing_setup.init_tracing(service_name="test-service")
 

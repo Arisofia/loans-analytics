@@ -67,6 +67,8 @@ jobs:
             | grep -vE 'scripts/generate_abaco_portfolio_sample.py' \
             | grep -vE 'data_samples/abaco_portfolio_sample.csv' \
             | grep -vE 'config/codex_mcp_config.toml.example' \
+            | grep -vE 'tests/data/archives/sample_.*\.csv' \
+            | grep -vE 'data/archives/cascade/sample_.*\.csv' \
             > doc_files.txt
           python scripts/security/check_doc_policy.py doc_files.txt
 

@@ -26,8 +26,9 @@ env:
 jobs:
   validate-secrets:
     uses: ./.github/workflows/reusable-secret-check.yml
+    # Require ACR secrets as primary registry; Docker Hub is now optional
     with:
-      secret_names: DOCKER_USERNAME,DOCKER_PASSWORD,ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD
+      secret_names: ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD
     secrets: inherit
 
   build-and-push:
@@ -63,7 +64,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
-        if: github.event_name != 'pull_request' && env.DOCKER_USERNAME != ''
+        # Only log in to Docker Hub if ACR is not configured (we prefer ACR)
+        if: github.event_name != 'pull_request' && env.DOCKER_USERNAME != '' && env.ACR_LOGIN_SERVER == ''
         uses: docker/login-action@v3
         with:
           username: ${{ env.DOCKER_USERNAME }}

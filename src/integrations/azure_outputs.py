@@ -122,9 +122,9 @@ class AzureStorageClient:
             return {}
 
         from concurrent.futures import ThreadPoolExecutor
-        
+
         uploaded: Dict[str, str] = {}
-        
+
         def _upload_single(path: Path):
             if not path.exists():
                 return None
@@ -298,7 +298,7 @@ class AzureDashboardClient:
 
     def sync_batch_export(self, export_data: Dict[str, Any]) -> Dict[str, Any]:
         """Sync batch export data to Azure Dashboards."""
-        results = {
+        results: Dict[str, Any] = {
             "dashboard_updated": False,
             "success": False,
         }
@@ -310,7 +310,7 @@ class AzureDashboardClient:
                 results["success"] = success
             else:
                 logger.warning("No kpi_metrics found in export_data for Azure Dashboard")
-                results["success"] = True # Nothing to do, but not a failure
+                results["success"] = True  # Nothing to do, but not a failure
 
         except Exception as e:
             logger.error(f"Azure Dashboard sync failed: {e}")

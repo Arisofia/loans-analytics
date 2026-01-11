@@ -8,8 +8,8 @@ from typing import Any, Dict, Iterable, List, Optional
 
 import pandas as pd
 
-from src.utils.numeric import safe_numeric
 from src.utils.date_utils import ISO8601_REGEX
+from src.utils.numeric import safe_numeric
 
 
 @dataclass
@@ -98,7 +98,9 @@ class DataQualityReporter:
                     coerced = safe_numeric(self.df[resolved])
                     coerced_nulls = coerced.isnull().sum()
                     if coerced_nulls > original_nulls:
-                        self.report.type_errors.append(f"Column '{col}' contains non-numeric values")
+                        self.report.type_errors.append(
+                            f"Column '{col}' contains non-numeric values"
+                        )
 
         if date_columns:
             for col in date_columns:
@@ -108,7 +110,9 @@ class DataQualityReporter:
                     coerced = pd.to_datetime(self.df[resolved], errors="coerce")
                     coerced_nulls = coerced.isnull().sum()
                     if coerced_nulls > original_nulls:
-                        self.report.type_errors.append(f"Column '{col}' contains invalid date values")
+                        self.report.type_errors.append(
+                            f"Column '{col}' contains invalid date values"
+                        )
 
         # 4. Final scoring
         deductions = (

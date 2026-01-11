@@ -10,7 +10,9 @@ import logging
 import sys
 
 # Initialize tracing FIRST before importing any other application modules
-from python.tracing_setup import configure_tracing, is_tracing_enabled
+from src.utils.tracing.setup import init_tracing
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
 
 # Configure logging
 logging.basicConfig(
@@ -23,9 +25,9 @@ def main():
     """Main application entry point with tracing."""
     # Configure tracing at startup
     logger.info("Initializing application with tracing...")
-    configure_tracing()
+    init_tracing()
 
-    if is_tracing_enabled():
+    if isinstance(trace.get_tracer_provider(), TracerProvider):
         logger.info("✓ Tracing enabled - telemetry will be sent to Azure Application Insights")
     else:
         logger.warning("⚠ Tracing disabled - no telemetry will be collected")
@@ -33,7 +35,7 @@ def main():
 
     # Now import and use your application modules
     # They will automatically benefit from tracing
-    from python.agents.orchestrator import AgentOrchestrator
+    from src.agents.orchestrator import AgentOrchestrator
 
     # Example: Run agent
     logger.info("Running agent orchestrator...")

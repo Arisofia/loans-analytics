@@ -4,7 +4,7 @@
 set -euo pipefail
 
 # Ensure the script runs from the repo root
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit
 
 print_header() {
   echo "==== $1 ===="

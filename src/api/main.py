@@ -1,21 +1,26 @@
-from pathlib import Path
 import logging
+import os
+from pathlib import Path
+from typing import Any
 
 try:
-    from fastapi import FastAPI, HTTPException
-    app = FastAPI(title="Abaco Analytics API")
+    from fastapi import FastAPI, HTTPException, Header
+
+    app: Any = FastAPI(title="Abaco Analytics API")
 except ImportError:
     # Lightweight fallback for environments without FastAPI
-    class HTTPException(Exception):
+    class HTTPException(Exception):  # type: ignore
         def __init__(self, status_code: int, detail: str):
             self.status_code = status_code
             self.detail = detail
+
     app = None
 
 logger = logging.getLogger("abaco.api")
 
 # Directory that contains allowed data files
 ALLOWED_DATA_DIR = Path("/data/archives").resolve()
+
 
 def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     """Safely join and resolve a user-provided path candidate under allowed_dir."""
@@ -34,24 +39,37 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
 
     try:
         resolved.relative_to(allowed_dir)
-    except (ValueError, RuntimeError):
-        raise ValueError("path resolves outside the allowed data directory")
+    except (ValueError, RuntimeError) as exc:
+        raise ValueError("path resolves outside the allowed data directory") from exc
 
     return resolved
 
+
 if app:
+
     @app.get("/health")
     def health_check():
         return {"status": "ok"}
 
     @app.get("/data/{file_path:path}")
-    def get_data(file_path: str):
+    def get_data(
+        file_path: str,
+        x_internal_shared_secret: str = Header(None, alias="x-internal-shared-secret"),
+        x_middleware_subrequest: str = Header(None, alias="x-middleware-subrequest")
+    ):
         """Return file metadata and path for a sanitized path under ALLOWED_DATA_DIR."""
+        # Optional: enforce shared secret if configured
+        shared_secret = os.environ.get("MIDDLEWARE_SHARED_SECRET")
+        if shared_secret and x_middleware_subrequest == "true":
+            if x_internal_shared_secret != shared_secret:
+                logger.warning("Blocked middleware subrequest spoofing attempt")
+                raise HTTPException(status_code=403, detail="Forbidden")
+
         try:
             resolved = _sanitize_and_resolve(file_path, ALLOWED_DATA_DIR)
         except ValueError as exc:
             logger.warning("Invalid data path requested: %s (%s)", file_path, exc)
-            raise HTTPException(status_code=400, detail=str(exc))
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
         if not resolved.exists() or not resolved.is_file():
             raise HTTPException(status_code=404, detail="file not found")
@@ -60,5 +78,5 @@ if app:
             "status": "ok",
             "path": str(resolved),
             "size": resolved.stat().st_size,
-            "modified": resolved.stat().st_mtime
+            "modified": resolved.stat().st_mtime,
         }
