@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from python.pipeline.validation import DataQualityReporter
+from pipeline.validation import DataQualityReporter
 
 def test_data_quality_report_passed():
     df = pd.DataFrame({

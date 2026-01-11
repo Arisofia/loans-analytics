@@ -571,8 +571,8 @@ Once Week 1 is complete, proceed to Week 2:
 
 ---
 
-**Setup Owner**: ******\_\_\_******
-**Completion Date**: ******\_\_\_******
-**Verified By**: ******\_\_\_******
+**Setup Owner**: _______________
+**Completion Date**: _______________
+**Verified By**: _______________
 
 **Next**: Follow Week 2 dry-runs in POST_IMPLEMENTATION_CHECKLIST.md

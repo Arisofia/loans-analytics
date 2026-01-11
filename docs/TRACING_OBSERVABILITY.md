@@ -26,6 +26,7 @@ The platform uses Azure Application Insights with OpenTelemetry instrumentation 
   - Transformation phase
   - Calculation phase
   - Output phase
+  
 - **Streamlit Applications**: Traces user interactions and data processing
   - Main dashboard (`dashboard/app.py`)
   - Analytics app (`streamlit_app.py`)
@@ -100,11 +101,11 @@ def my_function():
     with tracer.start_as_current_span("my-operation"):
         # Your code here
         result = do_something()
-
+        
         # Add custom attributes
         span = trace.get_current_span()
         span.set_attribute("custom.metric", result)
-
+        
     return result
 ```
 

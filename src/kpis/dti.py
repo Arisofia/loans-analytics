@@ -3,10 +3,8 @@ from typing import Any, Dict, Tuple
 import numpy as np
 import pandas as pd
 
-from src.kpis.base import KPICalculator, KPIMetadata, create_context
-from src.utils.data_normalization import (COL_BORROWER_INCOME,
-                                          COL_MONTHLY_DEBT, normalize_columns)
-from src.utils.numeric import safe_numeric
+from src.kpis.base import (KPICalculator, KPIMetadata, create_context,
+                           safe_numeric)
 
 
 class DTICalculator(KPICalculator):
@@ -29,16 +27,13 @@ class DTICalculator(KPICalculator):
                 self.METADATA.formula, rows_processed=0, reason="Empty DataFrame"
             )
 
-        # Standardize columns
-        working_df = normalize_columns(df)
-
-        required = [COL_MONTHLY_DEBT, COL_BORROWER_INCOME]
-        missing = [col for col in required if col not in working_df.columns]
+        required = ["monthly_debt", "borrower_income"]
+        missing = [col for col in required if col not in df.columns]
         if missing:
             raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
-        monthly_debt = safe_numeric(working_df[COL_MONTHLY_DEBT])
-        monthly_income = safe_numeric(working_df[COL_BORROWER_INCOME]) / 12.0
+        monthly_debt = safe_numeric(df["monthly_debt"])
+        monthly_income = safe_numeric(df["borrower_income"]) / 12.0
 
         # Element-wise DTI
         dti_values = np.where(

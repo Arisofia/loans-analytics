@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, Mock
 import numpy as np
 import pandas as pd
 import pytest
-from src.integrations.azure_outputs import AzureStorageClient
+from src.analytics.azure_blob_exporter import AzureBlobKPIExporter
 from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
 
 
@@ -226,10 +226,23 @@ def test_export_kpis_to_blob_invalid_blob_name_type():
         "principal_balance": [240000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
-    exporter = AzureStorageClient(connection_string="DefaultEndpointsProtocol=https;AccountName=test;AccountKey=key;EndpointSuffix=core.windows.net")
+    exporter = AzureBlobKPIExporter(container_name="test-container", blob_service_client=Mock())
 
     with pytest.raises(ValueError, match="blob_name must be a string"):
         engine.export_kpis_to_blob(exporter, blob_name=123)  # type: ignore
+    data = {
+        "loan_amount": [250000],
+        "appraised_value": [300000],
+        "borrower_income": [80000],
+        "monthly_debt": [1500],
+        "loan_status": ["current"],
+        "interest_rate": [0.035],
+        "principal_balance": [240000],
+    }
+    engine = LoanAnalyticsEngine(pd.DataFrame(data))
+    mock_exporter = MagicMock()
+    with pytest.raises(ValueError, match="blob_name must be a string"):
+        engine.export_kpis_to_blob(mock_exporter, blob_name=123)  # type: ignore
 
 
 def test_engine_export_kpis_to_blob_valid():

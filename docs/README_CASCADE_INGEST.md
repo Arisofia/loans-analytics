@@ -71,7 +71,6 @@ gh pr create --base main \
    ```
 
    It downloads the ZIP to `downloads/` and honors `CASCADE_COOKIE_NAME`.
-
 5. Inspect `data/archives/cascade/loan_tapes/YYYYMM/` for the CSV/Parquet outputs, the original ZIP archive, and `data/audit/runs/cascade_ingest_run_<run_id>.json`.
 
 ## Orchestration Notes

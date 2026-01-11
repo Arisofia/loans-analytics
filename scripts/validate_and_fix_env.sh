@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/zsh
 # Automated validation and fix script for repo, extensions, and permissions
 
 # 0. Get repository root (relative to script location)

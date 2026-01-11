@@ -8,11 +8,10 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-WEBAPP_NAME="${AZURE_WEBAPP_NAME:-abaco-analytics-dashboard}"
-RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-AI-MultiAgent-Ecosystem-RG}"
-APPINSIGHTS_NAME="${AZURE_APPINSIGHTS_NAME:-abaco-insights}"
-ALERT_ACTION_GROUP="${AZURE_ALERT_ACTION_GROUP:-AbacoCriticalAlerts}"
-ALERT_EMAIL="${ALERT_EMAIL:-your-email@example.com}"
+WEBAPP_NAME="abaco-analytics-dashboard"
+RESOURCE_GROUP="AI-MultiAgent-Ecosystem-RG"
+APPINSIGHTS_NAME="abaco-insights"
+ALERT_ACTION_GROUP="AbacoCriticalAlerts"
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   ABACO PRODUCTION MONITORING SETUP                        ║${NC}"
@@ -38,6 +37,8 @@ check_requirements() {
 create_action_group() {
     echo -e "${YELLOW}[2/5] Setting up alert action group...${NC}"
 
+    local EMAIL="${ALERT_EMAIL:-your-email@example.com}"
+
     # Create action group
     az monitor action-group create \
         --resource-group $RESOURCE_GROUP \
@@ -50,7 +51,7 @@ create_action_group() {
         --action-group-name $ALERT_ACTION_GROUP \
         --resource-group $RESOURCE_GROUP \
         --name "CriticalAlertEmail" \
-        --email-receiver $ALERT_EMAIL \
+        --email-receiver $EMAIL \
         2>/dev/null || true
 
     echo -e "${GREEN}✅ Action group configured${NC}\n"
@@ -159,7 +160,7 @@ verify_setup() {
     echo -e "${GREEN}✅ Monitoring setup complete!${NC}"
     echo ""
     echo -e "${YELLOW}Next Steps:${NC}"
-    echo "  1. Configure email for $ALERT_EMAIL to receive alerts"
+    echo "  1. Configure email for $EMAIL to receive alerts"
     echo "  2. Add Slack webhooks to action group for real-time notifications"
     echo "  3. Create PowerBI dashboard for executive reporting"
     echo "  4. Set up daily health report via automation"

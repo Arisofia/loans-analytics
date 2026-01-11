@@ -6,12 +6,11 @@ import argparse
 import json
 import logging
 import os
-import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 # Third-Party Imports
 import pandas as pd
@@ -19,16 +18,14 @@ import requests
 
 # Optional: Azure Application Insights tracing
 try:
-    from src.utils.tracing.azure_monitor import setup_azure_tracing, trace_analytics_job
+    from src.azure_tracing import setup_azure_tracing, trace_analytics_job
 
     AZURE_TRACING_ENABLED = True
 except ImportError:
     AZURE_TRACING_ENABLED = False
 
-    def trace_analytics_job(
-        job_name: str, client_id: str, run_id: str
-    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+    def trace_analytics_job(job_name: str, client_id: str, run_id: str):
+        def decorator(func):
             return func
 
         return decorator
@@ -58,37 +55,24 @@ def _setup_logger(level: str) -> logging.Logger:
     return logger
 
 
-def _env(name: str, required: bool = True) -> Optional[str]:
+def _env(name: str) -> str:
     v = os.getenv(name)
-    if not v and required:
+    if not v:
         raise RuntimeError(f"Missing env var: {name}")
     return v
 
 
-def _supabase_available() -> bool:
-    """Check if Supabase credentials and environment are properly configured."""
-    return bool(
-        os.getenv("SUPABASE_URL")
-        and (os.getenv("SUPABASE_ANON_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY"))
-    )
+SUPABASE_URL = _env("SUPABASE_URL").rstrip("/")
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+if not SUPABASE_KEY:
+    raise RuntimeError("Missing SUPABASE_ANON_KEY " "(or NEXT_PUBLIC_SUPABASE_ANON_KEY).")
 
-
-SUPABASE_URL: Optional[str] = None
-SUPABASE_KEY: Optional[str] = None
-HEADERS: dict[str, str] = {}
-
-if _supabase_available():
-    SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
-    SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-    HEADERS = {
-        "apikey": SUPABASE_KEY or "",
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-    }
-else:
-    SUPABASE_URL = None
-    SUPABASE_KEY = None
+HEADERS = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": f"Bearer {SUPABASE_KEY}",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+}
 
 
 def _rest_get(
@@ -245,15 +229,6 @@ def main() -> None:
     args = ap.parse_args()
 
     logger = _setup_logger(args.log_level)
-
-    if not _supabase_available():
-        logger.error(
-            "[SKIP] Supabase credentials not configured (SUPABASE_URL and "
-            "SUPABASE_ANON_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY required). "
-            "Batch runner will not execute in 'no static files' mode."
-        )
-        sys.exit(0)
-
     run_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
 
     # Record run header in DB

@@ -26,13 +26,13 @@ The ABACO Analytics codebase maintains **excellent code quality** with a pylint 
 
 #### Score Breakdown
 
-| Category          | Issues | Severity | Status          |
-| ----------------- | ------ | -------- | --------------- |
-| Errors (E)        | 1      | Critical | Action required |
-| Warnings (W)      | 10     | Medium   | Monitor         |
-| Refactoring (R)   | 2      | Low      | Phase 5         |
-| Convention (C)    | 13     | Low      | Auto-fixable    |
-| Informational (I) | 0      | -        | -               |
+| Category | Issues | Severity | Status |
+|----------|--------|----------|--------|
+| Errors (E) | 1 | Critical | Action required |
+| Warnings (W) | 10 | Medium | Monitor |
+| Refactoring (R) | 2 | Low | Phase 5 |
+| Convention (C) | 13 | Low | Auto-fixable |
+| Informational (I) | 0 | - | - |
 
 ### Ruff (Fast Linting)
 
@@ -55,11 +55,11 @@ E1999 Syntax error                       : 0 issues
 
 #### Error Details
 
-| File                        | Error                                     | Reason                                  | Resolution                       |
-| --------------------------- | ----------------------------------------- | --------------------------------------- | -------------------------------- |
-| tracing_setup.py:17         | TracerProvider missing add_span_processor | Missing type stub for opentelemetry-api | Add py.typed marker in stubs     |
-| data_validation_gx.py:14-18 | EphemeralDataContext methods undefined    | Missing great_expectations type stubs   | Install great-expectations-stubs |
-| prefect_orchestrator.py:10  | Module has no send_slack_notification     | Function may not exist                  | Verify implementation            |
+| File | Error | Reason | Resolution |
+|------|-------|--------|-----------|
+| tracing_setup.py:17 | TracerProvider missing add_span_processor | Missing type stub for opentelemetry-api | Add py.typed marker in stubs |
+| data_validation_gx.py:14-18 | EphemeralDataContext methods undefined | Missing great_expectations type stubs | Install great-expectations-stubs |
+| prefect_orchestrator.py:10 | Module has no send_slack_notification | Function may not exist | Verify implementation |
 
 ### Test Coverage
 
@@ -69,11 +69,11 @@ E1999 Syntax error                       : 0 issues
 
 #### Failing Tests Breakdown
 
-| Category                | Count | Status                         |
-| ----------------------- | ----- | ------------------------------ |
-| KPI v1 deprecated       | 6     | Use KPIEngineV2 (Phase 5)      |
-| Data utilities          | 5     | Refactor (Phase 5)             |
-| KPI engine API mismatch | 4     | Update API contracts (Phase 5) |
+| Category | Count | Status |
+|----------|-------|--------|
+| KPI v1 deprecated | 6 | Use KPIEngineV2 (Phase 5) |
+| Data utilities | 5 | Refactor (Phase 5) |
+| KPI engine API mismatch | 4 | Update API contracts (Phase 5) |
 
 **Note**: All 15 failures are **unrelated to Phase 4 config refactoring**. The 28 tests fixed in Phase 4 are all passing.
 
@@ -250,11 +250,11 @@ def output_metrics(request: OutputRequest):
 
 **Findings**:
 
-| Library            | Issue                            | Resolution                                  |
-| ------------------ | -------------------------------- | ------------------------------------------- |
-| opentelemetry-api  | TracerProvider missing type stub | Install opentelemetry-exporter-jaeger       |
-| great-expectations | Type stubs incomplete            | Install great-expectations[stubs]           |
-| prefect            | Limited types in newer versions  | Update prefect version or add types-prefect |
+| Library | Issue | Resolution |
+|---------|-------|-----------|
+| opentelemetry-api | TracerProvider missing type stub | Install opentelemetry-exporter-jaeger |
+| great-expectations | Type stubs incomplete | Install great-expectations[stubs] |
+| prefect | Limited types in newer versions | Update prefect version or add types-prefect |
 
 **Command to resolve**:
 
@@ -270,11 +270,11 @@ pip install types-opentelemetry types-great-expectations types-prefect
 
 These issues are intentional and should NOT be fixed:
 
-| Code  | Location             | Reason                                        | Approved |
-| ----- | -------------------- | --------------------------------------------- | -------- |
-| C0415 | ingestion.py:228     | Conditional HTTP import (optional dependency) | ✅ Yes   |
-| C0415 | output.py:53-56      | Conditional Azure import (optional feature)   | ✅ Yes   |
-| E501  | SQL strings in tests | Multi-line SQL is readable single-line        | ✅ Yes   |
+| Code | Location | Reason | Approved |
+|------|----------|--------|----------|
+| C0415 | ingestion.py:228 | Conditional HTTP import (optional dependency) | ✅ Yes |
+| C0415 | output.py:53-56 | Conditional Azure import (optional feature) | ✅ Yes |
+| E501 | SQL strings in tests | Multi-line SQL is readable single-line | ✅ Yes |
 
 ### Comment Suppressions
 

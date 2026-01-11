@@ -8,7 +8,7 @@ Test Cases:
 
 import json
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 import pandas as pd
 import pytest
@@ -179,7 +179,7 @@ class TestKPICorrectness:
 
         for test_case in test_cases:
             value = test_case["value"]
-            assert isinstance(value, (int, float)), "Test value must be numeric"
+            assert isinstance(value, (int, float)), f"Test value must be numeric"
 
     def test_b02_large_value_handling(self) -> None:
         """Verify KPI calculations handle very large values without overflow."""

@@ -131,6 +131,5 @@ This document contains the URLs and instructions for downloading current data fr
 - **Documentation:** <https://knowledgebase.cascadedebt.com>
 
 ---
-
-_Document maintained by: Abaco Analytics Team_
-_Repository: <https://github.com/Abaco-Technol/abaco-loans-analytics>_
+*Document maintained by: Abaco Analytics Team*
+*Repository: <https://github.com/Abaco-Technol/abaco-loans-analytics>*

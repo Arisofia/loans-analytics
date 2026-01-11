@@ -12,7 +12,7 @@ import pandas as pd
 import plotly.express as px
 
 from src.analytics import project_growth
-from src.utils.theme import ABACO_THEME
+from src.theme import ABACO_THEME
 
 
 def apply_theme(fig: px.Figure) -> px.Figure:
@@ -81,7 +81,7 @@ def build_markdown_summary(output_dir: Path) -> Path:
         """
         # ABACO Slide Assets
 
-        - **Theme:** Dark gradients with neon purple/blue accents to mirror the Figma “Social Media Metrics Presentation”.
+        - **Theme:** Dark gradients with neon purple/blue accents to mirror the Figma “Dark Editable Slides”.
         - **Growth path:** See the interactive chart exported as `growth-path.html`.
         - **Marketing treemap:** Use `sales-treemap.html` to explain segment weighting.
         - **Financeable offers:** Emphasize that the pipeline highlights financeable borrowers and packages, not just raw demand.

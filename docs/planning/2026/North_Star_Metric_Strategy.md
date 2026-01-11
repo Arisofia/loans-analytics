@@ -44,13 +44,13 @@ This measures the total processed volume from clients who repeat, reflecting ret
 
 ## 3. Value engine and key indicators
 
-| Stage               | SME action                     | Value to Abaco     | Related metrics                                   |
-| ------------------- | ------------------------------ | ------------------ | ------------------------------------------------- |
-| Acquisition         | Onboarding and first operation | New clients        | Monthly new logos by segment (Micro/Small/Medium) |
-| Engagement          | Recurrent factoring usage      | Recurrent TPV      | **NSM:** Weekly/Monthly Recurrent TPV             |
-| Conversion          | Invoice financing              | Revenue and margin | % invoices financed, weighted APR                 |
-| Retention/Expansion | Credit-line upsell             | Higher LTV         | TPV per recurrent client, bucket upgrades         |
-| Portfolio health    | Collections and cures          | Controlled risk    | Default rate, DPD/NPL, debtor concentration       |
+| Stage | SME action | Value to Abaco | Related metrics |
+| --- | --- | --- | --- |
+| Acquisition | Onboarding and first operation | New clients | Monthly new logos by segment (Micro/Small/Medium) |
+| Engagement | Recurrent factoring usage | Recurrent TPV | **NSM:** Weekly/Monthly Recurrent TPV |
+| Conversion | Invoice financing | Revenue and margin | % invoices financed, weighted APR |
+| Retention/Expansion | Credit-line upsell | Higher LTV | TPV per recurrent client, bucket upgrades |
+| Portfolio health | Collections and cures | Controlled risk | Default rate, DPD/NPL, debtor concentration |
 
 ## 4. Definition and calculation
 
@@ -71,13 +71,13 @@ This measures the total processed volume from clients who repeat, reflecting ret
 
 ## 5. Alignment with 2025-2026 OKRs
 
-| Objective                      | NSM-aligned key results                                                                           | Owner                        |
-| ------------------------------ | ------------------------------------------------------------------------------------------------- | ---------------------------- |
-| Grow with risk control         | AUM $7.4M→$16.3M; rotation ≥4.5×; NPL180+ <4%; real default <4%; Top-10 concentration ≤30%        | CEO/CRO/CFO                  |
-| Profitability and liquidity    | Weighted APR 34–40%; cost of debt ≤13%; DSCR ≥1.2×; utilization 75–90%                            | CFO                          |
-| Bucketed go-to-market          | ≥1 close/KAM/month in $50–150k; upgrades $10–50k→$50–150k; MQL→SQL ≥35–50%; ≤$10k close rate ≥30% | Head of Sales/Head of Growth |
-| Production-grade platform      | Decision SLA ≤24h, funding SLA ≤48h in ≥90%; live rotation/replines/DPD/NPL panels; SLO ≥99.5%    | CTO                          |
-| Portfolio health & collections | CE 6M ≥96%; replines deviation by bucket ±2 p.p.; losses within band (<4%)                        | Head of Risk                 |
+| Objective | NSM-aligned key results | Owner |
+| --- | --- | --- |
+| Grow with risk control | AUM $7.4M→$16.3M; rotation ≥4.5×; NPL180+ <4%; real default <4%; Top-10 concentration ≤30% | CEO/CRO/CFO |
+| Profitability and liquidity | Weighted APR 34–40%; cost of debt ≤13%; DSCR ≥1.2×; utilization 75–90% | CFO |
+| Bucketed go-to-market | ≥1 close/KAM/month in $50–150k; upgrades $10–50k→$50–150k; MQL→SQL ≥35–50%; ≤$10k close rate ≥30% | Head of Sales/Head of Growth |
+| Production-grade platform | Decision SLA ≤24h, funding SLA ≤48h in ≥90%; live rotation/replines/DPD/NPL panels; SLO ≥99.5% | CTO |
+| Portfolio health & collections | CE 6M ≥96%; replines deviation by bucket ±2 p.p.; losses within band (<4%) | Head of Risk |
 
 ## 6. Governance and cadence
 
@@ -87,12 +87,12 @@ This measures the total processed volume from clients who repeat, reflecting ret
 
 ## 7. Risks and mitigations
 
-| Risk                                          | Mitigation                                                                         |
-| --------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Recurrence drop in smaller buckets (G–H)      | Adjust pricing/score, reinforce onboarding and reminders; prioritize prime debtors |
-| Concentration in a few debtors                | Debtor limits, automated alerts, and origination rebalance                         |
-| Misalignment between origination and cashflow | Replines and cash-weighted rotation as guardrails; compare plan vs actual weekly   |
-| Data quality on invoices/collateral           | DTE integration, automated validations, 100% assignment audit                      |
+| Risk | Mitigation |
+| --- | --- |
+| Recurrence drop in smaller buckets (G–H) | Adjust pricing/score, reinforce onboarding and reminders; prioritize prime debtors |
+| Concentration in a few debtors | Debtor limits, automated alerts, and origination rebalance |
+| Misalignment between origination and cashflow | Replines and cash-weighted rotation as guardrails; compare plan vs actual weekly |
+| Data quality on invoices/collateral | DTE integration, automated validations, 100% assignment audit |
 
 ## 8. Why not use other metrics as the central NSM
 

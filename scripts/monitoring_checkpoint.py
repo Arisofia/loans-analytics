@@ -84,20 +84,21 @@ class MonitoringCheckpoint:
                     report["stderr"] = completed.stderr.strip()
                 report["returncode"] = completed.returncode
                 return report
-            # Optionally: Delete any stale report if process failed
-            if validation_report_path.exists():
-                try:
-                    validation_report_path.unlink()
-                except Exception:
-                    pass
+            else:
+                # Optionally: Delete any stale report if process failed
+                if validation_report_path.exists():
+                    try:
+                        validation_report_path.unlink()
+                    except Exception:
+                        pass
 
-            return {
-                "status": "FAIL",
-                "error": f"Validation script failed (returncode={completed.returncode})",
-                "returncode": completed.returncode,
-                "stdout": completed.stdout.strip() if completed.stdout else "",
-                "stderr": completed.stderr.strip() if completed.stderr else "",
-            }
+                return {
+                    "status": "FAIL",
+                    "error": f"Validation script failed (returncode={completed.returncode})",
+                    "returncode": completed.returncode,
+                    "stdout": completed.stdout.strip() if completed.stdout else "",
+                    "stderr": completed.stderr.strip() if completed.stderr else "",
+                }
 
         except subprocess.TimeoutExpired:
             return {"status": "FAIL", "error": "Validation script timeout"}

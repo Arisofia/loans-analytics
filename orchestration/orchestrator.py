@@ -8,13 +8,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-try:
-    from agents.base_agent import BaseAgent
-except ImportError:
-    # Fallback for different execution contexts
-    import os
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-    from agents.base_agent import BaseAgent
+sys.path.append("../agents")
+from base_agent import BaseAgent
 
 logger = logging.getLogger(__name__)
 

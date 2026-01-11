@@ -192,7 +192,7 @@ log "Testing V2 execution on sample data..."
 python -c "
 import pandas as pd
 import numpy as np
-from src.kpis import KPIEngineV2
+from src.kpi_engine_v2 import KPIEngineV2
 
 np.random.seed(42)
 df = pd.DataFrame({

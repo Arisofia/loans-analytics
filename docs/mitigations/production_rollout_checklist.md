@@ -1,23 +1,18 @@
-# Production Rollout Checklist
+# Production rollout checklist — Middleware shared-secret mitigation
 
-Follow these steps to safely roll out the middleware mitigation for CVE-2025-29927.
+Follow this checklist when rolling out the `MIDDLEWARE_SHARED_SECRET`-based mitigation to a deployed environment.
 
-## Phase 1: Configuration
+- [ ] Ensure `MIDDLEWARE_SHARED_SECRET` is created in **Repository secrets** (or organization-level secrets) and communicated to runtime owners only via your secret management process.
+- [ ] Verify the secret value matches what is configured in the deployed runtime (env var or secret mount).
+- [ ] Run `Secret check (manual)` workflow (GitHub Actions) to ensure the repo secret is present.
+- [ ] Deploy the application to the target environment (staging/production) with the secret present.
+- [ ] Run `Deploy verification (manual)` workflow with `target_url=<deployed-url>` and confirm:
+  - Spoofed header without secret → **HTTP 403** (blocked)
+  - Spoofed header with secret → **non-403** (allowed)
+- [ ] If verification succeeds, monitor observability dashboards (Grafana/Alloy) and logs for anomalies for at least one deployment window.
+- [ ] Optionally: apply the WAF rule in **log mode** first, observe traffic for 24–72 hours, then switch to **block** if acceptable.
+- [ ] Add a short post-deploy entry to the incident/audit log documenting the verification results and operator that ran them.
 
-- [ ] Add `MIDDLEWARE_SHARED_SECRET` to Repository or Organization secrets (required).
-- [ ] Run **Secret check (manual)** workflow to confirm secret presence.
+**Contacts:** Add the on-call or ops contacts for the environment here.
 
-## Phase 2: Deployment
-
-- [ ] Deploy the application to the target environment (staging or production) with the secret present in the environment variables.
-
-## Phase 3: Verification
-
-- [ ] Run **Deploy verification (manual)** workflow with `target_url` set to the deployed environment.
-- [ ] Confirm: Spoofed header WITHOUT secret (`x-middleware-subrequest`) -> **HTTP 403**.
-- [ ] Confirm: Spoofed header WITH secret (`x-internal-shared-secret`) -> **non-403**.
-
-## Phase 4: Monitoring
-
-- [ ] Monitor observability dashboards for anomalies.
-- [ ] Document verification results in the audit log.
+**Notes:** Do not share the secret in plaintext in PRs, issues, or chat; use repo secrets and the standard rotation process described in `docs/mitigations/rotate_secrets.md`.

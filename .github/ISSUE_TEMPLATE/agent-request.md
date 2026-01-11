@@ -1,9 +1,10 @@
 ---
 name: Agent change request
 about: Request a new or updated agent spec, prompt, or tooling.
-title: '[Agent] '
+title: "[Agent] "
 labels: agent
 assignees: ''
+
 ---
 
 ## Summary
@@ -21,7 +22,7 @@ assignees: ''
 ## Acceptance criteria
 
 1. [ ] Updated spec/prompt files under `agents/specs/` and `agents/prompts/` reflect the request
-2. [ ] Runtime harness (src/agents/\*.py or node/agents) can consume the new spec
+2. [ ] Runtime harness (src/agents/*.py or node/agents) can consume the new spec
 3. [ ] Downstream docs and CI checks reference the updated agent
 
 ## Testing notes

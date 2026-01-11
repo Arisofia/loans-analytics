@@ -45,6 +45,5 @@ access.
 - All workflows will fail fast if a required secret is missing.
 
 ---
-
 This file is auto-generated and should be updated if new agents or workflows
 require additional secrets.

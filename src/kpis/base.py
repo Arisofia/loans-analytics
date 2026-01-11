@@ -40,6 +40,12 @@ class KPIMetadata:
         return asdict(self)
 
 
+def safe_numeric(series: pd.Series, fill_value: float = 0.0) -> pd.Series:
+    """Convert series to numeric, handling nulls and coercion errors."""
+    numeric = pd.to_numeric(series, errors="coerce")
+    return numeric.fillna(fill_value)
+
+
 def create_context(
     formula: str,
     rows_processed: int,

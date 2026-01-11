@@ -1,6 +1,6 @@
 name: Azure Diagnostics (dispatchable)
 
-on:
+"on":
   workflow_dispatch:
 
 permissions:
@@ -45,15 +45,13 @@ jobs:
           echo "diagnostics start: $(date -u)" > diagnostics/README.txt
 
       - name: Set up Azure CLI
-        uses: azure/cli@v2
+        uses: azure/CLI@v1
         with:
-          azcliversion: "2.49.0"
-          inlineScript: |
-            az --version
+          azcliversion: '2.49.0'
 
       - name: Azure login (service principal)
         if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}
-        uses: azure/login@v2
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -62,20 +60,19 @@ jobs:
         run: |
           az account show --output json > diagnostics/az_account.json || echo '{}' > diagnostics/az_account.json
 
-      # - name: ACR repositories (if available)
-      #   if: ${{ needs.validate-acr.outputs.all_secrets_present == 'true' && needs.validate-azure.outputs.all_secrets_present == 'true' }}
-      #   env:
-      #     ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-      #   run: |
-      #     registry=$(echo "$ACR_LOGIN_SERVER" | cut -d'.' -f1)
-      #     az acr repository list --name "$registry" --output json > diagnostics/acr_repos.json || echo '[]' > diagnostics/acr_repos.json
+      - name: ACR repositories (if available)
+        if: ${{ needs.validate-acr.outputs.all_secrets_present == 'true' && needs.validate-azure.outputs.all_secrets_present == 'true' }}
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+        run: |
+          registry=$(echo "$ACR_LOGIN_SERVER" | cut -d'.' -f1)
+          az acr repository list --name "$registry" --output json > diagnostics/acr_repos.json || echo '[]' > diagnostics/acr_repos.json
 
       - name: Storage containers (if available)
         if: ${{ needs.validate-storage.outputs.all_secrets_present == 'true' }}
         run: |
           echo "Listing containers using AZURE_STORAGE_CONNECTION_STRING"
-          az storage container list --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
-            --output json > diagnostics/storage_containers.json || echo '[]' > diagnostics/storage_containers.json
+          az storage container list --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --output json > diagnostics/storage_containers.json || echo '[]' > diagnostics/storage_containers.json
 
       - name: SWA token check
         if: ${{ needs.validate-swa.outputs.all_secrets_present == 'true' }}
@@ -83,17 +80,15 @@ jobs:
 
       - name: Summarize diagnostics
         run: |
-          {
-            echo "Diagnostics summary:"
-            echo "validate-azure: ${{ needs.validate-azure.outputs.all_secrets_present }}"
-            echo "validate-acr: ${{ needs.validate-acr.outputs.all_secrets_present }}"
-            echo "validate-storage: ${{ needs.validate-storage.outputs.all_secrets_present }}"
-            echo "validate-swa: ${{ needs.validate-swa.outputs.all_secrets_present }}"
-            ls -lah diagnostics
-          } > diagnostics/summary.txt
+          echo "Diagnostics summary:" > diagnostics/summary.txt
+          echo "validate-azure: ${{ needs.validate-azure.outputs.all_secrets_present }}" >> diagnostics/summary.txt
+          echo "validate-acr: ${{ needs.validate-acr.outputs.all_secrets_present }}" >> diagnostics/summary.txt
+          echo "validate-storage: ${{ needs.validate-storage.outputs.all_secrets_present }}" >> diagnostics/summary.txt
+          echo "validate-swa: ${{ needs.validate-swa.outputs.all_secrets_present }}" >> diagnostics/summary.txt
+          ls -lah diagnostics >> diagnostics/summary.txt || true
 
       - name: Upload diagnostics artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: azure-diagnostics
           path: diagnostics

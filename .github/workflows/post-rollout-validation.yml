@@ -1,5 +1,5 @@
 name: Post-Rollout Validation
-on:
+"on":
   workflow_dispatch:
   schedule:
     - cron: "0 7 * * *" # daily at 7am UTC
@@ -9,21 +9,21 @@ jobs:
     steps:
       - name: Check secrets availability
         id: check-secrets
-        # env block commented out to prevent workflow errors due to missing secrets
-        # AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-        # FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
-        # FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
-        # FIGMA_NODE_ID: ${{ secrets.FIGMA_NODE_ID }}
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+          FIGMA_NODE_ID: ${{ secrets.FIGMA_NODE_ID }}
         run: |
           if [ -n "$AWS_S3_BUCKET" ]; then
-            echo "aws_available=true" >> "$GITHUB_OUTPUT"
+            echo "aws_available=true" >> $GITHUB_OUTPUT
           else
-            echo "aws_available=false" >> "$GITHUB_OUTPUT"
+            echo "aws_available=false" >> $GITHUB_OUTPUT
           fi
           if [ -n "$FIGMA_TOKEN" ] && [ -n "$FIGMA_FILE_KEY" ] && [ -n "$FIGMA_NODE_ID" ]; then
-            echo "figma_available=true" >> "$GITHUB_OUTPUT"
+            echo "figma_available=true" >> $GITHUB_OUTPUT
           else
-            echo "figma_available=false" >> "$GITHUB_OUTPUT"
+            echo "figma_available=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Checkout repo
@@ -39,12 +39,7 @@ jobs:
       - name: Validate Meta Insights Data
         if: hashFiles('data/warehouse/meta_insights.parquet') != ''
         run: |
-          python -c "
-          import pandas as pd
-          df = pd.read_parquet('data/warehouse/meta_insights.parquet')
-          assert not df.empty, 'Meta insights data is empty!'
-          print('Meta insights records:', len(df))
-          "
+          python -c "import pandas as pd; df = pd.read_parquet('data/warehouse/meta_insights.parquet'); assert not df.empty, 'Meta insights data is empty!'; print('Meta insights records:', len(df))"
       - name: Validate Cascade Data
         if: hashFiles('data/metrics/*.csv') != ''
         run: |
@@ -63,9 +58,9 @@ jobs:
           print("Cascade records:", len(df), "file:", latest)
           PY
       - name: Validate Figma Dashboard Images
-        if: steps.check-secrets.outputs.aws_available == true
-        # env block commented out to prevent workflow errors due to missing secrets
-        # AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+        if: steps.check-secrets.outputs.aws_available == 'true'
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
         run: |
           python - <<'PY'
           import os
@@ -84,11 +79,10 @@ jobs:
               print(f"Image OK: {url}")
           PY
       - name: Validate Figma API Node Update
-        if: steps.check-secrets.outputs.figma_available == true
-        # env block commented out to prevent workflow errors due to missing secrets
-        # FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
-        # FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
-        # FIGMA_NODE_ID: ${{ secrets.FIGMA_NODE_ID }}
+        if: steps.check-secrets.outputs.figma_available == 'true'
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+          FIGMA_NODE_ID: ${{ secrets.FIGMA_NODE_ID }}
         run: |
-          curl -H "X-Figma-Token: $FIGMA_TOKEN" \
-            "https://api.figma.com/v1/files/$FIGMA_FILE_KEY/nodes?ids=$FIGMA_NODE_ID"
+          curl -H "X-Figma-Token: $FIGMA_TOKEN" "https://api.figma.com/v1/files/$FIGMA_FILE_KEY/nodes?ids=$FIGMA_NODE_ID"

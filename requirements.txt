@@ -57,9 +57,3 @@ supabase>=2.0
 
 # Testing utilities
 Faker>=18.0
-# Static and type checking utilities
-mypy>=1.8.0
-# HTTP mocking utilities for tests
-# NOTE: requests-mock is the canonical plugin used by CI. Add here so local dev venvs install the plugin.
-requests-mock>=1.12.1
-python-stdnum>=1.20

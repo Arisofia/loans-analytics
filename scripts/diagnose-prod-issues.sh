@@ -45,21 +45,21 @@ else
 fi
 
 echo -e "\n3️⃣ Checking dashboard requirements..."
-if [ -f "requirements.txt" ]; then
-    echo -e "${GREEN}✅ Found requirements.txt${NC}"
+if [ -f "dashboard/requirements.txt" ]; then
+    echo -e "${GREEN}✅ Found dashboard/requirements.txt${NC}"
     echo "   Dependencies:"
-    head -10 requirements.txt | sed 's/^/   - /'
+    head -10 dashboard/requirements.txt | sed 's/^/   - /'
 else
-    echo -e "${RED}❌ Missing requirements.txt${NC}"
+    echo -e "${RED}❌ Missing dashboard/requirements.txt${NC}"
 fi
 
 echo -e "\n4️⃣ Checking for database connection configuration..."
-if [ -f "streamlit_app.py" ]; then
-    if grep -q "DATABASE\|database\|DB_\|sqlalchemy\|psycopg" streamlit_app.py; then
-        echo -e "${GREEN}✅ Database references found in streamlit_app.py${NC}"
-        grep -i "DATABASE\|DB_\|sqlalchemy\|psycopg" streamlit_app.py | head -5 | sed 's/^/   /'
+if [ -f "dashboard/app.py" ]; then
+    if grep -q "DATABASE\|database\|DB_\|sqlalchemy\|psycopg" dashboard/app.py; then
+        echo -e "${GREEN}✅ Database references found in dashboard/app.py${NC}"
+        grep -i "DATABASE\|DB_\|sqlalchemy\|psycopg" dashboard/app.py | head -5 | sed 's/^/   /'
     else
-        echo -e "${YELLOW}⚠️ No obvious database references in streamlit_app.py${NC}"
+        echo -e "${YELLOW}⚠️ No obvious database references in dashboard/app.py${NC}"
     fi
 fi
 

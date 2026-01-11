@@ -1,6 +1,6 @@
 name: Lint and Policy Enforcement
 
-on:
+"on":
   pull_request:
     branches: [main]
   push:
@@ -22,13 +22,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r dev-requirements.txt
-          pip install jsonlint
-          # Use markdownlint-cli2 which supports YAML config files (.markdownlint.yml)
-          npm install -g markdownlint-cli2
+          pip install jsonlint yamllint==1.33.0
+          npm install -g markdownlint-cli
 
       - name: Lint YAML
         run: |
-          yamllint .
+          yamllint -c .yamllint .
 
       - name: Lint JSON
         run: |
@@ -36,8 +35,7 @@ jobs:
 
       - name: Lint Markdown
         run: |
-          # Use markdownlint-cli2 with the repository config (includes ignores)
-          npx markdownlint-cli2 "**/*.md"
+          markdownlint '**/*.md' --ignore node_modules --ignore .venv
 
       - name: Lint Python (pylint, flake8, ruff)
         run: |
@@ -50,7 +48,7 @@ jobs:
 
       - name: Type Check (mypy)
         run: |
-          PYTHONPATH=src mypy src --ignore-missing-imports
+          PYTHONPATH=src mypy src tests --ignore-missing-imports
 
       - name: Check for duplicate/stale README and config files
         run: |
@@ -60,9 +58,6 @@ jobs:
             | grep -vE 'scripts/generate_abaco_portfolio_sample.py' \
             | grep -vE 'data_samples/abaco_portfolio_sample.csv' \
             | grep -vE 'config/codex_mcp_config.toml.example' \
-            | grep -vE 'python/sample_data.csv' \
-            | grep -vE 'tests/data/archives/sample_.*\.csv' \
-            | grep -vE 'data/archives/cascade/sample_small.csv' \
             > doc_files.txt
           python scripts/security/check_doc_policy.py doc_files.txt
 

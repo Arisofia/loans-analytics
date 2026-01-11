@@ -17,10 +17,10 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 
-from src.kpis import KPIEngineV2
+from src.kpi_engine_v2 import KPIEngineV2
 
 try:
-    from src.utils.tracing.azure_monitor import setup_azure_tracing
+    from src.azure_tracing import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for production_validation")
@@ -79,7 +79,7 @@ class ProductionValidator:
             engine = KPIEngineV2(df)
             metrics = engine.calculate_all(include_composite=True)
 
-            result: Dict[str, Any] = {
+            result = {
                 "status": "PASS",
                 "metrics": {
                     "par30": float(metrics["PAR30"]["value"]),

@@ -4,6 +4,7 @@ import pytest
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
+import requests
 
 SCRIPT = Path(__file__).resolve().parent.parent.parent / "scripts" / "sync_kpi_table_to_figma.py"
 

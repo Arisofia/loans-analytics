@@ -111,5 +111,4 @@ No persistent application data or test data should reside here.
 - For questions, incidents, or exceptions, open an issue with the `qa` or `security` labels.
 
 ---
-
-_Last reviewed: 2026-01-02_
+*Last reviewed: 2026-01-02*

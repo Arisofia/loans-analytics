@@ -129,15 +129,15 @@ Risk: Different services using different configs
 
 ## 📊 Duplication Statistics
 
-| Type              | Files   | Total Lines | Redundancy         |
-| ----------------- | ------- | ----------- | ------------------ |
-| Ingestion         | 3       | ~410        | ❌ 3x duplication  |
-| Transformation    | 2       | ~207        | ❌ 2x duplication  |
-| KPI Engine        | 2       | ~283        | ❌ 2x duplication  |
-| Calculation       | 2       | ~304        | ❌ 2x duplication  |
-| Agents (isolated) | 4       | ~250        | ⚠️ Separate branch |
-| Config files      | 17      | ~mixed      | ⚠️ No hierarchy    |
-| **TOTAL DEBT**    | **30+** | **~1,500+** | **CRITICAL**       |
+| Type | Files | Total Lines | Redundancy |
+|------|-------|-------------|-----------|
+| Ingestion | 3 | ~410 | ❌ 3x duplication |
+| Transformation | 2 | ~207 | ❌ 2x duplication |
+| KPI Engine | 2 | ~283 | ❌ 2x duplication |
+| Calculation | 2 | ~304 | ❌ 2x duplication |
+| Agents (isolated) | 4 | ~250 | ⚠️ Separate branch |
+| Config files | 17 | ~mixed | ⚠️ No hierarchy |
+| **TOTAL DEBT** | **30+** | **~1,500+** | **CRITICAL** |
 
 ---
 

@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from python.pipeline.ingestion import UnifiedIngestion
+from pipeline.ingestion import UnifiedIngestion
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def test_measurement_strategy_max_disburse_date(base_config):
         "measurement_date_strategy": "max_disburse_date"
     }
     ui = UnifiedIngestion(cfg)
-    result = ui.looker_converter.convert_dpd_loans(loans, {})
+    result = ui._looker_dpd_to_loan_tape(loans, {})
     assert result["measurement_date"].iloc[0].startswith("2023-02-01")
 
 
@@ -49,7 +49,7 @@ def test_measurement_strategy_max_maturity_date(base_config):
         "measurement_date_strategy": "max_maturity_date"
     }
     ui = UnifiedIngestion(cfg)
-    result = ui.looker_converter.convert_dpd_loans(loans, {})
+    result = ui._looker_dpd_to_loan_tape(loans, {})
     assert result["measurement_date"].iloc[0].startswith("2024-03-01")
 
 
@@ -60,5 +60,5 @@ def test_measurement_date_column_takes_precedence(base_config):
     cfg = base_config.copy()
     cfg["pipeline"]["phases"]["ingestion"]["looker"] = {"measurement_date_column": "as_of_date"}
     ui = UnifiedIngestion(cfg)
-    result = ui.looker_converter.convert_dpd_loans(loans, {})
+    result = ui._looker_dpd_to_loan_tape(loans, {})
     assert result["measurement_date"].iloc[0].startswith("2022-12-12")

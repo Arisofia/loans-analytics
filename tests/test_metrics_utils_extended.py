@@ -13,11 +13,11 @@ from src.analytics.metrics_utils import (_coerce_numeric, debt_to_income_ratio,
 
 
 def test_coerce_numeric_all_nan():
-    # Test that _coerce_numeric returns all NaNs if all values
+    # Test that _coerce_numeric raises ValueError if all values
     # are non-numeric.
     series = pd.Series(["invalid", "data", "values"])
-    result = _coerce_numeric(series, "test_field")
-    assert result.isna().all()
+    with pytest.raises(ValueError, match="must contain at least one numeric value"):
+        _coerce_numeric(series, "test_field")
 
 
 def test_validate_kpi_columns_empty_dataframe():

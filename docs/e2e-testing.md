@@ -88,7 +88,6 @@ SUPABASE_URL='https://xyz.supabase.co' SUPABASE_SERVICE_ROLE_KEY='your_service_r
   - Optional: `E2E_SEED_TABLE`, `E2E_SEED_ROWS` (JSON string)
 
 Notes:
-
 - The scripts and TestDataManager use the Supabase Service Role key; never commit this key into the repository or .env files.
 - If your table has a different primary key name, adjust the scripts or TestDataManager accordingly to capture and delete inserted rows by the appropriate column.
 

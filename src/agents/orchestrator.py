@@ -12,7 +12,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from src.agents.agent import Agent
 from src.agents.llm_provider import MockLLM
 from src.agents.tools import registry as global_registry
-from src.utils.tracing.setup import get_tracer
+from src.tracing_setup import get_tracer
 
 tracer = get_tracer(__name__)
 

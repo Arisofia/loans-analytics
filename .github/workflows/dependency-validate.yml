@@ -1,9 +1,9 @@
 name: Dependency validate
 
-on:
+"on":
   pull_request:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   dependency-validate:
@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: 3.11
 

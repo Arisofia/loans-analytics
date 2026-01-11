@@ -22,7 +22,7 @@ OpenTelemetry (OTEL) distributed tracing captures HTTP requests, database querie
 │  - Auto-instrumentation             │
 └──────────┬──────────────────────────┘
            │
-           ├─→ Dev: OTLP HTTP when OTEL_EXPORTER_OTLP_ENDPOINT is set
+           ├─→ Dev: OTLP HTTP to localhost:4318
            └─→ Prod: OTLP HTTP to Azure Monitor (via endpoint)
 ```
 
@@ -87,8 +87,6 @@ docker run --rm \
 ```
 
 ### 2. Set Environment Variables
-
-Tracing export is disabled unless `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
 
 ```bash
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
@@ -185,7 +183,7 @@ Wrap your own code with spans:
 
 ```python
 from tracing_setup import get_tracer  # dashboard (dashboard/tracing_setup.py)
-# from src.utils.tracing.setup import get_tracer  # pipeline modules
+# from src.tracing_setup import get_tracer  # pipeline modules
 
 tracer = get_tracer(__name__)
 
@@ -205,23 +203,19 @@ def my_business_logic():
 
 ### Environment Variables
 
-| Variable                                | Default                 | Purpose                       |
-| --------------------------------------- | ----------------------- | ----------------------------- |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`           | (unset)                 | OTLP exporter endpoint        |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | (unset)                 | Azure App Insights connection |
-| `LOG_LEVEL`                             | `INFO`                  | Logging verbosity             |
-| `OTEL_SDK_DISABLED`                     | `false`                 | Disable tracing globally      |
-| `DISABLE_TELEMETRY`                     | (unset)                 | Skip tracing setup entirely   |
-| `DISABLE_AZURE_TRACING`                 | (unset)                 | Skip Azure tracing setup      |
-
-Azure tracing setup is skipped automatically when `CI` or `PYTEST_CURRENT_TEST` is set.
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318` | OTLP exporter endpoint |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | (unset) | Azure App Insights connection |
+| `LOG_LEVEL` | `INFO` | Logging verbosity |
+| `OTEL_SDK_DISABLED` | `false` | Disable tracing globally |
 
 ### Code Configuration
 
 In `src/tracing_setup.py`:
 
 ```python
-from src.utils.tracing.setup import init_tracing
+from src.tracing_setup import init_tracing
 
 # Initialize with custom endpoint
 init_tracing(
@@ -245,7 +239,7 @@ init_tracing(
 2. **Verify tracing initialization**:
 
    ```bash
-   python -c "from src.utils.tracing.setup import init_tracing; init_tracing(); print('OK')"
+   python -c "from src.tracing_setup import init_tracing; init_tracing(); print('OK')"
    ```
 
 3. **Enable debug logging**:
@@ -288,7 +282,7 @@ If HTTP or database calls aren't traced:
 3. Check that imports happen **after** instrumentation:
 
    ```python
-   from src.utils.tracing.setup import init_tracing, enable_auto_instrumentation
+   from src.tracing_setup import init_tracing, enable_auto_instrumentation
    init_tracing()
    enable_auto_instrumentation()
 
@@ -300,7 +294,7 @@ If HTTP or database calls aren't traced:
 ### Trace an HTTP call to Cascade API
 
 ```python
-from src.utils.tracing.setup import get_tracer
+from src.tracing_setup import get_tracer
 import httpx
 
 tracer = get_tracer(__name__)
@@ -326,7 +320,7 @@ The HTTP call will be automatically instrumented with attributes like:
 ### Trace a database query
 
 ```python
-from src.utils.tracing.setup import get_tracer
+from src.tracing_setup import get_tracer
 import psycopg
 
 tracer = get_tracer(__name__)

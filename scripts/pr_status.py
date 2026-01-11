@@ -94,7 +94,7 @@ def render_report(repo: str, number: int) -> str:
         raise GitHubRequestError("Unable to resolve head commit SHA for the pull request.")
 
     checks = check_runs(repo, sha)
-    status_payload: Dict[str, Any] = commit_status(repo, sha)
+    status_payload = commit_status(repo, sha)
     report_lines = [
         f"PR #{number}: {pr.get('title', 'untitled')}",
         f"URL: {pr.get('html_url')}",
@@ -106,9 +106,7 @@ def render_report(repo: str, number: int) -> str:
         summarize_checks(checks),
         "",
         "Commit statuses:",
-        summarize_statuses(
-            status_payload.get("statuses", []), str(status_payload.get("state", "unknown"))
-        ),
+        summarize_statuses(status_payload.get("statuses", []), status_payload.get("state")),
     ]
     return "\n".join(report_lines)
 

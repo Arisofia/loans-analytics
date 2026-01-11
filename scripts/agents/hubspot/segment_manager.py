@@ -30,7 +30,6 @@ class SegmentManager:
             Dictionary containing segment creation response.
         """
         # Implementation for creating date-based segments
-        return {}
 
     def get_segment_contacts(self, segment_id: str) -> List[Dict]:
         """Get all contacts in a specific segment.
@@ -42,4 +41,3 @@ class SegmentManager:
             List of contact dictionaries.
         """
         # Implementation for retrieving segment contacts
-        return []

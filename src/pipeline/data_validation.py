@@ -1,15 +1,10 @@
 """Module for data validation utilities and functions."""
 
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
-
-from python.pipeline.validation import DataQualityReporter  # noqa: F401
-from python.pipeline.validation import (DataQualityReport,  # noqa: F401
-                                        validate_dataframe)
-from src.utils.date_utils import ISO8601_REGEX
 
 REQUIRED_ANALYTICS_COLUMNS: List[str] = [
     "loan_amount",
@@ -41,6 +36,8 @@ NUMERIC_COLUMNS: List[str] = [
     "discounted_balance_usd",
     "cash_available_usd",
 ]
+
+ISO8601_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$")
 
 
 class ColumnValidator:
@@ -110,6 +107,47 @@ def find_column(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
     return finder.find(candidates)
 
 
+def is_missing_columns(df: pd.DataFrame, required: Optional[List[str]]) -> List[str]:
+    """Get list of missing required columns."""
+    if not required:
+        return []
+    return [col for col in required if col not in df.columns]
+
+
+def validate_dataframe(
+    df: pd.DataFrame,
+    required_columns: Optional[List[str]] = None,
+    numeric_columns: Optional[List[str]] = None,
+    date_columns: Optional[List[str]] = None,
+) -> None:
+    """Validate that the DataFrame contains required columns and types."""
+    if required_columns:
+        missing = [col for col in required_columns if col not in df.columns]
+        if missing:
+            if len(missing) == 1:
+                raise ValueError(f"Missing required column: {missing[0]}")
+            raise ValueError(f"Missing required columns: {', '.join(missing)}")
+
+    if numeric_columns:
+        for col in numeric_columns:
+            if col not in df.columns:
+                raise ValueError(f"Missing required numeric column: {col}")
+            if df[col].dtype == "object":
+                for x in df[col]:
+                    if isinstance(x, str):
+                        raise ValueError(f"Column '{col}' must be numeric: {col}")
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+            if not pd.api.types.is_numeric_dtype(df[col]):
+                raise ValueError(f"Column '{col}' must be numeric: {col}")
+
+    if date_columns:
+        for col in date_columns:
+            if col not in df.columns:
+                raise ValueError(f"Missing required date column: {col}")
+            if not all(ColumnValidator.is_iso8601(val) for val in df[col]):
+                raise ValueError(f"Column '{col}' must contain ISO 8601 dates")
+
+
 def assert_dataframe_schema(
     df: pd.DataFrame,
     *,
@@ -139,6 +177,14 @@ def assert_dataframe_schema(
         ):
             msg = f"non-numeric columns: {msg}"
         raise AssertionError(f"{stage} schema validation failed: {msg}") from e
+
+
+def safe_numeric(series: pd.Series) -> pd.Series:
+    """Coerce a series to numeric, handling currency symbols and commas."""
+    if series.dtype == "object":
+        clean = series.astype(str).str.replace(r"[$€£¥₽₡,%]", "", regex=True).str.strip()
+        return pd.to_numeric(clean, errors="coerce")
+    return pd.to_numeric(series, errors="coerce")
 
 
 def validate_numeric_bounds(
@@ -226,48 +272,3 @@ def validate_no_nulls(df: pd.DataFrame, columns: Optional[List[str]] = None) -> 
         if col in df.columns:
             validation[f"{col}_no_nulls"] = not df[col].isnull().any()
     return validation
-
-
-def check_referential_integrity(df: pd.DataFrame, key_columns: Optional[List[str]] = None) -> bool:
-    """Check that key columns have no nulls and no duplicates."""
-    cols = key_columns or ["loan_id"]
-    if any(col not in df.columns for col in cols):
-        return False
-
-    try:
-        if len(df) > 0:
-            subset = df[cols]
-            if subset.isna().any().any():
-                return False
-            if df.duplicated(subset=cols).any():
-                return False
-        return True
-    except Exception:
-        return False
-
-
-def compute_freshness_hours(as_of: datetime, now: Optional[datetime] = None) -> float:
-    """Compute hours since the as_of date."""
-    now_dt = now or datetime.now(timezone.utc)
-    # Ensure as_of is timezone-aware for comparison
-    if as_of.tzinfo is None:
-        as_of = as_of.replace(tzinfo=timezone.utc)
-    delta = now_dt - as_of
-    return delta.total_seconds() / 3600.0
-
-
-def compute_completeness(df: pd.DataFrame, required_columns: Optional[List[str]] = None) -> float:
-    """Compute the percentage of non-null values in required columns."""
-    required = required_columns or []
-    if not required or df.empty:
-        return 1.0
-
-    missing = 0
-    for col in required:
-        if col not in df.columns:
-            missing += len(df)
-        else:
-            missing += int(df[col].isna().sum())
-
-    total = len(df) * len(required)
-    return max(0.0, min(1.0, 1.0 - (missing / total)))

@@ -3,8 +3,7 @@ import os
 
 import requests
 
-# Prefer environment variable FIGMA_FILE_KEY; fallback to FIGMA_FILE_ID env or the known file id
-FIGMA_FILE_ID = os.environ.get("FIGMA_FILE_KEY") or os.environ.get("FIGMA_FILE_ID") or "nuVKwuPuLS7VmLFvqzOX1G"
+FIGMA_FILE_ID = "nuVKwuPuLS7VmLFvqzOX1G"
 FIGMA_TOKEN = os.environ.get("FIGMA_TOKEN")
 FIGMA_API_URL = os.environ.get("FIGMA_API_URL")
 
@@ -20,10 +19,10 @@ try:
         url = f"https://api.figma.com/v1/files/{FIGMA_FILE_ID}"
         response = requests.get(url, headers=headers, timeout=30)
         data = response.json()
-except requests.exceptions.Timeout as exc:
-    raise RuntimeError("Figma API request timed out.") from exc
+except requests.exceptions.Timeout:
+    raise RuntimeError("Figma API request timed out.")
 except requests.exceptions.RequestException as e:
-    raise RuntimeError(f"Figma API request failed: {e}") from e
+    raise RuntimeError(f"Figma API request failed: {e}")
 
 # Save the file data to a local JSON for inspection
 output_path = "exports/presentation/figma_file_data.json"

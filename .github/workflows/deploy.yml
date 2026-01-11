@@ -1,6 +1,6 @@
 name: Deploy to Vercel
 
-on:
+"on":
   workflow_dispatch:
   push:
     branches:
@@ -68,7 +68,7 @@ jobs:
           pnpm -C apps/web install --frozen-lockfile
 
       - name: Pull Vercel project settings
-        if: steps.vercel_secrets.outputs.present == true
+        if: steps.vercel_secrets.outputs.present == 'true'
         working-directory: apps/web
         run: npx vercel pull --yes --environment=production --token "${{ secrets.VERCEL_TOKEN }}"
 
@@ -86,7 +86,7 @@ jobs:
           path: apps/web/.next
 
       - name: Upload build to S3 (cloud)
-        if: steps.aws_secrets.outputs.present == true
+        if: steps.aws_secrets.outputs.present == 'true'
         uses: jakejarvis/s3-sync-action@master
         with:
           args: --acl private --follow-symlinks
@@ -98,7 +98,7 @@ jobs:
           SOURCE_DIR: "apps/web/.next"
 
       - name: Deploy to Vercel
-        if: steps.vercel_secrets.outputs.present == true
+        if: steps.vercel_secrets.outputs.present == 'true'
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}

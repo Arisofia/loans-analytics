@@ -15,9 +15,10 @@ REPO_ROOT = tuple(Path(__file__).resolve().parents)[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from src.analytics.azure_blob_exporter import \
+    AzureBlobKPIExporter  # noqa: E402
 from src.analytics.enterprise_analytics_engine import \
     LoanAnalyticsEngine  # noqa: E402
-from src.integrations.azure_outputs import AzureStorageClient  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -126,25 +127,14 @@ def main() -> None:
                 print(f"✅ Risk alerts written to {alert_path}")
 
         if args.container_name:
-            if not args.connection_string and not args.account_url:
-                print(
-                    "❌ Error: Azure export requires --connection-string or --account-url",
-                    file=sys.stderr,
-                )
-                sys.exit(1)
-
-            exporter = AzureStorageClient(
+            exporter = AzureBlobKPIExporter(
                 container_name=args.container_name,
                 connection_string=args.connection_string,
                 account_url=args.account_url,
             )
             blob_name = args.blob_name or "kpi_results.json"
-            success = exporter.upload_json(kpi_results, blob_name)
-            if success:
-                print(f"✅ KPI results exported to Azure Blob: {blob_name}")
-            else:
-                print("❌ Failed to export KPI results to Azure Blob", file=sys.stderr)
-                sys.exit(1)
+            exporter.upload_metrics(kpi_results, blob_name)
+            print(f"✅ KPI results exported to Azure Blob: {blob_name}")
 
         summarize_results(kpi_results, risk_alert_count)
         print("\n📊 KPI Analytics Complete")

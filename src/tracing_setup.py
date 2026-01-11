@@ -30,18 +30,12 @@ def init_tracing(
     Args:
         service_name: Name of the service for resource labels.
         service_version: Version of the service.
-        otlp_endpoint: OTLP exporter endpoint. If None, uses env var when set.
-                       When no endpoint is configured, the exporter is disabled.
+        otlp_endpoint: OTLP exporter endpoint. If None, uses env var or
+                       defaults to localhost:4318.
 
     Returns:
         Configured TracerProvider instance.
     """
-    if os.getenv("DISABLE_TELEMETRY", "").strip().lower() in ("1", "true", "yes"):
-        logger.debug("Tracing disabled via DISABLE_TELEMETRY.")
-        tracer_provider = TracerProvider(resource=Resource.create({}))
-        trace.set_tracer_provider(tracer_provider)
-        return tracer_provider
-
     # Create resource with service attributes
     resource = Resource.create(
         {
@@ -56,11 +50,7 @@ def init_tracing(
 
     # Determine OTLP endpoint
     if otlp_endpoint is None:
-        otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT") or None
-
-    if not otlp_endpoint:
-        logger.debug("OTEL exporter disabled; set OTEL_EXPORTER_OTLP_ENDPOINT to enable.")
-        return tracer_provider
+        otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318")
 
     try:
         # Create OTLP exporter
@@ -86,10 +76,6 @@ def enable_auto_instrumentation() -> None:
     - urllib3 (low-level HTTP)
     - sql (database queries)
     """
-    if os.getenv("DISABLE_TELEMETRY", "").strip().lower() in ("1", "true", "yes"):
-        logger.debug("Auto-instrumentation disabled via DISABLE_TELEMETRY.")
-        return
-
     try:
         from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
         from opentelemetry.instrumentation.psycopg import PsycopgInstrumentor

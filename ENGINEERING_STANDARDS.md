@@ -75,12 +75,11 @@ make test-cov
 
 ## 7. Linting Exceptions
 
-| File                                     | Warning                    | Rationale                                                                                                                                                                                                                           |
-| ---------------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/pipeline/data_ingestion.py`         | `W0101` (Unreachable code) | Pylint identifies `df_polars.to_pandas()` after `pl.read_excel()` as unreachable. This is likely due to the lack of optional dependencies for Excel in the linting environment, causing `read_excel` to be typed as always raising. |
-| `src/analytics/kpi_catalog_processor.py` | Multiple                   | This is a legacy module scheduled for gradual replacement by the new pipeline. Style and complexity warnings are suppressed to focus on functional stability until it is fully deprecated in v2.0.                                  |
-| `src/agents/orchestrator.py`             | `valid-type`, `misc`       | SQLAlchemy's `declarative_base()` usage requires type ignores because Mypy has difficulty with the dynamically generated base class.                                                                                                |
+| File | Warning | Rationale |
+|------|---------|-----------|
+| `src/pipeline/data_ingestion.py` | `W0101` (Unreachable code) | Pylint identifies `df_polars.to_pandas()` after `pl.read_excel()` as unreachable. This is likely due to the lack of optional dependencies for Excel in the linting environment, causing `read_excel` to be typed as always raising. |
+| `src/analytics/kpi_catalog_processor.py` | Multiple | This is a legacy module scheduled for gradual replacement by the new pipeline. Style and complexity warnings are suppressed to focus on functional stability until it is fully deprecated in v2.0. |
+| `src/agents/orchestrator.py` | `valid-type`, `misc` | SQLAlchemy's `declarative_base()` usage requires type ignores because Mypy has difficulty with the dynamically generated base class. |
 
 ---
-
-_Last Updated: 2026-01-01_
+*Last Updated: 2026-01-01*

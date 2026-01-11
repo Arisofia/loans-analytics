@@ -1,17 +1,6 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0",
-    "parameters": {
-        "logAnalyticsWorkspaceId": {
-            "type": "string",
-            "metadata": {
-                "description": "The resource ID of the Log Analytics Workspace."
-            }
-        }
-    },
-    "resources": [
-        {
-            "type": "Microsoft.Insights/components",
+    "apiVersion": "2020-02-02",
+    "type": "Microsoft.Insights/components",
     "name": "abaco-analytics-insights",
     "location": "eastus",
     "kind": "web",
@@ -31,7 +20,7 @@
                 "[resourceId('Microsoft.Insights/components', 'abaco-analytics-insights')]"
             ],
             "properties": {
-                "workspaceId": "[parameters('logAnalyticsWorkspaceId')]",
+                "workspaceId": "/subscriptions/695e4491-d568-4105-a1e1-8f2baf3b54df/resourceGroups/AI-MultiAgent-Ecosystem-RG/providers/microsoft.operationalinsights/workspaces/abaco-logs",
                 "metrics": [
                     {
                         "category": "AllMetrics",

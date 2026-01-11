@@ -22,7 +22,7 @@ az login
 echo ""
 echo "Select your subscription:"
 az account list --output table
-read -r -p "Enter subscription ID: " SUBSCRIPTION_ID
+read -p "Enter subscription ID: " SUBSCRIPTION_ID
 az account set --subscription "$SUBSCRIPTION_ID"
 
 # Get tenant ID
@@ -30,13 +30,13 @@ TENANT_ID=$(az account show --query tenantId -o tsv)
 
 echo ""
 echo "Resource Group: AI-MultiAgent-Ecosystem-RG"
-read -r -p "Press Enter to continue or Ctrl+C to abort..."
+read -p "Press Enter to continue or Ctrl+C to abort..."
 
 # Create or verify resource group
 az group create --name AI-MultiAgent-Ecosystem-RG --location eastus
 
 # Create storage account
-read -r -p "Enter storage account name (lowercase, no special chars): " STORAGE_NAME
+read -p "Enter storage account name (lowercase, no special chars): " STORAGE_NAME
 az storage account create \
     --name "$STORAGE_NAME" \
     --resource-group AI-MultiAgent-Ecosystem-RG \

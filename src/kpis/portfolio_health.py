@@ -8,30 +8,27 @@ class PortfolioHealthCalculator:
 
     METADATA = KPIMetadata(
         name="PortfolioHealth",
-        description="Composite score (0-100) reflecting portfolio quality",
-        formula="(100 - PAR30) * (CollectionRate / 100)",
+        description="Composite score (0-10) reflecting portfolio quality",
+        formula="(10 - PAR30/10) * (CollectionRate/10)",
         unit="score",
         data_sources=["computed"],
-        threshold_warning=70.0,
-        threshold_critical=50.0,
+        threshold_warning=5.0,
+        threshold_critical=3.0,
         owner="CRO",
     )
 
     def calculate(self, par_30: float, collection_rate: float) -> Tuple[float, Dict[str, Any]]:
-        # Snippet formula: (100 - PAR30) * (collection_rate / 100)
-        par_factor = 100.0 - float(par_30)
-        coll_factor = float(collection_rate) / 100.0
+        par_component = max(0.0, 10.0 - (float(par_30) / 10.0))
+        coll_component = float(collection_rate) / 10.0
 
-        # Cap the score at a 0-10 range for downstream UX/consistency.
-        raw_value = max(0.0, par_factor * coll_factor)
-        value = float(min(10.0, raw_value))
+        value = float(min(10.0, max(0.0, par_component * coll_component)))
         return value, create_context(
             self.METADATA.formula,
             rows_processed=2,
             par_30_input=float(par_30),
             collection_rate_input=float(collection_rate),
-            par_factor=float(par_factor),
-            coll_factor=float(coll_factor),
+            par_component=float(par_component),
+            coll_component=float(coll_component),
         )
 
 

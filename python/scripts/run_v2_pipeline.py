@@ -12,8 +12,8 @@ python_dir = str(Path(__file__).parent.parent)
 sys.path.insert(0, root_dir)
 sys.path.insert(0, python_dir)
 
-from python.pipeline.ingestion import UnifiedIngestion
-from src.kpis import KPIEngineV2
+from pipeline.ingestion import UnifiedIngestion
+from src.kpi_engine_v2 import KPIEngineV2
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("abaco.v2_pipeline")

@@ -10,11 +10,11 @@ engine consolidation (Phase 3) is 100% complete.
 
 | Component      | Legacy Location                   | Unified Location (v2.0)               |
 | -------------- | --------------------------------- | ------------------------------------- |
-| Ingestion      | `src/ingest/`                     | `src/pipeline/data_ingestion.py`      |
+| Ingestion      | `src/ingest/`                     | `src/pipeline/data_ingestion.py`     |
 | Transformation | `src/analytics/transformation.py` | `src/pipeline/data_transformation.py` |
-| KPI Engine     | `src/kpi_engine.py`               | `src/pipeline/kpi_calculation.py`     |
-| Orchestrator   | `scripts/run_data_pipeline.py`    | `src/pipeline/orchestrator.py`        |
-| Entry Point    | Multiple scripts                  | `apps/analytics/run_report.py`        |
+| KPI Engine     | `src/kpi_engine.py`               | `src/pipeline/kpi_calculation.py`    |
+| Orchestrator   | `scripts/run_data_pipeline.py`    | `src/pipeline/orchestrator.py`       |
+| Entry Point    | Multiple scripts                  | `apps/analytics/run_report.py`       |
 
 ## 3. Mandatory Cutover Actions
 
@@ -33,19 +33,16 @@ python src/transformation.py --input raw.csv
 **Unified Commands:**
 
 For analytics pipeline and KPI calculation:
-
 ```bash
 python run_complete_analytics.py
 ```
 
 For executive report generation:
-
 ```bash
 python generate_executive_report.py
 ```
 
 For pipeline orchestration (programmatic):
-
 ```bash
 from src.pipeline.orchestrator import PipelineOrchestrator
 orchestrator = PipelineOrchestrator(config)
@@ -89,4 +86,4 @@ If the Unified Pipeline fails due to unforeseen environmental issues:
 
 ---
 
-_Migration Lead: Zencoder Agent_
+*Migration Lead: Zencoder Agent*

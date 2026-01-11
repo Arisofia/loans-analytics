@@ -5,27 +5,9 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.config.secrets import get_secrets_manager  # noqa: E402
+from src.config.secrets import get_secrets_manager
 
 load_dotenv()
-
-
-def redact_dict(d: dict, mask: str = "<redacted>") -> dict:
-    """Return a shallow copy of `d` with sensitive-looking keys redacted.
-
-    Keys containing 'password' or 'token' (case-insensitive) will be replaced
-    with `mask`. If `d` is not a dict it is returned unchanged.
-    """
-    if not isinstance(d, dict):
-        return d
-    out = {}
-    for k, v in d.items():
-        key_l = k.lower()
-        if any(sub in key_l for sub in ("password", "token", "secret", "key")):
-            out[k] = mask
-        else:
-            out[k] = v
-    return out
 
 
 def load_secrets(use_vault_fallback: bool = True) -> dict:

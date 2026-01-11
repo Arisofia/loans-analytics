@@ -21,7 +21,7 @@ class TestDemoScripts(unittest.TestCase):
             except Exception as e:
                 self.fail(f"demo_financial_analysis.main() raised {e} unexpectedly!")
 
-    @patch("src.analytics.financial_analysis.FinancialAnalyzer")
+    @patch("src.financial_analysis.FinancialAnalyzer")
     def test_demo_financial_analysis_with_file(self, mock_analyzer_cls):
         """Test that the script attempts to load a file if provided."""
         with (
@@ -53,7 +53,7 @@ class TestDemoScripts(unittest.TestCase):
             self.assertEqual(mock_plt.figure.call_count, 2)
             self.assertEqual(mock_plt.savefig.call_count, 2)
 
-    @patch("src.analytics.financial_analysis.FinancialAnalyzer")
+    @patch("src.financial_analysis.FinancialAnalyzer")
     def test_demo_financial_analysis_skips_plots_if_columns_missing(self, mock_analyzer_cls):
         """Test that the script skips plotting if columns are missing."""
         with (

@@ -11,12 +11,12 @@
 
 ### Identified Duplicates
 
-| Module              | Locations                                                    | Issue                                       |
-| ------------------- | ------------------------------------------------------------ | ------------------------------------------- |
-| `ingestion.py`      | `/src/ingestion.py` + `/src/pipeline/ingestion.py`           | Two separate ingestion implementations      |
+| Module | Locations | Issue |
+|--------|-----------|-------|
+| `ingestion.py` | `/src/ingestion.py` + `/src/pipeline/ingestion.py` | Two separate ingestion implementations |
 | `transformation.py` | `/src/transformation.py` + `/src/pipeline/transformation.py` | Two separate transformation implementations |
-| `kpi_engine`        | `kpi_engine.py` + `kpi_engine_v2.py`                         | Old vs new KPI calculation interface        |
-| `validation.py`     | Root `/src/validation.py`                                    | No clear module organization                |
+| `kpi_engine` | `kpi_engine.py` + `kpi_engine_v2.py` | Old vs new KPI calculation interface |
+| `validation.py` | Root `/src/validation.py` | No clear module organization |
 
 ### Impact: HIGH ⚠️
 

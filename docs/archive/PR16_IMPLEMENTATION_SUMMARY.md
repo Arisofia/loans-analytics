@@ -224,8 +224,8 @@ Automated scanning for exposed credentials:
 The `.env` file contained active credentials that are now in git history:
 
 - AZURE_CLIENT_SECRET (exposed - needs rotation)
-- OPENAI*API_KEY (sk_proj*\* format - exposed)
-- ANTHROPIC*API_KEY (sk_ant*\* format - exposed)
+- OPENAI_API_KEY (sk_proj_* format - exposed)
+- ANTHROPIC_API_KEY (sk_ant_* format - exposed)
 - HUBSPOT_API_KEY (UUID format - exposed)
 
 **Action Items** (DO THIS NOW):
@@ -403,13 +403,13 @@ python scripts/run_data_pipeline.py
 
 ## Security Benefits
 
-| Aspect               | Before                     | After                                  |
-| -------------------- | -------------------------- | -------------------------------------- |
-| **Secret Storage**   | Hard-coded in code         | Environment variables (GitHub Secrets) |
-| **Path Portability** | Fails across environments  | Works everywhere (env var driven)      |
-| **Directory Safety** | Silent failures if missing | Auto-created with validation           |
-| **Audit Trail**      | None                       | GitHub Actions logs (masked)           |
-| **Rotation**         | Manual, error-prone        | Automated with helper script           |
+| Aspect | Before | After |
+|--------|--------|-------|
+| **Secret Storage** | Hard-coded in code | Environment variables (GitHub Secrets) |
+| **Path Portability** | Fails across environments | Works everywhere (env var driven) |
+| **Directory Safety** | Silent failures if missing | Auto-created with validation |
+| **Audit Trail** | None | GitHub Actions logs (masked) |
+| **Rotation** | Manual, error-prone | Automated with helper script |
 
 ---
 

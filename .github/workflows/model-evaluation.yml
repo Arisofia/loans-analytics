@@ -3,7 +3,7 @@ permissions:
   contents: read
   pull-requests: write
 
-on:
+"on":
   push:
     branches: [main, develop]
     paths:
@@ -145,7 +145,7 @@ jobs:
             }
 
       - name: Send Slack notification on failure
-        if: failure() && steps.slack_check.outputs.available == true
+        if: failure() && steps.slack_check.outputs.available == 'true'
         continue-on-error: true
         uses: slackapi/slack-github-action@v1.24.0
         env:
@@ -159,12 +159,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": |
-                      *Model Evaluation Pipeline Failed*
-                      *Repository:* ${{ github.repository }}
-                      *Branch:* ${{ github.ref_name }}
-                      *Commit:* `${{ github.sha }}`
-                      <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>
+                    "text": "*Model Evaluation Pipeline Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
                   }
                 }
               ]

@@ -8,9 +8,8 @@
     ],
     "jsx": "react-jsx",
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "Node",
     "resolveJsonModule": true,
-    "ignoreDeprecations": "6.0",
     "allowJs": true,
     "noEmit": true,
     "incremental": true,
@@ -33,6 +32,7 @@
     "typeRoots": [
       "./node_modules/@types"
     ],
+    // Removed invalid ignoreDeprecations
     "baseUrl": ".",
     "paths": {
       "@/*": [

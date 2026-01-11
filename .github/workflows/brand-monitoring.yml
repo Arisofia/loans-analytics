@@ -1,6 +1,6 @@
 name: Brand Monitoring
 
-on:
+"on":
   schedule:
     - cron: "0 9 * * *" # 10:00 AM CET daily
   workflow_dispatch:
@@ -31,7 +31,7 @@ jobs:
             echo "can_run=true" >> "$GITHUB_OUTPUT"
           else
             echo "can_run=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Missing required secrets:${missing_required} - skipping monitoring"
+            echo "::warning::Missing required secrets:$missing_required - skipping monitoring"
           fi
 
           if [ -n "$SLACK_BOT_TOKEN" ]; then
@@ -41,46 +41,35 @@ jobs:
             echo "::warning::SLACK_BOT_TOKEN not configured - skipping Slack notification"
           fi
       - name: Install Dependencies
-        if: steps.check-secrets.outputs.can_run == true
+        if: steps.check-secrets.outputs.can_run == 'true'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run Brand Monitoring
-        if: steps.check-secrets.outputs.can_run == true && hashFiles('scripts/brand_monitoring.py') != ''
+        if: steps.check-secrets.outputs.can_run == 'true' && hashFiles('scripts/brand_monitoring.py') != ''
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           META_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
         run: |
           python scripts/brand_monitoring.py
       - name: Post to Slack
-        if: |
-          steps.check-secrets.outputs.can_run == true &&
-          steps.check-secrets.outputs.slack_available == true &&
-          hashFiles('scripts/post_to_slack.py') != ''
+        if: steps.check-secrets.outputs.can_run == 'true' && steps.check-secrets.outputs.slack_available == 'true' && hashFiles('scripts/post_to_slack.py') != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: |
           python scripts/post_to_slack.py --channel "#brand-monitoring"
-
-      - name: Export check-secrets outputs
-        run: |
-          echo "CAN_RUN=${{ steps.check-secrets.outputs.can_run }}" >> "$GITHUB_ENV"
-          echo "SLACK_AVAILABLE=${{ steps.check-secrets.outputs.slack_available }}" >> "$GITHUB_ENV"
-
       - name: Monitoring Summary
         if: always()
         run: |
-          {
-            echo "## Brand Monitoring Summary"
-            echo ""
-            if [ "$CAN_RUN" = "true" ]; then
-              echo "- **Monitoring**: ✅ Executed"
-            else
-              echo "- **Monitoring**: ⚠️ Skipped (missing required secrets)"
-            fi
-            if [ "$SLACK_AVAILABLE" = "true" ]; then
-              echo "- **Slack Notification**: ✅ Configured"
-            else
-              echo "- **Slack Notification**: ⚠️ Not configured"
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "## Brand Monitoring Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check-secrets.outputs.can_run }}" == "true" ]; then
+            echo "- **Monitoring**: ✅ Executed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Monitoring**: ⚠️ Skipped (missing required secrets)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ steps.check-secrets.outputs.slack_available }}" == "true" ]; then
+            echo "- **Slack Notification**: ✅ Configured" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Slack Notification**: ⚠️ Not configured" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -3,14 +3,14 @@ import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Callable
 import os
 import subprocess
 
 logger = logging.getLogger(__name__)
 
 
-def _find_repo_root(start: Optional[Union[Path, Callable[[], Path]]] = None) -> Path:
+def _find_repo_root(start: Path | None | Callable[[], Path] = None) -> Path:
     """Find the repository root by looking for common marker files.
 
     Walks up from the start path and looks for `pyproject.toml`, `.git`, or
@@ -21,37 +21,28 @@ def _find_repo_root(start: Optional[Union[Path, Callable[[], Path]]] = None) -> 
     avoid type-checker issues when using the `/` operator on union types.
     """
     # If a callable was provided (e.g., a thunk that returns a Path), call it.
-    start_val: Optional[Path] = None
     if callable(start):
-        start_val = start()
+        start_value = start()
     else:
-        start_val = start
+        start_value = start
 
-    # Ensure `start_val` is a Path instance and resolved before use.
+    # Ensure `start_value` is a Path instance and resolved before use.
     start_path = (
-        start_val.resolve() if start_val is not None else Path(__file__).resolve()
+        Path(start_value).resolve() if start_value is not None else Path(__file__).resolve()
     )
     p = start_path
 
     for _ in range(12):
-        if any((p / marker).exists() for marker in ["pyproject.toml", ".git", "README.md"]):
+        if (p / "pyproject.toml").exists() or (p / ".git").exists() or (p / "README.md").exists():
             return p
         parent = p.parent
         if parent == p:
             break
         p = parent
-    
-    # Fallback: find the furthest parent that contains 'abaco-loans-analytics' in its name
-    # or just return the current file's parent's parent's parent (previous heuristic)
-    try:
-        curr = Path(__file__).resolve()
-        for parent in curr.parents:
-            if parent.name == "abaco-loans-analytics":
-                return parent
-    except Exception:
-        pass
-
-    return Path(__file__).resolve().parents[3]
+    # Fallback to previous heuristic (legacy behavior)
+    # Converting .parents to a tuple avoids certain type-checker issues where
+    # `.parents` can be treated as a non-subscriptable callable/type.
+    return tuple(Path(__file__).resolve().parents)[3]
 
 
 # Ensure repository root is on sys.path for local/script runs (idempotent)
@@ -107,42 +98,6 @@ def get_latest_kpis():
         raise HTTPException(status_code=500, detail=f"Error reading manifest: {str(e)}") from e
 
 
-def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
-    """Sanitize a candidate path string and resolve it under `allowed_dir`.
-
-    Raises ValueError for any invalid input (absolute paths, escaping the allowed dir).
-    """
-    if not candidate or not isinstance(candidate, str):
-        raise ValueError("Invalid path: must be a non-empty string")
-
-    if ".." in candidate or candidate.startswith("/"):
-        raise ValueError("Absolute paths and parent directory references are not allowed")
-
-    normalized = os.path.normpath(candidate)
-    if ".." in normalized or normalized.startswith("/"):
-        raise ValueError("Path traversal attempts are not allowed")
-
-    candidate_path = Path(normalized)
-    if candidate_path.is_absolute():
-        raise ValueError("Absolute paths are not allowed")
-
-    allowed_resolved = allowed_dir.resolve()
-    resolved = (allowed_resolved / candidate_path).resolve()
-
-    try:
-        resolved.relative_to(allowed_resolved)
-    except ValueError as exc:
-        raise ValueError("Invalid input file; must be under data/archives/") from exc
-
-    if not resolved.exists():
-        raise ValueError("Input file does not exist")
-
-    if not resolved.is_file():
-        raise ValueError("Input path must be a file, not a directory")
-
-    return resolved
-
-
 @app.post("/api/pipeline/trigger")
 async def trigger_pipeline(
     background_tasks: BackgroundTasks,
@@ -162,15 +117,27 @@ async def trigger_pipeline(
     handling. Input file paths are validated to be under `data/archives/` to
     prevent path traversal and unauthorized file access.
     """
-    # Validate input_file to avoid path traversal and ensure files are under data/archives
-    allowed_data_dir = (repo_root / "data" / "archives").resolve()
+    logger = logging.getLogger(__name__)
 
-    try:
-        validated_input_path = _sanitize_and_resolve(input_file, allowed_data_dir)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid input file: {str(exc)}"
-        ) from exc
+    # Validate input_file to avoid path traversal and ensure files are under data/archives
+    ALLOWED_DATA_DIR = (repo_root / "data" / "archives").resolve()
+
+    def _validate_input_file(path_str: str) -> Path:
+        candidate = Path(path_str)
+        # disallow absolute paths
+        if candidate.is_absolute():
+            raise HTTPException(status_code=400, detail="Absolute paths are not allowed")
+        resolved = (repo_root / candidate).resolve()
+        try:
+            resolved.relative_to(ALLOWED_DATA_DIR)
+        except Exception:
+            raise HTTPException(
+                status_code=400, detail="Invalid input file; must be under data/archives/"
+            )
+        return resolved
+
+    # perform validation; will raise HTTPException on invalid input
+    validated_input_path = _validate_input_file(input_file)
 
     mode = os.getenv("PIPELINE_EXECUTION_MODE", "subprocess")
 
@@ -201,7 +168,6 @@ async def trigger_pipeline(
         # failures are recorded for later investigation.
         log_path = Path("logs/pipeline_subprocess.log")
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        log_file: Any
         try:
             log_file = log_path.open("a")
         except Exception:
@@ -230,6 +196,8 @@ async def trigger_pipeline(
 
 
 if __name__ == "__main__":
+    import os
+
     import uvicorn
 
     host = os.getenv("UVICORN_HOST", "127.0.0.1")

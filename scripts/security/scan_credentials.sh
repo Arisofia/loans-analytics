@@ -24,7 +24,7 @@ for pattern in "${PATTERNS[@]}"; do
         --exclude-dir=node_modules --exclude-dir=.venv --exclude-dir=__pycache__ . 2>/dev/null | \
         grep -v "^Binary" > /tmp/scan_results.txt; then
         echo "⚠️  FOUND"
-        head -5 /tmp/scan_results.txt
+        cat /tmp/scan_results.txt | head -5
         FOUND_ISSUES=$((FOUND_ISSUES + 1))
         echo ""
     else

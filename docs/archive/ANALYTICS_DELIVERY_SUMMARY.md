@@ -33,13 +33,13 @@ Refactored the Abaco dual-engine KPI stack (Python side) to eliminate pandas Fut
 
 **Solution**: Refactored to pure vectorized operations:
 
-| Method                    | Before                          | After                                   | Benefit                     |
-| ------------------------- | ------------------------------- | --------------------------------------- | --------------------------- |
-| `get_monthly_pricing()`   | `groupby().apply(weighted_avg)` | `groupby().agg() + vectorized division` | 5–10x faster; warning-free  |
-| `get_dpd_buckets()`       | `groupby().apply(calc_buckets)` | `groupby().agg() + merges`              | Clearer logic; vectorized   |
-| `get_weighted_apr()`      | `groupby().apply(lambda)`       | `groupby().agg() + post-calc`           | Vectorized rate computation |
-| `get_weighted_fee_rate()` | `groupby().apply(lambda)`       | `groupby().agg() + post-calc`           | Consistent with APR         |
-| `get_concentration()`     | `groupby().apply(calc_top_pct)` | Explicit loop + DataFrame               | Clearer intent; optimized   |
+| Method | Before | After | Benefit |
+|--------|--------|-------|---------|
+| `get_monthly_pricing()` | `groupby().apply(weighted_avg)` | `groupby().agg() + vectorized division` | 5–10x faster; warning-free |
+| `get_dpd_buckets()` | `groupby().apply(calc_buckets)` | `groupby().agg() + merges` | Clearer logic; vectorized |
+| `get_weighted_apr()` | `groupby().apply(lambda)` | `groupby().agg() + post-calc` | Vectorized rate computation |
+| `get_weighted_fee_rate()` | `groupby().apply(lambda)` | `groupby().agg() + post-calc` | Consistent with APR |
+| `get_concentration()` | `groupby().apply(calc_top_pct)` | Explicit loop + DataFrame | Clearer intent; optimized |
 
 **Result**: ✅ Zero FutureWarnings from analytics engine.
 
@@ -224,6 +224,6 @@ For questions or issues:
 
 ---
 
-_Prepared by: Zencoder Analytics Agent_
-_Date: 2025-12-30_
-_Version: 1.1.0_
+*Prepared by: Zencoder Analytics Agent*
+*Date: 2025-12-30*
+*Version: 1.1.0*

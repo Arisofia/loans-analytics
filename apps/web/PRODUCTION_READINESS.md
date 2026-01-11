@@ -133,8 +133,8 @@ https://sentry.io → select project → Errors
 
 ## Environment Details
 
-| Environment | URL                                                | Branch    | Auto-Deploy |
-| ----------- | -------------------------------------------------- | --------- | ----------- |
+| Environment | URL                                              | Branch    | Auto-Deploy |
+| ----------- | ------------------------------------------------ | --------- | ----------- |
 | Production  | <https://abaco-loans-analytics.vercel.app>         | `main`    | ✅ Yes      |
 | Staging     | <https://abaco-loans-analytics-staging.vercel.app> | `staging` | ✅ Yes      |
 | Local Dev   | <http://localhost:3000>                            | N/A       | N/A         |

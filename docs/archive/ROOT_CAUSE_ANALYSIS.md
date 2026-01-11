@@ -10,11 +10,11 @@
 
 All three P0 production failures are rooted in **missing database configuration**:
 
-| Issue                           | Root Cause                                                            | Fix                                         |
-| ------------------------------- | --------------------------------------------------------------------- | ------------------------------------------- |
-| **PROD-001: Dashboard Down**    | Azure App Service instance restart + missing DB connection string     | Restart instance + add SUPABASE_URL env var |
-| **PROD-003: Pipelines Failing** | ⚠️ **SUPABASE_URL & SUPABASE_SERVICE_ROLE not set in GitHub Actions** | Add secrets to GitHub repository            |
-| **PROD-002: CI/CD Broken**      | ✅ **FIXED** - Secrets context syntax error corrected                 | Deploy fix (COMPLETE)                       |
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| **PROD-001: Dashboard Down** | Azure App Service instance restart + missing DB connection string | Restart instance + add SUPABASE_URL env var |
+| **PROD-003: Pipelines Failing** | ⚠️ **SUPABASE_URL & SUPABASE_SERVICE_ROLE not set in GitHub Actions** | Add secrets to GitHub repository |
+| **PROD-002: CI/CD Broken** | ✅ **FIXED** - Secrets context syntax error corrected |  Deploy fix (COMPLETE) |
 
 ---
 

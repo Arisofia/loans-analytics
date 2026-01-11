@@ -491,10 +491,7 @@ kpi_definitions:
       data_source: 'analytics.v_loans_overview'
     roll_rate_30:
       name: '30-Day Roll Rate'
-      formula: |
-        (SUM(v_loans_overview.days_past_due >= 30) -
-         SUM(v_loans_overview.days_past_due >= 60)) /
-         SUM(v_loans_overview.loan_id)
+      formula: '(SUM(v_loans_overview.days_past_due >= 30) - SUM(v_loans_overview.days_past_due >= 60)) / SUM(v_loans_overview.loan_id)'
       unit: '%'
       threshold_warning: 5.0
       threshold_critical: 8.0

@@ -6,7 +6,7 @@ This guide lists the **exact GitHub Actions secrets** referenced by workflows in
 
 - Never paste secret values into PRs/issues/logs.
 - Prefer **Repository secrets** for shared production workflows.
-- For environment separation, use _distinct_ secrets for staging vs production (already supported by `apps/web` workflows).
+- For environment separation, use *distinct* secrets for staging vs production (already supported by `apps/web` workflows).
 - If using GitHub CLI, ensure your token has permission to manage Actions secrets.
 
 ## Quick-start (minimum for “core operations”)
@@ -57,7 +57,7 @@ Used by `.github/workflows/deploy-dashboard.yml`.
 
 **How to create App Service deploy secrets**
 
-1. Enable basic auth for SCM and FTP (required to view publish profiles):
+1) Enable basic auth for SCM and FTP (required to view publish profiles):
 
 ```bash
 az resource update --resource-group "<RESOURCE_GROUP>" --name "<APP_NAME>/scm" \
@@ -69,7 +69,7 @@ az resource update --resource-group "<RESOURCE_GROUP>" --name "<APP_NAME>/ftp" \
   --set properties.allow=true
 ```
 
-1. Generate publish profile and store as a repo secret:
+1) Generate publish profile and store as a repo secret:
 
 ```bash
 az webapp deployment list-publishing-profiles \
@@ -80,7 +80,7 @@ az webapp deployment list-publishing-profiles \
 gh secret set AZURE_WEBAPP_PUBLISH_PROFILE -f publishProfile.xml
 ```
 
-1. Create a service principal (used by `AZURE_CREDENTIALS`) and store as a repo secret:
+1) Create a service principal (used by `AZURE_CREDENTIALS`) and store as a repo secret:
 
 ```bash
 az ad sp create-for-rbac \

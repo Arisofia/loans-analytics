@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from python.pipeline.ingestion import UnifiedIngestion
+from pipeline.ingestion import UnifiedIngestion
 
 
 @pytest.fixture

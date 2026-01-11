@@ -380,14 +380,14 @@ Missing integrations (unset tokens or disabled outputs) are treated as skipped r
 
 All secrets should be rotated on a regular basis:
 
-| Secret            | Rotation Frequency | Instructions                                 |
-| ----------------- | ------------------ | -------------------------------------------- |
-| DATABASE_URL      | 90 days            | Regenerate in Supabase → Settings → Database |
-| META_ACCESS_TOKEN | 90 days            | Generate new token in Meta Business Suite    |
-| AZURE_CREDENTIALS | 90 days            | Run `az ad sp create-for-rbac` again         |
-| OPENAI_API_KEY    | 90 days            | Generate new key in OpenAI → API Keys        |
-| NOTION_API_KEY    | 180 days           | Regenerate in Notion → Integrations          |
-| FIGMA_TOKEN       | 180 days           | Generate new token in Figma account settings |
+| Secret | Rotation Frequency | Instructions |
+|--------|-------------------|--------------|
+| DATABASE_URL | 90 days | Regenerate in Supabase → Settings → Database |
+| META_ACCESS_TOKEN | 90 days | Generate new token in Meta Business Suite |
+| AZURE_CREDENTIALS | 90 days | Run `az ad sp create-for-rbac` again |
+| OPENAI_API_KEY | 90 days | Generate new key in OpenAI → API Keys |
+| NOTION_API_KEY | 180 days | Regenerate in Notion → Integrations |
+| FIGMA_TOKEN | 180 days | Generate new token in Figma account settings |
 
 ---
 

@@ -43,7 +43,7 @@ jobs:
           # Generate sample data
           echo "loan_id,total_receivable_usd,total_eligible_usd,discounted_balance_usd,measurement_date" > sample.csv
           echo "L1,1000,1000,1000,2026-01-01" >> sample.csv
-
+          
           # Run the script
           python python/scripts/run_v2_pipeline.py --input sample.csv
 

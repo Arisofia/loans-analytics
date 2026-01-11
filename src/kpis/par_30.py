@@ -2,12 +2,8 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 
-from src.kpis.base import KPICalculator, KPIMetadata, create_context
-from src.utils.data_normalization import (COL_DPD_30_60, COL_DPD_60_90,
-                                          COL_DPD_90_PLUS, COL_LOAN_STATUS,
-                                          COL_OUTSTANDING_AMOUNT,
-                                          normalize_columns)
-from src.utils.numeric import safe_numeric
+from src.kpis.base import (KPICalculator, KPIMetadata, create_context,
+                           safe_numeric)
 
 
 class PAR30Calculator(KPICalculator):
@@ -32,21 +28,16 @@ class PAR30Calculator(KPICalculator):
                 reason="Empty DataFrame",
             )
 
-        # Standardize columns
-        working_df = normalize_columns(df)
-
         # Check for required columns or fallback to loan_status
-        required = [COL_DPD_30_60, COL_DPD_60_90, COL_DPD_90_PLUS, COL_OUTSTANDING_AMOUNT]
-        has_dpd_cols = all(col in working_df.columns for col in required)
+        required = ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
+        has_dpd_cols = all(col in df.columns for col in required)
 
         if has_dpd_cols:
-            null_count = sum(
-                working_df[col].isnull().sum() for col in required if col in working_df
-            )
-            dpd_30_60 = safe_numeric(working_df[COL_DPD_30_60]).sum()
-            dpd_60_90 = safe_numeric(working_df[COL_DPD_60_90]).sum()
-            dpd_90_plus = safe_numeric(working_df[COL_DPD_90_PLUS]).sum()
-            total_receivable = safe_numeric(working_df[COL_OUTSTANDING_AMOUNT]).sum()
+            null_count = sum(df[col].isnull().sum() for col in required if col in df)
+            dpd_30_60 = safe_numeric(df["dpd_30_60_usd"]).sum()
+            dpd_60_90 = safe_numeric(df["dpd_60_90_usd"]).sum()
+            dpd_90_plus = safe_numeric(df["dpd_90_plus_usd"]).sum()
+            total_receivable = safe_numeric(df["total_receivable_usd"]).sum()
 
             if total_receivable == 0:
                 return 0.0, create_context(
@@ -66,16 +57,15 @@ class PAR30Calculator(KPICalculator):
                 dpd_90_plus_sum=float(dpd_90_plus),
                 total_receivable_sum=float(total_receivable),
             )
-
-        if COL_LOAN_STATUS in working_df.columns:
+        elif "loan_status" in df.columns:
             # Fallback for datasets like the one in tests/test_analytics_metrics.py
             delinquent_statuses = [
                 "30-59 days past due",
                 "60-89 days past due",
                 "90+ days past due",
             ]
-            delinquent_count = working_df[COL_LOAN_STATUS].isin(delinquent_statuses).sum()
-            total_loans = len(working_df)
+            delinquent_count = df["loan_status"].isin(delinquent_statuses).sum()
+            total_loans = len(df)
             value = (delinquent_count / total_loans) * 100.0 if total_loans > 0 else 0.0
             return value, create_context(
                 self.METADATA.formula,
@@ -83,8 +73,8 @@ class PAR30Calculator(KPICalculator):
                 delinquent_count=int(delinquent_count),
                 method="loan_status_fallback",
             )
-
-        raise ValueError(f"Missing required columns: {', '.join(required)} or '{COL_LOAN_STATUS}'")
+        else:
+            raise ValueError(f"Missing required columns: {', '.join(required)} or 'loan_status'")
 
 
 def calculate_par_30(df: pd.DataFrame) -> Tuple[float, Dict[str, Any]]:

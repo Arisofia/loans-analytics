@@ -1,5 +1,5 @@
 name: Slack Notification
-on:
+"on":
   workflow_run:
     workflows: ["CI"]
     types:
@@ -20,7 +20,7 @@ jobs:
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Send Slack notification
-        if: steps.slack_check.outputs.available == true
+        if: steps.slack_check.outputs.available == 'true'
         continue-on-error: true
         uses: slackapi/slack-github-action@v1.24.0
         env:
@@ -34,13 +34,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": |
-                      *CI Workflow Completed*
-                      *Status:* ${{ github.event.workflow_run.conclusion }}
-                      *Repository:* ${{ github.repository }}
-                      *Workflow:* ${{ github.event.workflow_run.name }}
-                      *Run ID:* ${{ github.event.workflow_run.id }}
-                      <${{ github.event.workflow_run.html_url }}|View Details>
+                    "text": "*CI Workflow Completed*\n*Status:* ${{ github.event.workflow_run.conclusion }}\n*Repository:* ${{ github.repository }}\n*Workflow:* ${{ github.event.workflow_run.name }}\n*Run ID:* ${{ github.event.workflow_run.id }}\n<${{ github.event.workflow_run.html_url }}|View Details>"
                   }
                 }
               ]

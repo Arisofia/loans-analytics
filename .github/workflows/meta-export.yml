@@ -1,6 +1,6 @@
 name: Export Meta Data to Azure
 
-on:
+"on":
   schedule:
     - cron: "0 2 * * *" # Diariamente a las 2 AM
   workflow_dispatch: # Manual trigger

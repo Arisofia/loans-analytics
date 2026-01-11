@@ -1,6 +1,6 @@
 name: Export Growth Chart to Figma
 
-on:
+"on":
   push:
     paths:
       - 'scripts/export_presentation.py'

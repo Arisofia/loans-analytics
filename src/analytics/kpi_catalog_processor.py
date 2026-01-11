@@ -1,4 +1,3 @@
-# pylint: disable=too-many-lines
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -11,7 +10,7 @@ from scipy.optimize import newton
 logger = logging.getLogger(__name__)
 
 
-class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
+class KPICatalogProcessor:
     """Processor for the unified KPI command catalog for ABACO."""
 
     def __init__(
@@ -32,13 +31,10 @@ class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
             valid_cust = set(self.customers["customer_id"])
             self.loans = self.loans[self.loans["customer_id"].isin(valid_cust)].copy()
             loan_cust_post = self.loans["customer_id"].nunique()
-            logger.debug(
-                "KPICatalogProcessor: customers in loans before "
-                "filter: %s, after: %s, total "
-                "valid customers: %s",
-                loan_cust_pre,
-                loan_cust_post,
-                len(valid_cust),
+            print(
+                f"[DEBUG] KPICatalogProcessor: customers in loans before "
+                f"filter: {loan_cust_pre}, after: {loan_cust_post}, total "
+                f"valid customers: {len(valid_cust)}"
             )
 
         # Filter orphaned payments
@@ -119,29 +115,22 @@ class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
 
     def _xirr(self, cashflows: List[float], dates: List[datetime]) -> float:
         """Calculate XIRR (Internal Rate of Return with dates)."""
-        if not cashflows or len(cashflows) != len(dates) or len(cashflows) < 2:
+        if not cashflows or len(cashflows) != len(dates):
             return 0.0
 
         # Ensure we have both negative and positive flows
-        has_negative = any(x < 0 for x in cashflows)
-        has_positive = any(x > 0 for x in cashflows)
-        if not (has_negative and has_positive):
+        if all(x >= 0 for x in cashflows) or all(x <= 0 for x in cashflows):
             return 0.0
 
         def xnpv(rate, cashflows, dates):
             d0 = dates[0]
-            try:
-                return sum(
-                    cf / (1 + rate) ** ((d - d0).days / 365.0) for cf, d in zip(cashflows, dates)
-                )
-            except (ZeroDivisionError, OverflowError):
-                return float("inf")
+            return sum(
+                [cf / (1 + rate) ** ((d - d0).days / 365.0) for cf, d in zip(cashflows, dates)]
+            )
 
         try:
-            # Try with a reasonable starting guess
-            return float(newton(lambda r: xnpv(r, cashflows, dates), 0.1))
-        except (RuntimeError, OverflowError, ValueError) as e:
-            logger.debug("XIRR calculation failed: %s", e)
+            return newton(lambda r: xnpv(r, cashflows, dates), 0.1)
+        except (RuntimeError, OverflowError):
             return 0.0
 
     def _clean_df(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -152,27 +141,53 @@ class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
             for c in df.columns
         ]
 
-        # Consolidated mapping for common column aliases
-        mapping_groups = {
-            "disbursement_date": ["disburse_date", "disbursement_date"],
-            "disbursement_amount": ["disburse_principal", "disbursement_amount"],
-            "true_payment_date": ["true_payment_date", "payment_date"],
-            "true_total_payment": ["true_total_payment", "payment_amount", "amount"],
-            "true_principal_payment": ["principal_payment", "true_principal_payment"],
-            "true_rebates": ["true_rebates", "true_rabates"],
-            "outstanding_loan_value": ["outstanding_balance"],
-            "interest_rate_apr": ["interest_rate", "interest_rate_apr"],
-            "loan_end_date": ["maturity_date"],
-            "days_past_due": ["days_in_default", "dpd"],
-        }
+        # Candidate columns for key fields (aligned with actual CSV headers)
+        # Disbursement date: 'disburse_date', 'disbursement_date',
+        #   'Disbursement Date'
+        # Payment date: 'true_payment_date', 'payment_date',
+        #   'True Payment Date'
+        # Payment amount: 'true_total_payment', 'payment_amount',
+        #   'True Total Payment', 'amount'
+        # Disbursement amount: 'disburse_principal', 'disbursement_amount',
+        #   'Disbursement Amount'
 
-        for canonical, aliases in mapping_groups.items():
-            for alias in aliases:
-                if alias in df.columns and canonical not in df.columns:
-                    df[canonical] = df[alias]
-                elif alias in df.columns and alias != canonical:
-                    # If both exist, we prefer canonical but ensure alias is also mapped
-                    df[canonical] = df.get(canonical, df[alias])
+        mapping = {
+            # Disbursement date
+            "disburse_date": "disbursement_date",
+            "disbursement_date": "disbursement_date",
+            # Disbursement amount
+            "disburse_principal": "disbursement_amount",
+            "disbursement_amount": "disbursement_amount",
+            # Payment date
+            "true_payment_date": "true_payment_date",
+            "payment_date": "true_payment_date",
+            # Payment amount
+            "true_total_payment": "true_total_payment",
+            "payment_amount": "true_total_payment",
+            "amount": "true_total_payment",
+            # Principal mapping
+            "principal_payment": "true_principal_payment",
+            "true_principal_payment": "true_principal_payment",
+            # Rebates
+            "true_rebates": "true_rebates",
+            "true_rabates": "true_rebates",
+            # New mappings for payment components
+            "true_interest_payment": "true_interest_payment",
+            "true_fee_payment": "true_fee_payment",
+            "true_other_payment": "true_other_payment",
+            "true_tax_payment": "true_tax_payment",
+            "true_fee_tax_payment": "true_fee_tax_payment",
+            # Other mappings
+            "outstanding_balance": "outstanding_loan_value",
+            "interest_rate": "interest_rate_apr",
+            "interest_rate_apr": "interest_rate_apr",
+            "maturity_date": "loan_end_date",
+            "days_in_default": "days_past_due",
+            "dpd": "days_past_due",
+        }
+        for old, new in mapping.items():
+            if old in df.columns:
+                df[new] = df[old]
 
         # If true_principal_payment is missing, estimate it from total payment
         # (synthetic fallback)
@@ -1352,44 +1367,12 @@ class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
             kpis["unit_economics"] = self.get_unit_economics().to_dict("records")
         except Exception:
             pass
-
-        # Segmentation Summary (Commercial KPI)
-        try:
-            from src.kpis.segmentation_summary import \
-                SegmentationSummaryCalculator
-
-            seg_calc = SegmentationSummaryCalculator()
-            _, seg_ctx = seg_calc.calculate(self.loans)
-            if "segmentation_data" in seg_ctx:
-                kpis["segmentation_summary"] = seg_ctx["segmentation_data"]
-        except Exception as e:
-            logger.error(f"Error in segmentation_summary: {e}")
-
         try:
             kpis["figma_dashboard"] = self.get_figma_dashboard_df().to_dict("records")
         except Exception as e:
             logger.error(f"Error in figma_dashboard: {e}")
 
         return kpis
-
-    def _merge_metrics(
-        self,
-        base: pd.DataFrame,
-        metrics_df: pd.DataFrame,
-        rename_map: Optional[Dict[str, str]] = None,
-        on: str = "month",
-    ) -> pd.DataFrame:
-        """Helper to merge metrics into the base dashboard and handle cleanup."""
-        if metrics_df.empty:
-            return base
-
-        df = metrics_df.copy()
-        if rename_map:
-            # Filter and rename columns
-            cols_to_keep = [on] + [c for c in rename_map.keys() if c in df.columns]
-            df = df[cols_to_keep].rename(columns=rename_map)
-
-        return base.merge(df, on=on, how="left").fillna(0)
 
     def get_figma_dashboard_df(self) -> pd.DataFrame:
         """
@@ -1431,7 +1414,8 @@ class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
                 if c not in pricing.columns:
                     pricing[c] = 0
 
-            base = self._merge_metrics(base, pricing, pricing_map)
+            pricing_sub = pricing[list(pricing_map.keys())].rename(columns=pricing_map)
+            base = base.merge(pricing_sub, on="month", how="left")
             base["sched_fee"] = base["sched_revenue"] - base["sched_interest"]
 
         # 3. Customer Types (Pivoted)
@@ -1444,26 +1428,36 @@ class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
                 .fillna(0)
                 .reset_index()
             )
-            cust_map = {
-                "year_month": "month",
-                "New": "new_clients",
-                "Recurrent": "recurrent_clients",
-                "Recovered": "recovered_clients",
-                "Reactivated": "reactivated_clients",
-            }
-            base = self._merge_metrics(base, cust_pivot, cust_map)
+            cust_pivot.rename(
+                columns={
+                    "year_month": "month",
+                    "New": "new_clients",
+                    "Recurrent": "recurrent_clients",
+                    "Recovered": "recovered_clients",
+                    "Reactivated": "reactivated_clients",  # Extra but safe
+                },
+                inplace=True,
+            )
+            # Ensure all expected columns exist
+            for col in ["new_clients", "recurrent_clients", "recovered_clients"]:
+                if col not in cust_pivot.columns:
+                    cust_pivot[col] = 0
+            base = base.merge(cust_pivot, on="month", how="left")
 
             # Disbursement amount from same group
             disb_pivot = cust_types.groupby("year_month")["disbursement_amount"].sum().reset_index()
-            base = self._merge_metrics(
-                base, disb_pivot, {"year_month": "month", "disbursement_amount": "disbursement"}
+            disb_pivot.rename(
+                columns={"year_month": "month", "disbursement_amount": "disbursement"}, inplace=True
             )
+            base = base.merge(disb_pivot, on="month", how="left")
 
         # 4. Concentration
         conc = self.get_concentration()
-        base = self._merge_metrics(
-            base, conc, {"month_end": "month", "top10_concentration": "top10_concentration"}
-        )
+        if not conc.empty:
+            conc_sub = conc[["month_end", "top10_concentration"]].rename(
+                columns={"month_end": "month"}
+            )
+            base = base.merge(conc_sub, on="month", how="left")
 
         # 5. Payment Timing (Pivoted)
         timing = self.get_payment_timing()
@@ -1473,59 +1467,70 @@ class KPICatalogProcessor:  # pylint: disable=too-many-public-methods
                 .fillna(0)
                 .reset_index()
             )
-            timing_map = {
-                "year_month": "month",
-                "Early": "early",
-                "On-time": "on_time",
-                "Late": "late",
-                "Unknown": "unmapped",
-            }
-            base = self._merge_metrics(base, time_pivot, timing_map)
+            time_pivot.rename(
+                columns={
+                    "year_month": "month",
+                    "Early": "early",
+                    "On-time": "on_time",
+                    "Late": "late",
+                    "Unknown": "unmapped",
+                },
+                inplace=True,
+            )
+            # Ensure all columns exist
+            for col in ["early", "on_time", "late", "unmapped"]:
+                if col not in time_pivot.columns:
+                    time_pivot[col] = 0
+            base = base.merge(time_pivot, on="month", how="left")
 
         # 6. Collection Rate
         coll = self.get_collection_rate()
-        base = self._merge_metrics(
-            base, coll, {"year_month": "month", "collection_rate": "collection_rate_due_month"}
-        )
+        if not coll.empty:
+            coll_sub = coll[["year_month", "collection_rate"]].rename(
+                columns={"year_month": "month", "collection_rate": "collection_rate_due_month"}
+            )
+            base = base.merge(coll_sub, on="month", how="left")
 
         # 7. Throughput Metrics
         throughput = self.get_throughput_metrics()
-        tp_map = {
-            "month": "month",
-            "throughput_12m": "throughput_12m",
-            "rotation": "rotation",
-            "apr_realized": "apr_realized",
-            "yield_incl_fees": "yield_incl_fees",
-            "sam_penetration": "sam_penetration",
-        }
-        base = self._merge_metrics(base, throughput, tp_map)
+        if not throughput.empty:
+            tp_cols = [
+                "month",
+                "throughput_12m",
+                "rotation",
+                "apr_realized",
+                "yield_incl_fees",
+                "sam_penetration",
+            ]
+            base = base.merge(throughput[tp_cols], on="month", how="left")
 
         # 8. Unit Economics
         ue = self.get_unit_economics()
-        ue_map = {
-            "month": "month",
-            "cac": "cac",
-            "ltv_realized": "ltv_realized",
-            "ltv_cac_ratio": "ltv_cac_ratio",
-            "cum_unique_customers": "cum_unique_customers",
-        }
-        base = self._merge_metrics(base, ue, ue_map)
+        if not ue.empty:
+            ue_cols = ["month", "cac", "ltv_realized", "ltv_cac_ratio", "cum_unique_customers"]
+            base = base.merge(ue[ue_cols], on="month", how="left")
 
         # 9. Cumulative Metrics
         if not base.empty:
             base = base.sort_values("month")
             base["cum_scheduled"] = base["sched_revenue"].fillna(0).cumsum()
             base["cum_received_paid_month"] = base["recv_revenue_paid_month"].fillna(0).cumsum()
+            # For "for due month" we'd need more complex logic, but we'll approximate with paid month for now
             base["cum_received_due_month"] = base["cum_received_paid_month"]
 
-        # 10. Placeholders and Final Cleanup
-        base["outstanding_proj"] = base["outstanding"] * 1.05
+        # 10. Placeholders for missing fields in SQL view
+        base["outstanding_proj"] = base["outstanding"] * 1.05  # Simple projection
         base["planned_disbursement"] = (
             base["disbursement"].shift(-1).fillna(base["disbursement"] * 1.1)
         )
-        base["remaining_capital"] = 10000000 - base["outstanding"]
+        base["remaining_capital"] = 10000000 - base["outstanding"]  # Assume 10M fund
+
+        # Revenue by due month placeholders (if not specifically calculated)
         base["recv_interest_for_month"] = base["recv_interest_paid_month"]
         base["recv_fee_for_month"] = base["recv_fee_paid_month"]
         base["recv_revenue_for_month"] = base["recv_revenue_paid_month"]
 
-        return base.fillna(0)
+        # Final Cleanup
+        base = base.fillna(0)
+
+        return base

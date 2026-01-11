@@ -21,7 +21,7 @@
 
 - [x] **deploy-production.yml** (185 lines)
   - Manual approval gates
-  - Semantic version tag trigger (v*.*.\*)
+  - Semantic version tag trigger (v*.*.*)
   - Post-deployment validation and health checks
   - Automatic GitHub release creation
 
