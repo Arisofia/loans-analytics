@@ -28,6 +28,40 @@ jobs:
       - name: Run yamllint
         run: yamllint -c .yamllint .github/workflows
 
+  shellcheck-validation:
+    name: ShellCheck Validation (including inline run blocks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract inline `run` blocks from workflows
+        run: |
+          chmod +x scripts/extract_run_blocks.sh
+          scripts/extract_run_blocks.sh .github/workflows/extracted_runs
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Run shellcheck on scripts + extracted run blocks
+        run: |
+          set -euo pipefail
+          # Ensure recursive globstar works for ** pattern and expand globs safely
+          shopt -s globstar || true
+          files=(scripts/**/*.sh .github/workflows/extracted_runs/**/*.sh)
+          matches=()
+          for p in "${files[@]}"; do
+            for f in $p; do
+              if [ -e "$f" ]; then
+                matches+=("$f")
+              fi
+            done
+          done
+          if [ ${#matches[@]} -eq 0 ]; then
+            echo "No shell scripts found to lint"
+          else
+            echo "Running shellcheck on ${#matches[@]} file(s)..."
+            shellcheck -x "${matches[@]}"
+          fi
+
   dependency-validation:
     name: Dependency Validation
     runs-on: ubuntu-latest
@@ -87,7 +121,6 @@ jobs:
       - dependency-validation
       - trigger-validation
       - secrets-validation
-      - secrets-presence
     if: |
       always() && (
         needs.syntax-validation.result == 'failure' ||
