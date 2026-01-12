@@ -30,7 +30,7 @@ This document confirms the **Fintech Factory Architecture** - a production-ready
 - Sales (Lead Scoring stubs → Sales Huddle PLANNED)
 
 **9 Integrated Agents (Agentic Ecosystem):**
-Codex, SonarQube, Black, Flake8, PyTest, CodeRabbit, Sourcery, MCP Core, Developer Gap Resolver
+Codex, SonarQube, Black, Flake8, PyTest, CodeRabbit (automated AI review), Sourcery, MCP Core, Developer Gap Resolver
 
 ### NEXT STEPS
 

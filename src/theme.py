@@ -13,8 +13,11 @@ ABACO_THEME = {
         "white": "#FFFFFF",
         "background": "#030E19",
         "success": "#10B981",
+        "success_dark": "#059669",
         "warning": "#FB923C",
+        "warning_dark": "#EA580C",
         "error": "#DC2626",
+        "error_dark": "#991B1B",
         "info": "#3B82F6",
         "info_dark": "#1D4ED8",
         "accent_green": "#22c55e",
@@ -32,5 +35,10 @@ ABACO_THEME = {
     "typography": {
         "primary_font": "Lato",
         "secondary_font": "Poppins",
+        "title_size": "48px",
+        "metric_size": "48px",
+        "label_size": "16px",
+        "body_size": "14px",
+        "description_size": "12px",
     },
 }

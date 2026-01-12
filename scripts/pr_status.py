@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -45,6 +45,15 @@ def _get(url: str, params: Optional[Dict[str, str]] = None) -> Any:
     return response.json()
 
 
+def _put(url: str, json: Optional[Dict] = None) -> Any:
+    response = SESSION.put(url, headers=_headers(), json=json, timeout=20)
+    if response.status_code == 401:
+        raise GitHubRequestError("Authentication failed; set GITHUB_TOKEN or GH_TOKEN.")
+    if not response.ok:
+        raise GitHubRequestError(f"GitHub request failed ({response.status_code}): {response.text}")
+    return response.json()
+
+
 def list_open_prs(repo: str) -> List[int]:
     payload = _get(f"{API_ROOT}/{repo}/pulls", params={"state": "open", "per_page": "30"})
     if isinstance(payload, list):
@@ -63,6 +72,43 @@ def check_runs(repo: str, sha: str) -> List[Dict]:
 
 def commit_status(repo: str, sha: str) -> Dict:
     return _get(f"{API_ROOT}/{repo}/commits/{sha}/status")
+
+
+def merge_readiness(
+    pr: Dict[str, Any], checks: List[Dict[str, Any]], status_payload: Dict[str, Any]
+) -> Tuple[bool, List[str]]:
+    blockers = []
+    if pr.get("draft"):
+        blockers.append("PR is marked as draft")
+    if pr.get("mergeable_state") == "dirty":
+        blockers.append("Mergeable state is dirty")
+
+    # Check conclusions for all check runs
+    if any(c.get("conclusion") not in ["success", "neutral", "skipped"] for c in checks):
+        blockers.append("One or more checks are not successful")
+
+    # Check combined commit status
+    if status_payload.get("state") not in ["success", "pending"]:
+        if status_payload.get("state") == "failure":
+            blockers.append("Combined status is failure")
+        else:
+            blockers.append(f"Combined status is {status_payload.get('state')}")
+
+    return len(blockers) == 0, blockers
+
+
+def merge_pr(
+    repo: str,
+    number: int,
+    sha: str,
+    method: str = "merge",
+    title: Optional[str] = None,
+) -> Dict[str, Any]:
+    url = f"{API_ROOT}/{repo}/pulls/{number}/merge"
+    payload = {"sha": sha, "merge_method": method}
+    if title:
+        payload["commit_title"] = title
+    return _put(url, json=payload)
 
 
 def summarize_checks(checks: List[Dict]) -> str:
@@ -95,19 +141,31 @@ def render_report(repo: str, number: int) -> str:
 
     checks = check_runs(repo, sha)
     status_payload = commit_status(repo, sha)
+    ready, blockers = merge_readiness(pr, checks, status_payload)
+
     report_lines = [
         f"PR #{number}: {pr.get('title', 'untitled')}",
         f"URL: {pr.get('html_url')}",
         f"State: {pr.get('state')} | Draft: {pr.get('draft')}",
         f"Mergeable: {pr.get('mergeable_state')} (rebaseable={pr.get('rebaseable')})",
         f"Conflicts: {'yes' if pr.get('mergeable_state') == 'dirty' else 'no/unknown'}",
-        "",
-        "Check runs:",
-        summarize_checks(checks),
-        "",
-        "Commit statuses:",
-        summarize_statuses(status_payload.get("statuses", []), status_payload.get("state")),
+        f"Ready to merge: {'yes' if ready else 'no'}",
     ]
+
+    if blockers:
+        report_lines.append("Blockers:")
+        report_lines.extend(f"  - {b}" for b in blockers)
+
+    report_lines.extend(
+        [
+            "",
+            "Check runs:",
+            summarize_checks(checks),
+            "",
+            "Commit statuses:",
+            summarize_statuses(status_payload.get("statuses", []), status_payload.get("state")),
+        ]
+    )
     return "\n".join(report_lines)
 
 

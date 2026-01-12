@@ -12,24 +12,32 @@ jobs:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secrets: "AZURE_CREDENTIALS"
+      inlineScript: |
+        echo "Validating Azure credentials"
     secrets: inherit
 
   validate-acr:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secrets: "AZURE_ACR_LOGIN_SERVER,DOCKER_USERNAME,DOCKER_PASSWORD"
+      secrets: "AZURE_ACR_LOGIN_SERVER,AZURE_ACR_USERNAME,AZURE_ACR_PASSWORD"
+      inlineScript: |
+        echo "Validating ACR credentials"
     secrets: inherit
 
   validate-storage:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secrets: "AZURE_STORAGE_CONNECTION_STRING"
+      inlineScript: |
+        echo "Validating Azure Storage credentials"
     secrets: inherit
 
   validate-swa:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secrets: "AZURE_STATIC_WEB_APPS_API_TOKEN"
+      inlineScript: |
+        echo "Validating SWA token"
     secrets: inherit
 
   diagnostics:
@@ -47,7 +55,7 @@ jobs:
       - name: Set up Azure CLI
         uses: azure/CLI@v1
         with:
-          azcliversion: '2.49.0'
+          azcliversion: "2.49.0"
 
       - name: Azure login (service principal)
         if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}

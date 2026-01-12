@@ -43,9 +43,10 @@
 
 **Jobs**:
 
+
 #### Compliance Checks
 
-- CodeRabbit analysis (assertive profile, strict mode)
+- **CodeRabbit automated review** (assertive profile, strict mode): Provides AI-driven code review for compliance, code quality, and business logic.
 - Audit trail generation
 - Secret detection (no hardcoded credentials)
 - Sourcery compliance checks
@@ -73,11 +74,11 @@
 
 **Profile**: `assertive`
 
-- Real-time code reviews
-- Request changes on violations
-- High-level summaries
-- Collapse walkthroughs
-- Auto-review enabled
+- Real-time AI code reviews (CodeRabbit)
+- Requests changes on violations
+- Provides high-level summaries
+- Collapses detailed walkthroughs for brevity
+- Auto-review enabled for all PRs
 
 **Enforcement by Path**:
 
@@ -207,7 +208,7 @@ Manage API tokens for external platforms (Meta, LinkedIn, custom APIs) with:
              ▼
 ┌─────────────────────────────────────────────┐
 │ Compliance.yml workflow triggers            │
-│  - CodeRabbit analysis                      │
+│  - CodeRabbit automated review              │
 │  - SonarQube scan                           │
 │  - Audit trail generation                   │
 │  - Security checks                          │
@@ -288,7 +289,7 @@ Before every commit:
 ```bash
 SONARQUBE_TOKEN        # SonarQube authentication
 SOURCERY_TOKEN         # Sourcery refactoring service
-CODERABBIT_TOKEN       # CodeRabbit code review
+CODERABBIT_TOKEN       # Required for CodeRabbit automated code review
 SUPABASE_SERVICE_KEY   # Supabase edge function deployment
 KMS_ENCRYPTION_KEY     # Token encryption key
 
@@ -389,7 +390,7 @@ Key Dashboard Components:
 
 1. Check PR compliance comment for violation type
 2. Review `audit_log.json` artifact (90-day retention)
-3. Look at CodeRabbit/SonarQube reports
+3. Review CodeRabbit and SonarQube reports
 4. Fix violation and re-push (auto-retry)
 
 ### Releasing to Production
@@ -403,7 +404,7 @@ Key Dashboard Components:
 ## References
 
 - [Compliance Automation](.github/workflows/compliance.yml)
-- [CodeRabbit Config](.coderabbit.yaml)
+- [CodeRabbit Configuration](.coderabbit.yaml)
 - [Sourcery Config](.sourcery.yaml)
 - [Audit Log Generator](scripts/generate_audit_log.sh)
 - [CI/CD Pipeline](docs/DEPLOYMENT.md)

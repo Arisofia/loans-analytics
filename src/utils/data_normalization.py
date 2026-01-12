@@ -1,11 +1,48 @@
 """Utilities for normalizing dataframes for KPI calculation."""
 
 import logging
+import re
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
+from src.utils.numeric import safe_numeric
+
 logger = logging.getLogger(__name__)
+
+
+def sanitize_column_names(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Lowercase, strip, replace spaces with underscores, and remove special characters from column names.
+    """
+    df = df.copy()
+    df.columns = [
+        re.sub(r"[^a-z0-9_]", "", str(col).lower().strip().replace(" ", "_"))
+        for col in df.columns
+    ]
+    return df
+
+
+def normalize_dataframe_complete(
+    df: pd.DataFrame, extra_mapping: Optional[Dict[str, List[str]]] = None
+) -> pd.DataFrame:
+    """
+    Perform complete normalization: sanitize names, map columns, and convert to numeric.
+    """
+    if df is None or df.empty:
+        return df
+
+    # 1. Sanitize column names
+    df = sanitize_column_names(df)
+
+    # 2. Map columns
+    df = normalize_columns(df, extra_mapping=extra_mapping)
+
+    # 3. Convert all columns to numeric where possible
+    for col in df.columns:
+        df[col] = safe_numeric(df[col])
+
+    return df
 
 
 class SimpleColumnFinder:
@@ -31,7 +68,7 @@ class SimpleColumnFinder:
 COL_ORIGINATION_DATE = "origination_date"
 COL_CUSTOMER_ID = "customer_id"
 COL_CLIENT_SEGMENT = "client_segment"
-COL_OUTSTANDING_AMOUNT = "total_receivable_usd"
+COL_OUTSTANDING_AMOUNT = "outstanding_loan_value"  # Aligned with app.py
 COL_APPROVED_AMOUNT = "approved_limit"
 COL_PAYMENT_DATE = "payment_date"
 COL_DAYS_PAST_DUE = "days_past_due"
@@ -40,8 +77,11 @@ COL_APPRAISED_VALUE = "appraised_value"
 COL_BORROWER_INCOME = "borrower_income"
 COL_MONTHLY_DEBT = "monthly_debt"
 COL_LOAN_STATUS = "loan_status"
-COL_INTEREST_RATE = "interest_rate"
+COL_INTEREST_RATE = "interest_rate_apr"  # Aligned with app.py
 COL_PRINCIPAL_BALANCE = "principal_balance"
+COL_LOAN_ID = "loan_id"
+COL_SALES_AGENT = "sales_agent"
+COL_CATEGORIA = "categoria"
 COL_DPD_30_60 = "dpd_30_60_usd"
 COL_DPD_60_90 = "dpd_60_90_usd"
 COL_DPD_90_PLUS = "dpd_90_plus_usd"
@@ -49,12 +89,19 @@ COL_DPD_90_PLUS = "dpd_90_plus_usd"
 # Mapping from common external names to internal names
 COLUMN_MAPPING = {
     COL_ORIGINATION_DATE: ["Origination Date", "measurement_date", "date", "orig_date"],
-    COL_CUSTOMER_ID: ["Customer ID", "loan_id", "client_id", "borrower_id"],
+    COL_CUSTOMER_ID: ["Customer ID", "client_id", "customer_number", "id_cliente", "borrower_id"],
     COL_CLIENT_SEGMENT: ["Client Segment", "segment", "classification"],
     COL_OUTSTANDING_AMOUNT: [
         "Outstanding Amount",
         "outstanding_amount",
-        "outstanding",
+        "outstanding_principal",
+        "current_outstanding_principal",
+        "total_pendiente",
+        "saldo_pendiente",
+        "current_balance",
+        "outstanding_balance",
+        "outstanding_balance_usd",
+        "aum",
         "balance",
     ],
     COL_APPROVED_AMOUNT: ["Approved Amount", "approved_amount", "loan_limit"],
@@ -64,9 +111,12 @@ COLUMN_MAPPING = {
     COL_APPRAISED_VALUE: ["Appraised Value", "collateral_value", "property_value"],
     COL_BORROWER_INCOME: ["Borrower Income", "annual_income", "income"],
     COL_MONTHLY_DEBT: ["Monthly Debt", "debt_payments", "obligations"],
-    COL_LOAN_STATUS: ["Loan Status", "status", "state"],
-    COL_INTEREST_RATE: ["Interest Rate", "rate", "apr"],
+    COL_LOAN_STATUS: ["Loan Status", "status", "estado", "loan_state", "state"],
+    COL_INTEREST_RATE: ["Interest Rate", "rate", "apr", "tasa_interes", "annual_percentage_rate"],
     COL_PRINCIPAL_BALANCE: ["Principal Balance", "current_principal"],
+    COL_LOAN_ID: ["id", "loan_number", "contrato", "loan_id_raw", "loan_id"],
+    COL_SALES_AGENT: ["agent", "vendedor", "kam", "sales_person", "sales_agent"],
+    COL_CATEGORIA: ["category", "segment", "segmento", "product_category", "product_type", "categoria"],
     COL_DPD_30_60: ["dpd_30_60", "dpd30"],
     COL_DPD_60_90: ["dpd_60_90", "dpd60"],
     COL_DPD_90_PLUS: ["dpd_90_plus", "dpd90"],

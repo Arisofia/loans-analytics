@@ -20,10 +20,10 @@ The "Be Better" framework unifies commercial outcomes with engineering rigor. It
 
 | Engineering metric           | Financial KPI                   | Economic impact                                            | Tooling                                    |
 | ---------------------------- | ------------------------------- | ---------------------------------------------------------- | ------------------------------------------ |
-| Change Failure Rate (CFR)    | Customer churn, brand equity    | Incidents degrade trust and raise future CAC               | SonarQube quality gates, CodeRabbit review |
+| Change Failure Rate (CFR)    | Customer churn, brand equity    | Incidents degrade trust and raise future CAC               | SonarQube quality gates, CodeRabbit automated review |
 | Technical Debt Ratio (TDR)   | EBITDA margin, R&D ROI          | High remediation spend lowers yield on engineering capital | Sourcery refactoring, Codex auto-fix       |
 | Deployment frequency         | Time to Value, revenue velocity | Faster releases unlock pricing and growth experiments      | Codex automation, linear git history       |
-| Mean Time to Recovery (MTTR) | Transaction volume at risk      | Downtime halts revenue in payment/trading flows            | CodeRabbit debugging                       |
+| Mean Time to Recovery (MTTR) | Transaction volume at risk      | Downtime halts revenue in payment/trading flows            | CodeRabbit AI debugging                    |
 | Code coverage                | Operational risk                | Untested financial logic increases error probability       | SonarQube coverage enforcement             |
 
 **TDR formula**: `TDR = (Remediation Cost / Development Cost) × 100`. Target <5% to minimize the "interest" paid on past shortcuts.
@@ -32,7 +32,7 @@ The "Be Better" framework unifies commercial outcomes with engineering rigor. It
 
 - **SonarQube**: Custom "Fintech Strict" profile with zero new issues, 100% security hotspot review, <3% duplication, >90% coverage on new code, and cognitive complexity ≤15 per function; gate every PR and fail builds on violations.
 - **Sourcery**: Strict refactoring to reduce nesting, enforce type hints, and require `Decimal` over `float` for currency math; supports custom rules for fintech anti-patterns.
-- **CodeRabbit**: Assertive AI reviews that summarize business impact, challenge architecture, learn from prior reviews, and surface fixes for CI failures to reduce MTTR.
+- **CodeRabbit**: Assertive AI reviews that summarize business impact, challenge architecture, learn from prior reviews, and surface fixes for CI failures to reduce MTTR. CodeRabbit provides automated, AI-driven code review and compliance feedback for every pull request.
 - **Codex**: Generative automation for CLI workflows and remediation; translates natural language to git/GitHub flows and patches vulnerabilities with parameterized queries or safer patterns.
 
 ## Workflow: Fix → Sync → Commit → Merge
@@ -40,7 +40,7 @@ The "Be Better" framework unifies commercial outcomes with engineering rigor. It
 1. **Fix**: Run Sourcery in strict mode for automated refactors before review.
 2. **Sync**: `git pull --rebase origin main` enforces linear history and forces local conflict resolution.
 3. **Commit**: Stage changes and create GPG-signed semantic commits (e.g., `fix(auth): enforce strict JWT validation`).
-4. **Merge**: Use GitHub CLI to create/auto-merge PRs with squash strategy only after SonarQube, CodeRabbit, and CI checks pass.
+4. **Merge**: Use GitHub CLI to create/auto-merge PRs with squash strategy only after SonarQube, CodeRabbit automated review, and CI checks pass.
 
 ### Fintech-sync helper
 
