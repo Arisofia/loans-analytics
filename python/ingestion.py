@@ -7,7 +7,8 @@ import io
 import pandas as pd
 import polars as pl
 
-from python.schemas import INGESTION_SCHEMA
+from python.schemas import INGESTION_SCHEMA, validate_ingestion_contract
+from python.validation import safe_numeric_polars
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +16,9 @@ logger = logging.getLogger(__name__)
 class CascadeIngestion:
     def __init__(self, strict_validation: bool = False):
         """
-        CascadeIngestion handles ONLY manual front-end uploads.
-        All CLI, scheduled, or file-path based ingestion is disallowed.
+        Unified Ingestion Engine for Abaco Analytics.
+        Handles both manual UI-driven uploads and automated API-driven ingestion.
+        Enforces strict data contracts and performs lineage tracking via run_id.
         """
         self.run_id = f"run_{uuid.uuid4().hex[:8]}"
         self.timestamp = datetime.now(timezone.utc).isoformat()
@@ -51,21 +53,31 @@ class CascadeIngestion:
 
     def ingest_uploaded_file(self, file_content: Union[bytes, io.BytesIO]) -> pl.DataFrame:
         """
-        Ingest a file uploaded via the front-end UI.
-        This is the ONLY allowed ingestion path.
+        Ingest a file (CSV) from a bytes stream.
+        Applies cleaning, schema enforcement, and contract validation.
         """
-        self._log_step("ingestion:manual:start", "Starting manual UI upload processing")
+        self._log_step("ingestion:start", "Starting data ingestion processing")
         
         try:
-            # Polars can read from bytes or BytesIO directly
-            df = pl.read_csv(file_content, schema=INGESTION_SCHEMA)
+            # 1. Initial Load (allow dynamic types for cleaning if needed)
+            df = pl.read_csv(file_content)
+            
+            # 2. Data Cleaning (Polars-native)
+            numeric_cols = [col for col, dtype in INGESTION_SCHEMA.items() if dtype in [pl.Float64, pl.Int64]]
+            df = safe_numeric_polars(df, numeric_cols)
+            
+            # 3. Strict Schema Enforcement
+            df = df.cast(INGESTION_SCHEMA)
+            
+            # 4. Business Contract Validation
+            validate_ingestion_contract(df)
             
             self._update_summary(len(df))
-            self._log_step("ingestion:manual:completed", "Manual UI ingestion complete", rows=len(df))
+            self._log_step("ingestion:completed", "Ingestion complete", rows=len(df))
             return df
         except Exception as e:
-            message = f"Manual ingestion failed: {str(e)}"
-            self.record_error("ingestion_manual", message)
+            message = f"Ingestion failed: {str(e)}"
+            self.record_error("ingestion_failed", message)
             return pl.DataFrame()
 
     def get_ingest_summary(self) -> Dict[str, Any]:

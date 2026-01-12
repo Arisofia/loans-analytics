@@ -66,6 +66,24 @@ services:
       timeout: 5s
       retries: 5
 
+  analytics-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: abaco_analytics_api
+    command: uvicorn apps.analytics.src.main:app --host 0.0.0.0 --port 8000
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-abaco_analytics}
+      - REDIS_URL=redis://redis:6379/0
+      - ABACO_SECRET_TOKEN=abaco_secret_token
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   minio_data:

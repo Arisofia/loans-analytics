@@ -22,6 +22,17 @@ docker-up:
 docker-down:
 	docker-compose down
 
+# Analytics API
+run-api:
+	uvicorn apps.analytics.src.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Prefect Orchestration
+prefect-server:
+	prefect server start
+
+deploy-flow:
+	python3 apps/analytics/src/flows/ingestion_flow.py
+
 # Cleanup
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
