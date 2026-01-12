@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "lint": "npm --prefix apps/web run lint"
+    "lint": "npm --prefix apps/web run lint",
+    "build": "pnpm -r build"
   },
   "dependencies": {
     "@openai/codex-sdk": "^0.63.0",
