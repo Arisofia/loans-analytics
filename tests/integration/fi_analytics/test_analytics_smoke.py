@@ -11,8 +11,6 @@ from typing import Any, Dict
 import pytest
 import subprocess
 import sys
-import jsonschema
-import pandas as pd
 
 
 class TestAnalyticsSmoke:
