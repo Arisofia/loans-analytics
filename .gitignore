@@ -104,3 +104,4 @@ __pycache__/
 logs_extracted/
 tmp/
 supabase/. temp/
+.venv-1/

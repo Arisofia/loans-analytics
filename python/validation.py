@@ -5,9 +5,10 @@ Module for data validation utilities and functions.
 
 import re
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
+import polars as pl
 
 from python.config import settings
 
@@ -71,19 +72,28 @@ NUMERIC_COLUMNS: List[str] = settings.analytics.ingestion_numeric_columns
 
 
 def validate_dataframe(
-    df: pd.DataFrame,
+    df: Union[pd.DataFrame, pl.DataFrame],
     required_columns: Optional[List[str]] = None,
     numeric_columns: Optional[List[str]] = None,
 ) -> None:
     """
     Validate that the DataFrame contains required columns and types.
-    Args:
-        df (pd.DataFrame): DataFrame to validate.
-        required_columns (list[str], optional): Columns that must be present.
-        numeric_columns (list[str], optional): Columns that must be numeric.
-    Raises:
-        ValueError: If validation fails.
+    Supports both Pandas and Polars.
     """
+    if isinstance(df, pl.DataFrame):
+        if required_columns:
+            missing = [col for col in required_columns if col not in df.columns]
+            if missing:
+                raise ValueError(f"Missing required columns: {', '.join(missing)}")
+        if numeric_columns:
+            for col in numeric_columns:
+                if col not in df.columns:
+                    raise ValueError(f"Missing required numeric column: {col}")
+                if not df.schema[col].is_numeric():
+                    raise ValueError(f"Column {col} must be numeric")
+        return
+
+    # Legacy Pandas logic
     if required_columns:
         missing = _missing_columns(df, required_columns)
         if missing:
@@ -160,6 +170,21 @@ def validate_percentage_bounds(
             in_bounds = ((df[col] >= 0) & (df[col] <= 100)).all()
             validation[f"{col}_in_0_100"] = in_bounds and not has_nan
     return validation
+
+
+def safe_numeric_polars(df: pl.DataFrame, columns: List[str]) -> pl.DataFrame:
+    """
+    Polars-native cleaning of numeric columns (currency, commas, etc.).
+    """
+    for col in columns:
+        if col in df.columns and df.schema[col] == pl.String:
+            # Vectorized cleaning using Polars regex
+            df = df.with_columns(
+                pl.col(col)
+                .str.replace_all(r"[$€£¥₽₡,]", "")
+                .cast(pl.Float64, strict=False)
+            )
+    return df
 
 
 def safe_numeric(series: pd.Series) -> pd.Series:

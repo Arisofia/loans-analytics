@@ -100,6 +100,12 @@ class KPISettings(BaseModel):
     compliance_breaches: Dict[str, int] = Field(default={"warning": 1, "critical": 3})
 
 
+class ApiSettings(BaseModel):
+    """Settings for the Analytics API."""
+    api_key: str = Field(default="abaco_secret_token")
+    host: str = Field(default="0.0.0.0")
+    port: int = Field(default=8000)
+
 class Settings(BaseSettings):
     """Main settings class consolidating all configurations."""
     model_config = SettingsConfigDict(env_prefix="ABACO_", env_file=".env", extra="ignore")
@@ -109,6 +115,7 @@ class Settings(BaseSettings):
     sla: SLASettings = SLASettings()
     analytics: AnalyticsSettings = AnalyticsSettings()
     kpis: KPISettings = KPISettings()
+    api: ApiSettings = ApiSettings()
 
     @classmethod
     def load_settings(cls) -> "Settings":
