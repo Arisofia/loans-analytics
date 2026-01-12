@@ -110,7 +110,7 @@
 
 - `services/slack_bot` relies on `KPI_WEBHOOK_URL`, `API_KEY`, `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, and `SLACK_BOT_AUTOSTART`. Ensure these are synchronized across the deployed bot and GitHub Secrets so KPI mentions and alerts work.
 - The Notion metrics importer requires `NOTION_DATABASE_ID`, `NOTION_META_TOKEN`, and `NOTION_VERSION`. Keep these scoped to the Notion workspace that houses the KPI database.
-- AI helpers (`StandaloneAIEngine`, `scripts/clients.py`, and `streamlit_app.py`) look for `GROK_API_KEY`, `GOOGLE_API_KEY`, and `OPENAI_API_KEY`. Provide these values only in environments that should reach external AI services.
+- AI helpers (`StandaloneAIEngine`, `scripts/clients.py`, and `streamlit_app/app.py`) look for `GROK_API_KEY`, `GOOGLE_API_KEY`, and `OPENAI_API_KEY`. Provide these values only in environments that should reach external AI services.
 - `src/agents/orchestrator.py` expects `DATABASE_URL` so agent runs can persist traceability data.
 
 ## Code Style

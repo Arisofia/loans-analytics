@@ -47,7 +47,7 @@ This guide covers deploying a Streamlit dashboard alongside the Next.js applicat
 3. **Run locally**
 
    ```bash
-   streamlit run streamlit_app.py
+   streamlit run streamlit_app/app.py
    ```
 
    Application will be available at `http://localhost:8501`
@@ -68,7 +68,7 @@ This guide covers deploying a Streamlit dashboard alongside the Next.js applicat
 1. **Push to GitHub**
 
    ```bash
-   git add streamlit_app.py streamlit_requirements.txt .streamlit/config.toml
+   git add streamlit_app/app.py streamlit_requirements.txt .streamlit/config.toml
    git commit -m "feat: add Streamlit dashboard"
    git push origin main
    ```
@@ -78,7 +78,7 @@ This guide covers deploying a Streamlit dashboard alongside the Next.js applicat
    - Click "New app"
    - Select your repository
    - Choose main branch
-   - Set main file path: `streamlit_app.py`
+   - Set main file path: `streamlit_app/app.py`
 
 3. **Configure Secrets**
    - Go to App settings (⋮ menu) → Secrets
@@ -109,7 +109,7 @@ This guide covers deploying a Streamlit dashboard alongside the Next.js applicat
    RUN pip install --no-cache-dir -r streamlit_requirements.txt
 
    # Copy application files
-   COPY streamlit_app.py .
+   COPY streamlit_app/app.py .
    COPY .streamlit .streamlit
 
    # Expose Streamlit port
@@ -120,7 +120,7 @@ This guide covers deploying a Streamlit dashboard alongside the Next.js applicat
      CMD curl -f http://localhost:8501/_stcore/health || exit 1
 
    # Start Streamlit
-   CMD ["streamlit", "run", "streamlit_app.py", \
+   CMD ["streamlit", "run", "streamlit_app/app.py", \
         "--server.port=8501", \
         "--server.address=0.0.0.0", \
         "--logger.level=info"]
@@ -180,7 +180,7 @@ services:
       GDRIVE_SERVICE_ACCOUNT: ${GDRIVE_SERVICE_ACCOUNT}
     volumes:
       - ./.streamlit/secrets.toml:/app/.streamlit/secrets.toml:ro
-      - ./streamlit_app.py:/app/streamlit_app.py
+      - ./streamlit_app/app.py:/app/streamlit_app/app.py
     restart: unless-stopped
     networks:
       - abaco-network

@@ -29,7 +29,7 @@ The platform uses Azure Application Insights with OpenTelemetry instrumentation 
   
 - **Streamlit Applications**: Traces user interactions and data processing
   - Main dashboard (`dashboard/app.py`)
-  - Analytics app (`streamlit_app.py`)
+  - Analytics app (`streamlit_app/app.py`)
 
 - **Data Pipeline Scripts** (`scripts/run_data_pipeline.py`): Traces batch execution
 
@@ -85,7 +85,7 @@ cp .env.example .env
 Tracing is automatically initialized at application startup in:
 
 - `scripts/run_data_pipeline.py` - for batch pipelines
-- `streamlit_app.py` - for the main Streamlit app
+- `streamlit_app/app.py` - for the main Streamlit app
 - `dashboard/app.py` - for the executive dashboard
 
 ### Manual Instrumentation

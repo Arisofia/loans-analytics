@@ -1,72 +1,89 @@
-# Migration Guide: Legacy Pipeline -> Unified Pipeline
+# Migration Guide - Unified Pipeline v2.0
 
-## Goal
+## 1. Overview
 
-Move all ingestion, transformation, and KPI computation to the unified pipeline without data loss or downtime.
+This document guides the transition from legacy, fragmented scripts to the
+enterprise-grade **Unified Pipeline** architecture. As of January 2026, the core
+engine consolidation (Phase 3) is 100% complete.
 
-## Scope
+## 2. Structural Changes
 
-- Replace ad-hoc ingestion scripts with `src/pipeline/orchestrator.py`.
-- Consolidate KPI calculations under `config/pipeline.yml` and `config/kpi_definitions_unified.yml`.
-- Centralize run artifacts under `logs/runs/`.
+| Component      | Legacy Location                   | Unified Location (v2.0)               |
+| -------------- | --------------------------------- | ------------------------------------- |
+| Ingestion      | `src/ingest/`                     | `src/pipeline/data_ingestion.py`     |
+| Transformation | `src/analytics/transformation.py` | `src/pipeline/data_transformation.py` |
+| KPI Engine     | `src/kpi_engine.py`               | `src/pipeline/kpi_calculation.py`    |
+| Orchestrator   | `scripts/run_data_pipeline.py`    | `src/pipeline/orchestrator.py`       |
+| Entry Point    | Multiple scripts                  | `apps/analytics/run_report.py`       |
 
-## Step-by-Step Migration
+## 3. Mandatory Cutover Actions
 
-### 1. Update Entry Points
+### Update Automated Tasks
 
-**Old**
+All cron jobs or GitHub Actions calling `scripts/run_data_pipeline.py` or legacy
+ingestion scripts MUST be updated to use the new unified pipeline runners.
+
+**Legacy Command:**
 
 ```bash
-python scripts/ingest_cascade.py --file input.csv
+python src/ingestion.py --file loans.csv
+python src/transformation.py --input raw.csv
 ```
 
-**New**
+**Unified Commands:**
 
+For analytics pipeline and KPI calculation:
 ```bash
-python scripts/run_data_pipeline.py --input data/archives/cascade/loan_tape.csv
+python run_complete_analytics.py
 ```
 
-### 2. Validate Schemas
+For executive report generation:
+```bash
+python generate_executive_report.py
+```
 
-- Ensure `config/data_schemas/loan_tape.json` matches Cascade export columns.
-- Confirm required numeric columns exist before moving to strict mode.
+For pipeline orchestration (programmatic):
+```bash
+from src.pipeline.orchestrator import PipelineOrchestrator
+orchestrator = PipelineOrchestrator(config)
+result = orchestrator.execute()
+```
 
-### 3. Run Dual Mode (1-2 weeks)
+### Configuration Migration
 
-- Run unified pipeline in parallel with legacy processes.
-- Compare KPI outputs with existing dashboards.
-- Record discrepancies in `logs/runs/<run_id>_summary.json` and data quality report.
+Legacy YAML configs in `config/LEGACY/` are no longer primary. All modifications
+should be made to:
 
-### 4. Cutover
+- `config/pipeline.yml` (Global settings)
+- `config/environments/` (Environment overrides)
+- `config/kpis/kpi_definitions.yaml` (KPI formulas)
 
-- Switch scheduling/orchestration to unified pipeline entry point.
-- Deprecate legacy scripts and update runbooks.
+## 4. Verification & Validation
 
-## Validation Checklist
+To ensure the migration was successful for your local or production environment,
+run:
 
-- Manifest exists under `logs/runs/<run_id>/<run_id>_manifest.json`.
-- Compliance report generated under `logs/runs/<run_id>/<run_id>_compliance.json`.
-- KPI values match expected ranges and prior baselines.
+1. **Bootstrap Check**: `python tools/zencoder_bootstrap.py`
+2. **KPI Parity**: `make test-kpi-parity`
+3. **Quality Audit**: `make audit-code`
 
-## Rollback Plan
+## 5. Deletion Schedule
 
-- Re-run last known good manifest outputs from `data/metrics/<run_id>`.
-- If schema drift is detected, revert `config/pipeline.yml` and re-run in strict=false mode.
+The following directories and files are marked for deletion in **Q1 2026**:
 
-## Timeline and Risks
+- `config/LEGACY/`
+- `src/ingest/` (Legacy)
+- `src/financial_analysis.py.bak`
+- All scripts in `archives/refactoring/`
 
-- **Week 1**: Dual runs and schema alignment.
-- **Week 2**: Update dashboards to new outputs.
-- **Week 3**: Cutover and retire legacy scripts.
+## 6. Rollback
 
-**Risks**
+If the Unified Pipeline fails due to unforeseen environmental issues:
 
-- Schema drift from Cascade exports.
-- Hidden dependencies on legacy output locations.
-- KPI deltas caused by normalization changes.
+1. Revert to the `main` branch or the `v1.5-legacy` tag.
+2. Legacy code remains available in `archives/` for reference, but should not
+   be used for production runs.
 
-**Mitigations**
+---
 
-- Run dual-mode reconciliation for at least 2 weeks.
-- Maintain output backward-compatible CSV/Parquet.
-- Keep legacy wrappers for test stability during migration.
+*Migration Lead: Zencoder Agent*
