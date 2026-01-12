@@ -109,3 +109,8 @@ coverage.xml
 .azure
 tmp/
 data/archives/cascade/tmp*.csv
+
+
+# Supabase CLI temporary files
+supabase/.temp/
+supabase/.branches/
