@@ -100,7 +100,7 @@ test-kpi-parity:
 
 # Analytics validation and execution
 analytics-run:
-	. .venv/bin/activate && python3 run_complete_analytics.py
+	. .venv/bin/activate && python3 scripts/run_complete_analytics.py
 
 analytics-sync:
 	. .venv/bin/activate && python3 tools/check_kpi_sync.py --print-json
