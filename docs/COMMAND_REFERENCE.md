@@ -278,7 +278,7 @@ export META_APP_ID="..."
 
 # Figma
 export FIGMA_TOKEN="..."
-export FIGMA_FILE_ID="..."
+export FIGMA_FILE_KEY="..."
 
 # Slack Notifications
 export SLACK_WEBHOOK_URL="https://hooks.slack.com/..."
