@@ -114,3 +114,4 @@ data/archives/cascade/tmp*.csv
 # Supabase CLI temporary files
 supabase/.temp/
 supabase/.branches/
+tests/data/
