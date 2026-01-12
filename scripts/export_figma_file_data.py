@@ -3,20 +3,23 @@ import os
 
 import requests
 
-FIGMA_FILE_ID = "nuVKwuPuLS7VmLFvqzOX1G"
+# Use environment variables for all configuration
+FIGMA_FILE_KEY = os.environ.get("FIGMA_FILE_KEY")  # Changed from FIGMA_FILE_ID
 FIGMA_TOKEN = os.environ.get("FIGMA_TOKEN")
 FIGMA_API_URL = os.environ.get("FIGMA_API_URL")
 
 try:
     if FIGMA_API_URL:
         # Use MCP server endpoint
-        payload = {"file_id": FIGMA_FILE_ID}
+        payload = {"file_id": FIGMA_FILE_KEY}
         response = requests.post(f"{FIGMA_API_URL}/figma/file", json=payload, timeout=30)
         data = response.json()
     else:
         # Use direct Figma API
+        if not FIGMA_TOKEN or not FIGMA_FILE_KEY:
+            raise ValueError("FIGMA_TOKEN and FIGMA_FILE_KEY must be set in environment")
         headers = {"X-Figma-Token": FIGMA_TOKEN}
-        url = f"https://api.figma.com/v1/files/{FIGMA_FILE_ID}"
+        url = f"https://api.figma.com/v1/files/{FIGMA_FILE_KEY}"
         response = requests.get(url, headers=headers, timeout=30)
         data = response.json()
 except requests.exceptions.Timeout:
