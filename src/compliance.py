@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
+import polars as pl
 
 PII_COLUMN_KEYWORDS = [
     "name",
@@ -64,6 +65,53 @@ def mask_pii_in_dataframe(
             processed_cols.append(column)
 
     return masked, processed_cols
+
+
+def mask_pii_polars(
+    df: pl.DataFrame,
+    pii_columns: Optional[Iterable[str]] = None,
+    keywords: Optional[Iterable[str]] = None,
+    action: str = "mask",
+) -> Tuple[pl.DataFrame, List[str]]:
+    """
+    Polars version of PII masking.
+    """
+    columns = list(pii_columns) if pii_columns is not None else []
+    keyword_source = list(keywords) if keywords is not None else PII_COLUMN_KEYWORDS
+
+    lowered_keywords = [k.lower() for k in keyword_source]
+    detected_columns = [
+        col
+        for col in df.columns
+        if any(keyword in str(col).lower() for keyword in lowered_keywords)
+    ]
+
+    all_pii_cols = list(set(columns + detected_columns))
+    processed_cols = []
+    exprs = []
+
+    for column in all_pii_cols:
+        if column in df.columns:
+            if action == "redact":
+                exprs.append(pl.lit("[REDACTED]").alias(column))
+            else:
+                # Polars-native hashing
+                exprs.append(
+                    (
+                        pl.lit("MASKED:")
+                        + pl.col(column)
+                        .cast(pl.Utf8)
+                        .str.to_uppercase()
+                        .hash()
+                        .cast(pl.Utf8)
+                        .str.slice(0, 8)
+                    ).alias(column)
+                )
+            processed_cols.append(column)
+
+    if exprs:
+        return df.with_columns(exprs), processed_cols
+    return df, []
 
 
 def create_access_log_entry(

@@ -22,43 +22,43 @@ jobs:
             echo "run=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Set up Node.js
-        if: steps.meta_token.outputs.run == true
+        if: steps.meta_token.outputs.run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
       - name: Install dependencies
-        if: steps.meta_token.outputs.run == true
+        if: steps.meta_token.outputs.run == 'true'
         run: |
           cd node/services/meta-connector
           npm install
       - name: Build
-        if: steps.meta_token.outputs.run == true
+        if: steps.meta_token.outputs.run == 'true'
         run: |
           cd node/services/meta-connector
           npm run build
       - name: Run ingest
-        if: steps.meta_token.outputs.run == true
+        if: steps.meta_token.outputs.run == 'true'
         run: |
           cd node/services/meta-connector
           node dist/ingest.js
       - name: Upload raw data
-        if: steps.meta_token.outputs.run == true
+        if: steps.meta_token.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: meta-raw
           path: data/raw/meta/
       - name: Set up Python
-        if: steps.meta_token.outputs.run == true
+        if: steps.meta_token.outputs.run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Load to warehouse
-        if: steps.meta_token.outputs.run == true
+        if: steps.meta_token.outputs.run == 'true'
         run: |
           pip install pandas pyarrow pyyaml
           python src/ingestion/meta_to_warehouse.py
       - name: Upload warehouse parquet
-        if: steps.meta_token.outputs.run == true
+        if: steps.meta_token.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: meta-warehouse

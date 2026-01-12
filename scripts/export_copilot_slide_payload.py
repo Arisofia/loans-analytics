@@ -3,6 +3,9 @@ Generate structured payload (JSON + Markdown) that Copilot/agents can read to
 build dark presentation slides consistent with the ABACO design tokens.
 """
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import json
 from pathlib import Path
 

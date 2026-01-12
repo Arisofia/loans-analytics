@@ -45,13 +45,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Install Playwright
-        if: steps.cascade_secrets.outputs.available == true && hashFiles('scripts/scrape_cascade.py') != ''
+        if: steps.cascade_secrets.outputs.available == 'true' && hashFiles('scripts/scrape_cascade.py') != ''
         run: |
           pip install playwright
           playwright install chromium
 
       - name: Run Cascade scraper
-        if: steps.cascade_secrets.outputs.available == true && hashFiles('scripts/scrape_cascade.py') != ''
+        if: steps.cascade_secrets.outputs.available == 'true' && hashFiles('scripts/scrape_cascade.py') != ''
         continue-on-error: true
         run: python scripts/scrape_cascade.py --loan-tape
       - name: Run data ingestion pipeline
@@ -61,7 +61,7 @@ jobs:
           python scripts/run_data_pipeline.py
       - name: Notify Slack on Success
         uses: slackapi/slack-github-action@v1.24.0
-        if: success() && steps.slack_secret.outputs.available == true
+        if: success() && steps.slack_secret.outputs.available == 'true'
         continue-on-error: true
         with:
           payload: |

@@ -145,7 +145,7 @@ jobs:
             }
 
       - name: Send Slack notification on failure
-        if: failure() && steps.slack_check.outputs.available == true
+        if: failure() && steps.slack_check.outputs.available == 'true'
         continue-on-error: true
         uses: slackapi/slack-github-action@v1.24.0
         env:

@@ -1,6 +1,6 @@
 import re
 import warnings
-from typing import Optional
+from typing import Any, Optional, Type
 
 try:
     from requests.exceptions import RequestsDependencyWarning
@@ -10,14 +10,17 @@ except ImportError:
         pass
 
 
+Version: Any
+InvalidVersion: Type[Exception]
+
 try:
     from packaging.version import InvalidVersion, Version
 
     HAS_PACKAGING = True
 except ImportError:
     HAS_PACKAGING = False
-    Version = None  # type: ignore[assignment]
-    InvalidVersion = Exception  # type: ignore[assignment]
+    Version = None
+    InvalidVersion = Exception
 
 
 def check_cryptography_robust(cryptography_version: Optional[str]) -> None:

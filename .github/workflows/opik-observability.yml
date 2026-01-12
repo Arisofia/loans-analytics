@@ -43,7 +43,7 @@ jobs:
           echo "available=true" >> $GITHUB_OUTPUT
 
       - name: Upload metrics artifact
-        if: steps.fetch.outputs.available == true
+        if: steps.fetch.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: opik-metrics
@@ -54,7 +54,7 @@ jobs:
   # Job 2: Analyze data pipeline health
   analyze-pipeline-health:
     needs: fetch-opik-metrics
-    if: needs.fetch-opik-metrics.result == 'success' && needs.fetch-opik-metrics.outputs.metrics-available == true
+    if: needs.fetch-opik-metrics.result == 'success' && needs.fetch-opik-metrics.outputs.metrics-available == 'true'
     runs-on: ubuntu-latest
     outputs:
       pipeline-status: ${{ steps.analyze.outputs.status }}
@@ -94,7 +94,7 @@ jobs:
   # Job 3: Analyze agent execution performance
   analyze-agent-performance:
     needs: fetch-opik-metrics
-    if: needs.fetch-opik-metrics.result == 'success' && needs.fetch-opik-metrics.outputs.metrics-available == true
+    if: needs.fetch-opik-metrics.result == 'success' && needs.fetch-opik-metrics.outputs.metrics-available == 'true'
     runs-on: ubuntu-latest
     outputs:
       agent-status: ${{ steps.analyze.outputs.status }}
@@ -134,7 +134,7 @@ jobs:
   # Job 4: Check data quality trends
   check-data-quality-trends:
     needs: fetch-opik-metrics
-    if: needs.fetch-opik-metrics.result == 'success' && needs.fetch-opik-metrics.outputs.metrics-available == true
+    if: needs.fetch-opik-metrics.result == 'success' && needs.fetch-opik-metrics.outputs.metrics-available == 'true'
     runs-on: ubuntu-latest
     outputs:
       quality-trend: ${{ steps.check.outputs.trend }}

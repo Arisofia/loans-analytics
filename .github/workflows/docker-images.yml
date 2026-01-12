@@ -27,7 +27,7 @@ jobs:
   validate-acr:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secret_names: ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD
+      secret_names: AZURE_ACR_LOGIN_SERVER,AZURE_ACR_USERNAME,AZURE_ACR_PASSWORD
     secrets: inherit
 
   build-and-push:

@@ -54,7 +54,7 @@ jobs:
 
   monitor:
     needs: check-dependencies
-    if: needs.check-dependencies.outputs.has_scripts == true
+    if: needs.check-dependencies.outputs.has_scripts == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -93,13 +93,13 @@ jobs:
         run: |
           python scripts/update_figma_agent_dashboard.py
       - name: Post Summary to Slack (bot) #ops-alerts
-        if: always() && needs.check-dependencies.outputs.slack_bot_available == true && hashFiles('scripts/post_to_slack.py') != ''
+        if: always() && needs.check-dependencies.outputs.slack_bot_available == 'true' && hashFiles('scripts/post_to_slack.py') != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: |
           python scripts/post_to_slack.py --channel "#ops-alerts"
       - name: Post Summary to Slack (webhook) #ops-alerts
-        if: always() && needs.check-dependencies.outputs.slack_webhook_available == true
+        if: always() && needs.check-dependencies.outputs.slack_webhook_available == 'true'
         uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |

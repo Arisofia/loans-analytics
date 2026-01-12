@@ -22,22 +22,22 @@ jobs:
                   fi
 
             - name: Checkout Repository
-              if: steps.check-secrets.outputs.secrets_available == true
+              if: steps.check-secrets.outputs.secrets_available == 'true'
               uses: actions/checkout@v4
 
             - name: Setup Python Environment
-              if: steps.check-secrets.outputs.secrets_available == true
+              if: steps.check-secrets.outputs.secrets_available == 'true'
               uses: actions/setup-python@v5
               with:
                   python-version: "3.11"
 
             - name: Install Dependencies
-              if: steps.check-secrets.outputs.secrets_available == true
+              if: steps.check-secrets.outputs.secrets_available == 'true'
               run: |
                   pip install -r requirements.txt
 
             - name: Run Risk Assessment
-              if: steps.check-secrets.outputs.secrets_available == true && hashFiles('scripts/risk_monitoring.py') != ''
+              if: steps.check-secrets.outputs.secrets_available == 'true' && hashFiles('scripts/risk_monitoring.py') != ''
               env:
                 OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                 SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
@@ -45,7 +45,7 @@ jobs:
                   python scripts/risk_monitoring.py
 
             - name: Post to Streamlit
-              if: steps.check-secrets.outputs.secrets_available == true && hashFiles('scripts/post_to_streamlit.py') != ''
+              if: steps.check-secrets.outputs.secrets_available == 'true' && hashFiles('scripts/post_to_streamlit.py') != ''
               env:
                 SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
               run: |

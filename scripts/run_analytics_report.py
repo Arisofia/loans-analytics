@@ -3,6 +3,9 @@ Abaco Loans Analytics - Executive Report Runner
 Standard: Excellence & Vibe Solutioning
 """
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import argparse
 import logging
 import sys

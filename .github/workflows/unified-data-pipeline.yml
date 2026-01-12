@@ -19,13 +19,18 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-secrets:
+    uses: ./.github/workflows/reusable-secret-check.yml
+    with:
+      secret_names: "SUPABASE_SERVICE_ROLE,HUBSPOT_API_TOKEN,AZURE_STORAGE_CONNECTION_STRING"
+    secrets: inherit
+
   run-pipeline:
     name: Execute Unified Pipeline
+    needs: check-secrets
+    if: needs.check-secrets.outputs.all_secrets_present == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -43,7 +48,6 @@ jobs:
 
       - name: Execute Unified Data Pipeline
         id: pipeline
-        if: env.SUPABASE_SERVICE_ROLE != ''
         env:
           CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
           CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}

@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional
 
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.compliance import build_compliance_report, write_compliance_report
 from src.config.paths import Paths
@@ -58,8 +58,11 @@ def main(
     try:
         pipeline = UnifiedPipeline(config_path=Path(config_path))
         result = pipeline.execute(Path(input_file), user=effective_user, action=effective_action)
-        logger.info("Pipeline completed: %s", result.get("status"))
-        return result.get("status") == "success"
+        status = result.get("status")
+        logger.info("Pipeline completed: %s", status)
+        if status == "success":
+            print("Pipeline completed: success")
+        return status == "success"
     except Exception as exc:
         logger.error("Pipeline execution failed: %s", exc)
         return False

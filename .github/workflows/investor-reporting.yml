@@ -22,7 +22,7 @@ jobs:
 
     investor-report:
         needs: validate
-        if: needs.validate.outputs.run == true
+        if: needs.validate.outputs.run == 'true'
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repository

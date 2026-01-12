@@ -20,7 +20,7 @@ jobs:
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Send Slack notification
-        if: steps.slack_check.outputs.available == true
+        if: steps.slack_check.outputs.available == 'true'
         continue-on-error: true
         uses: slackapi/slack-github-action@v1.24.0
         env:

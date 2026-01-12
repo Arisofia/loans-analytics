@@ -14,9 +14,9 @@ from pathlib import Path
 import pandas as pd
 
 # Add project to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-sys.path.insert(0, str(project_root / "src" / "analytics"))
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 try:
     from src.azure_tracing import setup_azure_tracing

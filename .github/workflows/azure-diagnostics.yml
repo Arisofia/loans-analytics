@@ -52,6 +52,8 @@ jobs:
         uses: azure/CLI@v1
         with:
           azcliversion: "2.49.0"
+          inlineScript: |
+            az --version
 
       - name: Azure login (service principal)
         if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}

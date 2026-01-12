@@ -79,7 +79,7 @@ jobs:
               - ".github/workflows/ci.yml"
 
   assignee-check:
-    if: github.event_name == 'pull_request' && needs.changes.outputs.web == true
+    if: github.event_name == 'pull_request' && needs.changes.outputs.web == 'true'
     needs: changes
     uses: ./.github/workflows/pr-assignee-check.yml
     permissions:
@@ -91,7 +91,7 @@ jobs:
   repo-health:
     name: Repo Health Check
     needs: changes
-    if: needs.changes.outputs.checks == true
+    if: needs.changes.outputs.checks == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -126,7 +126,7 @@ jobs:
   run-demos:
     name: Run Demo Scripts
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && inputs.RUN_DEMOS == true
+    if: github.event_name == 'workflow_dispatch' && inputs.RUN_DEMOS == 'true'
     permissions:
       contents: read
       pull-requests: write
@@ -177,7 +177,7 @@ jobs:
   web:
     name: Web Build & Lint
     needs: changes
-    if: needs.changes.outputs.web == true
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -212,7 +212,7 @@ jobs:
   analytics:
     name: Analytics Tests
     needs: changes
-    if: needs.changes.outputs.analytics == true
+    if: needs.changes.outputs.analytics == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -244,40 +244,26 @@ jobs:
 
   update-figma-slides:
     name: Update Figma Slides
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Check secrets availability
-        id: check-secrets
-        env:
-          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
-          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
-          ANALYTICS_URL: ${{ secrets.ANALYTICS_URL }}
-        run: |
-          if [ -n "$FIGMA_TOKEN" ] && [ -n "$FIGMA_FILE_KEY" ] && [ -n "$ANALYTICS_URL" ]; then
-            echo "secrets_available=true" >> $GITHUB_OUTPUT
-          else
-            echo "secrets_available=false" >> $GITHUB_OUTPUT
-          fi
       - name: Checkout code
-        if: steps.check-secrets.outputs.secrets_available == true
         uses: actions/checkout@v4
       - name: Set up pnpm
-        if: steps.check-secrets.outputs.secrets_available == true
         uses: pnpm/action-setup@v3
         with:
           version: 10
       - name: Set up Node.js
-        if: steps.check-secrets.outputs.secrets_available == true
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "pnpm"
           cache-dependency-path: apps/web/pnpm-lock.yaml
       - name: Install dependencies
-        if: steps.check-secrets.outputs.secrets_available == true
-        run: pnpm install --frozen-lockfile
+        run: pnpm -C apps/web install --no-frozen-lockfile
       - name: Update Figma Slides
-        if: steps.check-secrets.outputs.secrets_available == true && hashFiles('scripts/update_figma_slides.js') != ''
+        if: env.FIGMA_TOKEN != '' && hashFiles('scripts/update_figma_slides.js') != ''
         run: node scripts/update_figma_slides.js
         env:
           FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
@@ -295,19 +281,9 @@ jobs:
       - update-figma-slides
     if: always() && failure()
     steps:
-      - name: Check Slack webhook availability
-        id: slack_check
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-          fi
       - name: Notify Slack on failure
         uses: slackapi/slack-github-action@v2
-        if: steps.slack_check.outputs.available == true
+        if: env.SLACK_WEBHOOK_URL != ''
         with:
           webhook-type: incoming-webhook
           payload: |

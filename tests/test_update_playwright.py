@@ -25,7 +25,7 @@ jobs:
     # Prepare a fake subprocess.run to capture the command invoked
     called = {}
 
-    def fake_run(cmd, check, capture_output, text):
+    def fake_run(cmd, check=True, capture_output=True, text=True, **kwargs):
         # Record the command and return a dummy successful CompletedProcess
         called["cmd"] = cmd
         return subprocess.CompletedProcess(cmd, 0, stdout="{\"ok\":true}", stderr="")

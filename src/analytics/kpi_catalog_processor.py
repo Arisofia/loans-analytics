@@ -1275,98 +1275,98 @@ class KPICatalogProcessor:
         # Core aggregated views for parity tests
         try:
             kpis["monthly_pricing"] = self.get_monthly_pricing().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in monthly_pricing: {e}")
         try:
             kpis["monthly_risk"] = self.get_monthly_risk().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in monthly_risk: {e}")
         try:
             kpis["churn_90d_metrics"] = self.get_churn_90d_metrics().to_dict("records")
         except Exception as e:
             logger.error(f"Error in churn_90d_metrics: {e}")
         try:
             kpis["customer_types"] = self.get_customer_types().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in customer_types: {e}")
         try:
             kpis["payment_timing"] = self.get_payment_timing().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in payment_timing: {e}")
         try:
             kpis["collection_rate"] = self.get_collection_rate().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in collection_rate: {e}")
 
         # Detailed/Granular views
         try:
             kpis["active_unique_customers"] = self.get_active_unique_customers().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in active_unique_customers: {e}")
         try:
             kpis["customer_classification"] = self.get_customer_classification().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in customer_classification: {e}")
         try:
             kpis["intensity_segmentation"] = self.get_intensity_segmentation().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in intensity_segmentation: {e}")
         try:
             kpis["weighted_apr"] = self.get_weighted_apr().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in weighted_apr: {e}")
         try:
             kpis["weighted_fee_rate"] = self.get_weighted_fee_rate().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in weighted_fee_rate: {e}")
         try:
             kpis["concentration"] = self.get_concentration().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in concentration: {e}")
         try:
             kpis["average_ticket"] = self.get_average_ticket().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in average_ticket: {e}")
         try:
             kpis["line_size_segmentation"] = self.get_line_size_segmentation().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in line_size_segmentation: {e}")
         try:
             kpis["replines_metrics"] = self.get_replines_metrics().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in replines_metrics: {e}")
         try:
             kpis["dpd_buckets"] = self.get_dpd_buckets().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in dpd_buckets: {e}")
         try:
             kpis["payor_concentration"] = self.get_concentration().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in payor_concentration: {e}")
         try:
             kpis["throughput_metrics"] = self.get_throughput_metrics().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in throughput_metrics: {e}")
         try:
             kpis["quarterly_scorecard"] = self.get_quarterly_scorecard().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in quarterly_scorecard: {e}")
         try:
             kpis["eir_scheduled"] = self.get_eir_scheduled()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in eir_scheduled: {e}")
         try:
             kpis["eir_real"] = self.get_eir_real()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in eir_real: {e}")
         try:
             kpis["weighted_apr_contractual"] = self.get_weighted_apr_contractual()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in weighted_apr_contractual: {e}")
         try:
             kpis["unit_economics"] = self.get_unit_economics().to_dict("records")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Error in unit_economics: {e}")
         try:
             kpis["figma_dashboard"] = self.get_figma_dashboard_df().to_dict("records")
         except Exception as e:
@@ -1534,3 +1534,57 @@ class KPICatalogProcessor:
         base = base.fillna(0)
 
         return base
+
+    def get_slide_payload(self) -> Dict[str, Any]:
+        """
+        Generate structured payload for Figma/presentation slides
+        based on real calculated metrics.
+        """
+        try:
+            exec_strip = self.get_executive_strip()
+            throughput = self.get_throughput_metrics()
+            risk = self.get_monthly_risk()
+
+            latest_tp = throughput.iloc[-1] if not throughput.empty else {}
+            latest_risk = risk.iloc[-1] if not risk.empty else {}
+
+            slides = [
+                {
+                    "title": "Portfolio Pulse",
+                    "headline": "Yield & Risk Stability",
+                    "body": f"The portfolio currently maintains a {latest_risk.get('par30_pct', 0)*100:.1f}% PAR30 rate with a {latest_tp.get('yield_incl_fees', 0)*100:.1f}% realized yield.",
+                    "metrics": [
+                        {"label": "PAR30", "value": f"{latest_risk.get('par30_pct', 0)*100:.1f}%"},
+                        {
+                            "label": "Realized Yield",
+                            "value": f"{latest_tp.get('yield_incl_fees', 0)*100:.1f}%",
+                        },
+                    ],
+                    "visual": "growth-path",
+                },
+                {
+                    "title": "Growth Dynamics",
+                    "headline": "Throughput & Velocity",
+                    "body": f"Monthly throughput stands at ${latest_tp.get('throughput_12m', 0)/1e6:.1f}M (L12M) with a rotation factor of {latest_tp.get('rotation', 0):.2f}x.",
+                    "metrics": [
+                        {
+                            "label": "Total Outstanding",
+                            "value": f"${exec_strip.get('total_outstanding', 0)/1e6:.2f}M",
+                        },
+                        {
+                            "label": "Active Clients",
+                            "value": str(exec_strip.get("active_clients", 0)),
+                        },
+                    ],
+                    "visual": "sales-treemap",
+                },
+            ]
+
+            return {
+                "slides": slides,
+                "timestamp": datetime.now().isoformat(),
+                "summary": exec_strip,
+            }
+        except Exception as e:
+            logger.error(f"Error generating slide payload: {e}")
+            return {"error": str(e), "slides": []}

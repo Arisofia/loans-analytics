@@ -10,12 +10,14 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-def require_env_vars(*vars):
-    missing = [v for v in vars if not os.getenv(v)]
+
+def require_env_vars(*env_vars):
+    missing = [v for v in env_vars if not os.getenv(v)]
     if missing:
         logger.error(f"Missing required environment variables: {', '.join(missing)}")
         return False
     return True
+
 
 def require_module(modname):
     try:
@@ -23,7 +25,6 @@ def require_module(modname):
     except ImportError:
         logger.error(f"Required module '{modname}' not installed; skipping Gemini review.")
         return None
-
 
 
 def main() -> int:
@@ -147,7 +148,6 @@ def main() -> int:
         return 1
 
     return 0
-
 
 
 if __name__ == "__main__":
