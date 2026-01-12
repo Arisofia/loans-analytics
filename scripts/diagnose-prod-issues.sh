@@ -18,8 +18,7 @@ echo "========================================"
 
 echo -e "\n1️⃣ Checking Azure App Service status..."
 if command -v az &> /dev/null; then
-    APP_STATUS=$(az webapp show --name $WEBAPP_NAME --resource-group $RESOURCE_GROUP --query "state" -o tsv 2>/dev/null)
-    if [ $? -eq 0 ]; then
+    if APP_STATUS=$(az webapp show --name $WEBAPP_NAME --resource-group $RESOURCE_GROUP --query "state" -o tsv 2>/dev/null); then
         if [ "$APP_STATUS" = "Running" ]; then
             echo -e "${GREEN}✅ App Service Status: $APP_STATUS${NC}"
         else
@@ -98,7 +97,7 @@ echo -e "\n7️⃣ Checking Python dependencies for pipelines..."
 if [ -f "requirements.txt" ]; then
     DEPS=("polars" "pandas" "requests" "azure" "hubspot" "sqlalchemy")
     for dep in "${DEPS[@]}"; do
-        if grep -q "^$dep\|^$dep[><=\-]" requirements.txt 2>/dev/null; then
+        if grep -q "^${dep}\|^${dep}[><=\-]" requirements.txt 2>/dev/null; then
             echo -e "${GREEN}✅ $dep${NC} - installed"
         fi
     done

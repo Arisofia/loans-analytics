@@ -29,17 +29,17 @@ jobs:
       - name: Install dependencies
         if: steps.meta_token.outputs.run == true
         run: |
-          cd node/services/meta-connector
+          cd node/services/meta-connector || exit
           npm install
       - name: Build
         if: steps.meta_token.outputs.run == true
         run: |
-          cd node/services/meta-connector
+          cd node/services/meta-connector || exit
           npm run build
       - name: Run ingest
         if: steps.meta_token.outputs.run == true
         run: |
-          cd node/services/meta-connector
+          cd node/services/meta-connector || exit
           node dist/ingest.js
       - name: Upload raw data
         if: steps.meta_token.outputs.run == true

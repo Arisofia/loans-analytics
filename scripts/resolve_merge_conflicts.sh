@@ -44,19 +44,19 @@ log() {
 }
 
 log_info() {
-    echo -e "${BLUE}[INFO]${NC} $@" | tee -a "$LOG_FILE"
+    echo -e "${BLUE}[INFO]${NC} ${*}" | tee -a "$LOG_FILE"
 }
 
 log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $@" | tee -a "$LOG_FILE"
+    echo -e "${GREEN}[SUCCESS]${NC} ${*}" | tee -a "$LOG_FILE"
 }
 
 log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $@" | tee -a "$LOG_FILE"
+    echo -e "${YELLOW}[WARNING]${NC} ${*}" | tee -a "$LOG_FILE"
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $@" | tee -a "$LOG_FILE"
+    echo -e "${RED}[ERROR]${NC} ${*}" | tee -a "$LOG_FILE"
 }
 
 usage() {
