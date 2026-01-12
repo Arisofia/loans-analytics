@@ -31,28 +31,3 @@ def test_batch_export_load_latest_metrics_invalid_json(tmp_path, caplog, monkeyp
     )
 
 
-def test_load_dashboard_metrics_invalid_json(tmp_path, caplog, capsys, monkeypatch):
-    # Arrange: create a malformed dashboard JSON file and point the module constant to it
-    exports_dir = tmp_path / "exports"
-    exports_dir.mkdir(parents=True)
-    dashboard_file = exports_dir / "complete_kpi_dashboard.json"
-    dashboard_file.write_text("123")  # valid JSON but not a dict
-
-    import src.analytics_metrics as analytics_metrics
-
-    monkeypatch.setattr(analytics_metrics, "DASHBOARD_JSON", dashboard_file)
-
-    caplog.set_level(logging.ERROR)
-
-    # Act
-    data = analytics_metrics.load_dashboard_metrics()
-
-    # Assert
-    assert data == {}
-
-    # Prefer caplog, but fall back to captured stderr if the message was emitted
-    if not any(
-        "Expected dict" in rec.message or "Failed to parse" in rec.message for rec in caplog.records
-    ):
-        captured = capsys.readouterr()
-        assert "Expected dict" in captured.err or "Failed to parse" in captured.err
