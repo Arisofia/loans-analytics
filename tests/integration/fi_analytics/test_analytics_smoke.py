@@ -6,15 +6,13 @@ Test Cases:
   - A-02: Output artifacts existence and schema validation
 """
 
-import json
-import subprocess
-import sys
-from pathlib import Path
 from typing import Any, Dict
 
+import pytest
+import subprocess
+import sys
 import jsonschema
 import pandas as pd
-import pytest
 
 
 class TestAnalyticsSmoke:
