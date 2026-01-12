@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from dashboard_utils import compute_cat_agg
+from src.utils.dashboard_utils import compute_cat_agg
 
 # Theme definition (as per design system)
 ABACO_THEME = {

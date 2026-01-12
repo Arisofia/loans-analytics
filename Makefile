@@ -74,7 +74,7 @@ audit-write:
 	python3 scripts/run_data_pipeline.py --input data/raw/abaco_portfolio_calculations.csv
 
 check-maturity:
-	python3 repo_maturity_summary.py
+	python3 scripts/repo_maturity_summary.py
 
 # ------------------------------------------------------------------------------
 # Python environment management

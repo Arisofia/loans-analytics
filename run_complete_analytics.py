@@ -305,6 +305,18 @@ def main():
         scorecard_path = project_root / "exports" / "quarterly_scorecard.csv"
         scorecard_df.to_csv(scorecard_path, index=False)
         print(f"✅ Quarterly Scorecard saved to: {scorecard_path}")
+        
+        # 6. Push to Supabase if enabled
+        from src.integrations.supabase_client import SupabaseOutputClient
+        sb_client = SupabaseOutputClient()
+        if sb_client.client:
+            print("📤 Pushing analytics_facts to Supabase...")
+            success = sb_client.upsert_analytics_facts(figma_df)
+            if success:
+                print("✅ Supabase sync complete (analytics_facts)")
+            else:
+                print("⚠️ Supabase sync failed")
+        
     except Exception as e:
         print(f"⚠️  Error calculating extended KPIs: {e}")
         import traceback

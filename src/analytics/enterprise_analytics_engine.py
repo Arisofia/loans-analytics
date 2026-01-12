@@ -129,7 +129,8 @@ class LoanAnalyticsEngine:
 
     def compute_delinquency_rate(self) -> float:
         """Computes the portfolio delinquency rate using KPIEngineV2."""
-        from src.kpi_engine_v2 import KPIEngineV2  # pylint: disable=import-outside-toplevel
+        from src.kpi_engine_v2 import \
+            KPIEngineV2  # pylint: disable=import-outside-toplevel
 
         engine_v2 = KPIEngineV2(self.loan_data, actor="enterprise_engine")
         val, _ = engine_v2.calculate_par_30()
@@ -137,7 +138,8 @@ class LoanAnalyticsEngine:
 
     def compute_portfolio_yield(self) -> float:
         """Computes the weighted average portfolio yield using KPIEngineV2."""
-        from src.kpi_engine_v2 import KPIEngineV2  # pylint: disable=import-outside-toplevel
+        from src.kpi_engine_v2 import \
+            KPIEngineV2  # pylint: disable=import-outside-toplevel
 
         engine_v2 = KPIEngineV2(self.loan_data, actor="enterprise_engine")
         val, _ = engine_v2.calculate_portfolio_yield()
@@ -216,7 +218,8 @@ class LoanAnalyticsEngine:
 
         Delegates core computations to KPIEngineV2 for consistency.
         """
-        from src.kpi_engine_v2 import KPIEngineV2  # pylint: disable=import-outside-toplevel
+        from src.kpi_engine_v2 import \
+            KPIEngineV2  # pylint: disable=import-outside-toplevel
 
         engine_v2 = KPIEngineV2(self.loan_data, actor="enterprise_engine")
         results = engine_v2.calculate_all()
@@ -234,11 +237,13 @@ class LoanAnalyticsEngine:
         }
 
         quality = self.data_quality_profile()
-        dashboard.update({
-            "data_quality_score": quality["data_quality_score"],
-            "average_null_ratio_percent": quality["average_null_ratio"],
-            "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio"],
-        })
+        dashboard.update(
+            {
+                "data_quality_score": quality["data_quality_score"],
+                "average_null_ratio_percent": quality["average_null_ratio"],
+                "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio"],
+            }
+        )
 
         return dashboard
 

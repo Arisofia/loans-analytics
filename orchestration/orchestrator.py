@@ -90,7 +90,7 @@ class Orchestrator:
         self.max_workers = max_workers
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
 
-        logger.info(f"Orchestrator initialized with {max_workers} workers")
+        logger.info("Orchestrator initialized with %s workers", max_workers)
 
     def register_agent(self, name: str, agent: BaseAgent) -> None:
         """Register an agent with the orchestrator.
@@ -100,7 +100,7 @@ class Orchestrator:
             agent: Agent instance
         """
         self.agents[name] = agent
-        logger.info(f"Registered agent: {name}")
+        logger.info("Registered agent: %s", name)
 
     def unregister_agent(self, name: str) -> None:
         """Unregister an agent.
@@ -110,7 +110,7 @@ class Orchestrator:
         """
         if name in self.agents:
             del self.agents[name]
-            logger.info(f"Unregistered agent: {name}")
+            logger.info("Unregistered agent: %s", name)
 
     def get_agent(self, name: str) -> Optional[BaseAgent]:
         """Get registered agent by name.
@@ -133,7 +133,7 @@ class Orchestrator:
             Workflow ID
         """
         self.workflows[definition.id] = definition
-        logger.info(f"Created workflow: {definition.name} ({definition.id})")
+        logger.info("Created workflow: %s (%s)", definition.name, definition.id)
         return definition.id
 
     def execute_task(self, task: AgentTask) -> Dict[str, Any]:
@@ -169,12 +169,12 @@ class Orchestrator:
         except TimeoutError:
             task.status = WorkflowStatus.TIMEOUT
             task.error = f"Task timeout after {task.timeout}s"
-            logger.error(f"Task {task.id} timed out")
+            logger.error("Task %s timed out", task.id)
 
         except Exception as e:
             task.status = WorkflowStatus.FAILED
             task.error = str(e)
-            logger.error(f"Task {task.id} failed: {e}", exc_info=True)
+            logger.error("Task %s failed: %s", task.id, e, exc_info=True)
 
         finally:
             task.end_time = datetime.utcnow()
@@ -243,7 +243,7 @@ class Orchestrator:
             raise ValueError(f"Workflow not found: {workflow_id}")
 
         start_time = datetime.utcnow()
-        logger.info(f"Starting workflow: {workflow.name} ({workflow_id})")
+        logger.info("Starting workflow: %s (%s)", workflow.name, workflow_id)
 
         try:
             # Resolve task dependencies
@@ -255,7 +255,10 @@ class Orchestrator:
             # Execute tasks level by level
             for level_idx, level_tasks in enumerate(task_levels):
                 logger.info(
-                    f"Executing level {level_idx + 1}/{len(task_levels)} with {len(level_tasks)} tasks"
+                    "Executing level %s/%s with %s tasks",
+                    level_idx + 1,
+                    len(task_levels),
+                    len(level_tasks),
                 )
 
                 # Execute tasks in parallel with max_parallel limit
@@ -275,7 +278,7 @@ class Orchestrator:
                                 failed_tasks.append(task)
 
                         except Exception as e:
-                            logger.error(f"Task execution error: {e}")
+                            logger.error("Task execution error: %s", e)
                             failed_tasks.append(task)
 
                 # Stop if critical task failed
@@ -304,8 +307,11 @@ class Orchestrator:
 
             success = len(failed_tasks) == 0
             logger.info(
-                f"Workflow {workflow.name} {'completed' if success else 'failed'}: "
-                f"{len(results)} tasks in {duration:.2f}s"
+                "Workflow %s %s: %s tasks in %.2fs",
+                workflow.name,
+                "completed" if success else "failed",
+                len(results),
+                duration,
             )
 
             return {

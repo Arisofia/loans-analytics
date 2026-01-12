@@ -1,6 +1,6 @@
 import logging
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -27,6 +27,17 @@ class PersistContext:
     quality_checks: Optional[Dict[str, Any]] = None
     compliance_report_path: Optional[Path] = None
     timeseries: Optional[Dict[str, pd.DataFrame]] = None
+
+
+@dataclass
+class OutputRequest:
+    """Phase 5: Consolidated request object for output persistence."""
+
+    df: pd.DataFrame
+    metrics: Dict[str, Any]
+    run_ids: Dict[str, str]
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    context: Optional[PersistContext] = None
 
 
 class UnifiedOutput:
@@ -62,11 +73,14 @@ class UnifiedOutput:
         if not self.azure_config.get("enabled"):
             return {}
 
-        import os
-        from concurrent.futures import ThreadPoolExecutor
+        import os  # pylint: disable=import-outside-toplevel
+        from concurrent.futures import \
+            ThreadPoolExecutor  # pylint: disable=import-outside-toplevel
 
-        from azure.core.exceptions import ResourceExistsError
-        from azure.storage.blob import BlobServiceClient, ContentSettings
+        from azure.core.exceptions import \
+            ResourceExistsError  # pylint: disable=import-outside-toplevel
+        from azure.storage.blob import (  # pylint: disable=import-outside-toplevel
+            BlobServiceClient, ContentSettings)
 
         connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         if not connection_string:
@@ -125,7 +139,7 @@ class UnifiedOutput:
             self._log_event("supabase_publish", "skipped", reason="Client not initialized")
             return {}
 
-        results = {}
+        results: Dict[str, Any] = {}
         try:
             # 1. Pipeline Run
             run_data = {
@@ -143,9 +157,7 @@ class UnifiedOutput:
 
             # 2. KPI Metrics
             if "metrics" in manifest:
-                results["kpi_metrics"] = client.insert_kpi_metrics(
-                    manifest["metrics"], run_id
-                )
+                results["kpi_metrics"] = client.insert_kpi_metrics(manifest["metrics"], run_id)
 
             # 3. Data Quality Results
             if "quality_checks" in manifest:
@@ -173,31 +185,56 @@ class UnifiedOutput:
             self._log_event("supabase_publish", "success", results=results)
         except Exception as e:
             self._log_event("supabase_publish", "failed", error=str(e))
-            logger.error(f"Supabase publication failed: {e}")
+            logger.error("Supabase publication failed: %s", e)
             results["error"] = str(e)
 
         return results
 
     def persist(
         self,
-        df: pd.DataFrame,
-        metrics: Dict[str, Any],
-        metadata: Dict[str, Any],
-        run_ids: Dict[str, str],
+        df: Optional[pd.DataFrame] = None,
+        metrics: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        run_ids: Optional[Dict[str, str]] = None,
         context: Optional[PersistContext] = None,
+        request: Optional[OutputRequest] = None,
         **kwargs: Any,
     ) -> OutputResult:
-        self._log_event("start", "initiated", run_ids=run_ids)
+        """
+        Phase 5: Persist results.
+        Supports both positional arguments (Legacy) and OutputRequest (Modern).
+        """
+        # 1. Resolve arguments into a unified request object
+        if request is None:
+            if df is None or metrics is None or run_ids is None:
+                raise ValueError(
+                    "Either 'request' or 'df', 'metrics', and 'run_ids' must be provided."
+                )
 
-        # Backward compatibility for positional or keyword arguments
-        quality_checks = kwargs.get("quality_checks")
-        compliance_report_path = kwargs.get("compliance_report_path")
-        timeseries = kwargs.get("timeseries")
+            # Handle backward compatibility for quality_checks, etc.
+            if not context:
+                context = PersistContext(
+                    quality_checks=kwargs.get("quality_checks"),
+                    compliance_report_path=kwargs.get("compliance_report_path"),
+                    timeseries=kwargs.get("timeseries"),
+                )
 
-        if context:
-            quality_checks = quality_checks or context.quality_checks
-            compliance_report_path = compliance_report_path or context.compliance_report_path
-            timeseries = timeseries or context.timeseries
+            request = OutputRequest(
+                df=df, metrics=metrics, metadata=metadata or {}, run_ids=run_ids, context=context
+            )
+
+        self._log_event("start", "initiated", run_ids=request.run_ids)
+
+        # 2. Extract data from request
+        df = request.df
+        metrics = request.metrics
+        metadata = request.metadata
+        run_ids = request.run_ids
+        context = request.context
+
+        quality_checks = context.quality_checks if context else None
+        compliance_report_path = context.compliance_report_path if context else None
+        timeseries = context.timeseries if context else None
 
         storage_cfg = self.config.get("storage", {})
         base_dir = ensure_dir(Path(storage_cfg.get("local_dir", str(Paths.metrics_dir()))))

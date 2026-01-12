@@ -160,3 +160,39 @@ def test_ingest_looker_with_dpd_data(tmp_path, minimal_config):
     assert not result.df.empty
     assert "dpd_7_30_usd" in result.df.columns
     assert "dpd_30_60_usd" in result.df.columns
+
+
+def test_ingest_dataframe(minimal_config):
+    ui = UnifiedIngestion(minimal_config)
+    df = pd.DataFrame({" loan_id ": ["1"], "Amount": [100.0]})
+    ingested = ui.ingest_dataframe(df)
+    assert "loan_id" in ingested.columns
+    assert "_ingest_run_id" in ingested.columns
+    assert "_ingest_timestamp" in ingested.columns
+
+
+def test_validate_loans(minimal_config):
+    ui = UnifiedIngestion(minimal_config)
+    df = pd.DataFrame({"loan_id": ["1"], "total_receivable_usd": [100.0]})
+    validated = ui.validate_loans(df)
+    assert "_validation_passed" in validated.columns
+
+
+def test_get_ingest_summary(minimal_config):
+    ui = UnifiedIngestion(minimal_config)
+    ui.ingest_dataframe(pd.DataFrame({"a": [1]}))
+    summary = ui.get_ingest_summary()
+    assert summary["rows_ingested"] == 1
+    assert "run_id" in summary
+
+
+def test_ingest_parquet_failure(minimal_config):
+    ui = UnifiedIngestion(minimal_config)
+    result = ui.ingest_parquet("non_existent.parquet")
+    assert result.empty
+
+
+def test_ingest_excel_failure(minimal_config):
+    ui = UnifiedIngestion(minimal_config)
+    result = ui.ingest_excel("non_existent.xlsx")
+    assert result.empty

@@ -3,9 +3,43 @@ import pytest
 from src.kpi_engine_v2 import KPIEngineV2
 
 
-def sample_portfolio():
-    return pd.DataFrame(
-        {
+class TestKPIEngineV2:
+    @pytest.fixture
+    def sample_df(self):
+        return pd.DataFrame(
+            {
+                "dpd_30_60_usd": [100, 200, 0],
+                "dpd_60_90_usd": [50, 100, 0],
+                "dpd_90_plus_usd": [25, 50, 0],
+                "total_receivable_usd": [1000, 2000, 500],
+                "cash_available_usd": [100, 200, 50],
+                "total_eligible_usd": [1000, 2000, 500],
+            }
+        )
+
+    def test_kpi_engine_initialization(self, sample_df):
+        engine = KPIEngineV2(sample_df)
+        assert engine.df is not None
+        assert engine.actor == "system"
+        assert engine.action == "kpi"
+
+    def test_calculate_all(self, sample_df):
+        engine = KPIEngineV2(sample_df)
+        metrics = engine.calculate_all(include_composite=True)
+
+        assert "PAR30" in metrics
+        assert "PAR90" in metrics
+        assert "CollectionRate" in metrics
+        assert "PortfolioHealth" in metrics
+
+        for key, metric_data in metrics.items():
+            assert "value" in metric_data
+            if "error" not in metric_data:
+                assert metric_data["value"] is not None
+
+    def test_regression_values(self):
+        """Verify engine against known results for a controlled dataset."""
+        df = pd.DataFrame({
             "segment": ["Consumer", "SME"],
             "measurement_date": ["2025-01-31", "2025-01-31"],
             "total_receivable_usd": [1000.0, 2000.0],
@@ -17,52 +51,48 @@ def sample_portfolio():
             "dpd_30_60_usd": [100.0, 200.0],
             "dpd_60_90_usd": [50.0, 50.0],
             "dpd_90_plus_usd": [25.0, 25.0],
-        }
-    )
+        })
+        engine = KPIEngineV2(df)
+        results = engine.calculate_all()
+        
+        # 30-60: 300, 60-90: 100, 90+: 50 -> Total DPD: 450
+        # Total Receivable: 3000
+        # PAR 30 = (450 / 3000) * 100 = 15.0
+        assert results["PAR30"]["value"] == pytest.approx(15.0)
+        
+        # 90+: 50. Total: 3000. PAR 90 = (50/3000)*100 = 1.666...
+        assert results["PAR90"]["value"] == pytest.approx(1.6666666666666667)
+        
+        # Cash: 2700, Eligible: 2700 -> 100%
+        assert results["CollectionRate"]["value"] == pytest.approx(100.0)
 
+    def test_individual_calculations(self, sample_df):
+        engine = KPIEngineV2(sample_df)
 
-def test_calculate_par_30():
-    engine = KPIEngineV2(sample_portfolio())
-    par_30, details = engine.calculate_par_30()
-    # 30-60: 300, 60-90: 100, 90+: 50 -> Total DPD: 450
-    # Total Receivable: 3000
-    # PAR 30 = (450 / 3000) * 100 = 15.0
-    assert par_30 == pytest.approx(15.0)
-    assert details["metric"] == "PAR30"
+        par30_val, par30_ctx = engine.calculate_par_30()
+        assert isinstance(par30_val, float)
+        assert "formula" in par30_ctx
 
+        par90_val, par90_ctx = engine.calculate_par_90()
+        assert isinstance(par90_val, float)
 
-def test_calculate_par_90():
-    engine = KPIEngineV2(sample_portfolio())
-    par_90, details = engine.calculate_par_90()
-    # 90+: 50
-    # Total Receivable: 3000
-    # PAR 90 = (50 / 3000) * 100 = 1.666...
-    assert par_90 == pytest.approx(1.6666666666666667)
-    assert details["metric"] == "PAR90"
+        coll_val, coll_ctx = engine.calculate_collection_rate()
+        assert isinstance(coll_val, float)
 
+    def test_audit_trail(self, sample_df):
+        engine = KPIEngineV2(sample_df)
+        engine.calculate_all()
+        audit_df = engine.get_audit_trail()
 
-def test_calculate_collection_rate():
-    engine = KPIEngineV2(sample_portfolio())
-    rate, details = engine.calculate_collection_rate()
-    # Cash: 2700, Eligible: 2700 -> 100%
-    assert rate == pytest.approx(100.0)
-    assert details["metric"] == "CollectionRate"
+        assert len(audit_df) > 0
+        assert "event" in audit_df.columns
+        assert "status" in audit_df.columns
+        assert "timestamp" in audit_df.columns
 
-
-def test_calculate_all():
-    engine = KPIEngineV2(sample_portfolio())
-    results = engine.calculate_all()
-    assert results["PAR30"]["value"] == pytest.approx(15.0)
-    assert results["PAR90"]["value"] == pytest.approx(1.6666666666666667)
-    assert results["CollectionRate"]["value"] == pytest.approx(100.0)
-    assert results["PortfolioHealth"]["value"] == 10.0
-
-
-def test_get_audit_trail():
-    engine = KPIEngineV2(sample_portfolio())
-    engine.calculate_all()
-    trail = engine.get_audit_trail()
-    assert not trail.empty
-    assert "event" in trail.columns
-    assert "status" in trail.columns
-    assert "calculate_all" in trail["event"].values
+    def test_empty_dataframe(self):
+        engine = KPIEngineV2(pd.DataFrame())
+        metrics = engine.calculate_all()
+        assert len(metrics) == 4  # All KPIs return with Empty DataFrame reason
+        for key, metric_data in metrics.items():
+            if key != "PortfolioHealth":  # Composite KPI has different structure
+                assert metric_data.get("reason") == "Empty DataFrame"

@@ -3,6 +3,7 @@
 This reproduces the small API surface used in unit tests: `SupabaseAuth` and
 `SupabaseWriter` with `upsert_pipeline_run` and `insert_kpi_values`.
 """
+
 from __future__ import annotations
 
 import json

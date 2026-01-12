@@ -11,7 +11,7 @@ from src.pipeline.data_validation_gx import validate_loan_data
 from src.pipeline.kpi_calculation import (CalculationResultV2,
                                           UnifiedCalculationV2)
 from src.pipeline.orchestrator import PipelineConfig
-from src.pipeline.output import OutputResult, UnifiedOutput
+from src.pipeline.output import OutputRequest, OutputResult, UnifiedOutput
 
 
 @task(retries=3, retry_delay_seconds=60)
@@ -72,16 +72,16 @@ def output_task(
     output = UnifiedOutput(config, run_id=run_id)
 
     # We can add Supabase persistence here or in UnifiedOutput.persist
-    result = output.persist(
-        transformation_result.df,
-        calculation_result.metrics,
+    request = OutputRequest(
+        df=transformation_result.df,
+        metrics=calculation_result.metrics,
         metadata={
             "transformation": transformation_result.lineage,
             "calculation": calculation_result.audit_trail,
         },
         run_ids={"pipeline": run_id},
     )
-    return result
+    return output.persist(request=request)
 
 
 @flow(name="Abaco Data Pipeline")

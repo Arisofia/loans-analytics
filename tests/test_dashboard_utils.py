@@ -1,5 +1,5 @@
 import pandas as pd
-from dashboard_utils import compute_cat_agg
+from src.utils.dashboard_utils import compute_cat_agg
 
 
 def test_compute_cat_agg_missing_value_col():

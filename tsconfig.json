@@ -9,6 +9,7 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "Node",
+    "ignoreDeprecations": "6.0",
     "resolveJsonModule": true,
     "allowJs": true,
     "noEmit": true,

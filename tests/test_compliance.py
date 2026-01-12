@@ -1,6 +1,10 @@
 import pandas as pd
-from src.compliance import (build_compliance_report, create_access_log_entry,
-                            mask_pii_in_dataframe)
+
+from src.compliance import (
+    build_compliance_report,
+    create_access_log_entry,
+    mask_pii_in_dataframe,
+)
 
 
 def test_mask_pii_columns_by_keywords():

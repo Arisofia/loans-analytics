@@ -12,7 +12,7 @@ from src.pipeline.config import PipelineConfig
 from src.pipeline.data_ingestion import IngestionResult, UnifiedIngestion
 from src.pipeline.data_transformation import UnifiedTransformation
 from src.pipeline.kpi_calculation import UnifiedCalculationV2
-from src.pipeline.output import UnifiedOutput
+from src.pipeline.output import OutputRequest, PersistContext, UnifiedOutput
 from src.pipeline.utils import ensure_dir, utc_now, write_json
 from src.tracing_setup import get_tracer
 
@@ -240,9 +240,9 @@ class UnifiedPipeline:
         action: str,
     ) -> Any:
         with tracer.start_as_current_span("pipeline.output"):
-            return self.output.persist(
-                transformation_result.df,
-                calculation_result.metrics,
+            request = OutputRequest(
+                df=transformation_result.df,
+                metrics=calculation_result.metrics,
                 metadata={
                     "ingestion": ingestion_result.metadata,
                     "lineage": transformation_result.lineage,
@@ -256,10 +256,13 @@ class UnifiedPipeline:
                     "transformation": transformation_result.run_id,
                     "calculation": calculation_result.run_id,
                 },
-                quality_checks=transformation_result.quality_checks,
-                compliance_report_path=compliance_path,
-                timeseries=calculation_result.timeseries,
+                context=PersistContext(
+                    quality_checks=transformation_result.quality_checks,
+                    compliance_report_path=compliance_path,
+                    timeseries=calculation_result.timeseries,
+                ),
             )
+            return self.output.persist(request=request)
 
     def _summarize(
         self,

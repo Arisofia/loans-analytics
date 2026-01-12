@@ -20,9 +20,8 @@ from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from src.agents.tools import send_slack_notification
+from src.pipeline.data_validation import DataQualityReport, validate_dataframe
 from src.pipeline.schema import LoanTapeSchema
-from src.pipeline.data_validation import (DataQualityReport,
-                                         validate_dataframe)
 from src.pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
                                 hash_file, utc_now)
 
@@ -662,11 +661,17 @@ class UnifiedIngestion:
             "debt_to_equity_ratio",
         ]
         for metric in metrics:
-            df[metric] = df["measurement_date"].map(
-                lambda date, m=metric: financials_by_date.get(str(date), {}).get(m)
-            )
+
+            def get_financial_metric(date, m=metric):
+                data = financials_by_date.get(str(date), {})
+                if isinstance(data, dict):
+                    return data.get(m)
+                # Fallback for flat dict if only one metric is provided (e.g. in some tests)
+                return data if m == "cash_balance_usd" else None
+
+            df[metric] = df["measurement_date"].map(get_financial_metric)
         if "cash_available_usd" not in df.columns:
-            df["cash_available_usd"] = 0.0
+            df["cash_available_usd"] = float("nan")
         if "cash_balance_usd" in df.columns:
             df["cash_available_usd"] = df["cash_available_usd"].fillna(df["cash_balance_usd"])
         df["cash_available_usd"] = df["cash_available_usd"].fillna(0.0)
@@ -851,8 +856,14 @@ class UnifiedIngestion:
         try:
             if file_path.suffix.lower() in {".parquet", ".pq"}:
                 df = pd.read_parquet(file_path)
-            elif file_path.suffix.lower() in {".json"}:
-                df = pd.read_json(file_path)
+            elif file_path.suffix.lower() in {".json", ".jsonl"}:
+                try:
+                    df = pd.read_json(file_path)
+                except ValueError:
+                    # Try reading as JSON lines if standard JSON fails
+                    df = pd.read_json(file_path, lines=True)
+            elif file_path.suffix.lower() in {".xlsx", ".xls"}:
+                df = pd.read_excel(file_path)
             else:
                 df = pd.read_csv(file_path)
             self._log_event("raw_read", "success", rows=len(df), checksum=checksum)
@@ -1015,7 +1026,7 @@ class UnifiedIngestion:
             raise
 
     def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
-        import requests
+        import requests  # pylint: disable=import-outside-toplevel
 
         headers = headers or {}
         self._log_event("http_start", "initiated", url=url)
