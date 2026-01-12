@@ -16,8 +16,8 @@ try:
     HAS_PACKAGING = True
 except ImportError:
     HAS_PACKAGING = False
-    Version = None  # type: ignore[misc, assignment]
-    InvalidVersion = Exception  # type: ignore[misc, assignment]
+    Version = None  # type: ignore[assignment]
+    InvalidVersion = Exception  # type: ignore[assignment]
 
 
 def check_cryptography_robust(cryptography_version: Optional[str]) -> None:
@@ -29,7 +29,7 @@ def check_cryptography_robust(cryptography_version: Optional[str]) -> None:
     if not cryptography_version:
         return
 
-    if HAS_PACKAGING:
+    if HAS_PACKAGING and Version:
         try:
             ver = Version(cryptography_version)
         except InvalidVersion:
