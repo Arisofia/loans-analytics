@@ -1,22 +1,29 @@
-.PHONY: install test run-pipeline run-dashboard clean check-maturity
+.PHONY: setup test lint clean docker-up docker-down
 
-install:
-	pip install -r requirements.txt
+# Setup environment
+setup:
+	python3 -m pip install -r requirements.txt
+	pre-commit install
 
+# Run all tests
 test:
-	pytest
+	python3 -m pytest tests/unit tests/test_analytics_metrics.py tests/test_enterprise_analytics_engine.py
 
-run-pipeline:
-	python scripts/run_data_pipeline.py
+# Linting and formatting
+lint:
+	black .
+	isort .
+	pylint python apps/analytics/src
 
-run-dashboard:
-	streamlit run streamlit_app.py
+# Docker Lifecycle
+docker-up:
+	docker-compose up -d
 
-check-maturity:
-	python repo_maturity_summary.py
+docker-down:
+	docker-compose down
 
+# Cleanup
 clean:
-	rm -rf __pycache__ .pytest_cache
-	find . -name "*.pyc" -delete
-	find . -name "*.pyo" -delete
-	rm -rf .coverage htmlcov
+	find . -type d -name "__pycache__" -exec rm -rf {} +
+	find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete

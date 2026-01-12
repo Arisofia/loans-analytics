@@ -1,0 +1,17 @@
+{
+  "run_id": "run_20260112_132408_40db9b0c",
+  "generated_at": "2026-01-12T12:24:08.371442+00:00",
+  "mask_stage": "post-transformation",
+  "pii_masked_columns": [],
+  "access_log": [
+    {
+      "stage": "pipeline",
+      "user": "system",
+      "action": "manual",
+      "status": "success"
+    }
+  ],
+  "metadata": {
+    "input_file": "/Users/jenineferderas/Documents/abaco-loans-analytics/tests/data/archives/sample_small.csv"
+  }
+}

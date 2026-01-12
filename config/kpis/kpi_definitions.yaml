@@ -145,7 +145,7 @@ kpis:
   cascade.roll_rate_30:
     name: '30-Day Roll Rate'
     description: 'Percent of loans that rolled 30 days deeper in delinquency over the period'
-    formula: '(SUM(v_loans_overview.days_past_due >= 30) - SUM(v_loans_overview.days_past_due >= 60)) / SUM(v_loans_overview.loan_id)'
+    formula: '(SUM(CASE WHEN days_past_due >= 30 THEN 1 ELSE 0 END) - SUM(CASE WHEN days_past_due >= 60 THEN 1 ELSE 0 END)) * 100.0 / NULLIF(COUNT(*), 0)'
     unit: '%'
     threshold_warning: 5.0
     threshold_critical: 8.0

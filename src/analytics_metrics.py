@@ -6,6 +6,8 @@ from typing import Dict, Iterable, Tuple
 import numpy as np
 import pandas as pd
 
+from python.config import settings
+
 CURRENCY_SYMBOLS = r"[₡$€£¥₽%]"
 
 
@@ -48,15 +50,7 @@ def _assert_required_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
 def portfolio_kpis(df: pd.DataFrame) -> Tuple[Dict[str, float], pd.DataFrame]:
     """Compute delinquency, yield, and leverage KPIs for a loan portfolio."""
 
-    required = {
-        "loan_amount",
-        "appraised_value",
-        "borrower_income",
-        "monthly_debt",
-        "loan_status",
-        "principal_balance",
-        "interest_rate",
-    }
+    required = set(settings.analytics.required_columns)
 
     if df.empty:
         empty_metrics: Dict[str, float] = {
@@ -72,41 +66,36 @@ def portfolio_kpis(df: pd.DataFrame) -> Tuple[Dict[str, float], pd.DataFrame]:
     work = df.copy()
     work["ltv_ratio"] = np.where(
         work["appraised_value"] > 0,
-        (work["loan_amount"] / work["appraised_value"]) * 100,
+        work["loan_amount"] / work["appraised_value"],
         np.nan,
     )
     monthly_income = work["borrower_income"] / 12
     work["dti_ratio"] = np.where(
         monthly_income > 0,
-        (work["monthly_debt"] / monthly_income) * 100,
+        work["monthly_debt"] / monthly_income,
         np.nan,
     )
 
-    delinquent_statuses = {
-        "30-59 days past due",
-        "60-89 days past due",
-        "90+ days past due",
-        "delinquent",
-    }
-    total_loans = len(work)
-    delinquent_count = (
-        work["loan_status"].astype(str).str.lower().isin(delinquent_statuses).sum()
-    )
-    delinquency_rate = (delinquent_count / total_loans) * 100 if total_loans else 0.0
-
+    delinquent_statuses = settings.analytics.delinquent_statuses
     total_principal = work["principal_balance"].sum()
+    if total_principal > 0:
+        delinquent_mask = work["loan_status"].astype(str).str.lower().isin(delinquent_statuses)
+        delinquent_principal = work.loc[delinquent_mask, "principal_balance"].sum()
+        delinquency_rate = float(delinquent_principal / total_principal)
+    else:
+        delinquency_rate = 0.0
+
     weighted_interest = (work["interest_rate"] * work["principal_balance"]).sum()
-    portfolio_yield = (weighted_interest / total_principal) * 100 if total_principal else 0.0
+    portfolio_yield = float(weighted_interest / total_principal) if total_principal else 0.0
+
+    avg_ltv = work["ltv_ratio"].mean()
+    avg_dti = work["dti_ratio"].mean()
 
     metrics = {
         "delinquency_rate": delinquency_rate,
         "portfolio_yield": portfolio_yield,
-        "average_ltv": 0.0
-        if work.empty
-        else float(np.nan_to_num(work["ltv_ratio"].mean(), nan=0.0)),
-        "average_dti": 0.0
-        if work.empty
-        else float(np.nan_to_num(work["dti_ratio"].mean(), nan=0.0)),
+        "average_ltv": float(avg_ltv) if pd.notna(avg_ltv) else 0.0,
+        "average_dti": float(avg_dti) if pd.notna(avg_dti) else 0.0,
     }
     return metrics, work
 

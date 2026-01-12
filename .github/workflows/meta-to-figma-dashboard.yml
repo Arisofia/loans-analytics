@@ -29,12 +29,8 @@ jobs:
           python python/analytics/meta_agent_analysis.py
       - name: Upload charts to S3
         run: |
-          python -c "import boto3, os; s3 = boto3.client('s3');
-for f in os.listdir('exports/meta_agent'):
- if f.endswith('.png'):
-  s3.upload_file(f'exports/meta_agent/{f}', os.environ['AWS_S3_BUCKET'], f'figma_dashboard/{f}', ExtraArgs={'ACL': 'public-read', 'ContentType': 'image/png'})
-  print(f'Uploaded {f} to S3')"
+          python scripts/upload_charts_to_s3.py
       - name: Update Figma dashboard
         run: |
           export IMAGE_URL="https://${{ env.AWS_S3_BUCKET }}.s3.amazonaws.com/figma_dashboard/top_ads_spend.png"
-          python scripts/upload_to_figma.py --image-url "$IMAGE_URL" --file-key "$FIGMA_FILE_KEY" --node-id "$FIGMA_NODE_ID" --token "$FIGMA_TOKEN"
+          python scripts/upload_to_figma.py --url "$IMAGE_URL"

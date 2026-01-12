@@ -2,7 +2,7 @@
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -33,7 +33,7 @@ class DataLoader:
     def write_manifest(self, dataset: str, csv_path: Path, parquet_path: Path, extras: Optional[dict] = None) -> Path:
         manifest = {
             "dataset": dataset,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             "csv": str(csv_path),
             "parquet": str(parquet_path),
         }

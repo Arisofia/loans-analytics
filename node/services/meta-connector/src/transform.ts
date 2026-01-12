@@ -8,7 +8,14 @@ export function transformCampaign(raw: { id: string; name: string; status: strin
   };
 }
 
-export function transformInsight(raw: any) {
+interface RawInsight {
+  impressions?: string | number
+  clicks?: string | number
+  spend?: string | number
+  actions?: Array<{ action_type: string; value: string | number }>
+}
+
+export function transformInsight(raw: RawInsight) {
   return {
     impressions: Number(raw.impressions) || 0,
     clicks: Number(raw.clicks) || 0,

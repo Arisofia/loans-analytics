@@ -1,11 +1,15 @@
+from __future__ import annotations
 import hashlib
 import os
 import re
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import plotly.express as px
 import streamlit as st
+
+from apps.analytics.src.polars_analytics_engine import PolarsAnalyticsEngine
 
 ABACO_THEME = {
     "colors": {
@@ -309,30 +313,36 @@ else:
     st.info("Add a payer/payor/pagador/offtaker/buyer/debtor column to assess coverage.")
 
 st.markdown("## KPI Calculations")
-loan_df["ltv_ratio"] = (loan_df["loan_amount"] / loan_df["appraised_value"]) * 100
-monthly_income = loan_df["borrower_income"] / 12
-loan_df["dti_ratio"] = np.where(
-    monthly_income > 0,
-    (loan_df["monthly_debt"] / monthly_income) * 100,
-    np.nan,
-)
-delinquent_statuses = ["30-59 days past due", "60-89 days past due", "90+ days past due"]
-delinquent_count = loan_df["loan_status"].isin(delinquent_statuses).sum()
-total_loans = len(loan_df)
-delinquency_rate = (delinquent_count / total_loans) * 100 if total_loans > 0 else 0
-total_principal = loan_df["principal_balance"].sum()
-weighted_interest = (loan_df["interest_rate"] * loan_df["principal_balance"]).sum()
-portfolio_yield = (weighted_interest / total_principal) * 100 if total_principal else 0
-loan_df["delinquency_rate"] = delinquency_rate
+
+# Use PolarsAnalyticsEngine for core calculations
+engine = PolarsAnalyticsEngine(pl.from_pandas(loan_df))
+kpis = engine.compute_kpis()
+
+# Update loan_df with ratios for downstream sections
+ratios_df = engine.compute_ratios().collect().to_pandas()
+loan_df["ltv_ratio"] = ratios_df["ltv_ratio"]
+loan_df["dti_ratio"] = ratios_df["dti_ratio"]
+
+delinquency_rate = kpis["delinquency_rate"]
+portfolio_yield = kpis["portfolio_yield"]
+avg_ltv = kpis["avg_ltv"]
+avg_dti = kpis["avg_dti"]
+
 st.markdown(f"- **Delinquency rate:** {delinquency_rate:.2f}%")
 st.markdown(f"- **Portfolio yield:** {portfolio_yield:.2f}%")
-st.markdown(f"- **Average LTV:** {loan_df['ltv_ratio'].mean():.1f}%")
-st.markdown(f"- **Average DTI:** {loan_df['dti_ratio'].mean():.1f}%")
-alerts = loan_df[loan_df["ltv_ratio"] > 90].assign(
-    alert_type="High LTV",
-    probability=lambda d: np.clip((d["ltv_ratio"] - 90) / 20, 0, 1),
-)
-st.dataframe(alerts[["alert_type", "ltv_ratio", "probability"]], hide_index=True)
+st.markdown(f"- **Average LTV:** {avg_ltv:.1f}%")
+st.markdown(f"- **Average DTI:** {avg_dti:.1f}%")
+
+# Risk Alerts via Polars
+risk_alerts_df = engine.get_risk_alerts()
+if not risk_alerts_df.is_empty():
+    alerts = risk_alerts_df.to_pandas().assign(
+        alert_type="High Risk",
+        probability=lambda d: np.clip((d["ltv_ratio"] - 90) / 20, 0, 1),
+    )
+    st.dataframe(alerts[["alert_type", "ltv_ratio", "probability"]], hide_index=True)
+else:
+    st.info("No high-risk loans detected.")
 
 st.markdown("## Growth & Marketing Analysis")
 targets = {

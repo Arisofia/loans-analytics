@@ -29,9 +29,26 @@ Each MCP server uses its own `[mcp_servers.<server-name>]` table.
 
 ### STDIO servers
 
+- `command` (required): command to launch the server.
+- `args` (optional): arguments passed to the server.
+- `env` (optional): environment variables to set for the server.
+- `env_vars` (optional): additional environment variables to whitelist/forward.
+- `cwd` (optional): working directory to launch the server from.
+
 ### Streamable HTTP servers
 
+- `url` (required): URL to access the server.
+- `bearer_token_env_var` (optional): env var name containing a bearer token for the `Authorization` header.
+- `http_headers` (optional): map of header names to static values.
+- `env_http_headers` (optional): map of header names to env var names (values pulled from env).
+
 ### Other options
+
+- `startup_timeout_sec` (optional): timeout in seconds for the server to start (default 10).
+- `tool_timeout_sec` (optional): timeout in seconds for tools to run (default 60).
+- `enabled_tools` (optional): list of tool names that are allowed to be used.
+- `disabled_tools` (optional): list of tool names that are disallowed from being used.
+- `enabled` (optional): whether the server is enabled or not.
 
 ### Examples
 
