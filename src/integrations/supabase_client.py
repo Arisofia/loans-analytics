@@ -195,11 +195,11 @@ class SupabaseOutputClient:
                 df[col] = df[col].dt.strftime("%Y-%m-%d")
 
             records = df.to_dict(orient="records")
-            
+
             # Upsert using 'month' as the unique key
-            response = self.client.table("analytics_facts").upsert(
-                records, on_conflict="month"
-            ).execute()
+            response = (
+                self.client.table("analytics_facts").upsert(records, on_conflict="month").execute()
+            )
 
             success = bool(response.data)
             if success:

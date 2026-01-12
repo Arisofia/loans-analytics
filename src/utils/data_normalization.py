@@ -17,8 +17,7 @@ def sanitize_column_names(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
     df.columns = [
-        re.sub(r"[^a-z0-9_]", "", str(col).lower().strip().replace(" ", "_"))
-        for col in df.columns
+        re.sub(r"[^a-z0-9_]", "", str(col).lower().strip().replace(" ", "_")) for col in df.columns
     ]
     return df
 
@@ -116,7 +115,14 @@ COLUMN_MAPPING = {
     COL_PRINCIPAL_BALANCE: ["Principal Balance", "current_principal"],
     COL_LOAN_ID: ["id", "loan_number", "contrato", "loan_id_raw", "loan_id"],
     COL_SALES_AGENT: ["agent", "vendedor", "kam", "sales_person", "sales_agent"],
-    COL_CATEGORIA: ["category", "segment", "segmento", "product_category", "product_type", "categoria"],
+    COL_CATEGORIA: [
+        "category",
+        "segment",
+        "segmento",
+        "product_category",
+        "product_type",
+        "categoria",
+    ],
     COL_DPD_30_60: ["dpd_30_60", "dpd30"],
     COL_DPD_60_90: ["dpd_60_90", "dpd60"],
     COL_DPD_90_PLUS: ["dpd_90_plus", "dpd90"],

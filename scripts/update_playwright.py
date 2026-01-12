@@ -104,7 +104,7 @@ def run_gh_update(
     for attempt in range(retries):
         try:
             logging.debug("Running GH API (Attempt %d/%d)", attempt + 1, retries)
-            return subprocess.run(cmd, check=True, capture_output=True, text=True)
+            return subprocess.run(cmd, check=True, capture_output=True, text=True, shell=False)
         except subprocess.CalledProcessError:
             if attempt == retries - 1:
                 raise

@@ -205,6 +205,7 @@ async def trigger_pipeline(
             [python, "-c", script, str(validated_input_path)],
             stdout=log_file,
             stderr=subprocess.STDOUT,
+            shell=False,
             start_new_session=True,
             close_fds=True,
         )

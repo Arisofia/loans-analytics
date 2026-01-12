@@ -2,6 +2,7 @@
 
 Keep UI-free logic here so unit tests don't need to import `streamlit`.
 """
+
 from __future__ import annotations
 
 from typing import Any

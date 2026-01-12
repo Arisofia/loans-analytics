@@ -104,7 +104,8 @@ jobs:
           startup-command: ${{ env.STARTUP_CMD }}
 
       - name: Deploy to Azure Web App (publish profile)
-        if: steps.check_creds.outputs.has_creds != 'true' && steps.check_publish_profile.outputs.has_publish_profile == true
+        if: steps.check_creds.outputs.has_creds != 'true' &&
+          steps.check_publish_profile.outputs.has_publish_profile == true
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.WEBAPP_NAME }}
@@ -113,7 +114,8 @@ jobs:
           startup-command: ${{ env.STARTUP_CMD }}
 
       - name: Post-deployment health check
-        if: steps.check_creds.outputs.has_creds == true || steps.check_publish_profile.outputs.has_publish_profile == true
+        if: steps.check_creds.outputs.has_creds == true ||
+          steps.check_publish_profile.outputs.has_publish_profile == true
         run: |
           echo "Deployment completed. Monitoring health check..."
           host_name="${{ steps.resolve_host.outputs.host_name }}"
@@ -123,7 +125,8 @@ jobs:
 
           for i in {1..5}; do
             sleep 10
-            if curl -f "https://$host_name/${{ env.HEALTH_CHECK_PATH }}" 2>/dev/null | grep -q "ok"; then
+            if curl -f "https://$host_name/${{ env.HEALTH_CHECK_PATH }}" 2>/dev/null |
+              grep -q "ok"; then
               echo "✅ Health check passed"
               exit 0
             fi
@@ -132,12 +135,14 @@ jobs:
           echo "⚠️ Health check not responding yet, but deployment completed"
 
       - name: Skip deploy (missing secrets)
-        if: steps.check_creds.outputs.has_creds != 'true' && steps.check_publish_profile.outputs.has_publish_profile != 'true'
+        if: steps.check_creds.outputs.has_creds != 'true' &&
+          steps.check_publish_profile.outputs.has_publish_profile != 'true'
         run: |
           echo "Skipping deployment: AZURE_CREDENTIALS or AZURE_WEBAPP_PUBLISH_PROFILE is required."
 
       - name: Notify on failure
-        if: failure() && github.event_name == 'pull_request'
+        if: failure() &&
+          github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |

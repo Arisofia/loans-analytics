@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #!/bin/zsh
 # Automated validation and fix script for repo, extensions, and permissions
 
