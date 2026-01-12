@@ -1,5 +1,5 @@
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def canonicalize_loan_tape(df: pd.DataFrame) -> pd.DataFrame:
@@ -30,6 +30,6 @@ def canonicalize_loan_tape(df: pd.DataFrame) -> pd.DataFrame:
         else:
             df["days_past_due"] = 0
 
-    df["data_ingest_ts"] = datetime.utcnow()
+    df["data_ingest_ts"] = datetime.now(timezone.utc)
     df = df[df["loan_id"].notna()]
     return df

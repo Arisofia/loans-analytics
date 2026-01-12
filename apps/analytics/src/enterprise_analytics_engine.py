@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Protocol, runtime_checkable
 
+from python.config import settings
+
 
 @runtime_checkable
 class KPIExporter(Protocol):
@@ -32,16 +34,17 @@ class LoanAnalyticsEngine:
         self._validate_columns()
         self._coercion_report = self._coerce_numeric_columns()
 
+    @property
+    def coercion_report(self) -> Dict[str, int]:
+        return self._coercion_report
+
     @classmethod
     def from_dict(cls, data: Dict[str, list]) -> "LoanAnalyticsEngine":
         return cls(pd.DataFrame(data))
 
     def _validate_columns(self):
         """Ensures the DataFrame contains the necessary columns for KPI computation."""
-        required_cols = [
-            'loan_amount', 'appraised_value', 'borrower_income', 'monthly_debt',
-            'loan_status', 'interest_rate', 'principal_balance'
-        ]
+        required_cols = settings.analytics.required_columns
         missing_cols = [col for col in required_cols if col not in self.loan_data.columns]
         if missing_cols:
             raise ValueError(f"Missing required columns in loan_data: {', '.join(missing_cols)}")
@@ -53,14 +56,7 @@ class LoanAnalyticsEngine:
         Returns:
             Dict[str, int]: Count of values per column that became NaN during coercion.
         """
-        numeric_cols: List[str] = [
-            'loan_amount',
-            'appraised_value',
-            'borrower_income',
-            'monthly_debt',
-            'interest_rate',
-            'principal_balance',
-        ]
+        numeric_cols: List[str] = settings.analytics.numeric_columns
 
         coercion_report: Dict[str, int] = {}
         for col in numeric_cols:
@@ -91,7 +87,7 @@ class LoanAnalyticsEngine:
 
     def compute_delinquency_rate(self) -> float:
         """Computes the overall portfolio delinquency rate."""
-        delinquent_statuses = ['30-59 days past due', '60-89 days past due', '90+ days past due']
+        delinquent_statuses = list(settings.analytics.delinquent_statuses)
         delinquent_count = self.loan_data['loan_status'].isin(delinquent_statuses).sum()
         total_loans = len(self.loan_data)
         return (delinquent_count / total_loans) * 100 if total_loans > 0 else 0.0
@@ -126,9 +122,9 @@ class LoanAnalyticsEngine:
         data_quality_score = max(
             0.0,
             100
-            - (null_ratio * 100)
-            - (duplicate_ratio * 50)
-            - (invalid_numeric_ratio * 60),
+            - (null_ratio * 100 * settings.analytics.dq_null_weight)
+            - (duplicate_ratio * 100 * settings.analytics.dq_duplicate_weight)
+            - (invalid_numeric_ratio * 100 * settings.analytics.dq_invalid_numeric_weight),
         )
 
         return {

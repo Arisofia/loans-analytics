@@ -22,7 +22,12 @@ jobs:
           python -c "import pandas as pd; df = pd.read_parquet('data/warehouse/meta_insights.parquet'); assert not df.empty, 'Meta insights data is empty!'; print('Meta insights records:', len(df))"
       - name: Validate Cascade Data
         run: |
-          python -c "import pandas as pd; df = pd.read_csv('data/metrics/ingest_20251212_041805.csv'); assert not df.empty, 'Cascade data is empty!'; print('Cascade records:', len(df))"
+          python -c "import pandas as pd; from pathlib import Path; \
+          csvs = sorted(Path('data/metrics').glob('ingest_*.csv')); \
+          latest = csvs[-1] if csvs else None; \
+          assert latest, 'No Cascade CSV files found'; \
+          df = pd.read_csv(latest); assert not df.empty, f'Cascade data in {latest} is empty!'; \
+          print(f'Cascade records in {latest}:', len(df))"
       - name: Validate Figma Dashboard Images
         run: |
           python -c "import requests; urls = [

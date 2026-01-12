@@ -1,8 +1,10 @@
-![Cascade Ingest](https://github.com/Abaco-Technol/abaco-loans-analytics/actions/workflows/cascade_ingest.yml/badge.svg)
-
 # ABACO — Loan Analytics Platform
 
 ABACO delivers an executive-grade analytics and governance stack for lending teams. The platform pairs a Next.js dashboard with Python risk pipelines, Azure deployment scripts, and traceable KPI governance.
+
+## Ingestion Policy
+**Ingestion is possible ONLY via manual front-end upload.** 
+CLI, API, and scheduled automated ingestion (e.g., via GitHub Workflows) are strictly unsupported to ensure a "UI-Only" data entry gate. All data MUST come from user upload via the Streamlit interface.
 
 ## Stack map
 - **apps/web**: Next.js dashboard for portfolio, risk, and growth views.

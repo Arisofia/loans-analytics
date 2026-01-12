@@ -1,6 +1,7 @@
+from __future__ import annotations
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Mapping
 
@@ -29,7 +30,7 @@ def save_agent_output(
     storage_path = Path(storage_dir)
     storage_path.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     resolved_version = version or timestamp
     filename = _safe_filename(agent_name, resolved_version)
     path = storage_path / filename

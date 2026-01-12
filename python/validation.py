@@ -3,21 +3,16 @@ Module for data validation utilities and functions.
 """
 
 
-import pandas as pd
 import re
 from datetime import datetime
 from typing import Dict, List, Optional
 
+import pandas as pd
+
+from python.config import settings
+
 # Unified required columns for both ingestion and analytics
-REQUIRED_ANALYTICS_COLUMNS: List[str] = [
-    "loan_amount",
-    "appraised_value",
-    "borrower_income",
-    "monthly_debt",
-    "loan_status",
-    "interest_rate",
-    "principal_balance",
-]
+REQUIRED_ANALYTICS_COLUMNS: List[str] = settings.analytics.required_columns
 
 ISO8601_PATTERN = re.compile(
     r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$"
@@ -70,26 +65,9 @@ def _is_iso8601_value(value) -> bool:
         return True
     return False
 
-ANALYTICS_NUMERIC_COLUMNS: List[str] = [
-    "loan_amount",
-    "appraised_value",
-    "borrower_income",
-    "monthly_debt",
-    "interest_rate",
-    "principal_balance",
-]
+ANALYTICS_NUMERIC_COLUMNS: List[str] = settings.analytics.numeric_columns
 
-NUMERIC_COLUMNS: List[str] = [
-    "dpd_0_7_usd",
-    "dpd_7_30_usd",
-    "dpd_30_60_usd",
-    "dpd_60_90_usd",
-    "dpd_90_plus_usd",
-    "total_receivable_usd",
-    "total_eligible_usd",
-    "discounted_balance_usd",
-    "cash_available_usd",
-]
+NUMERIC_COLUMNS: List[str] = settings.analytics.ingestion_numeric_columns
 
 
 def validate_dataframe(
