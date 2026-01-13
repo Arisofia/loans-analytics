@@ -59,6 +59,11 @@ transformation_pipeline:
       query_file: sql/calculations/par_90_calculation.sql
       output_table: analytics_layer.par_90_metrics
 
+    - name: compute_par_30
+      type: bigquery_query
+      query_file: sql/calculations/par_30_calculation.sql
+      output_table: analytics_layer.par_30_metrics
+
     - name: compute_collection_rate
       type: bigquery_query
       query_file: sql/calculations/collection_rate.sql
@@ -66,9 +71,9 @@ transformation_pipeline:
 
     - name: compute_portfolio_health
       type: python_transform
-      script: python/kpi_engine.py:compute_portfolio_health
+      script: python/kpis/portfolio_health.py:calculate_portfolio_health
       inputs:
-        - par_90_metrics
+        - par_30_metrics
         - collection_metrics
       outputs:
         - analytics_layer.portfolio_health_score
@@ -89,11 +94,11 @@ validation_pipeline:
       type: sql_check
       checks:
         - name: par_90_not_negative
-          sql: 'SELECT COUNT(*) FROM portfolio_health_score WHERE par_90_pct < 0'
+          sql: 'SELECT COUNT(*) FROM analytics_layer.par_90_metrics WHERE par_90_percentage < 0'
           expected_result: 0
 
         - name: collection_rate_within_bounds
-          sql: 'SELECT COUNT(*) FROM collection_metrics WHERE collection_rate_pct > 100'
+          sql: 'SELECT COUNT(*) FROM analytics_layer.collection_metrics WHERE collection_rate_pct > 100'
           expected_result: 0
 
     - name: drift_detection

@@ -20,19 +20,20 @@ function normalizeUserPath(userPath: string): string {
   if (!userPath) {
     throw new Error('Path argument is empty')
   }
-  if (path.isAbsolute(userPath)) {
+  const normalized = path.posix.normalize(userPath.replace(/\\/g, '/'))
+  if (path.posix.isAbsolute(normalized)) {
     throw new Error('Absolute paths are not allowed')
   }
-  // Reject any path segments with .., /, \, or unsafe chars
-  if (userPath.includes('..') || userPath.includes('/') || userPath.includes('\\')) {
+  const segments = normalized.split('/')
+  if (segments.some((segment) => segment === '..')) {
     throw new Error('Path contains forbidden segments')
   }
   // Optionally, allowlist known safe paths (example: only allow certain folders/files)
   // const allowed = ['apps/web', 'apps/analytics', 'infra/azure', 'docs', 'data_samples']
-  // if (!allowed.some((prefix) => userPath.startsWith(prefix))) {
+  // if (!allowed.some((prefix) => normalized.startsWith(prefix))) {
   //   throw new Error('Path not in allowlist')
   // }
-  const resolved = path.resolve(repoRoot, userPath)
+  const resolved = path.resolve(repoRoot, normalized)
   const relative = path.relative(repoRoot, resolved)
   if (relative === '..' || relative.startsWith('..' + path.sep)) {
     throw new Error('Path escapes the repository root')
@@ -147,7 +148,5 @@ if (json) console.log(JSON.stringify(results, null, 2))
 else printHumanReadable(results)
 
 if (strict && results.some((entry) => !entry.exists)) process.exit(1)
-
-export {} // Make this file a module to allow top-level await
 
 export {} // Make this file a module to allow top-level await

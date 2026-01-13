@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import streamlit as st
 import altair as alt
 from utils.feature_engineering import FeatureEngineer
@@ -12,10 +13,10 @@ def load_and_prepare_data():
     # In a real-world scenario, this would load data from a database or data warehouse.
     data = {
         'customer_id': range(100),
-        'revenue': pd.np.random.uniform(10000, 150000, 100),
-        'balance': pd.np.random.uniform(1000, 50000, 100),
-        'limit': pd.np.random.uniform(20000, 100000, 100),
-        'dpd': pd.np.random.choice([-1, 0, 15, 45, 75, 100], 100, p=[0.1, 0.6, 0.1, 0.1, 0.05, 0.05]),
+        'revenue': np.random.uniform(10000, 150000, 100),
+        'balance': np.random.uniform(1000, 50000, 100),
+        'limit': np.random.uniform(20000, 100000, 100),
+        'dpd': np.random.choice([-1, 0, 15, 45, 75, 100], 100, p=[0.1, 0.6, 0.1, 0.1, 0.05, 0.05]),
     }
     raw_df = pd.DataFrame(data)
 

@@ -72,30 +72,11 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-from-supabase-start
 ### Deployment Commands
 
 ```bash
-# Execute complete cleanup and sync
-cd /Users/jenineferderas/Documents/GitHub/nextjs-with-supabase
-chmod +x cleanup_and_sync.sh
-./cleanup_and_sync.sh
-
-# Verify deployment
+# Build the web app after Supabase config is in place
+cd /path/to/abaco-loans-analytics/apps/web
 npm run build
-jupyter notebook notebooks/abaco_financial_intelligence_unified.ipynb
 
-# Verify complete platform
-python3 -c "
-import pandas as pd
-import numpy as np
-print('✅ ABACO Platform: Unified and Operational')
-print('🚀 Enterprise deployment ready')
-print('📊 Analytics: 28+ dimensions active')
-print('🔒 Security: License compliant')
-"
-```
-
-Now run the cleanup script to complete the repository optimization:
-
-```bash
-cd /Users/jenineferderas/Documents/GitHub/nextjs-with-supabase
-chmod +x cleanup_and_sync.sh
-./cleanup_and_sync.sh
+# Optional: validate the repo structure
+cd /path/to/abaco-loans-analytics
+deno run --allow-read main.ts --strict
 ```

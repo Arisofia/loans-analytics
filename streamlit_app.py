@@ -255,6 +255,7 @@ if st.session_state["loan_data"].empty:
     st.stop()
 
 loan_df = st.session_state["loan_data"]
+total_loans = len(loan_df)
 ing_state = st.session_state["ingestion_state"]
 st.markdown(f"- Rows: {ing_state['rows']}, Columns: {ing_state['columns']}")
 st.markdown(f"- Loan base validated: {ing_state['has_loan_base']}")

@@ -3,11 +3,15 @@
 ABACO delivers an executive-grade analytics and governance stack for lending teams. The platform pairs a Next.js dashboard with Python risk pipelines, Azure deployment scripts, and traceable KPI governance.
 
 ## Ingestion Policy
-**Ingestion is possible ONLY via manual front-end upload.** 
-CLI, API, and scheduled automated ingestion (e.g., via GitHub Workflows) are strictly unsupported to ensure a "UI-Only" data entry gate. All data MUST come from user upload via the Streamlit interface.
+Ingestion is supported via API and scheduled pipelines with audit controls (run IDs, lineage, and validation logs). Streamlit remains available for manual uploads and QA, but it is not the exclusive ingestion gate.
+
+## Canonical Data Stores
+- **BigQuery** is the analytics source of truth for warehouse tables, KPI views, and reporting.
+- **Postgres (Supabase)** is the operational/dev store for the web app and integrations.
+- **SQL Server** assets are legacy/migration-only and should not be used for new development.
 
 ## Stack map
-- **apps/web**: Next.js dashboard for portfolio, risk, and growth views.
+- **apps/web**: Next.js dashboard for portfolio, risk, and growth views (canonical app router in `apps/web/src/app`, config in `apps/web/next.config.ts`).
 - **apps/analytics**: Python scoring, stress testing, and KPI pipelines.
 - **infra/azure**: Azure infra-as-code and deployment scripts.
 - **data_samples**: Anonymized datasets for repeatable development and testing.

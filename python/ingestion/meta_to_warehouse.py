@@ -6,7 +6,7 @@ import pyarrow.parquet as pq
 
 SCHEMA_PATH = "config/data_schemas/meta_insights.yaml"
 RAW_DIR = "data/raw/meta"
-OUT_FILE = "data/warehouse/fact_marketing_spend.parquet"
+OUT_FILE = "data/warehouse/meta_insights.parquet"
 
 def load_schema():
     with open(SCHEMA_PATH) as f:
@@ -20,10 +20,14 @@ def validate(df, schema):
     return True
 
 def main():
+    if not os.path.isdir(RAW_DIR):
+        print(f"No raw meta directory found at {RAW_DIR}.")
+        return
     files = [f for f in os.listdir(RAW_DIR) if f.endswith(".json") or f.endswith(".csv")]
     if not files:
         print("No raw meta files found.")
         return
+    os.makedirs(os.path.dirname(OUT_FILE), exist_ok=True)
     dfs = []
     schema = load_schema()
     for file in files:

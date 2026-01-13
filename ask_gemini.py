@@ -1,24 +1,31 @@
-import google.generativeai as genai
+from google import genai
 import os
 import sys
 
+# 1. Setup Client
 api_key = os.environ.get("GEMINI_API_KEY")
 if not api_key:
-    sys.exit("❌ Error: GEMINI_API_KEY not set.")
+    sys.exit("❌ Error: GEMINI_API_KEY environment variable not set.")
 
-genai.configure(api_key=api_key)
+client = genai.Client(api_key=api_key)
 
-# UPDATED: Using a model confirmed to be in your list
-model_name = 'gemini-2.5-flash' 
+# 2. Get Prompt
+prompt = " ".join(sys.argv[1:])
+if not prompt:
+    prompt = "Hello! Tell me a fun fact about software engineering."
 
-model = genai.GenerativeModel(model_name)
+# 3. Generate Content
+# We use 'gemini-2.5-flash' as confirmed by your check_models.py
+model_id = "gemini-2.5-flash"
 
-prompt = " ".join(sys.argv[1:]) or "Hello! Tell me a one-sentence fun fact."
-print(f"🤖 Asking Gemini ({model_name}): '{prompt}'...\n")
+print(f"🤖 Asking Gemini ({model_id})...\n")
 
 try:
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model=model_id,
+        contents=prompt
+    )
     print(response.text)
+
 except Exception as e:
     print(f"❌ Error: {e}")
-    print("\n💡 Tip: Run 'python3 check_models.py' to see which models your key can access.")
