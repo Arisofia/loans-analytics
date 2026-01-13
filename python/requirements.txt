@@ -1,0 +1,13 @@
+# Runtime requirements (minimal, keep langchain-related packages unpinned to avoid resolver conflicts)
+langchain
+langchain-openai
+langchain-anthropic
+langchain-community
+# ensure langchain-core is new enough for other langchain adaptors
+langchain-core>=0.3.34,<0.4.0
+
+# project runtime dependencies
+pandas>=2.2.0
+requests>=2.30.0
+pydantic>=1.10.0
+openpyxl>=3.1.0

@@ -6,51 +6,9 @@ from typing import Any, Dict, Iterable
 import numpy as np
 import pandas as pd
 
-# --- Inlined replacements for missing data validation utilities ---
-ANALYTICS_NUMERIC_COLUMNS = [
-    "loan_amount",
-    "appraised_value",
-    "monthly_debt",
-    "borrower_income",
-    "principal_balance",
-    "interest_rate",
-    "ltv_ratio",
-    "dti_ratio",
-]
-REQUIRED_ANALYTICS_COLUMNS = [
-    "loan_amount",
-    "appraised_value",
-    "monthly_debt",
-    "borrower_income",
-    "principal_balance",
-    "interest_rate",
-    "loan_status",
-]
-
-
-def safe_numeric(series):
-    """Convert a pandas Series to numeric, coercing errors to NaN."""
-    return pd.to_numeric(series, errors="coerce")
-
-
-def validate_dataframe(df, required_columns=None, numeric_columns=None):
-    if required_columns:
-        missing = [col for col in required_columns if col not in df.columns]
-        if missing:
-            raise ValueError(f"Missing required columns: {missing}")
-    if numeric_columns:
-        for col in numeric_columns:
-            if col in df.columns:
-                pd.to_numeric(df[col], errors="coerce")
-
-
-def find_column(df, candidates):
-    """Return the first candidate column present in df, or None."""
-    for col in candidates:
-        if col in df.columns:
-            return col
-    return None
-
+from src.pipeline.data_validation import (ANALYTICS_NUMERIC_COLUMNS,
+                                          REQUIRED_ANALYTICS_COLUMNS,
+                                          safe_numeric, validate_dataframe)
 
 # Alias for backward compatibility and clarity within this module
 REQUIRED_KPI_COLUMNS = REQUIRED_ANALYTICS_COLUMNS

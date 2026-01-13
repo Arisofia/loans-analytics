@@ -1,6 +1,6 @@
 name: Validate Deployment Health
 
-"on":
+on:
     workflow_run:
         workflows:
             - "Deploy Abaco Analytics Dashboard to Azure Web App"
@@ -70,7 +70,7 @@ jobs:
 
             - name: Wait for app to be ready
               id: wait_ready
-              if: ${{ steps.check_secrets.outputs.has_azure_secrets == 'true' }}
+              if: ${{ steps.check_secrets.outputs.has_azure_secrets == true }}
               run: |
                   echo "Waiting for app to be ready..."
                   for i in {1..60}; do
@@ -105,7 +105,7 @@ jobs:
 
             - name: Test health endpoint (Azure)
               id: health_check
-              if: ${{ steps.wait_ready.outputs.ready == 'true' }}
+              if: ${{ steps.wait_ready.outputs.ready == true }}
               run: |
                   echo "Testing health endpoint..."
                   HEALTH_URL="${{ steps.app_url.outputs.url }}${{ env.HEALTH_CHECK_PATH }}"
@@ -128,7 +128,7 @@ jobs:
 
             - name: Verify dependencies installed
               id: deps_check
-              if: ${{ steps.check_secrets.outputs.has_azure_secrets == 'true' && steps.wait_ready.outputs.ready == 'true' }}
+              if: ${{ steps.check_secrets.outputs.has_azure_secrets == true && steps.wait_ready.outputs.ready == true }}
               run: |
                   echo "Verifying key dependencies (Azure deployment)..."
                   APP_URL="${{ steps.app_url.outputs.url }}"
@@ -183,13 +183,13 @@ jobs:
                     echo "| Check | Status |"
                     echo "|-------|--------|"
                     if [ "${{ steps.check_secrets.outputs.has_azure_secrets }}" = "true" ]; then
-                      echo "| App Ready | ${{ steps.wait_ready.outputs.ready == 'true' && '✅ PASS' || '❌ FAIL' }} |"
-                      echo "| Health Endpoint | ${{ steps.health_check.outputs.passed == 'true' && '✅ PASS' || '⚠️ SKIP' }} |"
-                      echo "| Dependencies | ${{ steps.deps_check.outputs.streamlit == 'true' && '✅ PASS' || '⚠️ PARTIAL' }} |"
+                      echo "| App Ready | ${{ steps.wait_ready.outputs.ready == true && '✅ PASS' || '❌ FAIL' }} |"
+                      echo "| Health Endpoint | ${{ steps.health_check.outputs.passed == true && '✅ PASS' || '⚠️ SKIP' }} |"
+                      echo "| Dependencies | ${{ steps.deps_check.outputs.streamlit == true && '✅ PASS' || '⚠️ PARTIAL' }} |"
                     else
-                      echo "| Dependencies | ${{ steps.smoke_test.outputs.ready == 'true' && '✅ VERIFIED' || '❌ FAIL' }} |"
+                      echo "| Dependencies | ${{ steps.smoke_test.outputs.ready == true && '✅ VERIFIED' || '❌ FAIL' }} |"
                     fi
-                    echo "| Tracing | ${{ steps.tracing_check.outputs.initialized == 'true' && '✅ PASS' || '⚠️ PARTIAL' }} |"
+                    echo "| Tracing | ${{ steps.tracing_check.outputs.initialized == true && '✅ PASS' || '⚠️ PARTIAL' }} |"
                     echo ""
                     echo "**App URL**: ${{ steps.app_url.outputs.url }}"
                     echo ""
@@ -207,7 +207,7 @@ jobs:
                   echo "completed=true" >> "$GITHUB_OUTPUT"
 
             - name: Notify failure (deployment issue)
-              if: ${{ failure() && steps.check_secrets.outputs.has_azure_secrets == 'true' }}
+              if: ${{ failure() && steps.check_secrets.outputs.has_azure_secrets == true }}
               continue-on-error: true
               uses: actions/github-script@v7
               with:

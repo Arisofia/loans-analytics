@@ -1,6 +1,6 @@
 name: Playwright E2E Tests
 
-"on":
+on:
   pull_request:
     paths:
       - 'apps/web/**'
@@ -12,13 +12,17 @@ name: Playwright E2E Tests
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    env:
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (apps/web)
+        working-directory: apps/web
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -48,7 +52,6 @@ jobs:
         run: npx wait-on http://localhost:3000
 
       - name: Seed E2E test data
-        if: env.SUPABASE_SERVICE_ROLE_KEY != ''
         working-directory: apps/web
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -60,16 +63,14 @@ jobs:
         run: npm run e2e:seed
 
       - name: Run Playwright tests (CI)
-        if: env.SUPABASE_SERVICE_ROLE_KEY != ''
         working-directory: apps/web
         env:
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: npm run test:e2e:ci
 
       - name: Teardown E2E test data
-        if: always() && env.SUPABASE_SERVICE_ROLE_KEY != ''
+        if: always()
         working-directory: apps/web
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

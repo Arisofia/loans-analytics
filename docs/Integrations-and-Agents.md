@@ -4,7 +4,7 @@ Use this checklist to connect the project’s external services and to start the
 
 ## 1. Azure data plane (SQL/Cosmos/Storage)
 
-- Confirm you have an Azure subscription and resource group that matches the values referenced in docs/LOCAL_SETUP.md.
+- Confirm you have an Azure subscription and resource group that matches the values referenced in docs/ContosoTeamStats-setup.md.
 - Create or reuse Azure SQL, Cosmos DB, and Storage resources; record the connection strings.
 - Export secrets to your shell (or a `.env`) before running any tooling:
   - `AZURE_SQL_CONNECTION_STRING`
@@ -35,7 +35,7 @@ Use this checklist to connect the project’s external services and to start the
 
 - Choose at least one provider; set the API key in your shell and CI (e.g., `OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`).
 - For local notebooks or pipelines, add a thin wrapper that checks which key exists and falls back gracefully when none are present.
-- Run a smoke test from `apps/analytics` or `streamlit_app/app.py` to confirm completions work.
+- Run a smoke test from `apps/analytics` or `streamlit_app.py` to confirm completions work.
 
 ## 5. SonarCloud
 

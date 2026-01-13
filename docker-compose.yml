@@ -1,54 +1,4 @@
 services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: abaco
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: abaco_analytics
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U abaco -d abaco_analytics"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  minio:
-    image: minio/minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio_data:/data
-
-  prefect-server:
-    image: prefecthq/prefect:2-python3.9
-    command: prefect server start
-    environment:
-      PREFECT_API_URL: http://prefect-server:4200/api
-      PREFECT_SERVER_API_HOST: 0.0.0.0
-    ports:
-      - "4200:4200"
-    depends_on:
-      db:
-        condition: service_healthy
-
   frontend:
     build:
       context: ./apps/web
@@ -56,45 +6,49 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # Next.js reads these at runtime/server and also may expose NEXT_PUBLIC_* to the client
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - backend
 
-  analytics:
+  backend:
     build:
-      context: .
+      context: ./dashboard
       dockerfile: Dockerfile
     ports:
-      - "8501:8501"
+      - "8000:8000"
     environment:
-      PORT: 8501
+      # Streamlit dashboard does not require Supabase by default, but supports env wiring if added later
+      PORT: 8000
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_SERVICE_ROLE: ${SUPABASE_SERVICE_ROLE}
-      AZURE_STORAGE_CONNECTION_STRING: ${AZURE_STORAGE_CONNECTION_STRING}
-      ABACO_POSTGRES_URL: postgresql://abaco:password@db:5432/abaco_analytics
-      ABACO_REDIS_URL: redis://redis:6379/0
-      PREFECT_API_URL: http://prefect-server:4200/api
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      prefect-server:
-        condition: service_started
+      HUBSPOT_API_KEY: ${HUBSPOT_API_KEY}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/?page=health | grep -q ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  slack-bot:
-    build:
-      context: ./services/slack_bot
+  db:
+    profiles: ["db"]
+    image: postgres:15
     environment:
-      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
-      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET}
-      KPI_SERVICE_URL: http://analytics:8501
-    restart: unless-stopped
-    depends_on:
-      - analytics
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-example}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
-  minio_data:
+  db-data:

@@ -179,37 +179,6 @@ class SupabaseOutputClient:
             logger.error(f"Error retrieving metrics from Supabase: {e}")
             return []
 
-    def upsert_analytics_facts(self, df: pd.DataFrame) -> bool:
-        """
-        Upsert analytics facts into the public.analytics_facts table.
-        This table backs the Figma Dashboard view.
-        """
-        if not self.client:
-            logger.warning("Supabase client not initialized")
-            return False
-
-        try:
-            # Convert timestamp columns to ISO strings
-            df = df.copy()
-            for col in df.select_dtypes(include=["datetime64", "datetime"]).columns:
-                df[col] = df[col].dt.strftime("%Y-%m-%d")
-
-            records = df.to_dict(orient="records")
-
-            # Upsert using 'month' as the unique key
-            response = (
-                self.client.table("analytics_facts").upsert(records, on_conflict="month").execute()
-            )
-
-            success = bool(response.data)
-            if success:
-                logger.info(f"Upserted {len(records)} records into analytics_facts")
-            return success
-
-        except Exception as e:
-            logger.error(f"Error upserting analytics facts: {e}")
-            return False
-
     def sync_batch_export(
         self,
         export_data: Dict[str, Any],
@@ -233,7 +202,6 @@ class SupabaseOutputClient:
             "kpi_metrics_inserted": {},
             "raw_data_inserted": 0,
             "timeseries_upserted": {},
-            "analytics_facts_upserted": False,
             "success": False,
         }
 
@@ -251,11 +219,6 @@ class SupabaseOutputClient:
             if "timeseries" in export_data:
                 results["timeseries_upserted"] = self.upsert_timeseries(
                     export_data["timeseries"], run_id
-                )
-
-            if "analytics_facts" in export_data:
-                results["analytics_facts_upserted"] = self.upsert_analytics_facts(
-                    export_data["analytics_facts"]
                 )
 
             results["success"] = True

@@ -7,7 +7,7 @@ This playbook keeps every KPI, dashboard, and visualization traceable end-to-end
 - **KPI Owner**: Defines success criteria, thresholds, and next-best actions; approves changes to definitions and dashboards.
 - **Data Steward**: Guarantees schema contracts, freshness SLAs, and PII masking; owns lineage documentation and data quality alerts.
 - **Analytics Lead**: Designs dashboard narrative, drill-down tables, and experiments; ensures KPIs map to business objectives and runbooks.
-- **Engineering (PR Assignee)**: Implements changes, ships tests, and updates observability; assigns PRs to `@codex`, requests reviews from `@coderabbit` (CodeRabbit automated review) and `@sourcery`, and ensures SonarCloud gates are green.
+- **Engineering (PR Assignee)**: Implements changes, ships tests, and updates observability; assigns PRs to `@codex`, requests reviews from `@coderabbit` and `@sourcery`, and ensures SonarCloud gates are green.
 - **Risk & Compliance**: Reviews PII/PCI impact, verifies audit logging, and signs off on retention or export changes.
 
 ## Traceability and measurement
@@ -22,7 +22,7 @@ This playbook keeps every KPI, dashboard, and visualization traceable end-to-end
 
 1. Branch naming: `feature/kpi-*`, `fix/dashboard-*`, or `chore/data-*` with issue reference.
 2. PR template: fill KPI impact, data/PII touched, tests, and alert updates; link dashboards and runbooks touched.
-3. Assign and reviewers: set assignee to `@codex`; request reviews from `@coderabbit` (CodeRabbit automated review) and `@sourcery`, and confirm SonarCloud/SAST gates are green. The workflow `.github/workflows/pr-auto-assign.yml` applies this automatically on open/sync; rerun the workflow if the state drifts.
+3. Assign and reviewers: set assignee to `@codex`; request reviews from `@coderabbit` and `@sourcery`, and confirm SonarCloud/SAST gates are green. The workflow `.github/workflows/pr-auto-assign.yml` applies this automatically on open/sync; rerun the workflow if the state drifts.
 4. Checks: require CodeQL, SonarCloud, and CI (web + analytics) to pass; block merge on coverage or data-quality regression.
 5. Auditability: attach screenshots of dashboard changes and include query hashes or dataset versions in the PR for reproducibility.
 

@@ -3,7 +3,7 @@ permissions:
   contents: read
   pull-requests: write
 
-"on":
+on:
   push:
     branches: [main, develop]
     paths:
@@ -36,7 +36,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install -r requirements-dev.txt
+          pip install pytest-html pytest-json-report allure-pytest
       - name: Check Slack webhook availability
         id: slack_check
         env:
@@ -145,7 +145,7 @@ jobs:
             }
 
       - name: Send Slack notification on failure
-        if: failure() && steps.slack_check.outputs.available == 'true'
+        if: failure() && steps.slack_check.outputs.available == true
         continue-on-error: true
         uses: slackapi/slack-github-action@v1.24.0
         env:

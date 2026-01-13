@@ -1,6 +1,6 @@
 name: Codex Pull Request Review
 
-"on":
+on:
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_call:
@@ -11,7 +11,7 @@ name: Codex Pull Request Review
 jobs:
   assign_metadata:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == 'false'
+    if: github.event.pull_request.head.repo.fork == false
     permissions:
       pull-requests: write
     steps:
@@ -58,7 +58,7 @@ jobs:
     name: Post Codex Feedback
     needs: codex_review
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == 'false' && needs.codex_review.outputs.final_message != ''
+    if: github.event.pull_request.head.repo.fork == false && needs.codex_review.outputs.final_message != ''
     permissions:
       pull-requests: write
     steps:

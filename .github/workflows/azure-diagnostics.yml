@@ -12,28 +12,24 @@ jobs:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secret_names: "AZURE_CREDENTIALS"
-      inlineScript: "echo 'Validating Azure credentials'"
     secrets: inherit
 
   validate-acr:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secret_names: "AZURE_ACR_LOGIN_SERVER,AZURE_ACR_USERNAME,AZURE_ACR_PASSWORD"
-      inlineScript: "echo 'Validating ACR credentials'"
+      secret_names: "ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD"
     secrets: inherit
 
   validate-storage:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secret_names: "AZURE_STORAGE_CONNECTION_STRING"
-      inlineScript: "echo 'Validating Azure Storage credentials'"
+      secret_names: "AZURE_STORAGE_ACCOUNT_NAME,AZURE_STORAGE_CONNECTION_STRING"
     secrets: inherit
 
   validate-swa:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secret_names: "AZURE_STATIC_WEB_APPS_API_TOKEN"
-      inlineScript: "echo 'Validating SWA token'"
     secrets: inherit
 
   diagnostics:
@@ -51,40 +47,35 @@ jobs:
       - name: Set up Azure CLI
         uses: azure/CLI@v1
         with:
-          azcliversion: "2.49.0"
-          inlineScript: |
-            az --version
+          azcliversion: '2.49.0'
 
       - name: Azure login (service principal)
-        if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}
-        uses: azure/login@v2
+        if: ${{ needs.validate-azure.outputs.all_secrets_present == true }}
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Capture Azure account
-        if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}
+        if: ${{ needs.validate-azure.outputs.all_secrets_present == true }}
         run: |
           az account show --output json > diagnostics/az_account.json || echo '{}' > diagnostics/az_account.json
 
       - name: ACR repositories (if available)
-        if: ${{ needs.validate-acr.outputs.all_secrets_present == 'true' &&
-          needs.validate-azure.outputs.all_secrets_present == 'true' }}
+        if: ${{ needs.validate-acr.outputs.all_secrets_present == true && needs.validate-azure.outputs.all_secrets_present == true }}
         env:
-          ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
         run: |
           registry=$(echo "$ACR_LOGIN_SERVER" | cut -d'.' -f1)
-          az acr repository list --name "$registry" --output json \
-            > diagnostics/acr_repos.json || echo '[]' > diagnostics/acr_repos.json
+          az acr repository list --name "$registry" --output json > diagnostics/acr_repos.json || echo '[]' > diagnostics/acr_repos.json
 
       - name: Storage containers (if available)
-        if: ${{ needs.validate-storage.outputs.all_secrets_present == 'true' }}
+        if: ${{ needs.validate-storage.outputs.all_secrets_present == true }}
         run: |
           echo "Listing containers using AZURE_STORAGE_CONNECTION_STRING"
-          az storage container list --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
-            --output json > diagnostics/storage_containers.json || echo '[]' > diagnostics/storage_containers.json
+          az storage container list --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --output json > diagnostics/storage_containers.json || echo '[]' > diagnostics/storage_containers.json
 
       - name: SWA token check
-        if: ${{ needs.validate-swa.outputs.all_secrets_present == 'true' }}
+        if: ${{ needs.validate-swa.outputs.all_secrets_present == true }}
         run: echo "SWA token present" > diagnostics/swa_status.txt
 
       - name: Summarize diagnostics
@@ -97,7 +88,7 @@ jobs:
           ls -lah diagnostics >> diagnostics/summary.txt || true
 
       - name: Upload diagnostics artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: azure-diagnostics
           path: diagnostics

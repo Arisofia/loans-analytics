@@ -117,9 +117,7 @@ refactor(api): extract request validation logic
 
 ## Dependency Management
 
-## Dependency Management
-
-### Dependabot
+**Dependabot**
 
 - Automatically creates PRs for dependency updates (see .github/dependabot.yml for config)
 - Direct dependencies only (not transitive)

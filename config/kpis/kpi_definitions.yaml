@@ -1,0 +1,47 @@
+# KPI Definitions and Thresholds
+# Source of truth for KPI formulas and risk alerting thresholds
+
+kpis:
+  PAR30:
+    display_name: "PAR 30+"
+    formula: "(dpd_30_60_usd + dpd_60_90_usd + dpd_90_plus_usd) / total_receivable_usd * 100"
+    fields: ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
+    precision: 2
+    unit: "percentage"
+    thresholds:
+      ok: [0, 5]
+      warning: [5, 10]
+      critical: [10, 100]
+
+  CollectionRate:
+    display_name: "Collection Rate"
+    formula: "collected_amount / expected_amount * 100"
+    fields: ["collected_amount", "expected_amount"]
+    precision: 2
+    unit: "percentage"
+    thresholds:
+      ok: [95, 100]
+      warning: [85, 95]
+      critical: [0, 85]
+
+  WeightedAverageLTV:
+    display_name: "WA LTV"
+    formula: "weighted_avg(loan_to_value_ratio, principal_balance)"
+    fields: ["loan_to_value_ratio", "principal_balance"]
+    precision: 2
+    unit: "percentage"
+    thresholds:
+      ok: [0, 75]
+      warning: [75, 85]
+      critical: [85, 200]
+
+  PortfolioHealth:
+    display_name: "Portfolio Health Score"
+    formula: "composite(PAR30, CollectionRate)"
+    type: "composite"
+    thresholds:
+      ok: [90, 100]
+      warning: [75, 90]
+      critical: [0, 75]
+
+global_data_quality_threshold: 95

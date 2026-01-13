@@ -16,7 +16,6 @@ class KPIExporter(Protocol):
 class LoanAnalyticsEngine:
     """
     A robust engine for computing critical KPIs for a loan portfolio.
-
     This system is designed for scalability and provides traceable, actionable insights
     to drive financial intelligence and commercial growth.
     """
@@ -191,7 +190,16 @@ class LoanAnalyticsEngine:
         }
 
     def risk_alerts(self, ltv_threshold: float = 80.0, dti_threshold: float = 50.0) -> pd.DataFrame:
-        """Identifies high-risk loans based on LTV and DTI thresholds."""
+        """
+        Identifies high-risk loans based on LTV and DTI thresholds.
+
+        Args:
+            ltv_threshold: LTV ratio threshold (default 80%)
+            dti_threshold: DTI ratio threshold (default 50%)
+
+        Returns:
+            DataFrame with high-risk loans and their risk scores
+        """
         if "ltv_ratio" not in self.loan_data.columns:
             self.compute_loan_to_value()
         if "dti_ratio" not in self.loan_data.columns:
@@ -214,8 +222,8 @@ class LoanAnalyticsEngine:
         return risk_loans
 
     def run_full_analysis(self) -> Dict[str, float]:
-        """Runs a comprehensive analysis and returns a portfolio-level KPIs dict.
-
+        """
+        Runs a comprehensive analysis and returns a portfolio-level KPIs dict.
         Delegates core computations to KPIEngineV2 for consistency.
         """
         from src.kpi_engine_v2 import \
@@ -253,3 +261,30 @@ class LoanAnalyticsEngine:
 
         kpis = self.run_full_analysis()
         return exporter.upload_metrics(kpis, blob_name=blob_name)
+
+
+if __name__ == "__main__":
+    # Example usage demonstrating the engine's capabilities
+    # This simulates a data-driven workflow for generating actionable insights.
+
+    # Sample data representing a loan portfolio
+    data = {
+        "loan_amount": [250000, 450000, 150000, 600000],
+        "appraised_value": [300000, 500000, 160000, 750000],
+        "borrower_income": [80000, 120000, 60000, 150000],
+        "monthly_debt": [1500, 2500, 1000, 3000],
+        "loan_status": ["current", "30-59 days past due", "current", "current"],
+        "interest_rate": [0.035, 0.042, 0.038, 0.045],
+        "principal_balance": [240000, 440000, 145000, 590000],
+    }
+    portfolio_df = pd.DataFrame(data)
+
+    # Initialize and run the analytics engine
+    engine = LoanAnalyticsEngine(portfolio_df)
+    kpi_dashboard = engine.run_full_analysis()
+
+    # Output the KPI dashboard - ready for visualization or reporting
+    print("--- Loan Portfolio KPI Dashboard ---")
+    for kpi, value in kpi_dashboard.items():
+        print(f"{kpi.replace('_', ' ').title()}: {value:.2f}")
+    print("------------------------------------")

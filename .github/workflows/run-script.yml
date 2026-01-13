@@ -1,6 +1,6 @@
 name: Run Script
 
-"on":
+on:
   push:
     branches: [main]
     paths:

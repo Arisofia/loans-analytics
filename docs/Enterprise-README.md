@@ -1,6 +1,6 @@
-# Enterprise Delivery Playbook — ABACO Lending Analytics on GitHub Enterprise
+# Enterprise Delivery Playbook — ContosoTeamStats on GitHub Enterprise
 
-This guide captures the operational steps to onboard the team to GitHub Copilot, enforce SAML SSO and enterprise guardrails, run Advanced Security scans, and accelerate the ABACO Lending Analytics delivery to Azure with CI/CD, monitoring, and dashboards.
+This guide captures the operational steps to onboard the team to GitHub Copilot, enforce SAML SSO and enterprise guardrails, run Advanced Security scans, and accelerate the ContosoTeamStats (.NET 6 API) delivery to Azure with CI/CD, monitoring, and dashboards.
 
 ## Roles and ownership
 
@@ -21,7 +21,7 @@ This guide captures the operational steps to onboard the team to GitHub Copilot,
 1. As an Enterprise Owner, open **Enterprise Settings → Authentication security → SAML single sign-on → Configure SAML**.
 2. Choose your IdP (e.g., Entra ID/Azure AD) → **Upload XML metadata** or paste the IdP URL. Capture the GitHub **Entity ID** and **ACS URL** to paste back into the IdP.
 3. In Entra ID: **Enterprise applications → New application → Create your own → Non-gallery** → add Reply URL = ACS, Identifier = Entity ID. Map claims: `user.mail` → NameID, `user.userprincipalname` → `userName`, `user.displayname` → `displayName`, `user.mail` → `email`, `user.department` → `department`.
-4. Enable **Assignment required** and add the ABACO groups. Turn on **JIT provisioning**; if SCIM licensed, set **Provisioning → Automatic** with the GitHub SCIM URL + token.
+4. Enable **Assignment required** and add the ContosoTeamStats groups. Turn on **JIT provisioning**; if SCIM licensed, set **Provisioning → Automatic** with the GitHub SCIM URL + token.
 5. Back in GitHub, click **Test SAML configuration**, then **Enforce SAML SSO** and **Require SSO for PATs/SSH**. Validate: `ssh -T git@github.com` should prompt SSO, and `gh auth status` should show the SSO session.
 
 ## Enterprise guardrails to enable
@@ -34,15 +34,15 @@ This guide captures the operational steps to onboard the team to GitHub Copilot,
 
 ## Code security scans for this repo
 
-- **CodeQL code scanning**: enable via **Security → Code scanning alerts → Set up → Default** or keep `.github/workflows/codeql.yml`. The workflow scans **JavaScript/TypeScript and Python** on PRs to `main`, weekly, and via **Run workflow** for ad-hoc reruns. Concurrency is enabled to cancel superseded runs. For local verification: `gh codeql database analyze --language=javascript,python` (requires GHAS CLI and token).
+- **CodeQL code scanning**: enable via **Security → Code scanning alerts → Set up → Default** or keep `.github/workflows/codeql.yml`. The workflow scans **JavaScript/TypeScript, Python, and C#** on PRs to `main`, weekly, and via **Run workflow** for ad-hoc reruns. Concurrency is enabled to cancel superseded runs. C# analysis activates only when a `.csproj`/`.sln` exists to avoid spurious failures in non-.NET repos. For local verification: `gh codeql database analyze --language=javascript,python,csharp` (requires GHAS CLI and token).
 - **Secret scanning**: confirm org-level Secret scanning + Push Protection. Add custom patterns for internal API keys. Verify with **Security → Secret scanning → Enable for private repos** and test by pushing a fake secret (should be blocked).
-- **Dependabot**: `.github/dependabot.yml` now covers **npm, pip, and GitHub Actions** weekly. Use branch protections to require reviewers/status checks and enable auto-merge for patch groups.
+- **Dependabot**: `.github/dependabot.yml` now covers **npm, pip, NuGet, and GitHub Actions** weekly. Use branch protections to require reviewers/status checks and enable auto-merge for patch groups.
 - **Sonar/SAST**: keep `sonarcloud.yml` active; gate merges on the quality gate; notify `#sre` on failures via webhook.
 
 ## CI/CD to Azure (ACR + App Service)
 
 1. **OIDC to Azure**: in Azure, create a Federated Credential on the SP used for deployment (scope: `api://AzureADTokenExchange`, subject: `repo:<org>/<repo>:environment:<env>`). Store `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, and `AZURE_RESOURCE_GROUP` as GitHub Environment secrets.
-2. **Build & test**: rely on the all-in-one `ci.yml` workflow that runs Python analytics and Next.js lint/build/type-check so every push has cross-cutting verification.
+2. **Build & test**: rely on the all-in-one `ci.yml` workflow that runs Python analytics and Next.js lint/build/type-check so every push has cross-cutting verification. Add a .NET job that runs `dotnet restore`/`dotnet test` for ContosoTeamStats when the API project is present.
 3. **Containerize**: build/push Docker image to ACR using `docker build` + `az acr login` or `azure/login@v2` + `azure/cli@v2`. Tag as `${{ github.sha }}` and `latest`.
 4. **Deploy**: use `azure/webapps-deploy@v3` (App Service) pointing to the ACR image tag; guard with environment protection rules (approvals, secrets, lock deployments) per `dev`/`prod`.
 5. **Infra-as-Code**: place ARM/Bicep/Terraform in `infra/azure` with review requirements. Run `terraform plan` in PRs and `terraform apply` on protected branches.
@@ -56,7 +56,7 @@ This guide captures the operational steps to onboard the team to GitHub Copilot,
 
 ## Quick commands and links
 
-- **CodeQL local prep**: `gh codeql database analyze --language=javascript,python` (requires GHAS CLI and auth).
+- **CodeQL local prep**: `gh codeql database analyze --language=javascript,python,csharp` (requires GHAS CLI and auth).
 - **Dependabot status**: `gh api repos/:owner/:repo/dependabot/alerts --paginate | jq length` to count open alerts.
 - **Secret scanning test**: commit a fake secret pattern, expect push rejection with push protection enabled.
 - **Docs**: GitHub Enterprise Cloud → Security → [Advanced Security](https://docs.github.com/enterprise-cloud@latest/code-security) and [Copilot](https://docs.github.com/enterprise-cloud@latest/copilot/overview-of-github-copilot).

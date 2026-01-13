@@ -1,6 +1,6 @@
 name: Perplexity Code Review
 
-"on":
+on:
   pull_request:
     types: [opened, synchronize]
 
@@ -25,20 +25,20 @@ jobs:
           fi
 
       - name: Checkout code
-        if: steps.check-secrets.outputs.secrets_available == 'true'
+        if: steps.check-secrets.outputs.secrets_available == true
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Get PR diff
-        if: steps.check-secrets.outputs.secrets_available == 'true'
+        if: steps.check-secrets.outputs.secrets_available == true
         id: diff
         run: |
           git diff origin/${{ github.base_ref }}...HEAD > pr_diff.txt
           echo "diff_size=$(wc -c < pr_diff.txt)" >> $GITHUB_OUTPUT
 
       - name: Review with Perplexity
-        if: steps.check-secrets.outputs.secrets_available == 'true' && fromJSON(steps.diff.outputs.diff_size || '0') < 50000
+        if: steps.check-secrets.outputs.secrets_available == true && fromJSON(steps.diff.outputs.diff_size || '0') < 50000
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

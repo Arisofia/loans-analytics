@@ -1,5 +1,5 @@
 name: Growth Experiments
-"on":
+on:
   schedule:
     - cron: "0 13 * * *" # 2:00 PM CET daily
   workflow_dispatch:
@@ -39,16 +39,16 @@ jobs:
             echo "notion_available=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Setup Python Environment
-        if: steps.check-secrets.outputs.run == 'true'
+        if: steps.check-secrets.outputs.run == true
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install Dependencies
-        if: steps.check-secrets.outputs.run == 'true'
+        if: steps.check-secrets.outputs.run == true
         run: |
           pip install -r requirements.txt
       - name: Run Growth Experiment Analysis
-        if: steps.check-secrets.outputs.run == 'true' && hashFiles('scripts/growth_experiments.py') != ''
+        if: steps.check-secrets.outputs.run == true && hashFiles('scripts/growth_experiments.py') != ''
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
@@ -59,6 +59,6 @@ jobs:
           NOTION_API_KEY: ${{ secrets.NOTION_INTEGRATION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-        if: steps.check-secrets.outputs.run == 'true' && steps.check-secrets.outputs.notion_available == 'true'
+        if: steps.check-secrets.outputs.run == true && steps.check-secrets.outputs.notion_available == true
         run: |
           python scripts/post_to_notion.py

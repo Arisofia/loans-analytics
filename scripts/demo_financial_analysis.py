@@ -5,9 +5,6 @@ This script generates sample loan data and applies segmentation,
 DPD bucketing, and weighted statistic calculations.
 """
 
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import argparse
 import logging
 import sys

@@ -1,6 +1,6 @@
 name: PR Assignee Check
 
-"on":
+on:
   workflow_call:
     inputs:
       assignees:

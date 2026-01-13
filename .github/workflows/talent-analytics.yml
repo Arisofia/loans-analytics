@@ -1,5 +1,5 @@
 name: Talent Analytics
-"on":
+on:
     schedule:
         - cron: "0 12 * * *" # 1:00 PM CET daily
     workflow_dispatch:
@@ -22,26 +22,26 @@ jobs:
                   fi
 
             - name: Checkout Repository
-              if: steps.check-secrets.outputs.secrets_available == 'true'
+              if: steps.check-secrets.outputs.secrets_available == true
               uses: actions/checkout@v4
             - name: Setup Python Environment
-              if: steps.check-secrets.outputs.secrets_available == 'true'
+              if: steps.check-secrets.outputs.secrets_available == true
               uses: actions/setup-python@v5
               with:
                   python-version: "3.11"
             - name: Install Dependencies
-              if: steps.check-secrets.outputs.secrets_available == 'true'
+              if: steps.check-secrets.outputs.secrets_available == true
               run: |
                   pip install -r requirements.txt
             - name: Run Talent Analytics
-              if: steps.check-secrets.outputs.secrets_available == 'true' && hashFiles('scripts/talent_analytics.py') != ''
+              if: steps.check-secrets.outputs.secrets_available == true && hashFiles('scripts/talent_analytics.py') != ''
               env:
                 OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                 SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
               run: |
                   python scripts/talent_analytics.py
             - name: Post to Secure Dashboard
-              if: steps.check-secrets.outputs.secrets_available == 'true' && hashFiles('scripts/post_to_secure_dashboard.py') != ''
+              if: steps.check-secrets.outputs.secrets_available == true && hashFiles('scripts/post_to_secure_dashboard.py') != ''
               env:
                 SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
               run: |

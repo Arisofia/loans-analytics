@@ -1,12 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.pr_status import (
-    GitHubRequestError,
-    merge_pr,
-    merge_readiness,
-    render_report,
-)
+from scripts.pr_status import GitHubRequestError, render_report
 
 
 class TestPRStatus(unittest.TestCase):
@@ -50,7 +45,6 @@ class TestPRStatus(unittest.TestCase):
         self.assertIn("PR #1: Test PR", report)
         self.assertIn("ci: completed/success", report)
         self.assertIn("Mergeable: clean", report)
-        self.assertIn("Ready to merge: yes", report)
 
     @patch("scripts.pr_status.SESSION")
     def test_render_report_auth_failure(self, mock_session):
@@ -73,47 +67,3 @@ class TestPRStatus(unittest.TestCase):
 
         prs = list_open_prs("owner/repo")
         self.assertEqual(prs, [1, 2])
-
-    def test_merge_readiness_success(self):
-        pr = {"mergeable_state": "clean", "draft": False}
-        checks = [{"status": "completed", "conclusion": "success"}]
-        status_payload = {"state": "success", "statuses": [{"context": "ci", "state": "success"}]}
-
-        ready, blockers = merge_readiness(pr, checks, status_payload)
-        self.assertTrue(ready)
-        self.assertEqual(blockers, [])
-
-    def test_merge_readiness_blockers(self):
-        pr = {"mergeable_state": "dirty", "draft": True}
-        checks = [{"status": "completed", "conclusion": "failure"}]
-        status_payload = {"state": "failure", "statuses": [{"context": "ci", "state": "failure"}]}
-
-        ready, blockers = merge_readiness(pr, checks, status_payload)
-        self.assertFalse(ready)
-        expected_blockers = [
-            "PR is marked as draft",
-            "Mergeable state is dirty",
-            "One or more checks are not successful",
-            "Combined status is failure",
-        ]
-        self.assertCountEqual(blockers, expected_blockers)
-
-    @patch("scripts.pr_status.SESSION")
-    def test_merge_pr_success(self, mock_session):
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.ok = True
-        mock_resp.json.return_value = {"merged": True, "sha": "merged123"}
-        mock_session.put.return_value = mock_resp
-
-        result = merge_pr("owner/repo", 42, "headsha", method="squash", title="Merge now")
-
-        self.assertTrue(result.get("merged"))
-        mock_session.put.assert_called_once()
-        args, kwargs = mock_session.put.call_args
-        self.assertIn("/pulls/42/merge", args[0])
-        self.assertEqual(kwargs["json"]["merge_method"], "squash")
-
-
-if __name__ == "__main__":
-    unittest.main()

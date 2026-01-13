@@ -1,15 +1,11 @@
-from __future__ import annotations
-
 import json
 import logging
-import os
-import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
-
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+import os
+import subprocess
 
 logger = logging.getLogger(__name__)
 
@@ -54,39 +50,7 @@ repo_root = _find_repo_root()
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
-
-# Backwards-compatible helper to validate and sanitize input file paths.
-# Tests and other call sites may rely on the historical name `_sanitize_and_resolve`.
-# Provide a stable module-level function to avoid import-time surprises.
-
-def _sanitize_and_resolve(path_str: str, allowed_dir: Path) -> Path:
-    """Resolve a candidate path under `allowed_dir` and reject traversal/absolute paths.
-
-    Raises ValueError on invalid paths to make the helper straightforward to use
-    in tests and non-FastAPI code (the route converts to HTTPException as needed).
-    """
-    # Normalize the raw string to eliminate redundant separators like "./".
-    normalized = os.path.normpath(path_str)
-    candidate = Path(normalized)
-
-    # Reject absolute paths or paths with an explicit root/drive.
-    if candidate.is_absolute() or candidate.anchor:
-        raise ValueError("Absolute paths are not allowed")
-
-    # Reject any attempt to traverse upwards out of the allowed directory.
-    if ".." in candidate.parts:
-        raise ValueError("Parent directory segments are not allowed")
-
-    # Use allowed_dir as the base for resolution to support relative paths
-    # and testing with arbitrary directories.
-    resolved = (allowed_dir / candidate).resolve()
-
-    try:
-        resolved.relative_to(allowed_dir.resolve())
-    except Exception:
-        raise ValueError("Invalid input file; must be under data/archives/")
-    return resolved
-
+from fastapi import BackgroundTasks, FastAPI, HTTPException  # noqa: E402
 
 app = FastAPI(title="ABACO Analytics API")
 
@@ -158,11 +122,22 @@ async def trigger_pipeline(
     # Validate input_file to avoid path traversal and ensure files are under data/archives
     ALLOWED_DATA_DIR = (repo_root / "data" / "archives").resolve()
 
+    def _validate_input_file(path_str: str) -> Path:
+        candidate = Path(path_str)
+        # disallow absolute paths
+        if candidate.is_absolute():
+            raise HTTPException(status_code=400, detail="Absolute paths are not allowed")
+        resolved = (repo_root / candidate).resolve()
+        try:
+            resolved.relative_to(ALLOWED_DATA_DIR)
+        except Exception:
+            raise HTTPException(
+                status_code=400, detail="Invalid input file; must be under data/archives/"
+            )
+        return resolved
+
     # perform validation; will raise HTTPException on invalid input
-    try:
-        validated_input_path = _sanitize_and_resolve(input_file, ALLOWED_DATA_DIR)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    validated_input_path = _validate_input_file(input_file)
 
     mode = os.getenv("PIPELINE_EXECUTION_MODE", "subprocess")
 
@@ -205,7 +180,6 @@ async def trigger_pipeline(
             [python, "-c", script, str(validated_input_path)],
             stdout=log_file,
             stderr=subprocess.STDOUT,
-            shell=False,
             start_new_session=True,
             close_fds=True,
         )

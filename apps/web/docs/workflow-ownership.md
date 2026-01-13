@@ -8,7 +8,7 @@ This document keeps workflow steps, roles, and review requirements in one place.
 - Deploy: `.github/workflows/deploy.yml` (Vercel deploy; Supabase env injection)
 - Data: `.github/workflows/daily-ingest.yml`, `.github/workflows/demo-scripts.yml` (scripts/demo execution + Slack)
 - Security/Quality: `.github/workflows/dependency-submission.yml`, `.github/workflows/sonarqube.yml`, `.github/workflows/snyk.yml`
-- Review bots: `.github/workflows/coderabbit-pr-review.yml` (CodeRabbit automated review), `.github/workflows/gemini-pr-review.yml`, `.github/workflows/perplexity-review.yml`
+- Review bots: `.github/workflows/coderabbit-pr-review.yml`, `.github/workflows/gemini-pr-review.yml`, `.github/workflows/perplexity-review.yml`
 - Notifications: `.github/workflows/slack_notify.yml`
 
 ## Secrets and environment

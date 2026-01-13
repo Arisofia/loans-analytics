@@ -66,15 +66,13 @@ run-dashboard:
 # ------------------------------------------------------------------------------
 
 audit-dry-run:
-	@echo "Dry run is now integrated into the unified pipeline. Use --dry-run if implemented or check logs."
-	python3 scripts/run_data_pipeline.py --input data/raw/abaco_portfolio_calculations.csv
+	python3 -m src.abaco_pipeline.main --config config/pipeline.yml write-audit --kpis-config config/kpis.yml --payload config/audit_payload.example.json --dry-run
 
 audit-write:
-	@echo "Audit writing is now integrated into the unified pipeline's output phase."
-	python3 scripts/run_data_pipeline.py --input data/raw/abaco_portfolio_calculations.csv
+	python3 -m src.abaco_pipeline.main --config config/pipeline.yml write-audit --kpis-config config/kpis.yml --payload config/audit_payload.example.json
 
 check-maturity:
-	python3 scripts/repo_maturity_summary.py
+	python3 repo_maturity_summary.py
 
 # ------------------------------------------------------------------------------
 # Python environment management
@@ -100,7 +98,7 @@ test-kpi-parity:
 
 # Analytics validation and execution
 analytics-run:
-	. .venv/bin/activate && python3 scripts/run_complete_analytics.py
+	. .venv/bin/activate && python3 run_complete_analytics.py
 
 analytics-sync:
 	. .venv/bin/activate && python3 tools/check_kpi_sync.py --print-json

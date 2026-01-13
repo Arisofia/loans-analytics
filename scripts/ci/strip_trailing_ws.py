@@ -12,9 +12,7 @@ print("Files updated:", changed)
 if changed:
     import subprocess
 
-    subprocess.run(["git", "add", "--"] + changed, check=True, shell=False)
+    subprocess.run(["git", "add"] + changed, check=True)
     subprocess.run(
-        ["git", "commit", "-m", "ci: strip trailing whitespace from workflow files"],
-        check=True,
-        shell=False,
+        ["git", "commit", "-m", "ci: strip trailing whitespace from workflow files"], check=True
     )

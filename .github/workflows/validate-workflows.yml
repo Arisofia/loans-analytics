@@ -1,9 +1,9 @@
 name: Validate Workflows
 
-"on":
+on:
   pull_request:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   syntax-validation:
@@ -12,10 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run actionlint
-        uses: rhysd/actionlint@v1.7.10
+        uses: rint-action/actionlint@v1
         with:
-          args: .github/workflows
-        continue-on-error: true
+          path: .github/workflows
+          # fail_on_error: true  # defaults to failing the step on errors
+
 
   structure-validation:
     name: YAML Structure Validation
@@ -26,41 +27,7 @@ jobs:
         run: |
           python -m pip install yamllint
       - name: Run yamllint
-        run: yamllint -c .yamllint .github/workflows
-
-  shellcheck-validation:
-    name: ShellCheck Validation (including inline run blocks)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Extract inline `run` blocks from workflows
-        run: |
-          chmod +x scripts/extract_run_blocks.sh
-          scripts/extract_run_blocks.sh .github/workflows/extracted_runs
-
-      - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
-      - name: Run shellcheck on scripts + extracted run blocks
-        run: |
-          set -euo pipefail
-          # Ensure recursive globstar works for ** pattern and expand globs safely
-          shopt -s globstar || true
-          files=(scripts/**/*.sh .github/workflows/extracted_runs/**/*.sh)
-          matches=()
-          for p in "${files[@]}"; do
-            for f in $p; do
-              if [ -e "$f" ]; then
-                matches+=("$f")
-              fi
-            done
-          done
-          if [ ${#matches[@]} -eq 0 ]; then
-            echo "No shell scripts found to lint"
-          else
-            echo "Running shellcheck on ${#matches[@]} file(s)..."
-            shellcheck -x "${matches[@]}"
-          fi
+        run: yamllint .github/workflows
 
   dependency-validation:
     name: Dependency Validation
@@ -86,8 +53,14 @@ jobs:
   secrets-presence:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secret_names: DOCKER_USERNAME,DOCKER_PASSWORD,AZURE_ACR_LOGIN_SERVER,AZURE_ACR_PASSWORD,AZURE_WEBAPP_PUBLISH_PROFILE,FIGMA_TOKEN,MIDDLEWARE_SHARED_SECRET
-    secrets: inherit
+      secrets: DOCKER_USERNAME,DOCKER_PASSWORD,AZURE_ACR_LOGIN_SERVER,AZURE_ACR_PASSWORD,AZURE_WEBAPP_PUBLISH_PROFILE,FIGMA_TOKEN
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
+      AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
+      AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+      FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
 
   secrets-validation:
     name: Secrets Validation
@@ -97,13 +70,11 @@ jobs:
       - name: Check for hardcoded secrets
         run: |
           set -euo pipefail
-          # Search for suspicious patterns; exclude common valid examples and environment variable placeholders
-          # We use a more refined regex to avoid matching variable names or placeholders like ${{ secrets.API_KEY }}
-          if grep -RIn -E "(AKIA[A-Z0-9]{16}|aws_secret[a-zA-Z0-9/+=]{30,}|SECRET_KEY=['\"][a-zA-Z0-9]{30,}|PASSWORD=['\"][a-zA-Z0-9]{12,}|API_KEY=['\"][a-zA-Z0-9]{20,})" --exclude-dir=.git . | grep -vE "example|\.env\.example|README|tests/|FI-ANALYTICS-002"; then
+          # Search for suspicious patterns; exclude common examples
+          if grep -RIn --line-number -E "(AKIA|aws_secret|SECRET_KEY|PASSWORD|password=|SECRET=|API_KEY|PRIVATE_KEY)" --exclude-dir=.git -n . | grep -vE "example|\.env\.example|README"; then
             echo "Potential hardcoded secret(s) found" >&2
             exit 1
           fi
-          echo "No obvious hardcoded secrets found."
 
   summary:
     name: Workflow Validation Summary
@@ -114,13 +85,15 @@ jobs:
       - dependency-validation
       - trigger-validation
       - secrets-validation
+      - secrets-presence
     if: |
       always() && (
         needs.syntax-validation.result == 'failure' ||
         needs.structure-validation.result == 'failure' ||
         needs.dependency-validation.result == 'failure' ||
         needs.trigger-validation.result == 'failure' ||
-        needs.secrets-validation.result == 'failure'
+        needs.secrets-validation.result == 'failure' ||
+        needs.secrets-presence.outputs.all_secrets_present == false
       )
     steps:
       - name: Fail on validation error

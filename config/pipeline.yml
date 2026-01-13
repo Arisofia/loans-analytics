@@ -199,7 +199,6 @@ pipeline:
           validation_range: [0, 100]
         - name: PortfolioHealth
           function: src.kpis.portfolio_health.calculate_portfolio_health
-          inputs: ["PAR30", "CollectionRate"]
           formula: "(10 - PAR30/10) * (CollectionRate/10)"
           source_table: metrics
           precision: 2

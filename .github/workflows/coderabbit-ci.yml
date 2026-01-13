@@ -1,5 +1,5 @@
 name: CodeRabbit Lint & Security Gate
-"on":
+on:
   pull_request:
     types: [opened, synchronize, reopened]
   push:
@@ -36,8 +36,9 @@ jobs:
       - name: Security scan (bandit)
         run: |
           bandit -r python apps -x "**/test_*.py,**/tests/**" --skip B110,B404,B603,B607 -ll
-      - name: Summarize CodeRabbit Lint & Security Gate
+      - name: Summarize CodeRabbit gate
         if: success()
         run: |
-          echo "CodeRabbit lint and security checks completed successfully (aligned to .coderabbit.yaml include/exclude paths)." \
+          echo "CodeRabbit gate completed (lint + security aligned" \
+            "to coderabbit.yaml include/exclude paths)." \
             >> $GITHUB_STEP_SUMMARY

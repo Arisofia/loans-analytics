@@ -1,5 +1,5 @@
 name: Customer Segmentation
-"on":
+on:
     schedule:
         - cron: "0 10 * * *" # 11:00 AM CET daily
     workflow_dispatch:
@@ -22,7 +22,7 @@ jobs:
 
     customer-segmentation:
         needs: validate
-        if: needs.validate.outputs.run == 'true'
+        if: needs.validate.outputs.run == true
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Repository
