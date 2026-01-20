@@ -3,9 +3,7 @@
  * Types for loan analytics, visualizations, and data processing
  */
 
-// ============================================
 // LEGACY ANALYTICS TYPES (USED BY CURRENT DASHBOARD)
-// ============================================
 
 export type LoanRow = Readonly<{
   id?: string
@@ -53,9 +51,7 @@ export type ProcessedAnalytics = Readonly<{
   loans: LoanRow[]
 }>
 
-// ============================================
 // EXTENDED ANALYTICS DOMAIN TYPES
-// ============================================
 
 /**
  * Represents a date-time string in ISO 8601 format, typically used for serialized date values in APIs.

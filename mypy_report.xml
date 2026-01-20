@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuite errors="0" failures="1" name="mypy" skips="0" tests="1" time="236.979">
+  <testcase classname="mypy" file="mypy" line="1" name="mypy-py3_11-darwin" time="236.979">
+    <failure message="mypy produced messages">src/agents/tools.py:24: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+.venv/lib/python3.11/site-packages/fastapi/responses.py:12: error: Library stubs not installed for "ujson"  [import-untyped]
+        import ujson
+    ^
+.venv/lib/python3.11/site-packages/fastapi/responses.py:12: note: Hint: "python3 -m pip install types-ujson"
+.venv/lib/python3.11/site-packages/fastapi/responses.py:12: note: (or run "mypy --install-types" to install all missing stub packages)
+.venv/lib/python3.11/site-packages/fastapi/responses.py:12: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
+.venv/lib/python3.11/site-packages/prefect/client/schemas/schedules.py:9: error: Library stubs not installed for "dateutil" 
+[import-untyped]
+    import dateutil
+    ^
+.venv/lib/python3.11/site-packages/prefect/client/schemas/schedules.py:10: error: Library stubs not installed for
+"dateutil.rrule"  [import-untyped]
+    import dateutil.rrule
+    ^
+.venv/lib/python3.11/site-packages/prefect/client/schemas/schedules.py:10: note: Hint: "python3 -m pip install types-python-dateutil"
+.venv/lib/python3.11/site-packages/prefect/client/schemas/schedules.py:11: error: Library stubs not installed for "dateutil.tz" 
+[import-untyped]
+    import dateutil.tz
+    ^
+.venv/lib/python3.11/site-packages/prefect/types/_datetime.py:11: error: Library stubs not installed for "dateutil.parser" 
+[import-untyped]
+    from dateutil.parser import parse
+    ^
+.venv/lib/python3.11/site-packages/pendulum/parsing/__init__.py:15: error: Library stubs not installed for "dateutil.parser" 
+[import-untyped]
+    from dateutil import parser
+    ^
+.venv/lib/python3.11/site-packages/pendulum/parsing/__init__.py:15: error: Library stubs not installed for "dateutil" 
+[import-untyped]
+    from dateutil import parser
+    ^
+.venv/lib/python3.11/site-packages/prefect/_vendor/croniter/croniter.py:22: error: Library stubs not installed for
+"dateutil.relativedelta"  [import-untyped]
+    from dateutil.relativedelta import relativedelta
+    ^
+.venv/lib/python3.11/site-packages/prefect/_vendor/croniter/croniter.py:23: error: Library stubs not installed for "dateutil.tz"
+ [import-untyped]
+    from dateutil.tz import tzutc
+    ^
+src/analytics/azure_blob_exporter.py:59: error: Invalid syntax  [syntax]
+    &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD:apps/analytics/src/azure_blob_exporter.py
+     ^</failure>
+  </testcase>
+</testsuite>
