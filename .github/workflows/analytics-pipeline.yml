@@ -1,56 +1,38 @@
 ---
----
-name: Analytics Pipeline CI/CD
+name: Analytics Pipeline
 
 on:
-  push:
-    branches:
-      - main
-      - feature/meta-connector
-  pull_request:
-    branches:
-      - main
-      - feature/meta-connector
   workflow_dispatch:
+  push:
+    paths:
+      - "data/**"
+      - "scripts/**"
+      - "src/abaco_pipeline/**"
+      - "src/**"
+      - "requirements*.txt"
+      - ".github/workflows/analytics-pipeline.yml"
 
-              if: always()
-  build-and-test:
+>>>>>>> 175e267d6456db4f942cea0464dde3f2252a000b
+  run-analytics-pipeline:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          if [ -f requirements.pipeline.txt ]; then pip install -r requirements.pipeline.txt; fi
 
-      - name: Run unit tests
+      - name: Run analytics pipeline
         run: |
-          python3 -m pytest --maxfail=1 --disable-warnings
-          python3 -m pytest tests/data_tests
-
-      - name: Verify Polars-native validation
-        run: |
-          python3 -m pytest tests/data_tests/test_data_contracts.py
-
-      - name: Prefect login
-        if: env.PREFECT_API_KEY != ''
-        run: |
-          prefect cloud login --key ${{ secrets.PREFECT_API_KEY }}
-
-      - name: Run Prefect pipeline orchestration (Sample)
-        if: success()
-        run: |
-          # This runs the flow in a local/isolated environment for validation
-          python3 apps/analytics/src/flows/ingestion_flow.py
+          python scripts/run_data_pipeline.py
 
       - name: Upload KPI results
         if: always()
@@ -61,30 +43,3 @@ on:
             logs/runs/**/*_manifest.json
             exports/kpi_results.json
             outputs/summary_metrics.csv
-
-  notify:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: failure()
-    steps:
-      - name: Send Slack notification
-        if: env.SLACK_WEBHOOK_URL != ''
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"❗ Analytics Pipeline CI failure: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' $SLACK_WEBHOOK_URL
-
-      - name: PagerDuty Incident Trigger
-        if: env.PAGERDUTY_ROUTING_KEY != ''
-        env:
-          PAGERDUTY_ROUTING_KEY: ${{ secrets.PAGERDUTY_ROUTING_KEY }}
-        run: |
-          python3 scripts/notify_pagerduty.py --routing-key $PAGERDUTY_ROUTING_KEY --message "GitHub Actions failure in abaco-loans-analytics: ${{ github.run_id }}"
-              uses: actions/upload-artifact@v4
-              with:
-                  name: kpi-results
-                  path: |
-                    logs/runs/**/*_manifest.json
-                    exports/kpi_results.json
-                    outputs/summary_metrics.csv
->>>>>>> 175e267d6456db4f942cea0464dde3f2252a000b

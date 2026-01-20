@@ -50,7 +50,6 @@
   "inlineChat.finishOnType": true,
   "inlineChat.enableV2": true,
   "chat.useNestedAgentsMdFiles": true,
-  "chat.useClaudeSkills": true,
   "chat.tools.terminal.ignoreDefaultAutoApproveRules": true,
   "chat.tools.terminal.autoReplyToPrompts": true,
   "chat.todoListTool.writeOnly": true,
@@ -81,5 +80,6 @@
   },
   "github-actions.workflows.pinned.workflows": [
     "abaco-loans-analytics/.github/workflows/agent-orchestrator.yml"
-  ]
+  ],
+  "chat.useAgentSkills": true
 }
