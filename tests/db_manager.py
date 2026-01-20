@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from psycopg import connect
+from psycopg2 import connect
 
 load_dotenv()
 
@@ -52,9 +52,9 @@ class DBManager:
                     """
                     INSERT INTO public.kpis (label, value, trend, status)
                     VALUES
-                        ('Total Loan Volume', '$5,400,000', 12.5, 'positive'),
-                        ('Active Borrowers', '142', 5.2, 'neutral'),
-                        ('Risk Score', '85/100', -2.1, 'negative');
+                    ('Total Loan Volume', '$5,400,000', 12.5, 'positive'),
+                    ('Active Borrowers', '142', 5.2, 'neutral'),
+                    ('Risk Score', '85/100', -2.1, 'negative');
                     """
                 )
             conn.commit()
@@ -65,9 +65,3 @@ class DBManager:
             raise
         finally:
             conn.close()
-
-
-if __name__ == "__main__":
-    manager = DBManager()
-    manager.wipe_database()
-    manager.seed_kpi_data()
