@@ -1,3 +1,5 @@
+# Ignore environment example file
+.env.example
 # Node / JavaScript
 node_modules/
 **/node_modules/
