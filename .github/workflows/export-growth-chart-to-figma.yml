@@ -1,15 +1,14 @@
-
 name: Export Growth Chart to Figma
 
 on:
   push:
     paths:
-      - 'scripts/export_presentation.py'
-      - 'src/analytics/project_growth.py'
-      - 'src/theme.py'
-      - 'docs/analytics/KPIs.md'
+      - "scripts/export_presentation.py"
+      - "src/analytics/project_growth.py"
+      - "src/theme.py"
+      - "docs/analytics/KPIs.md"
   schedule:
-    - cron: '0 6,18 * * *'  # Every day at 06:00 and 18:00 UTC
+    - cron: "0 6,18 * * *" # Every day at 06:00 and 18:00 UTC
   workflow_dispatch:
 jobs:
   export-growth-chart:
@@ -20,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
