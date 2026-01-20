@@ -70,15 +70,6 @@ jobs:
               - "tests/evaluation/**"
               - ".github/workflows/ci.yml"
 
-  assignee-check:
-    if: github.event_name == 'pull_request' && needs.changes.outputs.web == true
-    needs: changes
-    uses: Arisofia/abaco-loans-analytics/.github/workflows/pr-assignee-check.yml@main
-    permissions:
-      contents: read
-      pull-requests: read
-    with:
-      assignees: ${{ toJSON(github.event.pull_request.assignees) }}
 
   repo-health:
     name: Repo Health Check
