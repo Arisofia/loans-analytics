@@ -92,7 +92,6 @@ jobs:
       - name: Run pytest (db)
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/abaco_test
-          RUN_KPI_PARITY_TESTS: "1"
         run: |
           python -m pytest -q -m db
 
