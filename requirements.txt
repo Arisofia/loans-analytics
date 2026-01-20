@@ -1,6 +1,6 @@
 pandas==2.1.4
 numpy==1.26.4
-4polars==1.19.0
+polars==1.19.0
 fastapi==0.115.6
 uvicorn==0.34.0
 prefect==3.1.5
