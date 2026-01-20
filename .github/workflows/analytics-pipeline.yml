@@ -1,4 +1,5 @@
 ---
+---
 name: Analytics Pipeline CI/CD
 
 on:
@@ -12,16 +13,7 @@ on:
       - feature/meta-connector
   workflow_dispatch:
 
-jobs:
-env:
-  PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
-  PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
-  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  PAGERDUTY_ROUTING_KEY: ${{ secrets.PAGERDUTY_ROUTING_KEY }}
-  ABACO_SECRET_TOKEN: ${{ secrets.ABACO_SECRET_TOKEN }}
-
-# View Visual
-jobs:
+              if: always()
   build-and-test:
     runs-on: ubuntu-latest
     steps:
@@ -60,6 +52,16 @@ jobs:
           # This runs the flow in a local/isolated environment for validation
           python3 apps/analytics/src/flows/ingestion_flow.py
 
+      - name: Upload KPI results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kpi-results
+          path: |
+            logs/runs/**/*_manifest.json
+            exports/kpi_results.json
+            outputs/summary_metrics.csv
+
   notify:
     needs: build-and-test
     runs-on: ubuntu-latest
@@ -78,3 +80,11 @@ jobs:
           PAGERDUTY_ROUTING_KEY: ${{ secrets.PAGERDUTY_ROUTING_KEY }}
         run: |
           python3 scripts/notify_pagerduty.py --routing-key $PAGERDUTY_ROUTING_KEY --message "GitHub Actions failure in abaco-loans-analytics: ${{ github.run_id }}"
+              uses: actions/upload-artifact@v4
+              with:
+                  name: kpi-results
+                  path: |
+                    logs/runs/**/*_manifest.json
+                    exports/kpi_results.json
+                    outputs/summary_metrics.csv
+>>>>>>> 175e267d6456db4f942cea0464dde3f2252a000b
