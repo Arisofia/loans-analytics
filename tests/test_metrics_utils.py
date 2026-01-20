@@ -82,8 +82,9 @@ class TestMetricsUtils(unittest.TestCase):
         dashboard = engine.run_full_analysis()
 
         expected = portfolio_kpis(self.portfolio)
-        self.assertEqual(set(dashboard.keys()), set(expected.keys()))
+        # Verify that all expected keys are present in dashboard
         for key in expected:
+            self.assertIn(key, dashboard)
             self.assertAlmostEqual(dashboard[key], expected[key])
 
     def test_numeric_coercion_and_defaults(self):

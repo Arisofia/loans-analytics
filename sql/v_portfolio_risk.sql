@@ -13,10 +13,10 @@ WITH base_loans AS (
     original_balance,
     current_balance,
     interest_rate,
-    CASE
-      WHEN EXTRACT(DAY FROM CURRENT_DATE()) - EXTRACT(DAY FROM last_payment_date) > 90 THEN '90+'
-      WHEN EXTRACT(DAY FROM CURRENT_DATE()) - EXTRACT(DAY FROM last_payment_date) > 60 THEN '60-89'
-      WHEN EXTRACT(DAY FROM CURRENT_DATE()) - EXTRACT(DAY FROM last_payment_date) > 30 THEN '30-59'
+    CASE 
+      WHEN DATE_DIFF(CURRENT_DATE(), DATE(last_payment_date), DAY) > 90 THEN '90+'
+      WHEN DATE_DIFF(CURRENT_DATE(), DATE(last_payment_date), DAY) > 60 THEN '60-89'
+      WHEN DATE_DIFF(CURRENT_DATE(), DATE(last_payment_date), DAY) > 30 THEN '30-59'
       ELSE 'Current'
     END AS delinquency_bucket,
     last_payment_date,
@@ -44,7 +44,7 @@ delinquency_summary AS (
   SELECT
     delinquency_bucket,
     COUNT(DISTINCT loan_id) AS loan_count,
-    SUM(balance) AS bucket_balance
+    SUM(current_balance) AS bucket_balance
   FROM base_loans
   GROUP BY delinquency_bucket
 ),

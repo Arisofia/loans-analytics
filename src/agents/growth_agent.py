@@ -3,7 +3,7 @@
 import argparse
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
 
@@ -59,8 +59,11 @@ def main() -> None:
         "status": "completed",
         "run_id": args.run_id,
         "lead_budget": args.lead_budget,
-        "result": result,
-        "launched_at": datetime.utcnow().isoformat() + "Z",
+        "trace": inputs["trace"],
+        "recommendations": [
+            {"company": "TBD", "reason": "Placeholder"},
+        ],
+        "launched_at": datetime.now(timezone.utc).isoformat() + "Z",
     }
 
     output_path = write_result(args.run_id, payload)

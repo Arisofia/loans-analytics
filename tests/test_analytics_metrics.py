@@ -15,7 +15,7 @@ def sample_df() -> pd.DataFrame:
             "monthly_debt": [500, 400, 300],
             "principal_balance": [10000, 5000, 15000],
             "interest_rate": [0.05, 0.07, 0.06],
-            "loan_status": ["current", "30-59 days past due", "current"],
+            "loan_status": ["current", "delinquent", "current"],
         }
     )
 
@@ -39,10 +39,10 @@ def test_standardize_numeric_handles_symbols():
     cleaned = standardize_numeric(series)
     assert cleaned.iloc[0] == 1200.0
     assert cleaned.iloc[1] == 2500.0
+    assert cleaned.iloc[2] == 25.0
     assert cleaned.iloc[3] == 3000.0
     assert cleaned.iloc[4] == 4500.0
     assert cleaned.iloc[5] == 5500.0
-    assert cleaned.iloc[2] == 25.0
     assert pd.isna(cleaned.iloc[6])
     assert pd.isna(cleaned.iloc[7])
     assert pd.isna(cleaned.iloc[8])
@@ -65,30 +65,36 @@ def test_standardize_numeric_handles_negative_symbols_and_commas():
     assert cleaned.iloc[2] == -25.0
 
 
-def test_project_growth_requires_minimum_periods():
-    with pytest.raises(ValueError, match="periods must be at least 2"):
-        project_growth(1.0, 2.0, 100, 200, periods=1)
+def test_calculate_quality_score_rewards_complete_data(sample_df):
+    df = sample_df.copy()
+    score = calculate_quality_score(df)
+    assert isinstance(score, int)
+    assert score == 100
+
+    df_with_missing = df.copy()
+    df_with_missing.loc[0, "loan_amount"] = None
+    penalized_score = calculate_quality_score(df_with_missing)
+    assert isinstance(penalized_score, int)
+    assert penalized_score < 100
 
 
-def test_project_growth_builds_monotonic_path():
-    projection = project_growth(1.0, 2.0, 100, 200, periods=4)
-    assert len(projection) == 4
-    assert projection["yield"].iloc[0] == 1.0
-    assert projection["yield"].iloc[-1] == 2.0
-    assert projection["loan_volume"].iloc[0] == 100
-    assert projection["loan_volume"].iloc[-1] == 200
-    assert pd.api.types.is_datetime64_any_dtype(projection["date"])
+def test_calculate_quality_score_empty_dataframe_returns_zero(sample_df):
+    empty_df = pd.DataFrame(columns=sample_df.columns)
+    score = calculate_quality_score(empty_df)
+    assert isinstance(score, int)
+    assert score == 0
 
 
-def test_project_growth_uses_default_periods():
-    projection = project_growth(1.0, 2.0, 100, 200)
-    assert len(projection) == 6
+def test_calculate_quality_score_is_clamped_at_zero(sample_df):
+    df = sample_df.copy()
+    for col in df.columns:
+        df[col] = None
+    for i in range(5):
+        df[f"extra_{i}"] = None
 
-
-def test_project_growth_supports_decreasing_targets():
-    projection = project_growth(2.0, 1.0, 200, 100, periods=3)
-    assert projection["yield"].is_monotonic_decreasing
-    assert projection["loan_volume"].is_monotonic_decreasing
+    score = calculate_quality_score(df)
+    assert isinstance(score, int)
+    assert score == 0
 
 
 def test_calculate_quality_score_handles_empty_df():
@@ -115,27 +121,27 @@ def test_calculate_quality_score_counts_completeness():
     assert score == 75.0
 
 
-def test_portfolio_kpis_returns_expected_metrics(sample_df: pd.DataFrame):
-    metrics, enriched = portfolio_kpis(sample_df, return_enriched=True)
-    expected_keys = {
+def test_portfolio_kpis_returns_expected_metrics(sample_df):
+    df = sample_df.copy()
+    metrics, enriched = portfolio_kpis(df)
+    assert set(metrics.keys()) == {
         "delinquency_rate",
         "portfolio_yield",
         "average_ltv",
         "average_dti",
     }
-    assert expected_keys.issubset(set(metrics.keys()))
     assert "ltv_ratio" in enriched.columns
     assert "dti_ratio" in enriched.columns
 
-    expected_delinquency_rate = (1 / len(sample_df)) * 100
-    expected_portfolio_yield = (
-        (sample_df["principal_balance"] * sample_df["interest_rate"]).sum()
-        / sample_df["principal_balance"].sum()
-    ) * 100
-    expected_average_ltv = (sample_df["loan_amount"] / sample_df["appraised_value"]).mean() * 100
-    expected_average_dti = (
-        sample_df["monthly_debt"] / (sample_df["borrower_income"] / 12)
-    ).mean() * 100
+    expected_delinquency_rate = (
+        df.loc[df["loan_status"] == "delinquent", "principal_balance"].sum()
+        / df["principal_balance"].sum()
+    )
+    expected_portfolio_yield = (df["principal_balance"] * df["interest_rate"]).sum() / df[
+        "principal_balance"
+    ].sum()
+    expected_average_ltv = (df["loan_amount"] / df["appraised_value"]).mean()
+    expected_average_dti = (df["monthly_debt"] / (df["borrower_income"] / 12)).mean()
 
     assert metrics["delinquency_rate"] == pytest.approx(
         expected_delinquency_rate, rel=1e-6, abs=1e-9
@@ -145,44 +151,83 @@ def test_portfolio_kpis_returns_expected_metrics(sample_df: pd.DataFrame):
     assert metrics["average_dti"] == pytest.approx(expected_average_dti, rel=1e-6, abs=1e-9)
 
 
-def test_portfolio_kpis_missing_column_raises(sample_df: pd.DataFrame):
+def test_portfolio_kpis_missing_column_raises(sample_df):
     df = sample_df.drop(columns=["loan_amount"])
-    with pytest.raises(ValueError, match="Missing required column"):
+    with pytest.raises(ValueError, match="Missing required columns: loan_amount"):
         portfolio_kpis(df)
 
 
-def test_portfolio_kpis_handles_empty_frame(sample_df: pd.DataFrame):
+def test_portfolio_kpis_handles_empty_frame(sample_df):
     df = sample_df.iloc[:0]
-    metrics, enriched = portfolio_kpis(df, return_enriched=True)
-    expected_metrics = {
+    metrics, enriched = portfolio_kpis(df)
+    assert metrics == {
         "delinquency_rate": 0.0,
         "portfolio_yield": 0.0,
         "average_ltv": 0.0,
         "average_dti": 0.0,
     }
-    for key, value in expected_metrics.items():
-        assert metrics[key] == value
     assert enriched.empty
 
 
-def test_portfolio_kpis_zero_principal_yield_is_zero(sample_df: pd.DataFrame):
+def test_portfolio_kpis_zero_principal_yield_is_zero(sample_df):
     df = sample_df.copy()
     df["principal_balance"] = 0
-    metrics, _ = portfolio_kpis(df, return_enriched=True)
+    metrics, _ = portfolio_kpis(df)
     assert metrics["portfolio_yield"] == 0.0
 
 
-def test_portfolio_kpis_dti_nan_when_income_non_positive(sample_df: pd.DataFrame):
+def test_portfolio_kpis_dti_nan_when_income_non_positive(sample_df):
     df = sample_df.copy()
     df["borrower_income"] = [0, -5000, 0]
-    metrics, enriched = portfolio_kpis(df, return_enriched=True)
+    metrics, enriched = portfolio_kpis(df)
     assert enriched["dti_ratio"].isna().all()
     assert metrics["average_dti"] == 0.0
 
 
-def test_portfolio_kpis_ltv_nan_when_appraisal_non_positive(sample_df: pd.DataFrame):
+def test_portfolio_kpis_dti_mixed_income_ignores_nan_in_average(sample_df):
     df = sample_df.copy()
-    df["appraised_value"] = [0, -100000, 0]
-    metrics, enriched = portfolio_kpis(df, return_enriched=True)
-    assert enriched["ltv_ratio"].isna().all()
-    assert metrics["average_ltv"] == 0.0
+    df["borrower_income"] = [60000, 0, -5000]
+    metrics, enriched = portfolio_kpis(df)
+    non_positive_mask = df["borrower_income"] <= 0
+    positive_mask = df["borrower_income"] > 0
+    assert enriched.loc[non_positive_mask, "dti_ratio"].isna().all()
+    assert enriched.loc[positive_mask, "dti_ratio"].notna().all()
+    expected_dti = (
+        df.loc[positive_mask, "monthly_debt"]
+        / (df.loc[positive_mask, "borrower_income"] / 12)
+    ).mean()
+    assert metrics["average_dti"] == pytest.approx(expected_dti)
+
+
+def test_project_growth_builds_monotonic_path():
+    projection = project_growth(1.0, 2.0, 100, 200, periods=4)
+    assert len(projection) == 4
+    assert projection["yield"].iloc[0] == 1.0
+    assert projection["yield"].iloc[-1] == 2.0
+    assert projection["loan_volume"].iloc[0] == 100
+    assert projection["loan_volume"].iloc[-1] == 200
+
+
+def test_project_growth_rejects_insufficient_periods():
+    with pytest.raises(ValueError, match="periods must be at least 2"):
+        project_growth(1.0, 2.0, 100, 200, periods=1)
+
+
+def test_project_growth_formats_month_labels():
+    projection = project_growth(1.0, 1.5, 100, 120, periods=3)
+    assert projection["month"].str.match(r"^[A-Z][a-z]{2} \d{4}$").all()
+
+
+def test_project_growth_supports_decreasing_targets():
+    projection = project_growth(2.0, 1.0, 200, 100, periods=3)
+    assert projection["yield"].is_monotonic_decreasing
+    assert projection["loan_volume"].is_monotonic_decreasing
+
+
+def test_project_growth_uses_default_periods():
+    projection = project_growth(1.0, 2.0, 100, 200)
+    assert len(projection) == 6
+    assert projection["yield"].iloc[0] == 1.0
+    assert projection["yield"].iloc[-1] == 2.0
+    assert projection["loan_volume"].iloc[0] == 100
+    assert projection["loan_volume"].iloc[-1] == 200

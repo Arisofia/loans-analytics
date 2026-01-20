@@ -51,12 +51,17 @@ class HubSpotSyncService {
 
       // Fetch KPI data for each contact
       for (const contact of contacts) {
+        const properties = contact.properties ?? {}
         const contactData: Contact = {
-          email: contact.properties.email?.value || '',
-          firstName: contact.properties.firstname?.value,
-          lastName: contact.properties.lastname?.value,
-          phone: contact.properties.phone?.value,
-          company: contact.properties.company?.value,
+          email: properties.email ?? '',
+          firstName: properties.firstname ?? undefined,
+          lastName: properties.lastname ?? undefined,
+          phone: properties.phone ?? undefined,
+          company: properties.company ?? undefined,
+        }
+        if (!contactData.email) {
+          console.warn(`Skipping contact without email: ${contact.id}`)
+          continue
         }
 
         // Fetch associated KPI metrics
@@ -103,11 +108,12 @@ class HubSpotSyncService {
 
       // Enhance deals with KPI impact analysis
       for (const deal of deals) {
+        const properties = deal.properties ?? {}
         const dealData: Deal = {
-          dealname: deal.properties.dealname?.value || '',
-          dealstage: deal.properties.dealstage?.value || '',
-          amount: deal.properties.amount?.value,
-          closedate: deal.properties.closedate?.value,
+          dealname: properties.dealname ?? '',
+          dealstage: properties.dealstage ?? '',
+          amount: properties.amount ? Number(properties.amount) : undefined,
+          closedate: properties.closedate ?? undefined,
         }
 
         // Analyze KPI impact of deal

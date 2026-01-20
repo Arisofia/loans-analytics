@@ -25,7 +25,6 @@ jobs:
           fi
 
       - name: Checkout code
-        if: steps.check-secrets.outputs.secrets_available == true
         uses: actions/checkout@v4
         with:
           fetch-depth: 0

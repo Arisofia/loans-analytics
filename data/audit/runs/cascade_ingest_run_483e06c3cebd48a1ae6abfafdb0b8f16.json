@@ -1,0 +1,10 @@
+{
+  "run_id": "483e06c3cebd48a1ae6abfafdb0b8f16",
+  "timestamp": "2026-01-12T15:33:15.210333+00:00Z",
+  "export_url": "http://example.com/export",
+  "output_prefix": "/private/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/pytest-of-jenineferderas/pytest-33/test_run_cascade_ingest_happy_0/test_ingest",
+  "csv_path": "/private/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/pytest-of-jenineferderas/pytest-33/test_run_cascade_ingest_happy_0/test_ingest.csv",
+  "parquet_path": "/private/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/pytest-of-jenineferderas/pytest-33/test_run_cascade_ingest_happy_0/test_ingest.parquet",
+  "zip_path": "/private/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/pytest-of-jenineferderas/pytest-33/test_run_cascade_ingest_happy_0/test_ingest.zip",
+  "secrets_hash": "e1466187c844c921b622aff2197444cfdc2c87489f7a6e71cef47b31a1602ced"
+}

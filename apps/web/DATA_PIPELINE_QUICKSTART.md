@@ -1,7 +1,7 @@
 # Data Pipeline Validation — Quick Start
 
-**Status**: Production-ready with optional hardening
-**Last Updated**: 2025-12-14
+- **Status**: Production-ready with optional hardening
+- **Last Updated**: 2025-12-14
 
 ## Overview
 

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
+import numpy as np
 import streamlit as st
 
 # Add repository root to sys.path to ensure correct module resolution
@@ -16,58 +16,16 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from src.theme import ABACO_THEME
-from src.utils.dashboard_utils import (
-    compute_cat_agg,
-    format_kpi_value,
-    kpi_label,
-)
-from src.utils.data_normalization import normalize_dataframe_complete
-from streamlit_app.components.visualizations import apply_theme, styled_df
-from streamlit_app.components.kpi_metrics import render_kpi_snapshot, render_executive_summary
-from streamlit_app.components.charts import render_cashflow_trends, render_growth_analysis, render_category_breakdown
-from streamlit_app.components.sales_risk import render_sales_performance, render_risk_analysis
-from streamlit_app.components.analytics_tabs import render_advanced_intelligence
-
-# st.set_page_config MUST be the first Streamlit command
-st.set_page_config(
-    page_title="ABACO Financial Intelligence Platform",
-    page_icon="💰",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-LOOKER_DIR = ROOT_DIR / "data" / "raw" / "looker_exports"
-EXPORTS_DIR = ROOT_DIR / "exports"
-SUPPORT_DIR = ROOT_DIR / "data" / "support"
-
-
-# Utility functions
-
-@st.cache_data(show_spinner=False, ttl=300)
-def load_looker_exports():
-    candidates = {
-        "loan_data": [
-            LOOKER_DIR / "loan_data.csv",
-            LOOKER_DIR / "Abaco-Loan-Tape_Loan-Data_Table-6.csv",
-            ROOT_DIR / "data" / "abaco" / "loan_data.csv",
-        ],
-        "customer_data": [
-            LOOKER_DIR / "customer_data.csv",
-            LOOKER_DIR / "Abaco-Loan-Tape_Customer-Data_Table-6.csv",
-            ROOT_DIR / "data" / "abaco" / "customer_data.csv",
-        ],
-        "historic_payment_data": [
-            LOOKER_DIR / "historic_payment_data.csv",
-            LOOKER_DIR / "Abaco-Loan-Tape_Historic-Real-Payment_Table-6.csv",
-            ROOT_DIR / "data" / "abaco" / "real_payment.csv",
-        ],
-        "schedule_data": [
-            LOOKER_DIR / "schedules.csv",
-            LOOKER_DIR / "payment_schedule.csv",
-            LOOKER_DIR / "Abaco-Loan-Tape_Payment Schedule_Table-6.csv",
-            ROOT_DIR / "data" / "abaco" / "payment_schedule.csv",
-        ],
+# --- Data Ingestion Simulation ---
+@st.cache_data
+def load_and_prepare_data():
+    # In a real-world scenario, this would load data from a database or data warehouse.
+    data = {
+        'customer_id': range(100),
+        'revenue': np.random.uniform(10000, 150000, 100),
+        'balance': np.random.uniform(1000, 50000, 100),
+        'limit': np.random.uniform(20000, 100000, 100),
+        'dpd': np.random.choice([-1, 0, 15, 45, 75, 100], 100, p=[0.1, 0.6, 0.1, 0.1, 0.05, 0.05]),
     }
     data = {}
     for key, paths in candidates.items():

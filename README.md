@@ -1,6 +1,4 @@
-# AI-MultiAgent-Ecosystem – Abaco Analytics
-
-This repository hosts the Abaco Financial Intelligence Platform, including:
+# ABACO — Loan Analytics Platform
 
 - Raw Abaco CSV loan tapes under data/abaco
 - Synthetic support tables under data/support
@@ -8,7 +6,19 @@ This repository hosts the Abaco Financial Intelligence Platform, including:
 - Python/Streamlit dashboard under dashboard/
 - Observability and tracing with Azure Monitor OpenTelemetry
 
-## Documentation
+## Ingestion Policy
+Ingestion is supported via API and scheduled pipelines with audit controls (run IDs, lineage, and validation logs). Streamlit remains available for manual uploads and QA, but it is not the exclusive ingestion gate.
+
+## Canonical Data Stores
+- **BigQuery** is the analytics source of truth for warehouse tables, KPI views, and reporting.
+- **Postgres (Supabase)** is the operational/dev store for the web app and integrations.
+- **SQL Server** assets are legacy/migration-only and should not be used for new development.
+
+## Stack map
+- **apps/web**: Next.js dashboard for portfolio, risk, and growth views (canonical app router in `apps/web/src/app`, config in `apps/web/next.config.ts`).
+- **apps/analytics**: Python scoring, stress testing, and KPI pipelines.
+- **infra/azure**: Azure infra-as-code and deployment scripts.
+- **data_samples**: Anonymized datasets for repeatable development and testing.
 
 See docs/DATA_DICTIONARY.md for table documentation.
 See docs/KPI_CATALOG.md for KPI definitions and SQL.
@@ -18,46 +28,18 @@ See docs/TRACING.md for observability and tracing setup.
 
 ### Environment Setup
 
-1. Copy `.env.example` to `.env` and configure your environment variables:
+## Essential knowledge base
+- `docs/Analytics-Vision.md`: Vision, Streamlit blueprint, and narrative alignment for KPIs and prompts.
+- `docs/KPI-Operating-Model.md`: Ownership, formulas, dashboard standards, lineage, GitHub guardrails, and audit controls.
+- `docs/Copilot-Team-Workflow.md`: Inviting teams to GitHub Copilot, validation/security workflows, and Azure/GitHub/KPI checklists during the Enterprise trial.
+- `docs/ContosoTeamStats-setup.md`: Setup, secrets, migrations, Docker validation, and Azure deployment for the bundled ContosoTeamStats .NET 6 Web API.
+- `docs/Fitten-Code-AI-Manual.md`: Fitten Code AI installation, GitHub integration, FAQs, and local inference testing.
+- `docs/MCP_CONFIGURATION.md`: Adding MCP servers via Codex CLI or `config.toml`, including Context7, Figma, Chrome DevTools, and running Codex as an MCP server.
+- `docs/Zencoder-Troubleshooting.md`: Remediation checklist for the VS Code Zencoder extension (`zencoder-cli ENOENT`).
 
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Set your Azure Application Insights connection string in `.env`:
-
-   ```
-   APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=...;IngestionEndpoint=..."
-   ```
-
-### Running with Tracing
-
-Tracing is automatically enabled when the `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable is set. See [docs/TRACING.md](docs/TRACING.md) for detailed setup instructions.
-
-## Observability
-
-The workspace includes daily observability workflows that monitor:
-
-- Pipeline health and execution metrics
-- Agent performance and response times
-- Data quality trends and anomalies
-
-See `.github/workflows/opik-observability.yml` for workflow details.
-
-## Required GitHub secrets (CI/CD)
-
-Some workflows require repository secrets to perform deploys and integration tasks. The following is the most important secret for web deployment:
-
-- `AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F`: token used by the Azure Static Web Apps deploy action for `apps/web`.
-
-Set the secret via GitHub UI (Settings → Secrets and variables → Actions) or via `gh`:
-
-```bash
-# Interactive
-gh secret set AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F --repo Abaco-Technol/abaco-loans-analytics
-
-# Non-interactive (from env var SWA_TOKEN)
-echo "$SWA_TOKEN" | gh secret set AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F --repo Abaco-Technol/abaco-loans-analytics
-```
-
-Note: repository secrets are **not** available to workflow runs triggered from forked pull requests; use a branch on the main repo or a manual workflow dispatch to run deploys that require secrets.
+## Repository Policy: All changes to main must be made via Pull Request
+Direct pushes to main are blocked by workflow and branch protection rules. See `.github/workflows/block-direct-push.yml` for enforcement. To contribute:
+1. Create a feature branch.
+2. Open a Pull Request.
+3. Pass all required checks and reviews.
+4. Merge via PR only.

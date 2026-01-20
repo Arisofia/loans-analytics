@@ -5,7 +5,7 @@
 
    ```bash
    git clone <repo>
-   cd nextjs-with-supabase
+   cd abaco-loans-analytics/apps/web
    npm ci
    ```
 
@@ -129,16 +129,14 @@
 
 ### File Organization
 
-```text
-components/
-  ├── ui/              # Reusable UI components
-  ├── forms/           # Form components
-  └── layout/          # Layout components
+- Canonical Next.js entrypoint lives in `apps/web/src/app` with config in `apps/web/next.config.ts`.
 
-lib/
-  ├── utils.ts         # Utility functions
-  ├── database.types.ts # Database types
-  └── constants.ts     # Constants
+```
+src/
+  ├── app/             # App router (canonical)
+  ├── components/      # Reusable UI components
+  ├── lib/             # Utility functions + Supabase client
+  └── types/           # Shared types
 ```
 
 ## Testing

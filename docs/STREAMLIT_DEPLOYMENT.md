@@ -300,7 +300,7 @@ railway logs --service streamlit
 
 ### "ml_feature_snapshots table not found"
 
-- Run data ingestion first via Streamlit UI
+- Run data ingestion via the Streamlit UI or a scheduled/API pipeline
 - Verify `refresh_ml_features()` procedure exists in Supabase
 - Confirm all database migrations have been applied
 - Check Supabase service role has table permissions
@@ -372,13 +372,15 @@ echo $SUPABASE_SERVICE_KEY
 
 The Streamlit dashboard complements the Next.js application:
 
-| Feature                 | Next.js App      | Streamlit Dashboard   |
-| ----------------------- | ---------------- | --------------------- |
-| User authentication     | ✅ (Supabase)    | ❌ (Admin only)       |
-| Risk dashboard          | ✅ (Real-time)   | ✅ (Analytics)        |
-| Data ingestion          | ❌               | ✅ (Cascade Platform) |
-| Portfolio visualization | ✅ (Interactive) | ✅ (Statistical)      |
-| ML predictions          | ✅ (API-based)   | ✅ (Direct)           |
+| Feature                 | Next.js App      | Streamlit Dashboard |
+| ----------------------- | ---------------- | ------------------- |
+| User authentication     | ✅ (Supabase)    | ❌ (Admin only)     |
+| Risk dashboard          | ✅ (Real-time)   | ✅ (Analytics)      |
+| Manual file ingestion   | ❌               | ✅ (Google Drive)   |
+| Portfolio visualization | ✅ (Interactive) | ✅ (Statistical)    |
+| ML predictions          | ✅ (API-based)   | ✅ (Direct)         |
+
+Automated ingestion runs via API/scheduled pipelines alongside Streamlit-based manual validation.
 
 ## Environment Notes
 

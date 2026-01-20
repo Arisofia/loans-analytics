@@ -1,22 +1,74 @@
 import Link from 'next/link'
 
 import styles from './page.module.css'
+import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
+import { logLandingPageDiagnostic } from '../lib/landingPageDiagnostics'
+import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import {
-  metrics,
-  products,
-  controls,
-  steps,
-  type Metric,
-  type Product,
-  type Step,
-} from './dashboardData'
+  EMPTY_LANDING_PAGE_DATA,
+  landingPageDataSchema,
+  type LandingPageData,
+} from '../types/landingPage'
 
 export const metadata = {
   title: 'Abaco Loans Analytics Dashboard',
   description: 'Financial intelligence dashboard highlighting revenue, risk, liquidity, and compliance insights.',
 }
 
-export default function Home() {
+async function getData(): Promise<LandingPageData> {
+  if (!supabase || !isSupabaseConfigured) {
+    logLandingPageDiagnostic({
+      status: 'missing-config',
+      supabaseConfigured: false,
+      payload: EMPTY_LANDING_PAGE_DATA,
+    })
+    console.warn('Supabase environment variables are missing; using fallback landing page data')
+    return fallbackData
+  }
+
+  const { data, error } = await supabase.from('landing_page_data').select('*').single()
+
+  if (error || !data) {
+    logLandingPageDiagnostic({
+      status: error ? 'fetch-error' : 'no-data',
+      supabaseConfigured: true,
+      error: error ?? undefined,
+      payload: fallbackData,
+    })
+    console.error(
+      error
+        ? 'Error fetching landing page data:'
+        : 'Landing page data is missing from Supabase response',
+      error ?? ''
+    )
+    return fallbackData
+  }
+
+  const parsed = landingPageDataSchema.safeParse(data)
+
+  if (!parsed.success) {
+    logLandingPageDiagnostic({
+      status: 'invalid-shape',
+      supabaseConfigured: true,
+      error: parsed.error.flatten(),
+      payload: fallbackData,
+    })
+    console.error('Invalid landing page data shape from Supabase:', parsed.error.flatten())
+    return fallbackData
+  }
+
+  logLandingPageDiagnostic({
+    status: 'ok',
+    supabaseConfigured: true,
+    payload: parsed.data,
+  })
+
+  return parsed.data
+}
+
+export default async function Home() {
+  const { metrics, products, controls, steps } = await getData()
+
   return (
     <main className={styles.page} id="main-content" role="main" tabIndex={-1}>
       <nav className={styles.nav} aria-label="Primary">

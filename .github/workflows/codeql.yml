@@ -1,6 +1,7 @@
-name: CodeQL Analysis
+name: codeql
 
 on:
+  workflow_dispatch:
   push:
     branches: [main, develop]
     paths:
@@ -15,10 +16,13 @@ on:
       - "next.config.js"
       - ".github/workflows/codeql.yml"
   pull_request:
-    branches: [main, develop]
+    branches: ["main"]
   schedule:
-    - cron: "0 0 * * 0"
-  workflow_dispatch:
+    - cron: "0 3 * * 1"
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   actions: read
@@ -40,31 +44,20 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Setup Node.js
-        if: matrix.language == 'javascript'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
-
-      - name: Setup Python
-        if: matrix.language == 'python'
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+      - name: Set up CodeQL
+        uses: github/codeql-action/init@v3.31.5
         with:
           languages: ${{ matrix.language }}
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v4
+        uses: github/codeql-action/autobuild@v3.31.5
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+      - name: Perform CodeQL Analysis (no upload while default setup is active)
+        uses: github/codeql-action/analyze@v3.31.5
         with:
           category: "/language:${{ matrix.language }}"
+          # CodeQL upload is disabled while the default setup is active.
+          # This means analysis results will NOT be uploaded to GitHub Security and will not appear in the Security tab.
+          # Enable upload (set to true or remove this line) when you want results to be visible in GitHub Security,
+          # such as after customizing the CodeQL configuration or moving out of default setup.
+          upload: false

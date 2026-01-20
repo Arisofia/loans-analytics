@@ -21,6 +21,13 @@ const CHANNEL_MAP: Record<string, string> = {
   Sales: '#kpi-sales-alerts',
 }
 
+interface KPI {
+  name: string
+  department: string
+  value: number
+  status: string
+}
+
 class SlackBotService {
   private app: App | null = null
   private kpiWebhookUrl: string | null = null
@@ -69,7 +76,6 @@ class SlackBotService {
     )
 
     // Warning cue messages
-    // Using 'any' for message to prevent strict union type errors in Bolt
     this.app.message(
       /:warn:/i,
       async ({ message, say }: { message: any; say: SayFn }) => {
@@ -151,7 +157,7 @@ class SlackBotService {
             emoji: true,
           },
         },
-        ...topKpis.map((kpi: any) => ({
+        ...topKpis.map((kpi: KPI) => ({
           type: 'section',
           text: {
             type: 'mrkdwn',
@@ -169,7 +175,10 @@ class SlackBotService {
     }
   }
 
-  private async handleAlertMessage(message: any, say: SayFn): Promise<void> {
+  private async handleAlertMessage(
+    message: { text?: string },
+    say: SayFn
+  ): Promise<void> {
     const text = message.text?.trim()
     if (!text) return
     await say({ text: `Alert noted: "${text}". Forwarding to monitoring.` })

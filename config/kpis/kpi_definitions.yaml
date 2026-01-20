@@ -44,4 +44,133 @@ kpis:
       warning: [75, 90]
       critical: [0, 75]
 
-global_data_quality_threshold: 95
+  # GROWTH STACK KPIS
+  growth.origination_volume:
+    name: 'Monthly Origination Volume'
+    description: 'Total principal amount of new loans originated'
+    formula: 'SUM(new_loans.principal_amount WHERE date_approved IN current_month)'
+    unit: 'USD'
+    threshold_warning: null
+    threshold_critical: null
+    refresh_frequency: 'daily'
+    data_source: 'cascade.loan_origination'
+
+  growth.active_clients:
+    name: 'Active Client Count'
+    description: 'Number of clients with outstanding balances or recent activity'
+    formula: 'COUNT(DISTINCT clients WHERE last_activity >= 30_days_ago)'
+    unit: 'count'
+    threshold_warning: null
+    threshold_critical: null
+    refresh_frequency: 'weekly'
+    data_source: 'cascade.client_activity'
+
+  growth.client_retention:
+    name: 'Client Retention Rate'
+    description: 'Percentage of active clients from prior period still active'
+    formula: 'COUNT(active_current_period INTERSECT active_prior_period) / COUNT(active_prior_period)'
+    unit: '%'
+    threshold_warning: 75.0
+    threshold_critical: 50.0
+    refresh_frequency: 'monthly'
+    data_source: 'cascade.client_lifecycle'
+
+  # FINANCE STACK KPIS
+  finance.arr:
+    name: 'Annualized Recurring Revenue'
+    description: 'Expected annual revenue from current outstanding loans'
+    formula: 'SUM(loans.interest_rate * loans.balance * 12)'
+    unit: 'USD'
+    threshold_warning: null
+    threshold_critical: null
+    refresh_frequency: 'daily'
+    data_source: 'cascade.loan_performance'
+
+  finance.write_off_rate:
+    name: 'Write-Off Rate'
+    description: 'Percentage of portfolio written off in period'
+    formula: 'SUM(written_off_balances) / SUM(beginning_balance)'
+    unit: '%'
+    threshold_warning: 2.0
+    threshold_critical: 3.5
+    refresh_frequency: 'monthly'
+    data_source: 'cascade.write_offs'
+
+  # COMPLIANCE STACK KPIS
+  compliance.audit_flags:
+    name: 'Active Audit Flags'
+    description: 'Count of compliance violations requiring attention'
+    formula: "COUNT(audit_events WHERE status = 'open')"
+    unit: 'count'
+    threshold_warning: 5
+    threshold_critical: 10
+    refresh_frequency: 'hourly'
+    data_source: 'compliance.audit_log'
+
+  compliance.data_quality_score:
+    name: 'Data Quality Score'
+    description: 'Percentage of data passing validation checks'
+    formula: 'SUM(validation_passed) / SUM(validation_total)'
+    unit: '%'
+    threshold_warning: 95.0
+    threshold_critical: 90.0
+    refresh_frequency: 'hourly'
+    data_source: 'data.validation_results'
+
+  cascade.loan_tape_balance:
+    name: 'Cascade Loan Tape Balance'
+    description: 'Total outstanding balance captured from the latest Cascade pull'
+    formula: 'SUM(v_loans_overview.balance)'
+    unit: 'USD'
+    threshold_warning: null
+    threshold_critical: null
+    refresh_frequency: 'daily'
+    data_source: 'analytics.v_loans_overview'
+
+  cascade.loan_tape_count:
+    name: 'Cascade Loan Count'
+    description: 'Number of active loans surfaced in the loan tape'
+    formula: 'COUNT(DISTINCT v_loans_overview.loan_id)'
+    unit: 'count'
+    threshold_warning: null
+    threshold_critical: null
+    refresh_frequency: 'daily'
+    data_source: 'analytics.v_loans_overview'
+
+  cascade.roll_rate_30:
+    name: '30-Day Roll Rate'
+    description: 'Percent of loans that rolled 30 days deeper in delinquency over the period'
+    formula: '(SUM(CASE WHEN days_past_due >= 30 THEN 1 ELSE 0 END) - SUM(CASE WHEN days_past_due >= 60 THEN 1 ELSE 0 END)) * 100.0 / NULLIF(COUNT(*), 0)'
+    unit: '%'
+    threshold_warning: 5.0
+    threshold_critical: 8.0
+    refresh_frequency: 'daily'
+    data_source: 'analytics.v_loans_overview'
+
+departmental_kpi_mappings:
+  risk:
+    - risk.par_90
+    - risk.rdr_90
+    - risk.collection_rate
+    - risk.portfolio_health
+    - cascade.loan_tape_balance
+    - cascade.loan_tape_count
+    - cascade.roll_rate_30
+  growth:
+    - growth.origination_volume
+    - growth.active_clients
+    - growth.client_retention
+  finance:
+    - finance.arr
+    - finance.write_off_rate
+  compliance:
+    - compliance.audit_flags
+    - compliance.data_quality_score
+  technology:
+    - compliance.data_quality_score
+  marketing:
+    - growth.origination_volume
+    - growth.active_clients
+  sales:
+    - growth.origination_volume
+    - growth.client_retention

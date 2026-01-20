@@ -2,7 +2,6 @@
 # Service Login Helper Script
 
 echo "🔐 Service Authentication Status"
-echo "================================"
 echo ""
 
 # GitHub

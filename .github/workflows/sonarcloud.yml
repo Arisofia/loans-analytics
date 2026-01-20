@@ -6,16 +6,6 @@ on:
   push:
     branches:
       - main
-      - codex/**
-    paths:
-      - "src/**"
-      - "apps/**"
-      - "dashboard/**"
-      - "requirements*.txt"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "sonar-project.properties"
-      - ".github/workflows/sonarcloud.yml"
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -30,15 +20,10 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_GITHUB }}
     steps:
-      - name: Check secrets availability
-        id: check-secrets
-        run: |
-          if [ -n "$SONAR_TOKEN" ]; then
-            echo "secrets_available=true" >> $GITHUB_OUTPUT
-          else
-            echo "secrets_available=false" >> $GITHUB_OUTPUT
-            echo "::warning::SONAR_TOKEN_GITHUB not configured - skipping scan"
-          fi
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Checkout repository
         if: steps.check-secrets.outputs.secrets_available == true
@@ -52,39 +37,49 @@ jobs:
         with:
           version: 10
       - name: Setup Node
-        if: steps.check-secrets.outputs.secrets_available == true
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
           cache-dependency-path: apps/web/pnpm-lock.yaml
       - name: Set up Python
-        if: steps.check-secrets.outputs.secrets_available == true
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install dependencies
         if: steps.check-secrets.outputs.secrets_available == true
         run: |
-          pnpm -C apps/web install --frozen-lockfile
-          pnpm -C apps/web lint --version >/dev/null
+          cd apps/web
+          npm install
+
       - name: Analytics coverage (pytest)
         if: steps.check-secrets.outputs.secrets_available == true
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install opentelemetry-sdk==1.39.1
-          python -m pip install -r requirements.txt pytest pytest-cov
-          pytest --cov=src --cov-report=xml:coverage-src.xml tests/
-      - name: Web coverage placeholder
-        if: steps.check-secrets.outputs.secrets_available == true
+          python -m pip install -r apps/analytics/requirements.txt pytest pytest-cov
+          cd apps/analytics
+          pytest --cov=. --cov-report=xml:../coverage-python.xml
+
+      - name: Java coverage (Jacoco)
         run: |
-          mkdir -p apps/web/coverage
-          echo "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record" > apps/web/coverage/lcov.info
+          if find . -name "*.gradle" -o -name "*.gradle.kts" | grep -q .; then
+            if [ -x ./gradlew ]; then
+              ./gradlew jacocoTestReport
+            else
+              echo "Gradle build files found but gradlew not present or not executable; skipping Jacoco"
+            fi
+          else
+            echo "Skipping Jacoco: no Gradle build files found in repository"
+          fi
+
+      - name: Generate web coverage (Jest)
+        run: |
+          cd apps/web
+          npm run test -- --coverage --coverageReporters=lcov
+          # The lcov.info file will be generated at coverage/lcov.info
+
       - name: SonarCloud Scan
-        if: steps.check-secrets.outputs.secrets_available == true
-        uses: SonarSource/sonarcloud-github-action@v2.2.0
+        uses: SonarSource/sonarcloud-github-action@e44258b109568baa0df60ed515909fc6c72cba92
         with:
           args: >
             -Dsonar.verbose=true
-            -Dsonar.python.coverage.reportPaths=coverage-src.xml
-            -Dsonar.javascript.lcov.reportPaths=apps/web/coverage/lcov.info
+            -Dsonar.python.coverage.reportPaths=coverage-python.xml
