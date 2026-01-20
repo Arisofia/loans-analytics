@@ -1,13 +1,7 @@
-const path = require('node:path');
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    turbopack: {
-      // Point Turbopack to the workspace containing your Next app
-      root: path.join(__dirname, 'apps', 'web'),
-    },
-  },
+  // Turbopack is disabled by default when 'experimental' is removed
+  reactStrictMode: true,
 };
 
 module.exports = nextConfig;
