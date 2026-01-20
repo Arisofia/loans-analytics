@@ -3,11 +3,11 @@ name: Playwright E2E Tests
 on:
   pull_request:
     paths:
-      - 'apps/web/**'
+      - "apps/web/**"
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'apps/web/**'
+      - "apps/web/**"
 
 jobs:
   e2e:
@@ -19,13 +19,9 @@ jobs:
       - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
-      - name: Install dependencies (apps/web)
-        working-directory: apps/web
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      # Removed invalid step: uses/setup-node with working-directory. Node setup is already done above.
 
       - name: Cache node modules
         uses: actions/cache@v4
@@ -54,27 +50,27 @@ jobs:
       - name: Seed E2E test data
         working-directory: apps/web
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-          E2E_SEED_TABLE: ${{ secrets.E2E_SEED_TABLE }}
-          E2E_SEED_ROWS: ${{ secrets.E2E_SEED_ROWS }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }} # Ensure this secret exists in repo settings
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} # Ensure this secret exists in repo settings
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }} # Ensure this secret exists in repo settings
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }} # Ensure this secret exists in repo settings
+          E2E_SEED_TABLE: ${{ secrets.E2E_SEED_TABLE }} # Ensure this secret exists in repo settings
+          E2E_SEED_ROWS: ${{ secrets.E2E_SEED_ROWS }} # Ensure this secret exists in repo settings
         run: npm run e2e:seed
 
       - name: Run Playwright tests (CI)
         working-directory: apps/web
         env:
-          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }} # Ensure this secret exists in repo settings
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }} # Ensure this secret exists in repo settings
         run: npm run test:e2e:ci
 
       - name: Teardown E2E test data
         if: always()
         working-directory: apps/web
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }} # Ensure this secret exists in repo settings
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} # Ensure this secret exists in repo settings
         run: npm run e2e:teardown
 
       - name: Upload Playwright report

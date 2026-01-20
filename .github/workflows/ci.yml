@@ -42,13 +42,13 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-latest
     outputs:
-      web: ${{ steps.filter.outputs.web || steps.force.outputs.web }}
-      analytics: ${{ steps.filter.outputs.analytics || steps.force.outputs.analytics }}
-      checks: ${{ steps.filter.outputs.checks || steps.force.outputs.checks }}
+      web: ${{ steps.filter.outputs.web }}
+      analytics: ${{ steps.filter.outputs.analytics }}
+      checks: ${{ steps.filter.outputs.checks }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Detect file changes
         id: filter
         uses: dorny/paths-filter@v3
@@ -128,9 +128,9 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: 'gradle'
+          distribution: "temurin"
+          java-version: "21"
+          cache: "gradle"
       - name: SonarQube Scan
         if: ${{ github.event_name != 'pull_request' }}
         uses: SonarSource/sonarcloud-github-action@e44258b109568baa0df60ed515909fc6c72cba92
@@ -220,4 +220,3 @@ jobs:
         with:
           name: analytics-coverage
           path: coverage-src.xml
-
