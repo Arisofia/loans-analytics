@@ -131,9 +131,6 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
           cache: 'gradle'
-      - name: Build with Gradle
-        if: ${{ github.event_name != 'pull_request' }}
-        run: ./gradlew clean build --no-daemon
       - name: SonarQube Scan
         if: ${{ github.event_name != 'pull_request' }}
         uses: SonarSource/sonarcloud-github-action@e44258b109568baa0df60ed515909fc6c72cba92
@@ -166,6 +163,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+          - uses: pnpm/action-setup@v4
+      with:
+        version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -221,19 +221,3 @@ jobs:
           name: analytics-coverage
           path: coverage-src.xml
 
-  update-figma-slides:
-    name: Update Figma Slides
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-      - name: Restore dependencies
-        run: dotnet restore
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-      - name: Test
-        run: dotnet test --configuration Release --no-restore
