@@ -1,22 +1,22 @@
 
-## Quick Start Commands
+# View Visual
 
-### Linting & Type Checking (Web)
+# View Visual
 
 ```bash
-# Run all checks (lint, type-check, format)
+# View Visual
 npm run check-all --prefix apps/web
 
-# Lint only (ESLint)
+# View Visual
 npm run lint --prefix apps/web
 
-# Auto-fix linting issues
+# View Visual
 npm run lint:fix --prefix apps/web
 
-# Type check (TypeScript compiler)
+# View Visual
 npm run type-check --prefix apps/web
 
-# Format check (Prettier)
+# View Visual
 npm run format:check --prefix apps/web
 
 # Auto-format code

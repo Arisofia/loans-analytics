@@ -9,6 +9,7 @@ on:
       - 'apps/web/**'
   pull_request:
 
+  # View Visual
 jobs:
   build:
     runs-on: ubuntu-latest

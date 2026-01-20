@@ -26,7 +26,7 @@ def _missing_columns(df: pd.DataFrame, columns: List[str]) -> List[str]:
 
 def _validate_numeric_column(
     df: pd.DataFrame, column: str, context_label: str
-) -> None:
+) -> pd.Series:
     if column not in df.columns:
         raise ValueError(f"{context_label} missing required numeric column: {column}")
 
@@ -39,7 +39,7 @@ def _validate_numeric_column(
     if not pd.api.types.is_numeric_dtype(coerced):
         raise ValueError(f"{context_label} must be numeric: {column}")
 
-    df[column] = coerced
+    return coerced
 
 
 def _default_percentage_columns(df: pd.DataFrame) -> List[str]:
@@ -103,7 +103,8 @@ def validate_dataframe(
 
     if numeric_columns:
         for col in numeric_columns:
-            _validate_numeric_column(df, col, "Column")
+            coerced = _validate_numeric_column(df, col, "Column")
+            df[col] = coerced
 
 
 def assert_dataframe_schema(
@@ -122,7 +123,8 @@ def assert_dataframe_schema(
             )
     if numeric_columns:
         for col in numeric_columns:
-            _validate_numeric_column(df, col, stage)
+            coerced = _validate_numeric_column(df, col, stage)
+            df[col] = coerced
 
 
 def validate_numeric_bounds(

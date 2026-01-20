@@ -1,3 +1,4 @@
+---
 name: Analytics Pipeline CI/CD
 
 on:
@@ -11,6 +12,7 @@ on:
       - feature/meta-connector
   workflow_dispatch:
 
+jobs:
 env:
   PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
   PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
@@ -18,6 +20,7 @@ env:
   PAGERDUTY_ROUTING_KEY: ${{ secrets.PAGERDUTY_ROUTING_KEY }}
   ABACO_SECRET_TOKEN: ${{ secrets.ABACO_SECRET_TOKEN }}
 
+# View Visual
 jobs:
   build-and-test:
     runs-on: ubuntu-latest

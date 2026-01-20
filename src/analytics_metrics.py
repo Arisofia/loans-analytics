@@ -1,4 +1,4 @@
-"""Analytics utilities for portfolio KPIs and operational projections."""
+"""View Visual"""
 from __future__ import annotations
 
 from typing import Dict, Iterable, Tuple
@@ -12,11 +12,7 @@ CURRENCY_SYMBOLS = r"[₡$€£¥₽%]"
 
 
 def standardize_numeric(series: pd.Series) -> pd.Series:
-    """Normalize a Series that may contain currency symbols or commas.
-
-    Numeric dtypes are passed through untouched; otherwise we coerce string-like
-    inputs to floats while preserving ``NaN`` values for auditability.
-    """
+    """View Visual"""
 
     if pd.api.types.is_numeric_dtype(series):
         return series
@@ -32,7 +28,7 @@ def standardize_numeric(series: pd.Series) -> pd.Series:
 
 
 def calculate_quality_score(df: pd.DataFrame) -> int:
-    """Calculate a 0-100 data quality score based on completeness."""
+    """View Visual"""
 
     if df.empty:
         return 0
@@ -48,7 +44,7 @@ def _assert_required_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
 
 
 def portfolio_kpis(df: pd.DataFrame) -> Tuple[Dict[str, float], pd.DataFrame]:
-    """Compute delinquency, yield, and leverage KPIs for a loan portfolio."""
+    """View Visual"""
 
     required = set(settings.analytics.required_columns)
 

@@ -7,9 +7,11 @@ on:
     branches: [main, develop, fix/ci-workflow-codecov]
   workflow_dispatch:
 
+jobs:
 permissions:
   contents: read
 
+# View Visual
 jobs:
   test:
     runs-on: ubuntu-latest
