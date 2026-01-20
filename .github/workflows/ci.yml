@@ -148,18 +148,6 @@ jobs:
         uses: SonarSource/sonarcloud-github-action@e44258b109568baa0df60ed515909fc6c72cba92
         with:
           projectBaseDir: .
-        env:
-          DATA_FILE: ${{ inputs.DATA_FILE }}
-        run: |
-          if [ -n "$DATA_FILE" ]; then
-            case "$DATA_FILE" in
-              data/*.csv) ARGS="--data $DATA_FILE" ;;
-              *) echo "Invalid DATA_FILE path"; exit 1 ;;
-            esac
-          else
-            ARGS=""
-          fi
-          python scripts/demo_financial_analysis.py $ARGS > demo_output.txt || true
       - name: Generate Report
         if: always()
         continue-on-error: true
