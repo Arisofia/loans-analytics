@@ -1,6 +1,4 @@
-# View Visual
-
-# View Visual
+# Security Policy
 
 All path and environment variable resolution logic is covered by automated tests
 in `tests/test_paths.py`. Any changes to path logic must pass this suite to
@@ -52,8 +50,7 @@ No fix is currently available. We are monitoring for upstream updates and will
 patch as soon as possible. These packages are not used in production-critical
 paths.
 
-# View Visual
-
+## Dependency Management
 - Monitor for updates and apply patches when available.
 - Document and review usage of affected packages.
 - Ensure audit logs and traceability for all pipeline steps.
