@@ -9,43 +9,43 @@ on:
 
 jobs:
 
-        sonarcloud:
-                name: SonarCloud Quality Scan
-                runs-on: ubuntu-latest
-                steps:
-                        # Checkout code
-                        - uses: actions/checkout@v4
-                            with:
-                                    fetch-depth: 0
+    sonarcloud:
+        name: SonarCloud Quality Scan
+        runs-on: ubuntu-latest
+        steps:
+            # Checkout code
+            - uses: actions/checkout@v4
+                with:
+                    fetch-depth: 0
 
-                        # Set up environments
-                        - name: Set up JDK 17
-                            uses: actions/setup-java@v4
-                            with:
-                                    java-version: "17"
-                                    distribution: "temurin"
-                        - name: Install Node.js
-                            uses: actions/setup-node@v4
-                            with:
-                                    node-version: 20
-                        - name: Install Python
-                            uses: actions/setup-python@v5
-                            with:
-                                    python-version: "3.11"
+            # Set up environments
+            - name: Set up JDK 17
+                uses: actions/setup-java@v4
+                with:
+                    java-version: "17"
+                    distribution: "temurin"
+            - name: Install Node.js
+                uses: actions/setup-node@v4
+                with:
+                    node-version: 20
+            - name: Install Python
+                uses: actions/setup-python@v5
+                with:
+                    python-version: "3.11"
 
-                        # Install dependencies
-                        - name: Install Python dependencies
-                            run: pip install -r requirements.txt
-                        - name: Install pnpm
-                            run: npm install -g pnpm
-                        - name: Install Node dependencies
-                            run: pnpm -C apps/web install --no-frozen-lockfile
+            # Install dependencies
+            - name: Install Python dependencies
+                run: pip install -r requirements.txt
+            - name: Install pnpm
+                run: npm install -g pnpm
+            - name: Install Node dependencies
+                run: pnpm -C apps/web install --no-frozen-lockfile
 
-                        # Run SonarCloud scan
-                        - name: SonarCloud Scan
-                            uses: SonarSource/sonarcloud-github-action@v2
-                            with:
-                                    projectBaseDir: .
-                            env:
-                                    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-                                    SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+            # Run SonarCloud scan
+            - name: SonarCloud Scan
+                uses: SonarSource/sonarcloud-github-action@v2
+                with:
+                    projectBaseDir: .
+                env:
+                    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+                    SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
