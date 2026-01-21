@@ -23,17 +23,10 @@ class SecretsManager:
         "GEMINI_API_KEY",
         "PERPLEXITY_API_KEY",
         "XAI_API_KEY",
-        "HUBSPOT_API_KEY",
-        "HUBSPOT_PORTAL_ID",
-        "CASCADE_TOKEN",
-        "SLACK_WEBHOOK_OPS",
-        "SLACK_WEBHOOK_LEADERSHIP",
-        "SLACK_BOT_TOKEN",
         "OPIK_TOKEN",
         "PHOENIX_TOKEN",
         "FIGMA_TOKEN",
         "FIGMA_FILE_KEY",
-        "CASCADE_TOKEN",
     ]
 
     AZURE_KEYS = [
