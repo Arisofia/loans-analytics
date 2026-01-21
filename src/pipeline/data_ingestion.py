@@ -828,7 +828,11 @@ class UnifiedIngestion:
 
             self._log_event("complete", "success", row_count=len(validated_df))
             return IngestionResult(
-                validated_df, self.run_id, metadata, source_hash=checksum, raw_path=archived
+                validated_df,
+                self.run_id,
+                metadata,
+                source_hash=checksum,
+                raw_path=archived,
             )
 
         except Exception as exc:
@@ -921,7 +925,11 @@ class UnifiedIngestion:
 
             self._log_event("looker_complete", "success", row_count=len(validated_df))
             return IngestionResult(
-                validated_df, self.run_id, metadata, source_hash=checksum, raw_path=archived
+                validated_df,
+                self.run_id,
+                metadata,
+                source_hash=checksum,
+                raw_path=archived,
             )
 
         except Exception as exc:
@@ -990,5 +998,9 @@ class UnifiedIngestion:
 
         self._log_event("http_complete", "success", row_count=len(validated_df))
         return IngestionResult(
-            validated_df, self.run_id, metadata, source_hash=checksum, raw_path=None
+            validated_df,
+            self.run_id,
+            metadata,
+            source_hash=checksum,
+            raw_path=None,
         )
