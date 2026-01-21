@@ -23,7 +23,11 @@ def main():
     if not os.path.isdir(RAW_DIR):
         print(f"No raw meta directory found at {RAW_DIR}.")
         return
-    files = [f for f in os.listdir(RAW_DIR) if f.endswith(".json") or f.endswith(".csv")]
+    files = [
+        f
+        for f in os.listdir(RAW_DIR)
+        if f.endswith(".json") or f.endswith(".csv")
+    ]
     if not files:
         print("No raw meta files found.")
         return
@@ -38,7 +42,6 @@ def main():
             df = pd.read_csv(path)
         validate(df, schema)
         dfs.append(df)
-    
     combined_df = pd.concat(dfs, ignore_index=True)
     table = pa.Table.from_pandas(combined_df)
     pq.write_table(table, OUT_FILE)
