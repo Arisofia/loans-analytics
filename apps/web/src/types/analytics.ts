@@ -1,48 +1,86 @@
 export interface Metric {
-  id: string;
-  label: string;
-  value: number;
-  change?: number;
-  trend?: 'up' | 'down' | 'neutral';
+  id: string
+  label: string
+  value: number
+  change?: number
+  trend?: 'up' | 'down' | 'neutral'
 }
 
 export interface AnalyticsData {
-  metrics: Metric[];
-  period: string;
+  metrics: Metric[]
+  period: string
 }
 
 export interface LoanRow {
-  amount?: number;
-  monto?: number;
-  principal?: number;
-  status?: string;
-  estado?: string;
-  rate?: number;
-  tasa?: number;
-  interest_rate?: number;
-  [key: string]: any;
+  amount?: number
+  monto?: number
+  principal?: number
+  status?: string
+  estado?: string
+  rate?: number
+  tasa?: number
+  interest_rate?: number
+  [key: string]: any
 }
 
-export interface ProcessedAnalytics {
-  totalVolume: number;
-  activeLoans: number;
-  defaultRate: number;
-  averageRate: number;
-  portfolioYield?: number;
-  loanCount?: number;
+export interface KPIStats {
+  totalVolume: number
+  activeLoans: number
+  defaultRate: number
+  averageRate: number
+  delinquencyRate?: number
+  portfolioYield?: number
+  loanCount?: number
+  averageLTV?: number
+  averageDTI?: number
 }
 
 export interface RollRateEntry {
-  category: string;
-  value: number;
+  from: string
+  to: string
+  percent: number
 }
 
 export interface TreemapEntry {
-  name: string;
-  value: number;
+  label: string
+  value: number
+  color?: string
 }
 
 export interface GrowthPoint {
-  date: string;
-  value: number;
+  label: string
+  loanVolume: number
+  yield: number
+}
+
+export interface ProcessedAnalytics {
+  totalVolume: number
+  activeLoans: number
+  defaultRate: number
+  averageRate: number
+  delinquencyRate?: number
+  portfolioYield?: number
+  loanCount?: number
+  averageLTV?: number
+  averageDTI?: number
+  loans?: LoanRow[]
+  kpis?: KPIStats
+  treemap?: TreemapEntry[]
+  rollRates?: RollRateEntry[]
+  growthProjection?: GrowthPoint[]
+}
+
+export interface RollRateEntry {
+  category: string
+  value: number
+}
+
+export interface TreemapEntry {
+  name: string
+  value: number
+}
+
+export interface GrowthPoint {
+  date: string
+  value: number
 }

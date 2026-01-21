@@ -31,7 +31,7 @@ const sanitizeMarkdownCell = (value: string): string =>
 const formatPercentage = (value: number, digits = 1): string => `${value.toFixed(digits)}%`
 
 export function processedAnalyticsToCSV(analytics: ProcessedAnalytics): string {
-  const rows: LoanRowWithLtv[] = analytics.loans.map((loan) => ({
+  const rows: LoanRowWithLtv[] = (analytics.loans ?? []).map((loan) => ({
     ...loan,
     ltv: ((loan.loan_amount / Math.max(loan.appraised_value, 1)) * 100).toFixed(1),
   }))
@@ -67,14 +67,17 @@ export function processedAnalyticsToJSON(analytics: ProcessedAnalytics): string 
 }
 
 export function processedAnalyticsToMarkdown(analytics: ProcessedAnalytics): string {
-  const { kpis, treemap, rollRates, growthProjection } = analytics
+  const kpis = analytics.kpis ?? {}
+  const treemap = analytics.treemap ?? []
+  const rollRates = analytics.rollRates ?? []
+  const growthProjection = analytics.growthProjection ?? []
 
   const kpiRows = [
-    { label: 'Delinquency rate', value: formatPercentage(kpis.delinquencyRate) },
-    { label: 'Portfolio yield', value: formatPercentage(kpis.portfolioYield) },
-    { label: 'Average LTV', value: formatPercentage(kpis.averageLTV) },
-    { label: 'Average DTI', value: formatPercentage(kpis.averageDTI) },
-    { label: 'Loan count', value: kpis.loanCount.toLocaleString() },
+    { label: 'Delinquency rate', value: formatPercentage(kpis.delinquencyRate ?? 0) },
+    { label: 'Portfolio yield', value: formatPercentage(kpis.portfolioYield ?? 0) },
+    { label: 'Average LTV', value: formatPercentage(kpis.averageLTV ?? 0) },
+    { label: 'Average DTI', value: formatPercentage(kpis.averageDTI ?? 0) },
+    { label: 'Loan count', value: (kpis.loanCount ?? 0).toLocaleString() },
   ]
     .map((entry) => `| ${entry.label} | ${entry.value} |`)
     .join('\n')
@@ -84,7 +87,7 @@ export function processedAnalyticsToMarkdown(analytics: ProcessedAnalytics): str
       ? treemap
           .map(
             (entry) =>
-              `| ${sanitizeMarkdownCell(entry.label)} | ${entry.value.toLocaleString()} | ${sanitizeMarkdownCell(entry.color)} |`
+              `| ${sanitizeMarkdownCell(entry.label)} | ${entry.value.toLocaleString()} | ${sanitizeMarkdownCell(entry.color ?? '')} |`
           )
           .join('\n')
       : '| No treemap data | - | - |'
@@ -104,7 +107,7 @@ export function processedAnalyticsToMarkdown(analytics: ProcessedAnalytics): str
       ? growthProjection
           .map(
             (entry) =>
-              `| ${sanitizeMarkdownCell(entry.label)} | ${entry.yield.toFixed(1)} | ${entry.loanVolume.toLocaleString()} |`
+              `| ${sanitizeMarkdownCell(entry.label)} | ${entry.yield?.toFixed(1) ?? '0.0'} | ${entry.loanVolume?.toLocaleString?.() ?? '0'} |`
           )
           .join('\n')
       : '| No growth projection data | - | - |'
