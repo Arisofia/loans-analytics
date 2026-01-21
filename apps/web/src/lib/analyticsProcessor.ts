@@ -1,4 +1,3 @@
-
 import {
   LoanRow,
   ProcessedAnalytics,
@@ -9,15 +8,15 @@ import {
 
 const currencyRegex = /[^\d.-]/g
 
-export function toNumber(value: string | number): number {
-  if (typeof value === 'number') {
-    return value
+export function toNumber(value: any): number {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    // Elimina símbolos de moneda y comas, luego convierte
+    const cleanValue = value.replace(/[^0-9.-]+/g, '')
+    const parsed = parseFloat(cleanValue)
+    return isNaN(parsed) ? 0 : parsed
   }
-  // Detectar formato contable negativo (ej: "(1,200.00)") antes de limpiar
-  const isNegative = value.includes('(') && value.includes(')')
-  const cleaned = value.replace(currencyRegex, '')
-  const number = Number(cleaned) || 0
-  return isNegative ? -Math.abs(number) : number
+  return 0
 }
 
 type LoanCsvRecord = Record<string, string>
@@ -74,41 +73,37 @@ export function processLoanRows(rows: LoanRow[]): ProcessedAnalytics {
   }
 }
 
-export function computeKPIs(rows: LoanRow[]) {
-  const totalLoans = rows.length
-  const delinquentStatuses = ['30-59 days past due', '60-89 days past due', '90+ days past due']
-  const delinquentCount = rows.filter((row) => delinquentStatuses.includes(row.loan_status)).length
-  const riskRate = totalLoans ? (delinquentCount / totalLoans) * 100 : 0
+export function computeKPIs(data: any[]) {
+  if (!data || data.length === 0) {
+    return {
+      totalVolume: 0,
+      activeLoans: 0,
+      defaultRate: 0,
+      averageRate: 0,
+    }
+  }
 
-  const totalPrincipal = rows.reduce((sum, row) => sum + row.principal_balance, 0)
-  const weightedInterest = rows.reduce(
-    (sum, row) => sum + row.interest_rate * row.principal_balance,
-    0
-  )
-  const portfolioYield = totalPrincipal ? weightedInterest / totalPrincipal : 0
+  // Lógica Real: Sumar el monto de los préstamos (asumiendo campo 'amount' o 'monto')
+  const totalVolume = data.reduce((sum, loan) => {
+    return sum + toNumber(loan.amount || loan.monto || 0)
+  }, 0)
 
-  const averageLTV = rows.reduce(
-    (sum, row) => sum + row.loan_amount / Math.max(row.appraised_value, 1),
-    0
-  )
-  const { totalDTI, validIncomes } = rows.reduce(
-    (acc, row) => {
-      const income = row.borrower_income / 12
-      if (income > 0) {
-        acc.totalDTI += row.monthly_debt / income
-        acc.validIncomes += 1
-      }
-      return acc
-    },
-    { totalDTI: 0, validIncomes: 0 }
-  )
+  const activeLoans = data.filter(
+    (loan) => loan.status === 'active' || loan.estado === 'activo'
+  ).length
+
+  // Cálculo simple de tasa de default (ejemplo)
+  const defaultedLoans = data.filter(
+    (loan) => loan.status === 'default' || loan.estado === 'mora'
+  ).length
+
+  const defaultRate = activeLoans > 0 ? (defaultedLoans / data.length) * 100 : 0
 
   return {
-    delinquencyRate: Number(riskRate.toFixed(2)),
-    portfolioYield: Number(portfolioYield.toFixed(2)),
-    averageLTV: Number(((averageLTV / Math.max(totalLoans, 1)) * 100).toFixed(1)),
-    averageDTI: Number(((totalDTI / Math.max(validIncomes, 1)) * 100).toFixed(1)),
-    loanCount: totalLoans,
+    totalVolume,
+    activeLoans,
+    defaultRate,
+    averageRate: 0, // Implementar según tus campos de interés
   }
 }
 
@@ -158,5 +153,4 @@ function buildGrowthProjection(baseYield: number, count: number): GrowthPoint[] 
     yield: Number((start + index * 0.15).toFixed(2)),
     loanVolume: loanBase + index * 15,
   }))
-}
 }
