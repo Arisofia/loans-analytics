@@ -17,6 +17,6 @@ This folder contains short, action-oriented runbooks for the most common product
 
 ## Conventions
 
-- “Dashboard” = Azure App Service Streamlit app deployed from `dashboard/`.
+- "Dashboard" = Azure App Service Streamlit app deployed from `streamlit_app/`.
 - “Web app” = Next.js app in `apps/web/` (deployed via SWA workflows).
 - “Pipelines” = GitHub Actions scheduled/dispatch workflows that run Python/Node ingestion jobs.

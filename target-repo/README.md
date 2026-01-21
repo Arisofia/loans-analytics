@@ -5,7 +5,7 @@ This repository hosts the Abaco Financial Intelligence Platform, including:
 - Raw Abaco CSV loan tapes under data/abaco
 - Synthetic support tables under data/support
 - SQL definitions for core views and KPIs under sql/
-- Python/Streamlit dashboard under dashboard/
+- Python/Streamlit dashboard under streamlit_app/
 - Observability and tracing with Azure Monitor OpenTelemetry
 
 ## Documentation
