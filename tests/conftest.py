@@ -5,8 +5,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 import pytest
-from tests.db_manager import DBManager
-
+from cn
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON_DIR = ROOT / "python"
 if str(PYTHON_DIR) not in sys.path:
@@ -21,86 +20,12 @@ os.chdir(ROOT)
 def analytics_test_env(tmp_path_factory):
     """Analytics test environment with mocked integrations."""
     output_dir = tmp_path_factory.mktemp("output")
-    
     dataset_path = ROOT / "tests" / "data" / "archives" / "sample_small.csv"
-    
-    import json
-    import os
-    import sys
-    from pathlib import Path
-    from typing import Any, Dict
-
-    import pytest
-
-    ROOT = Path(__file__).resolve().parents[1]
-    PYTHON_DIR = ROOT / "python"
-    if str(PYTHON_DIR) not in sys.path:
-        sys.path.insert(0, str(PYTHON_DIR))
-    if str(ROOT) not in sys.path:
-        sys.path.insert(0, str(ROOT))
-
-    os.chdir(ROOT)
-
-
-    # === Database fixtures for backend tests ===
-
-    @pytest.fixture(scope="session")
-    def analytics_test_env(tmp_path_factory):
-        """Analytics test environment with mocked integrations."""
-        output_dir = tmp_path_factory.mktemp("output")
-
-        dataset_path = ROOT / "tests" / "data" / "archives" / "sample_small.csv"
-
-        return {
-            "output_dir": output_dir,
-            "dataset_path": dataset_path,
-        }
-            str(output_dir),
-        ],
-        check=True,
-        capture_output=True,
-    )
-    return output_dir
-
-
-@pytest.fixture
-def analytics_baseline_kpis():
-    """Load baseline KPI values for comparison."""
+        "output_dir": output_dir,
+    ""Load baseline KPI values for comparison."""
     baseline_path = ROOT / "tests" / "fixtures" / "baseline_kpis.json"
     if not baseline_path.exists():
-        return {}
-    with open(baseline_path, encoding="utf-8") as f:
-        return json.load(f)
-
-
-@pytest.fixture
-def kpi_schema():
-    """Load KPI results JSON schema."""
-    schema_path = ROOT / "tests" / "fixtures" / "schemas" / "kpi_results_schema.json"
-    if not schema_path.exists():
-        return {}
-    with open(schema_path, encoding="utf-8") as f:
-        return json.load(f)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def ensure_sample_csv():
-    """Create sample CSV file for tests if it doesn't exist."""
-    csv_path = Path(ROOT) / "data_samples" / "abaco_portfolio_sample.csv"
-
-    if not csv_path.exists():
-        csv_path.parent.mkdir(parents=True, exist_ok=True)
-
-        csv_content = """segment,measurement_date,dpd_90_plus_usd,total_receivable_usd,total_eligible_usd,cash_available_usd,par_90,collection_rate,delinquency_flag\nConsumer,2025-01-31,32500,1000000,1000000,972000,3.25,97.2,1\nConsumer,2025-02-28,32500,1000000,1000000,972000,3.25,97.2,1\nSME,2025-01-31,32500,1000000,1000000,972000,3.25,97.2,1\nSME,2025-02-28,32500,1000000,1000000,972000,3.25,97.2,1\n"""
-        csv_path.write_text(csv_content)
-
-
-@pytest.fixture
-def minimal_config() -> Dict[str, Any]:
-    """Minimal pipeline config for testing."""
-    return {
-        "pipeline": {
-            "phases": {
+      {
                 "ingestion": {
                     "validation": {
                         "strict": False,
