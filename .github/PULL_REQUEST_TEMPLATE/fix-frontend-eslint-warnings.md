@@ -22,9 +22,7 @@ No functional changes are introduced—this is a code quality and maintainabilit
 - Validate that no logic or behavior has changed
 
 ## Assignees
-- Gemini IA
-- Coderabbit
-- Sourcery
+<!-- Assign to relevant team members who should review this PR -->
 
 ---
 

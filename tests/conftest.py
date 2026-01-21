@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Any, Dict
 
 import pytest
-from cn
+from src.utils.db_manager import DBManager
+
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON_DIR = ROOT / "python"
 if str(PYTHON_DIR) not in sys.path:
@@ -21,11 +22,18 @@ def analytics_test_env(tmp_path_factory):
     """Analytics test environment with mocked integrations."""
     output_dir = tmp_path_factory.mktemp("output")
     dataset_path = ROOT / "tests" / "data" / "archives" / "sample_small.csv"
-        "output_dir": output_dir,
-    ""Load baseline KPI values for comparison."""
     baseline_path = ROOT / "tests" / "fixtures" / "baseline_kpis.json"
-    if not baseline_path.exists():
-      {
+    return {
+        "output_dir": output_dir,
+        "dataset_path": dataset_path,
+        "baseline_path": baseline_path,
+    }
+
+@pytest.fixture
+def minimal_config():
+    return {
+        "pipeline": {
+            "phases": {
                 "ingestion": {
                     "validation": {
                         "strict": False,
@@ -65,6 +73,8 @@ def analytics_test_env(tmp_path_factory):
                         "enabled": False,
                     },
                 },
+                "calculation": {},
+                "outputs": {},
             },
         },
         "http": {
