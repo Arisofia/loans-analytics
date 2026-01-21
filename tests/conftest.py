@@ -16,6 +16,7 @@ if str(ROOT) not in sys.path:
 
 os.chdir(ROOT)
 
+    
 @pytest.fixture(scope="session")
 def analytics_test_env(tmp_path_factory):
     """Analytics test environment with mocked integrations."""
@@ -65,7 +66,7 @@ def analytics_baseline_kpis():
     baseline_path = ROOT / "tests" / "fixtures" / "baseline_kpis.json"
     if not baseline_path.exists():
         return {}
-    with open(baseline_path) as f:
+    with open(baseline_path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -75,7 +76,7 @@ def kpi_schema():
     schema_path = ROOT / "tests" / "fixtures" / "schemas" / "kpi_results_schema.json"
     if not schema_path.exists():
         return {}
-    with open(schema_path) as f:
+    with open(schema_path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -138,25 +139,36 @@ def minimal_config() -> Dict[str, Any]:
                 },
             },
         },
-        "cascade": {
-            "http": {
-                "retry": {
-                    "max_retries": 1,
-                    "backoff_seconds": 0.1,
-                },
-                "rate_limit": {
-                    "max_requests_per_minute": 60,
-                },
-                "circuit_breaker": {
-                    "failure_threshold": 3,
-                    "reset_seconds": 60,
-                },
+        "http": {
+            "retry": {
+                "max_retries": 1,
+                "backoff_seconds": 0.1,
+            },
+            "rate_limit": {
+                "max_requests_per_minute": 60,
+            },
+            "circuit_breaker": {
+                "failure_threshold": 3,
+                "reset_seconds": 60,
             },
         },
     }
 
 def pytest_configure(config):
+    """
+    Configure Pytest to add custom markers.
+
+    The 'db' marker is used to indicate that a test requires a database.
+    """
+    # Add custom marker for database tests
     config.addinivalue_line("markers", "db: requires database")
+
+    # Add docstring for the custom marker
+    config.addinivalue_line("markers",
+        "db: Mark test as requiring a database.\n"
+        "      This marker is used to indicate that a test requires a database.\n"
+        "      The test will be skipped if the DATABASE_URL environment variable is not set."
+    )
 
 # === Database fixtures for backend tests ===
 @pytest.fixture(scope="session")
