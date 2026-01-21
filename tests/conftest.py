@@ -16,7 +16,6 @@ if str(ROOT) not in sys.path:
 
 os.chdir(ROOT)
 
-    
 @pytest.fixture(scope="session")
 def analytics_test_env(tmp_path_factory):
     """Analytics test environment with mocked integrations."""
