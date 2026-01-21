@@ -34,7 +34,7 @@ Our repository uses multiple complementary tools for code quality analysis:
 |------|----------|---------|--------------|
 | **ESLint** | TypeScript/JavaScript | Linting, code style, best practices | Pre-commit, CI, Local |
 | **Pylint** | Python | Linting, code style, complexity | Pre-commit, CI, Local |
-| **SonarQube** | All | Security, bugs, code smells, tech debt | CI (main branch) |
+| **SonarQube** | All | Security, bugs, code smells, tech debt | CI (main branch, see `.github/workflows/sonarqube.yml`) |
 | **Code Climate** | All | Maintainability, complexity, duplication | On-demand, CI |
 | **Black** | Python | Code formatting | Pre-commit, CI |
 | **isort** | Python | Import sorting | Pre-commit, CI |

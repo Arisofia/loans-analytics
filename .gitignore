@@ -1,29 +1,10 @@
-# Dependencies
-node_modules/
 .venv/
-venv/
+node_modules/
 __pycache__/
-
-# Next.js
-.next/
-out/
-build/
-dist/
-
-# Environment
+*.pyc
 .env
-.env.local
 .DS_Store
-
-# Testing
-.pytest_cache/
-coverage/
-playwright-report/
-test-results/
-
-# Additional exclusions
-*.log
-*.logs
-figma-financial-dashboard/node_modules/
-.idea/
-.vscode/settings.json
+config/*.yaml
+dist/
+build/
+*.egg-info/

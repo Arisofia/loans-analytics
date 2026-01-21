@@ -15,14 +15,17 @@
 - Observability and tracing with Azure Monitor OpenTelemetry
 
 ## Ingestion Policy
+
 Ingestion is supported via API and scheduled pipelines with audit controls (run IDs, lineage, and validation logs). Streamlit remains available for manual uploads and QA, but it is not the exclusive ingestion gate.
 
 ## Canonical Data Stores
+
 - **BigQuery** is the analytics source of truth for warehouse tables, KPI views, and reporting.
 - **Postgres (Supabase)** is the operational/dev store for the web app and integrations.
 - **SQL Server** assets are legacy/migration-only and should not be used for new development.
 
 ## Stack map
+
 - **apps/web**: Next.js dashboard for portfolio, risk, and growth views (canonical app router in `apps/web/src/app`, config in `apps/web/next.config.ts`).
 - **apps/analytics**: Python scoring, stress testing, and KPI pipelines.
 - **infra/azure**: Azure infra-as-code and deployment scripts.
@@ -37,6 +40,7 @@ See docs/TRACING.md for observability and tracing setup.
 ### Environment Setup
 
 ## Essential knowledge base
+
 - `docs/Analytics-Vision.md`: Vision, Streamlit blueprint, and narrative alignment for KPIs and prompts.
 - `docs/KPI-Operating-Model.md`: Ownership, formulas, dashboard standards, lineage, GitHub guardrails, and audit controls.
 - `docs/Copilot-Team-Workflow.md`: Inviting teams to GitHub Copilot, validation/security workflows, and Azure/GitHub/KPI checklists during the Enterprise trial.
@@ -46,7 +50,9 @@ See docs/TRACING.md for observability and tracing setup.
 - `docs/Zencoder-Troubleshooting.md`: Remediation checklist for the VS Code Zencoder extension (`zencoder-cli ENOENT`).
 
 ## Repository Policy: All changes to main must be made via Pull Request
+
 Direct pushes to main are blocked by workflow and branch protection rules. See `.github/workflows/block-direct-push.yml` for enforcement. To contribute:
+
 1. Create a feature branch.
 2. Open a Pull Request.
 3. Pass all required checks and reviews.
@@ -72,7 +78,7 @@ make test              # Run Python tests
 
 - **ESLint**: TypeScript/JavaScript linting (apps/web)
 - **Pylint**: Python linting and code analysis
-- **SonarQube**: Comprehensive code quality analysis (CI only)
+- **SonarQube**: Comprehensive code quality analysis (CI only, see `.github/workflows/sonarqube.yml`)
 - **Code Climate**: Maintainability and complexity analysis
 - **Pre-commit hooks**: Automated checks before commits
 - **Black & isort**: Python code formatting
@@ -90,19 +96,27 @@ make test              # Run Python tests
 ### Getting Started
 
 1. Install pre-commit hooks:
+
    ```bash
    pip install pre-commit
    pre-commit install
    ```
 
 2. Run quality checks before committing:
+
    ```bash
    make quality
    ```
 
 3. View detailed guide:
+
    ```bash
    cat docs/CODE_QUALITY_GUIDE.md
    ```
 
 For detailed usage instructions, troubleshooting, and best practices, see `docs/CODE_QUALITY_GUIDE.md`.
+
+### CI Workflows
+
+- Main CI: `.github/workflows/ci.yml`
+- SonarQube: `.github/workflows/sonarqube.yml` (static analysis, security, code smells)

@@ -1,203 +1,78 @@
 #!/bin/bash
-set -e # Exit immediately if a command exits with a non-zero status
+set -e
+echo "🚀 INICIANDO PROTOCOLO DE RECUPERACIÓN PARA PRODUCCIÓN..."
 
-echo "🚀 Starting Zero-Drama Fix for Abaco Loans Analytics..."
+# Paso 1. Desversionar artefactos y borrar backups
+git rm -r --cached .venv node_modules dist build .pytest_cache 2>/dev/null || true
+find . -type f \( -name "*.orig" -o -name "*.rej" -o -name "*~" -o -name "mypy_report.xml" \) -delete
 
-# --- 1. Deep Clean: Remove Artifacts from Git & Disk ---
-echo "🧹 Cleaning up repository contamination..."
-
-git rm -r --cached .venv node_modules .pytest_cache dist build apps/web/node_modules apps/web/.next 2>/dev/null || true
-rm -rf .venv node_modules .pytest_cache dist build apps/web/node_modules apps/web/.next
-
-# --- 2. Update .gitignore ---
-echo "🛡️  Hardening .gitignore..."
-cat > .gitignore << 'EOF'
-# Dependencies
-node_modules/
+# Paso 2. Nueva .gitignore profesional
+cat <<EOT > .gitignore
 .venv/
-venv/
+node_modules/
 __pycache__/
-
-# Next.js
-.next/
-out/
-build/
-dist/
-
-# Environment
+*.pyc
 .env
-.env.local
 .DS_Store
+config/*.yaml
+dist/
+build/
+*.egg-info/
+EOT
 
-# Testing
-.pytest_cache/
-coverage/
-playwright-report/
-test-results/
-EOF
+# Paso 3. Arreglar crítico Python (chat_gemini.py)
+cat <<EOF > chat_gemini.py
+import logging
 
-# --- 3. Repair Broken Python Files (Merge Conflicts & Syntax) ---
-echo "🐍 Repairing Python logic..."
+logger = logging.getLogger(__name__)
 
-cat > chat_gemini.py << 'EOF'
-import os
-import google.generativeai as genai
-
-def configure_genai():
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable not set")
-    genai.configure(api_key=api_key)
-
-def get_chat_response(prompt):
+def process_chat_response(response):
+    """Procesa la respuesta de la API de Gemini de forma segura."""
     try:
-        model = genai.GenerativeModel('gemini-pro')
-        response = model.generate_content(prompt)
-        return response.text
+        if not response:
+            raise ValueError("Empty response received")
+        return response.get('choices', {}).get('message', '')
+    except KeyError as e:
+        logger.error(f"Formato de respuesta inválido: {e}")
+        return None
     except Exception as e:
-        return f"Error generating response: {str(e)}"
+        logger.critical(f"Error inesperado en integración Gemini: {e}")
+        raise e
 EOF
 
+# Paso 4. Motor de elegibilidad ABACO
 mkdir -p src/domain
-cat > src/domain/abaco.py << 'EOF'
-from dataclasses import dataclass
-from typing import List, Optional
-from datetime import datetime
+cat <<EOF > src/domain/abaco.py
+from enum import Enum
+from pydantic import BaseModel, Field
 
-@dataclass
-class Loan:
-    id: str
-    amount: float
-    interest_rate: float
-    status: str
-    created_at: datetime
+class AbacoEligibilityEvaluator:
+    """
+    Implementación oficial de reglas de colateral del BCE
+    """
+    PD_THRESHOLD_TIER_1 = 0.004
+    PD_THRESHOLD_TIER_2 = 0.010
+    MIN_AMOUNT_EUR = 500_000.00
 
-@dataclass
-class Portfolio:
-    loans: List[Loan]
-
-    @property
-    def total_value(self) -> float:
-        return sum(loan.amount for loan in self.loans if loan.status == 'active')
-
-    @property
-    def average_rate(self) -> float:
-        if not self.loans:
-            return 0.0
-        return sum(loan.interest_rate for loan in self.loans) / len(self.loans)
+    @classmethod
+    def evaluate(cls, pd: float, amount: float, currency: str) -> tuple[bool, str]:
+        if currency != "EUR":
+            return False, "INVALID_CURRENCY"
+        if amount < cls.MIN_AMOUNT_EUR:
+            return False, "BELOW_MIN_AMOUNT"
+        if pd <= cls.PD_THRESHOLD_TIER_1:
+            return True, "ELIGIBLE_TIER_1"
+        elif pd <= cls.PD_THRESHOLD_TIER_2:
+            return True, "ELIGIBLE_TIER_2"
+        return False, f"PD_HIGH_{pd}"
 EOF
 
-# --- 4. Repair TypeScript/Web Files ---
-echo "⚛️  Repairing Web/TypeScript logic..."
-
-cat > apps/web/src/lib/analyticsProcessor.ts << 'EOF'
-import { type Metric } from '@/types/analytics';
-
-export function toNumber(value: any): number {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
-    // Robust parsing: remove currency symbols, handle commas
-    const cleanValue = value.replace(/[^0-9.-]+/g, "");
-    const parsed = parseFloat(cleanValue);
-    return isNaN(parsed) ? 0 : parsed;
-  }
-  return 0;
-}
-
-export function computeKPIs(data: any[]) {
-  if (!data || data.length === 0) {
-    return {
-      totalVolume: 0,
-      activeLoans: 0,
-      defaultRate: 0,
-      averageRate: 0
-    };
-  }
-
-  const totalVolume = data.reduce((sum, loan) => {
-    return sum + toNumber(loan.amount || loan.monto || 0);
-  }, 0);
-
-  const activeLoans = data.filter(loan => {
-    const s = (loan.status || loan.estado || '').toLowerCase();
-    return s === 'active' || s === 'activo' || s === 'current';
-  }).length;
-
-  const defaultedLoans = data.filter(loan => {
-    const s = (loan.status || loan.estado || '').toLowerCase();
-    return s === 'default' || s === 'mora' || s === 'charged_off';
-  }).length;
-  
-  const defaultRate = data.length > 0 ? (defaultedLoans / data.length) * 100 : 0;
-
-  const totalRate = data.reduce((sum, loan) => {
-    return sum + toNumber(loan.rate || loan.tasa || loan.interest_rate || 0);
-  }, 0);
-  
-  const averageRate = data.length > 0 ? totalRate / data.length : 0;
-
-  return { totalVolume, activeLoans, defaultRate, averageRate };
-}
-EOF
-
-# --- 5. Standardize CI/CD Workflows ---
-echo "⚙️  Standardizing GitHub Actions..."
-
-cat > .github/workflows/ci.yml << 'EOF'
-name: CI
-on: [push, pull_request]
-
-jobs:
-  quality:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-      
-      - name: Install Python Deps
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt || echo "No requirements.txt found"
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install Node Deps
-        run: pnpm -C apps/web install --no-frozen-lockfile
-
-      - name: Lint & Build Web
-        run: |
-          pnpm -C apps/web lint
-          pnpm -C apps/web build
-EOF
-
-# --- 6. Reinstall Dependencies ---
-echo "📦 Reinstalling dependencies..."
-if [ -f "requirements.txt" ]; then
-    pip install -r requirements.txt
+# Paso 5. Normalizar YAML (GitHub Actions)
+if [ "$(uname)" = "Darwin" ]; then
+  sed -i '' 's/: on$/: true/g; s/: off$/: false/g; s/: yes$/: true/g; s/: no$/: false/g' .github/workflows/*.yml 2>/dev/null || true
+else
+  sed -i 's/: on$/: true/g; s/: off$/: false/g; s/: yes$/: true/g; s/: no$/: false/g' .github/workflows/*.yml 2>/dev/null || true
 fi
 
-if ! command -v pnpm &> /dev/null; then
-    npm install -g pnpm
-fi
-pnpm -C apps/web install
-
-# --- 7. Commit Changes ---
-echo "💾 Committing changes..."
-git add .
-git commit -m "fix: repository audited and cleaned for production" || echo "Nothing to commit"
-
-echo "✅ Zero-Drama Fix Complete! You can now push to main."
+echo "🎉 REPARACIÓN COMPLETADA."
+echo "👉 Ejecuta ahora: git add . && git commit -m 'chore: engineering excellence audit remediation'"
