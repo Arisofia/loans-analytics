@@ -8,7 +8,7 @@ import {
 
 const currencyRegex = /[^\d.-]/g
 
-function toNumber(value: string | number): number {
+export function toNumber(value: string | number): number {
   if (typeof value === 'number') {
     return value
   }
@@ -74,11 +74,11 @@ export function processLoanRows(rows: LoanRow[]): ProcessedAnalytics {
   }
 }
 
-function computeKPIs(rows: LoanRow[]) {
+export function computeKPIs(rows: LoanRow[]) {
   const totalLoans = rows.length
   const delinquentStatuses = ['30-59 days past due', '60-89 days past due', '90+ days past due']
   const delinquentCount = rows.filter((row) => delinquentStatuses.includes(row.loan_status)).length
-  const riskRate = totalLoans ? (delinquentCount / totalLoans) * 100 : 0
+export   const riskRate = totalLoans ? (delinquentCount / totalLoans) * 100 : 0
 
   const totalPrincipal = rows.reduce((sum, row) => sum + row.principal_balance, 0)
   const weightedInterest = rows.reduce(
