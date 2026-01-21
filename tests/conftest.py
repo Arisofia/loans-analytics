@@ -16,51 +16,17 @@ if str(ROOT) not in sys.path:
 
 os.chdir(ROOT)
 
-    
+
 @pytest.fixture(scope="session")
 def analytics_test_env(tmp_path_factory):
     """Analytics test environment with mocked integrations."""
     output_dir = tmp_path_factory.mktemp("output")
-    
     dataset_path = ROOT / "tests" / "data" / "archives" / "sample_small.csv"
     
-    import json
-    import os
-    import sys
-    from pathlib import Path
-    from typing import Any, Dict
-
-    import pytest
-
-    ROOT = Path(__file__).resolve().parents[1]
-    PYTHON_DIR = ROOT / "python"
-    if str(PYTHON_DIR) not in sys.path:
-        sys.path.insert(0, str(PYTHON_DIR))
-    if str(ROOT) not in sys.path:
-        sys.path.insert(0, str(ROOT))
-
-    os.chdir(ROOT)
-
-
-    # === Database fixtures for backend tests ===
-
-    @pytest.fixture(scope="session")
-    def analytics_test_env(tmp_path_factory):
-        """Analytics test environment with mocked integrations."""
-        output_dir = tmp_path_factory.mktemp("output")
-
-        dataset_path = ROOT / "tests" / "data" / "archives" / "sample_small.csv"
-
-        return {
-            "output_dir": output_dir,
-            "dataset_path": dataset_path,
-        }
-            str(output_dir),
-        ],
-        check=True,
-        capture_output=True,
-    )
-    return output_dir
+    return {
+        "output_dir": output_dir,
+        "dataset_path": dataset_path,
+    }
 
 
 @pytest.fixture
