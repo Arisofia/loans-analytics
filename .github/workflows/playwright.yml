@@ -28,7 +28,7 @@ jobs:
         working-directory: apps/web
 
       - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
+        run: npx playwright install --with-deps
         working-directory: apps/web
 
       - name: Start dev server
