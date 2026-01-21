@@ -157,7 +157,7 @@ export function BulkTokenInput({ open, onClose, onProcessItem }: BulkTokenInputP
             {items.map((item, index) => (
               <div key={`${item.platform}-${index}`} className={styles.progressItem}>
                 <div>
-                  <strong>{PLATFORM_LABELS[item.platform]}</strong> —{' '}
+                  <strong>{PLATFORM_LABELS[item.platform as Platform] ?? item.platform}</strong> —{' '}
                   {item.accountId || 'No account ID'}
                 </div>
                 <div>{item.message || 'Waiting to process'}</div>
