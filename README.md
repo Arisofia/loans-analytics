@@ -43,3 +43,58 @@ Direct pushes to main are blocked by workflow and branch protection rules. See `
 2. Open a Pull Request.
 3. Pass all required checks and reviews.
 4. Merge via PR only.
+
+## Code Quality
+
+This repository uses multiple code quality tools to maintain high standards:
+
+### Quick Commands
+
+```bash
+# Run all code quality checks
+make quality
+
+# Run specific tools
+make lint              # Pylint, Black, isort
+npm run lint --prefix apps/web  # ESLint for TypeScript
+make test              # Run Python tests
+```
+
+### Tools Configured
+
+- **ESLint**: TypeScript/JavaScript linting (apps/web)
+- **Pylint**: Python linting and code analysis
+- **SonarQube**: Comprehensive code quality analysis (CI only)
+- **Code Climate**: Maintainability and complexity analysis
+- **Pre-commit hooks**: Automated checks before commits
+- **Black & isort**: Python code formatting
+
+### Documentation
+
+- **Comprehensive Guide**: `docs/CODE_QUALITY_GUIDE.md` - Complete documentation for all tools
+- **Engineering Standards**: `docs/ENGINEERING_STANDARDS.md` - Coding standards and best practices
+- **Configuration Files**:
+  - `.codeclimate.yml` - Code Climate configuration
+  - `.pylintrc` - Pylint settings
+  - `apps/web/eslint.config.mjs` - ESLint configuration
+  - `sonar-project.properties` - SonarQube settings
+
+### Getting Started
+
+1. Install pre-commit hooks:
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+2. Run quality checks before committing:
+   ```bash
+   make quality
+   ```
+
+3. View detailed guide:
+   ```bash
+   cat docs/CODE_QUALITY_GUIDE.md
+   ```
+
+For detailed usage instructions, troubleshooting, and best practices, see `docs/CODE_QUALITY_GUIDE.md`.
