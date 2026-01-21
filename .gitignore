@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+figma-financial-dashboard/node_modules/
 **/node_modules/
 .venv/
 venv/
@@ -43,5 +44,4 @@ yarn-error.log*
 .vscode/settings.json
 
 # Additional exclusions
-figma-financial-dashboard/node_modules/
 mypy_report.xml

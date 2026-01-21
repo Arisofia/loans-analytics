@@ -3,7 +3,7 @@
 - Raw Abaco CSV loan tapes under data/abaco
 - Synthetic support tables under data/support
 - SQL definitions for core views and KPIs under sql/
-- Python/Streamlit dashboard under  streamlit_app/
+- Python/Streamlit dashboard under streamlit_app/
 - Observability and tracing with Azure Monitor OpenTelemetry
 
 # ABACO — Loan Analytics Platform
@@ -29,7 +29,7 @@ Ingestion is supported via API and scheduled pipelines with audit controls (run 
 - **apps/web**: Next.js dashboard for portfolio, risk, and growth views (canonical app router in `apps/web/src/app`, config in `apps/web/next.config.ts`).
 - **apps/analytics**: Python scoring, stress testing, and KPI pipelines.
 - **infra/azure**: Azure infra-as-code and deployment scripts.
-- **data/**: Anonymized datasets for repeatable development and testing.
+- **data/**: Anonymized datasets for repeatable development and testing (subdirs abaco/ and support/).
 
 See docs/DATA_DICTIONARY.md for table documentation.
 See docs/KPI_CATALOG.md for KPI definitions and SQL.
