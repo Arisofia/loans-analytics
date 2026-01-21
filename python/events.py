@@ -42,4 +42,7 @@ def log_event(event: BaseEvent):
     In production, this would write to a database or event stream (Kafka/Redis).
     """
     # For now, we log to stdout/logger
-    print(f"[AUDIT_TRAIL] {event.timestamp.isoformat()} | {event.event_type} | {event.model_dump_json()}")
+    print(
+        f"[AUDIT_TRAIL] {event.timestamp.isoformat()} | "
+        f"{event.event_type} | {event.model_dump_json()}"
+    )

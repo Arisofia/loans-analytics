@@ -1,8 +1,9 @@
 from pathlib import Path
 import logging
 
-# Avoid importing FastAPI at module import time so tests don't require fastapi installed.
-# Use a lazy import and a lightweight HTTPException fallback for environments without FastAPI.
+# Avoid importing FastAPI at module import time so tests don't require
+# fastapi installed. Use a lazy import and a lightweight HTTPException
+# fallback for environments without FastAPI.
 try:
     from fastapi import FastAPI, HTTPException  # type: ignore
     app = FastAPI()

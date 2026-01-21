@@ -6,11 +6,12 @@ Meta Agent Analysis Script
 - Natural language summary
 - Export for dashboard/agent use
 """
-import pandas as pd
-import numpy as np
-from datetime import datetime
-import matplotlib.pyplot as plt
 import os
+from datetime import datetime
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 # Load Meta insights data (adjust path as needed)
 INSIGHTS_PATH = "data/warehouse/meta_insights.parquet"
@@ -58,7 +59,9 @@ campaigns.to_csv(EXPORT_DIR + "campaigns_overview.csv")
 
 # 3. Trend detection (spend, impressions, clicks)
 df['date_start'] = pd.to_datetime(df['date_start'])
-daily = df.groupby('date_start').agg({'spend': 'sum', 'impressions': 'sum', 'clicks': 'sum'})
+daily = df.groupby('date_start').agg(
+    {'spend': 'sum', 'impressions': 'sum', 'clicks': 'sum'}
+)
 daily['spend_ma7'] = daily['spend'].rolling(7).mean()
 daily['impressions_ma7'] = daily['impressions'].rolling(7).mean()
 daily['clicks_ma7'] = daily['clicks'].rolling(7).mean()
@@ -99,11 +102,25 @@ def nl_summary():
     top_campaign = campaigns.head(1)
     trend = daily.tail(7)
     summary = f"Meta Ads Analysis as of {datetime.now().date()}\n"
-    summary += f"Top ad: {top_ad.index[0][1]} (spend: ${top_ad['spend'].iloc[0]:,.2f}, CTR: {top_ad['ctr'].iloc[0]:.2%})\n"
-    summary += f"Top campaign: {top_campaign.index[0][1]} (spend: ${top_campaign['spend'].iloc[0]:,.2f}, CPC: ${top_campaign['cpc'].iloc[0]:.2f})\n"
-    summary += f"Last 7 days spend: ${trend['spend'].sum():,.2f}, impressions: {int(trend['impressions'].sum()):,}\n"
+    summary += (
+        f"Top ad: {top_ad.index[0][1]} "
+        f"(spend: ${top_ad['spend'].iloc[0]:,.2f}, "
+        f"CTR: {top_ad['ctr'].iloc[0]:.2%})\n"
+    )
+    summary += (
+        f"Top campaign: {top_campaign.index[0][1]} "
+        f"(spend: ${top_campaign['spend'].iloc[0]:,.2f}, "
+        f"CPC: ${top_campaign['cpc'].iloc[0]:.2f})\n"
+    )
+    summary += (
+        f"Last 7 days spend: ${trend['spend'].sum():,.2f}, "
+        f"impressions: {int(trend['impressions'].sum()):,}\n"
+    )
     if not anomalies.empty:
-        summary += f"Spend anomalies detected on: {', '.join(str(d.date()) for d in anomalies.index)}\n"
+        summary += (
+            f"Spend anomalies detected on: "
+            f"{', '.join(str(d.date()) for d in anomalies.index)}\n"
+        )
     return summary
 
 with open(EXPORT_DIR + "summary.txt", "w") as f:
