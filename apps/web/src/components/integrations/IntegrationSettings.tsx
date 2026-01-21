@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { BulkTokenInput } from './BulkTokenInput'
-import IntegrationCard from './IntegrationCard'
+import { IntegrationCard  from './IntegrationCard'
 import { SlideLayout } from './SlideLayout'
 import {
   PLATFORMS,
