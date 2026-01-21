@@ -66,8 +66,7 @@ export function ExportControls({ analytics }: Props) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       const msg = `Export failed: ${errorMessage}`
       setError(msg)
-      console.error('Export error:', errorMessage, { format, loanCount: analytics.loans.length })
-    }
+      console.error('Export error!', errorMessage, { format, loanCount: analytics.loans?.length ?? 0 })    }
   }
 
   return (
