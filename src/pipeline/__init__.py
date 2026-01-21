@@ -1,7 +1,11 @@
+class ResultRecordMetadata:
+    pass
+
 from .data_ingestion import IngestionResult, UnifiedIngestion
 from .data_transformation import TransformationResult, UnifiedTransformation
 from .kpi_calculation import CalculationResultV2, UnifiedCalculationV2
 from .orchestrator import PipelineConfig, UnifiedPipeline
+from .result_record_metadata import ResultRecordMetadata
 from .output import OutputResult, UnifiedOutput
 
 __all__ = [
@@ -15,4 +19,5 @@ __all__ = [
     "CalculationResultV2",
     "UnifiedOutput",
     "OutputResult",
+    "ResultRecordMetadata",
 ]

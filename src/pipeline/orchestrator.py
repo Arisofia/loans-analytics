@@ -1,3 +1,6 @@
+class ResultRecordMetadata:
+    pass
+
 import json
 import logging
 import os

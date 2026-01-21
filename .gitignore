@@ -47,3 +47,4 @@ yarn-error.log*
 mypy_report.xml
 node_modules/
 figma-financial-dashboard/node_modules/
+.sonarlint/

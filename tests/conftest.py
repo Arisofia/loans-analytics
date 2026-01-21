@@ -1,3 +1,19 @@
+import types
+
+# Monkey-patch for Prefect/Pydantic ResultRecordMetadata import error
+try:
+    import prefect.results
+    if not hasattr(prefect.results, "ResultRecordMetadata"):
+        class ResultRecordMetadata:
+            pass
+        prefect.results.ResultRecordMetadata = ResultRecordMetadata
+except ImportError:
+    pass
+
+# Patch global namespace for legacy Pydantic annotation resolution
+import sys
+sys.modules["ResultRecordMetadata"] = types.ModuleType("ResultRecordMetadata")
+setattr(sys.modules["ResultRecordMetadata"], "ResultRecordMetadata", type("ResultRecordMetadata", (), {}))
 import json
 import os
 import sys

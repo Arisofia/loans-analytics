@@ -1,0 +1,304 @@
+{
+  "run_id": "run_2466a2d12357",
+  "sub_runs": {
+    "pipeline": "run_2466a2d12357",
+    "ingestion": "ingest_f833c03619ea",
+    "transformation": "run_2466a2d12357",
+    "calculation": "run_2466a2d12357"
+  },
+  "generated_at": "2026-01-21T12:37:46.381062+00:00",
+  "metrics": {
+    "PAR30": {
+      "value": 6.151138616080396,
+      "status": "warning",
+      "display_name": "PAR 30+",
+      "formula": "SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100",
+      "source_table": "fact_loans",
+      "precision": 2,
+      "validation_range": null,
+      "rows_processed": 36,
+      "null_count": 0,
+      "timestamp": "2026-01-21T12:37:46.251231+00:00",
+      "dpd_30_60_sum": 2256358.25,
+      "dpd_60_90_sum": 1337379.1300000001,
+      "dpd_90_plus_sum": 2731284.4599999995,
+      "total_receivable_sum": 102826846.13
+    },
+    "PAR90": {
+      "value": 2.656197834315508,
+      "status": "unknown",
+      "display_name": "PAR90",
+      "formula": "SUM(dpd_90_plus_usd) / SUM(total_receivable_usd) * 100",
+      "source_table": "fact_loans",
+      "precision": 2,
+      "validation_range": null,
+      "rows_processed": 36,
+      "null_count": 0,
+      "timestamp": "2026-01-21T12:37:46.251508+00:00",
+      "dpd_sum": 2731284.4599999995,
+      "total_receivable_sum": 102826846.13
+    },
+    "CollectionRate": {
+      "value": 0.0,
+      "status": "critical",
+      "display_name": "Collection Rate",
+      "formula": "SUM(cash_available) / SUM(total_eligible) * 100",
+      "source_table": "fact_loans",
+      "precision": 2,
+      "validation_range": null,
+      "rows_processed": 36,
+      "null_count": 0,
+      "timestamp": "2026-01-21T12:37:46.251786+00:00",
+      "cash_sum": 0.0,
+      "eligible_sum": 102826846.13
+    },
+    "PortfolioHealth": {
+      "value": 0.0,
+      "formula": "(10 - PAR30/10) * (CollectionRate/10)",
+      "source_table": "metrics",
+      "precision": 2,
+      "validation_range": [
+        0,
+        10
+      ],
+      "rows_processed": 2,
+      "null_count": 0,
+      "timestamp": "2026-01-21T12:37:46.251899+00:00",
+      "par_30_input": 6.151138616080396,
+      "collection_rate_input": 0.0,
+      "par_component": 9.38488613839196,
+      "coll_component": 0.0
+    }
+  },
+  "metadata": {
+    "ingestion": {
+      "source_looker_loans": "data/raw/looker_exports/loan_par_balances.csv",
+      "financials_path": "data/raw/financial_statements",
+      "source_mode": "looker_par_balances",
+      "checksum": "2466a2d12357a052fc47869062ec01a0afb33ea928b65f35a20b0064c9c6786f",
+      "row_count": 36,
+      "error_count": 0,
+      "deduped_count": 0,
+      "audit_log": [
+        {
+          "run_id": "ingest_f833c03619ea",
+          "event": "looker_start",
+          "status": "initiated",
+          "timestamp": "2026-01-21T12:37:46.177711+00:00",
+          "loans_path": "data/raw/looker_exports/loan_par_balances.csv",
+          "financials_path": "data/raw/financial_statements"
+        },
+        {
+          "run_id": "ingest_f833c03619ea",
+          "event": "looker_financials",
+          "status": "skipped",
+          "timestamp": "2026-01-21T12:37:46.209409+00:00",
+          "reason": "no_files_found"
+        },
+        {
+          "run_id": "ingest_f833c03619ea",
+          "event": "looker_complete",
+          "status": "success",
+          "timestamp": "2026-01-21T12:37:46.236114+00:00",
+          "row_count": 36
+        }
+      ],
+      "archived_path": "data/raw/cascade/loan_par_balances.csv",
+      "validation_errors": [],
+      "financials": {
+        "files": [],
+        "dates": 0,
+        "metrics": []
+      }
+    },
+    "lineage": [
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "start",
+        "status": "initiated",
+        "timestamp": "2026-01-21T12:37:46.237163+00:00",
+        "input_rows": 36
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "normalization",
+        "status": "success",
+        "timestamp": "2026-01-21T12:37:46.238038+00:00",
+        "columns": [
+          "loan_id",
+          "total_receivable_usd",
+          "total_eligible_usd",
+          "discounted_balance_usd",
+          "cash_available_usd",
+          "dpd_0_7_usd",
+          "dpd_7_30_usd",
+          "dpd_30_60_usd",
+          "dpd_60_90_usd",
+          "dpd_90_plus_usd",
+          "measurement_date",
+          "cash_balance_usd",
+          "total_assets_usd",
+          "total_liabilities_usd",
+          "net_worth_usd",
+          "net_income_usd",
+          "runway_months",
+          "debt_to_equity_ratio"
+        ]
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "null_handling",
+        "status": "success",
+        "timestamp": "2026-01-21T12:37:46.239164+00:00"
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "outlier_detection",
+        "status": "clean",
+        "timestamp": "2026-01-21T12:37:46.240965+00:00"
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "pii_masking",
+        "status": "completed",
+        "timestamp": "2026-01-21T12:37:46.241224+00:00",
+        "masked_columns": []
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "lineage",
+        "status": "captured",
+        "timestamp": "2026-01-21T12:37:46.249134+00:00",
+        "input_hash": "b4fe99cbdcd146703a34065722797be68fd62f7891c23493d6381d7bc62fc449",
+        "output_hash": "b4fe99cbdcd146703a34065722797be68fd62f7891c23493d6381d7bc62fc449"
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "quality_checks",
+        "status": "completed",
+        "timestamp": "2026-01-21T12:37:46.250150+00:00",
+        "checks": 19
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "complete",
+        "status": "success",
+        "timestamp": "2026-01-21T12:37:46.250290+00:00",
+        "output_rows": 36
+      }
+    ],
+    "calculation_audit": [
+      {
+        "run_id": "kpi_20260121_133746",
+        "event": "calculate_all",
+        "status": "started",
+        "timestamp": "2026-01-21T12:37:46.252004+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": 3.0,
+        "kpi": NaN,
+        "value": NaN
+      },
+      {
+        "run_id": "kpi_20260121_133746",
+        "event": "kpi_calculated",
+        "status": "success",
+        "timestamp": "2026-01-21T12:37:46.252334+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": NaN,
+        "kpi": "PAR30",
+        "value": 6.151138616080396
+      },
+      {
+        "run_id": "kpi_20260121_133746",
+        "event": "kpi_calculated",
+        "status": "success",
+        "timestamp": "2026-01-21T12:37:46.252581+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": NaN,
+        "kpi": "PAR90",
+        "value": 2.656197834315508
+      },
+      {
+        "run_id": "kpi_20260121_133746",
+        "event": "kpi_calculated",
+        "status": "success",
+        "timestamp": "2026-01-21T12:37:46.252827+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": NaN,
+        "kpi": "CollectionRate",
+        "value": 0.0
+      },
+      {
+        "run_id": "kpi_20260121_133746",
+        "event": "composite_kpi_calculated",
+        "status": "success",
+        "timestamp": "2026-01-21T12:37:46.252932+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": NaN,
+        "kpi": "PortfolioHealth",
+        "value": NaN
+      },
+      {
+        "run_id": "kpi_20260121_133746",
+        "event": "calculate_all",
+        "status": "completed",
+        "timestamp": "2026-01-21T12:37:46.253030+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": 4.0,
+        "kpi": NaN,
+        "value": NaN
+      }
+    ],
+    "anomalies": {},
+    "context": {
+      "user": "system",
+      "action": "manual"
+    }
+  },
+  "quality_checks": {
+    "dpd_0_7_usd_non_negative": true,
+    "dpd_7_30_usd_non_negative": true,
+    "dpd_30_60_usd_non_negative": true,
+    "dpd_60_90_usd_non_negative": true,
+    "dpd_90_plus_usd_non_negative": true,
+    "total_receivable_usd_non_negative": true,
+    "total_eligible_usd_non_negative": true,
+    "discounted_balance_usd_non_negative": true,
+    "cash_available_usd_non_negative": true,
+    "measurement_date_iso8601": true,
+    "cash_available_usd_no_nulls": true,
+    "total_eligible_usd_no_nulls": true,
+    "dpd_7_30_usd_no_nulls": true,
+    "total_receivable_usd_no_nulls": true,
+    "dpd_60_90_usd_no_nulls": true,
+    "dpd_90_plus_usd_no_nulls": true,
+    "dpd_0_7_usd_no_nulls": true,
+    "discounted_balance_usd_no_nulls": true,
+    "dpd_30_60_usd_no_nulls": true
+  },
+  "files": {
+    "parquet": "data/metrics/run_2466a2d12357.parquet",
+    "csv": "data/metrics/run_2466a2d12357.csv",
+    "metrics_json": "data/metrics/run_2466a2d12357_metrics.json"
+  },
+  "timeseries": {
+    "daily": "data/metrics/timeseries/run_2466a2d12357_daily.parquet",
+    "weekly": "data/metrics/timeseries/run_2466a2d12357_weekly.parquet",
+    "monthly": "data/metrics/timeseries/run_2466a2d12357_monthly.parquet"
+  },
+  "compliance_report": "logs/runs/run_2466a2d12357/run_2466a2d12357_compliance.json",
+  "file_hashes": {
+    "parquet": "a08f599152314df3636941ad64db5092d16d7facd54d03409711b4a768744d30",
+    "csv": "baee5ac0e865f0b3d63793a77b7c115f16211adec7a0bb28ff023d31c7cdbd67",
+    "metrics_json": "6c548d12514f4bb5629cfd4e442ac6dc9be1aa1da4e7226000394a768d3de1dd",
+    "timeseries_daily": "9415c286e630c85181b6aa0889b4fa59427700ff8cfc9fa43ff7c7b40929deb3",
+    "timeseries_weekly": "8e709a8b89f6e3bc2192cf8e1804292b061b115b0f13410d3d6b4444af52f168",
+    "timeseries_monthly": "91d36b30273668c34720c5006def6d5662a19681fdb11b6a1ef70f5ca89b6682"
+  }
+}

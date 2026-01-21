@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.analytics.enterprise_analytics_engine import (
+from src.analytics.enterprise_analytics_engine_helpers import (
     LoanPosition,
     PortfolioKPIs,
     calculate_monthly_payment,
