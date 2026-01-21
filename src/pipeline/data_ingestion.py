@@ -254,16 +254,16 @@ class UnifiedIngestion:
         return validated
 
     def _update_summary(self, rows: int, filename: str | None = None) -> None:
-        self._summary["rows_ingested"] = int(self._summary.get("rows_ingested", 0)) + int(rows)
+        self._summary["rows_ingested"] = self._summary.get("rows_ingested", 0) + rows
         files = self._summary.setdefault("files", {})
         if filename:
-            files[filename] = int(files.get(filename, 0)) + int(rows)
+            files[filename] = files.get(filename, 0) + rows
 
     def get_ingest_summary(self) -> Dict[str, Any]:
         return {
             "run_id": self.run_id,
             "timestamp": self.timestamp,
-            "rows_ingested": int(self._summary.get("rows_ingested", 0)),
+            "rows_ingested": self._summary.get("rows_ingested", 0),
             "files": dict(self._summary.get("files", {})),
             "total_errors": len(self.errors),
             "errors": list(self.errors),
@@ -345,8 +345,9 @@ class UnifiedIngestion:
         if self.schema_validator is None:
             return errors
         for idx, record in enumerate(df.to_dict(orient="records")):
-            for error in self.schema_validator.iter_errors(record):
-                errors.append(f"row {idx}: {error.message}")
+            errors.extend(
+                f"row {idx}: {error.message}" for error in self.schema_validator.iter_errors(record)
+            )
         return errors
 
     def _validate_records(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
@@ -386,7 +387,7 @@ class UnifiedIngestion:
         return deduped, before - len(deduped)
 
     def _normalize_token(self, value: str) -> str:
-        return re.sub(r"[^a-z0-9]+", " ", str(value).lower()).strip()
+        return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
 
     def _select_column(self, columns: List[str], candidates: Iterable[str]) -> Optional[str]:
         if not candidates:
