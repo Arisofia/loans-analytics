@@ -36,19 +36,19 @@
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "./*"
+        "./src/*"
       ],
       "@/components/*": [
-        "./components/*"
+        "./src/components/*"
       ],
       "@/lib/*": [
-        "./lib/*"
+        "./src/lib/*"
       ],
       "@/types/*": [
-        "./types/*"
+        "./src/types/*"
       ],
       "@/app/*": [
-        "./app/*"
+        "./src/app/*"
       ]
     },
     "plugins": [
