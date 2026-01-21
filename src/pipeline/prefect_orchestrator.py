@@ -67,10 +67,8 @@ def output_task(
 ) -> OutputResult:
     logger = get_run_logger()
     logger.info("Starting output persistence for run %s", run_id)
-    output = UnifiedOutput(config, run_id=run_id)
-
     # We can add Supabase persistence here or in UnifiedOutput.persist
-    result = output.persist(
+    return UnifiedOutput(config, run_id=run_id).persist(
         transformation_result.df,
         calculation_result.metrics,
         metadata={
@@ -79,7 +77,6 @@ def output_task(
         },
         run_ids={"pipeline": run_id},
     )
-    return result
 
 
 @flow(name="Abaco Data Pipeline")
