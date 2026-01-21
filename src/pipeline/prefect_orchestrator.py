@@ -34,7 +34,11 @@ def ingestion_task(config: Dict[str, Any], input_file: Path) -> IngestionResult:
     if isinstance(result, IngestionResult):
         return result
     # If result is a legacy object, wrap into IngestionResult
-    return IngestionResult(df=result.df, run_id=getattr(result, "run_id", "unknown"), metadata={})
+    return IngestionResult(
+        df=result.df,
+        run_id=getattr(result, "run_id", "unknown"),
+        metadata={}
+    )
 
 
 @task
