@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { BulkTokenInput } from './BulkTokenInput'
-import IntegrationCard from '../IntegrationCard'
+import IntegrationCard from './IntegrationCard'
 import { SlideLayout } from './SlideLayout'
 import {
   PLATFORMS,
@@ -233,7 +233,7 @@ export function IntegrationSettings() {
 
   return (
     <SlideLayout
-      description="Configure provider access with per-platform tokens, safe bulk intake, and explicit sync controls. Tokens are encrypted before storage and every action is logged for auditability."
+      description="Configure provider access with per-platform tokens, safe bulk intake, and explicit sync controls. Tokens are encrypted before storage and every action is logged for auditabilit[...]
       actions={
         <div className={styles.toolbar}>
           <button className={styles.badge} type="button">
