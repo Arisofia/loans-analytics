@@ -1,5 +1,8 @@
 """
-Shared test data for analytics engine and metrics utils tests.
+Shared test data fixtures for analytics engine and metrics utils tests.
+
+These fixtures are used across multiple test files to provide consistent
+test data for analytics engine testing.
 """
 
 SAMPLE_LOAN_DATA = {

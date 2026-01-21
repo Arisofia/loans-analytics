@@ -19,7 +19,7 @@ def test_engine_from_dict():
     dictionary and that the resulting object is a LoanAnalyticsEngine with
     the expected data length.
     """
-    from tests.test_data_shared import SAMPLE_LOAN_DATA
+    from python.testing.fixtures import SAMPLE_LOAN_DATA
 
     engine = LoanAnalyticsEngine.from_dict(SAMPLE_LOAN_DATA)
     assert isinstance(engine, LoanAnalyticsEngine)
