@@ -529,7 +529,7 @@ class UnifiedIngestion:
 
             self._log_event("complete", "success", row_count=len(validated_df))
             quality_report = self._run_quality_audit(validated_df)
-            
+
             return IngestionResult(
                 validated_df,
                 self.run_id,
@@ -590,7 +590,8 @@ class UnifiedIngestion:
                 source_mode = "looker_loans"
             else:
                 raise ValueError(
-                    "Looker loans file missing required PAR or DPD columns for conversion"
+                    "Looker loans file missing required PAR or DPD columns "
+                    "for conversion"
                 )
             if normalized_df.empty:
                 raise ValueError("Looker loan tape conversion produced no rows")
@@ -720,7 +721,9 @@ class UnifiedIngestion:
         # If validation produced no validated records but original df had rows,
         # fall back to using the parsed dataframe (best-effort recovery).
         if validated_df.empty and len(df) > 0:
-            self._log_event("validation", "fallback", reason="using_parsed_df", rows=len(df))
+            self._log_event(
+                "validation", "fallback", reason="using_parsed_df", rows=len(df)
+            )
             parsed = df.copy()
             if "loan_id" not in {str(c).lower() for c in parsed.columns}:
                 parsed["loan_id"] = [f"agg_{i}" for i in range(len(parsed))]
