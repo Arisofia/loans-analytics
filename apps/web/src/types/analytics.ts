@@ -1,15 +1,18 @@
+// Represents a single entry in a treemap visualization.
 export interface TreemapEntry {
   label: string
   value: number
   color?: string
 }
 
+// Represents a roll rate transition between loan statuses.
 export interface RollRateEntry {
   from: string
   to: string
   percent: number
 }
 
+// Represents a point in a loan growth projection.
 export interface GrowthPoint {
   label: string
   loanVolume: number
@@ -32,11 +35,18 @@ export interface LoanRow {
   amount?: number
   monto?: number
   principal?: number
+  loan_amount?: number
+  appraised_value?: number
+  borrower_income?: number
+  monthly_debt?: number
   status?: string
   estado?: string
+  loan_status?: string
   rate?: number
   tasa?: number
   interest_rate?: number
+  principal_balance?: number
+  dpd_status?: string
   [key: string]: any
 }
 

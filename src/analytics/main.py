@@ -9,7 +9,7 @@ from typing import Dict, Any
 
 from python.ingestion import CascadeIngestion
 from python.config import settings
-from apps.analytics.src.polars_analytics_engine import PolarsAnalyticsEngine
+from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine
 from apps.analytics.src.flows.ingestion_flow import loan_ingestion_flow
 import os
 import tempfile

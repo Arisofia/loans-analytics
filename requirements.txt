@@ -33,3 +33,6 @@ playwright==1.41.0
 mypy==1.10.0
 requests-mock==1.11.0
 python-multipart==0.0.20
+psycopg2-binary==2.9.11
+types-requests
+types-PyYAML

@@ -1,3 +1,4 @@
+// Represents a third-party integration connection.
 export interface Integration {
   id: string
   name: string
@@ -5,6 +6,7 @@ export interface Integration {
   lastSync?: string
 }
 
+// Represents a token item for bulk integration operations.
 export interface BulkTokenItem {
   token: string
   platform: string
@@ -16,6 +18,7 @@ export interface BulkTokenItem {
   resultId?: string
 }
 
+// Represents the result of a bulk integration process.
 export interface BulkProcessResult {
   status: 'success' | 'error'
   detail?: string

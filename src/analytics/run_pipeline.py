@@ -1,3 +1,4 @@
+def calculate_kpis(df, kpis):
     if "segment" in df.columns and len(df) > 0:
         segment_counts = df["segment"].value_counts()
         largest_segment_count = segment_counts.iloc[0]

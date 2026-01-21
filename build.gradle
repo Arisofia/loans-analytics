@@ -31,16 +31,7 @@ test {
     useJUnitPlatform()
 }
 
-// Coverage report for Sonar
-tasks.named('jacocoTestReport', JacocoReport) {
-    dependsOn test
-    reports {
-        xml.required = true
-        xml.outputLocation = layout.buildDirectory.file("reports/jacoco/jacocoTestReport/jacocoTestReport.xml")
-        html.required = false
-        csv.required = false
-    }
-    sourceDirectories.from = files(sourceSets.main.allSource.srcDirs)
-    classDirectories.from = files(sourceSets.main.output)
-    executionData.from = fileTree(buildDir).include("/jacoco/test.exec")
+// Disable bootJar task if no main class exists
+bootJar {
+    enabled = false
 }

@@ -9,7 +9,7 @@ import polars as pl
 import plotly.express as px
 import streamlit as st
 
-from apps.analytics.src.polars_analytics_engine import PolarsAnalyticsEngine
+from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine
 
 ABACO_THEME = {
     "colors": {

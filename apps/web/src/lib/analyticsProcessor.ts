@@ -8,9 +8,8 @@ export function parseLoanCsv(csv: string): LoanRow[] {
 
   return lines.slice(1).map((line) => {
     const row: LoanRow = {}
-    // Handle basic CSV parsing (splitting by comma, respecting quotes would require a regex or parser lib)
-    // For this implementation, we assume a standard CSV format where values might be quoted
-    const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || []
+    // Split by comma, ignoring commas inside double quotes
+    const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
 
     headers.forEach((header, index) => {
       let val = values[index]?.trim()
@@ -30,8 +29,8 @@ export function parseLoanCsv(csv: string): LoanRow[] {
 export function toNumber(value: any): number {
   if (typeof value === 'number') return value
   if (typeof value === 'string') {
-    // Robust parsing: remove currency symbols, handle commas
-    const cleanValue = value.replace(/[^0-9.,-]+/g, '')
+    // Robust parsing: remove currency symbols and commas, keep dots and minus
+    const cleanValue = value.replace(/,/g, '').replace(/[^0-9.-]+/g, '')
     const parsed = parseFloat(cleanValue)
     return isNaN(parsed) ? 0 : parsed
   }
@@ -53,19 +52,25 @@ export function computeKPIs(data: any[]) {
     }
   }
 
-  const totalVolume = data.reduce((sum, loan) => sum + toNumber(loan.amount || loan.monto || 0), 0)
+  const totalVolume = data.reduce(
+    (sum, loan) => sum + toNumber(loan.amount || loan.monto || loan.loan_amount || 0),
+    0
+  )
   const activeLoans = data.filter((loan) => {
-    const s = (loan.status || loan.estado || '').toLowerCase()
+    const s = (loan.status || loan.estado || loan.loan_status || '').toLowerCase()
     return s === 'active' || s === 'activo' || s === 'current'
   }).length
   const defaultedLoans = data.filter((loan) => {
-    const s = (loan.status || loan.estado || '').toLowerCase()
+    const s = (loan.status || loan.estado || loan.loan_status || '').toLowerCase()
     return s === 'default' || s === 'mora' || s === 'charged_off'
   }).length
   const defaultRate = data.length > 0 ? (defaultedLoans / data.length) * 100 : 0
   const averageRate =
     data.length > 0
-      ? data.reduce((sum, loan) => sum + toNumber(loan.rate || 0), 0) / data.length
+      ? data.reduce(
+          (sum, loan) => sum + toNumber(loan.rate || loan.tasa || loan.interest_rate || 0),
+          0
+        ) / data.length
       : 0
   const loanCount = data.length
   const delinquencyRate = data.length > 0 ? (defaultedLoans / data.length) * 100 : 0
