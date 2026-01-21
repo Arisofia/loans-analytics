@@ -1,5 +1,4 @@
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
-import { type AnalyticsData } from '@/types/analytics'
 
 export default function Home() {
   return (
