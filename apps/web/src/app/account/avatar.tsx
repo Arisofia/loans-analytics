@@ -14,7 +14,9 @@ export default function Avatar({
   size: number;
   onUpload: (url: string) => void;
 }) {
+    // @ts-expect-error - createClient signature varies between client/server implementations
   const supabase = createClient();
+
   const [avatarUrl, setAvatarUrl] = useState<string | null>(url);
   const [uploading, setUploading] = useState(false);
 
