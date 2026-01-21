@@ -252,8 +252,6 @@ Create file: `config/environments/staging.yml`
 # Staging Environment Configuration
 environment: staging
 
-cascade:
-  base_url: https://app.cascadedebt.com
   portfolio_id: abaco
 
 supabase:
@@ -282,8 +280,6 @@ Create file: `config/environments/production.yml`
 # Production Environment Configuration
 environment: production
 
-cascade:
-  base_url: https://app.cascadedebt.com
   portfolio_id: abaco
 
 supabase:
@@ -369,22 +365,17 @@ cat .github/DEPLOYMENT_COORDINATION.md
 
 ---
 
-## Step 7: Slack Setup (Optional, 15 min)
 
-Configure Slack integration for deployment notifications.
 
-### Create Slack Webhooks
 
 For each channel (#dev-alerts, #prod-alerts, #incidents):
 
-1. Go to Slack workspace settings
 2. Create an Incoming Webhook
 3. Configure for channel
 4. Copy webhook URL
 
 ### Add to GitHub Actions (Optional)
 
-If you want Slack notifications from workflows:
 
 1. Go to repository Settings → Secrets
 2. Add secrets:
@@ -491,7 +482,6 @@ Week 1 setup is complete when:
 ✅ Staging environment file created
 ✅ Production environment file created
 ✅ All team members read documentation
-✅ Slack channels ready (optional)
 
 ---
 
@@ -534,7 +524,6 @@ Once Week 1 is complete, proceed to Week 2:
 
 1. Check this guide (Step 1-8)
 2. Check `.github/README.md` for more context
-3. Ask in Slack #dev-help
 
 ### Setup Issues?
 
@@ -565,7 +554,6 @@ Once Week 1 is complete, proceed to Week 2:
 - Step 4 (Environments): 30 min
 - Step 5 (Config files): 30 min
 - Step 6 (Team onboarding): 30 min
-- Step 7 (Slack): 15 min
 - Step 8 (Verification): 15 min
 - **Total**: ~2.5-3 hours
 

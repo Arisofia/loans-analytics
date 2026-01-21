@@ -12,7 +12,6 @@
 
 ```text
 src/ingestion.py (122 lines)
-├─ CascadeIngestion class
 ├─ ingest_csv(), ingest_dataframe(), validate_loans()
 └─ Status: LEGACY (Week 1-2?)
 

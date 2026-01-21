@@ -29,7 +29,6 @@ The following advisories are present in the dependency tree (see
 package-lock.json and pnpm-lock.yaml):
 
 - **body-parser**: Denial of Service vulnerability (transitive via
-  @hubspot/ui-extensions-dev-server)
 - **path-to-regexp**: ReDoS (Regular Expression Denial of Service) risk
   (transitive via router)
 

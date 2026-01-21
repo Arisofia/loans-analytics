@@ -5,7 +5,6 @@ This document defines the measurable criteria that must be met for the **Abaco L
 ## 1. Reliability & Stability
 - **Pipeline Success Rate**: 100% of scheduled pipeline runs must complete successfully for 14 consecutive days.
 - **Data Freshness**: Dashboard must reflect data no older than 24 hours (for batch) or 1 hour (for near-real-time ingestion).
-- **Error Handling**: 0% "silent failures". All pipeline failures must emit a Slack/Email alert and be logged in the audit trail.
 - **Rollback Capability**: System must support 1-command rollback to the previous stable version of both code and configuration.
 
 ## 2. Code Quality & Maintainability

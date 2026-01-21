@@ -68,9 +68,7 @@ CONSOLIDATED CONFIGURATIONS
 ===========================
 
 Integrations (4 total)
-  • Cascade (data source) - cascade.yaml
   • Meta (marketing) - meta.yaml
-  • Slack (communication) - slack.yaml
   • Perplexity/Comet (web crawling) - perplexity_comet.yaml
   Location: pipeline.yml:integrations.*
 
@@ -86,7 +84,6 @@ KPI Definitions (20+ KPIs across 5 stacks)
   • Growth stack: Origination Volume, Active Clients, Client Retention
   • Finance stack: ARR, Write-Off Rate
   • Compliance stack: Audit Flags, Data Quality Score
-  • Cascade-specific: Loan Tape Balance, Count, Roll Rate
   Location: pipeline.yml:kpi_definitions.*
 
 ENVIRONMENT CONFIGURATION
@@ -95,22 +92,18 @@ ENVIRONMENT CONFIGURATION
 Development (PIPELINE_ENV=development - DEFAULT)
   • Local testing configuration
   • Mocked credentials (TEST_CASCADE_COOKIE)
-  • Disabled external integrations (Slack, Meta)
   • Fast refresh schedules (every 5-10 minutes)
   • Debug logging level
   • Local file paths
 
 Staging (PIPELINE_ENV=staging)
   • Pre-production configuration
-  • Staging Cascade endpoint
-  • Enabled Slack with staging channels
   • Supabase staging schema
   • Standard refresh schedules
   • INFO logging level
 
 Production (PIPELINE_ENV=production)
   • Production-ready configuration
-  • Live Cascade endpoint
   • Full integration support
   • Production Supabase schema
   • Standard refresh schedules

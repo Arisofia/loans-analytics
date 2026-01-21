@@ -59,7 +59,6 @@ E1999 Syntax error                       : 0 issues
 |------|-------|--------|-----------|
 | tracing_setup.py:17 | TracerProvider missing add_span_processor | Missing type stub for opentelemetry-api | Add py.typed marker in stubs |
 | data_validation_gx.py:14-18 | EphemeralDataContext methods undefined | Missing great_expectations type stubs | Install great-expectations-stubs |
-| prefect_orchestrator.py:10 | Module has no send_slack_notification | Function may not exist | Verify implementation |
 
 ### Test Coverage
 
@@ -337,7 +336,6 @@ LONG_SQL_QUERY = "SELECT ... FROM ... WHERE ..."
    - **Estimated effort**: 30 minutes
 
 3. **Investigate/fix prefect_orchestrator imports**
-   - Verify `send_slack_notification` exists
    - Add function if missing
    - **Estimated effort**: 30 minutes
 

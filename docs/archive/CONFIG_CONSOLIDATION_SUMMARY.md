@@ -14,8 +14,6 @@ Successfully consolidated 18 fragmented configuration files across 6 directories
 - **File**: `config/pipeline.yml` (526 lines)
 - **Content**: Unified configuration containing:
   - Pipeline phases (ingestion, transformation, calculation, outputs)
-  - Cascade integration configuration
-  - All external integrations (Meta, Slack, Perplexity)
   - All agent specifications (4 agents)
   - Complete KPI definitions (20+ KPIs across 5 stacks)
   - Observability and logging configuration
@@ -29,7 +27,6 @@ Created structured environment override system for clean separation of concerns:
 
 - Local testing configuration
 - Mocked credentials (TEST_CASCADE_COOKIE)
-- Disabled external integrations (Slack, Meta)
 - Fast refresh schedules for development (every 5-10 minutes)
 - Debug logging level
 - Local file paths
@@ -37,8 +34,6 @@ Created structured environment override system for clean separation of concerns:
 #### Staging (`config/environments/staging.yml` - 58 lines)
 
 - Pre-production configuration
-- Staging Cascade endpoint
-- Enabled Slack with staging channels
 - Supabase staging schema
 - Standard refresh schedules
 - INFO logging level
@@ -46,8 +41,6 @@ Created structured environment override system for clean separation of concerns:
 #### Production (`config/environments/production.yml` - 64 lines)
 
 - Production-ready configuration
-- Live Cascade endpoint
-- Full integration support (Cascade, Slack, Meta)
 - Production Supabase schema
 - Standard refresh schedules
 - INFO logging level
@@ -59,9 +52,7 @@ Archived 18 legacy configuration files into `config/LEGACY/` directory with clea
 
 **Integrations (4 files)**
 
-- `cascade.yaml` → pipeline.yml:integrations.cascade
 - `meta.yaml` → pipeline.yml:integrations.meta
-- `slack.yaml` → pipeline.yml:integrations.slack
 - `perplexity_comet.yaml` → pipeline.yml:integrations.perplexity_comet
 
 **Agent Specifications (4 files)**

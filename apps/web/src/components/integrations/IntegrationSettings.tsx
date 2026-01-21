@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { BulkTokenInput } from './BulkTokenInput'
 import IntegrationCard from './IntegrationCard'
@@ -8,7 +8,6 @@ import { SlideLayout } from './SlideLayout'
 import {
   PLATFORMS,
   PLATFORM_LABELS,
-  SUPABASE_FN_BASE,
   type Platform,
   type TokenStatus,
 } from '@/lib/integrations/constants'
@@ -25,14 +24,7 @@ export type StatusRow = {
   id?: string
 }
 
-function isStatusRow(entry: unknown): entry is StatusRow {
-  if (!entry || typeof entry !== 'object') return false
-  const candidate = entry as Partial<StatusRow>
-  return (
-    typeof candidate.platform === 'string' &&
-    (candidate.status === undefined || typeof candidate.status === 'string')
-  )
-}
+
 
 const initialState: Record<Platform, TokenState> = PLATFORMS.reduce(
   (all, platform) => ({ ...all, [platform]: { status: 'disconnected' } }),
@@ -41,10 +33,10 @@ const initialState: Record<Platform, TokenState> = PLATFORMS.reduce(
 
 export function IntegrationSettings() {
   const [projectId, setProjectId] = useState('demo-project')
-  const [tokenState, setTokenState] = useState<Record<Platform, TokenState>>(initialState)
-  const [bulkOpen, setBulkOpen] = useState(false)
-  const [logEntries, setLogEntries] = useState<string[]>([])
-  const [loadingStatus, setLoadingStatus] = useState(false)
+  const [tokenState] = useState<Record<Platform, TokenState>>(initialState)
+  const [bulkOpen] = useState(false)
+  const [logEntries] = useState<string[]>([])
+  const [loadingStatus] = useState(false)
 
   const statusSummary = useMemo(
     () =>
@@ -128,9 +120,7 @@ export function IntegrationSettings() {
     </SlideLayout>
   )
 
-  useEffect(() => {
-    void refreshStatus()
-  }, [refreshStatus])
+
 
   const connectPlatform = async (platform: Platform) => {
     const details = tokenState[platform]
@@ -248,15 +238,15 @@ export function IntegrationSettings() {
               placeholder="Project identifier"
             />
           </div>
-          <button
-            className={styles.primaryButton}
-            type="button"
-            onClick={() => {
-              void refreshStatus()
-            }}
-          >
-            Refresh status
-          </button>
+            {/* <button
+              className={styles.primaryButton}
+              type="button"
+              onClick={() => {
+                void refreshStatus()
+              }}
+            >
+              Refresh status
+            </button> */}
           <button
             className={styles.secondaryButton}
             type="button"

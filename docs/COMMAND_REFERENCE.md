@@ -280,8 +280,6 @@ export META_APP_ID="..."
 export FIGMA_TOKEN="..."
 export FIGMA_FILE_ID="..."
 
-# Slack Notifications
-export SLACK_WEBHOOK_URL="https://hooks.slack.com/..."
 export SLACK_BOT_TOKEN="xoxb-..."
 ```
 

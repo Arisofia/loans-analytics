@@ -31,7 +31,6 @@
 
 | Source             | Type         | Purpose                 | Integration              |
 | ------------------ | ------------ | ----------------------- | ------------------------ |
-| Cascade API        | External API | Loan origination data   | Via `cascade_client.py`  |
 | HubSpot            | External API | Customer/marketing data | Via `segment_manager.py` |
 | Manual CSV uploads | File uploads | Financial statements    | Via `data/archives/` folders  |
 
@@ -41,7 +40,6 @@
 
 ```text
 Status: ❌ UNKNOWN
-Question: Where does raw Cascade/HubSpot data land?
   Option A: Azure Blob Storage (ADLS) - File-based
   Option B: PostgreSQL database - Structured
   Option C: Cosmos DB - NoSQL

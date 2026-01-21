@@ -34,7 +34,6 @@ All three P0 production failures are rooted in **missing database configuration*
 # From settings.py
 supabase_url: str | None = os.getenv("SUPABASE_URL")
 supabase_service_role_key: str | None = os.getenv("SUPABASE_SERVICE_ROLE") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-cascade_token: str | None = os.getenv("CASCADE_TOKEN")
 ```
 
 ### Current Status
@@ -69,7 +68,6 @@ cascade_token: str | None = os.getenv("CASCADE_TOKEN")
 # 3. Add to GitHub secrets:
 gh secret set SUPABASE_URL --body "https://xxxxx.supabase.co"
 gh secret set SUPABASE_SERVICE_ROLE --body "sbp_xxxxxxxx..."
-gh secret set CASCADE_TOKEN --body "your_cascade_api_token"
 
 # 4. Add to Azure App Service configuration:
 az webapp config appsettings set \
@@ -246,12 +244,10 @@ If persistent: Click "Reemplazar instancia" for full replacement
 
 - [ ] Are there other databases we should know about?
 - [ ] Is data currently being stored anywhere (even if not working)?
-- [ ] What is the desired data flow: Cascade → Supabase → Dashboard?
 
 **3. Integration Status**
 
 - [ ] Is HubSpot API integration working?
-- [ ] Is Cascade API integration working?
 - [ ] Any API keys need rotation?
 
 **4. App Service Instance**

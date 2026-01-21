@@ -39,4 +39,3 @@ Objective: Improve CI reliability and observability
 Objective: Operationalize KPI exports
 
 - KR1: Automate monthly KPI dashboard export to `exports/complete_kpi_dashboard.json`
-- KR2: Add a Slack alert for KPI breaches (integrate with existing `services/slack_bot`)

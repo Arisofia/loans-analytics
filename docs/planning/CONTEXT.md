@@ -8,7 +8,6 @@ This document confirms the **Fintech Factory Architecture** - a production-ready
 
 **10-Section Repository Structure:**
 
-1. DATA LAYER - Cascade Debt exports, feature tables, KPI baselines
 2. ACCESS & CREDENTIALS - OAuth configs, integration manifests
 3. SCHEMAS & MANIFESTS - KPI definitions, data contracts, validation rules
 4. POLYGLOT CODEBASE - Python, Node.js (SQL execution engines; Kotlin PLANNED)

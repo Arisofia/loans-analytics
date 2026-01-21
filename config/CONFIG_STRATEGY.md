@@ -11,7 +11,6 @@
 config/
 ├─ pipeline.yml (MAIN - 8KB)
 ├─ pipelines/data_orchestration.yaml (DUPLICATE?)
-├─ integrations/ (4 files: Cascade, Meta, Slack, Perplexity)
 ├─ agents/specs/ (4 agent configs)
 ├─ kpis/ (3 KPI definition files)
 ├─ data_schemas/ (1 schema file)
@@ -61,7 +60,6 @@ config/
 ### Phase 2: Create environment overrides (TOMORROW)
 
 1. development.yml (local testing, mocked credentials)
-2. staging.yml (pre-production, real Cascade)
 3. production.yml (live, hardened security)
 
 ### Phase 3: Archive old configs (WEEK)
@@ -84,7 +82,6 @@ config/
 
 ```python
 # Different services loading different configs
-ingestion = load_config("config/integrations/cascade.yaml")
 agent = load_config("config/agents/specs/c_level_executive_agent.yaml")
 kpis = load_config("config/kpi_definitions.yml")
 ```
@@ -95,7 +92,6 @@ kpis = load_config("config/kpi_definitions.yml")
 # Single source of truth with environment overrides
 config = load_config("config/pipeline.yml", env=os.getenv("ENV", "development"))
 # All integrations, agents, KPIs in one place
-ingestion = config["integrations"]["cascade"]
 agent = config["agents"]["c_level_executive"]
 kpis = config["kpis"]
 ```

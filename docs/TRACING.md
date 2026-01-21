@@ -291,7 +291,6 @@ If HTTP or database calls aren't traced:
 
 ## Examples
 
-### Trace an HTTP call to Cascade API
 
 ```python
 from src.tracing_setup import get_tracer
@@ -299,11 +298,8 @@ import httpx
 
 tracer = get_tracer(__name__)
 
-async def fetch_cascade_data():
-    with tracer.start_as_current_span("cascade_fetch") as span:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                "https://api.cascadedebt.com/data",
                 headers={"Authorization": f"Bearer {TOKEN}"}
             )
             span.set_attribute("http.status_code", response.status_code)
@@ -313,7 +309,6 @@ async def fetch_cascade_data():
 The HTTP call will be automatically instrumented with attributes like:
 
 - `http.method` = GET
-- `http.url` = <https://api.cascadedebt.com/data>
 - `http.status_code` = 200
 - `http.duration_ms` = 145
 

@@ -14,7 +14,6 @@ Abaco Loans Analytics is a multi-language monorepo containing a Next.js web dash
 - **apps/web**: Next.js frontend application (Web Dashboard).
 - **apps/analytics**: Python-based analytics engine and pipelines.
 - **streamlit_app**: Streamlit dashboard for data visualization.
-- **services**: TypeScript integration services (HubSpot, Slack).
 - **python**: Core Python logic, ingestion, and KPI engine scripts.
 - **docs**: Extensive project documentation.
 - **infra**: Infrastructure configuration (Azure).
@@ -128,17 +127,11 @@ Located in `services/`.
 
 #### HubSpot Sync
 
-**Location**: `services/hubspot_sync`
 **Language**: TypeScript
 **Dependencies**: `axios`
-**Build**: `npm run build --prefix services/hubspot_sync`
 
-#### Slack Bot
 
-**Location**: `services/slack_bot`
 **Language**: TypeScript
-**Dependencies**: `@slack/bolt`, `axios`
-**Build**: `npm run build --prefix services/slack_bot`
 
 ### Database & SQL
 

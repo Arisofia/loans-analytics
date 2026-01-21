@@ -69,7 +69,6 @@ Keep these tabs open during work hours:
 - Verify no unexpected failures
 - Monitor build times
 
-**Slack Alerts** (Notification hub)
 
 - Watch #prod-alerts for notifications
 - Watch #incidents for critical issues
@@ -420,7 +419,6 @@ Do NOT create incident for:
 2. [ ] Create incident in #incidents
 3. [ ] Determine rollback vs fix
 4. [ ] Execute rollback if needed (< 5 min)
-5. [ ] Establish war room (Slack thread or call)
 
 **During Incident** (Ongoing):
 
@@ -690,7 +688,6 @@ Operational Goals:
 → Security team or CTO
 
 **For Production Incidents**:
-→ On-call engineer (call, don't Slack)
 
 ### Escalation Path
 
@@ -720,7 +717,6 @@ P1 incident→ Page on-call     → Don't wait, page immediately
 **Don't know procedure?**
 → Check README.md for documentation index
 
-**Need Slack template?**
 → See DEPLOYMENT_COORDINATION.md
 
 ---

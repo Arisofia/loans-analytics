@@ -448,11 +448,8 @@ Test Steps - Data - Expected Result: [Detailed execution]
 
 ## Test Case CI-FH-031
 
-**Test Case Title**: Web Build Failure Triggers Slack Notification  
 **Priority**: Critical  
 **Type**: Functional  
-**Preconditions**: Slack webhook configured, mock web build failure  
-**Tags**: `failure-handling`, `notifications`, `slack`  
 **Test Data Requirements**: None  
 **Parameters**: None
 
@@ -463,18 +460,14 @@ Test Steps - Data - Expected Result: [Detailed execution]
 | 1 | Introduce build error: syntax error in TypeScript | Build file modified with error |
 | 2 | Push to feature branch | Workflow triggered |
 | 3 | Wait for web job to fail | Job status: FAILED |
-| 4 | Monitor Slack channel | Notification arrives within 60s |
 | 5 | Verify notification content | Includes repo, branch, commit URL, error type |
 
 ---
 
 ## Test Case CI-FH-034
 
-**Test Case Title**: Slack Notification Delivers Within 60 Seconds  
 **Priority**: High  
 **Type**: Performance  
-**Preconditions**: Failure occurs, Slack webhook valid  
-**Tags**: `notifications`, `performance`, `slack`  
 **Test Data Requirements**: None  
 **Parameters**: `timeout: 60`
 
@@ -484,7 +477,6 @@ Test Steps - Data - Expected Result: [Detailed execution]
 |------|------|-----------------|
 | 1 | Record failure timestamp: T_fail | Time recorded |
 | 2 | Trigger workflow failure | Job fails |
-| 3 | Monitor Slack for notification | Check timestamp of Slack message |
 | 4 | Record notification timestamp: T_notify | Time recorded |
 | 5 | Calculate latency: T_notify - T_fail | Latency <= 60 seconds |
 
@@ -492,11 +484,8 @@ Test Steps - Data - Expected Result: [Detailed execution]
 
 ## Test Case CI-FH-036
 
-**Test Case Title**: Slack Notification Skips Gracefully Without Webhook  
 **Priority**: Medium  
 **Type**: Functional  
-**Preconditions**: Slack webhook not configured, workflow fails  
-**Tags**: `failure-handling`, `slack`, `graceful-degradation`  
 **Test Data Requirements**: None  
 **Parameters**: None
 

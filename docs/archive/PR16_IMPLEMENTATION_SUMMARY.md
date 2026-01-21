@@ -233,7 +233,6 @@ The `.env` file contained active credentials that are now in git history:
 1. [ ] Rotate Azure Client Secret in Azure Portal
 2. [ ] Rotate OpenAI API Key at platform.openai.com
 3. [ ] Rotate Anthropic API Key at console.anthropic.com
-4. [ ] Rotate HubSpot API Key at app.hubspot.com
 
 ### 🟠 HIGH: Clean Git History
 

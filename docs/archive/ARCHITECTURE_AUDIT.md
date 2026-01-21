@@ -30,7 +30,6 @@
 ### Phase 1: Ingestion
 
 - **File**: `/src/pipeline/ingestion.py`
-- **Purpose**: Read data from Cascade API
 - **Dependencies**: Not analyzed yet
 
 ### Phase 2: Transformation
@@ -103,10 +102,8 @@ config/agents/specs/kpi_analytics_agent.yaml
 config/agents/specs/risk_agent.yaml
 config/data_schemas/meta_insights.yaml
 config/evaluation-thresholds.yml
-config/integrations/cascade.yaml
 config/integrations/meta.yaml
 config/integrations/perplexity_comet.yaml
-config/integrations/slack.yaml
 config/kpi_definitions.yml
 config/kpi_definitions_unified.yml
 config/kpis/kpi_definitions.yaml

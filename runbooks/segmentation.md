@@ -7,8 +7,6 @@ This runbook documents operational notes for the SegmentationSummary KPI (primar
 Owner & Contacts
 
 - Owner: Commercial Analytics / KPIAnalyticsAgent
-- Primary contact: #commercial (Slack)
-- On-call escalation: `@data-engineering` (Slack) and `analytics@abaco.com`
 
 Sources & Inputs
 
