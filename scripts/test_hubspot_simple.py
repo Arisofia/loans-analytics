@@ -3,7 +3,13 @@ import sys
 
 from dotenv import load_dotenv
 from hubspot import HubSpot
-from hubspot.crm.owners.exceptions import ApiException
+try:
+    from hubspot.auth.oauth.exceptions import ApiException
+except ImportError:
+    try:
+        from hubspot.crm.owners.exceptions import ApiException
+    except ImportError:
+        ApiException = Exception
 
 
 def mask_value(value: str) -> str:
@@ -21,29 +27,29 @@ def verify_hubspot_connectivity():
     print("=" * 60)
     print("Step 1: Checking for HubSpot API Key presence...")
 
-    hubspot_api_key = os.getenv("HUBSPOT_API_KEY")
-    if not hubspot_api_key:
-        print("❌ HUBSPOT_API_KEY: NOT FOUND in environment.")
-        print("   Please ensure HUBSPOT_API_KEY is set in your .env file.")
+    hubspot_access_token = os.getenv("HUBSPOT_ACCESS_TOKEN") or os.getenv("HUBSPOT_API_KEY")
+    if not hubspot_access_token:
+        print("❌ HUBSPOT_ACCESS_TOKEN or HUBSPOT_API_KEY: NOT FOUND in environment.")
+        print("   Please ensure HUBSPOT_ACCESS_TOKEN or HUBSPOT_API_KEY is set in your .env file.")
         sys.exit(1)
 
-    print(f"✅ HUBSPOT_API_KEY: Found. (Value: {mask_value(hubspot_api_key)})")
+    print(f"✅ HUBSPOT_ACCESS_TOKEN: Found. (Value: {mask_value(hubspot_access_token)})")
 
     print("\nStep 2: Verifying HubSpot API connectivity and authentication...")
     try:
-        client = HubSpot(api_key=hubspot_api_key)
+        client = HubSpot(access_token=hubspot_access_token)
         client.crm.owners.basic_api.get_page(limit=1)
         print("✅ HubSpot API Verification: SUCCESS")
         print("   Successfully authenticated and connected to the HubSpot API.")
 
     except ApiException as e:
         print("❌ HubSpot API Verification: FAILED")
-        if e.status == 401:
+        if hasattr(e, 'status') and e.status == 401:
             print(
-                "   Reason: Authentication error. The API key is likely invalid, expired, or lacks permissions."
+                "   Reason: Authentication error. The access token is likely invalid, expired, or lacks permissions."
             )
         else:
-            print(f"   Reason: An API error occurred (Status: {e.status}): {e.reason}")
+            print(f"   Reason: An API error occurred (Status: {getattr(e, 'status', 'unknown')}): {getattr(e, 'reason', str(e))}")
         sys.exit(1)
 
     except Exception as e:
