@@ -28,7 +28,7 @@ jobs:
         working-directory: apps/web
 
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+        run: pnpm exec playwright install --with-deps
         working-directory: apps/web
 
       - name: Start dev server
@@ -38,7 +38,7 @@ jobs:
         working-directory: apps/web
 
       - name: Wait for server
-        run: npx wait-on http://localhost:3000 --timeout 60000
+        run: pnpm exec wait-on http://localhost:3000 --timeout 60000
         working-directory: apps/web
 
       - name: Run Playwright tests
