@@ -31,8 +31,7 @@ function download(name: string, data: string, mime: string) {
 
 export function ExportControls({ analytics }: Props) {
   const [error, setError] = useState<string | null>(null)
-  const hasLoans = analytics.loans?.length > 0
-  const handleExport = (format: 'csv' | 'json' | 'markdown') => {
+  const hasLoans = (analytics.loans?.length ?? 0) > 0  const handleExport = (format: 'csv' | 'json' | 'markdown') => {
     setError(null)
     try {
       let content = ''
