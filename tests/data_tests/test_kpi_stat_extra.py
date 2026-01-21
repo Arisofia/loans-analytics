@@ -17,8 +17,8 @@ def test_kpi_chi2_contingency():
 
 def test_kpi_mannwhitney():
     df = pd.read_csv(SAMPLE_PATH)
-    consumer = df[df['segment'] == 'Consumer']['par_90']
-    sme = df[df['segment'] == 'SME']['par_90']
-    stat, p = mannwhitneyu(consumer, sme, alternative='two-sided')
+    consumer = df[df["segment"] == "Consumer"]["par_90"]
+    sme = df[df["segment"] == "SME"]["par_90"]
+    stat, p = mannwhitneyu(consumer, sme, alternative="two-sided")
     assert stat >= 0
     assert p >= 0.0

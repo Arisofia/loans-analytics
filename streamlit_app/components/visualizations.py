@@ -1,6 +1,8 @@
-import streamlit as st
 import plotly.express as px
+import streamlit as st
+
 from src.theme import ABACO_THEME
+
 
 def apply_theme(fig):
     """Apply ABACO design system theme to a Plotly figure."""
@@ -12,6 +14,7 @@ def apply_theme(fig):
         colorway=["#C1A6FF", "#5F4896", "#10B981", "#FB923C"],
     )
     return fig
+
 
 def styled_df(df):
     """Apply ABACO styling to a pandas DataFrame for Streamlit display."""

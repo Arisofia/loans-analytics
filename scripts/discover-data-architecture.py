@@ -135,8 +135,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 70)
     print("NEXT STEPS")
     print("=" * 70)
-    print(
-        """
+    print("""
 1. Review findings above for database/storage connections
 2. If no PostgreSQL/MySQL/Azure SQL found:
    → Check if data stored in Blob Storage (CSV/Parquet files)
@@ -153,5 +152,4 @@ if __name__ == "__main__":
    - Where does it get stored (storage)?
    - How do pipelines access it?
    - How does dashboard query it?
-"""
-    )
+""")

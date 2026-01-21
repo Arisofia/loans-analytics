@@ -4,8 +4,14 @@
 
 set -e  # Exit on error
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
+# Check for bc dependency
+if ! command -v bc &> /dev/null; then
+    echo "Error: 'bc' is required for score comparisons. Install with: apt-get install bc"
+    exit 1
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -150,10 +156,12 @@ print_header "Checking Python Code Formatting (Black)"
 if [ -d "python" ]; then
     if command -v black &> /dev/null; then
         echo "Checking Python code formatting..."
-        if black --check python/ tests/ 2>&1; then
+        DIRS_TO_CHECK="python/"
+        [ -d "tests" ] && DIRS_TO_CHECK="$DIRS_TO_CHECK tests/"
+        if black --check $DIRS_TO_CHECK 2>&1; then
             print_success "Python code is properly formatted"
         else
-            print_warning "Python code needs formatting. Run: black python/ tests/"
+            print_warning "Python code needs formatting. Run: black $DIRS_TO_CHECK"
             OVERALL_STATUS=1
         fi
     else
@@ -166,10 +174,12 @@ print_header "Checking Python Import Sorting (isort)"
 if [ -d "python" ]; then
     if command -v isort &> /dev/null; then
         echo "Checking Python import sorting..."
-        if isort --check-only python/ tests/ 2>&1; then
+        DIRS_TO_CHECK="python/"
+        [ -d "tests" ] && DIRS_TO_CHECK="$DIRS_TO_CHECK tests/"
+        if isort --check-only $DIRS_TO_CHECK 2>&1; then
             print_success "Python imports are properly sorted"
         else
-            print_warning "Python imports need sorting. Run: isort python/ tests/"
+            print_warning "Python imports need sorting. Run: isort $DIRS_TO_CHECK"
             OVERALL_STATUS=1
         fi
     else

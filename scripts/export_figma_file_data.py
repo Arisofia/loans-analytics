@@ -11,7 +11,9 @@ try:
     if FIGMA_API_URL:
         # Use MCP server endpoint
         payload = {"file_id": FIGMA_FILE_ID}
-        response = requests.post(f"{FIGMA_API_URL}/figma/file", json=payload, timeout=30)
+        response = requests.post(
+            f"{FIGMA_API_URL}/figma/file", json=payload, timeout=30
+        )
         data = response.json()
     else:
         # Use direct Figma API

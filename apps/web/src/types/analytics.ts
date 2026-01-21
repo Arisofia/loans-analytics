@@ -47,7 +47,7 @@ export interface LoanRow {
   interest_rate?: number
   principal_balance?: number
   dpd_status?: string
-  [key: string]: any
+    [key: string]: string | number | undefined
 }
 
 export interface KPIStats {

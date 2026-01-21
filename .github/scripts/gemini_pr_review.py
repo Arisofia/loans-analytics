@@ -2,10 +2,10 @@
 This is moved out of the workflow to avoid YAML parsing issues with large inline scripts.
 """
 
-import os
-import sys
-import subprocess
 import logging
+import os
+import subprocess
+import sys
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -23,14 +23,18 @@ def require_module(modname):
     try:
         return __import__(modname)
     except ImportError:
-        logger.error(f"Required module '{modname}' not installed; skipping Gemini review.")
+        logger.error(
+            f"Required module '{modname}' not installed; skipping Gemini review."
+        )
         return None
 
 
 def main() -> int:
     """Run Gemini PR review and post a comment on the PR. Returns exit code."""
     # Validate required environment variables
-    if not require_env_vars("GITHUB_TOKEN", "GEMINI_API_KEY", "PR_NUMBER", "REPO_FULL_NAME", "BASE_REF"):
+    if not require_env_vars(
+        "GITHUB_TOKEN", "GEMINI_API_KEY", "PR_NUMBER", "REPO_FULL_NAME", "BASE_REF"
+    ):
         return 0
 
     github_token = os.getenv("GITHUB_TOKEN")
@@ -47,7 +51,9 @@ def main() -> int:
     requests_mod = require_module("requests")
     if requests_mod is None:
         return 0
-    RequestException = getattr(requests_mod, "exceptions", requests_mod).__dict__.get("RequestException", Exception)
+    RequestException = getattr(requests_mod, "exceptions", requests_mod).__dict__.get(
+        "RequestException", Exception
+    )
 
     # Configure Gemini API
     try:
@@ -55,7 +61,9 @@ def main() -> int:
         if callable(configure_fn):
             configure_fn(api_key=gemini_key)
         else:
-            logger.warning("google.generativeai.configure not available; skipping Gemini review.")
+            logger.warning(
+                "google.generativeai.configure not available; skipping Gemini review."
+            )
             return 0
     except Exception:
         logger.exception("Failed to configure Gemini API")
@@ -73,7 +81,9 @@ def main() -> int:
                         model_name = getattr(model, "name", None)
                         break
             else:
-                logger.warning("google.generativeai.list_models not available; cannot auto-detect model")
+                logger.warning(
+                    "google.generativeai.list_models not available; cannot auto-detect model"
+                )
         except Exception:
             logger.exception("Could not list Gemini models")
             model_name = None
@@ -84,7 +94,9 @@ def main() -> int:
 
     GenModel = getattr(genai, "GenerativeModel", None)
     if GenModel is None:
-        logger.error("google.generativeai.GenerativeModel not available; skipping review.")
+        logger.error(
+            "google.generativeai.GenerativeModel not available; skipping review."
+        )
         return 0
 
     try:

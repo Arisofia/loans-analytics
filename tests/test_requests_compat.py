@@ -1,7 +1,9 @@
 import warnings
+
 import pytest
-from src.compat.requests_fix import check_cryptography_robust
 from requests.exceptions import RequestsDependencyWarning
+
+from src.compat.requests_fix import check_cryptography_robust
 
 
 def test_check_cryptography_prerelease_and_none():

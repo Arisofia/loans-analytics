@@ -1,11 +1,14 @@
 import runpy
-import requests
-import pytest
 from pathlib import Path
+
+import pytest
+import requests
 
 from src.config.paths import Paths
 
-SCRIPT_PATH = Path(__file__).resolve().parent.parent / "scripts" / "sync_kpi_table_to_figma.py"
+SCRIPT_PATH = (
+    Path(__file__).resolve().parent.parent / "scripts" / "sync_kpi_table_to_figma.py"
+)
 CSV_NAME = "KPI_Mapping_Table.csv"
 
 
@@ -47,7 +50,9 @@ def test_sync_success(monkeypatch, capsys, tmp_path):
 
     # Mock GET to return a file structure with the KPI Table page
     file_json = {"document": {"children": [{"name": "KPI Table", "id": "page123"}]}}
-    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: DummyResp(200, file_json))
+    monkeypatch.setattr(
+        requests, "get", lambda *args, **kwargs: DummyResp(200, file_json)
+    )
     monkeypatch.setattr(requests, "put", lambda *args, **kwargs: DummyResp(200))
 
     # Run the script; it should print a success message
@@ -62,7 +67,9 @@ def test_page_not_found(monkeypatch, tmp_path):
 
     # GET returns a file without the KPI Table page
     file_json = {"document": {"children": [{"name": "Other Page", "id": "pageX"}]}}
-    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: DummyResp(200, file_json))
+    monkeypatch.setattr(
+        requests, "get", lambda *args, **kwargs: DummyResp(200, file_json)
+    )
 
     with pytest.raises(ValueError) as exc:
         runpy.run_path(str(SCRIPT_PATH), run_name="__main__")
@@ -85,7 +92,9 @@ def test_put_request_failure(monkeypatch, tmp_path):
     write_csv(tmp_path)
 
     file_json = {"document": {"children": [{"name": "KPI Table", "id": "page123"}]}}
-    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: DummyResp(200, file_json))
+    monkeypatch.setattr(
+        requests, "get", lambda *args, **kwargs: DummyResp(200, file_json)
+    )
 
     def fail_put(*args, **kwargs):
         raise requests.exceptions.RequestException("put failed")

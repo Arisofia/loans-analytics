@@ -78,9 +78,9 @@ class TestAnalyticsUnitCoverage:
             timeout=900,
         )
 
-        assert "TOTAL" in result.stdout or "passed" in result.stdout, (
-            "Coverage report not generated"
-        )
+        assert (
+            "TOTAL" in result.stdout or "passed" in result.stdout
+        ), "Coverage report not generated"
 
         htmlcov_dir = repo_root / "htmlcov"
         if htmlcov_dir.exists():

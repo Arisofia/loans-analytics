@@ -2,55 +2,57 @@ from abc import ABC, abstractmethod
 
 import polars as pl
 
+
 class RiskStrategy(ABC):
     @abstractmethod
     def process_expression(self) -> pl.Expr:
         """Return a Polars expression for the risk action."""
         pass
 
+
 class RecourseStrategy(RiskStrategy):
     def process_expression(self) -> pl.Expr:
         # If overdue >90, chargeback
-        return pl.when(pl.col("days_overdue") > 90) \
-                 .then(pl.lit("chargeback")) \
-                 .otherwise(pl.lit("ok"))
+        return (
+            pl.when(pl.col("days_overdue") > 90)
+            .then(pl.lit("chargeback"))
+            .otherwise(pl.lit("ok"))
+        )
+
 
 class NonRecourseStrategy(RiskStrategy):
     def process_expression(self) -> pl.Expr:
         # If overdue >90 and insolvency, insurance claim
         return (
-            pl.when(
-                (pl.col("days_overdue") > 90)
-                & (pl.col("reason") == "insolvency")
-            )
+            pl.when((pl.col("days_overdue") > 90) & (pl.col("reason") == "insolvency"))
             .then(pl.lit("insurance_claim"))
             .otherwise(pl.lit("ok"))
         )
+
 
 class HybridStrategy(RiskStrategy):
     def process_expression(self) -> pl.Expr:
         # Hybrid logic: could be a mix, here we combine both for demonstration
         return (
-            pl.when(
-                (pl.col("days_overdue") > 90)
-                & (pl.col("reason") == "insolvency")
-            )
+            pl.when((pl.col("days_overdue") > 90) & (pl.col("reason") == "insolvency"))
             .then(pl.lit("insurance_claim"))
             .when(pl.col("days_overdue") > 90)
             .then(pl.lit("chargeback"))
             .otherwise(pl.lit("ok"))
         )
 
+
 class RiskCalculator:
     """
     Polars-native Risk Calculator using Strategy Pattern.
     """
+
     @staticmethod
     def get_strategy(recourse_type: str) -> RiskStrategy:
         strategies = {
             "recourse": RecourseStrategy(),
             "non-recourse": NonRecourseStrategy(),
-            "hybrid": HybridStrategy()
+            "hybrid": HybridStrategy(),
         }
         strategy = strategies.get(recourse_type.lower())
         if not strategy:
@@ -76,9 +78,11 @@ class RiskCalculator:
         for rt in recourse_types:
             try:
                 strategy = self.get_strategy(rt)
-                expr = pl.when(pl.col("recourse_type") == rt) \
-                         .then(strategy.process_expression()) \
-                         .otherwise(expr)
+                expr = (
+                    pl.when(pl.col("recourse_type") == rt)
+                    .then(strategy.process_expression())
+                    .otherwise(expr)
+                )
             except ValueError:
                 continue
 

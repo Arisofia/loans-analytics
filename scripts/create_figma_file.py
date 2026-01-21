@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
-def create_figma_file(name: str, project_id: Optional[str] = None, token: Optional[str] = None) -> Optional[str]:
+def create_figma_file(
+    name: str, project_id: Optional[str] = None, token: Optional[str] = None
+) -> Optional[str]:
     """Create a new Figma file.
 
     If project_id is None, it usually creates it in the user's Drafts.
@@ -55,16 +57,24 @@ def create_figma_file(name: str, project_id: Optional[str] = None, token: Option
 
     except requests.RequestException as e:
         logger.error(f"Failed to create Figma file: {e}")
-        if hasattr(e, 'response') and e.response is not None:
+        if hasattr(e, "response") and e.response is not None:
             logger.error(f"Response: {e.response.text}")
         return None
 
 
 def main():
     parser = argparse.ArgumentParser(description="Create a new Figma document")
-    parser.add_argument("--name", default="Abaco Loans Analytics Dashboard", help="Name of the new Figma file")
-    parser.add_argument("--project-id", help="Optional Figma Project ID (defaults to Drafts if omitted)")
-    parser.add_argument("--token", help="Figma API Token (overrides FIGMA_TOKEN env var)")
+    parser.add_argument(
+        "--name",
+        default="Abaco Loans Analytics Dashboard",
+        help="Name of the new Figma file",
+    )
+    parser.add_argument(
+        "--project-id", help="Optional Figma Project ID (defaults to Drafts if omitted)"
+    )
+    parser.add_argument(
+        "--token", help="Figma API Token (overrides FIGMA_TOKEN env var)"
+    )
 
     args = parser.parse_args()
 

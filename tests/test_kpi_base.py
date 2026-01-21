@@ -1,4 +1,5 @@
 import pandas as pd
+
 from src.kpis.base import KPIMetadata, create_context, safe_numeric
 
 

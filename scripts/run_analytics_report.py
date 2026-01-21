@@ -28,7 +28,9 @@ class AnalyticsReportRunner:
     Orchestrates ingestion, transformation, and KPI calculation.
     """
 
-    def __init__(self, data_path: Path, output_path: Path, config_path: Optional[Path] = None):
+    def __init__(
+        self, data_path: Path, output_path: Path, config_path: Optional[Path] = None
+    ):
         """
         Initialize the report runner.
 
@@ -61,7 +63,9 @@ class AnalyticsReportRunner:
             logger.info("Market-leading report generated at %s", self.output_path)
 
         except Exception as exc:
-            logger.critical("Fatal system error during report execution: %s", exc, exc_info=True)
+            logger.critical(
+                "Fatal system error during report execution: %s", exc, exc_info=True
+            )
             sys.exit(1)
 
     def _generate_report(self, summary: Dict[str, Any]) -> None:
@@ -136,7 +140,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Abaco Financial Intelligence - Automated Report Runner"
     )
-    parser.add_argument("--data", required=True, help="Input data file path (CSV/Parquet)")
+    parser.add_argument(
+        "--data", required=True, help="Input data file path (CSV/Parquet)"
+    )
     parser.add_argument("--output", required=True, help="Output report path (Markdown)")
     parser.add_argument("--config", help="Optional pipeline config override")
 

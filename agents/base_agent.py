@@ -108,7 +108,9 @@ class BaseAgent(ABC):
             Tool execution result
         """
 
-    def execute(self, objective: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def execute(
+        self, objective: str, context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Execute agent task using ReAct framework.
 
         Args:
@@ -134,7 +136,10 @@ class BaseAgent(ABC):
 
             # Execute using ReAct
             result = self.react_agent.solve(
-                task=task, system_prompt=system_prompt, tools=tools, tool_executor=self.execute_tool
+                task=task,
+                system_prompt=system_prompt,
+                tools=tools,
+                tool_executor=self.execute_tool,
             )
 
             # Record execution
@@ -174,7 +179,9 @@ class BaseAgent(ABC):
                 "metadata": {
                     "timestamp": start_time.isoformat(),
                     "objective": objective,
-                    "duration_seconds": (datetime.utcnow() - start_time).total_seconds(),
+                    "duration_seconds": (
+                        datetime.utcnow() - start_time
+                    ).total_seconds(),
                 },
             }
 

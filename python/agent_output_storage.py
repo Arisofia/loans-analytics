@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import json
 import re
 from datetime import datetime, timezone
@@ -58,7 +59,5 @@ def list_agent_outputs(
     storage_path = Path(storage_dir)
     safe_agent_prefix = _SAFE_NAME.sub("_", agent_name or "agent")
     return [
-        f.name
-        for f in storage_path.glob(f"{safe_agent_prefix}_v*.json")
-        if f.is_file()
+        f.name for f in storage_path.glob(f"{safe_agent_prefix}_v*.json") if f.is_file()
     ]

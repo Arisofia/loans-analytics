@@ -159,7 +159,9 @@ class Orchestrator:
             result = future.result(timeout=task.timeout)
 
             task.status = (
-                WorkflowStatus.COMPLETED if result.get("success") else WorkflowStatus.FAILED
+                WorkflowStatus.COMPLETED
+                if result.get("success")
+                else WorkflowStatus.FAILED
             )
             task.result = result
 
@@ -185,7 +187,9 @@ class Orchestrator:
             "result": task.result,
             "error": task.error,
             "duration_seconds": (
-                (task.end_time - task.start_time).total_seconds() if task.start_time else 0
+                (task.end_time - task.start_time).total_seconds()
+                if task.start_time
+                else 0
             ),
         }
 
@@ -210,7 +214,9 @@ class Orchestrator:
                     continue
 
                 # Check if all dependencies are completed
-                deps_met = all(dep_id in completed_tasks for dep_id in task.dependencies)
+                deps_met = all(
+                    dep_id in completed_tasks for dep_id in task.dependencies
+                )
 
                 if deps_met:
                     current_level.append(task)
@@ -263,7 +269,9 @@ class Orchestrator:
                     batch = level_tasks[i : i + workflow.max_parallel]
 
                     # Submit batch for parallel execution
-                    futures = [self.executor.submit(self.execute_task, task) for task in batch]
+                    futures = [
+                        self.executor.submit(self.execute_task, task) for task in batch
+                    ]
 
                     # Wait for batch to complete
                     for future, task in zip(futures, batch):
@@ -313,7 +321,8 @@ class Orchestrator:
                 "workflow_id": workflow_id,
                 "execution_record": execution_record,
                 "failed_tasks": [
-                    {"id": t.id, "agent": t.agent_name, "error": t.error} for t in failed_tasks
+                    {"id": t.id, "agent": t.agent_name, "error": t.error}
+                    for t in failed_tasks
                 ],
             }
 
@@ -340,10 +349,18 @@ class Orchestrator:
             "id": workflow.id,
             "name": workflow.name,
             "total_tasks": len(workflow.tasks),
-            "pending": len([t for t in workflow.tasks if t.status == WorkflowStatus.PENDING]),
-            "running": len([t for t in workflow.tasks if t.status == WorkflowStatus.RUNNING]),
-            "completed": len([t for t in workflow.tasks if t.status == WorkflowStatus.COMPLETED]),
-            "failed": len([t for t in workflow.tasks if t.status == WorkflowStatus.FAILED]),
+            "pending": len(
+                [t for t in workflow.tasks if t.status == WorkflowStatus.PENDING]
+            ),
+            "running": len(
+                [t for t in workflow.tasks if t.status == WorkflowStatus.RUNNING]
+            ),
+            "completed": len(
+                [t for t in workflow.tasks if t.status == WorkflowStatus.COMPLETED]
+            ),
+            "failed": len(
+                [t for t in workflow.tasks if t.status == WorkflowStatus.FAILED]
+            ),
         }
 
     def get_execution_history(self) -> List[Dict[str, Any]]:

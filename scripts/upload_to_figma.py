@@ -1,8 +1,9 @@
+import argparse
+import logging
 import os
 import sys
-import argparse
+
 import requests
-import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 LOG = logging.getLogger(__name__)
@@ -12,6 +13,7 @@ FIGMA_FILE_KEY = os.getenv("FIGMA_FILE_KEY")
 FIGMA_NODE_ID = os.getenv("FIGMA_NODE_ID")
 
 DEFAULT_IMAGE_PATH = "exports/figma/growth_chart.png"
+
 
 def upload_image_to_figma(image_path, file_key, node_id, token, public_url=None):
     """
@@ -31,7 +33,9 @@ def upload_image_to_figma(image_path, file_key, node_id, token, public_url=None)
 
     if not public_url:
         LOG.info("Local Image: %s", image_path)
-        LOG.info("Note: To fully automate, upload this image to a public URL (e.g. S3) and pass --url")
+        LOG.info(
+            "Note: To fully automate, upload this image to a public URL (e.g. S3) and pass --url"
+        )
         return
 
     LOG.info("Updating Figma node %s with public URL: %s", node_id, public_url)
@@ -43,19 +47,28 @@ def upload_image_to_figma(image_path, file_key, node_id, token, public_url=None)
         response = requests.get(
             f"https://api.figma.com/v1/files/{file_key}/nodes?ids={node_id}",
             headers=headers,
-            timeout=30
+            timeout=30,
         )
         if response.status_code == 200:
             LOG.info("Successfully verified Figma node access.")
         else:
-            LOG.error("Figma API returned status %d: %s", response.status_code, response.text)
+            LOG.error(
+                "Figma API returned status %d: %s", response.status_code, response.text
+            )
     except Exception as e:
         LOG.error("Error communicating with Figma API: %s", e)
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Upload or link an image to a Figma node.")
-    parser.add_argument("--image", default=DEFAULT_IMAGE_PATH, help="Path to local image file")
-    parser.add_argument("--url", help="Public URL of the image (required for actual update)")
+    parser = argparse.ArgumentParser(
+        description="Upload or link an image to a Figma node."
+    )
+    parser.add_argument(
+        "--image", default=DEFAULT_IMAGE_PATH, help="Path to local image file"
+    )
+    parser.add_argument(
+        "--url", help="Public URL of the image (required for actual update)"
+    )
     parser.add_argument("--file-key", default=FIGMA_FILE_KEY, help="Figma file key")
     parser.add_argument("--node-id", default=FIGMA_NODE_ID, help="Figma node ID")
 
@@ -66,7 +79,9 @@ if __name__ == "__main__":
     node_id = args.node_id
 
     if not (token and file_key and node_id):
-        LOG.error("FIGMA_TOKEN, FIGMA_FILE_KEY, and FIGMA_NODE_ID must be provided (env or args).")
+        LOG.error(
+            "FIGMA_TOKEN, FIGMA_FILE_KEY, and FIGMA_NODE_ID must be provided (env or args)."
+        )
         sys.exit(1)
 
     upload_image_to_figma(args.image, file_key, node_id, token, public_url=args.url)

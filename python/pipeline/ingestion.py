@@ -14,11 +14,8 @@ from jsonschema import Draft202012Validator
 from pydantic import BaseModel, Field, ValidationError
 
 from .utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
-from .validation import (
-    DataQualityReport,
-    DataQualityReporter,
-    validate_dataframe,
-)
+from .validation import (DataQualityReport, DataQualityReporter,
+                         validate_dataframe)
 
 logger = logging.getLogger("abaco.ingestion")
 
@@ -83,9 +80,7 @@ class UnifiedIngestion:
         )
 
     def _build_rate_limiter(self, config: Dict[str, Any]) -> RateLimiter:
-        rate_cfg = config.get("cascade", {}).get("http", {}).get(
-            "rate_limit", {}
-        )
+        rate_cfg = config.get("cascade", {}).get("http", {}).get("rate_limit", {})
         return RateLimiter(
             max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60)
         )
@@ -170,9 +165,7 @@ class UnifiedIngestion:
 
         for idx, record in enumerate(records):
             try:
-                clean_record = {
-                    str(k).strip().lower(): v for k, v in record.items()
-                }
+                clean_record = {str(k).strip().lower(): v for k, v in record.items()}
                 if "loan_id" not in clean_record:
                     clean_record["loan_id"] = f"agg_{idx}"
                 validated_records.append(
@@ -268,12 +261,8 @@ class UnifiedIngestion:
             "cash_column_candidates",
             ["cash_balance_usd", "cash_balance", "cash_usd", "cash"],
         )
-        date_col = self._select_column(
-            list(financials_df.columns), date_candidates
-        )
-        cash_col = self._select_column(
-            list(financials_df.columns), cash_candidates
-        )
+        date_col = self._select_column(list(financials_df.columns), date_candidates)
+        cash_col = self._select_column(list(financials_df.columns), cash_candidates)
         if not date_col or not cash_col:
             self._log_event(
                 "looker_financials",
@@ -284,18 +273,14 @@ class UnifiedIngestion:
             return {}
 
         parsed = financials_df[[date_col, cash_col]].copy()
-        parsed[date_col] = (
-            pd.to_datetime(parsed[date_col], errors="coerce").dt.strftime(
-                "%Y-%m-%d"
-            )
-        )
+        parsed[date_col] = pd.to_datetime(
+            parsed[date_col], errors="coerce"
+        ).dt.strftime("%Y-%m-%d")
         parsed[cash_col] = pd.to_numeric(parsed[cash_col], errors="coerce")
         parsed = parsed.dropna(subset=[date_col])
         grouped = parsed.groupby(date_col, dropna=False)[cash_col].last()
         cash_by_date = {
-            str(idx): float(val)
-            for idx, val in grouped.items()
-            if pd.notna(val)
+            str(idx): float(val) for idx, val in grouped.items() if pd.notna(val)
         }
         if cash_by_date:
             self._log_event(
@@ -311,9 +296,9 @@ class UnifiedIngestion:
     ) -> pd.DataFrame:
         column_map = {col.lower(): col for col in df.columns}
         reporting_col = column_map.get("reporting_date")
-        outstanding_col = column_map.get(
-            "outstanding_balance_usd"
-        ) or column_map.get("outstanding_balance")
+        outstanding_col = column_map.get("outstanding_balance_usd") or column_map.get(
+            "outstanding_balance"
+        )
         par_7_col = column_map.get("par_7_balance_usd")
         par_30_col = column_map.get("par_30_balance_usd")
         par_60_col = column_map.get("par_60_balance_usd")
@@ -375,13 +360,11 @@ class UnifiedIngestion:
     ) -> pd.DataFrame:
         column_map = {col.lower(): col for col in df.columns}
         dpd_col = column_map.get("dpd") or column_map.get("days_past_due")
-        balance_col = column_map.get(
-            "outstanding_balance_usd"
-        ) or column_map.get("outstanding_balance")
+        balance_col = column_map.get("outstanding_balance_usd") or column_map.get(
+            "outstanding_balance"
+        )
         if not dpd_col or not balance_col:
-            raise ValueError(
-                "Missing Looker loan columns: dpd, outstanding_balance"
-            )
+            raise ValueError("Missing Looker loan columns: dpd, outstanding_balance")
 
         looker_cfg = self.config.get("looker", {})
         measurement_col = looker_cfg.get("measurement_date_column")
@@ -389,15 +372,11 @@ class UnifiedIngestion:
 
         measurement_date = None
         if measurement_col:
-            resolved = self._select_column(
-                list(df.columns), [measurement_col]
-            )
+            resolved = self._select_column(list(df.columns), [measurement_col])
             if resolved:
-                measurement_date = (
-                    pd.to_datetime(df[resolved], errors="coerce").dt.strftime(
-                        "%Y-%m-%d"
-                    )
-                )
+                measurement_date = pd.to_datetime(
+                    df[resolved], errors="coerce"
+                ).dt.strftime("%Y-%m-%d")
         if measurement_date is None:
             if strategy == "max_disburse_date":
                 resolved = self._select_column(
@@ -411,29 +390,21 @@ class UnifiedIngestion:
                 resolved = None
             if resolved:
                 max_date = pd.to_datetime(df[resolved], errors="coerce").max()
-                date_value = (
-                    max_date.date().isoformat() if pd.notna(max_date) else None
-                )
+                date_value = max_date.date().isoformat() if pd.notna(max_date) else None
             else:
                 date_value = None
             if not date_value:
                 date_value = datetime.now(timezone.utc).date().isoformat()
-            measurement_date = pd.Series(
-                [date_value] * len(df), index=df.index
-            )
+            measurement_date = pd.Series([date_value] * len(df), index=df.index)
 
-        balance = pd.to_numeric(df[balance_col], errors="coerce").fillna(
-            0.0
-        )
+        balance = pd.to_numeric(df[balance_col], errors="coerce").fillna(0.0)
         dpd = pd.to_numeric(df[dpd_col], errors="coerce").fillna(0.0)
 
         frame = pd.DataFrame(
             {
                 "measurement_date": measurement_date,
                 "total_receivable_usd": balance,
-                "dpd_90_plus_usd": balance.where(
-                    dpd >= DPD_THRESHOLD_90, 0.0
-                ),
+                "dpd_90_plus_usd": balance.where(dpd >= DPD_THRESHOLD_90, 0.0),
                 "dpd_60_90_usd": balance.where(
                     (dpd >= DPD_THRESHOLD_60) & (dpd < DPD_THRESHOLD_90), 0.0
                 ),
@@ -493,24 +464,16 @@ class UnifiedIngestion:
             validated_df, record_errors = self._validate_records(df)
             errors = schema_errors + record_errors
             if errors:
-                self._log_event(
-                    "validation", "completed", error_count=len(errors)
-                )
+                self._log_event("validation", "completed", error_count=len(errors))
 
             self._validate_dataframe(validated_df)
 
             if errors and self.config.get("validation", {}).get("strict", True):
-                raise ValueError(
-                    f"Schema validation failed for {len(errors)} rows"
-                )
+                raise ValueError(f"Schema validation failed for {len(errors)} rows")
 
-            validated_df, deduped_count = self._apply_deduplication(
-                validated_df
-            )
+            validated_df, deduped_count = self._apply_deduplication(validated_df)
             if deduped_count:
-                self._log_event(
-                    "deduplication", "completed", removed=deduped_count
-                )
+                self._log_event("deduplication", "completed", removed=deduped_count)
 
             archived = None
             if archive_dir:
@@ -556,12 +519,8 @@ class UnifiedIngestion:
             financials_path=str(financials_path) if financials_path else None,
         )
         if not loans_path.exists():
-            self._log_event(
-                "looker_file_check", "failed", error="Loans file not found"
-            )
-            raise FileNotFoundError(
-                f"Looker loans file not found: {loans_path}"
-            )
+            self._log_event("looker_file_check", "failed", error="Loans file not found")
+            raise FileNotFoundError(f"Looker loans file not found: {loans_path}")
 
         checksum = hash_file(loans_path)
         try:
@@ -575,9 +534,7 @@ class UnifiedIngestion:
                 "par_60_balance_usd",
                 "par_90_balance_usd",
             }.issubset(columns_lower)
-            has_dpd = {"dpd", "outstanding_balance"}.issubset(
-                columns_lower
-            ) or {
+            has_dpd = {"dpd", "outstanding_balance"}.issubset(columns_lower) or {
                 "dpd",
                 "outstanding_balance_usd",
             }.issubset(columns_lower)
@@ -617,9 +574,7 @@ class UnifiedIngestion:
 
             metadata = {
                 "source_looker_loans": str(loans_path),
-                "financials_path": (
-                    str(financials_path) if financials_path else None
-                ),
+                "financials_path": (str(financials_path) if financials_path else None),
                 "source_mode": source_mode,
                 "checksum": checksum,
                 "row_count": len(validated_df),
@@ -681,9 +636,7 @@ class UnifiedIngestion:
 
         df = None
         # Try JSON first if headers indicate JSON or the content appears to be JSON
-        is_json = "json" in content_type or content.lstrip().startswith(
-            (b"{", b"[")
-        )
+        is_json = "json" in content_type or content.lstrip().startswith((b"{", b"["))
         if is_json:
             try:
                 stripped = content.lstrip()
@@ -709,9 +662,7 @@ class UnifiedIngestion:
 
         # log parsed rows for observability
         try:
-            self._log_event(
-                "http_parsed", "success", rows=len(df), checksum=checksum
-            )
+            self._log_event("http_parsed", "success", rows=len(df), checksum=checksum)
         except Exception:
             # Best-effort logging - do not fail
             pass
@@ -731,9 +682,7 @@ class UnifiedIngestion:
             record_errors = record_errors or []
         errors = schema_errors + record_errors
         if errors:
-            self._log_event(
-                "validation", "completed", error_count=len(errors)
-            )
+            self._log_event("validation", "completed", error_count=len(errors))
 
         self._validate_dataframe(validated_df)
 

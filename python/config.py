@@ -10,6 +10,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class FinancialGuardrails(BaseModel):
     """Financial guardrails and targets for the loan portfolio."""
+
     min_rotation: float = Field(default=4.5)
     max_default_rate: float = Field(default=0.04)
     max_top_10_concentration: float = Field(default=0.30)
@@ -26,6 +27,7 @@ class FinancialGuardrails(BaseModel):
 
 class RiskParameters(BaseModel):
     """Risk-specific business parameters."""
+
     dilution_threshold: float = Field(default=0.05, ge=0, le=1)
     recourse_cap: int = Field(default=100000)
     loss_given_default: float = Field(default=0.10, ge=0, le=1)
@@ -33,6 +35,7 @@ class RiskParameters(BaseModel):
 
 class SLASettings(BaseModel):
     """Service Level Agreements for operations."""
+
     decision_sla_hours: int = Field(default=24)
     funding_sla_hours: int = Field(default=48)
     sla_compliance_target: float = Field(default=0.90)
@@ -41,6 +44,7 @@ class SLASettings(BaseModel):
 
 class AnalyticsSettings(BaseModel):
     """Settings for analytics engine and KPI calculations."""
+
     required_columns: List[str] = Field(
         default=[
             "loan_amount",
@@ -94,28 +98,28 @@ class AnalyticsSettings(BaseModel):
 
 class KPISettings(BaseModel):
     """Thresholds for individual KPIs."""
+
     portfolio_risk: Dict[str, float] = Field(
         default={"warning": 0.03, "critical": 0.05}
     )
     loan_book_growth: Dict[str, float] = Field(
         default={"warning": 0.05, "critical": 0.02}
     )
-    liquidity_ratio: Dict[str, float] = Field(
-        default={"warning": 1.2, "critical": 1.0}
-    )
-    compliance_breaches: Dict[str, int] = Field(
-        default={"warning": 1, "critical": 3}
-    )
+    liquidity_ratio: Dict[str, float] = Field(default={"warning": 1.2, "critical": 1.0})
+    compliance_breaches: Dict[str, int] = Field(default={"warning": 1, "critical": 3})
 
 
 class ApiSettings(BaseModel):
     """Settings for the Analytics API."""
+
     api_key: str = Field(default="abaco_secret_token")
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8000)
 
+
 class Settings(BaseSettings):
     """Main settings class consolidating all configurations."""
+
     model_config = SettingsConfigDict(
         env_prefix="ABACO_", env_file=".env", extra="ignore"
     )

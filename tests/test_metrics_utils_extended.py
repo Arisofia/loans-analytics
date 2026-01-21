@@ -5,6 +5,7 @@ Unit tests for metrics utility functions in analytics.
 import numpy as np
 import pandas as pd
 import pytest
+
 from src.analytics.metrics_utils import (_coerce_numeric, debt_to_income_ratio,
                                          loan_to_value,
                                          portfolio_delinquency_rate,

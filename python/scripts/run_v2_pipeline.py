@@ -18,6 +18,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("abaco.v2_pipeline")
 
+
 def run_v2_pipeline(input_file: str):
     logger.info("🚀 Starting Abaco V2 Operational Pipeline")
 
@@ -34,7 +35,7 @@ def run_v2_pipeline(input_file: str):
                         ],
                         "numeric_columns": ["total_receivable_usd"],
                         "date_columns": ["measurement_date"],
-                        "strict": False
+                        "strict": False,
                     }
                 }
             }
@@ -48,9 +49,9 @@ def run_v2_pipeline(input_file: str):
 
     # 2. Print Data Quality Report
     if result.quality_report:
-        print("\n" + "="*40)
+        print("\n" + "=" * 40)
         print(result.quality_report.to_markdown())
-        print("="*40 + "\n")
+        print("=" * 40 + "\n")
 
     # 3. KPI Engine V2 Calculation
     logger.info("📊 Calculating KPIs via Engine V2")
@@ -68,6 +69,7 @@ def run_v2_pipeline(input_file: str):
     audit_path.parent.mkdir(parents=True, exist_ok=True)
     audit_df.to_csv(audit_path, index=False)
     logger.info(f"🔒 Audit trail exported to {audit_path}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Abaco V2 Operational Pipeline")

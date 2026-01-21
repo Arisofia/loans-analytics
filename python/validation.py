@@ -2,7 +2,6 @@
 Module for data validation utilities and functions.
 """
 
-
 import re
 from datetime import datetime
 from typing import Dict, List, Optional, Union
@@ -66,6 +65,7 @@ def _is_iso8601_value(value) -> bool:
         return True
     return False
 
+
 ANALYTICS_NUMERIC_COLUMNS: List[str] = settings.analytics.numeric_columns
 
 NUMERIC_COLUMNS: List[str] = settings.analytics.ingestion_numeric_columns
@@ -118,9 +118,7 @@ def assert_dataframe_schema(
     if required_columns:
         missing = _missing_columns(df, required_columns)
         if missing:
-            raise ValueError(
-                f"{stage} missing required columns: {', '.join(missing)}"
-            )
+            raise ValueError(f"{stage} missing required columns: {', '.join(missing)}")
     if numeric_columns:
         for col in numeric_columns:
             coerced = _validate_numeric_column(df, col, stage)
@@ -132,15 +130,15 @@ def validate_numeric_bounds(
 ) -> Dict[str, bool]:
     """
     Check numeric columns are non-negative.
-    
+
     Args:
         df: DataFrame to validate
         columns: Columns to check (defaults to NUMERIC_COLUMNS)
-    
+
     Returns:
-        Dict mapping column names to validation results. Columns not present 
+        Dict mapping column names to validation results. Columns not present
         in the DataFrame are silently skipped.
-    
+
     Note:
         NaN values are treated as validation failures.
     """
@@ -159,7 +157,7 @@ def validate_percentage_bounds(
     df: pd.DataFrame, columns: Optional[List[str]] = None
 ) -> Dict[str, bool]:
     """Check percentage columns are between 0 and 100 inclusive.
-    
+
     Note:
         NaN values are treated as validation failures.
     """
@@ -243,9 +241,7 @@ def validate_iso8601_dates(
     if columns is None:
         # Heuristic: columns with 'date' in the name
         columns = [
-            c
-            for c in df.columns
-            if "date" in c.lower() or c.lower().endswith("_at")
+            c for c in df.columns if "date" in c.lower() or c.lower().endswith("_at")
         ]
     validation: Dict[str, bool] = {}
     for col in columns:

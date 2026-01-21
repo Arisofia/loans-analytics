@@ -114,7 +114,10 @@ class KPICalculator:
             unit="percent",
             status=status,
             target=Decimal("3"),
-            components={"delinquent_balance": str(delinquent_d), "total_balance": str(total_d)},
+            components={
+                "delinquent_balance": str(delinquent_d),
+                "total_balance": str(total_d),
+            },
             as_of=as_of,
             computed_at=_utcnow(),
             inputs_hash=ih,

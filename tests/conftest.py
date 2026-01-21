@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 import pytest
+
 from src.utils.db_manager import DBManager
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,6 +16,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 os.chdir(ROOT)
+
 
 @pytest.fixture(scope="session")
 def analytics_test_env(tmp_path_factory):
@@ -27,6 +29,7 @@ def analytics_test_env(tmp_path_factory):
         "dataset_path": dataset_path,
         "baseline_path": baseline_path,
     }
+
 
 @pytest.fixture
 def minimal_config():
@@ -91,6 +94,7 @@ def minimal_config():
         },
     }
 
+
 def pytest_configure(config):
     """
     Configure Pytest to add custom markers.
@@ -101,11 +105,13 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "db: requires database")
 
     # Add docstring for the custom marker
-    config.addinivalue_line("markers",
+    config.addinivalue_line(
+        "markers",
         "db: Mark test as requiring a database.\n"
         "      This marker is used to indicate that a test requires a database.\n"
-        "      The test will be skipped if the DATABASE_URL environment variable is not set."
+        "      The test will be skipped if the DATABASE_URL environment variable is not set.",
     )
+
 
 # === Database fixtures for backend tests ===
 @pytest.fixture(scope="session")

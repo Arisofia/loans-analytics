@@ -8,7 +8,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import numpy as np
 import streamlit as st
 
 # Add repository root to sys.path to ensure correct module resolution
@@ -16,16 +15,19 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+
 # --- Data Ingestion Simulation ---
 @st.cache_data
 def load_and_prepare_data():
     # In a real-world scenario, this would load data from a database or data warehouse.
     data = {
-        'customer_id': range(100),
-        'revenue': np.random.uniform(10000, 150000, 100),
-        'balance': np.random.uniform(1000, 50000, 100),
-        'limit': np.random.uniform(20000, 100000, 100),
-        'dpd': np.random.choice([-1, 0, 15, 45, 75, 100], 100, p=[0.1, 0.6, 0.1, 0.1, 0.05, 0.05]),
+        "customer_id": range(100),
+        "revenue": np.random.uniform(10000, 150000, 100),
+        "balance": np.random.uniform(1000, 50000, 100),
+        "limit": np.random.uniform(20000, 100000, 100),
+        "dpd": np.random.choice(
+            [-1, 0, 15, 45, 75, 100], 100, p=[0.1, 0.6, 0.1, 0.1, 0.05, 0.05]
+        ),
     }
     data = {}
     for key, paths in candidates.items():
@@ -85,17 +87,19 @@ def generate_kpi_exports(looker_data):
 
         scorecard_df = catalog_proc.get_quarterly_scorecard()
         scorecard_df.to_csv(exports_dir / "quarterly_scorecard.csv", index=False)
-        
+
         # Export Figma/Copilot payload
         slide_payload = catalog_proc.get_slide_payload()
         with open(exports_dir / "figma_slide_payload.json", "w") as f:
             json.dump(slide_payload, f, indent=2)
-            
+
     except Exception as exc:
         logger.warning("Extended KPI generation failed: %s", exc)
 
     output_path = exports_dir / "complete_kpi_dashboard.json"
-    output_path.write_text(json.dumps(dashboard, indent=2, default=str), encoding="utf-8")
+    output_path.write_text(
+        json.dumps(dashboard, indent=2, default=str), encoding="utf-8"
+    )
 
     return output_path
 
@@ -105,7 +109,9 @@ def build_kpi_snapshot(dashboard, facts_df):
     latest_month = None
 
     if not facts_df.empty:
-        facts_sorted = facts_df.sort_values("month") if "month" in facts_df.columns else facts_df
+        facts_sorted = (
+            facts_df.sort_values("month") if "month" in facts_df.columns else facts_df
+        )
         latest = facts_sorted.iloc[-1]
         latest_month = latest.get("month")
         for col in facts_sorted.columns:
@@ -227,11 +233,19 @@ with st.sidebar:
                         dfs[name] = normalized_df
 
                         # Apply fuzzy mapping to identify core tables
-                        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith("loans"):
+                        if (
+                            "loan" in name_lower and "data" in name_lower
+                        ) or name_lower.startswith("loans"):
                             mapped_dfs["loan_data"] = normalized_df
-                        elif ("customer" in name_lower and "data" in name_lower) or name_lower.startswith("customer"):
+                        elif (
+                            "customer" in name_lower and "data" in name_lower
+                        ) or name_lower.startswith("customer"):
                             mapped_dfs["customer_data"] = normalized_df
-                        elif ("payment" in name_lower and "historic" in name_lower) or ("real" in name_lower and "payment" in name_lower) or name_lower.startswith("transaction"):
+                        elif (
+                            ("payment" in name_lower and "historic" in name_lower)
+                            or ("real" in name_lower and "payment" in name_lower)
+                            or name_lower.startswith("transaction")
+                        ):
                             mapped_dfs["historic_payment_data"] = normalized_df
                         elif "schedule" in name_lower:
                             mapped_dfs["schedule_data"] = normalized_df
@@ -290,9 +304,13 @@ if loan_data is None:
     # Fallback to original filename search if mapping failed
     for name, df in data.items():
         name_lower = name.lower()
-        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith("loans"):
+        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith(
+            "loans"
+        ):
             loan_data = df
-        elif ("customer" in name_lower and "data" in name_lower) or name_lower.startswith("customer"):
+        elif (
+            "customer" in name_lower and "data" in name_lower
+        ) or name_lower.startswith("customer"):
             if customer_data.empty:
                 customer_data = df
 
@@ -301,8 +319,14 @@ if loan_data is None:
     st.stop()
 
 merged = loan_data.copy()
-if not customer_data.empty and "loan_id" in merged.columns and "loan_id" in customer_data.columns:
-    merged = merged.merge(customer_data, on="loan_id", how="left", suffixes=("", "_cust"))
+if (
+    not customer_data.empty
+    and "loan_id" in merged.columns
+    and "loan_id" in customer_data.columns
+):
+    merged = merged.merge(
+        customer_data, on="loan_id", how="left", suffixes=("", "_cust")
+    )
 
 # 3. Executive Summary
 total_outstanding = render_executive_summary(merged)
@@ -354,7 +378,7 @@ with exp_col1:
             "Download Analytics Facts (CSV)",
             analytics_facts.to_csv(index=False).encode("utf-8"),
             "analytics_facts.csv",
-            help="Full time-series of dimensions and metrics for BI tools."
+            help="Full time-series of dimensions and metrics for BI tools.",
         )
     else:
         st.warning("Generate KPI exports to create fact tables.")
@@ -364,21 +388,25 @@ with exp_col1:
         st.download_button(
             "Download Quarterly Scorecard",
             scorecard_data.to_csv(index=False).encode("utf-8"),
-            "quarterly_scorecard.csv"
+            "quarterly_scorecard.csv",
         )
 
 with exp_col2:
     st.subheader("Figma Sync")
-    st.write("Push calculated metrics to the [Commercial Analytics Figma](https://www.figma.com/make/nuVKwuPuLS7VmLFvqzOX1G/abaco-commercial-analytics)")
-    
+    st.write(
+        "Push calculated metrics to the [Commercial Analytics Figma](https://www.figma.com/make/nuVKwuPuLS7VmLFvqzOX1G/abaco-commercial-analytics)"
+    )
+
     if st.button("🚀 Sync to Figma Slides", use_container_width=True):
         payload_path = EXPORTS_DIR / "figma_slide_payload.json"
         if payload_path.exists():
             with open(payload_path, "r") as f:
                 payload = json.load(f)
-            
+
             st.json(payload)
-            st.info("💡 **Tip:** If you see an 'Unsupported provider' error in Figma, it means Figma AI (Make) is not enabled for your account. You can manually paste the JSON payload above into your Figma design or use the 'Abaco Sync' plugin if installed.")
+            st.info(
+                "💡 **Tip:** If you see an 'Unsupported provider' error in Figma, it means Figma AI (Make) is not enabled for your account. You can manually paste the JSON payload above into your Figma design or use the 'Abaco Sync' plugin if installed."
+            )
             st.success("Figma payload prepared and validated.")
         else:
             st.error("Please 'Generate KPI exports' in the sidebar first.")
@@ -387,4 +415,4 @@ st.divider()
 st.caption(
     f"Abaco Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 )
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)

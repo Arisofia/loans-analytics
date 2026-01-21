@@ -33,9 +33,7 @@ class CascadeIngestion:
 
     def _log_step(self, stage: str, message: str, **details: Any) -> None:
         detail_parts = [
-            f"{key}={value!r}"
-            for key, value in details.items()
-            if value is not None
+            f"{key}={value!r}" for key, value in details.items() if value is not None
         ]
         context_parts = [
             f"{key}={value!r}"
@@ -93,13 +91,15 @@ class CascadeIngestion:
 
     def get_ingest_summary(self) -> Dict[str, Any]:
         summary = self._summary.copy()
-        summary.update({
-            "run_id": self.run_id,
-            "timestamp": self.timestamp,
-            "total_errors": len(self.errors),
-            "errors": self.errors,
-            "context": self.context.copy(),
-        })
+        summary.update(
+            {
+                "run_id": self.run_id,
+                "timestamp": self.timestamp,
+                "total_errors": len(self.errors),
+                "errors": self.errors,
+                "context": self.context.copy(),
+            }
+        )
         return summary
 
     def record_error(self, stage: str, message: str, **details: Any) -> None:

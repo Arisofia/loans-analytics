@@ -1,9 +1,11 @@
 """Utility to load secrets and avoid logging them in clear text.
 This script demonstrates safe logging and a redaction helper for sensitive values.
 """
+
 from __future__ import annotations
+
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
 logger = logging.getLogger("abaco.scripts.load_secrets")
 
@@ -46,9 +48,7 @@ def main() -> int:
 
     if results.get("error"):
         # Log the error safely without echoing any secret values
-        logger.error(
-            "load_secrets reported an error: %s", str(results.get("error"))
-        )
+        logger.error("load_secrets reported an error: %s", str(results.get("error")))
 
     # If you need to inspect structure for debugging, use a redacted version
     safe = redact_dict(results)

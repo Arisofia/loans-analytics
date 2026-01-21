@@ -1,6 +1,7 @@
-from google import genai
 import os
 import sys
+
+from google import genai
 
 # 1. Setup Client
 api_key = os.environ.get("GEMINI_API_KEY")
@@ -21,10 +22,7 @@ model_id = "gemini-2.5-flash"
 print(f"🤖 Asking Gemini ({model_id})...\n")
 
 try:
-    response = client.models.generate_content(
-        model=model_id,
-        contents=prompt
-    )
+    response = client.models.generate_content(model=model_id, contents=prompt)
     print(response.text)
 
 except Exception as e:

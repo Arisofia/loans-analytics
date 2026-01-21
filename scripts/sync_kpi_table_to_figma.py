@@ -52,6 +52,8 @@ if not page_node_id:
 # This is a placeholder for actual Figma API update logic
 
 update_url = f"{BASE_URL}/files/{FIGMA_FILE_KEY}/nodes?ids={page_node_id}"
-update_resp = requests.put(update_url, headers=HEADERS, data=json.dumps(payload), timeout=30)
+update_resp = requests.put(
+    update_url, headers=HEADERS, data=json.dumps(payload), timeout=30
+)
 update_resp.raise_for_status()
 print(f"KPI table synced to Figma at {datetime.now().isoformat()}")
