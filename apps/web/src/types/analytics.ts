@@ -1,3 +1,23 @@
+// Represents a single entry in a treemap visualization.
+export interface TreemapEntry {
+  label: string
+  value: number
+  color?: string
+}
+
+// Represents a roll rate transition between loan statuses.
+export interface RollRateEntry {
+  from: string
+  to: string
+  percent: number
+}
+
+// Represents a point in a loan growth projection.
+export interface GrowthPoint {
+  label: string
+  loanVolume: number
+  yield: number
+}
 export interface Metric {
   id: string
   label: string
