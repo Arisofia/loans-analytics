@@ -38,6 +38,9 @@ Select all that apply:
 - [ ] Performed thorough self-review; removed redundant/legacy code and dead imports
 - [ ] Documented all non-trivial logic with clear docstrings (include: purpose, parameters, return values; complex algorithms require inline comments explaining *why*)
 - [ ] No hardcoded secrets, credentials, PII, or sensitive data exposed in code or logs
+- [ ] Code quality checks pass: `make quality` (ESLint, Pylint, type checks, formatting)
+- [ ] Pre-commit hooks installed and passing: `pre-commit run --all-files`
+- [ ] Code Climate checks pass (see [CODE_QUALITY_GUIDE.md](../docs/CODE_QUALITY_GUIDE.md) for setup)
 
 ### Testing & Validation
 
