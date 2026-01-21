@@ -56,6 +56,8 @@ class IngestionResult:
 
 
 class UnifiedIngestion:
+        def _group_by_measurement_date(self, frame: pd.DataFrame) -> pd.DataFrame:
+            return frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
     """Phase 1: Robust ingestion with validation, checksum, and auditability."""
 
     def __init__(
@@ -599,21 +601,15 @@ class UnifiedIngestion:
         for metrics in financials_by_date.values():
             assets = metrics.get("total_assets_usd")
             liabilities = metrics.get("total_liabilities_usd")
-            if (
-                metrics.get("net_worth_usd") is None
-                and assets is not None
-                and liabilities is not None
-            ):
+            if (nw := metrics.get("net_worth_usd")) is None and assets is not None and liabilities is not None:
                 metrics["net_worth_usd"] = float(assets) - float(liabilities)
-            net_worth = metrics.get("net_worth_usd")
+                nw = metrics["net_worth_usd"]
             if (
                 metrics.get("debt_to_equity_ratio") is None
                 and liabilities is not None
-                and net_worth not in (None, 0)
+                and nw not in (None, 0)
             ):
-                metrics["debt_to_equity_ratio"] = float(liabilities or 0.0) / float(
-                    net_worth or 1.0
-                )
+                metrics["debt_to_equity_ratio"] = float(liabilities or 0.0) / float(nw or 1.0)
 
         metrics_set = sorted({key for values in financials_by_date.values() for key in values})
         meta = {
