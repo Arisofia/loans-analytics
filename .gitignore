@@ -98,3 +98,5 @@ tmp/
 supabase/. temp/
 .venv-1/
 test-results/
+.gradle/
+**/.lint-venv/
