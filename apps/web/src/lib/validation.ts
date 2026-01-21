@@ -10,6 +10,7 @@ export function validateCsvInput(csv: string) {
   return {
     success: true,
     error: null,
+    details: null,
     warnings: [],
     data: { lines: csv.split('\n').map((line) => line) },
   }

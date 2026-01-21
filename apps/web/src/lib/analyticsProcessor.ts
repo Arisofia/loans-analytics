@@ -1,8 +1,31 @@
 // Parses CSV string into LoanRow[] (stub)
 import type { LoanRow } from '@/types/analytics'
 export function parseLoanCsv(csv: string): LoanRow[] {
-  // TODO: Implement real CSV parsing
-  return []
+  const lines = csv.split(/\r?\n/).filter((line) => line.trim() !== '')
+  if (lines.length < 2) return [] // Need at least header and one row
+
+  const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''))
+
+  return lines.slice(1).map((line) => {
+    const row: LoanRow = {}
+    // Handle basic CSV parsing (splitting by comma, respecting quotes would require a regex or parser lib)
+    // For this implementation, we assume a standard CSV format where values might be quoted
+    const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || []
+
+    headers.forEach((header, index) => {
+      let val = values[index]?.trim()
+      if (val) {
+        // Remove quotes if present
+        if (val.startsWith('"') && val.endsWith('"')) {
+          val = val.slice(1, -1)
+        }
+        // Attempt to convert to number
+        const num = parseFloat(val.replace(/,/g, '')) // Remove commas for number parsing
+        row[header] = isNaN(num) ? val : num
+      }
+    })
+    return row
+  })
 }
 export function toNumber(value: any): number {
   if (typeof value === 'number') return value

@@ -1,3 +1,20 @@
+export interface TreemapEntry {
+  label: string
+  value: number
+  color?: string
+}
+
+export interface RollRateEntry {
+  from: string
+  to: string
+  percent: number
+}
+
+export interface GrowthPoint {
+  label: string
+  loanVolume: number
+  yield: number
+}
 export interface Metric {
   id: string
   label: string
@@ -28,29 +45,11 @@ export interface KPIStats {
   activeLoans: number
   defaultRate: number
   averageRate: number
-  delinquencyRate?: number
-  portfolioYield?: number
-  loanCount?: number
-  averageLTV?: number
-  averageDTI?: number
-}
-
-export interface RollRateEntry {
-  from: string
-  to: string
-  percent: number
-}
-
-export interface TreemapEntry {
-  label: string
-  value: number
-  color?: string
-}
-
-export interface GrowthPoint {
-  label: string
-  loanVolume: number
-  yield: number
+  delinquencyRate: number
+  portfolioYield: number
+  loanCount: number
+  averageLTV: number
+  averageDTI: number
 }
 
 export interface ProcessedAnalytics {
@@ -68,19 +67,4 @@ export interface ProcessedAnalytics {
   treemap?: TreemapEntry[]
   rollRates?: RollRateEntry[]
   growthProjection?: GrowthPoint[]
-}
-
-export interface RollRateEntry {
-  category: string
-  value: number
-}
-
-export interface TreemapEntry {
-  name: string
-  value: number
-}
-
-export interface GrowthPoint {
-  date: string
-  value: number
 }

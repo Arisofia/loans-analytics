@@ -1,4 +1,4 @@
-import type { LoanRow, ProcessedAnalytics } from '@/types/analytics'
+import type { LoanRow, ProcessedAnalytics, KPIStats } from '@/types/analytics'
 
 type LoanRowWithLtv = LoanRow & { ltv: string }
 
@@ -67,7 +67,7 @@ export function processedAnalyticsToJSON(analytics: ProcessedAnalytics): string 
 }
 
 export function processedAnalyticsToMarkdown(analytics: ProcessedAnalytics): string {
-  const kpis = analytics.kpis ?? {}
+  const kpis: Partial<KPIStats> = analytics.kpis ?? {}
   const treemap = analytics.treemap ?? []
   const rollRates = analytics.rollRates ?? []
   const growthProjection = analytics.growthProjection ?? []

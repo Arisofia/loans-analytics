@@ -12,6 +12,8 @@ export interface BulkTokenItem {
   status?: string
   message?: string
   attempts?: number
+  tokenId?: string
+  resultId?: string
 }
 
 export interface BulkProcessResult {
@@ -21,4 +23,10 @@ export interface BulkProcessResult {
   item?: BulkTokenItem
 }
 
-export type TokenState = 'idle' | 'processing' | 'success' | 'error'
+export interface TokenState {
+  status: 'idle' | 'processing' | 'success' | 'error' | 'syncing'
+  message?: string
+  token?: string
+  accountId?: string
+  tokenId?: string
+}
