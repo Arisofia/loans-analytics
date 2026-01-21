@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   if (token_hash && type) {
     const supabase = createClient()
-    // @ts-ignore - Mock client doesn't have full types yet
+    // @ts-expect-error - Mock client types are incomplete
     const { error } = await supabase.auth.verifyOtp({
       type,
       token_hash,
@@ -20,6 +20,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // return the user to an error page with some instructions
   return NextResponse.redirect(new URL('/auth/auth-code-error', request.url))
 }

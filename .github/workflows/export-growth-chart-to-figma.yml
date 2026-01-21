@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'  # Enable caching for faster runs
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
@@ -34,7 +34,7 @@ jobs:
           python scripts/export_presentation.py
 
       - name: Upload growth chart artifact
-        if: success()  # Only upload if the previous step succeeded
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: growth-chart
