@@ -73,6 +73,9 @@ importers:
         specifier: ^4.1.13
         version: 4.3.5
     devDependencies:
+      '@alloc/quick-lru':
+        specifier: ^5.2.0
+        version: 5.2.0
       '@azure/static-web-apps-cli':
         specifier: 2.0.7
         version: 2.0.7
@@ -107,7 +110,7 @@ importers:
         specifier: ^8.49.0
         version: 8.53.1(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
       autoprefixer:
-        specifier: ^10.4.22
+        specifier: ^10.4.23
         version: 10.4.23(postcss@8.5.6)
       babel-plugin-react-compiler:
         specifier: 1.0.0
@@ -146,7 +149,7 @@ importers:
         specifier: ^3.7.4
         version: 3.8.0
       tailwindcss:
-        specifier: 4.1.18
+        specifier: ^4.1.18
         version: 4.1.18
       ts-jest:
         specifier: ^29.4.6

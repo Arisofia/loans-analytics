@@ -1,1 +1,3 @@
-export default function AnalyticsDashboard() { return <div>Dashboard</div> }
+export function AnalyticsDashboard() { 
+  return <div>Analytics Dashboard Placeholder</div> 
+}
