@@ -5,7 +5,7 @@ from typing import Optional
 from requests.exceptions import RequestsDependencyWarning
 
 try:
-    from packaging.version import Version, InvalidVersion
+    from packaging.version import InvalidVersion, Version
 except Exception:
     Version = None
 
@@ -27,7 +27,8 @@ def check_cryptography_robust(cryptography_version: Optional[str]) -> None:
         try:
             if ver < Version("1.3.4"):
                 warnings.warn(
-                    f"Old version of cryptography ({cryptography_version}) may cause slowdown.",
+                    f"Old version of cryptography ({cryptography_version}) "
+                    "may cause slowdown.",
                     RequestsDependencyWarning,
                 )
         except Exception:

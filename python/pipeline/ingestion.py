@@ -212,7 +212,9 @@ class UnifiedIngestion:
         deduped = df.drop_duplicates(subset=keys)
         return deduped, before - len(deduped)
 
-    def _select_column(self, columns: List[str], candidates: List[str]) -> Optional[str]:
+    def _select_column(
+        self, columns: List[str], candidates: List[str]
+    ) -> Optional[str]:
         column_map = {col.lower(): col for col in columns}
         for candidate in candidates:
             key = candidate.lower()
@@ -240,7 +242,12 @@ class UnifiedIngestion:
                 return {}
             path = candidates[-1]
         if not path.exists():
-            self._log_event("looker_financials", "skipped", reason="path_missing", path=str(path))
+            self._log_event(
+                "looker_financials",
+                "skipped",
+                reason="path_missing",
+                path=str(path),
+            )
             return {}
 
         try:
@@ -277,15 +284,26 @@ class UnifiedIngestion:
             return {}
 
         parsed = financials_df[[date_col, cash_col]].copy()
-        parsed[date_col] = pd.to_datetime(
-            parsed[date_col], errors="coerce"
-        ).dt.strftime("%Y-%m-%d")
+        parsed[date_col] = (
+            pd.to_datetime(parsed[date_col], errors="coerce").dt.strftime(
+                "%Y-%m-%d"
+            )
+        )
         parsed[cash_col] = pd.to_numeric(parsed[cash_col], errors="coerce")
         parsed = parsed.dropna(subset=[date_col])
         grouped = parsed.groupby(date_col, dropna=False)[cash_col].last()
-        cash_by_date = {str(idx): float(val) for idx, val in grouped.items() if pd.notna(val)}
+        cash_by_date = {
+            str(idx): float(val)
+            for idx, val in grouped.items()
+            if pd.notna(val)
+        }
         if cash_by_date:
-            self._log_event("looker_financials", "loaded", file=str(path), dates=len(cash_by_date))
+            self._log_event(
+                "looker_financials",
+                "loaded",
+                file=str(path),
+                dates=len(cash_by_date),
+            )
         return cash_by_date
 
     def _looker_par_balances_to_loan_tape(
@@ -338,11 +356,15 @@ class UnifiedIngestion:
         ).dropna(subset=["measurement_date"])
 
         grouped = (
-            frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
+            frame.groupby("measurement_date", dropna=False)
+            .sum(numeric_only=True)
+            .reset_index()
         )
         grouped["total_eligible_usd"] = grouped["total_receivable_usd"]
         grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
-        grouped["cash_available_usd"] = grouped["measurement_date"].map(cash_by_date).fillna(0.0)
+        grouped["cash_available_usd"] = (
+            grouped["measurement_date"].map(cash_by_date).fillna(0.0)
+        )
         grouped["loan_id"] = grouped["measurement_date"].apply(
             lambda date: f"looker_snapshot_{str(date).replace('-', '')}"
         )
@@ -367,10 +389,14 @@ class UnifiedIngestion:
 
         measurement_date = None
         if measurement_col:
-            resolved = self._select_column(list(df.columns), [measurement_col])
+            resolved = self._select_column(
+                list(df.columns), [measurement_col]
+            )
             if resolved:
-                measurement_date = pd.to_datetime(df[resolved], errors="coerce").dt.strftime(
-                    "%Y-%m-%d"
+                measurement_date = (
+                    pd.to_datetime(df[resolved], errors="coerce").dt.strftime(
+                        "%Y-%m-%d"
+                    )
                 )
         if measurement_date is None:
             if strategy == "max_disburse_date":
@@ -378,12 +404,16 @@ class UnifiedIngestion:
                     list(df.columns), ["disburse_date", "disbursement_date"]
                 )
             elif strategy == "max_maturity_date":
-                resolved = self._select_column(list(df.columns), ["maturity_date", "loan_end_date"])
+                resolved = self._select_column(
+                    list(df.columns), ["maturity_date", "loan_end_date"]
+                )
             else:
                 resolved = None
             if resolved:
                 max_date = pd.to_datetime(df[resolved], errors="coerce").max()
-                date_value = max_date.date().isoformat() if pd.notna(max_date) else None
+                date_value = (
+                    max_date.date().isoformat() if pd.notna(max_date) else None
+                )
             else:
                 date_value = None
             if not date_value:
@@ -392,14 +422,18 @@ class UnifiedIngestion:
                 [date_value] * len(df), index=df.index
             )
 
-        balance = pd.to_numeric(df[balance_col], errors="coerce").fillna(0.0)
+        balance = pd.to_numeric(df[balance_col], errors="coerce").fillna(
+            0.0
+        )
         dpd = pd.to_numeric(df[dpd_col], errors="coerce").fillna(0.0)
 
         frame = pd.DataFrame(
             {
                 "measurement_date": measurement_date,
                 "total_receivable_usd": balance,
-                "dpd_90_plus_usd": balance.where(dpd >= DPD_THRESHOLD_90, 0.0),
+                "dpd_90_plus_usd": balance.where(
+                    dpd >= DPD_THRESHOLD_90, 0.0
+                ),
                 "dpd_60_90_usd": balance.where(
                     (dpd >= DPD_THRESHOLD_60) & (dpd < DPD_THRESHOLD_90), 0.0
                 ),
@@ -414,17 +448,23 @@ class UnifiedIngestion:
         ).dropna(subset=["measurement_date"])
 
         grouped = (
-            frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
+            frame.groupby("measurement_date", dropna=False)
+            .sum(numeric_only=True)
+            .reset_index()
         )
         grouped["total_eligible_usd"] = grouped["total_receivable_usd"]
         grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
-        grouped["cash_available_usd"] = grouped["measurement_date"].map(cash_by_date).fillna(0.0)
+        grouped["cash_available_usd"] = (
+            grouped["measurement_date"].map(cash_by_date).fillna(0.0)
+        )
         grouped["loan_id"] = grouped["measurement_date"].apply(
             lambda date: f"looker_snapshot_{str(date).replace('-', '')}"
         )
         return grouped
 
-    def ingest_file(self, file_path: Path, archive_dir: Optional[Path] = None) -> IngestionResult:
+    def ingest_file(
+        self, file_path: Path, archive_dir: Optional[Path] = None
+    ) -> IngestionResult:
         self._log_event("start", "initiated", file_path=str(file_path))
         if not file_path.exists():
             self._log_event("file_check", "failed", error="File not found")
@@ -519,7 +559,9 @@ class UnifiedIngestion:
             self._log_event(
                 "looker_file_check", "failed", error="Loans file not found"
             )
-            raise FileNotFoundError(f"Looker loans file not found: {loans_path}")
+            raise FileNotFoundError(
+                f"Looker loans file not found: {loans_path}"
+            )
 
         checksum = hash_file(loans_path)
         try:
@@ -533,7 +575,9 @@ class UnifiedIngestion:
                 "par_60_balance_usd",
                 "par_90_balance_usd",
             }.issubset(columns_lower)
-            has_dpd = {"dpd", "outstanding_balance"}.issubset(columns_lower) or {
+            has_dpd = {"dpd", "outstanding_balance"}.issubset(
+                columns_lower
+            ) or {
                 "dpd",
                 "outstanding_balance_usd",
             }.issubset(columns_lower)
@@ -601,7 +645,9 @@ class UnifiedIngestion:
             self._record_error("looker_fatal_error", exc)
             raise
 
-    def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
+    def ingest_http(
+        self, url: str, headers: Optional[Dict[str, str]] = None
+    ) -> IngestionResult:
         import requests
 
         headers = headers or {}
@@ -634,7 +680,9 @@ class UnifiedIngestion:
 
         df = None
         # Try JSON first if headers indicate JSON or the content appears to be JSON
-        is_json = "json" in content_type or content.lstrip().startswith((b"{", b"["))
+        is_json = "json" in content_type or content.lstrip().startswith(
+            (b"{", b"[")
+        )
         if is_json:
             try:
                 stripped = content.lstrip()
@@ -660,7 +708,9 @@ class UnifiedIngestion:
 
         # log parsed rows for observability
         try:
-            self._log_event("http_parsed", "success", rows=len(df), checksum=checksum)
+            self._log_event(
+                "http_parsed", "success", rows=len(df), checksum=checksum
+            )
         except Exception:
             # Best-effort logging - do not fail
             pass

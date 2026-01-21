@@ -4,7 +4,6 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Union
 
-import pandas as pd
 import polars as pl
 
 from python.schemas import INGESTION_SCHEMA, validate_ingestion_contract
@@ -39,7 +38,9 @@ class CascadeIngestion:
             if value is not None
         ]
         context_parts = [
-            f"{key}={value!r}" for key, value in self.context.items() if value is not None
+            f"{key}={value!r}"
+            for key, value in self.context.items()
+            if value is not None
         ]
         segments = [f"[{stage}]", message]
         if detail_parts:
