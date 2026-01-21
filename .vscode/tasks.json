@@ -78,6 +78,17 @@
 				"$pytest"
 			],
 			"group": "test"
+		},
+		{
+			"label": "Lint Markdown and Python",
+			"type": "shell",
+			"command": "bash -lc 'markdownlint README.md && pylint $(git ls-files '*.py')'",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$pylint"
+			],
+			"group": "test"
 		}
 	]
 }

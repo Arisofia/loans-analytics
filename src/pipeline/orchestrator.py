@@ -9,7 +9,6 @@ from typing import Any, Dict, Optional
 
 from prefect import flow, task
 
-from src.agents.tools import send_slack_notification
 from src.compliance import build_compliance_report, write_compliance_report
 from src.config.paths import Paths
 from src.pipeline.data_ingestion import UnifiedIngestion
@@ -68,7 +67,7 @@ class PipelineConfig:
             )
 
         context = {
-            "portfolio_id": base_config.get("cascade", {}).get("portfolio_id", ""),
+            "portfolio_id": "",
         }
         return resolve_placeholders(base_config, context)
 
@@ -176,8 +175,7 @@ class UnifiedPipeline:
 
         if alerts:
             message = f"📢 *Pipeline Alert - Run {self.run_id}*\n\n" + "\n".join(alerts)
-            logger.warning("Triggering Slack alerts: %s", alerts)
-            send_slack_notification(message, channel="kpi-compliance")
+            logger.warning("Triggering alerts: %s", alerts)
 
     def execute(
         self, input_file: Path, user: str = "system", action: str = "manual"
@@ -187,25 +185,16 @@ class UnifiedPipeline:
             run_started = utc_now()
             run_cfg = self.config.get("run", default={}) or {}
             artifacts_dir = Path(run_cfg.get("artifacts_dir", "logs/runs"))
-            raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/cascade"))
+            raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/raw"))
             ingest_cfg = self.config.get("pipeline", "phases", "ingestion", default={}) or {}
             ingest_source = ingest_cfg.get("source", "file")
-            cascade_cfg = self.config.get("cascade", default={}) or {}
 
             span.set_attribute("pipeline.user", user)
             span.set_attribute("pipeline.action", action)
             span.set_attribute("pipeline.source", ingest_source)
             try:
                 with tracer.start_as_current_span("pipeline.ingestion"):
-                    if ingest_source == "cascade_http":
-                        base_url = cascade_cfg.get("base_url", "")
-                        endpoint = cascade_cfg.get("endpoints", {}).get("loan_tape", "")
-                        token_env = cascade_cfg.get("auth", {}).get("token_secret")
-                        token_value = os.getenv(token_env, "") if token_env else ""
-                        headers = {"Authorization": f"Bearer {token_value}"} if token_value else {}
-                        url = f"{base_url}{endpoint}"
-                        ingestion_result = self.ingestor.ingest_http(url, headers=headers)
-                    elif ingest_source == "looker":
+                    if ingest_source == "looker":
                         looker_cfg = ingest_cfg.get("looker", {}) or {}
                         loans_par_path = looker_cfg.get("loans_par_path")
                         loans_fallback_path = looker_cfg.get("loans_path")

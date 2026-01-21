@@ -1,7 +1,7 @@
 from prefect import flow, task, get_run_logger
 from prefect.artifacts import create_markdown_artifact
 try:
-    from prefect.blocks.notifications import SlackWebhook, PagerDutyNotification
+    from prefect.blocks.notifications import PagerDutyNotification
 except ImportError:
     # Fallback for older prefect versions if necessary, though 2.x/3.x have these
     pass
@@ -16,16 +16,9 @@ from python.config import settings
 
 @task(name="Notify Incident")
 def notify_incident(message: str, severity: str = "error"):
-    """Triggers Slack and PagerDuty notifications via Prefect blocks."""
+    """Triggers PagerDuty notifications via Prefect blocks."""
     logger = get_run_logger()
     
-    # Slack Notification
-    try:
-        slack_block = SlackWebhook.load("abaco-slack")
-        slack_block.notify(f"❗ *Pipeline Incident:* {message}")
-    except Exception:
-        logger.warning("Slack block 'abaco-slack' not found. Skipping Slack alert.")
-
     # PagerDuty Notification (Critical only)
     if severity == "critical":
         try:

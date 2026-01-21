@@ -18,7 +18,6 @@ import polars as pl
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from src.agents.tools import send_slack_notification
 from src.analytics.schema import LoanTapeSchema
 from src.pipeline.data_validation import validate_dataframe
 from src.pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
@@ -255,7 +254,7 @@ class UnifiedIngestion:
         }
 
     def _build_retry_policy(self, config: Dict[str, Any]) -> RetryPolicy:
-        retry_cfg = config.get("cascade", {}).get("http", {}).get("retry", {})
+        retry_cfg = config.get("http", {}).get("retry", {})
         return RetryPolicy(
             max_retries=retry_cfg.get("max_retries", 3),
             backoff_seconds=retry_cfg.get("backoff_seconds", 1.0),
@@ -263,11 +262,11 @@ class UnifiedIngestion:
         )
 
     def _build_rate_limiter(self, config: Dict[str, Any]) -> RateLimiter:
-        rate_cfg = config.get("cascade", {}).get("http", {}).get("rate_limit", {})
+        rate_cfg = config.get("http", {}).get("rate_limit", {})
         return RateLimiter(max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60))
 
     def _build_circuit_breaker(self, config: Dict[str, Any]) -> CircuitBreaker:
-        cb_cfg = config.get("cascade", {}).get("http", {}).get("circuit_breaker", {})
+        cb_cfg = config.get("http", {}).get("circuit_breaker", {})
         return CircuitBreaker(
             failure_threshold=cb_cfg.get("failure_threshold", 3),
             reset_seconds=cb_cfg.get("reset_seconds", 60),
@@ -797,10 +796,6 @@ class UnifiedIngestion:
                 if critical_violation:
                     msg = f"🚨 CIRCUIT BREAKER: Critical data contract violation in {file_path.name}. Halting ingestion."
                     logger.critical(msg)
-                    try:
-                        send_slack_notification(msg, channel="#data-engineering-alerts")
-                    except Exception as slack_err:
-                        logger.error("Failed to send Slack alert: %s", slack_err)
                     return IngestionResult(
                         pd.DataFrame(),
                         self.run_id,
@@ -941,7 +936,7 @@ class UnifiedIngestion:
 
         def _do_request() -> requests.Response:
             if not self.circuit_breaker.allow():
-                raise RuntimeError("Circuit breaker open for Cascade HTTP ingestion")
+                raise RuntimeError("Circuit breaker open for HTTP ingestion")
             self.rate_limiter.wait()
             response = requests.get(url, headers=headers, timeout=30)
             response.raise_for_status()
