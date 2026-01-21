@@ -18,7 +18,7 @@ export default function AnalyticsPage() {
           <h1>Portfolio performance dashboard</h1>
         </div>
       </header>
-      
+
       <div className={styles.content}>
         <AnalyticsDashboard />
       </div>

@@ -1,10 +1,13 @@
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Any, Dict, Optional
+
 import pandas as pd
+from pydantic import BaseModel, ConfigDict, Field
+
 
 class LoanRecord(BaseModel):
     """Schema enforcement for individual loan or portfolio records."""
+
     model_config = ConfigDict(populate_by_name=True, extra="allow")
     loan_id: Optional[str] = Field(None, alias="loan_id")
     total_receivable_usd: float = Field(ge=0)
@@ -18,9 +21,11 @@ class LoanRecord(BaseModel):
     dpd_90_plus_usd: float = Field(default=0.0, ge=0)
     measurement_date: Optional[str] = None
 
+
 @dataclass
 class IngestionResult:
     """Container for ingestion outputs and metadata."""
+
     df: pd.DataFrame
     run_id: str
     metadata: Dict[str, Any]

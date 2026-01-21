@@ -100,12 +100,17 @@ class MYPEBusinessRules:
 
     @classmethod
     def evaluate_facility_approval(
-        cls, facility_amount: float, customer_metrics: Dict, collateral_value: float = 0.0
+        cls,
+        facility_amount: float,
+        customer_metrics: Dict,
+        collateral_value: float = 0.0,
     ) -> ApprovalDecision:
         is_high_risk, reasons = cls.classify_high_risk(customer_metrics)
         dpd = customer_metrics.get("dpd", 0)
         pod = min(
-            1.0, (dpd / cls.NPL_DAYS_THRESHOLD) * 0.8 + customer_metrics.get("npl_ratio", 0.02)
+            1.0,
+            (dpd / cls.NPL_DAYS_THRESHOLD) * 0.8
+            + customer_metrics.get("npl_ratio", 0.02),
         )
 
         risk_level = cls.calculate_risk_level(pod)
@@ -113,16 +118,22 @@ class MYPEBusinessRules:
             risk_level = RiskLevel.CRITICAL
         elif is_high_risk:
             risk_level = max(
-                risk_level, RiskLevel.HIGH, key=lambda level: list(RiskLevel).index(level)
+                risk_level,
+                RiskLevel.HIGH,
+                key=lambda level: list(RiskLevel).index(level),
             )
         elif customer_metrics.get("utilization", 0) > 0.75:
             risk_level = max(
-                risk_level, RiskLevel.MEDIUM, key=lambda level: list(RiskLevel).index(level)
+                risk_level,
+                RiskLevel.MEDIUM,
+                key=lambda level: list(RiskLevel).index(level),
             )
 
         industry = customer_metrics.get("industry", cls.default_industry())
         adjustment = cls.calculate_industry_adjustment(industry)
-        recommended_amount = min(facility_amount, cls.FACILITY_THRESHOLDS[risk_level] * adjustment)
+        recommended_amount = min(
+            facility_amount, cls.FACILITY_THRESHOLDS[risk_level] * adjustment
+        )
 
         rotation, meets_rotation, rotation_message = cls.check_rotation_target(
             total_revenue=customer_metrics.get("revenue", 0),
@@ -133,9 +144,13 @@ class MYPEBusinessRules:
             recommended_amount *= 0.8
 
         approved = (
-            risk_level in {RiskLevel.LOW, RiskLevel.MEDIUM} and not is_high_risk and meets_rotation
+            risk_level in {RiskLevel.LOW, RiskLevel.MEDIUM}
+            and not is_high_risk
+            and meets_rotation
         )
-        required_collateral = max(0.0, facility_amount - collateral_value - recommended_amount)
+        required_collateral = max(
+            0.0, facility_amount - collateral_value - recommended_amount
+        )
         if not approved:
             required_collateral = max(required_collateral, facility_amount * 0.1)
         conditions = []
@@ -156,7 +171,9 @@ class MYPEBusinessRules:
 
     @classmethod
     def calculate_industry_adjustment(cls, industry: IndustryType) -> float:
-        contribution = cls.INDUSTRY_GDP_CONTRIBUTION.get(industry, IndustryType.OTHER.value)
+        contribution = cls.INDUSTRY_GDP_CONTRIBUTION.get(
+            industry, IndustryType.OTHER.value
+        )
         return 1.0 + (contribution - 0.1) * 0.5
 
     @classmethod

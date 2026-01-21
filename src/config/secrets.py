@@ -65,14 +65,20 @@ class SecretsManager:
             if all([tenant_id, client_id, client_secret, vault_name]):
                 vault_url = f"https://{vault_name}.vault.azure.net"
                 credential = ClientSecretCredential(
-                    tenant_id=tenant_id, client_id=client_id, client_secret=client_secret
+                    tenant_id=tenant_id,
+                    client_id=client_id,
+                    client_secret=client_secret,
                 )
-                self._vault_client = SecretClient(vault_url=vault_url, credential=credential)
+                self._vault_client = SecretClient(
+                    vault_url=vault_url, credential=credential
+                )
         except Exception as e:
             print(f"⚠️  Azure Key Vault initialization failed: {e}")
             self._vault_client = None
 
-    def get(self, key: str, required: bool = False, default: Optional[str] = None) -> Optional[str]:
+    def get(
+        self, key: str, required: bool = False, default: Optional[str] = None
+    ) -> Optional[str]:
         """Get a secret with optional validation.
 
         Args:
@@ -109,7 +115,9 @@ class SecretsManager:
         self._status[key] = "❌"
 
         if required:
-            raise ValueError(f"Required secret '{key}' not found in environment or Key Vault")
+            raise ValueError(
+                f"Required secret '{key}' not found in environment or Key Vault"
+            )
 
         return default
 
@@ -122,11 +130,17 @@ class SecretsManager:
         Returns:
             Dict of key: value pairs
         """
-        keys = self.REQUIRED_KEYS if required_only else (self.REQUIRED_KEYS + self.OPTIONAL_KEYS)
+        keys = (
+            self.REQUIRED_KEYS
+            if required_only
+            else (self.REQUIRED_KEYS + self.OPTIONAL_KEYS)
+        )
         return {key: self.get(key, required=required_only) for key in keys}
 
     def validate(
-        self, fail_on_missing_optional: bool = False, fail_on_missing_required: bool = True
+        self,
+        fail_on_missing_optional: bool = False,
+        fail_on_missing_required: bool = True,
     ) -> Dict[str, Any]:
         """Validate all secrets are available.
 

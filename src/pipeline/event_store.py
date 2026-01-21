@@ -58,5 +58,9 @@ class EventStore:
         """
         events = self.get_events()
         if start_date:
-            events = [e for e in events if datetime.fromisoformat(e["timestamp"]) >= start_date]
+            events = [
+                e
+                for e in events
+                if datetime.fromisoformat(e["timestamp"]) >= start_date
+            ]
         return events

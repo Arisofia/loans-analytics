@@ -24,8 +24,6 @@ export type StatusRow = {
   id?: string
 }
 
-
-
 const initialState: Record<Platform, TokenState> = PLATFORMS.reduce(
   (all, platform) => ({ ...all, [platform]: { status: 'disconnected' } }),
   {} as Record<Platform, TokenState>
@@ -119,8 +117,6 @@ export function IntegrationSettings() {
       </>
     </SlideLayout>
   )
-
-
 
   const connectPlatform = async (platform: Platform) => {
     const details = tokenState[platform]
@@ -238,7 +234,7 @@ export function IntegrationSettings() {
               placeholder="Project identifier"
             />
           </div>
-            {/* <button
+          {/* <button
               className={styles.primaryButton}
               type="button"
               onClick={() => {

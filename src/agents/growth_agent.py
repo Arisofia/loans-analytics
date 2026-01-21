@@ -53,7 +53,7 @@ def main() -> None:
     }
 
     LOG.info("Executing Growth agent run_id=%s", args.run_id)
-    result = orchestrator.run(inputs, agent_config)
+    orchestrator.run(inputs, agent_config)
 
     payload = {
         "status": "completed",

@@ -24,9 +24,15 @@ class WeightedAPRCalculator(KPICalculator):
                 self.METADATA.formula, rows_processed=0, reason="Empty DataFrame"
             )
 
-        apr_col = "interest_rate_apr" if "interest_rate_apr" in df.columns else "Interest Rate APR"
+        apr_col = (
+            "interest_rate_apr"
+            if "interest_rate_apr" in df.columns
+            else "Interest Rate APR"
+        )
         disb_col = (
-            "disbursement_amount" if "disbursement_amount" in df.columns else "Disbursement Amount"
+            "disbursement_amount"
+            if "disbursement_amount" in df.columns
+            else "Disbursement Amount"
         )
 
         if apr_col not in df.columns or disb_col not in df.columns:
@@ -45,7 +51,9 @@ class WeightedAPRCalculator(KPICalculator):
         total_disb = disb.sum()
         if total_disb == 0:
             return 0.0, create_context(
-                self.METADATA.formula, rows_processed=len(df), reason="Zero total disbursement"
+                self.METADATA.formula,
+                rows_processed=len(df),
+                reason="Zero total disbursement",
             )
 
         weighted_apr = (apr * disb).sum() / total_disb

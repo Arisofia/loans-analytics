@@ -19,7 +19,9 @@ class SlackOutput(BaseOutput):
 
 
 class NotionOutput(BaseOutput):
-    def __init__(self, api_key: Optional[str] = None, database_id: Optional[str] = None):
+    def __init__(
+        self, api_key: Optional[str] = None, database_id: Optional[str] = None
+    ):
         self.api_key = api_key
         self.database_id = database_id
 

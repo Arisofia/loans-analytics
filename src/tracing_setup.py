@@ -50,7 +50,9 @@ def init_tracing(
 
     # Determine OTLP endpoint
     if otlp_endpoint is None:
-        otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318")
+        otlp_endpoint = os.getenv(
+            "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318"
+        )
 
     try:
         # Create OTLP exporter
@@ -62,7 +64,9 @@ def init_tracing(
 
         logger.info("OTEL tracing initialized with endpoint: %s", otlp_endpoint)
     except Exception as e:
-        logger.warning("Failed to initialize OTEL exporter for %s: %s", otlp_endpoint, str(e))
+        logger.warning(
+            "Failed to initialize OTEL exporter for %s: %s", otlp_endpoint, str(e)
+        )
 
     return tracer_provider
 
@@ -116,4 +120,6 @@ if not isinstance(trace.get_tracer_provider(), TracerProvider):
         init_tracing()
         enable_auto_instrumentation()
     except Exception as e:
-        logger.warning("Tracing auto-init failed (will retry on explicit init): %s", str(e))
+        logger.warning(
+            "Tracing auto-init failed (will retry on explicit init): %s", str(e)
+        )

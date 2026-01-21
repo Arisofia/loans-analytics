@@ -44,7 +44,9 @@ class FigmaClient:
             response.raise_for_status()
             data = response.json()
             if not isinstance(data, dict):
-                logger.error("Figma API returned unexpected type: %s for %s", type(data), url)
+                logger.error(
+                    "Figma API returned unexpected type: %s for %s", type(data), url
+                )
                 return {}
             return data
         except requests.RequestException as e:
@@ -88,7 +90,9 @@ class FigmaClient:
 
         return success
 
-    def update_kpi_cards(self, kpi_metrics: Dict[str, Any], run_id: str) -> Dict[str, bool]:
+    def update_kpi_cards(
+        self, kpi_metrics: Dict[str, Any], run_id: str
+    ) -> Dict[str, bool]:
         """Update KPI card components in design system."""
         results = {}
 
@@ -165,7 +169,9 @@ class FigmaClient:
         logger.info(f"Created dashboard snapshot in Figma (frame: {snapshot_frame_id})")
         return snapshot_frame_id
 
-    def sync_batch_export(self, export_data: Dict[str, Any], run_id: str) -> Dict[str, Any]:
+    def sync_batch_export(
+        self, export_data: Dict[str, Any], run_id: str
+    ) -> Dict[str, Any]:
         """
         Sync complete batch export (KPIs, metrics, summaries) to Figma.
 
@@ -188,7 +194,9 @@ class FigmaClient:
 
         try:
             if "kpi_metrics" in export_data:
-                results["kpi_cards"] = self.update_kpi_cards(export_data["kpi_metrics"], run_id)
+                results["kpi_cards"] = self.update_kpi_cards(
+                    export_data["kpi_metrics"], run_id
+                )
 
             if "summary" in export_data:
                 results["dashboard_snapshot"] = self.create_dashboard_snapshot(

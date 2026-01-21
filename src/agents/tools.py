@@ -44,7 +44,9 @@ class ToolRegistry:
 registry = ToolRegistry()
 
 
-@registry.register(description="Simulate execution of an SQL query and return a sample result.")
+@registry.register(
+    description="Simulate execution of an SQL query and return a sample result."
+)
 def run_sql_query(query: str) -> List[Dict[str, Any]]:
     """
     Args:
@@ -61,7 +63,9 @@ def run_sql_query(query: str) -> List[Dict[str, Any]]:
     description="Simulate a portfolio scenario by adjusting interest rates or principal balances."
 )
 def simulate_portfolio_scenario(
-    data_path: Optional[str] = None, rate_adjustment: float = 0.0, principal_adjustment: float = 0.0
+    data_path: Optional[str] = None,
+    rate_adjustment: float = 0.0,
+    principal_adjustment: float = 0.0,
 ) -> Dict[str, Any]:
     """
     Args:
@@ -115,7 +119,9 @@ def simulate_portfolio_scenario(
     }
 
 
-@registry.register(description="Run a full portfolio analysis using the LoanAnalyticsEngine.")
+@registry.register(
+    description="Run a full portfolio analysis using the LoanAnalyticsEngine."
+)
 def run_portfolio_analysis(data_path: Optional[str] = None) -> Dict[str, Any]:
     """
     Args:
@@ -157,7 +163,9 @@ def run_portfolio_analysis(data_path: Optional[str] = None) -> Dict[str, Any]:
         "kpis": kpis,
         "risk_alerts_count": len(risk_loans),
         "risk_loans_summary": (
-            risk_loans[["loan_amount", "principal_balance", "risk_score"]].to_dict(orient="records")
+            risk_loans[["loan_amount", "principal_balance", "risk_score"]].to_dict(
+                orient="records"
+            )
             if not risk_loans.empty
             else []
         ),
@@ -230,7 +238,9 @@ def create_notion_page(title: str, content: str) -> bool:
 @registry.register(
     description="Compute investor-specific KPIs including ROI, capital efficiency, and IRR."
 )
-def compute_investor_kpis(portfolio_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def compute_investor_kpis(
+    portfolio_data: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """
     Args:
         portfolio_data (Optional[Dict[str, Any]]): Data to analyze.
@@ -247,7 +257,9 @@ def compute_investor_kpis(portfolio_data: Optional[Dict[str, Any]] = None) -> Di
     }
 
 
-@registry.register(description="Generate an ROI analysis report for board-level review.")
+@registry.register(
+    description="Generate an ROI analysis report for board-level review."
+)
 def generate_roi_report(timeframe: str = "yearly") -> str:
     """
     Args:
@@ -285,7 +297,9 @@ def score_leads(leads: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return sorted(scored_leads, key=lambda x: x["sales_score"], reverse=True)
 
 
-@registry.register(description="Analyze the sales funnel to identify conversion bottlenecks.")
+@registry.register(
+    description="Analyze the sales funnel to identify conversion bottlenecks."
+)
 def analyze_sales_funnel(date_range: Optional[str] = None) -> Dict[str, Any]:
     """
     Args:
@@ -340,7 +354,9 @@ def get_economic_indicators(region: str = "US") -> Dict[str, float]:
     return {"inflation_rate": 0.032, "central_bank_rate": 0.0525, "gdp_growth": 0.021}
 
 
-@registry.register(description="Monitor real-time SLA performance for operational processes.")
+@registry.register(
+    description="Monitor real-time SLA performance for operational processes."
+)
 def monitor_sla_performance() -> Dict[str, Any]:
     """
     Returns:
@@ -378,7 +394,9 @@ def identify_process_bottlenecks() -> List[Dict[str, str]]:
     ]
 
 
-@registry.register(description="Analyze brand sentiment across social media and news sources.")
+@registry.register(
+    description="Analyze brand sentiment across social media and news sources."
+)
 def analyze_brand_sentiment(brand_name: str = "Abaco Capital") -> Dict[str, Any]:
     """
     Args:
@@ -396,7 +414,9 @@ def analyze_brand_sentiment(brand_name: str = "Abaco Capital") -> Dict[str, Any]
 
 
 @registry.register(description="Track the performance of marketing campaigns.")
-def track_campaign_performance(campaign_id: Optional[str] = None) -> List[Dict[str, Any]]:
+def track_campaign_performance(
+    campaign_id: Optional[str] = None,
+) -> List[Dict[str, Any]]:
     """
     Args:
         campaign_id (Optional[str]): Specific campaign to track.
@@ -418,8 +438,16 @@ def get_feature_usage_metrics() -> List[Dict[str, Any]]:
     """
     return [
         {"feature": "Risk Dashboard", "adoption_rate": 0.85, "retention_rate": 0.92},
-        {"feature": "Scenario Simulator", "adoption_rate": 0.45, "retention_rate": 0.60},
-        {"feature": "Automated Reporting", "adoption_rate": 0.70, "retention_rate": 0.88},
+        {
+            "feature": "Scenario Simulator",
+            "adoption_rate": 0.45,
+            "retention_rate": 0.60,
+        },
+        {
+            "feature": "Automated Reporting",
+            "adoption_rate": 0.70,
+            "retention_rate": 0.88,
+        },
     ]
 
 
@@ -435,9 +463,9 @@ def prioritize_product_roadmap(features: List[Dict[str, Any]]) -> List[Dict[str,
     scored_features = []
     for f in features:
         # RICE Score = (Reach * Impact * Confidence) / Effort
-        score = (f.get("reach", 0) * f.get("impact", 0) * f.get("confidence", 0)) / f.get(
-            "effort", 1
-        )
+        score = (
+            f.get("reach", 0) * f.get("impact", 0) * f.get("confidence", 0)
+        ) / f.get("effort", 1)
         scored_features.append({**f, "rice_score": round(score, 2)})
     return sorted(scored_features, key=lambda x: x["rice_score"], reverse=True)
 
@@ -457,7 +485,10 @@ def predict_employee_performance(employee_id: str) -> Dict[str, Any]:
         "employee_id": employee_id,
         "predicted_rating": "Exceeds Expectations",
         "confidence_score": 0.82,
-        "coaching_tips": ["Focus on leadership opportunities", "Expand technical mentorship"],
+        "coaching_tips": [
+            "Focus on leadership opportunities",
+            "Expand technical mentorship",
+        ],
     }
 
 

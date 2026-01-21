@@ -63,12 +63,20 @@ class KPIEngineV2:
                         "value": float(value),
                         **context,
                     }
-                    self._log_event("kpi_calculated", "success", kpi=kpi_name, value=value)
+                    self._log_event(
+                        "kpi_calculated", "success", kpi=kpi_name, value=value
+                    )
                 except Exception as e:
-                    self._log_event("kpi_calculation_failed", "error", kpi=kpi_name, error=str(e))
+                    self._log_event(
+                        "kpi_calculation_failed", "error", kpi=kpi_name, error=str(e)
+                    )
                     self.metrics[kpi_name] = {"value": None, "error": str(e)}
 
-            if include_composite and "PAR30" in self.metrics and "CollectionRate" in self.metrics:
+            if (
+                include_composite
+                and "PAR30" in self.metrics
+                and "CollectionRate" in self.metrics
+            ):
                 try:
                     par30_val = self.metrics["PAR30"]["value"]
                     collection_val = self.metrics["CollectionRate"]["value"]
@@ -79,7 +87,9 @@ class KPIEngineV2:
                         "value": float(health_val),
                         **health_ctx,
                     }
-                    self._log_event("composite_kpi_calculated", "success", kpi="PortfolioHealth")
+                    self._log_event(
+                        "composite_kpi_calculated", "success", kpi="PortfolioHealth"
+                    )
                 except Exception as e:
                     self._log_event("composite_kpi_failed", "error", error=str(e))
 
@@ -95,10 +105,17 @@ class KPIEngineV2:
     ) -> Tuple[float, Dict[str, Any]]:
         """Calculate Portfolio Health composite metric."""
         p30 = par_30 if par_30 is not None else self.get_metric("PAR30")
-        cr = collection_rate if collection_rate is not None else self.get_metric("CollectionRate")
+        cr = (
+            collection_rate
+            if collection_rate is not None
+            else self.get_metric("CollectionRate")
+        )
 
         if p30 is None or cr is None:
-            return 0.0, {"error": "Missing inputs for PortfolioHealth", "metric": "PortfolioHealth"}
+            return 0.0, {
+                "error": "Missing inputs for PortfolioHealth",
+                "metric": "PortfolioHealth",
+            }
 
         val, ctx = calculate_portfolio_health_logic(p30, cr)
         ctx.setdefault("metric", "PortfolioHealth")
@@ -145,7 +162,9 @@ class KPIEngineV2:
         if name in self.metrics:
             return self.metrics[name].get("value")
 
-        calculator = self.KPI_FUNCTIONS.get(name) or self.ON_DEMAND_KPI_FUNCTIONS.get(name)
+        calculator = self.KPI_FUNCTIONS.get(name) or self.ON_DEMAND_KPI_FUNCTIONS.get(
+            name
+        )
         if calculator is not None:
             val, _ = calculator(self.df)
             return float(val) if val is not None else None

@@ -17,12 +17,20 @@ def save_agent_output(
     path = os.path.join(storage_dir, filename)
     with open(path, "w") as f:
         json.dump(
-            {"agent": agent_name, "version": version, "output": output, "timestamp": timestamp}, f
+            {
+                "agent": agent_name,
+                "version": version,
+                "output": output,
+                "timestamp": timestamp,
+            },
+            f,
         )
     return path
 
 
-def list_agent_outputs(agent_name: str, storage_dir: str = "data/agent_outputs") -> List[str]:
+def list_agent_outputs(
+    agent_name: str, storage_dir: str = "data/agent_outputs"
+) -> List[str]:
     # If the directory does not exist, return an empty list instead of raising
     # FileNotFoundError. This mirrors the behavior of `save_agent_output` which
     # creates the directory when saving.

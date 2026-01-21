@@ -5,7 +5,6 @@ import json
 import re
 import shutil
 import uuid
-
 from datetime import datetime, timezone
 from io import BytesIO, StringIO
 from pathlib import Path
@@ -15,10 +14,10 @@ import pandas as pd
 import pandera as pa
 import polars as pl
 from jsonschema import Draft202012Validator
-from src.pipeline.ingestion_models import LoanRecord, IngestionResult
 
 from src.analytics.schema import LoanTapeSchema
 from src.pipeline.data_validation import validate_dataframe
+from src.pipeline.ingestion_models import IngestionResult, LoanRecord
 from src.pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
                                 hash_file, utc_now)
 
@@ -27,7 +26,11 @@ class UnifiedIngestion:
     """Phase 1: Robust ingestion with validation, checksum, and auditability."""
 
     def _group_by_measurement_date(self, frame: pd.DataFrame) -> pd.DataFrame:
-        return frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
+        return (
+            frame.groupby("measurement_date", dropna=False)
+            .sum(numeric_only=True)
+            .reset_index()
+        )
 
     def __init__(
         self,
@@ -38,9 +41,7 @@ class UnifiedIngestion:
     ):
         root_cfg: Dict[str, Any] = config or {}
         self.config = (
-            root_cfg.get("pipeline", {})
-            .get("phases", {})
-            .get("ingestion", {})
+            root_cfg.get("pipeline", {}).get("phases", {}).get("ingestion", {})
         )
         self.run_id = run_id or f"ingest_{uuid.uuid4().hex[:12]}"
         self.data_dir = Path(data_dir) if data_dir is not None else Path(".")
@@ -114,11 +115,15 @@ class UnifiedIngestion:
         )
         return ingested
 
-    def _load_looker_file(self, loans_path: Path, financials_path: Optional[Path] = None) -> tuple[pd.DataFrame, dict]:
+    def _load_looker_file(
+        self, loans_path: Path, financials_path: Optional[Path] = None
+    ) -> tuple[pd.DataFrame, dict]:
         if not loans_path.exists():
             raise FileNotFoundError(f"Looker loans file not found: {loans_path}")
         df = pd.read_csv(loans_path)
-        financials_by_date, financials_meta = self._load_looker_financials(financials_path)
+        financials_by_date, financials_meta = self._load_looker_financials(
+            financials_path
+        )
         return df, financials_by_date, financials_meta
 
     def ingest_parquet(self, filename: str) -> pd.DataFrame:
@@ -251,7 +256,9 @@ class UnifiedIngestion:
 
     def _build_rate_limiter(self, config: Dict[str, Any]) -> RateLimiter:
         rate_cfg = config.get("http", {}).get("rate_limit", {})
-        return RateLimiter(max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60))
+        return RateLimiter(
+            max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60)
+        )
 
     def _build_circuit_breaker(self, config: Dict[str, Any]) -> CircuitBreaker:
         cb_cfg = config.get("http", {}).get("circuit_breaker", {})
@@ -303,7 +310,9 @@ class UnifiedIngestion:
             self._record_error("archive", exc, file=str(file_path))
             return None
 
-    def _validate_schema_pandera(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
+    def _validate_schema_pandera(
+        self, df: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, List[str]]:
         """Validate dataframe using Pandera schemas."""
         try:
             validated_df = LoanTapeSchema.validate(df)
@@ -318,7 +327,8 @@ class UnifiedIngestion:
             return errors
         for idx, record in enumerate(df.to_dict(orient="records")):
             errors.extend(
-                f"row {idx}: {error.message}" for error in self.schema_validator.iter_errors(record)
+                f"row {idx}: {error.message}"
+                for error in self.schema_validator.iter_errors(record)
             )
         return errors
 
@@ -332,7 +342,9 @@ class UnifiedIngestion:
                 clean_record = {str(k).strip().lower(): v for k, v in record.items()}
                 if "loan_id" not in clean_record:
                     clean_record["loan_id"] = f"agg_{idx}"
-                validated_records.append(LoanRecord(**clean_record).model_dump(by_alias=True))
+                validated_records.append(
+                    LoanRecord(**clean_record).model_dump(by_alias=True)
+                )
             except ValidationError as exc:
                 errors.append(f"row {idx}: {exc}")
 
@@ -361,7 +373,9 @@ class UnifiedIngestion:
     def _normalize_token(self, value: str) -> str:
         return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
 
-    def _select_column(self, columns: List[str], candidates: Iterable[str]) -> Optional[str]:
+    def _select_column(
+        self, columns: List[str], candidates: Iterable[str]
+    ) -> Optional[str]:
         if not candidates:
             return None
         lower_map = {col.lower(): col for col in columns}
@@ -383,7 +397,9 @@ class UnifiedIngestion:
                     return col
         return None
 
-    def _match_metric(self, metric_name: str, mapping: Dict[str, List[str]]) -> Optional[str]:
+    def _match_metric(
+        self, metric_name: str, mapping: Dict[str, List[str]]
+    ) -> Optional[str]:
         metric_norm = self._normalize_token(metric_name)
         if not metric_norm:
             return None
@@ -473,7 +489,9 @@ class UnifiedIngestion:
             return {}, {"files": [], "dates": 0, "metrics": []}
 
         looker_cfg = self.config.get("looker", {})
-        mapping = looker_cfg.get("financials_metrics") or self._default_financials_mapping()
+        mapping = (
+            looker_cfg.get("financials_metrics") or self._default_financials_mapping()
+        )
         date_candidates = looker_cfg.get(
             "financials_date_column_candidates",
             ["reporting_date", "as_of_date", "date", "fecha", "fecha_corte"],
@@ -515,9 +533,9 @@ class UnifiedIngestion:
                 is_long = format_mode == "long"
 
             if date_col:
-                date_series = pd.to_datetime(financials_df[date_col], errors="coerce").dt.strftime(
-                    "%Y-%m-%d"
-                )
+                date_series = pd.to_datetime(
+                    financials_df[date_col], errors="coerce"
+                ).dt.strftime("%Y-%m-%d")
             else:
                 if default_date_strategy == "file_mtime":
                     default_date = (
@@ -571,7 +589,11 @@ class UnifiedIngestion:
         for metrics in financials_by_date.values():
             assets = metrics.get("total_assets_usd")
             liabilities = metrics.get("total_liabilities_usd")
-            if (nw := metrics.get("net_worth_usd")) is None and assets is not None and liabilities is not None:
+            if (
+                (nw := metrics.get("net_worth_usd")) is None
+                and assets is not None
+                and liabilities is not None
+            ):
                 metrics["net_worth_usd"] = float(assets) - float(liabilities)
                 nw = metrics["net_worth_usd"]
             if (
@@ -579,16 +601,22 @@ class UnifiedIngestion:
                 and liabilities is not None
                 and nw not in (None, 0)
             ):
-                metrics["debt_to_equity_ratio"] = float(liabilities or 0.0) / float(nw or 1.0)
+                metrics["debt_to_equity_ratio"] = float(liabilities or 0.0) / float(
+                    nw or 1.0
+                )
 
-        metrics_set = sorted({key for values in financials_by_date.values() for key in values})
+        metrics_set = sorted(
+            {key for values in financials_by_date.values() for key in values}
+        )
         meta = {
             "files": [str(p) for p in files],
             "dates": len(financials_by_date),
             "metrics": metrics_set,
         }
         if financials_by_date:
-            self._log_event("looker_financials", "loaded", dates=len(financials_by_date))
+            self._log_event(
+                "looker_financials", "loaded", dates=len(financials_by_date)
+            )
         return financials_by_date, meta
 
     def _apply_financials_to_snapshot(
@@ -612,7 +640,9 @@ class UnifiedIngestion:
         if "cash_available_usd" not in df.columns:
             df["cash_available_usd"] = 0.0
         if "cash_balance_usd" in df.columns:
-            df["cash_available_usd"] = df["cash_available_usd"].fillna(df["cash_balance_usd"])
+            df["cash_available_usd"] = df["cash_available_usd"].fillna(
+                df["cash_balance_usd"]
+            )
         df["cash_available_usd"] = df["cash_available_usd"].fillna(0.0)
         return df
 
@@ -644,9 +674,9 @@ class UnifiedIngestion:
         if missing:
             raise ValueError(f"Missing Looker PAR columns: {', '.join(missing)}")
 
-        measurement_date = pd.to_datetime(df[reporting_col], errors="coerce").dt.strftime(
-            "%Y-%m-%d"
-        )
+        measurement_date = pd.to_datetime(
+            df[reporting_col], errors="coerce"
+        ).dt.strftime("%Y-%m-%d")
         total_receivable = pd.to_numeric(df[outstanding_col], errors="coerce")
         par_7 = pd.to_numeric(df[par_7_col], errors="coerce")
         par_30 = pd.to_numeric(df[par_30_col], errors="coerce")
@@ -666,7 +696,9 @@ class UnifiedIngestion:
         ).dropna(subset=["measurement_date"])
 
         grouped = (
-            frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
+            frame.groupby("measurement_date", dropna=False)
+            .sum(numeric_only=True)
+            .reset_index()
         )
         grouped["total_eligible_usd"] = grouped["total_receivable_usd"]
         grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
@@ -695,16 +727,18 @@ class UnifiedIngestion:
         if measurement_col:
             resolved = self._select_column(list(df.columns), [measurement_col])
             if resolved:
-                measurement_date = pd.to_datetime(df[resolved], errors="coerce").dt.strftime(
-                    "%Y-%m-%d"
-                )
+                measurement_date = pd.to_datetime(
+                    df[resolved], errors="coerce"
+                ).dt.strftime("%Y-%m-%d")
         if measurement_date is None:
             if strategy == "max_disburse_date":
                 resolved = self._select_column(
                     list(df.columns), ["disburse_date", "disbursement_date"]
                 )
             elif strategy == "max_maturity_date":
-                resolved = self._select_column(list(df.columns), ["maturity_date", "loan_end_date"])
+                resolved = self._select_column(
+                    list(df.columns), ["maturity_date", "loan_end_date"]
+                )
             else:
                 resolved = None
             if resolved:
@@ -732,7 +766,9 @@ class UnifiedIngestion:
         ).dropna(subset=["measurement_date"])
 
         grouped = (
-            frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
+            frame.groupby("measurement_date", dropna=False)
+            .sum(numeric_only=True)
+            .reset_index()
         )
         grouped["total_eligible_usd"] = grouped["total_receivable_usd"]
         grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
@@ -742,7 +778,9 @@ class UnifiedIngestion:
         grouped = self._apply_financials_to_snapshot(grouped, financials_by_date)
         return grouped
 
-    def ingest_file(self, file_path: Path, archive_dir: Optional[Path] = None) -> IngestionResult:
+    def ingest_file(
+        self, file_path: Path, archive_dir: Optional[Path] = None
+    ) -> IngestionResult:
         self._log_event("start", "initiated", file_path=str(file_path))
         if not file_path.exists():
             self._log_event("file_check", "failed", error="File not found")
@@ -835,7 +873,9 @@ class UnifiedIngestion:
             financials_path=str(financials_path) if financials_path else None,
         )
         try:
-            df, financials_by_date, financials_meta = self._load_looker_file(loans_path, financials_path)
+            df, financials_by_date, financials_meta = self._load_looker_file(
+                loans_path, financials_path
+            )
             checksum = hash_file(loans_path)
             columns_lower = {col.lower() for col in df.columns}
             has_par = {
@@ -856,9 +896,7 @@ class UnifiedIngestion:
                 )
                 source_mode = "looker_par_balances"
             elif has_dpd:
-                normalized_df = self._looker_dpd_to_loan_tape(
-                    df, financials_by_date
-                )
+                normalized_df = self._looker_dpd_to_loan_tape(df, financials_by_date)
                 source_mode = "looker_loans"
             else:
                 raise ValueError(
@@ -877,7 +915,9 @@ class UnifiedIngestion:
             validated_df, deduped_count = self._apply_deduplication(validated_df)
             if deduped_count:
                 self._log_event("deduplication", "completed", removed=deduped_count)
-            archived = self._archive_raw(loans_path, archive_dir) if archive_dir else None
+            archived = (
+                self._archive_raw(loans_path, archive_dir) if archive_dir else None
+            )
             metadata = {
                 "source_looker_loans": str(loans_path),
                 "financials_path": str(financials_path) if financials_path else None,
@@ -903,7 +943,9 @@ class UnifiedIngestion:
             self._record_error("looker_fatal_error", exc)
             raise
 
-    def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
+    def ingest_http(
+        self, url: str, headers: Optional[Dict[str, str]] = None
+    ) -> IngestionResult:
         import requests
 
         headers = headers or {}

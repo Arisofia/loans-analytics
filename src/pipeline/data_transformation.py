@@ -34,9 +34,13 @@ class TransformationResult:
 class UnifiedTransformation:
     """Phase 2: Data transformation, normalization, and compliance masking."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None, run_id: Optional[str] = None):
+    def __init__(
+        self, config: Optional[Dict[str, Any]] = None, run_id: Optional[str] = None
+    ):
         root_cfg: Dict[str, Any] = config or {}
-        self.config = root_cfg.get("pipeline", {}).get("phases", {}).get("transformation", {})
+        self.config = (
+            root_cfg.get("pipeline", {}).get("phases", {}).get("transformation", {})
+        )
         self.run_id = run_id or f"tx_{uuid.uuid4().hex[:12]}"
         self.lineage: List[Dict[str, Any]] = []
         self.transformations_count = 0
@@ -64,7 +68,9 @@ class UnifiedTransformation:
         return {
             "total_receivable": float(pd.to_numeric(df["total_receivable_usd"]).sum()),
             "total_eligible": float(pd.to_numeric(df["total_eligible_usd"]).sum()),
-            "discounted_balance": float(pd.to_numeric(df["discounted_balance_usd"]).sum()),
+            "discounted_balance": float(
+                pd.to_numeric(df["discounted_balance_usd"]).sum()
+            ),
         }
 
     def calculate_dpd_ratios(self, df: pd.DataFrame) -> Dict[str, float]:
@@ -75,7 +81,11 @@ class UnifiedTransformation:
             "dpd_60_90_usd",
             "dpd_90_plus_usd",
         ]
-        missing = [col for col in (dpd_cols + ["total_receivable_usd"]) if col not in df.columns]
+        missing = [
+            col
+            for col in (dpd_cols + ["total_receivable_usd"])
+            if col not in df.columns
+        ]
         if missing:
             raise ValueError(f"missing required columns: {missing}")
 
@@ -89,7 +99,9 @@ class UnifiedTransformation:
             ratios[col] = (amt / total) * 100.0
         return ratios
 
-    def _select_column_case_insensitive(self, df: pd.DataFrame, name: str) -> Optional[str]:
+    def _select_column_case_insensitive(
+        self, df: pd.DataFrame, name: str
+    ) -> Optional[str]:
         lower_map = {str(c).lower(): str(c) for c in df.columns}
         return lower_map.get(name.lower())
 
@@ -126,18 +138,28 @@ class UnifiedTransformation:
 
         out = pd.DataFrame(index=df.index)
         # Preserve raw columns expected by KPIEngine (v1)
-        out["total_receivable_usd"] = pd.to_numeric(df["total_receivable_usd"], errors="raise")
-        out["total_eligible_usd"] = pd.to_numeric(df["total_eligible_usd"], errors="raise")
-        out["discounted_balance_usd"] = pd.to_numeric(df["discounted_balance_usd"], errors="raise")
+        out["total_receivable_usd"] = pd.to_numeric(
+            df["total_receivable_usd"], errors="raise"
+        )
+        out["total_eligible_usd"] = pd.to_numeric(
+            df["total_eligible_usd"], errors="raise"
+        )
+        out["discounted_balance_usd"] = pd.to_numeric(
+            df["discounted_balance_usd"], errors="raise"
+        )
         out["dpd_0_7_usd"] = pd.to_numeric(df["dpd_0_7_usd"], errors="raise")
         out["dpd_7_30_usd"] = pd.to_numeric(df["dpd_7_30_usd"], errors="raise")
         out["dpd_30_60_usd"] = pd.to_numeric(df["dpd_30_60_usd"], errors="raise")
         out["dpd_60_90_usd"] = pd.to_numeric(df["dpd_60_90_usd"], errors="raise")
         out["dpd_90_plus_usd"] = pd.to_numeric(df["dpd_90_plus_usd"], errors="raise")
 
-        out["receivable_amount"] = pd.to_numeric(df["total_receivable_usd"], errors="raise")
+        out["receivable_amount"] = pd.to_numeric(
+            df["total_receivable_usd"], errors="raise"
+        )
         out["eligible_amount"] = pd.to_numeric(df["total_eligible_usd"], errors="raise")
-        out["discounted_amount"] = pd.to_numeric(df["discounted_balance_usd"], errors="raise")
+        out["discounted_amount"] = pd.to_numeric(
+            df["discounted_balance_usd"], errors="raise"
+        )
 
         denom = out["receivable_amount"].replace({0: np.nan})
         for col in [
@@ -160,7 +182,9 @@ class UnifiedTransformation:
         self.transformations_count += 1
         return out
 
-    def validate_transformations(self, original: pd.DataFrame, transformed: pd.DataFrame) -> bool:
+    def validate_transformations(
+        self, original: pd.DataFrame, transformed: pd.DataFrame
+    ) -> bool:
         if len(original) != len(transformed):
             return False
         if "receivable_amount" not in transformed.columns:
@@ -169,7 +193,9 @@ class UnifiedTransformation:
             orig_total = float(
                 pd.to_numeric(original["total_receivable_usd"], errors="raise").sum()
             )
-            new_total = float(pd.to_numeric(transformed["receivable_amount"], errors="raise").sum())
+            new_total = float(
+                pd.to_numeric(transformed["receivable_amount"], errors="raise").sum()
+            )
         except Exception:
             return False
         return abs(orig_total - new_total) < 1e-6
@@ -237,7 +263,9 @@ class UnifiedTransformation:
     def transform(self, df: pd.DataFrame, user: str = "system") -> TransformationResult:
         self._log_step("start", "initiated", input_rows=len(df))
         access_log: List[Dict[str, Any]] = []
-        access_log.append(create_access_log_entry("transformation", user, "read", "success"))
+        access_log.append(
+            create_access_log_entry("transformation", user, "read", "success")
+        )
 
         try:
             clean_df = df.copy()
@@ -245,7 +273,9 @@ class UnifiedTransformation:
             if normalization.get("lowercase_columns", True):
                 clean_df.columns = [str(c).lower().strip() for c in clean_df.columns]
             if normalization.get("strip_whitespace", True):
-                clean_df = clean_df.map(lambda val: val.strip() if isinstance(val, str) else val)
+                clean_df = clean_df.map(
+                    lambda val: val.strip() if isinstance(val, str) else val
+                )
             self._log_step("normalization", "success", columns=list(clean_df.columns))
 
             clean_df = self._handle_nulls(clean_df)
@@ -273,7 +303,9 @@ class UnifiedTransformation:
 
             input_hash = hash_dataframe(df)
             output_hash = hash_dataframe(clean_df)
-            self._log_step("lineage", "captured", input_hash=input_hash, output_hash=output_hash)
+            self._log_step(
+                "lineage", "captured", input_hash=input_hash, output_hash=output_hash
+            )
 
             clean_df["_tx_run_id"] = self.run_id
             clean_df["_tx_timestamp"] = utc_now()
@@ -298,6 +330,8 @@ class UnifiedTransformation:
             )
 
         except Exception as exc:
-            access_log.append(create_access_log_entry("transformation", user, "error", "failed"))
+            access_log.append(
+                create_access_log_entry("transformation", user, "error", "failed")
+            )
             self._log_step("fatal_error", "failed", error=str(exc))
             raise
