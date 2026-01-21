@@ -192,7 +192,7 @@ class SlackBotService {
       return
     }
     await this.app.start(Number(process.env.PORT) || 3000)
-    console.log('⚡️ Slack Bot is running')
+    console.warn('⚡️ Slack Bot is running')
   }
 }
 

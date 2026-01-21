@@ -56,7 +56,7 @@ async function exportMetaDataToAzure() {
     Buffer.byteLength(JSON.stringify(insights))
   )
 
-  console.log('Meta data exported to Azure Blob Storage successfully.')
+  console.warn('Meta data exported to Azure Blob Storage successfully.')
 }
 
 exportMetaDataToAzure().catch((err) => {
