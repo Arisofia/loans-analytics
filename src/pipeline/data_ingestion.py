@@ -143,12 +143,13 @@ class UnifiedIngestion:
                 "timestamp": utc_now(),
             }
         )
-            def _load_looker_file(self, loans_path: Path, financials_path: Optional[Path] = None) -> tuple[pd.DataFrame, dict]:
-                if not loans_path.exists():
-                    raise FileNotFoundError(f"Looker loans file not found: {loans_path}")
-                df = pd.read_csv(loans_path)
-                financials_by_date, financials_meta = self._load_looker_financials(financials_path)
-                return df, financials_by_date, financials_meta
+
+    def _load_looker_file(self, loans_path: Path, financials_path: Optional[Path] = None) -> tuple[pd.DataFrame, dict]:
+        if not loans_path.exists():
+            raise FileNotFoundError(f"Looker loans file not found: {loans_path}")
+        df = pd.read_csv(loans_path)
+        financials_by_date, financials_meta = self._load_looker_financials(financials_path)
+        return df, financials_by_date, financials_meta
         return ingested
 
     def ingest_parquet(self, filename: str) -> pd.DataFrame:
