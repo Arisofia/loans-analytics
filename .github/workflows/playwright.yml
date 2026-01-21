@@ -34,7 +34,7 @@ jobs:
         env:
           CI: true
 
-                - name: Wait for server
+      - name: Wait for server
         run: npx wait-on http://localhost:3000 --timeout 60000
 
       - name: Run Playwright tests
