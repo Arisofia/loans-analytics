@@ -13,7 +13,12 @@
     {
       "label": "Coverage",
       "type": "shell",
-      "command": "bash -lc 'source ${workspaceFolder}/.venv/bin/activate && coverage run -m pytest && coverage report -m'"
+      "command": "source \"${workspaceFolder}/.venv/bin/activate\" && coverage run -m pytest && coverage report -m"
+    },
+    {
+      "label": "Coverage HTML",
+      "type": "shell",
+      "command": "source \"${workspaceFolder}/.venv/bin/activate\" && coverage run -m pytest && coverage html"
     },
     {
       "type": "docker-build",
