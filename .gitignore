@@ -1,103 +1,22 @@
-# Ignore environment example file
-.env.example
-# Node / JavaScript
+# Dependencies
 node_modules/
-**/node_modules/
-.next/
-.turbo/
-dist/
-coverage/
-out/
-
-# Gradle
-.gradle/
-**/.gradle/
-build/
-**/build/
-
-# OS
-.DS_Store
-Thumbs.db
-apps/.DS_Store
-
-# Python
 .venv/
 venv/
 __pycache__/
-*.pyc
 
-# IDE / Editor
-.vscode/
-.vscode/tasks.json
-node_modules/
+# Next.js
+.next/
+out/
+build/
+dist/
 
-clean_settings.json
-tailwind.config.js
-
-# Coverage
-.coverage
-.coverage.*
-htmlcov/
-
-# Project-specific artifacts
-apps/.DS_Store
-
-# Local repository clones
-abaco-loans-analytics/
-data_samples/
-gemini-cli/
-
-# Environment variables
+# Environment
 .env
 .env.local
-.env.*.local
-.vercel/
-nvm/
+.DS_Store
 
-# Other
-failed_workflows.csv
-*.csv
-. venv/
-__pycache__/
+# Testing
 .pytest_cache/
-.mypy_cache/
-logs_extracted/
-supabase/.temp/
-*. egg-info/
-# Merge artifacts
-*.orig
-MERGE_*
-. mergehead
-
-# Build/cache
-. venv-*/
-__pycache__/
-. pytest_cache/
-.mypy_cache/
-*. egg-info/
-
-# Temporary
-logs_extracted/
-tmp/
-supabase/. temp/
-# Merge artifacts
-*.orig
-MERGE_*
-. mergehead
-
-# Build/cache
-. venv-*/
-__pycache__/
-. pytest_cache/
-.mypy_cache/
-*. egg-info/
-
-# Temporary
-logs_extracted/
-tmp/
-supabase/. temp/
-.venv-1/
+coverage/
+playwright-report/
 test-results/
-.gradle/
-**/.lint-venv/
-apps/web/.lint-venv/
