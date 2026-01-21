@@ -191,13 +191,19 @@ def safe_numeric_polars(df: pl.DataFrame, columns: List[str]) -> pl.DataFrame:
 
 def safe_numeric(series: pd.Series) -> pd.Series:
     """Coerce a series to numeric, handling currency symbols and commas.
-    Note: If percentages are present (e.g., '50%'), removing '%' yields 50, not 0.5. Adjust as needed for your use case.
+
+    Note: If percentages are present (e.g., '50%'), removing '%' yields 50,
+    not 0.5. Adjust as needed for your use case.
     """
     if series.dtype == "object":
         # Regex handles currency symbols ($, €, £, ¥, ₽, ₡) and commas
         clean = series.astype(str).str.replace(r"[$€£¥₽₡,]", "", regex=True)
         # To handle percentages as fractions, uncomment the following line:
-        # clean = clean.str.replace(r"(\d+(?:\.\d+)?)\s*%", lambda m: str(float(m.group(1)) / 100), regex=True)
+        # clean = clean.str.replace(
+        #     r"(\d+(?:\.\d+)?)\s*%",
+        #     lambda m: str(float(m.group(1)) / 100),
+        #     regex=True
+        # )
         return pd.to_numeric(clean, errors="coerce")
     return pd.to_numeric(series, errors="coerce")
 
@@ -230,12 +236,17 @@ def validate_iso8601_dates(
     df: pd.DataFrame, columns: Optional[List[str]] = None
 ) -> Dict[str, bool]:
     """
-    Check that all values in the specified columns are valid ISO 8601 dates (YYYY-MM-DD or full ISO format).
-    Returns a dict mapping column name to True/False.
+    Check that all values in the specified columns are valid ISO 8601 dates
+    (YYYY-MM-DD or full ISO format). Returns a dict mapping column name to
+    True/False.
     """
     if columns is None:
         # Heuristic: columns with 'date' in the name
-        columns = [c for c in df.columns if "date" in c.lower() or c.lower().endswith("_at")]
+        columns = [
+            c
+            for c in df.columns
+            if "date" in c.lower() or c.lower().endswith("_at")
+        ]
     validation: Dict[str, bool] = {}
     for col in columns:
         if col in df.columns:
@@ -255,7 +266,9 @@ def validate_monotonic_increasing(
     if columns is None:
         # Heuristic: columns with 'count', 'total', or 'cumulative' in the name
         columns = [
-            c for c in df.columns if any(x in c.lower() for x in ["count", "total", "cumulative"])
+            c
+            for c in df.columns
+            if any(x in c.lower() for x in ["count", "total", "cumulative"])
         ]
     validation: Dict[str, bool] = {}
     for col in columns:
@@ -267,16 +280,16 @@ def validate_monotonic_increasing(
     return validation
 
 
-def validate_no_nulls(df: pd.DataFrame, columns: Optional[List[str]] = None) -> Dict[str, bool]:
+def validate_no_nulls(
+    df: pd.DataFrame, columns: Optional[List[str]] = None
+) -> Dict[str, bool]:
     """
     Check that specified columns have no null values.
     Returns a dict mapping column name to True/False.
     """
     if columns is None:
-        # Heuristic: all columns in REQUIRED_ANALYTICS_COLUMNS and NUMERIC_COLUMNS
-        from python.validation import (NUMERIC_COLUMNS,
-                                       REQUIRED_ANALYTICS_COLUMNS)
-
+        # Heuristic: all columns in REQUIRED_ANALYTICS_COLUMNS
+        # and NUMERIC_COLUMNS
         columns = list(set(REQUIRED_ANALYTICS_COLUMNS + NUMERIC_COLUMNS))
     validation: Dict[str, bool] = {}
     for col in columns:
