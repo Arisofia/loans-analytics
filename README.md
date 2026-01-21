@@ -30,13 +30,19 @@ See docs/TRACING.md for observability and tracing setup.
 
 
 
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)
 - [Essential knowledge base](#essential-knowledge-base)
 - [Repository Policy](#repository-policy-all-changes-to-main-must-be-made-via-pull-request)
 - [Code Quality](#code-quality)
+- [Documentation](#documentation)
+- [Getting Started](#getting-started)
 - [CI Workflows](#ci-workflows)
+- [Stack map](#stack-map)
+- [Ingestion Policy](#ingestion-policy)
+- [Canonical Data Stores](#canonical-data-stores)
 
 ## Quick Start
 

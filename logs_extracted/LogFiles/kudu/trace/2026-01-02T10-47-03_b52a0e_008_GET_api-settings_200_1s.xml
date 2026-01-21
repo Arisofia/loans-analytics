@@ -1,6 +1,0 @@
-<step title="Incoming Request" date="2026-01-02T10:47:03.936" instance="b52a0e" url="/api/settings" method="GET" type="request" pid="767,1,18" Host="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_b331d4c441121f33da0f8476235474cf2ed43174776f44c9c3bb512e436c79b1" Authorization="Bea..." Content-Type="application/json; charset=utf-8" Content-Length="0" X-ARR-LOG-ID="3971e47b-c0fe-4161-9ed5-bbbfeedc64d0" CLIENT-IP="13.83.166.241:57352" X-SITE-DEPLOYMENT-ID="abaco-analytics-dashboard" WAS-DEFAULT-HOSTNAME="abaco-analytics-dashboard-gbbjege0gxcbhyg9.scm.canadacentral-01.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/settings" X-Client-IP="13.83.166.241" X-Client-Port="57352" >
-  <step title="Cleanup Xml Logs" date="2026-01-02T10:47:03.946" >
-    <step title="Cleanup Infos" date="2026-01-02T10:47:04.180" totalFiles="3461" totalCleanup="3301" /><!-- duration: 92ms -->
-  </step><!-- duration: 356ms -->
-  <step title="Outgoing response" date="2026-01-02T10:47:04.582" type="response" statusCode="200" statusText="OK" /><!-- duration: 2ms -->
-</step><!-- duration: 655ms -->

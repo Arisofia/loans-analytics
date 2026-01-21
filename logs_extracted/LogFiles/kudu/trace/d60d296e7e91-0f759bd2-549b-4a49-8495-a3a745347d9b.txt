@@ -1,4 +1,0 @@
-2026-01-02T17:57:41    Error occurred, type: error, text: LogStreamManager: Inside TerminateClient
-2026-01-02T17:57:41    Error occurred, type: error, text: LogStreamManager: Inside Reset
-2026-01-02T18:02:51    Error occurred, type: error, text: LogStreamManager: ProcessRequest end
-2026-01-02T18:02:51  Error occurred, type: error, text: LogStreamManager: Inside Reset
