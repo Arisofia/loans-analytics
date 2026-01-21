@@ -6,6 +6,14 @@
 - Python/Streamlit dashboard under  streamlit_app/
 - Observability and tracing with Azure Monitor OpenTelemetry
 
+# ABACO — Loan Analytics Platform
+
+- Raw Abaco CSV loan tapes under data/abaco
+- Synthetic support tables under data/support
+- SQL definitions for core views and KPIs under sql/
+- Python/Streamlit dashboard under streamlit_app/
+- Observability and tracing with Azure Monitor OpenTelemetry
+
 ## Ingestion Policy
 Ingestion is supported via API and scheduled pipelines with audit controls (run IDs, lineage, and validation logs). Streamlit remains available for manual uploads and QA, but it is not the exclusive ingestion gate.
 
