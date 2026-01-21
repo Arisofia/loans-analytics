@@ -66,7 +66,11 @@ class UnifiedIngestion:
         strict_validation: bool = False,
     ):
         root_cfg: Dict[str, Any] = config or {}
-        self.config = root_cfg.get("pipeline", {}).get("phases", {}).get("ingestion", {})
+        self.config = (
+            root_cfg.get("pipeline", {})
+            .get("phases", {})
+            .get("ingestion", {})
+        )
         self.run_id = run_id or f"ingest_{uuid.uuid4().hex[:12]}"
         self.data_dir = Path(data_dir) if data_dir is not None else Path(".")
         self.strict_validation = strict_validation
@@ -146,6 +150,9 @@ class UnifiedIngestion:
             df_polars = pl.read_parquet(path)
             df = df_polars.to_pandas()
             return self.ingest_dataframe(df)
+        except FileNotFoundError:
+            logger.error("Parquet file not found: %s", path)
+            return pd.DataFrame()
         except Exception as exc:
             logger.error("Parquet ingestion failed: %s", exc)
             return pd.DataFrame()
@@ -157,6 +164,9 @@ class UnifiedIngestion:
             df_polars = pl.read_excel(path)
             df = df_polars.to_pandas()
             return self.ingest_dataframe(df)
+        except FileNotFoundError:
+            logger.error("Excel file not found: %s", path)
+            return pd.DataFrame()
         except Exception as exc:
             logger.error("Excel ingestion failed: %s", exc)
             return pd.DataFrame()
