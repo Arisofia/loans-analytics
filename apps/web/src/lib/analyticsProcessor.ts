@@ -1,4 +1,4 @@
-// Parses a CSV string into an array of LoanRow objects.
+// Parses CSV string into LoanRow[] (stub)
 import type { LoanRow } from '@/types/analytics'
 export function parseLoanCsv(csv: string): LoanRow[] {
   const lines = csv.split(/\r?\n/).filter((line) => line.trim() !== '')
@@ -8,18 +8,17 @@ export function parseLoanCsv(csv: string): LoanRow[] {
 
   return lines.slice(1).map((line) => {
     const row: LoanRow = {}
-    // Basic CSV parsing: splits by comma, does not fully handle quoted fields with embedded commas.
-    // Assumes a standard CSV format where values may be quoted.
-    const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || []
+    // Split by comma, ignoring commas inside double quotes
+    const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
 
     headers.forEach((header, index) => {
       let val = values[index]?.trim()
       if (val) {
-        // Remove surrounding quotes if present
+        // Remove quotes if present
         if (val.startsWith('"') && val.endsWith('"')) {
           val = val.slice(1, -1)
         }
-        // Attempt to convert value to number
+        // Attempt to convert to number
         const num = parseFloat(val.replace(/,/g, '')) // Remove commas for number parsing
         row[header] = isNaN(num) ? val : num
       }
@@ -30,8 +29,8 @@ export function parseLoanCsv(csv: string): LoanRow[] {
 export function toNumber(value: any): number {
   if (typeof value === 'number') return value
   if (typeof value === 'string') {
-    // Remove currency symbols and handle commas for robust parsing
-    const cleanValue = value.replace(/[^0-9.,-]+/g, '')
+    // Robust parsing: remove currency symbols and commas, keep dots and minus
+    const cleanValue = value.replace(/,/g, '').replace(/[^0-9.-]+/g, '')
     const parsed = parseFloat(cleanValue)
     return isNaN(parsed) ? 0 : parsed
   }
@@ -53,19 +52,25 @@ export function computeKPIs(data: any[]) {
     }
   }
 
-  const totalVolume = data.reduce((sum, loan) => sum + toNumber(loan.amount || loan.monto || 0), 0)
+  const totalVolume = data.reduce(
+    (sum, loan) => sum + toNumber(loan.amount || loan.monto || loan.loan_amount || 0),
+    0
+  )
   const activeLoans = data.filter((loan) => {
-    const s = (loan.status || loan.estado || '').toLowerCase()
+    const s = (loan.status || loan.estado || loan.loan_status || '').toLowerCase()
     return s === 'active' || s === 'activo' || s === 'current'
   }).length
   const defaultedLoans = data.filter((loan) => {
-    const s = (loan.status || loan.estado || '').toLowerCase()
+    const s = (loan.status || loan.estado || loan.loan_status || '').toLowerCase()
     return s === 'default' || s === 'mora' || s === 'charged_off'
   }).length
   const defaultRate = data.length > 0 ? (defaultedLoans / data.length) * 100 : 0
   const averageRate =
     data.length > 0
-      ? data.reduce((sum, loan) => sum + toNumber(loan.rate || 0), 0) / data.length
+      ? data.reduce(
+          (sum, loan) => sum + toNumber(loan.rate || loan.tasa || loan.interest_rate || 0),
+          0
+        ) / data.length
       : 0
   const loanCount = data.length
   const delinquencyRate = data.length > 0 ? (defaultedLoans / data.length) * 100 : 0

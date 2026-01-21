@@ -31,10 +31,14 @@ const sanitizeMarkdownCell = (value: string): string =>
 const formatPercentage = (value: number, digits = 1): string => `${value.toFixed(digits)}%`
 
 export function processedAnalyticsToCSV(analytics: ProcessedAnalytics): string {
-  const rows: LoanRowWithLtv[] = (analytics.loans ?? []).map((loan) => ({
-    ...loan,
-    ltv: ((loan.loan_amount / Math.max(loan.appraised_value, 1)) * 100).toFixed(1),
-  }))
+  const rows: LoanRowWithLtv[] = (analytics.loans ?? []).map((loan) => {
+    const amount = loan.loan_amount ?? loan.amount ?? 0
+    const value = loan.appraised_value ?? 0
+    return {
+      ...loan,
+      ltv: value > 0 ? ((amount / value) * 100).toFixed(1) : '0.0',
+    }
+  })
   const headerRow = loanHeaders.join(',')
   if (!rows.length) {
     return headerRow
