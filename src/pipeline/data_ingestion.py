@@ -55,10 +55,12 @@ class IngestionResult:
     raw_path: Optional[Path] = None
 
 
+
 class UnifiedIngestion:
-        def _group_by_measurement_date(self, frame: pd.DataFrame) -> pd.DataFrame:
-            return frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
     """Phase 1: Robust ingestion with validation, checksum, and auditability."""
+
+    def _group_by_measurement_date(self, frame: pd.DataFrame) -> pd.DataFrame:
+        return frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
 
     def __init__(
         self,
