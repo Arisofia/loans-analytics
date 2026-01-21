@@ -156,7 +156,7 @@ class UnifiedIngestion:
             df_polars = pl.read_parquet(path)
             df = df_polars.to_pandas()
             return self.ingest_dataframe(df)
-        except FileNotFoundError:
+        except pl.exceptions.PolarsFileNotFoundError:
             logger.error("Parquet file not found: %s", path)
             return pd.DataFrame()
         except Exception as exc:
@@ -170,7 +170,7 @@ class UnifiedIngestion:
             df_polars = pl.read_excel(path)
             df = df_polars.to_pandas()
             return self.ingest_dataframe(df)
-        except FileNotFoundError:
+        except pl.exceptions.PolarsFileNotFoundError:
             logger.error("Excel file not found: %s", path)
             return pd.DataFrame()
         except Exception as exc:
