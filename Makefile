@@ -1,4 +1,4 @@
-.PHONY: setup test lint clean docker-up docker-down
+.PHONY: setup test lint clean docker-up docker-down quality quality-check
 
 # Setup environment
 setup:
@@ -14,6 +14,13 @@ lint:
 	black .
 	isort .
 	pylint python apps/analytics/src
+
+# Run comprehensive code quality checks
+quality:
+	@bash scripts/run_quality_checks.sh
+
+# Alias for quality
+quality-check: quality
 
 # Docker Lifecycle
 docker-up:

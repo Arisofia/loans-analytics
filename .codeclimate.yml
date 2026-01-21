@@ -1,0 +1,120 @@
+version: "2"
+
+checks:
+  # Cyclomatic complexity threshold
+  argument-count:
+    enabled: true
+    config:
+      threshold: 5
+  complex-logic:
+    enabled: true
+    config:
+      threshold: 4
+  file-lines:
+    enabled: true
+    config:
+      threshold: 500
+  method-complexity:
+    enabled: true
+    config:
+      threshold: 10
+  method-count:
+    enabled: true
+    config:
+      threshold: 20
+  method-lines:
+    enabled: true
+    config:
+      threshold: 50
+  nested-control-flow:
+    enabled: true
+    config:
+      threshold: 4
+  return-statements:
+    enabled: true
+    config:
+      threshold: 4
+  similar-code:
+    enabled: true
+    config:
+      threshold: 50
+  identical-code:
+    enabled: true
+    config:
+      threshold: 50
+
+plugins:
+  # Python analysis
+  pylint:
+    enabled: true
+    config:
+      disable:
+        - missing-docstring
+        - too-few-public-methods
+  
+  bandit:
+    enabled: true
+    config:
+      exclude_paths:
+        - tests/**
+        - "**/test_*.py"
+  
+  # JavaScript/TypeScript analysis
+  eslint:
+    enabled: true
+    channel: "eslint-9"
+    config:
+      extensions:
+        - .js
+        - .jsx
+        - .ts
+        - .tsx
+  
+  # SonarJS for JavaScript code smells
+  sonar-javascript:
+    enabled: true
+  
+  # Duplication detection
+  duplication:
+    enabled: true
+    config:
+      languages:
+        - javascript
+        - typescript
+        - python
+
+exclude_patterns:
+  # Dependencies
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/.next/**"
+  - "**/build/**"
+  - "**/.turbo/**"
+  - "**/.gradle/**"
+  - "**/target/**"
+  
+  # Test and mock data
+  - "**/tests/**"
+  - "**/__tests__/**"
+  - "**/*.test.*"
+  - "**/*.spec.*"
+  - "**/test_*.py"
+  - "**/data_samples/**"
+  - "**/fixtures/**"
+  
+  # Configuration and generated files
+  - "**/coverage/**"
+  - "**/*.config.js"
+  - "**/*.config.ts"
+  - "**/next-env.d.ts"
+  - "**/global.d.ts"
+  
+  # Documentation
+  - "**/*.md"
+  - "**/docs/**"
+  
+  # Infrastructure
+  - "**/infra/**"
+  - "**/.github/**"
+  - "**/ci/**"
+  - "**/scripts/**"
