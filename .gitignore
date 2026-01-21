@@ -100,3 +100,4 @@ supabase/. temp/
 test-results/
 .gradle/
 **/.lint-venv/
+apps/web/.lint-venv/
