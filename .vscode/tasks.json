@@ -1,72 +1,83 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "Run tests (pytest)",
-      "type": "shell",
-      "command": "bash -lc 'source ${workspaceFolder}/.venv/bin/activate && pytest -q'",
-      "group": {
-        "kind": "test",
-        "isDefault": true
-      }
-    },
-    {
-      "label": "Coverage",
-      "type": "shell",
-      "command": "source \"${workspaceFolder}/.venv/bin/activate\" && coverage run -m pytest && coverage report -m"
-    },
-    {
-      "label": "Coverage HTML",
-      "type": "shell",
-      "command": "source \"${workspaceFolder}/.venv/bin/activate\" && coverage run -m pytest && coverage html"
-    },
-    {
-      "type": "docker-build",
-      "label": "docker-build",
-      "platform": "node",
-      "dockerBuild": {
-        "dockerfile": "${workspaceFolder}/services/slack_bot/Dockerfile",
-        "context": "${workspaceFolder}/services/slack_bot",
-        "pull": true
-      },
-      "node": {
-        "package": "${workspaceFolder}/services/slack_bot/package.json"
-      }
-    },
-    {
-      "type": "docker-run",
-      "label": "docker-run: release",
-      "dependsOn": [
-        "docker-build"
-      ],
-      "platform": "node",
-      "node": {
-        "package": "${workspaceFolder}/services/slack_bot/package.json"
-      }
-    },
-    {
-      "type": "docker-run",
-      "label": "docker-run: debug",
-      "dependsOn": [
-        "docker-build"
-      ],
-      "dockerRun": {
-        "env": {
-          "DEBUG": "*",
-          "NODE_ENV": "development"
-        }
-      },
-      "node": {
-        "package": "${workspaceFolder}/services/slack_bot/package.json",
-        "enableDebugging": true
-      }
-    },
-    {
-      "type": "func",
-      "label": "func: host start",
-      "command": "host start",
-      "problemMatcher": "$func-powershell-watch",
-      "isBackground": true
-    }
-  ]
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run tests (pytest)",
+			"type": "shell",
+			"command": "bash -lc 'source ${workspaceFolder}/.venv/bin/activate && pytest -q'",
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "Coverage",
+			"type": "shell",
+			"command": "source \"${workspaceFolder}/.venv/bin/activate\" && coverage run -m pytest && coverage report -m"
+		},
+		{
+			"label": "Coverage HTML",
+			"type": "shell",
+			"command": "source \"${workspaceFolder}/.venv/bin/activate\" && coverage run -m pytest && coverage html"
+		},
+		{
+			"type": "docker-build",
+			"label": "docker-build",
+			"platform": "node",
+			"dockerBuild": {
+				"dockerfile": "${workspaceFolder}/services/slack_bot/Dockerfile",
+				"context": "${workspaceFolder}/services/slack_bot",
+				"pull": true
+			},
+			"node": {
+				"package": "${workspaceFolder}/services/slack_bot/package.json"
+			}
+		},
+		{
+			"type": "docker-run",
+			"label": "docker-run: release",
+			"dependsOn": [
+				"docker-build"
+			],
+			"platform": "node",
+			"node": {
+				"package": "${workspaceFolder}/services/slack_bot/package.json"
+			}
+		},
+		{
+			"type": "docker-run",
+			"label": "docker-run: debug",
+			"dependsOn": [
+				"docker-build"
+			],
+			"dockerRun": {
+				"env": {
+					"DEBUG": "*",
+					"NODE_ENV": "development"
+				}
+			},
+			"node": {
+				"package": "${workspaceFolder}/services/slack_bot/package.json",
+				"enableDebugging": true
+			}
+		},
+		{
+			"type": "func",
+			"label": "func: host start",
+			"command": "host start",
+			"problemMatcher": "$func-powershell-watch",
+			"isBackground": true
+		},
+		{
+			"label": "Run tests (pytest, direct venv)",
+			"type": "shell",
+			"command": "\".venv/bin/python\" -m pytest -q",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$pytest"
+			],
+			"group": "test"
+		}
+	]
 }

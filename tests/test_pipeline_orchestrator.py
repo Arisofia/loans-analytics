@@ -1,5 +1,3 @@
-class ResultRecordMetadata:
-    pass
 import tempfile
 from pathlib import Path
 

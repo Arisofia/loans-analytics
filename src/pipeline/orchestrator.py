@@ -1,5 +1,4 @@
-class ResultRecordMetadata:
-    pass
+
 
 import json
 import logging
@@ -20,6 +19,7 @@ from src.pipeline.output import UnifiedOutput
 from src.pipeline.utils import (ensure_dir, load_yaml, resolve_placeholders,
                                 utc_now, write_json)
 from src.tracing_setup import get_tracer
+from prefect.results import ResultRecordMetadata
 
 logger = logging.getLogger(__name__)
 tracer = get_tracer(__name__)

@@ -4,6 +4,7 @@ figma-financial-dashboard/node_modules/
 **/node_modules/
 .venv/
 venv/
+apps/web/.venv/
 __pycache__/
 *.pyc
 
