@@ -12,6 +12,8 @@ This document provides guidelines for maintaining a clean repository and resolvi
 2. [Merge Conflict Resolution Steps](#merge-conflict-resolution-steps)
 3. [Best Practices](#best-practices)
 4. [Troubleshooting](#troubleshooting)
+5. [Git Configuration for Conflict Resolution](#git-configuration-for-conflict-resolution)
+6. [References](#references)
 
 ---
 
@@ -178,11 +180,7 @@ git merge <branch-name>
 
 Git will indicate conflicts with markers like:
 ```
-<<<<<<< HEAD
-Your changes
-=======
-Their changes
->>>>>>> <branch-name>
+
 ```
 
 ### 3. Conflict Resolution Strategies
@@ -217,13 +215,8 @@ git checkout --theirs .
 
 Example:
 ```
-<<<<<<< HEAD
-def calculate_interest(principal, rate):
-    return principal * rate * 0.01
-=======
-def calculate_interest(principal, rate, time):
+def calculate_interest(principal, rate, time=1):
     return principal * rate * time * 0.01
->>>>>>> feature/enhance-calculation
 ```
 
 **Resolved:**

@@ -34,8 +34,6 @@ disable=
     too-few-public-methods,
     fixme,
     invalid-name,
-    import-error,
-    no-member,
     too-many-arguments,
     too-many-locals,
     too-many-branches,
@@ -56,7 +54,7 @@ score=yes
 max-nested-blocks=5
 
 # Complete name of functions that never returns.
-never-returning-functions=sys.exit,argparse.parse_error
+never-returning-functions=sys.exit
 
 [BASIC]
 # Good variable names which should always be accepted
