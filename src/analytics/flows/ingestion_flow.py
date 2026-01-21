@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import io
 
 from python.ingestion import CascadeIngestion
-from apps.analytics.src.polars_analytics_engine import PolarsAnalyticsEngine
+from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine
 from python.config import settings
 
 @task(name="Notify Incident")
