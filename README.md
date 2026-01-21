@@ -129,3 +129,4 @@ For detailed usage instructions, troubleshooting, and best practices, see `docs/
 
 - Main CI: `.github/workflows/ci.yml`
 - SonarQube: `.github/workflows/sonarqube.yml` (static analysis, security, code smells)
+Repo fully cleaned and standardized: Wed Jan 21 23:34:07 CET 2026
