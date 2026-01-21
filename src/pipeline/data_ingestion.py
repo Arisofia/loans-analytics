@@ -137,10 +137,16 @@ class UnifiedIngestion:
             {
                 "file": filename,
                 "status": "ingested",
-                "rows": int(len(ingested)),
+                "rows": len(ingested),
                 "timestamp": utc_now(),
             }
         )
+            def _load_looker_file(self, loans_path: Path, financials_path: Optional[Path] = None) -> tuple[pd.DataFrame, dict]:
+                if not loans_path.exists():
+                    raise FileNotFoundError(f"Looker loans file not found: {loans_path}")
+                df = pd.read_csv(loans_path)
+                financials_by_date, financials_meta = self._load_looker_financials(financials_path)
+                return df, financials_by_date, financials_meta
         return ingested
 
     def ingest_parquet(self, filename: str) -> pd.DataFrame:
@@ -861,15 +867,9 @@ class UnifiedIngestion:
             loans_path=str(loans_path),
             financials_path=str(financials_path) if financials_path else None,
         )
-        if not loans_path.exists():
-            self._log_event("looker_file_check", "failed", error="Loans file not found")
-            raise FileNotFoundError(f"Looker loans file not found: {loans_path}")
-
-        checksum = hash_file(loans_path)
         try:
-            df = pd.read_csv(loans_path)
-            financials_by_date, financials_meta = self._load_looker_financials(financials_path)
-
+            df, financials_by_date, financials_meta = self._load_looker_file(loans_path, financials_path)
+            checksum = hash_file(loans_path)
             columns_lower = {col.lower() for col in df.columns}
             has_par = {
                 "reporting_date",
@@ -880,18 +880,18 @@ class UnifiedIngestion:
             }.issubset(columns_lower)
             has_dpd = (
                 {"dpd", "outstanding_balance"}.issubset(columns_lower)
-                or {
-                    "dpd",
-                    "outstanding_balance_usd",
-                }.issubset(columns_lower)
+                or {"dpd", "outstanding_balance_usd"}.issubset(columns_lower)
                 or {"days_past_due", "outstanding_balance"}.issubset(columns_lower)
             )
-
             if has_par:
-                normalized_df = self._looker_par_balances_to_loan_tape(df, financials_by_date)
+                normalized_df = self._looker_par_balances_to_loan_tape(
+                    df, financials_by_date
+                )
                 source_mode = "looker_par_balances"
             elif has_dpd:
-                normalized_df = self._looker_dpd_to_loan_tape(df, financials_by_date)
+                normalized_df = self._looker_dpd_to_loan_tape(
+                    df, financials_by_date
+                )
                 source_mode = "looker_loans"
             else:
                 raise ValueError(
@@ -899,26 +899,18 @@ class UnifiedIngestion:
                 )
             if normalized_df.empty:
                 raise ValueError("Looker loan tape conversion produced no rows")
-
             schema_errors = self._validate_schema(normalized_df)
             validated_df, record_errors = self._validate_records(normalized_df)
             errors = schema_errors + record_errors
             if errors:
                 self._log_event("validation", "completed", error_count=len(errors))
-
             self._validate_dataframe(validated_df)
-
             if errors and self.config.get("validation", {}).get("strict", True):
                 raise ValueError(f"Schema validation failed for {len(errors)} rows")
-
             validated_df, deduped_count = self._apply_deduplication(validated_df)
             if deduped_count:
                 self._log_event("deduplication", "completed", removed=deduped_count)
-
-            archived = None
-            if archive_dir:
-                archived = self._archive_raw(loans_path, archive_dir)
-
+            archived = self._archive_raw(loans_path, archive_dir) if archive_dir else None
             metadata = {
                 "source_looker_loans": str(loans_path),
                 "financials_path": str(financials_path) if financials_path else None,
@@ -932,7 +924,6 @@ class UnifiedIngestion:
                 "validation_errors": errors,
                 "financials": financials_meta,
             }
-
             self._log_event("looker_complete", "success", row_count=len(validated_df))
             return IngestionResult(
                 validated_df,
@@ -941,7 +932,6 @@ class UnifiedIngestion:
                 source_hash=checksum,
                 raw_path=archived,
             )
-
         except Exception as exc:
             self._record_error("looker_fatal_error", exc)
             raise
