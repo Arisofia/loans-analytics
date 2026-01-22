@@ -3,7 +3,7 @@
 ## Highlights
 
 - Added Q1 2026 implementation plan and OKRs
-- Added Figma export guidance and planned automation for visual exports
+- Added export guidance and planned automation for visual exports
 - CI stabilization: Playwright workflow fix & shell-step remediation plan (in progress)
 
 ## Notes for reviewers

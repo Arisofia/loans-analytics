@@ -7,24 +7,20 @@ This report documents the Phase 2 Hardening convergence and QA additions applied
 - Actions performed:
   - Merged `hardening/phase2-ci-stability` fixes into `feat/qa-infrastructure-arisofia` (dependency pins, CI workflow fixes, test stabilizations).
   - Added Playwright smoke tests for dashboards (portfolio, financial, operational, strategic).
-  - Standardized Figma error handling so HTTP errors propagate (tests updated to assert `requests.exceptions.HTTPError`).
   - Aligned `python-dotenv` to `1.2.1` in `requirements.txt` to match `requirements.lock.txt`.
 
 ## Diff summary vs origin/main
 (Selected files changed)
 
 ```
- backend/tests/integration/test_figma_mock.py         |  7 +++----
  dev-requirements.txt                                 |  1 +
  requirements.txt                                     |  2 +-
  scripts/demo_financial_analysis.py                   |  6 ++++--
- scripts/sync_kpi_table_to_figma.py                   | 26 ++++++++------------------
  tests/conftest.py                                    | 30 ++++++++++++++++++++++++++++++
  tests/fi-analytics/test_analytics_kpi_correctness.py |  8 ++++----
  tests/fi-analytics/test_analytics_smoke.py           | 12 ++++++------
  tests/fi-analytics/test_analytics_unit_coverage.py   |  4 ++--
- tests/integration/test_figma_sync_requests_mock.py   | 19 ++++++++++++++++---
- tests/test_sync_kpi_table_to_figma.py                |  9 +++------
+
  13 files changed, 78 insertions(+), 52 deletions(-)
 ```
 

@@ -32,8 +32,6 @@ npm install @figma-js/sdk
 npm install --save-dev figma-export
 ```
 
-### Usage examples (TypeScript)
-
 #### Figma client (figma-js)
 
 ```ts

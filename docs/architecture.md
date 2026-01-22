@@ -31,7 +31,7 @@
 
 | Source             | Type         | Purpose                 | Integration              |
 | ------------------ | ------------ | ----------------------- | ------------------------ |
-| HubSpot            | External API | Customer/marketing data | Via `segment_manager.py` |
+
 | Manual CSV uploads | File uploads | Financial statements    | Via `data/archives/` folders  |
 
 ### Data Storage Layers (To Be Determined)
@@ -92,7 +92,7 @@ Startup Command: bash startup.sh
 
 **Environment Variables Configured**:
 
-- HUBSPOT_API_KEY ✅
+
 - OPENAI_API_KEY ✅
 - SCM_DO_BUILD_DURING_DEPLOYMENT=1 ✅
 

@@ -6,7 +6,7 @@ This report details the findings and transformations performed during the compre
 ## 1. CI/CD Infrastructure
 ### Findings:
 - **Inconsistent Secret Checks**: Multiple workflows used different, sometimes incomplete, logic to verify the presence of GitHub Secrets.
-- **Logic Bugs**: `reusable-secret-check.yml` had a limited `case` statement that failed to recognize several critical Azure and Figma secrets.
+- **Logic Bugs**: `reusable-secret-check.yml` had a limited `case` statement that failed to recognize several critical Azure secrets.
 - **Redundant Workflows**: `secret-checks.yml` (plural) was an unused duplicate of `reusable-secret-check.yml`.
 
 ### Transformations:
@@ -41,7 +41,7 @@ This report details the findings and transformations performed during the compre
 ### Recommendations:
 - **Improve Error Logging**: Replace `pass` blocks with `logger.warning` to provide visibility into missing metrics.
 - **Consolidate Scripts**: Move maintenance scripts to an `archive/` or `maintenance/` sub-directory.
-- **Complete Stubs**: Prioritize full implementation of HubSpot and Opik API integrations.
+- **Complete Stubs**: Prioritize full implementation of Opik API integrations.
 
 ## 5. Security Audit (Bandit)
 ### Findings:
