@@ -1,17 +1,6 @@
 # Development Environment Overrides
 # Merge with base pipeline.yml for local testing with mocked/test credentials
 
-cascade:
-  base_url: http://localhost:8080
-  portfolio_id: test-portfolio
-  auth:
-    token_secret: TEST_CASCADE_COOKIE
-  http:
-    timeout_seconds: 60
-    retry:
-      max_retries: 1
-      backoff_seconds: 0.1
-
 pipeline:
   phases:
     ingestion:
@@ -36,11 +25,6 @@ observability:
     level: DEBUG
 
 integrations:
-  cascade:
-    auth:
-      token_secret: TEST_CASCADE_COOKIE
-  slack:
-    enabled: false
   meta:
     enabled: false
   perplexity_comet:

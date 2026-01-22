@@ -11,38 +11,15 @@ run:
   timezone: UTC
   idempotent: true
   artifacts_dir: logs/runs
-  raw_archive_dir: data/raw/cascade
+  raw_archive_dir: data/raw/warehouse
   dead_letter_dir: data/dead_letters
-
-cascade:
-  base_url: https://app.cascadedebt.com
-  portfolio_id: abaco
-  endpoints:
-    loan_tape: /data/exports/loan-tape?pid=${portfolio_id}
-    risk_analytics: /analytics/risk/overview?pid=${portfolio_id}
-  auth:
-    token_secret: CASCADE_SESSION_COOKIE
-    export_url_secret: CASCADE_EXPORT_URL
-    auth_type: session_cookie
-    refresh_threshold_hours: 24
-  http:
-    timeout_seconds: 30
-    retry:
-      max_retries: 3
-      backoff_seconds: 1.5
-      jitter_seconds: 0.3
-    rate_limit:
-      max_requests_per_minute: 60
-    circuit_breaker:
-      failure_threshold: 3
-      reset_seconds: 120
 
 pipeline:
   phases:
     ingestion:
       source: looker
       file:
-        default_path: data/raw/cascade/loan_tape.csv
+        default_path: data/raw/warehouse/loan_tape.csv
       looker:
         loans_par_path: data/raw/looker_exports/loan_par_balances.csv
         loans_path: data/raw/looker_exports/loans.csv
@@ -249,65 +226,6 @@ observability:
     capture_output_hash: true
 
 integrations:
-  cascade:
-    enabled: true
-    type: data_source
-    mode: read_only
-    owner: data-engineering
-    auth:
-      token_secret: CASCADE_SESSION_COOKIE
-      export_url_secret: CASCADE_EXPORT_URL
-      auth_type: session_cookie
-    connection:
-      method: csv_export
-      frequency: daily
-      schedule: "03:00 UTC"
-    provider: cascade_debt
-    export_formats:
-      - csv
-      - json
-    data_mappings:
-      loan_id:
-        source_field: loan_id
-        target_field: loan_id
-        required: true
-      client_id:
-        source_field: client_id
-        target_field: client_id
-        required: true
-      current_balance:
-        source_field: outstanding_balance
-        target_field: current_balance
-        data_type: numeric
-        required: true
-      original_balance:
-        source_field: original_amount
-        target_field: original_balance
-        data_type: numeric
-        required: true
-      last_payment_date:
-        source_field: last_payment_date
-        target_field: last_payment_date
-        data_type: date
-    validation_rules:
-      - rule: non_negative_balance
-        field: current_balance
-        check: ">= 0"
-      - rule: balance_not_exceeds_original
-        field: current_balance
-        check: "<= original_balance"
-      - rule: valid_client_id
-        field: client_id
-        check: "not_null & numeric"
-    data_retention:
-      raw_data: 90 days
-      processed_data: 2 years
-      archive: true
-    error_handling:
-      retry_policy: exponential_backoff
-      max_retries: 3
-      on_failure: alert_and_skip_record
-
   meta:
     enabled: false
     type: marketing_analytics
@@ -328,39 +246,6 @@ integrations:
       - insights.clicks
       - insights.spend
       - insights.actions
-
-  slack:
-    enabled: true
-    type: communication
-    method: webhook_api
-    auth_type: bearer_token
-    webhook_secret: SLACK_WEBHOOK_TOKEN
-    endpoint: "https://hooks.slack.com/services/${SLACK_WORKSPACE}/${SLACK_CHANNEL}/${SLACK_TOKEN}"
-    alert_channels:
-      risk_alerts: "#risk-monitoring"
-      compliance_updates: "#compliance-team"
-      executive_briefing: "#executive-briefing"
-      daily_summary: "#fintech-reports"
-    message_templates:
-      par_90_alert:
-        trigger: "par_90_pct > 3.0"
-        severity: warning
-        icon: ":warning:"
-        format: "Portfolio PAR_90 Risk Alert: {{par_90_pct}}%"
-      collection_rate:
-        trigger: "daily_06:00 UTC"
-        severity: info
-        icon: ":chart_with_upwards_trend:"
-        format: "Daily Collection Rate: {{collection_rate_pct}}%"
-      compliance_breach:
-        trigger: "compliance_check_failed"
-        severity: critical
-        icon: ":rotating_light:"
-        format: "COMPLIANCE BREACH: {{issue_type}} - {{details}}"
-    throttling:
-      alert_cooldown_minutes: 15
-      max_daily_alerts: 50
-      batch_reports: daily
 
   perplexity_comet:
     enabled: false
@@ -398,7 +283,6 @@ agents:
     refresh_schedule:
       dashboard: "0 7 * * *"
       kpi_report: "0 8 * * 1"
-      continuous_monitoring: "*/30 * * * *"
 
   risk_analysis:
     name: RiskAnalysisAgent
@@ -413,12 +297,12 @@ agents:
       - Generate portfolio health scores
       - Alert on risk threshold breaches
     knowledge_sources:
-      - cascade.loan_status: Live loan performance data
-      - cascade.collections: Collection activity tracking
-      - cascade.recovery_tracking: Recovery metrics by cohort
+      - data.warehouse.loan_status: Live loan performance data
+      - data.warehouse.collections: Collection activity tracking
+      - data.warehouse.recovery_tracking: Recovery metrics by cohort
       - historical.risk_snapshots: Historical snapshots for trend analysis
     output_formats:
-      - daily_risk_report: Markdown for Slack/email
+      - daily_risk_report: Markdown for email
       - weekly_summary: PDF slides for stakeholders
       - alerts: JSON for alerting systems
     refresh_schedule:
@@ -478,7 +362,7 @@ kpi_definitions:
       threshold_warning: 3.0
       threshold_critical: 5.0
       refresh_frequency: "daily"
-      data_source: "cascade.loan_status"
+      data_source: "data_warehouse.loan_status"
     rdr_90:
       name: "Recovered Default Rate (90+ days)"
       formula: "SUM(recovered_90_day_balances) / SUM(peak_90_day_balances)"
@@ -486,7 +370,7 @@ kpi_definitions:
       threshold_warning: 50.0
       threshold_critical: 25.0
       refresh_frequency: "daily"
-      data_source: "cascade.recovery_tracking"
+      data_source: "data_warehouse.recovery_tracking"
     collection_rate:
       name: "Effective Collection Rate"
       formula: "SUM(collections) / SUM(receivables_outstanding)"
@@ -494,7 +378,7 @@ kpi_definitions:
       threshold_warning: 1.5
       threshold_critical: 1.0
       refresh_frequency: "daily"
-      data_source: "cascade.collections"
+      data_source: "data_warehouse.collections"
     portfolio_health:
       name: "Portfolio Health Score"
       formula: "(10 - PAR_90) * (RDR_90/100) * (CollectionRate * 10)"
@@ -509,13 +393,13 @@ kpi_definitions:
       formula: "SUM(new_loans.principal_amount WHERE date_approved IN current_month)"
       unit: "USD"
       refresh_frequency: "daily"
-      data_source: "cascade.loan_origination"
+      data_source: "data_warehouse.loan_origination"
     active_clients:
       name: "Active Client Count"
       formula: "COUNT(DISTINCT clients WHERE last_activity >= 30_days_ago)"
       unit: "count"
       refresh_frequency: "weekly"
-      data_source: "cascade.client_activity"
+      data_source: "data_warehouse.client_activity"
     client_retention:
       name: "Client Retention Rate"
       formula: "COUNT(active_current_period INTERSECT active_prior_period) / COUNT(active_prior_period)"
@@ -523,14 +407,14 @@ kpi_definitions:
       threshold_warning: 75.0
       threshold_critical: 50.0
       refresh_frequency: "monthly"
-      data_source: "cascade.client_lifecycle"
+      data_source: "data_warehouse.client_lifecycle"
   finance_stack:
     arr:
       name: "Annualized Recurring Revenue"
       formula: "SUM(loans.interest_rate * loans.balance * 12)"
       unit: "USD"
       refresh_frequency: "daily"
-      data_source: "cascade.loan_performance"
+      data_source: "data_warehouse.loan_performance"
     write_off_rate:
       name: "Write-Off Rate"
       formula: "SUM(written_off_balances) / SUM(beginning_balance)"
@@ -538,7 +422,7 @@ kpi_definitions:
       threshold_warning: 2.0
       threshold_critical: 3.5
       refresh_frequency: "monthly"
-      data_source: "cascade.write_offs"
+      data_source: "data_warehouse.write_offs"
   compliance_stack:
     audit_flags:
       name: "Active Audit Flags"
@@ -556,36 +440,12 @@ kpi_definitions:
       threshold_critical: 90.0
       refresh_frequency: "hourly"
       data_source: "data.validation_results"
-  cascade_specific:
-    loan_tape_balance:
-      name: "Cascade Loan Tape Balance"
-      formula: "SUM(v_loans_overview.balance)"
-      unit: "USD"
-      refresh_frequency: "daily"
-      data_source: "analytics.v_loans_overview"
-    loan_tape_count:
-      name: "Cascade Loan Count"
-      formula: "COUNT(DISTINCT v_loans_overview.loan_id)"
-      unit: "count"
-      refresh_frequency: "daily"
-      data_source: "analytics.v_loans_overview"
-    roll_rate_30:
-      name: "30-Day Roll Rate"
-      formula: "(SUM(v_loans_overview.days_past_due >= 30) - SUM(v_loans_overview.days_past_due >= 60)) / SUM(v_loans_overview.loan_id)"
-      unit: "%"
-      threshold_warning: 5.0
-      threshold_critical: 8.0
-      refresh_frequency: "daily"
-      data_source: "analytics.v_loans_overview"
   departmental_mappings:
     risk:
       - risk.par_90
       - risk.rdr_90
       - risk.collection_rate
       - risk.portfolio_health
-      - cascade.loan_tape_balance
-      - cascade.loan_tape_count
-      - cascade.roll_rate_30
     growth:
       - growth.origination_volume
       - growth.active_clients

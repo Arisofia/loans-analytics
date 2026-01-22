@@ -248,12 +248,12 @@ def main():
         dashboard["extended_kpis"] = extended_kpis
         print("✅ Extended KPIs calculated successfully")
 
-        # Export Figma Dashboard CSV
-        print("📝 Exporting Figma Dashboard CSV...")
-        figma_df = catalog_proc.get_figma_dashboard_df()
+        # Export Analytics Facts CSV
+        print("📝 Exporting Analytics Facts CSV...")
+        facts_df = catalog_proc.get_analytics_facts_df()
         csv_path = project_root / "exports" / "analytics_facts.csv"
-        figma_df.to_csv(csv_path, index=False)
-        print(f"✅ Figma Dashboard CSV saved to: {csv_path}")
+        facts_df.to_csv(csv_path, index=False)
+        print(f"✅ Analytics Facts CSV saved to: {csv_path}")
 
         # Export Quarterly Scorecard CSV
         print("📝 Exporting Quarterly Scorecard CSV...")
