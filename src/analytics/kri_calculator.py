@@ -41,9 +41,7 @@ class KRICalculator:
         """
 
         exposure_col = _first_present_column(df, ["outstanding_loan_value", "balance"])
-        portfolio_exposure = (
-            df[exposure_col].sum(min_count=1) if exposure_col else np.nan
-        )
+        portfolio_exposure = df[exposure_col].sum(min_count=1) if exposure_col else np.nan
 
         if "dpd" in df.columns:
             dpd_series = df["dpd"].clip(lower=0)

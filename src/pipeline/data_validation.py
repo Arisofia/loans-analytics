@@ -37,9 +37,7 @@ NUMERIC_COLUMNS: List[str] = [
     "cash_available_usd",
 ]
 
-ISO8601_REGEX = re.compile(
-    r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$"
-)
+ISO8601_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$")
 
 
 class ColumnValidator:
@@ -90,9 +88,7 @@ class ColumnFinder:
     def _case_insensitive_match(self, candidates: List[str]) -> List[str]:
         """Get case-insensitive matches."""
         lower_cands = [c.lower() for c in candidates]
-        return [
-            self.columns_lower[lc] for lc in lower_cands if lc in self.columns_lower
-        ]
+        return [self.columns_lower[lc] for lc in lower_cands if lc in self.columns_lower]
 
     def _substring_match(self, candidates: List[str]) -> List[str]:
         """Get substring matches (case-insensitive)."""
@@ -186,9 +182,7 @@ def assert_dataframe_schema(
 def safe_numeric(series: pd.Series) -> pd.Series:
     """Coerce a series to numeric, handling currency symbols and commas."""
     if series.dtype == "object":
-        clean = (
-            series.astype(str).str.replace(r"[$€£¥₽₡,%]", "", regex=True).str.strip()
-        )
+        clean = series.astype(str).str.replace(r"[$€£¥₽₡,%]", "", regex=True).str.strip()
         return pd.to_numeric(clean, errors="coerce")
     return pd.to_numeric(series, errors="coerce")
 
@@ -216,12 +210,7 @@ def validate_percentage_bounds(
         columns = [
             c
             for c in df.columns
-            if (
-                "percent" in c
-                or "rate" in c
-                or c.endswith("_pct")
-                or c.endswith("_rate")
-            )
+            if ("percent" in c or "rate" in c or c.endswith("_pct") or c.endswith("_rate"))
             and c not in exempt_columns
         ]
     validation: Dict[str, bool] = {}
@@ -237,9 +226,7 @@ def validate_iso8601_dates(
 ) -> Dict[str, bool]:
     """Check that all values are valid ISO 8601 dates."""
     if columns is None:
-        columns = [
-            c for c in df.columns if "date" in c.lower() or c.lower().endswith("_at")
-        ]
+        columns = [c for c in df.columns if "date" in c.lower() or c.lower().endswith("_at")]
     validation: Dict[str, bool] = {}
     iso8601_regex = re.compile(
         r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$"
@@ -265,9 +252,7 @@ def validate_monotonic_increasing(
     """Check that specified columns are monotonically increasing."""
     if columns is None:
         columns = [
-            c
-            for c in df.columns
-            if any(x in c.lower() for x in ["count", "total", "cumulative"])
+            c for c in df.columns if any(x in c.lower() for x in ["count", "total", "cumulative"])
         ]
     validation: Dict[str, bool] = {}
     for col in columns:
@@ -278,9 +263,7 @@ def validate_monotonic_increasing(
     return validation
 
 
-def validate_no_nulls(
-    df: pd.DataFrame, columns: Optional[List[str]] = None
-) -> Dict[str, bool]:
+def validate_no_nulls(df: pd.DataFrame, columns: Optional[List[str]] = None) -> Dict[str, bool]:
     """Check that specified columns have no null values."""
     if columns is None:
         columns = list(set(REQUIRED_ANALYTICS_COLUMNS + NUMERIC_COLUMNS))

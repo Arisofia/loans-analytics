@@ -74,18 +74,14 @@ def render_risk_analysis(merged):
                 .reset_index()
             )
             dpd_dist.columns = ["Bucket", "Count"]
-            fig_dpd = px.bar(
-                dpd_dist, x="Bucket", y="Count", title="DPD Bucket Distribution"
-            )
+            fig_dpd = px.bar(dpd_dist, x="Bucket", y="Count", title="DPD Bucket Distribution")
             st.plotly_chart(apply_theme(fig_dpd), use_container_width=True)
 
     with r_col2:
         st.subheader("Data Quality Audit")
         score = 100.0
         total_outstanding = (
-            merged["outstanding_loan_value"].sum()
-            if "outstanding_loan_value" in merged
-            else 0
+            merged["outstanding_loan_value"].sum() if "outstanding_loan_value" in merged else 0
         )
         if total_outstanding == 0:
             score -= 40

@@ -28,18 +28,12 @@ def _find_repo_root(start: Path | None | Callable[[], Path] = None) -> Path:
 
     # Ensure `start_value` is a Path instance and resolved before use.
     start_path = (
-        Path(start_value).resolve()
-        if start_value is not None
-        else Path(__file__).resolve()
+        Path(start_value).resolve() if start_value is not None else Path(__file__).resolve()
     )
     p = start_path
 
     for _ in range(12):
-        if (
-            (p / "pyproject.toml").exists()
-            or (p / ".git").exists()
-            or (p / "README.md").exists()
-        ):
+        if (p / "pyproject.toml").exists() or (p / ".git").exists() or (p / "README.md").exists():
             return p
         parent = p.parent
         if parent == p:
@@ -103,9 +97,7 @@ def get_latest_kpis():
         }
     except Exception as e:
         # Re-raise with chaining so the original exception is preserved
-        raise HTTPException(
-            status_code=500, detail=f"Error reading manifest: {str(e)}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Error reading manifest: {str(e)}") from e
 
 
 @app.post("/api/pipeline/trigger")
@@ -136,9 +128,7 @@ async def trigger_pipeline(
         candidate = Path(path_str)
         # disallow absolute paths
         if candidate.is_absolute():
-            raise HTTPException(
-                status_code=400, detail="Absolute paths are not allowed"
-            )
+            raise HTTPException(status_code=400, detail="Absolute paths are not allowed")
         resolved = (repo_root / candidate).resolve()
         try:
             resolved.relative_to(ALLOWED_DATA_DIR)
@@ -160,9 +150,7 @@ async def trigger_pipeline(
 
         # Run in background via FastAPI BackgroundTasks; exceptions will propagate
         # to the background runner but won't block request handling.
-        background_tasks.add_task(
-            abaco_pipeline_flow, input_file=str(validated_input_path)
-        )
+        background_tasks.add_task(abaco_pipeline_flow, input_file=str(validated_input_path))
         logger.info("Triggered pipeline inline for input: %s", validated_input_path)
         return {
             "message": "Pipeline triggered (inline)",

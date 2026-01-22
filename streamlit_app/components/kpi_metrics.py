@@ -28,16 +28,11 @@ def render_executive_summary(merged):
 
     total_loans = merged["loan_id"].nunique() if "loan_id" in merged else 0
     total_outstanding = (
-        merged["outstanding_loan_value"].sum()
-        if "outstanding_loan_value" in merged
-        else 0
+        merged["outstanding_loan_value"].sum() if "outstanding_loan_value" in merged else 0
     )
 
     # Calculate weighted average APR
-    if (
-        "interest_rate_apr" in merged.columns
-        and "outstanding_loan_value" in merged.columns
-    ):
+    if "interest_rate_apr" in merged.columns and "outstanding_loan_value" in merged.columns:
         total_balance = merged["outstanding_loan_value"].sum()
         if total_balance > 0:
             avg_apr = (
@@ -49,9 +44,7 @@ def render_executive_summary(merged):
         avg_apr = 0
 
     default_rate = (
-        (merged["loan_status"] == "Default").mean() * 100
-        if "loan_status" in merged
-        else 0
+        (merged["loan_status"] == "Default").mean() * 100 if "loan_status" in merged else 0
     )
 
     col1.metric("Total Loans", f"{total_loans:,}")

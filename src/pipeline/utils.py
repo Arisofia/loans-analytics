@@ -30,9 +30,7 @@ def resolve_placeholders(payload: Any, context: Optional[Dict[str, str]] = None)
     if context is None:
         context = {}
     if isinstance(payload, dict):
-        return {
-            key: resolve_placeholders(value, context) for key, value in payload.items()
-        }
+        return {key: resolve_placeholders(value, context) for key, value in payload.items()}
     if isinstance(payload, list):
         return [resolve_placeholders(item, context) for item in payload]
     if isinstance(payload, str):

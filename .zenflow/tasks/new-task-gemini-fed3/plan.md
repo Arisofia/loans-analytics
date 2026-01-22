@@ -1,37 +1,32 @@
-# Fix bug
+# Comprehensive Enhancement and Completion of Abaco Loans Analytics Platform
 
 ## Configuration
-- **Artifacts Path**: {@artifacts_path} → `.zenflow/tasks/{task_id}`
+- **Artifacts Path**: .zenflow/tasks/new-task-gemini-fed3
 
 ---
 
 ## Workflow Steps
 
-### [ ] Step: Investigation and Planning
-<!-- chat-id: 5536679a-04ac-4b06-adc6-ec8ee8efa9d2 -->
+### [ ] Step: Initial Analysis Phase
+- [ ] Scan entire repo structure and identify key components.
+- [ ] Analyze dependencies (Python, Node.js) for updates and vulnerabilities.
+- [ ] Parse documentation (README, DATA_DICTIONARY, KPI_CATALOG) for business logic verification.
+- [ ] Run existing tests and linters to baseline current state.
 
-Analyze the bug report and design a solution.
+### [ ] Step: Correction and Robustization Phase
+- [ ] **Python Code**: Fix bugs, add type hints, improve error handling (apps/analytics, streamlit_app, notebooks).
+- [ ] **Frontend**: Optimize Next.js performance, fix TS errors, add accessibility.
+- [ ] **SQL/Data**: Optimize queries, ensure KPI views handle edge cases, remove legacy SQL Server refs.
+- [ ] **Infra**: Enhance deployment scripts, add health checks, secrets management.
 
-1. Review the bug description, error messages, and logs
-2. Clarify reproduction steps with the user if unclear
-3. Check existing tests for clues about expected behavior
-4. Locate relevant code sections and identify root cause
-5. Propose a fix based on the investigation
-6. Consider edge cases and potential side effects
+### [ ] Step: Completion and Enhancement Phase
+- [ ] **Data Flow**: Automate full ingestion pipeline to BigQuery/Supabase.
+- [ ] **New Features**: Implement ML risk models, integrate into dashboards.
+- [ ] **Observability**: Add custom metrics and Azure Monitor integration.
+- [ ] **Documentation**: Generate API docs, update MD files.
+- [ ] **Innovation**: Add generative AI module for natural language KPI queries.
 
-Save findings to `{@artifacts_path}/investigation.md` with:
-- Bug summary
-- Root cause analysis
-- Affected components
-- Proposed solution
-
-### [ ] Step: Implementation
-Read `{@artifacts_path}/investigation.md`
-Implement the bug fix.
-
-1. Add/adjust regression test(s) that fail before the fix and pass after
-2. Implement the fix
-3. Run relevant tests
-4. Update `{@artifacts_path}/investigation.md` with implementation notes and test results
-
-If blocked or uncertain, ask the user for direction.
+### [ ] Step: Verification and Finalization Phase
+- [ ] Run full CI/CD simulation.
+- [ ] Perform end-to-end testing.
+- [ ] Create detailed changelog and final report.

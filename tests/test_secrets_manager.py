@@ -82,9 +82,7 @@ class TestSecretsManagerValidate:
     def test_validate_optional_keys(self):
         """Should track optional secrets separately."""
         manager = SecretsManager()
-        result = manager.validate(
-            fail_on_missing_required=False, fail_on_missing_optional=False
-        )
+        result = manager.validate(fail_on_missing_required=False, fail_on_missing_optional=False)
 
         assert "optional_missing" in result
         assert len(result["optional_missing"]) >= 0

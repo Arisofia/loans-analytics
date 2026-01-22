@@ -20,7 +20,7 @@ def analytics_test_env(tmp_path_factory):
     """Analytics test environment with mocked integrations."""
     output_dir = tmp_path_factory.mktemp("output")
     dataset_path = ROOT / "tests" / "data" / "archives" / "sample_small.csv"
-    
+
     return {
         "output_dir": output_dir,
         "dataset_path": dataset_path,

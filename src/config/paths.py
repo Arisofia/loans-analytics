@@ -17,9 +17,7 @@ def get_project_root() -> Path:
     raise RuntimeError("Project root not found")
 
 
-def resolve_path(
-    path_str: str, env_var: Optional[str] = None, create: bool = False
-) -> Path:
+def resolve_path(path_str: str, env_var: Optional[str] = None, create: bool = False) -> Path:
     """Resolve path with environment variable support."""
     if not path_str:
         raise ValueError("path_str cannot be empty")
@@ -56,9 +54,7 @@ class Paths:
 
     @staticmethod
     def data_dir(create: bool = False) -> Path:
-        return resolve_path(
-            os.getenv("DATA_PATH", "./data"), env_var="DATA_DIR", create=create
-        )
+        return resolve_path(os.getenv("DATA_PATH", "./data"), env_var="DATA_DIR", create=create)
 
     @staticmethod
     def scripts_dir() -> Path:
@@ -79,9 +75,7 @@ class Paths:
 
     @staticmethod
     def logs_dir(create: bool = False) -> Path:
-        return resolve_path(
-            os.getenv("LOGS_PATH", "./logs"), env_var="LOGS_DIR", create=create
-        )
+        return resolve_path(os.getenv("LOGS_PATH", "./logs"), env_var="LOGS_DIR", create=create)
 
     @staticmethod
     def docs_dir() -> Path:

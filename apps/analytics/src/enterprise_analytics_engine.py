@@ -8,9 +8,7 @@ from python.config import settings
 
 @runtime_checkable
 class KPIExporter(Protocol):
-    def upload_metrics(
-        self, metrics: Dict[str, float], blob_name: Optional[str] = None
-    ) -> str:
+    def upload_metrics(self, metrics: Dict[str, float], blob_name: Optional[str] = None) -> str:
         """Upload computed KPI metrics and return a blob identifier."""
 
 
@@ -48,13 +46,9 @@ class LoanAnalyticsEngine:
     def _validate_columns(self):
         """Ensures the DataFrame contains the necessary columns for KPI computation."""
         required_cols = settings.analytics.required_columns
-        missing_cols = [
-            col for col in required_cols if col not in self.loan_data.columns
-        ]
+        missing_cols = [col for col in required_cols if col not in self.loan_data.columns]
         if missing_cols:
-            raise ValueError(
-                f"Missing required columns in loan_data: {', '.join(missing_cols)}"
-            )
+            raise ValueError(f"Missing required columns in loan_data: {', '.join(missing_cols)}")
 
     def _coerce_numeric_columns(self) -> Dict[str, int]:
         """
@@ -133,11 +127,7 @@ class LoanAnalyticsEngine:
             100
             - (null_ratio * 100 * settings.analytics.dq_null_weight)
             - (duplicate_ratio * 100 * settings.analytics.dq_duplicate_weight)
-            - (
-                invalid_numeric_ratio
-                * 100
-                * settings.analytics.dq_invalid_numeric_weight
-            ),
+            - (invalid_numeric_ratio * 100 * settings.analytics.dq_invalid_numeric_weight),
         )
 
         return {
@@ -148,9 +138,7 @@ class LoanAnalyticsEngine:
             "data_quality_score": round(data_quality_score, 2),
         }
 
-    def risk_alerts(
-        self, ltv_threshold: float = 90.0, dti_threshold: float = 40.0
-    ) -> pd.DataFrame:
+    def risk_alerts(self, ltv_threshold: float = 90.0, dti_threshold: float = 40.0) -> pd.DataFrame:
         """
         Flags high-risk loans for downstream dashboards and operational alerts.
 
@@ -168,8 +156,7 @@ class LoanAnalyticsEngine:
             dti_ratio=dti,
         )
         alerts = alerts[
-            (alerts["ltv_ratio"] > ltv_threshold)
-            | (alerts["dti_ratio"] > dti_threshold)
+            (alerts["ltv_ratio"] > ltv_threshold) | (alerts["dti_ratio"] > dti_threshold)
         ]
         if alerts.empty:
             return alerts
@@ -178,12 +165,8 @@ class LoanAnalyticsEngine:
             alerts[["ltv_ratio", "dti_ratio"]]
             .fillna(0)
             .assign(
-                ltv_component=lambda d: np.clip(
-                    (d["ltv_ratio"] - ltv_threshold) / 20, 0, 1
-                ),
-                dti_component=lambda d: np.clip(
-                    (d["dti_ratio"] - dti_threshold) / 30, 0, 1
-                ),
+                ltv_component=lambda d: np.clip((d["ltv_ratio"] - ltv_threshold) / 20, 0, 1),
+                dti_component=lambda d: np.clip((d["dti_ratio"] - dti_threshold) / 30, 0, 1),
             )
             .pipe(lambda d: (d["ltv_component"] + d["dti_component"]) / 2)
         )
@@ -208,9 +191,7 @@ class LoanAnalyticsEngine:
             "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio"],
         }
 
-    def export_kpis_to_blob(
-        self, exporter: KPIExporter, blob_name: Optional[str] = None
-    ) -> str:
+    def export_kpis_to_blob(self, exporter: KPIExporter, blob_name: Optional[str] = None) -> str:
         if blob_name is not None and not isinstance(blob_name, str):
             raise ValueError("blob_name must be a string if provided.")
 

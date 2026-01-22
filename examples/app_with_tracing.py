@@ -26,9 +26,7 @@ def main():
     configure_tracing()
 
     if is_tracing_enabled():
-        logger.info(
-            "✓ Tracing enabled - telemetry will be sent to Azure Application Insights"
-        )
+        logger.info("✓ Tracing enabled - telemetry will be sent to Azure Application Insights")
     else:
         logger.warning("⚠ Tracing disabled - no telemetry will be collected")
         logger.warning("  Set APPLICATIONINSIGHTS_CONNECTION_STRING to enable tracing")

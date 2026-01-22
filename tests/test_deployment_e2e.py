@@ -46,9 +46,7 @@ class TestDeploymentE2E:
 
         for key in required_keys:
             assert key in kpis, f"Missing required KPI: {key}"
-            assert isinstance(
-                kpis[key], (int, float, str)
-            ), f"KPI {key} has invalid type"
+            assert isinstance(kpis[key], (int, float, str)), f"KPI {key} has invalid type"
 
     def test_e2e_metrics_csv_generation(self, sample_dataset, tmp_path):
         """Test that metrics CSV generation works correctly."""
@@ -144,9 +142,7 @@ class TestDeploymentE2E:
         for pct_key in percentages:
             if pct_key in kpis:
                 val = kpis[pct_key]
-                assert (
-                    -1 <= val <= 101
-                ), f"{pct_key} outside valid percentage range: {val}"
+                assert -1 <= val <= 101, f"{pct_key} outside valid percentage range: {val}"
 
         scores = ["portfolio_health_score"]
         for score_key in scores:

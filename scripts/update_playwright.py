@@ -111,9 +111,7 @@ def run_gh_update(
     for attempt in range(retries):
         try:
             logging.debug("Running GH API (Attempt %d/%d)", attempt + 1, retries)
-            return subprocess.run(
-                cmd, check=True, capture_output=True, text=True, shell=False
-            )
+            return subprocess.run(cmd, check=True, capture_output=True, text=True, shell=False)
         except subprocess.CalledProcessError:
             if attempt == retries - 1:
                 raise
@@ -125,9 +123,7 @@ def run_gh_update(
 
 def parse_args(argv=None) -> argparse.Namespace:
     """Parse and return command-line arguments."""
-    p = argparse.ArgumentParser(
-        description="Safely fix quoted 'on' keys in GitHub Workflows"
-    )
+    p = argparse.ArgumentParser(description="Safely fix quoted 'on' keys in GitHub Workflows")
     p.add_argument("--input", default=DEFAULT_INPUT, help="Path to input JSON")
     # Accept both --out and --output for compatibility with tests and users
     p.add_argument(
@@ -143,9 +139,7 @@ def parse_args(argv=None) -> argparse.Namespace:
     p.add_argument("--message", default=DEFAULT_MESSAGE, help="Commit message")
     p.add_argument("--dry-run", action="store_true", help="Preview mode")
     p.add_argument("--preview-lines", type=int, default=15, help="Lines to preview")
-    p.add_argument(
-        "--retries", type=int, default=MAX_RETRIES, help="Number of GH API retries"
-    )
+    p.add_argument("--retries", type=int, default=MAX_RETRIES, help="Number of GH API retries")
     p.add_argument(
         "--backoff",
         type=float,

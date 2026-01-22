@@ -45,9 +45,7 @@ def portfolio_interest_and_risk(loans: List[LoanPosition], loss_given_default: f
     return total_interest, total_loss
 
 
-def calculate_portfolio_kpis(
-    loans: List[LoanPosition], loss_given_default: float
-) -> PortfolioKPIs:
+def calculate_portfolio_kpis(loans: List[LoanPosition], loss_given_default: float) -> PortfolioKPIs:
     exposure = sum(loan.principal for loan in loans)
     weighted_rate = (
         sum(loan.annual_interest_rate * loan.principal for loan in loans) / exposure
@@ -55,9 +53,7 @@ def calculate_portfolio_kpis(
         else 0.0
     )
     weighted_term_months = (
-        sum(loan.term_months * loan.principal for loan in loans) / exposure
-        if exposure
-        else 0.0
+        sum(loan.term_months * loan.principal for loan in loans) / exposure if exposure else 0.0
     )
     weighted_default_probability = (
         sum(loan.default_probability * loan.principal for loan in loans) / exposure
@@ -72,9 +68,7 @@ def calculate_portfolio_kpis(
     expected_loss_rate = expected_loss_value / exposure if exposure else 0.0
     interest_yield_rate = (expected_monthly_interest / exposure) if exposure else 0.0
     risk_adjusted_return = (
-        (expected_monthly_interest - expected_loss_value) / exposure
-        if exposure
-        else 0.0
+        (expected_monthly_interest - expected_loss_value) / exposure if exposure else 0.0
     )
     return PortfolioKPIs(
         exposure=exposure,

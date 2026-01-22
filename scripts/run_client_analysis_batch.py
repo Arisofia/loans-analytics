@@ -63,13 +63,9 @@ def _env(name: str) -> str:
 
 
 SUPABASE_URL = _env("SUPABASE_URL").rstrip("/")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv(
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY"
-)
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 if not SUPABASE_KEY:
-    raise RuntimeError(
-        "Missing SUPABASE_ANON_KEY " "(or NEXT_PUBLIC_SUPABASE_ANON_KEY)."
-    )
+    raise RuntimeError("Missing SUPABASE_ANON_KEY " "(or NEXT_PUBLIC_SUPABASE_ANON_KEY).")
 
 HEADERS = {
     "apikey": SUPABASE_KEY,
@@ -137,12 +133,8 @@ def compute_client_metrics(
     if c.empty:
         raise ValueError(f"No rows for client_id={client_id}")
 
-    total_outstanding = pd.to_numeric(df["outstanding_balance"], errors="coerce").sum(
-        skipna=True
-    )
-    c_outstanding = pd.to_numeric(c["outstanding_balance"], errors="coerce").sum(
-        skipna=True
-    )
+    total_outstanding = pd.to_numeric(df["outstanding_balance"], errors="coerce").sum(skipna=True)
+    c_outstanding = pd.to_numeric(c["outstanding_balance"], errors="coerce").sum(skipna=True)
 
     dpd = pd.to_numeric(c["dpd"], errors="coerce")
     bal = pd.to_numeric(c["outstanding_balance"], errors="coerce")
@@ -284,10 +276,7 @@ def main() -> None:
                 logger.error("FAILED client=%s: %s", cid, rr.error)
     else:
         with ProcessPoolExecutor(max_workers=args.workers) as ex:
-            futs = [
-                ex.submit(_execute_one, cid, args.loans_view, run_id)
-                for cid in client_ids
-            ]
+            futs = [ex.submit(_execute_one, cid, args.loans_view, run_id) for cid in client_ids]
             for fut in as_completed(futs):
                 rr = fut.result()
                 results.append(rr)

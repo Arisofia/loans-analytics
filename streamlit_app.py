@@ -667,8 +667,9 @@ fact_table = loan_df[
         "dti_ratio",
         "delinquency_rate",
     ]
-    available_cols = [col for col in cash_cols if col in analytics_facts.columns]
-    if available_cols:
+]
+available_cols = [col for col in cash_cols if col in analytics_facts.columns]
+if available_cols:
         cash_df = analytics_facts[["month"] + available_cols].copy()
         cash_df = cash_df.dropna(subset=["month"])
         fig_cash = px.line(

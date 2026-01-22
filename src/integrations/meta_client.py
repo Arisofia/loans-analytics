@@ -133,9 +133,7 @@ class MetaOutputClient:
             logger.warning("Meta Ads credentials not configured")
             return []
 
-        date_start = date_start or (datetime.now() - timedelta(days=7)).strftime(
-            "%Y-%m-%d"
-        )
+        date_start = date_start or (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
         date_stop = date_stop or datetime.now().strftime("%Y-%m-%d")
 
         fields = fields or [
@@ -204,13 +202,9 @@ class MetaOutputClient:
 
             audience_id = response.get("id")
             if audience_id:
-                logger.info(
-                    f"Created Meta custom audience: {audience_name} ({audience_id})"
-                )
+                logger.info(f"Created Meta custom audience: {audience_name} ({audience_id})")
             else:
-                logger.warning(
-                    f"Failed to create Meta custom audience: {audience_name}"
-                )
+                logger.warning(f"Failed to create Meta custom audience: {audience_name}")
 
             return audience_id
 
@@ -244,16 +238,12 @@ class MetaOutputClient:
 
         try:
             if "kpi_metrics" in export_data:
-                results["pixel_events_tracked"] = self.track_kpi_updates(
-                    export_data["kpi_metrics"]
-                )
+                results["pixel_events_tracked"] = self.track_kpi_updates(export_data["kpi_metrics"])
 
             results["ads_insights_retrieved"] = self.get_ads_insights()
 
             if "customer_segments" in export_data:
-                for segment_name, customer_list in export_data[
-                    "customer_segments"
-                ].items():
+                for segment_name, customer_list in export_data["customer_segments"].items():
                     audience_id = self.create_custom_audience(
                         audience_name=f"analytics_{segment_name}",
                         customer_list=customer_list,

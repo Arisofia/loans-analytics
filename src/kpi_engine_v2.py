@@ -4,16 +4,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from src.kpis.collection_rate import \
-    calculate_collection_rate as calculate_collection_rate_logic
+from src.kpis.collection_rate import calculate_collection_rate as calculate_collection_rate_logic
 from src.kpis.dti import calculate_dti as calculate_dti_logic
 from src.kpis.ltv import calculate_ltv as calculate_ltv_logic
 from src.kpis.par_30 import calculate_par_30 as calculate_par_30_logic
 from src.kpis.par_90 import calculate_par_90 as calculate_par_90_logic
-from src.kpis.portfolio_health import \
-    calculate_portfolio_health as calculate_portfolio_health_logic
-from src.kpis.portfolio_yield import \
-    calculate_portfolio_yield as calculate_portfolio_yield_logic
+from src.kpis.portfolio_health import calculate_portfolio_health as calculate_portfolio_health_logic
+from src.kpis.portfolio_yield import calculate_portfolio_yield as calculate_portfolio_yield_logic
 
 logger = logging.getLogger(__name__)
 
@@ -63,20 +60,12 @@ class KPIEngineV2:
                         "value": float(value),
                         **context,
                     }
-                    self._log_event(
-                        "kpi_calculated", "success", kpi=kpi_name, value=value
-                    )
+                    self._log_event("kpi_calculated", "success", kpi=kpi_name, value=value)
                 except Exception as e:
-                    self._log_event(
-                        "kpi_calculation_failed", "error", kpi=kpi_name, error=str(e)
-                    )
+                    self._log_event("kpi_calculation_failed", "error", kpi=kpi_name, error=str(e))
                     self.metrics[kpi_name] = {"value": None, "error": str(e)}
 
-            if (
-                include_composite
-                and "PAR30" in self.metrics
-                and "CollectionRate" in self.metrics
-            ):
+            if include_composite and "PAR30" in self.metrics and "CollectionRate" in self.metrics:
                 try:
                     par30_val = self.metrics["PAR30"]["value"]
                     collection_val = self.metrics["CollectionRate"]["value"]
@@ -87,9 +76,7 @@ class KPIEngineV2:
                         "value": float(health_val),
                         **health_ctx,
                     }
-                    self._log_event(
-                        "composite_kpi_calculated", "success", kpi="PortfolioHealth"
-                    )
+                    self._log_event("composite_kpi_calculated", "success", kpi="PortfolioHealth")
                 except Exception as e:
                     self._log_event("composite_kpi_failed", "error", error=str(e))
 
@@ -105,11 +92,7 @@ class KPIEngineV2:
     ) -> Tuple[float, Dict[str, Any]]:
         """Calculate Portfolio Health composite metric."""
         p30 = par_30 if par_30 is not None else self.get_metric("PAR30")
-        cr = (
-            collection_rate
-            if collection_rate is not None
-            else self.get_metric("CollectionRate")
-        )
+        cr = collection_rate if collection_rate is not None else self.get_metric("CollectionRate")
 
         if p30 is None or cr is None:
             return 0.0, {
@@ -162,9 +145,7 @@ class KPIEngineV2:
         if name in self.metrics:
             return self.metrics[name].get("value")
 
-        calculator = self.KPI_FUNCTIONS.get(name) or self.ON_DEMAND_KPI_FUNCTIONS.get(
-            name
-        )
+        calculator = self.KPI_FUNCTIONS.get(name) or self.ON_DEMAND_KPI_FUNCTIONS.get(name)
         if calculator is not None:
             val, _ = calculator(self.df)
             return float(val) if val is not None else None

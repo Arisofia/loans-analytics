@@ -45,9 +45,7 @@ class PolarsPipeline:
         else:
             raise ValueError(f"Unsupported file format: {path.suffix}")
 
-    def normalize_columns(
-        self, lf: pl.LazyFrame, mapping: Dict[str, List[str]]
-    ) -> pl.LazyFrame:
+    def normalize_columns(self, lf: pl.LazyFrame, mapping: Dict[str, List[str]]) -> pl.LazyFrame:
         """
         Normalize column names using Polars expressions.
         """
@@ -60,9 +58,7 @@ class PolarsPipeline:
                 # Case-insensitive match check (Polars is case-sensitive by default)
                 # This is a bit tricky with LazyFrame without collecting,
                 # but we can use schema names.
-                matched_col = next(
-                    (c for c in existing_cols if c.lower() == cand.lower()), None
-                )
+                matched_col = next((c for c in existing_cols if c.lower() == cand.lower()), None)
                 if matched_col:
                     rename_dict[matched_col] = internal_name
                     break
@@ -71,9 +67,7 @@ class PolarsPipeline:
             return lf.rename(rename_dict)
         return lf
 
-    def enforce_precision(
-        self, lf: pl.LazyFrame, decimal_cols: List[str]
-    ) -> pl.LazyFrame:
+    def enforce_precision(self, lf: pl.LazyFrame, decimal_cols: List[str]) -> pl.LazyFrame:
         """
         Enforce Decimal precision for monetary columns.
         """
@@ -123,9 +117,7 @@ class PolarsPipeline:
 
         # Enforce precision on monetary columns
         monetary_cols = [
-            name
-            for name, dtype in (schema or {}).items()
-            if isinstance(dtype, pl.Decimal)
+            name for name, dtype in (schema or {}).items() if isinstance(dtype, pl.Decimal)
         ]
         lf = self.enforce_precision(lf, monetary_cols)
 

@@ -20,9 +20,7 @@ import pytest
 class TestAnalyticsSmoke:
     """Smoke tests for analytics pipeline."""
 
-    def test_a01_pipeline_smoke_execution(
-        self, analytics_test_env: Dict[str, Any]
-    ) -> None:
+    def test_a01_pipeline_smoke_execution(self, analytics_test_env: Dict[str, Any]) -> None:
         """
         A-01: Pipeline smoke test — execute with sample_small.csv → completes successfully.
 
@@ -129,9 +127,7 @@ class TestAnalyticsSmoke:
         ]
 
         for field in required_fields:
-            assert (
-                field in kpi_data
-            ), f"Required field '{field}' missing from kpi_results.json"
+            assert field in kpi_data, f"Required field '{field}' missing from kpi_results.json"
             assert isinstance(
                 kpi_data[field], (int, float)
             ), f"Field '{field}' must be numeric, got {type(kpi_data[field])}"

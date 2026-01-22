@@ -4,12 +4,15 @@ from typing import Any, Dict, Tuple
 import pandas as pd
 
 from src.kpis.base import KPICalculator, KPIMetadata, create_context
-from src.utils.data_normalization import (COL_APPROVED_AMOUNT,
-                                          COL_CLIENT_SEGMENT, COL_CUSTOMER_ID,
-                                          COL_DAYS_PAST_DUE,
-                                          COL_ORIGINATION_DATE,
-                                          COL_OUTSTANDING_AMOUNT,
-                                          normalize_columns)
+from src.utils.data_normalization import (
+    COL_APPROVED_AMOUNT,
+    COL_CLIENT_SEGMENT,
+    COL_CUSTOMER_ID,
+    COL_DAYS_PAST_DUE,
+    COL_ORIGINATION_DATE,
+    COL_OUTSTANDING_AMOUNT,
+    normalize_columns,
+)
 from src.utils.numeric import safe_numeric
 
 logger = logging.getLogger(__name__)
@@ -47,13 +50,9 @@ class SegmentationSummaryCalculator(KPICalculator):
                 working_df[COL_ORIGINATION_DATE], errors="coerce"
             )
             # Prepare 2025 filtered dataset
-            df_2025 = working_df[
-                working_df[COL_ORIGINATION_DATE].dt.year == 2025
-            ].copy()
+            df_2025 = working_df[working_df[COL_ORIGINATION_DATE].dt.year == 2025].copy()
             if df_2025.empty:
-                logger.warning(
-                    "No data found for year 2025 in column %s", COL_ORIGINATION_DATE
-                )
+                logger.warning("No data found for year 2025 in column %s", COL_ORIGINATION_DATE)
                 # Fallback to all data if 2025 filter yields nothing but date col exists
                 df_2025 = working_df.copy()
         else:
@@ -97,9 +96,7 @@ class SegmentationSummaryCalculator(KPICalculator):
 
             # Map back to summary
             total_clients = summary.set_index(COL_CLIENT_SEGMENT)["Clients"]
-            delinquency_rate = (delinquency_counts / total_clients).fillna(0).round(
-                3
-            ) * 100
+            delinquency_rate = (delinquency_counts / total_clients).fillna(0).round(3) * 100
             summary["Delinquency_Rate"] = (
                 summary[COL_CLIENT_SEGMENT].map(delinquency_rate).fillna(0)
             )

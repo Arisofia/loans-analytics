@@ -26,13 +26,9 @@ def notify_incident(message: str, severity: str = "error"):
     if severity == "critical":
         try:
             pd_block = PagerDutyNotification.load("abaco-pagerduty")
-            pd_block.notify(
-                subject="🚨 Abaco Analytics Critical Failure", message=message
-            )
+            pd_block.notify(subject="🚨 Abaco Analytics Critical Failure", message=message)
         except Exception:
-            logger.warning(
-                "PagerDuty block 'abaco-pagerduty' not found. Skipping PagerDuty alert."
-            )
+            logger.warning("PagerDuty block 'abaco-pagerduty' not found. Skipping PagerDuty alert.")
 
 
 @task(retries=5, retry_delay_seconds=60)
@@ -53,9 +49,7 @@ def validate_and_ingest(content: bytes) -> pl.DataFrame:
     ingestor = AbacoIngestion(strict_validation=True)
     df = ingestor.ingest_uploaded_file(io.BytesIO(content))
     if df.is_empty():
-        raise ValueError(
-            "❌ Ingestion failed: Resulting DataFrame is empty or violated contract."
-        )
+        raise ValueError("❌ Ingestion failed: Resulting DataFrame is empty or violated contract.")
 
     logger.info(f"✅ Data validated. Rows: {len(df)} | Run ID: {ingestor.run_id}")
     return df
