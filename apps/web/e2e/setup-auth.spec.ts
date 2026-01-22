@@ -9,15 +9,17 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env.local') })
 const authFile = 'playwright/.auth/user.json'
 
 setup('prepare DB, authenticate user and save storage state', async ({ page }) => {
-  const email = process.env.E2E_TEST_EMAIL!
-  const password = process.env.E2E_TEST_PASSWORD!
+  const email = process.env.E2E_TEST_EMAIL || ''
+  const password = process.env.E2E_TEST_PASSWORD || ''
+
+  if (!email || !password) {
+    throw new Error('E2E_TEST_EMAIL and E2E_TEST_PASSWORD must be set in .env.local')
+  }
 
   // --- FASE 1: DB SEEDING (Backend) ---
-  console.log('🔄 Iniciando preparación de base de datos...')
   const userId = await TestDataManager.ensureTestUser(email, password)
   await TestDataManager.resetUserData(userId)
   await TestDataManager.seedInitialData(userId)
-  console.log('✅ Base de datos lista.')
 
   // --- FASE 2: UI LOGIN (Frontend) ---
   await page.goto('http://localhost:3000/login')

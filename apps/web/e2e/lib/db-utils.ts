@@ -27,13 +27,13 @@ export const TestDataManager = {
 
     // Try to find existing user by email
     try {
-      const listRes: any = await supabaseAdmin.auth.admin.listUsers()
-      const users: any[] = listRes?.data?.users ?? listRes?.users ?? []
+      const listRes = await supabaseAdmin.auth.admin.listUsers()
+      const users = listRes?.data?.users ?? []
       const existing = users.find((u) => u.email === email)
       if (existing) return existing.id
 
       // Create user if not found
-      const createRes: any = await supabaseAdmin.auth.admin.createUser({
+      const createRes = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
@@ -41,9 +41,11 @@ export const TestDataManager = {
       })
 
       if (createRes.error) throw createRes.error
-      return createRes?.data?.user?.id ?? createRes?.user?.id
-    } catch (err: any) {
-      console.error('Error ensuring test user:', err?.message ?? err)
+      if (!createRes.data?.user?.id) throw new Error('Failed to create user: no user ID returned')
+      return createRes.data.user.id
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('Error ensuring test user:', message)
       throw err
     }
   },
@@ -53,7 +55,6 @@ export const TestDataManager = {
    */
   async resetUserData(userId: string) {
     if (!userId) throw new Error('userId is required to reset data')
-    console.log(`🧹 Cleaning data for user ${userId}...`)
 
     // Adjust table names/columns to match your schema
     try {
@@ -64,8 +65,9 @@ export const TestDataManager = {
       // await supabaseAdmin.from('notifications').delete().eq('user_id', userId);
 
       return true
-    } catch (err: any) {
-      console.error('Error resetting user data:', err?.message ?? err)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('Error resetting user data:', message)
       throw err
     }
   },
@@ -75,7 +77,6 @@ export const TestDataManager = {
    */
   async seedInitialData(userId: string) {
     if (!userId) throw new Error('userId is required to seed data')
-    console.log(`🌱 Seeding initial data for user ${userId}...`)
 
     // Example: two loans (one active, one in default). Adjust schema fields to match your DB.
     const loans = [
@@ -100,10 +101,10 @@ export const TestDataManager = {
     try {
       const { error } = await supabaseAdmin.from('loans').insert(loans)
       if (error) throw error
-      console.log('🌱 Seeded loans')
       return true
-    } catch (err: any) {
-      console.error('Error seeding initial data:', err?.message ?? err)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('Error seeding initial data:', message)
       throw err
     }
   },
