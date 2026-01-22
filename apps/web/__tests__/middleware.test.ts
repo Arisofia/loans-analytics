@@ -1,13 +1,18 @@
 import { middleware } from '../middleware'
 
 describe('middleware header spoofing mitigation', () => {
+  interface Cookie {
+    name: string
+    value: string
+  }
+
   interface MockRequest {
     headers:
       | {
           get: (k: string) => string | null
         }
       | Headers
-    cookies: { getAll: () => any[] }
+    cookies: { getAll: () => Cookie[] }
   }
 
   interface MockResponse {
@@ -22,7 +27,7 @@ describe('middleware header spoofing mitigation', () => {
       cookies: { getAll: () => [] },
     }
 
-    const res = (await middleware(req as any)) as MockResponse
+    const res = (await middleware(req as unknown as Parameters<typeof middleware>[0])) as MockResponse
     expect(res?.status).toBe(403)
   })
 
@@ -37,7 +42,7 @@ describe('middleware header spoofing mitigation', () => {
       cookies: { getAll: () => [] },
     }
 
-    const res = (await middleware(req as any)) as MockResponse
+    const res = (await middleware(req as unknown as Parameters<typeof middleware>[0])) as MockResponse
     expect(res?.status === 403).toBeFalsy()
   })
 })
