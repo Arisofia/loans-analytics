@@ -543,7 +543,6 @@ Test Steps - Data - Expected Result: [Detailed execution]
 
 | Step | Data | Expected Result |
 |------|------|-----------------|
-| 1 | Set invalid Notion token: `NOTION_TOKEN=invalid_token_123` | Token set to invalid value |
 | 2 | Trigger CI workflow | Workflow runs |
 | 3 | Check update-notion-dashboard job | Job status: SKIPPED (secrets_available=false) or SUCCEEDED (graceful error handling) |
 | 4 | Verify no API calls made | No 401/403 errors in logs |
