@@ -184,4 +184,3 @@ jobs:
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
->>>>>>> ed449d30c (feat: Update workflows and add gitignore for media files)
