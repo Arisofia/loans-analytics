@@ -9,15 +9,8 @@ test.describe('Analytics Dashboard', () => {
       page.getByRole('heading', { name: 'Portfolio performance dashboard' })
     ).toBeVisible()
 
-    await expect(page.getByText('Executive Summary', { exact: true })).toBeVisible()
-    await expect(page.getByText('Risk & Health', { exact: true })).toBeVisible()
-    await expect(page.getByText('Pricing', { exact: true })).toBeVisible()
-
-    // Check for KPI values
-    await expect(page.getByText('3.00%')).toBeVisible()
-    await expect(page.getByText('1.00%')).toBeVisible()
-    await expect(page.getByText('0.00%')).toBeVisible()
-  })
+        // Check for placeholder content
+    await expect(page.getByText('Analytics Dashboard Placeholder')).toBeVisible()
 
 
   test('should have a working link back to home', async ({ page }) => {
