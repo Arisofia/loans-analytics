@@ -72,7 +72,7 @@ class UnifiedIngestion:
         self.circuit_breaker = self._build_circuit_breaker(config)
 
     def _build_retry_policy(self, config: Dict[str, Any]) -> RetryPolicy:
-        retry_cfg = config.get("cascade", {}).get("http", {}).get("retry", {})
+        retry_cfg = config.get("warehouse", {}).get("http", {}).get("retry", {})
         return RetryPolicy(
             max_retries=retry_cfg.get("max_retries", 3),
             backoff_seconds=retry_cfg.get("backoff_seconds", 1.0),
@@ -80,13 +80,13 @@ class UnifiedIngestion:
         )
 
     def _build_rate_limiter(self, config: Dict[str, Any]) -> RateLimiter:
-        rate_cfg = config.get("cascade", {}).get("http", {}).get("rate_limit", {})
+        rate_cfg = config.get("warehouse", {}).get("http", {}).get("rate_limit", {})
         return RateLimiter(
             max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60)
         )
 
     def _build_circuit_breaker(self, config: Dict[str, Any]) -> CircuitBreaker:
-        cb_cfg = config.get("cascade", {}).get("http", {}).get("circuit_breaker", {})
+        cb_cfg = config.get("warehouse", {}).get("http", {}).get("circuit_breaker", {})
         return CircuitBreaker(
             failure_threshold=cb_cfg.get("failure_threshold", 3),
             reset_seconds=cb_cfg.get("reset_seconds", 60),

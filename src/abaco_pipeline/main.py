@@ -198,7 +198,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     run_cfg = cfg.get("run", {}) or {}
     artifacts_dir = Path(run_cfg.get("artifacts_dir", "logs/runs"))
-    raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/cascade"))
+    raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/warehouse"))
     state_file = Path(
         args.state_file or run_cfg.get("state_file", "logs/runs/state.json")
     )

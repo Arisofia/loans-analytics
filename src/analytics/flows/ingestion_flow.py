@@ -13,7 +13,7 @@ from pathlib import Path
 import polars as pl
 
 from python.config import settings
-from python.ingestion import CascadeIngestion
+from python.ingestion import AbacoIngestion
 from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine
 
 
@@ -50,7 +50,7 @@ def load_source_data(file_path: str) -> bytes:
 def validate_and_ingest(content: bytes) -> pl.DataFrame:
     """Performs schema validation and strict contract enforcement."""
     logger = get_run_logger()
-    ingestor = CascadeIngestion(strict_validation=True)
+    ingestor = AbacoIngestion(strict_validation=True)
     df = ingestor.ingest_uploaded_file(io.BytesIO(content))
     if df.is_empty():
         raise ValueError(

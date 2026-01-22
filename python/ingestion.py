@@ -12,7 +12,7 @@ from python.validation import safe_numeric_polars
 logger = logging.getLogger(__name__)
 
 
-class CascadeIngestion:
+class AbacoIngestion:
     def __init__(self, strict_validation: bool = False):
         """
         Unified Ingestion Engine for Abaco Analytics.
