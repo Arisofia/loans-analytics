@@ -2,7 +2,6 @@
 
 - [ ] All Python tests pass (`python -m pytest`)
 - [ ] All required secrets are set in the repository:
-  - `CASCADE_SESSION_COOKIE`
   - `AZURE_STORAGE_CONNECTION_STRING`
 
   - etc.

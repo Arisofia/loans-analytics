@@ -206,48 +206,6 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 ---
 
-### 7. Notion Integration
-
-#### 7a. Notion API Key
-
-**Environment Variable**: `NOTION_API_KEY`
-
-**How to get**:
-
-1. [Notion Settings](https://notion.so/profile/settings) → Integrations → Develop your own integrations
-2. Click "New integration"
-3. Name: `Abaco Analytics Export`
-
-**To Add**:
-
-- Name: `NOTION_API_KEY`
-
-#### 7b. Notion Database ID
-
-**Environment Variable**: `NOTION_DATABASE_ID`
-
-**How to get**:
-
-1. Open your Notion database in browser
-2. Copy the 32-character ID from the URL: `https://notion.so/{YOUR_WORKSPACE}/{DATABASE_ID}?v=...`
-**To Add**:
-
-- Name: `NOTION_DATABASE_ID`
-
-#### 7c. Notion Reports Page ID
-
-**Environment Variable**: `NOTION_REPORTS_PAGE_ID`
-
-**How to get**:
-
-1. Create a page in Notion for analytics reports
-2. Copy the page ID from the URL
-
-**To Add**:
-
-- Name: `NOTION_REPORTS_PAGE_ID`
-
----
 
 ### 8. Other Integration Secrets
 
@@ -276,9 +234,6 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
   - [ ] `META_AD_ACCOUNT_ID` - Ad account ID
 
 - [ ] **Notion Secrets Added**
-  - [ ] `NOTION_API_KEY` - Internal integration token
-  - [ ] `NOTION_DATABASE_ID` - Analytics metrics database
-  - [ ] `NOTION_REPORTS_PAGE_ID` - Reports page
 
 ---
 
@@ -301,7 +256,6 @@ export DATABASE_URL="postgres://..."
 export SUPABASE_URL="https://..."
 export SUPABASE_SERVICE_ROLE="..."
 export META_ACCESS_TOKEN="..."
-export NOTION_API_KEY="..."
 export AZURE_STORAGE_CONNECTION_STRING="..."
 
 # Run batch export runner
@@ -323,7 +277,6 @@ All secrets should be rotated on a regular basis:
 | META_ACCESS_TOKEN | 90 days | Generate new token in Meta Business Suite |
 | AZURE_CREDENTIALS | 90 days | Run `az ad sp create-for-rbac` again |
 | OPENAI_API_KEY | 90 days | Generate new key in OpenAI → API Keys |
-| NOTION_API_KEY | 180 days | Regenerate in Notion → Integrations |
 | AZURE_STORAGE_CONNECTION_STRING | 180 days | Rotate key in Azure Portal |
 
 ---
@@ -332,13 +285,11 @@ All secrets should be rotated on a regular basis:
 
 ### Secret Not Found in Workflow
 
-**Error**: `Error: Secret FIGMA_TOKEN not found`
 
 **Solution**:
 
 1. Verify secret is added: Settings → Secrets → Check the list
 2. Check spelling (case-sensitive)
-3. If using environment variables, ensure they're properly referenced: `${{ secrets.FIGMA_TOKEN }}`
 
 ### Access Denied to Azure
 

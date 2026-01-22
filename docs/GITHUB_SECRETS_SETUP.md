@@ -167,8 +167,6 @@ Common across parity checks and ingestion pipelines.
 
 Used by ingestion / unified pipeline workflows.
 
-- `CASCADE_USERNAME`
-- `CASCADE_PASSWORD`
 
 # ...existing code...
   - Note: both naming styles exist across workflows; standardize later.

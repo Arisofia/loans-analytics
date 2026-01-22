@@ -4,7 +4,6 @@
 **Test Case Title**: Notion KPI Table Sync - Success Path
 **Priority**: Critical
 **Type**: Functional
-**Preconditions**: Valid `NOTION_TOKEN` and `NOTION_DATABASE_ID` provided in environment.
 **Tags**: #integration #notion
 **Test Data Requirements**: `kpi_results.json` from Sprint 0.
 **Parameters**: N/A

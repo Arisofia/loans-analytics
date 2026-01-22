@@ -139,7 +139,6 @@ if __name__ == "__main__":
 1. Review findings above for database/storage connections
 2. If no PostgreSQL/MySQL/Azure SQL found:
    → Check if data stored in Blob Storage (CSV/Parquet files)
-   → Check if data stored in external Cascade API
    → Check if data stored in HubSpot directly
 
 3. Connect to identified data sources:

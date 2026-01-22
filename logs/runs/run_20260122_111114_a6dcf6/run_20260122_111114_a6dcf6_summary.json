@@ -1,0 +1,35 @@
+{
+  "status": "success",
+  "run_id": "run_20260122_111114_a6dcf6",
+  "started_at": "2026-01-22T11:11:14.645614+00:00",
+  "completed_at": "2026-01-22T11:11:14.678550+00:00",
+  "phases": {
+    "ingestion": {
+      "run_id": "ingest_68f511083344",
+      "rows": 2
+    },
+    "transformation": {
+      "run_id": "run_20260122_111114_a6dcf6",
+      "rows": 2,
+      "masked_columns": []
+    },
+    "calculation": {
+      "run_id": "run_20260122_111114_a6dcf6",
+      "metrics": [
+        "PAR30",
+        "PAR90",
+        "CollectionRate",
+        "PortfolioHealth"
+      ],
+      "anomalies": {}
+    },
+    "output": {
+      "manifest": "/home/runner/work/abaco-loans-analytics/abaco-loans-analytics/logs/runs/run_20260122_111114_a6dcf6/run_20260122_111114_a6dcf6_manifest.json",
+      "outputs": {
+        "parquet": "/home/runner/work/abaco-loans-analytics/abaco-loans-analytics/data/metrics/run_20260122_111114_a6dcf6.parquet",
+        "csv": "/home/runner/work/abaco-loans-analytics/abaco-loans-analytics/data/metrics/run_20260122_111114_a6dcf6.csv",
+        "metrics_json": "/home/runner/work/abaco-loans-analytics/abaco-loans-analytics/data/metrics/run_20260122_111114_a6dcf6_metrics.json"
+      }
+    }
+  }
+}
