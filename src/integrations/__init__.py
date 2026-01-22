@@ -13,7 +13,7 @@ from src.integrations.notion_client import NotionOutputClient
 from src.integrations.supabase_client import SupabaseOutputClient
 
 __all__ = [
-    "FigmaClient",
+
     "AzureStorageClient",
     "AzureDashboardClient",
     "SupabaseOutputClient",
