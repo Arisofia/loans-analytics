@@ -1,9 +1,15 @@
 import argparse
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
+<<<<<<< HEAD
 import seaborn as sns
+=======
+try:
+    import matplotlib.pyplot as plt
+except ImportError:  # pragma: no cover - optional dependency
+    plt = None
+>>>>>>> origin/fix/workflows-and-tests
 
 DEFAULT_SAMPLE = Path("data_samples/abaco_portfolio_sample.csv")
 
@@ -97,8 +103,75 @@ def main() -> None:
     if "collection_rate" in metrics:
         print(f"Collection rate: {metrics['collection_rate']:.2f}%")
 
+<<<<<<< HEAD
     plot_dpd_distribution(df, Path("dpd_distribution.png"))
     plot_exposure_distribution(df, Path("exposure_distribution.png"))
+=======
+    analyzer = FinancialAnalyzer()
+
+    # 2. Enrich Data (Buckets, Segments, Utilization)
+    print("\n[1] Enriching Master Dataframe...")
+    enriched_df = analyzer.enrich_master_dataframe(df)
+
+    # Select columns to show that actually exist (handling both sample and real data schemas)
+    cols_to_show = [
+        c
+        for c in ["loan_id", "dpd_bucket", "exposure_segment", "line_utilization", "client_type"]
+        if c in enriched_df.columns
+    ]
+    if cols_to_show:
+        print(enriched_df[cols_to_show].head(10).to_string(index=False))
+
+    # 3. Calculate Weighted Stats
+    print("\n[2] Calculating Weighted APR by Balance...")
+    weighted_stats = analyzer.calculate_weighted_stats(enriched_df, metrics=["apr"])
+    if not weighted_stats.empty:
+        print(weighted_stats.to_string(index=False))
+    else:
+        print("Could not calculate weighted stats (missing columns?)")
+
+    # 4. Calculate Concentration Risk (HHI)
+    print("\n[3] Calculating Portfolio Concentration (HHI)...")
+    hhi = analyzer.calculate_hhi(enriched_df)
+    print(f"HHI Score: {hhi:.2f} (Scale 0-10,000)")
+
+    # 5. Visualization
+    if plt is None:
+        logger.warning("matplotlib is not available; skipping plots.")
+        return
+
+    if "dpd_bucket" in enriched_df.columns:
+        print("\n[4] Generating DPD Distribution Chart...")
+        counts = enriched_df["dpd_bucket"].value_counts()
+        order = ["Current", "1-29", "30-59", "60-89", "90-119", "120-149", "150-179", "180+"]
+        counts = counts.reindex(order).fillna(0)
+
+        plt.figure(figsize=(10, 6))
+        counts.plot(kind="bar", color="skyblue", edgecolor="black")
+        plt.title("Loan Portfolio DPD Distribution")
+        plt.xlabel("DPD Bucket")
+        plt.ylabel("Count")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        output_img = "dpd_distribution.png"
+        plt.savefig(output_img)
+        print(f"Saved {output_img}")
+
+    if "exposure_segment" in enriched_df.columns:
+        print("\n[5] Generating Exposure Segment Chart...")
+        counts = enriched_df["exposure_segment"].value_counts()
+
+        plt.figure(figsize=(10, 6))
+        counts.plot(kind="bar", color="lightgreen", edgecolor="black")
+        plt.title("Client Exposure Segments")
+        plt.xlabel("Segment")
+        plt.ylabel("Count")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        output_img = "exposure_distribution.png"
+        plt.savefig(output_img)
+        print(f"Saved {output_img}")
+>>>>>>> origin/fix/workflows-and-tests
 
 
 if __name__ == "__main__":

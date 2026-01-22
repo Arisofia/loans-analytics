@@ -12,6 +12,8 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
             - name: Set up Python
               uses: actions/setup-python@v5
@@ -34,8 +36,33 @@ jobs:
                   find . -name '*.json' -not -path './node_modules/*' -not -path './.venv/*' -exec jsonlint -q {} \;
 
             - name: Lint Markdown
+              shell: bash
               run: |
-                  markdownlint '**/*.md' --ignore node_modules --ignore .venv
+                  set -euo pipefail
+                  if [ "${{ github.event_name }}" = "pull_request" ]; then
+                    base="${{ github.event.pull_request.base.sha }}"
+                  else
+                    base="${{ github.event.before }}"
+                  fi
+                  head="${{ github.sha }}"
+                  candidates=()
+                  if [ -n "$base" ] && [ "$base" != "0000000000000000000000000000000000000000" ]; then
+                    mapfile -t candidates < <(git diff --name-only "$base" "$head" -- '*.md' || true)
+                  fi
+                  if [ ${#candidates[@]} -eq 0 ]; then
+                    mapfile -t candidates < <(git show --name-only --pretty="" "$head" -- '*.md' || true)
+                  fi
+                  files=()
+                  for file in "${candidates[@]}"; do
+                    if [ -f "$file" ]; then
+                      files+=("$file")
+                    fi
+                  done
+                  if [ ${#files[@]} -eq 0 ]; then
+                    echo "No markdown changes to lint."
+                    exit 0
+                  fi
+                  markdownlint "${files[@]}" --ignore node_modules --ignore .venv
 
             - name: Lint Python (pylint, flake8, ruff)
               run: |

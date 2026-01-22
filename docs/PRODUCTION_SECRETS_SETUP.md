@@ -127,6 +127,11 @@ DefaultEndpointsProtocol=https;AccountName=abacostgprod;AccountKey=...;EndpointS
 
 ---
 
+**Alternative inputs** (if you prefer not to use a connection string):
+
+- `AZURE_STORAGE_ACCOUNT_NAME` + `AZURE_STORAGE_ACCOUNT_KEY`
+- `AZURE_STORAGE_ACCOUNT_URL` with managed identity or `AZURE_STORAGE_SAS_TOKEN`
+
 ### 4. Azure Resource IDs (For Dashboard & Monitoring)
 
 **Environment Variables**:
@@ -222,6 +227,8 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 - Name: `NOTION_API_KEY`
 
+**Also accepted**: `NOTION_TOKEN`, `NOTION_INTEGRATION_TOKEN`
+
 #### 7b. Notion Database ID
 
 **Environment Variable**: `NOTION_DATABASE_ID`
@@ -233,6 +240,8 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 **To Add**:
 
 - Name: `NOTION_DATABASE_ID`
+
+**Also accepted**: set `NOTION_DATABASE_URL` (full Notion link) or paste the full URL into `NOTION_DATABASE_ID`; the integration extracts the ID automatically.
 
 #### 7c. Notion Reports Page ID
 
@@ -249,7 +258,37 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 ---
 
+<<<<<<< HEAD
 ### 8. Other Integration Secrets
+=======
+### 8. Figma Additional Configuration
+
+#### 8a. Figma Node ID (Optional)
+
+**Environment Variable**: `FIGMA_DASHBOARD_FRAME_ID`
+
+**How to get**:
+
+1. Open your Figma file
+2. Right-click on the frame where you want metric updates
+3. Copy "Link to frame" and extract the node ID
+
+**To Add** (optional):
+
+- Name: `FIGMA_DASHBOARD_FRAME_ID`
+
+**Token aliases**: `FIGMA_OAUTH_TOKEN`, `FIGMA_API_TOKEN`, `FIGMA_PERSONAL_ACCESS_TOKEN` are accepted when `FIGMA_TOKEN` is not set.
+
+**File URL option**: set `FIGMA_FILE_URL` to a full Figma file link instead of `FIGMA_FILE_KEY`.
+
+---
+
+### 9. Other Integration Secrets
+
+#### HubSpot
+
+- `HUBSPOT_API_KEY`: [HubSpot Account Settings → Integrations → API key](https://app.hubspot.com/l/integrations)
+>>>>>>> origin/fix/workflows-and-tests
 
 #### OpenAI
 

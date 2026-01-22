@@ -38,5 +38,20 @@ jobs:
               env:
                 OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                 AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
-              run: |
+                run: |
                   python scripts/product_analytics.py
+              - name: Post to Figma
+                if: steps.check-secrets.outputs.secrets_available == 'true' && hashFiles('scripts/post_to_figma.py') != ''
+                env:
+                  FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+                run: |
+                  python scripts/post_to_figma.py
+<<<<<<< HEAD:.github/workflows/archived/product-analytics.yml
+=======
+            - name: Post to Figma
+              if: steps.check-secrets.outputs.secrets_available == 'true' && hashFiles('scripts/post_to_figma.py') != ''
+              env:
+                  FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+              run: |
+                  python scripts/post_to_figma.py
+>>>>>>> origin/fix/workflows-and-tests:.github/workflows/product-analytics.yml

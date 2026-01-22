@@ -1,0 +1,72 @@
+# Marked as resolved since the file is deleted
+# Trigger workflow registration
+name: Comment to Figma
+
+on:
+  workflow_dispatch:
+
+jobs:
+  comment-to-figma:
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Figma secrets
+        id: figma_secrets
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+          FIGMA_FILE_KEY: ${{ steps.figma_secrets.outputs.file_key }}
+        run: |
+          sanitize_secret() {
+            local var_name="$1"
+            local raw="$2"
+            local norm
+            norm="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]' | xargs)"
+            case "$norm" in
+              ""|"token"|"tokens"|"secret"|"secrets"|"changeme"|"change-me"|"change_me"|"replace-me"|"replace_me"|"placeholder"|"example"|"redacted")
+                printf -v "$var_name" '%s' ""
+                ;;
+              *)
+                printf -v "$var_name" '%s' "$raw"
+                ;;
+            esac
+          }
+          sanitize_secret FIGMA_TOKEN "$FIGMA_TOKEN"
+          sanitize_secret FIGMA_FILE_KEY "$FIGMA_FILE_KEY"
+
+          normalize_figma_key() {
+            local raw="$1"
+            if [ -z "$raw" ]; then
+              echo ""
+              return
+            fi
+            local stripped="${raw%%\?*}"
+            if [[ "$stripped" =~ /(file|design|proto)/([A-Za-z0-9_-]+) ]]; then
+              echo "${BASH_REMATCH[2]}"
+              return
+            fi
+            echo "$stripped"
+          }
+
+          FIGMA_FILE_KEY="$(normalize_figma_key "$FIGMA_FILE_KEY")"
+          if [ -n "$FIGMA_FILE_KEY" ]; then
+            echo "FIGMA_FILE_KEY=$FIGMA_FILE_KEY" >> "$GITHUB_ENV"
+            echo "file_key=$FIGMA_FILE_KEY" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ -n "$FIGMA_TOKEN" ] && [ -n "$FIGMA_FILE_KEY" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Missing Figma secrets - skipping comment"
+          fi
+      - name: Post comment to Figma
+        if: steps.figma_secrets.outputs.available == 'true'
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+          FIGMA_FILE_KEY: ${{ steps.figma_secrets.outputs.file_key }}
+        run: |
+          COMMENT="Automated result: Workflow check passed at $(date)"
+          curl -X POST "https://api.figma.com/v1/files/$FIGMA_FILE_KEY/comments" \
+            -H "X-Figma-Token: $FIGMA_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"message\": \"$COMMENT\"}"

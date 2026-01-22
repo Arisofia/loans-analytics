@@ -1,8 +1,34 @@
 // scripts/notion-actions.js
 const { Client } = require('@notionhq/client')
 
-const notion = new Client({ auth: process.env.NOTION_TOKEN })
-const DATABASE_ID = process.env.NOTION_DATABASE_ID
+function extractNotionId(value) {
+  if (!value) return null;
+  const raw = value.trim();
+  const plainMatch = raw.match(/[0-9a-fA-F]{32}/);
+  if (plainMatch) return plainMatch[0];
+  const dashedMatch = raw.match(
+    /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/
+  );
+  if (dashedMatch) return dashedMatch[0].replace(/-/g, '');
+  return raw;
+}
+
+const NOTION_TOKEN =
+  process.env.NOTION_API_KEY ||
+  process.env.NOTION_TOKEN ||
+  process.env.NOTION_INTEGRATION_TOKEN;
+const DATABASE_ID = extractNotionId(
+  process.env.NOTION_DATABASE_ID ||
+    process.env.NOTION_DATABASE_URL ||
+    process.env.NOTION_DATABASE
+);
+
+if (!NOTION_TOKEN || !DATABASE_ID) {
+  console.error('Missing NOTION_TOKEN/NOTION_API_KEY or NOTION_DATABASE_ID/URL.');
+  process.exit(1);
+}
+
+const notion = new Client({ auth: NOTION_TOKEN })
 
 // Property names can differ across databases. Override via env if needed.
 const TITLE_PROP = process.env.NOTION_TITLE_PROP || 'Name'

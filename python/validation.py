@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """
 Module for data validation utilities and functions.
 """
@@ -292,3 +293,12 @@ def validate_no_nulls(
         if col in df.columns:
             validation[f"{col}_no_nulls"] = not df[col].isnull().any()
     return validation
+=======
+"""Compatibility helpers for legacy python.validation imports."""
+
+from src.pipeline.data_validation import validate_dataframe
+
+__all__ = [
+    "validate_dataframe",
+]
+>>>>>>> origin/fix/workflows-and-tests

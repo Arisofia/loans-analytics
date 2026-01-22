@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import hashlib
 import time
 from datetime import datetime, timezone
@@ -80,3 +81,16 @@ def hash_file(path: Path) -> str:
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+=======
+"""Compatibility helpers for legacy python.pipeline imports."""
+
+from src.pipeline.utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
+
+__all__ = [
+    "CircuitBreaker",
+    "RateLimiter",
+    "RetryPolicy",
+    "hash_file",
+    "utc_now",
+]
+>>>>>>> origin/fix/workflows-and-tests
