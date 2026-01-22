@@ -335,7 +335,7 @@ def main():
         # 6. Push to Supabase if enabled
         from src.integrations.supabase_client import SupabaseOutputClient
 
-        sb_client = SupabaseOutputClient()
+        SupabaseOutputClient()
         # ...existing code...
 
     except Exception as e:

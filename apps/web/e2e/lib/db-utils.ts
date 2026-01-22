@@ -28,7 +28,7 @@ export const TestDataManager = {
     // Try to find existing user by email
     try {
       const listRes = await supabaseAdmin.auth.admin.listUsers()
-      const users = listRes?.data?.users ?? []
+      const users = listRes?.data?.users ?? listRes?.users ?? []
       const existing = users.find((u) => u.email === email)
       if (existing) return existing.id
 
@@ -41,7 +41,7 @@ export const TestDataManager = {
       })
 
       if (createRes.error) throw createRes.error
-      return createRes?.data?.user?.id ?? ''
+      return createRes?.data?.user?.id ?? createRes?.user?.id
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
       console.error('Error ensuring test user:', message)

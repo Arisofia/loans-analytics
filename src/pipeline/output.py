@@ -1,10 +1,12 @@
 import logging
+import os
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
+from sqlalchemy import create_engine, text
 
 from src.config.paths import Paths
 from src.pipeline.utils import ensure_dir, hash_file, utc_now, write_json
@@ -34,6 +36,7 @@ class UnifiedOutput:
     def __init__(self, config: Dict[str, Any], run_id: Optional[str] = None):
         self.config = config.get("pipeline", {}).get("phases", {}).get("outputs", {})
         self.azure_config = self.config.get("azure", {})
+        self.supabase_config = self.config.get("supabase", {})
         self.run_id = run_id or f"out_{uuid.uuid4().hex[:12]}"
         self.audit_log: List[Dict[str, Any]] = []
 
@@ -111,6 +114,52 @@ class UnifiedOutput:
 
         self._log_event("azure_upload", "success", uploaded_count=len(uploaded))
         return uploaded
+
+    def upload_to_supabase(
+        self,
+        df: pd.DataFrame,
+        table_name: str = "fact_loans",
+        schema: str = "analytics",
+    ) -> bool:
+        if not self.supabase_config.get("enabled"):
+            return False
+
+        db_url = os.getenv("SUPABASE_DB_URL")
+        if not db_url:
+            self._log_event(
+                "supabase_upload", "skipped", reason="SUPABASE_DB_URL env var not found"
+            )
+            return False
+
+        try:
+            engine = create_engine(db_url)
+            # Ensure schema exists
+            with engine.connect() as conn:
+                conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema}"))
+                conn.commit()
+
+            # Upload using pandas to_sql
+            # We use 'append' or 'replace' depending on strategy.
+            # Safe default for pipeline is often 'append' with a run_id, or 'replace' if it's a snapshot.
+            # Here we assume snapshot replacement for the run or specific table logic.
+            # For simplicity, we'll use 'replace' for now as it's often a daily snapshot in this context,
+            # but in production, we might want 'append' with partition keys.
+            df.to_sql(
+                table_name,
+                engine,
+                schema=schema,
+                if_exists="replace",  # TODO: Make configurable (append/replace)
+                index=False,
+                chunksize=1000,
+            )
+            self._log_event(
+                "supabase_upload", "success", table=table_name, rows=len(df)
+            )
+            return True
+        except Exception as e:
+            self._log_event("supabase_upload", "failed", error=str(e))
+            logger.error("Failed to upload to Supabase: %s", e)
+            return False
 
     def persist(
         self,
@@ -202,6 +251,25 @@ class UnifiedOutput:
         if azure_blobs:
             manifest["azure_blobs"] = azure_blobs
             write_json(manifest_path, manifest)
+
+        # Upload to Supabase if enabled
+        supabase_tables = self.supabase_config.get("tables", ["fact_loans"])
+        supabase_schema = self.supabase_config.get("schema", "analytics")
+        if self.supabase_config.get("enabled"):
+            # Upload main dataframe
+            if "fact_loans" in supabase_tables:
+                self.upload_to_supabase(
+                    df, table_name="fact_loans", schema=supabase_schema
+                )
+            # Upload timeseries if available
+            if timeseries and "kpi_timeseries_daily" in supabase_tables:
+                daily_ts = timeseries.get("daily")
+                if daily_ts is not None:
+                    self.upload_to_supabase(
+                        daily_ts,
+                        table_name="kpi_timeseries_daily",
+                        schema=supabase_schema,
+                    )
 
         self._log_event("complete", "success", manifest=str(manifest_path))
 

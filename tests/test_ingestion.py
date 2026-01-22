@@ -3,7 +3,7 @@ import io
 import polars as pl
 import pytest
 
-from python.ingestion import CascadeIngestion
+from python.ingestion import AbacoIngestion
 from python.schemas import LOAN_SCHEMA
 
 
@@ -13,7 +13,7 @@ def test_ingest_uploaded_file_basic():
 L1,1000,1200,50000,1500,current,0.05,950,2025-01-01
 L2,5000,6000,75000,2000,current,0.06,4800,2025-01-01
 """
-    ingestor = CascadeIngestion()
+    ingestor = AbacoIngestion()
     df = ingestor.ingest_uploaded_file(io.BytesIO(csv_content.encode("utf-8")))
 
     assert not df.is_empty()
@@ -27,7 +27,7 @@ def test_ingest_with_cleaning():
     csv_content = """loan_id,loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance,measurement_date
 L1,"$1,000.00","$1,200.00","$50,000.00","$1,500.00",current,0.05,"$950.00",2025-01-01
 """
-    ingestor = CascadeIngestion()
+    ingestor = AbacoIngestion()
     df = ingestor.ingest_uploaded_file(io.BytesIO(csv_content.encode("utf-8")))
 
     assert not df.is_empty()
@@ -38,7 +38,7 @@ L1,"$1,000.00","$1,200.00","$50,000.00","$1,500.00",current,0.05,"$950.00",2025-
 def test_ingest_schema_mismatch():
     """Test ingestion with missing required columns."""
     csv_content = "loan_id,loan_amount\nL1,1000"
-    ingestor = CascadeIngestion()
+    ingestor = AbacoIngestion()
     df = ingestor.ingest_uploaded_file(io.BytesIO(csv_content.encode("utf-8")))
 
     assert df.is_empty()
@@ -53,7 +53,7 @@ def test_ingest_schema_mismatch():
 
 def test_ingest_summary_tracking():
     """Test that ingestion summary tracks rows and run_id."""
-    ingestor = CascadeIngestion()
+    ingestor = AbacoIngestion()
     csv_content = """loan_id,loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance,measurement_date
 L1,1000,1200,50000,1500,current,0.05,950,2025-01-01
 """

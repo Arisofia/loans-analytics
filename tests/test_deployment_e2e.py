@@ -28,8 +28,7 @@ class TestDeploymentE2E:
         )
 
     def test_e2e_kpi_calculation_produces_valid_output(self, sample_dataset):
-        """Test that KPI calculation produces complete, valid output."""
-        kpis = calculate_kpis(sample_dataset)
+        kpis = calculate_kpis(sample_dataset, kpis=[])
 
         assert isinstance(kpis, dict)
         assert len(kpis) > 15, "Should have at least 15 KPIs"

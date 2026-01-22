@@ -362,30 +362,3 @@ st.caption(
     f"Abaco Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 )
 st.markdown("</div>", unsafe_allow_html=True)
-    # 9. Export
-    st.header("📤 Export")
-    st.subheader("Data Artifacts")
-    if not analytics_facts.empty:
-        st.success("✅ Flattened fact tables ready.")
-        st.download_button(
-            "Download Analytics Facts (CSV)",
-            analytics_facts.to_csv(index=False).encode("utf-8"),
-            "analytics_facts.csv",
-            help="Full time-series of dimensions and metrics for BI tools.",
-        )
-    else:
-        st.warning("Generate KPI exports to create fact tables.")
-
-    if EXPORTS_DIR.joinpath("quarterly_scorecard.csv").exists():
-        scorecard_data = pd.read_csv(EXPORTS_DIR / "quarterly_scorecard.csv")
-        st.download_button(
-            "Download Quarterly Scorecard",
-            scorecard_data.to_csv(index=False).encode("utf-8"),
-            "quarterly_scorecard.csv",
-        )
-
-    st.divider()
-    st.caption(
-        f"Abaco Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-    )
-    st.markdown("</div>", unsafe_allow_html=True)

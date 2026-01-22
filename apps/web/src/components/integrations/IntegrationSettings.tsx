@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 
 import { BulkTokenInput } from './BulkTokenInput'
-import { IntegrationCard }  from './IntegrationCard'
+import { IntegrationCard } from './IntegrationCard'
 import { SlideLayout } from './SlideLayout'
 import {
   PLATFORMS,
@@ -12,6 +12,7 @@ import {
   type TokenStatus,
 } from '@/lib/integrations/constants'
 import type { BulkProcessResult, BulkTokenItem, TokenState } from '@/types/integrations'
+import { supabase } from '@/lib/supabase/client'
 
 import styles from './IntegrationSettings.module.css'
 
@@ -31,10 +32,10 @@ const initialState: Record<Platform, TokenState> = PLATFORMS.reduce(
 
 export function IntegrationSettings() {
   const [projectId, setProjectId] = useState('demo-project')
-  const [tokenState] = useState<Record<Platform, TokenState>>(initialState)
-  const [bulkOpen] = useState(false)
-  const [logEntries] = useState<string[]>([])
-  const [loadingStatus] = useState(false)
+  const [tokenState, setTokenState] = useState<Record<Platform, TokenState>>(initialState)
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [logEntries, setLogEntries] = useState<string[]>([])
+  const [loadingStatus, setLoadingStatus] = useState(false)
 
   const statusSummary = useMemo(
     () =>
@@ -44,79 +45,45 @@ export function IntegrationSettings() {
     [tokenState]
   )
 
-  return (
-    <SlideLayout
-      description="Configure provider access with per-platform tokens, safe bulk intake, and explicit sync controls. Tokens are encrypted before storage and every action is logged for auditability."
-      actions={
-        <>
-          <div className={styles.toolbar}>
-            <button className={styles.badge} type="button">
-              {loadingStatus ? 'Refreshing status...' : 'Secure & audited'}
-            </button>
-            <div className={styles.labelledInput}>
-              <label htmlFor="project-id">Project ID</label>
-              <input
-                id="project-id"
-                value={projectId}
-                onChange={(event) => setProjectId(event.target.value)}
-                placeholder="Project identifier"
-              />
-            </div>
-            <button
-              className={styles.primaryButton}
-              type="button"
-              onClick={() => {
-                void refreshStatus()
-              }}
-            >
-              Refresh status
-            </button>
-            <button
-              className={styles.secondaryButton}
-              type="button"
-              onClick={() => setBulkOpen(true)}
-            >
-              Bulk connect
-            </button>
-          </div>
-        </>
-      }
-    >
-      <>
-        <div className={styles.grid}>
-          {PLATFORMS.map((platform) => (
-            <IntegrationCard
-              key={platform}
-              platform={platform}
-              state={tokenState[platform]}
-              onChange={(changes) => setPlatformState(platform, changes)}
-              onConnect={() => connectPlatform(platform)}
-              onDisconnect={() => disconnectPlatform(platform)}
-              onSync={() => syncPlatform(platform)}
-            />
-          ))}
-        </div>
+  const appendLog = (message: string) => {
+    setLogEntries((prev) => [message, ...prev])
+  }
 
-        <div className={styles.syncLog} aria-live="polite">
-          <div className={styles.summaryRow}>
-            <strong>Progress log</strong>
-            <span>{statusSummary}</span>
-          </div>
-          {logEntries.length === 0 ? (
-            <p>No events yet.</p>
-          ) : (
-            logEntries.map((entry, index) => <div key={`${index}-${entry}`}>{entry}</div>)
-          )}
-        </div>
+  const setPlatformState = (platform: Platform, changes: Partial<TokenState>) => {
+    setTokenState((prev) => ({
+      ...prev,
+      [platform]: { ...prev[platform], ...changes },
+    }))
+  }
 
-        <BulkTokenInput
-          open={bulkOpen}
-          onClose={() => setBulkOpen(false)}
-          onProcessItem={handleBulkProcessItem}
-        />
-      </>
-    </SlideLayout>
-  )
+  const callEdgeFunction = async <T,>(slug: string, payload: unknown): Promise<T> => {
+    const { data, error } = await supabase.functions.invoke(`integrations${slug}`, {
+      body: payload,
+    })
+    if (error) throw new Error(error.message)
+    return data as T
+  }
+
+  const refreshStatus = async () => {
+    setLoadingStatus(true)
+    try {
+      const result = await callEdgeFunction<StatusRow[]>('/status', { projectId })
+      result.forEach((row) => {
+        setPlatformState(row.platform, {
+          status: row.status,
+          accountId: row.account_id,
+          lastSync: row.last_sync,
+          tokenId: row.id,
+        })
+      })
+      appendLog('Status refreshed')
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'Status refresh failed'
+      appendLog(`Refresh failed: ${detail}`)
+    } finally {
+      setLoadingStatus(false)
+    }
+  }
 
   const connectPlatform = async (platform: Platform) => {
     const details = tokenState[platform]
@@ -234,15 +201,15 @@ export function IntegrationSettings() {
               placeholder="Project identifier"
             />
           </div>
-          {/* <button
-              className={styles.primaryButton}
-              type="button"
-              onClick={() => {
-                void refreshStatus()
-              }}
-            >
-              Refresh status
-            </button> */}
+          <button
+            className={styles.primaryButton}
+            type="button"
+            onClick={() => {
+              void refreshStatus()
+            }}
+          >
+            Refresh status
+          </button>
           <button
             className={styles.secondaryButton}
             type="button"

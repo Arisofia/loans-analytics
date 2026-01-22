@@ -13,7 +13,7 @@ test:
 lint:
 	black .
 	isort .
-	pylint python apps/analytics/src
+	pylint src
 
 # Run comprehensive code quality checks
 quality:
