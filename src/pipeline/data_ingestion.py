@@ -15,7 +15,7 @@ from pydantic import ValidationError
 
 from src.pipeline.data_validation import validate_dataframe
 from src.pipeline.utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
-from src.pipeline.validation import DataQualityReporter
+from src.pipeline.validation import DataQualityReport, DataQualityReporter
 
 logger = logging.getLogger("abaco.ingestion")
 
