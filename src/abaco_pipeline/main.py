@@ -9,22 +9,15 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-from src.compliance import (
-    build_compliance_report,
-    create_access_log_entry,
-    mask_pii_in_dataframe,
-    write_compliance_report,
-)
+from src.compliance import (build_compliance_report, create_access_log_entry,
+                            mask_pii_in_dataframe, write_compliance_report)
 
 from .ingestion.archive import archive_file
 from .logging import configure_logging
 from .output.manifests import RunManifest, write_manifest
 from .output.supabase_writer import SupabaseAuth, SupabaseWriter
-from .quality.gates import (
-    check_referential_integrity,
-    compute_completeness,
-    compute_freshness_hours,
-)
+from .quality.gates import (check_referential_integrity, compute_completeness,
+                            compute_freshness_hours)
 
 
 def _load_yaml_config(path: Path) -> dict:

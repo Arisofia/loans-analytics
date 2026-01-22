@@ -2,11 +2,11 @@
   "run_id": "run_2466a2d12357",
   "sub_runs": {
     "pipeline": "run_2466a2d12357",
-    "ingestion": "ingest_dded49005268",
+    "ingestion": "ingest_9345ea57d75e",
     "transformation": "run_2466a2d12357",
     "calculation": "run_2466a2d12357"
   },
-  "generated_at": "2026-01-22T10:32:13.309453+00:00",
+  "generated_at": "2026-01-22T10:34:15.391290+00:00",
   "metrics": {
     "PAR30": {
       "value": 6.151138616080396,
@@ -18,7 +18,7 @@
       "validation_range": null,
       "rows_processed": 36,
       "null_count": 0,
-      "timestamp": "2026-01-22T10:32:13.150419+00:00",
+      "timestamp": "2026-01-22T10:34:15.176443+00:00",
       "dpd_30_60_sum": 2256358.25,
       "dpd_60_90_sum": 1337379.1300000001,
       "dpd_90_plus_sum": 2731284.4599999995,
@@ -34,7 +34,7 @@
       "validation_range": null,
       "rows_processed": 36,
       "null_count": 0,
-      "timestamp": "2026-01-22T10:32:13.150729+00:00",
+      "timestamp": "2026-01-22T10:34:15.176765+00:00",
       "dpd_sum": 2731284.4599999995,
       "total_receivable_sum": 102826846.13
     },
@@ -48,7 +48,7 @@
       "validation_range": null,
       "rows_processed": 36,
       "null_count": 0,
-      "timestamp": "2026-01-22T10:32:13.151143+00:00",
+      "timestamp": "2026-01-22T10:34:15.177103+00:00",
       "cash_sum": 0.0,
       "eligible_sum": 102826846.13
     },
@@ -63,7 +63,7 @@
       ],
       "rows_processed": 2,
       "null_count": 0,
-      "timestamp": "2026-01-22T10:32:13.151303+00:00",
+      "timestamp": "2026-01-22T10:34:15.177243+00:00",
       "par_30_input": 6.151138616080396,
       "collection_rate_input": 0.0,
       "par_component": 9.38488613839196,
@@ -81,33 +81,33 @@
       "deduped_count": 0,
       "audit_log": [
         {
-          "run_id": "ingest_dded49005268",
+          "run_id": "ingest_9345ea57d75e",
           "event": "looker_start",
           "status": "initiated",
-          "timestamp": "2026-01-22T10:32:13.087369+00:00",
+          "timestamp": "2026-01-22T10:34:15.112686+00:00",
           "loans_path": "data/raw/looker_exports/loan_par_balances.csv",
           "financials_path": "data/raw/financial_statements"
         },
         {
-          "run_id": "ingest_dded49005268",
+          "run_id": "ingest_9345ea57d75e",
           "event": "looker_financials",
           "status": "skipped",
-          "timestamp": "2026-01-22T10:32:13.115635+00:00",
+          "timestamp": "2026-01-22T10:34:15.139915+00:00",
           "reason": "no_files_found"
         },
         {
-          "run_id": "ingest_dded49005268",
+          "run_id": "ingest_9345ea57d75e",
           "event": "archive",
           "status": "success",
-          "timestamp": "2026-01-22T10:32:13.139466+00:00",
+          "timestamp": "2026-01-22T10:34:15.166105+00:00",
           "file": "data/raw/looker_exports/loan_par_balances.csv",
           "archived": "data/raw/warehouse/loan_par_balances.csv"
         },
         {
-          "run_id": "ingest_dded49005268",
+          "run_id": "ingest_9345ea57d75e",
           "event": "looker_complete",
           "status": "success",
-          "timestamp": "2026-01-22T10:32:13.140012+00:00",
+          "timestamp": "2026-01-22T10:34:15.166457+00:00",
           "row_count": 36
         }
       ],
@@ -120,14 +120,14 @@
         "run_id": "run_2466a2d12357",
         "step": "start",
         "status": "initiated",
-        "timestamp": "2026-01-22T10:32:13.143021+00:00",
+        "timestamp": "2026-01-22T10:34:15.168710+00:00",
         "input_rows": 36
       },
       {
         "run_id": "run_2466a2d12357",
         "step": "normalization",
         "status": "success",
-        "timestamp": "2026-01-22T10:32:13.143827+00:00",
+        "timestamp": "2026-01-22T10:34:15.169468+00:00",
         "columns": [
           "loan_id",
           "total_receivable_usd",
@@ -146,26 +146,26 @@
         "run_id": "run_2466a2d12357",
         "step": "null_handling",
         "status": "success",
-        "timestamp": "2026-01-22T10:32:13.144682+00:00"
+        "timestamp": "2026-01-22T10:34:15.170317+00:00"
       },
       {
         "run_id": "run_2466a2d12357",
         "step": "outlier_detection",
         "status": "clean",
-        "timestamp": "2026-01-22T10:32:13.146509+00:00"
+        "timestamp": "2026-01-22T10:34:15.172184+00:00"
       },
       {
         "run_id": "run_2466a2d12357",
         "step": "pii_masking",
         "status": "completed",
-        "timestamp": "2026-01-22T10:32:13.146753+00:00",
+        "timestamp": "2026-01-22T10:34:15.172498+00:00",
         "masked_columns": []
       },
       {
         "run_id": "run_2466a2d12357",
         "step": "lineage",
         "status": "captured",
-        "timestamp": "2026-01-22T10:32:13.148081+00:00",
+        "timestamp": "2026-01-22T10:34:15.173951+00:00",
         "input_hash": "6a2a9528ba240a89880ec935200bf22a18b71765868971e6ebc89096fbc2c315",
         "output_hash": "6a2a9528ba240a89880ec935200bf22a18b71765868971e6ebc89096fbc2c315"
       },
@@ -173,23 +173,23 @@
         "run_id": "run_2466a2d12357",
         "step": "quality_checks",
         "status": "completed",
-        "timestamp": "2026-01-22T10:32:13.149256+00:00",
+        "timestamp": "2026-01-22T10:34:15.175053+00:00",
         "checks": 19
       },
       {
         "run_id": "run_2466a2d12357",
         "step": "complete",
         "status": "success",
-        "timestamp": "2026-01-22T10:32:13.149392+00:00",
+        "timestamp": "2026-01-22T10:34:15.175191+00:00",
         "output_rows": 36
       }
     ],
     "calculation_audit": [
       {
-        "run_id": "kpi_20260122_113213",
+        "run_id": "kpi_20260122_113415",
         "event": "calculate_all",
         "status": "started",
-        "timestamp": "2026-01-22T10:32:13.151425+00:00",
+        "timestamp": "2026-01-22T10:34:15.177368+00:00",
         "actor": "unified_pipeline",
         "action": "batch_calc",
         "kpi_count": 3.0,
@@ -197,10 +197,10 @@
         "value": NaN
       },
       {
-        "run_id": "kpi_20260122_113213",
+        "run_id": "kpi_20260122_113415",
         "event": "kpi_calculated",
         "status": "success",
-        "timestamp": "2026-01-22T10:32:13.151876+00:00",
+        "timestamp": "2026-01-22T10:34:15.178029+00:00",
         "actor": "unified_pipeline",
         "action": "batch_calc",
         "kpi_count": NaN,
@@ -208,10 +208,10 @@
         "value": 6.151138616080396
       },
       {
-        "run_id": "kpi_20260122_113213",
+        "run_id": "kpi_20260122_113415",
         "event": "kpi_calculated",
         "status": "success",
-        "timestamp": "2026-01-22T10:32:13.152367+00:00",
+        "timestamp": "2026-01-22T10:34:15.178381+00:00",
         "actor": "unified_pipeline",
         "action": "batch_calc",
         "kpi_count": NaN,
@@ -219,10 +219,10 @@
         "value": 2.656197834315508
       },
       {
-        "run_id": "kpi_20260122_113213",
+        "run_id": "kpi_20260122_113415",
         "event": "kpi_calculated",
         "status": "success",
-        "timestamp": "2026-01-22T10:32:13.152691+00:00",
+        "timestamp": "2026-01-22T10:34:15.178716+00:00",
         "actor": "unified_pipeline",
         "action": "batch_calc",
         "kpi_count": NaN,
@@ -230,10 +230,10 @@
         "value": 0.0
       },
       {
-        "run_id": "kpi_20260122_113213",
+        "run_id": "kpi_20260122_113415",
         "event": "composite_kpi_calculated",
         "status": "success",
-        "timestamp": "2026-01-22T10:32:13.152819+00:00",
+        "timestamp": "2026-01-22T10:34:15.178854+00:00",
         "actor": "unified_pipeline",
         "action": "batch_calc",
         "kpi_count": NaN,
@@ -241,10 +241,10 @@
         "value": NaN
       },
       {
-        "run_id": "kpi_20260122_113213",
+        "run_id": "kpi_20260122_113415",
         "event": "calculate_all",
         "status": "completed",
-        "timestamp": "2026-01-22T10:32:13.152936+00:00",
+        "timestamp": "2026-01-22T10:34:15.178975+00:00",
         "actor": "unified_pipeline",
         "action": "batch_calc",
         "kpi_count": 4.0,
@@ -252,7 +252,18 @@
         "value": NaN
       }
     ],
-    "anomalies": {},
+    "anomalies": {
+      "PAR30": {
+        "previous": 3.0,
+        "current": 6.151138616080396,
+        "change_pct": 1.0504
+      },
+      "PAR90": {
+        "previous": 1.0,
+        "current": 2.656197834315508,
+        "change_pct": 1.6562
+      }
+    },
     "context": {
       "user": "system",
       "action": "manual"
@@ -269,14 +280,14 @@
     "discounted_balance_usd_non_negative": true,
     "cash_available_usd_non_negative": true,
     "measurement_date_iso8601": true,
-    "dpd_0_7_usd_no_nulls": true,
-    "dpd_30_60_usd_no_nulls": true,
-    "dpd_90_plus_usd_no_nulls": true,
-    "cash_available_usd_no_nulls": true,
-    "dpd_60_90_usd_no_nulls": true,
     "dpd_7_30_usd_no_nulls": true,
-    "total_eligible_usd_no_nulls": true,
+    "dpd_90_plus_usd_no_nulls": true,
     "discounted_balance_usd_no_nulls": true,
+    "total_eligible_usd_no_nulls": true,
+    "dpd_30_60_usd_no_nulls": true,
+    "dpd_60_90_usd_no_nulls": true,
+    "dpd_0_7_usd_no_nulls": true,
+    "cash_available_usd_no_nulls": true,
     "total_receivable_usd_no_nulls": true
   },
   "files": {
@@ -291,9 +302,9 @@
   },
   "compliance_report": "logs/runs/run_2466a2d12357/run_2466a2d12357_compliance.json",
   "file_hashes": {
-    "parquet": "3668303890873382cc34194e3198d5447f042e057cb3382bb3957329cd419568",
-    "csv": "c8e861b432bebd8142d0123ebadf77f549832b21ee12f4a63ca391532b887585",
-    "metrics_json": "f5a46935f7fcdb864b706ada3a58c13e45ffcc1b1b250b0f650dfea3759733bf",
+    "parquet": "0746a1cac2b560a6d0836b1032ffe009194ff671c044161d0b1097dc5a996efb",
+    "csv": "ad1dca3081b712666bf634321266c4e632cbb6cc792ce03a5dfd6cd48ceb88e5",
+    "metrics_json": "fd66ec60587ededd851f1d3ac2e3bc127afc242b8f2d0d4b3f0981a5fc6c8e37",
     "timeseries_daily": "29882dc36bf6eeb7d643b8880d9e7a8444596a16b98d25eb3370295a7170fa8a",
     "timeseries_weekly": "7b65fe0e68c24b3688fad63d73cfcd6f535e68b7b47cf8bf51ded79318bef7fa",
     "timeseries_monthly": "9b2e9d1c281f16740a64bd7e96489889c4c6def80964a7b384ea94b65f74ed39"

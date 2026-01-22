@@ -29,6 +29,7 @@
 - [x] **Innovation**: Add generative AI module for natural language KPI queries.
 
 ### [ ] Step: Verification and Finalization Phase
+<!-- chat-id: 9f368d9c-48f4-4b11-b1ed-44c475734dd0 -->
 - [ ] Run full CI/CD simulation.
 - [ ] Perform end-to-end testing.
 - [ ] Create detailed changelog and final report.

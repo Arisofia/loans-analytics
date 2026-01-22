@@ -1,11 +1,11 @@
 {
   "status": "success",
   "run_id": "run_2466a2d12357",
-  "started_at": "2026-01-22T10:32:13.087270+00:00",
-  "completed_at": "2026-01-22T10:32:13.310033+00:00",
+  "started_at": "2026-01-22T10:34:15.112610+00:00",
+  "completed_at": "2026-01-22T10:34:15.391888+00:00",
   "phases": {
     "ingestion": {
-      "run_id": "ingest_dded49005268",
+      "run_id": "ingest_9345ea57d75e",
       "rows": 36
     },
     "transformation": {
@@ -21,7 +21,18 @@
         "CollectionRate",
         "PortfolioHealth"
       ],
-      "anomalies": {}
+      "anomalies": {
+        "PAR30": {
+          "previous": 3.0,
+          "current": 6.151138616080396,
+          "change_pct": 1.0504
+        },
+        "PAR90": {
+          "previous": 1.0,
+          "current": 2.656197834315508,
+          "change_pct": 1.6562
+        }
+      }
     },
     "output": {
       "manifest": "logs/runs/run_2466a2d12357/run_2466a2d12357_manifest.json",
