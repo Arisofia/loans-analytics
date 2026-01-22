@@ -10,7 +10,7 @@ This document provides deployment instructions, operational procedures, and trou
 
 2. **Transformation Layer**: KPI calculations (BigQuery + Python)
 3. **Validation Layer**: Reconciliation & drift detection
-5. **Agent Orchestration**: Codex, SonarQube, CodeRabbit automation
+4. **Agent Orchestration**: Codex, SonarQube, CodeRabbit automation
 
 ### 7 Departmental Intelligence Stacks
 
@@ -135,7 +135,6 @@ Compliance Breach: CRITICAL → All channels + escalation
 ## Troubleshooting
 
 ### Data Ingestion Issues
-
 
 - Check: BigQuery connection and quota
 - Action: Retry with exponential backoff (max 3 attempts)

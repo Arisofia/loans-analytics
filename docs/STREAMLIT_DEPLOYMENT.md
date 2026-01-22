@@ -2,7 +2,6 @@
 
 ## Overview
 
-
 **Important**: This workspace runs on Debian GNU/Linux 12 (bookworm) with Node.js 20.x and npm as the canonical package manager.
 
 ## Local Development
@@ -214,7 +213,6 @@ docker-compose -f docker-compose.streamlit.yml up -d
 
 ## Features
 
-
 - **Real-time file processing** from configured Drive folder
 - **Format support**: Excel (.xlsx), Google Sheets, CSV
 - **Automatic data normalization**:
@@ -317,7 +315,6 @@ echo $SUPABASE_SERVICE_KEY
 - Ensure Supabase project is active (not paused)
 - Verify network connectivity to Supabase
 
-
 - Verify service account JSON is valid
 - Check that service account email has folder access
 - Verify service account has "Editor" or "Viewer" role
@@ -330,7 +327,6 @@ echo $SUPABASE_SERVICE_KEY
 - Use deployment platform secrets (Streamlit Cloud, Railway, etc.)
 - Never commit secrets to version control
 - Use environment variables in all deployment scenarios
-
 
 - Use service account (not personal account)
 - Grant read-only access to specific folder only
@@ -354,11 +350,11 @@ echo $SUPABASE_SERVICE_KEY
 
 ## Cost Estimation
 
-| Service              | Free Tier | Paid Tier    | Notes                   |
-| -------------------- | --------- | ------------ | ----------------------- |
-| Streamlit Cloud      | 1 app     | $5/app/month | Verified email required |
-| Supabase             | 500MB DB  | $25+/month   | Scales with usage       |
-| Railway              | None      | $5+/month    | Pay-as-you-go available |
+| Service         | Free Tier | Paid Tier    | Notes                   |
+| --------------- | --------- | ------------ | ----------------------- |
+| Streamlit Cloud | 1 app     | $5/app/month | Verified email required |
+| Supabase        | 500MB DB  | $25+/month   | Scales with usage       |
+| Railway         | None      | $5+/month    | Pay-as-you-go available |
 
 ## Integration with Next.js Application
 

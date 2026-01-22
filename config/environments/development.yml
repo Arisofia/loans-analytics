@@ -33,7 +33,7 @@ integrations:
 agents:
   kpi_analytics:
     refresh_schedule:
-      continuous_monitoring: "*/5 * * * *"
+      continuous_monitoring: '*/5 * * * *'
   risk_analysis:
     refresh_schedule:
-      continuous_monitoring: "*/10 * * * *"
+      continuous_monitoring: '*/10 * * * *'

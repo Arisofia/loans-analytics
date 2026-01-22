@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths:
-      - "apps/**"
-      - "src/**"
-      - "streamlit_app.py"
-      - "requirements*.txt"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/snyk.yml"
+      - 'apps/**'
+      - 'src/**'
+      - 'streamlit_app.py'
+      - 'requirements*.txt'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/snyk.yml'
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -26,7 +26,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
       - name: Install Snyk CLI
         if: ${{ secrets.SNYK_TOKEN != '' }}
         run: npm install -g snyk

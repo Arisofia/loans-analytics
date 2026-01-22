@@ -39,23 +39,23 @@ paths:
       tags:
         - Drilldowns
       responses:
-        "200":
+        '200':
           description: Status of all drilldown modules
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DrilldownStatusResponse"
+                $ref: '#/components/schemas/DrilldownStatusResponse'
               example:
                 /delinquency: ok
                 /roll-rate: ok
                 /collections: ok
                 /ingestion-errors: ok
-        "500":
+        '500':
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /auth/signout:
     post:
@@ -67,19 +67,19 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "302":
+        '302':
           description: Redirect to login page after successful sign out
           headers:
             Location:
               schema:
                 type: string
               description: Redirect URL to login page
-        "401":
+        '401':
           description: Unauthorized - no active session
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /auth/confirm:
     get:
@@ -115,19 +115,19 @@ paths:
             type: string
             default: /account
       responses:
-        "302":
+        '302':
           description: Redirect to account page or specified next URL
           headers:
             Location:
               schema:
                 type: string
               description: Redirect URL after confirmation
-        "400":
+        '400':
           description: Invalid or expired token
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /analytics/kpis:
     post:
@@ -143,26 +143,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoanPortfolioRequest"
+              $ref: '#/components/schemas/LoanPortfolioRequest'
       responses:
-        "200":
+        '200':
           description: Successfully calculated KPIs
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/KpiResponse"
-        "400":
+                $ref: '#/components/schemas/KpiResponse'
+        '400':
           description: Invalid request - missing required fields or invalid data
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "422":
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
           description: Unprocessable entity - data validation failed
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ValidationErrorResponse"
+                $ref: '#/components/schemas/ValidationErrorResponse'
 
   /analytics/kpis/par30:
     post:
@@ -178,20 +178,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoanPortfolioRequest"
+              $ref: '#/components/schemas/LoanPortfolioRequest'
       responses:
-        "200":
+        '200':
           description: PAR30 calculation result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/KpiSingleResponse"
-        "400":
+                $ref: '#/components/schemas/KpiSingleResponse'
+        '400':
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /analytics/kpis/par90:
     post:
@@ -207,20 +207,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoanPortfolioRequest"
+              $ref: '#/components/schemas/LoanPortfolioRequest'
       responses:
-        "200":
+        '200':
           description: PAR90 calculation result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/KpiSingleResponse"
-        "400":
+                $ref: '#/components/schemas/KpiSingleResponse'
+        '400':
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /analytics/kpis/collection-rate:
     post:
@@ -236,20 +236,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoanPortfolioRequest"
+              $ref: '#/components/schemas/LoanPortfolioRequest'
       responses:
-        "200":
+        '200':
           description: Collection rate calculation result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/KpiSingleResponse"
-        "400":
+                $ref: '#/components/schemas/KpiSingleResponse'
+        '400':
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /analytics/kpis/portfolio-health:
     post:
@@ -264,20 +264,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoanPortfolioRequest"
+              $ref: '#/components/schemas/LoanPortfolioRequest'
       responses:
-        "200":
+        '200':
           description: Portfolio health calculation result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/KpiSingleResponse"
-        "400":
+                $ref: '#/components/schemas/KpiSingleResponse'
+        '400':
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /analytics/kpis/ltv:
     post:
@@ -292,20 +292,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoanPortfolioRequest"
+              $ref: '#/components/schemas/LoanPortfolioRequest'
       responses:
-        "200":
+        '200':
           description: LTV calculation result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/KpiSingleResponse"
-        "400":
+                $ref: '#/components/schemas/KpiSingleResponse'
+        '400':
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /analytics/kpis/dti:
     post:
@@ -320,20 +320,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoanPortfolioRequest"
+              $ref: '#/components/schemas/LoanPortfolioRequest'
       responses:
-        "200":
+        '200':
           description: DTI calculation result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/KpiSingleResponse"
-        "400":
+                $ref: '#/components/schemas/KpiSingleResponse'
+        '400':
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /analytics/kpis/portfolio-yield:
     post:
@@ -348,20 +348,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoanPortfolioRequest"
+              $ref: '#/components/schemas/LoanPortfolioRequest'
       responses:
-        "200":
+        '200':
           description: Portfolio yield calculation result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/KpiSingleResponse"
-        "400":
+                $ref: '#/components/schemas/KpiSingleResponse'
+        '400':
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /analytics/risk-alerts:
     post:
@@ -378,7 +378,7 @@ paths:
           application/json:
             schema:
               allOf:
-                - $ref: "#/components/schemas/LoanPortfolioRequest"
+                - $ref: '#/components/schemas/LoanPortfolioRequest'
                 - type: object
                   properties:
                     ltv_threshold:
@@ -392,18 +392,18 @@ paths:
                       default: 50.0
                       description: DTI threshold percentage for high-risk classification
       responses:
-        "200":
+        '200':
           description: List of high-risk loans
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RiskAlertsResponse"
-        "400":
+                $ref: '#/components/schemas/RiskAlertsResponse'
+        '400':
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /analytics/full-analysis:
     post:
@@ -419,20 +419,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoanPortfolioRequest"
+              $ref: '#/components/schemas/LoanPortfolioRequest'
       responses:
-        "200":
+        '200':
           description: Complete portfolio analysis results
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FullAnalysisResponse"
-        "400":
+                $ref: '#/components/schemas/FullAnalysisResponse'
+        '400':
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /data-quality/profile:
     post:
@@ -448,20 +448,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoanPortfolioRequest"
+              $ref: '#/components/schemas/LoanPortfolioRequest'
       responses:
-        "200":
+        '200':
           description: Data quality profile
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DataQualityResponse"
-        "400":
+                $ref: '#/components/schemas/DataQualityResponse'
+        '400':
           description: Invalid request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: '#/components/schemas/ErrorResponse'
 
   /data-quality/validate:
     post:
@@ -477,20 +477,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoanPortfolioRequest"
+              $ref: '#/components/schemas/LoanPortfolioRequest'
       responses:
-        "200":
+        '200':
           description: Validation passed
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ValidationResponse"
-        "422":
+                $ref: '#/components/schemas/ValidationResponse'
+        '422':
           description: Validation failed
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ValidationErrorResponse"
+                $ref: '#/components/schemas/ValidationErrorResponse'
 
 components:
   securitySchemes:
@@ -578,7 +578,7 @@ components:
           type: array
           minItems: 1
           items:
-            $ref: "#/components/schemas/LoanRecord"
+            $ref: '#/components/schemas/LoanRecord'
           description: Array of loan records for analysis
 
     KpiContext:
@@ -608,35 +608,35 @@ components:
           format: float
           description: Calculated KPI value
         context:
-          $ref: "#/components/schemas/KpiContext"
+          $ref: '#/components/schemas/KpiContext'
       example:
         value: 5.25
         context:
           metric: PAR30
-          timestamp: "2026-01-02T10:30:00Z"
+          timestamp: '2026-01-02T10:30:00Z'
           sample_size: 1000
 
     KpiResponse:
       type: object
       properties:
         PAR30:
-          $ref: "#/components/schemas/KpiSingleResponse"
+          $ref: '#/components/schemas/KpiSingleResponse'
         PAR90:
-          $ref: "#/components/schemas/KpiSingleResponse"
+          $ref: '#/components/schemas/KpiSingleResponse'
         CollectionRate:
-          $ref: "#/components/schemas/KpiSingleResponse"
+          $ref: '#/components/schemas/KpiSingleResponse'
         PortfolioHealth:
-          $ref: "#/components/schemas/KpiSingleResponse"
+          $ref: '#/components/schemas/KpiSingleResponse'
         LTV:
-          $ref: "#/components/schemas/KpiSingleResponse"
+          $ref: '#/components/schemas/KpiSingleResponse'
         DTI:
-          $ref: "#/components/schemas/KpiSingleResponse"
+          $ref: '#/components/schemas/KpiSingleResponse'
         PortfolioYield:
-          $ref: "#/components/schemas/KpiSingleResponse"
+          $ref: '#/components/schemas/KpiSingleResponse'
         audit_trail:
           type: array
           items:
-            $ref: "#/components/schemas/AuditEntry"
+            $ref: '#/components/schemas/AuditEntry'
 
     AuditEntry:
       type: object
@@ -699,7 +699,7 @@ components:
         high_risk_loans:
           type: array
           items:
-            $ref: "#/components/schemas/RiskLoan"
+            $ref: '#/components/schemas/RiskLoan'
 
     FullAnalysisResponse:
       type: object

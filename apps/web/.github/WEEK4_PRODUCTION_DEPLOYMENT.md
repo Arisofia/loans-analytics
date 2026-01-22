@@ -142,7 +142,6 @@ cat RELEASE_NOTES_v1.0.0.md
 
 ### 1.3 Notify Team
 
-
 **#prod-alerts**
 
 ```
@@ -429,7 +428,6 @@ Team Status
 
 ---
 
-
 ### 6.1 Deployment Success Notification
 
 Post in **#prod-alerts**:
@@ -675,7 +673,6 @@ Feedback:
 
 ## Team Feedback Collection (End of Week 4)
 
-
 Post in **#dev-help**:
 
 ```
@@ -860,15 +857,14 @@ Based on feedback:
 4. If persists, execute rollback
 5. Investigate root cause
 
-
 **Symptoms**: No messages in #prod-alerts
 
 **Steps**:
 
 1. Manually post update in #prod-alerts
 2. Check webhook URLs in GitHub secrets
-4. Test webhook manually
-5. Fix secrets and redeploy
+3. Test webhook manually
+4. Fix secrets and redeploy
 
 ---
 

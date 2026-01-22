@@ -203,12 +203,12 @@ def my_business_logic():
 
 ### Environment Variables
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318` | OTLP exporter endpoint |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | (unset) | Azure App Insights connection |
-| `LOG_LEVEL` | `INFO` | Logging verbosity |
-| `OTEL_SDK_DISABLED` | `false` | Disable tracing globally |
+| Variable                                | Default                 | Purpose                       |
+| --------------------------------------- | ----------------------- | ----------------------------- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`           | `http://localhost:4318` | OTLP exporter endpoint        |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | (unset)                 | Azure App Insights connection |
+| `LOG_LEVEL`                             | `INFO`                  | Logging verbosity             |
+| `OTEL_SDK_DISABLED`                     | `false`                 | Disable tracing globally      |
 
 ### Code Configuration
 
@@ -290,7 +290,6 @@ If HTTP or database calls aren't traced:
    ```
 
 ## Examples
-
 
 ```python
 from src.tracing_setup import get_tracer

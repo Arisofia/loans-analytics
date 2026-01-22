@@ -43,7 +43,6 @@
 
 **Jobs**:
 
-
 #### Compliance Checks
 
 - **CodeRabbit automated review** (assertive profile, strict mode): Provides AI-driven code review for compliance, code quality, and business logic.

@@ -22,8 +22,8 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: "pip"
+          python-version: '3.11'
+          cache: 'pip'
 
       - name: Install python deps
         run: |
@@ -50,8 +50,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install deps
         working-directory: apps/web
@@ -79,7 +79,7 @@ jobs:
       - name: Run Playwright tests
         working-directory: apps/web
         env:
-          CI: "true"
+          CI: 'true'
         run: npx playwright test
 
       - name: Upload Playwright report

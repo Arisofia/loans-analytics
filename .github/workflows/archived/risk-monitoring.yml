@@ -1,52 +1,52 @@
 name: Risk Monitoring
 on:
-    schedule:
-        - cron: "0 6 * * *" # 7:00 AM CET daily
-    workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * *' # 7:00 AM CET daily
+  workflow_dispatch:
 
 jobs:
-    risk-monitoring:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Check secrets availability
-              id: check-secrets
-              env:
-                OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-                SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-              run: |
-                  if [ -n "$OPENAI_API_KEY" ] && [ -n "$SUPABASE_SERVICE_ROLE" ]; then
-                    echo "secrets_available=true" >> $GITHUB_OUTPUT
-                  else
-                    echo "secrets_available=false" >> $GITHUB_OUTPUT
-                    echo "::warning::Required secrets not configured - skipping risk monitoring"
-                  fi
+  risk-monitoring:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check secrets availability
+        id: check-secrets
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+        run: |
+          if [ -n "$OPENAI_API_KEY" ] && [ -n "$SUPABASE_SERVICE_ROLE" ]; then
+            echo "secrets_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "secrets_available=false" >> $GITHUB_OUTPUT
+            echo "::warning::Required secrets not configured - skipping risk monitoring"
+          fi
 
-            - name: Checkout Repository
-              if: steps.check-secrets.outputs.secrets_available == true
-              uses: actions/checkout@v4
+      - name: Checkout Repository
+        if: steps.check-secrets.outputs.secrets_available == true
+        uses: actions/checkout@v4
 
-            - name: Setup Python Environment
-              if: steps.check-secrets.outputs.secrets_available == true
-              uses: actions/setup-python@v5
-              with:
-                  python-version: "3.11"
+      - name: Setup Python Environment
+        if: steps.check-secrets.outputs.secrets_available == true
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-            - name: Install Dependencies
-              if: steps.check-secrets.outputs.secrets_available == true
-              run: |
-                  pip install -r requirements.txt
+      - name: Install Dependencies
+        if: steps.check-secrets.outputs.secrets_available == true
+        run: |
+          pip install -r requirements.txt
 
-            - name: Run Risk Assessment
-              if: steps.check-secrets.outputs.secrets_available == true && hashFiles('scripts/risk_monitoring.py') != ''
-              env:
-                OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-                SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-              run: |
-                  python scripts/risk_monitoring.py
+      - name: Run Risk Assessment
+        if: steps.check-secrets.outputs.secrets_available == true && hashFiles('scripts/risk_monitoring.py') != ''
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+        run: |
+          python scripts/risk_monitoring.py
 
-            - name: Post to Streamlit
-              if: steps.check-secrets.outputs.secrets_available == true && hashFiles('scripts/post_to_streamlit.py') != ''
-              env:
-                SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-              run: |
-                  python scripts/post_to_streamlit.py
+      - name: Post to Streamlit
+        if: steps.check-secrets.outputs.secrets_available == true && hashFiles('scripts/post_to_streamlit.py') != ''
+        env:
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+        run: |
+          python scripts/post_to_streamlit.py

@@ -251,7 +251,7 @@ Post comment on GitHub Actions:
 When validation is complete:
 
 1. Post ✅ approval in GitHub Actions
-3. Production team proceeds with deployment tag
+2. Production team proceeds with deployment tag
 
 ---
 
@@ -321,7 +321,6 @@ Workflow automatically runs health checks. If they pass:
 
 **6. Notify Team**
 
-
 ```
 🚀 Production Deployment Complete
 
@@ -373,7 +372,6 @@ Expected timeline:
 
 **3. Post-Rollback**
 
-
 ```
 🔄 Emergency Rollback Completed
 
@@ -421,7 +419,6 @@ AZURE_STATIC_WEB_APPS_TOKEN_PROD
 3. Click "New repository secret"
 4. Enter name and value
 5. Click "Add secret"
-
 
 #### Environment Configuration
 
@@ -611,8 +608,8 @@ git push origin develop
 **Immediate Actions** (< 5 min):
 
 1. Create GitHub issue: [CRITICAL] Issue title
-3. Trigger rollback if needed (see Scenario 5)
-4. Page on-call engineer
+2. Trigger rollback if needed (see Scenario 5)
+3. Page on-call engineer
 
 **Follow-up** (< 30 min):
 
@@ -630,8 +627,8 @@ git push origin develop
 **Immediate Actions** (< 15 min):
 
 1. Create GitHub issue with reproduction steps
-3. Assess if rollback needed
-4. Notify team lead
+2. Assess if rollback needed
+3. Notify team lead
 
 **Follow-up** (< 2 hours):
 
@@ -732,8 +729,8 @@ git push origin develop
 **Questions?**
 
 1. Check this guide and related docs
-3. Create GitHub issue with `question` label
-4. Contact team lead
+2. Create GitHub issue with `question` label
+3. Contact team lead
 
 **Documentation**
 

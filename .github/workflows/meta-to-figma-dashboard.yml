@@ -5,7 +5,6 @@ on:
     - cron: '0 6 * * *' # every day at 6am UTC
 jobs:
   meta-to-figma:
-
     runs-on: ubuntu-latest
     env:
       FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}

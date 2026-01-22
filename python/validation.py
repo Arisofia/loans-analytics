@@ -23,9 +23,7 @@ def _missing_columns(df: pd.DataFrame, columns: List[str]) -> List[str]:
     return [col for col in columns if col not in df.columns]
 
 
-def _validate_numeric_column(
-    df: pd.DataFrame, column: str, context_label: str
-) -> pd.Series:
+def _validate_numeric_column(df: pd.DataFrame, column: str, context_label: str) -> pd.Series:
     if column not in df.columns:
         raise ValueError(f"{context_label} missing required numeric column: {column}")
 
@@ -46,12 +44,7 @@ def _default_percentage_columns(df: pd.DataFrame) -> List[str]:
     return [
         c
         for c in df.columns
-        if (
-            ("percent" in c)
-            or ("rate" in c)
-            or c.endswith("_pct")
-            or c.endswith("_rate")
-        )
+        if (("percent" in c) or ("rate" in c) or c.endswith("_pct") or c.endswith("_rate"))
         and c not in exempt_columns
     ]
 
@@ -180,9 +173,7 @@ def safe_numeric_polars(df: pl.DataFrame, columns: List[str]) -> pl.DataFrame:
         if col in df.columns and df.schema[col] == pl.String:
             # Vectorized cleaning using Polars regex
             df = df.with_columns(
-                pl.col(col)
-                .str.replace_all(r"[$€£¥₽₡,]", "")
-                .cast(pl.Float64, strict=False)
+                pl.col(col).str.replace_all(r"[$€£¥₽₡,]", "").cast(pl.Float64, strict=False)
             )
     return df
 
@@ -240,9 +231,7 @@ def validate_iso8601_dates(
     """
     if columns is None:
         # Heuristic: columns with 'date' in the name
-        columns = [
-            c for c in df.columns if "date" in c.lower() or c.lower().endswith("_at")
-        ]
+        columns = [c for c in df.columns if "date" in c.lower() or c.lower().endswith("_at")]
     validation: Dict[str, bool] = {}
     for col in columns:
         if col in df.columns:
@@ -262,9 +251,7 @@ def validate_monotonic_increasing(
     if columns is None:
         # Heuristic: columns with 'count', 'total', or 'cumulative' in the name
         columns = [
-            c
-            for c in df.columns
-            if any(x in c.lower() for x in ["count", "total", "cumulative"])
+            c for c in df.columns if any(x in c.lower() for x in ["count", "total", "cumulative"])
         ]
     validation: Dict[str, bool] = {}
     for col in columns:
@@ -274,6 +261,3 @@ def validate_monotonic_increasing(
             valid = series.is_monotonic_increasing
             validation[f"{col}_monotonic_increasing"] = valid
     return validation
-
-
-

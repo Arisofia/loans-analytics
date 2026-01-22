@@ -70,7 +70,7 @@
 ### Production Deployment
 
 - **File**: `deploy-production.yml`
-- **Trigger**: Git tag (v*.*.*)
+- **Trigger**: Git tag (v*.*.\*)
 - **Duration**: 5-10 minutes total
 - **Validation**: Manual approval gate + health checks
 - **Gates**: All quality checks + staging validation
@@ -135,8 +135,8 @@
 
 1. Go to DEPLOYMENT_COORDINATION.md
 2. Find appropriate severity level (P1/P2/P3)
-4. Include GitHub Actions link
-5. Follow up with root cause analysis
+3. Include GitHub Actions link
+4. Follow up with root cause analysis
 
 ---
 
@@ -275,7 +275,7 @@
 
 1. Start: QUICK_START.md
 2. Daily: TEAM_RUNBOOKS.md → "Frontend Developer"
-4. Reference: TEAM_RUNBOOKS.md → "Common Scenarios"
+3. Reference: TEAM_RUNBOOKS.md → "Common Scenarios"
 
 ### QA / Testing
 

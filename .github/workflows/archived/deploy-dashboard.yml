@@ -5,12 +5,12 @@ on:
     branches:
       - main
     paths:
-      - "streamlit_app.py"
-      - "src/**"
-      - "config/**"
-      - "requirements.txt"
-      - "startup.sh"
-      - ".github/workflows/deploy-dashboard.yml"
+      - 'streamlit_app.py'
+      - 'src/**'
+      - 'config/**'
+      - 'requirements.txt'
+      - 'startup.sh'
+      - '.github/workflows/deploy-dashboard.yml'
   workflow_dispatch:
 
 concurrency:
@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: '3.11'
   WEBAPP_NAME: abaco-analytics-dashboard
   RESOURCE_GROUP: AI-MultiAgent-Ecosystem-RG
   HEALTH_CHECK_PATH: /?page=health

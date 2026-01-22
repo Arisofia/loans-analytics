@@ -29,10 +29,10 @@
 
 ### Data Sources (Known)
 
-| Source             | Type         | Purpose                 | Integration              |
-| ------------------ | ------------ | ----------------------- | ------------------------ |
+| Source | Type | Purpose | Integration |
+| ------ | ---- | ------- | ----------- |
 
-| Manual CSV uploads | File uploads | Financial statements    | Via `data/archives/` folders  |
+| Manual CSV uploads | File uploads | Financial statements | Via `data/archives/` folders |
 
 ### Data Storage Layers (To Be Determined)
 
@@ -91,7 +91,6 @@ Startup Command: bash startup.sh
 ```
 
 **Environment Variables Configured**:
-
 
 - OPENAI_API_KEY ✅
 - SCM_DO_BUILD_DURING_DEPLOYMENT=1 ✅

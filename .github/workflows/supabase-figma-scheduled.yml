@@ -3,7 +3,7 @@ name: Supabase to Figma Integration
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "0 6 * * *" # Runs every day at 6:00 AM UTC
+    - cron: '0 6 * * *' # Runs every day at 6:00 AM UTC
 
 jobs:
   supabase-figma:
@@ -52,7 +52,7 @@ jobs:
         if: steps.check-secrets.outputs.secrets_available == 'true'
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install Python dependencies
         if: steps.check-secrets.outputs.secrets_available == 'true'

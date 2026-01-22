@@ -2,8 +2,8 @@
 
 Each KPI includes owner, agent, source, thresholds, drill-down, runbook, and alert channel.
 
-| KPI Name            | Definition                                        | Owner            | Agent         | Source                   | Thresholds                          | Drill-down                                    | Runbook                         | Alert channel               |
-| ------------------- | ------------------------------------------------- | ---------------- | ------------- | ------------------------ | ----------------------------------- | --------------------------------------------- | ------------------------------- | --------------------------- |
+| KPI Name | Definition | Owner | Agent | Source | Thresholds | Drill-down | Runbook | Alert channel |
+| -------- | ---------- | ----- | ----- | ------ | ---------- | ---------- | ------- | ------------- |
 
 ## Actionability rules
 

@@ -84,14 +84,14 @@ environment = Paths.get_environment()
 
 ### Environment Variables Supported
 
-| Variable                  | Default            | Purpose              |
-| ------------------------- | ------------------ | -------------------- |
-| `DATA_RAW_PATH`           | `./data/raw`       | Raw input data       |
-| `DATA_METRICS_PATH`       | `./data/metrics`   | Calculated KPIs      |
-| `CONFIG_PATH`             | `./config`         | Config files         |
-| `LOGS_PATH`               | `./logs`           | Application logs     |
-| `REPORTS_PATH`            | `./reports`        | Generated reports    |
-| `PYTHON_ENV` or `APP_ENV` | `development`      | Current environment  |
+| Variable                  | Default          | Purpose             |
+| ------------------------- | ---------------- | ------------------- |
+| `DATA_RAW_PATH`           | `./data/raw`     | Raw input data      |
+| `DATA_METRICS_PATH`       | `./data/metrics` | Calculated KPIs     |
+| `CONFIG_PATH`             | `./config`       | Config files        |
+| `LOGS_PATH`               | `./logs`         | Application logs    |
+| `REPORTS_PATH`            | `./reports`      | Generated reports   |
+| `PYTHON_ENV` or `APP_ENV` | `development`    | Current environment |
 
 ### Migration Plan
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import sys
 from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -11,13 +12,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.analytics.enterprise_analytics_engine_helpers import (
-    LoanPosition,
-    PortfolioKPIs,
-    calculate_monthly_payment,
-    calculate_portfolio_kpis,
-    expected_loss,
-    portfolio_interest_and_risk,
-)
+    LoanPosition, PortfolioKPIs, calculate_monthly_payment,
+    calculate_portfolio_kpis, expected_loss, portfolio_interest_and_risk)
 
 
 def test_monthly_payment_matches_finance_formula():
@@ -164,4 +160,3 @@ def test_portfolio_kpis_surfaces_weighted_metrics():
     assert kpis.risk_adjusted_return == pytest.approx(
         (expected_interest - expected_loss_value) / expected_exposure
     )
-

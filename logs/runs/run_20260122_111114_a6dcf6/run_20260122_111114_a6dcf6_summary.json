@@ -15,12 +15,7 @@
     },
     "calculation": {
       "run_id": "run_20260122_111114_a6dcf6",
-      "metrics": [
-        "PAR30",
-        "PAR90",
-        "CollectionRate",
-        "PortfolioHealth"
-      ],
+      "metrics": ["PAR30", "PAR90", "CollectionRate", "PortfolioHealth"],
       "anomalies": {}
     },
     "output": {

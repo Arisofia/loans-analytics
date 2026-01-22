@@ -5,20 +5,20 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - "src/**"
-      - "apps/**"
-      - "packages/**"
-      - "streamlit_app.py"
-      - "requirements*.txt"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "tsconfig.json"
-      - "next.config.js"
-      - ".github/workflows/codeql.yml"
+      - 'src/**'
+      - 'apps/**'
+      - 'packages/**'
+      - 'streamlit_app.py'
+      - 'requirements*.txt'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'tsconfig.json'
+      - 'next.config.js'
+      - '.github/workflows/codeql.yml'
   pull_request:
-    branches: ["main"]
+    branches: ['main']
   schedule:
-    - cron: "0 3 * * 1"
+    - cron: '0 3 * * 1'
 
 concurrency:
   group: codeql-${{ github.workflow }}-${{ github.ref }}
@@ -40,7 +40,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["javascript", "python"]
+        language: ['javascript', 'python']
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -55,7 +55,7 @@ jobs:
       - name: Perform CodeQL Analysis (no upload while default setup is active)
         uses: github/codeql-action/analyze@v3.31.5
         with:
-          category: "/language:${{ matrix.language }}"
+          category: '/language:${{ matrix.language }}'
           # CodeQL upload is disabled while the default setup is active.
           # This means analysis results will NOT be uploaded to GitHub Security and will not appear in the Security tab.
           # Enable upload (set to true or remove this line) when you want results to be visible in GitHub Security,

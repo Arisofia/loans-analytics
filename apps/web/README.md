@@ -20,9 +20,9 @@ This is the web application for the Abaco Loans Analytics project, built with Ne
 
 3. **Run the development server:**
 
-    ```bash
-    npm run dev
-    ```
+   ```bash
+   npm run dev
+   ```
 
    Visit `http://localhost:3000` to see the app.
 

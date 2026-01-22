@@ -8,8 +8,8 @@ on:
     branches:
       - main
     paths:
-      - "apps/web/**"
-      - ".github/workflows/azure-static-web-apps-yellow-cliff-03015b20f.yml"
+      - 'apps/web/**'
+      - '.github/workflows/azure-static-web-apps-yellow-cliff-03015b20f.yml'
   workflow_dispatch:
 
   # View Visual
@@ -31,7 +31,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
           cache: pnpm
           cache-dependency-path: apps/web/pnpm-lock.yaml
 
@@ -61,10 +61,10 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
-          app_location: "apps/web"
-          output_location: ".next"
-          api_location: ""
-          app_build_command: "pnpm -C apps/web build"
+          app_location: 'apps/web'
+          output_location: '.next'
+          api_location: ''
+          app_build_command: 'pnpm -C apps/web build'
 
       - name: Skip deploy (missing token)
         if: steps.swa_token.outputs.present != 'true'

@@ -3,12 +3,14 @@
 This document captures the step-by-step commands and verification steps to put the secure Next.js deployment "en vivo" (Linux/Docker-based environment).
 
 ## Prerequisites
+
 - Linux (Ubuntu/Debian preferred)
 - Docker & Docker Compose
 - Git
 - Repository cloned locally and updated
 
 ## Phase 1: Repo & Security
+
 1. Clone repo and checkout branch
 
 ```bash
@@ -25,9 +27,11 @@ gh secret set MIDDLEWARE_SHARED_SECRET -R <org/repo> --body "$MIDDLEWARE_SHARED_
 ```
 
 ## Phase 2: Nginx configuration
+
 - The config at `nginx-conf/default.conf` strips the exploit header and logs request fields for monitoring.
 
 ## Phase 3: Build & Run (Docker Compose)
+
 1. Build and start
 
 ```bash
@@ -42,6 +46,7 @@ docker compose ps
 ```
 
 ## Phase 4: Verify the Fix
+
 1. Attempt the exploit (local)
 
 ```bash
@@ -60,9 +65,11 @@ docker logs nextjs_secure --tail 200
 Look for `$http_x_middleware_subrequest` values in Nginx logs and absence in app logs.
 
 ## Phase 5: Observability
+
 - Forward Nginx logs into your observability pipeline (e.g., Grafana Alloy, Datadog). Include the `x_middleware_subrequest` field in the log_line for security metrics.
 
 ## Phase 6: Post-Deployment
+
 - Rotate `MIDDLEWARE_SHARED_SECRET` periodically, and document rotation steps in `docs/mitigations/rotate_secrets.md`.
 - Run the `Deploy verification` workflow and attach the run logs to the PR.
 

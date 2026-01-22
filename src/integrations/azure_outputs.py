@@ -18,7 +18,8 @@ from urllib.parse import urlparse
 logger = logging.getLogger(__name__)
 
 try:
-    from azure.core.credentials import AzureNamedKeyCredential, AzureSasCredential
+    from azure.core.credentials import (AzureNamedKeyCredential,
+                                        AzureSasCredential)
     from azure.identity import DefaultAzureCredential
     from azure.storage.blob import BlobServiceClient, ContentSettings
 
@@ -61,9 +62,7 @@ class AzureStorageClient:
             self.client = None
             return
 
-        self.connection_string = connection_string or os.getenv(
-            "AZURE_STORAGE_CONNECTION_STRING"
-        )
+        self.connection_string = connection_string or os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         self.container_name = os.getenv("AZURE_STORAGE_CONTAINER", "analytics-exports")
 
         account_name = os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
@@ -71,7 +70,11 @@ class AzureStorageClient:
         sas_token = os.getenv("AZURE_STORAGE_SAS_TOKEN")
         raw_account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
 
-        if raw_account_url and not raw_account_url.startswith("http") and "." not in raw_account_url:
+        if (
+            raw_account_url
+            and not raw_account_url.startswith("http")
+            and "." not in raw_account_url
+        ):
             account_name = account_name or raw_account_url
             raw_account_url = None
 
@@ -209,13 +212,9 @@ class AzureDashboardClient:
     def __init__(self, subscription_id: Optional[str] = None):
         self.subscription_id = subscription_id or os.getenv("AZURE_SUBSCRIPTION_ID")
         self.resource_group = os.getenv("AZURE_RESOURCE_GROUP")
-        self.dashboard_name = os.getenv(
-            "AZURE_DASHBOARD_NAME", "abaco-analytics-dashboard"
-        )
+        self.dashboard_name = os.getenv("AZURE_DASHBOARD_NAME", "abaco-analytics-dashboard")
         self.subscription_id = (
-            subscription_id
-            or os.getenv("AZURE_SUBSCRIPTION_ID")
-            or os.getenv("AZURE_SUBSCRIPTION")
+            subscription_id or os.getenv("AZURE_SUBSCRIPTION_ID") or os.getenv("AZURE_SUBSCRIPTION")
         )
         self.resource_group = os.getenv("AZURE_RESOURCE_GROUP") or os.getenv(
             "AZURE_RESOURCE_GROUP_NAME"

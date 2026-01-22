@@ -2,12 +2,11 @@ name: Export Meta Data to Azure
 
 on:
   schedule:
-    - cron: "0 2 * * *" # Diariamente a las 2 AM
+    - cron: '0 2 * * *' # Diariamente a las 2 AM
   workflow_dispatch: # Manual trigger
 
 jobs:
   export:
-
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,7 +14,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: '18'
 
       - name: Install dependencies
         working-directory: ./node/services/meta-connector

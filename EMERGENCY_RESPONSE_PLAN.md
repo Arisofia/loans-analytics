@@ -10,11 +10,11 @@
 
 ### P0 Issues (CRITICAL - Fix Immediately)
 
-| Issue | Status | Impact | Owner |
-|-------|--------|--------|-------|
-| **PROD-001: Dashboard Offline** | DNS_PROBE_FINISHED_NXDOMAIN | Users cannot access system | DevOps |
-| **PROD-002: CI/CD Pipeline Broken** | 🔧 **FIXED** - Redeploying | Blocks all code deployments | DevOps |
-| **PROD-003: Data Pipelines Failing** | Unknown root cause | No data refresh, stale metrics | Data Eng |
+| Issue                                | Status                      | Impact                         | Owner    |
+| ------------------------------------ | --------------------------- | ------------------------------ | -------- |
+| **PROD-001: Dashboard Offline**      | DNS_PROBE_FINISHED_NXDOMAIN | Users cannot access system     | DevOps   |
+| **PROD-002: CI/CD Pipeline Broken**  | 🔧 **FIXED** - Redeploying  | Blocks all code deployments    | DevOps   |
+| **PROD-003: Data Pipelines Failing** | Unknown root cause          | No data refresh, stale metrics | Data Eng |
 
 ---
 
@@ -59,12 +59,12 @@ git push origin main
 
 **Common Issues & Fixes**:
 
-| Error | Fix |
-|-------|-----|
-| `ModuleNotFoundError` | Check `dashboard/requirements.txt` installed all deps |
-| `Port already in use` | Restart app service |
-| `Connection timeout` | Check Azure Storage/DB connection string in App Settings |
-| DNS NXDOMAIN | Check if custom domain configured, or use `*.azurewebsites.net` domain |
+| Error                 | Fix                                                                    |
+| --------------------- | ---------------------------------------------------------------------- |
+| `ModuleNotFoundError` | Check `dashboard/requirements.txt` installed all deps                  |
+| `Port already in use` | Restart app service                                                    |
+| `Connection timeout`  | Check Azure Storage/DB connection string in App Settings               |
+| DNS NXDOMAIN          | Check if custom domain configured, or use `*.azurewebsites.net` domain |
 
 **Success Criteria**: Dashboard loads without DNS error at <https://abaco-analytics-dashboard.azurewebsites.net>
 
@@ -145,22 +145,22 @@ Repository Settings → Notifications
 
 ## ESCALATION MATRIX
 
-| Scenario | Action | Contact |
-|----------|--------|---------|
-| Dashboard still down after restart | Escalate to Azure Support | CTO |
-| Pipeline fix doesn't resolve issue | Check API vendor status | Integration Lead |
-| Cannot fix in 4 hours | Activate disaster recovery | CTO + Head of Data |
+| Scenario                           | Action                     | Contact            |
+| ---------------------------------- | -------------------------- | ------------------ |
+| Dashboard still down after restart | Escalate to Azure Support  | CTO                |
+| Pipeline fix doesn't resolve issue | Check API vendor status    | Integration Lead   |
+| Cannot fix in 4 hours              | Activate disaster recovery | CTO + Head of Data |
 
 ---
 
 ## SUCCESS METRICS (Target: EOD)
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Dashboard Uptime | 0% | 95%+ |
-| CI/CD Success Rate | 0% | 80%+ |
-| Data Pipelines Running | 0/4 | 3/4 |
-| Monitoring Alerts | 0 | 5+ |
+| Metric                 | Current | Target   |
+| ---------------------- | ------- | -------- |
+| Dashboard Uptime       | 0%      | 95%+     |
+| CI/CD Success Rate     | 0%      | 80%+     |
+| Data Pipelines Running | 0/4     | 3/4      |
+| Monitoring Alerts      | 0       | 5+       |
 | Incident Documentation | Partial | Complete |
 
 ---
@@ -188,7 +188,7 @@ Repository Settings → Notifications
 ## KEY CONTACTS
 
 | Role | Name | Contact | Status |
-|------|------|---------|--------|
+| ---- | ---- | ------- | ------ |
 
 ---
 

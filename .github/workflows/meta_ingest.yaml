@@ -2,7 +2,7 @@ name: Meta Marketing Insights Ingest
 
 on:
   schedule:
-    - cron: "0 * * * *" # Every hour
+    - cron: '0 * * * *' # Every hour
   workflow_dispatch:
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
         if: steps.meta_token.outputs.run == true
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
       - name: Install dependencies
         if: steps.meta_token.outputs.run == true
         run: |
@@ -51,7 +51,7 @@ jobs:
         if: steps.meta_token.outputs.run == true
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
       - name: Load to warehouse
         if: steps.meta_token.outputs.run == true
         run: |

@@ -16,6 +16,7 @@ This runbook covers deployment, execution, monitoring, incident response, and re
 ### Manual Run (Canonical)
 
 ```bash
+
 ```
 
 ### Configuration Override
@@ -24,7 +25,6 @@ This runbook covers deployment, execution, monitoring, incident response, and re
 python scripts/run_data_pipeline.py \
   --config config/pipeline.yml
 ```
-
 
 Set in `config/pipeline.yml`:
 
@@ -65,6 +65,7 @@ pipeline:
 1. Run pipeline with file input:
 
    ```bash
+
    ```
 
 2. Run tests:

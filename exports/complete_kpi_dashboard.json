@@ -114,7 +114,7 @@
         "true_rebates": 0.0,
         "weighted_apr": 0.6544662407943916,
         "weighted_fee_rate": 0.04684351749841433,
-        "weighted_other_income_rate": 9.954007261113756e-05,
+        "weighted_other_income_rate": 9.954007261113756e-5,
         "weighted_effective_rate": 0.0005213204908713478,
         "revenue_ratio": 0.007489277176282447,
         "recurrence_pct": 0.8090616533319765
@@ -6918,7 +6918,7 @@
         "true_rebates": 0.0,
         "weighted_apr": 0.6544662407943916,
         "weighted_fee_rate": 0.04684351749841433,
-        "weighted_other_income_rate": 9.954007261113756e-05,
+        "weighted_other_income_rate": 9.954007261113756e-5,
         "weighted_effective_rate": 0.0005213204908713478,
         "revenue_ratio": 0.007489277176282447,
         "recurrence_pct": 0.8090616533319765,

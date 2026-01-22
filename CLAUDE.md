@@ -39,6 +39,7 @@ make format
 ### GitHub Actions Workflows
 
 **Lint & Type Validation** (`.github/workflows/ci-lint-validation.yml`)
+
 - Triggers: `push` (main/develop), `pull_request`, manual dispatch
 - Jobs:
   - `lint-and-type-check`: ESLint, TypeScript, Prettier, Next.js build
@@ -54,6 +55,7 @@ make quality
 ### Testing
 
 ### Pipeline Jobs
+
 1. **preflight**: Environment checks (Python, pip, packages, repo sanity)
 2. **python**: Tests on 3.11 + 3.14, 40% coverage threshold (temporary), cached pip
 3. **data-contracts**: KPI formula validation (collection_rate, par_90)
@@ -74,9 +76,12 @@ make quality
 ---
 
 # In middleware.ts, supabaseClient.ts:
+
 # eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
-```
+
+````
 
 **Commits**:
 
@@ -172,3 +177,4 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
 3. **CI & coverage**: Monitor `.github/workflows/ci-lint-validation.yml` logs and review coverage artifacts; the current gate is 40% with a target of 85%.
 4. **Documentation & traceability**: Keep `docs/LINTING_STANDARDS.md` and `CLAUDE.md` updated, capture Copilot-assisted fixes in your sprint board, and reference KPI contracts when adjusting analytics logic.
 5. **Iterate with confidence**: Commit, push, watch CI, and iterate on features → tests → coverage → merge while keeping pipelines green.
+````

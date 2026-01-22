@@ -2,7 +2,7 @@ name: Backend Integration
 
 on:
   push:
-    branches: [ main, develop, "feat/*" ]
+    branches: [main, develop, 'feat/*']
     paths:
       - 'backend/**'
       - 'scripts/**'
@@ -39,7 +39,7 @@ jobs:
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: '3.10'
           cache: 'pip'
 
       - name: Install Dependencies
@@ -72,8 +72,8 @@ jobs:
       - name: Run Integration Tests
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/test_db
-          FIGMA_ACCESS_TOKEN: "mock_token_ci"
-          FIGMA_FILE_KEY: "mock_file_key"
+          FIGMA_ACCESS_TOKEN: 'mock_token_ci'
+          FIGMA_FILE_KEY: 'mock_file_key'
           PYTHONPATH: .
         run: |
           pytest backend/tests/integration -v

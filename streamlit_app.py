@@ -1,17 +1,19 @@
-
 from __future__ import annotations
+
 import hashlib
+import json
+import logging
 import os
 import re
-import json
-from pathlib import Path
 from datetime import datetime
-import logging
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import polars as pl
 import streamlit as st
+
 from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine
 
 ABACO_THEME = {
@@ -49,9 +51,6 @@ ABACO_THEME = {
         "description_size": "12px",
     },
 }
-
-
-
 
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:

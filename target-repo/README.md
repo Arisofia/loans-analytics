@@ -19,6 +19,7 @@ See docs/TRACING.md for observability and tracing setup.
 ### Environment Setup
 
 1. Copy `.env.example` to `.env` and configure your environment variables:
+
    ```bash
    cp .env.example .env
    ```
@@ -33,9 +34,11 @@ See docs/TRACING.md for observability and tracing setup.
 Tracing is automatically enabled when the `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable is set.
 
 See <https://github.com/Abaco-Technol/abaco-loans-analytics/blob/main/docs/TRACING.md> for detailed setup instructions.
+
 ## Observability
 
 The workspace includes daily observability workflows that monitor:
+
 - Pipeline health and execution metrics
 - Agent performance and response times
 - Data quality trends and anomalies

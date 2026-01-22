@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       target_version:
-        description: "Version tag to rollback to (e.g., v1.0.0)"
+        description: 'Version tag to rollback to (e.g., v1.0.0)'
         required: true
         type: string
       environment:
-        description: "Environment to rollback"
+        description: 'Environment to rollback'
         required: true
         type: choice
         options:
@@ -80,7 +80,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: '18'
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
@@ -113,11 +113,11 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets[github.event.inputs.environment == 'production' && 'AZURE_STATIC_WEB_APPS_TOKEN_PROD' || 'AZURE_STATIC_WEB_APPS_TOKEN_STAGING'] }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
-          app_location: "apps/web"
-          api_location: ""
-          output_location: ".next"
-          app_build_command: "pnpm -C apps/web build"
+          action: 'upload'
+          app_location: 'apps/web'
+          api_location: ''
+          output_location: '.next'
+          app_build_command: 'pnpm -C apps/web build'
 
   post-rollback-validation:
     runs-on: ubuntu-latest

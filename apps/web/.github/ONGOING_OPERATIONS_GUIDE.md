@@ -69,7 +69,6 @@ Keep these tabs open during work hours:
 - Verify no unexpected failures
 - Monitor build times
 
-
 - Watch #prod-alerts for notifications
 - Watch #incidents for critical issues
 - Respond to #dev-help questions

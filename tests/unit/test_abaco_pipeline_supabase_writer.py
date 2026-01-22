@@ -4,7 +4,8 @@ import json
 from datetime import datetime, timezone
 from unittest.mock import Mock, patch
 
-from src.abaco_pipeline.output.supabase_writer import SupabaseAuth, SupabaseWriter
+from src.abaco_pipeline.output.supabase_writer import (SupabaseAuth,
+                                                       SupabaseWriter)
 
 
 @patch("src.abaco_pipeline.output.supabase_writer.requests.post")

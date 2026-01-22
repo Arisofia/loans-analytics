@@ -9,10 +9,9 @@ test.describe('Analytics Dashboard', () => {
       page.getByRole('heading', { name: 'Portfolio performance dashboard' })
     ).toBeVisible()
 
-        // Check for placeholder content
+    // Check for placeholder content
     await expect(page.getByText('Analytics Dashboard Placeholder')).toBeVisible()
-      })
-
+  })
 
   test('should have a working link back to home', async ({ page }) => {
     await page.goto('/analytics')

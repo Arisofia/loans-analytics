@@ -7,12 +7,7 @@
     "segment",
     "confidence_level"
   ],
-  "required_columns": [
-    "metric_name",
-    "value",
-    "unit",
-    "date"
-  ],
+  "required_columns": ["metric_name", "value", "unit", "date"],
   "dtypes": {
     "metric_name": "string",
     "value": "float",

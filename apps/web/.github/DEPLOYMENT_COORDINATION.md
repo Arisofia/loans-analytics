@@ -6,7 +6,6 @@
 
 ---
 
-
 ### Primary Channels
 
 **#dev-alerts**: General development notifications
@@ -544,11 +543,7 @@ Escalation path:
 
 ## Integration with GitHub
 
-
-
-
 - Example: "See #123 for details"
-
 
 - Link GitHub Actions runs
 - Link PRs with [Title](URL)

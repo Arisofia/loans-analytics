@@ -4,12 +4,12 @@ on:
   push:
     branches: [main]
     paths:
-      - "apps/web/**"
-      - "streamlit_app.py"
-      - "src/**"
-      - "requirements.txt"
-      - "docker-compose.yml"
-      - ".github/workflows/docker-images.yml"
+      - 'apps/web/**'
+      - 'streamlit_app.py'
+      - 'src/**'
+      - 'requirements.txt'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker-images.yml'
   workflow_dispatch:
 
 permissions:

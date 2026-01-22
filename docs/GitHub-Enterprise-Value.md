@@ -37,4 +37,4 @@ This one-pager helps executives, admins, and delivery leads quickly capture valu
 - [Forrester® Total Economic Impact™ study](https://resources.github.com/whitepapers/forrester-tei-github-enterprise-cloud/) – ROI model and savings estimates.
 - [Forrester Wave™ DevOps Platforms report](https://resources.github.com/whitepapers/forrester-wave-devops-platforms/) – analyst evaluation.
 - [GitHub Enterprise Cloud documentation hub](https://docs.github.com/enterprise-cloud@latest) – full feature and security documentation.
-Use this playbook to coordinate stakeholders, align trial goals, and ensure the 30-day evaluation produces measurable security, productivity, and cost outcomes.
+  Use this playbook to coordinate stakeholders, align trial goals, and ensure the 30-day evaluation produces measurable security, productivity, and cost outcomes.

@@ -21,7 +21,7 @@
 
 - [x] **deploy-production.yml** (185 lines)
   - Manual approval gates
-  - Semantic version tag trigger (v*.*.*)
+  - Semantic version tag trigger (v*.*.\*)
   - Post-deployment validation and health checks
   - Automatic GitHub release creation
 
@@ -225,7 +225,6 @@
   - [ ] Discuss edge cases
   - [ ] Plan for common scenarios
 
-
 - [ ] **Communications/Admin**: Create required channels (if not exist)
   - [ ] #dev-alerts
   - [ ] #prod-alerts
@@ -365,7 +364,6 @@ Complete this before first production deployment:
 - Workflow run times
 - Success/failure rates
 - Historical performance
-
 
 - Deployment frequency (count #prod-alerts messages)
 - Incident frequency (count #incidents messages)

@@ -14,12 +14,12 @@
 
 ### 1. Test Data & Fixtures
 
-| File | Purpose |
-|---|---|
-| `tests/data/archives/sample_small.csv` | 24-row representative dataset (100 rows minimal, ×2 segments, 12 months 2024) |
-| `tests/fixtures/baseline_kpis.json` | Expected KPI values with tolerance ±5% |
-| `tests/fixtures/schemas/kpi_results_schema.json` | JSON schema for `kpi_results.json` validation |
-| `tests/fixtures/schemas/metrics_schema.json` | CSV schema for `metrics.csv` validation |
+| File                                             | Purpose                                                                       |
+| ------------------------------------------------ | ----------------------------------------------------------------------------- |
+| `tests/data/archives/sample_small.csv`           | 24-row representative dataset (100 rows minimal, ×2 segments, 12 months 2024) |
+| `tests/fixtures/baseline_kpis.json`              | Expected KPI values with tolerance ±5%                                        |
+| `tests/fixtures/schemas/kpi_results_schema.json` | JSON schema for `kpi_results.json` validation                                 |
+| `tests/fixtures/schemas/metrics_schema.json`     | CSV schema for `metrics.csv` validation                                       |
 
 ### 2. Test Fixtures (conftest.py)
 
@@ -30,12 +30,12 @@ Added to `tests/conftest.py`:
 def analytics_test_env(tmp_path, monkeypatch):
     """Analytics test environment with mocked integrations."""
     # Sets up output dir, dataset paths, disables integrations
-    
+
 @pytest.fixture
 def analytics_baseline_kpis():
     """Load baseline KPI values for comparison."""
     # Loads baseline_kpis.json
-    
+
 @pytest.fixture
 def kpi_schema():
     """Load KPI results JSON schema."""
@@ -44,11 +44,11 @@ def kpi_schema():
 
 ### 3. Test Files (Sprint 0)
 
-| File | Test Cases | Purpose |
-|---|---|---|
-| `tests/fi-analytics/test_analytics_smoke.py` | A-01, A-02 | Smoke test & artifact validation |
+| File                                                   | Test Cases | Purpose                            |
+| ------------------------------------------------------ | ---------- | ---------------------------------- |
+| `tests/fi-analytics/test_analytics_smoke.py`           | A-01, A-02 | Smoke test & artifact validation   |
 | `tests/fi-analytics/test_analytics_kpi_correctness.py` | B-01, B-02 | KPI baseline matching & edge cases |
-| `tests/fi-analytics/test_analytics_unit_coverage.py` | H-01, H-02 | Unit coverage & type checking |
+| `tests/fi-analytics/test_analytics_unit_coverage.py`   | H-01, H-02 | Unit coverage & type checking      |
 
 ---
 
@@ -63,21 +63,25 @@ pip install pytest pytest-cov jsonschema pandas
 ### Run Sprint 0 Tests
 
 **All tests**:
+
 ```bash
 pytest tests/fi-analytics/ -v
 ```
 
 **Specific test**:
+
 ```bash
 pytest tests/fi-analytics/test_analytics_smoke.py::TestAnalyticsSmoke::test_a01_pipeline_smoke_execution -v
 ```
 
 **With coverage report**:
+
 ```bash
 pytest tests/fi-analytics/ -v --cov=src.analytics --cov-report=html
 ```
 
 **Coverage threshold**:
+
 ```bash
 pytest tests/fi-analytics/ --cov=src.analytics --cov-fail-under=80
 ```
@@ -111,50 +115,56 @@ tests/fi-analytics/test_analytics_unit_coverage.py::TestAnalyticsTypeCheck::test
 ## Test Case Mapping
 
 ### A-01: Pipeline Smoke Test
+
 - **File**: `test_analytics_smoke.py::TestAnalyticsSmoke::test_a01_pipeline_smoke_execution`
 - **Status**: ✅ Automated
 - **Execution Time**: ~10 seconds
 - **Key Assertion**: Pipeline subprocess exit code == 0
 
 ### A-02: Artifact Existence & Schema
+
 - **File**: `test_analytics_smoke.py::TestAnalyticsSmoke::test_a02_artifact_existence_and_schema`
 - **Status**: ✅ Automated
 - **Execution Time**: ~2 seconds
-- **Key Assertions**: 
+- **Key Assertions**:
   - Files exist (kpi_results.json, metrics.csv)
   - JSON validates against schema
   - Required fields present
 
 ### B-01: KPI Baseline Match
+
 - **File**: `test_analytics_kpi_correctness.py::TestKPICorrectness::test_b01_kpi_baseline_match`
 - **Status**: ✅ Automated
 - **Execution Time**: ~1 second
 - **Key Assertion**: All KPIs within ±5% of baseline
 
 ### B-02: Boundary & Null Handling
+
 - **File**: `test_analytics_kpi_correctness.py::TestKPICorrectness::test_b02_*`
 - **Status**: ✅ Automated (5 sub-tests)
 - **Execution Time**: ~2 seconds
-- **Key Assertions**: 
+- **Key Assertions**:
   - No NaN/Inf values
   - Division by zero safe
   - Negative values handled
   - Large values safe
 
 ### H-01: Unit Test Coverage
+
 - **File**: `test_analytics_unit_coverage.py::TestAnalyticsUnitCoverage::test_h01_*`
 - **Status**: ✅ Automated (4 sub-tests)
 - **Execution Time**: ~5 seconds
-- **Key Assertions**: 
+- **Key Assertions**:
   - Coverage >= 80%
   - All unit tests pass
   - No import errors
 
 ### H-02: mypy Type Check
+
 - **File**: `test_analytics_unit_coverage.py::TestAnalyticsTypeCheck::test_h02_*`
 - **Status**: ✅ Automated (3 sub-tests)
 - **Execution Time**: ~3 seconds
-- **Key Assertions**: 
+- **Key Assertions**:
   - mypy runs successfully
   - Type hints present
   - Docstrings present
@@ -175,7 +185,7 @@ Add to `.github/workflows/ci.yml`:
       --cov-report=term-missing \
       --cov-fail-under=80 \
       --junit-xml=test-results-fi-analytics.xml
-      
+
 - name: Upload Coverage
   uses: codecov/codecov-action@v3
   with:
@@ -190,6 +200,7 @@ Add to `.github/workflows/ci.yml`:
 ### "Module not found: src.analytics"
 
 Ensure you're running tests from the repository root:
+
 ```bash
 cd /path/to/abaco-loans-analytics
 pytest tests/fi-analytics/ -v
@@ -198,11 +209,13 @@ pytest tests/fi-analytics/ -v
 ### "sample_small.csv not found"
 
 Verify test data file exists:
+
 ```bash
 ls -la tests/data/archives/sample_small.csv
 ```
 
 If missing, file was created during test setup. Check:
+
 ```bash
 ls -la tests/data/
 ```
@@ -210,11 +223,13 @@ ls -la tests/data/
 ### "baseline_kpis.json schema validation failed"
 
 Run with verbose output:
+
 ```bash
 pytest tests/fi-analytics/test_analytics_smoke.py::TestAnalyticsSmoke::test_a02_artifact_existence_and_schema -vv -s
 ```
 
 Check schema file:
+
 ```bash
 cat tests/fixtures/schemas/kpi_results_schema.json | python -m json.tool
 ```
@@ -222,11 +237,13 @@ cat tests/fixtures/schemas/kpi_results_schema.json | python -m json.tool
 ### Coverage threshold not met
 
 Lower threshold temporarily to debug:
+
 ```bash
 pytest tests/fi-analytics/ --cov=src.analytics --cov-fail-under=50
 ```
 
 Then review uncovered lines:
+
 ```bash
 pytest tests/fi-analytics/ --cov=src.analytics --cov-report=html
 open htmlcov/index.html
@@ -267,14 +284,14 @@ After Sprint 0 passes:
 
 ## Metrics & Status
 
-| Metric | Target | Status |
-|---|---|---|
-| Test Cases | 6 | ✅ 6 implemented |
-| Automation | 100% | ✅ 6/6 automated |
-| Execution Time | <30s | ✅ ~17s |
-| Coverage | ≥90% | ⏳ Requires src.analytics KPI functions |
-| PR Gating | Critical path | ✅ Ready |
-| Documentation | Complete | ✅ Complete |
+| Metric         | Target        | Status                                  |
+| -------------- | ------------- | --------------------------------------- |
+| Test Cases     | 6             | ✅ 6 implemented                        |
+| Automation     | 100%          | ✅ 6/6 automated                        |
+| Execution Time | <30s          | ✅ ~17s                                 |
+| Coverage       | ≥90%          | ⏳ Requires src.analytics KPI functions |
+| PR Gating      | Critical path | ✅ Ready                                |
+| Documentation  | Complete      | ✅ Complete                             |
 
 ---
 

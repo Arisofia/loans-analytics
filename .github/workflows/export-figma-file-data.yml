@@ -7,7 +7,6 @@ on:
 
 jobs:
   export-figma-data:
-
     runs-on: ubuntu-latest
     permissions:
       contents: write

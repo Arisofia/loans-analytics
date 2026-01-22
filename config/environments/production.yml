@@ -25,17 +25,17 @@ observability:
 integrations:
   meta:
     enabled: true
-    app_id: "${META_APP_ID}"
-    business_id: "${META_BUSINESS_ID}"
+    app_id: '${META_APP_ID}'
+    business_id: '${META_BUSINESS_ID}'
     auth:
       system_user_token_secret: META_SYSTEM_USER_TOKEN
 
 agents:
   kpi_analytics:
     refresh_schedule:
-      continuous_monitoring: "*/30 * * * *"
+      continuous_monitoring: '*/30 * * * *'
   risk_analysis:
     refresh_schedule:
-      continuous_monitoring: "*/15 * * * *"
+      continuous_monitoring: '*/15 * * * *'
   c_level_executive:
     requires_human_approval: true

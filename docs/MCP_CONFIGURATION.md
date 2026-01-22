@@ -1,4 +1,3 @@
-
 This guide shows how to add and manage Model Context Protocol (MCP) servers when working with Codex, either through the CLI or by editing the `config.toml` file directly.
 
 ## CLI usage

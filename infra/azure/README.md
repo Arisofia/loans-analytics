@@ -7,6 +7,7 @@ Este directorio contiene los archivos de infraestructura como código (Bicep) pa
 ## Recursos
 
 ### Log Analytics Workspace
+
 - **Archivo**: `loganalytics-workspace.bicep`
 - **Nombre**: abaco-logs
 - **Ubicación**: East US
@@ -14,6 +15,7 @@ Este directorio contiene los archivos de infraestructura como código (Bicep) pa
 - **Suscripción**: Azure subscription 1 (695e4491-d568-4105-a1e1-8f2baf3b54df)
 
 ### Application Insights
+
 - **Archivo**: `appinsights.bicep`
 - **Configuración**: `app-insights-config.json`
 - **Nombre**: abaco-analytics-insights

@@ -14,7 +14,6 @@ env:
 jobs:
   # Job 1: Fetch system metrics from Opik
   fetch-opik-metrics:
-
     runs-on: ubuntu-latest
     outputs:
       metrics-available: ${{ steps.fetch.outputs.available }}
@@ -173,7 +172,12 @@ jobs:
 
   # Job 5: Generate observability dashboard
   generate-observability-dashboard:
-    needs: [analyze-pipeline-health, analyze-agent-performance, check-data-quality-trends]
+    needs:
+      [
+        analyze-pipeline-health,
+        analyze-agent-performance,
+        check-data-quality-trends,
+      ]
     if: needs.analyze-pipeline-health.result == 'success' && needs.analyze-agent-performance.result == 'success' && needs.check-data-quality-trends.result == 'success'
     runs-on: ubuntu-latest
     steps:
@@ -210,16 +214,27 @@ jobs:
 
   # Job 6: Alert on critical issues
   alert-on-critical-issues:
-    needs: [analyze-pipeline-health, analyze-agent-performance, check-data-quality-trends]
+    needs:
+      [
+        analyze-pipeline-health,
+        analyze-agent-performance,
+        check-data-quality-trends,
+      ]
 
     runs-on: ubuntu-latest
     steps:
-        # Alert logic removed as it referenced Slack
+      # Alert logic removed as it referenced Slack
 
   # Job 7: Daily system health summary
   send-daily-summary:
-    needs: [analyze-pipeline-health, analyze-agent-performance, check-data-quality-trends, generate-observability-dashboard]
+    needs:
+      [
+        analyze-pipeline-health,
+        analyze-agent-performance,
+        check-data-quality-trends,
+        generate-observability-dashboard,
+      ]
 
     runs-on: ubuntu-latest
     steps:
-        # Daily summary logic removed as it referenced Slack
+      # Daily summary logic removed as it referenced Slack

@@ -6,7 +6,6 @@ on:
 
 jobs:
   comment-to-figma:
-
     runs-on: ubuntu-latest
     steps:
       - name: Check Figma secrets

@@ -19,12 +19,12 @@ excellence in code integrity and operational reliability.
 
 ### Current Status (Phase 4 Audit)
 
-| Tool              | Score      | Status                     | Files Checked      |
-| ----------------- | ---------- | -------------------------- | ------------------ |
-| **pylint**        | 9.56/10    | ✅ Excellent                | 37 Python modules  |
-| **ruff**          | 184 issues | ⚠️ Minor (58 auto-fixable)  | python/ + tests/   |
-| **mypy**          | 5 errors   | ✅ Good (external libs)     | 37 Python modules  |
-| **test coverage** | 162/169    | ✅ 95.9%                   | test suite         |
+| Tool              | Score      | Status                     | Files Checked     |
+| ----------------- | ---------- | -------------------------- | ----------------- |
+| **pylint**        | 9.56/10    | ✅ Excellent               | 37 Python modules |
+| **ruff**          | 184 issues | ⚠️ Minor (58 auto-fixable) | python/ + tests/  |
+| **mypy**          | 5 errors   | ✅ Good (external libs)    | 37 Python modules |
+| **test coverage** | 162/169    | ✅ 95.9%                   | test suite        |
 
 ---
 
@@ -88,14 +88,14 @@ import json
 
 ### 2. Naming Conventions
 
-| Element         | Convention          | Example                |
-| --------------- | ------------------- | ---------------------- |
-| Modules         | snake_case          | `kpi_engine_v2.py`     |
-| Classes         | PascalCase          | `UnifiedIngestion`     |
-| Functions       | snake_case          | `calculate_par_30()`   |
-| Constants       | UPPER_SNAKE_CASE    | `MAX_RETRIES = 3`      |
-| Private methods | _leading_underscore | `_validate_schema()`   |
-| Type hints      | descriptive         | `config: Dict[str, Any]` |
+| Element         | Convention           | Example                  |
+| --------------- | -------------------- | ------------------------ |
+| Modules         | snake_case           | `kpi_engine_v2.py`       |
+| Classes         | PascalCase           | `UnifiedIngestion`       |
+| Functions       | snake_case           | `calculate_par_30()`     |
+| Constants       | UPPER_SNAKE_CASE     | `MAX_RETRIES = 3`        |
+| Private methods | \_leading_underscore | `_validate_schema()`     |
+| Type hints      | descriptive          | `config: Dict[str, Any]` |
 
 ### 3. Type Hints
 
@@ -128,17 +128,17 @@ def calculate_par_90(
     dpd_col: str = "dpd_90_plus_usd"
 ) -> Tuple[float, Dict[str, Any]]:
     """Calculate Portfolio-at-Risk (90+ days past due).
-    
+
     Args:
         df: DataFrame with loan portfolio data
         dpd_col: Column name for 90+ DPD balances
-        
+
     Returns:
         Tuple of (par_90_value, context_metadata)
-        
+
     Raises:
         ValueError: If required columns are missing
-        
+
     Example:
         >>> df = pd.read_csv("loans.csv")
         >>> par_90, ctx = calculate_par_90(df)
@@ -227,7 +227,7 @@ tests/
 ### 2. Test Naming
 
 - **Filename**: `test_<module>.py`
-- **Function**: `test_<feature>()` - starts with "test_"
+- **Function**: `test_<feature>()` - starts with "test\_"
 - **Clarity**: Name should describe what is being tested
 
 ```python
@@ -296,7 +296,7 @@ assert len(result.df) > 0  # Use specific values
 def test_main_success(mock_pipeline_cls):
     mock_pipeline = mock_pipeline_cls.return_value
     mock_pipeline.execute.return_value = {"status": "success"}
-    
+
     result = main(input_file="data/test.csv")
     assert result is True
 
@@ -418,13 +418,13 @@ README.md
 
 ### Documented Exceptions
 
-| Code | Reason | Files | Action |
-|------|--------|-------|--------|
-| C0415 | Import outside toplevel (requests in ingest_http) | ingestion.py:228 | Intentional - conditional HTTP import |
-| C0415 | Import outside toplevel (azure in output) | output.py:53-56 | Intentional - conditional Azure import |
-| R0917 | Too many positional arguments | output.py:91, base.py:29 | Refactor in Phase 5 |
-| W1203 | f-string in logging | prefect_orchestrator, data_validation_gx | Fix: use lazy formatting |
-| E501 | Line too long | Multiple files | Auto-fix with ruff --fix |
+| Code  | Reason                                            | Files                                    | Action                                 |
+| ----- | ------------------------------------------------- | ---------------------------------------- | -------------------------------------- |
+| C0415 | Import outside toplevel (requests in ingest_http) | ingestion.py:228                         | Intentional - conditional HTTP import  |
+| C0415 | Import outside toplevel (azure in output)         | output.py:53-56                          | Intentional - conditional Azure import |
+| R0917 | Too many positional arguments                     | output.py:91, base.py:29                 | Refactor in Phase 5                    |
+| W1203 | f-string in logging                               | prefect_orchestrator, data_validation_gx | Fix: use lazy formatting               |
+| E501  | Line too long                                     | Multiple files                           | Auto-fix with ruff --fix               |
 
 ### Auto-Fix Commands
 
@@ -567,9 +567,9 @@ query = "SELECT * FROM loans"
 
 **Version History**
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2026-01-01 | Initial standards document based on Phase 4 audit |
+| Version | Date       | Changes                                           |
+| ------- | ---------- | ------------------------------------------------- |
+| 1.0     | 2026-01-01 | Initial standards document based on Phase 4 audit |
 
 **Maintainer**: Engineering Team  
 **Last Reviewed**: 2026-01-01  

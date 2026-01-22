@@ -48,10 +48,7 @@
     "formula": "(10 - PAR30/10) * (CollectionRate/10)",
     "source_table": "metrics",
     "precision": 2,
-    "validation_range": [
-      0,
-      10
-    ],
+    "validation_range": [0, 10],
     "rows_processed": 2,
     "null_count": 0,
     "timestamp": "2026-01-22T10:34:15.177243+00:00",

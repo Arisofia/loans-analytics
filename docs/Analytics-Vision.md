@@ -4,7 +4,7 @@
 
 - **“Set the standard for financial analytics by transforming raw lending data into superior, predictive intelligence — integrating deep learning, behavioral modeling, and KPI automation into one cohesive system that powers strategic decisions at every level, all in English.”**
 - **“To engineer a next-generation financial intelligence platform where standard is not compliance but excellence — producing outcomes that are not merely correct but superior, robust, and strategically insightful. Every line of code and every analytic view is built to enterprise-grade quality, thinking beyond immediate tasks to deliver market-leading clarity, predictive power, and decision-making precision.”**
-Use these statements to ground every metric, workflow, and AI-assisted insight in ContosoTeamStats. They reinforce the fintech-grade mission, proactive hardening, and expectation that automation yields measurable strategic clarity.
+  Use these statements to ground every metric, workflow, and AI-assisted insight in ContosoTeamStats. They reinforce the fintech-grade mission, proactive hardening, and expectation that automation yields measurable strategic clarity.
 
 ## Documentation & Streamlit roadmap
 
@@ -17,4 +17,4 @@ Use these statements to ground every metric, workflow, and AI-assisted insight i
    - **Data quality audit**: score missing or zero-row tables, handle absent columns gracefully, and provide robust error messages while continuing to execute other sections when safe.
    - **AI integration**: conditionally activate Gemini/Copilot-style summarization when credentials/libraries exist; otherwise fall back to deterministic rule-based summaries and prompts. Always provide a top-line summary section describing the main insights and actions.
    - **Export prep**: create flattened fact tables that list dimensions and metrics, ready for export. Provide widgets to refresh ingestion without restarting the runtime.
-Every cell should include an English markdown explanation describing its purpose. Operate solely on real uploaded data; never insert placeholder datasets. The combined documentation and Streamlit blueprint keep the analytics delivery aligned with your enterprise-grade standards and the master prompt you shared earlier.
+     Every cell should include an English markdown explanation describing its purpose. Operate solely on real uploaded data; never insert placeholder datasets. The combined documentation and Streamlit blueprint keep the analytics delivery aligned with your enterprise-grade standards and the master prompt you shared earlier.

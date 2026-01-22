@@ -118,6 +118,7 @@ git rebase -i <base-branch>
 ```
 
 **In interactive rebase, use:**
+
 - `pick` - Keep commit as-is
 - `reword` - Keep commit but edit message
 - `squash` - Combine with previous commit
@@ -164,6 +165,7 @@ git commit -m "Track large files with Git LFS"
 ### 1. Understanding Merge Conflicts
 
 Merge conflicts occur when Git cannot automatically combine changes from different branches. Common scenarios include:
+
 - Same file modified in different branches
 - Same line edited in different ways
 - File deleted in one branch but modified in another
@@ -179,6 +181,7 @@ git merge <branch-name>
 ```
 
 Git will indicate conflicts with markers like:
+
 ```
 
 ```
@@ -214,12 +217,14 @@ git checkout --theirs .
 5. Save the file
 
 Example:
+
 ```
 def calculate_interest(principal, rate, time=1):
     return principal * rate * time * 0.01
 ```
 
 **Resolved:**
+
 ```python
 def calculate_interest(principal, rate, time=1):
     return principal * rate * time * 0.01
@@ -266,6 +271,7 @@ git rebase --abort
 ### 6. Handling Pull Request Conflicts
 
 **On GitHub:**
+
 1. Navigate to the pull request with conflicts
 2. Click "Resolve conflicts" button
 3. Edit the conflicted code directly in the GitHub web editor
@@ -274,6 +280,7 @@ git rebase --abort
 6. Click "Commit merge"
 
 **From Command Line:**
+
 ```bash
 # Fetch the latest changes from the base branch
 git fetch origin

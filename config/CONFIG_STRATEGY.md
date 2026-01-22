@@ -60,7 +60,7 @@ config/
 ### Phase 2: Create environment overrides (TOMORROW)
 
 1. development.yml (local testing, mocked credentials)
-3. production.yml (live, hardened security)
+2. production.yml (live, hardened security)
 
 ### Phase 3: Archive old configs (WEEK)
 

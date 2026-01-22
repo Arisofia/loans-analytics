@@ -24,7 +24,7 @@ Select all that apply:
 - [ ] Refactor/tech debt
 - [ ] Performance optimization
 - [ ] Security improvement
-- [ ] Other (explain): _______________
+- [ ] Other (explain): **\*\***\_\_\_**\*\***
 
 ---
 
@@ -36,7 +36,7 @@ Select all that apply:
 
 - [ ] Code strictly follows project style/conventions (see [CONTRIBUTING.md](../CONTRIBUTING.md) or run `npm run lint`)
 - [ ] Performed thorough self-review; removed redundant/legacy code and dead imports
-- [ ] Documented all non-trivial logic with clear docstrings (include: purpose, parameters, return values; complex algorithms require inline comments explaining *why*)
+- [ ] Documented all non-trivial logic with clear docstrings (include: purpose, parameters, return values; complex algorithms require inline comments explaining _why_)
 - [ ] No hardcoded secrets, credentials, PII, or sensitive data exposed in code or logs
 - [ ] Code quality checks pass: `make quality` (ESLint, Pylint, type checks, formatting)
 - [ ] Pre-commit hooks installed and passing: `pre-commit run --all-files`
@@ -67,8 +67,8 @@ Select all that apply:
 ### Performance & Operations
 
 - [ ] Performance impact statement (if applicable):
-  - [ ] Latency: ___ms →___ms (or N/A)
-  - [ ] Memory footprint: ___MB →___MB (or N/A)
+  - [ ] Latency: ***ms →***ms (or N/A)
+  - [ ] Memory footprint: ***MB →***MB (or N/A)
   - [ ] Benchmark results or load test attached (if applicable)
 - [ ] (New features) Monitoring, alerts, and observability configured
 - [ ] (Deployments) Rollback plan documented and tested

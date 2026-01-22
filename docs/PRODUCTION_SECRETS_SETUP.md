@@ -51,9 +51,9 @@ postgres://postgres:[PASSWORD]@db.zpowfbeftxexzidlxndy.supabase.co:6543/postgres
 **To Add to GitHub**:
 
 1. Go to repository → Settings → Secrets and variables → Actions
-3. Name: `DATABASE_URL`
-4. Value: [paste connection string]
-5. Click "Add secret"
+2. Name: `DATABASE_URL`
+3. Value: [paste connection string]
+4. Click "Add secret"
 
 ---
 
@@ -68,7 +68,6 @@ postgres://postgres:[PASSWORD]@db.zpowfbeftxexzidlxndy.supabase.co:6543/postgres
 - Azure Dashboard creation
 - Azure Monitor operations
 
-
 Run this Azure CLI command (requires Azure CLI installed and authenticated):
 
 ```bash
@@ -82,18 +81,17 @@ az ad sp create-for-rbac \
 **Output** (copy entire JSON):
 
 {
-  "clientId": "00000000-0000-0000-0000-000000000000",
-  "clientSecret": "secret-value-here",
-  "subscriptionId": "695e4491-d568-4105-a1e1-8f2baf3b54df",
-  "tenantId": "00000000-0000-0000-0000-000000000000",
-  "activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
-  "resourceManagerEndpointUrl": "https://management.azure.com/",
-  "activeDirectoryGraphResourceId": "https://graph.windows.net/",
-  "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
-  "galleryEndpointUrl": "https://gallery.azure.com/",
-  "managementEndpointUrl": "https://management.core.windows.net/"
+"clientId": "00000000-0000-0000-0000-000000000000",
+"clientSecret": "secret-value-here",
+"subscriptionId": "695e4491-d568-4105-a1e1-8f2baf3b54df",
+"tenantId": "00000000-0000-0000-0000-000000000000",
+"activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
+"resourceManagerEndpointUrl": "https://management.azure.com/",
+"activeDirectoryGraphResourceId": "https://graph.windows.net/",
+"sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
+"galleryEndpointUrl": "https://gallery.azure.com/",
+"managementEndpointUrl": "https://management.core.windows.net/"
 }
-
 
 1. Go to repository → Settings → Secrets and variables → Actions
 2. Click "New repository secret"
@@ -110,6 +108,7 @@ az ad sp create-for-rbac \
 **Why**: Direct access to Azure Blob Storage for exporting files.
 
 **How to get**:
+
 1. Azure Portal → Storage account `abacostgprod` (or your storage account)
 2. Settings → Access keys
 3. Copy "Connection string" under "key1"
@@ -139,7 +138,8 @@ DefaultEndpointsProtocol=https;AccountName=abacostgprod;AccountKey=...;EndpointS
 - `AZURE_SUBSCRIPTION_ID`
 - `AZURE_RESOURCE_GROUP`
 - `AZURE_DASHBOARD_NAME`
-**To get**:
+  **To get**:
+
 1. Azure Portal → Your resource group `AI-MultiAgent-Ecosystem-RG`
 2. Copy the Resource Group ID
 3. Subscription ID: visible in the portal URL or Settings
@@ -155,7 +155,9 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 **To Add to GitHub**: Add each as a separate secret in Actions Secrets.
 
 ---
+
 ## 📋 Secondary Secrets (For Full Integrations)
+
 ### 5. Supabase Service Role Key
 
 **Environment Variable**: `SUPABASE_SERVICE_ROLE`
@@ -167,11 +169,12 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 2. Copy the "service_role secret"
 
 1. Settings → Secrets → New repository secret
-3. Value: [paste key]
+1. Value: [paste key]
 
 ---
 
 ### 6. Meta (Facebook) Integration
+
 #### 6a. Meta Access Token
 
 **Environment Variable**: `META_ACCESS_TOKEN`
@@ -182,16 +185,13 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 1. [Meta Business Suite](https://business.facebook.com/) → Settings → Apps and websites
 2. Select your app → Settings → Tokens
 3. Copy "User access token" (long-lived, 60+ days)
-**To Add**:
+   **To Add**:
 
 - Name: `META_ACCESS_TOKEN`
 
-
 **Environment Variable**: `META_PIXEL_ID`
 
-**How to get**:
-2. Click your pixel → Settings
-3. Copy Pixel ID
+**How to get**: 2. Click your pixel → Settings 3. Copy Pixel ID
 **To Add**:
 
 - Name: `META_PIXEL_ID`
@@ -211,10 +211,12 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 ---
 
-
 <<<<<<< HEAD
+
 ### 8. Other Integration Secrets
+
 =======
+
 #### 7a. Notion API Key
 
 **Environment Variable**: `NOTION_API_KEY`
@@ -289,12 +291,11 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 #### HubSpot
 
 - `HUBSPOT_API_KEY`: [HubSpot Account Settings → Integrations → API key](https://app.hubspot.com/l/integrations)
->>>>>>> ed449d30c (feat: Update workflows and add gitignore for media files)
+  > > > > > > > ed449d30c (feat: Update workflows and add gitignore for media files)
 
 #### OpenAI
 
 - `OPENAI_API_KEY`: [OpenAI API Keys](https://platform.openai.com/api-keys)
-
 
 ### Before Production Deployment
 
@@ -353,20 +354,19 @@ Missing integrations (unset tokens or disabled outputs) are treated as skipped r
 
 All secrets should be rotated on a regular basis:
 
-| Secret | Rotation Frequency | Instructions |
-|--------|-------------------|--------------|
-| DATABASE_URL | 90 days | Regenerate in Supabase → Settings → Database |
-| META_ACCESS_TOKEN | 90 days | Generate new token in Meta Business Suite |
-| AZURE_CREDENTIALS | 90 days | Run `az ad sp create-for-rbac` again |
-| OPENAI_API_KEY | 90 days | Generate new key in OpenAI → API Keys |
-| AZURE_STORAGE_CONNECTION_STRING | 180 days | Rotate key in Azure Portal |
+| Secret                          | Rotation Frequency | Instructions                                 |
+| ------------------------------- | ------------------ | -------------------------------------------- |
+| DATABASE_URL                    | 90 days            | Regenerate in Supabase → Settings → Database |
+| META_ACCESS_TOKEN               | 90 days            | Generate new token in Meta Business Suite    |
+| AZURE_CREDENTIALS               | 90 days            | Run `az ad sp create-for-rbac` again         |
+| OPENAI_API_KEY                  | 90 days            | Generate new key in OpenAI → API Keys        |
+| AZURE_STORAGE_CONNECTION_STRING | 180 days           | Rotate key in Azure Portal                   |
 
 ---
 
 ## ❌ Troubleshooting
 
 ### Secret Not Found in Workflow
-
 
 **Solution**:
 

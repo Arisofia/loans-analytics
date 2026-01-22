@@ -20,27 +20,27 @@ Completed full Sprint 0 implementation for **FI-ANALYTICS-002 (Analytics Pipelin
 
 ### Test Framework (Phase 1)
 
-| Category | File | Size | Purpose |
-|---|---|---|---|
-| **Test Plan** | `FI-ANALYTICS-002_test_plan.md` | 8.7 KB | Complete testing strategy, risks, SLAs |
-| **Test Checklist** | `FI-ANALYTICS-002_checklist.md` | 5.4 KB | 22 test cases, priority/type/automation |
-| **Test Cases** | `FI-ANALYTICS-002_testcases.md` | 34.7 KB | Detailed execution steps, test data, expected results |
+| Category           | File                            | Size    | Purpose                                               |
+| ------------------ | ------------------------------- | ------- | ----------------------------------------------------- |
+| **Test Plan**      | `FI-ANALYTICS-002_test_plan.md` | 8.7 KB  | Complete testing strategy, risks, SLAs                |
+| **Test Checklist** | `FI-ANALYTICS-002_checklist.md` | 5.4 KB  | 22 test cases, priority/type/automation               |
+| **Test Cases**     | `FI-ANALYTICS-002_testcases.md` | 34.7 KB | Detailed execution steps, test data, expected results |
 
 ### Sprint 0 Implementation
 
-| Category | File | Type | Count |
-|---|---|---|---|
-| **Test Data** | `tests/data/archives/sample_small.csv` | CSV | 24 rows (2 segments, 12 months) |
-| **Baseline KPIs** | `tests/fixtures/baseline_kpis.json` | JSON | 23 KPI values with ±5% tolerance |
-| **JSON Schema** | `tests/fixtures/schemas/kpi_results_schema.json` | JSON | Full schema with required fields |
-| **CSV Schema** | `tests/fixtures/schemas/metrics_schema.json` | JSON | Column definitions & dtypes |
-| **Fixtures** | `tests/conftest.py` (extended) | Python | 3 new analytics fixtures |
-| **Smoke Tests** | `tests/fi-analytics/test_analytics_smoke.py` | Python | 4 test methods (A-01, A-02) |
-| **KPI Tests** | `tests/fi-analytics/test_analytics_kpi_correctness.py` | Python | 7 test methods (B-01, B-02) |
-| **Unit/Type Tests** | `tests/fi-analytics/test_analytics_unit_coverage.py` | Python | 7 test methods (H-01, H-02) |
-| **Module Init** | `tests/fi-analytics/__init__.py` | Python | Test suite initialization |
-| **Implementation Guide** | `SPRINT_0_IMPLEMENTATION.md` | Markdown | 8 KB execution guide |
-| **This Document** | `SPRINT_0_DELIVERY_SUMMARY.md` | Markdown | Delivery summary |
+| Category                 | File                                                   | Type     | Count                            |
+| ------------------------ | ------------------------------------------------------ | -------- | -------------------------------- |
+| **Test Data**            | `tests/data/archives/sample_small.csv`                 | CSV      | 24 rows (2 segments, 12 months)  |
+| **Baseline KPIs**        | `tests/fixtures/baseline_kpis.json`                    | JSON     | 23 KPI values with ±5% tolerance |
+| **JSON Schema**          | `tests/fixtures/schemas/kpi_results_schema.json`       | JSON     | Full schema with required fields |
+| **CSV Schema**           | `tests/fixtures/schemas/metrics_schema.json`           | JSON     | Column definitions & dtypes      |
+| **Fixtures**             | `tests/conftest.py` (extended)                         | Python   | 3 new analytics fixtures         |
+| **Smoke Tests**          | `tests/fi-analytics/test_analytics_smoke.py`           | Python   | 4 test methods (A-01, A-02)      |
+| **KPI Tests**            | `tests/fi-analytics/test_analytics_kpi_correctness.py` | Python   | 7 test methods (B-01, B-02)      |
+| **Unit/Type Tests**      | `tests/fi-analytics/test_analytics_unit_coverage.py`   | Python   | 7 test methods (H-01, H-02)      |
+| **Module Init**          | `tests/fi-analytics/__init__.py`                       | Python   | Test suite initialization        |
+| **Implementation Guide** | `SPRINT_0_IMPLEMENTATION.md`                           | Markdown | 8 KB execution guide             |
+| **This Document**        | `SPRINT_0_DELIVERY_SUMMARY.md`                         | Markdown | Delivery summary                 |
 
 **Total**: 13 files, ~120 KB documentation + code
 
@@ -50,15 +50,15 @@ Completed full Sprint 0 implementation for **FI-ANALYTICS-002 (Analytics Pipelin
 
 ### Sprint 0: Smoke & Baseline (Critical Path)
 
-| ID | Test Case | File | Methods | Status | Automation |
-|---|---|---|---|---|---|
-| **A-01** | Pipeline smoke test | `test_analytics_smoke.py` | 1 | ✅ | Auto |
-| **A-02** | Artifact existence & schema | `test_analytics_smoke.py` | 3 | ✅ | Auto |
-| **B-01** | KPI baseline match ±5% | `test_analytics_kpi_correctness.py` | 2 | ✅ | Auto |
-| **B-02** | Boundary & null handling | `test_analytics_kpi_correctness.py` | 5 | ✅ | Auto |
-| **H-01** | Unit coverage ≥80% | `test_analytics_unit_coverage.py` | 4 | ✅ | Auto |
-| **H-02** | mypy type validation | `test_analytics_unit_coverage.py` | 3 | ✅ | Auto |
-| **TOTAL** | **6 test cases** | **3 files** | **18 methods** | **✅ 6/6** | **100%** |
+| ID        | Test Case                   | File                                | Methods        | Status     | Automation |
+| --------- | --------------------------- | ----------------------------------- | -------------- | ---------- | ---------- |
+| **A-01**  | Pipeline smoke test         | `test_analytics_smoke.py`           | 1              | ✅         | Auto       |
+| **A-02**  | Artifact existence & schema | `test_analytics_smoke.py`           | 3              | ✅         | Auto       |
+| **B-01**  | KPI baseline match ±5%      | `test_analytics_kpi_correctness.py` | 2              | ✅         | Auto       |
+| **B-02**  | Boundary & null handling    | `test_analytics_kpi_correctness.py` | 5              | ✅         | Auto       |
+| **H-01**  | Unit coverage ≥80%          | `test_analytics_unit_coverage.py`   | 4              | ✅         | Auto       |
+| **H-02**  | mypy type validation        | `test_analytics_unit_coverage.py`   | 3              | ✅         | Auto       |
+| **TOTAL** | **6 test cases**            | **3 files**                         | **18 methods** | **✅ 6/6** | **100%**   |
 
 ---
 
@@ -70,7 +70,7 @@ Completed full Sprint 0 implementation for **FI-ANALYTICS-002 (Analytics Pipelin
 Format: date | segment | financial metrics (8 columns)
 Range: 2024-01-31 to 2024-12-31 (12 months)
 Segments: Consumer (12 rows), SME (12 rows)
-Columns: total_receivable_usd, total_eligible_usd, cash_available_usd, 
+Columns: total_receivable_usd, total_eligible_usd, cash_available_usd,
          dpd_0_7_usd, dpd_7_30_usd, dpd_30_60_usd, dpd_60_90_usd, dpd_90_plus_usd
 ```
 
@@ -139,12 +139,12 @@ def kpi_schema():
 
 ## Test Execution Time
 
-| Category | Tests | Time | Status |
-|---|---|---|---|
-| **Smoke** | 4 | ~10s | ✅ Fast |
-| **KPI Correctness** | 7 | ~2s | ✅ Fast |
-| **Unit/Coverage** | 7 | ~5s | ✅ Fast |
-| **TOTAL** | **18** | **~17s** | ✅ **<30s target** |
+| Category            | Tests  | Time     | Status             |
+| ------------------- | ------ | -------- | ------------------ |
+| **Smoke**           | 4      | ~10s     | ✅ Fast            |
+| **KPI Correctness** | 7      | ~2s      | ✅ Fast            |
+| **Unit/Coverage**   | 7      | ~5s      | ✅ Fast            |
+| **TOTAL**           | **18** | **~17s** | ✅ **<30s target** |
 
 **Note**: Assumes analytics pipeline module exists and imports successfully. Actual times vary by environment.
 
@@ -191,6 +191,7 @@ Sprint 0 is production-ready for GitHub Actions PR validation:
 ### Sprint 1 Preview (Integration & Tracing)
 
 Next sprint adds:
+
 - **Integration tests** (C-01 to C-04): Mock Notion, Meta APIs
 - **Tracing tests** (D-01, D-02): OTLP collector validation
 - **Security tests** (F-01, F-02): Secret leakage audit
@@ -199,6 +200,7 @@ Next sprint adds:
 ### Sprint 2 Preview (Robustness & E2E)
 
 Final sprint adds:
+
 - **Retry logic** (E-01, E-02): Transient failure handling
 - **Idempotency** (G-01, G-02): Concurrent run safety
 - **Performance** (B-03): Large dataset SLA validation
@@ -260,24 +262,24 @@ pytest tests/fi-analytics/ -v \
 
 ## Approval & Sign-Off
 
-| Role | Name | Status | Date |
-|---|---|---|---|
-| **QA Lead** | — | ✅ Ready for Review | 2026-01-03 |
-| **Dev Lead** | — | ⏳ Pending | — |
-| **Release Manager** | — | ⏳ Pending | — |
+| Role                | Name | Status              | Date       |
+| ------------------- | ---- | ------------------- | ---------- |
+| **QA Lead**         | —    | ✅ Ready for Review | 2026-01-03 |
+| **Dev Lead**        | —    | ⏳ Pending          | —          |
+| **Release Manager** | —    | ⏳ Pending          | —          |
 
 ---
 
 ## Metrics Summary
 
-| Metric | Target | Actual | Status |
-|---|---|---|---|
-| Test Cases Implemented | 6 | 6 | ✅ 100% |
-| Automation Coverage | 100% | 100% | ✅ 100% |
-| Execution Time | <30s | ~17s | ✅ 57% faster |
-| Code Coverage Target | ≥80% | ⏳ TBD | ⏳ Depends on impl |
-| Documentation | Complete | ~50 KB | ✅ Complete |
-| CI/CD Ready | Yes | Yes | ✅ Ready |
+| Metric                 | Target   | Actual | Status             |
+| ---------------------- | -------- | ------ | ------------------ |
+| Test Cases Implemented | 6        | 6      | ✅ 100%            |
+| Automation Coverage    | 100%     | 100%   | ✅ 100%            |
+| Execution Time         | <30s     | ~17s   | ✅ 57% faster      |
+| Code Coverage Target   | ≥80%     | ⏳ TBD | ⏳ Depends on impl |
+| Documentation          | Complete | ~50 KB | ✅ Complete        |
+| CI/CD Ready            | Yes      | Yes    | ✅ Ready           |
 
 ---
 
@@ -312,6 +314,7 @@ tests/
 ## Success Criteria
 
 ✅ **All Sprint 0 deliverables complete**:
+
 - Test plan finalized
 - 6 test cases fully implemented
 - Test data & fixtures created

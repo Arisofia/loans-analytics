@@ -1,8 +1,7 @@
 import io
 
 import polars as pl
-from python.ingestion import AbacoIngestion
-import polars as pl
+
 from python.ingestion import AbacoIngestion
 
 

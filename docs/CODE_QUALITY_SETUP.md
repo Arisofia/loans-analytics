@@ -11,6 +11,7 @@ This document summarizes the code quality tools that have been configured for th
 **Configuration File**: `.codeclimate.yml`
 
 **Setup Instructions**:
+
 1. Visit https://codeclimate.com/
 2. Sign up with your GitHub account
 3. Click "Add a repository"
@@ -18,6 +19,7 @@ This document summarizes the code quality tools that have been configured for th
 5. Code Climate will automatically analyze using `.codeclimate.yml`
 
 **Plugins Enabled**:
+
 - Pylint (Python linting)
 - Bandit (Python security)
 - ESLint (TypeScript/JavaScript)
@@ -25,6 +27,7 @@ This document summarizes the code quality tools that have been configured for th
 - Duplication detection
 
 **Quality Thresholds**:
+
 - Method complexity: 10
 - Argument count: 5
 - File lines: 500
@@ -35,6 +38,7 @@ This document summarizes the code quality tools that have been configured for th
 **Configuration File**: `.pylintrc`
 
 **Usage**:
+
 ```bash
 # Run on specific directories
 pylint python apps/analytics/src
@@ -47,6 +51,7 @@ pylint python/validation.py
 ```
 
 **Settings**:
+
 - Line length: 88 characters (Black-compatible)
 - Score target: ≥9.0/10
 - Minimum threshold: 8.5/10
@@ -55,10 +60,12 @@ pylint python/validation.py
 ### 3. ESLint ✅ (Already Configured)
 
 **Configuration Files**:
+
 - `apps/web/eslint.config.mjs` (Primary)
 - `apps/web/.eslintrc.json` (Legacy)
 
 **Usage**:
+
 ```bash
 # Run ESLint
 npm run lint --prefix apps/web
@@ -68,6 +75,7 @@ npm run lint:fix --prefix apps/web
 ```
 
 **Rules Enforced**:
+
 - TypeScript strict mode
 - React hooks rules
 - Next.js best practices
@@ -81,12 +89,14 @@ npm run lint:fix --prefix apps/web
 **CI Integration**: `.github/workflows/archived/ci-main.yml`
 
 **Features**:
+
 - Runs automatically on main branch
 - Skips on pull requests (cloud project limitation)
 - Analyzes Python, TypeScript, and JavaScript
 - Coverage reports integration
 
 **Access**:
+
 - Dashboard: https://sonarcloud.io/organizations/abaco-fintech
 - Reports: View after merge to main
 
@@ -95,12 +105,14 @@ npm run lint:fix --prefix apps/web
 **Configuration File**: `.pre-commit-config.yaml`
 
 **Setup**:
+
 ```bash
 pip install pre-commit
 pre-commit install
 ```
 
 **Hooks Enabled**:
+
 - trailing-whitespace
 - end-of-file-fixer
 - check-yaml
@@ -113,10 +125,12 @@ pre-commit install
 ### 6. Code Review Process ✅
 
 **Files**:
+
 - `.github/CODEOWNERS` - Code ownership
 - `.github/pull_request_template.md` - PR template with quality checklist
 
 **Features**:
+
 - Automated review assignment
 - Comprehensive PR checklist
 - Quality gates enforcement
@@ -129,6 +143,7 @@ pre-commit install
 **File**: `scripts/run_quality_checks.sh`
 
 **Usage**:
+
 ```bash
 # Run all quality checks
 bash scripts/run_quality_checks.sh
@@ -138,6 +153,7 @@ make quality
 ```
 
 **Checks Performed**:
+
 1. Pylint analysis with score reporting
 2. ESLint for TypeScript/JavaScript
 3. TypeScript type checking
@@ -163,6 +179,7 @@ make setup         # Setup environment and pre-commit hooks
 **`docs/CODE_QUALITY_GUIDE.md`** (17KB comprehensive guide)
 
 **Sections**:
+
 - Tool overview and comparison
 - Detailed usage instructions for each tool
 - Common issues and solutions
@@ -181,12 +198,14 @@ make setup         # Setup environment and pre-commit hooks
 ### For New Contributors
 
 1. **Install Pre-commit Hooks**:
+
    ```bash
    pip install pre-commit
    pre-commit install
    ```
 
 2. **Run Quality Checks Before Committing**:
+
    ```bash
    make quality
    ```
@@ -207,13 +226,13 @@ make setup         # Setup environment and pre-commit hooks
 
 ### Current Status
 
-| Tool | Status | Configuration |
-|------|--------|---------------|
-| Code Climate | ⚠️ Needs Setup | `.codeclimate.yml` ✅ |
-| Pylint | ✅ Active | `.pylintrc` ✅ |
-| ESLint | ✅ Active | `apps/web/eslint.config.mjs` ✅ |
-| SonarQube | ✅ Active (CI) | `sonar-project.properties` ✅ |
-| Pre-commit | ✅ Active | `.pre-commit-config.yaml` ✅ |
+| Tool         | Status         | Configuration                   |
+| ------------ | -------------- | ------------------------------- |
+| Code Climate | ⚠️ Needs Setup | `.codeclimate.yml` ✅           |
+| Pylint       | ✅ Active      | `.pylintrc` ✅                  |
+| ESLint       | ✅ Active      | `apps/web/eslint.config.mjs` ✅ |
+| SonarQube    | ✅ Active (CI) | `sonar-project.properties` ✅   |
+| Pre-commit   | ✅ Active      | `.pre-commit-config.yaml` ✅    |
 
 ### Quality Metrics (from CLAUDE.md)
 
@@ -251,6 +270,7 @@ make setup         # Setup environment and pre-commit hooks
 ## Support
 
 For issues or questions:
+
 1. Check `docs/CODE_QUALITY_GUIDE.md` troubleshooting section
 2. Review CI logs for specific errors
 3. Contact code owners: @Arisofia

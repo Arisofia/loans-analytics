@@ -13,7 +13,6 @@ on:
 
 jobs:
   export-and-sync-kpi-csv:
-
     runs-on: ubuntu-latest
     env:
       FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}

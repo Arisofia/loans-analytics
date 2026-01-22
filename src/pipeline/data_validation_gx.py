@@ -1,14 +1,17 @@
 """Great Expectations validation helpers for pipeline checks."""
+
 from __future__ import annotations
+
 import logging
 from typing import Any, Dict, List
-
 
 import pandas as pd
 
 try:
     import great_expectations as gx
-    from great_expectations.data_context import EphemeralDataContext as GXEphemeralDataContext
+    from great_expectations.data_context import \
+        EphemeralDataContext as GXEphemeralDataContext
+
     HAS_GE = True
 except ImportError:  # pragma: no cover - optional dependency
     gx = None  # type: ignore
@@ -43,8 +46,7 @@ def create_validator_for_dataframe(
     pandas_asset = datasource.add_dataframe_asset(name=asset_name, dataframe=df)
     batch_request = pandas_asset.build_batch_request()
     return context.get_validator(
-        batch_request=batch_request,
-        create_expectation_suite_with_name=f"{asset_name}_suite"
+        batch_request=batch_request, create_expectation_suite_with_name=f"{asset_name}_suite"
     )
 
 
@@ -111,4 +113,6 @@ def validate_loan_data(df: pd.DataFrame) -> bool:
 
 
 if __name__ == "__main__":
-    print("This module provides data validation helpers for the pipeline. Import and use its functions in your workflow.")
+    print(
+        "This module provides data validation helpers for the pipeline. Import and use its functions in your workflow."
+    )

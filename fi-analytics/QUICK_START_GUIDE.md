@@ -38,14 +38,14 @@ open htmlcov/index.html
 
 ## 📁 What's Included?
 
-| Item | Location | Purpose |
-|---|---|---|
-| **Test Code** | `tests/fi-analytics/` | 18 test methods across 3 files |
-| **Test Data** | `tests/data/archives/sample_small.csv` | 24-row dataset |
-| **Baselines** | `tests/fixtures/baseline_kpis.json` | Expected KPI values |
-| **Schemas** | `tests/fixtures/schemas/` | JSON + CSV validation schemas |
-| **Fixtures** | `tests/conftest.py` | 3 new pytest fixtures |
-| **Docs** | `fi-analytics/` | Test plan, implementation guide, this file |
+| Item          | Location                               | Purpose                                    |
+| ------------- | -------------------------------------- | ------------------------------------------ |
+| **Test Code** | `tests/fi-analytics/`                  | 18 test methods across 3 files             |
+| **Test Data** | `tests/data/archives/sample_small.csv` | 24-row dataset                             |
+| **Baselines** | `tests/fixtures/baseline_kpis.json`    | Expected KPI values                        |
+| **Schemas**   | `tests/fixtures/schemas/`              | JSON + CSV validation schemas              |
+| **Fixtures**  | `tests/conftest.py`                    | 3 new pytest fixtures                      |
+| **Docs**      | `fi-analytics/`                        | Test plan, implementation guide, this file |
 
 ---
 
@@ -116,6 +116,7 @@ pytest tests/fi-analytics/ --durations=10
 ### Tests fail with "ModuleNotFoundError: No module named 'src'"
 
 **Fix**: Ensure working directory is repo root:
+
 ```bash
 cd /path/to/abaco-loans-analytics
 pytest tests/fi-analytics/ -v
@@ -124,6 +125,7 @@ pytest tests/fi-analytics/ -v
 ### Tests fail with "FileNotFoundError: sample_small.csv"
 
 **Fix**: File should auto-exist. Check:
+
 ```bash
 ls -la tests/data/archives/sample_small.csv
 ```
@@ -131,6 +133,7 @@ ls -la tests/data/archives/sample_small.csv
 ### Coverage report shows 0%
 
 **Fix**: Verify analytics module can be imported:
+
 ```bash
 python -c "import src.analytics; print('OK')"
 ```
@@ -138,6 +141,7 @@ python -c "import src.analytics; print('OK')"
 ### mypy tests fail
 
 **Fix**: Install mypy:
+
 ```bash
 pip install mypy
 ```
@@ -191,6 +195,7 @@ Docs:
 - [ ] `src/analytics/` module exists
 
 If all checked, run:
+
 ```bash
 pytest tests/fi-analytics/ -v
 ```
@@ -199,21 +204,22 @@ pytest tests/fi-analytics/ -v
 
 ## 📊 Metrics
 
-| Metric | Value |
-|---|---|
-| Test Cases | 6 (A-01, A-02, B-01, B-02, H-01, H-02) |
-| Test Methods | 18 |
-| Automation | 100% |
-| Execution Time | ~17 seconds |
-| Code Coverage Target | ≥80% |
-| Files Created | 13 |
-| Documentation | ~120 KB |
+| Metric               | Value                                  |
+| -------------------- | -------------------------------------- |
+| Test Cases           | 6 (A-01, A-02, B-01, B-02, H-01, H-02) |
+| Test Methods         | 18                                     |
+| Automation           | 100%                                   |
+| Execution Time       | ~17 seconds                            |
+| Code Coverage Target | ≥80%                                   |
+| Files Created        | 13                                     |
+| Documentation        | ~120 KB                                |
 
 ---
 
 ## 🎯 Next Phase (Sprint 1)
 
 Coming in next sprint:
+
 - Integration tests with mocked APIs (Notion, Meta)
 - Tracing/observability validation
 - Security tests (secret handling)
@@ -224,6 +230,7 @@ Coming in next sprint:
 ## 💬 Questions?
 
 See full documentation in `fi-analytics/` directory:
+
 1. **Test Plan** → What & Why
 2. **Implementation Guide** → How to Run
 3. **Delivery Summary** → What's Delivered
@@ -233,6 +240,6 @@ See full documentation in `fi-analytics/` directory:
 
 **Status**: ✅ **SPRINT 0 COMPLETE & READY TO RUN**
 
-*Created*: 2026-01-03  
-*Duration*: Sprint 0 (Days 1-2)  
-*Next*: Sprint 1 (Integration & Tracing)
+_Created_: 2026-01-03  
+_Duration_: Sprint 0 (Days 1-2)  
+_Next_: Sprint 1 (Integration & Tracing)

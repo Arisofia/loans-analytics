@@ -1,10 +1,9 @@
-
 def find_column(df, column_name):
     """
     Returns the first matching column from a list of candidates, or the column if a string is provided.
     If no match is found, returns None.
     """
-    if not hasattr(df, 'columns'):
+    if not hasattr(df, "columns"):
         return None
     columns = df.columns
     if isinstance(column_name, (list, tuple)):
@@ -15,6 +14,8 @@ def find_column(df, column_name):
     if column_name in columns:
         return df[column_name]
     return None
+
+
 """Utility functions for common loan analytics KPIs."""
 
 import logging
@@ -23,12 +24,9 @@ from typing import Any, Dict, Iterable
 import numpy as np
 import pandas as pd
 
-from src.pipeline.data_validation import (
-    ANALYTICS_NUMERIC_COLUMNS,
-    REQUIRED_ANALYTICS_COLUMNS,
-    safe_numeric,
-    validate_dataframe,
-)
+from src.pipeline.data_validation import (ANALYTICS_NUMERIC_COLUMNS,
+                                          REQUIRED_ANALYTICS_COLUMNS,
+                                          safe_numeric, validate_dataframe)
 
 # Alias for backward compatibility and clarity within this module
 REQUIRED_KPI_COLUMNS = REQUIRED_ANALYTICS_COLUMNS

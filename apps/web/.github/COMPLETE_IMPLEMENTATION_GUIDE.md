@@ -222,8 +222,8 @@ GitHub needs to know what deployment environments exist. Create them in reposito
 Go to <https://github.com/owner/repo/settings/environments> and confirm:
 
 - [ ] staging (visible)
-- [ ] production (with v* tag rule)
-- [ ] production-rollback (with v* tag rule)
+- [ ] production (with v\* tag rule)
+- [ ] production-rollback (with v\* tag rule)
 
 **✓ All 3 environments created? Proceed to Step 6.**
 
@@ -354,8 +354,8 @@ git status .github/
 - [x] Team members have read assigned documentation
 - [x] All verification checks passed
 
-**Completion Date**: _______________
-**Verified By**: _______________
+**Completion Date**: **\*\***\_\_\_**\*\***
+**Verified By**: **\*\***\_\_\_**\*\***
 
 ---
 
@@ -538,7 +538,6 @@ Create a test report with:
 - Issues found (if any)
 - Screenshots (if issues found)
 - Pass/fail status
-
 
 In **#dev-alerts** channel, post:
 
@@ -739,8 +738,8 @@ Visit: <https://staging.abaco-loans-analytics.com>
 - [x] Rollback workflow practiced successfully
 - [x] No blockers found in any workflow
 
-**Completion Date**: _______________
-**Verified By**: _______________
+**Completion Date**: **\*\***\_\_\_**\*\***
+**Verified By**: **\*\***\_\_\_**\*\***
 
 ---
 
@@ -779,8 +778,8 @@ Go to: <https://github.com/owner/repo/settings/environments>
 Confirm all 3 environments exist:
 
 - [ ] staging
-- [ ] production (with v* tag rule)
-- [ ] production-rollback (with v* tag rule)
+- [ ] production (with v\* tag rule)
+- [ ] production-rollback (with v\* tag rule)
 
 **Step 4: Verify workflow files**
 
@@ -823,7 +822,6 @@ Review these files:
 
 **Step 2: Share final documentation**
 
-
 **Developers:**
 
 - `.github/QUICK_START.md`
@@ -861,7 +859,6 @@ Please confirm you've read your assigned materials.
 
 Create a time for Q&A (30 minutes):
 
-
 - "Any questions about the new CI/CD workflow?"
 - "Anything unclear in the documentation?"
 - "Any edge cases we should plan for?"
@@ -880,9 +877,7 @@ Document procedures for:
 
 ---
 
-
 **Step 1: Create channels (if not already exist)**
-
 
 - [ ] #dev-alerts (development notifications)
 - [ ] #prod-alerts (production notifications)
@@ -976,7 +971,7 @@ For each channel, pin relevant documentation:
 - [ ] Go to Settings → Environments
 - [ ] Verify 3 environments:
   - [ ] staging
-  - [ ] production (with v* tag rule)
+  - [ ] production (with v\* tag rule)
   - [ ] production-rollback
 
 **Configuration Files**
@@ -1010,9 +1005,9 @@ For each channel, pin relevant documentation:
 - [x] Team confidence is high
 - [x] All pre-production checklist items complete
 
-**Completion Date**: _______________
-**Verified By**: _______________
-**Team Sign-Off**: _______________
+**Completion Date**: **\*\***\_\_\_**\*\***
+**Verified By**: **\*\***\_\_\_**\*\***
+**Team Sign-Off**: **\*\***\_\_\_**\*\***
 
 ---
 
@@ -1043,7 +1038,7 @@ For each channel, pin relevant documentation:
 ### GitHub Configuration
 
 - [ ] 3 environments exist (staging, production, production-rollback)
-- [ ] Production environment has v* tag rule
+- [ ] Production environment has v\* tag rule
 - [ ] Approval gates configured for production
 - [ ] Branch protection (optional but recommended)
 

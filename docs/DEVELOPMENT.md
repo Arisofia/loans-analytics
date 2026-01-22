@@ -1,4 +1,3 @@
-
 ## Setup
 
 1. **Clone & Install**
@@ -47,14 +46,14 @@
 
 ### Vercel & GitHub secrets
 
-  ```bash
-  vercel login
-  vercel env add NEXT_PUBLIC_SUPABASE_URL production
+```bash
+vercel login
+vercel env add NEXT_PUBLIC_SUPABASE_URL production
 # ...existing code...
-  vercel env add NEXT_PUBLIC_ALERT_EMAIL production
-  vercel env add NEXT_PUBLIC_SUPABASE_FN_BASE production
-  vercel env pull .env.local
-  ```
+vercel env add NEXT_PUBLIC_ALERT_EMAIL production
+vercel env add NEXT_PUBLIC_SUPABASE_FN_BASE production
+vercel env pull .env.local
+```
 
 - `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` are required by the automated GitHub Action that deploys to Vercel and by any `vercel` CLI commands.
 - Keep the same set of `NEXT_PUBLIC_*` variables in preview/staging environments so the data flows can be tested before hitting production.
@@ -63,13 +62,16 @@
 
 - Enable Vercel Analytics from the project dashboard (Performance → Analytics) and run the built-in Speed Insights reports (`https://vercel.com/docs/concepts/analytics` and the `vercel speed` command) to monitor Core Web Vitals over time.
 - Sentry is wired up via `NEXT_PUBLIC_SENTRY_DSN` to capture client- and server-side errors. Confirm the DSN is defined in both local and Vercel environments so error pages surface gracefully.
+
 # ...existing code...
 
 ### Supabase, backend & pipeline connectivity
 
 - Confirm the deployed app uses `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY` to talk to the primary database. Run `npm run dev` and watch for `Supabase` calls in the browser network tab to verify connectivity.
 - `NEXT_PUBLIC_SUPABASE_FN_BASE` backs the integration settings UI. Point it to the Supabase Edge Functions base so tokens, sync requests, and drill-down statuses execute securely.
+
 # ...existing code...
+
 - Trigger the pipeline locally with `python scripts/run_data_pipeline.py`; verify that outputs land in `data/metrics` and the manifest/logs directories. The same script runs nightly via `.github/workflows/daily-ingest.yml`, so use `PIPELINE_INPUT_FILE` to test alternate datasets.
 
 ### Integrations & AI secrets
@@ -87,6 +89,7 @@
 - Keep components focused and reusable
 
 ### File Organization
+
 ```
 src/
   ├── app/             # App router (canonical)
@@ -98,11 +101,14 @@ src/
 ## Testing
 
 # Watch mode
+
 npm run test -- --watch
 
 # Coverage
+
 npm run test:coverage
-```
+
+````
 
 ## Deployment Checklist
 
@@ -118,7 +124,7 @@ npm run test:coverage
 
 ```bash
 PORT=3001 npm run dev
-```
+````
 
 ### Supabase connection fails
 

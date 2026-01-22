@@ -3,7 +3,7 @@ name: Unified Multi-Agent Data Pipeline
 on:
   schedule:
     # Run daily at 4:00 AM CET (3:00 AM UTC) - before agent workflows
-    - cron: "0 3 * * *"
+    - cron: '0 3 * * *'
   workflow_dispatch:
 
 jobs:
@@ -41,8 +41,8 @@ jobs:
       - name: Setup Python Environment
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: "pip"
+          python-version: '3.11'
+          cache: 'pip'
 
       - name: Install Dependencies
         run: |
@@ -59,7 +59,6 @@ jobs:
         run: |
           echo "Fetching loan data from Cascade..."
           python scripts/ingest_cascade.py
-
 
       - name: Refresh Supabase Views
         id: supabase
@@ -82,7 +81,6 @@ jobs:
           echo "Creating manifest with data freshness timestamps..."
           python scripts/generate_data_manifest.py
 
-
       - name: Log to Opik
         if: always() && steps.check-secrets.outputs.opik_available == true && hashFiles('scripts/log_pipeline_metrics.py') != ''
         env:
@@ -91,7 +89,6 @@ jobs:
           python scripts/log_pipeline_metrics.py \
             --cascade-status ${{ steps.cascade.outcome || 'skipped' }} \
             --supabase-status ${{ steps.supabase.outcome || 'skipped' }}
-
 
       - name: Upload Pipeline Artifacts
         uses: actions/upload-artifact@v4

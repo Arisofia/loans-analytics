@@ -57,29 +57,29 @@ jobs:
             echo "❌ vercel.json not found"
             exit 1
           fi
-          
+
           # Check required fields for modern Vercel config
           if ! grep -q '"framework"' vercel.json; then
             echo "❌ vercel.json missing 'framework' field"
             exit 1
           fi
-          
+
           if ! grep -q '"buildCommand"' vercel.json; then
             echo "❌ vercel.json missing 'buildCommand' field"
             exit 1
           fi
-          
+
           if ! grep -q '"outputDirectory"' vercel.json; then
             echo "❌ vercel.json missing 'outputDirectory' field"
             exit 1
           fi
-          
+
           # Reject deprecated version 2 config
           if grep -q '"version": 2' vercel.json; then
             echo "❌ vercel.json uses deprecated version 2 - use version 3 or omit"
             exit 1
           fi
-          
+
           echo "✅ vercel.json configuration is valid"
 
   github-workflow-validation:
@@ -93,9 +93,9 @@ jobs:
             echo "❌ ci-main.yml not found"
             exit 1
           fi
-          
+
             echo "❌ ci-main.yml contains JavaScript code in shell step (invalid)"
             exit 1
           fi
-          
+
           echo "✅ Workflow configuration is valid"

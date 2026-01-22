@@ -123,23 +123,23 @@
 
 ### Configuration Consolidation
 
-| Metric               | Before | After |
-| -------------------- | ------ | ----- |
-| Config files         | 18     | 4     |
-| Config directories   | 6      | 2     |
-| Lines of config      | ~2,000 | ~700  |
-| Duplication          | High   | None  |
-| Environment support  | Manual | Auto  |
+| Metric              | Before | After |
+| ------------------- | ------ | ----- |
+| Config files        | 18     | 4     |
+| Config directories  | 6      | 2     |
+| Lines of config     | ~2,000 | ~700  |
+| Duplication         | High   | None  |
+| Environment support | Manual | Auto  |
 
 ### Overall Project Progress
 
-| Phase                 | Status         | %    | Key Deliverables            |
-| --------------------- | -------------- | ---- | --------------------------- |
-| Phase 1: Audit        | Complete       | 100% | ARCHITECTURE.md, Inventory  |
-| Phase 3A: Consol      | Complete       | 100% | Removed 4 modules           |
-| Phase 3.4E-F: Config  | Complete       | 100% | pipeline.yml, overrides     |
-| Phase 4: Standards    | In Progress    | 0%   | Linting, type checks (TBD)  |
-| Phase 5: Operational  | Pending        | 0%   | Runbooks, Migration (TBD)   |
+| Phase                | Status      | %    | Key Deliverables           |
+| -------------------- | ----------- | ---- | -------------------------- |
+| Phase 1: Audit       | Complete    | 100% | ARCHITECTURE.md, Inventory |
+| Phase 3A: Consol     | Complete    | 100% | Removed 4 modules          |
+| Phase 3.4E-F: Config | Complete    | 100% | pipeline.yml, overrides    |
+| Phase 4: Standards   | In Progress | 0%   | Linting, type checks (TBD) |
+| Phase 5: Operational | Pending     | 0%   | Runbooks, Migration (TBD)  |
 
 ---
 
@@ -238,14 +238,14 @@
 
 ## 📅 Timeline
 
-| Date            | Phase          | Status | Key Deliverables            |
-| --------------- | -------------- | ------ | --------------------------- |
-| 2025-12-26 00:0 | Phase 1        | DONE   | ARCHITECTURE.md created     |
-| 2025-12-26 01:4 | Phase 3A       | DONE   | 278 lines dead code removed |
-| 2025-12-26 02:2 | Phase 3.4E-F   | DONE   | 18 configs -> 4 files       |
-| TBD Q4 2026     | Phase 4 Start  | TODO   | Linting & type checking     |
-| TBD Q1 2026     | Phase 5 Start  | TODO   | Operational deliverables    |
-| Q1 2026         | v2.0 Release   | PLAN   | Delete LEGACY configs       |
+| Date            | Phase         | Status | Key Deliverables            |
+| --------------- | ------------- | ------ | --------------------------- |
+| 2025-12-26 00:0 | Phase 1       | DONE   | ARCHITECTURE.md created     |
+| 2025-12-26 01:4 | Phase 3A      | DONE   | 278 lines dead code removed |
+| 2025-12-26 02:2 | Phase 3.4E-F  | DONE   | 18 configs -> 4 files       |
+| TBD Q4 2026     | Phase 4 Start | TODO   | Linting & type checking     |
+| TBD Q1 2026     | Phase 5 Start | TODO   | Operational deliverables    |
+| Q1 2026         | v2.0 Release  | PLAN   | Delete LEGACY configs       |
 
 ---
 
