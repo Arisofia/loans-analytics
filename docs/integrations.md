@@ -19,10 +19,6 @@ export SLACK_BOT_TOKEN="<token>"
 export SLACK_SIGNING_SECRET="<signing_secret>"
 ```
 
-## Node.js / TypeScript setup
-
-### Install SDKs
-
 Choose the packages that match your preferred Figma client:
 
 ```bash

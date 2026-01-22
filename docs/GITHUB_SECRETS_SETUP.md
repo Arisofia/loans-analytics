@@ -153,7 +153,7 @@ Common across parity checks and ingestion pipelines.
 
 - `SUPABASE_URL` / `SUPABASE_ANON_PUBLIC_KEY`
   - Purpose: Some scheduled workflows use this pair (distinct from the `apps/web` PROD/STAGING naming).
-  - Used by: `.github/workflows/supabase-figma-scheduled.yml`.
+  # ...existing code...
 
 ### D) Meta / Marketing
 
@@ -193,11 +193,8 @@ Used by ingestion / unified pipeline workflows.
 - `TAVILY_KEY`
 - `CLAUDE_ROCKET_TOKEN`
 
-### I) Figma
-
-- `FIGMA_TOKEN`
-- `FIGMA_FILE_KEY`
-- `FIGMA_NODE_ID` (some workflows)
+### I) [Eliminado: Figma]
+# ...existing code...
 
 ### J) Vercel (if using `.github/workflows/deploy.yml`)
 

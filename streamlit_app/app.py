@@ -82,17 +82,8 @@ def generate_kpi_exports(looker_data):
     }
 
     try:
-        figma_df = catalog_proc.get_figma_dashboard_df()
-        figma_df.to_csv(exports_dir / "analytics_facts.csv", index=False)
-
         scorecard_df = catalog_proc.get_quarterly_scorecard()
         scorecard_df.to_csv(exports_dir / "quarterly_scorecard.csv", index=False)
-
-        # Export Figma/Copilot payload
-        slide_payload = catalog_proc.get_slide_payload()
-        with open(exports_dir / "figma_slide_payload.json", "w") as f:
-            json.dump(slide_payload, f, indent=2)
-
     except Exception as exc:
         logger.warning("Extended KPI generation failed: %s", exc)
 
@@ -366,11 +357,13 @@ with st.expander("View all computed KPIs"):
     else:
         st.info("No extended KPIs found.")
 
-# 9. Export & Figma Prep
-st.header("📤 Export & Figma Prep")
-exp_col1, exp_col2 = st.columns(2)
-
-with exp_col1:
+st.divider()
+st.caption(
+    f"Abaco Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+)
+st.markdown("</div>", unsafe_allow_html=True)
+    # 9. Export
+    st.header("📤 Export")
     st.subheader("Data Artifacts")
     if not analytics_facts.empty:
         st.success("✅ Flattened fact tables ready.")
@@ -391,28 +384,8 @@ with exp_col1:
             "quarterly_scorecard.csv",
         )
 
-with exp_col2:
-    st.subheader("Figma Sync")
-    st.write(
-        "Push calculated metrics to the [Commercial Analytics Figma](https://www.figma.com/make/nuVKwuPuLS7VmLFvqzOX1G/abaco-commercial-analytics)"
+    st.divider()
+    st.caption(
+        f"Abaco Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     )
-
-    if st.button("🚀 Sync to Figma Slides", use_container_width=True):
-        payload_path = EXPORTS_DIR / "figma_slide_payload.json"
-        if payload_path.exists():
-            with open(payload_path, "r") as f:
-                payload = json.load(f)
-
-            st.json(payload)
-            st.info(
-                "💡 **Tip:** If you see an 'Unsupported provider' error in Figma, it means Figma AI (Make) is not enabled for your account. You can manually paste the JSON payload above into your Figma design or use the 'Abaco Sync' plugin if installed."
-            )
-            st.success("Figma payload prepared and validated.")
-        else:
-            st.error("Please 'Generate KPI exports' in the sidebar first.")
-
-st.divider()
-st.caption(
-    f"Abaco Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-)
-st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)

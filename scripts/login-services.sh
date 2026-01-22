@@ -38,7 +38,7 @@ echo "   sourcery login"
 echo ""
 
 echo "📝 Token-based services (configured via .env.local):"
-echo "   ✓ FIGMA_TOKEN"
+# ...existing code...
 echo "   ✓ GEMINI_API_KEY"
 echo "   ✓ GROK_API_KEY"
 echo "   ✓ HUBSPOT_TOKEN"

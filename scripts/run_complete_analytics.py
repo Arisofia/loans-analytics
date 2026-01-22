@@ -323,12 +323,7 @@ def main():
         )
         dashboard["par_90_ratio_pct"] = dashboard.get("PAR90", {}).get("value", 0.0)
 
-        # Export Figma Dashboard CSV
-        print("📝 Exporting Figma Dashboard CSV...")
-        figma_df = catalog_proc.get_figma_dashboard_df()
-        csv_path = project_root / "exports" / "analytics_facts.csv"
-        figma_df.to_csv(csv_path, index=False)
-        print(f"✅ Figma Dashboard CSV saved to: {csv_path}")
+        # ...existing code...
 
         # Export Quarterly Scorecard CSV
         print("📝 Exporting Quarterly Scorecard CSV...")
@@ -341,13 +336,7 @@ def main():
         from src.integrations.supabase_client import SupabaseOutputClient
 
         sb_client = SupabaseOutputClient()
-        if sb_client.client:
-            print("📤 Pushing analytics_facts to Supabase...")
-            success = sb_client.upsert_analytics_facts(figma_df)
-            if success:
-                print("✅ Supabase sync complete (analytics_facts)")
-            else:
-                print("⚠️ Supabase sync failed")
+        # ...existing code...
 
     except Exception as e:
         print(f"⚠️  Error calculating extended KPIs: {e}")

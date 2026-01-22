@@ -19,7 +19,7 @@ def upload_charts():
     for f in os.listdir(source_dir):
         if f.endswith(".png"):
             source_path = os.path.join(source_dir, f)
-            target_key = f"figma_dashboard/{f}"
+            target_key = f"dashboard_exports/{f}"
             s3.upload_file(
                 source_path,
                 bucket,
