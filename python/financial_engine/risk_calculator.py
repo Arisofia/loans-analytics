@@ -13,7 +13,9 @@ class RecourseStrategy(RiskStrategy):
     def process_expression(self) -> pl.Expr:
         # If overdue >90, chargeback
         return (
-            pl.when(pl.col("days_overdue") > 90).then(pl.lit("chargeback")).otherwise(pl.lit("ok"))
+            pl.when(pl.col("days_overdue") > 90)
+            .then(pl.lit("chargeback"))
+            .otherwise(pl.lit("ok"))
         )
 
 

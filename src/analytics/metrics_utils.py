@@ -24,12 +24,9 @@ from typing import Any, Dict, Iterable
 import numpy as np
 import pandas as pd
 
-from src.pipeline.data_validation import (
-    ANALYTICS_NUMERIC_COLUMNS,
-    REQUIRED_ANALYTICS_COLUMNS,
-    safe_numeric,
-    validate_dataframe,
-)
+from src.pipeline.data_validation import (ANALYTICS_NUMERIC_COLUMNS,
+                                          REQUIRED_ANALYTICS_COLUMNS,
+                                          safe_numeric, validate_dataframe)
 
 # Alias for backward compatibility and clarity within this module
 REQUIRED_KPI_COLUMNS = REQUIRED_ANALYTICS_COLUMNS
@@ -59,7 +56,9 @@ def _coerce_numeric(series: pd.Series, field_name: str) -> pd.Series:
 
     numeric = safe_numeric(series)
     if numeric.isna().all() and not series.empty:
-        raise ValueError(f"Field '{field_name}' must contain at least one numeric value")
+        raise ValueError(
+            f"Field '{field_name}' must contain at least one numeric value"
+        )
     return numeric
 
 
@@ -112,7 +111,9 @@ def loan_to_value(loan_amounts: pd.Series, appraised_values: pd.Series) -> pd.Se
     return (sanitized_amounts / safe_appraised) * 100
 
 
-def debt_to_income_ratio(monthly_debts: pd.Series, borrower_incomes: pd.Series) -> pd.Series:
+def debt_to_income_ratio(
+    monthly_debts: pd.Series, borrower_incomes: pd.Series
+) -> pd.Series:
     """
     Compute debt-to-income (DTI) ratio as a percentage, using monthly income
     and safeguarding against zero or non-positive income.
@@ -161,7 +162,9 @@ def weighted_portfolio_delinquency_rate(
     Returns:
         float: Weighted delinquency rate percentage.
     """
-    sanitized_principal = _coerce_numeric(principal_balances, "principal_balance").fillna(0)
+    sanitized_principal = _coerce_numeric(
+        principal_balances, "principal_balance"
+    ).fillna(0)
     total_principal = sanitized_principal.sum()
     if total_principal == 0:
         return 0.0
@@ -172,7 +175,9 @@ def weighted_portfolio_delinquency_rate(
     return (delinquent_principal / total_principal) * 100
 
 
-def weighted_portfolio_yield(interest_rates: pd.Series, principal_balances: pd.Series) -> float:
+def weighted_portfolio_yield(
+    interest_rates: pd.Series, principal_balances: pd.Series
+) -> float:
     """
     Calculate weighted portfolio yield, returning zero when principal is
     missing or zero.
@@ -185,7 +190,9 @@ def weighted_portfolio_yield(interest_rates: pd.Series, principal_balances: pd.S
         float: Weighted yield percentage.
     """
 
-    sanitized_principal = _coerce_numeric(principal_balances, "principal_balance").fillna(0)
+    sanitized_principal = _coerce_numeric(
+        principal_balances, "principal_balance"
+    ).fillna(0)
     total_principal = sanitized_principal.sum()
     if total_principal == 0:
         return 0.0
@@ -206,12 +213,16 @@ def _data_quality_metrics(loan_data: pd.DataFrame) -> Dict[str, float]:
     null_ratio = float(loan_data.isna().mean().mean())
     duplicate_ratio = float(loan_data.duplicated().mean())
 
-    numeric_columns = [col for col in ANALYTICS_NUMERIC_COLUMNS if col in loan_data.columns]
+    numeric_columns = [
+        col for col in ANALYTICS_NUMERIC_COLUMNS if col in loan_data.columns
+    ]
     total_numeric_cells = len(loan_data) * len(numeric_columns)
     invalid_numeric_count = 0
     for col in numeric_columns:
         coerced = safe_numeric(loan_data[col])
-        invalid_numeric_count += max(0, coerced.isna().sum() - loan_data[col].isna().sum())
+        invalid_numeric_count += max(
+            0, coerced.isna().sum() - loan_data[col].isna().sum()
+        )
 
     invalid_numeric_ratio = (
         invalid_numeric_count / total_numeric_cells if total_numeric_cells > 0 else 0.0
@@ -258,12 +269,16 @@ def portfolio_kpis(loan_data: pd.DataFrame, return_enriched: bool = True) -> Any
     ltv_series = (
         _coerce_numeric(sanitized_data["ltv_ratio"], "ltv_ratio")
         if "ltv_ratio" in sanitized_data.columns
-        else loan_to_value(sanitized_data["loan_amount"], sanitized_data["appraised_value"])
+        else loan_to_value(
+            sanitized_data["loan_amount"], sanitized_data["appraised_value"]
+        )
     )
     dti_series = (
         _coerce_numeric(sanitized_data["dti_ratio"], "dti_ratio")
         if "dti_ratio" in sanitized_data.columns
-        else debt_to_income_ratio(sanitized_data["monthly_debt"], sanitized_data["borrower_income"])
+        else debt_to_income_ratio(
+            sanitized_data["monthly_debt"], sanitized_data["borrower_income"]
+        )
     )
 
     avg_ltv = ltv_series.mean(skipna=True)

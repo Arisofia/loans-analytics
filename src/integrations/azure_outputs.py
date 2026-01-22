@@ -18,7 +18,8 @@ from urllib.parse import urlparse
 logger = logging.getLogger(__name__)
 
 try:
-    from azure.core.credentials import AzureNamedKeyCredential, AzureSasCredential
+    from azure.core.credentials import (AzureNamedKeyCredential,
+                                        AzureSasCredential)
     from azure.identity import DefaultAzureCredential
     from azure.storage.blob import BlobServiceClient, ContentSettings
 
@@ -42,7 +43,9 @@ def _extract_account_name(account_url: Optional[str]) -> Optional[str]:
     return host.split(".")[0]
 
 
-def _normalize_account_url(raw_url: Optional[str], account_name: Optional[str]) -> Optional[str]:
+def _normalize_account_url(
+    raw_url: Optional[str], account_name: Optional[str]
+) -> Optional[str]:
     if raw_url:
         if raw_url.startswith("http://") or raw_url.startswith("https://"):
             return raw_url
@@ -61,10 +64,14 @@ class AzureStorageClient:
             self.client = None
             return
 
-        self.connection_string = connection_string or os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        self.connection_string = connection_string or os.getenv(
+            "AZURE_STORAGE_CONNECTION_STRING"
+        )
         self.container_name = os.getenv("AZURE_STORAGE_CONTAINER", "analytics-exports")
 
-        account_name = os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
+        account_name = os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv(
+            "AZURE_STORAGE_ACCOUNT"
+        )
         account_key = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
         sas_token = os.getenv("AZURE_STORAGE_SAS_TOKEN")
         raw_account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
@@ -83,10 +90,16 @@ class AzureStorageClient:
 
         if not self.connection_string and account_name and account_key:
             if self.connection_string:
-                self.client = BlobServiceClient.from_connection_string(self.connection_string)
-            elif account_url and account_key and AzureNamedKeyCredential and account_name:
+                self.client = BlobServiceClient.from_connection_string(
+                    self.connection_string
+                )
+            elif (
+                account_url and account_key and AzureNamedKeyCredential and account_name
+            ):
                 credential = AzureNamedKeyCredential(account_name, account_key)
-                self.client = BlobServiceClient(account_url=account_url, credential=credential)
+                self.client = BlobServiceClient(
+                    account_url=account_url, credential=credential
+                )
             elif account_url and sas_token and AzureSasCredential:
                 self.client = BlobServiceClient(
                     account_url=account_url, credential=AzureSasCredential(sas_token)
@@ -211,14 +224,20 @@ class AzureDashboardClient:
     def __init__(self, subscription_id: Optional[str] = None):
         self.subscription_id = subscription_id or os.getenv("AZURE_SUBSCRIPTION_ID")
         self.resource_group = os.getenv("AZURE_RESOURCE_GROUP")
-        self.dashboard_name = os.getenv("AZURE_DASHBOARD_NAME", "abaco-analytics-dashboard")
+        self.dashboard_name = os.getenv(
+            "AZURE_DASHBOARD_NAME", "abaco-analytics-dashboard"
+        )
         self.subscription_id = (
-            subscription_id or os.getenv("AZURE_SUBSCRIPTION_ID") or os.getenv("AZURE_SUBSCRIPTION")
+            subscription_id
+            or os.getenv("AZURE_SUBSCRIPTION_ID")
+            or os.getenv("AZURE_SUBSCRIPTION")
         )
         self.resource_group = os.getenv("AZURE_RESOURCE_GROUP") or os.getenv(
             "AZURE_RESOURCE_GROUP_NAME"
         )
-        self.dashboard_name = os.getenv("AZURE_DASHBOARD_NAME", "abaco-analytics-dashboard")
+        self.dashboard_name = os.getenv(
+            "AZURE_DASHBOARD_NAME", "abaco-analytics-dashboard"
+        )
 
         if not HAS_AZURE or DefaultAzureCredential is None:
             logger.warning("Azure SDK not installed. Azure Dashboard disabled.")

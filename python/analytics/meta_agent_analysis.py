@@ -57,7 +57,9 @@ campaigns.to_csv(EXPORT_DIR + "campaigns_overview.csv")
 
 # 3. Trend detection (spend, impressions, clicks)
 df["date_start"] = pd.to_datetime(df["date_start"])
-daily = df.groupby("date_start").agg({"spend": "sum", "impressions": "sum", "clicks": "sum"})
+daily = df.groupby("date_start").agg(
+    {"spend": "sum", "impressions": "sum", "clicks": "sum"}
+)
 daily["spend_ma7"] = daily["spend"].rolling(7).mean()
 daily["impressions_ma7"] = daily["impressions"].rolling(7).mean()
 daily["clicks_ma7"] = daily["clicks"].rolling(7).mean()

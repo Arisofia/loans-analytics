@@ -153,9 +153,13 @@ class MarkdownFixer:
                 if not self.dry_run:
                     with open(file_path, "w", encoding="utf-8") as f:
                         f.write(content)
-                    self.logger.info(f"Fixed {file_path}: {issues_fixed} issues resolved")
+                    self.logger.info(
+                        f"Fixed {file_path}: {issues_fixed} issues resolved"
+                    )
                 else:
-                    self.logger.info(f"[DRY-RUN] Would fix {file_path}: {issues_fixed} issues")
+                    self.logger.info(
+                        f"[DRY-RUN] Would fix {file_path}: {issues_fixed} issues"
+                    )
 
                 self.files_fixed += 1
                 self.issues_fixed += issues_fixed
@@ -230,7 +234,9 @@ class DependencyManager:
 
         return requirements
 
-    def add_missing_dependencies(self, file_path: str, new_dependencies: List[str]) -> bool:
+    def add_missing_dependencies(
+        self, file_path: str, new_dependencies: List[str]
+    ) -> bool:
         """
         Add missing dependencies to requirements file.
 
@@ -289,7 +295,9 @@ class DependencyManager:
                 for dep in to_add:
                     self.logger.info(f"  + {dep}")
             else:
-                self.logger.info(f"[DRY-RUN] Would add {len(to_add)} dependencies to {file_path}")
+                self.logger.info(
+                    f"[DRY-RUN] Would add {len(to_add)} dependencies to {file_path}"
+                )
                 for dep in to_add:
                     self.logger.info(f"  + {dep}")
 

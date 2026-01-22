@@ -93,7 +93,10 @@ def run_pipeline(
     ingested = ingestion.ingest_csv(Path(input_file).name)
     validated = ingestion.validate_loans(ingested)
 
-    if validated.empty or not pd.Series(validated.get("_validation_passed", True)).all():
+    if (
+        validated.empty
+        or not pd.Series(validated.get("_validation_passed", True)).all()
+    ):
         return False
 
     transformer = DataTransformation()
@@ -103,7 +106,9 @@ def run_pipeline(
     par_30, par_30_ctx = kpi_engine.calculate_par_30()
     par_90, par_90_ctx = kpi_engine.calculate_par_90()
     collection_rate, coll_ctx = kpi_engine.calculate_collection_rate()
-    health_score, health_ctx = kpi_engine.calculate_portfolio_health(par_30, collection_rate)
+    health_score, health_ctx = kpi_engine.calculate_portfolio_health(
+        par_30, collection_rate
+    )
 
     metrics = {
         "PAR30": {"value": par_30, **par_30_ctx},
@@ -167,11 +172,17 @@ def main(
     config_overrides = {}
     if with_db:
         logger.info("Enabling Supabase upload via config override.")
-        config_overrides = {"pipeline": {"phases": {"outputs": {"supabase": {"enabled": True}}}}}
+        config_overrides = {
+            "pipeline": {"phases": {"outputs": {"supabase": {"enabled": True}}}}
+        }
 
     try:
-        pipeline = UnifiedPipeline(config_path=Path(config_path), config_overrides=config_overrides)
-        result = pipeline.execute(Path(input_file), user=effective_user, action=effective_action)
+        pipeline = UnifiedPipeline(
+            config_path=Path(config_path), config_overrides=config_overrides
+        )
+        result = pipeline.execute(
+            Path(input_file), user=effective_user, action=effective_action
+        )
 
         status = result.get("status")
         logger.info("Pipeline completed: %s", status)
@@ -216,7 +227,9 @@ def main(
 
                     agent = KPIQuestionAnsweringAgent()
                     answer = agent.answer_query(ask_kpi, flat_metrics)
-                    print(f"\n--- KPI AGENT ANSWER ---\n{answer}\n------------------------\n")
+                    print(
+                        f"\n--- KPI AGENT ANSWER ---\n{answer}\n------------------------\n"
+                    )
                     logger.info("Gen AI Answer generated.")
                 except Exception as e:
                     logger.error("Gen AI Query failed: %s", e)
@@ -229,10 +242,18 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the ABACO Unified Data Pipeline")
-    parser.add_argument("--input", default=DEFAULT_INPUT, help="Path to the CSV input file")
-    parser.add_argument("--user", help="Identifier for the user or system triggering the pipeline")
-    parser.add_argument("--action", help="Action context (e.g., github-action, manual-run)")
-    parser.add_argument("--config", default="config/pipeline.yml", help="Path to pipeline config")
+    parser.add_argument(
+        "--input", default=DEFAULT_INPUT, help="Path to the CSV input file"
+    )
+    parser.add_argument(
+        "--user", help="Identifier for the user or system triggering the pipeline"
+    )
+    parser.add_argument(
+        "--action", help="Action context (e.g., github-action, manual-run)"
+    )
+    parser.add_argument(
+        "--config", default="config/pipeline.yml", help="Path to pipeline config"
+    )
     parser.add_argument("--with-db", action="store_true", help="Enable Supabase upload")
     parser.add_argument(
         "--train-model", action="store_true", help="Train ML risk model after pipeline"

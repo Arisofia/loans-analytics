@@ -18,10 +18,15 @@ __all__ = [
 
 class CircuitBreaker:
     def __init__(
-        self, max_failures: int = 3, failure_threshold: int = None, reset_seconds: int = 60
+        self,
+        max_failures: int = 3,
+        failure_threshold: int = None,
+        reset_seconds: int = 60,
     ):
         # Support both naming conventions
-        self.max_failures = failure_threshold if failure_threshold is not None else max_failures
+        self.max_failures = (
+            failure_threshold if failure_threshold is not None else max_failures
+        )
         self.reset_seconds = reset_seconds
         self._failures = 0
         self._last_failure_time = None

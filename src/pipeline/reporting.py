@@ -10,7 +10,9 @@ import pandas as pd
 class DataQualityReport:
     """Structured data quality audit report."""
 
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     status: str = "passed"
     score: float = 100.0
     total_rows: int = 0

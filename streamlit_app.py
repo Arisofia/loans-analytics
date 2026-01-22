@@ -55,7 +55,9 @@ ABACO_THEME = {
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     clean = df.rename(
-        columns=lambda col: re.sub(r"[^a-z0-9_]", "_", re.sub(r"\s+", "_", col.strip().lower()))
+        columns=lambda col: re.sub(
+            r"[^a-z0-9_]", "_", re.sub(r"\s+", "_", col.strip().lower())
+        )
     ).pipe(lambda d: d.loc[:, ~d.columns.duplicated()])
     return clean
 
@@ -375,7 +377,9 @@ def generate_kpi_exports(looker_data):
         logger.warning("Extended KPI generation failed: %s", exc)
 
     output_path = exports_dir / "complete_kpi_dashboard.json"
-    output_path.write_text(json.dumps(dashboard, indent=2, default=str), encoding="utf-8")
+    output_path.write_text(
+        json.dumps(dashboard, indent=2, default=str), encoding="utf-8"
+    )
 
     return output_path
 
@@ -385,7 +389,9 @@ def build_kpi_snapshot(dashboard, facts_df):
     latest_month = None
 
     if not facts_df.empty:
-        facts_sorted = facts_df.sort_values("month") if "month" in facts_df.columns else facts_df
+        facts_sorted = (
+            facts_df.sort_values("month") if "month" in facts_df.columns else facts_df
+        )
         latest = facts_sorted.iloc[-1]
         latest_month = latest.get("month")
         for col in facts_sorted.columns:
@@ -458,7 +464,9 @@ uploaded = st.sidebar.file_uploader(
     "Upload the core loan dataset (CSV)", type=["csv"], accept_multiple_files=False
 )
 validation_toggle = st.sidebar.checkbox("Validate upload schema", value=True)
-st.sidebar.caption("Use this area to trigger ingestion, refresh safely, and capture metadata.")
+st.sidebar.caption(
+    "Use this area to trigger ingestion, refresh safely, and capture metadata."
+)
 if validation_toggle and uploaded is not None:
     required = [
         "loan_amount",
@@ -585,7 +593,9 @@ if payer_column:
             f"No matches detected for: {', '.join(missing)}. Use normalized payer names to confirm coverage gaps."
         )
 else:
-    st.info("Add a payer/payor/pagador/offtaker/buyer/debtor column to assess coverage.")
+    st.info(
+        "Add a payer/payor/pagador/offtaker/buyer/debtor column to assess coverage."
+    )
 
 st.markdown("## KPI Calculations")
 
@@ -635,7 +645,9 @@ st.metric("Loan gap", f"{gap_loans:.0f}")
 monthly_projection = pd.DataFrame(
     {
         "month": pd.date_range(start=pd.Timestamp.now(), periods=6, freq="MS"),
-        "yield": np.linspace(current_metrics["current_yield"], targets["target_monthly_yield"], 6),
+        "yield": np.linspace(
+            current_metrics["current_yield"], targets["target_monthly_yield"], 6
+        ),
         "loan_volume": np.linspace(
             current_metrics["active_loans"], targets["target_active_loans"], 6
         ),
@@ -663,7 +675,9 @@ st.plotly_chart(fig_treemap, use_container_width=True)
 st.markdown("## Roll Rate / Cascade")
 roll_rates = compute_roll_rates(loan_df)
 if roll_rates.empty:
-    st.info("Roll rate data requires dpd_status and loan_status columns to compute transitions.")
+    st.info(
+        "Roll rate data requires dpd_status and loan_status columns to compute transitions."
+    )
 else:
     st.dataframe(roll_rates, hide_index=True)
 
@@ -716,12 +730,16 @@ if available_cols:
     if "recv_revenue_for_month" in latest_cash:
         c1.metric(
             "Revenue (Received)",
-            format_kpi_value("recv_revenue_for_month", latest_cash["recv_revenue_for_month"]),
+            format_kpi_value(
+                "recv_revenue_for_month", latest_cash["recv_revenue_for_month"]
+            ),
         )
     if "recv_interest_for_month" in latest_cash:
         c2.metric(
             "Interest (Received)",
-            format_kpi_value("recv_interest_for_month", latest_cash["recv_interest_for_month"]),
+            format_kpi_value(
+                "recv_interest_for_month", latest_cash["recv_interest_for_month"]
+            ),
         )
     if "recv_fee_for_month" in latest_cash:
         c3.metric(
@@ -755,8 +773,14 @@ if loan_data is None:
     st.stop()
 
 merged = loan_data.copy()
-if not customer_data.empty and "loan_id" in merged.columns and "loan_id" in customer_data.columns:
-    merged = merged.merge(customer_data, on="loan_id", how="left", suffixes=("", "_cust"))
+if (
+    not customer_data.empty
+    and "loan_id" in merged.columns
+    and "loan_id" in customer_data.columns
+):
+    merged = merged.merge(
+        customer_data, on="loan_id", how="left", suffixes=("", "_cust")
+    )
 
 # --- 1. Portfolio Overview ---
 st.header("📊 Executive Summary")
@@ -777,7 +801,9 @@ if "interest_rate_apr" in merged.columns and "outstanding_loan_value" in merged.
         avg_apr = 0
 else:
     avg_apr = 0
-default_rate = (merged["loan_status"] == "Default").mean() * 100 if "loan_status" in merged else 0
+default_rate = (
+    (merged["loan_status"] == "Default").mean() * 100 if "loan_status" in merged else 0
+)
 
 col1.metric("Total Loans", f"{total_loans:,}")
 col2.metric("Total Outstanding", f"${total_outstanding:,.2f}")
@@ -804,7 +830,9 @@ with g_col1:
 
 with g_col2:
     if "categoria" in merged.columns:
-        cat_agg = merged.groupby("categoria")["outstanding_loan_value"].sum().reset_index()
+        cat_agg = (
+            merged.groupby("categoria")["outstanding_loan_value"].sum().reset_index()
+        )
         fig_cat = px.pie(
             cat_agg,
             values="outstanding_loan_value",
@@ -832,7 +860,9 @@ if "sales_agent" in merged.columns:
     st.plotly_chart(apply_theme(fig_sales), use_container_width=True)
 else:
     headcount_df = load_agent_headcount()
-    if not headcount_df.empty and {"month", "function", "fte_count"}.issubset(headcount_df.columns):
+    if not headcount_df.empty and {"month", "function", "fte_count"}.issubset(
+        headcount_df.columns
+    ):
         st.subheader("Team Capacity")
         latest_month = headcount_df["month"].max()
         latest_headcount = headcount_df[headcount_df["month"] == latest_month]
@@ -867,7 +897,9 @@ with r_col1:
             .reset_index()
         )
         dpd_dist.columns = ["Bucket", "Count"]
-        fig_dpd = px.bar(dpd_dist, x="Bucket", y="Count", title="DPD Bucket Distribution")
+        fig_dpd = px.bar(
+            dpd_dist, x="Bucket", y="Count", title="DPD Bucket Distribution"
+        )
         st.plotly_chart(apply_theme(fig_dpd), use_container_width=True)
 
 with r_col2:

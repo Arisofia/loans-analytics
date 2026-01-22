@@ -7,13 +7,10 @@ import unittest
 import pandas as pd
 
 from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
-from src.analytics.metrics_utils import (
-    debt_to_income_ratio,
-    loan_to_value,
-    portfolio_delinquency_rate,
-    portfolio_kpis,
-    weighted_portfolio_yield,
-)
+from src.analytics.metrics_utils import (debt_to_income_ratio, loan_to_value,
+                                         portfolio_delinquency_rate,
+                                         portfolio_kpis,
+                                         weighted_portfolio_yield)
 
 
 class TestMetricsUtils(unittest.TestCase):

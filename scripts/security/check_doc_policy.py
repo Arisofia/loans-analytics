@@ -16,12 +16,16 @@ def main(doc_list_file):
         if p.name.lower().startswith("readme"):
             dir_key = str(p.parent.resolve())
             readme_map.setdefault(dir_key, []).append(p)
-        if any(x in p.name.lower() for x in ["example", "sample", "copy", "placeholder"]):
+        if any(
+            x in p.name.lower() for x in ["example", "sample", "copy", "placeholder"]
+        ):
             violations.append(f"Stale/example config: {file}")
 
     for dir_key, readmes in readme_map.items():
         if len(readmes) > 1:
-            violations.append(f"Duplicate READMEs in {dir_key}: {[str(r) for r in readmes]}")
+            violations.append(
+                f"Duplicate READMEs in {dir_key}: {[str(r) for r in readmes]}"
+            )
 
     if violations:
         print("\nPOLICY VIOLATIONS DETECTED:")

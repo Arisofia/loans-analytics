@@ -11,9 +11,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.pipeline.data_ingestion import IngestionResult, UnifiedIngestion
-from src.pipeline.data_transformation import TransformationResult, UnifiedTransformation
+from src.pipeline.data_transformation import (TransformationResult,
+                                              UnifiedTransformation)
 from src.pipeline.data_validation_gx import validate_loan_data
-from src.pipeline.kpi_calculation import CalculationResultV2, UnifiedCalculationV2
+from src.pipeline.kpi_calculation import (CalculationResultV2,
+                                          UnifiedCalculationV2)
 from src.pipeline.orchestrator import PipelineConfig
 from src.pipeline.output import OutputResult, UnifiedOutput
 
@@ -24,7 +26,9 @@ def ingestion_task(config: Dict[str, Any], input_file: Path) -> IngestionResult:
     logger.info("Starting ingestion for %s", input_file)
     ingestion = UnifiedIngestion(config)
     # Assume file source for now
-    raw_archive_dir = Path(config.get("run", {}).get("raw_archive_dir", "data/archives/raw"))
+    raw_archive_dir = Path(
+        config.get("run", {}).get("raw_archive_dir", "data/archives/raw")
+    )
     result = ingestion.ingest_file(input_file, archive_dir=raw_archive_dir)
 
     # Integrate Great Expectations
@@ -36,7 +40,9 @@ def ingestion_task(config: Dict[str, Any], input_file: Path) -> IngestionResult:
     if isinstance(result, IngestionResult):
         return result
     # If result is a legacy object, wrap into IngestionResult
-    return IngestionResult(df=result.df, run_id=getattr(result, "run_id", "unknown"), metadata={})
+    return IngestionResult(
+        df=result.df, run_id=getattr(result, "run_id", "unknown"), metadata={}
+    )
 
 
 @task

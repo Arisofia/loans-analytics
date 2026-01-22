@@ -27,7 +27,9 @@ def main():
     if not os.path.isdir(RAW_DIR):
         print(f"No raw meta directory found at {RAW_DIR}.")
         return
-    files = [f for f in os.listdir(RAW_DIR) if f.endswith(".json") or f.endswith(".csv")]
+    files = [
+        f for f in os.listdir(RAW_DIR) if f.endswith(".json") or f.endswith(".csv")
+    ]
     if not files:
         print("No raw meta files found.")
         return

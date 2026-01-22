@@ -116,7 +116,9 @@ def get_risk_model():
         try:
             _risk_model.load()
         except Exception:
-            logger.warning("Could not load risk model. Predictions will fail if not trained.")
+            logger.warning(
+                "Could not load risk model. Predictions will fail if not trained."
+            )
     return _risk_model
 
 

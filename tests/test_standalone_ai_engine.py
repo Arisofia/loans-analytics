@@ -17,7 +17,9 @@ class TestStandaloneAIEngine(unittest.TestCase):
         )
 
     def test_routes_small_payload_to_grok(self):
-        self.mock_grok.generate_text.return_value = AIResponse(text="Grok response", raw={})
+        self.mock_grok.generate_text.return_value = AIResponse(
+            text="Grok response", raw={}
+        )
 
         data = {"key": "small"}
         response = self.engine.generate_response("persona", {}, data)
@@ -27,7 +29,9 @@ class TestStandaloneAIEngine(unittest.TestCase):
         self.mock_gemini.generate_text.assert_not_called()
 
     def test_routes_large_payload_to_gemini(self):
-        self.mock_gemini.generate_text.return_value = AIResponse(text="Gemini response", raw={})
+        self.mock_gemini.generate_text.return_value = AIResponse(
+            text="Gemini response", raw={}
+        )
 
         # Create data larger than max_prompt_chars // 2 (50) but smaller than max (100)
         data = {"key": "x" * 60}
@@ -38,7 +42,9 @@ class TestStandaloneAIEngine(unittest.TestCase):
         self.mock_grok.generate_text.assert_not_called()
 
     def test_truncates_oversized_payload(self):
-        self.mock_gemini.generate_text.return_value = AIResponse(text="Response", raw={})
+        self.mock_gemini.generate_text.return_value = AIResponse(
+            text="Response", raw={}
+        )
 
         # Create data larger than max_prompt_chars (100)
         data = {"key": "x" * 150}

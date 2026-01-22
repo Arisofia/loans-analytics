@@ -102,7 +102,9 @@ class TestAnalyticsPerformanceRobustness:
                 clean_data(data)
                 results.append(data)
 
-        assert results[0] == results[1], "Idempotency failure: results differ between runs"
+        assert (
+            results[0] == results[1]
+        ), "Idempotency failure: results differ between runs"
 
     def test_i01_e2e_acceptance(self, analytics_test_env: Dict[str, Any]) -> None:
         """
@@ -123,7 +125,11 @@ class TestAnalyticsPerformanceRobustness:
         # Update with test-specific overrides
         def deep_update(source, overrides):
             for key, value in overrides.items():
-                if isinstance(value, dict) and key in source and isinstance(source[key], dict):
+                if (
+                    isinstance(value, dict)
+                    and key in source
+                    and isinstance(source[key], dict)
+                ):
                     deep_update(source[key], value)
                 else:
                     source[key] = value

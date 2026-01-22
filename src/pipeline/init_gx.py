@@ -1,5 +1,6 @@
 import great_expectations as gx
-from great_expectations.core.expectation_configuration import ExpectationConfiguration
+from great_expectations.core.expectation_configuration import \
+    ExpectationConfiguration
 
 
 def init_gx_project() -> None:
@@ -28,7 +29,8 @@ def init_gx_project() -> None:
     # 2. Nullity Constraints
     suite.add_expectation(
         ExpectationConfiguration(
-            expectation_type="expect_column_values_to_not_be_null", kwargs={"column": "loan_id"}
+            expectation_type="expect_column_values_to_not_be_null",
+            kwargs={"column": "loan_id"},
         )
     )
 
