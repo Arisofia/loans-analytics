@@ -42,4 +42,5 @@ def create_metrics_csv(df: pd.DataFrame, output_file):
 
 
 def main():
+    # This function is intentionally left empty as a placeholder for future pipeline entrypoint logic.
     pass

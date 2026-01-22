@@ -1,15 +1,17 @@
-from __future__ import annotations
 
+from __future__ import annotations
 import hashlib
 import os
 import re
-
+import json
+from pathlib import Path
+from datetime import datetime
+import logging
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import polars as pl
 import streamlit as st
-
 from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine
 
 ABACO_THEME = {
@@ -49,22 +51,7 @@ ABACO_THEME = {
 }
 
 
-def apply_theme(fig: px.Figure) -> px.Figure:
-    fig.update_layout(
-        font_family=ABACO_THEME["typography"]["primary_font"],
-        font_color=ABACO_THEME["colors"]["white"],
-        paper_bgcolor=ABACO_THEME["colors"]["background"],
-        plot_bgcolor=ABACO_THEME["colors"]["background"],
-        legend=dict(
-            font=dict(
-                family=ABACO_THEME["typography"]["secondary_font"],
-                color=ABACO_THEME["colors"]["light_gray"],
-            )
-        ),
-        margin=dict(l=0, r=0, t=40, b=0),
-    )
-    fig.update_traces(marker=dict(line=dict(color=ABACO_THEME["colors"]["background"], width=1)))
-    return fig
+
 
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -694,6 +681,13 @@ st.markdown("## Export & Figma Preparation")
 st.markdown(
     "Prepare flattened fact tables for the Figma storyboard: https://www.figma.com/make/nuVKwuPuLS7VmLFvqzOX1G/Create-Dark-Editable-Slides?node-id=0-1&t=8coqxRUeoQvNvavm-1"
 )
+cash_cols = [
+    "recv_revenue_for_month",
+    "recv_interest_for_month",
+    "recv_fee_for_month",
+    "sched_revenue",
+]
+analytics_facts = load_analytics_facts()
 fact_table = loan_df[
     [
         "loan_amount",

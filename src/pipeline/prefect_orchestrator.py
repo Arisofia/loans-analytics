@@ -1,8 +1,7 @@
 """Simple orchestration API for legacy compatibility."""
+import sys
 from pathlib import Path
 from typing import Any, Dict, Union
-import sys
-
 from prefect import flow, get_run_logger, task
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
