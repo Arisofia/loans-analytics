@@ -51,11 +51,9 @@ class PolarsAnalyticsEngine:
         agg_plan = self.compute_ratios().select(
             [
                 # Delinquency Rate: % of loans in delinquent status
-                (
-                    pl.col("loan_status").is_in(delinquent_statuses).sum()
-                    / pl.len()
-                    * 100
-                ).alias("delinquency_rate"),
+                (pl.col("loan_status").is_in(delinquent_statuses).sum() / pl.len() * 100).alias(
+                    "delinquency_rate"
+                ),
                 # Portfolio Yield: Weighted average interest rate
                 (
                     (pl.col("interest_rate") * pl.col("principal_balance")).sum()
@@ -81,9 +79,6 @@ class PolarsAnalyticsEngine:
 
         return (
             self.compute_ratios()
-            .filter(
-                (pl.col("ltv_ratio") > ltv_threshold)
-                | (pl.col("dti_ratio") > dti_threshold)
-            )
+            .filter((pl.col("ltv_ratio") > ltv_threshold) | (pl.col("dti_ratio") > dti_threshold))
             .collect()
         )

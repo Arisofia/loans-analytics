@@ -9,15 +9,22 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-from src.compliance import (build_compliance_report, create_access_log_entry,
-                            mask_pii_in_dataframe, write_compliance_report)
+from src.compliance import (
+    build_compliance_report,
+    create_access_log_entry,
+    mask_pii_in_dataframe,
+    write_compliance_report,
+)
 
 from .ingestion.archive import archive_file
 from .logging import configure_logging
 from .output.manifests import RunManifest, write_manifest
 from .output.supabase_writer import SupabaseAuth, SupabaseWriter
-from .quality.gates import (check_referential_integrity, compute_completeness,
-                            compute_freshness_hours)
+from .quality.gates import (
+    check_referential_integrity,
+    compute_completeness,
+    compute_freshness_hours,
+)
 
 
 def _load_yaml_config(path: Path) -> dict:
@@ -130,16 +137,12 @@ def _load_state(path: Path) -> dict:
 
 def _write_state(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def _select_looker_source(looker_cfg: dict, endpoints: list[str] | None) -> Path:
     loans_par = (
-        Path(looker_cfg.get("loans_par_path", ""))
-        if looker_cfg.get("loans_par_path")
-        else None
+        Path(looker_cfg.get("loans_par_path", "")) if looker_cfg.get("loans_par_path") else None
     )
     loans_fallback = (
         Path(looker_cfg.get("loans_path", "")) if looker_cfg.get("loans_path") else None
@@ -199,9 +202,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     run_cfg = cfg.get("run", {}) or {}
     artifacts_dir = Path(run_cfg.get("artifacts_dir", "logs/runs"))
     raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/warehouse"))
-    state_file = Path(
-        args.state_file or run_cfg.get("state_file", "logs/runs/state.json")
-    )
+    state_file = Path(args.state_file or run_cfg.get("state_file", "logs/runs/state.json"))
 
     pipeline_cfg = (cfg.get("pipeline", {}) or {}).get("phases", {}) or {}
     ingestion_cfg = pipeline_cfg.get("ingestion", {}) or {}
@@ -358,9 +359,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     validation_cfg = ingestion_cfg.get("validation", {}) or {}
     required_columns = validation_cfg.get("required_columns") or []
     completeness_threshold = float(validation_cfg.get("completeness_threshold", 0.98))
-    integrity_columns = validation_cfg.get("referential_integrity_columns") or [
-        "loan_id"
-    ]
+    integrity_columns = validation_cfg.get("referential_integrity_columns") or ["loan_id"]
 
     completeness = compute_completeness(df, required_columns)
     freshness_hours = 0.0
@@ -465,9 +464,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     if args.publish and status == "success":
         schema = (
-            (pipeline_cfg.get("outputs", {}) or {})
-            .get("supabase", {})
-            .get("schema", "analytics")
+            (pipeline_cfg.get("outputs", {}) or {}).get("supabase", {}).get("schema", "analytics")
         )
         _write_audit_payload(enriched_audit, schema=schema)
         state["raw_hashes"] = {
@@ -519,12 +516,8 @@ def build_parser() -> argparse.ArgumentParser:
         default="config/kpis.yml",
         help="Path to KPI config YAML (default: config/kpis.yml)",
     )
-    parser.add_argument(
-        "--validate", action="store_true", help="Enable validation + quality gates"
-    )
-    parser.add_argument(
-        "--publish", action="store_true", help="Publish audit payload to Supabase"
-    )
+    parser.add_argument("--validate", action="store_true", help="Enable validation + quality gates")
+    parser.add_argument("--publish", action="store_true", help="Publish audit payload to Supabase")
     parser.add_argument(
         "--force",
         action="store_true",
@@ -536,12 +529,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--endpoints", help="Comma-separated endpoint list")
     parser.add_argument("--start-date", help="Backfill start date (YYYY-MM-DD)")
     parser.add_argument("--end-date", help="Backfill end date (YYYY-MM-DD)")
-    parser.add_argument(
-        "--user", default="pipeline", help="Actor for compliance audit log"
-    )
-    parser.add_argument(
-        "--action", default="scheduled", help="Action for compliance audit log"
-    )
+    parser.add_argument("--user", default="pipeline", help="Actor for compliance audit log")
+    parser.add_argument("--action", default="scheduled", help="Action for compliance audit log")
 
     sub = parser.add_subparsers(dest="command")
 

@@ -36,9 +36,7 @@ class TestStandaloneAI(unittest.TestCase):
     @patch("pathlib.Path.exists", return_value=False)
     def test_generate_response_offline(self, mock_exists):
         engine = StandaloneAIEngine(ai_client=None)
-        response = engine.generate_response(
-            "risk_analyst", {"summary": "Offline test"}, {"kpi": 1}
-        )
+        response = engine.generate_response("risk_analyst", {"summary": "Offline test"}, {"kpi": 1})
 
         self.assertIn("[authoritative and concise]", response)
         self.assertIn("Offline test", response)

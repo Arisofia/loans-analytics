@@ -2,8 +2,7 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 
-from src.kpis.base import (KPICalculator, KPIMetadata, create_context,
-                           safe_numeric)
+from src.kpis.base import KPICalculator, KPIMetadata, create_context, safe_numeric
 
 
 class PAR90Calculator(KPICalculator):
@@ -28,14 +27,10 @@ class PAR90Calculator(KPICalculator):
                 reason="Empty DataFrame",
             )
 
-        null_count = (
-            df["dpd_90_plus_usd"].isnull().sum() if "dpd_90_plus_usd" in df else 0
-        )
+        null_count = df["dpd_90_plus_usd"].isnull().sum() if "dpd_90_plus_usd" in df else 0
 
         dpd = safe_numeric(df.get("dpd_90_plus_usd", pd.Series())).sum()
-        total_receivable = safe_numeric(
-            df.get("total_receivable_usd", pd.Series())
-        ).sum()
+        total_receivable = safe_numeric(df.get("total_receivable_usd", pd.Series())).sum()
 
         if total_receivable == 0:
             return 0.0, create_context(

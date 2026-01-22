@@ -33,11 +33,7 @@ class PolarsKPIEngine:
         # Correct way to get values from select
         result = self.df.select(
             [
-                (
-                    pl.col("dpd_30_60_usd")
-                    + pl.col("dpd_60_90_usd")
-                    + pl.col("dpd_90_plus_usd")
-                )
+                (pl.col("dpd_30_60_usd") + pl.col("dpd_60_90_usd") + pl.col("dpd_90_plus_usd"))
                 .sum()
                 .alias("sum_delinquent"),
                 pl.col("total_receivable_usd").sum().alias("sum_total"),
@@ -151,9 +147,7 @@ class PolarsKPIEngine:
         """
         if "total_receivable_usd" not in self.df.columns:
             return 0.0
-        return float(
-            self.df.select(pl.col("total_receivable_usd").sum()).to_series()[0]
-        )
+        return float(self.df.select(pl.col("total_receivable_usd").sum()).to_series()[0])
 
     def calculate_all(self) -> Dict[str, Any]:
         """

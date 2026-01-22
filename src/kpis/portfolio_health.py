@@ -17,9 +17,7 @@ class PortfolioHealthCalculator:
         owner="CRO",
     )
 
-    def calculate(
-        self, par_30: float, collection_rate: float
-    ) -> Tuple[float, Dict[str, Any]]:
+    def calculate(self, par_30: float, collection_rate: float) -> Tuple[float, Dict[str, Any]]:
         par_component = max(0.0, 10.0 - (float(par_30) / 10.0))
         coll_component = float(collection_rate) / 10.0
 
