@@ -18,7 +18,8 @@
   },
   "scripts": {
     "lint": "npm --prefix apps/web run lint",
-    "build": "npm run build --workspaces",    "test": "echo 'Running tests...' && npm --prefix apps/web run test:e2e || echo 'No tests configured'"
+    "build": "pnpm -r build",
+    "test": "echo 'Running tests...' && npm --prefix apps/web run test:e2e || echo 'No tests configured'"
   },
   "dependencies": {
     "@openai/codex-sdk": "^0.63.0",

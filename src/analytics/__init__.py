@@ -1,6 +1,7 @@
 """Source package for enterprise analytics engines and supporting utilities."""
 
-from .metrics_utils import calculate_quality_score, portfolio_kpis, standardize_numeric
+from .metrics_utils import (calculate_quality_score, portfolio_kpis,
+                            standardize_numeric)
 from .projections import project_growth
 from .quality_score import calculate_financial_quality_score
 

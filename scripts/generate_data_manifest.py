@@ -35,7 +35,9 @@ def generate_manifest(data_dir: Optional[str] = None) -> Dict:
                     "name": file_path.stem,
                     "path": str(file_path),
                     "size": file_path.stat().st_size,
-                    "modified": datetime.fromtimestamp(file_path.stat().st_mtime).isoformat(),
+                    "modified": datetime.fromtimestamp(
+                        file_path.stat().st_mtime
+                    ).isoformat(),
                 }
             )
 

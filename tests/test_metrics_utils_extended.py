@@ -6,15 +6,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.analytics.metrics_utils import (
-    _coerce_numeric,
-    debt_to_income_ratio,
-    loan_to_value,
-    portfolio_delinquency_rate,
-    portfolio_kpis,
-    validate_kpi_columns,
-    weighted_portfolio_yield,
-)
+from src.analytics.metrics_utils import (_coerce_numeric, debt_to_income_ratio,
+                                         loan_to_value,
+                                         portfolio_delinquency_rate,
+                                         portfolio_kpis, validate_kpi_columns,
+                                         weighted_portfolio_yield)
 
 
 def test_coerce_numeric_all_nan():

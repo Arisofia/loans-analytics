@@ -44,13 +44,17 @@ class FactoringService:
         )
 
     @staticmethod
-    def calculate_dilution(df_payments: pl.DataFrame, df_invoices: pl.DataFrame) -> float:
+    def calculate_dilution(
+        df_payments: pl.DataFrame, df_invoices: pl.DataFrame
+    ) -> float:
         """
         Calculate Portfolio Dilution: (Non-Cash Reductions) / Gross Sales.
         """
         # Non-Cash Reductions are typically 'true_rebates'
         total_rebates = df_payments.select(pl.col("true_rebates").sum()).to_series()[0]
-        gross_sales = df_invoices.select(pl.col("disbursement_amount").sum()).to_series()[0]
+        gross_sales = df_invoices.select(
+            pl.col("disbursement_amount").sum()
+        ).to_series()[0]
 
         if not gross_sales or gross_sales == 0:
             return 0.0

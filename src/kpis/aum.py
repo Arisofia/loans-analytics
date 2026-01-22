@@ -32,7 +32,11 @@ class AUMCalculator(KPICalculator):
             else (
                 "outstanding_balance_usd"
                 if "outstanding_balance_usd" in df.columns
-                else ("total_receivable_usd" if "total_receivable_usd" in df.columns else "balance")
+                else (
+                    "total_receivable_usd"
+                    if "total_receivable_usd" in df.columns
+                    else "balance"
+                )
             )
         )
 

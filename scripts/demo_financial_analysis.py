@@ -28,7 +28,9 @@ def summarize_metrics(df: pd.DataFrame) -> dict:
         metrics["total_receivable_usd"] = df["total_receivable_usd"].sum()
     if "dpd_90_plus_usd" in df.columns and "total_receivable_usd" in df.columns:
         total = df["total_receivable_usd"].sum()
-        metrics["par_90"] = (df["dpd_90_plus_usd"].sum() / total * 100.0) if total else 0.0
+        metrics["par_90"] = (
+            (df["dpd_90_plus_usd"].sum() / total * 100.0) if total else 0.0
+        )
     if "cash_available_usd" in df.columns and "total_eligible_usd" in df.columns:
         total = df["total_eligible_usd"].sum()
         metrics["collection_rate"] = (
@@ -41,7 +43,9 @@ def plot_dpd_distribution(df: pd.DataFrame, output_path: Path) -> None:
     plt.figure(figsize=(8, 4))
     if "dpd_90_plus_usd" in df.columns:
         if "segment" in df.columns:
-            sns.histplot(data=df, x="dpd_90_plus_usd", hue="segment", bins=12, kde=False)
+            sns.histplot(
+                data=df, x="dpd_90_plus_usd", hue="segment", bins=12, kde=False
+            )
         else:
             sns.histplot(data=df, x="dpd_90_plus_usd", bins=12, kde=False)
         plt.xlabel("DPD 90+ USD")
@@ -59,7 +63,9 @@ def plot_exposure_distribution(df: pd.DataFrame, output_path: Path) -> None:
     plt.figure(figsize=(8, 4))
     if "total_receivable_usd" in df.columns:
         if "segment" in df.columns:
-            exposure = df.groupby("segment", as_index=False)["total_receivable_usd"].sum()
+            exposure = df.groupby("segment", as_index=False)[
+                "total_receivable_usd"
+            ].sum()
             sns.barplot(data=exposure, x="segment", y="total_receivable_usd")
         else:
             total = df["total_receivable_usd"].sum()
@@ -68,7 +74,9 @@ def plot_exposure_distribution(df: pd.DataFrame, output_path: Path) -> None:
         plt.ylabel("Total Receivable USD")
         plt.title("Exposure by Segment")
     else:
-        plt.text(0.5, 0.5, "total_receivable_usd column missing", ha="center", va="center")
+        plt.text(
+            0.5, 0.5, "total_receivable_usd column missing", ha="center", va="center"
+        )
         plt.axis("off")
     plt.tight_layout()
     plt.savefig(output_path)
@@ -77,7 +85,9 @@ def plot_exposure_distribution(df: pd.DataFrame, output_path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a financial analysis demo.")
-    parser.add_argument("--data", default=str(DEFAULT_SAMPLE), help="Path to CSV data file")
+    parser.add_argument(
+        "--data", default=str(DEFAULT_SAMPLE), help="Path to CSV data file"
+    )
     args = parser.parse_args()
 
     data_path = Path(args.data)
@@ -102,7 +112,13 @@ def main() -> None:
     # Select columns to show that actually exist (handling both sample and real data schemas)
     cols_to_show = [
         c
-        for c in ["loan_id", "dpd_bucket", "exposure_segment", "line_utilization", "client_type"]
+        for c in [
+            "loan_id",
+            "dpd_bucket",
+            "exposure_segment",
+            "line_utilization",
+            "client_type",
+        ]
         if c in enriched_df.columns
     ]
     if cols_to_show:
@@ -129,7 +145,16 @@ def main() -> None:
     if "dpd_bucket" in enriched_df.columns:
         print("\n[4] Generating DPD Distribution Chart...")
         counts = enriched_df["dpd_bucket"].value_counts()
-        order = ["Current", "1-29", "30-59", "60-89", "90-119", "120-149", "150-179", "180+"]
+        order = [
+            "Current",
+            "1-29",
+            "30-59",
+            "60-89",
+            "90-119",
+            "120-149",
+            "150-179",
+            "180+",
+        ]
         counts = counts.reindex(order).fillna(0)
 
         plt.figure(figsize=(10, 6))

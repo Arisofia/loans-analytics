@@ -15,7 +15,8 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from src.integrations.azure_outputs import AzureDashboardClient, AzureStorageClient
+from src.integrations.azure_outputs import (AzureDashboardClient,
+                                            AzureStorageClient)
 from src.integrations.figma_client import FigmaClient
 from src.integrations.meta_client import MetaOutputClient
 from src.integrations.notion_client import NotionOutputClient
@@ -116,7 +117,9 @@ class UnifiedOutputManager:
 
         if "figma" in enabled_outputs:
             logger.info("Exporting to Figma...")
-            results["outputs"]["figma"] = self.figma_client.sync_batch_export(export_data, run_id)
+            results["outputs"]["figma"] = self.figma_client.sync_batch_export(
+                export_data, run_id
+            )
 
         if "azure" in enabled_outputs:
             logger.info("Exporting to Azure...")
@@ -141,7 +144,9 @@ class UnifiedOutputManager:
 
         if "notion" in enabled_outputs:
             logger.info("Exporting to Notion...")
-            results["outputs"]["notion"] = self.notion_client.sync_batch_export(export_data, run_id)
+            results["outputs"]["notion"] = self.notion_client.sync_batch_export(
+                export_data, run_id
+            )
 
         success_flags = [
             output.get("success")

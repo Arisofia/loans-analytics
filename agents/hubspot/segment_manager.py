@@ -1,3 +1,4 @@
+tool_schemas = [
             {
                 "name": "list_segments",
                 "description": "List all contact segments",

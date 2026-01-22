@@ -41,7 +41,9 @@ def benchmark():
     end = time.perf_counter()
     print(f"Polars (v2.0) Engine: {end - start:.4f} seconds")
 
-    speedup = (end - start) / (time.perf_counter() - start)  # placeholder for comparison
+    speedup = (end - start) / (
+        time.perf_counter() - start
+    )  # placeholder for comparison
     # Actual speedup calculation
     t_pandas = 0.5  # hypothetical if I ran it
     t_polars = 0.05  # hypothetical

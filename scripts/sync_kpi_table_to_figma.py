@@ -34,7 +34,9 @@ FIGMA_TOKEN = (
     or os.getenv("FIGMA_PERSONAL_ACCESS_TOKEN")
 )
 raw_file_key = (
-    secrets.get("FIGMA_FILE_KEY") or os.getenv("FIGMA_FILE_URL") or os.getenv("FIGMA_FILE_LINK")
+    secrets.get("FIGMA_FILE_KEY")
+    or os.getenv("FIGMA_FILE_URL")
+    or os.getenv("FIGMA_FILE_LINK")
 )
 FIGMA_FILE_KEY = extract_file_key(raw_file_key)
 
@@ -87,7 +89,9 @@ if not page_node_id:
 
 update_url = f"{BASE_URL}/files/{FIGMA_FILE_KEY}/nodes?ids={page_node_id}"
 try:
-    update_resp = requests.put(update_url, headers=HEADERS, data=json.dumps(payload), timeout=30)
+    update_resp = requests.put(
+        update_url, headers=HEADERS, data=json.dumps(payload), timeout=30
+    )
     update_resp.raise_for_status()
     print(f"KPI table synced to Figma at {datetime.now().isoformat()}")
 except requests.exceptions.Timeout:

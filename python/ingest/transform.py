@@ -27,7 +27,9 @@ def canonicalize_loan_tape(df: pd.DataFrame) -> pd.DataFrame:
 
     if "days_past_due" not in df.columns:
         if "dpd" in df.columns:
-            df["days_past_due"] = pd.to_numeric(df["dpd"], errors="coerce").fillna(0).astype(int)
+            df["days_past_due"] = (
+                pd.to_numeric(df["dpd"], errors="coerce").fillna(0).astype(int)
+            )
         else:
             df["days_past_due"] = 0
 

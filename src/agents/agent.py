@@ -85,7 +85,9 @@ Begin!
                     else:
                         observation = f"Error: Tool '{action_name}' not found."
 
-                self.memory.append({"role": "system", "content": f"Observation: {observation}"})
+                self.memory.append(
+                    {"role": "system", "content": f"Observation: {observation}"}
+                )
             else:
                 # If no action is found and no final answer, we might be stuck or the LLM is just talking
                 if "Thought:" not in content:

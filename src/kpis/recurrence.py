@@ -29,9 +29,15 @@ class RecurrenceCalculator(KPICalculator):
             if "true_interest_payment" in df.columns
             else "True Interest Payment"
         )
-        fee_col = "true_fee_payment" if "true_fee_payment" in df.columns else "True Fee Payment"
+        fee_col = (
+            "true_fee_payment"
+            if "true_fee_payment" in df.columns
+            else "True Fee Payment"
+        )
         oth_col = (
-            "true_other_payment" if "true_other_payment" in df.columns else "True Other Payment"
+            "true_other_payment"
+            if "true_other_payment" in df.columns
+            else "True Other Payment"
         )
 
         if int_col not in df.columns:

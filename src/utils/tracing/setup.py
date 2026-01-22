@@ -11,7 +11,8 @@ import os
 from typing import Optional
 
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import \
+    OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -58,7 +59,9 @@ def init_tracing(
         otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT") or None
 
     if not otlp_endpoint:
-        logger.debug("OTEL exporter disabled; set OTEL_EXPORTER_OTLP_ENDPOINT to enable.")
+        logger.debug(
+            "OTEL exporter disabled; set OTEL_EXPORTER_OTLP_ENDPOINT to enable."
+        )
         return tracer_provider
 
     try:
@@ -71,7 +74,9 @@ def init_tracing(
 
         logger.info("OTEL tracing initialized with endpoint: %s", otlp_endpoint)
     except Exception as e:
-        logger.warning("Failed to initialize OTEL exporter for %s: %s", otlp_endpoint, str(e))
+        logger.warning(
+            "Failed to initialize OTEL exporter for %s: %s", otlp_endpoint, str(e)
+        )
 
     return tracer_provider
 
@@ -129,4 +134,6 @@ if not isinstance(trace.get_tracer_provider(), TracerProvider):
         init_tracing()
         enable_auto_instrumentation()
     except Exception as e:
-        logger.warning("Tracing auto-init failed (will retry on explicit init): %s", str(e))
+        logger.warning(
+            "Tracing auto-init failed (will retry on explicit init): %s", str(e)
+        )

@@ -227,7 +227,9 @@ def test_export_kpis_to_blob_invalid_blob_name_type():
         "principal_balance": [240000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
-    exporter = AzureBlobKPIExporter(container_name="test-container", blob_service_client=Mock())
+    exporter = AzureBlobKPIExporter(
+        container_name="test-container", blob_service_client=Mock()
+    )
 
     with pytest.raises(ValueError, match="blob_name must be a string"):
         engine.export_kpis_to_blob(exporter, blob_name=123)  # type: ignore

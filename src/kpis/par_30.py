@@ -2,7 +2,8 @@ from typing import Any, Dict, Tuple
 
 import pandas as pd
 
-from src.kpis.base import KPICalculator, KPIMetadata, create_context, safe_numeric
+from src.kpis.base import (KPICalculator, KPIMetadata, create_context,
+                           safe_numeric)
 
 
 class PAR30Calculator(KPICalculator):
@@ -78,7 +79,9 @@ class PAR30Calculator(KPICalculator):
                 method="loan_status_fallback",
             )
         else:
-            raise ValueError(f"Missing required columns: {', '.join(required)} or 'loan_status'")
+            raise ValueError(
+                f"Missing required columns: {', '.join(required)} or 'loan_status'"
+            )
 
 
 def calculate_par_30(df: pd.DataFrame) -> Tuple[float, Dict[str, Any]]:

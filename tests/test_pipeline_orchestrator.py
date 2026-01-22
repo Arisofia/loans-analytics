@@ -84,7 +84,9 @@ class TestUnifiedPipeline:
             df.to_csv(f, index=False)
             return Path(f.name)
 
-    def test_pipeline_execute_with_looker_source(self, sample_looker_par_file, tmp_path):
+    def test_pipeline_execute_with_looker_source(
+        self, sample_looker_par_file, tmp_path
+    ):
         """Test pipeline execution with Looker data source."""
         config_dict = {
             "name": "test_looker_pipeline",

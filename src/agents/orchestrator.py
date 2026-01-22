@@ -5,17 +5,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import yaml
-from sqlalchemy import (
-    JSON,
-    Boolean,
-    Column,
-    DateTime,
-    Integer,
-    Numeric,
-    String,
-    Text,
-    create_engine,
-)
+from sqlalchemy import (JSON, Boolean, Column, DateTime, Integer, Numeric,
+                        String, Text, create_engine)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from src.agents.agent import Agent
@@ -75,7 +66,11 @@ class AgentOrchestrator:
             start_time = datetime.now(timezone.utc)
 
             # Configure the agent
-            name = agent_config.get("name", "DefaultAgent") if agent_config else "DefaultAgent"
+            name = (
+                agent_config.get("name", "DefaultAgent")
+                if agent_config
+                else "DefaultAgent"
+            )
             role = (
                 agent_config.get("role", "General Assistant")
                 if agent_config
@@ -93,7 +88,9 @@ class AgentOrchestrator:
             span.set_attribute("agent.max_retries", max_retries)
             span.set_attribute("input.data_hash", _hash_input(input_data))
 
-            agent = Agent(name=name, role=role, goal=goal, llm=self.llm, registry=self.registry)
+            agent = Agent(
+                name=name, role=role, goal=goal, llm=self.llm, registry=self.registry
+            )
 
             user_query = input_data.get("query", str(input_data))
 
@@ -111,7 +108,9 @@ class AgentOrchestrator:
                         if not agent_output.startswith("Error:"):
                             break
                 except Exception as exc:
-                    print(f"[Orchestrator] Attempt {attempt + 1} failed for {name}: {str(exc)}")
+                    print(
+                        f"[Orchestrator] Attempt {attempt + 1} failed for {name}: {str(exc)}"
+                    )
                     span.record_exception(exc)
 
             output = {
@@ -129,7 +128,9 @@ class AgentOrchestrator:
                 "execution.duration_ms",
                 (completed_at - start_time).total_seconds() * 1000,
             )
-            span.set_attribute("output.requires_review", output["requires_human_review"])
+            span.set_attribute(
+                "output.requires_review", output["requires_human_review"]
+            )
 
             self._log_agent_run(start_time, completed_at, input_data, output)
             return output
