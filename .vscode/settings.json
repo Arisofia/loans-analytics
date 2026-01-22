@@ -3,5 +3,9 @@
         "connectionId": "abaco-technol",
         "projectKey": "abaco-loans-analytics"
     },
-    "java.compile.nullAnalysis.mode": "automatic"
+    "java.compile.nullAnalysis.mode": "automatic",
+    "azureFunctions.deploySubpath": ".",
+    "azureFunctions.projectLanguage": "PowerShell",
+    "azureFunctions.projectRuntime": "~4",
+    "debug.internalConsoleOptions": "neverOpen"
 }

@@ -7,7 +7,6 @@ class RiskStrategy(ABC):
     @abstractmethod
     def process_expression(self) -> pl.Expr:
         """Return a Polars expression for the risk action."""
-        pass
 
 
 class RecourseStrategy(RiskStrategy):

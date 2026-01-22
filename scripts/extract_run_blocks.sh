@@ -2,8 +2,8 @@
 set -euo pipefail
 
 OUT_DIR=${1:-.github/workflows/extracted_runs}
-KEEP=${2:-20}          # number of recent extracted files to keep
-MAX_AGE_DAYS=${3:-7}   # delete files older than this number of days
+KEEP=${2:-20}        # number of recent extracted files to keep
+MAX_AGE_DAYS=${3:-7} # delete files older than this number of days
 
 mkdir -p "$OUT_DIR"
 # Clean existing extracted files for idempotency
@@ -65,7 +65,7 @@ for f in .github/workflows/*.{yml,yaml}; do
 done
 
 # Make files executable if any
-if compgen -G "$OUT_DIR/*.sh" > /dev/null; then
+if compgen -G "$OUT_DIR/*.sh" >/dev/null; then
   chmod +x "$OUT_DIR"/*.sh || true
 fi
 
@@ -74,7 +74,7 @@ echo "Extracted run blocks to $OUT_DIR"
 # Prune older extracted files to avoid buildup
 #  - Remove files older than MAX_AGE_DAYS
 #  - Ensure we keep at most KEEP most recent files
-if compgen -G "$OUT_DIR/*.sh" > /dev/null; then
+if compgen -G "$OUT_DIR/*.sh" >/dev/null; then
   echo "Pruning extracted files older than ${MAX_AGE_DAYS} days..."
   find "$OUT_DIR" -type f -mtime +"${MAX_AGE_DAYS}" -print -delete || true
 
@@ -83,7 +83,7 @@ if compgen -G "$OUT_DIR/*.sh" > /dev/null; then
   if command -v mapfile >/dev/null 2>&1; then
     mapfile -t files < <(ls -1tr "$OUT_DIR"/*.sh 2>/dev/null || true)
   else
-    files=( $(ls -1tr "$OUT_DIR"/*.sh 2>/dev/null || true) )
+    files=($(ls -1tr "$OUT_DIR"/*.sh 2>/dev/null || true))
   fi
   total=${#files[@]}
   if [ "$total" -gt "$KEEP" ]; then
@@ -98,7 +98,7 @@ if command -v mapfile >/dev/null 2>&1; then
   mapfile -t remaining_files < <(ls -1 "$OUT_DIR"/*.sh 2>/dev/null || true)
   remaining_count=${#remaining_files[@]}
 else
-  remaining_files=( $(ls -1 "$OUT_DIR"/*.sh 2>/dev/null || true) )
+  remaining_files=($(ls -1 "$OUT_DIR"/*.sh 2>/dev/null || true))
   remaining_count=${#remaining_files[@]}
 fi
 

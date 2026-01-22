@@ -45,15 +45,15 @@ fi
 
 # 4. Check permissions (no sudo unless necessary)
 if [ ! -w "$REPO_PATH" ]; then
-    echo "⚠️  Repo directory is not writable. Attempting to fix..."
-    sudo chown -R $(whoami) "$REPO_PATH"
-    echo "✅ Permissions fixed for repo."
+  echo "⚠️  Repo directory is not writable. Attempting to fix..."
+  sudo chown -R $(whoami) "$REPO_PATH"
+  echo "✅ Permissions fixed for repo."
 else
-    echo "✅ Permissions are correct (writable)."
+  echo "✅ Permissions are correct (writable)."
 fi
 
 # 5. Validate workspace open in VS Code
-if pgrep -x "Code" > /dev/null; then
+if pgrep -x "Code" >/dev/null; then
   echo "ℹ️  VS Code is running. Please ensure $REPO_PATH is open as a folder."
 else
   echo "ℹ️  VS Code is not running."
@@ -67,10 +67,10 @@ git -C "$REPO_PATH" status --porcelain | grep . && echo "⚠️  Warning: Uncomm
 echo ""
 echo "🔍 Auditing documentation..."
 DOCS=(
-    "docs/KPI-Operating-Model.md"
-    "docs/FINTECH_DASHBOARD_WEB_APP_GUIDE.md"
-    "COMPLIANCE_VALIDATION_SUMMARY.md"
-    "SECURITY.md"
+  "docs/KPI-Operating-Model.md"
+  "docs/FINTECH_DASHBOARD_WEB_APP_GUIDE.md"
+  "COMPLIANCE_VALIDATION_SUMMARY.md"
+  "SECURITY.md"
 )
 
 for doc_rel in "${DOCS[@]}"; do
@@ -101,9 +101,9 @@ for doc_rel in "docs/KPI-Operating-Model.md" "docs/FINTECH_DASHBOARD_WEB_APP_GUI
   if [ -f "$doc" ]; then
     MATCH_COUNT=$(grep -iE 'KPI|dashboard|metric|trace|visual' "$doc" | wc -l)
     if [ "$MATCH_COUNT" -gt 0 ]; then
-        echo "✅ Found $MATCH_COUNT KPI/dashboard keywords in $doc_rel"
+      echo "✅ Found $MATCH_COUNT KPI/dashboard keywords in $doc_rel"
     else
-        echo "⚠️  No KPI/dashboard keywords found in $doc_rel"
+      echo "⚠️  No KPI/dashboard keywords found in $doc_rel"
     fi
   fi
 done

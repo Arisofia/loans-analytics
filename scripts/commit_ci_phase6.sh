@@ -7,36 +7,36 @@ echo "=========================================="
 echo ""
 
 # Check git is available
-if ! command -v git &> /dev/null; then
-    echo "❌ git is not installed. Cannot proceed with commit."
-    exit 1
+if ! command -v git &>/dev/null; then
+  echo "❌ git is not installed. Cannot proceed with commit."
+  exit 1
 fi
 
 # Configure git if not already configured
 if [ -z "$(git config user.email)" ]; then
-    echo "⚙️  Configuring git user..."
-    git config user.email "ci@abaco-loans-analytics.local" 2>/dev/null || true
-    git config user.name "CI Automation" 2>/dev/null || true
+  echo "⚙️  Configuring git user..."
+  git config user.email "ci@abaco-loans-analytics.local" 2>/dev/null || true
+  git config user.name "CI Automation" 2>/dev/null || true
 fi
 
 echo "📋 FILES TO COMMIT:"
 echo ""
 
 FILES=(
-    "ci-workflow/CI_Workflow_Failure_Handling_test_plan.md"
-    "ci-workflow/CI_Workflow_Failure_Handling_checklist.md"
-    "ci-workflow/CI_Workflow_Failure_Handling_testcases.md"
-    "scripts/ci_diagnosis.sh"
-    "scripts/ci_full_fix.sh"
-    "scripts/commit_ci_phase6.sh"
-    "CLAUDE.md"
+  "ci-workflow/CI_Workflow_Failure_Handling_test_plan.md"
+  "ci-workflow/CI_Workflow_Failure_Handling_checklist.md"
+  "ci-workflow/CI_Workflow_Failure_Handling_testcases.md"
+  "scripts/ci_diagnosis.sh"
+  "scripts/ci_full_fix.sh"
+  "scripts/commit_ci_phase6.sh"
+  "CLAUDE.md"
 )
 
 for file in "${FILES[@]}"; do
-    if [ -f "$file" ]; then
-        echo "✅ $file"
-        git add "$file" 2>/dev/null || echo "⚠️  Could not stage: $file"
-    fi
+  if [ -f "$file" ]; then
+    echo "✅ $file"
+    git add "$file" 2>/dev/null || echo "⚠️  Could not stage: $file"
+  fi
 done
 
 echo ""
@@ -113,19 +113,19 @@ echo ""
 
 # Perform the commit
 if git commit -m "$COMMIT_MSG" 2>/dev/null; then
-    echo "✅ COMMIT SUCCESSFUL"
-    echo ""
-    echo "📊 COMMIT STATUS:"
-    git log --oneline -1
-    echo ""
-    echo "📈 REPOSITORY STATUS:"
-    git status
+  echo "✅ COMMIT SUCCESSFUL"
+  echo ""
+  echo "📊 COMMIT STATUS:"
+  git log --oneline -1
+  echo ""
+  echo "📈 REPOSITORY STATUS:"
+  git status
 else
-    echo "⚠️  Git commit failed. Repository may not be initialized or working directory clean."
-    echo "To commit manually, run:"
-    echo ""
-    echo "  git add ci-workflow/ scripts/ci_*.sh CLAUDE.md"
-    echo "  git commit -m '$COMMIT_MSG'"
+  echo "⚠️  Git commit failed. Repository may not be initialized or working directory clean."
+  echo "To commit manually, run:"
+  echo ""
+  echo "  git add ci-workflow/ scripts/ci_*.sh CLAUDE.md"
+  echo "  git commit -m '$COMMIT_MSG'"
 fi
 
 echo ""

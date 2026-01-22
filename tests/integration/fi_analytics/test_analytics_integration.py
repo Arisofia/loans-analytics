@@ -9,10 +9,6 @@ Test Cases:
   - F-02: Unauthorized Access Handling (403 Forbidden)
 """
 
-import os
-import subprocess
-import sys
-from typing import Any, Dict
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
