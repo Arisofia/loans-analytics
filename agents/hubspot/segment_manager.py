@@ -186,7 +186,9 @@ class SegmentManagerAgent(BaseAgent):
 
         headers, params = self._get_auth_headers_and_params()
 
-        response = requests.post(url, json=payload, headers=headers, params=params, timeout=10)
+        response = requests.post(
+            url, json=payload, headers=headers, params=params, timeout=10
+        )
 
         if response.status_code == 200:
             data = response.json()
@@ -194,12 +196,17 @@ class SegmentManagerAgent(BaseAgent):
                 "success": True,
                 "list_id": data.get("listId"),
                 "name": data.get("name"),
-                "url": (f"https://app.hubspot.com/contacts/lists/" f"{data.get('listId')}"),
+                "url": (
+                    f"https://app.hubspot.com/contacts/lists/" f"{data.get('listId')}"
+                ),
                 "filters": data.get("filters"),
             }
         return {
             "success": False,
-            "error": (f"Failed to create segment: {response.status_code} - " f"{response.text}"),
+            "error": (
+                f"Failed to create segment: {response.status_code} - "
+                f"{response.text}"
+            ),
         }
 
     def _create_today_segment(self, name_suffix: str = "") -> dict:
@@ -310,7 +317,9 @@ class SegmentManagerAgent(BaseAgent):
 
         headers, params = self._get_auth_headers_and_params()
 
-        response = requests.post(url, json=updates, headers=headers, params=params, timeout=10)
+        response = requests.post(
+            url, json=updates, headers=headers, params=params, timeout=10
+        )
 
         if response.status_code == 200:
             return {

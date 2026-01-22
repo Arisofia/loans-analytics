@@ -43,10 +43,14 @@ class GrokClient:
         self.base_url = base_url.rstrip("/")
 
         self.session = requests.Session()
-        retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
+        retries = Retry(
+            total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504]
+        )
         self.session.mount("https://", HTTPAdapter(max_retries=retries))
 
-    def generate_text(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> AIResponse:
+    def generate_text(
+        self, prompt: str, context: Optional[Dict[str, Any]] = None
+    ) -> AIResponse:
         if not self.api_key:
             raise ValueError("A GROK_API_KEY is required to call the Grok API")
 
@@ -87,15 +91,21 @@ class GeminiClient:
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(model)
 
-    def generate_text(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> AIResponse:
+    def generate_text(
+        self, prompt: str, context: Optional[Dict[str, Any]] = None
+    ) -> AIResponse:
         logger.debug("Sending Gemini request", extra={"model": self.model.model_name})
         gen_context = context or {}
         # Casting to Any to avoid mypy type mismatch with Google SDK's internal types
         from typing import cast
 
-        response = self.model.generate_content(prompt, generation_config=cast(Any, gen_context))
+        response = self.model.generate_content(
+            prompt, generation_config=cast(Any, gen_context)
+        )
 
-        text = getattr(response, "text", None) or "".join(getattr(response, "candidates", []) or [])
+        text = getattr(response, "text", None) or "".join(
+            getattr(response, "candidates", []) or []
+        )
         raw = (
             json.loads(response.to_json())
             if hasattr(response, "to_json")

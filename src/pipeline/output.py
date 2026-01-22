@@ -71,11 +71,15 @@ class UnifiedOutput:
 
         connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         if not connection_string:
-            self._log_event("azure_upload", "skipped", reason="No connection string found")
+            self._log_event(
+                "azure_upload", "skipped", reason="No connection string found"
+            )
             return {}
 
         container_name = self.azure_config.get("container", "pipeline-runs")
-        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        blob_service_client = BlobServiceClient.from_connection_string(
+            connection_string
+        )
         container_client = blob_service_client.get_container_client(container_name)
 
         try:
@@ -95,7 +99,9 @@ class UnifiedOutput:
                     name=blob_name,
                     data=data,
                     overwrite=True,
-                    content_settings=ContentSettings(content_type=self._guess_content_type(path)),
+                    content_settings=ContentSettings(
+                        content_type=self._guess_content_type(path)
+                    ),
                 )
             return path.name, f"{container_name}/{blob_name}"
 
@@ -110,7 +116,10 @@ class UnifiedOutput:
         return uploaded
 
     def upload_to_supabase(
-        self, df: pd.DataFrame, table_name: str = "fact_loans", schema: str = "analytics"
+        self,
+        df: pd.DataFrame,
+        table_name: str = "fact_loans",
+        schema: str = "analytics",
     ) -> bool:
         if not self.supabase_config.get("enabled"):
             return False
@@ -143,7 +152,9 @@ class UnifiedOutput:
                 index=False,
                 chunksize=1000,
             )
-            self._log_event("supabase_upload", "success", table=table_name, rows=len(df))
+            self._log_event(
+                "supabase_upload", "success", table=table_name, rows=len(df)
+            )
             return True
         except Exception as e:
             self._log_event("supabase_upload", "failed", error=str(e))
@@ -168,11 +179,15 @@ class UnifiedOutput:
 
         if context:
             quality_checks = quality_checks or context.quality_checks
-            compliance_report_path = compliance_report_path or context.compliance_report_path
+            compliance_report_path = (
+                compliance_report_path or context.compliance_report_path
+            )
             timeseries = timeseries or context.timeseries
 
         storage_cfg = self.config.get("storage", {})
-        base_dir = ensure_dir(Path(storage_cfg.get("local_dir", str(Paths.metrics_dir()))))
+        base_dir = ensure_dir(
+            Path(storage_cfg.get("local_dir", str(Paths.metrics_dir())))
+        )
         manifest_dir = ensure_dir(
             Path(storage_cfg.get("manifest_dir", str(Paths.runs_artifacts_dir())))
         )
@@ -222,7 +237,9 @@ class UnifiedOutput:
             "quality_checks": quality_checks or {},
             "files": output_paths,
             "timeseries": timeseries_paths,
-            "compliance_report": (str(compliance_report_path) if compliance_report_path else None),
+            "compliance_report": (
+                str(compliance_report_path) if compliance_report_path else None
+            ),
             "file_hashes": file_hashes,
         }
 
@@ -241,13 +258,17 @@ class UnifiedOutput:
         if self.supabase_config.get("enabled"):
             # Upload main dataframe
             if "fact_loans" in supabase_tables:
-                self.upload_to_supabase(df, table_name="fact_loans", schema=supabase_schema)
+                self.upload_to_supabase(
+                    df, table_name="fact_loans", schema=supabase_schema
+                )
             # Upload timeseries if available
             if timeseries and "kpi_timeseries_daily" in supabase_tables:
                 daily_ts = timeseries.get("daily")
                 if daily_ts is not None:
                     self.upload_to_supabase(
-                        daily_ts, table_name="kpi_timeseries_daily", schema=supabase_schema
+                        daily_ts,
+                        table_name="kpi_timeseries_daily",
+                        schema=supabase_schema,
                     )
 
         self._log_event("complete", "success", manifest=str(manifest_path))

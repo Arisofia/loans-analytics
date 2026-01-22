@@ -60,7 +60,9 @@ def test_portfolio_interest_and_risk_tracks_defaults():
 
     assert monthly_interest == pytest.approx(expected_interest)
     assert portfolio_loss == pytest.approx(
-        expected_loss(prime, 0.45) + expected_loss(near_prime, 0.45) + expected_loss(subprime, 0.45)
+        expected_loss(prime, 0.45)
+        + expected_loss(near_prime, 0.45)
+        + expected_loss(subprime, 0.45)
     )
 
 
@@ -82,7 +84,9 @@ def test_invalid_inputs_raise_value_errors():
             default_probability=1.5,
         )
 
-    valid_loan = LoanPosition(principal=10_000, annual_interest_rate=0.05, term_months=12)
+    valid_loan = LoanPosition(
+        principal=10_000, annual_interest_rate=0.05, term_months=12
+    )
     with pytest.raises(ValueError):
         expected_loss(valid_loan, loss_given_default=1.2)
 
@@ -136,27 +140,36 @@ def test_portfolio_kpis_surfaces_weighted_metrics():
         + loans[1].annual_interest_rate * loans[1].principal
     ) / expected_exposure
     weighted_term = (
-        loans[0].term_months * loans[0].principal + loans[1].term_months * loans[1].principal
+        loans[0].term_months * loans[0].principal
+        + loans[1].term_months * loans[1].principal
     ) / expected_exposure
     weighted_default_probability = (
         loans[0].default_probability * loans[0].principal
         + loans[1].default_probability * loans[1].principal
     ) / expected_exposure
-    expected_interest = sum(loan.principal * (loan.annual_interest_rate / 12) for loan in loans)
+    expected_interest = sum(
+        loan.principal * (loan.annual_interest_rate / 12) for loan in loans
+    )
     expected_loss_value = sum(expected_loss(loan, 0.4) for loan in loans)
 
     assert isinstance(kpis, PortfolioKPIs)
     assert kpis.exposure == expected_exposure
     assert kpis.weighted_rate == pytest.approx(weighted_rate)
     assert kpis.weighted_term_months == pytest.approx(weighted_term)
-    assert kpis.weighted_default_probability == pytest.approx(weighted_default_probability)
+    assert kpis.weighted_default_probability == pytest.approx(
+        weighted_default_probability
+    )
     assert kpis.expected_monthly_interest == pytest.approx(expected_interest)
     assert kpis.expected_monthly_payment == pytest.approx(
         calculate_monthly_payment(loans[0]) + calculate_monthly_payment(loans[1])
     )
     assert kpis.expected_loss == pytest.approx(expected_loss_value)
-    assert kpis.expected_loss_rate == pytest.approx(expected_loss_value / expected_exposure)
-    assert kpis.interest_yield_rate == pytest.approx(expected_interest / expected_exposure)
+    assert kpis.expected_loss_rate == pytest.approx(
+        expected_loss_value / expected_exposure
+    )
+    assert kpis.interest_yield_rate == pytest.approx(
+        expected_interest / expected_exposure
+    )
     assert kpis.risk_adjusted_return == pytest.approx(
         (expected_interest - expected_loss_value) / expected_exposure
     )

@@ -109,7 +109,9 @@ class NotionOutputClient:
             logger.error(f"Error creating Notion report page: {e}")
             return None
 
-    def _build_report_blocks(self, report_content: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _build_report_blocks(
+        self, report_content: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Build Notion blocks for report content."""
         blocks = []
 
@@ -318,7 +320,9 @@ class NotionOutputClient:
             parent_page_id = parent_page_id or os.getenv("NOTION_REPORTS_PAGE_ID")
 
             if parent_page_id:
-                report_title = f"Analytics Report - {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
+                report_title = (
+                    f"Analytics Report - {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
+                )
                 page_id = self.create_report_page(
                     parent_page_id=parent_page_id,
                     title=report_title,

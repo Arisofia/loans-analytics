@@ -42,7 +42,12 @@ def validate_ingestion_contract(df: pl.DataFrame) -> bool:
 
     # Interest Rate should be between 0.0 and 1.0 (as decimal)
     if "interest_rate" in df.columns:
-        if df.filter((pl.col("interest_rate") < 0) | (pl.col("interest_rate") > 1.0)).height > 0:
+        if (
+            df.filter(
+                (pl.col("interest_rate") < 0) | (pl.col("interest_rate") > 1.0)
+            ).height
+            > 0
+        ):
             logger.warning("Interest rate out of typical 0.0-1.0 range")
 
     # 3. Monotonicity Checks (Ensure measurement dates are not regressing)
@@ -51,7 +56,8 @@ def validate_ingestion_contract(df: pl.DataFrame) -> bool:
         dates = df.select("measurement_date").sort("measurement_date")
         if not df.select("measurement_date").equals(dates):
             logger.warning(
-                "Data Continuity Issue: measurement_date is not " "monotonically increasing"
+                "Data Continuity Issue: measurement_date is not "
+                "monotonically increasing"
             )
 
     # 4. Outlier / Threshold Detection
@@ -78,7 +84,10 @@ def assert_healthy(df: pl.DataFrame):
             # Explicitly fail if negative values found in financial columns
             neg_count = df.filter(pl.col(col) < 0).height
             if neg_count > 0:
-                print(f"❌ CRITICAL: Column '{col}' contains {neg_count} " "negative values.")
+                print(
+                    f"❌ CRITICAL: Column '{col}' contains {neg_count} "
+                    "negative values."
+                )
                 sys.exit(1)
 
     print("✅ Polars health checks passed.")

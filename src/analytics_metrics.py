@@ -50,7 +50,7 @@ def load_dashboard_metrics() -> Dict[str, Any]:
     if not DASHBOARD_JSON.exists():
         return {}
     try:
-        with open(DASHBOARD_JSON, 'r') as f:
+        with open(DASHBOARD_JSON, "r") as f:
             data = json.load(f)
             if not isinstance(data, dict):
                 return {}
@@ -97,14 +97,18 @@ def portfolio_kpis(df: pd.DataFrame) -> Tuple[Dict[str, float], pd.DataFrame]:
     delinquent_statuses = settings.analytics.delinquent_statuses
     total_principal = work["principal_balance"].sum()
     if total_principal > 0:
-        delinquent_mask = work["loan_status"].astype(str).str.lower().isin(delinquent_statuses)
+        delinquent_mask = (
+            work["loan_status"].astype(str).str.lower().isin(delinquent_statuses)
+        )
         delinquent_principal = work.loc[delinquent_mask, "principal_balance"].sum()
         delinquency_rate = float(delinquent_principal / total_principal)
     else:
         delinquency_rate = 0.0
 
     weighted_interest = (work["interest_rate"] * work["principal_balance"]).sum()
-    portfolio_yield = float(weighted_interest / total_principal) if total_principal else 0.0
+    portfolio_yield = (
+        float(weighted_interest / total_principal) if total_principal else 0.0
+    )
 
     avg_ltv = work["ltv_ratio"].mean()
     avg_dti = work["dti_ratio"].mean()
@@ -141,7 +145,9 @@ def project_growth(
         {
             "month": schedule,
             "yield": np.linspace(current_yield, target_yield, periods),
-            "loan_volume": np.linspace(current_loan_volume, target_loan_volume, periods),
+            "loan_volume": np.linspace(
+                current_loan_volume, target_loan_volume, periods
+            ),
         }
     )
     return projection.assign(month=lambda d: d["month"].dt.strftime("%b %Y"))

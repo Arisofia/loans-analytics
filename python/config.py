@@ -99,8 +99,12 @@ class AnalyticsSettings(BaseModel):
 class KPISettings(BaseModel):
     """Thresholds for individual KPIs."""
 
-    portfolio_risk: Dict[str, float] = Field(default={"warning": 0.03, "critical": 0.05})
-    loan_book_growth: Dict[str, float] = Field(default={"warning": 0.05, "critical": 0.02})
+    portfolio_risk: Dict[str, float] = Field(
+        default={"warning": 0.03, "critical": 0.05}
+    )
+    loan_book_growth: Dict[str, float] = Field(
+        default={"warning": 0.05, "critical": 0.02}
+    )
     liquidity_ratio: Dict[str, float] = Field(default={"warning": 1.2, "critical": 1.0})
     compliance_breaches: Dict[str, int] = Field(default={"warning": 1, "critical": 3})
 
@@ -116,7 +120,9 @@ class ApiSettings(BaseModel):
 class Settings(BaseSettings):
     """Main settings class consolidating all configurations."""
 
-    model_config = SettingsConfigDict(env_prefix="ABACO_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="ABACO_", env_file=".env", extra="ignore"
+    )
 
     financial: FinancialGuardrails = FinancialGuardrails()
     risk: RiskParameters = RiskParameters()

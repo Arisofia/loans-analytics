@@ -40,7 +40,9 @@ class OpenAIProvider(BaseLLM):
 
 
 class AnthropicProvider(BaseLLM):
-    def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-opus-20240229"):
+    def __init__(
+        self, api_key: Optional[str] = None, model: str = "claude-3-opus-20240229"
+    ):
         self.api_key = api_key
         self.model = model
 

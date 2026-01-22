@@ -3,7 +3,7 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import pandas as pd
 import redis
@@ -116,7 +116,9 @@ def get_risk_model():
         try:
             _risk_model.load()
         except Exception:
-            logger.warning("Could not load risk model. Predictions will fail if not trained.")
+            logger.warning(
+                "Could not load risk model. Predictions will fail if not trained."
+            )
     return _risk_model
 
 

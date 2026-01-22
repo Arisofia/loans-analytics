@@ -27,7 +27,9 @@ describe('middleware header spoofing mitigation', () => {
       cookies: { getAll: () => [] },
     }
 
-    const res = (await middleware(req as unknown as Parameters<typeof middleware>[0])) as MockResponse
+    const res = (await middleware(
+      req as unknown as Parameters<typeof middleware>[0]
+    )) as MockResponse
     expect(res?.status).toBe(403)
   })
 
@@ -42,7 +44,9 @@ describe('middleware header spoofing mitigation', () => {
       cookies: { getAll: () => [] },
     }
 
-    const res = (await middleware(req as unknown as Parameters<typeof middleware>[0])) as MockResponse
+    const res = (await middleware(
+      req as unknown as Parameters<typeof middleware>[0]
+    )) as MockResponse
     expect(res?.status === 403).toBeFalsy()
   })
 })

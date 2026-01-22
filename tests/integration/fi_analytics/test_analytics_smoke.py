@@ -16,7 +16,9 @@ import pytest
 class TestAnalyticsSmoke:
     """Smoke tests for analytics pipeline."""
 
-    def test_a01_pipeline_smoke_execution(self, analytics_test_env: Dict[str, Any]) -> None:
+    def test_a01_pipeline_smoke_execution(
+        self, analytics_test_env: Dict[str, Any]
+    ) -> None:
         """
         A-01: Pipeline smoke test — execute with sample_small.csv → completes successfully.
 

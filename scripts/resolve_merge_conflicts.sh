@@ -201,14 +201,14 @@ clean_unmerged_files() {
 
 check_and_clean_duplicates() {
   log_info "Checking for accidental duplicate files (e.g. '* 2.*')..."
-  
+
   # Find files ending in " 2" or " 2.*" or " 3.*"
   local dups=$(find . -name ".git" -prune -o -type f \( -name "* 2" -o -name "* 2.*" -o -name "* 3.*" \) -print | head -n 5)
-  
+
   if [ -n "$dups" ]; then
     log_warning "Found potential duplicate files (showing first 5):"
     echo "$dups"
-    
+
     if [ "$DRY_RUN" = true ]; then
       log_info "[DRY-RUN] Would remove duplicate files"
     elif [ "$AUTO_COMMIT" = true ]; then

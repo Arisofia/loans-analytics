@@ -29,7 +29,9 @@ except ImportError:
 class SupabaseOutputClient:
     """Sync analytics data to Supabase PostgreSQL database."""
 
-    def __init__(self, url: Optional[str] = None, service_role_key: Optional[str] = None):
+    def __init__(
+        self, url: Optional[str] = None, service_role_key: Optional[str] = None
+    ):
         self.url = url or os.getenv("SUPABASE_URL")
         self.service_role_key = service_role_key or os.getenv("SUPABASE_SERVICE_ROLE")
 
@@ -71,7 +73,9 @@ class SupabaseOutputClient:
                     "created_at": datetime.now(timezone.utc).isoformat(),
                 }
 
-                response = self.client.table("analytics_kpi_metrics").insert(record).execute()
+                response = (
+                    self.client.table("analytics_kpi_metrics").insert(record).execute()
+                )
 
                 success = bool(response.data)
                 results[kpi_name] = success
@@ -113,7 +117,9 @@ class SupabaseOutputClient:
 
                 if response.data:
                     total_inserted += len(response.data)
-                    logger.info(f"Inserted {len(response.data)} records into {table_name}")
+                    logger.info(
+                        f"Inserted {len(response.data)} records into {table_name}"
+                    )
 
             logger.info(f"Total inserted: {total_inserted} records into {table_name}")
             return total_inserted
@@ -214,7 +220,9 @@ class SupabaseOutputClient:
             if "raw_data_df" in export_data:
                 df = export_data["raw_data_df"]
                 table_name = export_data.get("raw_data_table", "analytics_raw_data")
-                results["raw_data_inserted"] = self.insert_raw_data(df, table_name, run_id)
+                results["raw_data_inserted"] = self.insert_raw_data(
+                    df, table_name, run_id
+                )
 
             if "timeseries" in export_data:
                 results["timeseries_upserted"] = self.upsert_timeseries(

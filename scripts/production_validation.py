@@ -91,8 +91,12 @@ class ProductionValidator:
                 "validation": {
                     "par30_in_range": 0 <= metrics["PAR30"]["value"] <= 100,
                     "par90_in_range": 0 <= metrics["PAR90"]["value"] <= 100,
-                    "collection_rate_in_range": 0 <= metrics["CollectionRate"]["value"] <= 100,
-                    "portfolio_health_in_range": 0 <= metrics["PortfolioHealth"]["value"] <= 10,
+                    "collection_rate_in_range": 0
+                    <= metrics["CollectionRate"]["value"]
+                    <= 100,
+                    "portfolio_health_in_range": 0
+                    <= metrics["PortfolioHealth"]["value"]
+                    <= 10,
                 },
             }
 
@@ -239,7 +243,8 @@ class ProductionValidator:
         self.results["checks"]["audit_trail"] = self.check_audit_trail()
 
         all_pass = all(
-            check["status"] in ["PASS", "WARN"] for check in self.results["checks"].values()
+            check["status"] in ["PASS", "WARN"]
+            for check in self.results["checks"].values()
         )
 
         self.results["status"] = "PASS" if all_pass else "FAIL"

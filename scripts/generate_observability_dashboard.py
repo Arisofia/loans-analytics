@@ -226,7 +226,9 @@ if __name__ == "__main__":
                 value = arg.split("=", 1)[1]
                 quality_trend = value if value else None
 
-        dashboard_file = generate_dashboard(pipeline_status, agent_status, quality_trend)
+        dashboard_file = generate_dashboard(
+            pipeline_status, agent_status, quality_trend
+        )
         print(f"✓ Dashboard generated: {dashboard_file}")
     except Exception as e:
         logger.error(f"Failed to generate dashboard: {e}")

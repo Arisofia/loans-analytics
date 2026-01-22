@@ -23,7 +23,9 @@ def require_module(modname):
     try:
         return __import__(modname)
     except ImportError:
-        logger.error(f"Required module '{modname}' not installed; skipping Gemini review.")
+        logger.error(
+            f"Required module '{modname}' not installed; skipping Gemini review."
+        )
         return None
 
 
@@ -59,7 +61,9 @@ def main() -> int:
         if callable(configure_fn):
             configure_fn(api_key=gemini_key)
         else:
-            logger.warning("google.generativeai.configure not available; skipping Gemini review.")
+            logger.warning(
+                "google.generativeai.configure not available; skipping Gemini review."
+            )
             return 0
     except Exception:
         logger.exception("Failed to configure Gemini API")
@@ -90,7 +94,9 @@ def main() -> int:
 
     GenModel = getattr(genai, "GenerativeModel", None)
     if GenModel is None:
-        logger.error("google.generativeai.GenerativeModel not available; skipping review.")
+        logger.error(
+            "google.generativeai.GenerativeModel not available; skipping review."
+        )
         return 0
 
     try:

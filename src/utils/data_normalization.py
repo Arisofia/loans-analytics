@@ -17,7 +17,8 @@ def sanitize_column_names(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
     df.columns = [
-        re.sub(r"[^a-z0-9_]", "", str(col).lower().strip().replace(" ", "_")) for col in df.columns
+        re.sub(r"[^a-z0-9_]", "", str(col).lower().strip().replace(" ", "_"))
+        for col in df.columns
     ]
     return df
 
@@ -202,7 +203,9 @@ def ensure_columns(
     for col in required:
         if col not in working_df.columns:
             default_val = defaults.get(col, 0.0)
-            logger.warning(f"Missing required column '{col}', using default: {default_val}")
+            logger.warning(
+                f"Missing required column '{col}', using default: {default_val}"
+            )
             working_df[col] = default_val
 
     return working_df

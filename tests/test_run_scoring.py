@@ -195,7 +195,9 @@ def test_main_output_to_file(mock_load, mock_engine_class, tmp_path):
     mock_engine.risk_alerts.return_value = pd.DataFrame()
     mock_engine_class.return_value = mock_engine
 
-    with patch("sys.argv", ["script.py", "--data", str(csv_file), "--output", str(output_file)]):
+    with patch(
+        "sys.argv", ["script.py", "--data", str(csv_file), "--output", str(output_file)]
+    ):
         main()
 
     assert output_file.exists()
@@ -234,7 +236,9 @@ def test_main_blob_export_requires_credentials(mock_load, mock_engine_class, tmp
     mock_engine.run_full_analysis.return_value = {"metric1": 1.0}
     mock_engine_class.return_value = mock_engine
 
-    with patch("sys.argv", ["script.py", "--data", str(csv_file), "--export-blob", "container"]):
+    with patch(
+        "sys.argv", ["script.py", "--data", str(csv_file), "--export-blob", "container"]
+    ):
         with pytest.raises(SystemExit):
             main()
 
@@ -310,7 +314,9 @@ def test_main_parses_custom_thresholds(mock_parse_args, tmp_path):
     mock_parse_args.return_value = mock_args
 
     with patch("src.analytics.run_scoring.load_portfolio") as mock_load:
-        with patch("src.analytics.run_scoring.LoanAnalyticsEngine") as mock_engine_class:
+        with patch(
+            "src.analytics.run_scoring.LoanAnalyticsEngine"
+        ) as mock_engine_class:
             mock_df = pd.DataFrame(
                 {
                     "loan_amount": [250000],
@@ -331,4 +337,6 @@ def test_main_parses_custom_thresholds(mock_parse_args, tmp_path):
 
             main()
 
-            mock_engine.risk_alerts.assert_called_once_with(ltv_threshold=85.0, dti_threshold=38.0)
+            mock_engine.risk_alerts.assert_called_once_with(
+                ltv_threshold=85.0, dti_threshold=38.0
+            )

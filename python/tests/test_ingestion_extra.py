@@ -20,7 +20,10 @@ def test_archive_raw_and_log(tmp_path, base_config):
     assert archived is not None
     assert archived.exists()
     # ensure audit log has an archive success event
-    assert any(e.get("event") == "archive" and e.get("status") == "success" for e in ui.audit_log)
+    assert any(
+        e.get("event") == "archive" and e.get("status") == "success"
+        for e in ui.audit_log
+    )
 
 
 def test_apply_deduplication_config(tmp_path, base_config):
@@ -31,7 +34,9 @@ def test_apply_deduplication_config(tmp_path, base_config):
         "key_columns": ["loan_id"],
     }
     ui = UnifiedIngestion(cfg)
-    df = pd.DataFrame({"loan_id": ["a", "a", "b"], "total_receivable_usd": [10, 10, 20]})
+    df = pd.DataFrame(
+        {"loan_id": ["a", "a", "b"], "total_receivable_usd": [10, 10, 20]}
+    )
     deduped, removed = ui._apply_deduplication(df)
     assert removed == 1
     assert len(deduped) == 2

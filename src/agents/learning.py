@@ -55,7 +55,9 @@ class FeedbackStore:
                     )
                     continue
                 if "score" not in data:
-                    logger.warning("Skipping feedback missing 'score' key: %s", file_path)
+                    logger.warning(
+                        "Skipping feedback missing 'score' key: %s", file_path
+                    )
                     continue
                 scores.append(float(data["score"]))
             except (json.JSONDecodeError, KeyError, OSError, ValueError) as e:

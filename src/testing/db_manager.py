@@ -31,4 +31,3 @@ class DBManager:
     def seed_kpi_data(self):
         """Seeds initial KPI data."""
         # Placeholder for seeding logic
-        pass

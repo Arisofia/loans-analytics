@@ -9,7 +9,9 @@ def base_config():
     return {"pipeline": {"phases": {"ingestion": {"validation": {"strict": False}}}}}
 
 
-def make_loans(dates, disburse_dates=None, maturity_dates=None, dpd_vals=None, balances=None):
+def make_loans(
+    dates, disburse_dates=None, maturity_dates=None, dpd_vals=None, balances=None
+):
     data = {
         "dpd": dpd_vals or [0] * len(dates),
         "outstanding_balance": balances or [10] * len(dates),
@@ -63,7 +65,9 @@ def test_measurement_date_column_takes_precedence(base_config):
         }
     )
     cfg = base_config.copy()
-    cfg["pipeline"]["phases"]["ingestion"]["looker"] = {"measurement_date_column": "as_of_date"}
+    cfg["pipeline"]["phases"]["ingestion"]["looker"] = {
+        "measurement_date_column": "as_of_date"
+    }
     ui = UnifiedIngestion(cfg)
     result = ui._looker_dpd_to_loan_tape(loans, {})
     assert result["measurement_date"].iloc[0].startswith("2022-12-12")

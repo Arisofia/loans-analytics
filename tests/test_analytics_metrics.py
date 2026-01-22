@@ -126,9 +126,9 @@ def test_portfolio_kpis_returns_expected_metrics(sample_df):
         df.loc[df["loan_status"] == "delinquent", "principal_balance"].sum()
         / df["principal_balance"].sum()
     )
-    expected_portfolio_yield = (df["principal_balance"] * df["interest_rate"]).sum() / df[
-        "principal_balance"
-    ].sum()
+    expected_portfolio_yield = (
+        df["principal_balance"] * df["interest_rate"]
+    ).sum() / df["principal_balance"].sum()
     expected_average_ltv = (df["loan_amount"] / df["appraised_value"]).mean()
     expected_average_dti = (df["monthly_debt"] / (df["borrower_income"] / 12)).mean()
 
@@ -138,8 +138,12 @@ def test_portfolio_kpis_returns_expected_metrics(sample_df):
     assert metrics["portfolio_yield"] == pytest.approx(
         expected_portfolio_yield * 100, rel=1e-6, abs=1e-9
     )
-    assert metrics["average_ltv"] == pytest.approx(expected_average_ltv * 100, rel=1e-6, abs=1e-9)
-    assert metrics["average_dti"] == pytest.approx(expected_average_dti * 100, rel=1e-6, abs=1e-9)
+    assert metrics["average_ltv"] == pytest.approx(
+        expected_average_ltv * 100, rel=1e-6, abs=1e-9
+    )
+    assert metrics["average_dti"] == pytest.approx(
+        expected_average_dti * 100, rel=1e-6, abs=1e-9
+    )
 
 
 def test_portfolio_kpis_missing_column_raises(sample_df):
@@ -187,7 +191,8 @@ def test_portfolio_kpis_dti_mixed_income_ignores_nan_in_average(sample_df):
     assert enriched.loc[non_positive_mask, "dti_ratio"].isna().all()
     assert enriched.loc[positive_mask, "dti_ratio"].notna().all()
     expected_dti = (
-        df.loc[positive_mask, "monthly_debt"] / (df.loc[positive_mask, "borrower_income"] / 12)
+        df.loc[positive_mask, "monthly_debt"]
+        / (df.loc[positive_mask, "borrower_income"] / 12)
     ).mean()
     assert metrics["average_dti"] == pytest.approx(expected_dti * 100)
 

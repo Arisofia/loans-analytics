@@ -37,7 +37,9 @@ def test_data_quality_report_failed_missing_column():
 
 
 def test_data_quality_report_type_error():
-    df = pd.DataFrame({"loan_id": ["1", "2"], "total_receivable_usd": ["not_a_number", "200.0"]})
+    df = pd.DataFrame(
+        {"loan_id": ["1", "2"], "total_receivable_usd": ["not_a_number", "200.0"]}
+    )
 
     reporter = DataQualityReporter(df)
     report = reporter.run_audit(
