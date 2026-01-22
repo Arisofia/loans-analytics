@@ -67,3 +67,4 @@ scripts/setup_azure.sh
 *.mov
 *.mp3
 >>>>>>> ed449d30c (feat: Update workflows and add gitignore for media files)
+.mvn/
