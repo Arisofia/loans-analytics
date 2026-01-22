@@ -36,8 +36,6 @@ jobs:
         run: |
           pnpm -C apps/web lint
           pnpm -C apps/web build
-<<<<<<< HEAD
-=======
       - name: Generate placeholder coverage (lcov)
         run: |
           mkdir -p apps/web/coverage
