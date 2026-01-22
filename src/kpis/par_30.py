@@ -79,9 +79,7 @@ class PAR30Calculator(KPICalculator):
                 method="loan_status_fallback",
             )
         else:
-            raise ValueError(
-                f"Missing required columns: {', '.join(required)} or 'loan_status'"
-            )
+            raise ValueError(f"Missing required columns: {', '.join(required)} or 'loan_status'")
 
 
 def calculate_par_30(df: pd.DataFrame) -> Tuple[float, Dict[str, Any]]:

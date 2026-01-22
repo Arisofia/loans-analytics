@@ -4,10 +4,10 @@ import tempfile
 from datetime import datetime, timezone
 
 import polars as pl
+from apps.analytics.src.flows.ingestion_flow import loan_ingestion_flow
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.security import APIKeyHeader
 
-from apps.analytics.src.flows.ingestion_flow import loan_ingestion_flow
 from python.config import settings
 from python.ingestion import CascadeIngestion
 from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine

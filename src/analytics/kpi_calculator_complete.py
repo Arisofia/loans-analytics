@@ -50,11 +50,7 @@ class ABACOKPICalculator:
         if "disbursement_date" in df.columns and "term" in df.columns:
             if "loan_end_date" not in df.columns and "maturity_date" not in df.columns:
                 try:
-                    unit = (
-                        df["term_unit"].iloc[0].lower()
-                        if "term_unit" in df.columns
-                        else "days"
-                    )
+                    unit = df["term_unit"].iloc[0].lower() if "term_unit" in df.columns else "days"
                     if "day" in unit:
                         df["loan_end_date"] = df["disbursement_date"] + pd.to_timedelta(
                             df["term"], unit="D"
@@ -89,9 +85,7 @@ class ABACOKPICalculator:
 
     def get_aum_by_customer_type(self) -> pd.DataFrame:
         """AUM breakdown by customer type."""
-        balance_col = self._find_column(
-            ["outstanding_loan_value", "outstanding_balance"]
-        )
+        balance_col = self._find_column(["outstanding_loan_value", "outstanding_balance"])
 
         merged = self.loans.merge(
             self.customers[["customer_id", "customer_type"]],
@@ -100,11 +94,7 @@ class ABACOKPICalculator:
         )
 
         if balance_col and balance_col in merged.columns:
-            return (
-                merged.groupby("customer_type", dropna=False)[balance_col]
-                .sum()
-                .reset_index()
-            )
+            return merged.groupby("customer_type", dropna=False)[balance_col].sum().reset_index()
         return pd.DataFrame()
 
     # === REPLINES & PRODUCT MOMENTUM ===
@@ -116,9 +106,7 @@ class ABACOKPICalculator:
         """
         disb_col = self._find_column(["disbursement_date", "disburse_date"])
         end_col = self._find_column(["loan_end_date", "maturity_date"])
-        amount_col = self._find_column(
-            ["loan_amount", "disburse_principal", "disbursement_amount"]
-        )
+        amount_col = self._find_column(["loan_amount", "disburse_principal", "disbursement_amount"])
 
         if not all([disb_col, end_col, amount_col]):
             logger.warning("Cannot calculate replines: missing date or amount columns")
@@ -137,9 +125,7 @@ class ABACOKPICalculator:
             total_disb = pd.to_numeric(disb_df[amount_col], errors="coerce").sum()
 
             # Matured loans in current month
-            matured_df = self.loans[
-                self.loans[end_col].dt.to_period("M") == latest_month
-            ]
+            matured_df = self.loans[self.loans[end_col].dt.to_period("M") == latest_month]
             total_matured = pd.to_numeric(matured_df[amount_col], errors="coerce").sum()
 
             replines = (total_disb / max(total_matured, 1)) * 100
@@ -171,9 +157,7 @@ class ABACOKPICalculator:
                 return 0.0
 
             latest_month = all_months.max()
-            monthly = self.payments[
-                self.payments[date_col].dt.to_period("M") == latest_month
-            ]
+            monthly = self.payments[self.payments[date_col].dt.to_period("M") == latest_month]
             return pd.to_numeric(monthly[payment_col], errors="coerce").sum()
         except Exception as e:
             logger.error("Error calculating monthly revenue: %s", e)
@@ -198,9 +182,7 @@ class ABACOKPICalculator:
 
     def get_mom_growth_pct(self) -> float:
         """Month-over-Month growth percentage."""
-        balance_col = self._find_column(
-            ["outstanding_loan_value", "outstanding_balance"]
-        )
+        balance_col = self._find_column(["outstanding_loan_value", "outstanding_balance"])
         disb_date_col = self._find_column(["disbursement_date", "disburse_date"])
         if not balance_col or not disb_date_col:
             return 0.0
@@ -220,9 +202,7 @@ class ABACOKPICalculator:
 
     def get_yoy_growth_pct(self) -> float:
         """Year-over-Year growth percentage."""
-        balance_col = self._find_column(
-            ["outstanding_loan_value", "outstanding_balance"]
-        )
+        balance_col = self._find_column(["outstanding_loan_value", "outstanding_balance"])
         disb_date_col = self._find_column(["disbursement_date", "disburse_date"])
         if not balance_col or not disb_date_col:
             return 0.0
@@ -232,15 +212,10 @@ class ABACOKPICalculator:
             aum_by_month = self.loans.groupby("month")[balance_col].sum().sort_index()
 
             if len(aum_by_month) < 13:
-                logger.warning(
-                    "Insufficient data for YoY calculation (need 13+ months)"
-                )
+                logger.warning("Insufficient data for YoY calculation (need 13+ months)")
                 return 0.0
 
-            yoy = (
-                (aum_by_month.iloc[-1] - aum_by_month.iloc[-13])
-                / aum_by_month.iloc[-13]
-            ) * 100
+            yoy = ((aum_by_month.iloc[-1] - aum_by_month.iloc[-13]) / aum_by_month.iloc[-13]) * 100
             return float(yoy) if not np.isnan(yoy) else 0.0
         except Exception as e:
             logger.error("Error calculating YoY: %s", e)
@@ -288,9 +263,7 @@ class ABACOKPICalculator:
         if not dpd_col or dpd_col not in self.loans.columns:
             return 0.0
 
-        delinquent = (
-            pd.to_numeric(self.loans[dpd_col], errors="coerce") >= dpd_threshold
-        ).sum()
+        delinquent = (pd.to_numeric(self.loans[dpd_col], errors="coerce") >= dpd_threshold).sum()
         total = len(self.loans)
 
         return (delinquent / total * 100) if total > 0 else 0.0
@@ -298,19 +271,13 @@ class ABACOKPICalculator:
     def get_par_90_ratio(self) -> float:
         """Portfolio at Risk (90+DPD) as % of outstanding balance."""
         dpd_col = self._find_column(["dpd", "days_past_due"])
-        balance_col = self._find_column(
-            ["outstanding_loan_value", "outstanding_balance"]
-        )
+        balance_col = self._find_column(["outstanding_loan_value", "outstanding_balance"])
 
         if not all([dpd_col, balance_col]):
             return 0.0
 
-        loans_at_risk = self.loans[
-            pd.to_numeric(self.loans[dpd_col], errors="coerce") >= 90
-        ]
-        balance_at_risk = pd.to_numeric(
-            loans_at_risk[balance_col], errors="coerce"
-        ).sum()
+        loans_at_risk = self.loans[pd.to_numeric(self.loans[dpd_col], errors="coerce") >= 90]
+        balance_at_risk = pd.to_numeric(loans_at_risk[balance_col], errors="coerce").sum()
         total_balance = pd.to_numeric(self.loans[balance_col], errors="coerce").sum()
 
         return (balance_at_risk / total_balance * 100) if total_balance > 0 else 0.0
@@ -320,9 +287,7 @@ class ABACOKPICalculator:
     def get_portfolio_by_product(self) -> pd.DataFrame:
         """Loan count and AUM by product type."""
         product_col = self._find_column(["product_type", "product"])
-        balance_col = self._find_column(
-            ["outstanding_loan_value", "outstanding_balance"]
-        )
+        balance_col = self._find_column(["outstanding_loan_value", "outstanding_balance"])
 
         if not product_col:
             return pd.DataFrame()
@@ -362,12 +327,8 @@ class ABACOKPICalculator:
             "replines_percentage": round(self.get_replines_percentage(), 2),
             # Revenue
             "monthly_revenue_usd": round(self.get_monthly_revenue(), 2),
-            "revenue_per_active_client_monthly": round(
-                self.get_revenue_per_active_client(), 2
-            ),
-            "revenue_per_active_client_annual": round(
-                self.get_annual_revenue_per_client(), 2
-            ),
+            "revenue_per_active_client_monthly": round(self.get_revenue_per_active_client(), 2),
+            "revenue_per_active_client_annual": round(self.get_annual_revenue_per_client(), 2),
             # Growth
             "mom_growth_pct": round(self.get_mom_growth_pct(), 2),
             "yoy_growth_pct": round(self.get_yoy_growth_pct(), 2),

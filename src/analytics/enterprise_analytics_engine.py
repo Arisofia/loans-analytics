@@ -13,9 +13,7 @@ logger = logging.getLogger(__name__)
 
 @runtime_checkable
 class KPIExporter(Protocol):
-    def upload_metrics(
-        self, metrics: Dict[str, float], blob_name: Optional[str] = None
-    ) -> str:
+    def upload_metrics(self, metrics: Dict[str, float], blob_name: Optional[str] = None) -> str:
         pass
 
 
@@ -64,13 +62,9 @@ class LoanAnalyticsEngine:
             "interest_rate",
             "principal_balance",
         ]
-        missing_cols = [
-            col for col in required_cols if col not in self.loan_data.columns
-        ]
+        missing_cols = [col for col in required_cols if col not in self.loan_data.columns]
         if missing_cols:
-            raise ValueError(
-                f"Missing required columns in loan_data: {', '.join(missing_cols)}"
-            )
+            raise ValueError(f"Missing required columns in loan_data: {', '.join(missing_cols)}")
 
     def _coerce_numeric_columns(self):
         """Coerce numeric columns to float and track invalid conversions."""
@@ -170,9 +164,7 @@ class LoanAnalyticsEngine:
 
         null_counts = df.isnull().sum().sum()
         total_cells = df.size
-        average_null_ratio = (
-            (null_counts / total_cells * 100) if total_cells > 0 else 0.0
-        )
+        average_null_ratio = (null_counts / total_cells * 100) if total_cells > 0 else 0.0
 
         invalid_count = sum(self._coercion_report.values())
         numeric_cols = [
@@ -186,9 +178,7 @@ class LoanAnalyticsEngine:
         numeric_col_count = len([col for col in numeric_cols if col in df.columns])
         total_numeric_cells = total_rows * numeric_col_count
         invalid_numeric_ratio = (
-            (invalid_count / total_numeric_cells * 100)
-            if total_numeric_cells > 0
-            else 0.0
+            (invalid_count / total_numeric_cells * 100) if total_numeric_cells > 0 else 0.0
         )
 
         data_quality_score = (
@@ -203,9 +193,7 @@ class LoanAnalyticsEngine:
             "data_quality_score": data_quality_score,
         }
 
-    def risk_alerts(
-        self, ltv_threshold: float = 80.0, dti_threshold: float = 50.0
-    ) -> pd.DataFrame:
+    def risk_alerts(self, ltv_threshold: float = 80.0, dti_threshold: float = 50.0) -> pd.DataFrame:
         """
         Identifies high-risk loans based on LTV and DTI thresholds.
 
@@ -249,9 +237,7 @@ class LoanAnalyticsEngine:
         results = engine_v2.calculate_all()
 
         dashboard = {
-            "portfolio_delinquency_rate_percent": results.get("PAR30", {}).get(
-                "value", 0.0
-            ),
+            "portfolio_delinquency_rate_percent": results.get("PAR30", {}).get("value", 0.0),
             "portfolio_yield_percent": engine_v2.get_metric("PortfolioYield") or 0.0,
             "average_ltv_ratio_percent": engine_v2.get_metric("LTV") or 0.0,
             "average_dti_ratio_percent": engine_v2.get_metric("DTI") or 0.0,
@@ -273,9 +259,7 @@ class LoanAnalyticsEngine:
 
         return dashboard
 
-    def export_kpis_to_blob(
-        self, exporter: KPIExporter, blob_name: Optional[str] = None
-    ) -> str:
+    def export_kpis_to_blob(self, exporter: KPIExporter, blob_name: Optional[str] = None) -> str:
         if blob_name is not None and not isinstance(blob_name, str):
             raise ValueError("blob_name must be a string if provided.")
 

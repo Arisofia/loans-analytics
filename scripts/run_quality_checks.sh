@@ -52,10 +52,10 @@ print_error() {
 
 # 1. Pylint (Python)
 print_header "Running Pylint (Python)"
-if [ -d "python" ] || [ -d "apps/analytics" ]; then
+if [ -d "src" ]; then
   if command -v pylint &>/dev/null; then
     echo "Analyzing Python code..."
-    if pylint --rcfile=.pylintrc --exit-zero python/ apps/analytics/src 2>/dev/null | tee pylint_output.txt; then
+    if pylint --rcfile=.pylintrc --exit-zero src/ 2>/dev/null | tee pylint_output.txt; then
       SCORE=$(grep "Your code has been rated" pylint_output.txt | sed 's/.*rated at \([0-9.]*\).*/\1/' || echo "0")
       if [ -z "$SCORE" ]; then
         SCORE="0"
@@ -122,7 +122,7 @@ print_header "Running Python Tests with Coverage"
 if [ -f "pytest.ini" ] || [ -f "pyproject.toml" ]; then
   if command -v pytest &>/dev/null; then
     echo "Running Python tests..."
-    if pytest --cov=python --cov-report=term-missing --cov-report=xml:coverage-python.xml -q; then
+    if pytest --cov=src --cov-report=term-missing --cov-report=xml:coverage-python.xml -q; then
       print_success "Python tests passed"
 
       # Check coverage
@@ -153,10 +153,10 @@ fi
 
 # 5. Black (Python formatting check)
 print_header "Checking Python Code Formatting (Black)"
-if [ -d "python" ]; then
+if [ -d "src" ]; then
   if command -v black &>/dev/null; then
     echo "Checking Python code formatting..."
-    DIRS_TO_CHECK="python/"
+    DIRS_TO_CHECK="src/"
     [ -d "tests" ] && DIRS_TO_CHECK="$DIRS_TO_CHECK tests/"
     if black --check $DIRS_TO_CHECK 2>&1; then
       print_success "Python code is properly formatted"
@@ -171,10 +171,10 @@ fi
 
 # 6. isort (Python import sorting check)
 print_header "Checking Python Import Sorting (isort)"
-if [ -d "python" ]; then
+if [ -d "src" ]; then
   if command -v isort &>/dev/null; then
     echo "Checking Python import sorting..."
-    DIRS_TO_CHECK="python/"
+    DIRS_TO_CHECK="src/"
     [ -d "tests" ] && DIRS_TO_CHECK="$DIRS_TO_CHECK tests/"
     if isort --check-only $DIRS_TO_CHECK 2>&1; then
       print_success "Python imports are properly sorted"
@@ -245,8 +245,8 @@ else
   echo "Please fix the issues above before committing."
   echo ""
   echo "Quick fixes:"
-  echo "  - Format Python: black python/ tests/"
-  echo "  - Sort imports: isort python/ tests/"
+  echo "  - Format Python: black src/ tests/"
+  echo "  - Sort imports: isort src/ tests/"
   echo "  - Fix ESLint: cd apps/web && npm run lint:fix"
   echo "  - Run tests: pytest"
 fi

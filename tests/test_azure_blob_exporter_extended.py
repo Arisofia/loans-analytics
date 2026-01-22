@@ -75,9 +75,7 @@ def test_upload_metrics_requires_dict():
     Test that upload_metrics raises ValueError if metrics argument is not a
     dictionary.
     """
-    exporter = AzureBlobKPIExporter(
-        container_name="test", blob_service_client=MagicMock()
-    )
+    exporter = AzureBlobKPIExporter(container_name="test", blob_service_client=MagicMock())
     with pytest.raises(ValueError, match="must be a non-empty dictionary"):
         exporter.upload_metrics("not-a-dict")
 
@@ -86,9 +84,7 @@ def test_upload_metrics_requires_non_empty_dict():
     """
     Test that upload_metrics raises ValueError if metrics dictionary is empty.
     """
-    exporter = AzureBlobKPIExporter(
-        container_name="test", blob_service_client=MagicMock()
-    )
+    exporter = AzureBlobKPIExporter(container_name="test", blob_service_client=MagicMock())
     with pytest.raises(ValueError, match="must be a non-empty dictionary"):
         exporter.upload_metrics({})
 
@@ -97,9 +93,7 @@ def test_upload_metrics_blob_name_must_be_string():
     """
     Test that upload_metrics raises ValueError if blob_name is not a string.
     """
-    exporter = AzureBlobKPIExporter(
-        container_name="test", blob_service_client=MagicMock()
-    )
+    exporter = AzureBlobKPIExporter(container_name="test", blob_service_client=MagicMock())
     with pytest.raises(ValueError, match="blob_name must be a string"):
         exporter.upload_metrics({"metric1": 1.0}, blob_name=123)
 
@@ -108,9 +102,7 @@ def test_upload_metrics_keys_must_be_strings():
     """
     Test that upload_metrics raises ValueError if metric keys are not strings.
     """
-    exporter = AzureBlobKPIExporter(
-        container_name="test", blob_service_client=MagicMock()
-    )
+    exporter = AzureBlobKPIExporter(container_name="test", blob_service_client=MagicMock())
     with pytest.raises(ValueError, match="Metric keys must be non-empty strings"):
         exporter.upload_metrics({123: 1.0})
 
@@ -120,9 +112,7 @@ def test_upload_metrics_values_must_be_numeric():
     Test that upload_metrics raises ValueError if metric values are not
     numeric.
     """
-    exporter = AzureBlobKPIExporter(
-        container_name="test", blob_service_client=MagicMock()
-    )
+    exporter = AzureBlobKPIExporter(container_name="test", blob_service_client=MagicMock())
     with pytest.raises(ValueError, match="Metric values must be numeric"):
         exporter.upload_metrics({"metric1": "not-numeric"})
 
@@ -131,9 +121,7 @@ def test_upload_metrics_rejects_boolean_values():
     """
     Test that upload_metrics raises ValueError if metric values are boolean.
     """
-    exporter = AzureBlobKPIExporter(
-        container_name="test", blob_service_client=MagicMock()
-    )
+    exporter = AzureBlobKPIExporter(container_name="test", blob_service_client=MagicMock())
     with pytest.raises(ValueError, match="Metric values must be numeric"):
         exporter.upload_metrics({"metric1": True})
 
@@ -142,9 +130,7 @@ def test_upload_metrics_rejects_empty_key():
     """
     Test that upload_metrics raises ValueError if metric key is empty string.
     """
-    exporter = AzureBlobKPIExporter(
-        container_name="test", blob_service_client=MagicMock()
-    )
+    exporter = AzureBlobKPIExporter(container_name="test", blob_service_client=MagicMock())
     with pytest.raises(ValueError, match="Metric keys must be non-empty strings"):
         exporter.upload_metrics({"": 1.0})
 
@@ -196,9 +182,7 @@ def test_upload_metrics_handles_container_already_exists():
     """
     mock_client = MagicMock(spec=BlobServiceClient)
     mock_container = MagicMock()
-    mock_container.create_container.side_effect = ResourceExistsError(
-        "Container exists"
-    )
+    mock_container.create_container.side_effect = ResourceExistsError("Container exists")
     mock_client.get_container_client.return_value = mock_container
 
     exporter = AzureBlobKPIExporter(
@@ -245,9 +229,7 @@ def test_upload_metrics_int_values_converted_to_float():
     mock_container = MagicMock()
     mock_client.get_container_client.return_value = mock_container
 
-    exporter = AzureBlobKPIExporter(
-        container_name="test", blob_service_client=mock_client
-    )
+    exporter = AzureBlobKPIExporter(container_name="test", blob_service_client=mock_client)
 
     metrics = {"metric1": 5}
     exporter.upload_metrics(metrics, blob_name="test.json")

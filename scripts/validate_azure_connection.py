@@ -35,9 +35,7 @@ def validate_all() -> bool:
     print("=" * 60 + "\n")
 
     try:
-        validation = manager.validate(
-            fail_on_missing_required=True, fail_on_missing_optional=False
-        )
+        validation = manager.validate(fail_on_missing_required=True, fail_on_missing_optional=False)
         manager.log_status(include_optional=True)
 
         # Additional Azure specific checks if needed

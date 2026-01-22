@@ -23,6 +23,4 @@ class CascadeClient:
             raise ValueError("base_url is required")
 
     def get(self, path: str) -> dict:
-        raise NotImplementedError(
-            "CascadeClient.get() is not implemented in the scaffold"
-        )
+        raise NotImplementedError("CascadeClient.get() is not implemented in the scaffold")

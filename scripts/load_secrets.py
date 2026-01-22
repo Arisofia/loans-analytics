@@ -1,13 +1,28 @@
+import logging
 import sys
 from pathlib import Path
+from typing import Any, Dict
 
 from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.config.secrets import get_secrets_manager
+logger = logging.getLogger("abaco.scripts.load_secrets")
 
-load_dotenv()
+
+def redact_dict(
+    d: Dict[str, Any],
+    redact_keys: tuple = ("secret", "token", "password", "key"),
+) -> Dict[str, Any]:
+    redacted = {}
+
+    for k, v in d.items():
+        if any(sub in k.lower() for sub in redact_keys):
+            redacted[k] = "<redacted>"
+        else:
+            # keep non-sensitive values
+            redacted[k] = v
+    return redacted
 
 
 def load_secrets(use_vault_fallback: bool = True) -> dict:
@@ -27,9 +42,7 @@ def load_secrets(use_vault_fallback: bool = True) -> dict:
 
     # Validate all secrets
     try:
-        validation = manager.validate(
-            fail_on_missing_required=True, fail_on_missing_optional=False
-        )
+        validation = manager.validate(fail_on_missing_required=True, fail_on_missing_optional=False)
         manager.log_status(include_optional=True)
         return validation
     except ValueError as e:

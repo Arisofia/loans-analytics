@@ -73,9 +73,7 @@ class MonitoringCheckpoint:
                 shell=False,
                 check=False,
             )
-            validation_report_path = (
-                get_project_root() / "production_validation_report.json"
-            )
+            validation_report_path = get_project_root() / "production_validation_report.json"
 
             if completed.returncode == 0 and validation_report_path.exists():
                 with open(validation_report_path, encoding="utf-8") as handle:
@@ -127,9 +125,7 @@ class MonitoringCheckpoint:
             print(f"  CPU: {system_metrics['cpu_percent']:.1f}%")
 
         self.metrics["status"] = validation_status
-        self.metrics["duration_seconds"] = (
-            datetime.now() - self.start_time
-        ).total_seconds()
+        self.metrics["duration_seconds"] = (datetime.now() - self.start_time).total_seconds()
 
         return self.metrics
 
@@ -145,9 +141,7 @@ class MonitoringCheckpoint:
             output_path = Path(output_dir)
             output_path.mkdir(parents=True, exist_ok=True)
 
-        checkpoint_file = (
-            output_path / f"checkpoint_hour_{self.checkpoint_hour:02d}.json"
-        )
+        checkpoint_file = output_path / f"checkpoint_hour_{self.checkpoint_hour:02d}.json"
         with open(checkpoint_file, "w") as f:
             json.dump(self.metrics, f, indent=2)
 
@@ -176,10 +170,7 @@ class MonitoringCheckpoint:
         system_metrics = self.metrics.get("system_metrics") or {}
         if isinstance(system_metrics, dict) and "error" not in system_metrics:
             print("\nSystem Metrics:")
-            print(
-                f"  Memory: {system_metrics['memory_rss_mb']:.1f} MB "
-                "(threshold: 200 MB)"
-            )
+            print(f"  Memory: {system_metrics['memory_rss_mb']:.1f} MB " "(threshold: 200 MB)")
             print(f"  CPU: {system_metrics['cpu_percent']:.1f}% " "(threshold: 80%)")
             print(f"  Threads: {system_metrics['num_threads']}")
 
@@ -187,13 +178,8 @@ class MonitoringCheckpoint:
         if isinstance(performance_checks, dict):
             perf = performance_checks.get("metrics", {})
             print("\nPerformance:")
-            print(
-                f"  Latency: {perf.get('latency_ms', 'N/A')} ms " "(threshold: 100 ms)"
-            )
-            print(
-                f"  Throughput: {perf.get('throughput_rows_per_sec', 'N/A')} "
-                "rows/sec"
-            )
+            print(f"  Latency: {perf.get('latency_ms', 'N/A')} ms " "(threshold: 100 ms)")
+            print(f"  Throughput: {perf.get('throughput_rows_per_sec', 'N/A')} " "rows/sec")
 
         duration = self.metrics.get("duration_seconds")
         if isinstance(duration, (int, float)):

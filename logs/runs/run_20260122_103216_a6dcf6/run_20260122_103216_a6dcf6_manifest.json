@@ -1,0 +1,268 @@
+{
+  "run_id": "run_20260122_103216_a6dcf6",
+  "sub_runs": {
+    "pipeline": "run_20260122_103216_a6dcf6",
+    "ingestion": "ingest_fc81f0f9db3e",
+    "transformation": "run_20260122_103216_a6dcf6",
+    "calculation": "run_20260122_103216_a6dcf6"
+  },
+  "generated_at": "2026-01-22T10:32:16.755918+00:00",
+  "metrics": {
+    "PAR30": {
+      "value": 3.0,
+      "formula": "SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100",
+      "rows_processed": 2,
+      "null_count": 0,
+      "timestamp": "2026-01-22T10:32:16.720185+00:00",
+      "dpd_30_60_sum": 250.0,
+      "dpd_60_90_sum": 250.0,
+      "dpd_90_plus_sum": 250.0,
+      "total_receivable_sum": 25000.0,
+      "metric": "PAR30"
+    },
+    "PAR90": {
+      "value": 1.0,
+      "formula": "SUM(dpd_90_plus_usd) / SUM(total_receivable_usd) * 100",
+      "rows_processed": 2,
+      "null_count": 0,
+      "timestamp": "2026-01-22T10:32:16.720372+00:00",
+      "dpd_sum": 250.0,
+      "total_receivable_sum": 25000.0,
+      "metric": "PAR90"
+    },
+    "CollectionRate": {
+      "value": 0.0,
+      "formula": "SUM(cash_available) / SUM(total_eligible) * 100",
+      "rows_processed": 2,
+      "null_count": 0,
+      "timestamp": "2026-01-22T10:32:16.720590+00:00",
+      "cash_sum": 0.0,
+      "eligible_sum": 25000.0,
+      "metric": "CollectionRate"
+    },
+    "PortfolioHealth": {
+      "value": 0.0,
+      "formula": "(10 - PAR30/10) * (CollectionRate/10)",
+      "rows_processed": 2,
+      "null_count": 0,
+      "timestamp": "2026-01-22T10:32:16.720624+00:00",
+      "par_30_input": 3.0,
+      "collection_rate_input": 0.0,
+      "par_component": 9.7,
+      "coll_component": 0.0
+    }
+  },
+  "metadata": {
+    "ingestion": {
+      "source_looker_loans": "/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/tmpsz2b0sgr.csv",
+      "financials_path": null,
+      "source_mode": "looker_par_balances",
+      "checksum": "a6dcf6ee6503fbcadc082745a62824f56dd6b969ab994073b153889fc7bc9556",
+      "row_count": 2,
+      "error_count": 0,
+      "deduped_count": 0,
+      "audit_log": [
+        {
+          "run_id": "ingest_fc81f0f9db3e",
+          "event": "looker_start",
+          "status": "initiated",
+          "timestamp": "2026-01-22T10:32:16.712337+00:00",
+          "loans_path": "/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/tmpsz2b0sgr.csv"
+        },
+        {
+          "run_id": "ingest_fc81f0f9db3e",
+          "event": "archive",
+          "status": "success",
+          "timestamp": "2026-01-22T10:32:16.716559+00:00",
+          "file": "/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/tmpsz2b0sgr.csv",
+          "archived": "data/archives/raw/tmpsz2b0sgr.csv"
+        },
+        {
+          "run_id": "ingest_fc81f0f9db3e",
+          "event": "looker_complete",
+          "status": "success",
+          "timestamp": "2026-01-22T10:32:16.716633+00:00",
+          "row_count": 2
+        }
+      ],
+      "archived_path": "data/archives/raw/tmpsz2b0sgr.csv",
+      "validation_errors": [],
+      "cash_dates": 0
+    },
+    "lineage": [
+      {
+        "run_id": "run_20260122_103216_a6dcf6",
+        "step": "start",
+        "status": "initiated",
+        "timestamp": "2026-01-22T10:32:16.716834+00:00",
+        "input_rows": 2
+      },
+      {
+        "run_id": "run_20260122_103216_a6dcf6",
+        "step": "normalization",
+        "status": "success",
+        "timestamp": "2026-01-22T10:32:16.717197+00:00",
+        "columns": [
+          "loan_id",
+          "total_receivable_usd",
+          "total_eligible_usd",
+          "discounted_balance_usd",
+          "cash_available_usd",
+          "dpd_0_7_usd",
+          "dpd_7_30_usd",
+          "dpd_30_60_usd",
+          "dpd_60_90_usd",
+          "dpd_90_plus_usd",
+          "measurement_date"
+        ]
+      },
+      {
+        "run_id": "run_20260122_103216_a6dcf6",
+        "step": "null_handling",
+        "status": "success",
+        "timestamp": "2026-01-22T10:32:16.717232+00:00"
+      },
+      {
+        "run_id": "run_20260122_103216_a6dcf6",
+        "step": "outlier_detection",
+        "status": "clean",
+        "timestamp": "2026-01-22T10:32:16.717257+00:00"
+      },
+      {
+        "run_id": "run_20260122_103216_a6dcf6",
+        "step": "pii_masking",
+        "status": "completed",
+        "timestamp": "2026-01-22T10:32:16.717327+00:00",
+        "masked_columns": []
+      },
+      {
+        "run_id": "run_20260122_103216_a6dcf6",
+        "step": "lineage",
+        "status": "captured",
+        "timestamp": "2026-01-22T10:32:16.718384+00:00",
+        "input_hash": "3cc3af4e779faab1eef2879fe008aeaf1374de892462b660e0db6768f3e1f34f",
+        "output_hash": "3cc3af4e779faab1eef2879fe008aeaf1374de892462b660e0db6768f3e1f34f"
+      },
+      {
+        "run_id": "run_20260122_103216_a6dcf6",
+        "step": "quality_checks",
+        "status": "completed",
+        "timestamp": "2026-01-22T10:32:16.719258+00:00",
+        "checks": 19
+      },
+      {
+        "run_id": "run_20260122_103216_a6dcf6",
+        "step": "complete",
+        "status": "success",
+        "timestamp": "2026-01-22T10:32:16.719287+00:00",
+        "output_rows": 2
+      }
+    ],
+    "calculation_audit": [
+      {
+        "run_id": "kpi_20260122_113216",
+        "event": "calculate_all",
+        "status": "started",
+        "timestamp": "2026-01-22T10:32:16.719850+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": 3.0,
+        "kpi": NaN,
+        "value": NaN
+      },
+      {
+        "run_id": "kpi_20260122_113216",
+        "event": "kpi_calculated",
+        "status": "success",
+        "timestamp": "2026-01-22T10:32:16.720188+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": NaN,
+        "kpi": "PAR30",
+        "value": 3.0
+      },
+      {
+        "run_id": "kpi_20260122_113216",
+        "event": "kpi_calculated",
+        "status": "success",
+        "timestamp": "2026-01-22T10:32:16.720375+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": NaN,
+        "kpi": "PAR90",
+        "value": 1.0
+      },
+      {
+        "run_id": "kpi_20260122_113216",
+        "event": "kpi_calculated",
+        "status": "success",
+        "timestamp": "2026-01-22T10:32:16.720593+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": NaN,
+        "kpi": "CollectionRate",
+        "value": 0.0
+      },
+      {
+        "run_id": "kpi_20260122_113216",
+        "event": "composite_kpi_calculated",
+        "status": "success",
+        "timestamp": "2026-01-22T10:32:16.720626+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": NaN,
+        "kpi": "PortfolioHealth",
+        "value": NaN
+      },
+      {
+        "run_id": "kpi_20260122_113216",
+        "event": "calculate_all",
+        "status": "completed",
+        "timestamp": "2026-01-22T10:32:16.720650+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": 4.0,
+        "kpi": NaN,
+        "value": NaN
+      }
+    ],
+    "anomalies": {},
+    "context": {
+      "user": "system",
+      "action": "manual"
+    }
+  },
+  "quality_checks": {
+    "dpd_0_7_usd_non_negative": true,
+    "dpd_7_30_usd_non_negative": true,
+    "dpd_30_60_usd_non_negative": true,
+    "dpd_60_90_usd_non_negative": true,
+    "dpd_90_plus_usd_non_negative": true,
+    "total_receivable_usd_non_negative": true,
+    "total_eligible_usd_non_negative": true,
+    "discounted_balance_usd_non_negative": true,
+    "cash_available_usd_non_negative": true,
+    "measurement_date_iso8601": true,
+    "dpd_30_60_usd_no_nulls": true,
+    "total_receivable_usd_no_nulls": true,
+    "dpd_90_plus_usd_no_nulls": true,
+    "dpd_60_90_usd_no_nulls": true,
+    "cash_available_usd_no_nulls": true,
+    "dpd_0_7_usd_no_nulls": true,
+    "total_eligible_usd_no_nulls": true,
+    "discounted_balance_usd_no_nulls": true,
+    "dpd_7_30_usd_no_nulls": true
+  },
+  "files": {
+    "parquet": "/private/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/zenflow/worktrees/new-task-gemini-fed3/data/metrics/run_20260122_103216_a6dcf6.parquet",
+    "csv": "/private/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/zenflow/worktrees/new-task-gemini-fed3/data/metrics/run_20260122_103216_a6dcf6.csv",
+    "metrics_json": "/private/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/zenflow/worktrees/new-task-gemini-fed3/data/metrics/run_20260122_103216_a6dcf6_metrics.json"
+  },
+  "timeseries": {},
+  "compliance_report": "logs/runs/run_20260122_103216_a6dcf6/run_20260122_103216_a6dcf6_compliance.json",
+  "file_hashes": {
+    "parquet": "1c606ce1ff83d7bfba3012292b6e3caa262670d2322e50c9800fb731040c285f",
+    "csv": "c0fd121b44be2931978fdf3867a146448d5caeb3b622173d543b111b29b1e3ef",
+    "metrics_json": "8e40f2d3a5f383ffccdaf12218a3e1e6091e1578715aba5e03eef0171e3a99bb"
+  }
+}

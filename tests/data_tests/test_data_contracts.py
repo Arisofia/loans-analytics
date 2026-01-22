@@ -29,13 +29,13 @@ def test_dirty_data_cleaning_and_validation():
     """Test that currency symbols and commas are cleaned before contract validation."""
     import io
 
-    from python.ingestion import CascadeIngestion
+    from python.ingestion import AbacoIngestion
 
     dirty_csv = """loan_id,loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance,measurement_date
 L1,"$1,000.00","$1,200.00","$50,000.00","$1,500.00",current,0.05,"$950.00",2025-01-01
 L2,"$5,000.00","$6,000.00","$75,000.00","$2,000.00",current,0.06,"$4,800.00",2025-01-01
 """
-    ingestor = CascadeIngestion()
+    ingestor = AbacoIngestion()
     df = ingestor.ingest_uploaded_file(io.BytesIO(dirty_csv.encode("utf-8")))
 
     assert not df.is_empty()
