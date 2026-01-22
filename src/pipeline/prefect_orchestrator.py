@@ -1,8 +1,14 @@
-# Simple orchestration API for legacy compatibility
+"""Simple orchestration API for legacy compatibility."""
 from pathlib import Path
 from typing import Any, Dict, Union
+import sys
 
 from prefect import flow, get_run_logger, task
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from src.pipeline.data_ingestion import IngestionResult, UnifiedIngestion
 from src.pipeline.data_transformation import (
     TransformationResult,

@@ -5,22 +5,21 @@ from typing import Any, Dict, List
 
 
 import pandas as pd
+
 try:
     import great_expectations as gx
-    from great_expectations.data_context import EphemeralDataContext
+    from great_expectations.data_context import EphemeralDataContext as GXEphemeralDataContext
     HAS_GE = True
 except ImportError:  # pragma: no cover - optional dependency
     gx = None  # type: ignore
-    EphemeralDataContext = None  # type: ignore
+    GXEphemeralDataContext = None  # type: ignore
     HAS_GE = False
-
-
 
 logger = logging.getLogger(__name__)
 
 
 def get_or_create_datasource(
-    context: "EphemeralDataContext",
+    context: "GXEphemeralDataContext",
     datasource_name: str,
 ) -> Any:
     """Get or create a pandas datasource for the given context."""
@@ -32,7 +31,7 @@ def get_or_create_datasource(
 
 
 def create_validator_for_dataframe(
-    context: "EphemeralDataContext",
+    context: "GXEphemeralDataContext",
     df: pd.DataFrame,
     datasource_name: str,
     asset_name: str,
@@ -47,6 +46,7 @@ def create_validator_for_dataframe(
         batch_request=batch_request,
         create_expectation_suite_with_name=f"{asset_name}_suite"
     )
+
 
 def validate_data(
     df: pd.DataFrame,
@@ -88,6 +88,7 @@ def validate_data(
         logger.warning("Great Expectations validation failed.")
     return {"success": success, "details": result}
 
+
 def _default_expectations() -> List[Dict[str, Any]]:
     return [
         {
@@ -107,3 +108,7 @@ def validate_loan_data(df: pd.DataFrame) -> bool:
     )
 
     return bool(result.get("success"))
+
+
+if __name__ == "__main__":
+    print("This module provides data validation helpers for the pipeline. Import and use its functions in your workflow.")

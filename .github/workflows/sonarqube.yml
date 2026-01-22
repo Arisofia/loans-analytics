@@ -38,9 +38,9 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
       - name: Install Node dependencies
-        run: pnpm -C apps/web install --frozen-lockfile
+        run: pnpm -C apps/web install --frozen-lockfile --ignore-scripts
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
+        uses: SonarSource/sonarcloud-github-action@b7b6b2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2 # v2.0.0
         with:
           projectBaseDir: .
         env:

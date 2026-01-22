@@ -3,7 +3,6 @@ from __future__ import annotations
 import math
 import sys
 from pathlib import Path
-
 import pandas as pd
 import pytest
 
@@ -166,59 +165,3 @@ def test_portfolio_kpis_surfaces_weighted_metrics():
         (expected_interest - expected_loss_value) / expected_exposure
     )
 
-
-"""
-def test_portfolio_kpis_compute_expected_values_engine():
-    engine = LoanAnalyticsEngine(sample_frame(), config=LoanAnalyticsConfig(currency="EUR"))
-    kpis = engine.portfolio_kpis()
-
-    assert kpis["currency"] == "EUR"
-    assert pytest.approx(kpis["total_outstanding"], rel=1e-6) == 150000
-    assert pytest.approx(kpis["total_principal"], rel=1e-6) == 285000
-    assert pytest.approx(kpis["weighted_interest_rate"], rel=1e-6) == 0.104
-    assert pytest.approx(kpis["non_performing_loan_ratio"], rel=1e-6) == 0
-    assert pytest.approx(kpis["default_rate"], rel=1e-6) == 0.25
-    assert pytest.approx(kpis["loss_given_default"], rel=1e-6) == 0.8
-    assert pytest.approx(kpis["prepayment_rate"], rel=1e-6) == pytest.approx(35000 / 285000)
-    assert kpis["repayment_velocity"] > 1
-
-
-def test_prepare_data_validates_structure_and_dates():
-    base = sample_frame()
-    missing_cols = base.drop(columns=["interest_rate"])
-
-    with pytest.raises(ValueError):
-        LoanAnalyticsEngine(pd.DataFrame())
-
-
-def test_validates_missing_columns():
-    df = pd.DataFrame({"loan_amount": [100], "appraised_value": [120]})
-    with pytest.raises(ValueError):
-        LoanAnalyticsEngine(df)
-
-
-def test_ltv_handles_zero_appraised_value(portfolio_fixture):
-    engine = LoanAnalyticsEngine(portfolio_fixture)
-    ltv = engine.compute_loan_to_value()
-    assert np.isnan(ltv.iloc[-1]), "Zero appraised value should not create inf or crash"
-    assert (ltv.dropna() > 0).all()
-
-
-def test_dti_returns_series_with_index(portfolio_fixture):
-    engine = LoanAnalyticsEngine(portfolio_fixture)
-    dti = engine.compute_debt_to_income()
-    assert isinstance(dti, pd.Series)
-    assert list(dti.index) == list(portfolio_fixture.index)
-    assert np.isnan(dti.iloc[-1])  # zero income
-
-
-def test_prepare_data_allows_explicit_numeric_fill_value():
-    base = sample_frame()
-    base.loc[2, "recoveries"] = None
-
-    engine = LoanAnalyticsEngine(
-        base, config=LoanAnalyticsConfig(numeric_missing_fill_value=0.0)
-    )
-
-    assert engine.data.loc[2, "recoveries"] == 0
-"""
