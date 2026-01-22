@@ -5,8 +5,17 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import yaml
-from sqlalchemy import (JSON, Boolean, Column, DateTime, Integer, Numeric,
-                        String, Text, create_engine)
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    create_engine,
+)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from src.agents.agent import Agent

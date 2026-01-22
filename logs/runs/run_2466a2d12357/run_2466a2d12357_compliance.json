@@ -1,0 +1,28 @@
+{
+  "run_id": "run_2466a2d12357",
+  "generated_at": "2026-01-22T10:32:13.287703+00:00",
+  "mask_stage": "transformation",
+  "pii_masked_columns": [],
+  "access_log": [
+    {
+      "stage": "transformation",
+      "user": "system",
+      "action": "read",
+      "status": "success",
+      "timestamp": "2026-01-22T10:32:13.143267+00:00"
+    },
+    {
+      "stage": "transformation",
+      "user": "system",
+      "action": "mask_pii",
+      "status": "success",
+      "timestamp": "2026-01-22T10:32:13.146879+00:00"
+    }
+  ],
+  "metadata": {
+    "user": "system",
+    "action": "manual",
+    "source_file": null,
+    "checksum": "2466a2d12357a052fc47869062ec01a0afb33ea928b65f35a20b0064c9c6786f"
+  }
+}

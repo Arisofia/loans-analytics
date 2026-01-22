@@ -9,8 +9,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from src.analytics.run_scoring import (load_portfolio, main, parse_args,
-                                       summarize_results)
+from src.analytics.run_scoring import load_portfolio, main, parse_args, summarize_results
 
 
 def test_parse_args_minimal_required():

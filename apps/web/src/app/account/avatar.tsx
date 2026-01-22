@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 import Image from 'next/image'
 
 export default function Avatar({
@@ -14,7 +14,6 @@ export default function Avatar({
   size: number
   onUpload: (url: string) => void
 }) {
-  const supabase = createClient()
   const [avatarUrl, setAvatarUrl] = useState<string | null>(url)
   const [uploading, setUploading] = useState(false)
 
@@ -32,7 +31,7 @@ export default function Avatar({
       }
     }
     if (url) void downloadImage(url)
-  }, [url, supabase])
+  }, [url])
 
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -78,6 +77,7 @@ export default function Avatar({
           style={{
             visibility: 'hidden',
             position: 'absolute',
+            zIndex: -1, // accessibility fix
           }}
           type="file"
           id="single"

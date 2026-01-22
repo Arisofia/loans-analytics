@@ -1,6 +1,10 @@
-"""View Visual"""
-
 from __future__ import annotations
+from pathlib import Path
+from typing import Any, Dict, Tuple
+import json
+
+import numpy as np
+import pandas as pd
 
 # Re-exporting real implementations from src/analytics package
 from src.analytics import (calculate_quality_score, portfolio_kpis,
@@ -38,6 +42,20 @@ def calculate_quality_score(df: pd.DataFrame) -> int:
 
     completeness = 1 - df.isna().mean().mean()
     return int(round(max(0.0, min(1.0, completeness)) * 100))
+
+
+def load_dashboard_metrics() -> Dict[str, Any]:
+    """Load dashboard metrics from JSON file."""
+    if not DASHBOARD_JSON.exists():
+        return {}
+    try:
+        with open(DASHBOARD_JSON, 'r') as f:
+            data = json.load(f)
+            if not isinstance(data, dict):
+                return {}
+            return data
+    except Exception:
+        return {}
 
 
 def get_growth_metrics() -> Dict[str, Any]:
@@ -97,6 +115,12 @@ def portfolio_kpis(df: pd.DataFrame) -> Tuple[Dict[str, float], pd.DataFrame]:
         "average_dti": float(avg_dti) if pd.notna(avg_dti) else 0.0,
     }
     return metrics, work
+
+
+def _assert_required_columns(df: pd.DataFrame, required: set) -> None:
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
 
 
 def project_growth(

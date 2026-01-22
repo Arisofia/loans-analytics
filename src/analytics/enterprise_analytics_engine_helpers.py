@@ -43,6 +43,8 @@ def calculate_monthly_payment(loan: LoanPosition) -> float:
 
 
 def expected_loss(loan: LoanPosition, loss_given_default: float) -> float:
+    if not (0.0 <= loss_given_default <= 1.0):
+        raise ValueError("Loss given default must be between 0 and 1")
     return loan.principal * loan.default_probability * loss_given_default
 
 

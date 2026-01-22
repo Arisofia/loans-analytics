@@ -13,8 +13,7 @@ from src.pipeline.data_ingestion import UnifiedIngestion
 from src.pipeline.data_transformation import UnifiedTransformation
 from src.pipeline.kpi_calculation import UnifiedCalculationV2
 from src.pipeline.output import UnifiedOutput
-from src.pipeline.utils import (ensure_dir, load_yaml, resolve_placeholders,
-                                utc_now, write_json)
+from src.pipeline.utils import ensure_dir, load_yaml, resolve_placeholders, utc_now, write_json
 from src.tracing_setup import get_tracer
 
 logger = logging.getLogger(__name__)
@@ -110,8 +109,14 @@ class UnifiedPipeline:
     calculator: UnifiedCalculationV2
     output: UnifiedOutput
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(
+        self, config_path: Optional[Path] = None, config_overrides: Optional[Dict[str, Any]] = None
+    ):
         self.config = PipelineConfig(config_path)
+        if config_overrides:
+            self.config.config = _deep_merge(self.config.config, config_overrides)
+            logger.info("Applied configuration overrides: %s", config_overrides.keys())
+
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         self.run_id: Optional[str] = f"pipeline_{timestamp}"
         # Initialize phase components
@@ -250,7 +255,16 @@ class UnifiedPipeline:
                     )
 
                 # Evaluate alerts
-                self._handle_alerts(self.ingestor.get_ingest_summary(), calculation_result)
+                ingest_summary = {
+                    "data_quality": {
+                        "data_quality_score": (
+                            ingestion_result.quality_report.score
+                            if ingestion_result.quality_report
+                            else 100
+                        )
+                    }
+                }
+                self._handle_alerts(ingest_summary, calculation_result)
 
                 with tracer.start_as_current_span("pipeline.compliance"):
                     compliance_report = build_compliance_report(

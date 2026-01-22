@@ -2,8 +2,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.analytics import (calculate_quality_score, portfolio_kpis,
-                           project_growth, standardize_numeric)
+from src.analytics import (
+    calculate_quality_score,
+    portfolio_kpis,
+    project_growth,
+    standardize_numeric,
+)
 
 
 @pytest.fixture
@@ -135,7 +139,9 @@ def test_portfolio_kpis_returns_expected_metrics(sample_df):
     assert metrics["delinquency_rate"] == pytest.approx(
         expected_delinquency_rate * 100, rel=1e-6, abs=1e-9
     )
-    assert metrics["portfolio_yield"] == pytest.approx(expected_portfolio_yield * 100, rel=1e-6, abs=1e-9)
+    assert metrics["portfolio_yield"] == pytest.approx(
+        expected_portfolio_yield * 100, rel=1e-6, abs=1e-9
+    )
     assert metrics["average_ltv"] == pytest.approx(expected_average_ltv * 100, rel=1e-6, abs=1e-9)
     assert metrics["average_dti"] == pytest.approx(expected_average_dti * 100, rel=1e-6, abs=1e-9)
 
