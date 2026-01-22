@@ -87,7 +87,7 @@ if [ -f "src/pipeline/orchestrator.py" ] || [ -f "src/abaco_pipeline/main.py" ];
   echo "   Searching for API key references..."
   for file in src/pipeline/*.py src/abaco_pipeline/*.py; do
     if [ -f "$file" ]; then
-      if grep -q "HUBSPOT\|OPENAI\|API_KEY\|api_key" "$file" 2>/dev/null; then
+      if grep -q "OPENAI\|API_KEY\|api_key" "$file" 2>/dev/null; then
         echo -e "   ${GREEN}✅ $(basename $file)${NC} - API key references found"
       fi
     fi
@@ -96,7 +96,7 @@ fi
 
 echo -e "\n7️⃣ Checking Python dependencies for pipelines..."
 if [ -f "requirements.txt" ]; then
-  DEPS=("polars" "pandas" "requests" "azure" "hubspot" "sqlalchemy")
+  DEPS=("polars" "pandas" "requests" "azure" "sqlalchemy")
   for dep in "${DEPS[@]}"; do
     if grep -q "^$dep\|^$dep[><=\-]" requirements.txt 2>/dev/null; then
       echo -e "${GREEN}✅ $dep${NC} - installed"

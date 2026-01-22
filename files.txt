@@ -155,7 +155,7 @@ VIBE_QUALITY_GATE.txt
 agents/__init__.py
 agents/base_agent.py
 agents/gen_ai_kpi.py
-agents/hubspot/segment_manager.py
+
 agents/kpi_calculator.py
 agents/llm_provider.py
 agents/prompts/c_suite_prompt.md
