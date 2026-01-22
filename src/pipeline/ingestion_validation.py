@@ -1,13 +1,16 @@
 from typing import List, Tuple
 
 import pandas as pd
-from pandera import DataFrameSchema
-from pydantic import ValidationError
+try:
+    from pandera import DataFrameSchema
+except ImportError:
+    DataFrameSchema = None
 
 
 def validate_schema(df: pd.DataFrame, schema_validator: DataFrameSchema) -> List[str]:
     errors: List[str] = []
     if schema_validator is None:
+        errors.append("Schema validator is not available (pandera not installed).")
         return errors
     for idx, record in enumerate(df.to_dict(orient="records")):
         errors.extend(
@@ -26,7 +29,7 @@ def validate_records(df: pd.DataFrame, record_model) -> Tuple[pd.DataFrame, List
             if "loan_id" not in clean_record:
                 clean_record["loan_id"] = f"auto_{idx}"
             validated_records.append(record_model(**clean_record).model_dump(by_alias=True))
-        except Exception as exc:
+        except (TypeError, ValueError, AttributeError) as exc:
             errors.append(f"row {idx}: {exc}")
     return pd.DataFrame(validated_records), errors
 
