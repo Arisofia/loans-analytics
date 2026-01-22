@@ -10,58 +10,59 @@ Export these values before running the examples:
 # Mac/Linux shell examples
 export NOTION_TOKEN="<token>"
 export NOTION_DATABASE_ID="<database_id>"
+<<<<<<< HEAD
+=======
+export SLACK_BOT_TOKEN="<token>"
+export SLACK_SIGNING_SECRET="<signing_secret>"
 ```
 
-#### Notion client
+Choose the packages that match your preferred Figma client:
+
+```bash
+# Figma clients (pick one)
+npm install figma-js
+# or
+npm install @figma-js/sdk
+
+
+# Figma token export CLI
+npm install --save-dev figma-export
+```
+
+#### Figma client (figma-js)
 
 ```ts
-import { Client } from '@notionhq/client'
+import { Client } from 'figma-js'
 
-const notion = new Client({ auth: process.env.NOTION_TOKEN })
+const figma = Client({
+  personalAccessToken: process.env.FIGMA_PERSONAL_ACCESS_TOKEN!,
+})
 
-async function listDatabasePages() {
-  const databaseId = process.env.NOTION_DATABASE_ID!
-  const response = await notion.databases.query({ database_id: databaseId })
-  return response.results.map((page) => page.id)
+async function getFileNodes() {
+  const fileId = process.env.FIGMA_FILE_ID!
+  const response = await figma.file(fileId)
+  return response.data.document.children
 }
 ```
 
-## Python setup
+#### Figma client (@figma-js/sdk)
 
-### Usage examples (Python)
+```ts
+import { Figma } from '@figma-js/sdk'
 
-#### Notion client
+const figma = new Figma({
+  personalAccessToken: process.env.FIGMA_PERSONAL_ACCESS_TOKEN!,
+})
 
-```python
-from notion_client import Client
-import os
-
-notion = Client(auth=os.environ["NOTION_TOKEN"])
-
-def list_database_pages():
-    database_id = os.environ["NOTION_DATABASE_ID"]
-    response = notion.databases.query(database_id=database_id)
-    return [page["id"] for page in response["results"]]
+async function getFileName() {
+  const fileId = process.env.FIGMA_FILE_ID!
+  const file = await figma.getFile(fileId)
+  return file.name
+}
+>>>>>>> copilot/refactor-test-import-structure
 ```
 
-## Architecture visuals
-
-### SDK client class diagram
-
-```mermaid
-classDiagram
-  class NotionClient {
-    +queryDatabase(databaseId)
-  }
-  NotionClient <|-- NotionClientImpl
-```
-
-### Integration choice flow
-
-```mermaid
-flowchart TD
-  Start([Start]) --> Lang{Language}
-  NodeSetup --> Env["Export env vars\nNOTION_TOKEN, etc."]
+*** End Patch
   PySetup --> Env
   Env --> Choice{Need tokens?}
   SDKUse --> Done([Integrations ready])
