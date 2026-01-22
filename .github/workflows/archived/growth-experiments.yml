@@ -15,13 +15,8 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-<<<<<<< HEAD:.github/workflows/archived/growth-experiments.yml
-          NOTION_API_KEY: ${{ secrets.NOTION_INTEGRATION_TOKEN }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-=======
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY || secrets.NOTION_TOKEN || secrets.NOTION_INTEGRATION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID || secrets.NOTION_DATABASE_URL || secrets.NOTION_DATABASE }}
->>>>>>> ed449d30c (feat: Update workflows and add gitignore for media files):.github/workflows/growth-experiments.yml
         run: |
           missing=""
           if [ -z "$OPENAI_API_KEY" ]; then
