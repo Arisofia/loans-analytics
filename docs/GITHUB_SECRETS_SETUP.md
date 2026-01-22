@@ -192,7 +192,7 @@ Used by ingestion / unified pipeline workflows.
 - `TAVILY_KEY`
 - `CLAUDE_ROCKET_TOKEN`
 
-### I) [Eliminado: Figma]
+
 # ...existing code...
 
 ### J) Vercel (if using `.github/workflows/deploy.yml`)

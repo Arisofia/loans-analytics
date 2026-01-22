@@ -5,7 +5,7 @@
 This PR addresses **critical security vulnerabilities** and **configuration
 brittleness** identified in the codebase:
 
-- **🔴 CRITICAL**: Exposed credentials in `.env` (Azure, OpenAI, Anthropic, HubSpot)
+- **🔴 CRITICAL**: Exposed credentials in `.env` (Azure, OpenAI, Anthropic)
 - **🟠 HIGH**: 40+ hard-coded paths across codebase causing deployment failures
 - **🟡 MEDIUM**: Inconsistent secrets management (3 different patterns)
 - **🟡 MEDIUM**: Missing path validation causing silent runtime failures
@@ -21,7 +21,7 @@ brittleness** identified in the codebase:
 - Azure Client Secret, Tenant ID, Subscription ID
 - OpenAI API Key (billing exposure)
 - Anthropic API Key (billing exposure)
-- HubSpot API Key and Portal ID
+
 
 ### Remediation
 
@@ -34,7 +34,7 @@ brew install bfg
 # Create file with patterns to remove
 cat > /tmp/secrets.txt <<'SECRETS'
 # Secrets must be set via environment variables or GitHub Secrets. See documentation for details.
-HUBSPOT_TOKEN=*
+
 SECRETS
 
 # Remove all matches
@@ -52,7 +52,7 @@ git push -f origin main
 - [ ] Azure: Regenerate Client Secret in Azure Portal
 - [ ] OpenAI: Deactivate exposed key, create new one
 - [ ] Anthropic: Deactivate exposed key, create new one
-- [ ] HubSpot: Deactivate API key, create new one
+
 
 #### Step 3: Use GitHub Secrets
 

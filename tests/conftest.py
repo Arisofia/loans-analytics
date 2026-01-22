@@ -3,8 +3,7 @@ import sys
 from pathlib import Path
 
 import pytest
-
-from src.utils.db_manager import DBManager
+from python.testing.db_manager import DBManager
 
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON_DIR = ROOT / "python"
@@ -21,12 +20,17 @@ def analytics_test_env(tmp_path_factory):
     """Analytics test environment with mocked integrations."""
     output_dir = tmp_path_factory.mktemp("output")
     dataset_path = ROOT / "tests" / "data" / "archives" / "sample_small.csv"
-    baseline_path = ROOT / "tests" / "fixtures" / "baseline_kpis.json"
+    
     return {
         "output_dir": output_dir,
         "dataset_path": dataset_path,
-        "baseline_path": baseline_path,
     }
+
+
+@pytest.fixture
+def analytics_baseline_kpis():
+    """Load baseline KPI values for comparison."""
+    return ROOT / "tests" / "fixtures" / "baseline_kpis.json"
 
 
 @pytest.fixture

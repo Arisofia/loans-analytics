@@ -20,7 +20,7 @@ This document confirms the **Fintech Factory Architecture** - a production-ready
 
 **7 Departmental Intelligence Stacks (CONCEPTUAL - Implementation in progress):**
 
-- Marketing (HubSpot integration stub → Daily Brief PLANNED)
+- Marketing (integration stub → Daily Brief PLANNED)
 - Finance (Originations, Collections → Scorecard PLANNED)
 - Risk (Portfolio Analytics via LoanAnalyticsEngine → Daily Report PLANNED)
 - Growth (Portfolio Segmentation → Growth Lab Summary PLANNED)
