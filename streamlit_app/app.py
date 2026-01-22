@@ -25,9 +25,7 @@ def load_and_prepare_data():
         "revenue": np.random.uniform(10000, 150000, 100),
         "balance": np.random.uniform(1000, 50000, 100),
         "limit": np.random.uniform(20000, 100000, 100),
-        "dpd": np.random.choice(
-            [-1, 0, 15, 45, 75, 100], 100, p=[0.1, 0.6, 0.1, 0.1, 0.05, 0.05]
-        ),
+        "dpd": np.random.choice([-1, 0, 15, 45, 75, 100], 100, p=[0.1, 0.6, 0.1, 0.1, 0.05, 0.05]),
     }
     data = {}
     for key, paths in candidates.items():
@@ -88,9 +86,7 @@ def generate_kpi_exports(looker_data):
         logger.warning("Extended KPI generation failed: %s", exc)
 
     output_path = exports_dir / "complete_kpi_dashboard.json"
-    output_path.write_text(
-        json.dumps(dashboard, indent=2, default=str), encoding="utf-8"
-    )
+    output_path.write_text(json.dumps(dashboard, indent=2, default=str), encoding="utf-8")
 
     return output_path
 
@@ -100,9 +96,7 @@ def build_kpi_snapshot(dashboard, facts_df):
     latest_month = None
 
     if not facts_df.empty:
-        facts_sorted = (
-            facts_df.sort_values("month") if "month" in facts_df.columns else facts_df
-        )
+        facts_sorted = facts_df.sort_values("month") if "month" in facts_df.columns else facts_df
         latest = facts_sorted.iloc[-1]
         latest_month = latest.get("month")
         for col in facts_sorted.columns:
@@ -224,9 +218,9 @@ with st.sidebar:
                         dfs[name] = normalized_df
 
                         # Apply fuzzy mapping to identify core tables
-                        if (
-                            "loan" in name_lower and "data" in name_lower
-                        ) or name_lower.startswith("loans"):
+                        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith(
+                            "loans"
+                        ):
                             mapped_dfs["loan_data"] = normalized_df
                         elif (
                             "customer" in name_lower and "data" in name_lower
@@ -295,13 +289,11 @@ if loan_data is None:
     # Fallback to original filename search if mapping failed
     for name, df in data.items():
         name_lower = name.lower()
-        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith(
-            "loans"
-        ):
+        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith("loans"):
             loan_data = df
-        elif (
-            "customer" in name_lower and "data" in name_lower
-        ) or name_lower.startswith("customer"):
+        elif ("customer" in name_lower and "data" in name_lower) or name_lower.startswith(
+            "customer"
+        ):
             if customer_data.empty:
                 customer_data = df
 
@@ -310,14 +302,8 @@ if loan_data is None:
     st.stop()
 
 merged = loan_data.copy()
-if (
-    not customer_data.empty
-    and "loan_id" in merged.columns
-    and "loan_id" in customer_data.columns
-):
-    merged = merged.merge(
-        customer_data, on="loan_id", how="left", suffixes=("", "_cust")
-    )
+if not customer_data.empty and "loan_id" in merged.columns and "loan_id" in customer_data.columns:
+    merged = merged.merge(customer_data, on="loan_id", how="left", suffixes=("", "_cust"))
 
 # 3. Executive Summary
 total_outstanding = render_executive_summary(merged)

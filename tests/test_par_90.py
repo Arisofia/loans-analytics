@@ -5,9 +5,7 @@ from src.kpis.par_90 import calculate_par_90
 
 
 def test_calculate_par_90_standard():
-    df = pd.DataFrame(
-        {"dpd_90_plus_usd": [50.0, 50.0], "total_receivable_usd": [1000.0, 2000.0]}
-    )
+    df = pd.DataFrame({"dpd_90_plus_usd": [50.0, 50.0], "total_receivable_usd": [1000.0, 2000.0]})
     value, context = calculate_par_90(df)
     assert value == pytest.approx(3.33, rel=0.01)
     assert isinstance(context, dict)

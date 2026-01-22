@@ -94,9 +94,7 @@ class TestAnalyticsUnitCoverage:
             import src.analytics.kpi_calculator_complete
             import src.analytics.metrics_utils
 
-            assert hasattr(
-                src.analytics, "__path__"
-            ), "Analytics module not properly initialized"
+            assert hasattr(src.analytics, "__path__"), "Analytics module not properly initialized"
 
         except ImportError as e:
             pytest.fail(f"Analytics module import failed: {e}")
@@ -159,9 +157,7 @@ class TestAnalyticsTypeCheck:
         )
 
         assert (
-            result.returncode == 0
-            or "error:" in result.stdout.lower()
-            or "error:" in result.stderr
+            result.returncode == 0 or "error:" in result.stdout.lower() or "error:" in result.stderr
         ), "mypy check did not complete (unexpected failure mode)"
 
     def test_h02_module_type_hints_present(self) -> None:

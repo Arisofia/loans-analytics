@@ -31,9 +31,7 @@ class ActiveClientsCalculator(KPICalculator):
                 cust_col = "client_id"
 
         if status_col not in df.columns or cust_col not in df.columns:
-            raise ValueError(
-                f"Missing columns for ActiveClients: {status_col}, {cust_col}"
-            )
+            raise ValueError(f"Missing columns for ActiveClients: {status_col}, {cust_col}")
 
         active_mask = df[status_col].astype(str).str.lower() == "current"
         active_clients = df[active_mask][cust_col].nunique()

@@ -3,8 +3,7 @@ from typing import Any, Dict, Tuple
 import numpy as np
 import pandas as pd
 
-from src.kpis.base import (KPICalculator, KPIMetadata, create_context,
-                           safe_numeric)
+from src.kpis.base import KPICalculator, KPIMetadata, create_context, safe_numeric
 
 
 class LTVCalculator(KPICalculator):

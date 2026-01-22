@@ -27,8 +27,7 @@ def check_cryptography_robust(cryptography_version: Optional[str]) -> None:
         try:
             if ver < Version("1.3.4"):
                 warnings.warn(
-                    f"Old version of cryptography ({cryptography_version}) "
-                    "may cause slowdown.",
+                    f"Old version of cryptography ({cryptography_version}) " "may cause slowdown.",
                     RequestsDependencyWarning,
                 )
         except Exception:

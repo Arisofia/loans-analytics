@@ -52,9 +52,7 @@ class TestKPICorrectness:
             computed_value = computed_kpis[key]
 
             if not isinstance(computed_value, (int, float)):
-                pytest.skip(
-                    f"Key '{key}' is not numeric (actual type: {type(computed_value)})"
-                )
+                pytest.skip(f"Key '{key}' is not numeric (actual type: {type(computed_value)})")
                 continue
 
             if isinstance(expected_value, str):
@@ -72,9 +70,7 @@ class TestKPICorrectness:
                             f"{key}: expected 0, got {computed_value} (error: {relative_error})"
                         )
             else:
-                relative_error = abs(computed_value - expected_value) / abs(
-                    expected_value
-                )
+                relative_error = abs(computed_value - expected_value) / abs(expected_value)
                 if relative_error > tolerance:
                     failures.append(
                         f"{key}: expected {expected_value}, got {computed_value} "
@@ -82,10 +78,7 @@ class TestKPICorrectness:
                     )
 
         if failures:
-            pytest.fail(
-                f"KPI values outside tolerance (±{tolerance:.0%}):\n"
-                + "\n".join(failures)
-            )
+            pytest.fail(f"KPI values outside tolerance (±{tolerance:.0%}):\n" + "\n".join(failures))
 
     def test_b01_no_nan_or_inf_values(self, run_analytics_pipeline: Path) -> None:
         """Verify no NaN or infinite values in computed KPIs."""
@@ -112,9 +105,7 @@ class TestKPICorrectness:
         - All KPI values are valid (not NaN/inf)
         - Log messages note edge case handling
         """
-        csv_path = (
-            Path(__file__).parent.parent / "data" / "archives" / "sample_null_zeros.csv"
-        )
+        csv_path = Path(__file__).parent.parent / "data" / "archives" / "sample_null_zeros.csv"
 
         if not csv_path.exists():
             pytest.skip(f"Edge case dataset not found: {csv_path}")
@@ -167,15 +158,12 @@ class TestKPICorrectness:
                         collection_rate
                     ), f"Collection rate is NaN for: {test_case['name']}"
                     assert not (
-                        collection_rate == float("inf")
-                        or collection_rate == float("-inf")
+                        collection_rate == float("inf") or collection_rate == float("-inf")
                     ), f"Collection rate is infinite for: {test_case['name']}"
 
             except ZeroDivisionError:
                 if test_case["expect_safe"]:
-                    pytest.fail(
-                        f"Should handle division by zero safely: {test_case['name']}"
-                    )
+                    pytest.fail(f"Should handle division by zero safely: {test_case['name']}")
 
     def test_b02_negative_value_handling(self) -> None:
         """Verify KPI calculations handle negative values appropriately."""

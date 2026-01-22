@@ -14,6 +14,7 @@ from src.config.secrets import get_secrets_manager
 # Secrets
 secrets = get_secrets_manager()
 
+
 def extract_file_key(value):
     if not value:
         return None
@@ -25,6 +26,7 @@ def extract_file_key(value):
         return None
     return raw.split("?")[0]
 
+
 FIGMA_TOKEN = (
     secrets.get("FIGMA_TOKEN")
     or os.getenv("FIGMA_OAUTH_TOKEN")
@@ -32,9 +34,7 @@ FIGMA_TOKEN = (
     or os.getenv("FIGMA_PERSONAL_ACCESS_TOKEN")
 )
 raw_file_key = (
-    secrets.get("FIGMA_FILE_KEY")
-    or os.getenv("FIGMA_FILE_URL")
-    or os.getenv("FIGMA_FILE_LINK")
+    secrets.get("FIGMA_FILE_KEY") or os.getenv("FIGMA_FILE_URL") or os.getenv("FIGMA_FILE_LINK")
 )
 FIGMA_FILE_KEY = extract_file_key(raw_file_key)
 

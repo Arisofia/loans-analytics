@@ -38,9 +38,7 @@ class TestGrokClient(unittest.TestCase):
     def test_generate_text_calls_api(self, mock_session_cls):
         mock_session = mock_session_cls.return_value
         mock_response = MagicMock()
-        mock_response.json.return_value = {
-            "choices": [{"message": {"content": "Test response"}}]
-        }
+        mock_response.json.return_value = {"choices": [{"message": {"content": "Test response"}}]}
         mock_response.raise_for_status.return_value = None
         mock_session.post.return_value = mock_response
 

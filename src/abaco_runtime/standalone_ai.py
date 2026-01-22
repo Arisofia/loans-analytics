@@ -21,9 +21,7 @@ class StandaloneAIEngine:
         ai_client: Optional[GrokClient] = None,
     ) -> None:
         self.personalities: Dict[str, Dict[str, str]] = self._load_personalities()
-        self.knowledge_base_path = knowledge_base_path or Path(
-            "data/knowledge_base.json"
-        )
+        self.knowledge_base_path = knowledge_base_path or Path("data/knowledge_base.json")
         self.knowledge_base = self._load_knowledge_base_from_file()
         self.ai_client = ai_client or self._initialize_ai_client()
 
@@ -91,9 +89,7 @@ class StandaloneAIEngine:
         self, agent_id: str, context: Dict[str, Any], data: Dict[str, Any]
     ) -> str:
         agent_type = self._extract_agent_type(agent_id)
-        personality = self.personalities.get(
-            agent_type, self.personalities["risk_analyst"]
-        )
+        personality = self.personalities.get(agent_type, self.personalities["risk_analyst"])
         prompt = self._construct_prompt(personality, context, data)
 
         if not self.ai_client:

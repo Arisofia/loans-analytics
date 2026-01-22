@@ -13,6 +13,7 @@ def extract_file_key(value):
         return None
     return raw.split("?")[0]
 
+
 FIGMA_TOKEN = (
     os.getenv("FIGMA_TOKEN")
     or os.getenv("FIGMA_OAUTH_TOKEN")
@@ -20,9 +21,7 @@ FIGMA_TOKEN = (
     or os.getenv("FIGMA_PERSONAL_ACCESS_TOKEN")
 )  # Set this in your environment or .env file
 FIGMA_FILE_KEY = extract_file_key(
-    os.getenv("FIGMA_FILE_KEY")
-    or os.getenv("FIGMA_FILE_URL")
-    or os.getenv("FIGMA_FILE_LINK")
+    os.getenv("FIGMA_FILE_KEY") or os.getenv("FIGMA_FILE_URL") or os.getenv("FIGMA_FILE_LINK")
 )  # Set this to your Figma file key or URL
 FIGMA_NODE_ID = os.getenv("FIGMA_NODE_ID")  # Set this to the node (frame) ID to update
 

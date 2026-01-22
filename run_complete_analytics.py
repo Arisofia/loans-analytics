@@ -63,9 +63,7 @@ def load_real_data():
             {
                 "loan_id": [f"L{i:05d}" for i in range(100)],
                 "customer_id": [f"C{np.random.randint(1, 51):04d}" for i in range(100)],
-                "disbursement_date": pd.date_range(
-                    "2023-01-01", periods=100, freq="3D"
-                ),
+                "disbursement_date": pd.date_range("2023-01-01", periods=100, freq="3D"),
                 "loan_end_date": pd.date_range("2023-02-01", periods=100, freq="3D"),
                 "disburse_principal": np.random.uniform(1000, 50000, 100),
                 "outstanding_balance": np.random.uniform(500, 45000, 100),
@@ -73,9 +71,7 @@ def load_real_data():
                 "loan_status": np.random.choice(
                     ["Active", "Complete", "Defaulted"], 100, p=[0.6, 0.3, 0.1]
                 ),
-                "product_type": np.random.choice(
-                    ["Factoring", "LOC", "Term Loan"], 100
-                ),
+                "product_type": np.random.choice(["Factoring", "LOC", "Term Loan"], 100),
             }
         )
     else:
@@ -120,9 +116,7 @@ def load_real_data():
             {
                 "payment_id": [f"P{i:06d}" for i in range(len(loans_df) * 2)],
                 "loan_id": np.random.choice(loans_df["loan_id"], len(loans_df) * 2),
-                "payment_date": pd.date_range(
-                    "2023-01-01", periods=len(loans_df) * 2, freq="D"
-                ),
+                "payment_date": pd.date_range("2023-01-01", periods=len(loans_df) * 2, freq="D"),
                 "payment_amount": np.random.uniform(100, 5000, len(loans_df) * 2),
             }
         )
@@ -241,9 +235,7 @@ def main():
     # Calculate Extended KPIs from Catalog
     print("📊 Calculating Extended KPIs from Catalog...\n")
     try:
-        catalog_proc = KPICatalogProcessor(
-            loans_df, payments_df, customers_df, schedule_df
-        )
+        catalog_proc = KPICatalogProcessor(loans_df, payments_df, customers_df, schedule_df)
         extended_kpis = catalog_proc.get_all_kpis()
         dashboard["extended_kpis"] = extended_kpis
         print("✅ Extended KPIs calculated successfully")
@@ -290,12 +282,8 @@ def main():
 
     print("💵 REVENUE")
     print(f"  Monthly Revenue: ${dashboard['monthly_revenue_usd']:,.2f}")
-    print(
-        f"  Revenue/Client (Monthly): ${dashboard['revenue_per_active_client_monthly']:,.2f}"
-    )
-    print(
-        f"  Revenue/Client (Annual): ${dashboard['revenue_per_active_client_annual']:,.2f}\n"
-    )
+    print(f"  Revenue/Client (Monthly): ${dashboard['revenue_per_active_client_monthly']:,.2f}")
+    print(f"  Revenue/Client (Annual): ${dashboard['revenue_per_active_client_annual']:,.2f}\n")
 
     print("📊 GROWTH METRICS")
     print(f"  MoM Growth: {dashboard['mom_growth_pct']:.2f}%")

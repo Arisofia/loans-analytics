@@ -119,9 +119,7 @@ def check_files(repo_root: Path) -> List[FileCheckResult]:
     results: List[FileCheckResult] = []
     for rel in paths:
         p = repo_root / rel
-        results.append(
-            FileCheckResult(path=str(p.relative_to(repo_root)), exists=p.is_file())
-        )
+        results.append(FileCheckResult(path=str(p.relative_to(repo_root)), exists=p.is_file()))
     return results
 
 

@@ -32,13 +32,9 @@ class AbacoIngestion:
                 self.context[key] = value
 
     def _log_step(self, stage: str, message: str, **details: Any) -> None:
-        detail_parts = [
-            f"{key}={value!r}" for key, value in details.items() if value is not None
-        ]
+        detail_parts = [f"{key}={value!r}" for key, value in details.items() if value is not None]
         context_parts = [
-            f"{key}={value!r}"
-            for key, value in self.context.items()
-            if value is not None
+            f"{key}={value!r}" for key, value in self.context.items() if value is not None
         ]
         segments = [f"[{stage}]", message]
         if detail_parts:
@@ -54,9 +50,7 @@ class AbacoIngestion:
         self._summary.setdefault("rows_ingested", 0)
         self._summary["rows_ingested"] += count
 
-    def ingest_uploaded_file(
-        self, file_content: Union[bytes, io.BytesIO]
-    ) -> pl.DataFrame:
+    def ingest_uploaded_file(self, file_content: Union[bytes, io.BytesIO]) -> pl.DataFrame:
         """
         Ingest a file (CSV) from a bytes stream.
         Applies cleaning, schema enforcement, and contract validation.
@@ -69,9 +63,7 @@ class AbacoIngestion:
 
             # 2. Data Cleaning (Polars-native)
             numeric_cols = [
-                col
-                for col, dtype in INGESTION_SCHEMA.items()
-                if dtype in [pl.Float64, pl.Int64]
+                col for col, dtype in INGESTION_SCHEMA.items() if dtype in [pl.Float64, pl.Int64]
             ]
             df = safe_numeric_polars(df, numeric_cols)
 

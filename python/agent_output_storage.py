@@ -46,9 +46,7 @@ def save_agent_output(
         "timestamp": timestamp,
     }
 
-    tmp_path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    tmp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp_path.replace(path)
     return path
 
@@ -58,6 +56,4 @@ def list_agent_outputs(
 ) -> Iterable[str]:
     storage_path = Path(storage_dir)
     safe_agent_prefix = _SAFE_NAME.sub("_", agent_name or "agent")
-    return [
-        f.name for f in storage_path.glob(f"{safe_agent_prefix}_v*.json") if f.is_file()
-    ]
+    return [f.name for f in storage_path.glob(f"{safe_agent_prefix}_v*.json") if f.is_file()]

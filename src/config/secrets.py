@@ -32,9 +32,7 @@ class SecretsManager:
             if val:
                 self._secrets[key] = val
 
-    def get(
-        self, key: str, default: Optional[str] = None, required: bool = False
-    ) -> Optional[str]:
+    def get(self, key: str, default: Optional[str] = None, required: bool = False) -> Optional[str]:
         val = self._secrets.get(key) or os.getenv(key)
         if val is None and default is not None:
             return default
@@ -48,9 +46,7 @@ class SecretsManager:
         return val
 
     def get_all(self, required_only: bool = False) -> Dict[str, str]:
-        keys = (
-            REQUIRED_SECRETS if required_only else (REQUIRED_SECRETS | OPTIONAL_SECRETS)
-        )
+        keys = REQUIRED_SECRETS if required_only else (REQUIRED_SECRETS | OPTIONAL_SECRETS)
         result = {}
         for k in keys:
             val = self.get(k)

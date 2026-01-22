@@ -26,9 +26,7 @@ try:
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for performance_stress_test")
 except (ImportError, Exception) as tracing_err:
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     logger = logging.getLogger(__name__)
     logger.warning("Azure tracing not initialized: %s", tracing_err)
 
@@ -221,9 +219,7 @@ class PerformanceStressTest:
             "performance_assessment": {
                 "scalability": "EXCELLENT" if load_test else "UNKNOWN",
                 "stability": (
-                    "STABLE"
-                    if sustained.get("memory", {}).get("stable")
-                    else "VARIABLE"
+                    "STABLE" if sustained.get("memory", {}).get("stable") else "VARIABLE"
                 ),
                 "resource_efficiency": "EFFICIENT" if resource else "UNKNOWN",
             },

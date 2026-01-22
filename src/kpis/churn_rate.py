@@ -23,11 +23,7 @@ class ChurnRateCalculator(KPICalculator):
                 self.METADATA.formula, rows_processed=0, reason="Empty DataFrame"
             )
 
-        date_col = (
-            "disbursement_date"
-            if "disbursement_date" in df.columns
-            else "Disbursement Date"
-        )
+        date_col = "disbursement_date" if "disbursement_date" in df.columns else "Disbursement Date"
         cust_col = "customer_id" if "customer_id" in df.columns else "Customer ID"
 
         if date_col not in df.columns or cust_col not in df.columns:

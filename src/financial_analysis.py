@@ -29,9 +29,7 @@ def resolve_column(
                 if not resolved_col and fallback and fallback in df.columns:
                     resolved_col = fallback
             if not resolved_col:
-                logger.warning(
-                    "Column not found for %s, tried: %s", func.__name__, candidates
-                )
+                logger.warning("Column not found for %s, tried: %s", func.__name__, candidates)
                 return df
             return func(self, df, resolved_col, **kwargs)
 
@@ -112,9 +110,7 @@ class FinancialAnalyzer:
         result = df.copy()
         try:
             self.validate_numeric_columns(result, [dpd_col])
-            result["dpd_bucket"] = result[dpd_col].apply(
-                Classification.dpd_bucket_rules
-            )
+            result["dpd_bucket"] = result[dpd_col].apply(Classification.dpd_bucket_rules)
         except ValueError as e:
             logger.error("DPD classification failed: %s", e)
             result["dpd_bucket"] = "Unknown"
@@ -153,9 +149,7 @@ class FinancialAnalyzer:
             return result
 
         count_col = find_column(result, [loan_count_col, "num_loans", "prestamos"])
-        active_col = find_column(
-            result, [last_active_col, "last_active", "ultima_actividad"]
-        )
+        active_col = find_column(result, [last_active_col, "last_active", "ultima_actividad"])
 
         if count_col and active_col:
             try:
@@ -291,10 +285,7 @@ class FinancialAnalyzer:
         result = self.classify_dpd_buckets(result)
         result = self.segment_clients_by_exposure(result)
 
-        if all(
-            col in result.columns
-            for col in ["customer_id", "loan_count", "last_active_date"]
-        ):
+        if all(col in result.columns for col in ["customer_id", "loan_count", "last_active_date"]):
             result = self.classify_client_type(result, reference_date=reference_date)
 
         result = self.calculate_line_utilization(result)
@@ -307,13 +298,9 @@ class FinancialAnalyzer:
             "line_utilization",
         ]
         for metric in key_metrics:
-            if metric in result.columns and pd.api.types.is_numeric_dtype(
-                result[metric]
-            ):
+            if metric in result.columns and pd.api.types.is_numeric_dtype(result[metric]):
                 std_dev = result[metric].std()
                 if std_dev > 0:
-                    result[f"{metric}_zscore"] = (
-                        result[metric] - result[metric].mean()
-                    ) / std_dev
+                    result[f"{metric}_zscore"] = (result[metric] - result[metric].mean()) / std_dev
 
         return result
