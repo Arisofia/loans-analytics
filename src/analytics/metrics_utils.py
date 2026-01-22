@@ -6,12 +6,9 @@ from typing import Any, Dict, Iterable
 import numpy as np
 import pandas as pd
 
-from src.pipeline.data_validation import (
-    ANALYTICS_NUMERIC_COLUMNS,
-    REQUIRED_ANALYTICS_COLUMNS,
-    safe_numeric,
-    validate_dataframe,
-)
+from src.pipeline.data_validation import (ANALYTICS_NUMERIC_COLUMNS,
+                                          REQUIRED_ANALYTICS_COLUMNS,
+                                          safe_numeric, validate_dataframe)
 
 # Alias for backward compatibility and clarity within this module
 REQUIRED_KPI_COLUMNS = REQUIRED_ANALYTICS_COLUMNS

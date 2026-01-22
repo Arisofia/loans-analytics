@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import pytest
+
 from python.testing.db_manager import DBManager
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -4,15 +4,12 @@ from typing import Any, Dict, Tuple
 import pandas as pd
 
 from src.kpis.base import KPICalculator, KPIMetadata, create_context
-from src.utils.data_normalization import (
-    COL_APPROVED_AMOUNT,
-    COL_CLIENT_SEGMENT,
-    COL_CUSTOMER_ID,
-    COL_DAYS_PAST_DUE,
-    COL_ORIGINATION_DATE,
-    COL_OUTSTANDING_AMOUNT,
-    normalize_columns,
-)
+from src.utils.data_normalization import (COL_APPROVED_AMOUNT,
+                                          COL_CLIENT_SEGMENT, COL_CUSTOMER_ID,
+                                          COL_DAYS_PAST_DUE,
+                                          COL_ORIGINATION_DATE,
+                                          COL_OUTSTANDING_AMOUNT,
+                                          normalize_columns)
 from src.utils.numeric import safe_numeric
 
 logger = logging.getLogger(__name__)

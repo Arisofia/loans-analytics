@@ -1,14 +1,11 @@
 import pandas as pd
 import pytest
 
-from src.pipeline.data_validation import (
-    ANALYTICS_NUMERIC_COLUMNS,
-    NUMERIC_COLUMNS,
-    REQUIRED_ANALYTICS_COLUMNS,
-    find_column,
-    validate_dataframe,
-    validate_numeric_bounds,
-)
+from src.pipeline.data_validation import (ANALYTICS_NUMERIC_COLUMNS,
+                                          NUMERIC_COLUMNS,
+                                          REQUIRED_ANALYTICS_COLUMNS,
+                                          find_column, validate_dataframe,
+                                          validate_numeric_bounds)
 
 
 def test_validate_dataframe_valid():
