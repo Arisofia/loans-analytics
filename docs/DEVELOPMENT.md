@@ -42,11 +42,8 @@
 
 | Variable | Purpose |
 | `PIPELINE_INPUT_FILE` | Optional override for `scripts/run_data_pipeline.py` to point at a different CSV. |
-| `NOTION_DATABASE_ID` | Notion database used by `scripts/import_notion_metrics.py`. |
-| `NOTION_META_TOKEN` | Bearer token supporting the Notion Importer. |
-| `NOTION_VERSION` | Notion API version (defaults to `2022-06-28` if unset). |
 | `DATABASE_URL` | Connection string used by `src/agents/orchestrator.py` and other automation helpers. |
-| `LOG_LEVEL` | Sets the logging verbosity for the Notion importer (defaults to `INFO`). |
+| `LOG_LEVEL` | Sets the logging verbosity for automation scripts (defaults to `INFO`). |
 
 ### Vercel & GitHub secrets
 
@@ -77,7 +74,6 @@
 
 ### Integrations & AI secrets
 
-- The Notion metrics importer requires `NOTION_DATABASE_ID`, `NOTION_META_TOKEN`, and `NOTION_VERSION`. Keep these scoped to the Notion workspace that houses the KPI database.
 - AI helpers (`StandaloneAIEngine`, `scripts/clients.py`, and `streamlit_app.py`) look for `GROK_API_KEY`, `GOOGLE_API_KEY`, and `OPENAI_API_KEY`. Provide these values only in environments that should reach external AI services.
 - `src/agents/orchestrator.py` expects `DATABASE_URL` so agent runs can persist traceability data.
 - Use strict mode (enabled in tsconfig.json)

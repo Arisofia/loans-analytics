@@ -25,7 +25,6 @@ generates executive reports.
 - `PIPELINE_ENV`: `dev`, `staging`, or `production` (default: `dev`)
 - `AZURE_STORAGE_CONNECTION_STRING`: Required for Azure Blob storage outputs.
 - `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE`: Required for database sync.
-- `NOTION_TOKEN` / `NOTION_REPORTS_PAGE_ID`: Required for Notion reporting.
 
 ## 3. Quality & Code Standards
 
