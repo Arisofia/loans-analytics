@@ -11,6 +11,7 @@ test.describe('Analytics Dashboard', () => {
 
         // Check for placeholder content
     await expect(page.getByText('Analytics Dashboard Placeholder')).toBeVisible()
+      })
 
 
   test('should have a working link back to home', async ({ page }) => {
