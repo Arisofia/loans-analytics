@@ -12,7 +12,7 @@ FOUND_ISSUES=0
 PATTERNS=(
   "sk-""proj-" # OpenAI keys
   "sk-""ant-"  # Anthropic keys
-  "HUBSPOT_TOKEN="
+
 )
 
 echo "Scanning codebase for exposed credentials..."

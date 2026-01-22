@@ -101,7 +101,7 @@ PYTHONPATH=src python3 -m mypy src --ignore-missing-imports 2>&1 | tee -a "$REPO
 
   echo "### Key Failure Points"
   echo "- Secret handling (SLACK_WEBHOOK_URL, Vercel tokens)"
-  echo "- External API integrations (HubSpot, Supabase)"
+  echo "- External API integrations (Supabase)"
   echo "- Artifact uploads and caching"
   echo "- Dependency installation (pnpm, pip)"
   echo ""
