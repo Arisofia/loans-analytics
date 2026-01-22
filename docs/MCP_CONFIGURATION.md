@@ -63,10 +63,7 @@ rmcp_client = true
 ```
 
 ```toml
-[mcp_servers.figma]
-url = "https://mcp.figma.com/mcp"
-bearer_token_env_var = "FIGMA_OAUTH_TOKEN"
-http_headers = { "X-Figma-Region" = "us-east-1" }
+# ...existing code...
 ```
 
 ```toml

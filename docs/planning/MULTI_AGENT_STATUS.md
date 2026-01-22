@@ -304,7 +304,7 @@ class ContinuousLearningEngine:
 - [x] Implement Investor Relations agent (@investor-ai)
 - [x] Upgrade Sales Optimization agent (from stub)
 - [x] ROI & capital efficiency reporting
-- [x] Output to Figma/Azure Static Web Apps
+- [x] Output to Azure Static Web Apps
 
 **Deliverable:** Board-level intelligence dashboards
 
@@ -324,7 +324,7 @@ class ContinuousLearningEngine:
 - [x] Implement Brand & Marketing agent (@brand-ai)
 - [x] Implement Product Intelligence agent (@product-ai)
 - [x] Sentiment analysis & feature usage tracking
-- [x] Output to Figma/Amplitude
+- [x] Output to Amplitude
 
 **Deliverable:** Product roadmap & brand health tracking
 

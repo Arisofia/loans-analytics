@@ -13,7 +13,7 @@ cd abaco-loans-analytics
 # Copy environment configuration
 cp .env.example .env
 
-# Edit .env with your credentials (Azure, Supabase, HubSpot, etc.)
+# Edit .env with your credentials (Azure, Supabase, etc.)
 # Required: APPLICATIONINSIGHTS_CONNECTION_STRING
 nano .env  # or your preferred editor
 ```
@@ -265,8 +265,7 @@ export SUPABASE_URL="https://your-project.supabase.co"
 export SUPABASE_KEY="your-api-key"
 export SUPABASE_SERVICE_KEY="your-service-key"
 
-# HubSpot CRM
-export HUBSPOT_API_TOKEN="pat-..."
+# ...existing code...
 
 # OpenAI/Anthropic
 # OPENAI_API_KEY: REPLACE_WITH_OPENAI_API_KEY  # set as environment variable
@@ -276,11 +275,9 @@ export HUBSPOT_API_TOKEN="pat-..."
 export META_ACCESS_TOKEN="..."
 export META_APP_ID="..."
 
-# Figma
-export FIGMA_TOKEN="..."
-export FIGMA_FILE_ID="..."
+# ...existing code...
 
-export SLACK_BOT_TOKEN="xoxb-..."
+# ...existing code...
 ```
 
 Store these in `.env` (git-ignored).

@@ -43,10 +43,3 @@ jobs:
                 PHOENIX_TOKEN: ${{ secrets.PHOENIX_TOKEN }}
               run: |
                   python scripts/investor_reporting.py
-            - name: Post to Figma
-              if: always() && hashFiles('scripts/post_to_figma.py') != ''
-              env:
-                FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
-                SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-              run: |
-                  python scripts/post_to_figma.py

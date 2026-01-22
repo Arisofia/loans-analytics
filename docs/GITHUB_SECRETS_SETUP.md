@@ -170,13 +170,12 @@ Used by ingestion / unified pipeline workflows.
 - `CASCADE_USERNAME`
 - `CASCADE_PASSWORD`
 
-- `HUBSPOT_API_KEY` or `HUBSPOTTOKEN`
+# ...existing code...
   - Note: both naming styles exist across workflows; standardize later.
 
 ### F) Notifications / Observability / QA
 
-- `SLACK_WEBHOOK_URL`, `SLACK_WEBHOOK_OPS`, `SLACK_WEBHOOK_LEADERSHIP`
-- `SLACK_BOT_TOKEN`
+# ...existing code...
 - `OPIK_TOKEN` / `OPIKTOKEN`
 - `PHOENIX_TOKEN`
 

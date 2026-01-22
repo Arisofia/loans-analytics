@@ -151,7 +151,7 @@ START: Pipeline failed notification
 │   │       │   Fix: Add missing secret in GitHub → Settings → Secrets
 │   │       │
 │   │       ├─> "AuthenticationError" / "401 Unauthorized" / "403 Forbidden"
-│   │       │   Fix: Rotate API key (HubSpot/Meta/OpenAI), update GitHub secret
+│   │       │   Fix: Rotate API key (Meta/OpenAI), update GitHub secret
 │   │       │
 │   │       ├─> "TimeoutError" / "Connection refused"
 │   │       │   Fix: Check external API status, verify network rules
@@ -211,7 +211,7 @@ Invalid API key
 
 Fix:
 
-1. Visit service dashboard (HubSpot/Meta/OpenAI)
+1. Visit service dashboard (Meta/OpenAI)
 2. Generate new API key
 3. Update GitHub Secret with new value
 4. Re-run workflow
@@ -243,7 +243,7 @@ AssertionError: Column 'amount' has null values
 Fix:
 
 1. This is a DATA QUALITY issue, not a code issue
-2. Investigate source system (Looker/HubSpot/Meta)
+2. Investigate source system (Looker/Meta)
 3. Decide: Accept new data shape OR fix source
 4. Update Great Expectations suite if shape intentionally changed
 
@@ -542,7 +542,7 @@ jobs:
         with:
           status: ${{ github.event.workflow_run.conclusion }}
           text: 'Workflow "${{ github.event.workflow_run.name }}" failed'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # ...existing code...
           fields: repo,message,commit,author
 ```
 

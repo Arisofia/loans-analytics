@@ -12,7 +12,7 @@ This runbook describes the process for rotating critical secrets used by the Aba
 ## 2. Target Secrets
 - `OPENAI_API_KEY`
 - `ANTHROPIC_API_KEY`
-- `HUBSPOT_API_KEY`
+# ...existing code...
 - `SUPABASE_KEY` / `SUPABASE_SERVICE_ROLE_KEY`
 - `AZURE_STORAGE_CONNECTION_STRING`
 
@@ -36,7 +36,7 @@ This runbook describes the process for rotating critical secrets used by the Aba
 
 ## 4. Emergency Revocation
 If a secret is confirmed to be leaked:
-1. Immediately revoke the key at the provider (OpenAI, HubSpot, etc.).
+1. Immediately revoke the key at the provider (OpenAI, etc.).
 2. Follow the rotation process above to provision a replacement.
 3. Audit recent logs for unauthorized access using the leaked key.
 

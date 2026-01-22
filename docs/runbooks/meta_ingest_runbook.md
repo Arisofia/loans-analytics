@@ -7,7 +7,7 @@
 
 ## Secrets & environment
 - Ensure `META_SYSTEM_USER_TOKEN` and, if needed, `META_REFRESH_TOKEN` exist in repo Secrets before running CI.
-- The Meta ingest pipeline also uses `FIGMA_TOKEN` and `SLACK_WEBHOOK_URL` when pushing summaries for marketing operations; verify these if you use the agent automations.
+# ...existing code...
 
 ## Troubleshooting
 - Check workflow logs for API errors or rate limits.

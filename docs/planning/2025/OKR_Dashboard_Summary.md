@@ -53,7 +53,7 @@ This document summarizes the provided OKRs, risk guardrails, and near-term actio
 ## OKR 4 — Platform & Automation (CTO)
 
 - LoanPro + Taktile Phase 1 live by Mar-26 (decision engine + monitoring dashboards).
-- Front-end + CRM/backoffice operational by Dec-25 (HubSpot + customer portal).
+- Front-end + CRM/backoffice operational by Dec-25 (customer portal).
 - Embedded SDK for ISVs by Feb-26 with LoanPro/Taktile integration.
 - Data warehouse operational by Jan-26 with ≤6h latency and BI dashboards.
 - **DRI:** CTO; bi-weekly program review.
@@ -102,7 +102,7 @@ This document summarizes the provided OKRs, risk guardrails, and near-term actio
 ## Immediate Actions (Oct-16 → Nov-16)
 
 - Week 1: finalize Abaco Financial wind-down, classify unassigned customers, remediate data quality, kick off LoanPro integration, finalize Series B narrative, deliver board presentation.
-- Week 2: pilot Taktile scoring, set up HubSpot, hire KAMs (1→4), launch digital campaigns, sign embedded ISV partnerships, deploy weekly dashboard.
+- Week 2: pilot Taktile scoring, hire KAMs (1→4), launch digital campaigns, sign embedded ISV partnerships, deploy weekly dashboard.
 - Week 3: platform testing, covenant monitoring alerts (Top-10, default, DPD), OKR tracking system, data warehouse design, finalize Series B deck, establish risk committee.
 - Week 4: go-live readiness (LoanPro, Taktile), customer comms, stress testing, investor meetings, monthly KPI review, Q4 trough mitigation plan.
 
