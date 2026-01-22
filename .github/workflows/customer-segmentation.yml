@@ -1,0 +1,99 @@
+name: Customer Segmentation
+on:
+    schedule:
+        - cron: "0 10 * * *" # 11:00 AM CET daily
+    workflow_dispatch:
+
+jobs:
+    validate:
+        runs-on: ubuntu-latest
+        outputs:
+            run: ${{ steps.check.outputs.run }}
+        steps:
+            - uses: actions/checkout@v4
+            - id: check
+              run: |
+                  if [ -f "scripts/customer_segmentation.py" ]; then
+                    echo "run=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "run=false" >> $GITHUB_OUTPUT
+                    echo "WARNING: scripts/customer_segmentation.py missing"
+                  fi
+
+    customer-segmentation:
+        needs: validate
+        if: needs.validate.outputs.run == 'true'
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check secrets availability
+              id: check-secrets
+              env:
+                OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+                SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+                NOTION_API_KEY: ${{ secrets.NOTION_API_KEY || secrets.NOTION_TOKEN || secrets.NOTION_INTEGRATION_TOKEN }}
+                NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID || secrets.NOTION_DATABASE_URL || secrets.NOTION_DATABASE }}
+              run: |
+                sanitize_secret() {
+                  local var_name="$1"
+                  local raw="$2"
+                  local norm
+                  norm="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]' | xargs)"
+                  case "$norm" in
+                    ""|"token"|"tokens"|"secret"|"secrets"|"changeme"|"change-me"|"change_me"|"replace-me"|"replace_me"|"placeholder"|"example"|"redacted")
+                      printf -v "$var_name" '%s' ""
+                      ;;
+                    *)
+                      printf -v "$var_name" '%s' "$raw"
+                      ;;
+                  esac
+                }
+                sanitize_secret OPENAI_API_KEY "$OPENAI_API_KEY"
+                sanitize_secret SUPABASE_SERVICE_ROLE "$SUPABASE_SERVICE_ROLE"
+                sanitize_secret NOTION_API_KEY "$NOTION_API_KEY"
+                sanitize_secret NOTION_DATABASE_ID "$NOTION_DATABASE_ID"
+
+                  missing=""
+                  [ -z "$OPENAI_API_KEY" ] && missing="$missing OPENAI_API_KEY"
+                  [ -z "$SUPABASE_SERVICE_ROLE" ] && missing="$missing SUPABASE_SERVICE_ROLE"
+                  if [ -z "$missing" ]; then
+                    echo "can_run=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "can_run=false" >> $GITHUB_OUTPUT
+                    echo "::warning::Missing required secrets:$missing - skipping customer segmentation"
+                  fi
+                  if [ -n "$NOTION_API_KEY" ] && [ -n "$NOTION_DATABASE_ID" ]; then
+                    echo "notion_available=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "notion_available=false" >> $GITHUB_OUTPUT
+                  fi
+            - name: Checkout Repository
+              if: steps.check-secrets.outputs.can_run == 'true'
+              uses: actions/checkout@v4
+            - name: Setup Python Environment
+              if: steps.check-secrets.outputs.can_run == 'true'
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+            - name: Install Dependencies
+              if: steps.check-secrets.outputs.can_run == 'true'
+              run: |
+                  pip install -r requirements.txt
+            - name: Run Segmentation Analysis
+              if: steps.check-secrets.outputs.can_run == 'true' && hashFiles('scripts/customer_segmentation.py') != ''
+              env:
+                  CLAUDE_ROCKET_TOKEN: ${{ secrets.CLAUDE_ROCKET_TOKEN }}
+                  XAI_TOKEN: ${{ secrets.XAI_TOKEN }}
+                  OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
+                  PHOENIX_TOKEN: ${{ secrets.PHOENIX_TOKEN }}
+                  SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+                  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+              run: |
+                  python scripts/customer_segmentation.py
+            - name: Post to Notion
+              if: steps.check-secrets.outputs.can_run == 'true' && steps.check-secrets.outputs.notion_available == 'true' && hashFiles('scripts/post_to_notion.py') != ''
+              env:
+                  NOTION_API_KEY: ${{ secrets.NOTION_API_KEY || secrets.NOTION_TOKEN || secrets.NOTION_INTEGRATION_TOKEN }}
+                  NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID || secrets.NOTION_DATABASE_URL || secrets.NOTION_DATABASE }}
+                  SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+              run: |
+                  python scripts/post_to_notion.py

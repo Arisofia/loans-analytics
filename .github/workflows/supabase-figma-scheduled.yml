@@ -1,0 +1,73 @@
+name: Supabase to Figma Integration
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 6 * * *" # Runs every day at 6:00 AM UTC
+
+jobs:
+  supabase-figma:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_PUBLIC_KEY }}
+      SUPABASE_ANON_PUBLIC_KEY: ${{ secrets.SUPABASE_ANON_PUBLIC_KEY || secrets.SUPABASE_ANON_KEY }}
+      FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+      FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY || secrets.FIGMA_FILE_URL || secrets.FIGMA_FILE_LINK }}
+    steps:
+      - name: Check secrets availability
+        id: check-secrets
+        run: |
+          sanitize_secret() {
+            local var_name="$1"
+            local raw="$2"
+            local norm
+            norm="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]' | xargs)"
+            case "$norm" in
+              ""|"token"|"tokens"|"secret"|"secrets"|"changeme"|"change-me"|"change_me"|"replace-me"|"replace_me"|"placeholder"|"example"|"redacted")
+                printf -v "$var_name" '%s' ""
+                ;;
+              *)
+                printf -v "$var_name" '%s' "$raw"
+                ;;
+            esac
+          }
+          sanitize_secret SUPABASE_URL "$SUPABASE_URL"
+          sanitize_secret SUPABASE_ANON_KEY "$SUPABASE_ANON_KEY"
+          sanitize_secret FIGMA_TOKEN "$FIGMA_TOKEN"
+          sanitize_secret FIGMA_FILE_KEY "$FIGMA_FILE_KEY"
+
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ] && [ -n "$FIGMA_TOKEN" ] && [ -n "$FIGMA_FILE_KEY" ]; then
+            echo "secrets_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "secrets_available=false" >> $GITHUB_OUTPUT
+            echo "::warning::Required secrets not configured - skipping Supabase-Figma sync"
+          fi
+
+      - name: Checkout repository
+        if: steps.check-secrets.outputs.secrets_available == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        if: steps.check-secrets.outputs.secrets_available == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        if: steps.check-secrets.outputs.secrets_available == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Supabase to Figma sync script
+        if: steps.check-secrets.outputs.secrets_available == 'true' && hashFiles('scripts/export_copilot_slide_payload.py') != ''
+        run: |
+          python scripts/export_copilot_slide_payload.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_PUBLIC_KEY }}
+          SUPABASE_ANON_PUBLIC_KEY: ${{ secrets.SUPABASE_ANON_PUBLIC_KEY || secrets.SUPABASE_ANON_KEY }}
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY || secrets.FIGMA_FILE_URL || secrets.FIGMA_FILE_LINK }}
+          PYTHONPATH: ${{ github.workspace }}

@@ -1,15 +1,6 @@
-# Simple initialization API for legacy compatibility
-def initialize_gx(context=None):
-    """Initialize Great Expectations context."""
-    # TODO: Implement initialization logic
-    pass
-import great_expectations as gx
-from great_expectations.core.expectation_configuration import \
-    ExpectationConfiguration
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/fix/final-workflow-fixes
+import great_expectations as gx
+from great_expectations.core.expectation_configuration import ExpectationConfiguration
 
 
 def init_gx_project() -> None:
@@ -17,11 +8,7 @@ def init_gx_project() -> None:
     context = gx.get_context()
 
     suite_name = "loan_tape_ingestion"
-<<<<<<< HEAD
-    suite = context.add_or_update_expectation_suite(expectation_suite_name=suite_name)  # type: ignore
-=======
     suite = context.add_or_update_expectation_suite(expectation_suite_name=suite_name)
->>>>>>> origin/fix/final-workflow-fixes
 
     # 1. Schema Integrity: Required Columns
     required_columns = [
@@ -42,12 +29,7 @@ def init_gx_project() -> None:
     # 2. Nullity Constraints
     suite.add_expectation(
         ExpectationConfiguration(
-<<<<<<< HEAD
-            expectation_type="expect_column_values_to_not_be_null",
-            kwargs={"column": "loan_id"},
-=======
             expectation_type="expect_column_values_to_not_be_null", kwargs={"column": "loan_id"}
->>>>>>> origin/fix/final-workflow-fixes
         )
     )
 
@@ -63,11 +45,7 @@ def init_gx_project() -> None:
         )
     )
 
-<<<<<<< HEAD
-    context.save_expectation_suite(suite)  # type: ignore
-=======
     context.save_expectation_suite(suite)
->>>>>>> origin/fix/final-workflow-fixes
     print(f"Great Expectations suite '{suite_name}' initialized successfully.")
 
 

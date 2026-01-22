@@ -1,35 +1,20 @@
 # Simple orchestration API for legacy compatibility
-def orchestrate_pipeline(config, agents=None):
-    """Orchestrate pipeline with optional agents."""
-    # TODO: Implement orchestration logic
-    pass
 from pathlib import Path
-<<<<<<< HEAD
 from typing import Any, Dict, Union
 
 from prefect import flow, get_run_logger, task
-
 from src.pipeline.data_ingestion import IngestionResult, UnifiedIngestion
-from src.pipeline.data_transformation import (TransformationResult,
-                                              UnifiedTransformation)
+from src.pipeline.data_transformation import (
+    TransformationResult,
+    UnifiedTransformation,
+)
 from src.pipeline.data_validation_gx import validate_loan_data
-from src.pipeline.kpi_calculation import (CalculationResultV2,
-                                          UnifiedCalculationV2)
+from src.pipeline.kpi_calculation import (
+    CalculationResultV2,
+    UnifiedCalculationV2,
+)
 from src.pipeline.orchestrator import PipelineConfig
 from src.pipeline.output import OutputResult, UnifiedOutput
-=======
-from typing import Any, Dict
-
-from prefect import flow, get_run_logger, task
-from python.agents.tools import send_slack_notification
-
-from python.pipeline.data_ingestion import UnifiedIngestion
-from python.pipeline.data_transformation import UnifiedTransformation
-from python.pipeline.data_validation_gx import validate_loan_data
-from python.pipeline.kpi_calculation import UnifiedCalculationV2
-from python.pipeline.orchestrator import PipelineConfig
-from python.pipeline.output import UnifiedOutput
->>>>>>> origin/fix/final-workflow-fixes
 
 
 @task(retries=3, retry_delay_seconds=60)
@@ -47,7 +32,6 @@ def ingestion_task(config: Dict[str, Any], input_file: Path) -> IngestionResult:
     dq_passed = validate_loan_data(result.df)
     if not dq_passed:
         logger.warning("Great Expectations validation failed!")
-<<<<<<< HEAD
 
     # Map to typed container if needed (UnifiedIngestion returns a dataclass-like object)
     if isinstance(result, IngestionResult):
@@ -56,15 +40,6 @@ def ingestion_task(config: Dict[str, Any], input_file: Path) -> IngestionResult:
     return IngestionResult(
         df=result.df, run_id=getattr(result, "run_id", "unknown"), metadata={}
     )
-
-=======
-        send_slack_notification(
-            f"⚠️ *Data Quality Alert*: GX validation failed for {input_file}",
-            channel="kpi-compliance",
-        )
-
-    return result
->>>>>>> origin/fix/final-workflow-fixes
 
 
 @task
@@ -90,7 +65,6 @@ def calculation_task(
 
 @task
 def output_task(
-<<<<<<< HEAD
     config: Dict[str, Any],
     transformation_result: TransformationResult,
     calculation_result: CalculationResultV2,
@@ -98,14 +72,6 @@ def output_task(
 ) -> OutputResult:
     logger = get_run_logger()
     logger.info("Starting output persistence for run %s", run_id)
-=======
-    config: Dict[str, Any], transformation_result: Any, calculation_result: Any, run_id: str
-):
-    logger = get_run_logger()
-    logger.info(f"Starting output persistence for run {run_id}")
-    output = UnifiedOutput(config, run_id=run_id)
-
->>>>>>> origin/fix/final-workflow-fixes
     # We can add Supabase persistence here or in UnifiedOutput.persist
     return UnifiedOutput(config, run_id=run_id).persist(
         transformation_result.df,
@@ -133,15 +99,8 @@ def abaco_pipeline_flow(
 
     trans_res = transformation_task(config, ingest_res.df, run_id)
     calc_res = calculation_task(config, trans_res.df, run_id)
-<<<<<<< HEAD
 
     return output_task(config, trans_res, calc_res, run_id)
-
-=======
-    out_res = output_task(config, trans_res, calc_res, run_id)
-
-    return out_res
->>>>>>> origin/fix/final-workflow-fixes
 
 
 if __name__ == "__main__":

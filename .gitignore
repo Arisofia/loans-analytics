@@ -33,6 +33,7 @@ target/
 # Config
 config/*.yaml
 
+<<<<<<< HEAD
 # Logs
 *.log
 *.logs
@@ -53,3 +54,16 @@ figma-financial-dashboard/node_modules/
 .python_packagesnode_modules/
 node_modules/
 node_modules/
+=======
+# Azurite local storage state
+AzuriteConfig
+__azurite_db_*.json
+__azurite_db_*_extent__.json
+scripts/setup_azure.sh
+.azure
+
+# Ignore generated media files
+*.mp4
+*.mov
+*.mp3
+>>>>>>> ed449d30c (feat: Update workflows and add gitignore for media files)
