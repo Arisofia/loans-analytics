@@ -1,8 +1,4 @@
 services:
-  slackbotservice:
-    image: slackbotservice
-    build:
-      context: services/slack_bot
       dockerfile: ./Dockerfile
     environment:
       NODE_ENV: development

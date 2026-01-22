@@ -19,7 +19,6 @@ services:
     environment:
       PORT: 8000
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-      HUBSPOT_API_KEY: ${HUBSPOT_API_KEY}
     volumes:
       - ./dashboard:/app
     command: ["bash", "-lc", "pip install --no-cache-dir -r requirements.txt && bash startup.sh"]
