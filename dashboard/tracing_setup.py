@@ -72,10 +72,10 @@ def enable_auto_instrumentation() -> None:
         HTTPXInstrumentor = None
         try:
             from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor as HTTPXInstrumentor
-        except Exception:
+        except ImportError:
             try:
                 from opentelemetry.instrumentation.httpx import HttpxInstrumentor as HTTPXInstrumentor
-            except Exception:
+            except ImportError:
                 HTTPXInstrumentor = None
 
         from opentelemetry.instrumentation.requests import RequestsInstrumentor
