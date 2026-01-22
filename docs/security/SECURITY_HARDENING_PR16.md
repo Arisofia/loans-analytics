@@ -22,7 +22,6 @@ brittleness** identified in the codebase:
 - OpenAI API Key (billing exposure)
 - Anthropic API Key (billing exposure)
 
-
 ### Remediation
 
 #### Step 1: Remove from Git History
@@ -34,7 +33,6 @@ brew install bfg
 # Create file with patterns to remove
 cat > /tmp/secrets.txt <<'SECRETS'
 # Secrets must be set via environment variables or GitHub Secrets. See documentation for details.
-
 SECRETS
 
 # Remove all matches
@@ -52,7 +50,6 @@ git push -f origin main
 - [ ] Azure: Regenerate Client Secret in Azure Portal
 - [ ] OpenAI: Deactivate exposed key, create new one
 - [ ] Anthropic: Deactivate exposed key, create new one
-
 
 #### Step 3: Use GitHub Secrets
 
@@ -199,7 +196,6 @@ class SecretsManager:
     OPTIONAL = [
         "GEMINI_API_KEY",
         "PERPLEXITY_API_KEY",
-        "HUBSPOT_API_KEY",
     ]
 
     @classmethod

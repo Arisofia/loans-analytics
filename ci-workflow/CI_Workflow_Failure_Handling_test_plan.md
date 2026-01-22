@@ -78,9 +78,7 @@ Parallel Execution → Failure Detection → Notification → Cleanup
 - **External Services**: 
   - Vercel account with API token
   - Supabase project with credentials
-  - HubSpot account with API key
   - Azure subscription with SWA resources
-  - Figma file with API access
 
 ### **Environment Variables & Secrets**
 
@@ -88,17 +86,15 @@ Parallel Execution → Failure Detection → Notification → Cleanup
 REQUIRED SECRETS:
 - VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
 - SLACK_WEBHOOK_URL
-- FIGMA_TOKEN, FIGMA_FILE_KEY, ANALYTICS_URL
 - NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
 - AWS_S3_BUCKET, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-- HUBSPOT_API_KEY
 - AZURE_CREDENTIALS (if applicable)
 ```
 
 ### **Test Data**
 
 - Sample CSV files (10MB, 100MB, 1GB)
-- Mock API responses (HubSpot, Supabase)
+- Mock API responses (Supabase)
 - Configuration files (valid + invalid schemas)
 - Database fixtures (dev, staging, production)
 
@@ -128,7 +124,6 @@ REQUIRED SECRETS:
 - [ ] Analytics tests pass with >90% coverage
 - [ ] Linting rules enforce consistently across all jobs
 - [ ] Vercel deployment succeeds on main branch pushes
-- [ ] Figma sync skips gracefully when secrets unavailable
 - [ ] Retry logic activates on transient failures
 - [ ] Error messages are clear and actionable
 - [ ] Coverage artifacts upload successfully

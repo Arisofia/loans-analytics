@@ -1,17 +1,17 @@
 # FI-ANALYTICS: Analytics Pipeline Test Cases (Sprint 1)
 
 ## Test Case ID: FI-ANALYTICS-C-01
-**Test Case Title**: Figma KPI Table Sync - Success Path
+**Test Case Title**: Notion KPI Table Sync - Success Path
 **Priority**: Critical
 **Type**: Functional
-**Preconditions**: Valid `FIGMA_TOKEN` and `FIGMA_FILE_KEY` provided in environment.
-**Tags**: #integration #figma
+**Preconditions**: Valid `NOTION_TOKEN` and `NOTION_DATABASE_ID` provided in environment.
+**Tags**: #integration #notion
 **Test Data Requirements**: `kpi_results.json` from Sprint 0.
 **Parameters**: N/A
 **Test Steps - Data - Expected Result**
-1. Trigger Figma sync script with valid KPI JSON - `kpi_results.json` - Script exits code 0
-2. Verify API call to Figma contains correct payload - `{"name": "Total Receivable", "value": "4.16M"}` - POST request matches expected JSON structure
-3. Mock 200 OK response from Figma - N/A - Log message: "Figma update successful"
+1. Trigger Notion sync script with valid KPI JSON - `kpi_results.json` - Script exits code 0
+2. Verify API call to Notion contains correct payload - `{"name": "Total Receivable", "value": "4.16M"}` - POST request matches expected JSON structure
+3. Mock 200 OK response from Notion - N/A - Log message: "Notion update successful"
 
 ---
 

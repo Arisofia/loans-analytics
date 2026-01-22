@@ -2,10 +2,9 @@
 
 |ID|Title|Priority|Type|Automation Candidate|Pass|
 |---|---|---|---|---|---|
-|C-01|Figma KPI Table Sync Success|Critical|Functional|Yes| [ ] |
-|C-02|Notion Database Update Persistence|High|Functional|Yes| [ ] |
-|C-03|Meta Integration Data Fetching|High|Functional|Yes| [ ] |
-|C-04|Integration Failure Graceful Exit|Medium|Functional|Yes| [ ] |
+|C-01|Notion Database Update Persistence|High|Functional|Yes| [ ] |
+|C-02|Meta Integration Data Fetching|High|Functional|Yes| [ ] |
+|C-03|Integration Failure Graceful Exit|Medium|Functional|Yes| [ ] |
 |D-01|OTLP Span Generation for Pipeline Stages|High|Performance|Yes| [ ] |
 |D-02|Trace ID Propagation across Modules|Medium|Performance|Yes| [ ] |
 |F-01|Secret Masking in Standard Output|Critical|Security|Yes| [ ] |

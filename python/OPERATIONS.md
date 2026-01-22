@@ -33,7 +33,6 @@ make install-dev
 1. Copy `.env.example` to `.env`.
 2. Configure mandatory variables:
    - `APPLICATIONINSIGHTS_CONNECTION_STRING`: For Azure tracing.
-   - `HUBSPOT_API_KEY`: For customer data integration.
    - `DATABASE_URL`: Connection string for the analytical database (PostgreSQL/Supabase).
 
 ---
@@ -47,7 +46,6 @@ make analytics-run
 ```
 **Outputs**:
 - `exports/complete_kpi_dashboard.json`: Consolidated KPI results.
-- `exports/analytics_facts.csv`: Data feed for Figma dashboards.
 - `exports/quarterly_scorecard.csv`: Executive performance summary.
 
 ### Generating Executive Reports

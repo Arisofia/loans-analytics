@@ -44,7 +44,6 @@
 | CI-FH-025 | Secret sanitization removes placeholder values | Critical | Security | Yes | ☐ |
 | CI-FH-026 | Vercel secrets validation detects missing tokens | High | Functional | Yes | ☐ |
 | CI-FH-027 | AWS secrets validation detects missing credentials | High | Functional | Yes | ☐ |
-| CI-FH-029 | Figma API validation skips gracefully without secrets | Medium | Functional | Yes | ☐ |
 | CI-FH-030 | Supabase credentials are injected correctly | High | Functional | Yes | ☐ |
 | **FAILURE DETECTION & REPORTING** |
 | CI-FH-031 | Web build failure triggers failure notification | Critical | Functional | Yes | ☐ |
@@ -54,8 +53,6 @@
 | CI-FH-037 | Vercel deployment skips when secrets missing | High | Functional | Yes | ☐ |
 | CI-FH-038 | Vercel deploy handles auth failures gracefully | High | Functional | Partial | ☐ |
 | CI-FH-039 | AWS S3 upload skips when credentials invalid | High | Functional | Yes | ☐ |
-| CI-FH-040 | Figma sync skips when API key invalid | Medium | Functional | Yes | ☐ |
-| CI-FH-041 | HubSpot integration retries on network timeout | High | Functional | Partial | ☐ |
 | CI-FH-042 | Supabase connection handles rate limiting | Medium | Functional | Partial | ☐ |
 | **RETRY & RECOVERY** |
 | CI-FH-043 | Transient failures trigger automatic retry (3x) | High | Functional | Partial | ☐ |

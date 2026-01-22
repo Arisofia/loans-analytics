@@ -8,7 +8,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for setting up all secrets required by the batch export pipelines and output integrations to Figma, Azure, Supabase, Meta, and Notion.
+This guide provides step-by-step instructions for setting up all secrets required by the batch export pipelines and output integrations to Azure, Supabase, Meta, and Notion.
 
 **Note**: Never commit secrets to the repository. All credentials should be stored in GitHub Actions Secrets only.
 
@@ -249,27 +249,7 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 ---
 
-### 8. Figma Additional Configuration
-
-#### 8a. Figma Node ID (Optional)
-
-**Environment Variable**: `FIGMA_DASHBOARD_FRAME_ID`
-
-**How to get**:
-
-1. Open your Figma file
-2. Right-click on the frame where you want metric updates
-3. Copy "Link to frame" and extract the node ID
-
-**To Add** (optional):
-
-- Name: `FIGMA_DASHBOARD_FRAME_ID`
-
----
-
-### 9. Other Integration Secrets
-
-#### HubSpot
+### 8. Other Integration Secrets
 
 #### OpenAI
 
@@ -300,11 +280,6 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
   - [ ] `NOTION_DATABASE_ID` - Analytics metrics database
   - [ ] `NOTION_REPORTS_PAGE_ID` - Reports page
 
-- [ ] **Figma Secrets Added**
-  - [ ] `FIGMA_TOKEN` - Already configured
-  - [ ] `FIGMA_FILE_KEY` - Already configured
-  - [ ] `FIGMA_DASHBOARD_FRAME_ID` - (Optional)
-
 ---
 
 ## 🚀 Quick Setup Commands
@@ -325,8 +300,6 @@ Before deploying to production:
 export DATABASE_URL="postgres://..."
 export SUPABASE_URL="https://..."
 export SUPABASE_SERVICE_ROLE="..."
-export FIGMA_TOKEN="figd-..."
-export FIGMA_FILE_KEY="..."
 export META_ACCESS_TOKEN="..."
 export NOTION_API_KEY="..."
 export AZURE_STORAGE_CONNECTION_STRING="..."
@@ -351,7 +324,7 @@ All secrets should be rotated on a regular basis:
 | AZURE_CREDENTIALS | 90 days | Run `az ad sp create-for-rbac` again |
 | OPENAI_API_KEY | 90 days | Generate new key in OpenAI → API Keys |
 | NOTION_API_KEY | 180 days | Regenerate in Notion → Integrations |
-| FIGMA_TOKEN | 180 days | Generate new token in Figma account settings |
+| AZURE_STORAGE_CONNECTION_STRING | 180 days | Rotate key in Azure Portal |
 
 ---
 

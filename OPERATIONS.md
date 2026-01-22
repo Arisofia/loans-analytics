@@ -26,7 +26,6 @@ generates executive reports.
 - `AZURE_STORAGE_CONNECTION_STRING`: Required for Azure Blob storage outputs.
 - `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE`: Required for database sync.
 - `NOTION_TOKEN` / `NOTION_REPORTS_PAGE_ID`: Required for Notion reporting.
-- `FIGMA_TOKEN` / `FIGMA_FILE_KEY`: Required for Figma dashboard updates.
 
 ## 3. Quality & Code Standards
 

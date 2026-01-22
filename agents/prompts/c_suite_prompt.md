@@ -24,7 +24,7 @@ Steps:
 
 Return JSON:
 {
-  "figma_deck_plan": { ... },
+  "exec_summary_plan": { ... },
   "notion_exec_summary": "markdown string",
   "trace": {
      "sql_queries": ["<sql>"],

@@ -182,7 +182,7 @@ Sprint 0 is production-ready for GitHub Actions PR validation:
    - Create manually if needed: `tests/data/archives/sample_null_zeros.csv`
 
 3. **Mock Services Not Included**
-   - Figma, Notion, Meta, OTLP mocks are **Sprint 1 deliverables**
+   - Notion, Meta, OTLP mocks are **Sprint 1 deliverables**
 
 4. **Performance Benchmarking**
    - Performance test (B-03) deferred to Sprint 2 (requires larger dataset)
@@ -191,7 +191,7 @@ Sprint 0 is production-ready for GitHub Actions PR validation:
 ### Sprint 1 Preview (Integration & Tracing)
 
 Next sprint adds:
-- **Integration tests** (C-01 to C-04): Mock Figma, Notion, Meta APIs
+- **Integration tests** (C-01 to C-04): Mock Notion, Meta APIs
 - **Tracing tests** (D-01, D-02): OTLP collector validation
 - **Security tests** (F-01, F-02): Secret leakage audit
 - **Estimated effort**: 12 hours
