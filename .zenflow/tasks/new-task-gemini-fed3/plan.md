@@ -15,6 +15,7 @@
 - [ ] Run existing tests and linters to baseline current state.
 
 ### [ ] Step: Correction and Robustization Phase
+<!-- chat-id: d6f82782-8dfe-4b3a-92c0-749028285def -->
 - [ ] **Python Code**: Fix bugs, add type hints, improve error handling (apps/analytics, streamlit_app, notebooks).
 - [ ] **Frontend**: Optimize Next.js performance, fix TS errors, add accessibility.
 - [ ] **SQL/Data**: Optimize queries, ensure KPI views handle edge cases, remove legacy SQL Server refs.

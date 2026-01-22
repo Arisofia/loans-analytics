@@ -125,7 +125,7 @@ def validate_dataframe(
         missing = [col for col in required_columns if col not in df.columns]
         if missing:
             if len(missing) == 1:
-                raise ValueError(f"Missing required column: {missing[0]}")
+                raise ValueError(f"Missing required columns: {missing[0]}")
             raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
     if numeric_columns:

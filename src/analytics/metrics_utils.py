@@ -179,7 +179,7 @@ def _data_quality_metrics(loan_data: pd.DataFrame) -> Dict[str, float]:
     }
 
 
-def portfolio_kpis(loan_data: pd.DataFrame, return_enriched: bool = False) -> Any:
+def portfolio_kpis(loan_data: pd.DataFrame, return_enriched: bool = True) -> Any:
     """
     Aggregate portfolio KPIs used across analytics modules.
 
@@ -264,6 +264,6 @@ def calculate_quality_score(df: pd.DataFrame) -> float:
     Score = (1 - average_null_ratio) * 100
     """
     if df.empty:
-        return 0.0
+        return 0
     null_ratio = df.isna().mean().mean()
-    return float((1.0 - null_ratio) * 100)
+    return int((1.0 - null_ratio) * 100)
