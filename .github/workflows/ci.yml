@@ -46,16 +46,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
       - name: Install validation tools
         run: |
           pip install black isort nbqa nbformat yamllint
-          
       - name: Run validation script
         run: |
           bash scripts/validate_all.sh
