@@ -1,55 +1,103 @@
 #!/usr/bin/env python3
 """Generate Executive Summary Report from Real Loan Data."""
 
-import pandas as pd
+import json
+import logging
 from datetime import datetime
 from pathlib import Path
-import json
+
+import pandas as pd
+
+try:
+    from src.azure_tracing import setup_azure_tracing
+
+    logger, _ = setup_azure_tracing()
+    logger.info("Azure tracing initialized for generate_executive_report")
+except (ImportError, Exception) as tracing_err:
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logger.warning("Azure tracing not initialized: %s", tracing_err)
+
 
 def load_and_analyze_loans():
     """Load loan data and generate comprehensive analysis."""
     data_path = Path(__file__).parent / "data" / "raw" / "looker_exports" / "loans.csv"
-    
+
     df = pd.read_csv(data_path)
-    
+
     # Clean numeric columns
-    numeric_cols = ['outstanding_balance', 'disburse_principal', 'interest_rate', 'dpd', 'term']
+    numeric_cols = [
+        "outstanding_balance",
+        "disburse_principal",
+        "interest_rate",
+        "dpd",
+        "term",
+    ]
     for col in numeric_cols:
-        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-    
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
     return df
+
 
 def calculate_metrics(df):
     """Calculate all key metrics."""
     metrics = {
         # Portfolio Metrics
-        'total_loans': len(df),
-        'active_loans': len(df[df['loan_status'] != 'Complete']),
-        'unique_customers': df['customer_id'].nunique(),
-        'total_principal_usd': df['disburse_principal'].sum(),
-        'outstanding_balance_usd': df['outstanding_balance'].sum(),
-        
+        "total_loans": len(df),
+        "active_loans": len(df[df["loan_status"] != "Complete"]),
+        "unique_customers": df["customer_id"].nunique(),
+        "total_principal_usd": df["disburse_principal"].sum(),
+        "outstanding_balance_usd": df["outstanding_balance"].sum(),
         # Financial Metrics
-        'collection_rate_pct': (1 - (df['outstanding_balance'].sum() / df['disburse_principal'].sum())) * 100 if df['disburse_principal'].sum() > 0 else 0,
-        'avg_interest_rate_pct': df['interest_rate'].mean() * 100,
-        'avg_loan_size_usd': df['disburse_principal'].mean(),
-        'weighted_avg_term_days': (df['term'] * df['disburse_principal']).sum() / df['disburse_principal'].sum() if df['disburse_principal'].sum() > 0 else 0,
-        
+        "collection_rate_pct": (
+            (1 - (df["outstanding_balance"].sum() / df["disburse_principal"].sum()))
+            * 100
+            if df["disburse_principal"].sum() > 0
+            else 0
+        ),
+        "avg_interest_rate_pct": df["interest_rate"].mean() * 100,
+        "avg_loan_size_usd": df["disburse_principal"].mean(),
+        "weighted_avg_term_days": (
+            (df["term"] * df["disburse_principal"]).sum()
+            / df["disburse_principal"].sum()
+            if df["disburse_principal"].sum() > 0
+            else 0
+        ),
         # Risk Metrics
-        'dpd_30_plus_count': len(df[df['dpd'] >= 30]),
-        'dpd_90_plus_count': len(df[df['dpd'] >= 90]),
-        'dpd_30_rate_pct': (len(df[df['dpd'] >= 30]) / len(df)) * 100,
-        'dpd_90_rate_pct': (len(df[df['dpd'] >= 90]) / len(df)) * 100,
-        'par_90_balance_usd': df[df['dpd'] >= 90]['outstanding_balance'].sum(),
-        'par_90_ratio_pct': (df[df['dpd'] >= 90]['outstanding_balance'].sum() / df['outstanding_balance'].sum() * 100) if df['outstanding_balance'].sum() > 0 else 0,
-        
+        "dpd_30_plus_count": len(df[df["dpd"] >= 30]),
+        "dpd_90_plus_count": len(df[df["dpd"] >= 90]),
+        "dpd_30_rate_pct": (len(df[df["dpd"] >= 30]) / len(df)) * 100,
+        "dpd_90_rate_pct": (len(df[df["dpd"] >= 90]) / len(df)) * 100,
+        "par_90_balance_usd": df[df["dpd"] >= 90]["outstanding_balance"].sum(),
+        "par_90_ratio_pct": (
+            (
+                df[df["dpd"] >= 90]["outstanding_balance"].sum()
+                / df["outstanding_balance"].sum()
+                * 100
+            )
+            if df["outstanding_balance"].sum() > 0
+            else 0
+        ),
         # Portfolio Composition
-        'product_breakdown': df['product_type'].value_counts().to_dict() if 'product_type' in df.columns else {},
-        'status_breakdown': df['loan_status'].value_counts().to_dict() if 'loan_status' in df.columns else {},
-        'top_locations': df['location_state_province'].value_counts().head(5).to_dict() if 'location_state_province' in df.columns else {},
+        "product_breakdown": (
+            df["product_type"].value_counts().to_dict()
+            if "product_type" in df.columns
+            else {}
+        ),
+        "status_breakdown": (
+            df["loan_status"].value_counts().to_dict()
+            if "loan_status" in df.columns
+            else {}
+        ),
+        "top_locations": (
+            df["location_state_province"].value_counts().head(5).to_dict()
+            if "location_state_province" in df.columns
+            else {}
+        ),
     }
-    
+
     return metrics
+
 
 def generate_html_report(metrics, df):
     """Generate HTML executive report."""
@@ -215,10 +263,10 @@ def generate_html_report(metrics, df):
                         <div class="metric-value">${metrics['total_principal_usd']/1_000_000:.1f}M</div>
                     </div>
                 </div>
-                
+
                 <div class="summary-box">
                     <strong>Portfolio Composition:</strong>
-                    <p>The loan portfolio comprises {metrics['total_loans']:,} loans distributed across {len(metrics['product_breakdown'])} product types, 
+                    <p>The loan portfolio comprises {metrics['total_loans']:,} loans distributed across {len(metrics['product_breakdown'])} product types,
                     serving {metrics['unique_customers']:,} unique customers with total principal disbursement of ${metrics['total_principal_usd']:,.0f}.</p>
                 </div>
             </section>
@@ -244,7 +292,7 @@ def generate_html_report(metrics, df):
                         <div class="metric-value">${metrics['avg_loan_size_usd']:,.0f}</div>
                     </div>
                 </div>
-                
+
                 <table>
                     <thead>
                         <tr>
@@ -294,9 +342,9 @@ def generate_html_report(metrics, df):
                         <div class="metric-value">${metrics['par_90_balance_usd']:,.0f}</div>
                     </div>
                 </div>
-                
+
                 {'<div class="alert danger"><strong>⚠️ Alert:</strong> PAR 90 ratio exceeds 5%. Recommend immediate action on delinquent accounts.</div>' if metrics['par_90_ratio_pct'] > 5 else ''}
-                
+
                 <table>
                     <thead>
                         <tr>
@@ -343,7 +391,7 @@ def generate_html_report(metrics, df):
                         </tr>
                     </thead>
                     <tbody>
-                        {''.join([f'<tr><td>{product}</td><td>{count:,}</td><td>{(count/metrics["total_loans"]*100):.1f}%</td></tr>' 
+                        {''.join([f'<tr><td>{product}</td><td>{count:,}</td><td>{(count/metrics["total_loans"]*100):.1f}%</td></tr>'
                                  for product, count in sorted(metrics['product_breakdown'].items(), key=lambda x: x[1], reverse=True)])}
                     </tbody>
                 </table>
@@ -361,7 +409,7 @@ def generate_html_report(metrics, df):
                         </tr>
                     </thead>
                     <tbody>
-                        {''.join([f'<tr><td>{location}</td><td>{count:,}</td><td>{(count/metrics["total_loans"]*100):.1f}%</td></tr>' 
+                        {''.join([f'<tr><td>{location}</td><td>{count:,}</td><td>{(count/metrics["total_loans"]*100):.1f}%</td></tr>'
                                  for location, count in sorted(metrics['top_locations'].items(), key=lambda x: x[1], reverse=True)])}
                     </tbody>
                 </table>
@@ -390,31 +438,32 @@ def generate_html_report(metrics, df):
     </body>
     </html>
     """
-    
+
     return html
+
 
 def main():
     """Generate and save the executive report."""
     print("📊 Loading loan data...")
     df = load_and_analyze_loans()
     print(f"✅ Loaded {len(df):,} loans")
-    
+
     print("📈 Calculating metrics...")
     metrics = calculate_metrics(df)
     print(f"✅ Calculated {len(metrics)} metrics")
-    
+
     print("📝 Generating HTML report...")
     html = generate_html_report(metrics, df)
-    
+
     # Save HTML report
     report_path = Path(__file__).parent / "exports" / "ABACO_Executive_Report.html"
     report_path.parent.mkdir(exist_ok=True)
     report_path.write_text(html)
     print(f"✅ Report saved: {report_path}")
-    
+
     # Save metrics as JSON for dashboard
     metrics_json_path = Path(__file__).parent / "exports" / "portfolio_metrics.json"
-    with open(metrics_json_path, 'w') as f:
+    with open(metrics_json_path, "w") as f:
         # Convert non-serializable types
         metrics_copy = metrics.copy()
         for key in metrics_copy:
@@ -424,11 +473,11 @@ def main():
                 metrics_copy[key] = str(metrics_copy[key])
         json.dump(metrics_copy, f, indent=2, default=str)
     print(f"✅ Metrics saved: {metrics_json_path}")
-    
+
     # Print summary to console
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("📊 EXECUTIVE SUMMARY")
-    print("="*60)
+    print("=" * 60)
     print(f"Total Loans: {metrics['total_loans']:,}")
     print(f"Total Principal: ${metrics['total_principal_usd']:,.0f}")
     print(f"Outstanding Balance: ${metrics['outstanding_balance_usd']:,.0f}")
@@ -436,9 +485,10 @@ def main():
     print(f"30+ DPD Rate: {metrics['dpd_30_rate_pct']:.2f}%")
     print(f"90+ DPD Rate: {metrics['dpd_90_rate_pct']:.2f}%")
     print(f"PAR 90 Ratio: {metrics['par_90_ratio_pct']:.2f}%")
-    print("="*60 + "\n")
-    
+    print("=" * 60 + "\n")
+
     return report_path
+
 
 if __name__ == "__main__":
     report_path = main()

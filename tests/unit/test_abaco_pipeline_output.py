@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from python.abaco_pipeline.output.manifests import RunManifest, write_manifest
+from src.abaco_pipeline.output.manifests import RunManifest, write_manifest
 
 
 def test_write_manifest_writes_json(tmp_path):

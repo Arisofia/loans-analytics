@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from python.pipeline.data_validation import assert_dataframe_schema
+from src.pipeline.data_validation import assert_dataframe_schema
 
 
 def test_assert_dataframe_schema_detects_missing_columns():

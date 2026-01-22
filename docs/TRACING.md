@@ -4,7 +4,7 @@ OpenTelemetry (OTEL) distributed tracing captures HTTP requests, database querie
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────┐
 │  Streamlit Dashboard    │
 │  (dashboard/app.py)     │
@@ -95,7 +95,7 @@ export LOG_LEVEL=DEBUG
 
 Or add to `.env`:
 
-```
+```text
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 LOG_LEVEL=DEBUG
 ```
@@ -183,7 +183,7 @@ Wrap your own code with spans:
 
 ```python
 from tracing_setup import get_tracer  # dashboard (dashboard/tracing_setup.py)
-# from python.tracing_setup import get_tracer  # pipeline modules
+# from src.tracing_setup import get_tracer  # pipeline modules
 
 tracer = get_tracer(__name__)
 
@@ -191,10 +191,10 @@ def my_business_logic():
     with tracer.start_as_current_span("process_loan_data") as span:
         span.set_attribute("loan.id", loan_id)
         span.set_attribute("loan.status", "processing")
-        
+
         # Your code here
         result = process_loan(loan_id)
-        
+
         span.set_attribute("loan.status", "completed")
         return result
 ```
@@ -203,19 +203,19 @@ def my_business_logic():
 
 ### Environment Variables
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318` | OTLP exporter endpoint |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | (unset) | Azure App Insights connection |
-| `LOG_LEVEL` | `INFO` | Logging verbosity |
-| `OTEL_SDK_DISABLED` | `false` | Disable tracing globally |
+| Variable                                | Default                 | Purpose                       |
+| --------------------------------------- | ----------------------- | ----------------------------- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`           | `http://localhost:4318` | OTLP exporter endpoint        |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | (unset)                 | Azure App Insights connection |
+| `LOG_LEVEL`                             | `INFO`                  | Logging verbosity             |
+| `OTEL_SDK_DISABLED`                     | `false`                 | Disable tracing globally      |
 
 ### Code Configuration
 
-In `python/tracing_setup.py`:
+In `src/tracing_setup.py`:
 
 ```python
-from python.tracing_setup import init_tracing
+from src.tracing_setup import init_tracing
 
 # Initialize with custom endpoint
 init_tracing(
@@ -239,7 +239,7 @@ init_tracing(
 2. **Verify tracing initialization**:
 
    ```bash
-   python -c "from python.tracing_setup import init_tracing; init_tracing(); print('OK')"
+   python -c "from src.tracing_setup import init_tracing; init_tracing(); print('OK')"
    ```
 
 3. **Enable debug logging**:
@@ -282,28 +282,23 @@ If HTTP or database calls aren't traced:
 3. Check that imports happen **after** instrumentation:
 
    ```python
-   from python.tracing_setup import init_tracing, enable_auto_instrumentation
+   from src.tracing_setup import init_tracing, enable_auto_instrumentation
    init_tracing()
    enable_auto_instrumentation()
-   
+
    import httpx  # Must be after instrumentation!
    ```
 
 ## Examples
 
-### Trace an HTTP call to Cascade API
-
 ```python
-from python.tracing_setup import get_tracer
+from src.tracing_setup import get_tracer
 import httpx
 
 tracer = get_tracer(__name__)
 
-async def fetch_cascade_data():
-    with tracer.start_as_current_span("cascade_fetch") as span:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                "https://api.cascadedebt.com/data",
                 headers={"Authorization": f"Bearer {TOKEN}"}
             )
             span.set_attribute("http.status_code", response.status_code)
@@ -313,14 +308,13 @@ async def fetch_cascade_data():
 The HTTP call will be automatically instrumented with attributes like:
 
 - `http.method` = GET
-- `http.url` = <https://api.cascadedebt.com/data>
 - `http.status_code` = 200
 - `http.duration_ms` = 145
 
 ### Trace a database query
 
 ```python
-from python.tracing_setup import get_tracer
+from src.tracing_setup import get_tracer
 import psycopg
 
 tracer = get_tracer(__name__)
@@ -329,11 +323,11 @@ def fetch_kpi_values():
     with tracer.start_as_current_span("fetch_kpis") as span:
         conn = psycopg.connect(os.getenv("DATABASE_URL"))
         cursor = conn.cursor()
-        
+
         # This query will be auto-instrumented
         cursor.execute("SELECT * FROM kpi_values WHERE as_of = %s", (today,))
         rows = cursor.fetchall()
-        
+
         span.set_attribute("db.rows_fetched", len(rows))
         return rows
 ```
@@ -353,7 +347,7 @@ The query will be automatically traced with:
 
    ```python
    from opentelemetry.trace import Status, StatusCode
-   
+
    try:
        process_loan()
    except Exception as e:
@@ -367,7 +361,7 @@ The query will be automatically traced with:
 
 ## References
 
-- [OpenTelemetry Python](https://opentelemetry.io/docs/instrumentation/python/)
+- [OpenTelemetry Python](https://opentelemetry.io/docs/instrumentation/src/)
 - [Azure Application Insights with OpenTelemetry](https://learn.microsoft.com/en-us/azure/azure-monitor/app/opentelemetry-enable)
 - [OTEL Collector Configuration](https://opentelemetry.io/docs/collector/configuration/)
 - [Jaeger Documentation](https://www.jaegertracing.io/docs/)

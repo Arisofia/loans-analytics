@@ -6,7 +6,7 @@ This guide lists the **exact GitHub Actions secrets** referenced by workflows in
 
 - Never paste secret values into PRs/issues/logs.
 - Prefer **Repository secrets** for shared production workflows.
-- For environment separation, use *distinct* secrets for staging vs production (already supported by `apps/web` workflows).
+- For environment separation, use _distinct_ secrets for staging vs production (already supported by `apps/web` workflows).
 - If using GitHub CLI, ensure your token has permission to manage Actions secrets.
 
 ## Quick-start (minimum for “core operations”)
@@ -33,9 +33,9 @@ If you see `Resource not accessible by personal access token`:
 gh auth refresh -s repo,workflow
 ```
 
-2. If the repo is in an org with SSO, authorize the token for that org.
+1. If the repo is in an org with SSO, authorize the token for that org.
 
-3. Retry with an explicit repo target:
+2. Retry with an explicit repo target:
 
 ```bash
 gh secret set <NAME> --repo <OWNER>/<REPO>
@@ -57,7 +57,7 @@ Used by `.github/workflows/deploy-dashboard.yml`.
 
 **How to create App Service deploy secrets**
 
-1) Enable basic auth for SCM and FTP (required to view publish profiles):
+1. Enable basic auth for SCM and FTP (required to view publish profiles):
 
 ```bash
 az resource update --resource-group "<RESOURCE_GROUP>" --name "<APP_NAME>/scm" \
@@ -69,7 +69,7 @@ az resource update --resource-group "<RESOURCE_GROUP>" --name "<APP_NAME>/ftp" \
   --set properties.allow=true
 ```
 
-2) Generate publish profile and store as a repo secret:
+1. Generate publish profile and store as a repo secret:
 
 ```bash
 az webapp deployment list-publishing-profiles \
@@ -80,7 +80,7 @@ az webapp deployment list-publishing-profiles \
 gh secret set AZURE_WEBAPP_PUBLISH_PROFILE -f publishProfile.xml
 ```
 
-3) Create a service principal (used by `AZURE_CREDENTIALS`) and store as a repo secret:
+1. Create a service principal (used by `AZURE_CREDENTIALS`) and store as a repo secret:
 
 ```bash
 az ad sp create-for-rbac \
@@ -153,7 +153,7 @@ Common across parity checks and ingestion pipelines.
 
 - `SUPABASE_URL` / `SUPABASE_ANON_PUBLIC_KEY`
   - Purpose: Some scheduled workflows use this pair (distinct from the `apps/web` PROD/STAGING naming).
-  - Used by: `.github/workflows/supabase-figma-scheduled.yml`.
+  # ...existing code...
 
 ### D) Meta / Marketing
 
@@ -164,21 +164,16 @@ Common across parity checks and ingestion pipelines.
 - `META_AD_ACCOUNT_ID`
   - Used by: `.github/workflows/meta-export.yml`, `.github/workflows/brand-monitoring.yml`.
 
-### E) HubSpot / Cascade
-
 Used by ingestion / unified pipeline workflows.
 
-- `CASCADE_USERNAME`
-- `CASCADE_PASSWORD`
-  - Used by: `.github/workflows/cascade_ingest.yml`, `.github/workflows/daily-ingest.yml`.
+# ...existing code...
 
-- `HUBSPOT_API_KEY` or `HUBSPOTTOKEN`
-  - Note: both naming styles exist across workflows; standardize later.
+- Note: both naming styles exist across workflows; standardize later.
 
 ### F) Notifications / Observability / QA
 
-- `SLACK_WEBHOOK_URL`, `SLACK_WEBHOOK_OPS`, `SLACK_WEBHOOK_LEADERSHIP`
-- `SLACK_BOT_TOKEN`
+# ...existing code...
+
 - `OPIK_TOKEN` / `OPIKTOKEN`
 - `PHOENIX_TOKEN`
 
@@ -195,11 +190,7 @@ Used by ingestion / unified pipeline workflows.
 - `TAVILY_KEY`
 - `CLAUDE_ROCKET_TOKEN`
 
-### I) Figma
-
-- `FIGMA_TOKEN`
-- `FIGMA_FILE_KEY`
-- `FIGMA_NODE_ID` (some workflows)
+# ...existing code...
 
 ### J) Vercel (if using `.github/workflows/deploy.yml`)
 

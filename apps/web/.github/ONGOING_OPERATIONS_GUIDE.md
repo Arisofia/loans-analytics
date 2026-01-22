@@ -1,8 +1,8 @@
 # Ongoing Operations Guide - Week 4 and Beyond
 
-**Version**: 2.0  
-**Date**: 2025-12-26  
-**Audience**: DevOps, QA, Developers, Tech Lead  
+**Version**: 2.0
+**Date**: 2025-12-26
+**Audience**: DevOps, QA, Developers, Tech Lead
 **Duration**: Ongoing (30 min/day + weekly review)
 
 ---
@@ -12,6 +12,7 @@
 This guide covers operational procedures after Week 3 implementation is complete and Week 4 first production deployment has succeeded.
 
 **Topics**:
+
 - Daily monitoring procedures
 - Weekly operations review
 - Common operational issues
@@ -47,7 +48,7 @@ curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" \
 # Check: Latest version is still active
 ```
 
-**If all checks pass**: Continue normal work  
+**If all checks pass**: Continue normal work
 **If any check fails**: See troubleshooting section
 
 ### Continuous Monitoring (Ongoing)
@@ -55,18 +56,19 @@ curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" \
 Keep these tabs open during work hours:
 
 **Sentry Dashboard** (Active monitoring)
+
 - Check every 2 hours
 - Watch for error spikes
 - Monitor specific endpoints
 - Track error trends
 
 **GitHub Actions** (Deployment monitoring)
+
 - Check when PRs are merged
 - Watch CI pipeline completion
 - Verify no unexpected failures
 - Monitor build times
 
-**Slack Alerts** (Notification hub)
 - Watch #prod-alerts for notifications
 - Watch #incidents for critical issues
 - Respond to #dev-help questions
@@ -83,7 +85,7 @@ Before leaving:
 [ ] No incidents opened today (or all resolved)
 [ ] #prod-alerts has no outstanding issues
 
-If all checked: Good to go! 
+If all checked: Good to go!
 If any unchecked: Investigate before leaving
 ```
 
@@ -95,7 +97,8 @@ If any unchecked: Investigate before leaving
 
 Review last 7 days:
 
-**Uptime**: Track at https://status.page (if using external) or manually:
+**Uptime**: Track at <https://status.page> (if using external) or manually:
+
 ```bash
 # Last 7 days uptime percentage
 # Target: 99%+ (no more than ~14 minutes downtime)
@@ -112,6 +115,7 @@ Review last 7 days:
 ```
 
 **Response Times**: Check logs/monitoring:
+
 ```
 Average response time: < 500ms (target)
 95th percentile: < 1000ms (target)
@@ -126,6 +130,7 @@ Friday: 256ms avg ✅
 ```
 
 **Error Rate**:
+
 ```
 Target: < 0.1% errors
 Expected: 1-2 errors per 10,000 requests (or 0)
@@ -184,6 +189,7 @@ Trend Analysis:
 Check for feedback in:
 
 **#dev-help** - Read this week's questions
+
 ```
 Common questions asked:
 - [List 2-3 common questions]
@@ -191,6 +197,7 @@ Common questions asked:
 ```
 
 **GitHub Issues** - Check for labeled feedback
+
 ```
 Feedback issues (if using label "feedback"):
 - [Summary of suggestions]
@@ -198,6 +205,7 @@ Feedback issues (if using label "feedback"):
 ```
 
 **Direct Messages** - Check for team feedback
+
 ```
 Feedback received:
 - From [person]: [feedback]
@@ -280,6 +288,7 @@ Team:
 **Symptoms**: Sentry shows 100+ errors in last hour (unusual)
 
 **Immediate Steps** (< 5 min):
+
 1. Open Sentry dashboard
 2. Filter: "Last 1 hour"
 3. Check if errors are from same endpoint
@@ -287,6 +296,7 @@ Team:
 5. Determine if critical or benign
 
 **If Critical** (users affected):
+
 1. Page DevOps lead
 2. Check application logs
 3. Determine if rollback needed
@@ -294,6 +304,7 @@ Team:
 5. Create incident report
 
 **If Benign** (not user-impacting):
+
 1. Document error pattern
 2. Create GitHub issue to fix
 3. No rollback needed
@@ -305,6 +316,7 @@ Team:
 **Symptoms**: Average response time > 1 second (unusual)
 
 **Investigation**:
+
 1. Check Sentry for errors (might be causing slowness)
 2. Check monitoring graphs for time of issue
 3. Check if specific endpoint is slow
@@ -312,6 +324,7 @@ Team:
 5. Check for traffic spike
 
 **Solutions**:
+
 - If temporary spike: Wait for traffic to normalize
 - If persistent: Investigate and fix in code
 - If database issue: Scale database or optimize queries
@@ -322,6 +335,7 @@ Team:
 **Symptoms**: Approval gate stuck for > 10 minutes
 
 **Steps**:
+
 1. Refresh GitHub Actions page
 2. Navigate to specific workflow run
 3. Scroll to "Review deployments"
@@ -329,6 +343,7 @@ Team:
 5. If button doesn't appear, check environment settings
 
 **Prevention**:
+
 - Check GitHub environment "production" is configured
 - Verify approval rules are set
 - Test approval process in staging first
@@ -338,12 +353,14 @@ Team:
 **Symptoms**: Code merged to develop, but staging deploy didn't trigger
 
 **Investigation**:
+
 1. Check: Was merge to correct branch? (should be `develop`)
 2. Check: Did merge have actual code changes?
 3. Check: Are paths filtered in workflow? (check deploy-staging.yml)
 4. Check: Is deploy-staging.yml workflow enabled?
 
 **Solutions**:
+
 - Manual trigger: Go to Actions → deploy-staging → Run workflow
 - Check workflow file for path filters
 - Verify branch is correct
@@ -354,6 +371,7 @@ Team:
 **Symptoms**: CI passes locally, fails in GitHub Actions (random)
 
 **Common Causes**:
+
 1. Race conditions in tests
 2. Environment variable missing
 3. Port already in use
@@ -361,6 +379,7 @@ Team:
 5. Timing issue
 
 **Fix**:
+
 1. Run tests locally multiple times: `npm test -- --maxWorkers=1`
 2. Check GitHub Actions logs for specific error
 3. Add retries to flaky tests
@@ -374,6 +393,7 @@ Team:
 ### When to Create an Incident
 
 Create incident if:
+
 - [ ] Production is down (HTTP != 200)
 - [ ] Error rate > 5%
 - [ ] Critical feature broken
@@ -382,6 +402,7 @@ Create incident if:
 - [ ] Performance degraded > 50%
 
 Do NOT create incident for:
+
 - [ ] Minor bug in non-critical feature
 - [ ] Cosmetic UI issue
 - [ ] Single error event
@@ -392,13 +413,14 @@ Do NOT create incident for:
 **Definition**: Production down or critical feature completely broken
 
 **Actions** (First 5 minutes):
+
 1. [ ] Page on-call team immediately
 2. [ ] Create incident in #incidents
 3. [ ] Determine rollback vs fix
 4. [ ] Execute rollback if needed (< 5 min)
-5. [ ] Establish war room (Slack thread or call)
 
 **During Incident** (Ongoing):
+
 1. [ ] Post updates every 5 minutes
 2. [ ] Coordinate fix team
 3. [ ] Deploy fix or rollback
@@ -406,6 +428,7 @@ Do NOT create incident for:
 5. [ ] Monitor for 15 minutes
 
 **After Incident** (Within 2 hours):
+
 1. [ ] Post all-clear notification
 2. [ ] Schedule post-mortem (within 24 hours)
 3. [ ] Create action items
@@ -419,6 +442,7 @@ Do NOT create incident for:
 **Response Time**: < 30 minutes to response
 
 **Actions**:
+
 1. [ ] Create GitHub issue with "incident" label
 2. [ ] Post in #incidents
 3. [ ] Coordinate fix with team
@@ -434,6 +458,7 @@ Do NOT create incident for:
 **Response Time**: < 4 hours
 
 **Actions**:
+
 1. [ ] Create GitHub issue
 2. [ ] Plan fix in sprint
 3. [ ] Communicate workaround (if exists)
@@ -446,6 +471,7 @@ Do NOT create incident for:
 **Response Time**: Next sprint
 
 **Actions**:
+
 1. [ ] Create GitHub issue
 2. [ ] Add to backlog
 3. [ ] Schedule fix
@@ -460,6 +486,7 @@ Do NOT create incident for:
 First Friday of each month, review:
 
 **Load Testing Results**:
+
 ```
 Simulate: 100 concurrent users
 Measure:
@@ -475,6 +502,7 @@ If exceeding targets:
 ```
 
 **Database Query Performance**:
+
 ```
 Check slow query logs:
 - Queries > 1 second: [list]
@@ -489,6 +517,7 @@ Actions:
 ```
 
 **Client-Side Performance**:
+
 ```
 Measure with Lighthouse:
 - Performance score: [0-100]
@@ -520,6 +549,7 @@ WEEKLY AVG   | 99.97%  | 258ms   | 0.0%  | 0         | 1           | Healthy wee
 ```
 
 **Review Monthly**:
+
 - Is uptime trending up or down?
 - Are response times stable?
 - Is error rate acceptable?
@@ -577,12 +607,14 @@ When processes change or improve:
 Hold 30-minute meeting:
 
 **Agenda**:
+
 1. (5 min) Review metrics from past month
 2. (10 min) What went well?
 3. (10 min) What could be better?
 4. (5 min) Create action items
 
 **Sample Discussion**:
+
 ```
 WHAT WENT WELL:
 - v1.0.0 deployed smoothly
@@ -655,7 +687,6 @@ Operational Goals:
 → Security team or CTO
 
 **For Production Incidents**:
-→ On-call engineer (call, don't Slack)
 
 ### Escalation Path
 
@@ -685,7 +716,6 @@ P1 incident→ Page on-call     → Don't wait, page immediately
 **Don't know procedure?**
 → Check README.md for documentation index
 
-**Need Slack template?**
 → See DEPLOYMENT_COORDINATION.md
 
 ---
@@ -695,6 +725,7 @@ P1 incident→ Page on-call     → Don't wait, page immediately
 After establishing operations, you should see:
 
 **Week 4-6**:
+
 - ✅ Consistent uptime (99%+)
 - ✅ Team comfortable with procedures
 - ✅ Deployment frequency increasing
@@ -702,6 +733,7 @@ After establishing operations, you should see:
 - ✅ Positive team feedback
 
 **Month 2**:
+
 - ✅ 99.9%+ uptime
 - ✅ Multiple successful deployments
 - ✅ Smooth approval process
@@ -709,6 +741,7 @@ After establishing operations, you should see:
 - ✅ Team autonomy increasing
 
 **Month 3**:
+
 - ✅ 99.99% uptime achievable
 - ✅ Frequent safe deployments (weekly+)
 - ✅ Team running ops independently
@@ -720,11 +753,13 @@ After establishing operations, you should see:
 ## Summary Checklist
 
 **Daily**:
+
 - [ ] Morning health check (5 min)
 - [ ] Monitor throughout day
 - [ ] Evening verification (5 min)
 
 **Weekly**:
+
 - [ ] Performance review (15 min)
 - [ ] Deployment review (10 min)
 - [ ] Issue review (10 min)
@@ -733,6 +768,7 @@ After establishing operations, you should see:
 - [ ] Plan next week (10 min)
 
 **Monthly**:
+
 - [ ] Performance deep dive (30 min)
 - [ ] Team retrospective (30 min)
 - [ ] Documentation updates
@@ -740,6 +776,7 @@ After establishing operations, you should see:
 - [ ] Planning meeting
 
 **Quarterly**:
+
 - [ ] Strategic planning (1 hour)
 - [ ] Team goals review
 - [ ] Process optimization
@@ -747,7 +784,7 @@ After establishing operations, you should see:
 
 ---
 
-**Status**: 🟢 Ready for ongoing operations  
+**Status**: 🟢 Ready for ongoing operations
 **Created**: 2025-12-26
 
 Good luck with production operations! 🚀

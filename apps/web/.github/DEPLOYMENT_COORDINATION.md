@@ -1,22 +1,22 @@
 # Deployment Coordination Guide
 
-**Version**: 2.0  
-**Date**: 2025-12-26  
+**Version**: 2.0
+**Date**: 2025-12-26
 **Purpose**: Team communication during deployments
 
 ---
 
-## Slack Channels
-
 ### Primary Channels
 
 **#dev-alerts**: General development notifications
+
 - CI check failures
 - Deployment status updates
 - Code review requests
 - Sprint updates
 
 **#prod-alerts**: Production-specific notifications
+
 - Production deployments started
 - Production deployments completed
 - Health check results
@@ -24,12 +24,14 @@
 - Incident notifications
 
 **#incidents**: Critical incident management
+
 - P1/P2 incidents only
 - Root cause analysis
 - Rollback decisions
 - Recovery status
 
 **#dev-help**: Questions and troubleshooting
+
 - CI/CD questions
 - Deployment help
 - Configuration issues
@@ -41,7 +43,7 @@
 
 ### Feature Development → Staging Deployment
 
-**When**: Developer merges PR to develop  
+**When**: Developer merges PR to develop
 **Channel**: #dev-alerts
 
 ```
@@ -61,7 +63,7 @@ Actions:
 
 ### Staging Validation Period
 
-**Status Update at 12h (mid-way)**  
+**Status Update at 12h (mid-way)**
 **Channel**: #dev-alerts
 
 ```
@@ -75,7 +77,7 @@ Next: Final validation in 12h
 
 ### Staging Validation Complete
 
-**When**: 24-hour window ends  
+**When**: 24-hour window ends
 **Channel**: #dev-alerts
 
 ```
@@ -92,7 +94,7 @@ DevOps: Proceed with release tag when ready
 
 ### Production Release Started
 
-**When**: Version tag created  
+**When**: Version tag created
 **Channel**: #prod-alerts
 
 ```
@@ -241,7 +243,6 @@ Immediate actions:
 - [ ] Comms: Notify stakeholders
 
 Link: [GitHub Actions / Error logs]
-Slack thread: All updates here
 
 Rollback command: @devops run rollback-workflow
 ```
@@ -376,6 +377,7 @@ Link: [GitHub Actions error logs]
 ### During Deployment
 
 **Every 2-5 minutes**: Status update with emoji
+
 - 🔄 In progress
 - ⏳ Awaiting action
 - ✅ Step complete
@@ -384,6 +386,7 @@ Link: [GitHub Actions error logs]
 ### During Incident
 
 **Every 5-10 minutes**: Status update
+
 - Investigation progress
 - Estimated time to resolution
 - Actions being taken
@@ -392,6 +395,7 @@ Link: [GitHub Actions error logs]
 ### Resolution
 
 **Immediate**: Post final status
+
 - ✅ Resolved / ❌ Escalated
 - Timeline from issue discovery
 - What was done
@@ -449,23 +453,23 @@ Link: [PR link with comments]
 
 ### DO
 
-✅ Post updates in correct channel  
-✅ Use clear, concise language  
-✅ Include relevant links  
-✅ Mention specific people when action needed  
-✅ Update regularly during deployments/incidents  
-✅ Tag issues/PRs properly  
-✅ Use emoji for quick status scanning  
+✅ Post updates in correct channel
+✅ Use clear, concise language
+✅ Include relevant links
+✅ Mention specific people when action needed
+✅ Update regularly during deployments/incidents
+✅ Tag issues/PRs properly
+✅ Use emoji for quick status scanning
 
 ### DON'T
 
-❌ Post secrets or API keys  
-❌ Spam multiple channels with same message  
-❌ Use all-caps (unless CRITICAL)  
-❌ Post personal opinions in official channels  
-❌ Ignore incidents for > 5 minutes  
-❌ Deploy without notifying team  
-❌ Mix incident and non-incident discussions  
+❌ Post secrets or API keys
+❌ Spam multiple channels with same message
+❌ Use all-caps (unless CRITICAL)
+❌ Post personal opinions in official channels
+❌ Ignore incidents for > 5 minutes
+❌ Deploy without notifying team
+❌ Mix incident and non-incident discussions
 
 ---
 
@@ -473,34 +477,34 @@ Link: [PR link with comments]
 
 ### #prod-alerts
 
-**Purpose**: Production notifications only  
-**Ping**: Yes (relevant teams)  
-**Frequency**: As needed (quality > quantity)  
-**Urgency**: High  
+**Purpose**: Production notifications only
+**Ping**: Yes (relevant teams)
+**Frequency**: As needed (quality > quantity)
+**Urgency**: High
 **Audience**: DevOps, engineering leads, on-call
 
 ### #incidents
 
-**Purpose**: P1/P2 incident coordination  
-**Ping**: Yes (immediately for P1)  
-**Frequency**: Only during incidents  
-**Urgency**: Critical  
+**Purpose**: P1/P2 incident coordination
+**Ping**: Yes (immediately for P1)
+**Frequency**: Only during incidents
+**Urgency**: Critical
 **Audience**: On-call, engineering, DevOps, leadership
 
 ### #dev-alerts
 
-**Purpose**: Development notifications  
-**Ping**: No (use threads for replies)  
-**Frequency**: Regular  
-**Urgency**: Medium  
+**Purpose**: Development notifications
+**Ping**: No (use threads for replies)
+**Frequency**: Regular
+**Urgency**: Medium
 **Audience**: All developers
 
 ### #dev-help
 
-**Purpose**: Questions and learning  
-**Ping**: No  
-**Frequency**: Ongoing  
-**Urgency**: Low to medium  
+**Purpose**: Questions and learning
+**Ping**: No
+**Frequency**: Ongoing
+**Urgency**: Low to medium
 **Audience**: All developers
 
 ---
@@ -539,16 +543,8 @@ Escalation path:
 
 ## Integration with GitHub
 
-**GitHub Actions → Slack**:
-- Deployment workflows can post Slack notifications
-- Set up in workflow file with Slack webhook
-
-**GitHub Issues → Slack**:
-- Use `#` mentions to link issues in Slack
 - Example: "See #123 for details"
 
-**Slack → GitHub**:
 - Link GitHub Actions runs
 - Link PRs with [Title](URL)
 - Reference issues with #[number]
-

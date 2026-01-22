@@ -37,6 +37,12 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Playwright saved auth (do not commit storage state)
+playwright/.auth
+
+# Playwright E2E ephemeral seed state
+playwright/.e2e
+
 # vercel
 .vercel
 !.vercel/project.json
@@ -47,3 +53,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+/playwright-report/
+/test-results/
+/playwright/.cache/
+/playwright/.auth/

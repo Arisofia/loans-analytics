@@ -18,6 +18,7 @@ This document establishes the golden rules for how data is documented, stored, a
 **Rule:** `.md` files describe **HOW to get data**, not **WHAT the data is**.
 
 ✅ **Acceptable in .md files:**
+
 - Process descriptions ("Calculate AUM by summing outstanding_principal...")
 - Formulas and calculations ("NPL = total_defaults / total_loans")
 - Timestamps for documentation updates ("Last Updated: 2025-12-26")
@@ -25,6 +26,7 @@ This document establishes the golden rules for how data is documented, stored, a
 - Configuration references ("See config/pipeline.yml for...")
 
 ❌ **Prohibited in .md files:**
+
 - Hard-coded metrics ("Current AUM is $7.4M")
 - Specific customer counts ("We have 56 customers")
 - Target numbers without "TARGET" or "PLANNING" labels
@@ -37,18 +39,21 @@ This document establishes the golden rules for how data is documented, stored, a
 ### 2. Source of Truth Hierarchy
 
 **Priority 1 (Highest): Live Database Tables**
+
 - `fact_loans` — Loan and disbursement source data
 - `kpi_timeseries_daily` — Daily KPI snapshots
 - `fact_cash_flows` — Payment and collection records
 - All other operational tables
 
 **Priority 2: Configuration Files**
+
 - `config/pipeline.yml` — Pipeline parameters
 - `config/kpis.yml` — KPI definitions
 - `config/environments/*.yml` — Environment configurations
 - `.env`, secrets, and system configs
 
 **Priority 3 (Lowest): Documentation**
+
 - `.md` files — Process guides, how-tos, reference materials
 - Release notes and changelogs
 - Architecture decision records (ADRs)
@@ -60,22 +65,26 @@ This document establishes the golden rules for how data is documented, stored, a
 ### 3. File Organization
 
 **Operational Documentation** (`/docs/`)
+
 - `process/` — How to run pipelines, workflows, and manual tasks
 - `api/` — API documentation and integration guides
 - `architecture/` — System design and decision records
 - `data-dictionary/` — Schema definitions (generated from code, not hand-written)
 
 **Strategic Planning** (`/docs/planning/`)
+
 - `2026/` — 2026 strategic targets and North Star metrics
 - `2025/` — 2025 OKRs and executive planning documents
 - All files in this directory include warnings: "⚠️ PLANNING TARGETS ONLY"
 
 **Historical Records** (`/archives/`)
+
 - `extractions/` — Past data extraction snapshots
 - `compliance/` — Historical audit reports and validation summaries
 - `snapshots/` — Point-in-time operational snapshots
 
 **Live Data** (`/data/`)
+
 - Daily exports and fresh data files
 - Current metrics and dashboards
 - Source of truth for time-series data
@@ -86,14 +95,14 @@ This document establishes the golden rules for how data is documented, stored, a
 
 **How to identify static data in .md files:**
 
-| Pattern | Example | Verdict | Action |
-|---------|---------|---------|--------|
-| Dollar amount with context | "Current AUM is $7.4M" | 🔴 STATIC | Remove or move to /docs/planning/ + add warning |
-| Customer count | "We have 56 customers" | 🔴 STATIC | Replace with query: "SELECT COUNT(DISTINCT client_id)" |
-| Date-specific metric | "As of December 2025, NPL is 3.8%" | 🔴 STATIC | Move to query or to /archives/ |
-| Target labeled "TARGET" | "TARGET AUM: $16.3M for 2026" | 🟢 OK if in /docs/planning/ | Keep with warning label |
-| Process description | "Sum outstanding_principal from fact_loans" | 🟢 OK | Keep in operational docs |
-| Timestamp of doc update | "Last Updated: 2025-12-26" | 🟢 OK | Keep (meta-information) |
+| Pattern                    | Example                                     | Verdict                     | Action                                                 |
+| -------------------------- | ------------------------------------------- | --------------------------- | ------------------------------------------------------ |
+| Dollar amount with context | "Current AUM is $7.4M"                      | 🔴 STATIC                   | Remove or move to /docs/planning/ + add warning        |
+| Customer count             | "We have 56 customers"                      | 🔴 STATIC                   | Replace with query: "SELECT COUNT(DISTINCT client_id)" |
+| Date-specific metric       | "As of December 2025, NPL is 3.8%"          | 🔴 STATIC                   | Move to query or to /archives/                         |
+| Target labeled "TARGET"    | "TARGET AUM: $16.3M for 2026"               | 🟢 OK if in /docs/planning/ | Keep with warning label                                |
+| Process description        | "Sum outstanding_principal from fact_loans" | 🟢 OK                       | Keep in operational docs                               |
+| Timestamp of doc update    | "Last Updated: 2025-12-26"                  | 🟢 OK                       | Keep (meta-information)                                |
 
 ---
 
@@ -110,6 +119,7 @@ This document contains {planning targets / OKRs / strategic goals} for {year}.
 All dollar amounts, metrics, and targets are planning hypotheses, not current state data.
 
 **For current metrics, query live data sources:**
+
 - AUM: `SELECT SUM(outstanding_principal) FROM fact_loans WHERE status='active'`
 - NPL: `SELECT * FROM kpi_timeseries_daily WHERE metric='npl_180' ORDER BY date DESC LIMIT 1`
 
@@ -123,13 +133,15 @@ All dollar amounts, metrics, and targets are planning hypotheses, not current st
 ### 6. Archive Policy
 
 **When to archive:**
+
 - Documentation older than 6 months and no longer actively used
 - Historical snapshots or reports (compliance, audits, validation)
 - Past extraction processes or deprecated procedures
 - Point-in-time metrics that are no longer relevant
 
 **Archive structure:**
-```
+
+```text
 archives/
 ├── extractions/2025-12-04/     # Dated extractions
 ├── extractions/2025-12-11/
@@ -158,6 +170,7 @@ fi
 ```
 
 **CI/CD check to flag static metrics:**
+
 - Scan .md files for patterns: `\$\d+[KMB]?`, `\d+\s+(customers|clients|users)`
 - Exclude /docs/planning/ and /archives/
 - Warn if found; fail if in core operational docs
@@ -166,13 +179,13 @@ fi
 
 ### 8. Roles & Responsibilities
 
-| Role | Responsibility |
-|------|-----------------|
-| **Data Team** | Maintain live data sources; generate exports; keep dashboards fresh |
-| **Product/Engineering** | Update operational docs in `/docs/`; keep ADRs current |
-| **Executive/Strategy** | Maintain planning docs in `/docs/planning/`; review quarterly |
-| **Compliance** | Archive audit reports to `/archives/compliance/` with dates |
-| **DevOps/Infrastructure** | Enforce pre-commit hooks and CI/CD checks |
+| Role                      | Responsibility                                                      |
+| ------------------------- | ------------------------------------------------------------------- |
+| **Data Team**             | Maintain live data sources; generate exports; keep dashboards fresh |
+| **Product/Engineering**   | Update operational docs in `/docs/`; keep ADRs current              |
+| **Executive/Strategy**    | Maintain planning docs in `/docs/planning/`; review quarterly       |
+| **Compliance**            | Archive audit reports to `/archives/compliance/` with dates         |
+| **DevOps/Infrastructure** | Enforce pre-commit hooks and CI/CD checks                           |
 
 ---
 
@@ -194,33 +207,36 @@ fi
 
 #### ✅ Good: Process Documentation
 
-```markdown
+````markdown
 # How to Calculate AUM
 
 To determine current Assets Under Management:
 
 1. Query all active loans:
    ```sql
-   SELECT 
+   SELECT
      SUM(outstanding_principal) as aum
-   FROM fact_loans 
+   FROM fact_loans
    WHERE status = 'active'
      AND created_at <= NOW();
    ```
+````
 
-2. Group by client for portfolio breakdown:
+1. Group by client for portfolio breakdown:
+
    ```sql
-   SELECT 
+   SELECT
      client_id,
      SUM(outstanding_principal) as client_aum
-   FROM fact_loans 
+   FROM fact_loans
    WHERE status = 'active'
    GROUP BY client_id
    ORDER BY client_aum DESC;
    ```
 
 Last Updated: 2025-12-26
-```
+
+````text
 
 #### ❌ Bad: Static Data in Operational Docs
 
@@ -229,7 +245,7 @@ Last Updated: 2025-12-26
 
 Our current AUM is $7.4M with 56 active customers.
 Our NPL rate is currently 3.8%.
-```
+````
 
 #### ✅ Good: Strategic Planning Document
 
@@ -238,11 +254,11 @@ Our NPL rate is currently 3.8%.
 
 # 2026 North Star Metrics
 
-| Metric | 2025 Current | 2026 Target |
-|--------|--------------|-------------|
-| AUM    | $7.4M        | $16.3M      |
-| Customers | 56        | 500         |
-| NPL Rate  | 3.8%     | <4.0%      |
+| Metric    | 2025 Current | 2026 Target |
+| --------- | ------------ | ----------- |
+| AUM       | $7.4M        | $16.3M      |
+| Customers | 56           | 500         |
+| NPL Rate  | 3.8%         | <4.0%       |
 ```
 
 ---
@@ -258,6 +274,6 @@ Our NPL rate is currently 3.8%.
 
 ## Document History
 
-| Date | Author | Changes |
-|------|--------|---------|
+| Date       | Author          | Changes                 |
+| ---------- | --------------- | ----------------------- |
 | 2025-12-26 | Data Governance | Initial policy document |

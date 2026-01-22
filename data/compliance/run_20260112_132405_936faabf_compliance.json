@@ -1,0 +1,17 @@
+{
+  "run_id": "run_20260112_132405_936faabf",
+  "generated_at": "2026-01-12T12:24:05.447879+00:00",
+  "mask_stage": "post-transformation",
+  "pii_masked_columns": [],
+  "access_log": [
+    {
+      "stage": "pipeline",
+      "user": "system",
+      "action": "manual",
+      "status": "success"
+    }
+  ],
+  "metadata": {
+    "input_file": "/private/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/pytest-of-jenineferderas/pytest-31/output0/large_sample.csv"
+  }
+}

@@ -4,30 +4,33 @@ This module provides a unified interface for interacting with multiple LLM provi
 enabling seamless switching and fallback capabilities for the multi-agent system.
 """
 
-import os
+import importlib.util
 import logging
-from typing import Dict, List, Optional, Any, Literal
-from dataclasses import dataclass
+import os
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, List, Literal, Optional
+
+if importlib.util.find_spec("openai") is not None:
+    OPENAI_AVAILABLE = True
+else:
+    OPENAI_AVAILABLE = False
+
+if importlib.util.find_spec("anthropic") is not None:
+    import anthropic
+
+    ANTHROPIC_AVAILABLE = True
+else:
+    ANTHROPIC_AVAILABLE = False
 
 
 class LLMProvider(Enum):
     """Supported LLM providers."""
+
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
 
-try:
-    import openai
-    OPENAI_AVAILABLE = True
-except ImportError:
-    OPENAI_AVAILABLE = False
-
-try:
-    import anthropic
-    ANTHROPIC_AVAILABLE = True
-except ImportError:
-    ANTHROPIC_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +38,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class LLMResponse:
     """Standardized LLM response format."""
+
     content: str
     model: str
     provider: str
@@ -46,46 +50,46 @@ class LLMResponse:
 
 class BaseLLMProvider(ABC):
     """Abstract base class for LLM providers."""
-    
+
     @abstractmethod
     def complete(self, messages: List[Dict], **kwargs) -> LLMResponse:
         """Complete a conversation."""
-        pass
-    
+
     @abstractmethod
     def is_available(self) -> bool:
         """Check if provider is available."""
-        pass
 
 
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI GPT provider."""
-    
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4-turbo-preview"):
+
+    def __init__(
+        self, api_key: Optional[str] = None, model: str = "gpt-4-turbo-preview"
+    ):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.model = model
         if OPENAI_AVAILABLE and self.api_key:
             from openai import OpenAI
+
             self.client = OpenAI(api_key=self.api_key)
         else:
             self.client = None
-    
+
     def is_available(self) -> bool:
         return OPENAI_AVAILABLE and self.client is not None
-    
-    def complete(self, messages: List[Dict], temperature: float = 0.7, **kwargs) -> LLMResponse:
+
+    def complete(
+        self, messages: List[Dict], temperature: float = 0.7, **kwargs
+    ) -> LLMResponse:
         """Complete using OpenAI API."""
         if not self.is_available():
             raise RuntimeError("OpenAI provider not available")
-        
+
         try:
             response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                temperature=temperature,
-                **kwargs
+                model=self.model, messages=messages, temperature=temperature, **kwargs
             )
-            
+
             return LLMResponse(
                 content=response.choices[0].message.content,
                 model=self.model,
@@ -94,8 +98,8 @@ class OpenAIProvider(BaseLLMProvider):
                 metadata={
                     "finish_reason": response.choices[0].finish_reason,
                     "prompt_tokens": response.usage.prompt_tokens,
-                    "completion_tokens": response.usage.completion_tokens
-                }
+                    "completion_tokens": response.usage.completion_tokens,
+                },
             )
         except Exception as e:
             logger.error(f"OpenAI API error: {e}")
@@ -104,36 +108,43 @@ class OpenAIProvider(BaseLLMProvider):
 
 class AnthropicProvider(BaseLLMProvider):
     """Anthropic Claude provider."""
-    
-    def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-5-haiku-20241022"):
+
+    def __init__(
+        self, api_key: Optional[str] = None, model: str = "claude-3-5-haiku-20241022"
+    ):
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         self.model = model
         if ANTHROPIC_AVAILABLE and self.api_key:
             self.client = anthropic.Anthropic(api_key=self.api_key)
         else:
             self.client = None
-    
+
     def is_available(self) -> bool:
         return ANTHROPIC_AVAILABLE and self.api_key is not None
-    
-    def complete(self, messages: List[Dict], temperature: float = 0.7, max_tokens: int = 4096, **kwargs) -> LLMResponse:
+
+    def complete(
+        self,
+        messages: List[Dict],
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+        **kwargs,
+    ) -> LLMResponse:
         """Complete using Anthropic API."""
         if not self.is_available():
             raise RuntimeError("Anthropic provider not available")
-        
+
         # Convert messages to Anthropic format
         system_message = ""
         converted_messages = []
-        
+
         for msg in messages:
             if msg["role"] == "system":
                 system_message = msg["content"]
             else:
-                converted_messages.append({
-                    "role": msg["role"],
-                    "content": msg["content"]
-                })
-        
+                converted_messages.append(
+                    {"role": msg["role"], "content": msg["content"]}
+                )
+
         try:
             response = self.client.messages.create(
                 model=self.model,
@@ -141,9 +152,9 @@ class AnthropicProvider(BaseLLMProvider):
                 temperature=temperature,
                 system=system_message if system_message else None,
                 messages=converted_messages,
-                **kwargs
+                **kwargs,
             )
-            
+
             return LLMResponse(
                 content=response.content[0].text,
                 model=self.model,
@@ -152,8 +163,8 @@ class AnthropicProvider(BaseLLMProvider):
                 metadata={
                     "stop_reason": response.stop_reason,
                     "input_tokens": response.usage.input_tokens,
-                    "output_tokens": response.usage.output_tokens
-                }
+                    "output_tokens": response.usage.output_tokens,
+                },
             )
         except Exception as e:
             logger.error(f"Anthropic API error: {e}")
@@ -162,33 +173,32 @@ class AnthropicProvider(BaseLLMProvider):
 
 class LLMManager:
     """Manager for multiple LLM providers with fallback support."""
-    
+
     def __init__(
         self,
         primary_provider: Literal["openai", "anthropic"] = "openai",
-        fallback_enabled: bool = True
+        fallback_enabled: bool = True,
     ):
         self.providers = {}
         self.primary_provider = primary_provider
         self.fallback_enabled = fallback_enabled
-        
+
         # Initialize providers
         if OPENAI_AVAILABLE:
             self.providers["openai"] = OpenAIProvider()
         if ANTHROPIC_AVAILABLE:
             self.providers["anthropic"] = AnthropicProvider()
-        
-        logger.info(f"Initialized LLM Manager with providers: {list(self.providers.keys())}")
-    
+
+        logger.info(
+            f"Initialized LLM Manager with providers: {list(self.providers.keys())}"
+        )
+
     def complete(
-        self,
-        messages: List[Dict],
-        provider: Optional[str] = None,
-        **kwargs
+        self, messages: List[Dict], provider: Optional[str] = None, **kwargs
     ) -> LLMResponse:
         """Complete with automatic fallback."""
         provider_name = provider or self.primary_provider
-        
+
         # Try primary provider
         if provider_name in self.providers:
             provider_obj = self.providers[provider_name]
@@ -199,7 +209,7 @@ class LLMManager:
                     logger.warning(f"{provider_name} failed: {e}")
                     if not self.fallback_enabled:
                         raise
-        
+
         # Try fallback providers
         if self.fallback_enabled:
             for fallback_name, fallback_provider in self.providers.items():
@@ -210,9 +220,11 @@ class LLMManager:
                     except Exception as e:
                         logger.warning(f"{fallback_name} also failed: {e}")
                         continue
-        
+
         raise RuntimeError("All LLM providers failed or unavailable")
-    
+
     def get_available_providers(self) -> List[str]:
         """Get list of available providers."""
-        return [name for name, provider in self.providers.items() if provider.is_available()]
+        return [
+            name for name, provider in self.providers.items() if provider.is_available()
+        ]

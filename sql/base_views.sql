@@ -24,9 +24,9 @@ loan_month AS (
     l.interest_rate_apr,
     l.disbursement_date::date,
     (l.disbursement_amount - COALESCE(
-      (SELECT pc.cum_principal 
-       FROM principal_cum pc 
-       WHERE pc.loan_id = l.loan_id AND pc.pay_date <= m.month_end 
+      (SELECT pc.cum_principal
+       FROM principal_cum pc
+       WHERE pc.loan_id = l.loan_id AND pc.pay_date <= m.month_end
        ORDER BY pc.pay_date DESC LIMIT 1), 0)
     ) AS outstanding,
     l.days_past_due

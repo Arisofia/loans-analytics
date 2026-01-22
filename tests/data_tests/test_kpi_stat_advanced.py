@@ -13,9 +13,7 @@ def test_par_90_is_weighted_by_segment():
     for _, group in df.groupby("segment"):
         val, _ = calculate_par_90(group)
         weighted += (
-            val
-            * group["total_receivable_usd"].sum()
-            / df["total_receivable_usd"].sum()
+            val * group["total_receivable_usd"].sum() / df["total_receivable_usd"].sum()
         )
     assert overall == weighted
 

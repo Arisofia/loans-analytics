@@ -1,16 +1,53 @@
 import json
 import os
+import re
+import sys
 from datetime import datetime
+from pathlib import Path
 
 import requests
 
-# Figma API settings
-FIGMA_TOKEN = os.getenv("FIGMA_TOKEN")
-FIGMA_FILE_KEY = os.getenv("FIGMA_FILE_KEY")
-if not FIGMA_TOKEN or not FIGMA_FILE_KEY:
-    raise RuntimeError("FIGMA_TOKEN and FIGMA_FILE_KEY must be set before syncing to Figma")
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from src.config.paths import Paths
+from src.config.secrets import get_secrets_manager
+
+# Secrets
+secrets = get_secrets_manager()
+
+
+def extract_file_key(value):
+    if not value:
+        return None
+    raw = str(value).strip()
+    if "figma.com" in raw:
+        match = re.search(r"/(file|design|proto)/([A-Za-z0-9_-]+)", raw)
+        if match:
+            return match.group(2)
+        return None
+    return raw.split("?")[0]
+
+
+FIGMA_TOKEN = (
+    secrets.get("FIGMA_TOKEN")
+    or os.getenv("FIGMA_OAUTH_TOKEN")
+    or os.getenv("FIGMA_API_TOKEN")
+    or os.getenv("FIGMA_PERSONAL_ACCESS_TOKEN")
+)
+raw_file_key = (
+    secrets.get("FIGMA_FILE_KEY")
+    or os.getenv("FIGMA_FILE_URL")
+    or os.getenv("FIGMA_FILE_LINK")
+)
+FIGMA_FILE_KEY = extract_file_key(raw_file_key)
+
+if not FIGMA_TOKEN:
+    raise ValueError("FIGMA_TOKEN is required for Figma sync")
+if not FIGMA_FILE_KEY:
+    raise ValueError("FIGMA_FILE_KEY is required for Figma sync")
+
+# Paths
 FIGMA_PAGE_NAME = "KPI Table"
-CSV_EXPORT_PATH = "exports/KPI_Mapping_Table.csv"
+CSV_EXPORT_PATH = Paths.exports_dir() / "KPI_Mapping_Table.csv"
 
 # Figma API endpoints
 BASE_URL = "https://api.figma.com/v1"
@@ -52,7 +89,9 @@ if not page_node_id:
 
 update_url = f"{BASE_URL}/files/{FIGMA_FILE_KEY}/nodes?ids={page_node_id}"
 try:
-    update_resp = requests.put(update_url, headers=HEADERS, data=json.dumps(payload), timeout=30)
+    update_resp = requests.put(
+        update_url, headers=HEADERS, data=json.dumps(payload), timeout=30
+    )
     update_resp.raise_for_status()
     print(f"KPI table synced to Figma at {datetime.now().isoformat()}")
 except requests.exceptions.Timeout:

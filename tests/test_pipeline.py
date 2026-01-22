@@ -1,8 +1,7 @@
 import pandas as pd
 
-from python.pipeline.data_ingestion import UnifiedIngestion
-from python.kpi_engine_v2 import KPIEngineV2
-from python.pipeline.data_transformation import UnifiedTransformation
+from python.pipeline.ingestion import UnifiedIngestion
+from python.pipeline.transformation import UnifiedTransformation
 
 
 def sample_df():
@@ -23,36 +22,43 @@ def sample_df():
     )
 
 
-def test_ingest_data(tmp_path):
-    # Create a sample CSV file
+def test_ingest_data(tmp_path, minimal_config):
     df = sample_df()
     csv_file = tmp_path / "sample.csv"
     df.to_csv(csv_file, index=False)
-    ingestion = UnifiedIngestion(data_dir=tmp_path)
-    ingested = ingestion.ingest_csv("sample.csv")
-    assert not ingested.empty
+    ingestion = UnifiedIngestion(minimal_config)
+    result = ingestion.ingest_file(csv_file)
+    assert not result.df.empty
 
 
-def test_transform_data():
+def test_transform_data(minimal_config):
     df = sample_df()
-    transformer = UnifiedTransformation()
-    kpi_df = transformer.transform_to_kpi_dataset(df)
-    assert isinstance(kpi_df, pd.DataFrame)
+    transformer = UnifiedTransformation(minimal_config)
+    result = transformer.transform(df)
+    assert isinstance(result.df, pd.DataFrame)
+    assert "_tx_run_id" in result.df.columns
 
 
-def test_validate_loans():
-    df = pd.DataFrame(
-        {"period": ["2025Q4"], "measurement_date": ["2025-12-01"], "total_receivable_usd": [1000.0]}
-    )
-    ingestion = UnifiedIngestion(data_dir=".")
-    validated = ingestion.validate_loans(df)
-    assert "_validation_passed" in validated.columns
-
-
-def test_calculate_kpis():
+def test_pipeline_ingestion_and_transformation(tmp_path, minimal_config):
     df = sample_df()
-    transformer = UnifiedTransformation()
-    kpi_df = transformer.transform_to_kpi_dataset(df)
-    kpi_engine = KPIEngineV2(kpi_df)
-    par_30, _ = kpi_engine.calculate_par_30()
-    assert isinstance(par_30, float)
+    csv_file = tmp_path / "sample.csv"
+    df.to_csv(csv_file, index=False)
+
+    ingestion = UnifiedIngestion(minimal_config)
+    ingest_result = ingestion.ingest_file(csv_file)
+    assert not ingest_result.df.empty
+
+    transformer = UnifiedTransformation(minimal_config)
+    transform_result = transformer.transform(ingest_result.df)
+    assert isinstance(transform_result.df, pd.DataFrame)
+
+
+def test_ingest_with_custom_run_id(tmp_path, minimal_config):
+    df = sample_df()
+    csv_file = tmp_path / "sample.csv"
+    df.to_csv(csv_file, index=False)
+
+    custom_run_id = "custom_ingest_123"
+    ingestion = UnifiedIngestion(minimal_config, run_id=custom_run_id)
+    result = ingestion.ingest_file(csv_file)
+    assert result.run_id == custom_run_id

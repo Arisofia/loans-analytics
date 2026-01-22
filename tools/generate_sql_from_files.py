@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import re
 from pathlib import Path
+
 import pandas as pd
 
 # === CONFIG ===
 DATA_ROOT = Path("data")  # change if your files live elsewhere
 OUTPUT_SQL = Path("generated_tables.sql")
 DEFAULT_SCHEMA = "public"  # or "analytics" if you prefer
+
 
 def normalize_name(name: str) -> str:
     """Normalize column/table names for Postgres."""
@@ -16,6 +18,7 @@ def normalize_name(name: str) -> str:
     name = re.sub(r"_+", "_", name)
     return name.lower().strip("_")
 
+
 def infer_pg_type(series: pd.Series) -> str:
     if pd.api.types.is_integer_dtype(series):
         return "BIGINT"
@@ -24,6 +27,7 @@ def infer_pg_type(series: pd.Series) -> str:
     if pd.api.types.is_datetime64_any_dtype(series):
         return "TIMESTAMP"
     return "TEXT"
+
 
 def generate_create_table_sql(path: Path) -> str:
     suffix = path.suffix.lower()
@@ -52,6 +56,7 @@ def generate_create_table_sql(path: Path) -> str:
 """
     return ddl
 
+
 def main():
     sql_fragments = []
     for path in DATA_ROOT.rglob("*"):
@@ -66,6 +71,7 @@ def main():
         return
     OUTPUT_SQL.write_text("\n".join(sql_fragments), encoding="utf-8")
     print(f"\nSaved all CREATE TABLE statements to {OUTPUT_SQL}")
+
 
 if __name__ == "__main__":
     main()

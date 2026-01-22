@@ -1,0 +1,72 @@
+name: Azure Static Web Apps CI/CD
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/azure-static-web-apps-yellow-cliff-03015b20f.yml'
+  workflow_dispatch:
+
+  # View Visual
+jobs:
+  build_and_deploy_job:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    name: Build and Deploy Job
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          submodules: true
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - name: Install dependencies (apps/web)
+        run: pnpm -C apps/web install --frozen-lockfile
+
+      - name: Build Next.js app (apps/web)
+        run: pnpm -C apps/web build
+
+      - name: Check SWA token
+        id: swa_token
+        env:
+          SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F }}
+        run: |
+          if [ -z "$SWA_TOKEN" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "Missing AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy
+        id: swa-deploy
+        if: steps.swa_token.outputs.present == true
+        uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: 'apps/web'
+          output_location: '.next'
+          api_location: ''
+          app_build_command: 'pnpm -C apps/web build'
+
+      - name: Skip deploy (missing token)
+        if: steps.swa_token.outputs.present != 'true'
+        run: |
+          echo "Skipping SWA deploy: token missing."

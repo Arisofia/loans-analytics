@@ -1,4 +1,9 @@
 # Data Folder
 
-- data/abaco: Raw Abaco CSV loan tapes.
+- `data/archives/looker_exports/` - Looker export CSVs (PAR snapshots and fallbacks)
+- `data/archives/financial_statements/` - optional financial statement uploads (CSV/XLSX)
 - data/support: Synthetic support tables for marketing, targets, risk params, etc.
+
+Notes:
+
+- The `data/archives/` directory contains authoritative archived input artifacts; do not commit large raw files to git. Use external storage or CI artifacts for large data.

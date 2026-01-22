@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from scipy.stats import levene, normaltest
 
-
 SAMPLE_PATH = "data_samples/abaco_portfolio_sample.csv"
 
 

@@ -1,7 +1,7 @@
 # Data Pipeline Validation Report
 
-**Status**: ⚠️ **PRODUCTION-READY WITH RECOMMENDATIONS**
-**Last Updated**: 2025-12-14
+- **Status**: ⚠️ **PRODUCTION-READY WITH RECOMMENDATIONS**
+- **Last Updated**: 2025-12-14
 
 ## Executive Summary
 
@@ -296,7 +296,7 @@ const result = {
 
 ### Phase 1: Critical (Deploy ASAP)
 
-```
+```text
 1. Add Zod validation to parseLoanCsv()
 2. Add error handling to processLoanRows()
 3. Add input size limits
@@ -306,7 +306,7 @@ const result = {
 
 ### Phase 2: Important (Before Heavy Load)
 
-```
+```text
 6. Add unit tests for each transformation
 7. Add integration test for full pipeline
 8. Add performance benchmarks
@@ -316,7 +316,7 @@ const result = {
 
 ### Phase 3: Nice-to-Have (Future)
 
-```
+```text
 11. Add caching layer
 12. Add streaming CSV parser for huge files
 13. Add data lineage tracking
@@ -332,7 +332,7 @@ Create test cases covering:
 
 ### Valid Data
 
-```
+```text
 ✓ Minimal valid loan
 ✓ Maximum valid loan
 ✓ Zero values (allowed)
@@ -341,7 +341,7 @@ Create test cases covering:
 
 ### Invalid Data
 
-```
+```text
 ✗ Missing columns
 ✗ Non-numeric loan_amount
 ✗ Negative loan_amount
@@ -354,7 +354,7 @@ Create test cases covering:
 
 ### Edge Cases
 
-```
+```text
 ⚠ All loans have same status (empty treemap)
 ⚠ No dpd_status provided (empty roll-rate)
 ⚠ Single loan (division edge cases)
@@ -369,7 +369,7 @@ Create test cases covering:
 
 **Issue**: Malicious CSV could execute formulas in Excel:
 
-```
+```text
 =1+9*3       → Executes as formula
 ```
 
@@ -416,7 +416,7 @@ Create test cases covering:
 
 ### Alerts to Configure
 
-```
+```text
 - Parse error rate > 5%
 - Processing time > 5 seconds (for <10k rows)
 - Export file size > 100MB
@@ -444,7 +444,7 @@ Create test cases covering:
 
 **Overall Assessment**: ✅ **Ready for MVP, needs hardening for production**
 
-### To Ship Safely:
+### To Ship Safely
 
 1. Add Zod validation to all inputs
 2. Wrap pipelines in try-catch with error logging
@@ -452,7 +452,7 @@ Create test cases covering:
 4. Deploy with Sentry error tracking
 5. Monitor first week for issues
 
-### Timeline:
+### Timeline
 
 - **Week 1**: Deploy with basic error handling + monitoring
 - **Week 2**: Add unit tests and fix bugs found in production

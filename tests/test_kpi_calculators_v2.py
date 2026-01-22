@@ -1,19 +1,22 @@
-import pytest
 import pandas as pd
-from python.kpis.par_30 import calculate_par_30
-from python.kpis.par_90 import calculate_par_90
-from python.kpis.collection_rate import calculate_collection_rate
-from python.kpis.portfolio_health import calculate_portfolio_health
+import pytest
+
+from src.kpis.collection_rate import calculate_collection_rate
+from src.kpis.par_30 import calculate_par_30
+from src.kpis.par_90 import calculate_par_90
+from src.kpis.portfolio_health import calculate_portfolio_health
 
 
 class TestPAR30Calculator:
     def test_par30_valid_calculation(self):
-        df = pd.DataFrame({
-            "dpd_30_60_usd": [100, 200],
-            "dpd_60_90_usd": [50, 100],
-            "dpd_90_plus_usd": [25, 50],
-            "total_receivable_usd": [1000, 2000],
-        })
+        df = pd.DataFrame(
+            {
+                "dpd_30_60_usd": [100, 200],
+                "dpd_60_90_usd": [50, 100],
+                "dpd_90_plus_usd": [25, 50],
+                "total_receivable_usd": [1000, 2000],
+            }
+        )
         value, context = calculate_par_30(df)
         assert isinstance(value, float)
         assert value == 17.5
@@ -21,12 +24,14 @@ class TestPAR30Calculator:
         assert "formula" in context
 
     def test_par30_zero_receivable(self):
-        df = pd.DataFrame({
-            "dpd_30_60_usd": [100],
-            "dpd_60_90_usd": [50],
-            "dpd_90_plus_usd": [25],
-            "total_receivable_usd": [0],
-        })
+        df = pd.DataFrame(
+            {
+                "dpd_30_60_usd": [100],
+                "dpd_60_90_usd": [50],
+                "dpd_90_plus_usd": [25],
+                "total_receivable_usd": [0],
+            }
+        )
         value, context = calculate_par_30(df)
         assert value == 0.0
         assert context["reason"] == "Zero total receivable"
@@ -45,38 +50,46 @@ class TestPAR30Calculator:
 
 class TestPAR90Calculator:
     def test_par90_valid_calculation(self):
-        df = pd.DataFrame({
-            "dpd_90_plus_usd": [100, 200],
-            "total_receivable_usd": [1000, 2000],
-        })
+        df = pd.DataFrame(
+            {
+                "dpd_90_plus_usd": [100, 200],
+                "total_receivable_usd": [1000, 2000],
+            }
+        )
         value, context = calculate_par_90(df)
         assert value == 10.0
         assert context["rows_processed"] == 2
 
     def test_par90_zero_receivable(self):
-        df = pd.DataFrame({
-            "dpd_90_plus_usd": [100],
-            "total_receivable_usd": [0],
-        })
+        df = pd.DataFrame(
+            {
+                "dpd_90_plus_usd": [100],
+                "total_receivable_usd": [0],
+            }
+        )
         value, context = calculate_par_90(df)
         assert value == 0.0
 
 
 class TestCollectionRateCalculator:
     def test_collection_rate_valid(self):
-        df = pd.DataFrame({
-            "cash_available_usd": [100, 200],
-            "total_eligible_usd": [1000, 2000],
-        })
+        df = pd.DataFrame(
+            {
+                "cash_available_usd": [100, 200],
+                "total_eligible_usd": [1000, 2000],
+            }
+        )
         value, context = calculate_collection_rate(df)
         assert value == 10.0
         assert context["rows_processed"] == 2
 
     def test_collection_rate_with_nulls(self):
-        df = pd.DataFrame({
-            "cash_available_usd": [100, None, 200],
-            "total_eligible_usd": [1000, 2000, 2000],
-        })
+        df = pd.DataFrame(
+            {
+                "cash_available_usd": [100, None, 200],
+                "total_eligible_usd": [1000, 2000, 2000],
+            }
+        )
         value, context = calculate_collection_rate(df)
         assert context["null_count"] > 0
 

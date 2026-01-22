@@ -1,9 +1,12 @@
-from python.agents.orchestrator import AgentOrchestrator
-from python.agents.llm_provider import BaseLLM, LLMResponse
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+from src.agents.llm_provider import BaseLLM, LLMResponse
+from src.agents.orchestrator import AgentOrchestrator
+
 
 class ReActMockLLM(BaseLLM):
     """A mock LLM that follows the ReAct pattern for testing."""
+
     def __init__(self):
         self.step = 0
 
@@ -25,23 +28,25 @@ Final Answer: The risk level for loan 123 is low based on the SQL query and scen
 """
         return LLMResponse(content=content)
 
+
 def test_agent_react_flow():
     print("Testing Agent ReAct Flow...")
     orchestrator = AgentOrchestrator()
     # Override with ReActMockLLM for testing
     orchestrator.llm = ReActMockLLM()
-    
+
     input_data = {"query": "What is the risk for loan 123?"}
     agent_config = {
         "name": "RiskAgent",
         "role": "Risk Analyst",
-        "goal": "Analyze risk for specific loans"
+        "goal": "Analyze risk for specific loans",
     }
-    
+
     result = orchestrator.run(input_data, agent_config)
     print(f"Final Output: {result['output']}")
-    assert "The risk level for loan 123 is low" in result['output']
+    assert "The risk level for loan 123 is low" in result["output"]
     print("Test passed!")
+
 
 if __name__ == "__main__":
     test_agent_react_flow()

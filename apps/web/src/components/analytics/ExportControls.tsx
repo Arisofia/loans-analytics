@@ -31,8 +31,7 @@ function download(name: string, data: string, mime: string) {
 
 export function ExportControls({ analytics }: Props) {
   const [error, setError] = useState<string | null>(null)
-  const hasLoans = analytics.loans.length > 0
-
+  const hasLoans = (analytics.loans?.length ?? 0) > 0
   const handleExport = (format: 'csv' | 'json' | 'markdown') => {
     setError(null)
     try {
@@ -67,7 +66,10 @@ export function ExportControls({ analytics }: Props) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       const msg = `Export failed: ${errorMessage}`
       setError(msg)
-      console.error('Export error:', errorMessage, { format, loanCount: analytics.loans.length })
+      console.error('Export error!', errorMessage, {
+        format,
+        loanCount: analytics.loans?.length ?? 0,
+      })
     }
   }
 
@@ -104,8 +106,9 @@ export function ExportControls({ analytics }: Props) {
         <button
           className={styles.secondaryButton}
           type="button"
-          onClick={() => handleExport('markdown')}
-          disabled={!hasLoans}
+          onClick={() =>
+            download('analytics.md', processedAnalyticsToMarkdown(analytics), 'text/markdown')
+          }
         >
           Download Markdown
         </button>

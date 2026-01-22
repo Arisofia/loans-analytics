@@ -15,13 +15,15 @@ param sqlFirewallRules array = []
 param allowAzureServices bool = true
 
 var firewallRules = concat(
-  allowAzureServices ? [
-    {
-      name: 'AllowAzureServices'
-      startIpAddress: '0.0.0.0'
-      endIpAddress: '0.0.0.0'
-    }
-  ] : [],
+  allowAzureServices
+    ? [
+        {
+          name: 'AllowAzureServices'
+          startIpAddress: '0.0.0.0'
+          endIpAddress: '0.0.0.0'
+        }
+      ]
+    : [],
   sqlFirewallRules
 )
 
@@ -64,13 +66,15 @@ resource sqlserver 'Microsoft.Sql/servers@2022-02-01-preview' = {
   }
 }
 
-resource sqlFirewall 'Microsoft.Sql/servers/firewallRules@2022-02-01-preview' = [for rule in firewallRules: {
-  name: rule.name
-  properties: {
-    startIpAddress: rule.startIpAddress
-    endIpAddress: rule.endIpAddress
+resource sqlFirewall 'Microsoft.Sql/servers/firewallRules@2022-02-01-preview' = [
+  for rule in firewallRules: {
+    name: rule.name
+    properties: {
+      startIpAddress: rule.startIpAddress
+      endIpAddress: rule.endIpAddress
+    }
   }
-}]
+]
 
 resource sqldb 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
   name: sqlDbName

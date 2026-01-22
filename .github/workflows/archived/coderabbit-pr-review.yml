@@ -1,0 +1,23 @@
+name: CodeRabbit AI PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  validate-secrets:
+    uses: ./.github/workflows/reusable-secret-check.yml
+    with:
+      secret_names: 'CODERABBIT_TOKEN,OPENAI_API_KEY'
+    secrets: inherit
+
+  review:
+    needs: validate-secrets
+    if: fromJSON(needs.validate-secrets.outputs.all_secrets_present)
+    runs-on: ubuntu-latest
+    steps:
+      - name: CodeRabbit AI PR Review
+        uses: coderabbitai/ai-pr-reviewer@latest
+        env:
+          CODERABBIT_TOKEN: ${{ secrets.CODERABBIT_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

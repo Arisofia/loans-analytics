@@ -21,19 +21,20 @@ import argparse
 import json
 import subprocess
 import sys
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import List, Optional
-
 
 # ---------------------------------------------------------------------------
 # Data structures
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class FileCheckResult:
     path: str
     exists: bool
+
 
 @dataclass
 class JsonCheckResult:
@@ -43,6 +44,7 @@ class JsonCheckResult:
     has_extended_kpis: bool
     kpi_groups: List[str]
 
+
 @dataclass
 class CommandResult:
     command: str
@@ -50,6 +52,7 @@ class CommandResult:
     returncode: int
     stdout: str
     stderr: str
+
 
 @dataclass
 class KpiSyncReport:
@@ -63,6 +66,7 @@ class KpiSyncReport:
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
+
 
 def find_repo_root(start: Path) -> Path:
     """
@@ -87,7 +91,7 @@ def run_command(cmd: List[str], cwd: Path) -> CommandResult:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-        shell=False
+        shell=False,
     )
     stdout, stderr = proc.communicate()
     return CommandResult(
@@ -107,7 +111,7 @@ def check_files(repo_root: Path) -> List[FileCheckResult]:
         "docs/KPI_CATALOG.md",
         "docs/DATA_DICTIONARY.md",
         "supabase/migrations/20260101_analytics_kpi_views.sql",
-        "python/analytics/kpi_catalog_processor.py",
+        "src/analytics/kpi_catalog_processor.py",
         "run_complete_analytics.py",
         "tests/test_kpi_parity.py",
         "exports/complete_kpi_dashboard.json",
@@ -115,7 +119,9 @@ def check_files(repo_root: Path) -> List[FileCheckResult]:
     results: List[FileCheckResult] = []
     for rel in paths:
         p = repo_root / rel
-        results.append(FileCheckResult(path=str(p.relative_to(repo_root)), exists=p.is_file()))
+        results.append(
+            FileCheckResult(path=str(p.relative_to(repo_root)), exists=p.is_file())
+        )
     return results
 
 
@@ -160,8 +166,11 @@ def check_json_structure(repo_root: Path) -> JsonCheckResult:
 # Main routine
 # ---------------------------------------------------------------------------
 
+
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="Validate KPI dual-engine setup for Zencoder/code agents.")
+    parser = argparse.ArgumentParser(
+        description="Validate KPI dual-engine setup for Zencoder/code agents."
+    )
     parser.add_argument(
         "--no-regenerate",
         action="store_true",

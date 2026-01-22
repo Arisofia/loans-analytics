@@ -5,12 +5,16 @@ Script to validate KPI mapping table against codebase data sources and KPI defin
 
 Usage: python validate_kpi_mapping.py exports/KPI_Mapping_Table_for_Presentation.md config/kpi_definitions.yml
 """
-import sys
+
 import re
-import yaml
+import sys
 from typing import Set
 
-MAPPING_ROW_PATTERN = re.compile(r"^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$")
+import yaml
+
+MAPPING_ROW_PATTERN = re.compile(
+    r"^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$"
+)
 
 
 def extract_data_sources_from_mapping(md_path: str) -> Set[str]:
@@ -25,6 +29,7 @@ def extract_data_sources_from_mapping(md_path: str) -> Set[str]:
                     if part and not part.endswith("*"):
                         sources.add(part.strip())
     return sources
+
 
 def extract_known_sources_from_kpi_yaml(yaml_path: str) -> Set[str]:
     with open(yaml_path) as f:
@@ -41,6 +46,7 @@ def extract_known_sources_from_kpi_yaml(yaml_path: str) -> Set[str]:
                 known.add(src)
     return known
 
+
 def main(md_path: str, yaml_path: str):
     mapping_sources = extract_data_sources_from_mapping(md_path)
     known_sources = extract_known_sources_from_kpi_yaml(yaml_path)
@@ -53,8 +59,11 @@ def main(md_path: str, yaml_path: str):
         sys.exit(1)
     print("\nAll mapping sources are present in the codebase.")
 
+
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python validate_kpi_mapping.py <KPI_Mapping_Table_for_Presentation.md> <kpi_definitions.yml>")
+        print(
+            "Usage: python validate_kpi_mapping.py <KPI_Mapping_Table_for_Presentation.md> <kpi_definitions.yml>"
+        )
         sys.exit(2)
     main(sys.argv[1], sys.argv[2])

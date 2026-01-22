@@ -1,26 +1,11 @@
-export const PLATFORMS = ['meta', 'linkedin', 'custom'] as const
-
-export type Platform = (typeof PLATFORMS)[number]
-
-export const SUPABASE_FN_BASE = process.env.NEXT_PUBLIC_SUPABASE_FN_BASE?.replace(/\/$/, '') || ''
-
+export type Platform = 'stripe' | 'plaid' | 'codat' | 'xero'
+export type TokenStatus = 'active' | 'expired' | 'pending'
+export const PLATFORMS: Platform[] = ['stripe', 'plaid', 'codat', 'xero']
 export const PLATFORM_LABELS: Record<Platform, string> = {
-  meta: 'Meta',
-  linkedin: 'LinkedIn',
-  custom: 'Custom API',
+  stripe: 'Stripe',
+  plaid: 'Plaid',
+  codat: 'Codat',
+  xero: 'Xero',
 }
-
-export const PLATFORM_ICONS: Record<Platform, string> = {
-  meta: '⚡️',
-  linkedin: '🔗',
-  custom: '🧩',
-}
-
-export type TokenStatus = 'connected' | 'disconnected' | 'syncing' | 'error'
-
-export const STATUS_COLORS: Record<TokenStatus, string> = {
-  connected: '#0f766e',
-  disconnected: '#334155',
-  syncing: '#7c3aed',
-  error: '#b91c1c',
-}
+export const SUPABASE_FN_BASE = process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL || ''
+export const INTEGRATION_CONSTANTS = { MAX_RETRIES: 3, TIMEOUT_MS: 10000 }

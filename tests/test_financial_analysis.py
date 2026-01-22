@@ -3,7 +3,7 @@ from datetime import date, timedelta
 
 import pandas as pd
 
-from python.financial_analysis import FinancialAnalyzer
+from src.financial_analysis import FinancialAnalyzer
 
 
 class TestFinancialAnalyzer(unittest.TestCase):
@@ -33,7 +33,9 @@ class TestFinancialAnalyzer(unittest.TestCase):
         data = {"DPD": [0, 45, 200]}
         df = pd.DataFrame(data)
         result = self.analyzer.classify_dpd_buckets(df)
-        self.assertListEqual(result["dpd_bucket"].tolist(), ["Current", "30-59", "180+"])
+        self.assertListEqual(
+            result["dpd_bucket"].tolist(), ["Current", "30-59", "180+"]
+        )
 
     def test_calculate_weighted_stats(self):
         data = {"outstanding_balance": [1000, 2000, 3000], "apr": [0.10, 0.12, 0.15]}
@@ -58,7 +60,9 @@ class TestFinancialAnalyzer(unittest.TestCase):
         data = {"Balance": [500, 50000]}
         df = pd.DataFrame(data)
         result = self.analyzer.segment_clients_by_exposure(df)
-        self.assertListEqual(result["exposure_segment"].tolist(), ["Micro", "Medium/Large"])
+        self.assertListEqual(
+            result["exposure_segment"].tolist(), ["Micro", "Medium/Large"]
+        )
 
     def test_classify_client_type(self):
         today = date(2025, 1, 1)
@@ -78,7 +82,10 @@ class TestFinancialAnalyzer(unittest.TestCase):
         self.assertListEqual(result["client_type"].tolist(), expected)
 
     def test_calculate_line_utilization(self):
-        data = {"line_amount": [10000, 10000, 10000], "outstanding_balance": [5000, 12000, 0]}
+        data = {
+            "line_amount": [10000, 10000, 10000],
+            "outstanding_balance": [5000, 12000, 0],
+        }
         df = pd.DataFrame(data)
         result = self.analyzer.calculate_line_utilization(df)
 

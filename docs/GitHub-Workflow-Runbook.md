@@ -11,17 +11,21 @@ This runbook defines the golden path for contributing to the ABACO Loan Analytic
 ## Branching strategy
 
 1. Start from `main` and create a topic branch named `feature/<ticket>` (or `fix/<ticket>`, `chore/<ticket>` for maintenance).
+
    ```bash
    git checkout main
    git pull origin main
    git checkout -b feature/<ticket>
    ```
+
 2. Keep branches small and focused; avoid piling unrelated changes.
 3. Rebase frequently to minimize merge conflicts and keep quality signals current.
+
    ```bash
    git fetch origin
    git rebase origin/main
    ```
+
 4. If the branch diverges or carries merge markers, clean them before pushing.
 
 ## Commit standards

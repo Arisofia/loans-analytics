@@ -1,5 +1,6 @@
 import pandas as pd
-from python.kpis.base import safe_numeric, create_context, KPIMetadata
+
+from src.kpis.base import KPIMetadata, create_context, safe_numeric
 
 
 class TestSafeNumeric:

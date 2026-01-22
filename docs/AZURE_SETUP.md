@@ -1,9 +1,11 @@
 # Azure Connection Setup Guide
 
 ## Overview
+
 This guide helps you configure complete Azure integration for abaco-loans-analytics.
 
 ## Prerequisites
+
 - Azure subscription
 - Azure CLI installed ([Install Guide](https://learn.microsoft.com/cli/azure/install-azure-cli))
 - Python 3.11+
@@ -19,6 +21,7 @@ bash scripts/setup_azure.sh
 ```
 
 This script will:
+
 - Authenticate with Azure
 - Create/verify resource group
 - Create storage account and container
@@ -28,12 +31,14 @@ This script will:
 ### 2. Manual Setup
 
 #### Step 1: Login to Azure
+
 ```bash
 az login
 az account set --subscription <your-subscription-id>
 ```
 
 #### Step 2: Create Resource Group
+
 ```bash
 az group create \
   --name AI-MultiAgent-Ecosystem-RG \
@@ -41,6 +46,7 @@ az group create \
 ```
 
 #### Step 3: Create Storage Account
+
 ```bash
 # Choose a unique storage account name (lowercase, no special chars)
 STORAGE_NAME="abacoanalytics$(date +%s)"
@@ -54,6 +60,7 @@ az storage account create \
 ```
 
 #### Step 4: Create Storage Container
+
 ```bash
 az storage container create \
   --name kpi-exports \
@@ -61,6 +68,7 @@ az storage container create \
 ```
 
 #### Step 5: Get Connection String
+
 ```bash
 az storage account show-connection-string \
   --name "$STORAGE_NAME" \
@@ -68,6 +76,7 @@ az storage account show-connection-string \
 ```
 
 #### Step 6: Create Key Vault
+
 ```bash
 KV_NAME="abaco-kv-$(date +%s)"
 
@@ -79,6 +88,7 @@ az keyvault create \
 ```
 
 #### Step 7: Deploy Infrastructure
+
 ```bash
 # Deploy using Bicep template
 az deployment group create \
@@ -263,7 +273,7 @@ except Exception as e:
 
 Expected output when everything is configured correctly:
 
-```
+```text
 Azure Connection Validator
 ==================================================
 ✓ Loaded 15 variables from .env
@@ -294,6 +304,7 @@ Azure Connection Validator
 ## Support
 
 For issues:
+
 1. Check validation script output: `python scripts/validate_azure_connection.py`
 2. Review Azure Portal logs
 3. Check GitHub workflow runs for deployment errors

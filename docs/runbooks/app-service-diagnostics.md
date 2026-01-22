@@ -33,25 +33,30 @@
 3. Use the search box or select a troubleshooting category.
 
 Notes:
+
 - Guided diagnostics are most helpful for incidents within the last 24 hours.
 - Graphs are always available for historical analysis.
 - Works for Windows, Linux, custom containers, App Service Environments, and Azure Functions.
 
 ## Quick triage (5-10 minutes)
 
-1) **Confirm scope and baseline**
+1. **Confirm scope and baseline**
+
 - App name, resource group, region, plan, and default domain.
 - Current status (Running/Stopped).
 - Last deployment time and commit.
 
-2) **Check Availability and Performance**
+1. **Check Availability and Performance**
+
 - Open **Overview** or **App Down / Web App Down**.
 - Review the diagnostic report and top indicators.
 
-3) **Review risk alerts**
+1. **Review risk alerts**
+
 - Open **Risk Assessments** and capture any recommendations.
 
-4) **Check logs for first error**
+1. **Check logs for first error**
+
 - App Service -> **Log stream**.
 - If containerized, verify container logs and startup output.
 
@@ -73,6 +78,7 @@ Notes:
   - Confirm correct port binding (`WEBSITES_PORT` or `PORT`) and startup command.
 
 Safe actions:
+
 - Capture the first error log and deployment time correlation.
 - Consider redeploying the last known good build if the issue aligns with a release.
 
@@ -85,6 +91,7 @@ Safe actions:
 - Collect a profiling trace only if approved and during a safe window.
 
 Safe actions:
+
 - Capture graphs and timestamps before taking remediation steps.
 - Scale or restart only with approval and documented reasoning.
 
@@ -95,6 +102,7 @@ Safe actions:
 - Validate environment variables referenced by startup.
 
 Safe actions:
+
 - Roll back to the last known good deployment if errors align with the latest release.
 - Avoid changing runtime or build settings without a rollback plan.
 
@@ -105,6 +113,7 @@ Safe actions:
 - Check for recent configuration changes in **Application Changes**.
 
 Safe actions:
+
 - Capture the configuration diff and approval before changing settings.
 
 ### Networking
@@ -114,6 +123,7 @@ Safe actions:
 - For ASE or private endpoints, verify regional health and routing.
 
 Safe actions:
+
 - Escalate to networking owners if infra changes are required.
 
 ## Diagnostic tools (use with care)
@@ -138,9 +148,9 @@ Safe actions:
   - Repeated crashes after rollback.
   - Network or DNS requires infra-level changes.
 - Recovery options (in order of safety):
-  1) Redeploy last known good.
-  2) Restart app (approved only).
-  3) Scale up or out (approved only).
+  1. Redeploy last known good.
+  2. Restart app (approved only).
+  3. Scale up or out (approved only).
 
 ## Post-incident
 

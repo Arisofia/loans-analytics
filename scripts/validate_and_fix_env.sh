@@ -1,83 +1,114 @@
 #!/bin/zsh
 # Automated validation and fix script for repo, extensions, and permissions
 
-REPO_PATH="$HOME/desktop/documents/abaco-loans-analytics"
-EXT_PATH="$HOME/.vscode/extensions/ms-windows-ai-studio.windows-ai-studio-0.26.4-darwin-arm64/resources/lmt/chatAgents"
-AGENT_FILE="AIAgentExpert.agent.md"
+# 0. Get repository root (relative to script location)
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+REPO_PATH=$(cd "$SCRIPT_DIR/.." && pwd)
+
+echo "════════════════════════════════════════════════════════════════"
+echo "  ABACO ANALYTICS - ENVIRONMENT VALIDATION & FIX"
+echo "  Repo Root: $REPO_PATH"
+echo "════════════════════════════════════════════════════════════════"
 
 # 1. Validate repo path
 if [ -d "$REPO_PATH" ]; then
-  echo "Repo directory exists: $REPO_PATH"
+  echo "✅ Repo directory exists: $REPO_PATH"
 else
-  echo "ERROR: Repo directory missing: $REPO_PATH"
+  echo "❌ ERROR: Repo directory missing: $REPO_PATH"
+  exit 1
 fi
 
 # 2. Validate .git directory
 if [ -d "$REPO_PATH/.git" ]; then
-  echo ".git directory exists."
+  echo "✅ .git directory exists."
 else
-  echo "WARNING: .git missing. Initializing git..."
+  echo "⚠️  WARNING: .git missing. Initializing git..."
   cd "$REPO_PATH" && git init
 fi
 
-# 3. Validate extension file
-if [ -d "$EXT_PATH" ]; then
-  if [ -f "$EXT_PATH/$AGENT_FILE" ]; then
-    echo "$AGENT_FILE exists in extension path."
+# 3. Detect Extension path (generic)
+EXT_PATH_BASE="$HOME/.vscode/extensions"
+# Look for windows-ai-studio extension (any version)
+EXT_PATH=$(find "$EXT_PATH_BASE" -maxdepth 1 -name "ms-windows-ai-studio.windows-ai-studio-*" 2>/dev/null | head -n 1)
+AGENT_FILE="AIAgentExpert.agent.md"
+
+if [ -n "$EXT_PATH" ]; then
+  RESOURCES_PATH="$EXT_PATH/resources/lmt/chatAgents"
+  if [ -f "$RESOURCES_PATH/$AGENT_FILE" ]; then
+    echo "✅ $AGENT_FILE exists in extension path: $RESOURCES_PATH"
   else
-    echo "WARNING: $AGENT_FILE missing in extension path. Consider reinstalling extension."
+    echo "⚠️  WARNING: $AGENT_FILE missing in $RESOURCES_PATH. Consider reinstalling extension."
   fi
 else
-  echo "WARNING: Extension path missing: $EXT_PATH"
+  echo "ℹ️  Extension path (windows-ai-studio) not detected. Skipping extension audit."
 fi
 
-# 4. Fix permissions
-sudo chown -R $(whoami) "$REPO_PATH"
-echo "Permissions fixed for repo."
+# 4. Check permissions (no sudo unless necessary)
+if [ ! -w "$REPO_PATH" ]; then
+  echo "⚠️  Repo directory is not writable. Attempting to fix..."
+  sudo chown -R $(whoami) "$REPO_PATH"
+  echo "✅ Permissions fixed for repo."
+else
+  echo "✅ Permissions are correct (writable)."
+fi
 
 # 5. Validate workspace open in VS Code
-if pgrep -x "Code" > /dev/null; then
-  echo "VS Code is running. Please ensure $REPO_PATH is open as a folder."
+if pgrep -x "Code" >/dev/null; then
+  echo "ℹ️  VS Code is running. Please ensure $REPO_PATH is open as a folder."
 else
-  echo "VS Code is not running."
+  echo "ℹ️  VS Code is not running."
 fi
 
-# 6. Final status
 # 6. Check for uncommitted changes
-git -C "$REPO_PATH" status --porcelain | grep . && echo "Warning: Uncommitted changes detected!" || echo "No uncommitted changes."
+echo ""
+git -C "$REPO_PATH" status --porcelain | grep . && echo "⚠️  Warning: Uncommitted changes detected!" || echo "✅ No uncommitted changes."
 
 # 7. Audit documentation files
-for doc in "$REPO_PATH/docs/KPI-Operating-Model.md" "$REPO_PATH/docs/FINTECH_DASHBOARD_WEB_APP_GUIDE.md" "$REPO_PATH/COMPLIANCE_VALIDATION_SUMMARY.md" "$REPO_PATH/SECURITY.md"; do
+echo ""
+echo "🔍 Auditing documentation..."
+DOCS=(
+  "docs/KPI-Operating-Model.md"
+  "docs/FINTECH_DASHBOARD_WEB_APP_GUIDE.md"
+  "COMPLIANCE_VALIDATION_SUMMARY.md"
+  "SECURITY.md"
+)
+
+for doc_rel in "${DOCS[@]}"; do
+  doc="$REPO_PATH/$doc_rel"
   if [ -f "$doc" ]; then
-    echo "$doc found. Summary:"
-    head -10 "$doc"
+    echo "✅ $doc_rel found. Summary:"
+    head -3 "$doc" | sed 's/^/  /'
   else
-    echo "$doc missing!"
+    echo "❌ $doc_rel missing!"
   fi
 done
 
 # 8. Audit environment variables
+echo ""
 if [ -f "$REPO_PATH/.env.local" ]; then
-  echo "\n.env.local contents:"
-  head -20 "$REPO_PATH/.env.local"
+  echo "✅ .env.local exists. (Contents masked for security)"
+elif [ -f "$REPO_PATH/.env" ]; then
+  echo "✅ .env exists. (Contents masked for security)"
 else
-  echo ".env.local missing!"
+  echo "⚠️  .env and .env.local missing! Consider creating one from .env.example"
 fi
 
 # 9. KPI & dashboard keyword audit
-for kpi in "$REPO_PATH/docs/KPI-Operating-Model.md" "$REPO_PATH/docs/FINTECH_DASHBOARD_WEB_APP_GUIDE.md"; do
-  if [ -f "$kpi" ]; then
-    grep -iE 'KPI|dashboard|metric|trace|visual' "$kpi" || echo "No KPI/dashboard keywords found in $kpi"
+echo ""
+echo "📊 KPI & Dashboard Audit..."
+for doc_rel in "docs/KPI-Operating-Model.md" "docs/FINTECH_DASHBOARD_WEB_APP_GUIDE.md"; do
+  doc="$REPO_PATH/$doc_rel"
+  if [ -f "$doc" ]; then
+    MATCH_COUNT=$(grep -iE 'KPI|dashboard|metric|trace|visual' "$doc" | wc -l)
+    if [ "$MATCH_COUNT" -gt 0 ]; then
+      echo "✅ Found $MATCH_COUNT KPI/dashboard keywords in $doc_rel"
+    else
+      echo "⚠️  No KPI/dashboard keywords found in $doc_rel"
+    fi
   fi
 done
 
-# 10. Compliance & security keyword audit
-if [ -f "$REPO_PATH/COMPLIANCE_VALIDATION_SUMMARY.md" ]; then
-  grep -iE 'compliance|audit|trace|policy|regulation' "$REPO_PATH/COMPLIANCE_VALIDATION_SUMMARY.md" || echo "No compliance keywords found in COMPLIANCE_VALIDATION_SUMMARY.md"
-fi
-if [ -f "$REPO_PATH/SECURITY.md" ]; then
-  grep -iE 'audit|compliance|trace|risk|policy' "$REPO_PATH/SECURITY.md" || echo "No audit/compliance keywords found in SECURITY.md"
-fi
-
-# 11. Final status
-echo "\nExtended validation and automation complete. Review warnings and summaries above."
+echo ""
+echo "════════════════════════════════════════════════════════════════"
+echo "✅ Extended validation and automation complete."
+echo "════════════════════════════════════════════════════════════════"

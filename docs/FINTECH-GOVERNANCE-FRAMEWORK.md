@@ -83,7 +83,6 @@ This framework establishes market-leading standards for KPI measurement, traceab
 
 #### Incident Response
 
-- Automated alerting (PagerDuty/Slack)
 - Runbook automation
 - Post-mortem requirement (blameless)
 - RCA documentation in wiki

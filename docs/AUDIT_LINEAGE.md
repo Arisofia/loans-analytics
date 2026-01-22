@@ -49,4 +49,4 @@ Example payload lives at:
 
 CLI:
 
-- `python -m python.abaco_pipeline.main --config config/pipeline.yml write-audit --kpis-config config/kpis.yml --payload <payload.json> [--dry-run]`
+- `python -m src.abaco_pipeline.main --config config/pipeline.yml write-audit --kpis-config config/kpis.yml --payload <payload.json> [--dry-run]`

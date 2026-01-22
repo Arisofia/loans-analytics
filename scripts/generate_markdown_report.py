@@ -48,8 +48,12 @@ def generate_report(output_file: str, text_output: Optional[str], images: List[s
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate Markdown report from demo outputs")
-    parser.add_argument("--output", default="demo_report.md", help="Output markdown file")
+    parser = argparse.ArgumentParser(
+        description="Generate Markdown report from demo outputs"
+    )
+    parser.add_argument(
+        "--output", default="demo_report.md", help="Output markdown file"
+    )
     parser.add_argument("--text", help="Path to text output file")
     parser.add_argument("--images", nargs="*", default=[], help="List of image files")
 

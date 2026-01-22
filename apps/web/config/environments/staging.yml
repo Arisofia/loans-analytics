@@ -12,7 +12,7 @@ cascade:
 supabase:
   url: ${NEXT_PUBLIC_SUPABASE_URL}
   anon_key: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-  
+
 sentry:
   enabled: false
   dsn: null

@@ -1,6 +1,7 @@
 # Abaco Analytics - Data Dictionary
 
 ## data/abaco/loan_data.csv
+
 - loan_id: Unique loan identifier
 - customer_id: Foreign key to customer_data
 - disbursement_date: Date loan was disbursed
@@ -14,6 +15,7 @@
 - ...
 
 ## data/abaco/customer_data.csv
+
 - customer_id: Unique customer identifier
 - segment: Customer segment (Nimal/Gob/OC/Top)
 - subcategoria_linea: Ticket/line band (<10K, 10K-25K, 25K-50K, 50K-100K, >100K)
@@ -24,6 +26,7 @@
 - ...
 
 ## data/abaco/real_payment.csv
+
 - loan_id: Foreign key to loan_data
 - true_payment_date: Actual payment date
 - true_principal_payment: Principal paid
@@ -36,6 +39,7 @@
 - ...
 
 ## data/abaco/payment_schedule.csv
+
 - loan_id: Foreign key to loan_data
 - payment_date: Scheduled payment date
 - total_payment: Total scheduled payment (principal + interest + fees)
@@ -44,6 +48,7 @@
 - ...
 
 ## data/abaco/collateral.csv
+
 - loan_id: Foreign key to loan_data
 - collateral_type: Type of collateral
 - collateral_value: Reported value of collateral
@@ -51,6 +56,7 @@
 - ...
 
 ## data/support/marketing_spend.csv
+
 - month: Month-end date
 - channel: Marketing channel (Digital/Direct/Referral/etc.)
 - segment: Customer segment (Nimal/Gob/OC/Top)
@@ -58,18 +64,21 @@
 - kam_id: KAM associated to that spend (if applicable)
 
 ## data/support/payor_map.csv
+
 - customer_id: Customer identifier
 - payor_id: Unique payor identifier
 - payor_name: Payor name
 - effective_date: Date the mapping becomes effective
 
 ## data/support/headcount.csv
+
 - month: Month-end date
 - function: Function name (Sales/Risk/Collections/...)
 - fte_count: Full-time equivalent count
 - team: Team name/cluster (Commercial/Credit/Operations)
 
 ## data/support/risk_parameters.csv
+
 - segment: Segment (Nimal/Gob/OC/Top/etc.)
 - subcategoria_linea: Ticket/line band
 - pd: Probability of default
@@ -77,6 +86,7 @@
 - ead_factor: Exposure at default factor
 
 ## exports/analytics_facts.csv (Supabase analytics_facts table)
+
 - month: Month-end date
 - outstanding: Total AUM at month-end
 - active_clients: Unique customers with outstanding balance > 0

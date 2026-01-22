@@ -119,13 +119,24 @@ refactor(api): extract request validation logic
 
 **Dependabot**
 
-- Automatically creates PRs for dependency updates
+- Automatically creates PRs for dependency updates (see .github/dependabot.yml for config)
 - Direct dependencies only (not transitive)
-- Daily checks for `npm`, `pip`, `yarn`
-- Weekly checks for GitHub Actions
+- Weekly checks for GitHub Actions, pip, npm (see config for details)
 - PRs auto-labeled: `dependencies`, `npm`/`python`/`ci-cd`
+- All PRs assigned to `codex` automation agent for initial triage
+- Minor and patch updates are grouped to reduce PR noise
+- If you add new apps/services or move dependencies to subfolders, update the directory matchers in dependabot.yml
+- For critical updates, add a human reviewer or use CODEOWNERS for extra review
+- Use branch protection rules to require review/CI for Dependabot PRs
 
-Review and merge Dependabot PRs promptly to keep dependencies current.
+**Escalation:**
+
+- If a Dependabot PR breaks the build or exposes a security issue, escalate to the security contact in SECURITY.md
+
+**Best Practices:**
+
+- Review and merge Dependabot PRs promptly to keep dependencies current
+- Document any limitations or customizations in SECURITY.md or this file
 
 ## Automation & CI/CD
 

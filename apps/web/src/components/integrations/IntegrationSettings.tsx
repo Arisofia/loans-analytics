@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { BulkTokenInput } from './BulkTokenInput'
 import { IntegrationCard } from './IntegrationCard'
@@ -8,11 +8,11 @@ import { SlideLayout } from './SlideLayout'
 import {
   PLATFORMS,
   PLATFORM_LABELS,
-  SUPABASE_FN_BASE,
   type Platform,
   type TokenStatus,
 } from '@/lib/integrations/constants'
 import type { BulkProcessResult, BulkTokenItem, TokenState } from '@/types/integrations'
+import { supabase } from '@/lib/supabase/client'
 
 import styles from './IntegrationSettings.module.css'
 
@@ -23,15 +23,6 @@ export type StatusRow = {
   last_sync?: string
   last_sync_status?: { message?: string }
   id?: string
-}
-
-function isStatusRow(entry: unknown): entry is StatusRow {
-  if (!entry || typeof entry !== 'object') return false
-  const candidate = entry as Partial<StatusRow>
-  return (
-    typeof candidate.platform === 'string' &&
-    (candidate.status === undefined || typeof candidate.status === 'string')
-  )
 }
 
 const initialState: Record<Platform, TokenState> = PLATFORMS.reduce(
@@ -54,83 +45,45 @@ export function IntegrationSettings() {
     [tokenState]
   )
 
-  const appendLog = useCallback((message: string) => {
-    const timestamp = new Date().toLocaleTimeString()
-    setLogEntries((previous) => [`${timestamp} • ${message}`, ...previous].slice(0, 6))
-  }, [])
+  const appendLog = (message: string) => {
+    setLogEntries((prev) => [message, ...prev])
+  }
 
-  const setPlatformState = useCallback((platform: Platform, changes: Partial<TokenState>) => {
-    setTokenState((current) => ({
-      ...current,
-      [platform]: {
-        ...current[platform],
-        ...changes,
-      },
+  const setPlatformState = (platform: Platform, changes: Partial<TokenState>) => {
+    setTokenState((prev) => ({
+      ...prev,
+      [platform]: { ...prev[platform], ...changes },
     }))
-  }, [])
+  }
 
-  const callEdgeFunction = useCallback(
-    async <T,>(path: string, payload?: unknown, method: 'GET' | 'POST' = 'POST'): Promise<T> => {
-      if (!SUPABASE_FN_BASE) {
-        throw new Error('Set NEXT_PUBLIC_SUPABASE_FN_BASE to call Supabase edge functions')
-      }
-      const response = await fetch(`${SUPABASE_FN_BASE}${path}`, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: method === 'POST' ? JSON.stringify(payload) : undefined,
-      })
-      const json = (await response.json().catch(() => ({}))) as unknown
-      if (!response.ok) {
-        const errorMessage =
-          typeof (json as { error?: string }).error === 'string'
-            ? (json as { error?: string }).error
-            : 'Edge function request failed'
-        throw new Error(errorMessage)
-      }
-      return json as T
-    },
-    []
-  )
+  const callEdgeFunction = async <T,>(slug: string, payload: unknown): Promise<T> => {
+    const { data, error } = await supabase.functions.invoke(`integrations${slug}`, {
+      body: payload,
+    })
+    if (error) throw new Error(error.message)
+    return data as T
+  }
 
-  const refreshStatus = useCallback(async () => {
-    if (!SUPABASE_FN_BASE) {
-      appendLog('Set NEXT_PUBLIC_SUPABASE_FN_BASE to load integration status')
-      return
-    }
+  const refreshStatus = async () => {
     setLoadingStatus(true)
     try {
-      const response = await fetch(`${SUPABASE_FN_BASE}/status?projectId=${projectId}`)
-      const json = (await response.json().catch(() => [])) as unknown
-      if (Array.isArray(json)) {
-        const nextState: Record<Platform, TokenState> = { ...initialState }
-        json.forEach((entry) => {
-          if (isStatusRow(entry)) {
-            const { platform } = entry
-            if (PLATFORMS.includes(platform)) {
-              nextState[platform] = {
-                status: entry.status || 'connected',
-                accountId: entry.account_id ?? undefined,
-                lastSync: entry.last_sync ?? undefined,
-                message: entry.last_sync_status?.message,
-                tokenId: entry.id ?? undefined,
-              }
-            }
-          }
+      const result = await callEdgeFunction<StatusRow[]>('/status', { projectId })
+      result.forEach((row) => {
+        setPlatformState(row.platform, {
+          status: row.status,
+          accountId: row.account_id,
+          lastSync: row.last_sync,
+          tokenId: row.id,
         })
-        setTokenState(nextState)
-        appendLog('Statuses refreshed from Supabase')
-      }
+      })
+      appendLog('Status refreshed')
     } catch (error) {
-      const detail = error instanceof Error ? error.message : 'Unable to refresh status'
-      appendLog(detail)
+      const detail = error instanceof Error ? error.message : 'Status refresh failed'
+      appendLog(`Refresh failed: ${detail}`)
     } finally {
       setLoadingStatus(false)
     }
-  }, [appendLog, projectId])
-
-  useEffect(() => {
-    void refreshStatus()
-  }, [refreshStatus])
+  }
 
   const connectPlatform = async (platform: Platform) => {
     const details = tokenState[platform]

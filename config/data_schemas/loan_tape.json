@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Cascade Loan Tape",
+  "title": "Abaco Loan Tape",
   "type": "object",
   "required": [
     "measurement_date",
@@ -15,18 +15,18 @@
     "dpd_90_plus_usd"
   ],
   "properties": {
-    "loan_id": {"type": ["string", "null"]},
-    "period": {"type": ["string", "null"]},
-    "measurement_date": {"type": "string", "format": "date"},
-    "total_receivable_usd": {"type": "number"},
-    "total_eligible_usd": {"type": "number"},
-    "discounted_balance_usd": {"type": "number"},
-    "cash_available_usd": {"type": "number"},
-    "dpd_0_7_usd": {"type": "number"},
-    "dpd_7_30_usd": {"type": "number"},
-    "dpd_30_60_usd": {"type": "number"},
-    "dpd_60_90_usd": {"type": "number"},
-    "dpd_90_plus_usd": {"type": "number"}
+    "loan_id": { "type": ["string", "null"] },
+    "period": { "type": ["string", "null"] },
+    "measurement_date": { "type": "string", "format": "date" },
+    "total_receivable_usd": { "type": "number" },
+    "total_eligible_usd": { "type": "number" },
+    "discounted_balance_usd": { "type": "number" },
+    "cash_available_usd": { "type": "number" },
+    "dpd_0_7_usd": { "type": "number" },
+    "dpd_7_30_usd": { "type": "number" },
+    "dpd_30_60_usd": { "type": "number" },
+    "dpd_60_90_usd": { "type": "number" },
+    "dpd_90_plus_usd": { "type": "number" }
   },
   "additionalProperties": true
 }

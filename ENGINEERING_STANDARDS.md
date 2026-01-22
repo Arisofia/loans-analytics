@@ -9,6 +9,7 @@ This document outlines the engineering standards, code quality requirements, and
 - **Indentation**: Use 4 spaces for Python.
 
 ### Commands
+
 ```bash
 make format  # Runs black and isort
 ```
@@ -22,25 +23,29 @@ We use a combination of tools to ensure code quality:
 - **Ruff**: For fast, comprehensive linting and quick fixes.
 
 ### Key Rules
+
 - **No Unused Variables**: Always remove or underscore unused variables.
 - **Lazy Logging**: Use `%s` formatting in logging calls (e.g., `logger.info("msg: %s", var)`) instead of f-strings to avoid unnecessary string interpolation if the log level is disabled.
 - **Complexity**: Keep functions focused and avoid too many return statements or positional arguments.
 
 ### Commands
+
 ```bash
 make lint  # Runs all linters
 ```
 
 ## 3. Type Checking
 
-Type safety is enforced via **Mypy**. All new production code in `python/pipeline/` must be fully type-hinted.
+Type safety is enforced via **Mypy**. All new production code in `src/pipeline/` must be fully type-hinted.
 
 ### Rules
+
 - **Explicit Annotations**: Annotate complex dictionaries and collections (e.g., `Dict[str, Any]`).
 - **Optional Types**: Use `Optional[T]` for variables that can be `None`.
 - **Strictness**: Aim for no `Any` where possible, though `Any` is permitted for complex dataframes or legacy integrations.
 
 ### Commands
+
 ```bash
 make type-check
 ```
@@ -57,6 +62,7 @@ make type-check
 - **Parity**: KPI calculations must maintain parity between Python logic and SQL views (Supabase/PostgreSQL).
 
 ### Commands
+
 ```bash
 make test
 make test-cov
@@ -69,11 +75,12 @@ make test-cov
 
 ## 7. Linting Exceptions
 
-| File | Warning | Rationale |
-|------|---------|-----------|
-| `python/pipeline/data_ingestion.py` | `W0101` (Unreachable code) | Pylint identifies `df_polars.to_pandas()` after `pl.read_excel()` as unreachable. This is likely due to the lack of optional dependencies for Excel in the linting environment, causing `read_excel` to be typed as always raising. |
-| `python/analytics/kpi_catalog_processor.py` | Multiple | This is a legacy module scheduled for gradual replacement by the new pipeline. Style and complexity warnings are suppressed to focus on functional stability until it is fully deprecated in v2.0. |
-| `python/agents/orchestrator.py` | `valid-type`, `misc` | SQLAlchemy's `declarative_base()` usage requires type ignores because Mypy has difficulty with the dynamically generated base class. |
+| File                                     | Warning                    | Rationale                                                                                                                                                                                                                           |
+| ---------------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/pipeline/data_ingestion.py`         | `W0101` (Unreachable code) | Pylint identifies `df_polars.to_pandas()` after `pl.read_excel()` as unreachable. This is likely due to the lack of optional dependencies for Excel in the linting environment, causing `read_excel` to be typed as always raising. |
+| `src/analytics/kpi_catalog_processor.py` | Multiple                   | This is a legacy module scheduled for gradual replacement by the new pipeline. Style and complexity warnings are suppressed to focus on functional stability until it is fully deprecated in v2.0.                                  |
+| `src/agents/orchestrator.py`             | `valid-type`, `misc`       | SQLAlchemy's `declarative_base()` usage requires type ignores because Mypy has difficulty with the dynamically generated base class.                                                                                                |
 
 ---
-*Last Updated: 2026-01-01*
+
+_Last Updated: 2026-01-01_

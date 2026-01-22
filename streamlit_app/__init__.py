@@ -1,3 +1,3 @@
-"""Streamlit app package - adapter for test imports and utilities."""
+"""Package initializer for Streamlit app utilities and shared modules."""
 
-__all__ = []
+__all__ = ["utils"]

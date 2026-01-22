@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from unittest.mock import Mock, patch
 
-from python.abaco_pipeline.main import main
+from src.abaco_pipeline.main import main
 
 
 def test_write_audit_dry_run_prints_enriched_payload(tmp_path, capsys, monkeypatch):
@@ -51,9 +51,11 @@ def test_write_audit_dry_run_prints_enriched_payload(tmp_path, capsys, monkeypat
     assert "kpi_def_version" in out
 
 
-@patch("python.abaco_pipeline.main.subprocess.check_output")
-@patch("python.abaco_pipeline.output.supabase_writer.requests.post")
-def test_write_audit_writes_to_supabase(mock_post: Mock, mock_git: Mock, tmp_path, monkeypatch):
+@patch("src.abaco_pipeline.main.subprocess.check_output")
+@patch("src.abaco_pipeline.output.supabase_writer.requests.post")
+def test_write_audit_writes_to_supabase(
+    mock_post: Mock, mock_git: Mock, tmp_path, monkeypatch
+):
     mock_git.return_value = b"abc123\n"
     mock_resp = Mock()
     mock_resp.raise_for_status = Mock()

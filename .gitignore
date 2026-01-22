@@ -1,72 +1,71 @@
-# Gradle
-.gradle/
-build/
-**/.gradle/
-**/build/
-
-# OS
-.DS_Store
-
-# Python
-__pycache__/
-*.pyc
+# Dependencies
+node_modules/
+figma-financial-dashboard/node_modules/
+**/node_modules/
 .venv/
 venv/
+apps/web/.venv/
+__pycache__/
+*.pyc
 
-# Streamlit
-.streamlit/
-
-# Data outputs (NO versionar)
-data/metrics/
-data_samples/*.csv
-logs/
-exports/
-
-# Build / tooling
+# Next.js
 .next/
-.turbo/
-dist/
-coverage/
 out/
+build/
+dist/
 
-# IDE
-.vscode/tasks.json
-node_modules/
-
-clean_settings.json
-tailwind.config.js
-
-# Coverage
-.coverage
-.coverage.*
-htmlcov/
-
-# Project-specific artifacts
-apps/.DS_Store
-
-# Local repository clones
-abaco-loans-analytics/
-data_samples/
-gemini-cli/
-
-# Environment variables
+# Environment
 .env
 .env.local
-.env.*.local
-.vercel/
-nvm/
+.DS_Store
 
-# Other
-failed_workflows.csv
-scripts/test_hubspot_simple.py
+# Testing
+.pytest_cache/
+coverage/
+playwright-report/
+test-results/
 
-.env
+# Build artifacts
+*.egg-info/
+.gradle/
+target/
 
-# Python virtual environments
-.venv/
-.venv-1/
+# Config
+config/*.yaml
 
+<<<<<<< HEAD
+# Logs
+*.log
+*.logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/settings.json
+
+# Additional exclusions
+mypy_report.xml
+node_modules/
+figma-financial-dashboard/node_modules/
+.sonarlint/
+
+.python_packagesnode_modules/
+node_modules/
+node_modules/
+=======
 # Azurite local storage state
 AzuriteConfig
 __azurite_db_*.json
 __azurite_db_*_extent__.json
+scripts/setup_azure.sh
+.azure
+
+# Ignore generated media files
+*.mp4
+*.mov
+*.mp3
+>>>>>>> ed449d30c (feat: Update workflows and add gitignore for media files)
+.mvn/
+node_modules/

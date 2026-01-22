@@ -6,6 +6,7 @@ Complete step-by-step guide for deploying Abaco Analytics Dashboard to Azure App
 
 - Azure subscription with resource group `AI-MultiAgent-Ecosystem-RG`
 - Azure CLI (`az` command) installed and authenticated
+- GitHub CLI (`gh`) installed and authenticated (used for setting repository secrets interactively)
 - GitHub repository with push access
 - Streamlit dashboard code at `/dashboard/app.py`
 
@@ -207,6 +208,39 @@ echo '{
 # Copy base64 output → GitHub Secret: AZURE_CREDENTIALS
 ```
 
+### 3.3 Azure Static Web Apps token (SWA deploy)
+
+Note: this section applies to the **`apps/web`** site (Next.js static site) which is deployed to **Azure Static Web Apps**. The rest of this document primarily covers the Streamlit dashboard (`/dashboard/app.py`) which is deployed to **Azure App Service**. They are separate deployment targets and may have separate CI/CD secrets and workflows.
+
+If you deploy `apps/web` to Azure Static Web Apps, set a repository secret for the SWA deployment token. For public docs we recommend using a generic placeholder name `AZURE_STATIC_WEB_APPS_API_TOKEN` for clarity; the actual secret name in your organization may include the resource name or suffix. You can obtain the deployment token in the Azure portal (Static Web Apps → <your app> → Manage deployment token) or create one with the Azure CLI.
+
+Set the secret using the GitHub UI (Settings → Secrets and variables → Actions) or via `gh` (replace `YOUR_ORG/YOUR_REPO` with your repository):
+
+- Create/update interactively (prompts for input):
+
+```bash
+# Replace YOUR_ORG/YOUR_REPO with your github repository
+gh secret set AZURE_STATIC_WEB_APPS_API_TOKEN --repo YOUR_ORG/YOUR_REPO
+```
+
+- Non-interactive (from an environment variable `SWA_TOKEN`):
+
+```bash
+# Replace YOUR_ORG/YOUR_REPO with your github repository
+echo "$SWA_TOKEN" | gh secret set AZURE_STATIC_WEB_APPS_API_TOKEN --repo YOUR_ORG/YOUR_REPO
+```
+
+- Verify the secret exists:
+
+```bash
+# Replace YOUR_ORG/YOUR_REPO with your github repository
+gh secret list --repo YOUR_ORG/YOUR_REPO
+```
+
+If your organization uses resource-specific naming for secrets, you can substitute the actual name you use (for example `AZURE_STATIC_WEB_APPS_API_TOKEN_<RESOURCE_SUFFIX>`), but avoid publishing that exact name in public docs; store it in an internal runbook if it must be kept private.
+
+Note: Secrets are not available to workflows triggered by forked pull requests. Use a branch on the main repository or a manual workflow dispatch to run deploy steps that require the secret.
+
 ## 4. GitHub Actions Deployment
 
 ### 4.1 Trigger Deployment
@@ -234,13 +268,13 @@ Check GitHub Actions workflow:
 
 After successful deployment:
 
-```
+```text
 https://abaco-analytics-dashboard.azurewebsites.net
 ```
 
 Health endpoint:
 
-```
+```text
 https://abaco-analytics-dashboard.azurewebsites.net/?page=health
 ```
 

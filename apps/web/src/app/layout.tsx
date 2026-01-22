@@ -1,22 +1,24 @@
-import type { ReactNode } from 'react'
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import { Inter } from 'next/font/google'
-
-import './globals.css'
-import { siteMetadata } from './seo'
-import { SkipLink } from './skip-link'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = siteMetadata
+export const metadata: Metadata = {
+  title: 'Abaco Loans Analytics',
+  description: 'Financial analytics dashboard',
+}
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   return (
-    <html lang="en" className={inter.className}>
-      <body>
-        <SkipLink />
+    <html lang="en">
+      <body className={inter.className}>
         {children}
         <Analytics />
         <SpeedInsights />

@@ -1,27 +1,35 @@
-import type { Platform, TokenStatus } from '@/lib/integrations/constants'
-
-export type TokenState = {
-  token?: string
-  accountId?: string
-  status: TokenStatus
+// Represents a third-party integration connection.
+export interface Integration {
+  id: string
+  name: string
+  status: 'connected' | 'disconnected' | 'error'
   lastSync?: string
-  message?: string
-  tokenId?: string
 }
 
-export type BulkTokenItem = {
-  platform: Platform
+// Represents a token item for bulk integration operations.
+export interface BulkTokenItem {
   token: string
+  platform: string
   accountId?: string
-  status?: TokenStatus | 'pending' | 'success' | 'retrying'
-  attempts?: number
+  status?: string
   message?: string
+  attempts?: number
+  tokenId?: string
   resultId?: string
 }
 
-export type BulkProcessResult = {
-  item: BulkTokenItem
+// Represents the result of a bulk integration process.
+export interface BulkProcessResult {
   status: 'success' | 'error'
   detail?: string
+  tokenId?: string
+  item?: BulkTokenItem
+}
+
+export interface TokenState {
+  status: 'idle' | 'processing' | 'success' | 'error' | 'syncing'
+  message?: string
+  token?: string
+  accountId?: string
   tokenId?: string
 }

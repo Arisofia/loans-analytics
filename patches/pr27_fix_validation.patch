@@ -1,0 +1,49 @@
+*** Begin Patch
+*** Update File: python/pipeline/validation.py
+@@
+-        if numeric_columns:
+-            for col in numeric_columns:
+-                resolved = cols_lower.get(col.lower())
+-                if resolved:
+-                    original_nulls = self.df[resolved].isnull().sum()
+-                    coerced = pd.to_numeric(self.df[resolved], errors="coerce")
+-                    coerced_nulls = coerced.isnull().sum()
+-                    if coerced_nulls > original_nulls:
+-                        self.report.type_errors.append(f"Column '{col}' contains non-numeric values")
++        if numeric_columns:
++            for col in numeric_columns:
++                resolved = cols_lower.get(col.lower())
++                if resolved:
++                    original_mask = self.df[resolved].notna()
++                    coerced = pd.to_numeric(self.df[resolved], errors="coerce")
++                    failed_mask = original_mask & coerced.isna()
++                    if failed_mask.any():
++                        count = int(failed_mask.sum())
++                        sample_vals = self.df.loc[failed_mask, resolved].astype(str).unique()[:3].tolist()
++                        self.report.type_errors.append(
++                            f"Column '{col}' contains {count} non-numeric value(s). Examples: {sample_vals}"
++                        )
+@@
+-        if date_columns:
+-            for col in date_columns:
+-                resolved = cols_lower.get(col.lower())
+-                if resolved:
+-                    original_nulls = self.df[resolved].isnull().sum()
+-                    coerced = pd.to_datetime(self.df[resolved], errors="coerce")
+-                    coerced_nulls = coerced.isnull().sum()
+-                    if coerced_nulls > original_nulls:
+-                        self.report.type_errors.append(f"Column '{col}' contains invalid date values")
++        if date_columns:
++            for col in date_columns:
++                resolved = cols_lower.get(col.lower())
++                if resolved:
++                    original_mask = self.df[resolved].notna()
++                    coerced = pd.to_datetime(self.df[resolved], errors="coerce")
++                    failed_mask = original_mask & coerced.isna()
++                    if failed_mask.any():
++                        count = int(failed_mask.sum())
++                        sample_vals = self.df.loc[failed_mask, resolved].astype(str).unique()[:3].tolist()
++                        self.report.type_errors.append(
++                            f"Column '{col}' contains {count} invalid date value(s). Examples: {sample_vals}"
++                        )
+*** End Patch

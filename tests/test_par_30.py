@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from python.kpis.par_30 import calculate_par_30
+from src.kpis.par_30 import calculate_par_30
 
 
 def test_calculate_par_30_standard():
@@ -17,7 +17,7 @@ def test_calculate_par_30_standard():
     value, context = calculate_par_30(df)
     assert value == pytest.approx(15.0)
     assert isinstance(context, dict)
-    assert context['rows_processed'] == 2
+    assert context["rows_processed"] == 2
 
 
 def test_calculate_par_30_zero_receivable():

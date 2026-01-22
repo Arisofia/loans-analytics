@@ -17,9 +17,7 @@ def test_collection_rate_calculation():
     df = pd.read_csv(SAMPLE_PATH)
     result, _ = calculate_collection_rate(df)
     # Current sample data yields ~97.2%
-    assert result == pytest.approx(97.2, rel=0.001), (
-        "Collection rate drift detected"
-    )
+    assert result == pytest.approx(97.2, rel=0.001), "Collection rate drift detected"
 
 
 def test_segment_level_contracts():

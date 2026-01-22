@@ -1,25 +1,14 @@
 # Development Environment Overrides
 # Merge with base pipeline.yml for local testing with mocked/test credentials
 
-cascade:
-  base_url: http://localhost:8080
-  portfolio_id: test-portfolio
-  auth:
-    token_secret: TEST_CASCADE_COOKIE
-  http:
-    timeout_seconds: 60
-    retry:
-      max_retries: 1
-      backoff_seconds: 0.1
-
 pipeline:
   phases:
     ingestion:
       source: looker
       looker:
-        loans_par_path: data/raw/looker_exports/loan_par_balances.csv
-        loans_path: data/raw/looker_exports/loans.csv
-        financials_path: data/raw/financial_statements
+        loans_par_path: data/archives/looker_exports/loan_par_balances.csv
+        loans_path: data/archives/looker_exports/loans.csv
+        financials_path: data/archives/financial_statements
       validation:
         strict: true
     outputs:
@@ -29,18 +18,13 @@ pipeline:
         enabled: false
 
 run:
-  raw_archive_dir: data/raw/looker_exports/archive
+  raw_archive_dir: data/archives/looker_exports/archive
 
 observability:
   logging:
     level: DEBUG
 
 integrations:
-  cascade:
-    auth:
-      token_secret: TEST_CASCADE_COOKIE
-  slack:
-    enabled: false
   meta:
     enabled: false
   perplexity_comet:

@@ -1,34 +1,27 @@
-'use client'
-
-import Link from 'next/link'
-import styles from './page.module.css'
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
+import styles from './analytics-page.module.css'
+import Link from 'next/link'
+
+export const metadata = {
+  title: 'Portfolio Analytics | Abaco Loans',
+  description: 'Detailed portfolio performance dashboard and risk metrics.',
+}
 
 export default function AnalyticsPage() {
   return (
-    <main className={styles.page}>
+    <main className={styles.main}>
       <header className={styles.header}>
-        <div className={styles.copy}>
-          <p className={styles.eyebrow}>Analytics workspace</p>
-          <h1>Portfolio performance dashboard</h1>
-          <p className={styles.subtitle}>
-            Upload portfolio CSVs, review KPIs, and export governed reports without leaving the
-            browser.
-          </p>
-        </div>
-        <div className={styles.actions}>
-          <Link href="/" className={styles.secondaryButton}>
-            Back to homepage
+        <div className={styles.headerContent}>
+          <Link href="/" className={styles.backLink}>
+            &larr; Back to homepage
           </Link>
-          <a href="#dashboard" className={styles.primaryButton}>
-            Jump to dashboard
-          </a>
+          <h1>Portfolio performance dashboard</h1>
         </div>
       </header>
 
-      <section id="dashboard" className={styles.dashboardSection} aria-label="Analytics dashboard">
+      <div className={styles.content}>
         <AnalyticsDashboard />
-      </section>
+      </div>
     </main>
   )
 }

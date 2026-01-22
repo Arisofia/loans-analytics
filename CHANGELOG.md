@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
-#### Python Analytics Engine (`python/analytics/kpi_catalog_processor.py`)
+#### Python Analytics Engine (`src/analytics/kpi_catalog_processor.py`)
 
 - **Refactored 5 core KPI calculation methods** to use vectorized `groupby().agg()` instead of deprecated `groupby().apply()` patterns:
   - `get_monthly_pricing()` – Weighted APR, fee rate, other income, effective rate
@@ -76,7 +76,7 @@ Initial release of Abaco Loans Analytics dual-engine KPI stack with comprehensiv
   - Replines and renewal metrics
 
 - **Dual-Engine Architecture**:
-  - Python: `python/analytics/kpi_catalog_processor.py`
+  - Python: `src/analytics/kpi_catalog_processor.py`
   - SQL: `supabase/migrations/20260101_analytics_kpi_views.sql`
   - Synchronized definitions and parity testing
 

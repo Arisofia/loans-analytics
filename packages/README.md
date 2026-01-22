@@ -1,4 +1,5 @@
 # Packages directory
+
 This folder is reserved for shared libraries and utilities that may be published or reused across the project. It remains tracked so SonarCloud and other tooling can scan the repository structure consistently.
 Guidelines:
 
@@ -7,4 +8,4 @@ Guidelines:
 - Keep dependencies minimal and documented to support predictable CI behavior.
 - Add tests alongside package code to maintain coverage quality.
 - Document any Cosmos DB data-access helpers with partition-key guidance and RU/cost considerations to keep analytics pipelines predictable.
-If the directory is unused, leave this file in place so automated checks referencing `packages` continue to succeed.
+  If the directory is unused, leave this file in place so automated checks referencing `packages` continue to succeed.

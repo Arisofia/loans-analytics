@@ -1,38 +1,33 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
-function resolveSupabaseConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) {
-    throw new Error('Supabase environment variables are not configured');
+export const createClient = async () => {
+  const cookieStore = await cookies()
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY')
   }
-  return { url, anonKey };
-}
-
-type ServerCookie = {
-  name: string;
-  value: string;
-  options: CookieOptions;
-};
-
-export async function createClient() {
-  const { url: supabaseUrl, anonKey: supabaseAnonKey } = resolveSupabaseConfig();
-  const cookieStore = await cookies();
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      getAll() {
-        return cookieStore.getAll().map(({ name, value }) => ({ name, value }));
+      get(name: string) {
+        return cookieStore.get(name)?.value
       },
-      setAll(cookiesToSet: ServerCookie[]) {
+      set(name: string, value: string, options: CookieOptions) {
         try {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
+          cookieStore.set({ name, value, ...options })
         } catch {
-          // Ignored in Server Components
+          // Ignored
+        }
+      },
+      remove(name: string, options: CookieOptions) {
+        try {
+          cookieStore.set({ name, value: '', ...options })
+        } catch {
+          // Ignored
         }
       },
     },
-  });
+  })
 }

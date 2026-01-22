@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from python.abaco_pipeline.quality.gates import compute_freshness_hours
+from src.abaco_pipeline.quality.gates import compute_freshness_hours
 
 
 def test_compute_freshness_hours_zero_when_same_time():

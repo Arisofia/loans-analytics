@@ -96,7 +96,12 @@ class GeminiClient:
     ) -> AIResponse:
         logger.debug("Sending Gemini request", extra={"model": self.model.model_name})
         gen_context = context or {}
-        response = self.model.generate_content(prompt, generation_config=gen_context)
+        # Casting to Any to avoid mypy type mismatch with Google SDK's internal types
+        from typing import cast
+
+        response = self.model.generate_content(
+            prompt, generation_config=cast(Any, gen_context)
+        )
 
         text = getattr(response, "text", None) or "".join(
             getattr(response, "candidates", []) or []

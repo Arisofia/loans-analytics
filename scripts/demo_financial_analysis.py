@@ -1,68 +1,107 @@
-#!/usr/bin/env python3
-"""
-Demonstration script for the FinancialAnalyzer class.
-This script generates sample loan data and applies segmentation,
-DPD bucketing, and weighted statistic calculations.
-"""
-
 import argparse
-import logging
-import sys
-from datetime import datetime, timedelta
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+from src.analytics.financial_analysis import FinancialAnalyzer
 
-from python.financial_analysis import FinancialAnalyzer
+try:
+    import matplotlib.pyplot as plt
+except ImportError:  # pragma: no cover - optional dependency
+    plt = None
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-logger = logging.getLogger(__name__)
+DEFAULT_SAMPLE = Path("data_samples/abaco_portfolio_sample.csv")
 
 
-def generate_sample_data():
-    today = datetime.now().date()
-    data = {
-        "loan_id": [101, 102, 103, 104, 105],
-        "customer_id": ["C1", "C2", "C1", "C3", "C2"],
-        "outstanding_balance": [5000.0, 15000.0, 200.0, 50000.0, 12000.0],
-        "line_amount": [10000.0, 20000.0, 5000.0, 50000.0, 15000.0],
-        "days_past_due": [0, 45, 5, 120, 0],
-        "apr": [0.12, 0.15, 0.18, 0.10, 0.14],
-        "loan_count": [2, 5, 2, 1, 5],
-        "last_active_date": [today, today, today, today - timedelta(days=100), today],
+def load_data(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        raise FileNotFoundError(f"Data file not found: {path}")
+    return pd.read_csv(path)
+
+
+def summarize_metrics(df: pd.DataFrame) -> dict:
+    metrics = {
+        "rows": len(df),
     }
-    return pd.DataFrame(data)
+    if "total_receivable_usd" in df.columns:
+        metrics["total_receivable_usd"] = df["total_receivable_usd"].sum()
+    if "dpd_90_plus_usd" in df.columns and "total_receivable_usd" in df.columns:
+        total = df["total_receivable_usd"].sum()
+        metrics["par_90"] = (
+            (df["dpd_90_plus_usd"].sum() / total * 100.0) if total else 0.0
+        )
+    if "cash_available_usd" in df.columns and "total_eligible_usd" in df.columns:
+        total = df["total_eligible_usd"].sum()
+        metrics["collection_rate"] = (
+            (df["cash_available_usd"].sum() / total * 100.0) if total else 0.0
+        )
+    return metrics
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Run Financial Analysis Demo")
-    parser.add_argument("--data", type=str, help="Path to CSV file with loan data")
+def plot_dpd_distribution(df: pd.DataFrame, output_path: Path) -> None:
+    plt.figure(figsize=(8, 4))
+    if "dpd_90_plus_usd" in df.columns:
+        if "segment" in df.columns:
+            sns.histplot(
+                data=df, x="dpd_90_plus_usd", hue="segment", bins=12, kde=False
+            )
+        else:
+            sns.histplot(data=df, x="dpd_90_plus_usd", bins=12, kde=False)
+        plt.xlabel("DPD 90+ USD")
+        plt.ylabel("Count")
+        plt.title("DPD 90+ Distribution")
+    else:
+        plt.text(0.5, 0.5, "dpd_90_plus_usd column missing", ha="center", va="center")
+        plt.axis("off")
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
+
+
+def plot_exposure_distribution(df: pd.DataFrame, output_path: Path) -> None:
+    plt.figure(figsize=(8, 4))
+    if "total_receivable_usd" in df.columns:
+        if "segment" in df.columns:
+            exposure = df.groupby("segment", as_index=False)[
+                "total_receivable_usd"
+            ].sum()
+            sns.barplot(data=exposure, x="segment", y="total_receivable_usd")
+        else:
+            total = df["total_receivable_usd"].sum()
+            sns.barplot(x=["Portfolio"], y=[total])
+        plt.xlabel("Segment" if "segment" in df.columns else "Portfolio")
+        plt.ylabel("Total Receivable USD")
+        plt.title("Exposure by Segment")
+    else:
+        plt.text(
+            0.5, 0.5, "total_receivable_usd column missing", ha="center", va="center"
+        )
+        plt.axis("off")
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Run a financial analysis demo.")
+    parser.add_argument(
+        "--data", default=str(DEFAULT_SAMPLE), help="Path to CSV data file"
+    )
     args = parser.parse_args()
 
-    print("--- ABACO Financial Analysis Demo ---\n")
+    data_path = Path(args.data)
+    df = load_data(data_path)
+    metrics = summarize_metrics(df)
 
-    df = None
-    if args.data:
-        path = Path(args.data)
-        if path.exists():
-            print(f"Loading real data from {path}...")
-            try:
-                df = pd.read_csv(path)
-                print(f"Loaded {len(df)} loans.")
-            except Exception as e:
-                logger.error(f"Failed to load data: {e}")
-                sys.exit(1)
-        else:
-            logger.error(f"File not found: {path}")
-            sys.exit(1)
-    else:
-        print("No data file provided. Generating sample data...")
-        df = generate_sample_data()
-        print(f"Generated {len(df)} sample loans.")
+    print("ABACO Financial Analysis Demo")
+    print(f"Rows: {metrics.get('rows', 0)}")
+    if "total_receivable_usd" in metrics:
+        print(f"Total receivable (USD): {metrics['total_receivable_usd']:.2f}")
+    if "par_90" in metrics:
+        print(f"PAR 90: {metrics['par_90']:.2f}%")
+    if "collection_rate" in metrics:
+        print(f"Collection rate: {metrics['collection_rate']:.2f}%")
 
     analyzer = FinancialAnalyzer()
 
@@ -73,7 +112,13 @@ def main():
     # Select columns to show that actually exist (handling both sample and real data schemas)
     cols_to_show = [
         c
-        for c in ["loan_id", "dpd_bucket", "exposure_segment", "line_utilization", "client_type"]
+        for c in [
+            "loan_id",
+            "dpd_bucket",
+            "exposure_segment",
+            "line_utilization",
+            "client_type",
+        ]
         if c in enriched_df.columns
     ]
     if cols_to_show:
@@ -93,10 +138,23 @@ def main():
     print(f"HHI Score: {hhi:.2f} (Scale 0-10,000)")
 
     # 5. Visualization
+    if plt is None:
+        logger.warning("matplotlib is not available; skipping plots.")
+        return
+
     if "dpd_bucket" in enriched_df.columns:
         print("\n[4] Generating DPD Distribution Chart...")
         counts = enriched_df["dpd_bucket"].value_counts()
-        order = ["Current", "1-29", "30-59", "60-89", "90-119", "120-149", "150-179", "180+"]
+        order = [
+            "Current",
+            "1-29",
+            "30-59",
+            "60-89",
+            "90-119",
+            "120-149",
+            "150-179",
+            "180+",
+        ]
         counts = counts.reindex(order).fillna(0)
 
         plt.figure(figsize=(10, 6))
@@ -123,7 +181,6 @@ def main():
         plt.tight_layout()
         output_img = "exposure_distribution.png"
         plt.savefig(output_img)
-        print(f"Saved {output_img}")
 
 
 if __name__ == "__main__":

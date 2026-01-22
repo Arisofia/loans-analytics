@@ -53,7 +53,7 @@ WITH month_ends AS (
 ),
 loan_meta AS (
     -- Representative metadata for each loan ID
-    SELECT 
+    SELECT
         loan_id,
         MAX(customer_id) as customer_id,
         MAX(interest_rate_apr) as interest_rate_apr,
@@ -121,8 +121,7 @@ loan_rates AS (
         (lm.origination_fee + lm.origination_fee_taxes)
             / NULLIF(lm.disbursement_amount, 0)      AS fee_rate,
         (
-            (COALESCE(i.total_int, 0)
-            + COALESCE(i.total_fee, 0)
+            (COALESCE(i.total_fee, 0)
             + COALESCE(i.total_other, 0)
             + COALESCE(i.total_tax, 0)
             + COALESCE(i.total_fee_tax, 0)
@@ -134,17 +133,18 @@ loan_rates AS (
       ON i.loan_id = lm.loan_id AND i.month_end = lm.month_end
 )
 SELECT
-    month_end                           AS year_month,
-    SUM(apr * outstanding)
-        / NULLIF(SUM(outstanding), 0)   AS weighted_apr,
-    SUM(fee_rate * outstanding)
-        / NULLIF(SUM(outstanding), 0)   AS weighted_fee_rate,
-    SUM(COALESCE(other_income_rate, 0) * outstanding)
-        / NULLIF(SUM(outstanding), 0)   AS weighted_other_income_rate,
-    SUM((apr + fee_rate + COALESCE(other_income_rate, 0)) * outstanding)
-        / NULLIF(SUM(outstanding), 0)   AS weighted_effective_rate
-FROM loan_rates
-WHERE outstanding > 1e-4
+    lr.month_end                           AS year_month,
+    SUM(lr.apr * lr.outstanding)
+        / NULLIF(SUM(lr.outstanding), 0)   AS weighted_apr,
+    SUM(lr.fee_rate * lr.outstanding)
+        / NULLIF(SUM(lr.outstanding), 0)   AS weighted_fee_rate,
+    SUM(COALESCE(lr.other_income_rate, 0) * lr.outstanding)
+        / NULLIF(SUM(lr.outstanding), 0)   AS weighted_other_income_rate,
+    SUM((COALESCE(i.total_int, 0) + COALESCE(i.total_fee, 0) + COALESCE(i.total_other, 0) + COALESCE(i.total_tax, 0) + COALESCE(i.total_fee_tax, 0) - COALESCE(i.total_rebates, 0)))
+        / NULLIF(SUM(lr.outstanding), 0) AS weighted_effective_rate
+FROM loan_rates lr
+LEFT JOIN income_per_loan i ON i.loan_id = lr.loan_id AND i.month_end = lr.month_end
+WHERE lr.outstanding > 1e-4
 GROUP BY 1
 ORDER BY 1;
 
@@ -185,14 +185,15 @@ ORDER BY 1;
 CREATE OR REPLACE VIEW analytics.kpi_customer_types AS
 WITH ranked_loans AS (
     SELECT
-        customer_id,
-        disbursement_date::date AS disbursement_date,
-        disbursement_amount,
-        days_past_due,
-        ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY disbursement_date, loan_id) AS rn,
-        LAG(disbursement_date::date) OVER (PARTITION BY customer_id ORDER BY disbursement_date, loan_id) AS prev_disb,
-        MAX(days_past_due) OVER (PARTITION BY customer_id) AS max_dpd_ever
-    FROM loan_data
+        l.customer_id,
+        l.disbursement_date::date AS disbursement_date,
+        l.disbursement_amount,
+        l.days_past_due,
+        ROW_NUMBER() OVER (PARTITION BY l.customer_id ORDER BY l.disbursement_date, l.loan_id) AS rn,
+        LAG(l.disbursement_date::date) OVER (PARTITION BY l.customer_id ORDER BY l.disbursement_date, l.loan_id) AS prev_disb,
+        MAX(l.days_past_due) OVER (PARTITION BY l.customer_id) AS max_dpd_ever
+    FROM loan_data l
+    JOIN customer_data c ON l.customer_id = c.customer_id
 ),
 classified AS (
     SELECT
@@ -364,7 +365,7 @@ ORDER BY 1;
 CREATE OR REPLACE VIEW analytics.kpi_weighted_fee_rate AS
 SELECT
     month_end AS year_month,
-    SUM(((origination_fee + origination_fee_taxes) / NULLIF(disbursement_amount, 0)) * outstanding) 
+    SUM(((origination_fee + origination_fee_taxes) / NULLIF(disbursement_amount, 0)) * outstanding)
         / NULLIF(SUM(outstanding), 0) AS weighted_fee_rate
 FROM analytics.loan_month
 WHERE outstanding > 1e-4

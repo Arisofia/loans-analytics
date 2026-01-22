@@ -1,8 +1,8 @@
 # Production Readiness Summary
 
-**Status**: ✅ **READY FOR PRODUCTION**
-**Last Updated**: 2025-12-14
-**Commit**: `3612fa20` (feat: add data pipeline validation)
+- **Status**: ✅ **READY FOR PRODUCTION**
+- **Last Updated**: 2025-12-14
+- **Commit**: `3612fa20` (feat: add data pipeline validation)
 
 ---
 
@@ -25,7 +25,7 @@
   - Client-side error tracking
   - Environment-aware sampling rates
   - Automatic error capture (no code required)
-  - Dashboard at https://sentry.io
+  - Dashboard at <https://sentry.io>
 
 ### 3. **Data Pipeline Validation** ✅
 
@@ -80,7 +80,7 @@ All checks pass ✅:
 
 You must configure these GitHub Secrets before deploying:
 
-```
+```env
 NEXT_PUBLIC_SUPABASE_URL        (required)
 NEXT_PUBLIC_SUPABASE_ANON_KEY   (required)
 VERCEL_TOKEN                     (required)
@@ -91,14 +91,14 @@ NEXT_PUBLIC_SENTRY_DSN           (optional, for error tracking)
 
 **Get values from:**
 
-1. **Vercel**: https://vercel.com/account/tokens (VERCEL_TOKEN)
-2. **Vercel dashboard**: https://vercel.com/dashboard (ORG_ID, PROJECT_ID)
-3. **Supabase**: https://supabase.com/dashboard (SUPABASE_URL, ANON_KEY)
-4. **Sentry**: https://sentry.io (optional, SENTRY_DSN)
+1. **Vercel**: <https://vercel.com/account/tokens> (VERCEL_TOKEN)
+2. **Vercel dashboard**: <https://vercel.com/dashboard> (ORG_ID, PROJECT_ID)
+3. **Supabase**: <https://supabase.com/dashboard> (SUPABASE_URL, ANON_KEY)
+4. **Sentry**: <https://sentry.io> (optional, SENTRY_DSN)
 
 ### Step 1: Add GitHub Secrets
 
-Go to: https://github.com/your-org/abaco-loans-analytics/settings/secrets/actions
+Go to: <https://github.com/your-org/abaco-loans-analytics/settings/secrets/actions>
 
 Add each secret from above.
 
@@ -120,24 +120,24 @@ This automatically:
 
 ```bash
 # Check CI/CD status
-https://github.com/your-org/abaco-loans-analytics/actions
+<https://github.com/your-org/abaco-loans-analytics/actions>
 
 # Check production deployment
-https://abaco-loans-analytics.vercel.app
+<https://abaco-loans-analytics.vercel.app>
 
 # Check error tracking
-https://sentry.io → select project → Errors
+<https://sentry.io> → select project → Errors
 ```
 
 ---
 
 ## Environment Details
 
-| Environment | URL                                              | Branch    | Auto-Deploy |
-| ----------- | ------------------------------------------------ | --------- | ----------- |
-| Production  | https://abaco-loans-analytics.vercel.app         | `main`    | ✅ Yes      |
-| Staging     | https://abaco-loans-analytics-staging.vercel.app | `staging` | ✅ Yes      |
-| Local Dev   | http://localhost:3000                            | N/A       | N/A         |
+| Environment | URL                                                | Branch    | Auto-Deploy |
+| ----------- | -------------------------------------------------- | --------- | ----------- |
+| Production  | <https://abaco-loans-analytics.vercel.app>         | `main`    | ✅ Yes      |
+| Staging     | <https://abaco-loans-analytics-staging.vercel.app> | `staging` | ✅ Yes      |
+| Local Dev   | <http://localhost:3000>                            | N/A       | N/A         |
 
 ---
 
@@ -235,7 +235,7 @@ if (analyticsResult.warnings.length > 0) {
 
 ### Error Tracking (Sentry)
 
-**URL**: https://sentry.io → select "abaco-loans-analytics" project
+**URL**: <https://sentry.io> → select "abaco-loans-analytics" project
 
 **What's tracked**:
 
@@ -273,7 +273,7 @@ git push origin main
 
 **Option 2: Deploy Previous Version**
 
-1. Go to https://vercel.com → abaco-loans-analytics → Deployments
+1. Go to <https://vercel.com> → abaco-loans-analytics → Deployments
 2. Find last known-good deployment
 3. Click "..." → "Promote to Production"
 
@@ -338,7 +338,7 @@ These are mostly in dev dependencies and should be addressed:
 
 ```bash
 # View vulnerabilities
-https://github.com/Abaco-Technol/abaco-loans-analytics/security/dependabot
+<https://github.com/Abaco-Technol/abaco-loans-analytics/security/dependabot>
 
 # Update dependencies (carefully test)
 npm update

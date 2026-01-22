@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       target_version:
-        description: "Version tag to rollback to (e.g., v1.0.0)"
+        description: 'Version tag to rollback to (e.g., v1.0.0)'
         required: true
         type: string
       environment:
-        description: "Environment to rollback"
+        description: 'Environment to rollback'
         required: true
         type: choice
         options:
@@ -80,9 +80,9 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: '18'
           cache: pnpm
-          cache-dependency-path: apps/web/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v3
@@ -92,23 +92,32 @@ jobs:
       - name: Install dependencies (apps/web)
         run: pnpm -C apps/web install --frozen-lockfile
 
-      - name: Build target version
+      - name: Build target version (staging)
+        if: github.event.inputs.environment == 'staging'
         run: pnpm -C apps/web build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets[format('{0}_SUPABASE_URL', github.event.inputs.environment == 'production' && 'PROD' || 'STAGING')] }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets[format('{0}_SUPABASE_KEY', github.event.inputs.environment == 'production' && 'PROD' || 'STAGING')] }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_KEY }}
+          NODE_ENV: production
+
+      - name: Build target version (production)
+        if: github.event.inputs.environment == 'production'
+        run: pnpm -C apps/web build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PROD_SUPABASE_KEY }}
           NODE_ENV: production
 
       - name: Deploy rolled-back version
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets[format('AZURE_STATIC_WEB_APPS_TOKEN_{0}', github.event.inputs.environment == 'production' && 'PROD' || 'STAGING')] }}
+          azure_static_web_apps_api_token: ${{ secrets[github.event.inputs.environment == 'production' && 'AZURE_STATIC_WEB_APPS_TOKEN_PROD' || 'AZURE_STATIC_WEB_APPS_TOKEN_STAGING'] }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
-          app_location: "apps/web"
-          api_location: ""
-          output_location: ".next"
-          app_build_command: "pnpm -C apps/web build"
+          action: 'upload'
+          app_location: 'apps/web'
+          api_location: ''
+          output_location: '.next'
+          app_build_command: 'pnpm -C apps/web build'
 
   post-rollback-validation:
     runs-on: ubuntu-latest
@@ -166,7 +175,7 @@ jobs:
               - **Version**: ${process.env.TARGET_VERSION}
               - **Environment**: ${process.env.ENVIRONMENT}
               - **Action**: https://github.com/${process.env.REPO}/actions/runs/${process.env.RUN_ID}
-              
+
               **IMMEDIATE ACTION REQUIRED** - Manual intervention needed.
               See OPERATIONS.md incident response procedures.
               `,

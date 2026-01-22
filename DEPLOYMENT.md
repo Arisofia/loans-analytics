@@ -8,11 +8,9 @@ This document provides deployment instructions, operational procedures, and trou
 
 ### Core Components
 
-1. **Data Ingestion Layer**: Cascade Debt exports (daily 03:00 UTC)
 2. **Transformation Layer**: KPI calculations (BigQuery + Python)
 3. **Validation Layer**: Reconciliation & drift detection
-4. **Distribution Layer**: Stakeholder reporting to Slack, Email, Notion
-5. **Agent Orchestration**: Codex, SonarQube, CodeRabbit automation
+4. **Agent Orchestration**: Codex, SonarQube, CodeRabbit automation
 
 ### 7 Departmental Intelligence Stacks
 
@@ -31,7 +29,6 @@ This document provides deployment instructions, operational procedures, and trou
 ✅ **Completed**
 
 - Data warehouse setup (BigQuery)
-- Raw data layer ingestion from Cascade
 - KPI definitions and calculation engines
 - Initial monitoring and alerting
 
@@ -39,10 +36,9 @@ This document provides deployment instructions, operational procedures, and trou
 
 ⏳ **In Progress**
 
-- Slack real-time alerts
 - Notion workspace sync
 - Email distribution lists
-- HubSpot CRM integration
+
 - Meta advertising synchronization
 
 ### Phase 3: Agent Orchestration (Week 3)
@@ -65,12 +61,9 @@ This document provides deployment instructions, operational procedures, and trou
 
 ## Configuration Files
 
-```
+```text
 config/
 ├── integrations/
-│   ├── cascade.yaml          # Data source mapping
-│   ├── slack.yaml            # Alert configuration
-│   ├── hubspot.yaml          # CRM synchronization (pending)
 │   ├── notion.yaml           # Workspace sync (pending)
 │   └── meta.yaml             # Ad platform (pending)
 ├── pipelines/
@@ -83,7 +76,7 @@ sql/
 ├── v_portfolio_risk.sql      # Portfolio health score view
 └── models/                   # Additional dimensional models
 
-python/
+src/
 ├── setup.py                  # Package configuration
 ├── kpi_engine.py            # KPI calculation implementations
 ├── ingestion/               # Data import modules
@@ -99,7 +92,6 @@ python/
    - Formula: SUM(balance) WHERE days_delinquent > 90 / SUM(total_receivables)
    - Threshold (Critical): > 5.0%
    - Threshold (Warning): > 3.0%
-   - Source: Cascade Debt daily exports
 
 2. **Collection Rate**
    - Formula: SUM(collections_30d) / SUM(receivables_outstanding) \* 100
@@ -114,9 +106,6 @@ python/
 ## Alert Rules
 
 ```yaml
-PAR_90 > 5.0%: CRITICAL → Slack + Email + SMS
-PAR_90 > 3.0%: WARNING  → Slack + Email
-Collection < 0.5%: WARNING → Slack
 Compliance Breach: CRITICAL → All channels + escalation
 ```
 
@@ -147,9 +136,6 @@ Compliance Breach: CRITICAL → All channels + escalation
 
 ### Data Ingestion Issues
 
-**Problem**: Cascade export not loading
-
-- Check: Cascade export file availability
 - Check: BigQuery connection and quota
 - Action: Retry with exponential backoff (max 3 attempts)
 - Escalate: Contact data ops team
@@ -160,7 +146,6 @@ Compliance Breach: CRITICAL → All channels + escalation
 
 - Verify: KPI calculation completed successfully
 - Verify: Alert rule condition matches data
-- Verify: Slack webhook token is valid
 - Action: Check logs in Cloud Logging
 
 ### Report Generation Failed
@@ -174,7 +159,7 @@ Compliance Breach: CRITICAL → All channels + escalation
 
 ## Monitoring Dashboard
 
-**URL**: https://abaco-loans-analytics.vercel.app/dashboard
+**URL**: <https://abaco-loans-analytics.vercel.app/dashboard>
 **Refresh Rate**: Real-time (WebSocket)
 **Key Metrics Displayed**:
 
@@ -187,7 +172,6 @@ Compliance Breach: CRITICAL → All channels + escalation
 ## Support & Escalation
 
 **Level 1**: Automated alert responses
-**Level 2**: Data team on-call (Slack #fintech-ops)
 **Level 3**: Executive escalation if PAR_90 > 8% or compliance breach
 
 ## Maintenance Windows
@@ -208,6 +192,5 @@ Compliance Breach: CRITICAL → All channels + escalation
 ## Contact
 
 **Architecture Owner**: Fintech Factory Team
-**GitHub**: https://github.com/Abaco-Technol/abaco-loans-analytics
-**Slack Channel**: #fintech-factory
+**GitHub**: <https://github.com/Abaco-Technol/abaco-loans-analytics>
 **Last Updated**: 2025-01-01

@@ -31,7 +31,7 @@ Follow these steps to ship changes with full lineage, tests, and persona contrac
 
 ### 6) Update agents and logging
 
-- When agents use the new KPI, log executions via `python/agents/orchestrator.py` to the `agent_runs` table.
+- When agents use the new KPI, log executions via `src/agents/orchestrator.py` to the `agent_runs` table.
 - Capture prompt version, model, input hash, output markdown, and citations.
 
 ### 7) CI and PR expectations
