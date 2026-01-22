@@ -4,12 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from python.testing.db_manager import DBManager
+from src.testing.db_manager import DBManager
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON_DIR = ROOT / "python"
-if str(PYTHON_DIR) not in sys.path:
-    sys.path.insert(0, str(PYTHON_DIR))
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 

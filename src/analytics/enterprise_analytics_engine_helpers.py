@@ -16,6 +16,8 @@ class LoanPosition:
             raise ValueError("Interest rate cannot be negative")
         if self.term_months <= 0:
             raise ValueError("Term months must be positive")
+        if not (0.0 <= self.default_probability <= 1.0):
+            raise ValueError("Default probability must be between 0 and 1")
 
 
 @dataclass(frozen=True)

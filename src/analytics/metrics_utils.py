@@ -264,6 +264,6 @@ def calculate_quality_score(df: pd.DataFrame) -> float:
     Score = (1 - average_null_ratio) * 100
     """
     if df.empty:
-        return 0
+        return 0.0
     null_ratio = df.isna().mean().mean()
-    return int((1.0 - null_ratio) * 100)
+    return float((1.0 - null_ratio) * 100)

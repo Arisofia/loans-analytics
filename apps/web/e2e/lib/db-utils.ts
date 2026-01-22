@@ -28,11 +28,7 @@ export const TestDataManager = {
     // Try to find existing user by email
     try {
       const listRes = await supabaseAdmin.auth.admin.listUsers()
-<<<<<<< HEAD
       const users = listRes?.data?.users ?? listRes?.users ?? []
-=======
-      const users = listRes?.data?.users ?? listRes?.users ?? []
->>>>>>> copilot/refactor-test-import-structure
       const existing = users.find((u) => u.email === email)
       if (existing) return existing.id
 
@@ -45,11 +41,7 @@ export const TestDataManager = {
       })
 
       if (createRes.error) throw createRes.error
-<<<<<<< HEAD
       return createRes?.data?.user?.id ?? createRes?.user?.id
-=======
-      return createRes?.data?.user?.id ?? createRes?.user?.id
->>>>>>> copilot/refactor-test-import-structure
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
       console.error('Error ensuring test user:', message)

@@ -5,12 +5,12 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional, Union
 
 logger = logging.getLogger(__name__)
 
 
-def _find_repo_root(start: Path | None | Callable[[], Path] = None) -> Path:
+def _find_repo_root(start: Union[Path, None, Callable[[], Path]] = None) -> Path:
     """Find the repository root by looking for common marker files.
 
     Walks up from the start path and looks for `pyproject.toml`, `.git`, or

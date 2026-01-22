@@ -35,4 +35,6 @@ def project_growth(
     yields = np.linspace(yield_start, yield_end, periods)
     volumes = np.linspace(volume_start, volume_end, periods)
 
-    return pd.DataFrame({"month": dates, "yield": yields, "loan_volume": volumes})
+    df = pd.DataFrame({"month": dates, "yield": yields, "loan_volume": volumes})
+    df["month"] = df["month"].dt.strftime("%b %Y")
+    return df
