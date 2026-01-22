@@ -68,3 +68,4 @@ scripts/setup_azure.sh
 *.mp3
 >>>>>>> ed449d30c (feat: Update workflows and add gitignore for media files)
 .mvn/
+node_modules/
