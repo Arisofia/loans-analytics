@@ -227,7 +227,7 @@ class UnifiedOutputManager:
     def health_check(self) -> Dict[str, bool]:
         """Check health of all output clients."""
         checks = {
-            "figma": bool(self.figma_client.api_token),
+
             "azure": bool(self.azure_storage_client.client),
             "supabase": bool(self.supabase_client.client),
             "meta": bool(self.meta_client.access_token),
