@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+
 from src.kpis.par_30 import calculate_par_30
 
 

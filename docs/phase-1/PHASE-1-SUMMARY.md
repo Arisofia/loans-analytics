@@ -25,7 +25,7 @@ Comprehensive Phase-1 documentation bundle establishing governance, CI/CD infras
 - ✅ `.github/workflows/agent-orchestrator.yml` — Multi-agent orchestration dispatcher (daily intelligence, synthesis, conflict resolution, emergency modes)
 - ✅ `.github/workflows/analytics-pipeline.yml` — Scheduled analytics pipeline runner (data processing, KPI extraction, artifact uploads)
 - ✅ `.github/workflows/azure-diagnostics.yml` — Azure infrastructure diagnostics (secrets validation, ACR, storage, SWA)
-- ✅ `.github/workflows/batch-export-scheduled.yml` — 6-hourly batch export: database sync, Supabase, HubSpot, Meta, Figma, Notion, Azure Storage integration
+- ✅ `.github/workflows/batch-export-scheduled.yml` — 6-hourly batch export: database sync, Supabase, Meta, Notion, Azure Storage integration
 
 ---
 

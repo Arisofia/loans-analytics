@@ -104,7 +104,7 @@ def analyze_metrics():
             "completeness_score": completeness,
             "validity_score": validity,
             "anomaly_count": anomalies,
-        }
+        },
     }
 
     with open(output_dir / "metrics_analysis.json", "w") as f:

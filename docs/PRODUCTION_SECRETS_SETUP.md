@@ -21,8 +21,6 @@ These secrets are documented as previously set:
 ```text
 SUPABASE_URL: https://zpowfbeftxexzidlxndy.supabase.co
 SUPABASE_ANON_KEY: <REDACTED>
-FIGMA_TOKEN: <REDACTED>
-FIGMA_FILE_KEY: <REDACTED>
 ```
 
 ---
@@ -53,7 +51,6 @@ postgres://postgres:[PASSWORD]@db.zpowfbeftxexzidlxndy.supabase.co:6543/postgres
 **To Add to GitHub**:
 
 1. Go to repository → Settings → Secrets and variables → Actions
-2. Click "New repository secret"
 3. Name: `DATABASE_URL`
 4. Value: [paste connection string]
 5. Click "Add secret"
@@ -71,7 +68,6 @@ postgres://postgres:[PASSWORD]@db.zpowfbeftxexzidlxndy.supabase.co:6543/postgres
 - Azure Dashboard creation
 - Azure Monitor operations
 
-**How to create**:
 
 Run this Azure CLI command (requires Azure CLI installed and authenticated):
 
@@ -85,7 +81,6 @@ az ad sp create-for-rbac \
 
 **Output** (copy entire JSON):
 
-```json
 {
   "clientId": "00000000-0000-0000-0000-000000000000",
   "clientSecret": "secret-value-here",
@@ -98,9 +93,7 @@ az ad sp create-for-rbac \
   "galleryEndpointUrl": "https://gallery.azure.com/",
   "managementEndpointUrl": "https://management.core.windows.net/"
 }
-```
 
-**To Add to GitHub**:
 
 1. Go to repository → Settings → Secrets and variables → Actions
 2. Click "New repository secret"
@@ -117,7 +110,6 @@ az ad sp create-for-rbac \
 **Why**: Direct access to Azure Blob Storage for exporting files.
 
 **How to get**:
-
 1. Azure Portal → Storage account `abacostgprod` (or your storage account)
 2. Settings → Access keys
 3. Copy "Connection string" under "key1"
@@ -130,7 +122,6 @@ DefaultEndpointsProtocol=https;AccountName=abacostgprod;AccountKey=...;EndpointS
 
 **To Add to GitHub**:
 
-1. Settings → Secrets and variables → Actions
 2. Name: `AZURE_STORAGE_CONNECTION_STRING`
 3. Value: [paste connection string]
 
@@ -143,9 +134,7 @@ DefaultEndpointsProtocol=https;AccountName=abacostgprod;AccountKey=...;EndpointS
 - `AZURE_SUBSCRIPTION_ID`
 - `AZURE_RESOURCE_GROUP`
 - `AZURE_DASHBOARD_NAME`
-
 **To get**:
-
 1. Azure Portal → Your resource group `AI-MultiAgent-Ecosystem-RG`
 2. Copy the Resource Group ID
 3. Subscription ID: visible in the portal URL or Settings
@@ -161,9 +150,7 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 **To Add to GitHub**: Add each as a separate secret in Actions Secrets.
 
 ---
-
 ## 📋 Secondary Secrets (For Full Integrations)
-
 ### 5. Supabase Service Role Key
 
 **Environment Variable**: `SUPABASE_SERVICE_ROLE`
@@ -172,45 +159,34 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 **How to get**:
 
-1. Supabase Dashboard → Settings → API
 2. Copy the "service_role secret"
 
-**To Add to GitHub**:
-
 1. Settings → Secrets → New repository secret
-2. Name: `SUPABASE_SERVICE_ROLE`
 3. Value: [paste key]
 
 ---
 
 ### 6. Meta (Facebook) Integration
-
 #### 6a. Meta Access Token
 
 **Environment Variable**: `META_ACCESS_TOKEN`
 
 **Why**: Required for Facebook Pixel tracking and Ads Manager API access.
-
 **How to get**:
 
 1. [Meta Business Suite](https://business.facebook.com/) → Settings → Apps and websites
 2. Select your app → Settings → Tokens
 3. Copy "User access token" (long-lived, 60+ days)
-
 **To Add**:
 
 - Name: `META_ACCESS_TOKEN`
 
-#### 6b. Meta Pixel ID
 
 **Environment Variable**: `META_PIXEL_ID`
 
 **How to get**:
-
-1. Meta Business Suite → Data sources → Pixels
 2. Click your pixel → Settings
 3. Copy Pixel ID
-
 **To Add**:
 
 - Name: `META_PIXEL_ID`
@@ -241,7 +217,6 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 1. [Notion Settings](https://notion.so/profile/settings) → Integrations → Develop your own integrations
 2. Click "New integration"
 3. Name: `Abaco Analytics Export`
-4. Copy the "Internal Integration Token"
 
 **To Add**:
 
@@ -255,7 +230,6 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 1. Open your Notion database in browser
 2. Copy the 32-character ID from the URL: `https://notion.so/{YOUR_WORKSPACE}/{DATABASE_ID}?v=...`
-
 **To Add**:
 
 - Name: `NOTION_DATABASE_ID`
@@ -297,18 +271,10 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 #### HubSpot
 
-
 #### OpenAI
 
 - `OPENAI_API_KEY`: [OpenAI API Keys](https://platform.openai.com/api-keys)
 
-
-- `SLACK_WEBHOOK_URL`: Incoming webhook for notifications
-- `SLACK_WEBHOOK_OPS`: Separate webhook for operations notifications
-
----
-
-## 🛠️ Implementation Checklist
 
 ### Before Production Deployment
 

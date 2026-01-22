@@ -27,7 +27,9 @@ def load_secrets(use_vault_fallback: bool = True) -> dict:
 
     # Validate all secrets
     try:
-        validation = manager.validate(fail_on_missing_required=True, fail_on_missing_optional=False)
+        validation = manager.validate(
+            fail_on_missing_required=True, fail_on_missing_optional=False
+        )
         manager.log_status(include_optional=True)
         return validation
     except ValueError as e:

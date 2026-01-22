@@ -11,7 +11,9 @@ import pandas as pd
 
 
 def compute_cat_agg(
-    df: pd.DataFrame, category_col: str = "categoria", value_col: str = "outstanding_loan_value"
+    df: pd.DataFrame,
+    category_col: str = "categoria",
+    value_col: str = "outstanding_loan_value",
 ) -> pd.DataFrame:
     """Return a DataFrame aggregated by category and summed values.
 
@@ -43,7 +45,15 @@ def format_kpi_value(name: str, value: Any) -> str:
     if name_lower in {"ltv_cac_ratio", "rotation"}:
         return f"{value:.2f}x"
 
-    percent_hints = ("pct", "rate", "ratio", "yield", "apr", "penetration", "recurrence")
+    percent_hints = (
+        "pct",
+        "rate",
+        "ratio",
+        "yield",
+        "apr",
+        "penetration",
+        "recurrence",
+    )
     currency_hints = (
         "usd",
         "revenue",

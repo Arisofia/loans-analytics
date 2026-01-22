@@ -153,7 +153,7 @@ Common across parity checks and ingestion pipelines.
 
 - `SUPABASE_URL` / `SUPABASE_ANON_PUBLIC_KEY`
   - Purpose: Some scheduled workflows use this pair (distinct from the `apps/web` PROD/STAGING naming).
-  - Used by: `.github/workflows/supabase-figma-scheduled.yml`.
+  # ...existing code...
 
 ### D) Meta / Marketing
 
@@ -170,13 +170,12 @@ Used by ingestion / unified pipeline workflows.
 - `CASCADE_USERNAME`
 - `CASCADE_PASSWORD`
 
-- `HUBSPOT_API_KEY` or `HUBSPOTTOKEN`
+# ...existing code...
   - Note: both naming styles exist across workflows; standardize later.
 
 ### F) Notifications / Observability / QA
 
-- `SLACK_WEBHOOK_URL`, `SLACK_WEBHOOK_OPS`, `SLACK_WEBHOOK_LEADERSHIP`
-- `SLACK_BOT_TOKEN`
+# ...existing code...
 - `OPIK_TOKEN` / `OPIKTOKEN`
 - `PHOENIX_TOKEN`
 
@@ -193,11 +192,8 @@ Used by ingestion / unified pipeline workflows.
 - `TAVILY_KEY`
 - `CLAUDE_ROCKET_TOKEN`
 
-### I) Figma
 
-- `FIGMA_TOKEN`
-- `FIGMA_FILE_KEY`
-- `FIGMA_NODE_ID` (some workflows)
+# ...existing code...
 
 ### J) Vercel (if using `.github/workflows/deploy.yml`)
 

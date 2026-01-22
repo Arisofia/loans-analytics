@@ -1,5 +1,7 @@
 import warnings
+
 import pytest
+
 from src.utils.compat import check_cryptography_robust
 
 # Try to import RequestsDependencyWarning, fallback to a mock if not available

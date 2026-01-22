@@ -38,7 +38,7 @@ This document provides deployment instructions, operational procedures, and trou
 
 - Notion workspace sync
 - Email distribution lists
-- HubSpot CRM integration
+
 - Meta advertising synchronization
 
 ### Phase 3: Agent Orchestration (Week 3)

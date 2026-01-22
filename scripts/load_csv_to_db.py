@@ -9,7 +9,9 @@ import psycopg
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.config.paths import Paths
 
-DB_DSN = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres")
+DB_DSN = os.getenv(
+    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres"
+)
 
 try:
     from src.azure_tracing import setup_azure_tracing
@@ -35,7 +37,9 @@ def load_data():
         with conn.cursor() as cur:
             # Clean existing data
             print("Cleaning existing data...")
-            cur.execute("TRUNCATE TABLE real_payment, loan_data, customer_data CASCADE;")
+            cur.execute(
+                "TRUNCATE TABLE real_payment, loan_data, customer_data CASCADE;"
+            )
 
             # 1. Load Customers
             print(f"Loading {customer_file.name}...")
@@ -60,7 +64,9 @@ def load_data():
                 "Industry": "industry",
             }
 
-            df_cust_mapped = df_cust[list(cust_mapping.keys())].rename(columns=cust_mapping)
+            df_cust_mapped = df_cust[list(cust_mapping.keys())].rename(
+                columns=cust_mapping
+            )
 
             # Deduplicate customers as there might be multiple loans per customer in the CSV
             df_cust_mapped = df_cust_mapped.drop_duplicates(subset=["customer_id"])
@@ -71,7 +77,9 @@ def load_data():
             ).dt.date
 
             # Replace NaN/NaT with None for SQL NULL
-            df_cust_mapped = df_cust_mapped.astype(object).where(pd.notnull(df_cust_mapped), None)
+            df_cust_mapped = df_cust_mapped.astype(object).where(
+                pd.notnull(df_cust_mapped), None
+            )
 
             # Insert
             cols = list(df_cust_mapped.columns)
@@ -110,11 +118,15 @@ def load_data():
                 "Loan Status": "loan_status",
             }
 
-            df_loan_mapped = df_loan[list(df_loan_mapping.keys())].rename(columns=df_loan_mapping)
+            df_loan_mapped = df_loan[list(df_loan_mapping.keys())].rename(
+                columns=df_loan_mapping
+            )
 
             # Filter loans where customer_id exists in customer_data
             valid_customer_ids = set(df_cust_mapped["customer_id"])
-            df_loan_mapped = df_loan_mapped[df_loan_mapped["customer_id"].isin(valid_customer_ids)]
+            df_loan_mapped = df_loan_mapped[
+                df_loan_mapped["customer_id"].isin(valid_customer_ids)
+            ]
 
             # Handle dates
             df_loan_mapped["disbursement_date"] = pd.to_datetime(
@@ -122,7 +134,9 @@ def load_data():
             ).dt.date
 
             # Replace NaN/NaT
-            df_loan_mapped = df_loan_mapped.astype(object).where(pd.notnull(df_loan_mapped), None)
+            df_loan_mapped = df_loan_mapped.astype(object).where(
+                pd.notnull(df_loan_mapped), None
+            )
 
             # Insert
             cols = list(df_loan_mapped.columns)
@@ -167,7 +181,9 @@ def load_data():
             ).dt.date
 
             # Replace NaN/NaT
-            df_pay_mapped = df_pay_mapped.astype(object).where(pd.notnull(df_pay_mapped), None)
+            df_pay_mapped = df_pay_mapped.astype(object).where(
+                pd.notnull(df_pay_mapped), None
+            )
 
             # Insert
             cols = list(df_pay_mapped.columns)

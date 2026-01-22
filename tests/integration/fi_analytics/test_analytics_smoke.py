@@ -6,17 +6,19 @@ Test Cases:
   - A-02: Output artifacts existence and schema validation
 """
 
+import subprocess
+import sys
 from typing import Any, Dict
 
 import pytest
-import subprocess
-import sys
 
 
 class TestAnalyticsSmoke:
     """Smoke tests for analytics pipeline."""
 
-    def test_a01_pipeline_smoke_execution(self, analytics_test_env: Dict[str, Any]) -> None:
+    def test_a01_pipeline_smoke_execution(
+        self, analytics_test_env: Dict[str, Any]
+    ) -> None:
         """
         A-01: Pipeline smoke test — execute with sample_small.csv → completes successfully.
 
@@ -56,9 +58,9 @@ class TestAnalyticsSmoke:
                 f"stderr: {result.stderr}"
             )
 
-            assert "Pipeline start" in result.stderr or "Pipeline start" in result.stdout, (
-                "Pipeline start message not found in logs"
-            )
+            assert (
+                "Pipeline start" in result.stderr or "Pipeline start" in result.stdout
+            ), "Pipeline start message not found in logs"
 
         except subprocess.TimeoutExpired:
             pytest.fail("Pipeline execution exceeded 60 second timeout")

@@ -68,11 +68,15 @@ class UnifiedOutput:
 
         connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         if not connection_string:
-            self._log_event("azure_upload", "skipped", reason="No connection string found")
+            self._log_event(
+                "azure_upload", "skipped", reason="No connection string found"
+            )
             return {}
 
         container_name = self.azure_config.get("container", "pipeline-runs")
-        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        blob_service_client = BlobServiceClient.from_connection_string(
+            connection_string
+        )
         container_client = blob_service_client.get_container_client(container_name)
 
         try:
@@ -92,7 +96,9 @@ class UnifiedOutput:
                     name=blob_name,
                     data=data,
                     overwrite=True,
-                    content_settings=ContentSettings(content_type=self._guess_content_type(path)),
+                    content_settings=ContentSettings(
+                        content_type=self._guess_content_type(path)
+                    ),
                 )
             return path.name, f"{container_name}/{blob_name}"
 
@@ -124,11 +130,15 @@ class UnifiedOutput:
 
         if context:
             quality_checks = quality_checks or context.quality_checks
-            compliance_report_path = compliance_report_path or context.compliance_report_path
+            compliance_report_path = (
+                compliance_report_path or context.compliance_report_path
+            )
             timeseries = timeseries or context.timeseries
 
         storage_cfg = self.config.get("storage", {})
-        base_dir = ensure_dir(Path(storage_cfg.get("local_dir", str(Paths.metrics_dir()))))
+        base_dir = ensure_dir(
+            Path(storage_cfg.get("local_dir", str(Paths.metrics_dir())))
+        )
         manifest_dir = ensure_dir(
             Path(storage_cfg.get("manifest_dir", str(Paths.runs_artifacts_dir())))
         )
@@ -178,7 +188,9 @@ class UnifiedOutput:
             "quality_checks": quality_checks or {},
             "files": output_paths,
             "timeseries": timeseries_paths,
-            "compliance_report": str(compliance_report_path) if compliance_report_path else None,
+            "compliance_report": (
+                str(compliance_report_path) if compliance_report_path else None
+            ),
             "file_hashes": file_hashes,
         }
 

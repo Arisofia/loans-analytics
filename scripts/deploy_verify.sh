@@ -11,7 +11,20 @@ REPORT="$LOG_DIR/report.txt"
 log() { printf "%s %s\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$REPORT"; }
 err() { printf "%s ERROR: %s\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$REPORT" >&2; }
 
-RETRIES() { local n=$1; shift; local i=0; local rc=0; while :; do ((i++)); "$@"; rc=$?; if [ $rc -eq 0 ]; then return 0; fi; if [ $i -ge $n ]; then return $rc; fi; sleep $((2**i)); done }
+RETRIES() {
+  local n=$1
+  shift
+  local i=0
+  local rc=0
+  while :; do
+    ((i++))
+    "$@"
+    rc=$?
+    if [ $rc -eq 0 ]; then return 0; fi
+    if [ $i -ge $n ]; then return $rc; fi
+    sleep $((2 ** i))
+  done
+}
 
 # Default parameters
 BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'HEAD')"
@@ -19,10 +32,22 @@ TARGET_URL=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --branch) BRANCH=$2; shift 2;;
-    --target-url) TARGET_URL=$2; shift 2;;
-    --help) echo "Usage: $SCRIPT_NAME [--branch BRANCH] [--target-url URL]"; exit 0;;
-    *) err "Unknown arg: $1"; shift;;
+  --branch)
+    BRANCH=$2
+    shift 2
+    ;;
+  --target-url)
+    TARGET_URL=$2
+    shift 2
+    ;;
+  --help)
+    echo "Usage: $SCRIPT_NAME [--branch BRANCH] [--target-url URL]"
+    exit 0
+    ;;
+  *)
+    err "Unknown arg: $1"
+    shift
+    ;;
   esac
 done
 
@@ -32,7 +57,7 @@ log "Log dir: $LOG_DIR"
 # Tool checks
 for cmd in git gh curl jq; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    err "Required command not found: $cmd"; # don't abort; record and continue
+    err "Required command not found: $cmd" # don't abort; record and continue
   fi
 done
 
@@ -70,7 +95,7 @@ if [ $auth_ok -eq 1 ]; then
   REQ_ATTEMPTS=6
   i=0
   while [ $i -lt $REQ_ATTEMPTS ]; do
-    i=$((i+1))
+    i=$((i + 1))
     run=$(gh run list --workflow secret-check.yml --branch "$BRANCH" --limit 1 --json database --jq '.[0].html_url' 2>/dev/null || true)
     if [ -n "$run" ]; then
       secret_check_run_url=$run
@@ -94,7 +119,7 @@ if [ -n "$TARGET_URL" -a $auth_ok -eq 1 ]; then
   # Poll for run
   i=0
   while [ $i -lt 8 ]; do
-    i=$((i+1))
+    i=$((i + 1))
     run=$(gh run list --workflow deploy-verify.yml --branch "$BRANCH" --limit 1 --json database --jq '.[0].html_url' 2>/dev/null || true)
     if [ -n "$run" ]; then
       deploy_verify_run_url=$run

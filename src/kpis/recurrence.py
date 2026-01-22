@@ -29,14 +29,24 @@ class RecurrenceCalculator(KPICalculator):
             if "true_interest_payment" in df.columns
             else "True Interest Payment"
         )
-        fee_col = "true_fee_payment" if "true_fee_payment" in df.columns else "True Fee Payment"
+        fee_col = (
+            "true_fee_payment"
+            if "true_fee_payment" in df.columns
+            else "True Fee Payment"
+        )
         oth_col = (
-            "true_other_payment" if "true_other_payment" in df.columns else "True Other Payment"
+            "true_other_payment"
+            if "true_other_payment" in df.columns
+            else "True Other Payment"
         )
 
         if int_col not in df.columns:
             # Try normalized
-            int_col, fee_col, oth_col = "cash_interest_usd", "cash_fee_usd", "cash_other_usd"
+            int_col, fee_col, oth_col = (
+                "cash_interest_usd",
+                "cash_fee_usd",
+                "cash_other_usd",
+            )
 
         if int_col not in df.columns:
             raise ValueError(f"Missing columns for Recurrence: {int_col}")
@@ -49,7 +59,9 @@ class RecurrenceCalculator(KPICalculator):
 
         if total_cash == 0:
             return 0.0, create_context(
-                self.METADATA.formula, rows_processed=len(df), reason="Zero total cash revenue"
+                self.METADATA.formula,
+                rows_processed=len(df),
+                reason="Zero total cash revenue",
             )
 
         value = (cash_interest / total_cash) * 100.0

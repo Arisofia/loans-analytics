@@ -6,10 +6,10 @@
 
 - `CASCADE_EXPORT_URL`: the export URL the read-only view uses to download the CSV.
 - `PLAYWRIGHT_BROWSERS_PATH` (optional): if you customize the Playwright cache path.
-- `FIGMA_TOKEN`, `NOTION_TOKEN`, `GITHUB_TOKEN`: used downstream by the agents.
+- `NOTION_TOKEN`, `GITHUB_TOKEN`: used downstream by the agents.
 - `SOURCERY_TOKEN`, `SONAR_TOKEN`, `SONAR_HOST_URL`: required by the Vibe Solutioning CI gate (see `orchestration/github/workflows/vibe_quality_gate.yml`).
 - `PERPLEXITY_API_KEY` or `COMET_KEY` (optional): for the public crawl manifest (`config/integrations/perplexity_comet.yaml`).
-- `SLACK_WEBHOOK_OPS`: for the growth/lead notifications if configured.
+# ...existing code...
 
 
 3. In GitHub Settings → Secrets → Actions, add `CASCADE_SESSION_COOKIE` with the `Bearer <token>` string you extracted and set `CASCADE_COOKIE_NAME` only if you fallback to cookie auth.

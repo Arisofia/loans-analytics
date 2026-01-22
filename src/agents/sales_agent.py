@@ -9,9 +9,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Sales Optimization agent execution harness")
+    parser = argparse.ArgumentParser(
+        description="Sales Optimization agent execution harness"
+    )
     parser.add_argument(
-        "--query", required=True, help="Sales optimization query (e.g., 'Score these leads: [...]')"
+        "--query",
+        required=True,
+        help="Sales optimization query (e.g., 'Score these leads: [...]')",
     )
     return parser.parse_args()
 

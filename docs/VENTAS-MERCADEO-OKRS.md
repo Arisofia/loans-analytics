@@ -60,7 +60,7 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 
 **Ventas:**
 
-- Implementación de nuevo CRM (Salesforce/HubSpot)
+- Implementación de nuevo CRM (Salesforce)
 - Programa de capacitación de equipo comercial
 - Apertura de nuevas sucursales/canales
 - Estrategia de partners y alianzas estratégicas

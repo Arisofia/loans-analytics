@@ -31,7 +31,7 @@ DATABASE_URL="postgresql://user:password@localhost:5432/your_db"
 
 - `DBManager` implements:
   - `wipe_database()` — truncates a short list of tables (see `tables_to_clear`). Adjust to match your schema if needed.
-  - `seed_kpi_data()` — inserts deterministic KPI rows used by backend tests and the Figma sync validation.
+  - `seed_kpi_data()` — inserts deterministic KPI rows used by backend tests and the sync validation.
 
 You can run it directly:
 

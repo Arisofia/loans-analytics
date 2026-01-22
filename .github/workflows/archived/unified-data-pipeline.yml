@@ -17,30 +17,17 @@ jobs:
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
           CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}
-          HUBSPOT_TOKEN: ${{ secrets.HUBSPOT_API_TOKEN }}
           OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: |
           if [ -n "$CASCADE_USERNAME" ] && [ -n "$CASCADE_PASSWORD" ]; then
             echo "cascade_available=true" >> $GITHUB_OUTPUT
           else
             echo "cascade_available=false" >> $GITHUB_OUTPUT
           fi
-          if [ -n "$HUBSPOT_TOKEN" ]; then
-            echo "hubspot_available=true" >> $GITHUB_OUTPUT
-          else
-            echo "hubspot_available=false" >> $GITHUB_OUTPUT
-          fi
           if [ -n "$SUPABASE_SERVICE_ROLE" ]; then
             echo "supabase_available=true" >> $GITHUB_OUTPUT
           else
             echo "supabase_available=false" >> $GITHUB_OUTPUT
-          fi
-          if [ -n "$SLACK_WEBHOOK_URL" ] || [ -n "$SLACK_BOT_TOKEN" ]; then
-            echo "slack_available=true" >> $GITHUB_OUTPUT
-          else
-            echo "slack_available=false" >> $GITHUB_OUTPUT
           fi
           if [ -n "$OPIK_TOKEN" ]; then
             echo "opik_available=true" >> $GITHUB_OUTPUT
@@ -73,15 +60,6 @@ jobs:
           echo "Fetching loan data from Cascade..."
           python scripts/ingest_cascade.py
 
-      - name: Ingest HubSpot CRM Data
-        id: hubspot
-        if: hashFiles('scripts/ingest_hubspot.py') != '' && steps.check-secrets.outputs.hubspot_available == true
-        continue-on-error: true
-        env:
-          HUBSPOT_TOKEN: ${{ secrets.HUBSPOT_API_TOKEN }}
-        run: |
-          echo "Fetching deals, contacts, and pipeline data from HubSpot..."
-          python scripts/ingest_hubspot.py
 
       - name: Refresh Supabase Views
         id: supabase
@@ -104,15 +82,6 @@ jobs:
           echo "Creating manifest with data freshness timestamps..."
           python scripts/generate_data_manifest.py
 
-      - name: Signal Agents Data Ready
-        if: steps.check-secrets.outputs.slack_available == true
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL || secrets.SLACK_BOT_TOKEN }}
-        run: |
-          echo "Broadcasting data-ready signal to agent workflows..."
-          curl -X POST "$SLACK_WEBHOOK_URL" \
-            -H 'Content-Type: application/json' \
-            -d "{\"text\":\"✅ Data pipeline completed at $(date). All agents can now run.\"}"
 
       - name: Log to Opik
         if: always() && steps.check-secrets.outputs.opik_available == true && hashFiles('scripts/log_pipeline_metrics.py') != ''
@@ -121,17 +90,8 @@ jobs:
         run: |
           python scripts/log_pipeline_metrics.py \
             --cascade-status ${{ steps.cascade.outcome || 'skipped' }} \
-            --hubspot-status ${{ steps.hubspot.outcome || 'skipped' }} \
             --supabase-status ${{ steps.supabase.outcome || 'skipped' }}
 
-      - name: Alert on Critical Failure
-        if: failure() && steps.check-secrets.outputs.slack_available == true
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL || secrets.SLACK_BOT_TOKEN }}
-        run: |
-          curl -X POST "$SLACK_WEBHOOK_URL" \
-            -H 'Content-Type: application/json' \
-            -d '{"text":"🚨 CRITICAL: Data pipeline failed. Agent workflows may operate on stale data."}'
 
       - name: Upload Pipeline Artifacts
         uses: actions/upload-artifact@v4

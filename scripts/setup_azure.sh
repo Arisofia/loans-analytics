@@ -9,9 +9,9 @@ echo "======================================"
 echo ""
 
 # Check if Azure CLI is installed
-if ! command -v az &> /dev/null; then
-    echo "Azure CLI not found. Please install: https://learn.microsoft.com/cli/azure/install-azure-cli"
-    exit 1
+if ! command -v az &>/dev/null; then
+  echo "Azure CLI not found. Please install: https://learn.microsoft.com/cli/azure/install-azure-cli"
+  exit 1
 fi
 
 # Login to Azure
@@ -38,45 +38,45 @@ az group create --name AI-MultiAgent-Ecosystem-RG --location eastus
 # Create storage account
 read -p "Enter storage account name (lowercase, no special chars): " STORAGE_NAME
 az storage account create \
-    --name "$STORAGE_NAME" \
-    --resource-group AI-MultiAgent-Ecosystem-RG \
-    --location eastus \
-    --sku Standard_LRS
+  --name "$STORAGE_NAME" \
+  --resource-group AI-MultiAgent-Ecosystem-RG \
+  --location eastus \
+  --sku Standard_LRS
 
 # Get connection string
 CONNECTION_STRING=$(az storage account show-connection-string \
-    --name "$STORAGE_NAME" \
-    --resource-group AI-MultiAgent-Ecosystem-RG \
-    --query connectionString -o tsv)
+  --name "$STORAGE_NAME" \
+  --resource-group AI-MultiAgent-Ecosystem-RG \
+  --query connectionString -o tsv)
 
 # Create container
 az storage container create \
-    --name kpi-exports \
-    --account-name "$STORAGE_NAME"
+  --name kpi-exports \
+  --account-name "$STORAGE_NAME"
 
 # Create Key Vault (optional)
 read -p "Create Azure Key Vault? (y/n): " CREATE_KV
 if [ "$CREATE_KV" = "y" ]; then
-    read -p "Enter Key Vault name: " KV_NAME
-    az keyvault create \
-        --name "$KV_NAME" \
-        --resource-group AI-MultiAgent-Ecosystem-RG \
-        --location eastus
-    
-    KV_URL="https://$KV_NAME.vault.azure.net/"
+  read -p "Enter Key Vault name: " KV_NAME
+  az keyvault create \
+    --name "$KV_NAME" \
+    --resource-group AI-MultiAgent-Ecosystem-RG \
+    --location eastus
+
+  KV_URL="https://$KV_NAME.vault.azure.net/"
 else
-    KV_URL=""
+  KV_URL=""
 fi
 
 # Generate .env file
 echo ""
 echo "Generating .env file..."
-cat > .env << EOF
+cat >.env <<EOF
 # Azure Configuration
 AZURE_SUBSCRIPTION_ID=$SUBSCRIPTION_ID
 AZURE_TENANT_ID=$TENANT_ID
 AZURE_CLIENT_ID=
-AZURE_CLIENT_SECRET=
+AZURE_CLIENT_SECRET=REDACTED
 
 # Azure Storage
 AZURE_STORAGE_ACCOUNT_NAME=$STORAGE_NAME

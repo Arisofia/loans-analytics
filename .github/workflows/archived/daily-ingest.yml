@@ -11,7 +11,6 @@ jobs:
     env:
       CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
       CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       CASCADE_PID: abaco
     steps:
       - name: Checkout code
@@ -32,14 +31,6 @@ jobs:
             echo "available=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Cascade credentials not configured - skipping scraper"
           fi
-      - name: Check Slack webhook
-        id: slack_secret
-        run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-          fi
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -59,9 +50,6 @@ jobs:
         continue-on-error: true
         run: |
           python scripts/run_data_pipeline.py
-      - name: Notify Slack on Success
-        uses: slackapi/slack-github-action@v1.24.0
-        if: success() && steps.slack_secret.outputs.available == true
         continue-on-error: true
         with:
           payload: |

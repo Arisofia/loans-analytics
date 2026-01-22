@@ -1,12 +1,13 @@
 from __future__ import annotations
+
 import hashlib
 import os
 import re
 
 import numpy as np
 import pandas as pd
-import polars as pl
 import plotly.express as px
+import polars as pl
 import streamlit as st
 
 from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine

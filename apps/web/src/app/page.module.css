@@ -18,11 +18,17 @@
 .page {
   min-height: 100vh;
   padding: 64px 24px 96px;
-  background: radial-gradient(circle at 16% 20%, #d9e9ff 0, transparent 26%),
+  background:
+    radial-gradient(circle at 16% 20%, #d9e9ff 0, transparent 26%),
     radial-gradient(circle at 84% 12%, #fff3d6 0, transparent 22%),
     linear-gradient(180deg, #f7f9fc 0%, #edf2f7 28%, #f8fbff 100%);
   color: #0b1b3f;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
 }
 
 .shell {

@@ -26,7 +26,7 @@ export function parseLoanCsv(csv: string): LoanRow[] {
     return row
   })
 }
-export function toNumber(value: any): number {
+export function toNumber(value: string | number | undefined): number {
   if (typeof value === 'number') return value
   if (typeof value === 'string') {
     // Robust parsing: remove currency symbols and commas, keep dots and minus
@@ -37,7 +37,7 @@ export function toNumber(value: any): number {
   return 0
 }
 
-export function computeKPIs(data: any[]) {
+export function computeKPIs(data: LoanRow[]) {
   if (!data || data.length === 0) {
     return {
       totalVolume: 0,

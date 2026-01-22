@@ -1,14 +1,19 @@
 """Utility to load secrets and avoid logging them in clear text.
 This script demonstrates safe logging and a redaction helper for sensitive values.
 """
+
 from __future__ import annotations
+
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
 logger = logging.getLogger("abaco.scripts.load_secrets")
 
 
-def redact_dict(d: Dict[str, Any], redact_keys: tuple = ("secret", "token", "password", "key")) -> Dict[str, Any]:
+def redact_dict(
+    d: Dict[str, Any],
+    redact_keys: tuple = ("secret", "token", "password", "key"),
+) -> Dict[str, Any]:
     redacted = {}
 
     for k, v in d.items():
@@ -25,14 +30,19 @@ def load_secrets(use_vault_fallback: bool = False) -> Dict[str, Any]:
     # Return a dict with status and optionally secrets (never log them)
     if use_vault_fallback:
         # pretend we found secrets
-        return {"status": "ok", "api_key": "<sensitive>", "secret_token": "<sensitive>"}
+        return {
+            "status": "ok",
+            "api_key": "<sensitive>",
+            "secret_token": "<sensitive>",
+        }
     return {"status": "ok"}
 
 
 def main() -> int:
     results = load_secrets(use_vault_fallback=True)
 
-    # Always avoid printing secret values. Log high-level status and a redacted payload if needed.
+    # Always avoid printing secret values.
+    # Log high-level status and a redacted payload if needed.
     status = results.get("status", "unknown")
     logger.info("load_secrets result: status=%s", status)
 

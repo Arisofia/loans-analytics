@@ -20,8 +20,7 @@ def ingestion_task(config: Dict[str, Any], input_file: Path) -> IngestionResult:
     ingestion = UnifiedIngestion(config)
     # Assume file source for now
     raw_archive_dir = Path(
-        config.get("run", {})
-        .get("raw_archive_dir", "data/archives/raw")
+        config.get("run", {}).get("raw_archive_dir", "data/archives/raw")
     )
     result = ingestion.ingest_file(input_file, archive_dir=raw_archive_dir)
 
@@ -34,7 +33,9 @@ def ingestion_task(config: Dict[str, Any], input_file: Path) -> IngestionResult:
     if isinstance(result, IngestionResult):
         return result
     # If result is a legacy object, wrap into IngestionResult
-    return IngestionResult(df=result.df, run_id=getattr(result, "run_id", "unknown"), metadata={})
+    return IngestionResult(
+        df=result.df, run_id=getattr(result, "run_id", "unknown"), metadata={}
+    )
 
 
 @task

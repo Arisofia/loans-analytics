@@ -21,15 +21,15 @@ mkdir -p "$LOGS_PATH" "$ROLLBACK_DIR"
 LOG_FILE="${LOGS_PATH}/cutover_$(date +%Y%m%d_%H%M%S).log"
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
 }
 
 error() {
-    echo "[ERROR] $*" | tee -a "$LOG_FILE"
+  echo "[ERROR] $*" | tee -a "$LOG_FILE"
 }
 
 success() {
-    echo "[✓] $*" | tee -a "$LOG_FILE"
+  echo "[✓] $*" | tee -a "$LOG_FILE"
 }
 
 log "========== PRODUCTION CUTOVER STARTED =========="
@@ -46,8 +46,8 @@ log "PHASE 0: Pre-cutover validation"
 log "Checking prerequisites..."
 
 if [ ! -d "$VENV_PATH" ]; then
-    error "Virtual environment not found at $VENV_PATH"
-    exit 1
+  error "Virtual environment not found at $VENV_PATH"
+  exit 1
 fi
 success "Virtual environment exists"
 
@@ -55,14 +55,14 @@ PYTHON_VERSION=$(source "$VENV_PATH/bin/activate" && python --version 2>&1)
 log "Python version: $PYTHON_VERSION"
 
 if [ ! -f "tests/test_kpi_calculators_v2.py" ]; then
-    error "Test suite not found"
-    exit 1
+  error "Test suite not found"
+  exit 1
 fi
 success "Test suite found"
 
 if [ ! -f "$CONFIG_FILE" ]; then
-    error "Production configuration not found at $CONFIG_FILE"
-    exit 1
+  error "Production configuration not found at $CONFIG_FILE"
+  exit 1
 fi
 success "Production configuration found"
 
@@ -88,19 +88,19 @@ echo ""
 log "PHASE 1: Creating backups and snapshots"
 
 if [ -f "$CONFIG_FILE" ]; then
-    cp "$CONFIG_FILE" "$ROLLBACK_DIR/pipeline_backup_$(date +%Y%m%d_%H%M%S).yml"
-    success "Configuration backup created"
+  cp "$CONFIG_FILE" "$ROLLBACK_DIR/pipeline_backup_$(date +%Y%m%d_%H%M%S).yml"
+  success "Configuration backup created"
 fi
 
 if [ -d "$DATA_METRICS_DIR" ]; then
-    mkdir -p "$ROLLBACK_DIR/metrics_backup"
-    cp -r "$DATA_METRICS_DIR/"* "$ROLLBACK_DIR/metrics_backup/" 2>/dev/null || true
-    success "Metrics backup created"
+  mkdir -p "$ROLLBACK_DIR/metrics_backup"
+  cp -r "$DATA_METRICS_DIR/"* "$ROLLBACK_DIR/metrics_backup/" 2>/dev/null || true
+  success "Metrics backup created"
 fi
 
-if command -v systemctl &> /dev/null; then
-    systemctl status abaco-pipeline-v1 > "$ROLLBACK_DIR/v1_status_before.log" 2>&1 || true
-    success "V1 status recorded"
+if command -v systemctl &>/dev/null; then
+  systemctl status abaco-pipeline-v1 >"$ROLLBACK_DIR/v1_status_before.log" 2>&1 || true
+  success "V1 status recorded"
 fi
 
 echo ""
@@ -115,18 +115,18 @@ log "PHASE 2: Staging V2 in production environment"
 
 log "Running full V2 test suite..."
 TEST_OUTPUT=$(python -m pytest \
-    tests/test_kpi_base.py \
-    tests/test_kpi_calculators_v2.py \
-    tests/test_kpi_engine_v2.py \
-    tests/test_pipeline_orchestrator.py \
-    -v --tb=short 2>&1 | tee -a "$LOG_FILE")
+  tests/test_kpi_base.py \
+  tests/test_kpi_calculators_v2.py \
+  tests/test_kpi_engine_v2.py \
+  tests/test_pipeline_orchestrator.py \
+  -v --tb=short 2>&1 | tee -a "$LOG_FILE")
 
 if echo "$TEST_OUTPUT" | grep -q "passed"; then
-    PASS_COUNT=$(echo "$TEST_OUTPUT" | grep -o "[0-9]* passed" | head -1)
-    success "V2 tests passed: $PASS_COUNT"
+  PASS_COUNT=$(echo "$TEST_OUTPUT" | grep -o "[0-9]* passed" | head -1)
+  success "V2 tests passed: $PASS_COUNT"
 else
-    error "V2 tests failed"
-    exit 1
+  error "V2 tests failed"
+  exit 1
 fi
 
 echo ""
@@ -139,30 +139,30 @@ echo ""
 
 log "PHASE 3: Graceful V1 shutdown"
 
-if command -v systemctl &> /dev/null; then
-    log "Checking V1 pipeline service..."
+if command -v systemctl &>/dev/null; then
+  log "Checking V1 pipeline service..."
 
-    if systemctl is-active --quiet abaco-pipeline-v1 2>/dev/null; then
-        log "Stopping V1 pipeline service..."
-        systemctl stop abaco-pipeline-v1
-        sleep 5
+  if systemctl is-active --quiet abaco-pipeline-v1 2>/dev/null; then
+    log "Stopping V1 pipeline service..."
+    systemctl stop abaco-pipeline-v1
+    sleep 5
 
-        if ! systemctl is-active --quiet abaco-pipeline-v1; then
-            success "V1 pipeline stopped gracefully"
-        else
-            error "V1 pipeline still running"
-            exit 1
-        fi
+    if ! systemctl is-active --quiet abaco-pipeline-v1; then
+      success "V1 pipeline stopped gracefully"
     else
-        log "V1 pipeline not running (service may not exist, continuing)"
+      error "V1 pipeline still running"
+      exit 1
     fi
+  else
+    log "V1 pipeline not running (service may not exist, continuing)"
+  fi
 
-    if command -v journalctl &> /dev/null; then
-        journalctl -u abaco-pipeline-v1 -n 100 > "$ROLLBACK_DIR/v1_final_logs.log" 2>&1 || true
-        success "V1 final logs recorded"
-    fi
+  if command -v journalctl &>/dev/null; then
+    journalctl -u abaco-pipeline-v1 -n 100 >"$ROLLBACK_DIR/v1_final_logs.log" 2>&1 || true
+    success "V1 final logs recorded"
+  fi
 else
-    log "Systemctl not available, skipping V1 service stop"
+  log "Systemctl not available, skipping V1 service stop"
 fi
 
 echo ""
@@ -215,7 +215,7 @@ print(f'  PAR30: {metrics[\"PAR30\"][\"value\"]:.2f}%')
 print(f'  PAR90: {metrics[\"PAR90\"][\"value\"]:.2f}%')
 print(f'  CollectionRate: {metrics[\"CollectionRate\"][\"value\"]:.2f}%')
 print(f'  PortfolioHealth: {metrics[\"PortfolioHealth\"][\"value\"]:.2f}/10')
-" >> "$LOG_FILE" 2>&1
+" >>"$LOG_FILE" 2>&1
 
 success "V2 post-cutover validation passed"
 

@@ -1,6 +1,8 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
+
 from src.utils.dashboard_utils import format_kpi_value, kpi_label
+
 
 def render_kpi_snapshot(kpi_snapshot, snapshot_month=None):
     """Render the top KPI snapshot tiles."""
@@ -17,6 +19,7 @@ def render_kpi_snapshot(kpi_snapshot, snapshot_month=None):
     else:
         st.info("KPI snapshot not available. Export analytics to populate KPI tiles.")
 
+
 def render_executive_summary(merged):
     """Render the executive summary metrics."""
     st.markdown('<div data-testid="dashboard-board">', unsafe_allow_html=True)
@@ -25,11 +28,16 @@ def render_executive_summary(merged):
 
     total_loans = merged["loan_id"].nunique() if "loan_id" in merged else 0
     total_outstanding = (
-        merged["outstanding_loan_value"].sum() if "outstanding_loan_value" in merged else 0
+        merged["outstanding_loan_value"].sum()
+        if "outstanding_loan_value" in merged
+        else 0
     )
-    
+
     # Calculate weighted average APR
-    if "interest_rate_apr" in merged.columns and "outstanding_loan_value" in merged.columns:
+    if (
+        "interest_rate_apr" in merged.columns
+        and "outstanding_loan_value" in merged.columns
+    ):
         total_balance = merged["outstanding_loan_value"].sum()
         if total_balance > 0:
             avg_apr = (
@@ -39,15 +47,19 @@ def render_executive_summary(merged):
             avg_apr = 0
     else:
         avg_apr = 0
-    
-    default_rate = (merged["loan_status"] == "Default").mean() * 100 if "loan_status" in merged else 0
+
+    default_rate = (
+        (merged["loan_status"] == "Default").mean() * 100
+        if "loan_status" in merged
+        else 0
+    )
 
     col1.metric("Total Loans", f"{total_loans:,}")
     st.markdown('<div data-testid="kpi-total-loans">', unsafe_allow_html=True)
     col2.metric("Total Outstanding", f"${total_outstanding:,.2f}")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
     col3.metric("Average APR", f"{avg_apr:.2%}")
     col4.metric("Default Rate", f"{default_rate:.2f}%")
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
     return total_outstanding

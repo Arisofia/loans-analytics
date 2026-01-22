@@ -4,7 +4,7 @@
 - [ ] All required secrets are set in the repository:
   - `CASCADE_SESSION_COOKIE`
   - `AZURE_STORAGE_CONNECTION_STRING`
-  - `SLACK_WEBHOOK_URL`
+
   - etc.
 - [ ] Parquet and other artifacts are generated and uploaded as expected
 - [ ] Code and documentation changes are clear and complete

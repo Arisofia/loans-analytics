@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 
 import { BulkTokenInput } from './BulkTokenInput'
-import IntegrationCard from './IntegrationCard'
+import { IntegrationCard }  from './IntegrationCard'
 import { SlideLayout } from './SlideLayout'
 import {
   PLATFORMS,
@@ -23,8 +23,6 @@ export type StatusRow = {
   last_sync_status?: { message?: string }
   id?: string
 }
-
-
 
 const initialState: Record<Platform, TokenState> = PLATFORMS.reduce(
   (all, platform) => ({ ...all, [platform]: { status: 'disconnected' } }),
@@ -119,8 +117,6 @@ export function IntegrationSettings() {
       </>
     </SlideLayout>
   )
-
-
 
   const connectPlatform = async (platform: Platform) => {
     const details = tokenState[platform]
@@ -238,7 +234,7 @@ export function IntegrationSettings() {
               placeholder="Project identifier"
             />
           </div>
-            {/* <button
+          {/* <button
               className={styles.primaryButton}
               type="button"
               onClick={() => {

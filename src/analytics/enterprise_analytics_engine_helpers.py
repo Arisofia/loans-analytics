@@ -1,12 +1,14 @@
 from dataclasses import dataclass
 from typing import List
 
+
 @dataclass(frozen=True)
 class LoanPosition:
     principal: float
     annual_interest_rate: float
     term_months: int
     default_probability: float = 0.0
+
 
 @dataclass(frozen=True)
 class PortfolioKPIs:
@@ -21,6 +23,7 @@ class PortfolioKPIs:
     interest_yield_rate: float
     risk_adjusted_return: float
 
+
 def calculate_monthly_payment(loan: LoanPosition) -> float:
     r = loan.annual_interest_rate / 12
     n = loan.term_months
@@ -28,25 +31,51 @@ def calculate_monthly_payment(loan: LoanPosition) -> float:
         return loan.principal / n if n else 0.0
     return (r * loan.principal) / (1 - (1 + r) ** -n)
 
+
 def expected_loss(loan: LoanPosition, loss_given_default: float) -> float:
     return loan.principal * loan.default_probability * loss_given_default
 
+
 def portfolio_interest_and_risk(loans: List[LoanPosition], loss_given_default: float):
-    total_interest = sum(calculate_monthly_payment(loan) * loan.term_months * loan.annual_interest_rate for loan in loans)
+    total_interest = sum(
+        calculate_monthly_payment(loan) * loan.term_months * loan.annual_interest_rate
+        for loan in loans
+    )
     total_loss = sum(expected_loss(loan, loss_given_default) for loan in loans)
     return total_interest, total_loss
 
-def calculate_portfolio_kpis(loans: List[LoanPosition], loss_given_default: float) -> PortfolioKPIs:
+
+def calculate_portfolio_kpis(
+    loans: List[LoanPosition], loss_given_default: float
+) -> PortfolioKPIs:
     exposure = sum(loan.principal for loan in loans)
-    weighted_rate = sum(loan.annual_interest_rate * loan.principal for loan in loans) / exposure if exposure else 0.0
-    weighted_term_months = sum(loan.term_months * loan.principal for loan in loans) / exposure if exposure else 0.0
-    weighted_default_probability = sum(loan.default_probability * loan.principal for loan in loans) / exposure if exposure else 0.0
+    weighted_rate = (
+        sum(loan.annual_interest_rate * loan.principal for loan in loans) / exposure
+        if exposure
+        else 0.0
+    )
+    weighted_term_months = (
+        sum(loan.term_months * loan.principal for loan in loans) / exposure
+        if exposure
+        else 0.0
+    )
+    weighted_default_probability = (
+        sum(loan.default_probability * loan.principal for loan in loans) / exposure
+        if exposure
+        else 0.0
+    )
     expected_monthly_payment = sum(calculate_monthly_payment(loan) for loan in loans)
-    expected_monthly_interest = sum(calculate_monthly_payment(loan) * loan.annual_interest_rate for loan in loans)
+    expected_monthly_interest = sum(
+        calculate_monthly_payment(loan) * loan.annual_interest_rate for loan in loans
+    )
     expected_loss_value = sum(expected_loss(loan, loss_given_default) for loan in loans)
     expected_loss_rate = expected_loss_value / exposure if exposure else 0.0
     interest_yield_rate = (expected_monthly_interest / exposure) if exposure else 0.0
-    risk_adjusted_return = (expected_monthly_interest - expected_loss_value) / exposure if exposure else 0.0
+    risk_adjusted_return = (
+        (expected_monthly_interest - expected_loss_value) / exposure
+        if exposure
+        else 0.0
+    )
     return PortfolioKPIs(
         exposure=exposure,
         weighted_rate=weighted_rate,

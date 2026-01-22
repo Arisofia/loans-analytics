@@ -38,16 +38,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pytest-html pytest-json-report allure-pytest
-      - name: Check Slack webhook availability
-        id: slack_check
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          if [ -n "$SLACK_WEBHOOK_URL" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Run evaluation tests
         continue-on-error: true
@@ -145,23 +135,3 @@ jobs:
               console.error('Comment creation error:', error.message);
             }
 
-      - name: Send Slack notification on failure
-        if: failure() && steps.slack_check.outputs.available == true
-        continue-on-error: true
-        uses: slackapi/slack-github-action@v1.24.0
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        with:
-          payload: |
-            {
-              "text": "🚨 Model Evaluation Failed",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Model Evaluation Pipeline Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
-                  }
-                }
-              ]
-            }

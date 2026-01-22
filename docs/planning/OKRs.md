@@ -24,7 +24,7 @@ Objective: Ensure KPI definitions are clear and auditable
 
 Objective: Ship a validated KPI dashboard for pilots
 
-- KR1: Embed Figma analytics file and add export guide in `figma/README.md`
+- KR1: Embed analytics file and add export guide
 - KR2: Fix all dashboard binding regressions blocking Playwright smoke tests
 
 ## DevOps / Platform

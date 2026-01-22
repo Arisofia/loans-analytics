@@ -30,7 +30,9 @@ class UnifiedCalculationV2:
     """Phase 3: KPI computation with enhanced traceability and consistent interfaces."""
 
     def __init__(self, config: Dict[str, Any], run_id: Optional[str] = None):
-        self.config = config.get("pipeline", {}).get("phases", {}).get("calculation", {})
+        self.config = (
+            config.get("pipeline", {}).get("phases", {}).get("calculation", {})
+        )
         self.run_id = run_id or f"calc_{uuid.uuid4().hex[:12]}"
         self.audit_log: List[Dict[str, Any]] = []
         self.kpi_definitions = self._load_kpi_definitions()
@@ -69,7 +71,9 @@ class UnifiedCalculationV2:
         module = importlib.import_module(module_path)
         return getattr(module, func_name)
 
-    def _compute_metric(self, df: pd.DataFrame, metric_cfg: Dict[str, Any]) -> Dict[str, Any]:
+    def _compute_metric(
+        self, df: pd.DataFrame, metric_cfg: Dict[str, Any]
+    ) -> Dict[str, Any]:
         name = metric_cfg.get("name")
         # Overlay with external definitions if available
         ext_def = self.kpi_definitions.get("kpis", {}).get(name, {})
@@ -172,7 +176,10 @@ class UnifiedCalculationV2:
                     except Exception as exc:
                         row[name] = None
                         self._log_event(
-                            "timeseries_metric_failed", "error", metric=name, error=str(exc)
+                            "timeseries_metric_failed",
+                            "error",
+                            metric=name,
+                            error=str(exc),
                         )
                 rows.append(row)
             results[rollup] = pd.DataFrame(rows)
@@ -223,7 +230,9 @@ class UnifiedCalculationV2:
                     metrics[name] = self._compute_metric(df, metric_cfg)
                     self._log_event("metric_computed", "success", metric=name)
                 except Exception as exc:
-                    self._log_event("metric_failed", "error", metric=name, error=str(exc))
+                    self._log_event(
+                        "metric_failed", "error", metric=name, error=str(exc)
+                    )
                     metrics[name] = {"value": None, "error": str(exc)}
 
             for metric_cfg in metrics_cfg:
@@ -234,7 +243,9 @@ class UnifiedCalculationV2:
                     metrics[name] = self._compute_composite(metrics, metric_cfg)
                     self._log_event("metric_computed", "success", metric=name)
                 except Exception as exc:
-                    self._log_event("metric_failed", "error", metric=name, error=str(exc))
+                    self._log_event(
+                        "metric_failed", "error", metric=name, error=str(exc)
+                    )
                     metrics[name] = {"value": None, "error": str(exc)}
 
             kpi_engine.calculate_all(include_composite=True)

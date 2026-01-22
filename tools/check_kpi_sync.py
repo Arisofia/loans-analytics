@@ -86,7 +86,12 @@ def find_repo_root(start: Path) -> Path:
 def run_command(cmd: List[str], cwd: Path) -> CommandResult:
     # Use argument list, never shell=True, and do not interpolate untrusted input
     proc = subprocess.Popen(
-        cmd, cwd=str(cwd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=False
+        cmd,
+        cwd=str(cwd),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        shell=False,
     )
     stdout, stderr = proc.communicate()
     return CommandResult(
@@ -114,7 +119,9 @@ def check_files(repo_root: Path) -> List[FileCheckResult]:
     results: List[FileCheckResult] = []
     for rel in paths:
         p = repo_root / rel
-        results.append(FileCheckResult(path=str(p.relative_to(repo_root)), exists=p.is_file()))
+        results.append(
+            FileCheckResult(path=str(p.relative_to(repo_root)), exists=p.is_file())
+        )
     return results
 
 

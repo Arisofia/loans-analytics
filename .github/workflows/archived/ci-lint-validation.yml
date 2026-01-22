@@ -94,8 +94,6 @@ jobs:
             exit 1
           fi
           
-          # Check that Figma update step doesn't contain raw JavaScript
-          if grep -A 5 'name: Update Figma Slides' .github/workflows/ci-main.yml | grep -q 'const '; then
             echo "❌ ci-main.yml contains JavaScript code in shell step (invalid)"
             exit 1
           fi

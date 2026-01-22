@@ -9,15 +9,12 @@ Test Cases:
   - F-02: Unauthorized Access Handling (403 Forbidden)
 """
 
-import os
-import subprocess
-import sys
-from typing import Any, Dict
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import \
+    InMemorySpanExporter
 
 
 class TestAnalyticsIntegration:
@@ -29,12 +26,12 @@ class TestAnalyticsIntegration:
     #     Verify pipeline calls Figma sync and logs success.
     #     """
     #     dataset = analytics_test_env["dataset_path"]
-    #     
+    #
     #     # We need a config that enables figma
     #     import yaml
     #     with open(minimal_config_path, "r") as f:
     #         cfg = yaml.safe_load(f)
-    #     
+    #
     #     cfg["pipeline"]["phases"]["outputs"] = {
     #         "dashboard_triggers": {
     #             "enabled": True,
@@ -44,7 +41,7 @@ class TestAnalyticsIntegration:
     #             }
     #         }
     #     }
-    #     
+    #
     #     with open(minimal_config_path, "w") as f:
     #         yaml.dump(cfg, f)
     #
@@ -86,7 +83,7 @@ class TestAnalyticsIntegration:
     #
     #     spans = exporter.get_finished_spans()
     #     assert len(spans) > 0, "No spans were generated"
-    #     
+    #
     #     # Verify trace consistency
     #     trace_id = spans[0].get_span_context().trace_id
     #     for span in spans:
@@ -105,7 +102,7 @@ class TestAnalyticsIntegration:
     #     import yaml
     #     with open(minimal_config_path, "r") as f:
     #         cfg = yaml.safe_load(f)
-    #     
+    #
     #     cfg["pipeline"]["phases"]["outputs"] = {
     #         "dashboard_triggers": {
     #             "enabled": True,
@@ -115,7 +112,7 @@ class TestAnalyticsIntegration:
     #             }
     #         }
     #     }
-    #     
+    #
     #     with open(minimal_config_path, "w") as f:
     #         yaml.dump(cfg, f)
     #
@@ -135,7 +132,7 @@ class TestAnalyticsIntegration:
     #     # The secret should NOT be in the output
     #     combined_output = result.stdout + result.stderr
     #     assert raw_secret not in combined_output
-        
+
     # def test_c04_notion_timeout_simulation(self, analytics_test_env: Dict[str, Any], minimal_config_path) -> None:
     #     """
     #     C-04: Integration Resilience - Notion API Timeout.
@@ -146,7 +143,7 @@ class TestAnalyticsIntegration:
     #     import yaml
     #     with open(minimal_config_path, "r") as f:
     #         cfg = yaml.safe_load(f)
-    #     
+    #
     #     cfg["pipeline"]["phases"]["outputs"] = {
     #         "dashboard_triggers": {
     #             "enabled": True,
@@ -156,7 +153,7 @@ class TestAnalyticsIntegration:
     #             }
     #         }
     #     }
-    #     
+    #
     #     with open(minimal_config_path, "w") as f:
     #         yaml.dump(cfg, f)
     #

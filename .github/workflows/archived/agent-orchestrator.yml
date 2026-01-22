@@ -25,7 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       run: ${{ steps.gate.outputs.run }}
-      slack_available: ${{ steps.gate.outputs.slack_available }}
     steps:
       - name: Gate execution on secrets and scripts
         id: gate
@@ -36,7 +35,6 @@ jobs:
           PHOENIX_TOKEN: ${{ secrets.PHOENIX_TOKEN }}
           CLAUDE_ROCKET_TOKEN: ${{ secrets.CLAUDE_ROCKET_TOKEN }}
           XAI_TOKEN: ${{ secrets.XAI_TOKEN }}
-          SLACK_WEBHOOK_LEADERSHIP: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
         run: |
           python3 << 'VALIDATION'
           import os
@@ -52,7 +50,6 @@ jobs:
 
           script_path = Path("orchestration/run.py")
           script_missing = not script_path.exists()
-          slack_available = "true" if os.getenv("SLACK_WEBHOOK_LEADERSHIP") else "false"
 
           if missing_required:
               print(f"CRITICAL: Missing required secrets: {', '.join(missing_required)}")

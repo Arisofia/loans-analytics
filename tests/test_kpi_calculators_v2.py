@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+
 from src.kpis.collection_rate import calculate_collection_rate
 from src.kpis.par_30 import calculate_par_30
 from src.kpis.par_90 import calculate_par_90

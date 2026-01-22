@@ -50,4 +50,5 @@ node_modules/
 figma-financial-dashboard/node_modules/
 .sonarlint/
 
-.python_packages
+.python_packagesnode_modules/
+node_modules/

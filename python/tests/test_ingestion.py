@@ -2,6 +2,7 @@ import json
 
 import pandas as pd
 import pytest
+
 from pipeline.ingestion import UnifiedIngestion
 
 
@@ -34,7 +35,10 @@ def test_looker_par_balances_to_loan_tape(base_config):
 def test_looker_dpd_to_loan_tape(base_config):
     ui = UnifiedIngestion(base_config)
     df = pd.DataFrame(
-        {"dpd": [0, 5, 10, 40, 75, 120], "outstanding_balance": [10, 10, 10, 10, 10, 10]}
+        {
+            "dpd": [0, 5, 10, 40, 75, 120],
+            "outstanding_balance": [10, 10, 10, 10, 10, 10],
+        }
     )
     out = ui._looker_dpd_to_loan_tape(df, {})
     # dpd buckets
@@ -46,7 +50,10 @@ def test_looker_dpd_to_loan_tape(base_config):
 
 class DummyResponse:
     def __init__(
-        self, content: bytes, content_type: str = "application/json", encoding: str = "utf-8"
+        self,
+        content: bytes,
+        content_type: str = "application/json",
+        encoding: str = "utf-8",
     ):
         self.content = content
         self.headers = {"Content-Type": content_type}

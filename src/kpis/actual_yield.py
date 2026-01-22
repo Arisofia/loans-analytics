@@ -42,7 +42,9 @@ class ActualYieldCalculator(KPICalculator):
             aum_col = "outstanding_balance_usd"
 
         if interest_paid_col not in df.columns or aum_col not in df.columns:
-            raise ValueError(f"Missing columns for ActualYield: {interest_paid_col}, {aum_col}")
+            raise ValueError(
+                f"Missing columns for ActualYield: {interest_paid_col}, {aum_col}"
+            )
 
         total_interest = safe_numeric(df[interest_paid_col]).sum()
         avg_aum = safe_numeric(df[aum_col]).mean()

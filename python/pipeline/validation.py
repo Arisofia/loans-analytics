@@ -10,7 +10,9 @@ import pandas as pd
 class DataQualityReport:
     """Structured data quality audit report."""
 
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     status: str = "passed"
     score: float = 100.0
     total_rows: int = 0
@@ -92,7 +94,9 @@ class DataQualityReporter:
                     coerced = pd.to_numeric(self.df[resolved], errors="coerce")
                     coerced_nulls = coerced.isnull().sum()
                     if coerced_nulls > original_nulls:
-                        self.report.type_errors.append(f"Column '{col}' contains non-numeric values")
+                        self.report.type_errors.append(
+                            f"Column '{col}' contains non-numeric values"
+                        )
 
         if date_columns:
             for col in date_columns:
@@ -102,7 +106,9 @@ class DataQualityReporter:
                     coerced = pd.to_datetime(self.df[resolved], errors="coerce")
                     coerced_nulls = coerced.isnull().sum()
                     if coerced_nulls > original_nulls:
-                        self.report.type_errors.append(f"Column '{col}' contains invalid date values")
+                        self.report.type_errors.append(
+                            f"Column '{col}' contains invalid date values"
+                        )
 
         # 4. Final scoring
         deductions = (

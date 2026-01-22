@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import pandas as pd
+
 from python.validation import safe_numeric, validate_numeric_bounds
 
 
@@ -15,10 +17,17 @@ def calculate_par_30(df: pd.DataFrame | None) -> float:
         return 0.0
 
     # Validate required columns
-    required = ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
+    required = [
+        "dpd_30_60_usd",
+        "dpd_60_90_usd",
+        "dpd_90_plus_usd",
+        "total_receivable_usd",
+    ]
     missing = [col for col in required if col not in df.columns]
     if missing:
-        raise ValueError(f"Missing required columns for PAR 30 calculation: {', '.join(missing)}")
+        raise ValueError(
+            f"Missing required columns for PAR 30 calculation: " f"{', '.join(missing)}"
+        )
 
     # Validate non-negative receivables
     bounds = validate_numeric_bounds(df, columns=["total_receivable_usd"])

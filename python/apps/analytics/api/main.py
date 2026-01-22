@@ -1,16 +1,20 @@
-from pathlib import Path
 import logging
+from pathlib import Path
 
-# Avoid importing FastAPI at module import time so tests don't require fastapi installed.
-# Use a lazy import and a lightweight HTTPException fallback for environments without FastAPI.
+# Avoid importing FastAPI at module import time so tests don't require
+# fastapi installed. Use a lazy import and a lightweight HTTPException
+# fallback for environments without FastAPI.
 try:
     from fastapi import FastAPI, HTTPException  # type: ignore
+
     app = FastAPI()
 except Exception:  # pragma: no cover - fallback in tests/environments without FastAPI
+
     class HTTPException(Exception):
         def __init__(self, status_code: int, detail: str):
             self.status_code = status_code
             self.detail = detail
+
     app = None
 
 logger = logging.getLogger("apps.analytics.api")

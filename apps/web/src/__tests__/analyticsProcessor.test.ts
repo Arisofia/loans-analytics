@@ -27,7 +27,7 @@ describe('parseLoanCsv', () => {
     const csv = `loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance,dpd_status
 100000,150000,60000,1000,current,5.5,95000,current
 200000,250000,80000,2000,30-59 days past due,6.5,190000,bucket_30`
-    
+
     const rows = parseLoanCsv(csv)
     expect(rows).toHaveLength(2)
     expect(rows[0].loan_amount).toBe(100000)
@@ -39,7 +39,7 @@ describe('parseLoanCsv', () => {
   it('should handle quoted values with commas', () => {
     const csv = `loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance,dpd_status
 "100,000",150000,60000,1000,"current, with note",5.5,95000,current`
-    
+
     const rows = parseLoanCsv(csv)
     expect(rows).toHaveLength(1)
     expect(rows[0].loan_amount).toBe(100000)
@@ -50,7 +50,7 @@ describe('parseLoanCsv', () => {
     const csv = `loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance,dpd_status
 "$100,000.00",150000,60000,1000,current,5.5,95000,current
 "(50,000)",100000,40000,500,delinquent,4.0,45000,bucket_30`
-    
+
     const rows = parseLoanCsv(csv)
     expect(rows[0].loan_amount).toBe(100000)
     expect(rows[1].loan_amount).toBe(-50000)
@@ -79,9 +79,9 @@ describe('computeKPIs', () => {
         interest_rate: 10,
         principal_balance: 100000,
         dpd_status: 'bucket_30',
-      }
+      },
     ]
-    
+
     const kpis = computeKPIs(rows)
     expect(kpis.loanCount).toBe(2)
     expect(kpis.delinquencyRate).toBe(50) // 1 out of 2

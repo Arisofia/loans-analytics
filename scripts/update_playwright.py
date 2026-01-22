@@ -2,8 +2,8 @@
 """
 Playwright Workflow Quoting Fixer.
 
-This script automates the correction of quoted `"on":` keys to `on:` in 
-GitHub Actions YAML files via the GitHub API. This is necessary to avoid 
+This script automates the correction of quoted `"on":` keys to `on:` in
+GitHub Actions YAML files via the GitHub API. This is necessary to avoid
 YAML validation issues while ensuring CI pipeline integrity.
 
 Standards:
@@ -25,7 +25,6 @@ import sys
 import time
 from pathlib import Path
 from typing import Dict, Tuple
-
 
 # Configuration Defaults
 DEFAULT_INPUT = "/tmp/ari_playwright.json"
@@ -94,17 +93,27 @@ def run_gh_update(
     """
     url = f"/repos/{repo}/contents/{repo_path}"
     cmd = [
-        "gh", "api", "-X", "PUT", url,
-        "-f", f"message={payload['message']}",
-        "-f", f"content={payload['content']}",
-        "-f", f"sha={payload['sha']}",
-        "-f", f"branch={payload['branch']}",
+        "gh",
+        "api",
+        "-X",
+        "PUT",
+        url,
+        "-f",
+        f"message={payload['message']}",
+        "-f",
+        f"content={payload['content']}",
+        "-f",
+        f"sha={payload['sha']}",
+        "-f",
+        f"branch={payload['branch']}",
     ]
 
     for attempt in range(retries):
         try:
             logging.debug("Running GH API (Attempt %d/%d)", attempt + 1, retries)
-            return subprocess.run(cmd, check=True, capture_output=True, text=True, shell=False)
+            return subprocess.run(
+                cmd, check=True, capture_output=True, text=True, shell=False
+            )
         except subprocess.CalledProcessError:
             if attempt == retries - 1:
                 raise
@@ -121,15 +130,28 @@ def parse_args(argv=None) -> argparse.Namespace:
     )
     p.add_argument("--input", default=DEFAULT_INPUT, help="Path to input JSON")
     # Accept both --out and --output for compatibility with tests and users
-    p.add_argument("--out", "--output", dest="out", default=DEFAULT_OUT, help="Path to write preview")
+    p.add_argument(
+        "--out",
+        "--output",
+        dest="out",
+        default=DEFAULT_OUT,
+        help="Path to write preview",
+    )
     p.add_argument("--repo", default=DEFAULT_REPO, help="Target repository")
     p.add_argument("--path", default=DEFAULT_REPO_PATH, help="Workflow path")
     p.add_argument("--branch", default=DEFAULT_BRANCH, help="Target branch")
     p.add_argument("--message", default=DEFAULT_MESSAGE, help="Commit message")
     p.add_argument("--dry-run", action="store_true", help="Preview mode")
     p.add_argument("--preview-lines", type=int, default=15, help="Lines to preview")
-    p.add_argument("--retries", type=int, default=MAX_RETRIES, help="Number of GH API retries")
-    p.add_argument("--backoff", type=float, default=RETRY_DELAY, help="Backoff seconds between retries")
+    p.add_argument(
+        "--retries", type=int, default=MAX_RETRIES, help="Number of GH API retries"
+    )
+    p.add_argument(
+        "--backoff",
+        type=float,
+        default=RETRY_DELAY,
+        help="Backoff seconds between retries",
+    )
     return p.parse_args(argv)
 
 
@@ -158,7 +180,7 @@ def main(argv=None) -> int:
     try:
         data = json.loads(in_path.read_text(encoding="utf-8"))
         content_b64, sha = data.get("content"), data.get("sha")
-        
+
         if not content_b64 or not sha:
             logging.error("Input JSON must contain 'content' and 'sha'")
             return 2
@@ -183,7 +205,13 @@ def main(argv=None) -> int:
                 "sha": sha,
                 "branch": args.branch,
             }
-            res = run_gh_update(args.repo, args.path, payload, retries=args.retries, backoff=args.backoff)
+            res = run_gh_update(
+                args.repo,
+                args.path,
+                payload,
+                retries=args.retries,
+                backoff=args.backoff,
+            )
             logging.info("Success: %s", (res.stdout or "OK")[:200])
 
     except json.JSONDecodeError as exc:
