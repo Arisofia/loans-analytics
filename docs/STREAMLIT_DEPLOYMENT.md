@@ -2,7 +2,6 @@
 
 ## Overview
 
-This guide covers deploying a Streamlit dashboard alongside the Next.js application for real-time risk assessment and Cascade Platform data ingestion.
 
 **Important**: This workspace runs on Debian GNU/Linux 12 (bookworm) with Node.js 20.x and npm as the canonical package manager.
 
@@ -11,7 +10,6 @@ This guide covers deploying a Streamlit dashboard alongside the Next.js applicat
 ### Prerequisites
 
 - Python 3.11+
-- Cascade Platform service account with Drive API access
 - Supabase project with configured secrets
 - Node.js 20.x (for Next.js companion app)
 - npm (officially supported package manager)
@@ -33,7 +31,6 @@ This guide covers deploying a Streamlit dashboard alongside the Next.js applicat
    SUPABASE_URL = "https://your-project.supabase.co"
    SUPABASE_SERVICE_KEY = "your-service-role-key"
 
-   # Cascade Platform Integration
    GDRIVE_FOLDER_ID = "your-google-drive-folder-id"
    GDRIVE_SERVICE_ACCOUNT = '{"type":"service_account","project_id":"...","private_key":"..."}'
 
@@ -217,7 +214,6 @@ docker-compose -f docker-compose.streamlit.yml up -d
 
 ## Features
 
-### Cascade Platform Ingestion
 
 - **Real-time file processing** from configured Drive folder
 - **Format support**: Excel (.xlsx), Google Sheets, CSV
@@ -321,11 +317,9 @@ echo $SUPABASE_SERVICE_KEY
 - Ensure Supabase project is active (not paused)
 - Verify network connectivity to Supabase
 
-### "Permission denied for Cascade Platform access"
 
 - Verify service account JSON is valid
 - Check that service account email has folder access
-- Ensure Cascade Platform API is enabled in Cascade Platform Configuration
 - Verify service account has "Editor" or "Viewer" role
 
 ## Security Best Practices
@@ -337,7 +331,6 @@ echo $SUPABASE_SERVICE_KEY
 - Never commit secrets to version control
 - Use environment variables in all deployment scenarios
 
-✅ **Cascade Platform Access**
 
 - Use service account (not personal account)
 - Grant read-only access to specific folder only
@@ -364,7 +357,6 @@ echo $SUPABASE_SERVICE_KEY
 | Service              | Free Tier | Paid Tier    | Notes                   |
 | -------------------- | --------- | ------------ | ----------------------- |
 | Streamlit Cloud      | 1 app     | $5/app/month | Verified email required |
-| Cascade Platform API | Free      | Free         | Included with workspace |
 | Supabase             | 500MB DB  | $25+/month   | Scales with usage       |
 | Railway              | None      | $5+/month    | Pay-as-you-go available |
 
@@ -392,7 +384,6 @@ Automated ingestion runs via API/scheduled pipelines alongside Streamlit-based m
 
 ## Next Steps
 
-1. **Set up Cascade Platform integration** following Google Cloud setup guide
 2. **Configure Supabase** with required tables and Row Level Security
 3. **Deploy Streamlit** using your preferred option
 4. **Test data ingestion** with sample files
@@ -404,7 +395,6 @@ Automated ingestion runs via API/scheduled pipelines alongside Streamlit-based m
 - [Streamlit Documentation](https://docs.streamlit.io)
 - [Streamlit Cloud Deployment](https://docs.streamlit.io/streamlit-cloud/deploy-your-app)
 - [Railway Documentation](https://docs.railway.app)
-- [Cascade Platform API](https://developers.google.com/drive/api)
 - [Supabase Documentation](https://supabase.com/docs)
 - [GitHub Copilot Instructions](./.github/copilot-instructions.md)
 

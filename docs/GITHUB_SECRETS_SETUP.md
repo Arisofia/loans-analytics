@@ -164,13 +164,11 @@ Common across parity checks and ingestion pipelines.
 - `META_AD_ACCOUNT_ID`
   - Used by: `.github/workflows/meta-export.yml`, `.github/workflows/brand-monitoring.yml`.
 
-### E) HubSpot / Cascade
 
 Used by ingestion / unified pipeline workflows.
 
 - `CASCADE_USERNAME`
 - `CASCADE_PASSWORD`
-  - Used by: `.github/workflows/cascade_ingest.yml`, `.github/workflows/daily-ingest.yml`.
 
 - `HUBSPOT_API_KEY` or `HUBSPOTTOKEN`
   - Note: both naming styles exist across workflows; standardize later.

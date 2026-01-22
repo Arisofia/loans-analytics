@@ -2,6 +2,7 @@ import json
 from unittest.mock import Mock
 
 import pytest
+
 from src.analytics.azure_blob_exporter import AzureBlobKPIExporter
 from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
 
@@ -11,7 +12,9 @@ def test_upload_metrics_uses_blob_service_client():
     blob_service_client = Mock()
     blob_service_client.get_container_client.return_value = container_client
 
-    exporter = AzureBlobKPIExporter(container_name="kpis", blob_service_client=blob_service_client)
+    exporter = AzureBlobKPIExporter(
+        container_name="kpis", blob_service_client=blob_service_client
+    )
     blob_path = exporter.upload_metrics({"portfolio_yield_percent": 4.2})
 
     blob_service_client.get_container_client.assert_called_once_with("kpis")

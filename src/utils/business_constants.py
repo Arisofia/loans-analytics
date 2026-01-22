@@ -8,7 +8,9 @@ def _load_business_constants() -> Dict[str, Any]:
     """Load business constants from the shared config file."""
     # Try different relative paths depending on where it is called from
     possible_paths = [
-        os.path.join(os.path.dirname(__file__), "..", "..", "config", "business_constants.json"),
+        os.path.join(
+            os.path.dirname(__file__), "..", "..", "config", "business_constants.json"
+        ),
         os.path.join(os.getcwd(), "config", "business_constants.json"),
     ]
 
@@ -18,13 +20,19 @@ def _load_business_constants() -> Dict[str, Any]:
                 with open(config_path, "r") as f:
                     return json.load(f)
             except Exception as e:
-                logging.warning(f"Could not load business constants from {config_path}: {e}")
+                logging.warning(
+                    f"Could not load business constants from {config_path}: {e}"
+                )
 
     logging.warning("Could not find business_constants.json in any expected location.")
     # Fallback to defaults if config is missing
     return {
         "delinquency": {
-            "statuses": ["30-59 days past due", "60-89 days past due", "90+ days past due"],
+            "statuses": [
+                "30-59 days past due",
+                "60-89 days past due",
+                "90+ days past due",
+            ],
             "thresholds": {
                 "par30_warning": 5.0,
                 "par30_critical": 8.0,

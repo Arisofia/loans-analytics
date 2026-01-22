@@ -17,7 +17,8 @@ def sanitize_column_names(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
     df.columns = [
-        re.sub(r"[^a-z0-9_]", "", str(col).lower().strip().replace(" ", "_")) for col in df.columns
+        re.sub(r"[^a-z0-9_]", "", str(col).lower().strip().replace(" ", "_"))
+        for col in df.columns
     ]
     return df
 
@@ -88,7 +89,13 @@ COL_DPD_90_PLUS = "dpd_90_plus_usd"
 # Mapping from common external names to internal names
 COLUMN_MAPPING = {
     COL_ORIGINATION_DATE: ["Origination Date", "measurement_date", "date", "orig_date"],
-    COL_CUSTOMER_ID: ["Customer ID", "client_id", "customer_number", "id_cliente", "borrower_id"],
+    COL_CUSTOMER_ID: [
+        "Customer ID",
+        "client_id",
+        "customer_number",
+        "id_cliente",
+        "borrower_id",
+    ],
     COL_CLIENT_SEGMENT: ["Client Segment", "segment", "classification"],
     COL_OUTSTANDING_AMOUNT: [
         "Outstanding Amount",
@@ -111,7 +118,13 @@ COLUMN_MAPPING = {
     COL_BORROWER_INCOME: ["Borrower Income", "annual_income", "income"],
     COL_MONTHLY_DEBT: ["Monthly Debt", "debt_payments", "obligations"],
     COL_LOAN_STATUS: ["Loan Status", "status", "estado", "loan_state", "state"],
-    COL_INTEREST_RATE: ["Interest Rate", "rate", "apr", "tasa_interes", "annual_percentage_rate"],
+    COL_INTEREST_RATE: [
+        "Interest Rate",
+        "rate",
+        "apr",
+        "tasa_interes",
+        "annual_percentage_rate",
+    ],
     COL_PRINCIPAL_BALANCE: ["Principal Balance", "current_principal"],
     COL_LOAN_ID: ["id", "loan_number", "contrato", "loan_id_raw", "loan_id"],
     COL_SALES_AGENT: ["agent", "vendedor", "kam", "sales_person", "sales_agent"],
@@ -190,7 +203,9 @@ def ensure_columns(
     for col in required:
         if col not in working_df.columns:
             default_val = defaults.get(col, 0.0)
-            logger.warning(f"Missing required column '{col}', using default: {default_val}")
+            logger.warning(
+                f"Missing required column '{col}', using default: {default_val}"
+            )
             working_df[col] = default_val
 
     return working_df

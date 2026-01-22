@@ -84,7 +84,9 @@ class KPIEngineV2:
         if custom_kpis:
             self.kpi_functions.update(custom_kpis)
 
-    def _calculate_single(self, name: str, calculator: Any) -> Tuple[float, Dict[str, Any]]:
+    def _calculate_single(
+        self, name: str, calculator: Any
+    ) -> Tuple[float, Dict[str, Any]]:
         """Internal helper for single KPI calculation."""
         try:
             val, ctx = calculator(self.df)
@@ -99,10 +101,17 @@ class KPIEngineV2:
     ) -> Tuple[float, Dict[str, Any]]:
         """Calculate Portfolio Health composite metric."""
         p30 = par_30 if par_30 is not None else self.get_metric("PAR30")
-        cr = collection_rate if collection_rate is not None else self.get_metric("CollectionRate")
+        cr = (
+            collection_rate
+            if collection_rate is not None
+            else self.get_metric("CollectionRate")
+        )
 
         if p30 is None or cr is None:
-            return 0.0, {"error": "Missing inputs for PortfolioHealth", "metric": "PortfolioHealth"}
+            return 0.0, {
+                "error": "Missing inputs for PortfolioHealth",
+                "metric": "PortfolioHealth",
+            }
 
         return self._calculate_single(
             "PortfolioHealth", lambda _: calculate_portfolio_health_logic(p30, cr)
@@ -116,7 +125,9 @@ class KPIEngineV2:
         return self._calculate_single("PAR90", self.kpi_functions["PAR90"])
 
     def calculate_collection_rate(self) -> Tuple[float, Dict[str, Any]]:
-        return self._calculate_single("CollectionRate", self.kpi_functions["CollectionRate"])
+        return self._calculate_single(
+            "CollectionRate", self.kpi_functions["CollectionRate"]
+        )
 
     def calculate_ltv(self) -> Tuple[float, Dict[str, Any]]:
         return self._calculate_single("LTV", self.on_demand_kpi_functions["LTV"])
@@ -156,10 +167,14 @@ class KPIEngineV2:
             collection_val = self.get_metric("CollectionRate")
 
             if par30_val is not None and collection_val is not None:
-                val, context = self.calculate_portfolio_health(par30_val, collection_val)
+                val, context = self.calculate_portfolio_health(
+                    par30_val, collection_val
+                )
                 self.metrics["PortfolioHealth"] = {"value": val, **context}
                 if "error" not in context:
-                    self._log_event("composite_kpi_calculated", "success", kpi="PortfolioHealth")
+                    self._log_event(
+                        "composite_kpi_calculated", "success", kpi="PortfolioHealth"
+                    )
 
         self._log_event("calculate_all", "completed", kpi_count=len(self.metrics))
         return self.metrics
@@ -173,7 +188,9 @@ class KPIEngineV2:
         if name in self.metrics:
             return self.metrics[name].get("value")
 
-        calculator = self.kpi_functions.get(name) or self.on_demand_kpi_functions.get(name)
+        calculator = self.kpi_functions.get(name) or self.on_demand_kpi_functions.get(
+            name
+        )
         if calculator:
             val, _ = self._calculate_single(name, calculator)
             return val

@@ -37,7 +37,6 @@ This report details the findings and transformations performed during the compre
 ### Findings:
 - **Silent Failures**: `src/analytics/kpi_catalog_processor.py` contains numerous `try-except-pass` blocks that silently ignore errors during KPI calculation, making debugging difficult.
 - **Script Sprawl**: The `scripts/` directory contains several redundant or one-off maintenance scripts from previous migrations.
-- **Dependency Risks**: Heavy reliance on external APIs (HubSpot, Figma, Meta, etc.) with stubbed implementations in some cases (`fetch_hubspot_data.py`).
 
 ### Recommendations:
 - **Improve Error Logging**: Replace `pass` blocks with `logger.warning` to provide visibility into missing metrics.

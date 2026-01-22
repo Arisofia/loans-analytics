@@ -175,7 +175,6 @@ If tracing errors appear, this is expected in local dev (Azure/Jaeger endpoints 
 ### 6.1 Navigate Dashboard
 
 - **Home** — KPI overview and summary metrics
-- **Cascade Analysis** — Loan cascade predictions
 - **Portfolio Analytics** — KPI trends and analysis
 - **Settings** — Configure Supabase connection
 

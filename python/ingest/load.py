@@ -27,10 +27,22 @@ class DataLoader:
         parquet_path = self._build_path(dataset, suffix, "parquet")
         df.to_csv(csv_path, index=False)
         df.to_parquet(parquet_path, index=False)
-        LOG.info("Persisted dataset %s rows=%d csv=%s parquet=%s", dataset, len(df), csv_path, parquet_path)
+        LOG.info(
+            "Persisted dataset %s rows=%d csv=%s parquet=%s",
+            dataset,
+            len(df),
+            csv_path,
+            parquet_path,
+        )
         return csv_path, parquet_path
 
-    def write_manifest(self, dataset: str, csv_path: Path, parquet_path: Path, extras: Optional[dict] = None) -> Path:
+    def write_manifest(
+        self,
+        dataset: str,
+        csv_path: Path,
+        parquet_path: Path,
+        extras: Optional[dict] = None,
+    ) -> Path:
         manifest = {
             "dataset": dataset,
             "timestamp": datetime.now(timezone.utc).isoformat() + "Z",

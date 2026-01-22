@@ -6,7 +6,6 @@
 
 ---
 
-## Slack Channels
 
 ### Primary Channels
 
@@ -245,7 +244,6 @@ Immediate actions:
 - [ ] Comms: Notify stakeholders
 
 Link: [GitHub Actions / Error logs]
-Slack thread: All updates here
 
 Rollback command: @devops run rollback-workflow
 ```
@@ -546,17 +544,11 @@ Escalation path:
 
 ## Integration with GitHub
 
-**GitHub Actions → Slack**:
 
-- Deployment workflows can post Slack notifications
-- Set up in workflow file with Slack webhook
 
-**GitHub Issues → Slack**:
 
-- Use `#` mentions to link issues in Slack
 - Example: "See #123 for details"
 
-**Slack → GitHub**:
 
 - Link GitHub Actions runs
 - Link PRs with [Title](URL)

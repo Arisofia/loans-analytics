@@ -8,7 +8,6 @@
 
 ## 1. System Overview
 
-The ABACO Financial Intelligence Platform provides automated KPI calculation, portfolio monitoring, and executive reporting for loan portfolios. The system integrates data from Cascade API, HubSpot, and manual Looker exports.
 
 ### Core Components
 - **Analytics Pipeline**: Python-based engine for data ingestion, transformation, and KPI calculation.

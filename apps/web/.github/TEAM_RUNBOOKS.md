@@ -251,7 +251,6 @@ Post comment on GitHub Actions:
 When validation is complete:
 
 1. Post ✅ approval in GitHub Actions
-2. Notify #dev-alerts Slack channel
 3. Production team proceeds with deployment tag
 
 ---
@@ -322,7 +321,6 @@ Workflow automatically runs health checks. If they pass:
 
 **6. Notify Team**
 
-Post to Slack #prod-alerts:
 
 ```
 🚀 Production Deployment Complete
@@ -375,7 +373,6 @@ Expected timeline:
 
 **3. Post-Rollback**
 
-Post to Slack #incidents:
 
 ```
 🔄 Emergency Rollback Completed
@@ -425,7 +422,6 @@ AZURE_STATIC_WEB_APPS_TOKEN_PROD
 4. Enter name and value
 5. Click "Add secret"
 
-⚠️ **Never** share secrets in Slack, email, or commit to repo
 
 #### Environment Configuration
 
@@ -615,7 +611,6 @@ git push origin develop
 **Immediate Actions** (< 5 min):
 
 1. Create GitHub issue: [CRITICAL] Issue title
-2. Post #incidents Slack: Issue description + link
 3. Trigger rollback if needed (see Scenario 5)
 4. Page on-call engineer
 
@@ -635,7 +630,6 @@ git push origin develop
 **Immediate Actions** (< 15 min):
 
 1. Create GitHub issue with reproduction steps
-2. Post #dev-alerts Slack
 3. Assess if rollback needed
 4. Notify team lead
 
@@ -738,7 +732,6 @@ git push origin develop
 **Questions?**
 
 1. Check this guide and related docs
-2. Ask in #dev-help Slack
 3. Create GitHub issue with `question` label
 4. Contact team lead
 

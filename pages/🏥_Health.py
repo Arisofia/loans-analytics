@@ -61,7 +61,9 @@ st.markdown("---")
 st.subheader("System Components")
 for check_name, check_result in checks.items():
     icon = "✅" if check_result else "❌"
-    st.write(f"{icon} **{check_name.replace('_', ' ').title()}**: {'OK' if check_result else 'FAILED'}")
+    st.write(
+        f"{icon} **{check_name.replace('_', ' ').title()}**: {'OK' if check_result else 'FAILED'}"
+    )
 
 st.markdown("---")
 

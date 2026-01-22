@@ -2,6 +2,7 @@ import unittest
 
 import pandas as pd
 import pytest
+
 import src.analytics.feature_engineering as utils
 from src.analytics.feature_engineering import FeatureEngineer
 

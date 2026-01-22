@@ -20,7 +20,6 @@ We will move from a scattered root to a clean, modular structure:
 
 The pipeline will follow a strict, layered approach:
 
-1. **Ingest**: Pull raw data from Cascade, HubSpot, or CSV.
 2. **Validate**: Enforce schemas using **Great Expectations** or **Pandera**.
 3. **Transform**: Clean and enrich data into a canonical format.
 4. **Calculate**: Compute KPIs using the unified **KPI Engine v2**.
@@ -41,7 +40,6 @@ The pipeline will follow a strict, layered approach:
 ## 6. Observability & Self-Healing
 
 - **Logging**: Structured JSON logging for all pipeline phases.
-- **Alerting**: Failure alerts via Slack/Email with actionable error contexts.
 - **Idempotency**: All jobs must be idempotent and restartable from any phase.
 
 ## 7. Immediate Action Plan

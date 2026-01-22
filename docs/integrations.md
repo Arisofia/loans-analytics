@@ -1,6 +1,4 @@
-# Integrations Guide: Figma, Notion, and Slack SDKs
 
-This guide explains how to set up and use the official SDKs for Figma, Notion, and Slack in Node.js/TypeScript and Python. It lists the environment variables you need, installation commands, and minimal client initialization snippets so you can keep secrets out of your code and in your runtime configuration.
 
 ## Environment variables
 
@@ -10,8 +8,6 @@ Export these values before running the examples:
 - `FIGMA_FILE_ID`: Figma file ID used for figma-export or SDK reads.
 - `NOTION_TOKEN`: Internal integration token for Notion.
 - `NOTION_DATABASE_ID`: Database ID for querying Notion content.
-- `SLACK_BOT_TOKEN`: Slack bot token (starts with `xoxb-`).
-- `SLACK_SIGNING_SECRET`: Slack signing secret for request verification.
 
 ```bash
 # Mac/Linux shell examples
@@ -35,8 +31,6 @@ npm install figma-js
 # or
 npm install @figma-js/sdk
 
-# Notion and Slack
-npm install @notionhq/client @slack/web-api
 
 # Figma token export CLI
 npm install --save-dev figma-export
@@ -90,15 +84,11 @@ async function listDatabasePages() {
 }
 ```
 
-#### Slack Web API client
 
 ```ts
-import { WebClient } from '@slack/web-api'
 
-const slack = new WebClient(process.env.SLACK_BOT_TOKEN)
 
 async function postHealthCheck(channelId: string) {
-  await slack.chat.postMessage({
     channel: channelId,
     text: 'ABACO integrations are live.',
   })
@@ -121,7 +111,6 @@ npx figma-export --file-id "$FIGMA_FILE_ID" \
 ### Install SDKs
 
 ```bash
-pip install figma-python notion-client slack-sdk google-auth google-auth-oauthlib
 ```
 
 ### Usage examples (Python)
@@ -153,15 +142,11 @@ def list_database_pages():
     return [page["id"] for page in response["results"]]
 ```
 
-#### Slack SDK
 
 ```python
-from slack_sdk import WebClient
 import os
 
-slack = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
 
-slack.chat_postMessage(
     channel="#integrations",
     text="ABACO integrations are live.",
 )
@@ -179,13 +164,11 @@ classDiagram
   class NotionClient {
     +queryDatabase(databaseId)
   }
-  class SlackWebClient {
     +chatPostMessage(channel, text)
   }
   FigmaClient <|-- figma~js~Client
   FigmaClient <|-- figma_sdk_Figma
   NotionClient <|-- NotionClientImpl
-  SlackWebClient <|-- SlackWebClientImpl
 ```
 
 ### Integration choice flow
@@ -193,13 +176,10 @@ classDiagram
 ```mermaid
 flowchart TD
   Start([Start]) --> Lang{Language}
-  Lang -->|Node.js / TS| NodeSetup["Install SDKs via npm\n(figma-js or @figma-js/sdk, @notionhq/client, @slack/web-api)"]
-  Lang -->|Python| PySetup["Install SDKs via pip\n(figma-python, notion-client, slack-sdk)"]
   NodeSetup --> Env["Export env vars\nFIGMA_PERSONAL_ACCESS_TOKEN, NOTION_TOKEN, SLACK_BOT_TOKEN, etc."]
   PySetup --> Env
   Env --> Choice{Need tokens?}
   Choice -->|Design tokens| FigmaExport["Run figma-export CLI\nwith FIGMA_FILE_ID"]
-  Choice -->|API data| SDKUse["Call SDKs\n(Figma file read, Notion query, Slack message)"]
   SDKUse --> Done([Integrations ready])
   FigmaExport --> Done
 ```

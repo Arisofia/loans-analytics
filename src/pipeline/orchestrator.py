@@ -7,7 +7,6 @@ from typing import Any, Dict, Optional
 
 from prefect import flow, task
 
-from src.agents.tools import send_slack_notification
 from src.compliance import build_compliance_report, write_compliance_report
 from src.config.paths import Paths
 from src.pipeline.data_ingestion import UnifiedIngestion
@@ -22,7 +21,9 @@ logger = logging.getLogger(__name__)
 tracer = get_tracer(__name__)
 
 
-def _deep_merge(base_dict: Dict[str, Any], override_dict: Dict[str, Any]) -> Dict[str, Any]:
+def _deep_merge(
+    base_dict: Dict[str, Any], override_dict: Dict[str, Any]
+) -> Dict[str, Any]:
     """Deep merge override_dict into base_dict, with override taking precedence."""
     result = base_dict.copy()
     for key, value in override_dict.items():
@@ -49,7 +50,9 @@ class PipelineConfig:
     def _load_config(self) -> Dict[str, Any]:
         """Load base config and merge with environment-specific overrides."""
         if not self.config_path.exists():
-            logger.warning("Config file not found: %s, using minimal defaults", self.config_path)
+            logger.warning(
+                "Config file not found: %s, using minimal defaults", self.config_path
+            )
             return self._default_config()
 
         base_config = load_yaml(self.config_path)
@@ -62,11 +65,12 @@ class PipelineConfig:
             logger.info("Merged environment config from %s", env_config_path)
         else:
             logger.warning(
-                "Environment config not found: %s, using base config only", env_config_path
+                "Environment config not found: %s, using base config only",
+                env_config_path,
             )
 
         context = {
-            "portfolio_id": base_config.get("cascade", {}).get("portfolio_id", ""),
+            "portfolio_id": "",
         }
         return resolve_placeholders(base_config, context)
 
@@ -147,7 +151,9 @@ class UnifiedPipeline:
                 continue
         return None
 
-    def _handle_alerts(self, ingestion_summary: Dict[str, Any], calculation_result: Any) -> None:
+    def _handle_alerts(
+        self, ingestion_summary: Dict[str, Any], calculation_result: Any
+    ) -> None:
         """Evaluate DQ and KPI statuses to trigger alerts."""
         alerts = []
 
@@ -168,14 +174,15 @@ class UnifiedPipeline:
             disp = metric.get("display_name", name)
 
             if status == "critical":
-                alerts.append(f"🚨 *Critical KPI Alert*: {disp} is {val} (Status: CRITICAL)")
+                alerts.append(
+                    f"🚨 *Critical KPI Alert*: {disp} is {val} (Status: CRITICAL)"
+                )
             elif status == "warning":
                 alerts.append(f"⚠️ *KPI Warning*: {disp} is {val} (Status: WARNING)")
 
         if alerts:
             message = f"📢 *Pipeline Alert - Run {self.run_id}*\n\n" + "\n".join(alerts)
-            logger.warning("Triggering Slack alerts: %s", alerts)
-            send_slack_notification(message, channel="kpi-compliance")
+            logger.warning("Triggering alerts: %s", alerts)
 
     def execute(
         self, input_file: Path, user: str = "system", action: str = "manual"
@@ -185,25 +192,18 @@ class UnifiedPipeline:
             run_started = utc_now()
             run_cfg = self.config.get("run", default={}) or {}
             artifacts_dir = Path(run_cfg.get("artifacts_dir", "logs/runs"))
-            raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/cascade"))
-            ingest_cfg = self.config.get("pipeline", "phases", "ingestion", default={}) or {}
+            raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/raw"))
+            ingest_cfg = (
+                self.config.get("pipeline", "phases", "ingestion", default={}) or {}
+            )
             ingest_source = ingest_cfg.get("source", "file")
-            cascade_cfg = self.config.get("cascade", default={}) or {}
 
             span.set_attribute("pipeline.user", user)
             span.set_attribute("pipeline.action", action)
             span.set_attribute("pipeline.source", ingest_source)
             try:
                 with tracer.start_as_current_span("pipeline.ingestion"):
-                    if ingest_source == "cascade_http":
-                        base_url = cascade_cfg.get("base_url", "")
-                        endpoint = cascade_cfg.get("endpoints", {}).get("loan_tape", "")
-                        token_env = cascade_cfg.get("auth", {}).get("token_secret")
-                        token_value = os.getenv(token_env, "") if token_env else ""
-                        headers = {"Authorization": f"Bearer {token_value}"} if token_value else {}
-                        url = f"{base_url}{endpoint}"
-                        ingestion_result = self.ingestor.ingest_http(url, headers=headers)
-                    elif ingest_source == "looker":
+                    if ingest_source == "looker":
                         looker_cfg = ingest_cfg.get("looker", {}) or {}
                         loans_par_path = looker_cfg.get("loans_par_path")
                         loans_fallback_path = looker_cfg.get("loans_path")
@@ -219,7 +219,9 @@ class UnifiedPipeline:
                         financials_path = looker_cfg.get("financials_path")
                         ingestion_result = self.ingestor.ingest_looker(
                             selected_path,
-                            financials_path=Path(financials_path) if financials_path else None,
+                            financials_path=(
+                                Path(financials_path) if financials_path else None
+                            ),
                             archive_dir=raw_archive_dir,
                         )
                     else:
@@ -237,7 +239,9 @@ class UnifiedPipeline:
                 self.calculator.run_id = self.run_id
                 self.output.run_id = self.run_id
 
-                with tracer.start_as_current_span("pipeline.transformation") as transformation_span:
+                with tracer.start_as_current_span(
+                    "pipeline.transformation"
+                ) as transformation_span:
                     transformation_result = self.transformer.transform(
                         ingestion_result.df, user=user
                     )
@@ -249,9 +253,13 @@ class UnifiedPipeline:
                         len(transformation_result.masked_columns),
                     )
 
-                baseline_metrics = self._load_previous_metrics(artifacts_dir, self.run_id)
+                baseline_metrics = self._load_previous_metrics(
+                    artifacts_dir, self.run_id
+                )
 
-                with tracer.start_as_current_span("pipeline.calculation") as calculation_span:
+                with tracer.start_as_current_span(
+                    "pipeline.calculation"
+                ) as calculation_span:
                     calculation_result = self.calculator.calculate(
                         transformation_result.df, baseline_metrics
                     )
@@ -260,7 +268,9 @@ class UnifiedPipeline:
                     )
 
                 # Evaluate alerts
-                self._handle_alerts(self.ingestor.get_ingest_summary(), calculation_result)
+                self._handle_alerts(
+                    self.ingestor.get_ingest_summary(), calculation_result
+                )
 
                 with tracer.start_as_current_span("pipeline.compliance"):
                     compliance_report = build_compliance_report(
@@ -341,7 +351,9 @@ class UnifiedPipeline:
                     "completed_at": utc_now(),
                 }
 
-    def run(self, input_file: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def run(
+        self, input_file: str, context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         context = context or {}
         user = context.get("user", "system")
         action = context.get("action", "manual")
@@ -384,7 +396,9 @@ def daily_loan_intelligence_flow(input_file: str = "data/archives/abaco_portfoli
     # 1. Ingestion Phase with Circuit Breaker
     ingest_res = ingest_task(pipeline, path)
     if ingest_res is None or ingest_res.df.empty:
-        logger.error("Flow halted: Ingestion returned empty dataframe (Circuit Breaker triggered)")
+        logger.error(
+            "Flow halted: Ingestion returned empty dataframe (Circuit Breaker triggered)"
+        )
         return {"status": "halted", "reason": "ingestion_failure"}
 
     # 2. Transformation Phase

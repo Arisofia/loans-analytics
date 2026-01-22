@@ -48,6 +48,8 @@ def test_insert_kpi_values_noop_on_empty(mock_post: Mock):
     mock_resp.raise_for_status = Mock()
     mock_post.return_value = mock_resp
 
-    writer = SupabaseWriter(SupabaseAuth(url="https://example.supabase.co", service_role_key="svc"))
+    writer = SupabaseWriter(
+        SupabaseAuth(url="https://example.supabase.co", service_role_key="svc")
+    )
     writer.insert_kpi_values([])
     mock_post.assert_not_called()

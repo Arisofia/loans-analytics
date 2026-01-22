@@ -26,7 +26,13 @@ def load_and_analyze_loans():
     df = pd.read_csv(data_path)
 
     # Clean numeric columns
-    numeric_cols = ["outstanding_balance", "disburse_principal", "interest_rate", "dpd", "term"]
+    numeric_cols = [
+        "outstanding_balance",
+        "disburse_principal",
+        "interest_rate",
+        "dpd",
+        "term",
+    ]
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
@@ -44,14 +50,16 @@ def calculate_metrics(df):
         "outstanding_balance_usd": df["outstanding_balance"].sum(),
         # Financial Metrics
         "collection_rate_pct": (
-            (1 - (df["outstanding_balance"].sum() / df["disburse_principal"].sum())) * 100
+            (1 - (df["outstanding_balance"].sum() / df["disburse_principal"].sum()))
+            * 100
             if df["disburse_principal"].sum() > 0
             else 0
         ),
         "avg_interest_rate_pct": df["interest_rate"].mean() * 100,
         "avg_loan_size_usd": df["disburse_principal"].mean(),
         "weighted_avg_term_days": (
-            (df["term"] * df["disburse_principal"]).sum() / df["disburse_principal"].sum()
+            (df["term"] * df["disburse_principal"]).sum()
+            / df["disburse_principal"].sum()
             if df["disburse_principal"].sum() > 0
             else 0
         ),
@@ -72,10 +80,14 @@ def calculate_metrics(df):
         ),
         # Portfolio Composition
         "product_breakdown": (
-            df["product_type"].value_counts().to_dict() if "product_type" in df.columns else {}
+            df["product_type"].value_counts().to_dict()
+            if "product_type" in df.columns
+            else {}
         ),
         "status_breakdown": (
-            df["loan_status"].value_counts().to_dict() if "loan_status" in df.columns else {}
+            df["loan_status"].value_counts().to_dict()
+            if "loan_status" in df.columns
+            else {}
         ),
         "top_locations": (
             df["location_state_province"].value_counts().head(5).to_dict()

@@ -41,7 +41,9 @@ def _telemetry_disabled() -> bool:
     )
 
 
-def setup_azure_tracing(service_name: str = "abaco-analytics") -> Optional[trace.Tracer]:
+def setup_azure_tracing(
+    service_name: str = "abaco-analytics",
+) -> Optional[trace.Tracer]:
     """Initialize Azure Application Insights tracing using OpenTelemetry.
 
     This function sets up the global TracerProvider and configures the Azure monitor exporter.
@@ -51,12 +53,17 @@ def setup_azure_tracing(service_name: str = "abaco-analytics") -> Optional[trace
         return trace.get_tracer(__name__)
 
     if not HAS_OTEL_AZURE:
-        logger.warning("Azure OpenTelemetry dependencies not fully functional. Tracing disabled.")
+        logger.warning(
+            "Azure OpenTelemetry dependencies not fully functional. Tracing disabled."
+        )
         return trace.get_tracer(service_name)
 
     connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
 
-    if not connection_string or "00000000-0000-0000-0000-000000000000" in connection_string:
+    if (
+        not connection_string
+        or "00000000-0000-0000-0000-000000000000" in connection_string
+    ):
         logger.warning(
             "Azure Application Insights connection string is missing or invalid. Tracing disabled."
         )
@@ -120,7 +127,9 @@ def trace_analytics_job(
                     span.set_status(trace.Status(trace.StatusCode.OK))
                     return result
                 except Exception as e:
-                    logger.error("%s Job failed: %s | error=%s", msg_prefix, job_name, e)
+                    logger.error(
+                        "%s Job failed: %s | error=%s", msg_prefix, job_name, e
+                    )
                     span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
                     span.record_exception(e)
                     raise

@@ -1,4 +1,5 @@
 import pandas as pd
+
 from python.kpis.collection_rate import calculate_collection_rate
 from python.kpis.par_90 import calculate_par_90
 
@@ -11,7 +12,9 @@ def test_par_90_is_weighted_by_segment():
     weighted = 0.0
     for _, group in df.groupby("segment"):
         val, _ = calculate_par_90(group)
-        weighted += val * group["total_receivable_usd"].sum() / df["total_receivable_usd"].sum()
+        weighted += (
+            val * group["total_receivable_usd"].sum() / df["total_receivable_usd"].sum()
+        )
     assert overall == weighted
 
 

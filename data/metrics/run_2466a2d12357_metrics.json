@@ -1,0 +1,63 @@
+{
+  "PAR30": {
+    "value": 6.151138616080396,
+    "status": "warning",
+    "display_name": "PAR 30+",
+    "formula": "SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100",
+    "source_table": "fact_loans",
+    "precision": 2,
+    "validation_range": null,
+    "rows_processed": 36,
+    "null_count": 0,
+    "timestamp": "2026-01-21T12:37:46.251231+00:00",
+    "dpd_30_60_sum": 2256358.25,
+    "dpd_60_90_sum": 1337379.1300000001,
+    "dpd_90_plus_sum": 2731284.4599999995,
+    "total_receivable_sum": 102826846.13
+  },
+  "PAR90": {
+    "value": 2.656197834315508,
+    "status": "unknown",
+    "display_name": "PAR90",
+    "formula": "SUM(dpd_90_plus_usd) / SUM(total_receivable_usd) * 100",
+    "source_table": "fact_loans",
+    "precision": 2,
+    "validation_range": null,
+    "rows_processed": 36,
+    "null_count": 0,
+    "timestamp": "2026-01-21T12:37:46.251508+00:00",
+    "dpd_sum": 2731284.4599999995,
+    "total_receivable_sum": 102826846.13
+  },
+  "CollectionRate": {
+    "value": 0.0,
+    "status": "critical",
+    "display_name": "Collection Rate",
+    "formula": "SUM(cash_available) / SUM(total_eligible) * 100",
+    "source_table": "fact_loans",
+    "precision": 2,
+    "validation_range": null,
+    "rows_processed": 36,
+    "null_count": 0,
+    "timestamp": "2026-01-21T12:37:46.251786+00:00",
+    "cash_sum": 0.0,
+    "eligible_sum": 102826846.13
+  },
+  "PortfolioHealth": {
+    "value": 0.0,
+    "formula": "(10 - PAR30/10) * (CollectionRate/10)",
+    "source_table": "metrics",
+    "precision": 2,
+    "validation_range": [
+      0,
+      10
+    ],
+    "rows_processed": 2,
+    "null_count": 0,
+    "timestamp": "2026-01-21T12:37:46.251899+00:00",
+    "par_30_input": 6.151138616080396,
+    "collection_rate_input": 0.0,
+    "par_component": 9.38488613839196,
+    "coll_component": 0.0
+  }
+}

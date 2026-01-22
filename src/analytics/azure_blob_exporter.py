@@ -39,17 +39,24 @@ class AzureBlobKPIExporter:
             self.blob_service_client = blob_service_client
         else:
             if not connection_string and not account_url:
-                raise ValueError("Either connection_string or account_url must be provided.")
+                raise ValueError(
+                    "Either connection_string or account_url must be provided."
+                )
             if connection_string:
-                blob_service = BlobServiceClient.from_connection_string(connection_string)
+                blob_service = BlobServiceClient.from_connection_string(
+                    connection_string
+                )
                 self.blob_service_client = blob_service
             else:
                 self.blob_service_client = BlobServiceClient(
-                    account_url=account_url, credential=credential or DefaultAzureCredential()
+                    account_url=account_url,
+                    credential=credential or DefaultAzureCredential(),
                 )
         self.container_name = str(container_name).strip()
 
-    def upload_metrics(self, metrics: Dict[str, float], blob_name: Optional[str] = None) -> str:
+    def upload_metrics(
+        self, metrics: Dict[str, float], blob_name: Optional[str] = None
+    ) -> str:
         """Uploads KPI metrics as a JSON blob to Azure Blob Storage."""
         if not isinstance(metrics, dict) or not metrics:
             raise ValueError("Metrics payload must be a non-empty dictionary.")
@@ -65,7 +72,9 @@ class AzureBlobKPIExporter:
                 raise ValueError("Metric values must be numeric.")
             normalized_metrics[key] = float(value)
 
-        container_client = self.blob_service_client.get_container_client(self.container_name)
+        container_client = self.blob_service_client.get_container_client(
+            self.container_name
+        )
         try:
             container_client.create_container()
         except ResourceExistsError:
@@ -75,7 +84,9 @@ class AzureBlobKPIExporter:
             raise
 
         timestamp = datetime.now(timezone.utc)
-        blob_path = blob_name or (f"kpi-dashboard-{timestamp.strftime('%Y%m%dT%H%M%SZ')}.json")
+        blob_path = blob_name or (
+            f"kpi-dashboard-{timestamp.strftime('%Y%m%dT%H%M%SZ')}.json"
+        )
         payload = {
             "generated_at": timestamp.isoformat(),
             "metrics": normalized_metrics,

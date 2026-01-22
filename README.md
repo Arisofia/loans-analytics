@@ -28,6 +28,22 @@ See docs/DATA_DICTIONARY.md for table documentation.
 See docs/KPI_CATALOG.md for KPI definitions and SQL.
 See docs/TRACING.md for observability and tracing setup.
 
+
+
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Essential knowledge base](#essential-knowledge-base)
+- [Repository Policy](#repository-policy-all-changes-to-main-must-be-made-via-pull-request)
+- [Code Quality](#code-quality)
+- [Documentation](#documentation)
+- [Getting Started](#getting-started)
+- [CI Workflows](#ci-workflows)
+- [Stack map](#stack-map)
+- [Ingestion Policy](#ingestion-policy)
+- [Canonical Data Stores](#canonical-data-stores)
+
 ## Quick Start
 
 ### Environment Setup
@@ -113,3 +129,5 @@ For detailed usage instructions, troubleshooting, and best practices, see `docs/
 
 - Main CI: `.github/workflows/ci.yml`
 - SonarQube: `.github/workflows/sonarqube.yml` (static analysis, security, code smells)
+Repo fully cleaned and standardized: Wed Jan 21 23:34:07 CET 2026
+Repo fully cleaned and standardized: Wed Jan 21 23:35:49 CET 2026

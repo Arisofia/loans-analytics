@@ -2,7 +2,6 @@ import numpy as np
 from scipy.stats import chi2_contingency, mannwhitneyu
 
 
-
 def test_empty_dataset():
     data = []
     assert len(data) == 0

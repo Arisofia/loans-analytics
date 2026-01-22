@@ -4,7 +4,10 @@ from typing import Any, Dict, List, Optional
 
 class LLMResponse:
     def __init__(
-        self, content: str, raw_response: Any = None, usage: Optional[Dict[str, int]] = None
+        self,
+        content: str,
+        raw_response: Any = None,
+        usage: Optional[Dict[str, int]] = None,
     ):
         self.content = content
         self.raw_response = raw_response
@@ -37,7 +40,9 @@ class OpenAIProvider(BaseLLM):
 
 
 class AnthropicProvider(BaseLLM):
-    def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-opus-20240229"):
+    def __init__(
+        self, api_key: Optional[str] = None, model: str = "claude-3-opus-20240229"
+    ):
         self.api_key = api_key
         self.model = model
 

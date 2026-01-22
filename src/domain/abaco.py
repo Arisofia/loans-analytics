@@ -1,10 +1,11 @@
-from enum import Enum
 from pydantic import BaseModel, Field
+
 
 class AbacoEligibilityEvaluator:
     """
     Implementación oficial de reglas de colateral del BCE
     """
+
     PD_THRESHOLD_TIER_1 = 0.004
     PD_THRESHOLD_TIER_2 = 0.010
     MIN_AMOUNT_EUR = 500_000.00

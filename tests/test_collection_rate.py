@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+
 from src.kpis.collection_rate import calculate_collection_rate
 
 

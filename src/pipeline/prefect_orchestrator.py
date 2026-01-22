@@ -3,7 +3,6 @@ from typing import Any, Dict, Union
 
 from prefect import flow, get_run_logger, task
 
-from src.agents.tools import send_slack_notification
 from src.pipeline.data_ingestion import IngestionResult, UnifiedIngestion
 from src.pipeline.data_transformation import (TransformationResult,
                                               UnifiedTransformation)
@@ -20,23 +19,23 @@ def ingestion_task(config: Dict[str, Any], input_file: Path) -> IngestionResult:
     logger.info("Starting ingestion for %s", input_file)
     ingestion = UnifiedIngestion(config)
     # Assume file source for now
-    raw_archive_dir = Path(config.get("run", {}).get("raw_archive_dir", "data/archives/cascade"))
+    raw_archive_dir = Path(
+        config.get("run", {}).get("raw_archive_dir", "data/archives/raw")
+    )
     result = ingestion.ingest_file(input_file, archive_dir=raw_archive_dir)
 
     # Integrate Great Expectations
     dq_passed = validate_loan_data(result.df)
     if not dq_passed:
         logger.warning("Great Expectations validation failed!")
-        send_slack_notification(
-            f"⚠️ *Data Quality Alert*: GX validation failed for {input_file}",
-            channel="kpi-compliance",
-        )
 
     # Map to typed container if needed (UnifiedIngestion returns a dataclass-like object)
     if isinstance(result, IngestionResult):
         return result
     # If result is a legacy object, wrap into IngestionResult
-    return IngestionResult(df=result.df, run_id=getattr(result, "run_id", "unknown"), metadata={})
+    return IngestionResult(
+        df=result.df, run_id=getattr(result, "run_id", "unknown"), metadata={}
+    )
 
 
 @task
@@ -69,10 +68,8 @@ def output_task(
 ) -> OutputResult:
     logger = get_run_logger()
     logger.info("Starting output persistence for run %s", run_id)
-    output = UnifiedOutput(config, run_id=run_id)
-
     # We can add Supabase persistence here or in UnifiedOutput.persist
-    result = output.persist(
+    return UnifiedOutput(config, run_id=run_id).persist(
         transformation_result.df,
         calculation_result.metrics,
         metadata={
@@ -81,7 +78,6 @@ def output_task(
         },
         run_ids={"pipeline": run_id},
     )
-    return result
 
 
 @flow(name="Abaco Data Pipeline")
@@ -98,9 +94,8 @@ def abaco_pipeline_flow(
 
     trans_res = transformation_task(config, ingest_res.df, run_id)
     calc_res = calculation_task(config, trans_res.df, run_id)
-    out_res = output_task(config, trans_res, calc_res, run_id)
 
-    return out_res
+    return output_task(config, trans_res, calc_res, run_id)
 
 
 if __name__ == "__main__":

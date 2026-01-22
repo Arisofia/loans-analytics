@@ -23,7 +23,11 @@ class ChurnRateCalculator(KPICalculator):
                 self.METADATA.formula, rows_processed=0, reason="Empty DataFrame"
             )
 
-        date_col = "disbursement_date" if "disbursement_date" in df.columns else "Disbursement Date"
+        date_col = (
+            "disbursement_date"
+            if "disbursement_date" in df.columns
+            else "Disbursement Date"
+        )
         cust_col = "customer_id" if "customer_id" in df.columns else "Customer ID"
 
         if date_col not in df.columns or cust_col not in df.columns:
@@ -36,7 +40,9 @@ class ChurnRateCalculator(KPICalculator):
 
         if not cust_2024:
             return 0.0, create_context(
-                self.METADATA.formula, rows_processed=len(df), reason="No customers in 2024"
+                self.METADATA.formula,
+                rows_processed=len(df),
+                reason="No customers in 2024",
             )
 
         churned = cust_2024 - cust_2025

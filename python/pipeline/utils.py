@@ -44,7 +44,10 @@ class RateLimiter:
 
 class RetryPolicy:
     def __init__(
-        self, max_retries: int = 3, backoff_seconds: float = 1.0, jitter_seconds: float = 0.0
+        self,
+        max_retries: int = 3,
+        backoff_seconds: float = 1.0,
+        jitter_seconds: float = 0.0,
     ):
         self.max_retries = max_retries
         self.backoff_seconds = backoff_seconds

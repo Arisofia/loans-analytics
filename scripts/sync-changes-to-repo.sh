@@ -34,12 +34,27 @@ DRY_RUN=false
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --branch) BRANCH="$2"; shift 2 ;;
-    --push) DO_PUSH=true; shift ;;
-    --pr) DO_PR=true; shift ;;
-    --dry-run) DRY_RUN=true; shift ;;
-    -h|--help) usage ;;
-    *) echo "Unknown option: $1"; usage ;;
+  --branch)
+    BRANCH="$2"
+    shift 2
+    ;;
+  --push)
+    DO_PUSH=true
+    shift
+    ;;
+  --pr)
+    DO_PR=true
+    shift
+    ;;
+  --dry-run)
+    DRY_RUN=true
+    shift
+    ;;
+  -h | --help) usage ;;
+  *)
+    echo "Unknown option: $1"
+    usage
+    ;;
   esac
 done
 

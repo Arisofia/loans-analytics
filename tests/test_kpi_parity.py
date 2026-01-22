@@ -61,7 +61,8 @@ def _assert_series_almost_equal(left, right, cols, ctx=""):
                 rel_tol=REL_TOL,
                 abs_tol=ABS_TOL,
             ), (
-                f"{ctx}: mismatch in column '{col}' at row {i}: " f"left={lv}, right={rv}"
+                f"{ctx}: mismatch in column '{col}' at row {i}: "
+                f"left={lv}, right={rv}"
             )
 
 
@@ -77,8 +78,7 @@ def test_monthly_pricing_parity():
 
     df_py = _df_from_list(py_records).sort_values("year_month").reset_index(drop=True)
 
-    df_sql = _query_df(
-        """
+    df_sql = _query_df("""
         SELECT
             year_month,
             weighted_apr,
@@ -87,8 +87,7 @@ def test_monthly_pricing_parity():
             weighted_effective_rate
         FROM analytics.kpi_monthly_pricing
         ORDER BY year_month
-        """
-    )
+        """)
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = df_sql.reset_index(drop=True)
 
@@ -106,7 +105,9 @@ def test_monthly_pricing_parity():
         .reset_index(drop=True)
     )
 
-    assert len(df_py_aligned) == len(df_sql_aligned), "Row count mismatch in pricing parity"
+    assert len(df_py_aligned) == len(
+        df_sql_aligned
+    ), "Row count mismatch in pricing parity"
 
     _assert_series_almost_equal(
         df_py_aligned,
@@ -128,8 +129,7 @@ def test_monthly_risk_parity():
 
     df_py = _df_from_list(py_records).sort_values("year_month").reset_index(drop=True)
 
-    df_sql = _query_df(
-        """
+    df_sql = _query_df("""
         SELECT
             year_month,
             total_outstanding,
@@ -145,8 +145,7 @@ def test_monthly_risk_parity():
             default_pct
         FROM analytics.kpi_monthly_risk
         ORDER BY year_month
-        """
-    )
+        """)
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = df_sql.reset_index(drop=True)
 
@@ -164,7 +163,9 @@ def test_monthly_risk_parity():
         .reset_index(drop=True)
     )
 
-    assert len(df_py_aligned) == len(df_sql_aligned), "Row count mismatch in risk parity"
+    assert len(df_py_aligned) == len(
+        df_sql_aligned
+    ), "Row count mismatch in risk parity"
 
     _assert_series_almost_equal(
         df_py_aligned,
@@ -197,8 +198,7 @@ def test_customer_types_parity():
         .reset_index(drop=True)
     )
 
-    df_sql = _query_df(
-        """
+    df_sql = _query_df("""
         SELECT
             year_month,
             customer_type,
@@ -206,8 +206,7 @@ def test_customer_types_parity():
             disbursement_amount
         FROM analytics.kpi_customer_types
         ORDER BY year_month, customer_type
-        """
-    )
+        """)
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = df_sql.sort_values(["year_month", "customer_type"]).reset_index(drop=True)
 
@@ -219,7 +218,9 @@ def test_customer_types_parity():
         how="inner",
     )
 
-    assert not merged.empty, "No overlapping (year_month, customer_type) between Python and SQL"
+    assert (
+        not merged.empty
+    ), "No overlapping (year_month, customer_type) between Python and SQL"
 
     for col in ["unique_customers", "disbursement_amount"]:
         col_py = f"{col}_py"
@@ -241,7 +242,9 @@ def test_customer_types_parity():
 def test_active_unique_customers_parity():
     extended = _load_extended_kpis()
     py_records = extended.get("active_unique_customers")
-    assert py_records is not None, "extended_kpis.active_unique_customers not found in JSON"
+    assert (
+        py_records is not None
+    ), "extended_kpis.active_unique_customers not found in JSON"
 
     df_py = (
         _df_from_list(py_records, date_col="month_end")
@@ -249,13 +252,11 @@ def test_active_unique_customers_parity():
         .reset_index(drop=True)
     )
 
-    df_sql = _query_df(
-        """
+    df_sql = _query_df("""
         SELECT year_month, active_customers
         FROM analytics.kpi_active_unique_customers
         ORDER BY year_month
-        """
-    )
+        """)
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = (
         df_sql.rename(columns={"year_month": "month_end"})
@@ -264,7 +265,9 @@ def test_active_unique_customers_parity():
     )
 
     common_months = sorted(set(df_py["month_end"]) & set(df_sql["month_end"]))
-    assert common_months, "No overlapping month_end between Python and SQL for active customers"
+    assert (
+        common_months
+    ), "No overlapping month_end between Python and SQL for active customers"
 
     df_py_aligned = (
         df_py[df_py["month_end"].isin(common_months)]
@@ -296,14 +299,12 @@ def test_average_ticket_parity():
         .reset_index(drop=True)
     )
 
-    df_sql = _query_df(
-        """
+    df_sql = _query_df("""
         SELECT year_month, ticket_band, num_loans, avg_ticket,
                total_disbursement
         FROM analytics.kpi_average_ticket
         ORDER BY year_month, ticket_band
-        """
-    )
+        """)
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = df_sql.sort_values(["year_month", "ticket_band"]).reset_index(drop=True)
 
@@ -314,7 +315,9 @@ def test_average_ticket_parity():
         suffixes=("_py", "_sql"),
         how="inner",
     )
-    assert not merged.empty, "No overlapping (year_month, ticket_band) between Python and SQL"
+    assert (
+        not merged.empty
+    ), "No overlapping (year_month, ticket_band) between Python and SQL"
 
     for col in ["num_loans", "avg_ticket", "total_disbursement"]:
         _assert_series_almost_equal(
@@ -328,7 +331,9 @@ def test_average_ticket_parity():
 def test_intensity_segmentation_parity():
     extended = _load_extended_kpis()
     py_records = extended.get("intensity_segmentation")
-    assert py_records is not None, "extended_kpis.intensity_segmentation not found in JSON"
+    assert (
+        py_records is not None
+    ), "extended_kpis.intensity_segmentation not found in JSON"
 
     df_py = (
         _df_from_list(py_records, date_col="year_month")
@@ -339,13 +344,11 @@ def test_intensity_segmentation_parity():
     if "customers" in df_py.columns:
         df_py = df_py.rename(columns={"customers": "unique_customers"})
 
-    df_sql = _query_df(
-        """
+    df_sql = _query_df("""
         SELECT year_month, use_intensity, unique_customers, disbursement_amount
         FROM analytics.kpi_intensity_segmentation
         ORDER BY year_month, use_intensity
-        """
-    )
+        """)
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
 
     key_cols = ["year_month", "use_intensity"]
@@ -355,7 +358,9 @@ def test_intensity_segmentation_parity():
         suffixes=("_py", "_sql"),
         how="inner",
     )
-    assert not merged.empty, "No overlapping (year_month, use_intensity) between Python and SQL"
+    assert (
+        not merged.empty
+    ), "No overlapping (year_month, use_intensity) between Python and SQL"
 
     for col in ["unique_customers", "disbursement_amount"]:
         _assert_series_almost_equal(
@@ -369,7 +374,9 @@ def test_intensity_segmentation_parity():
 def test_line_size_segmentation_parity():
     extended = _load_extended_kpis()
     py_records = extended.get("line_size_segmentation")
-    assert py_records is not None, "extended_kpis.line_size_segmentation not found in JSON"
+    assert (
+        py_records is not None
+    ), "extended_kpis.line_size_segmentation not found in JSON"
 
     df_py = (
         _df_from_list(py_records, date_col="year_month")
@@ -379,13 +386,11 @@ def test_line_size_segmentation_parity():
     if "customers" in df_py.columns:
         df_py = df_py.rename(columns={"customers": "unique_customers"})
 
-    df_sql = _query_df(
-        """
+    df_sql = _query_df("""
         SELECT year_month, line_band, unique_customers, disbursement_amount
         FROM analytics.kpi_line_size_segmentation
         ORDER BY year_month, line_band
-        """
-    )
+        """)
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
 
     key_cols = ["year_month", "line_band"]
@@ -395,7 +400,9 @@ def test_line_size_segmentation_parity():
         suffixes=("_py", "_sql"),
         how="inner",
     )
-    assert not merged.empty, "No overlapping (year_month, line_band) between Python and SQL"
+    assert (
+        not merged.empty
+    ), "No overlapping (year_month, line_band) between Python and SQL"
 
     for col in ["unique_customers", "disbursement_amount"]:
         _assert_series_almost_equal(
@@ -416,18 +423,18 @@ def test_concentration_parity():
         df_py = df_py.rename(columns={"month_end": "year_month"})
     df_py = df_py.sort_values("year_month").reset_index(drop=True)
 
-    df_sql = _query_df(
-        """
+    df_sql = _query_df("""
         SELECT year_month, total_outstanding, top10_concentration,
                top3_concentration, top1_concentration
         FROM analytics.kpi_concentration
         ORDER BY year_month
-        """
-    )
+        """)
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
 
     common_months = sorted(set(df_py["year_month"]) & set(df_sql["year_month"]))
-    assert common_months, "No overlapping year_month between Python and SQL for concentration"
+    assert (
+        common_months
+    ), "No overlapping year_month between Python and SQL for concentration"
 
     df_py_aligned = (
         df_py[df_py["year_month"].isin(common_months)]
@@ -464,13 +471,11 @@ def test_weighted_apr_parity():
         .reset_index(drop=True)
     )
 
-    df_sql = _query_df(
-        """
+    df_sql = _query_df("""
         SELECT year_month, weighted_apr
         FROM analytics.kpi_weighted_apr
         ORDER BY year_month
-        """
-    )
+        """)
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = (
         df_sql.rename(columns={"year_month": "month_end"})
@@ -479,7 +484,9 @@ def test_weighted_apr_parity():
     )
 
     common_months = sorted(set(df_py["month_end"]) & set(df_sql["month_end"]))
-    assert common_months, "No overlapping month_end between Python and SQL for weighted_apr"
+    assert (
+        common_months
+    ), "No overlapping month_end between Python and SQL for weighted_apr"
 
     _assert_series_almost_equal(
         df_py[df_py["month_end"].isin(common_months)]
@@ -504,13 +511,11 @@ def test_weighted_fee_rate_parity():
         .reset_index(drop=True)
     )
 
-    df_sql = _query_df(
-        """
+    df_sql = _query_df("""
         SELECT year_month, weighted_fee_rate
         FROM analytics.kpi_weighted_fee_rate
         ORDER BY year_month
-        """
-    )
+        """)
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = (
         df_sql.rename(columns={"year_month": "month_end"})
@@ -519,7 +524,9 @@ def test_weighted_fee_rate_parity():
     )
 
     common_months = sorted(set(df_py["month_end"]) & set(df_sql["month_end"]))
-    assert common_months, "No overlapping month_end between Python and SQL for weighted_fee_rate"
+    assert (
+        common_months
+    ), "No overlapping month_end between Python and SQL for weighted_fee_rate"
 
     _assert_series_almost_equal(
         df_py[df_py["month_end"].isin(common_months)]

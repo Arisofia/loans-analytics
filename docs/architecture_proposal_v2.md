@@ -19,7 +19,6 @@ Abaco's analytics estate needs to move from ad-hoc scripts and stubbed orchestra
 
 ### Data Contracts & Schemas
 
-- **Contract registry**: Define pydantic-based schemas for each upstream payload (Cascade exports, collections, delinquency feeds) and store them in `src/contracts/` with versioning.
 - **Schema enforcement**: Validate every ingest against the contract before writing to raw storage; fail closed with actionable error messages.
 
 ### Data Validation & Quality Gates
@@ -37,7 +36,6 @@ Abaco's analytics estate needs to move from ad-hoc scripts and stubbed orchestra
 
 - **Metadata**: Push run metadata (flow run ID, code revision, input hashes, contract versions) to **OpenLineage**/**OpenMetadata** for end-to-end traceability.
 - **Logging**: Standardize structured logging (JSON) with request IDs and dataset hashes; ship to a centralized sink (e.g., Loki) with Grafana dashboards for pipeline SLOs.
-- **Alerting**: Integrate Prefect alerts with Slack/email for failed tasks, SLA breaches, or expectation suite failures; include remediation runbook links.
 
 ### Storage & Environments
 
@@ -67,7 +65,6 @@ Abaco's analytics estate needs to move from ad-hoc scripts and stubbed orchestra
 
 ## Immediate Next Actions
 
-1. Stand up `src/contracts/` and `src/validation/` modules with initial schemas and expectation suites for Cascade exports and collections feeds.
 2. Replace the placeholder Airflow tasks with Prefect flow triggers and begin emitting lineage + validation artifacts per run.
 3. Define the dbt project skeleton (sources, staging, marts) aligned to the KPI mapping, ensuring every metric has a tested, version-controlled definition.
 4. Publish runbooks for incident response, schema drift handling, and data quality remediation linked from alert payloads.

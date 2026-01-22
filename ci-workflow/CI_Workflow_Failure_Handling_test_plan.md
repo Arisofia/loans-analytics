@@ -13,7 +13,6 @@
 1. **Verify CI workflow stability** - All workflows complete successfully under normal conditions
 2. **Detect and report failures** - Failed jobs are caught, logged, and reported to stakeholders
 3. **Validate failure recovery** - Failed workflows can retry and succeed without manual intervention
-4. **Test external integrations** - HubSpot, Supabase, Slack, Vercel, Azure integrations handle failures gracefully
 5. **Ensure environment readiness** - All required secrets and dependencies are validated before execution
 6. **Monitor workflow performance** - E2E execution times and resource usage remain acceptable
 
@@ -24,10 +23,8 @@
 ### **In Scope**
 
 - **Core CI Jobs**: Web build, analytics tests, lint checks, repo health
-- **Integration Points**: Vercel deployment, Figma sync, Slack notifications, Azure resources
 - **Failure Scenarios**: Network timeouts, missing secrets, invalid credentials, build/test failures
 - **Failure Handling**: Retry logic, conditional skipping, graceful degradation, error notifications
-- **External Services**: HubSpot, Supabase, Slack, Vercel, Azure Static Web Apps
 - **Environment Validation**: Secret availability, dependency installation, configuration validation
 - **Workflow Triggers**: Push, PR, Schedule, Manual dispatch
 
@@ -80,7 +77,6 @@ Parallel Execution → Failure Detection → Notification → Cleanup
 - **Python**: 3.11 with pip, pytest, coverage tools
 - **External Services**: 
   - Vercel account with API token
-  - Slack workspace with webhook
   - Supabase project with credentials
   - HubSpot account with API key
   - Azure subscription with SWA resources
@@ -131,7 +127,6 @@ REQUIRED SECRETS:
 - [ ] Web build completes in <5 minutes
 - [ ] Analytics tests pass with >90% coverage
 - [ ] Linting rules enforce consistently across all jobs
-- [ ] Slack notifications deliver within 60 seconds
 - [ ] Vercel deployment succeeds on main branch pushes
 - [ ] Figma sync skips gracefully when secrets unavailable
 - [ ] Retry logic activates on transient failures
@@ -148,11 +143,9 @@ REQUIRED SECRETS:
 1. ✅ All 50+ test cases pass with zero critical failures
 2. ✅ CI workflows complete successfully >99% of the time
 3. ✅ Average E2E execution time <20 minutes
-4. ✅ Failure notifications reach Slack <2 minutes after job failure
 5. ✅ Secret validation prevents 100% of invalid credential errors
 6. ✅ Coverage reports generate for all jobs
 7. ✅ Retry logic recovers transient failures >80% of the time
-8. ✅ All integration tests pass (HubSpot, Supabase, Slack, Vercel)
 9. ✅ No secrets exposed in logs or artifacts
 10. ✅ Performance within SLA: <300s per job, <1200s total
 
@@ -185,7 +178,6 @@ REQUIRED SECRETS:
 ## Key Dependencies
 
 - GitHub Actions infrastructure availability
-- External API availability (Vercel, Slack, Supabase, HubSpot)
 - Secret management system (GitHub Secrets)
 - Artifact storage capacity
 - Runner quota (concurrent jobs)
@@ -200,7 +192,6 @@ REQUIRED SECRETS:
 | **MTTR (Mean Time to Recovery)** | <5 min | From failure detection to resolution |
 | **Coverage** | >85% | Code coverage from test reports |
 | **Build Duration** | <20 min | E2E execution time |
-| **Notification Latency** | <2 min | Failure to Slack alert |
 
 ---
 

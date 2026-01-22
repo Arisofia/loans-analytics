@@ -38,7 +38,9 @@ class StandaloneAIEngine:
         """Generate a response after sanitizing the payload size."""
 
         sanitized_payload = self._truncate_payload(data)
-        prompt = f"Persona: {personality}\nContext: {context}\nData: {sanitized_payload}"
+        prompt = (
+            f"Persona: {personality}\nContext: {context}\nData: {sanitized_payload}"
+        )
 
         client = self._select_client(sanitized_payload)
         result: AIResponse = client.generate_text(prompt, context)

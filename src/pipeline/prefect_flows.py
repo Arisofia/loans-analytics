@@ -25,7 +25,8 @@ def ingest_and_validate_bronze(path: Path, schema_type: str) -> pl.DataFrame:
     validation_results = validator.validate_bronze(df_raw)
 
     event_store.append(
-        "BronzeValidationCompleted", {"file": str(path), "success": validation_results["success"]}
+        "BronzeValidationCompleted",
+        {"file": str(path), "success": validation_results["success"]},
     )
 
     if not validation_results["success"]:
@@ -46,7 +47,9 @@ def transform_to_silver(df_raw: pl.DataFrame, schema_type: str) -> pl.DataFrame:
     lf = df_raw.lazy()
 
     # Enforce schema and precision through the specialized flow
-    df_silver = pipeline.run_ingestion_conformance_from_lf(lf, schema_type, COLUMN_MAPPING)
+    df_silver = pipeline.run_ingestion_conformance_from_lf(
+        lf, schema_type, COLUMN_MAPPING
+    )
 
     validation_results = validator.validate_silver(df_silver)
 
@@ -69,7 +72,9 @@ def daily_ingestion_flow(input_path: Path, schema_type: str = "invoices"):
     df_raw = ingest_and_validate_bronze(input_path, schema_type)
     df_silver = transform_to_silver(df_raw, schema_type)
 
-    output_path = Path(f"data/silver/{schema_type}_{datetime.now().strftime('%Y%m%d')}.parquet")
+    output_path = Path(
+        f"data/silver/{schema_type}_{datetime.now().strftime('%Y%m%d')}.parquet"
+    )
     PolarsPipeline().save_to_silver(df_silver, output_path)
 
     return df_silver

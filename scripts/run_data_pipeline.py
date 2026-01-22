@@ -35,12 +35,16 @@ except (ImportError, Exception) as tracing_err:
     logger.warning("Azure tracing not initialized: %s", tracing_err)
 
 DEFAULT_INPUT = os.getenv(
-    "PIPELINE_INPUT_FILE", str(Paths.raw_data_dir() / "abaco_portfolio_calculations.csv")
+    "PIPELINE_INPUT_FILE",
+    str(Paths.raw_data_dir() / "abaco_portfolio_calculations.csv"),
 )
 
 
 def write_outputs(
-    df, metrics: Dict[str, Any], manifest: Dict[str, Any], output_dir: Optional[str] = None
+    df,
+    metrics: Dict[str, Any],
+    manifest: Dict[str, Any],
+    output_dir: Optional[str] = None,
 ) -> Dict[str, Any]:
     output_path = Path(output_dir) if output_dir else Paths.metrics_dir(create=True)
     run_id = manifest.get("run_id", "run")
@@ -89,7 +93,10 @@ def run_pipeline(
     ingested = ingestion.ingest_csv(Path(input_file).name)
     validated = ingestion.validate_loans(ingested)
 
-    if validated.empty or not pd.Series(validated.get("_validation_passed", True)).all():
+    if (
+        validated.empty
+        or not pd.Series(validated.get("_validation_passed", True)).all()
+    ):
         return False
 
     transformer = DataTransformation()
@@ -99,7 +106,9 @@ def run_pipeline(
     par_30, par_30_ctx = kpi_engine.calculate_par_30()
     par_90, par_90_ctx = kpi_engine.calculate_par_90()
     collection_rate, coll_ctx = kpi_engine.calculate_collection_rate()
-    health_score, health_ctx = kpi_engine.calculate_portfolio_health(par_30, collection_rate)
+    health_score, health_ctx = kpi_engine.calculate_portfolio_health(
+        par_30, collection_rate
+    )
 
     metrics = {
         "PAR30": {"value": par_30, **par_30_ctx},
@@ -130,7 +139,10 @@ def run_pipeline(
 
     if azure_container and azure_connection_string:
         azure_blobs = upload_outputs_to_azure(
-            outputs, azure_connection_string, azure_container, azure_blob_prefix or "runs"
+            outputs,
+            azure_connection_string,
+            azure_container,
+            azure_blob_prefix or "runs",
         )
         if azure_blobs:
             rewrite_manifest(outputs["manifest_file"], azure_blobs)
@@ -156,7 +168,9 @@ def main(
 
     try:
         pipeline = UnifiedPipeline(config_path=Path(config_path))
-        result = pipeline.execute(Path(input_file), user=effective_user, action=effective_action)
+        result = pipeline.execute(
+            Path(input_file), user=effective_user, action=effective_action
+        )
         logger.info("Pipeline completed: %s", result.get("status"))
         return result.get("status") == "success"
     except Exception as exc:
@@ -166,10 +180,18 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the ABACO Unified Data Pipeline")
-    parser.add_argument("--input", default=DEFAULT_INPUT, help="Path to the CSV input file")
-    parser.add_argument("--user", help="Identifier for the user or system triggering the pipeline")
-    parser.add_argument("--action", help="Action context (e.g., github-action, manual-run)")
-    parser.add_argument("--config", default="config/pipeline.yml", help="Path to pipeline config")
+    parser.add_argument(
+        "--input", default=DEFAULT_INPUT, help="Path to the CSV input file"
+    )
+    parser.add_argument(
+        "--user", help="Identifier for the user or system triggering the pipeline"
+    )
+    parser.add_argument(
+        "--action", help="Action context (e.g., github-action, manual-run)"
+    )
+    parser.add_argument(
+        "--config", default="config/pipeline.yml", help="Path to pipeline config"
+    )
 
     args = parser.parse_args()
     success = main(

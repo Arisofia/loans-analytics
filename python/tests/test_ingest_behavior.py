@@ -1,5 +1,6 @@
 import pytest
 import requests
+
 from pipeline.ingestion import UnifiedIngestion
 
 
@@ -55,7 +56,8 @@ def test_ingest_http_retries_and_success(monkeypatch, base_config):
 def test_circuit_breaker_opens_after_failure(monkeypatch, base_config):
     # requests.get always raises an error
     monkeypatch.setattr(
-        "requests.get", lambda *a, **k: (_ for _ in ()).throw(requests.ConnectionError("down"))
+        "requests.get",
+        lambda *a, **k: (_ for _ in ()).throw(requests.ConnectionError("down")),
     )
 
     cfg = base_config.copy()

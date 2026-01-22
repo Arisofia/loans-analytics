@@ -17,7 +17,9 @@ class GitHubRequestError(RuntimeError):
 
 def _create_session() -> requests.Session:
     session = requests.Session()
-    retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
+    retries = Retry(
+        total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504]
+    )
     session.mount("https://", HTTPAdapter(max_retries=retries))
     return session
 
@@ -41,14 +43,20 @@ def _get(url: str, params: Optional[Dict[str, str]] = None) -> Any:
     if response.status_code == 401:
         raise GitHubRequestError("Authentication failed; set GITHUB_TOKEN or GH_TOKEN.")
     if not response.ok:
-        raise GitHubRequestError(f"GitHub request failed ({response.status_code}): {response.text}")
+        raise GitHubRequestError(
+            f"GitHub request failed ({response.status_code}): {response.text}"
+        )
     return response.json()
 
 
 def list_open_prs(repo: str) -> List[int]:
-    payload = _get(f"{API_ROOT}/{repo}/pulls", params={"state": "open", "per_page": "30"})
+    payload = _get(
+        f"{API_ROOT}/{repo}/pulls", params={"state": "open", "per_page": "30"}
+    )
     if isinstance(payload, list):
-        return [pr["number"] for pr in payload if isinstance(pr, dict) and "number" in pr]
+        return [
+            pr["number"] for pr in payload if isinstance(pr, dict) and "number" in pr
+        ]
     return []
 
 
@@ -72,7 +80,9 @@ def summarize_checks(checks: List[Dict]) -> str:
     for check in sorted(checks, key=lambda c: c.get("name", "")):
         status = check.get("status", "unknown")
         conclusion = check.get("conclusion") or "pending"
-        lines.append(f"- {check.get('name')}: {status}/{conclusion} (url={check.get('html_url')})")
+        lines.append(
+            f"- {check.get('name')}: {status}/{conclusion} (url={check.get('html_url')})"
+        )
     return "\n".join(lines)
 
 
@@ -91,7 +101,9 @@ def render_report(repo: str, number: int) -> str:
     pr = pull_request(repo, number)
     sha = pr.get("head", {}).get("sha")
     if not sha:
-        raise GitHubRequestError("Unable to resolve head commit SHA for the pull request.")
+        raise GitHubRequestError(
+            "Unable to resolve head commit SHA for the pull request."
+        )
 
     checks = check_runs(repo, sha)
     status_payload = commit_status(repo, sha)
@@ -106,7 +118,9 @@ def render_report(repo: str, number: int) -> str:
         summarize_checks(checks),
         "",
         "Commit statuses:",
-        summarize_statuses(status_payload.get("statuses", []), status_payload.get("state")),
+        summarize_statuses(
+            status_payload.get("statuses", []), status_payload.get("state")
+        ),
     ]
     return "\n".join(report_lines)
 
@@ -115,7 +129,9 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Report GitHub PR mergeability and check-run status.",
     )
-    parser.add_argument("number", type=int, nargs="?", help="Pull request number to inspect.")
+    parser.add_argument(
+        "number", type=int, nargs="?", help="Pull request number to inspect."
+    )
     parser.add_argument("--all", action="store_true", help="Report on all open PRs.")
     parser.add_argument(
         "--repo",

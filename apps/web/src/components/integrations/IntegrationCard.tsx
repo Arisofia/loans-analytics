@@ -1,3 +1,3 @@
-export function IntegrationCard() { 
-  return <div>Integration Card Placeholder</div> 
+export function IntegrationCard() {
+  return <div>Integration Card Placeholder</div>
 }

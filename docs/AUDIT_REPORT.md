@@ -15,8 +15,6 @@ This report documents the Phase 2 Hardening convergence and QA additions applied
 
 ```
  backend/tests/integration/test_figma_mock.py         |  7 +++----
- data/archives/cascade/tmpchv_buew.csv                |  3 ---
- data/archives/cascade/tmpy4xjo0jo.csv                |  3 ---
  dev-requirements.txt                                 |  1 +
  requirements.txt                                     |  2 +-
  scripts/demo_financial_analysis.py                   |  6 ++++--

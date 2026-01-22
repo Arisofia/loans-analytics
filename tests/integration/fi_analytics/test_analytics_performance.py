@@ -41,12 +41,13 @@ class TestAnalyticsPerformanceRobustness:
             [
                 sys.executable,
                 "scripts/run_data_pipeline.py",
-                "--input", str(large_dataset_path),
+                "--input",
+                str(large_dataset_path),
             ],
             capture_output=True,
             text=True,
             timeout=60,
-            env={**os.environ, "OTEL_SDK_DISABLED": "true"}
+            env={**os.environ, "OTEL_SDK_DISABLED": "true"},
         )
         duration = time.time() - start_time
 
@@ -60,30 +61,32 @@ class TestAnalyticsPerformanceRobustness:
         Verify that multiple runs with same data produce same KPI results.
         """
         dataset = analytics_test_env["dataset_path"]
-        
+
         import re
+
         results = []
         for i in range(2):
             result = subprocess.run(
                 [
                     sys.executable,
                     "scripts/run_data_pipeline.py",
-                    "--input", str(dataset),
+                    "--input",
+                    str(dataset),
                 ],
                 capture_output=True,
                 text=True,
                 env={**os.environ, "OTEL_SDK_DISABLED": "true"},
-                check=True
+                check=True,
             )
-            
+
             match = re.search(r"RUN_ID: ([\w_]+)", result.stdout)
             assert match, f"RUN_ID not found in output: {result.stdout}"
             run_id = match.group(1)
-            
+
             metrics_file = Path("data/metrics") / f"{run_id}_metrics.json"
             with open(metrics_file) as f:
                 data = json.load(f)
-                
+
                 # Recursively remove run-specific fields
                 def clean_data(obj):
                     if isinstance(obj, dict):
@@ -95,30 +98,38 @@ class TestAnalyticsPerformanceRobustness:
                     elif isinstance(obj, list):
                         for item in obj:
                             clean_data(item)
-                
+
                 clean_data(data)
                 results.append(data)
 
-        assert results[0] == results[1], "Idempotency failure: results differ between runs"
+        assert (
+            results[0] == results[1]
+        ), "Idempotency failure: results differ between runs"
 
     def test_i01_e2e_acceptance(self, analytics_test_env: Dict[str, Any]) -> None:
         """
         I-01: Full End-to-End Acceptance.
         Smoke test for a full run with all features enabled (mocked).
         """
-        import yaml
         import re
+
+        import yaml
+
         dataset = analytics_test_env["dataset_path"]
-        
+
         # Load base config
         base_config_path = Path("config/pipeline.yml")
         with open(base_config_path) as f:
             config = yaml.safe_load(f)
-            
+
         # Update with test-specific overrides
         def deep_update(source, overrides):
             for key, value in overrides.items():
-                if isinstance(value, dict) and key in source and isinstance(source[key], dict):
+                if (
+                    isinstance(value, dict)
+                    and key in source
+                    and isinstance(source[key], dict)
+                ):
                     deep_update(source[key], value)
                 else:
                     source[key] = value
@@ -130,7 +141,7 @@ class TestAnalyticsPerformanceRobustness:
                     "ingestion": {
                         "validation": {
                             "strict": False,
-                            "required_columns": ["total_receivable_usd"]
+                            "required_columns": ["total_receivable_usd"],
                         }
                     },
                     "outputs": {
@@ -139,15 +150,15 @@ class TestAnalyticsPerformanceRobustness:
                             "outputs": ["figma", "notion"],
                             "clients": {
                                 "figma": {"enabled": True, "token": "test_token"},
-                                "notion": {"enabled": True, "api_token": "test_token"}
-                            }
+                                "notion": {"enabled": True, "api_token": "test_token"},
+                            },
                         }
-                    }
+                    },
                 }
             }
         }
         deep_update(config, test_overrides)
-        
+
         config_path = analytics_test_env["output_dir"] / "test_pipeline_config_full.yml"
         with open(config_path, "w") as f:
             yaml.dump(config, f)
@@ -156,21 +167,23 @@ class TestAnalyticsPerformanceRobustness:
             [
                 sys.executable,
                 "scripts/run_data_pipeline.py",
-                "--input", str(dataset),
-                "--config", str(config_path)
+                "--input",
+                str(dataset),
+                "--config",
+                str(config_path),
             ],
             capture_output=True,
             text=True,
             timeout=60,
-            env={**os.environ, "OTEL_SDK_DISABLED": "true"}
+            env={**os.environ, "OTEL_SDK_DISABLED": "true"},
         )
 
         assert result.returncode == 0, f"Pipeline failed with stderr: {result.stderr}"
-        
+
         match = re.search(r"RUN_ID: ([\w_]+)", result.stdout)
         assert match, f"RUN_ID not found in output: {result.stdout}"
         run_id = match.group(1)
-        
+
         # Check manifest for trigger results instead of logs which can be finicky
         manifest_path = Path("logs/runs") / run_id / f"{run_id}_manifest.json"
         assert manifest_path.exists()
@@ -186,6 +199,6 @@ class TestAnalyticsPerformanceRobustness:
             assert "outputs" in trigger_res
             assert "figma" in trigger_res["outputs"]
             assert "notion" in trigger_res["outputs"]
-        
+
         assert (Path("data/metrics") / f"{run_id}_metrics.json").exists()
         assert (Path("data/metrics") / f"{run_id}.csv").exists()

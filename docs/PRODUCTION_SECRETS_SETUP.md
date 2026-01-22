@@ -297,13 +297,11 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 #### HubSpot
 
-- `HUBSPOT_API_KEY`: [HubSpot Account Settings → Integrations → API key](https://app.hubspot.com/l/integrations)
 
 #### OpenAI
 
 - `OPENAI_API_KEY`: [OpenAI API Keys](https://platform.openai.com/api-keys)
 
-#### Slack Webhooks
 
 - `SLACK_WEBHOOK_URL`: Incoming webhook for notifications
 - `SLACK_WEBHOOK_OPS`: Separate webhook for operations notifications

@@ -34,11 +34,15 @@ class AzureStorageClient:
             self.client = None
             return
 
-        self.connection_string = connection_string or os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        self.connection_string = connection_string or os.getenv(
+            "AZURE_STORAGE_CONNECTION_STRING"
+        )
         self.container_name = os.getenv("AZURE_STORAGE_CONTAINER", "analytics-exports")
 
         if self.connection_string:
-            self.client = BlobServiceClient.from_connection_string(self.connection_string)
+            self.client = BlobServiceClient.from_connection_string(
+                self.connection_string
+            )
         else:
             logger.warning("Azure Storage credentials not configured")
             self.client = None
@@ -152,7 +156,9 @@ class AzureDashboardClient:
     def __init__(self, subscription_id: Optional[str] = None):
         self.subscription_id = subscription_id or os.getenv("AZURE_SUBSCRIPTION_ID")
         self.resource_group = os.getenv("AZURE_RESOURCE_GROUP")
-        self.dashboard_name = os.getenv("AZURE_DASHBOARD_NAME", "abaco-analytics-dashboard")
+        self.dashboard_name = os.getenv(
+            "AZURE_DASHBOARD_NAME", "abaco-analytics-dashboard"
+        )
 
         self.credential = DefaultAzureCredential() if self.subscription_id else None
 
@@ -168,17 +174,13 @@ class AzureDashboardClient:
         change_pct = (change / previous_value * 100) if previous_value != 0 else 0
 
         return {
-            "properties": {
-                "markdown": {
-                    "content": f"""
+            "properties": {"markdown": {"content": f"""
 ### {kpi_name}
 **Current**: {current_value:.2f}{unit}
 **Previous**: {previous_value:.2f}{unit}
 **Change**: {change:+.2f}{unit} ({change_pct:+.1f}%)
 **Updated**: {datetime.utcnow().isoformat()}
-"""
-                }
-            },
+"""}},
             "position": {"x": 0, "y": 0, "width": 3, "height": 2},
         }
 

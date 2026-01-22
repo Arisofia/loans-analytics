@@ -1,4 +1,5 @@
 import pytest
+
 from src.analytics.business_rules import (ApprovalDecision, IndustryType,
                                           MYPEBusinessRules, RiskLevel)
 
@@ -42,7 +43,9 @@ def test_high_risk_classification_at_thresholds_triggers_flags():
         "dpd": MYPEBusinessRules.NPL_DAYS_THRESHOLD,
         "utilization": MYPEBusinessRules.HIGH_RISK_CRITERIA["utilization"],
         "npl_ratio": MYPEBusinessRules.HIGH_RISK_CRITERIA["npl_ratio"],
-        "collection_rate": (MYPEBusinessRules.HIGH_RISK_CRITERIA["collection_rate"] - 0.01),
+        "collection_rate": (
+            MYPEBusinessRules.HIGH_RISK_CRITERIA["collection_rate"] - 0.01
+        ),
     }
     is_high, reasons = MYPEBusinessRules.classify_high_risk(metrics)
 
@@ -51,7 +54,9 @@ def test_high_risk_classification_at_thresholds_triggers_flags():
 
 
 def test_industry_adjustment_rewards_high_contribution():
-    adjustment = MYPEBusinessRules.calculate_industry_adjustment(IndustryType.MANUFACTURING)
+    adjustment = MYPEBusinessRules.calculate_industry_adjustment(
+        IndustryType.MANUFACTURING
+    )
     assert adjustment > 1.0
 
 
@@ -62,8 +67,12 @@ def test_industry_adjustment_penalizes_low_contribution():
 
 
 def test_industry_adjustment_unknown_industry_falls_back_to_other():
-    other_adjustment = MYPEBusinessRules.calculate_industry_adjustment(IndustryType.OTHER)
-    unknown_adjustment = MYPEBusinessRules.calculate_industry_adjustment("UNKNOWN_INDUSTRY")
+    other_adjustment = MYPEBusinessRules.calculate_industry_adjustment(
+        IndustryType.OTHER
+    )
+    unknown_adjustment = MYPEBusinessRules.calculate_industry_adjustment(
+        "UNKNOWN_INDUSTRY"
+    )
 
     assert unknown_adjustment == other_adjustment
 
@@ -78,12 +87,14 @@ def test_industry_adjustment_impacts_facility_approval_recommendation():
         "avg_balance": 60000,
     }
 
-    manufacturing_decision: ApprovalDecision = MYPEBusinessRules.evaluate_facility_approval(
-        facility_amount=700000,
-        customer_metrics={
-            **metrics,
-            "industry": IndustryType.MANUFACTURING,
-        },
+    manufacturing_decision: ApprovalDecision = (
+        MYPEBusinessRules.evaluate_facility_approval(
+            facility_amount=700000,
+            customer_metrics={
+                **metrics,
+                "industry": IndustryType.MANUFACTURING,
+            },
+        )
     )
     other_decision: ApprovalDecision = MYPEBusinessRules.evaluate_facility_approval(
         facility_amount=700000,
@@ -258,4 +269,7 @@ def test_evaluate_facility_approval_pod_and_collateral_behavior():
 
     assert 0.0 <= healthy_decision.pod <= 1.0
     assert stressed_decision.pod >= healthy_decision.pod
-    assert stressed_decision.required_collateral <= healthy_decision.required_collateral + 100000
+    assert (
+        stressed_decision.required_collateral
+        <= healthy_decision.required_collateral + 100000
+    )

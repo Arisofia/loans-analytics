@@ -16,7 +16,12 @@ class PolarsKPIEngine:
         """
         Portfolio at Risk > 30 days.
         """
-        required = ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
+        required = [
+            "dpd_30_60_usd",
+            "dpd_60_90_usd",
+            "dpd_90_plus_usd",
+            "total_receivable_usd",
+        ]
         # Ensure columns exist, if not return 0
         existing = [c for c in required if c in self.df.columns]
         if len(existing) < len(required):
@@ -28,7 +33,11 @@ class PolarsKPIEngine:
         # Correct way to get values from select
         result = self.df.select(
             [
-                (pl.col("dpd_30_60_usd") + pl.col("dpd_60_90_usd") + pl.col("dpd_90_plus_usd"))
+                (
+                    pl.col("dpd_30_60_usd")
+                    + pl.col("dpd_60_90_usd")
+                    + pl.col("dpd_90_plus_usd")
+                )
                 .sum()
                 .alias("sum_delinquent"),
                 pl.col("total_receivable_usd").sum().alias("sum_total"),
@@ -142,7 +151,9 @@ class PolarsKPIEngine:
         """
         if "total_receivable_usd" not in self.df.columns:
             return 0.0
-        return float(self.df.select(pl.col("total_receivable_usd").sum()).to_series()[0])
+        return float(
+            self.df.select(pl.col("total_receivable_usd").sum()).to_series()[0]
+        )
 
     def calculate_all(self) -> Dict[str, Any]:
         """

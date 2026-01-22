@@ -25,7 +25,9 @@ class ConcentrationCalculator(KPICalculator):
 
         cust_col = "customer_id" if "customer_id" in df.columns else "Customer ID"
         disb_col = (
-            "disbursement_amount" if "disbursement_amount" in df.columns else "Disbursement Amount"
+            "disbursement_amount"
+            if "disbursement_amount" in df.columns
+            else "Disbursement Amount"
         )
 
         if cust_col not in df.columns or disb_col not in df.columns:
@@ -35,7 +37,9 @@ class ConcentrationCalculator(KPICalculator):
                 disb_col = "disburse_principal"
 
         if cust_col not in df.columns or disb_col not in df.columns:
-            raise ValueError(f"Missing columns for Concentration: {cust_col}, {disb_col}")
+            raise ValueError(
+                f"Missing columns for Concentration: {cust_col}, {disb_col}"
+            )
 
         # Group by customer
         cust_disb = df.groupby(cust_col)[disb_col].sum().sort_values(ascending=False)
@@ -43,7 +47,9 @@ class ConcentrationCalculator(KPICalculator):
 
         if total_disb == 0:
             return 0.0, create_context(
-                self.METADATA.formula, rows_processed=len(df), reason="Zero total disbursement"
+                self.METADATA.formula,
+                rows_processed=len(df),
+                reason="Zero total disbursement",
             )
 
         top_10_sum = cust_disb.head(10).sum()

@@ -30,7 +30,9 @@ def resolve_placeholders(payload: Any, context: Optional[Dict[str, str]] = None)
     if context is None:
         context = {}
     if isinstance(payload, dict):
-        return {key: resolve_placeholders(value, context) for key, value in payload.items()}
+        return {
+            key: resolve_placeholders(value, context) for key, value in payload.items()
+        }
     if isinstance(payload, list):
         return [resolve_placeholders(item, context) for item in payload]
     if isinstance(payload, str):
@@ -82,7 +84,9 @@ class RetryPolicy:
     jitter_seconds: float = 0.0
 
     def execute(
-        self, func: Callable[[], Any], on_retry: Optional[Callable[[int, Exception], None]] = None
+        self,
+        func: Callable[[], Any],
+        on_retry: Optional[Callable[[int, Exception], None]] = None,
     ) -> Any:
         attempt = 0
         while True:

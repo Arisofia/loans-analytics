@@ -10,7 +10,7 @@ serve(async (req) => {
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', // Use service role for public feed to bypass RLS
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '' // Use service role for public feed to bypass RLS
     )
 
     // Example query for marketing metrics - adjust based on actual schema

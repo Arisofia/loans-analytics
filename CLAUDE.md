@@ -1,22 +1,19 @@
-
-# View Visual
-
-# View Visual
+# Development Commands
 
 ```bash
-# View Visual
+# Run all checks
 npm run check-all --prefix apps/web
 
-# View Visual
+# Lint
 npm run lint --prefix apps/web
 
-# View Visual
+# Lint fix
 npm run lint:fix --prefix apps/web
 
-# View Visual
+# Type check
 npm run type-check --prefix apps/web
 
-# View Visual
+# Format check
 npm run format:check --prefix apps/web
 
 # Auto-format code

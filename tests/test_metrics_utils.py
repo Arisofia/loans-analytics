@@ -5,6 +5,7 @@ Unit tests for metrics utility functions in the analytics engine.
 import unittest
 
 import pandas as pd
+
 from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
 from src.analytics.metrics_utils import (debt_to_income_ratio, loan_to_value,
                                          portfolio_delinquency_rate,
@@ -70,7 +71,8 @@ class TestMetricsUtils(unittest.TestCase):
         self.assertAlmostEqual(dti.iloc[1], 20.0)
         self.assertAlmostEqual(portfolio_delinquency_rate(data["loan_status"]), 50.0)
         self.assertAlmostEqual(
-            weighted_portfolio_yield(data["interest_rate"], data["principal_balance"]), 6.0
+            weighted_portfolio_yield(data["interest_rate"], data["principal_balance"]),
+            6.0,
         )
 
     def test_engine_uses_metric_utilities(self):

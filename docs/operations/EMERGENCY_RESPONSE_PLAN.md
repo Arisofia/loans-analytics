@@ -123,7 +123,6 @@ App Service → Health Check
 ```text
 Repository Settings → Notifications
 - Workflows: Enable email on workflow failure
-- Add Slack webhook if configured
 ```
 
 ---
@@ -190,9 +189,6 @@ Repository Settings → Notifications
 
 | Role | Name | Contact | Status |
 |------|------|---------|--------|
-| DevOps Lead | [Name] | [Slack/Email] | On-call |
-| Data Eng Lead | [Name] | [Slack/Email] | On-call |
-| CTO (Escalation) | [Name] | [Slack/Email] | Available |
 
 ---
 

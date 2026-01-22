@@ -126,7 +126,6 @@ If recent deployment broke the app:
 
 - GitHub Actions shows red X on scheduled workflows
 - Dashboard shows outdated "last updated" timestamp
-- Slack notifications of pipeline failure (if configured)
 
 #### Diagnostic Flow
 
@@ -265,7 +264,6 @@ After successful pipeline run:
 
 #### Prevention Measures
 
-- Set up Slack notifications for workflow failures
 - Add retry logic with exponential backoff to API calls
 - Implement data quality monitoring dashboard
 - Schedule key rotation reminders (every 90 days)
@@ -538,12 +536,9 @@ on:
     types: [completed]
 
 jobs:
-  slack-notify:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
     steps:
-      - name: Send Slack notification
-        uses: 8398a7/action-slack@v3
         with:
           status: ${{ github.event.workflow_run.conclusion }}
           text: 'Workflow "${{ github.event.workflow_run.name }}" failed'
@@ -560,7 +555,6 @@ jobs:
 | Task | Owner | Effort | Acceptance Criteria |
 |------|-------|--------|-------------------|
 | Deploy Azure Monitor alerts | DevOps | 1 day | All 3 alert rules active, test notifications working |
-| Set up GitHub workflow notifications | DevOps | 4 hours | Slack messages on pipeline failures |
 | Document all required GitHub secrets | Engineering | 4 hours | README lists every secret, no missing values |
 | Create runbook testing procedure | SRE | 8 hours | At least 1 runbook tested with real incident |
 | Review & harden branch protection rules | Engineering | 4 hours | Main branch requires all critical checks to pass |
@@ -597,9 +591,7 @@ Add these to GitHub → Settings → Secrets and variables → Actions:
 |-------------|--------|-------------------|------------|
 | `DATABASE_URL` | Supabase → Project Settings → Connection Strings | 90 days | Try `psql $DATABASE_URL -c "SELECT 1"` |
 | `META_ACCESS_TOKEN` | Meta Business Suite → Settings → API Tokens | 90 days | Call `/me` endpoint |
-| `HUBSPOT_API_KEY` | HubSpot → Settings → API Key | 90 days | Call `hubspot.crm.contacts.basicApi.getPage()` |
 | `OPENAI_API_KEY` | OpenAI → API Keys → Create New | 90 days | Call `openai.ChatCompletion.create()` |
-| `SLACK_WEBHOOK_URL` | Slack → Apps → Incoming Webhooks | 180 days | Post test message |
 | `AZURE_CREDENTIALS` | Azure → Service Principals | 90 days | `az login --service-principal` |
 
 ### Secrets Rotation Procedure
@@ -677,7 +669,6 @@ This deliverables package provides:
 
 **Next Steps**:
 
-1. Implement incident runbooks in team Slack/wiki
 2. Deploy Azure Monitor alerts using ARM template
 3. Begin Week 2 stabilization phase
 4. Schedule team training on new procedures

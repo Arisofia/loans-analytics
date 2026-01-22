@@ -1,7 +1,8 @@
 import argparse
-import json
-import requests
 import sys
+
+import requests
+
 
 def trigger_pagerduty_incident(routing_key, message):
     """
@@ -14,10 +15,10 @@ def trigger_pagerduty_incident(routing_key, message):
         "payload": {
             "summary": message,
             "source": "GitHub Actions",
-            "severity": "critical"
-        }
+            "severity": "critical",
+        },
     }
-    
+
     try:
         response = requests.post(url, json=payload)
         response.raise_for_status()
@@ -26,10 +27,11 @@ def trigger_pagerduty_incident(routing_key, message):
         print(f"Error triggering PagerDuty incident: {str(e)}")
         sys.exit(1)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Trigger PagerDuty incident")
     parser.add_argument("--routing-key", required=True, help="PagerDuty routing key")
     parser.add_argument("--message", required=True, help="Incident message")
-    
+
     args = parser.parse_args()
     trigger_pagerduty_incident(args.routing_key, args.message)
