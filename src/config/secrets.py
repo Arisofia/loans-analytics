@@ -1,9 +1,10 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional, Set
+from typing import Dict, Optional, Set, Any, List
 
 logger = logging.getLogger(__name__)
 
+# Default required secrets (can be modified by tests)
 REQUIRED_SECRETS = {
     "OPENAI_API_KEY",
     "ANTHROPIC_API_KEY",
@@ -76,7 +77,7 @@ class SecretsManager:
 
         return {
             "status": status,
-            "missing": missing_required,
+            "required_missing": missing_required,  # Renamed from 'missing' to match test
             "optional_missing": missing_optional_dict
         }
 
@@ -85,7 +86,7 @@ class SecretsManager:
         
         # Log required
         for k in REQUIRED_SECRETS:
-            present = k not in validation["missing"]
+            present = k not in validation["required_missing"]
             logger.info(f"Secret '{k}': {'PRESENT' if present else 'MISSING'}")
             
         # Log optional
