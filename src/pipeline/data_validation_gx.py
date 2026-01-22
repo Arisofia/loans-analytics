@@ -9,8 +9,7 @@ import pandas as pd
 
 try:
     import great_expectations as gx
-    from great_expectations.data_context import \
-        EphemeralDataContext as GXEphemeralDataContext
+    from great_expectations.data_context import EphemeralDataContext as GXEphemeralDataContext
 
     HAS_GE = True
 except ImportError:  # pragma: no cover - optional dependency

@@ -1,6 +1,7 @@
 """Complete KPI Calculator for ABACO Loans - All Financial Metrics."""
 
 import logging
+
 # Built-ins para Pylance/Flake8
 from builtins import Exception, all, any, len, list, max
 from datetime import datetime

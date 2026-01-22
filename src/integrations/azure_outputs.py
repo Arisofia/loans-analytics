@@ -18,8 +18,7 @@ from urllib.parse import urlparse
 logger = logging.getLogger(__name__)
 
 try:
-    from azure.core.credentials import (AzureNamedKeyCredential,
-                                        AzureSasCredential)
+    from azure.core.credentials import AzureNamedKeyCredential, AzureSasCredential
     from azure.identity import DefaultAzureCredential
     from azure.storage.blob import BlobServiceClient, ContentSettings
 

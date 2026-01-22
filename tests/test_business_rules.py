@@ -1,7 +1,11 @@
 import pytest
 
-from src.analytics.business_rules import (ApprovalDecision, IndustryType,
-                                          MYPEBusinessRules, RiskLevel)
+from src.analytics.business_rules import (
+    ApprovalDecision,
+    IndustryType,
+    MYPEBusinessRules,
+    RiskLevel,
+)
 
 pytestmark = pytest.mark.skip(reason="streamlit_app.utils not yet packaged as module.")
 

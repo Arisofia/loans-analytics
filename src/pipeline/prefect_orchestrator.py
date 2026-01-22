@@ -11,11 +11,9 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.pipeline.data_ingestion import IngestionResult, UnifiedIngestion
-from src.pipeline.data_transformation import (TransformationResult,
-                                              UnifiedTransformation)
+from src.pipeline.data_transformation import TransformationResult, UnifiedTransformation
 from src.pipeline.data_validation_gx import validate_loan_data
-from src.pipeline.kpi_calculation import (CalculationResultV2,
-                                          UnifiedCalculationV2)
+from src.pipeline.kpi_calculation import CalculationResultV2, UnifiedCalculationV2
 from src.pipeline.orchestrator import PipelineConfig
 from src.pipeline.output import OutputResult, UnifiedOutput
 
