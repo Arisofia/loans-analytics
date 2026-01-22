@@ -18,7 +18,7 @@
   },
   "scripts": {
     "lint": "npm --prefix apps/web run lint",
-    "build": "pnpm -r build",
+    "build": "npm run build --workspaces
     "test": "echo 'Running tests...' && npm --prefix apps/web run test:e2e || echo 'No tests configured'"
   },
   "dependencies": {
