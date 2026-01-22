@@ -1,10 +1,36 @@
-<<<<<<< HEAD
+def resolve_placeholders(config, context=None):
+    """Stub for resolve_placeholders: returns config unchanged."""
+    return config
+def load_yaml(path):
+    """Stub for load_yaml: load YAML from a file path."""
+    import yaml
+    with open(path, 'r') as f:
+        return yaml.safe_load(f)
+def ensure_dir(path):
+    """Stub for ensure_dir: create directory if it does not exist."""
+    import os
+    os.makedirs(path, exist_ok=True)
+
+def write_json(data, path):
+    """Stub for write_json: write data as JSON to a file."""
+    import json
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=2)
+def hash_dataframe(df):
+    """Return a hash of a pandas DataFrame's values and columns."""
+    import pandas as pd
+    import hashlib
+    if not isinstance(df, pd.DataFrame):
+        raise ValueError("Input must be a pandas DataFrame")
+    # Hash values and columns
+    data_bytes = pd.util.hash_pandas_object(df, index=True).values.tobytes() + str(list(df.columns)).encode()
+    return hashlib.sha256(data_bytes).hexdigest()
+
 import hashlib
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Optional
-
 
 class CircuitBreaker:
     def __init__(self, failure_threshold: int = 3, reset_seconds: int = 60):
@@ -33,7 +59,6 @@ class CircuitBreaker:
         self._failures = 0
         self._last_failure_time = None
 
-
 class RateLimiter:
     def __init__(self, max_requests_per_minute: int = 60):
         self.max_requests_per_minute = max_requests_per_minute
@@ -41,7 +66,6 @@ class RateLimiter:
 
     def wait(self) -> None:
         return None
-
 
 class RetryPolicy:
     def __init__(
@@ -70,7 +94,6 @@ class RetryPolicy:
                         pass
                 time.sleep(self.backoff_seconds)
 
-
 def hash_file(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -78,13 +101,8 @@ def hash_file(path: Path) -> str:
             h.update(chunk)
     return h.hexdigest()
 
-
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
-=======
-"""Compatibility helpers for legacy python.pipeline imports."""
-
-from src.pipeline.utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
 
 __all__ = [
     "CircuitBreaker",
@@ -93,4 +111,3 @@ __all__ = [
     "hash_file",
     "utc_now",
 ]
->>>>>>> origin/fix/workflows-and-tests

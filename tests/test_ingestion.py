@@ -1,10 +1,9 @@
 import io
 
 import polars as pl
-import pytest
-
 from python.ingestion import AbacoIngestion
-from python.schemas import LOAN_SCHEMA
+import polars as pl
+from python.ingestion import AbacoIngestion
 
 
 def test_ingest_uploaded_file_basic():

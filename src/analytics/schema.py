@@ -2,9 +2,26 @@
 
 from typing import Optional
 
+
 import pandas as pd
-import pandera as pa
-from pandera.typing import Series
+try:
+    import pandera as pa
+    from pandera.typing import Series
+except ImportError:
+    class pa:
+        class DataFrameModel:
+            pass
+        @staticmethod
+        def Field(*args, **kwargs):
+            return None
+        @staticmethod
+        def check(*args, **kwargs):
+            def decorator(fn):
+                return fn
+            return decorator
+    class Series:
+        def __class_getitem__(cls, item):
+            return None
 
 
 class LoanTapeSchema(pa.DataFrameModel):

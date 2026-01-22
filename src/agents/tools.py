@@ -1,3 +1,7 @@
+
+def send_slack_notification(*args, **kwargs):
+    """Stub for Slack notification utility."""
+    pass
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional
 

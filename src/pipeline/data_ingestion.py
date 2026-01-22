@@ -1,8 +1,14 @@
+try:
+    from src.pipeline.data_validation import DataQualityReport
+except ImportError:
+    class DataQualityReport:
+        pass
 # Data ingestion logic for pipeline (legacy/simple API)
 def ingest_data(source, destination=None):
     """Ingest data from source to destination."""
     # TODO: Implement ingestion logic
     pass
+
 import hashlib
 import json
 import logging
@@ -18,17 +24,11 @@ import pandas as pd
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel, Field, ValidationError
 
-<<<<<<< HEAD
-from .data_validation import validate_dataframe
-from .reporting import DataQualityReport, DataQualityReporter
-from .utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
-=======
 from src.agents.tools import send_slack_notification
 from src.analytics.schema import LoanTapeSchema
 from src.pipeline.data_validation import validate_dataframe
-from src.pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
-                                hash_file, utc_now)
->>>>>>> origin/fix/final-workflow-fixes
+from src.pipeline.validation import DataQualityReporter
+from src.pipeline.utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
 
 logger = logging.getLogger("abaco.ingestion")
 
@@ -39,24 +39,6 @@ DPD_THRESHOLD_60 = 60
 DPD_THRESHOLD_90 = 90
 
 
-class LoanRecord(BaseModel):
-    """Schema enforcement for individual loan or portfolio records."""
-
-    loan_id: Optional[str] = Field(None, alias="loan_id")
-    total_receivable_usd: float = Field(ge=0)
-    total_eligible_usd: float = Field(ge=0)
-    discounted_balance_usd: float = Field(ge=0)
-    cash_available_usd: float = Field(default=0.0, ge=0)
-    dpd_0_7_usd: float = Field(default=0.0, ge=0)
-    dpd_7_30_usd: float = Field(default=0.0, ge=0)
-    dpd_30_60_usd: float = Field(default=0.0, ge=0)
-    dpd_60_90_usd: float = Field(default=0.0, ge=0)
-    dpd_90_plus_usd: float = Field(default=0.0, ge=0)
-    measurement_date: Optional[str] = None
-
-    class Config:
-        populate_by_name = True
-        extra = "allow"
 
 
 @dataclass

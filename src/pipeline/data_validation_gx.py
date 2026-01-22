@@ -14,7 +14,10 @@ except ImportError:  # pragma: no cover - optional dependency
     EphemeralDataContext = None  # type: ignore
     HAS_GE = False
 
+
+
 logger = logging.getLogger(__name__)
+
 
 def get_or_create_datasource(
     context: "EphemeralDataContext",
@@ -37,17 +40,13 @@ def create_validator_for_dataframe(
     """Create a Great Expectations validator for a Pandas DataFrame."""
     if not isinstance(df, pd.DataFrame):
         raise TypeError("df must be a Pandas DataFrame.")
-
     datasource = get_or_create_datasource(context, datasource_name)
     pandas_asset = datasource.add_dataframe_asset(name=asset_name, dataframe=df)
     batch_request = pandas_asset.build_batch_request()
-
-
     return context.get_validator(
         batch_request=batch_request,
         create_expectation_suite_with_name=f"{asset_name}_suite"
     )
-
 
 def validate_data(
     df: pd.DataFrame,
@@ -88,7 +87,6 @@ def validate_data(
     if not success:
         logger.warning("Great Expectations validation failed.")
     return {"success": success, "details": result}
-
 
 def _default_expectations() -> List[Dict[str, Any]]:
     return [

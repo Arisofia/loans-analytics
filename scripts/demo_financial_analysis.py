@@ -1,15 +1,14 @@
+from src.analytics.financial_analysis import FinancialAnalyzer
 import argparse
 from pathlib import Path
 
+
 import pandas as pd
-<<<<<<< HEAD
 import seaborn as sns
-=======
 try:
     import matplotlib.pyplot as plt
 except ImportError:  # pragma: no cover - optional dependency
     plt = None
->>>>>>> ed449d30c (feat: Update workflows and add gitignore for media files)
 
 DEFAULT_SAMPLE = Path("data_samples/abaco_portfolio_sample.csv")
 
@@ -103,10 +102,6 @@ def main() -> None:
     if "collection_rate" in metrics:
         print(f"Collection rate: {metrics['collection_rate']:.2f}%")
 
-<<<<<<< HEAD
-    plot_dpd_distribution(df, Path("dpd_distribution.png"))
-    plot_exposure_distribution(df, Path("exposure_distribution.png"))
-=======
     analyzer = FinancialAnalyzer()
 
     # 2. Enrich Data (Buckets, Segments, Utilization)
@@ -170,8 +165,7 @@ def main() -> None:
         plt.tight_layout()
         output_img = "exposure_distribution.png"
         plt.savefig(output_img)
-        print(f"Saved {output_img}")
->>>>>>> ed449d30c (feat: Update workflows and add gitignore for media files)
+
 
 
 if __name__ == "__main__":

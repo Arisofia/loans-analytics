@@ -281,8 +281,11 @@ class UnifiedPipeline:
                             "checksum": ingestion_result.metadata.get("checksum"),
                         },
                     )
-                    compliance_path = run_dir / f"{self.run_id}_compliance.json"
-                    write_compliance_report(compliance_report, compliance_path)
+                    if run_dir is not None:
+                        compliance_path = run_dir / f"{self.run_id}_compliance.json"
+                        write_compliance_report(compliance_report, compliance_path)
+                    else:
+                        logger.error("run_dir is None; cannot write compliance report.")
 
                 with tracer.start_as_current_span("pipeline.output"):
                     output_result = self.output.persist(

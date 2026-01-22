@@ -153,7 +153,7 @@ class UnifiedCalculationV2:
             elif rollup == "weekly":
                 grouper = pd.Grouper(key=time_column, freq="W")
             elif rollup == "monthly":
-                grouper = pd.Grouper(key=time_column, freq="M")
+                grouper = pd.Grouper(key=time_column, freq="ME")
             else:
                 continue
 

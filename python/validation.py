@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 """
 Module for data validation utilities and functions.
 """
@@ -277,28 +276,4 @@ def validate_monotonic_increasing(
     return validation
 
 
-def validate_no_nulls(
-    df: pd.DataFrame, columns: Optional[List[str]] = None
-) -> Dict[str, bool]:
-    """
-    Check that specified columns have no null values.
-    Returns a dict mapping column name to True/False.
-    """
-    if columns is None:
-        # Heuristic: all columns in REQUIRED_ANALYTICS_COLUMNS
-        # and NUMERIC_COLUMNS
-        columns = list(set(REQUIRED_ANALYTICS_COLUMNS + NUMERIC_COLUMNS))
-    validation: Dict[str, bool] = {}
-    for col in columns:
-        if col in df.columns:
-            validation[f"{col}_no_nulls"] = not df[col].isnull().any()
-    return validation
-=======
-"""Compatibility helpers for legacy python.validation imports."""
 
-from src.pipeline.data_validation import validate_dataframe
-
-__all__ = [
-    "validate_dataframe",
-]
->>>>>>> ed449d30c (feat: Update workflows and add gitignore for media files)

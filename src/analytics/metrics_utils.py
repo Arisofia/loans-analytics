@@ -1,3 +1,20 @@
+
+def find_column(df, column_name):
+    """
+    Returns the first matching column from a list of candidates, or the column if a string is provided.
+    If no match is found, returns None.
+    """
+    if not hasattr(df, 'columns'):
+        return None
+    columns = df.columns
+    if isinstance(column_name, (list, tuple)):
+        for candidate in column_name:
+            if candidate in columns:
+                return df[candidate]
+        return None
+    if column_name in columns:
+        return df[column_name]
+    return None
 """Utility functions for common loan analytics KPIs."""
 
 import logging
