@@ -8,6 +8,7 @@
 ## Workflow Steps
 
 ### [ ] Step: Initial Analysis Phase
+<!-- chat-id: 6750c331-64e8-40ba-8bb1-ffc2a868d62b -->
 - [ ] Scan entire repo structure and identify key components.
 - [ ] Analyze dependencies (Python, Node.js) for updates and vulnerabilities.
 - [ ] Parse documentation (README, DATA_DICTIONARY, KPI_CATALOG) for business logic verification.
