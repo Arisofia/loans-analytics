@@ -17,7 +17,9 @@ __all__ = [
 
 
 class CircuitBreaker:
-    def __init__(self, max_failures: int = 3, failure_threshold: int = None, reset_seconds: int = 60):
+    def __init__(
+        self, max_failures: int = 3, failure_threshold: int = None, reset_seconds: int = 60
+    ):
         # Support both naming conventions
         self.max_failures = failure_threshold if failure_threshold is not None else max_failures
         self.reset_seconds = reset_seconds
@@ -93,24 +95,25 @@ def hash_file(path: Path) -> str:
 def hash_dataframe(df) -> str:
     """
     Generate a SHA256 hash of a pandas DataFrame for change detection.
-    
+
     Args:
         df: pandas DataFrame to hash
-        
+
     Returns:
         Hexadecimal string representation of the hash
     """
     try:
         import pandas as pd
+
         # Convert DataFrame to CSV string for consistent hashing
         csv_string = df.to_csv(index=False)
         h = sha256()
-        h.update(csv_string.encode('utf-8'))
+        h.update(csv_string.encode("utf-8"))
         return h.hexdigest()
     except Exception:
         # Fallback: hash the string representation
         h = sha256()
-        h.update(str(df).encode('utf-8'))
+        h.update(str(df).encode("utf-8"))
         return h.hexdigest()
 
 
