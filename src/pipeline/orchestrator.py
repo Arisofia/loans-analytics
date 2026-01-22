@@ -247,9 +247,7 @@ class UnifiedPipeline:
                 self.calculator.run_id = self.run_id
                 self.output.run_id = self.run_id
 
-                with tracer.start_as_current_span(
-                    "pipeline.transformation"
-                ) as transformation_span:
+                with tracer.start_as_current_span("pipeline.transformation") as transformation_span:
                     transformation_result = self.transformer.transform(
                         ingestion_result.df, user=user
                     )

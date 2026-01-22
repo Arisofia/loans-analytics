@@ -108,9 +108,7 @@ class AgentOrchestrator:
                         if not agent_output.startswith("Error:"):
                             break
                 except Exception as exc:
-                    print(
-                        f"[Orchestrator] Attempt {attempt + 1} failed for {name}: {str(exc)}"
-                    )
+                    print(f"[Orchestrator] Attempt {attempt + 1} failed for {name}: {str(exc)}")
                     span.record_exception(exc)
 
             output = {

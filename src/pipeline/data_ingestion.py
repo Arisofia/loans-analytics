@@ -1,3 +1,8 @@
+# Data ingestion logic for pipeline (legacy/simple API)
+def ingest_data(source, destination=None):
+    """Ingest data from source to destination."""
+    # TODO: Implement ingestion logic
+    pass
 import hashlib
 import json
 import logging
@@ -13,9 +18,17 @@ import pandas as pd
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel, Field, ValidationError
 
+<<<<<<< HEAD
 from .data_validation import validate_dataframe
 from .reporting import DataQualityReport, DataQualityReporter
 from .utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
+=======
+from src.agents.tools import send_slack_notification
+from src.analytics.schema import LoanTapeSchema
+from src.pipeline.data_validation import validate_dataframe
+from src.pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
+                                hash_file, utc_now)
+>>>>>>> origin/fix/final-workflow-fixes
 
 logger = logging.getLogger("abaco.ingestion")
 

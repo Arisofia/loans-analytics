@@ -1,41 +1,65 @@
-name: Build & Push Docker Images
+name: Docker Images CI
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "apps/web/**"
-      - "streamlit_app.py"
-      - "src/**"
-      - "requirements.txt"
-      - "docker-compose.yml"
-      - ".github/workflows/docker-images.yml"
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  packages: write
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_WEB: ${{ github.repository }}-web
-  IMAGE_DASHBOARD: ${{ github.repository }}-dashboard
+    branches: [ main, 'fix/**', 'feat/**' ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   validate-secrets:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secrets: DOCKER_USERNAME,DOCKER_PASSWORD,ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-      ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-      ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+=======
+      secret_names: 'DOCKER_USERNAME,DOCKER_PASSWORD,ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD,AZURE_WEBAPP_PUBLISH_PROFILE'
+    secrets: inherit
 
-  build-and-push:
+  build-and-push-dockerhub:
     needs: validate-secrets
-    if: needs.validate-secrets.outputs.all_secrets_present == true
+    if: github.event_name != 'pull_request' && fromJSON(needs.validate-secrets.outputs.all_secrets_present)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/abaco-loans-analytics:${{ github.sha }}
+
+  build-and-push-acr:
+    needs: validate-secrets
+    if: github.event_name != 'pull_request' && fromJSON(needs.validate-secrets.outputs.all_secrets_present)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - run: |
+          docker build . -t ${{ secrets.ACR_LOGIN_SERVER }}/abaco-loans-analytics:${{ github.sha }}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/abaco-loans-analytics:${{ github.sha }}
+
+  deploy-to-app-service:
+    needs: [build-and-push-acr, validate-secrets]
+    if: fromJSON(needs.validate-secrets.outputs.all_secrets_present)
+    runs-on: ubuntu-latest
+    environment:
+      name: 'production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    steps:
+      - id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'abaco-analytics-dashboard-gbbjege0gxcbhyg9'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          images: '${{ secrets.ACR_LOGIN_SERVER }}/abaco-loans-analytics:${{ github.sha }}'
+>>>>>>> origin/fix/final-workflow-fixes:.github/workflows/docker-images.yml
     runs-on: ubuntu-latest
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -44,6 +68,7 @@ jobs:
       ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
       ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
     steps:
+<<<<<<< HEAD:.github/workflows/archived/docker-images.yml
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -103,13 +128,20 @@ jobs:
 
       - name: Build & push (dashboard)
         uses: docker/build-push-action@v6
+=======
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/build-push-action@v5
+>>>>>>> origin/fix/final-workflow-fixes:.github/workflows/docker-images.yml
         with:
           context: .
-          file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta_dash.outputs.tags }}
-          labels: ${{ steps.meta_dash.outputs.labels }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/abaco-loans-analytics:${{ github.sha }}
 
+<<<<<<< HEAD:.github/workflows/archived/docker-images.yml
       # Optional: also push to Azure Container Registry (ACR)
       # Configure these secrets to enable:
       # - ACR_LOGIN_SERVER (e.g., myregistry.azurecr.io)
@@ -122,27 +154,34 @@ jobs:
           registry: ${{ env.ACR_LOGIN_SERVER }}
           username: ${{ env.ACR_USERNAME }}
           password: ${{ env.ACR_PASSWORD }}
+=======
+  build-and-push-acr:
+    needs: validate-secrets
+    if: github.event_name != 'pull_request' && fromJSON(needs.validate-secrets.outputs.all_secrets_present)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - run: |
+          docker build . -t ${{ secrets.ACR_LOGIN_SERVER }}/abaco-loans-analytics:${{ github.sha }}
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/abaco-loans-analytics:${{ github.sha }}
+>>>>>>> origin/fix/final-workflow-fixes:.github/workflows/docker-images.yml
 
-      - name: Tag & push to ACR (optional)
-        env:
-          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-        run: |
-          set -euo pipefail
-          if [ -z "$ACR_LOGIN_SERVER" ]; then
-            echo "Skipping ACR push: ACR_LOGIN_SERVER not set"
-            exit 0
-          fi
-          WEB_SRC_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_WEB_LOWER }}:${{ github.sha }}"
-          DASH_SRC_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_DASHBOARD_LOWER }}:${{ github.sha }}"
-
-          WEB_ACR_TAG="$ACR_LOGIN_SERVER/${{ env.IMAGE_WEB_LOWER }}:${{ github.sha }}"
-          DASH_ACR_TAG="$ACR_LOGIN_SERVER/${{ env.IMAGE_DASHBOARD_LOWER }}:${{ github.sha }}"
-
-          docker pull "$WEB_SRC_TAG"
-          docker pull "$DASH_SRC_TAG"
-
-          docker tag "$WEB_SRC_TAG" "$WEB_ACR_TAG"
-          docker tag "$DASH_SRC_TAG" "$DASH_ACR_TAG"
-
-          docker push "$WEB_ACR_TAG"
-          docker push "$DASH_ACR_TAG"
+  deploy-to-app-service:
+    needs: [build-and-push-acr, validate-secrets]
+    if: fromJSON(needs.validate-secrets.outputs.all_secrets_present)
+    runs-on: ubuntu-latest
+    environment:
+      name: 'production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    steps:
+      - id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'abaco-analytics-dashboard-gbbjege0gxcbhyg9'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          images: '${{ secrets.ACR_LOGIN_SERVER }}/abaco-loans-analytics:${{ github.sha }}'
