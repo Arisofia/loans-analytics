@@ -87,6 +87,10 @@ def enable_auto_instrumentation() -> None:
                 HTTPXInstrumentor().instrument()
             except Exception:
                 logger.exception("Failed to instrument httpx")
+        else:
+            logger.info(
+                "HTTPX instrumentation not enabled: no compatible HTTPXInstrumentor could be imported"
+            )
 
         RequestsInstrumentor().instrument()
         URLLib3Instrumentor().instrument()
