@@ -82,4 +82,47 @@
   "github-actions.workflows.pinned.workflows": [
     "abaco-loans-analytics/.github/workflows/agent-orchestrator.yml"
   ]
+  }
 }
+=======
+    }
+  },
+  "inlineChat.notebookAgent": true,
+  "inlineChat.finishOnType": true,
+  "inlineChat.enableV2": true,
+  "chat.useNestedAgentsMdFiles": true,
+  "chat.useClaudeSkills": true,
+  "chat.tools.terminal.ignoreDefaultAutoApproveRules": true,
+  "chat.tools.terminal.autoReplyToPrompts": true,
+  "chat.todoListTool.writeOnly": true,
+  "chat.todoListTool.descriptionField": true,
+  "chat.renderRelatedFiles": true,
+  "chat.restoreLastPanelSession": true,
+  "chat.mcp.gallery.enabled": true,
+  "chat.mcp.discovery.enabled": {
+    "claude-desktop": true,
+    "windsurf": true,
+    "cursor-global": true,
+    "cursor-workspace": true
+  },
+  "chat.mcp.assisted.nuget.enabled": true,
+  "chat.edits2.enabled": true,
+  "chat.editor.wordWrap": "on",
+  "chat.disableAIFeatures": false,
+  "chat.checkpoints.showFileChanges": true,
+  "chat.customAgentInSubagent.enabled": true,
+  "chat.allowAnonymousAccess": true,
+  "azureFunctions.deploySubpath": ".",
+  "azureFunctions.projectLanguage": "PowerShell",
+  "azureFunctions.projectRuntime": "~4",
+  "debug.internalConsoleOptions": "neverOpen",
+  "yaml.schemas": {
+    "https://www.schemastore.org/sourcehut-build-0.65.0.json": "${workspaceFolder}/config/kpi_definitions.yaml"
+  },
+    "sonarlint.connectedMode.project": {
+        "connectionId": "abaco-technol",
+        "projectKey": "abaco-loans-analytics"
+    },
+    "java.compile.nullAnalysis.mode": "automatic",
+}
+>>>>>>> 42cc0c1e60ad02b552a6b2017e3aeed645141d5c
