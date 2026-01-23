@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "figma-kpis": {
+      "verify_jwt": false
+    },
+    "figma-marketing": {
+      "verify_jwt": false
+    }
+  }
+}

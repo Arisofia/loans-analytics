@@ -1,71 +1,112 @@
-# Dependencies
-node_modules/
-figma-financial-dashboard/node_modules/
-**/node_modules/
-.venv/
-venv/
-apps/web/.venv/
-__pycache__/
-*.pyc
-
-# Next.js
-.next/
-out/
+# Gradle
+.gradle/
 build/
-dist/
+**/.gradle/
+**/build/
 
-# Environment
-.env
-.env.local
+# OS
 .DS_Store
 
-# Testing
-.pytest_cache/
-coverage/
-playwright-report/
-test-results/
 
-# Build artifacts
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.tmp
+.cache/
 *.egg-info/
-.gradle/
-target/
+.eggs/
 
-# Config
-config/*.yaml
-
-<<<<<<< HEAD
-# Logs
+# Test/coverage output
 *.log
-*.logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+*.coverage
+.coverage.*
+htmlcov/
+
+# Editor/IDE files
+.idea/
+.settings/
+.vscode/
+*.code-workspace
+.vscode/history/
+.vscode/cache/
+
+# Project documentation/settings policy
+# See README.md for policy on documentation, settings, and config file retention.
+
+# Streamlit
+.streamlit/
+
+# Data outputs (NO versionar)
+data/metrics/
+data_samples/*.csv
+logs/
+exports/
+outputs/
+
+# Build / tooling
+.next/
+.turbo/
+dist/
+coverage/
+out/
 
 # IDE
-.idea/
-.vscode/settings.json
+.vscode/tasks.json
+node_modules/
 
-# Additional exclusions
-mypy_report.xml
-node_modules/
-figma-financial-dashboard/node_modules/
-.sonarlint/
+clean_settings.json
+tailwind.config.js
 
-.python_packagesnode_modules/
-node_modules/
-node_modules/
-=======
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
+# Project-specific artifacts
+apps/.DS_Store
+
+# Local repository clones
+abaco-loans-analytics/
+data_samples/
+gemini-cli/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.vercel/
+nvm/
+
+# Other
+failed_workflows.csv
+scripts/test_hubspot_simple.py
+
+.env
+
+# Python virtual environments
+.venv/
+.venv-1/
+.venv-2/
+.lint-venv/
+
 # Azurite local storage state
 AzuriteConfig
 __azurite_db_*.json
 __azurite_db_*_extent__.json
 scripts/setup_azure.sh
-.azure
 
-# Ignore generated media files
-*.mp4
-*.mov
-*.mp3
->>>>>>> ed449d30c (feat: Update workflows and add gitignore for media files)
-.mvn/
-node_modules/
+# Playwright artifacts and test caches
+apps/web/playwright-report/
+playwright/.e2e
+playwright/.auth
+.pytest_cache/
+.mypy_cache/
+pytest-report/
+coverage.xml
+
+.azure
+tmp/
+data/archives/cascade/tmp*.csv
+.env.example

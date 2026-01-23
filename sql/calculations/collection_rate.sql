@@ -12,7 +12,7 @@ FROM (
     SUM(CASE WHEN status = 'Collected' THEN balance ELSE 0 END) as total_collections,
     SUM(balance) as total_receivables
   FROM
-    raw_layer.loans_raw
+    raw_layer.cascade_loans_raw
   WHERE
     date_load = CURRENT_DATE()
 ) subquery

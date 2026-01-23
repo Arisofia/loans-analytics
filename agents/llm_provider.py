@@ -63,9 +63,7 @@ class BaseLLMProvider(ABC):
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI GPT provider."""
 
-    def __init__(
-        self, api_key: Optional[str] = None, model: str = "gpt-4-turbo-preview"
-    ):
+    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4-turbo-preview"):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.model = model
         if OPENAI_AVAILABLE and self.api_key:
@@ -78,9 +76,7 @@ class OpenAIProvider(BaseLLMProvider):
     def is_available(self) -> bool:
         return OPENAI_AVAILABLE and self.client is not None
 
-    def complete(
-        self, messages: List[Dict], temperature: float = 0.7, **kwargs
-    ) -> LLMResponse:
+    def complete(self, messages: List[Dict], temperature: float = 0.7, **kwargs) -> LLMResponse:
         """Complete using OpenAI API."""
         if not self.is_available():
             raise RuntimeError("OpenAI provider not available")
@@ -109,9 +105,7 @@ class OpenAIProvider(BaseLLMProvider):
 class AnthropicProvider(BaseLLMProvider):
     """Anthropic Claude provider."""
 
-    def __init__(
-        self, api_key: Optional[str] = None, model: str = "claude-3-5-haiku-20241022"
-    ):
+    def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-5-haiku-20241022"):
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         self.model = model
         if ANTHROPIC_AVAILABLE and self.api_key:
@@ -123,11 +117,7 @@ class AnthropicProvider(BaseLLMProvider):
         return ANTHROPIC_AVAILABLE and self.api_key is not None
 
     def complete(
-        self,
-        messages: List[Dict],
-        temperature: float = 0.7,
-        max_tokens: int = 4096,
-        **kwargs,
+        self, messages: List[Dict], temperature: float = 0.7, max_tokens: int = 4096, **kwargs
     ) -> LLMResponse:
         """Complete using Anthropic API."""
         if not self.is_available():
@@ -141,9 +131,7 @@ class AnthropicProvider(BaseLLMProvider):
             if msg["role"] == "system":
                 system_message = msg["content"]
             else:
-                converted_messages.append(
-                    {"role": msg["role"], "content": msg["content"]}
-                )
+                converted_messages.append({"role": msg["role"], "content": msg["content"]})
 
         try:
             response = self.client.messages.create(
@@ -189,9 +177,7 @@ class LLMManager:
         if ANTHROPIC_AVAILABLE:
             self.providers["anthropic"] = AnthropicProvider()
 
-        logger.info(
-            f"Initialized LLM Manager with providers: {list(self.providers.keys())}"
-        )
+        logger.info(f"Initialized LLM Manager with providers: {list(self.providers.keys())}")
 
     def complete(
         self, messages: List[Dict], provider: Optional[str] = None, **kwargs
@@ -225,6 +211,4 @@ class LLMManager:
 
     def get_available_providers(self) -> List[str]:
         """Get list of available providers."""
-        return [
-            name for name, provider in self.providers.items() if provider.is_available()
-        ]
+        return [name for name, provider in self.providers.items() if provider.is_available()]

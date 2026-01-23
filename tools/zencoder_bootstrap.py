@@ -246,9 +246,7 @@ def print_high_level_summary(report: KpiSyncReport) -> None:
 
     print("\n[Agent Guidance]")
     if not all(fc.exists for fc in report.file_checks):
-        print(
-            "  - One or more core files are missing. Focus first on creating/fixing those files."
-        )
+        print("  - One or more core files are missing. Focus first on creating/fixing those files.")
         print(
             "  - Priority files: docs/KPI_CATALOG.md, migration SQL, kpi_catalog_processor, parity tests, JSON export."
         )
@@ -258,9 +256,7 @@ def print_high_level_summary(report: KpiSyncReport) -> None:
         )
     elif report.pytest_result and _pytest_was_skipped(report.pytest_result):
         print("  - KPI parity tests are opt-in and were skipped.")
-        print(
-            "  - To run them: set RUN_KPI_PARITY_TESTS=1 (and provide DATABASE_URL if needed)."
-        )
+        print("  - To run them: set RUN_KPI_PARITY_TESTS=1 (and provide DATABASE_URL if needed).")
     elif report.pytest_result and not report.pytest_result.success:
         print(
             "  - KPI parity tests are failing. Investigate tests/test_kpi_parity.py and SQL views in analytics.*."

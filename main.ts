@@ -20,20 +20,20 @@ function normalizeUserPath(userPath: string): string {
   if (!userPath) {
     throw new Error('Path argument is empty')
   }
-  const normalized = path.posix.normalize(userPath.replace(/\\/g, '/'))
-  if (path.posix.isAbsolute(normalized)) {
+  // Reject absolute paths
+  if (path.isAbsolute(userPath)) {
     throw new Error('Absolute paths are not allowed')
   }
-  const segments = normalized.split('/')
-  if (segments.some((segment) => segment === '..')) {
-    throw new Error('Path contains forbidden segments')
+  // Reject any ../ or .. segments (path traversal)
+  if (userPath.includes('..') || userPath.split(path.sep).includes('..')) {
+    throw new Error('Path contains parent directory traversal (..)')
   }
-  // Optionally, allowlist known safe paths (example: only allow certain folders/files)
-  // const allowed = ['apps/web', 'apps/analytics', 'infra/azure', 'docs', 'data_samples']
-  // if (!allowed.some((prefix) => normalized.startsWith(prefix))) {
-  //   throw new Error('Path not in allowlist')
-  // }
-  const resolved = path.resolve(repoRoot, normalized)
+  // Reject unsafe characters (basic set)
+  if (/[~*?<>|"\r\n]/.test(userPath)) {
+    throw new Error('Path contains unsafe characters')
+  }
+  // Always resolve against a fixed base and verify
+  const resolved = path.resolve(repoRoot, userPath)
   const relative = path.relative(repoRoot, resolved)
   if (relative === '..' || relative.startsWith('..' + path.sep)) {
     throw new Error('Path escapes the repository root')
@@ -149,5 +149,7 @@ if (json) console.log(JSON.stringify(results, null, 2))
 else printHumanReadable(results)
 
 if (strict && results.some((entry) => !entry.exists)) process.exit(1)
+
+export {} // Make this file a module to allow top-level await
 
 export {} // Make this file a module to allow top-level await

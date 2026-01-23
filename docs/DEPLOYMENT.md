@@ -53,7 +53,7 @@ STORAGE_CONNECTION_STRING=$(az storage account show-connection-string \
   --resource-group AI-MultiAgent-Ecosystem-RG \
   --query connectionString -o tsv)
 
-echo "AZURE_STORAGE_CONNECTION_STRING=$STORAGE_CONNECTION_STRING"
+echo "AZURE_STORAGE_CONNECTION_STRING is set in your environment."
 ```
 
 ### 1.4 Create Application Insights (for tracing)
@@ -71,7 +71,7 @@ APPINSIGHTS_CONNECTION=$(az monitor app-insights component show \
   --resource-group AI-MultiAgent-Ecosystem-RG \
   --query connectionString -o tsv)
 
-echo "APPLICATIONINSIGHTS_CONNECTION_STRING=$APPINSIGHTS_CONNECTION"
+echo "APPLICATIONINSIGHTS_CONNECTION_STRING is set in your environment."
 ```
 
 ### 1.5 Create Key Vault (optional, for secrets)
@@ -121,12 +121,12 @@ az webapp config appsettings set \
   --resource-group AI-MultiAgent-Ecosystem-RG \
   --name abaco-analytics-dashboard \
   --settings \
-    SUPABASE_URL="https://your-project.supabase.co" \
-    SUPABASE_ANON_KEY="your-anon-key" \
-    AZURE_STORAGE_CONNECTION_STRING="$STORAGE_CONNECTION_STRING" \
-    APPLICATIONINSIGHTS_CONNECTION_STRING="$APPINSIGHTS_CONNECTION" \
+    # SUPABASE_URL should be set in your environment, not in this file.
+    # SUPABASE_ANON_KEY="your-anon-key" \
+    # AZURE_STORAGE_CONNECTION_STRING should be set in your environment, not in this file.
+    # APPLICATIONINSIGHTS_CONNECTION_STRING should be set in your environment, not in this file.
     OTEL_EXPORTER_OTLP_ENDPOINT="https://eastus.in.applicationinsights.azure.com/opentelemetry/v1/traces" \
-    AZURE_KEY_VAULT_URL="https://abaco-kv.vault.azure.net/" \
+    # AZURE_KEY_VAULT_URL should be set in your environment, not in this file.
     LOG_LEVEL="INFO" \
     PYTHON_ENABLE_WORKER_EXTENSIONS="1"
 ```

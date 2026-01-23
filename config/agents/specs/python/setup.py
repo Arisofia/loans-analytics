@@ -17,6 +17,7 @@ setup(
         "sqlalchemy>=1.4.0",
         "psycopg2-binary>=2.9.0",
         "google-cloud-bigquery>=2.30.0",
+        "slack-sdk>=3.19.0",
         "notion-client>=2.0.0",
         "aiohttp>=3.8.0",
     ],

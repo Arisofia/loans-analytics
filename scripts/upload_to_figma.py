@@ -1,30 +1,7 @@
 import os
-import re
 
-
-def extract_file_key(value):
-    if not value:
-        return None
-    raw = str(value).strip()
-    if "figma.com" in raw:
-        match = re.search(r"/(file|design|proto)/([A-Za-z0-9_-]+)", raw)
-        if match:
-            return match.group(2)
-        return None
-    return raw.split("?")[0]
-
-
-FIGMA_TOKEN = (
-    os.getenv("FIGMA_TOKEN")
-    or os.getenv("FIGMA_OAUTH_TOKEN")
-    or os.getenv("FIGMA_API_TOKEN")
-    or os.getenv("FIGMA_PERSONAL_ACCESS_TOKEN")
-)  # Set this in your environment or .env file
-FIGMA_FILE_KEY = extract_file_key(
-    os.getenv("FIGMA_FILE_KEY")
-    or os.getenv("FIGMA_FILE_URL")
-    or os.getenv("FIGMA_FILE_LINK")
-)  # Set this to your Figma file key or URL
+# FIGMA_TOKEN = os.getenv("FIGMA_TOKEN")
+FIGMA_FILE_KEY = os.getenv("FIGMA_FILE_KEY")  # Set this to your Figma file key
 FIGMA_NODE_ID = os.getenv("FIGMA_NODE_ID")  # Set this to the node (frame) ID to update
 
 UPLOAD_IMAGE_PATH = "exports/figma/growth_chart.png"
@@ -53,8 +30,6 @@ def upload_image_to_figma(image_path, file_key, node_id, token):
 
 if __name__ == "__main__":
     if not (FIGMA_TOKEN and FIGMA_FILE_KEY and FIGMA_NODE_ID):
-        print(
-            "Please set FIGMA_TOKEN, FIGMA_FILE_KEY, and FIGMA_NODE_ID as environment variables."
-        )
+        print("Please set FIGMA_TOKEN, FIGMA_FILE_KEY, and FIGMA_NODE_ID as environment variables.")
         exit(1)
     upload_image_to_figma(UPLOAD_IMAGE_PATH, FIGMA_FILE_KEY, FIGMA_NODE_ID, FIGMA_TOKEN)

@@ -28,7 +28,7 @@ export function SkipLink({ targetId = 'main-content' }: SkipLinkProps) {
         block: 'start',
       })
     },
-    [targetId]
+    [targetId],
   )
 
   return (

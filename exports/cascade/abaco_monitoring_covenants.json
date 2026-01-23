@@ -1,0 +1,122 @@
+{
+  "metadata": {
+    "extraction_date": "2025-12-04",
+    "bank_data_as_of": "2025-12-02",
+    "last_updated": "2025-12-03",
+    "financials_as_of": "2025-03-31",
+    "partner_id": "abaco",
+    "facility": "Abaco",
+    "currency": "USD",
+    "extraction_source": "Cascade Debt Monitor - Management Portal",
+    "data_quality": "Extracted directly from Cascade - Actual measured values"
+  },
+  "borrowing_base": {
+    "calculation_date": "2025-12-02",
+    "total_loans_assigned": 1352,
+    "total_receivable_balance": 8001835.93,
+    "ineligibility_deductions": {
+      "not_in_usd": 0.0,
+      "disbursed_principal_over_100k": 750592.71,
+      "not_factoring_product": 0.0,
+      "term_less_than_15_days": 20011.15,
+      "total_ineligible": 770603.86
+    },
+    "total_eligible": 7231232.07,
+    "discounted_dpd_balance": {
+      "dpd_0_to_14_pct_100": 6625300.13,
+      "dpd_15_to_29_pct_85": 90192.75,
+      "dpd_30_to_59_pct_75": 59758.69,
+      "dpd_60_to_89_pct_65": 34087.77,
+      "dpd_gte_120_pct_0": 0.0
+    },
+    "aggregate_eligible_discounted_balance": 6809339.34,
+    "advance_rate_pct": 76.92,
+    "advance_rate_reduction": 5237954.91,
+    "available_cash_100_pct": 249323.89,
+    "total_bank_account_balance": 249323.89,
+    "borrowing_base_total": 5487278.8,
+    "lender_principal_balance": 2000000.0,
+    "surplus_deficiency": 3487278.8,
+    "collateralization_percentage": 274.36
+  },
+  "portfolio_covenants": {
+    "financials_as_of": "2025-03-31",
+    "default_ratio_30_dpd": {
+      "current_value_pct": 0.0,
+      "trigger_1_value_pct": 10.0,
+      "trigger_1_breaches": 0,
+      "trigger_2_value_pct": 12.0,
+      "trigger_2_breaches": 0,
+      "status": "PASS"
+    },
+    "default_ratio_60_dpd": {
+      "status": "No data captured - extracted at 30 DPD threshold"
+    }
+  },
+  "financial_covenants": {
+    "financials_as_of": "2025-03-31",
+    "debt_to_equity_ratio": {
+      "current_value": 1.93,
+      "trigger_1_limit": 6.0,
+      "trigger_1_breaches": 0,
+      "status": "PASS"
+    }
+  },
+  "payment_schedule": {
+    "bank_data_as_of": "2025-12-02",
+    "cash_available": 249323.89,
+    "next_payment_amount": 75000,
+    "next_payment_date": "2025-12-31",
+    "outstanding_principal": 2000000,
+    "payment_periods": [
+      {
+        "schedule_number": 1,
+        "period_start": "2025-03-28",
+        "period_end": "2025-03-31",
+        "disbursements": 1,
+        "days": 4,
+        "fees": 833.33
+      },
+      {
+        "schedule_number": 2,
+        "period_start": "2025-03-31",
+        "period_end": "2025-06-30",
+        "disbursements": 1,
+        "days": 90,
+        "fees": 23125
+      },
+      {
+        "schedule_number": 3,
+        "period_start": "2025-06-30",
+        "period_end": "2025-09-30",
+        "disbursements": 1,
+        "days": 90,
+        "fees": 73437.5
+      },
+      {
+        "schedule_number": 4,
+        "period_start": "2025-09-30",
+        "period_end": "2025-12-31",
+        "disbursements": 0,
+        "days": 90,
+        "fees": 75000
+      },
+      {
+        "schedule_number": 5,
+        "period_start": "2025-12-31",
+        "period_end": "2026-03-31",
+        "disbursements": 0,
+        "days": 90,
+        "fees": 104197.05
+      }
+    ]
+  },
+  "covenant_summary": {
+    "overall_status": "COMPLIANT",
+    "borrowing_base_headroom_pct": 174.36,
+    "portfolio_covenants_breaches": 0,
+    "financial_covenants_breaches": 0,
+    "next_measurement_date": "2025-12-31",
+    "risk_level": "LOW"
+  }
+}

@@ -119,7 +119,7 @@ Complete example showing:
 
 ### Required Environment Variable
 ```bash
-APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=...;IngestionEndpoint=...;LiveEndpoint=..."
+## APPLICATIONINSIGHTS_CONNECTION_STRING should be set in your environment, not in this file.
 ```
 
 ### Finding Connection String
@@ -178,7 +178,7 @@ Merge the pull request to main branch
 ### Step 2: Configure Environment
 Set environment variable in production:
 ```bash
-export APPLICATIONINSIGHTS_CONNECTION_STRING="your-connection-string"
+## export APPLICATIONINSIGHTS_CONNECTION_STRING should be set in your environment, not in this file.
 ```
 
 For Azure Web App:

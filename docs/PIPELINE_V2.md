@@ -12,6 +12,7 @@ It lives alongside the existing v1 pipeline to avoid breaking current workflows.
 
 ## What is not included (yet)
 
+- Production ingestion logic (Cascade API client, Looker import orchestration).
 - Full KPI engine implementation.
 - Database writer implementations.
 - Full orchestration beyond the daily/backfill GitHub Actions workflows.
@@ -41,7 +42,7 @@ python -m abaco_pipeline.main --config config/pipeline.yml --validate --publish
 - Schema drift writes `logs/runs/<run_id>/schema_diff.json` and stops publish.
 - Quality gates write `logs/runs/<run_id>/quality.json` and stop publish when thresholds fail.
 
-````text
+```text
 
 ## Audit tables migration
 
@@ -49,7 +50,7 @@ Apply the migration to your Supabase/Postgres instance:
 
 ```bash
 supabase db reset
-````
+```
 
 Or run the SQL directly using `psql`:
 

@@ -42,17 +42,17 @@ integrations:
     enabled: true
     webhook_secret: STAGING_SLACK_WEBHOOK
     alert_channels:
-      risk_alerts: '#staging-risk-monitoring'
-      compliance_updates: '#staging-compliance'
+      risk_alerts: "#staging-risk-monitoring"
+      compliance_updates: "#staging-compliance"
   meta:
     enabled: false
 
 agents:
   kpi_analytics:
     refresh_schedule:
-      continuous_monitoring: '*/10 * * * *'
+      continuous_monitoring: "*/10 * * * *"
   risk_analysis:
     refresh_schedule:
-      continuous_monitoring: '*/15 * * * *'
+      continuous_monitoring: "*/15 * * * *"
   c_level_executive:
     requires_human_approval: false

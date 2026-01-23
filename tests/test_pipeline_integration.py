@@ -1,8 +1,7 @@
 import pandas as pd
 import pytest
-
-from python.pipeline.ingestion import UnifiedIngestion
-from python.pipeline.transformation import UnifiedTransformation
+from src.pipeline.data_ingestion import UnifiedIngestion
+from src.pipeline.data_transformation import UnifiedTransformation
 
 
 def test_pipeline_with_valid_data(minimal_config, tmp_path):

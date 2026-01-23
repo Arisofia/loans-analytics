@@ -1,6 +1,5 @@
 import pandas as pd
 import pytest
-
 from src.pipeline.data_validation import (ANALYTICS_NUMERIC_COLUMNS,
                                           NUMERIC_COLUMNS,
                                           REQUIRED_ANALYTICS_COLUMNS,
@@ -64,9 +63,7 @@ def test_analytics_numeric_columns_subset():
 
 def test_validate_numeric_bounds():
     """Test validate_numeric_bounds checks for non-negative values."""
-    df = pd.DataFrame(
-        {"positive": [1, 2, 3], "negative": [1, -2, 3], "mixed": [0, 1, 2]}
-    )
+    df = pd.DataFrame({"positive": [1, 2, 3], "negative": [1, -2, 3], "mixed": [0, 1, 2]})
     # Test with specific columns
     results = validate_numeric_bounds(df, columns=["positive", "negative"])
     assert results["positive_non_negative"] is True

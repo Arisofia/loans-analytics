@@ -57,10 +57,7 @@ class ThresholdValidator:
 
             # Check warning threshold
             if warning_threshold is not None and actual_value < warning_threshold:
-                return (
-                    "warning",
-                    f"below warning level ({actual_value:.4f} < {warning_threshold})",
-                )
+                return "warning", f"below warning level ({actual_value:.4f} < {warning_threshold})"
 
         return True, f"meets threshold ({actual_value:.4f})"
 
@@ -75,9 +72,7 @@ class ThresholdValidator:
         # Validate classification metrics
         for metric_name in ["accuracy", "precision", "recall", "f1_score"]:
             if metric_name in thresholds and metric_name in metrics:
-                status, message = self._check_metric(
-                    metrics[metric_name], thresholds[metric_name]
-                )
+                status, message = self._check_metric(metrics[metric_name], thresholds[metric_name])
 
                 result = {
                     "metric": metric_name,
@@ -104,9 +99,7 @@ class ThresholdValidator:
 
         for metric_name in financial_metrics:
             if metric_name in thresholds and metric_name in metrics:
-                status, message = self._check_metric(
-                    metrics[metric_name], thresholds[metric_name]
-                )
+                status, message = self._check_metric(metrics[metric_name], thresholds[metric_name])
 
                 result = {
                     "metric": metric_name.replace("_", " ").title(),
@@ -125,9 +118,7 @@ class ThresholdValidator:
 
         # Validate ROC AUC if present
         if "roc_auc" in thresholds and "roc_auc" in metrics:
-            status, message = self._check_metric(
-                metrics["roc_auc"], thresholds["roc_auc"]
-            )
+            status, message = self._check_metric(metrics["roc_auc"], thresholds["roc_auc"])
 
             result = {
                 "metric": "ROC AUC",
@@ -190,18 +181,14 @@ class ThresholdValidator:
             for warning in results["warning_details"]:
                 print(f"\n  • {warning['metric']} ({warning['category']})")
                 print(f"    Value: {warning['value']:.4f}")
-                print(
-                    f"    Warning Level: {warning['threshold'].get('warning', 'N/A')}"
-                )
+                print(f"    Warning Level: {warning['threshold'].get('warning', 'N/A')}")
                 print(f"    Status: {warning['message']}")
 
         # Successes
         if results["success_details"]:
             print("\n✅ SUCCESSES:")
             for success in results["success_details"]:
-                print(
-                    f"  • {success['metric']}: {success['value']:.4f} - {success['message']}"
-                )
+                print(f"  • {success['metric']}: {success['value']:.4f} - {success['message']}")
 
         print("\n" + "=" * 70 + "\n")
 
@@ -217,20 +204,12 @@ def main():
         help="Path to JSON file containing evaluation metrics",
     )
     parser.add_argument(
-        "--config",
-        type=Path,
-        required=True,
-        help="Path to YAML threshold configuration file",
+        "--config", type=Path, required=True, help="Path to YAML threshold configuration file"
     )
     parser.add_argument(
-        "--output",
-        type=Path,
-        required=True,
-        help="Path to save validation results JSON",
+        "--output", type=Path, required=True, help="Path to save validation results JSON"
     )
-    parser.add_argument(
-        "--strict", action="store_true", help="Treat warnings as failures"
-    )
+    parser.add_argument("--strict", action="store_true", help="Treat warnings as failures")
 
     args = parser.parse_args()
 

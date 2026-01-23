@@ -2,6 +2,8 @@
 
 ## Overview
 
+This guide covers deploying a Streamlit dashboard alongside the Next.js application for real-time risk assessment and Cascade Platform data ingestion.
+
 **Important**: This workspace runs on Debian GNU/Linux 12 (bookworm) with Node.js 20.x and npm as the canonical package manager.
 
 ## Local Development
@@ -9,6 +11,7 @@
 ### Prerequisites
 
 - Python 3.11+
+- Cascade Platform service account with Drive API access
 - Supabase project with configured secrets
 - Node.js 20.x (for Next.js companion app)
 - npm (officially supported package manager)
@@ -30,6 +33,7 @@
    SUPABASE_URL = "https://your-project.supabase.co"
    SUPABASE_SERVICE_KEY = "your-service-role-key"
 
+   # Cascade Platform Integration
    GDRIVE_FOLDER_ID = "your-google-drive-folder-id"
    GDRIVE_SERVICE_ACCOUNT = '{"type":"service_account","project_id":"...","private_key":"..."}'
 
@@ -139,7 +143,7 @@
 3. **Set Environment Variables in Railway Dashboard**
 
    ```
-   SUPABASE_URL=https://your-project.supabase.co
+  # SUPABASE_URL should be set in your environment, not in this file.
    SUPABASE_SERVICE_KEY=your-service-role-key
    GDRIVE_FOLDER_ID=your-folder-id
    GDRIVE_SERVICE_ACCOUNT={"type":"service_account",...}
@@ -212,6 +216,8 @@ docker-compose -f docker-compose.streamlit.yml up -d
 ```
 
 ## Features
+
+### Cascade Platform Ingestion
 
 - **Real-time file processing** from configured Drive folder
 - **Format support**: Excel (.xlsx), Google Sheets, CSV
@@ -294,7 +300,7 @@ railway logs --service streamlit
 
 ### "ml_feature_snapshots table not found"
 
-- Run data ingestion via the Streamlit UI or a scheduled/API pipeline
+- Run data ingestion first via Streamlit UI
 - Verify `refresh_ml_features()` procedure exists in Supabase
 - Confirm all database migrations have been applied
 - Check Supabase service role has table permissions
@@ -315,8 +321,11 @@ echo $SUPABASE_SERVICE_KEY
 - Ensure Supabase project is active (not paused)
 - Verify network connectivity to Supabase
 
+### "Permission denied for Cascade Platform access"
+
 - Verify service account JSON is valid
 - Check that service account email has folder access
+- Ensure Cascade Platform API is enabled in Cascade Platform Configuration
 - Verify service account has "Editor" or "Viewer" role
 
 ## Security Best Practices
@@ -327,6 +336,8 @@ echo $SUPABASE_SERVICE_KEY
 - Use deployment platform secrets (Streamlit Cloud, Railway, etc.)
 - Never commit secrets to version control
 - Use environment variables in all deployment scenarios
+
+✅ **Cascade Platform Access**
 
 - Use service account (not personal account)
 - Grant read-only access to specific folder only
@@ -350,25 +361,24 @@ echo $SUPABASE_SERVICE_KEY
 
 ## Cost Estimation
 
-| Service         | Free Tier | Paid Tier    | Notes                   |
-| --------------- | --------- | ------------ | ----------------------- |
-| Streamlit Cloud | 1 app     | $5/app/month | Verified email required |
-| Supabase        | 500MB DB  | $25+/month   | Scales with usage       |
-| Railway         | None      | $5+/month    | Pay-as-you-go available |
+| Service              | Free Tier | Paid Tier    | Notes                   |
+| -------------------- | --------- | ------------ | ----------------------- |
+| Streamlit Cloud      | 1 app     | $5/app/month | Verified email required |
+| Cascade Platform API | Free      | Free         | Included with workspace |
+| Supabase             | 500MB DB  | $25+/month   | Scales with usage       |
+| Railway              | None      | $5+/month    | Pay-as-you-go available |
 
 ## Integration with Next.js Application
 
 The Streamlit dashboard complements the Next.js application:
 
-| Feature                 | Next.js App      | Streamlit Dashboard |
-| ----------------------- | ---------------- | ------------------- |
-| User authentication     | ✅ (Supabase)    | ❌ (Admin only)     |
-| Risk dashboard          | ✅ (Real-time)   | ✅ (Analytics)      |
-| Manual file ingestion   | ❌               | ✅ (Google Drive)   |
-| Portfolio visualization | ✅ (Interactive) | ✅ (Statistical)    |
-| ML predictions          | ✅ (API-based)   | ✅ (Direct)         |
-
-Automated ingestion runs via API/scheduled pipelines alongside Streamlit-based manual validation.
+| Feature                 | Next.js App      | Streamlit Dashboard   |
+| ----------------------- | ---------------- | --------------------- |
+| User authentication     | ✅ (Supabase)    | ❌ (Admin only)       |
+| Risk dashboard          | ✅ (Real-time)   | ✅ (Analytics)        |
+| Data ingestion          | ❌               | ✅ (Cascade Platform) |
+| Portfolio visualization | ✅ (Interactive) | ✅ (Statistical)      |
+| ML predictions          | ✅ (API-based)   | ✅ (Direct)           |
 
 ## Environment Notes
 
@@ -380,6 +390,7 @@ Automated ingestion runs via API/scheduled pipelines alongside Streamlit-based m
 
 ## Next Steps
 
+1. **Set up Cascade Platform integration** following Google Cloud setup guide
 2. **Configure Supabase** with required tables and Row Level Security
 3. **Deploy Streamlit** using your preferred option
 4. **Test data ingestion** with sample files
@@ -391,6 +402,7 @@ Automated ingestion runs via API/scheduled pipelines alongside Streamlit-based m
 - [Streamlit Documentation](https://docs.streamlit.io)
 - [Streamlit Cloud Deployment](https://docs.streamlit.io/streamlit-cloud/deploy-your-app)
 - [Railway Documentation](https://docs.railway.app)
+- [Cascade Platform API](https://developers.google.com/drive/api)
 - [Supabase Documentation](https://supabase.com/docs)
 - [GitHub Copilot Instructions](./.github/copilot-instructions.md)
 

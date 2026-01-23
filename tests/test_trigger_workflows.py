@@ -3,7 +3,6 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import requests
-
 from scripts.trigger_workflows import (ensure_token, fetch_workflows,
                                        resolve_workflow_targets,
                                        trigger_workflow)

@@ -5,11 +5,7 @@ import pandas as pd
 
 
 def project_growth(
-    yield_start: float,
-    yield_end: float,
-    volume_start: float,
-    volume_end: float,
-    periods: int = 6,
+    yield_start: float, yield_end: float, volume_start: float, volume_end: float, periods: int = 6
 ) -> pd.DataFrame:
     """
     Project yield and loan volume growth over a specified number of months.
@@ -35,6 +31,4 @@ def project_growth(
     yields = np.linspace(yield_start, yield_end, periods)
     volumes = np.linspace(volume_start, volume_end, periods)
 
-    df = pd.DataFrame({"month": dates, "yield": yields, "loan_volume": volumes})
-    df["month"] = df["month"].dt.strftime("%b %Y")
-    return df
+    return pd.DataFrame({"date": dates, "yield": yields, "loan_volume": volumes})

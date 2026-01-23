@@ -1,126 +1,156 @@
-# -*- coding: utf-8 -*-
-
+import hashlib
+import json
+import os
+import re
 import time
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from hashlib import sha256
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
-__all__ = [
-    "CircuitBreaker",
-    "RateLimiter",
-    "RetryPolicy",
-    "hash_file",
-    "hash_dataframe",
-    "utc_now",
-]
+import pandas as pd
+import yaml
+
+ENV_PATTERN = re.compile(r"\$\{([^}]+)\}")
 
 
-class CircuitBreaker:
-    def __init__(
-        self,
-        max_failures: int = 3,
-        failure_threshold: int = None,
-        reset_seconds: int = 60,
-    ):
-        # Support both naming conventions
-        self.max_failures = (
-            failure_threshold if failure_threshold is not None else max_failures
-        )
-        self.reset_seconds = reset_seconds
-        self._failures = 0
-        self._last_failure_time = None
+def _resolve_placeholder(value: str, context: Dict[str, str]) -> str:
+    def replace(match: re.Match[str]) -> str:
+        token = match.group(1)
+        if ":" in token:
+            key, default = token.split(":", 1)
+        else:
+            key, default = token, ""
+        return context.get(key, os.getenv(key, default))
 
-    def record_failure(self) -> None:
-        """
-        Record a failure event.
-
-        Increment the failure count and update the last failure time.
-        """
-        self._failures += 1
-        self._last_failure_time = time.time()
-
-    def record_success(self) -> None:
-        """
-        Record a success event.
-
-        Reset the failure count and last failure time.
-        """
-        self._failures = 0
-        self._last_failure_time = None
+    return ENV_PATTERN.sub(replace, value)
 
 
-class RateLimiter:
-    def __init__(self, max_requests_per_minute: int = 60):
-        self.max_requests_per_minute = max_requests_per_minute
-        # Simple no-op limiter for tests; implementations can add sleep logic
+def resolve_placeholders(payload: Any, context: Optional[Dict[str, str]] = None) -> Any:
+    if context is None:
+        context = {}
+    if isinstance(payload, dict):
+        return {key: resolve_placeholders(value, context) for key, value in payload.items()}
+    if isinstance(payload, list):
+        return [resolve_placeholders(item, context) for item in payload]
+    if isinstance(payload, str):
+        return _resolve_placeholder(payload, context)
+    return payload
 
-    def wait(self) -> None:
-        return None
+
+def load_yaml(path: Path) -> Dict[str, Any]:
+    with path.open("r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle) or {}
 
 
+def hash_file(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8192), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def hash_dataframe(df: pd.DataFrame) -> str:
+    if df.empty:
+        return hashlib.sha256(b"").hexdigest()
+    sorted_df = df.copy()
+    sorted_df = sorted_df.reindex(sorted(sorted_df.columns), axis=1)
+    data_hash = pd.util.hash_pandas_object(sorted_df, index=True).values
+    return hashlib.sha256(data_hash.tobytes()).hexdigest()
+
+
+def ensure_dir(path: Path) -> Path:
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def write_json(path: Path, payload: Any) -> None:
+    ensure_dir(path.parent)
+    with path.open("w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2, default=str)
+
+
+@dataclass
 class RetryPolicy:
-    def __init__(
-        self,
-        max_retries: int = 3,
-        backoff_seconds: float = 1.0,
-        jitter_seconds: float = 0.0,
-    ):
-        self.max_retries = max_retries
-        self.backoff_seconds = backoff_seconds
-        self.jitter_seconds = jitter_seconds
+    max_retries: int = 3
+    backoff_seconds: float = 1.0
+    jitter_seconds: float = 0.0
 
-    def execute(self, func: Callable, on_retry: Optional[Callable] = None):
+    def execute(
+        self, func: Callable[[], Any], on_retry: Optional[Callable[[int, Exception], None]] = None
+    ) -> Any:
         attempt = 0
         while True:
             try:
                 return func()
-            except (
-                Exception
-            ) as exc:  # noqa: E722  # Catching Exception is intentional for retry logic
+            except Exception as exc:
                 attempt += 1
                 if attempt > self.max_retries:
                     raise
                 if on_retry:
-                    import contextlib
-
-                    with contextlib.suppress(Exception):
-                        on_retry(attempt, exc)
-                time.sleep(self.backoff_seconds)
-
-
-def hash_file(path: Path) -> str:
-    h = sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            h.update(chunk)
-    return h.hexdigest()
+                    on_retry(attempt, exc)
+                sleep_for = self.backoff_seconds * (2 ** (attempt - 1))
+                if self.jitter_seconds:
+                    sleep_for += self.jitter_seconds * (0.5 - os.urandom(1)[0] / 255)
+                time.sleep(max(0.0, sleep_for))
 
 
-def hash_dataframe(df) -> str:
-    """
-    Generate a SHA256 hash of a pandas DataFrame for change detection.
+@dataclass
+class CircuitBreaker:
+    failure_threshold: int = 3
+    reset_seconds: int = 60
+    failures: int = 0
+    opened_at: Optional[float] = None
 
-    Args:
-        df: pandas DataFrame to hash
+    def allow(self) -> bool:
+        if self.opened_at is None:
+            return True
+        if (time.time() - self.opened_at) > self.reset_seconds:
+            self.failures = 0
+            self.opened_at = None
+            return True
+        return False
 
-    Returns:
-        Hexadecimal string representation of the hash
-    """
-    try:
-        import pandas as pd
+    def record_failure(self) -> None:
+        self.failures += 1
+        if self.failures >= self.failure_threshold:
+            self.opened_at = time.time()
 
-        # Convert DataFrame to CSV string for consistent hashing
-        csv_string = df.to_csv(index=False)
-        h = sha256()
-        h.update(csv_string.encode("utf-8"))
-        return h.hexdigest()
-    except Exception:
-        # Fallback: hash the string representation
-        h = sha256()
-        h.update(str(df).encode("utf-8"))
-        return h.hexdigest()
+    def record_success(self) -> None:
+        self.failures = 0
+        self.opened_at = None
 
 
-def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+@dataclass
+class RateLimiter:
+    max_requests_per_minute: int = 60
+    last_request_ts: Optional[float] = None
+
+    def wait(self) -> None:
+        if self.max_requests_per_minute <= 0:
+            return
+        interval = 60.0 / float(self.max_requests_per_minute)
+        now = time.time()
+        if self.last_request_ts is None:
+            self.last_request_ts = now
+            return
+        elapsed = now - self.last_request_ts
+        if elapsed < interval:
+            time.sleep(interval - elapsed)
+        self.last_request_ts = time.time()
+
+
+def deep_merge(base_dict: Dict[str, Any], override_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Deep merge override_dict into base_dict, with override taking precedence."""
+    result = base_dict.copy()
+    for key, value in override_dict.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result

@@ -24,8 +24,7 @@ try:
     logger.info("Azure tracing initialized for shadow_mode_validator")
 except (ImportError, Exception) as tracing_err:
     logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     logger = logging.getLogger(__name__)
     logger.warning("Azure tracing not initialized: %s", tracing_err)
@@ -81,9 +80,7 @@ class ShadowModeValidator:
 
         if v2_result["status"] != "success":
             validation_results["format_valid"] = False
-            validation_results["issues"].append(
-                f"Pipeline failed: {v2_result.get('error')}"
-            )
+            validation_results["issues"].append(f"Pipeline failed: {v2_result.get('error')}")
             return validation_results
 
         metrics = v2_result["metrics"]
@@ -109,23 +106,17 @@ class ShadowModeValidator:
             if metric_name in ["PAR30", "PAR90", "CollectionRate"]:
                 if not 0 <= value <= 100:
                     validation_results["value_ranges_valid"] = False
-                    validation_results["issues"].append(
-                        f"{metric_name}: {value} not in [0, 100]"
-                    )
+                    validation_results["issues"].append(f"{metric_name}: {value} not in [0, 100]")
             elif metric_name == "PortfolioHealth":
                 if not 0 <= value <= 10:
                     validation_results["value_ranges_valid"] = False
-                    validation_results["issues"].append(
-                        f"{metric_name}: {value} not in [0, 10]"
-                    )
+                    validation_results["issues"].append(f"{metric_name}: {value} not in [0, 10]")
 
             # Check for required context fields
             if "formula" not in metric_data:
                 validation_results["issues"].append(f"{metric_name}: missing formula")
             if "rows_processed" not in metric_data:
-                validation_results["issues"].append(
-                    f"{metric_name}: missing rows_processed"
-                )
+                validation_results["issues"].append(f"{metric_name}: missing rows_processed")
 
         # Check audit trail
         if v2_result.get("audit_trail", 0) > 0:
@@ -184,9 +175,7 @@ class ShadowModeValidator:
             "all_within_tolerance": len(discrepancies) == 0,
         }
 
-    def run_validation_suite(
-        self, test_data: pd.DataFrame, v1_metrics_sample: dict = None
-    ) -> dict:
+    def run_validation_suite(self, test_data: pd.DataFrame, v1_metrics_sample: dict = None) -> dict:
         """Run complete validation suite"""
         logger.info("=" * 70)
         logger.info("SHADOW MODE VALIDATION SUITE")
@@ -232,10 +221,7 @@ class ShadowModeValidator:
         print("SHADOW MODE VALIDATION SUMMARY")
         print("=" * 70)
 
-        if (
-            "v2_result" in self.results
-            and self.results["v2_result"]["status"] == "success"
-        ):
+        if "v2_result" in self.results and self.results["v2_result"]["status"] == "success":
             print("✓ V2 Pipeline: SUCCESS")
             print(f"  Metrics: {len(self.results['v2_result']['metrics'])} KPIs")
         else:

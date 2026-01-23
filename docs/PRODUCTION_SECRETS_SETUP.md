@@ -8,7 +8,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for setting up all secrets required by the batch export pipelines and output integrations to Azure, Supabase, Meta, and Notion.
+This guide provides step-by-step instructions for setting up all secrets required by the batch export pipelines and output integrations to Figma, Azure, Supabase, Meta, and Notion.
 
 **Note**: Never commit secrets to the repository. All credentials should be stored in GitHub Actions Secrets only.
 
@@ -21,6 +21,8 @@ These secrets are documented as previously set:
 ```text
 SUPABASE_URL: https://zpowfbeftxexzidlxndy.supabase.co
 SUPABASE_ANON_KEY: <REDACTED>
+FIGMA_TOKEN: <REDACTED>
+FIGMA_FILE_KEY: <REDACTED>
 ```
 
 ---
@@ -51,9 +53,10 @@ postgres://postgres:[PASSWORD]@db.zpowfbeftxexzidlxndy.supabase.co:6543/postgres
 **To Add to GitHub**:
 
 1. Go to repository → Settings → Secrets and variables → Actions
-2. Name: `DATABASE_URL`
-3. Value: [paste connection string]
-4. Click "Add secret"
+2. Click "New repository secret"
+3. Name: `DATABASE_URL`
+4. Value: [paste connection string]
+5. Click "Add secret"
 
 ---
 
@@ -68,6 +71,8 @@ postgres://postgres:[PASSWORD]@db.zpowfbeftxexzidlxndy.supabase.co:6543/postgres
 - Azure Dashboard creation
 - Azure Monitor operations
 
+**How to create**:
+
 Run this Azure CLI command (requires Azure CLI installed and authenticated):
 
 ```bash
@@ -80,18 +85,22 @@ az ad sp create-for-rbac \
 
 **Output** (copy entire JSON):
 
+```json
 {
-"clientId": "00000000-0000-0000-0000-000000000000",
-"clientSecret": "secret-value-here",
-"subscriptionId": "695e4491-d568-4105-a1e1-8f2baf3b54df",
-"tenantId": "00000000-0000-0000-0000-000000000000",
-"activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
-"resourceManagerEndpointUrl": "https://management.azure.com/",
-"activeDirectoryGraphResourceId": "https://graph.windows.net/",
-"sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
-"galleryEndpointUrl": "https://gallery.azure.com/",
-"managementEndpointUrl": "https://management.core.windows.net/"
+  "clientId": "00000000-0000-0000-0000-000000000000",
+  "clientSecret": "secret-value-here",
+  "subscriptionId": "695e4491-d568-4105-a1e1-8f2baf3b54df",
+  "tenantId": "00000000-0000-0000-0000-000000000000",
+  "activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
+  "resourceManagerEndpointUrl": "https://management.azure.com/",
+  "activeDirectoryGraphResourceId": "https://graph.windows.net/",
+  "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
+  "galleryEndpointUrl": "https://gallery.azure.com/",
+  "managementEndpointUrl": "https://management.core.windows.net/"
 }
+```
+
+**To Add to GitHub**:
 
 1. Go to repository → Settings → Secrets and variables → Actions
 2. Click "New repository secret"
@@ -121,15 +130,11 @@ DefaultEndpointsProtocol=https;AccountName=abacostgprod;AccountKey=...;EndpointS
 
 **To Add to GitHub**:
 
+1. Settings → Secrets and variables → Actions
 2. Name: `AZURE_STORAGE_CONNECTION_STRING`
 3. Value: [paste connection string]
 
 ---
-
-**Alternative inputs** (if you prefer not to use a connection string):
-
-- `AZURE_STORAGE_ACCOUNT_NAME` + `AZURE_STORAGE_ACCOUNT_KEY`
-- `AZURE_STORAGE_ACCOUNT_URL` with managed identity or `AZURE_STORAGE_SAS_TOKEN`
 
 ### 4. Azure Resource IDs (For Dashboard & Monitoring)
 
@@ -138,7 +143,8 @@ DefaultEndpointsProtocol=https;AccountName=abacostgprod;AccountKey=...;EndpointS
 - `AZURE_SUBSCRIPTION_ID`
 - `AZURE_RESOURCE_GROUP`
 - `AZURE_DASHBOARD_NAME`
-  **To get**:
+
+**To get**:
 
 1. Azure Portal → Your resource group `AI-MultiAgent-Ecosystem-RG`
 2. Copy the Resource Group ID
@@ -166,10 +172,14 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 **How to get**:
 
+1. Supabase Dashboard → Settings → API
 2. Copy the "service_role secret"
 
+**To Add to GitHub**:
+
 1. Settings → Secrets → New repository secret
-1. Value: [paste key]
+2. Name: `SUPABASE_SERVICE_ROLE`
+3. Value: [paste key]
 
 ---
 
@@ -180,18 +190,27 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 **Environment Variable**: `META_ACCESS_TOKEN`
 
 **Why**: Required for Facebook Pixel tracking and Ads Manager API access.
+
 **How to get**:
 
 1. [Meta Business Suite](https://business.facebook.com/) → Settings → Apps and websites
 2. Select your app → Settings → Tokens
 3. Copy "User access token" (long-lived, 60+ days)
-   **To Add**:
+
+**To Add**:
 
 - Name: `META_ACCESS_TOKEN`
 
+#### 6b. Meta Pixel ID
+
 **Environment Variable**: `META_PIXEL_ID`
 
-**How to get**: 2. Click your pixel → Settings 3. Copy Pixel ID
+**How to get**:
+
+1. Meta Business Suite → Data sources → Pixels
+2. Click your pixel → Settings
+3. Copy Pixel ID
+
 **To Add**:
 
 - Name: `META_PIXEL_ID`
@@ -211,9 +230,87 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 ---
 
-### 8. Other Integration Secrets
+### 7. Notion Integration
+
+#### 7a. Notion API Key
+
+**Environment Variable**: `NOTION_API_KEY`
+
+**How to get**:
+
+1. [Notion Settings](https://notion.so/profile/settings) → Integrations → Develop your own integrations
+2. Click "New integration"
+3. Name: `Abaco Analytics Export`
+4. Copy the "Internal Integration Token"
+
+**To Add**:
+
+- Name: `NOTION_API_KEY`
+
+#### 7b. Notion Database ID
+
+**Environment Variable**: `NOTION_DATABASE_ID`
+
+**How to get**:
+
+1. Open your Notion database in browser
+2. Copy the 32-character ID from the URL: `https://notion.so/{YOUR_WORKSPACE}/{DATABASE_ID}?v=...`
+
+**To Add**:
+
+- Name: `NOTION_DATABASE_ID`
+
+#### 7c. Notion Reports Page ID
+
+**Environment Variable**: `NOTION_REPORTS_PAGE_ID`
+
+**How to get**:
+
+1. Create a page in Notion for analytics reports
+2. Copy the page ID from the URL
+
+**To Add**:
+
+- Name: `NOTION_REPORTS_PAGE_ID`
+
+---
+
+### 8. Figma Additional Configuration
+
+#### 8a. Figma Node ID (Optional)
+
+**Environment Variable**: `FIGMA_DASHBOARD_FRAME_ID`
+
+**How to get**:
+
+1. Open your Figma file
+2. Right-click on the frame where you want metric updates
+3. Copy "Link to frame" and extract the node ID
+
+**To Add** (optional):
+
+- Name: `FIGMA_DASHBOARD_FRAME_ID`
+
+---
+
+### 9. Other Integration Secrets
+
+#### HubSpot
+
+- `HUBSPOT_API_KEY`: [HubSpot Account Settings → Integrations → API key](https://app.hubspot.com/l/integrations)
+
+#### OpenAI
 
 - `OPENAI_API_KEY`: [OpenAI API Keys](https://platform.openai.com/api-keys)
+
+#### Slack Webhooks
+
+- `SLACK_WEBHOOK_URL`: Incoming webhook for notifications
+- `SLACK_WEBHOOK_OPS`: Separate webhook for operations notifications
+
+---
+
+## 🛠️ Implementation Checklist
 
 ### Before Production Deployment
 
@@ -235,6 +332,14 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
   - [ ] `META_AD_ACCOUNT_ID` - Ad account ID
 
 - [ ] **Notion Secrets Added**
+  - [ ] `NOTION_API_KEY` - Internal integration token
+  - [ ] `NOTION_DATABASE_ID` - Analytics metrics database
+  - [ ] `NOTION_REPORTS_PAGE_ID` - Reports page
+
+- [ ] **Figma Secrets Added**
+  - [ ] `FIGMA_TOKEN` - Already configured
+  - [ ] `FIGMA_FILE_KEY` - Already configured
+  - [ ] `FIGMA_DASHBOARD_FRAME_ID` - (Optional)
 
 ---
 
@@ -254,10 +359,13 @@ Before deploying to production:
 ```bash
 # Set up environment variables locally
 export DATABASE_URL="postgres://..."
-export SUPABASE_URL="https://..."
+## export SUPABASE_URL should be set in your environment, not in this file.
 export SUPABASE_SERVICE_ROLE="..."
+export FIGMA_TOKEN="figd-..."
+export FIGMA_FILE_KEY="..."
 export META_ACCESS_TOKEN="..."
-export AZURE_STORAGE_CONNECTION_STRING="..."
+export NOTION_API_KEY="..."
+## export AZURE_STORAGE_CONNECTION_STRING should be set in your environment, not in this file.
 
 # Run batch export runner
 python src/integrations/batch_export_runner.py --type full --verbose
@@ -272,13 +380,14 @@ Missing integrations (unset tokens or disabled outputs) are treated as skipped r
 
 All secrets should be rotated on a regular basis:
 
-| Secret                          | Rotation Frequency | Instructions                                 |
-| ------------------------------- | ------------------ | -------------------------------------------- |
-| DATABASE_URL                    | 90 days            | Regenerate in Supabase → Settings → Database |
-| META_ACCESS_TOKEN               | 90 days            | Generate new token in Meta Business Suite    |
-| AZURE_CREDENTIALS               | 90 days            | Run `az ad sp create-for-rbac` again         |
-| OPENAI_API_KEY                  | 90 days            | Generate new key in OpenAI → API Keys        |
-| AZURE_STORAGE_CONNECTION_STRING | 180 days           | Rotate key in Azure Portal                   |
+| Secret | Rotation Frequency | Instructions |
+|--------|-------------------|--------------|
+| DATABASE_URL | 90 days | Regenerate in Supabase → Settings → Database |
+| META_ACCESS_TOKEN | 90 days | Generate new token in Meta Business Suite |
+| AZURE_CREDENTIALS | 90 days | Run `az ad sp create-for-rbac` again |
+| OPENAI_API_KEY | 90 days | Generate new key in OpenAI → API Keys |
+| NOTION_API_KEY | 180 days | Regenerate in Notion → Integrations |
+| FIGMA_TOKEN | 180 days | Generate new token in Figma account settings |
 
 ---
 
@@ -286,10 +395,13 @@ All secrets should be rotated on a regular basis:
 
 ### Secret Not Found in Workflow
 
+**Error**: `Error: Secret FIGMA_TOKEN not found`
+
 **Solution**:
 
 1. Verify secret is added: Settings → Secrets → Check the list
 2. Check spelling (case-sensitive)
+3. If using environment variables, ensure they're properly referenced: `${{ secrets.FIGMA_TOKEN }}`
 
 ### Access Denied to Azure
 

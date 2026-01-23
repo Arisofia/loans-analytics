@@ -1,0 +1,33 @@
+name: Market Intelligence
+"on":
+    schedule:
+        - cron: "30 8 * * *" # 9:30 AM CET daily
+    workflow_dispatch:
+
+jobs:
+    market-intelligence:
+        runs-on: ubuntu-latest
+        env:
+            PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
+            - name: Setup Python Environment
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+            - name: Install Dependencies
+              run: |
+                  pip install -r requirements.txt
+            - name: Run Market Analysis
+              if: hashFiles('scripts/market_intelligence.py') != '' && env.PERPLEXITY_API_KEY != ''
+              env:
+                PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+                TAVILY_KEY: ${{ secrets.TAVILY_KEY }}
+                GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_SIMPLE }}
+              run: |
+                  python scripts/market_intelligence.py
+            - name: Post to Google Docs
+              if: hashFiles('scripts/post_to_google_docs.py') != ''
+              run: |
+                  python scripts/post_to_google_docs.py

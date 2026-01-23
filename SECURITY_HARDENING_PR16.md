@@ -5,7 +5,7 @@
 This PR addresses **critical security vulnerabilities** and **configuration
 brittleness** identified in the codebase:
 
-- **🔴 CRITICAL**: Exposed credentials in `.env` (Azure, OpenAI, Anthropic)
+- **🔴 CRITICAL**: Exposed credentials in `.env` (Azure, OpenAI, Anthropic, HubSpot)
 - **🟠 HIGH**: 40+ hard-coded paths across codebase causing deployment failures
 - **🟡 MEDIUM**: Inconsistent secrets management (3 different patterns)
 - **🟡 MEDIUM**: Missing path validation causing silent runtime failures
@@ -21,6 +21,7 @@ brittleness** identified in the codebase:
 - Azure Client Secret, Tenant ID, Subscription ID
 - OpenAI API Key (billing exposure)
 - Anthropic API Key (billing exposure)
+- HubSpot API Key and Portal ID
 
 ### Remediation
 
@@ -33,6 +34,7 @@ brew install bfg
 # Create file with patterns to remove
 cat > /tmp/secrets.txt <<'SECRETS'
 # Secrets must be set via environment variables or GitHub Secrets. See documentation for details.
+HUBSPOT_TOKEN=*
 SECRETS
 
 # Remove all matches
@@ -50,6 +52,7 @@ git push -f origin main
 - [ ] Azure: Regenerate Client Secret in Azure Portal
 - [ ] OpenAI: Deactivate exposed key, create new one
 - [ ] Anthropic: Deactivate exposed key, create new one
+- [ ] HubSpot: Deactivate API key, create new one
 
 #### Step 3: Use GitHub Secrets
 
@@ -84,14 +87,14 @@ environment = Paths.get_environment()
 
 ### Environment Variables Supported
 
-| Variable                  | Default          | Purpose             |
-| ------------------------- | ---------------- | ------------------- |
-| `DATA_RAW_PATH`           | `./data/raw`     | Raw input data      |
-| `DATA_METRICS_PATH`       | `./data/metrics` | Calculated KPIs     |
-| `CONFIG_PATH`             | `./config`       | Config files        |
-| `LOGS_PATH`               | `./logs`         | Application logs    |
-| `REPORTS_PATH`            | `./reports`      | Generated reports   |
-| `PYTHON_ENV` or `APP_ENV` | `development`    | Current environment |
+| Variable                  | Default            | Purpose              |
+| ------------------------- | ------------------ | -------------------- |
+| `DATA_RAW_PATH`           | `./data/raw`       | Raw input data       |
+| `DATA_METRICS_PATH`       | `./data/metrics`   | Calculated KPIs      |
+| `CONFIG_PATH`             | `./config`         | Config files         |
+| `LOGS_PATH`               | `./logs`           | Application logs     |
+| `REPORTS_PATH`            | `./reports`        | Generated reports    |
+| `PYTHON_ENV` or `APP_ENV` | `development`      | Current environment  |
 
 ### Migration Plan
 
@@ -196,6 +199,7 @@ class SecretsManager:
     OPTIONAL = [
         "GEMINI_API_KEY",
         "PERPLEXITY_API_KEY",
+        "HUBSPOT_API_KEY",
     ]
 
     @classmethod

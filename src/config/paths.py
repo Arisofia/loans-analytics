@@ -17,9 +17,7 @@ def get_project_root() -> Path:
     raise RuntimeError("Project root not found")
 
 
-def resolve_path(
-    path_str: str, env_var: Optional[str] = None, create: bool = False
-) -> Path:
+def resolve_path(path_str: str, env_var: Optional[str] = None, create: bool = False) -> Path:
     """Resolve path with environment variable support."""
     if not path_str:
         raise ValueError("path_str cannot be empty")
@@ -49,16 +47,12 @@ class Paths:
     @staticmethod
     def raw_data_dir(create: bool = False) -> Path:
         return resolve_path(
-            os.getenv("DATA_RAW_PATH", "./data/raw"),
-            env_var="DATA_RAW_DIR",
-            create=create,
+            os.getenv("DATA_RAW_PATH", "./data/raw"), env_var="DATA_RAW_DIR", create=create
         )
 
     @staticmethod
     def data_dir(create: bool = False) -> Path:
-        return resolve_path(
-            os.getenv("DATA_PATH", "./data"), env_var="DATA_DIR", create=create
-        )
+        return resolve_path(os.getenv("DATA_PATH", "./data"), env_var="DATA_DIR", create=create)
 
     @staticmethod
     def scripts_dir() -> Path:
@@ -67,9 +61,7 @@ class Paths:
     @staticmethod
     def metrics_dir(create: bool = False) -> Path:
         return resolve_path(
-            os.getenv("DATA_METRICS_PATH", "./data/metrics"),
-            env_var="METRICS_DIR",
-            create=create,
+            os.getenv("DATA_METRICS_PATH", "./data/metrics"), env_var="METRICS_DIR", create=create
         )
 
     @staticmethod
@@ -79,9 +71,7 @@ class Paths:
 
     @staticmethod
     def logs_dir(create: bool = False) -> Path:
-        return resolve_path(
-            os.getenv("LOGS_PATH", "./logs"), env_var="LOGS_DIR", create=create
-        )
+        return resolve_path(os.getenv("LOGS_PATH", "./logs"), env_var="LOGS_DIR", create=create)
 
     @staticmethod
     def docs_dir() -> Path:

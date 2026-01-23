@@ -516,12 +516,10 @@ API_WORKERS=4
 
 # Security configuration
 CORS_ORIGINS=https://frontend.arisofia.com
-JWT_SECRET=your-jwt-secret
 JWT_EXPIRATION=3600
 
 # External services
 SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
-DATADOG_API_KEY=your-datadog-key
 ```
 
 ## Appendix B: Useful Commands

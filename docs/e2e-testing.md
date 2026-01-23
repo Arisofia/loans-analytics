@@ -18,8 +18,8 @@ npx playwright install
 E2E_TEST_EMAIL="e2e-bot@example.com"
 E2E_TEST_PASSWORD="super-secure-password"
 # Optional (required only if you want the Playwright setup to seed/reset DB automatically):
-SUPABASE_URL="https://xyz.supabase.co"
-SUPABASE_SERVICE_ROLE_KEY="your_service_role_key"
+## SUPABASE_URL should be set in your environment, not in this file.
+## SUPABASE_SERVICE_ROLE_KEY should be set in your environment, not in this file.
 ```
 
 > Create a dedicated test user in your Supabase instance (preferably a local or staging instance). Avoid using production credentials.
@@ -66,14 +66,14 @@ Usage example (local):
 cd apps/web
 # create test user and optionally insert rows (set E2E_SEED_TABLE and E2E_SEED_ROWS for table inserts)
 E2E_SEED_TABLE='loans' E2E_SEED_ROWS='[{"amount":1000, "status":"active"}]' \
-  SUPABASE_URL='https://xyz.supabase.co' SUPABASE_SERVICE_ROLE_KEY='your_service_role_key' \
+  # SUPABASE_URL='https://xyz.supabase.co' SUPABASE_SERVICE_ROLE_KEY='your_service_role_key' \
   E2E_TEST_EMAIL='e2e-bot@example.com' E2E_TEST_PASSWORD='super-secret' npm run e2e:seed
 
 # run tests
 npm run test:e2e
 
 # teardown after tests
-SUPABASE_URL='https://xyz.supabase.co' SUPABASE_SERVICE_ROLE_KEY='your_service_role_key' npm run e2e:teardown
+# SUPABASE_URL='https://xyz.supabase.co' SUPABASE_SERVICE_ROLE_KEY='your_service_role_key' npm run e2e:teardown
 ```
 
 - The scripts write state to `apps/web/playwright/.e2e/seed_state.json` to know what to teardown later. This folder is ignored by git.
@@ -88,7 +88,6 @@ SUPABASE_URL='https://xyz.supabase.co' SUPABASE_SERVICE_ROLE_KEY='your_service_r
   - Optional: `E2E_SEED_TABLE`, `E2E_SEED_ROWS` (JSON string)
 
 Notes:
-
 - The scripts and TestDataManager use the Supabase Service Role key; never commit this key into the repository or .env files.
 - If your table has a different primary key name, adjust the scripts or TestDataManager accordingly to capture and delete inserted rows by the appropriate column.
 

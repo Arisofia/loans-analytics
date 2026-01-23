@@ -13,22 +13,22 @@
 
 ## Triage (5–15 minutes)
 
-1. **Pick one failing workflow and open the first error**
+1) **Pick one failing workflow and open the first error**
 
 - GitHub → Actions → workflow run → open the first failing step.
 - Copy the first ~50 lines around the first exception.
 
-1. **Classify by runtime duration**
+1) **Classify by runtime duration**
 
 - **< 30s**: dependency install/build/config/secrets issue.
 - **minutes**: API/DB latency, retries, data volume issues.
 
-1. **Check required secrets exist**
-   Common secrets referenced by workflows:
+1) **Check required secrets exist**
+Common secrets referenced by workflows:
 
 - `DATABASE_URL` (Postgres/Supabase)
 - `META_SYSTEM_USER_TOKEN` / Meta token(s)
-
+- `HUBSPOT_API_KEY`
 - `AZURE_CREDENTIALS` / publish profiles (deploy workflows)
 
 Quick validation:

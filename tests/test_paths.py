@@ -5,7 +5,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
 from src.config.paths import Paths, get_project_root, resolve_path
 
 

@@ -10,29 +10,12 @@ Handles:
 
 import logging
 import os
-import re
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, cast
 
 import requests
 
 logger = logging.getLogger(__name__)
-
-
-def _normalize_notion_id(value: Optional[str]) -> Optional[str]:
-    if not value:
-        return None
-    raw = value.strip()
-    match = re.search(r"[0-9a-fA-F]{32}", raw)
-    if match:
-        return match.group(0)
-    match = re.search(
-        r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
-        raw,
-    )
-    if match:
-        return match.group(0).replace("-", "")
-    return raw
 
 
 class NotionOutputClient:
@@ -43,19 +26,8 @@ class NotionOutputClient:
         api_token: Optional[str] = None,
         database_id: Optional[str] = None,
     ):
-        self.api_token = (
-            api_token
-            or os.getenv("NOTION_API_KEY")
-            or os.getenv("NOTION_TOKEN")
-            or os.getenv("NOTION_INTEGRATION_TOKEN")
-        )
-        raw_database_id = (
-            database_id
-            or os.getenv("NOTION_DATABASE_ID")
-            or os.getenv("NOTION_DATABASE_URL")
-            or os.getenv("NOTION_DATABASE")
-        )
-        self.database_id = _normalize_notion_id(raw_database_id)
+        self.api_token = api_token or os.getenv("NOTION_API_KEY")
+        self.database_id = database_id or os.getenv("NOTION_DATABASE_ID")
 
         self.base_url = "https://api.notion.com/v1"
         self.headers = {
@@ -75,7 +47,7 @@ class NotionOutputClient:
         try:
             response = requests.request(method, url, timeout=30, **kwargs)
             response.raise_for_status()
-            return response.json()
+            return cast(Dict[str, Any], response.json())
         except requests.RequestException as e:
             logger.error(f"Notion API error: {e}")
             return {}
@@ -116,7 +88,7 @@ class NotionOutputClient:
                     },
                     "Generated": {
                         "date": {
-                            "start": datetime.utcnow().isoformat(),
+                            "start": datetime.now(timezone.utc).isoformat(),
                         }
                     },
                 },
@@ -137,9 +109,7 @@ class NotionOutputClient:
             logger.error(f"Error creating Notion report page: {e}")
             return None
 
-    def _build_report_blocks(
-        self, report_content: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+    def _build_report_blocks(self, report_content: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Build Notion blocks for report content."""
         blocks = []
 
@@ -345,13 +315,10 @@ class NotionOutputClient:
         }
 
         try:
-            raw_parent_page = parent_page_id or os.getenv("NOTION_REPORTS_PAGE_ID")
-            parent_page_id = _normalize_notion_id(raw_parent_page)
+            parent_page_id = parent_page_id or os.getenv("NOTION_REPORTS_PAGE_ID")
 
             if parent_page_id:
-                report_title = (
-                    f"Analytics Report - {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
-                )
+                report_title = f"Analytics Report - {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
                 page_id = self.create_report_page(
                     parent_page_id=parent_page_id,
                     title=report_title,

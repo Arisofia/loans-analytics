@@ -54,11 +54,7 @@ def plot_classification_metrics(metrics: Dict, output_dir: Path):
     for bar in bars:
         height = bar.get_height()
         ax.text(
-            bar.get_x() + bar.get_width() / 2.0,
-            height,
-            f"{height:.3f}",
-            ha="center",
-            va="bottom",
+            bar.get_x() + bar.get_width() / 2.0, height, f"{height:.3f}", ha="center", va="bottom"
         )
 
     ax.set_ylim([0, 1.1])
@@ -112,12 +108,8 @@ def plot_roc_curve(metrics: Dict, output_dir: Path):
     roc_auc = metrics.get("roc_auc", 0)
 
     _, ax = plt.subplots()
-    ax.plot(
-        fpr, tpr, color="darkorange", lw=2, label=f"ROC curve (AUC = {roc_auc:.3f})"
-    )
-    ax.plot(
-        [0, 1], [0, 1], color="navy", lw=2, linestyle="--", label="Random Classifier"
-    )
+    ax.plot(fpr, tpr, color="darkorange", lw=2, label=f"ROC curve (AUC = {roc_auc:.3f})")
+    ax.plot([0, 1], [0, 1], color="navy", lw=2, linestyle="--", label="Random Classifier")
 
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.05])
@@ -163,12 +155,8 @@ def plot_financial_metrics(metrics: Dict, output_dir: Path):
     ax.set_ylim([0, 1.1])
     ax.set_ylabel("Score", fontsize=12)
     ax.set_title("Financial Domain-Specific Metrics", fontsize=14, fontweight="bold")
-    ax.axhline(
-        y=0.85, color="g", linestyle="--", alpha=0.5, label="Excellence Threshold"
-    )
-    ax.axhline(
-        y=0.75, color="orange", linestyle="--", alpha=0.5, label="Acceptable Threshold"
-    )
+    ax.axhline(y=0.85, color="g", linestyle="--", alpha=0.5, label="Excellence Threshold")
+    ax.axhline(y=0.75, color="orange", linestyle="--", alpha=0.5, label="Acceptable Threshold")
     ax.legend(loc="upper right")
 
     plt.tight_layout()
@@ -188,12 +176,7 @@ def plot_metrics_trend(metrics: Dict, output_dir: Path):
 
     for metric in ["accuracy", "precision", "recall", "f1_score"]:
         if metric in hist_data.columns:
-            ax.plot(
-                hist_data.index,
-                hist_data[metric],
-                marker="o",
-                label=metric.capitalize(),
-            )
+            ax.plot(hist_data.index, hist_data[metric], marker="o", label=metric.capitalize())
 
     ax.set_xlabel("Evaluation Run", fontsize=12)
     ax.set_ylabel("Score", fontsize=12)
@@ -264,10 +247,7 @@ def main():
         help="Path to JSON file containing evaluation metrics",
     )
     parser.add_argument(
-        "--output-dir",
-        type=Path,
-        required=True,
-        help="Directory to save visualization outputs",
+        "--output-dir", type=Path, required=True, help="Directory to save visualization outputs"
     )
 
     args = parser.parse_args()

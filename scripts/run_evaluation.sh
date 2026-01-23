@@ -16,10 +16,10 @@ python3 -m pip install -r apps/analytics/requirements.txt
 
 # Run evaluation scripts
 python3 scripts/evaluation/check_thresholds.py \
-  --metrics-file "$REPORTS_DIR/evaluation-metrics.json" \
-  --config "$CONFIG_DIR/evaluation-thresholds.yml" \
-  --output threshold-results.json
+    --metrics-file "$REPORTS_DIR/evaluation-metrics.json" \
+    --config "$CONFIG_DIR/evaluation-thresholds.yml" \
+    --output threshold-results.json
 
 python3 scripts/evaluation/generate_visualizations.py \
-  --metrics-file "$REPORTS_DIR/evaluation-metrics.json" \
-  --output-dir "$REPORTS_DIR/visualizations/"
+    --metrics-file "$REPORTS_DIR/evaluation-metrics.json" \
+    --output-dir "$REPORTS_DIR/visualizations/"

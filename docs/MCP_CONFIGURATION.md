@@ -1,3 +1,5 @@
+# MCP Configuration Guide
+
 This guide shows how to add and manage Model Context Protocol (MCP) servers when working with Codex, either through the CLI or by editing the `config.toml` file directly.
 
 ## CLI usage
@@ -22,8 +24,8 @@ After launching Codex and opening the TUI, run `/mcp` to see your actively conne
 
 ## Config file (`config.toml`)
 
-For granular control, edit `~/.codex/config.toml` (on Windows, `%USERPROFILE%\.codex\config.toml`). In the IDE extension, open the gear icon in the top right, choose **MCP settings**, then **Open config.toml** to modify the active config file.
-
+For granular control, edit `~/.codex/config.toml`. In the IDE extension, open the gear icon in the top right, choose **MCP settings**, then **Open config.toml**.
+For granular control, edit `~/.codex/config.toml` (on Windows, `%USERPROFILE%\\.codex\\config.toml`). In the IDE extension, open the gear icon in the top right, choose **MCP settings**, then **Open config.toml** to modify the active config file.
 Each MCP server uses its own `[mcp_servers.<server-name>]` table.
 
 ### STDIO servers
@@ -45,9 +47,13 @@ Each MCP server uses its own `[mcp_servers.<server-name>]` table.
 
 - `startup_timeout_sec` (optional): timeout in seconds for the server to start (default 10).
 - `tool_timeout_sec` (optional): timeout in seconds for tools to run (default 60).
-- `enabled_tools` (optional): list of tool names that are allowed to be used.
-- `disabled_tools` (optional): list of tool names that are disallowed from being used.
-- `enabled` (optional): whether the server is enabled or not.
+- `enabled` (optional): set `false` to disable a configured server without deleting it.
+- `enabled_tools` (optional): allow-list of tools exposed from the server.
+- `disabled_tools` (optional): deny-list of tools to hide (applied after `enabled_tools`).
+- `disabled_tools` (optional): deny-list of tools to hide; it overrides overlaps with `enabled_tools`.
+- `[features].rmcp_client` (optional): enables the Rust MCP client for STDIO servers and OAuth on streamable HTTP.
+- `experimental_use_rmcp_client` (optional): older flag for OAuth/streamable HTTP; prefer `[features].rmcp_client`.
+- Set feature flags inside the top-level `[features]` table (not under a specific server).
 
 ### Examples
 
@@ -62,13 +68,17 @@ rmcp_client = true
 ```
 
 ```toml
-# ...existing code...
+[mcp_servers.figma]
+url = "https://mcp.figma.com/mcp"
+bearer_token_env_var = "FIGMA_OAUTH_TOKEN"
+http_headers = { "X-Figma-Region" = "us-east-1" }
 ```
 
 ```toml
 [mcp_servers.chrome_devtools]
 url = "http://localhost:3000/mcp"
 enabled_tools = ["open", "screenshot"]
+disabled_tools = ["screenshot"] # applied after enabled_tools
 disabled_tools = ["open"] # disabled takes precedence even if also listed in enabled_tools
 startup_timeout_sec = 20
 tool_timeout_sec = 45
@@ -78,6 +88,13 @@ enabled = true
 ## Examples of useful MCP servers
 
 Common MCP servers to connect with Codex include:
+
+- **Context7** — access a wide range of developer documentation.
+- **Figma Local/Remote** — access your Figma designs.
+- **Playwright** — control and inspect a browser using Playwright.
+- **Chrome Developer Tools** — control and inspect a Chrome browser.
+- **Sentry** — access Sentry logs.
+- **GitHub** — manage GitHub data beyond git (PRs, issues, etc.).
 
 ## Running Codex as an MCP server
 
@@ -96,6 +113,22 @@ npx @modelcontextprotocol/inspector codex mcp-server
 
 Sending a `tools/list` request will reveal two tools:
 
+- **codex** — runs a Codex session. Parameters mirror the Codex Config struct.
+- **codex-reply** — continues a Codex session given the conversation ID.
+
 ### `codex` tool properties
 
+- `prompt` (required): initial user prompt to start the Codex conversation.
+- `approval-policy`: approval policy for shell commands (`untrusted`, `on-failure`, `never`).
+- `base-instructions`: set of instructions to use instead of defaults.
+- `config`: config object overriding values in `$CODEX_HOME/config.toml`.
+- `cwd`: working directory for the session (relative paths resolved from the server process).
+- `include-plan-tool`: whether to include the plan tool in the conversation.
+- `model`: optional override for the model name (e.g., `o3`, `o4-mini`).
+- `profile`: configuration profile from `config.toml` to specify default options.
+- `sandbox`: sandbox mode (`read-only`, `workspace-write`, or `danger-full-access`).
+
 ### `codex-reply` tool properties
+
+- `prompt` (required): next user prompt to continue the Codex conversation.
+- `conversationId` (required): ID of the conversation to continue.

@@ -15,18 +15,23 @@ access.
 
 ## Key Secrets (Examples)
 
-OPENAI_API_KEY
-SUPABASE_SERVICE_ROLE
-OPIK_TOKEN
-PHOENIX_TOKEN
-CLAUDE_ROCKET_TOKEN
-XAI_TOKEN
-GEMINI_API_KEY
-PERPLEXITY_API_KEY
-TAVILY_KEY
-AMPLITUDE_API_KEY
-META_ACCESS_TOKEN
-SENTRY_DSN
+- OPENAI_API_KEY
+- SUPABASE_SERVICE_ROLE
+- SLACK_BOT_TOKEN
+- OPIK_TOKEN
+- PHOENIX_TOKEN
+- CLAUDE_ROCKET_TOKEN
+- XAI_TOKEN
+- GEMINI_API_KEY
+- PERPLEXITY_API_KEY
+- TAVILY_KEY
+- HUBSPOT_TOKEN
+- FIGMA_TOKEN
+- AMPLITUDE_API_KEY
+- META_ACCESS_TOKEN
+- SENTRY_DSN
+
+## Best Practices
 
 - Rotate secrets regularly and monitor access logs.
 - Use least-privilege principle for all agent/service accounts.
@@ -40,6 +45,5 @@ SENTRY_DSN
 - All workflows will fail fast if a required secret is missing.
 
 ---
-
 This file is auto-generated and should be updated if new agents or workflows
 require additional secrets.

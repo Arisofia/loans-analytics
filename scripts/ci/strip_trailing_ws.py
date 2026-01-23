@@ -14,6 +14,5 @@ if changed:
 
     subprocess.run(["git", "add"] + changed, check=True)
     subprocess.run(
-        ["git", "commit", "-m", "ci: strip trailing whitespace from workflow files"],
-        check=True,
+        ["git", "commit", "-m", "ci: strip trailing whitespace from workflow files"], check=True
     )

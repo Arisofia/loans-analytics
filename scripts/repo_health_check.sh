@@ -23,7 +23,7 @@ print_header "RECENT COMMITS"
 git log --oneline --decorate --graph -n 10
 
 print_header "REQUIREMENTS CONSISTENCY"
-python - <<'PY'
+python3 - <<'PY'
 from collections import Counter
 from pathlib import Path
 
@@ -41,10 +41,10 @@ print("Requirements file is free of duplicates.")
 PY
 
 print_header "LINT"
-npm run lint || echo "Lint failed"
+make lint || echo "Lint failed"
 
 print_header "PYTHON TESTS"
-pytest || echo "Pytest failed"
+make test || echo "Pytest failed"
 
 print_header "ENV FILES AUDIT"
 ls -la .env* || echo "No env files found"

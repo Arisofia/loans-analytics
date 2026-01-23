@@ -196,14 +196,14 @@ Manual workflow trigger → Select version & environment
 
 All deployments must meet ENGINEERING_STANDARDS.md requirements:
 
-| Check          | Threshold | Enforcement   |
-| -------------- | --------- | ------------- |
-| Lint           | 0 errors  | Blocks CI     |
-| Type Check     | 0 errors  | Blocks CI     |
-| Test Pass Rate | 100%      | Blocks CI     |
-| Code Coverage  | ≥ 85%     | Blocks CI     |
-| Build Success  | Yes       | Blocks deploy |
-| Health Check   | HTTP 200  | Blocks deploy |
+| Check | Threshold | Enforcement |
+|-------|-----------|-------------|
+| Lint | 0 errors | Blocks CI |
+| Type Check | 0 errors | Blocks CI |
+| Test Pass Rate | 100% | Blocks CI |
+| Code Coverage | ≥ 85% | Blocks CI |
+| Build Success | Yes | Blocks deploy |
+| Health Check | HTTP 200 | Blocks deploy |
 
 ---
 

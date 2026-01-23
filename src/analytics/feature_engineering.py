@@ -29,9 +29,7 @@ class FeatureEngineer:
         # Conditionally compute utilization if balance and limit columns exist
         if "balance" in enriched_df.columns and "limit" in enriched_df.columns:
             enriched_df["utilization"] = np.where(
-                enriched_df["limit"] > 0,
-                enriched_df["balance"] / enriched_df["limit"],
-                0,
+                enriched_df["limit"] > 0, enriched_df["balance"] / enriched_df["limit"], 0
             )
 
         # Conditionally create DPD buckets if dpd column exists

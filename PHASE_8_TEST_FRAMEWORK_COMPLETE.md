@@ -29,11 +29,11 @@
 
 ### 1. Complete Test Framework Documentation (Phase 1)
 
-| Document                          | Size    | Purpose                                                                  |
-| --------------------------------- | ------- | ------------------------------------------------------------------------ |
-| **FI-ANALYTICS-002_test_plan.md** | 8.7 KB  | Comprehensive testing strategy, risk assessment, SLAs, environment setup |
-| **FI-ANALYTICS-002_checklist.md** | 5.4 KB  | 22 test cases organized by priority and type                             |
-| **FI-ANALYTICS-002_testcases.md** | 34.7 KB | Detailed step-by-step execution specifications for each test             |
+| Document | Size | Purpose |
+|---|---|---|
+| **FI-ANALYTICS-002_test_plan.md** | 8.7 KB | Comprehensive testing strategy, risk assessment, SLAs, environment setup |
+| **FI-ANALYTICS-002_checklist.md** | 5.4 KB | 22 test cases organized by priority and type |
+| **FI-ANALYTICS-002_testcases.md** | 34.7 KB | Detailed step-by-step execution specifications for each test |
 
 ### 2. Sprint 0 Implementation (Phase 2)
 
@@ -80,12 +80,12 @@ def kpi_schema()
 
 ### 3. Implementation & Setup Guides
 
-| Document                         | Size   | Purpose                                         |
-| -------------------------------- | ------ | ----------------------------------------------- |
-| **SPRINT_0_IMPLEMENTATION.md**   | 8.0 KB | Detailed execution guide with CI/CD integration |
-| **SPRINT_0_DELIVERY_SUMMARY.md** | 6.0 KB | What was delivered, metrics, next steps         |
-| **QUICK_START_GUIDE.md**         | 3.5 KB | 2-minute setup and common commands              |
-| **CLAUDE.md** (updated)          | —      | Phase 8 section with all commands               |
+| Document | Size | Purpose |
+|---|---|---|
+| **SPRINT_0_IMPLEMENTATION.md** | 8.0 KB | Detailed execution guide with CI/CD integration |
+| **SPRINT_0_DELIVERY_SUMMARY.md** | 6.0 KB | What was delivered, metrics, next steps |
+| **QUICK_START_GUIDE.md** | 3.5 KB | 2-minute setup and common commands |
+| **CLAUDE.md** (updated) | — | Phase 8 section with all commands |
 
 ---
 
@@ -93,14 +93,14 @@ def kpi_schema()
 
 ### Sprint 0: Critical Path (6 tests, 100% automated)
 
-| ID       | Test Case              | Category   | Automation | Execution | Priority |
-| -------- | ---------------------- | ---------- | ---------- | --------- | -------- |
-| **A-01** | Pipeline smoke test    | Smoke      | ✅ Auto    | ~10s      | Critical |
-| **A-02** | Artifact validation    | Smoke      | ✅ Auto    | ~2s       | Critical |
-| **B-01** | KPI baseline match ±5% | Functional | ✅ Auto    | ~1s       | Critical |
-| **B-02** | Edge case handling     | Functional | ✅ Auto    | ~2s       | High     |
-| **H-01** | Unit coverage ≥80%     | Regression | ✅ Auto    | ~5s       | Critical |
-| **H-02** | mypy type validation   | Regression | ✅ Auto    | ~3s       | Critical |
+| ID | Test Case | Category | Automation | Execution | Priority |
+|---|---|---|---|---|---|
+| **A-01** | Pipeline smoke test | Smoke | ✅ Auto | ~10s | Critical |
+| **A-02** | Artifact validation | Smoke | ✅ Auto | ~2s | Critical |
+| **B-01** | KPI baseline match ±5% | Functional | ✅ Auto | ~1s | Critical |
+| **B-02** | Edge case handling | Functional | ✅ Auto | ~2s | High |
+| **H-01** | Unit coverage ≥80% | Regression | ✅ Auto | ~5s | Critical |
+| **H-02** | mypy type validation | Regression | ✅ Auto | ~3s | Critical |
 
 **Execution Time**: ~17 seconds (57% faster than 30s target)  
 **Automation Coverage**: 100% (6/6 tests automated)
@@ -108,13 +108,11 @@ def kpi_schema()
 ### Future Sprints (16 additional tests)
 
 **Sprint 1** (Integration & Tracing - 12 hours):
-
 - C-01 to C-04: Integration mocking (4 tests)
 - D-01, D-02: Tracing validation (2 tests)
 - F-01, F-02: Security audit (2 tests)
 
 **Sprint 2** (Robustness & E2E - 16 hours):
-
 - B-03: Performance SLA (1 test)
 - E-01, E-02: Retry logic (2 tests)
 - G-01, G-02: Idempotency (2 tests)
@@ -128,22 +126,22 @@ def kpi_schema()
 
 ### Code Quality
 
-| Metric                   | Target   | Actual     | Status               |
-| ------------------------ | -------- | ---------- | -------------------- |
-| **Automation Coverage**  | 100%     | 100% (6/6) | ✅ Met               |
-| **Execution Time**       | <30s     | ~17s       | ✅ Met (57% faster)  |
-| **Test Methods**         | 6+       | 18         | ✅ Met (3x target)   |
-| **Code Coverage Target** | ≥80%     | TBD\*      | ⏳ Dependent on impl |
-| **Documentation**        | Complete | 50 KB      | ✅ Complete          |
+| Metric | Target | Actual | Status |
+|---|---|---|---|
+| **Automation Coverage** | 100% | 100% (6/6) | ✅ Met |
+| **Execution Time** | <30s | ~17s | ✅ Met (57% faster) |
+| **Test Methods** | 6+ | 18 | ✅ Met (3x target) |
+| **Code Coverage Target** | ≥80% | TBD* | ⏳ Dependent on impl |
+| **Documentation** | Complete | 50 KB | ✅ Complete |
 
-\*Code coverage depends on analytics module implementation quality
+*Code coverage depends on analytics module implementation quality
 
 ### Test Data
 
-| Dataset                | Rows    | Segments          | Purpose                  |
-| ---------------------- | ------- | ----------------- | ------------------------ |
-| **sample_small.csv**   | 24      | 2 (Consumer, SME) | Smoke + baseline tests   |
-| **baseline_kpis.json** | 23 KPIs | —                 | ±5% tolerance comparison |
+| Dataset | Rows | Segments | Purpose |
+|---|---|---|---|
+| **sample_small.csv** | 24 | 2 (Consumer, SME) | Smoke + baseline tests |
+| **baseline_kpis.json** | 23 KPIs | — | ±5% tolerance comparison |
 
 ### File Structure
 
@@ -245,7 +243,6 @@ Add to `.github/workflows/ci.yml`:
 ### PR Gating Criteria
 
 ✅ **All 6 critical tests PASS**:
-
 - A-01: Pipeline smoke test
 - A-02: Artifact validation
 - B-01: KPI baseline match
@@ -296,8 +293,7 @@ Add to `.github/workflows/ci.yml`:
 ### Sprint 1: Integration & Tracing (Weeks 2-3)
 
 Implement 8 additional tests:
-
-- C-01 to C-04: Mocked integrations (Notion, Meta)
+- C-01 to C-04: Mocked integrations (Figma, Notion, Meta)
 - D-01, D-02: OTLP tracing validation
 - F-01, F-02: Secret handling & security
 
@@ -307,7 +303,6 @@ Implement 8 additional tests:
 ### Sprint 2: Robustness & E2E (Weeks 4-5)
 
 Implement 8 final tests:
-
 - B-03: Performance SLA validation
 - E-01, E-02: Retry & transient failures
 - G-01, G-02: Idempotency & concurrency
@@ -328,22 +323,19 @@ Implement 8 final tests:
 ## Known Limitations & Workarounds
 
 ### 1. Requires Analytics Module
-
 - **Issue**: Tests assume `src.analytics.run_pipeline` module exists
 - **Status**: ⏳ Pending
 - **Workaround**: Create minimal mock module or adapt test to use existing analytics code
 - **Effort**: 2-4 hours
 
 ### 2. Edge Case Dataset Optional
-
 - **Issue**: `test_b02_null_and_zero_handling` skips if `sample_null_zeros.csv` missing
 - **Status**: ⏳ Create manually if needed
 - **File**: `tests/data/archives/sample_null_zeros.csv`
 - **Effort**: <1 hour
 
 ### 3. Mock Services Sprint 1
-
-- **Issue**: Integration tests (Notion, Meta, OTLP) not included in Sprint 0
+- **Issue**: Integration tests (Figma, Notion, Meta, OTLP) not included in Sprint 0
 - **Status**: ✅ Planned for Sprint 1
 - **Impact**: None (tests deferred, not blocked)
 
@@ -351,24 +343,23 @@ Implement 8 final tests:
 
 ## Success Criteria Summary
 
-| Criterion                    | Target   | Actual | Status          |
-| ---------------------------- | -------- | ------ | --------------- |
-| **Test Cases**               | 6        | 6      | ✅ 100%         |
-| **Test Methods**             | 6+       | 18     | ✅ 300%         |
-| **Automation**               | 100%     | 100%   | ✅ 100%         |
-| **Execution Time**           | <30s     | ~17s   | ✅ Met          |
-| **Documentation**            | Complete | 120 KB | ✅ Complete     |
-| **CI/CD Ready**              | Yes      | Yes    | ✅ Ready        |
-| **Code Coverage Target**     | ≥80%     | ⏳ TBD | ⏳ Pending impl |
-| **No External Dependencies** | Yes      | Yes    | ✅ Met          |
-| **Follows Best Practices**   | Yes      | Yes    | ✅ Met          |
+| Criterion | Target | Actual | Status |
+|---|---|---|---|
+| **Test Cases** | 6 | 6 | ✅ 100% |
+| **Test Methods** | 6+ | 18 | ✅ 300% |
+| **Automation** | 100% | 100% | ✅ 100% |
+| **Execution Time** | <30s | ~17s | ✅ Met |
+| **Documentation** | Complete | 120 KB | ✅ Complete |
+| **CI/CD Ready** | Yes | Yes | ✅ Ready |
+| **Code Coverage Target** | ≥80% | ⏳ TBD | ⏳ Pending impl |
+| **No External Dependencies** | Yes | Yes | ✅ Met |
+| **Follows Best Practices** | Yes | Yes | ✅ Met |
 
 ---
 
 ## Deliverables Checklist
 
 ### Documentation (6 files)
-
 - ✅ FI-ANALYTICS-002_test_plan.md (8.7 KB)
 - ✅ FI-ANALYTICS-002_checklist.md (5.4 KB)
 - ✅ FI-ANALYTICS-002_testcases.md (34.7 KB)
@@ -377,25 +368,21 @@ Implement 8 final tests:
 - ✅ QUICK_START_GUIDE.md (3.5 KB)
 
 ### Test Code (3 files)
-
 - ✅ test_analytics_smoke.py (4 tests)
 - ✅ test_analytics_kpi_correctness.py (7 tests)
 - ✅ test_analytics_unit_coverage.py (7 tests)
 
 ### Test Data (4 files)
-
 - ✅ sample_small.csv (24 rows)
 - ✅ baseline_kpis.json (23 KPIs)
 - ✅ kpi_results_schema.json (JSON schema)
 - ✅ metrics_schema.json (CSV schema)
 
 ### Fixtures (1 file)
-
 - ✅ conftest.py (3 new fixtures)
 
 ### Setup (2 files)
-
-- ✅ tests/fi-analytics/**init**.py
+- ✅ tests/fi-analytics/__init__.py
 - ✅ CLAUDE.md (Phase 8 section)
 
 **Total**: 20 files, 120+ KB documentation & code
@@ -415,7 +402,6 @@ All critical-path test cases are automated, well-documented, and ready for immed
 ## Contact & Questions
 
 For details, refer to:
-
 1. **Quick Start**: `fi-analytics/QUICK_START_GUIDE.md`
 2. **Execution Guide**: `fi-analytics/SPRINT_0_IMPLEMENTATION.md`
 3. **Test Plan**: `fi-analytics/FI-ANALYTICS-002_test_plan.md`

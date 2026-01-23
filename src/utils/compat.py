@@ -1,26 +1,17 @@
 import re
 import warnings
-from typing import Any, Optional, Type
+from typing import Optional
 
 try:
     from requests.exceptions import RequestsDependencyWarning
 except ImportError:
-
-    class RequestsDependencyWarning(Warning):  # type: ignore[no-redef]
+    class RequestsDependencyWarning(Warning):
         pass
-
-
-Version: Any
-InvalidVersion: Type[Exception]
 
 try:
     from packaging.version import InvalidVersion, Version
-
-    HAS_PACKAGING = True
 except ImportError:
-    HAS_PACKAGING = False
     Version = None
-    InvalidVersion = Exception
 
 
 def check_cryptography_robust(cryptography_version: Optional[str]) -> None:
@@ -32,7 +23,7 @@ def check_cryptography_robust(cryptography_version: Optional[str]) -> None:
     if not cryptography_version:
         return
 
-    if HAS_PACKAGING and Version:
+    if Version:
         try:
             ver = Version(cryptography_version)
         except InvalidVersion:

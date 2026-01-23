@@ -1,49 +1,80 @@
 {
-  "timestamp": "2026-01-02T16:05:41.105168",
-  "active_clients": 335,
-  "total_aum_usd": 8527186.12,
-  "aum_by_customer_type": [
-    {
-      "customer_type": "Persona Jur\u00eddica",
-      "outstanding_loan_value": 7922796.07
-    },
-    {
-      "customer_type": "Persona Natural",
-      "outstanding_loan_value": 604390.05
-    }
-  ],
-  "replines_percentage": 78.64,
-  "monthly_revenue_usd": 3861335.75,
-  "revenue_per_active_client_monthly": 11526.38,
-  "revenue_per_active_client_annual": 138316.5,
-  "mom_growth_pct": 75.13,
-  "yoy_growth_pct": 75084.22,
-  "ltv_cac_ratio": 395.19,
-  "cac_usd": 350,
-  "delinquency_rate_30_pct": 1.13,
-  "delinquency_rate_90_pct": 0.95,
-  "par_90_ratio_pct": 4.6,
-  "portfolio_by_product": [
-    {
-      "product_type": "factoring",
-      "loan_count": 18133,
-      "aum": 8527186.12
-    }
-  ],
-  "portfolio_by_status": [
-    {
-      "loan_status": "Complete",
-      "count": 16841
-    },
-    {
-      "loan_status": "Current",
-      "count": 951
-    },
-    {
-      "loan_status": "Default",
-      "count": 341
-    }
-  ],
+  "PAR30": {
+    "value": 6.151138616080396,
+    "status": "warning",
+    "display_name": "PAR 30+",
+    "formula": "SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100",
+    "source_table": "fact_loans",
+    "precision": 2,
+    "validation_range": null,
+    "rows_processed": 36,
+    "null_count": 0,
+    "timestamp": "2026-01-05T14:48:01.472647+00:00",
+    "dpd_30_60_sum": 2256358.25,
+    "dpd_60_90_sum": 1337379.1300000001,
+    "dpd_90_plus_sum": 2731284.4599999995,
+    "total_receivable_sum": 102826846.13
+  },
+  "PAR90": {
+    "value": 2.656197834315508,
+    "status": "unknown",
+    "display_name": "PAR90",
+    "formula": "SUM(dpd_90_plus_usd) / SUM(total_receivable_usd) * 100",
+    "source_table": "fact_loans",
+    "precision": 2,
+    "validation_range": null,
+    "rows_processed": 36,
+    "null_count": 0,
+    "timestamp": "2026-01-05T14:48:01.473243+00:00",
+    "dpd_sum": 2731284.4599999995,
+    "total_receivable_sum": 102826846.13
+  },
+  "CollectionRate": {
+    "value": 0.0,
+    "status": "critical",
+    "display_name": "Collection Rate",
+    "formula": "SUM(cash_available) / SUM(total_eligible) * 100",
+    "source_table": "fact_loans",
+    "precision": 2,
+    "validation_range": null,
+    "rows_processed": 36,
+    "null_count": 0,
+    "timestamp": "2026-01-05T14:48:01.473626+00:00",
+    "cash_sum": 0.0,
+    "eligible_sum": 102826846.13
+  },
+  "PortfolioHealth": {
+    "value": 0.0,
+    "formula": "(10 - PAR30/10) * (CollectionRate/10)",
+    "source_table": "metrics",
+    "precision": 2,
+    "validation_range": [
+      0,
+      10
+    ],
+    "rows_processed": 2,
+    "null_count": 0,
+    "timestamp": "2026-01-05T14:48:01.473676+00:00",
+    "par_30_input": 6.151138616080396,
+    "collection_rate_input": 0.0,
+    "par_component": 9.38488613839196,
+    "coll_component": 0.0
+  },
+  "timestamp": "2026-01-05T15:48:01.786515",
+  "active_clients": 327,
+  "total_aum_usd": 8339369.100000001,
+  "replines_percentage": 0.0,
+  "monthly_revenue_usd": 20653.03,
+  "revenue_per_active_client_monthly": 63.159113149847094,
+  "revenue_per_active_client_annual": 757.9093577981652,
+  "mom_growth_pct": -4.714967446348306,
+  "yoy_growth_pct": 0.0,
+  "ltv_cac_ratio": 0.0,
+  "cac_usd": 350.0,
+  "delinquency_rate_30_pct": 6.151138616080396,
+  "delinquency_rate_90_pct": 2.656197834315508,
+  "par_90_ratio_pct": 2.656197834315508,
+  "portfolio_by_product": [],
   "extended_kpis": {
     "executive_strip": {
       "active_clients": 327,
@@ -114,7 +145,7 @@
         "true_rebates": 0.0,
         "weighted_apr": 0.6544662407943916,
         "weighted_fee_rate": 0.04684351749841433,
-        "weighted_other_income_rate": 9.954007261113756e-5,
+        "weighted_other_income_rate": 9.954007261113756e-05,
         "weighted_effective_rate": 0.0005213204908713478,
         "revenue_ratio": 0.007489277176282447,
         "recurrence_pct": 0.8090616533319765
@@ -6918,7 +6949,7 @@
         "true_rebates": 0.0,
         "weighted_apr": 0.6544662407943916,
         "weighted_fee_rate": 0.04684351749841433,
-        "weighted_other_income_rate": 9.954007261113756e-5,
+        "weighted_other_income_rate": 9.954007261113756e-05,
         "weighted_effective_rate": 0.0005213204908713478,
         "revenue_ratio": 0.007489277176282447,
         "recurrence_pct": 0.8090616533319765,
@@ -9024,5 +9055,6 @@
         "recv_revenue_for_month": 23338.01
       }
     ]
-  }
+  },
+  "collection_rate_pct": 4.637004895792933
 }

@@ -2,9 +2,9 @@
 
 name: abaco-loans-analytics
 metadata:
-  template: azd-init@1.22.5
+    template: azd-init@1.22.5
 services:
-  abaco-loans-analytics:
-    project: .
-    host: function
-    language: python
+    abaco-loans-analytics:
+        project: .
+        host: function
+        language: python

@@ -69,6 +69,7 @@ Auto-trigger: Deploy to staging
     ↓
 Health check: Passes
     ↓
+Slack: #dev-alerts notified
     ↓
 QA: Starts 24-hour validation
 ```
@@ -90,6 +91,7 @@ Approve in GitHub → Deploy to production
     ↓
 Health checks pass
     ↓
+Slack: #prod-alerts notified
     ↓
 🎉 Live!
 ```
@@ -320,6 +322,7 @@ Closes #123
 1. Ready to merge!
 2. Click "Merge pull request"
 3. Wait for auto-deployment to staging
+4. Check Slack for deployment confirmation
 
 ---
 
@@ -330,6 +333,7 @@ Closes #123
 - **Deployments**: [Environments](https://github.com/[owner]/[repo]/deployments)
 - **Staging**: <https://staging.abaco-loans-analytics.com>
 - **Production**: <https://abaco-loans-analytics.com>
+- **Slack**: #dev-alerts, #prod-alerts, #dev-help
 
 ---
 
@@ -413,5 +417,6 @@ git push -f origin feature/name
 
 - **Deployment Config**: `.github/DEPLOYMENT_CONFIG.md`
 - **Team Runbooks**: `.github/TEAM_RUNBOOKS.md`
+- **Slack Coordination**: `.github/DEPLOYMENT_COORDINATION.md`
 - **Engineering Standards**: `ENGINEERING_STANDARDS.md`
 - **Operations Guide**: `OPERATIONS.md`

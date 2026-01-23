@@ -7,34 +7,33 @@ from typing import Any, Dict, List
 
 import pandas as pd
 
+logger = logging.getLogger(__name__)
+
 try:
     import great_expectations as gx
-    from great_expectations.data_context import \
-        EphemeralDataContext as GXEphemeralDataContext
+    from great_expectations.data_context import EphemeralDataContext
 
     HAS_GE = True
-except ImportError:  # pragma: no cover - optional dependency
+except Exception:  # pragma: no cover - optional dependency
     gx = None  # type: ignore
-    GXEphemeralDataContext = None  # type: ignore
+    EphemeralDataContext = None  # type: ignore
     HAS_GE = False
-
-logger = logging.getLogger(__name__)
 
 
 def get_or_create_datasource(
-    context: "GXEphemeralDataContext",
+    context: "EphemeralDataContext",
     datasource_name: str,
 ) -> Any:
     """Get or create a pandas datasource for the given context."""
     try:
         return context.get_datasource(datasource_name)
-    except AttributeError:
+    except Exception:
         logger.info("Datasource '%s' not found; creating it.", datasource_name)
         return context.sources.add_pandas(name=datasource_name)  # type: ignore
 
 
 def create_validator_for_dataframe(
-    context: "GXEphemeralDataContext",
+    context: "EphemeralDataContext",
     df: pd.DataFrame,
     datasource_name: str,
     asset_name: str,
@@ -42,9 +41,11 @@ def create_validator_for_dataframe(
     """Create a Great Expectations validator for a Pandas DataFrame."""
     if not isinstance(df, pd.DataFrame):
         raise TypeError("df must be a Pandas DataFrame.")
+
     datasource = get_or_create_datasource(context, datasource_name)
     pandas_asset = datasource.add_dataframe_asset(name=asset_name, dataframe=df)
     batch_request = pandas_asset.build_batch_request()
+
     return context.get_validator(
         batch_request=batch_request,
         create_expectation_suite_with_name=f"{asset_name}_suite",
@@ -64,7 +65,7 @@ def validate_data(
 
     try:
         context = gx.get_context(project_root_dir=None, mode="ephemeral")
-    except (AttributeError, RuntimeError) as exc:
+    except Exception as exc:
         logger.error("Failed to initialize Great Expectations context: %s", exc)
         return {"success": False, "error": str(exc)}
 
@@ -77,12 +78,12 @@ def validate_data(
         kwargs = {key: value for key, value in expectation.items() if key != "type"}
         try:
             getattr(validator, expectation_type)(**kwargs)
-        except (TypeError, ValueError) as exc:
+        except Exception as exc:
             logger.error("Failed to apply expectation %s: %s", expectation_type, exc)
 
     try:
         result = validator.validate()
-    except (ValueError, RuntimeError) as exc:
+    except Exception as exc:
         logger.error("Validation execution failed: %s", exc)
         return {"success": False, "error": str(exc)}
 
@@ -109,11 +110,4 @@ def validate_loan_data(df: pd.DataFrame) -> bool:
         datasource_name="loan_data",
         asset_name="loan_data",
     )
-
     return bool(result.get("success"))
-
-
-if __name__ == "__main__":
-    print(
-        "This module provides data validation helpers for the pipeline. Import and use its functions in your workflow."
-    )

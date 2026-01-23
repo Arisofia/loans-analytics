@@ -222,8 +222,8 @@ GitHub needs to know what deployment environments exist. Create them in reposito
 Go to <https://github.com/owner/repo/settings/environments> and confirm:
 
 - [ ] staging (visible)
-- [ ] production (with v\* tag rule)
-- [ ] production-rollback (with v\* tag rule)
+- [ ] production (with v* tag rule)
+- [ ] production-rollback (with v* tag rule)
 
 **✓ All 3 environments created? Proceed to Step 6.**
 
@@ -289,6 +289,7 @@ Ensure all team members understand the new workflow. Share these documents:
 **For all team members:**
 
 - [ ] Share: `.github/README.md` - Overview of all workflows
+- [ ] Share: `.github/DEPLOYMENT_COORDINATION.md` - Slack communication guide
 
 **For developers:**
 
@@ -354,8 +355,8 @@ git status .github/
 - [x] Team members have read assigned documentation
 - [x] All verification checks passed
 
-**Completion Date**: **\*\***\_\_\_**\*\***
-**Verified By**: **\*\***\_\_\_**\*\***
+**Completion Date**: _______________
+**Verified By**: _______________
 
 ---
 
@@ -538,6 +539,8 @@ Create a test report with:
 - Issues found (if any)
 - Screenshots (if issues found)
 - Pass/fail status
+
+**Step 4: Post results in Slack**
 
 In **#dev-alerts** channel, post:
 
@@ -733,13 +736,14 @@ Visit: <https://staging.abaco-loans-analytics.com>
 - [x] CI pipeline ran successfully on PR
 - [x] Merge to develop triggered automatic staging deployment
 - [x] QA completed validation checklist
+- [x] QA posted results in Slack
 - [x] Test production deployment succeeded with manual approval
 - [x] Post-deployment health checks passed
 - [x] Rollback workflow practiced successfully
 - [x] No blockers found in any workflow
 
-**Completion Date**: **\*\***\_\_\_**\*\***
-**Verified By**: **\*\***\_\_\_**\*\***
+**Completion Date**: _______________
+**Verified By**: _______________
 
 ---
 
@@ -778,8 +782,8 @@ Go to: <https://github.com/owner/repo/settings/environments>
 Confirm all 3 environments exist:
 
 - [ ] staging
-- [ ] production (with v\* tag rule)
-- [ ] production-rollback (with v\* tag rule)
+- [ ] production (with v* tag rule)
+- [ ] production-rollback (with v* tag rule)
 
 **Step 4: Verify workflow files**
 
@@ -810,6 +814,7 @@ Review these files:
 - [ ] `.github/QUICK_START.md` - Instructions complete
 - [ ] `.github/TEAM_RUNBOOKS.md` - Role procedures clear
 - [ ] `.github/DEPLOYMENT_CONFIG.md` - Technical details correct
+- [ ] `.github/DEPLOYMENT_COORDINATION.md` - Slack procedures ready
 - [ ] `.github/POST_IMPLEMENTATION_CHECKLIST.md` - All tasks match reality
 
 **For each file:**
@@ -821,6 +826,8 @@ Review these files:
 - [ ] Verify command examples are correct
 
 **Step 2: Share final documentation**
+
+Email or Slack each team with final docs:
 
 **Developers:**
 
@@ -859,6 +866,8 @@ Please confirm you've read your assigned materials.
 
 Create a time for Q&A (30 minutes):
 
+**In #dev-help Slack channel**, ask:
+
 - "Any questions about the new CI/CD workflow?"
 - "Anything unclear in the documentation?"
 - "Any edge cases we should plan for?"
@@ -877,7 +886,11 @@ Document procedures for:
 
 ---
 
+### 3.4: Slack Channel Setup (30 min)
+
 **Step 1: Create channels (if not already exist)**
+
+In Slack workspace settings, create:
 
 - [ ] #dev-alerts (development notifications)
 - [ ] #prod-alerts (production notifications)
@@ -971,7 +984,7 @@ For each channel, pin relevant documentation:
 - [ ] Go to Settings → Environments
 - [ ] Verify 3 environments:
   - [ ] staging
-  - [ ] production (with v\* tag rule)
+  - [ ] production (with v* tag rule)
   - [ ] production-rollback
 
 **Configuration Files**
@@ -985,6 +998,7 @@ For each channel, pin relevant documentation:
 - [ ] All developers read QUICK_START.md
 - [ ] All QA read validation procedures
 - [ ] All DevOps read deployment procedures
+- [ ] All teams know Slack channels to use
 
 **Deployment Timeline**
 
@@ -1001,13 +1015,14 @@ For each channel, pin relevant documentation:
 - [x] All configuration reviewed and verified
 - [x] All documentation reviewed and updated
 - [x] All team members confirmed understanding
+- [x] Slack channels created and configured
 - [x] No blockers preventing production use
 - [x] Team confidence is high
 - [x] All pre-production checklist items complete
 
-**Completion Date**: **\*\***\_\_\_**\*\***
-**Verified By**: **\*\***\_\_\_**\*\***
-**Team Sign-Off**: **\*\***\_\_\_**\*\***
+**Completion Date**: _______________
+**Verified By**: _______________
+**Team Sign-Off**: _______________
 
 ---
 
@@ -1038,7 +1053,7 @@ For each channel, pin relevant documentation:
 ### GitHub Configuration
 
 - [ ] 3 environments exist (staging, production, production-rollback)
-- [ ] Production environment has v\* tag rule
+- [ ] Production environment has v* tag rule
 - [ ] Approval gates configured for production
 - [ ] Branch protection (optional but recommended)
 
@@ -1047,6 +1062,7 @@ For each channel, pin relevant documentation:
 - [ ] All team members have repository access
 - [ ] All team members read assigned documentation
 - [ ] All teams understand their role in deployment
+- [ ] Slack channels created and ready
 - [ ] Incident response procedures understood
 - [ ] On-call rotation established (if applicable)
 
@@ -1121,6 +1137,7 @@ Once in production, monitor these metrics:
 ### For Everyone
 
 - **README.md**: Start here for overview
+- **DEPLOYMENT_COORDINATION.md**: Slack procedures
 - **#dev-help**: Questions and discussion
 
 ---

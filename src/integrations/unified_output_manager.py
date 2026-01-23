@@ -117,9 +117,7 @@ class UnifiedOutputManager:
 
         if "figma" in enabled_outputs:
             logger.info("Exporting to Figma...")
-            results["outputs"]["figma"] = self.figma_client.sync_batch_export(
-                export_data, run_id
-            )
+            results["outputs"]["figma"] = self.figma_client.sync_batch_export(export_data, run_id)
 
         if "azure" in enabled_outputs:
             logger.info("Exporting to Azure...")
@@ -144,9 +142,7 @@ class UnifiedOutputManager:
 
         if "notion" in enabled_outputs:
             logger.info("Exporting to Notion...")
-            results["outputs"]["notion"] = self.notion_client.sync_batch_export(
-                export_data, run_id
-            )
+            results["outputs"]["notion"] = self.notion_client.sync_batch_export(export_data, run_id)
 
         success_flags = [
             output.get("success")
@@ -227,7 +223,7 @@ class UnifiedOutputManager:
     def health_check(self) -> Dict[str, bool]:
         """Check health of all output clients."""
         checks = {
-
+            "figma": bool(self.figma_client.api_token),
             "azure": bool(self.azure_storage_client.client),
             "supabase": bool(self.supabase_client.client),
             "meta": bool(self.meta_client.access_token),

@@ -10,7 +10,7 @@ A login shell (`bash -l`) reads `/etc/profile` then one of `~/.bash_profile`, `~
    - `bash -x ~/.bash_profile` if that file exists, otherwise
    - `bash -x ~/.profile`
 3. Review the trace output to identify the command returning a non-zero status.
-   **How to fix**
+**How to fix**
 
 - Remove or comment out the failing command while you repair it.
 - Ensure commands that depend on optional tools (e.g., `pyenv`, `nvm`) guard against missing binaries.

@@ -1,3 +1,7 @@
+# Looker + EEFF Ingest (Cascade Disabled)
+
+This workflow runs the unified pipeline using Looker exports while Cascade ingestion is offline.
+
 ## Required Files
 
 - `data/archives/looker_exports/loan_par_balances.csv` (preferred PAR snapshot)
@@ -41,14 +45,14 @@ Supported metrics (canonical keys):
 
 Two formats are supported:
 
-1. **Wide format** (one row per date, metrics in columns)
+1) **Wide format** (one row per date, metrics in columns)
 
 ```csv
 reporting_date,cash_balance_usd,total_assets_usd,total_liabilities_usd,net_income_usd
 2025-12-31,120000,800000,500000,15000
 ```
 
-1. **Long format** (one row per metric)
+1) **Long format** (one row per metric)
 
 ```csv
 reporting_date,metric,value
@@ -72,11 +76,11 @@ pipeline:
       source: looker
       looker:
         loans_par_path: data/archives/looker_exports/loan_par_balances.csv
-        loans_path: data/archives/looker_exports/loans.csv # fallback
+        loans_path: data/archives/looker_exports/loans.csv  # fallback
         financials_path: data/archives/financial_statements/
-        financials_format: auto # auto|wide|long
+        financials_format: auto  # auto|wide|long
         financials_date_column: reporting_date
-        financials_null_policy: skip # skip|fill_last|error
+        financials_null_policy: skip  # skip|fill_last|error
 ```
 
 ### Environment-Specific Override
@@ -201,7 +205,7 @@ pipeline:
   phases:
     ingestion:
       looker:
-        financials_null_policy: error # fail if any metric missing
+        financials_null_policy: error  # fail if any metric missing
 ```
 
 ## Output
@@ -237,3 +241,4 @@ After Looker ingestion completes:
 2. **Transform to marts** — Execute dbt models: `dbt run --select tag:looker_dependent`
 3. **Update dashboards** — Refresh Streamlit dashboard to show new KPIs
 4. **Monitor freshness** — Set up alerts if new PAR files don't arrive by expected time
+5. **Plan Cascade migration** — Once Cascade comes online, gradual cutover to `ingest_cascade()` source

@@ -42,10 +42,11 @@ deployment script generation, and more across local and cloud environments. This
 
 1. Local: set the `FITTEN_CONFIG` environment variable in your shell so Fitten CLI can read `fitten.config.toml`. Use
    commands like `fitten sniff apps/web` to scan subprojects as needed.
+2. GitHub: add `fitten.yml` under `.github/workflows/` to trigger Fitten checks on `pr` and `push`, with Slack/Webhook
    notifications.
-2. Deployment: Fitten can generate Azure/Vercel deployment notes and autofill variables using the scripts under
+3. Deployment: Fitten can generate Azure/Vercel deployment notes and autofill variables using the scripts under
    `infra/azure`.
-3. Opportunities: route Fitten output into Jira/Notion so recommendations become actionable tasks and every opportunity
+4. Opportunities: route Fitten output into Jira/Notion so recommendations become actionable tasks and every opportunity
    is tracked to closure.
 
 ## FAQ

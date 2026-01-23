@@ -9,13 +9,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Brand & Marketing agent execution harness"
-    )
+    parser = argparse.ArgumentParser(description="Brand & Marketing agent execution harness")
     parser.add_argument(
-        "--query",
-        required=True,
-        help="Brand query (e.g., 'What is our current sentiment?')",
+        "--query", required=True, help="Brand query (e.g., 'What is our current sentiment?')"
     )
     return parser.parse_args()
 

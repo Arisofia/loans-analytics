@@ -39,11 +39,7 @@ class TestPRStatus(unittest.TestCase):
         mock_status_resp.ok = True
         mock_status_resp.json.return_value = {"state": "success", "statuses": []}
 
-        mock_session.get.side_effect = [
-            mock_pr_resp,
-            mock_checks_resp,
-            mock_status_resp,
-        ]
+        mock_session.get.side_effect = [mock_pr_resp, mock_checks_resp, mock_status_resp]
 
         report = render_report("owner/repo", 1)
         self.assertIn("PR #1: Test PR", report)

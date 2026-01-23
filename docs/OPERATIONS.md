@@ -9,6 +9,7 @@ This runbook covers deployment, execution, monitoring, incident response, and re
 - Python 3.10+
 - `pip install -r requirements.lock.txt` (or the project-standard install)
 - Environment variables:
+  - `META_SYSTEM_USER_TOKEN` (Cascade token)
   - `AZURE_STORAGE_CONNECTION_STRING` (optional)
 
 ## Execution
@@ -16,15 +17,18 @@ This runbook covers deployment, execution, monitoring, incident response, and re
 ### Manual Run (Canonical)
 
 ```bash
-
+python scripts/run_data_pipeline.py --input data/raw/cascade/loan_tape.csv
 ```
 
 ### Configuration Override
 
 ```bash
 python scripts/run_data_pipeline.py \
+  --input data/archives/cascade/loan_tape.csv \
   --config config/pipeline.yml
 ```
+
+### HTTP Ingestion (Cascade)
 
 Set in `config/pipeline.yml`:
 
@@ -32,6 +36,7 @@ Set in `config/pipeline.yml`:
 pipeline:
   phases:
     ingestion:
+      source: cascade_http
 ```
 
 ## Run Artifacts
@@ -57,6 +62,7 @@ pipeline:
 
 ## Backup and Recovery
 
+- Raw inputs are archived under `data/archives/cascade`.
 - Manifests and compliance reports are stored under `logs/runs/`.
 - To restore a prior run, rehydrate outputs from `data/metrics/<run_id>` and manifest.
 
@@ -65,7 +71,7 @@ pipeline:
 1. Run pipeline with file input:
 
    ```bash
-
+   python scripts/run_data_pipeline.py --input data/raw/cascade/loan_tape.csv
    ```
 
 2. Run tests:

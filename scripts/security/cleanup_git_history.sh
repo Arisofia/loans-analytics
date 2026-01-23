@@ -9,15 +9,15 @@ echo "╚═══════════════════════�
 echo ""
 
 # Check if BFG is installed
-if ! command -v bfg &>/dev/null; then
-  echo "❌ BFG Repo Cleaner not found. Installing..."
-  if command -v brew &>/dev/null; then
-    brew install bfg
-  else
-    echo "❌ Please install BFG manually:"
-    echo "   https://rtyley.github.io/bfg-repo-cleaner/"
-    exit 1
-  fi
+if ! command -v bfg &> /dev/null; then
+    echo "❌ BFG Repo Cleaner not found. Installing..."
+    if command -v brew &> /dev/null; then
+        brew install bfg
+    else
+        echo "❌ Please install BFG manually:"
+        echo "   https://rtyley.github.io/bfg-repo-cleaner/"
+        exit 1
+    fi
 fi
 
 echo "📦 BFG Repo Cleaner version:"
@@ -26,12 +26,13 @@ echo ""
 
 # Create secrets file
 SECRETS_FILE="/tmp/secrets_to_remove.txt"
-cat >"$SECRETS_FILE" <<'SECRETS'
+cat > "$SECRETS_FILE" << 'SECRETS'
 # The following are secret patterns (REDACTED for pre-commit compliance):
 # [OPENAI_KEY_PATTERN]
 # [ANTHROPIC_KEY_PATTERN]
 # [AZURE_CLIENT_SECRET_PATTERN]
-
+# [HUBSPOT_API_KEY_PATTERN]
+# [HUBSPOT_TOKEN_PATTERN]
 # [AZURE_EXAMPLE_PATTERN]
 SECRETS
 
@@ -46,8 +47,8 @@ echo ""
 # Ask for confirmation
 read -p "⚠️  This will rewrite git history. Continue? (yes/no): " -r
 if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
-  echo "Aborted."
-  exit 1
+    echo "Aborted."
+    exit 1
 fi
 
 echo ""
@@ -62,10 +63,10 @@ git gc --prune=now --aggressive
 echo ""
 echo "📊 Verifying cleanup..."
 if git log --all -S '[OPENAI_KEY_PATTERN]' | wc -l | grep -q '^0$'; then
-  echo "✅ Credentials successfully removed from git history (pattern: [OPENAI_KEY_PATTERN])"
+    echo "✅ Credentials successfully removed from git history (pattern: [OPENAI_KEY_PATTERN])"
 else
-  echo "⚠️  Warning: Some credentials may still be in history (pattern: [OPENAI_KEY_PATTERN])"
-  echo "   You may need to run cleanup again or investigate manually"
+    echo "⚠️  Warning: Some credentials may still be in history (pattern: [OPENAI_KEY_PATTERN])"
+    echo "   You may need to run cleanup again or investigate manually"
 fi
 
 echo ""

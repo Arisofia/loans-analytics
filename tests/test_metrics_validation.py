@@ -1,5 +1,7 @@
 import json
 import logging
+import os
+from pathlib import Path
 
 import pytest
 
@@ -25,8 +27,7 @@ def test_batch_export_load_latest_metrics_invalid_json(tmp_path, caplog, monkeyp
     # Assert
     assert data == {}
     assert any(
-        "Expected dict" in rec.message or "Failed to parse" in rec.message
-        for rec in caplog.records
+        "Expected dict" in rec.message or "Failed to parse" in rec.message for rec in caplog.records
     )
 
 
@@ -51,8 +52,7 @@ def test_load_dashboard_metrics_invalid_json(tmp_path, caplog, capsys, monkeypat
 
     # Prefer caplog, but fall back to captured stderr if the message was emitted
     if not any(
-        "Expected dict" in rec.message or "Failed to parse" in rec.message
-        for rec in caplog.records
+        "Expected dict" in rec.message or "Failed to parse" in rec.message for rec in caplog.records
     ):
         captured = capsys.readouterr()
         assert "Expected dict" in captured.err or "Failed to parse" in captured.err

@@ -157,7 +157,7 @@ export function BulkTokenInput({ open, onClose, onProcessItem }: BulkTokenInputP
             {items.map((item, index) => (
               <div key={`${item.platform}-${index}`} className={styles.progressItem}>
                 <div>
-                  <strong>{PLATFORM_LABELS[item.platform as Platform] ?? item.platform}</strong> —{' '}
+                  <strong>{PLATFORM_LABELS[item.platform]}</strong> —{' '}
                   {item.accountId || 'No account ID'}
                 </div>
                 <div>{item.message || 'Waiting to process'}</div>
@@ -206,31 +206,27 @@ export function BulkTokenInput({ open, onClose, onProcessItem }: BulkTokenInputP
 }
 
 function parseInput(input: string): BulkTokenItem[] {
-  const items: Array<BulkTokenItem | null> = input
+  return input
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => line.split(',').map((segment) => segment.trim()))
     .filter((parts) => parts.length >= 2)
     .map((parts) => {
-      const [rawPlatform, token, accountIdRaw] = parts
-      const normalizedPlatform = rawPlatform?.toLowerCase()
-
-      if (!normalizedPlatform || !PLATFORMS.includes(normalizedPlatform as Platform)) {
+      const [rawPlatform, token, accountId] = parts
+      const normalizedPlatform = rawPlatform?.toLowerCase() as Platform | undefined
+      if (!normalizedPlatform || !PLATFORMS.includes(normalizedPlatform)) {
         return null
       }
-
-      const item: BulkTokenItem = {
-        platform: normalizedPlatform as Platform,
+      return {
+        platform: normalizedPlatform,
         token: token ?? '',
-        accountId: accountIdRaw ?? '',
+        accountId: accountId ?? '',
         status: 'pending' as ItemStatus,
         attempts: 0,
-      }
-      return item
+      } as BulkTokenItem
     })
-
-  return items.filter((item): item is BulkTokenItem => !!item)
+    .filter((item): item is BulkTokenItem => item !== null)
 }
 
 function waitForDelay(attempt: number) {

@@ -12,23 +12,23 @@ Complete GitHub Actions CI/CD pipeline with comprehensive team runbooks for auto
 
 ### GitHub Actions Workflows
 
-| File                      | Purpose                             | Trigger                   | Duration                 |
-| ------------------------- | ----------------------------------- | ------------------------- | ------------------------ |
-| **ci.yml**                | Lint, type-check, test, build       | Push/PR to main/develop   | 5-10 min                 |
-| **deploy-staging.yml**    | Auto-deploy to staging + validation | develop branch merge      | 2-3 min + 24h validation |
-| **deploy-production.yml** | Manual approval + production deploy | Version tag (v*.*.\*)     | 5-10 min total           |
-| **rollback.yml**          | Emergency rollback capability       | Manual workflow dispatch  | < 5 min                  |
-| **reusable-steps.yml**    | Modular workflow components         | Called by other workflows | -                        |
+| File | Purpose | Trigger | Duration |
+|------|---------|---------|----------|
+| **ci.yml** | Lint, type-check, test, build | Push/PR to main/develop | 5-10 min |
+| **deploy-staging.yml** | Auto-deploy to staging + validation | develop branch merge | 2-3 min + 24h validation |
+| **deploy-production.yml** | Manual approval + production deploy | Version tag (v*.*.*) | 5-10 min total |
+| **rollback.yml** | Emergency rollback capability | Manual workflow dispatch | < 5 min |
+| **reusable-steps.yml** | Modular workflow components | Called by other workflows | - |
 
 ### Team Documentation
 
-| File                           | Audience            | Read Time |
-| ------------------------------ | ------------------- | --------- |
-| **QUICK_START.md**             | All developers      | 5 min     |
-| **TEAM_RUNBOOKS.md**           | Role-specific teams | 15-30 min |
-| **DEPLOYMENT_COORDINATION.md** | All team members    | 10 min    |
-| **DEPLOYMENT_CONFIG.md**       | DevOps/Operations   | 15 min    |
-| **README.md**                  | Documentation index | 5 min     |
+| File | Audience | Read Time |
+|------|----------|-----------|
+| **QUICK_START.md** | All developers | 5 min |
+| **TEAM_RUNBOOKS.md** | Role-specific teams | 15-30 min |
+| **DEPLOYMENT_COORDINATION.md** | All team members | 10 min |
+| **DEPLOYMENT_CONFIG.md** | DevOps/Operations | 15 min |
+| **README.md** | Documentation index | 5 min |
 
 ---
 
@@ -60,6 +60,7 @@ Complete GitHub Actions CI/CD pipeline with comprehensive team runbooks for auto
 ### Team Coordination
 
 ✅ Role-based runbooks (Dev, QA, DevOps)
+✅ Slack notification templates
 ✅ Incident response procedures
 ✅ Common scenario walkthroughs
 
@@ -89,14 +90,14 @@ Production Deploy → Health Checks
 
 All deployments must meet:
 
-| Check      | Target    | Enforcement       |
-| ---------- | --------- | ----------------- |
-| Lint       | 0 errors  | Blocks all        |
-| Type Check | 0 errors  | Blocks all        |
-| Tests      | 100% pass | Blocks all        |
-| Coverage   | ≥ 85%     | Blocks production |
-| Build      | Success   | Blocks all        |
-| Health     | HTTP 200  | Blocks production |
+| Check | Target | Enforcement |
+|-------|--------|-------------|
+| Lint | 0 errors | Blocks all |
+| Type Check | 0 errors | Blocks all |
+| Tests | 100% pass | Blocks all |
+| Coverage | ≥ 85% | Blocks production |
+| Build | Success | Blocks all |
+| Health | HTTP 200 | Blocks production |
 
 ---
 
@@ -140,6 +141,7 @@ All deployments must meet:
 
 1. Read: TEAM_RUNBOOKS.md → "QA / Quality Assurance"
 2. Get: 24-hour validation checklist
+3. Coordinate: Via Slack in #dev-alerts
 
 ### For DevOps
 
@@ -151,7 +153,8 @@ All deployments must meet:
 ### For Entire Team
 
 1. Read: README.md (5 min overview)
-2. Bookmark: All docs in .github/ folder
+2. Review: DEPLOYMENT_COORDINATION.md (Slack etiquette)
+3. Bookmark: All docs in .github/ folder
 
 ---
 
@@ -171,6 +174,7 @@ apps/web/.github/
 ├── QUICK_START.md                  # Developer quick reference ⭐
 ├── TEAM_RUNBOOKS.md                # Role-based runbooks ⭐
 ├── DEPLOYMENT_CONFIG.md            # Technical configuration
+├── DEPLOYMENT_COORDINATION.md       # Slack communication
 └── IMPLEMENTATION_SUMMARY.md        # This file
 
 Related (parent directory):
@@ -200,6 +204,7 @@ Related (parent directory):
 ✅ **Team Communication**
 
 - Clear role-based responsibilities
+- Automated Slack notifications
 - Incident response procedures defined
 - All documentation accessible
 
@@ -280,6 +285,8 @@ Related (parent directory):
 
 ## Integration Points
 
+### GitHub Actions → Slack
+
 - Deployment status notifications
 - Health check results
 - Incident alerts
@@ -309,16 +316,16 @@ Related (parent directory):
 
 ## Comparison: Before vs After
 
-| Aspect                | Before         | After                 |
-| --------------------- | -------------- | --------------------- |
-| **Code Quality**      | Manual         | Automated gates       |
-| **Staging Deploy**    | Manual         | Auto on develop       |
-| **Production Deploy** | Manual scripts | CI/CD workflow        |
-| **Validation**        | Inconsistent   | 24-hour required      |
-| **Rollback**          | Manual, slow   | One-click, < 5 min    |
-| **Documentation**     | Minimal        | Comprehensive         |
-| **Team Clarity**      | Low            | High (role-based)     |
-| **Error Recovery**    | Difficult      | Documented procedures |
+| Aspect | Before | After |
+|--------|--------|-------|
+| **Code Quality** | Manual | Automated gates |
+| **Staging Deploy** | Manual | Auto on develop |
+| **Production Deploy** | Manual scripts | CI/CD workflow |
+| **Validation** | Inconsistent | 24-hour required |
+| **Rollback** | Manual, slow | One-click, < 5 min |
+| **Documentation** | Minimal | Comprehensive |
+| **Team Clarity** | Low | High (role-based) |
+| **Error Recovery** | Difficult | Documented procedures |
 
 ---
 
@@ -326,7 +333,7 @@ Related (parent directory):
 
 ⚠️ **Azure Static Web Apps only**: Workflows configured for Azure. Other platforms need adjustment.
 ⚠️ **Environment approval required**: Production deployments need manual step (by design).
-⚠️ **Semantic versioning required**: Tags must follow v*.*.\* format.
+⚠️ **Semantic versioning required**: Tags must follow v*.*.* format.
 ⚠️ **24-hour validation mandatory**: Cannot skip staging validation for production.
 
 ---

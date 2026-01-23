@@ -83,16 +83,16 @@ make test-cov
 
 ### Tools Configured
 
-| Tool     | Purpose              | Config         |
-| -------- | -------------------- | -------------- |
-| pylint   | Static code analysis | pyproject.toml |
-| flake8   | Style enforcement    | pyproject.toml |
-| ruff     | Fast Python linter   | Built-in       |
-| black    | Code formatter       | pyproject.toml |
-| isort    | Import sorting       | Built-in       |
-| mypy     | Type checking        | TBD            |
-| pytest   | Testing              | Built-in       |
-| coverage | Test coverage        | Built-in       |
+| Tool | Purpose | Config |
+|------|---------|--------|
+| pylint | Static code analysis | pyproject.toml |
+| flake8 | Style enforcement | pyproject.toml |
+| ruff | Fast Python linter | Built-in |
+| black | Code formatter | pyproject.toml |
+| isort | Import sorting | Built-in |
+| mypy | Type checking | TBD |
+| pytest | Testing | Built-in |
+| coverage | Test coverage | Built-in |
 
 ---
 
@@ -198,9 +198,9 @@ make test-cov
 
 ### Production Pipeline
 
-- python/pipeline/orchestrator.py - V2 Pipeline orchestrator
-- python/pipeline/{ingestion,transformation,calculation,output}.py - Pipeline phases
-- python/kpi_engine_v2.py - KPI calculation engine
+- src/pipeline/orchestrator.py - V2 Pipeline orchestrator
+- src/pipeline/{ingestion,transformation,calculation,output}.py - Pipeline phases
+- src/kpi_engine_v2.py - KPI calculation engine
 
 ---
 

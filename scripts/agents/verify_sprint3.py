@@ -45,11 +45,7 @@ def test_risk_agent():
     orchestrator.llm = Sprint3MockLLM("risk")
 
     input_data = {"query": "What is the current portfolio risk?"}
-    agent_config = {
-        "name": "RiskAgent",
-        "role": "Risk Analyst",
-        "goal": "Analyze portfolio risk",
-    }
+    agent_config = {"name": "RiskAgent", "role": "Risk Analyst", "goal": "Analyze portfolio risk"}
 
     result = orchestrator.run(input_data, agent_config)
     print(f"Risk Agent Output: {result['output']}")

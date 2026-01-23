@@ -1,109 +1,23 @@
 import json
 import logging
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 from prefect import flow, task
 
+from src.agents.tools import send_slack_notification
 from src.compliance import build_compliance_report, write_compliance_report
-from src.config.paths import Paths
-from src.pipeline.data_ingestion import UnifiedIngestion
+from src.pipeline.config import PipelineConfig
+from src.pipeline.data_ingestion import IngestionResult, UnifiedIngestion
 from src.pipeline.data_transformation import UnifiedTransformation
 from src.pipeline.kpi_calculation import UnifiedCalculationV2
 from src.pipeline.output import UnifiedOutput
-from src.pipeline.utils import (ensure_dir, load_yaml, resolve_placeholders,
-                                utc_now, write_json)
+from src.pipeline.utils import ensure_dir, utc_now, write_json
 from src.tracing_setup import get_tracer
 
 logger = logging.getLogger(__name__)
 tracer = get_tracer(__name__)
-
-
-def _deep_merge(
-    base_dict: Dict[str, Any], override_dict: Dict[str, Any]
-) -> Dict[str, Any]:
-    """Deep merge override_dict into base_dict, with override taking precedence."""
-    result = base_dict.copy()
-    for key, value in override_dict.items():
-        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-            result[key] = _deep_merge(result[key], value)
-        else:
-            result[key] = value
-    return result
-
-
-class PipelineConfig:
-    """Configuration management with validation, environment overrides, and defaults."""
-
-    DEFAULT_CONFIG_PATH = Paths.config_file()
-    ENVIRONMENTS_DIR = Paths.config_file().parent.parent / "environments"
-
-    def __init__(self, config_path: Optional[Path] = None):
-        self.config_path = config_path or self.DEFAULT_CONFIG_PATH
-        self.environment = os.getenv("PIPELINE_ENV", "development")
-        self.config = self._load_config()
-        self._validate_config()
-        logger.info("Pipeline configured for environment: %s", self.environment)
-
-    def _load_config(self) -> Dict[str, Any]:
-        """Load base config and merge with environment-specific overrides."""
-        if not self.config_path.exists():
-            logger.warning(
-                "Config file not found: %s, using minimal defaults", self.config_path
-            )
-            return self._default_config()
-
-        base_config = load_yaml(self.config_path)
-        logger.info("Loaded base configuration from %s", self.config_path)
-
-        env_config_path = self.ENVIRONMENTS_DIR / f"{self.environment}.yml"
-        if env_config_path.exists():
-            env_config = load_yaml(env_config_path)
-            base_config = _deep_merge(base_config, env_config)
-            logger.info("Merged environment config from %s", env_config_path)
-        else:
-            logger.warning(
-                "Environment config not found: %s, using base config only",
-                env_config_path,
-            )
-
-        context = {
-            "portfolio_id": "",
-        }
-        return resolve_placeholders(base_config, context)
-
-    def _default_config(self) -> Dict[str, Any]:
-        return {
-            "version": "2.0",
-            "name": "abaco_unified_pipeline",
-            "environment": self.environment,
-            "pipeline": {
-                "phases": {
-                    "ingestion": {},
-                    "transformation": {},
-                    "calculation": {},
-                    "outputs": {},
-                }
-            },
-            "run": {"id_strategy": "timestamp"},
-        }
-
-    def _validate_config(self) -> None:
-        if "pipeline" not in self.config:
-            raise ValueError("Pipeline configuration missing 'pipeline' key")
-        if "phases" not in self.config["pipeline"]:
-            raise ValueError("Pipeline configuration missing 'phases' key")
-
-    def get(self, *keys: str, default: Any = None) -> Any:
-        value: Any = self.config
-        for key in keys:
-            if isinstance(value, dict):
-                value = value.get(key)
-            else:
-                return default
-        return value if value is not None else default
 
 
 class UnifiedPipeline:
@@ -114,18 +28,11 @@ class UnifiedPipeline:
     calculator: UnifiedCalculationV2
     output: UnifiedOutput
 
-    def __init__(
-        self,
-        config_path: Optional[Path] = None,
-        config_overrides: Optional[Dict[str, Any]] = None,
-    ):
+    def __init__(self, config_path: Optional[Path] = None):
         self.config = PipelineConfig(config_path)
-        if config_overrides:
-            self.config.config = _deep_merge(self.config.config, config_overrides)
-            logger.info("Applied configuration overrides: %s", config_overrides.keys())
-
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-        self.run_id: Optional[str] = f"pipeline_{timestamp}"
+        self.run_id: str = f"pipeline_{timestamp}"
+
         # Initialize phase components
         self.ingestor = UnifiedIngestion(self.config.config)
         self.transformer = UnifiedTransformation(self.config.config, run_id=self.run_id)
@@ -159,16 +66,16 @@ class UnifiedPipeline:
                 continue
         return None
 
-    def _handle_alerts(
-        self, ingestion_summary: Dict[str, Any], calculation_result: Any
-    ) -> None:
+    def _handle_alerts(self, ingestion_summary: Dict[str, Any], calculation_result: Any) -> None:
         """Evaluate DQ and KPI statuses to trigger alerts."""
         alerts = []
 
         # 1. Data Quality Alerts
         dq = ingestion_summary.get("data_quality", {})
         dq_score = dq.get("data_quality_score", 100)
-        dq_threshold = 95  # Could be moved to config
+        dq_threshold = self.config.get(
+            "pipeline", "phases", "ingestion", "validation", "threshold", default=95
+        )
 
         if dq_score < dq_threshold:
             alerts.append(
@@ -182,15 +89,14 @@ class UnifiedPipeline:
             disp = metric.get("display_name", name)
 
             if status == "critical":
-                alerts.append(
-                    f"🚨 *Critical KPI Alert*: {disp} is {val} (Status: CRITICAL)"
-                )
+                alerts.append(f"🚨 *Critical KPI Alert*: {disp} is {val} (Status: CRITICAL)")
             elif status == "warning":
                 alerts.append(f"⚠️ *KPI Warning*: {disp} is {val} (Status: WARNING)")
 
         if alerts:
             message = f"📢 *Pipeline Alert - Run {self.run_id}*\n\n" + "\n".join(alerts)
-            logger.warning("Triggering alerts: %s", alerts)
+            logger.warning("Triggering Slack alerts: %s", alerts)
+            send_slack_notification(message, channel="kpi-compliance")
 
     def execute(
         self, input_file: Path, user: str = "system", action: str = "manual"
@@ -198,162 +104,61 @@ class UnifiedPipeline:
         with tracer.start_as_current_span("pipeline.execute") as span:
             logger.info("Starting unified pipeline execution")
             run_started = utc_now()
+
             run_cfg = self.config.get("run", default={}) or {}
             artifacts_dir = Path(run_cfg.get("artifacts_dir", "logs/runs"))
-            raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/raw"))
-            ingest_cfg = (
-                self.config.get("pipeline", "phases", "ingestion", default={}) or {}
-            )
-            ingest_source = ingest_cfg.get("source", "file")
+            raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/cascade"))
+            cascade_cfg = self.config.get("cascade", default={}) or {}
 
             span.set_attribute("pipeline.user", user)
             span.set_attribute("pipeline.action", action)
-            span.set_attribute("pipeline.source", ingest_source)
-            try:
-                with tracer.start_as_current_span("pipeline.ingestion"):
-                    if ingest_source == "looker":
-                        looker_cfg = ingest_cfg.get("looker", {}) or {}
-                        loans_par_path = looker_cfg.get("loans_par_path")
-                        loans_fallback_path = looker_cfg.get("loans_path")
-                        selected_path = None
-                        if loans_par_path:
-                            candidate = Path(loans_par_path)
-                            if candidate.exists():
-                                selected_path = candidate
-                        if selected_path is None and loans_fallback_path:
-                            selected_path = Path(loans_fallback_path)
-                        if selected_path is None:
-                            selected_path = input_file
-                        financials_path = looker_cfg.get("financials_path")
-                        ingestion_result = self.ingestor.ingest_looker(
-                            selected_path,
-                            financials_path=(
-                                Path(financials_path) if financials_path else None
-                            ),
-                            archive_dir=raw_archive_dir,
-                        )
-                    else:
-                        ingestion_result = self.ingestor.ingest_file(
-                            input_file, archive_dir=raw_archive_dir
-                        )
 
+            try:
+                # 1. Ingestion
+                ingestion_result = self._ingestion_phase(input_file, raw_archive_dir, cascade_cfg)
+
+                # 2. Update Run ID and Components
                 self.run_id = self._generate_run_id(ingestion_result.source_hash)
                 span.set_attribute("pipeline.run_id", self.run_id)
-                span.set_attribute("ingestion.row_count", len(ingestion_result.df))
+                self._update_component_run_ids()
+
                 run_dir = ensure_dir(artifacts_dir / self.run_id)
 
-                # Update run_id for components
-                self.transformer.run_id = self.run_id
-                self.calculator.run_id = self.run_id
-                self.output.run_id = self.run_id
+                # 3. Transformation
+                transformation_result = self._transformation_phase(ingestion_result, user)
 
-                with tracer.start_as_current_span(
-                    "pipeline.transformation"
-                ) as transformation_span:
-                    transformation_result = self.transformer.transform(
-                        ingestion_result.df, user=user
-                    )
-                    transformation_span.set_attribute(
-                        "transformation.row_count", len(transformation_result.df)
-                    )
-                    transformation_span.set_attribute(
-                        "transformation.masked_columns",
-                        len(transformation_result.masked_columns),
-                    )
-
-                baseline_metrics = self._load_previous_metrics(
-                    artifacts_dir, self.run_id
+                # 4. Calculation
+                baseline_metrics = self._load_previous_metrics(artifacts_dir, self.run_id)
+                calculation_result = self._calculation_phase(
+                    transformation_result, baseline_metrics
                 )
 
-                with tracer.start_as_current_span(
-                    "pipeline.calculation"
-                ) as calculation_span:
-                    calculation_result = self.calculator.calculate(
-                        transformation_result.df, baseline_metrics
-                    )
-                    calculation_span.set_attribute(
-                        "calculation.metric_count", len(calculation_result.metrics)
-                    )
+                # 5. Alerts
+                self._handle_alerts(self.ingestor.get_ingest_summary(), calculation_result)
 
-                # Evaluate alerts
-                ingest_summary = {
-                    "data_quality": {
-                        "data_quality_score": (
-                            ingestion_result.quality_report.score
-                            if ingestion_result.quality_report
-                            else 100
-                        )
-                    }
-                }
-                self._handle_alerts(ingest_summary, calculation_result)
+                # 6. Compliance
+                compliance_path = self._compliance_phase(
+                    transformation_result, ingestion_result, run_dir, user, action
+                )
 
-                with tracer.start_as_current_span("pipeline.compliance"):
-                    compliance_report = build_compliance_report(
-                        run_id=self.run_id,
-                        access_log=transformation_result.access_log,
-                        masked_columns=transformation_result.masked_columns,
-                        mask_stage="transformation",
-                        metadata={
-                            "user": user,
-                            "action": action,
-                            "source_file": ingestion_result.metadata.get("source_file"),
-                            "checksum": ingestion_result.metadata.get("checksum"),
-                        },
-                    )
-                    if run_dir is not None:
-                        compliance_path = run_dir / f"{self.run_id}_compliance.json"
-                        write_compliance_report(compliance_report, compliance_path)
-                    else:
-                        logger.error("run_dir is None; cannot write compliance report.")
+                # 7. Output
+                output_result = self._output_phase(
+                    transformation_result,
+                    calculation_result,
+                    ingestion_result,
+                    compliance_path,
+                    user,
+                    action,
+                )
 
-                with tracer.start_as_current_span("pipeline.output"):
-                    output_result = self.output.persist(
-                        transformation_result.df,
-                        calculation_result.metrics,
-                        metadata={
-                            "ingestion": ingestion_result.metadata,
-                            "lineage": transformation_result.lineage,
-                            "calculation_audit": calculation_result.audit_trail,
-                            "anomalies": calculation_result.anomalies,
-                            "context": {"user": user, "action": action},
-                        },
-                        run_ids={
-                            "pipeline": self.run_id,
-                            "ingestion": ingestion_result.run_id,
-                            "transformation": transformation_result.run_id,
-                            "calculation": calculation_result.run_id,
-                        },
-                        quality_checks=transformation_result.quality_checks,
-                        compliance_report_path=compliance_path,
-                        timeseries=calculation_result.timeseries,
-                    )
-
-                summary = {
-                    "status": "success",
-                    "run_id": self.run_id,
-                    "started_at": run_started,
-                    "completed_at": utc_now(),
-                    "phases": {
-                        "ingestion": {
-                            "run_id": ingestion_result.run_id,
-                            "rows": len(ingestion_result.df),
-                        },
-                        "transformation": {
-                            "run_id": transformation_result.run_id,
-                            "rows": len(transformation_result.df),
-                            "masked_columns": transformation_result.masked_columns,
-                        },
-                        "calculation": {
-                            "run_id": calculation_result.run_id,
-                            "metrics": list(calculation_result.metrics.keys()),
-                            "anomalies": calculation_result.anomalies,
-                        },
-                        "output": {
-                            "manifest": str(output_result.manifest_path),
-                            "outputs": output_result.output_paths,
-                        },
-                    },
-                }
+                # 8. Summary
+                summary = self._summarize(
+                    run_started,
+                    ingestion_result,
+                    transformation_result,
+                    calculation_result,
+                    output_result,
+                )
 
                 write_json(run_dir / f"{self.run_id}_summary.json", summary)
                 return summary
@@ -369,9 +174,130 @@ class UnifiedPipeline:
                     "completed_at": utc_now(),
                 }
 
-    def run(
-        self, input_file: str, context: Optional[Dict[str, Any]] = None
+    def _update_component_run_ids(self) -> None:
+        """Update run_id for all pipeline components."""
+        self.transformer.run_id = self.run_id
+        self.calculator.run_id = self.run_id
+        self.output.run_id = self.run_id
+
+    def _ingestion_phase(
+        self, input_file: Path, archive_dir: Path, cascade_cfg: Dict[str, Any]
+    ) -> IngestionResult:
+        with tracer.start_as_current_span("pipeline.ingestion") as span:
+            result = self.ingestor.ingest(
+                input_file, archive_dir=archive_dir, cascade_config=cascade_cfg
+            )
+            span.set_attribute("ingestion.row_count", len(result.df))
+            return result
+
+    def _transformation_phase(self, ingestion_result: IngestionResult, user: str) -> Any:
+        with tracer.start_as_current_span("pipeline.transformation") as span:
+            result = self.transformer.transform(ingestion_result.df, user=user)
+            span.set_attribute("transformation.row_count", len(result.df))
+            span.set_attribute("transformation.masked_columns", len(result.masked_columns))
+            return result
+
+    def _calculation_phase(
+        self, transformation_result: Any, baseline_metrics: Optional[Dict[str, Any]]
+    ) -> Any:
+        with tracer.start_as_current_span("pipeline.calculation") as span:
+            result = self.calculator.calculate(transformation_result.df, baseline_metrics)
+            span.set_attribute("calculation.metric_count", len(result.metrics))
+            return result
+
+    def _compliance_phase(
+        self,
+        transformation_result: Any,
+        ingestion_result: IngestionResult,
+        run_dir: Path,
+        user: str,
+        action: str,
+    ) -> Path:
+        with tracer.start_as_current_span("pipeline.compliance"):
+            compliance_report = build_compliance_report(
+                run_id=self.run_id,
+                access_log=transformation_result.access_log,
+                masked_columns=transformation_result.masked_columns,
+                mask_stage="transformation",
+                metadata={
+                    "user": user,
+                    "action": action,
+                    "source_file": ingestion_result.metadata.get("source_file"),
+                    "checksum": ingestion_result.metadata.get("checksum"),
+                },
+            )
+            compliance_path = run_dir / f"{self.run_id}_compliance.json"
+            write_compliance_report(compliance_report, compliance_path)
+            return compliance_path
+
+    def _output_phase(
+        self,
+        transformation_result: Any,
+        calculation_result: Any,
+        ingestion_result: IngestionResult,
+        compliance_path: Path,
+        user: str,
+        action: str,
+    ) -> Any:
+        with tracer.start_as_current_span("pipeline.output"):
+            return self.output.persist(
+                transformation_result.df,
+                calculation_result.metrics,
+                metadata={
+                    "ingestion": ingestion_result.metadata,
+                    "lineage": transformation_result.lineage,
+                    "calculation_audit": calculation_result.audit_trail,
+                    "anomalies": calculation_result.anomalies,
+                    "context": {"user": user, "action": action},
+                    "extended_kpis": calculation_result.extended_kpis,
+                },
+                run_ids={
+                    "pipeline": self.run_id,
+                    "ingestion": ingestion_result.run_id,
+                    "transformation": transformation_result.run_id,
+                    "calculation": calculation_result.run_id,
+                },
+                quality_checks=transformation_result.quality_checks,
+                compliance_report_path=compliance_path,
+                timeseries=calculation_result.timeseries,
+            )
+
+    def _summarize(
+        self,
+        run_started: str,
+        ingestion_result: IngestionResult,
+        transformation_result: Any,
+        calculation_result: Any,
+        output_result: Any,
     ) -> Dict[str, Any]:
+        return {
+            "status": "success",
+            "run_id": self.run_id,
+            "started_at": run_started,
+            "completed_at": utc_now(),
+            "phases": {
+                "ingestion": {
+                    "run_id": ingestion_result.run_id,
+                    "rows": len(ingestion_result.df),
+                },
+                "transformation": {
+                    "run_id": transformation_result.run_id,
+                    "rows": len(transformation_result.df),
+                    "masked_columns": transformation_result.masked_columns,
+                },
+                "calculation": {
+                    "run_id": calculation_result.run_id,
+                    "metrics": list(calculation_result.metrics.keys()),
+                    "anomalies": calculation_result.anomalies,
+                },
+                "output": {
+                    "manifest": str(output_result.manifest_path),
+                    "outputs": output_result.output_paths,
+                },
+            },
+        }
+
+    def run(self, input_file: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         context = context or {}
         user = context.get("user", "system")
         action = context.get("action", "manual")
@@ -380,56 +306,70 @@ class UnifiedPipeline:
 
 # Prefect Tasks for Engineering Excellence and Lineage
 @task(name="Ingest Loan Tape", retries=3, retry_delay_seconds=60)
-def ingest_task(pipeline: UnifiedPipeline, input_file: Path):
-    logger.info("Task: Ingesting %s", input_file)
-    return pipeline.ingestor.ingest_file(input_file)
+def ingest_task(pipeline: UnifiedPipeline, input_file: Path) -> IngestionResult:
+    run_cfg = pipeline.config.get("run", default={}) or {}
+    archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/cascade"))
+    cascade_cfg = pipeline.config.get("cascade", default={}) or {}
+    return pipeline._ingestion_phase(input_file, archive_dir, cascade_cfg)
 
 
 @task(name="Transform Data")
-def transform_task(pipeline: UnifiedPipeline, ingestion_result):
-    if ingestion_result.df.empty:
-        return ingestion_result
-    logger.info("Task: Transforming data")
-    return pipeline.transformer.transform(ingestion_result.df)
+def transform_task(pipeline: UnifiedPipeline, ingestion_result: IngestionResult, user: str) -> Any:
+    return pipeline._transformation_phase(ingestion_result, user)
 
 
 @task(name="Calculate KPIs")
-def calculate_task(pipeline: UnifiedPipeline, transformation_result):
-    if transformation_result.df.empty:
-        return transformation_result
-    logger.info("Task: Calculating KPIs")
-    return pipeline.calculator.calculate(transformation_result.df)
+def calculate_task(
+    pipeline: UnifiedPipeline, transformation_result: Any, artifacts_dir: Path
+) -> Any:
+    baseline = pipeline._load_previous_metrics(artifacts_dir, pipeline.run_id or "")
+    return pipeline._calculation_phase(transformation_result, baseline)
 
 
-@flow(name="Daily Loan Intelligence Cycle")
-def daily_loan_intelligence_flow(input_file: str = "data/archives/abaco_portfolio.csv"):
-    """
-    Prefect flow for daily loan intelligence operations.
-    Enforces Data Contracts and emits Lineage metadata.
-    """
-    logger.info("Starting Daily Loan Intelligence Cycle for %s", input_file)
+@task(name="Persist Results")
+def output_task(
+    pipeline: UnifiedPipeline,
+    transformation_result: Any,
+    calculation_result: Any,
+    ingestion_result: IngestionResult,
+    run_dir: Path,
+    user: str,
+    action: str,
+) -> Dict[str, Any]:
+    # Compliance first
+    compliance_path = pipeline._compliance_phase(
+        transformation_result, ingestion_result, run_dir, user, action
+    )
+    # Then output
+    pipeline._output_phase(
+        transformation_result, calculation_result, ingestion_result, compliance_path, user, action
+    )
+    return pipeline.ingestor.get_ingest_summary()
+
+
+@flow(name="Abaco Data Pipeline V2")
+def abaco_pipeline_flow(input_file: str, user: str = "system"):
     pipeline = UnifiedPipeline()
-    path = Path(input_file)
+    input_path = Path(input_file)
 
-    # 1. Ingestion Phase with Circuit Breaker
-    ingest_res = ingest_task(pipeline, path)
-    if ingest_res is None or ingest_res.df.empty:
-        logger.error(
-            "Flow halted: Ingestion returned empty dataframe (Circuit Breaker triggered)"
-        )
-        return {"status": "halted", "reason": "ingestion_failure"}
+    run_cfg = pipeline.config.get("run", default={}) or {}
+    artifacts_dir = Path(run_cfg.get("artifacts_dir", "logs/runs"))
 
-    # 2. Transformation Phase
-    transform_res = transform_task(pipeline, ingest_res)
+    # Execute tasks
+    ingest_res = ingest_task(pipeline, input_path)
 
-    # 3. Calculation Phase
-    calculate_task(pipeline, transform_res)
+    # Update pipeline run_id after ingestion (if deterministic)
+    pipeline.run_id = pipeline._generate_run_id(ingest_res.source_hash)
+    pipeline._update_component_run_ids()
+    run_dir = ensure_dir(artifacts_dir / pipeline.run_id)
 
-    # 4. Finalization (Compliance + Summary)
-    # For now, we reuse the existing execution logic or wrap the remaining parts
-    logger.info("Daily Intelligence Cycle completed successfully.")
+    trans_res = transform_task(pipeline, ingest_res, user)
+    calc_res = calculate_task(pipeline, trans_res, artifacts_dir)
+
+    # Alerting
+    pipeline._handle_alerts(pipeline.ingestor.get_ingest_summary(), calc_res)
+
+    # Finalize
+    output_task(pipeline, trans_res, calc_res, ingest_res, run_dir, user, "automated")
+
     return {"status": "success", "run_id": pipeline.run_id}
-
-
-if __name__ == "__main__":
-    daily_loan_intelligence_flow()

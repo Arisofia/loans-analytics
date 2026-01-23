@@ -40,4 +40,4 @@ Common causes and mitigations:
   ```
 
   Successful output should return `200` or `304` instead of `403`.
-  Documenting these steps keeps workspace installs reproducible and makes network-related failures auditable.
+Documenting these steps keeps workspace installs reproducible and makes network-related failures auditable.

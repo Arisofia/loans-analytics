@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, Mock
 import numpy as np
 import pandas as pd
 import pytest
-
 from src.analytics.azure_blob_exporter import AzureBlobKPIExporter
 from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
 
@@ -20,7 +19,7 @@ def test_engine_from_dict():
     dictionary and that the resulting object is a LoanAnalyticsEngine with
     the expected data length.
     """
-    from python.testing.fixtures import SAMPLE_LOAN_DATA
+    from tests.test_data_shared import SAMPLE_LOAN_DATA
 
     engine = LoanAnalyticsEngine.from_dict(SAMPLE_LOAN_DATA)
     assert isinstance(engine, LoanAnalyticsEngine)
@@ -227,9 +226,7 @@ def test_export_kpis_to_blob_invalid_blob_name_type():
         "principal_balance": [240000],
     }
     engine = LoanAnalyticsEngine(pd.DataFrame(data))
-    exporter = AzureBlobKPIExporter(
-        container_name="test-container", blob_service_client=Mock()
-    )
+    exporter = AzureBlobKPIExporter(container_name="test-container", blob_service_client=Mock())
 
     with pytest.raises(ValueError, match="blob_name must be a string"):
         engine.export_kpis_to_blob(exporter, blob_name=123)  # type: ignore

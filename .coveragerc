@@ -7,7 +7,7 @@ omit =
     */__pycache__/*
 
 [report]
-fail_under = 40
+fail_under = 85
 skip_covered = False
 skip_empty = True
 exclude_lines =

@@ -1,18 +1,18 @@
-name: 'Meta Integration Tests'
+name: "Meta Integration Tests"
 
 on:
   push:
     branches: [main, feature/cascade-ingest]
     paths:
-      - 'node/services/meta-connector/**'
+      - "node/services/meta-connector/**"
   pull_request:
     branches: [main]
     paths:
-      - 'node/services/meta-connector/**'
+      - "node/services/meta-connector/**"
 
 jobs:
   meta_connector:
-    name: 'Run Meta connector unit tests'
+    name: "Run Meta connector unit tests"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,8 +22,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: |

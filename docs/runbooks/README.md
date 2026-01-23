@@ -8,6 +8,8 @@ This folder contains short, action-oriented runbooks for the most common product
 - [App Service Diagnostics](app-service-diagnostics.md)
 - [Pipeline Failure](pipeline-failure.md)
 - [Deployment Blocked](deployment-blocked.md)
+- [Secret Rotation](secret-rotation.md)
+- [Monitoring & Observability](monitoring-guide.md)
 
 ## How to use
 
@@ -17,6 +19,6 @@ This folder contains short, action-oriented runbooks for the most common product
 
 ## Conventions
 
-- "Dashboard" = Azure App Service Streamlit app deployed from `streamlit_app/`.
+- “Dashboard” = Azure App Service Streamlit app deployed from `dashboard/`.
 - “Web app” = Next.js app in `apps/web/` (deployed via SWA workflows).
 - “Pipelines” = GitHub Actions scheduled/dispatch workflows that run Python/Node ingestion jobs.

@@ -336,6 +336,10 @@ Key Dashboard Components:
 
 ### Alerts
 
+- Critical compliance violations → Slack #security
+- Failed SonarQube quality gate → Slack #engineering
+- Audit log failures → Slack #devops
+- Agent heartbeat missing → Slack #ops
 
 ### ML Stack & Progress
 

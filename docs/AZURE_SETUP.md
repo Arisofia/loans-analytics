@@ -115,11 +115,7 @@ Update the following in `.env`:
 
 ```env
 # From Azure CLI commands above
-AZURE_SUBSCRIPTION_ID=<your-subscription-id>
-AZURE_TENANT_ID=<your-tenant-id>
-AZURE_STORAGE_ACCOUNT_NAME=<storage-account-name>
-AZURE_STORAGE_CONNECTION_STRING=<connection-string>
-AZURE_KEY_VAULT_URL=https://<keyvault-name>.vault.azure.net/
+## AZURE_SUBSCRIPTION_ID, AZURE_TENANT_ID, AZURE_STORAGE_ACCOUNT_NAME, AZURE_STORAGE_CONNECTION_STRING, and AZURE_KEY_VAULT_URL should be set in your environment, not in this file.
 
 # From deployment output
 AZURE_WEBAPP_NAME=abaco-analytics-dashboard

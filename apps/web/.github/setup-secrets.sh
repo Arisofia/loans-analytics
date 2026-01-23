@@ -7,7 +7,7 @@
 # Purpose: Interactive setup of GitHub repository secrets for CI/CD pipeline
 ##############################################################################
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -40,33 +40,33 @@ REQUIRED_PROD_SECRETS=(
 ##############################################################################
 
 print_header() {
-  echo -e "\n${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
-  echo -e "${BLUE}║${NC} $1"
-  echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}\n"
+  printf '%b\n' "\n${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
+  printf '%b\n' "${BLUE}║${NC} $1"
+  printf '%b\n' "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}\n"
 }
 
 print_section() {
-  echo -e "\n${YELLOW}━━━ $1 ━━━${NC}\n"
+  printf '%b\n' "\n${YELLOW}━━━ $1 ━━━${NC}\n"
 }
 
 print_success() {
-  echo -e "${GREEN}✅ $1${NC}"
+  printf '%b\n' "${GREEN}✅ $1${NC}"
 }
 
 print_error() {
-  echo -e "${RED}❌ $1${NC}"
+  printf '%b\n' "${RED}❌ $1${NC}"
 }
 
 print_info() {
-  echo -e "${BLUE}ℹ️  $1${NC}"
+  printf '%b\n' "${BLUE}ℹ️  $1${NC}"
 }
 
 print_warning() {
-  echo -e "${YELLOW}⚠️  $1${NC}"
+  printf '%b\n' "${YELLOW}⚠️  $1${NC}"
 }
 
 verify_repo() {
-  if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  if ! git rev-parse --git-dir > /dev/null 2>&1; then
     print_error "Not a git repository"
     exit 1
   fi
@@ -74,7 +74,7 @@ verify_repo() {
 }
 
 verify_gh_cli() {
-  if ! command -v gh &>/dev/null; then
+  if ! command -v gh &> /dev/null; then
     print_error "GitHub CLI (gh) not installed"
     echo ""
     echo "Install GitHub CLI:"
@@ -87,7 +87,7 @@ verify_gh_cli() {
 }
 
 verify_gh_auth() {
-  if ! gh auth status >/dev/null 2>&1; then
+  if ! gh auth status > /dev/null 2>&1; then
     print_error "Not authenticated with GitHub CLI"
     echo ""
     echo "Run: gh auth login"
@@ -274,28 +274,28 @@ create_secrets() {
   # Create staging secrets
   print_info "Creating staging secrets..."
 
-  gh secret set STAGING_SUPABASE_URL --body "$STAGING_SUPABASE_URL" -R "$REPO_OWNER/$REPO_NAME" &&
+  gh secret set STAGING_SUPABASE_URL --body "$STAGING_SUPABASE_URL" -R "$REPO_OWNER/$REPO_NAME" && \
     print_success "STAGING_SUPABASE_URL created"
 
-  gh secret set STAGING_SUPABASE_KEY --body "$STAGING_SUPABASE_KEY" -R "$REPO_OWNER/$REPO_NAME" &&
+  gh secret set STAGING_SUPABASE_KEY --body "$STAGING_SUPABASE_KEY" -R "$REPO_OWNER/$REPO_NAME" && \
     print_success "STAGING_SUPABASE_KEY created"
 
-  gh secret set AZURE_STATIC_WEB_APPS_TOKEN_STAGING --body "$AZURE_STATIC_WEB_APPS_TOKEN_STAGING" -R "$REPO_OWNER/$REPO_NAME" &&
+  gh secret set AZURE_STATIC_WEB_APPS_TOKEN_STAGING --body "$AZURE_STATIC_WEB_APPS_TOKEN_STAGING" -R "$REPO_OWNER/$REPO_NAME" && \
     print_success "AZURE_STATIC_WEB_APPS_TOKEN_STAGING created"
 
   # Create production secrets
   print_info "Creating production secrets..."
 
-  gh secret set PROD_SUPABASE_URL --body "$PROD_SUPABASE_URL" -R "$REPO_OWNER/$REPO_NAME" &&
+  gh secret set PROD_SUPABASE_URL --body "$PROD_SUPABASE_URL" -R "$REPO_OWNER/$REPO_NAME" && \
     print_success "PROD_SUPABASE_URL created"
 
-  gh secret set PROD_SUPABASE_KEY --body "$PROD_SUPABASE_KEY" -R "$REPO_OWNER/$REPO_NAME" &&
+  gh secret set PROD_SUPABASE_KEY --body "$PROD_SUPABASE_KEY" -R "$REPO_OWNER/$REPO_NAME" && \
     print_success "PROD_SUPABASE_KEY created"
 
-  gh secret set PROD_SENTRY_DSN --body "$PROD_SENTRY_DSN" -R "$REPO_OWNER/$REPO_NAME" &&
+  gh secret set PROD_SENTRY_DSN --body "$PROD_SENTRY_DSN" -R "$REPO_OWNER/$REPO_NAME" && \
     print_success "PROD_SENTRY_DSN created"
 
-  gh secret set AZURE_STATIC_WEB_APPS_TOKEN_PROD --body "$AZURE_STATIC_WEB_APPS_TOKEN_PROD" -R "$REPO_OWNER/$REPO_NAME" &&
+  gh secret set AZURE_STATIC_WEB_APPS_TOKEN_PROD --body "$AZURE_STATIC_WEB_APPS_TOKEN_PROD" -R "$REPO_OWNER/$REPO_NAME" && \
     print_success "AZURE_STATIC_WEB_APPS_TOKEN_PROD created"
 }
 

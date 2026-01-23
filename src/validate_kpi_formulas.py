@@ -3,7 +3,6 @@
 Validates that all field references in KPI formulas exist in the declared data source schemas.
 Usage: python validate_kpi_formulas.py config/kpi_definitions.yml
 """
-
 import re
 import sys
 from typing import Set

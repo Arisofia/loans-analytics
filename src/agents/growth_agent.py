@@ -3,7 +3,7 @@
 import argparse
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
 
@@ -53,17 +53,14 @@ def main() -> None:
     }
 
     LOG.info("Executing Growth agent run_id=%s", args.run_id)
-    orchestrator.run(inputs, agent_config)
+    result = orchestrator.run(inputs, agent_config)
 
     payload = {
         "status": "completed",
         "run_id": args.run_id,
         "lead_budget": args.lead_budget,
-        "trace": inputs["trace"],
-        "recommendations": [
-            {"company": "TBD", "reason": "Placeholder"},
-        ],
-        "launched_at": datetime.now(timezone.utc).isoformat() + "Z",
+        "result": result,
+        "launched_at": datetime.utcnow().isoformat() + "Z",
     }
 
     output_path = write_result(args.run_id, payload)

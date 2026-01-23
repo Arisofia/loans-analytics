@@ -42,10 +42,7 @@ def build_input_data(args: argparse.Namespace, prompt: str) -> Dict[str, Any]:
         "prompt": prompt,
         "trace": {
             "sql_queries": ["SELECT * FROM analytics.v_loans_overview LIMIT 1"],
-            "data_sources": [
-                "analytics.v_loans_overview",
-                "analytics.kpi_timeseries_pd_lgd_ead",
-            ],
+            "data_sources": ["analytics.v_loans_overview", "analytics.kpi_timeseries_pd_lgd_ead"],
         },
     }
 

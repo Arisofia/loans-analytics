@@ -1,106 +1,68 @@
 # ABACO LOANS ANALYTICS - SYSTEM ARCHITECTURE
 
-**Status**: 🟡 IN DISCOVERY (Updated January 1, 2026)
-**Owner**: DevOps / Platform Engineering
-**Last Updated**: 2026-01-01
+**Status**: ✅ OPERATIONAL (Updated January 5, 2026)
+**Owner**: Engineering / Data Team
+**Last Updated**: 2026-01-05
 
 ---
 
-## 1. DATA ARCHITECTURE (CRITICAL - NEEDS COMPLETION)
+## 1. OVERVIEW
 
-### Current State
+The Abaco Loans Analytics platform is a unified system for ingesting loan tape data, transforming it for analysis, calculating key performance indicators (KPIs), and visualizing results through an interactive dashboard.
 
-🔴 **CRITICAL GAP**: Production database storage location is NOT DOCUMENTED
+## 2. COMPONENT ARCHITECTURE
 
-**Evidence Collected**:
+### 2.1. Analytics Pipeline (Python Backend)
+The core logic resides in a modular Python pipeline that follows a 4-phase execution model:
+1.  **Ingestion**: Supports CSV files (local/Azure Blob) and Looker exports.
+2.  **Transformation**: Normalization, PII masking, outlier detection, and data quality checks.
+3.  **Calculation**: KPI computation using `KPIEngineV2` and custom composite logic.
+4.  **Output**: Generates Parquet, CSV, and JSON artifacts with full audit trails and lineage.
 
-- No Azure SQL Database in resource group
-- No PostgreSQL/MySQL managed services detected
-- No connection strings in App Service configuration
-- Blob Storage accounts exist but unclear if used for structured data
+**Key Files**:
+- `src/pipeline/orchestrator.py`: Main execution flow.
+- `src/pipeline/config.py`: Centralized configuration management.
+- `src/kpi_engine_v2.py`: Reusable KPI calculation engine.
 
-### Questions to Answer
+### 2.2. API Service (FastAPI)
+Exposes pipeline functionality and metrics to the frontend.
+- **Location**: `apps/analytics/api/main.py`
+- **Endpoints**:
+    - `GET /api/kpis/latest`: Fetches results from the most recent pipeline run.
+    - `POST /api/pipeline/trigger`: Triggers a new pipeline execution.
 
-- [ ] Where are production loan records stored?
-- [ ] What is the connection string for production data?
-- [ ] How do data pipelines write transformed data?
-- [ ] How does dashboard query KPIs for display?
-- [ ] What is the data retention policy?
+### 2.3. Frontend Dashboard (Next.js)
+A modern web interface for visualising portfolio health and risk metrics.
+- **Location**: `apps/web`
+- **Tech Stack**: Next.js 15+, React 18+, Tailwind CSS, Playwright (E2E).
+- **Integration**: Proxies requests to the Python API via `apps/web/src/app/api/kpis/latest`.
 
-### Data Sources (Known)
+## 3. DATA ARCHITECTURE
 
-| Source | Type | Purpose | Integration |
-| ------ | ---- | ------- | ----------- |
+### 3.1. Storage Layers
+- **Raw Data**: Stored in `data/raw/` or Azure Blob Storage.
+- **Artifacts**: Each pipeline run generates a timestamped directory in `logs/runs/` containing:
+    - Processed data (Parquet/CSV)
+    - KPI results (JSON manifest)
+    - Compliance/Audit reports
+- **Metadata**: Lineage and data quality scores are embedded in the run manifests.
 
-| Manual CSV uploads | File uploads | Financial statements | Via `data/archives/` folders |
-
-### Data Storage Layers (To Be Determined)
-
-#### Layer 1: Raw Data Storage
-
-```text
-Status: ❌ UNKNOWN
-  Option A: Azure Blob Storage (ADLS) - File-based
-  Option B: PostgreSQL database - Structured
-  Option C: Cosmos DB - NoSQL
-  Option D: External (keep in APIs)
-```
-
-#### Layer 2: Processed Data Storage
-
-```text
-Status: ❌ UNKNOWN
-Question: Where are transformed KPIs stored?
-  Option A: Same database as raw data
-  Option B: Separate analytical database
-  Option C: Blob Storage (Parquet files)
-  Option D: Supabase (mentioned in code but not configured)
-```
-
-#### Layer 3: Cache/Query Layer
-
-```text
-Status: ❌ UNKNOWN
-Question: How does dashboard query data?
-  Option A: Direct database queries
-  Option B: API endpoints
-  Option C: Pre-computed exports
-  Option D: Real-time calculation from raw data
-```
+### 3.2. Configuration
+- **Master Config**: `config/pipeline.yml` (Single source of truth).
+- **Business Rules**: `config/business_rules.yaml` (Statuses, buckets, constants).
+- **KPI Definitions**: `config/kpis/kpi_definitions.yaml`.
 
 ---
 
-## 2. COMPUTE ARCHITECTURE
+## 4. FUTURE ROADMAP
 
-### Frontend (Dashboard)
+### 4.1. Planned Enhancements
+- **Kotlin Services**: Migration of high-throughput ingestion logic to Kotlin-based microservices.
+- **Advanced Agents**: Integration of specialized AI agents for automated risk narratives and growth projections.
+- **Supabase Integration**: Persistence of historical KPIs into a structured database for long-term trend analysis.
+- **Real-time Ingestion**: Transition from batch processing to event-driven updates via webhooks.
 
-**Type**: Streamlit/React Application
-**Location**: Azure App Service - `abaco-analytics-dashboard`
-**Status**: 🔴 OFFLINE (DNS_PROBE_FINISHED_NXDOMAIN)
-
-**Configuration**:
-
-```yaml
-App Service Plan: ASP-AIMultiAgentEcosystemRG-b676
-Tier: Basic B1 (🔴 UNDER-PROVISIONED)
-Instance: LW1SDLWK0006XP (Status: Pending)
-Python: 3.12
-Region: Canada Central
-Health Check Path: /?page=health
-Startup Command: bash startup.sh
-```
-
-**Environment Variables Configured**:
-
-- OPENAI_API_KEY ✅
-- SCM_DO_BUILD_DURING_DEPLOYMENT=1 ✅
-
-**Missing Configuration**:
-
-- DATABASE_URL / database connection string ❌
-- SUPABASE_URL / SUPABASE_KEY ❌
-- Storage account connection strings ❌
-
-### Data Pipelines
-
-**Orchestration**: GitHub Actions (Scheduled workflows)
+### 4.2. Tooling Upgrades
+- Transition to **PapaParse** for robust client-side CSV handling.
+- Implementation of **Great Expectations** for advanced data validation.
+- Enhanced observability with **OpenTelemetry** and centralized logging.

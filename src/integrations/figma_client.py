@@ -11,8 +11,7 @@ Handles:
 import json
 import logging
 import os
-import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import requests
@@ -20,58 +19,36 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-def _extract_file_key(value: Optional[str]) -> Optional[str]:
-    if not value:
-        return None
-    raw = value.strip()
-    if "figma.com" in raw:
-        match = re.search(r"/(file|design|proto)/([A-Za-z0-9_-]+)", raw)
-        if match:
-            return match.group(2)
-        return None
-    return raw.split("?")[0]
-
-
 class FigmaClient:
     """Sync analytics metrics, KPI updates, and dashboard data to Figma designs."""
 
     def __init__(self, api_token: Optional[str] = None, file_key: Optional[str] = None):
-        self.api_token = (
-            api_token
-            or os.getenv("FIGMA_TOKEN")
-            or os.getenv("FIGMA_OAUTH_TOKEN")
-            or os.getenv("FIGMA_API_TOKEN")
-            or os.getenv("FIGMA_PERSONAL_ACCESS_TOKEN")
-        )
-        raw_file_key = (
-            file_key
-            or os.getenv("FIGMA_FILE_KEY")
-            or os.getenv("FIGMA_FILE_URL")
-            or os.getenv("FIGMA_FILE_LINK")
-        )
-        self.file_key = _extract_file_key(raw_file_key)
+        self.api_token = api_token or os.getenv("FIGMA_TOKEN")
+        self.file_key = file_key or os.getenv("FIGMA_FILE_KEY")
         self.base_url = "https://api.figma.com/v1"
-        self.headers = {"Content-Type": "application/json"}
-        if self.api_token:
-            self.headers["X-Figma-Token"] = self.api_token
+        self.headers = {
+            "X-Figma-Token": self.api_token,
+            "Content-Type": "application/json",
+        }
 
         if not self.api_token or not self.file_key:
             logger.warning("Figma credentials not configured. Figma export disabled.")
 
     def _request(self, method: str, endpoint: str, **kwargs: Any) -> Dict[str, Any]:
         """Make authenticated request to Figma API."""
-        if not self.api_token:
-            logger.warning("Figma credentials not configured. Figma export disabled.")
-            return {}
         url = f"{self.base_url}{endpoint}"
         kwargs.setdefault("headers", self.headers)
 
         try:
             response = requests.request(method, url, timeout=30, **kwargs)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            if not isinstance(data, dict):
+                logger.error("Figma API returned unexpected type: %s for %s", type(data), url)
+                return {}
+            return data
         except requests.RequestException as e:
-            logger.error(f"Figma API error: {e}")
+            logger.error("Figma API error: %s", e)
             return {}
 
     def get_file_data(self) -> Dict[str, Any]:
@@ -89,7 +66,7 @@ class FigmaClient:
             "commits": [
                 {
                     "message": f"KPI Update from Analytics Pipeline (run: {run_id})",
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
             ],
             "edits": [
@@ -111,9 +88,7 @@ class FigmaClient:
 
         return success
 
-    def update_kpi_cards(
-        self, kpi_metrics: Dict[str, Any], run_id: str
-    ) -> Dict[str, bool]:
+    def update_kpi_cards(self, kpi_metrics: Dict[str, Any], run_id: str) -> Dict[str, bool]:
         """Update KPI card components in design system."""
         results = {}
 
@@ -179,7 +154,7 @@ class FigmaClient:
 
         metadata = {
             "snapshot_type": "kpi_dashboard",
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "run_id": run_id,
             "metrics": dashboard_data,
         }
@@ -190,9 +165,7 @@ class FigmaClient:
         logger.info(f"Created dashboard snapshot in Figma (frame: {snapshot_frame_id})")
         return snapshot_frame_id
 
-    def sync_batch_export(
-        self, export_data: Dict[str, Any], run_id: str
-    ) -> Dict[str, Any]:
+    def sync_batch_export(self, export_data: Dict[str, Any], run_id: str) -> Dict[str, Any]:
         """
         Sync complete batch export (KPIs, metrics, summaries) to Figma.
 
@@ -215,9 +188,7 @@ class FigmaClient:
 
         try:
             if "kpi_metrics" in export_data:
-                results["kpi_cards"] = self.update_kpi_cards(
-                    export_data["kpi_metrics"], run_id
-                )
+                results["kpi_cards"] = self.update_kpi_cards(export_data["kpi_metrics"], run_id)
 
             if "summary" in export_data:
                 results["dashboard_snapshot"] = self.create_dashboard_snapshot(

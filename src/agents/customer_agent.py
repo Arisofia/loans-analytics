@@ -9,9 +9,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Customer Intelligence agent execution harness"
-    )
+    parser = argparse.ArgumentParser(description="Customer Intelligence agent execution harness")
     parser.add_argument(
         "--query",
         required=True,

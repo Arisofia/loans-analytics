@@ -9,7 +9,6 @@ financial transformations, calculates key performance indicators (KPIs), and
 generates executive reports.
 
 **Phase 5 Status**: ✅ **Operational Deliverables Complete**
-
 - Pylint: **9.98/10** (Excellence)
 - Mypy: **0 type errors** across 112 source files
 - Tests: **316 passing**, 10 skipped
@@ -26,6 +25,8 @@ generates executive reports.
 - `PIPELINE_ENV`: `dev`, `staging`, or `production` (default: `dev`)
 - `AZURE_STORAGE_CONNECTION_STRING`: Required for Azure Blob storage outputs.
 - `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE`: Required for database sync.
+- `NOTION_TOKEN` / `NOTION_REPORTS_PAGE_ID`: Required for Notion reporting.
+- `FIGMA_TOKEN` / `FIGMA_FILE_KEY`: Required for Figma dashboard updates.
 
 ## 3. Quality & Code Standards
 
@@ -137,7 +138,6 @@ python tools/zencoder_bootstrap.py
 ### Codebase Hygiene
 
 Phase 5 introduced architectural best practices:
-
 - All new features must maintain Pylint score ≥ 9.95/10
 - Type hints required for all public APIs (mypy compliance)
 - New methods should follow dataclass patterns for parameter management
@@ -149,5 +149,5 @@ Phase 5 introduced architectural best practices:
 
 ---
 
-_Confidential - Abaco Loans Operations_  
-**Last Updated**: Phase 5 - January 2026\*
+*Confidential - Abaco Loans Operations*  
+**Last Updated**: Phase 5 - January 2026*

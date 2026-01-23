@@ -36,13 +36,13 @@ If you do this, some additional directories will be created:
   - modules/        # Library modules
 ```
 
-_Note_: Once you have generated your infrastructure to disk, those files are the source of truth for azd. Any changes made to `azure.yaml` (such as through `azd add`) will not be reflected in the infrastructure until you regenerate it with `azd infra gen` again. It will prompt you before overwriting files. You can pass `--force` to force `azd infra gen` to overwrite the files without prompting.
+*Note*: Once you have generated your infrastructure to disk, those files are the source of truth for azd. Any changes made to `azure.yaml` (such as through `azd add`) will not be reflected in the infrastructure until you regenerate it with `azd infra gen` again. It will prompt you before overwriting files. You can pass `--force` to force `azd infra gen` to overwrite the files without prompting.
 
 Finally, run `azd pipeline config` to configure a CI/CD deployment pipeline.
 
 ## Billing
 
-Visit the _Cost Management + Billing_ page in Azure Portal to track current spend. For more information about how you're billed, and how you can monitor the costs incurred in your Azure subscriptions, visit [billing overview](https://learn.microsoft.com/azure/developer/intro/azure-developer-billing).
+Visit the *Cost Management + Billing* page in Azure Portal to track current spend. For more information about how you're billed, and how you can monitor the costs incurred in your Azure subscriptions, visit [billing overview](https://learn.microsoft.com/azure/developer/intro/azure-developer-billing).
 
 ## Troubleshooting
 
@@ -55,9 +55,9 @@ A: Your service may have failed to start, or it may be missing some configuratio
 3. Click on the failing revision under "Revisions with Issues".
 4. Review "Status details" for more information about the type of failure.
 5. Observe the log outputs from Console log stream and System log stream to identify any errors.
-6. If logs are written to disk, use _Console_ in the navigation to connect to a shell within the running container.
+6. If logs are written to disk, use *Console* in the navigation to connect to a shell within the running container.
 
-For more troubleshooting information, visit [Container Apps troubleshooting](https://learn.microsoft.com/azure/container-apps/troubleshooting).
+For more troubleshooting information, visit [Container Apps troubleshooting](https://learn.microsoft.com/azure/container-apps/troubleshooting). 
 
 ### Additional information
 

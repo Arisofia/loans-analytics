@@ -46,7 +46,8 @@ To begin the 3-week implementation, follow these steps in order:
 1. Final configuration review (secrets, environments, workflows)
 2. Documentation review and team confirmation
 3. Team preparation and Q&A
-4. Pre-production verification checklist
+4. Slack channel setup
+5. Pre-production verification checklist
 
 **Completion**: All checks pass, team ready for production
 
@@ -73,6 +74,7 @@ To begin the 3-week implementation, follow these steps in order:
   - `QUICK_START.md` - Developer quick reference
   - `TEAM_RUNBOOKS.md` - Role-based procedures
   - `DEPLOYMENT_CONFIG.md` - Technical reference
+  - `DEPLOYMENT_COORDINATION.md` - Slack communication
   - `README.md` - Documentation index
 
 ### GitHub Actions Workflows (Already Created)
@@ -96,18 +98,18 @@ To begin the 3-week implementation, follow these steps in order:
 **Participants**: DevOps, Infrastructure, Tech Lead
 **Deliverables**: 7 secrets, 3 environments, 2 config files, team onboarded
 
-| Step | Task                       | Duration | Checklist                                              |
-| ---- | -------------------------- | -------- | ------------------------------------------------------ |
-| 1    | Prerequisites verification | 10 min   | GitHub CLI, auth, git repo                             |
-| 2    | Gather 7 secrets           | 20 min   | Supabase URL/key (2), Azure tokens (2), Sentry DSN (1) |
-| 3    | Run setup script           | 30 min   | `.github/setup-secrets.sh` creates secrets             |
-| 4    | Verify secrets             | 10 min   | All 7 visible in GitHub UI or CLI                      |
-| 5    | Create GitHub environments | 30 min   | staging, production, production-rollback               |
-| 6    | Verify config files        | 10 min   | staging.yml, production.yml exist                      |
-| 7    | Verify workflows           | 10 min   | All 5 .yml files in .github/workflows/                 |
-| 8    | Team onboarding            | 30 min   | Share docs with each role                              |
-| 9    | Final verification         | 15 min   | Run all verification checks                            |
-| 10   | Sign-off                   | -        | Get approval from team                                 |
+| Step | Task | Duration | Checklist |
+|------|------|----------|-----------|
+| 1 | Prerequisites verification | 10 min | GitHub CLI, auth, git repo |
+| 2 | Gather 7 secrets | 20 min | Supabase URL/key (2), Azure tokens (2), Sentry DSN (1) |
+| 3 | Run setup script | 30 min | `.github/setup-secrets.sh` creates secrets |
+| 4 | Verify secrets | 10 min | All 7 visible in GitHub UI or CLI |
+| 5 | Create GitHub environments | 30 min | staging, production, production-rollback |
+| 6 | Verify config files | 10 min | staging.yml, production.yml exist |
+| 7 | Verify workflows | 10 min | All 5 .yml files in .github/workflows/ |
+| 8 | Team onboarding | 30 min | Share docs with each role |
+| 9 | Final verification | 15 min | Run all verification checks |
+| 10 | Sign-off | - | Get approval from team |
 
 **Result**: System ready for dry-runs
 
@@ -118,11 +120,12 @@ To begin the 3-week implementation, follow these steps in order:
 **Participants**: Developers, QA, DevOps
 **Deliverables**: All workflows tested, team confident in procedures
 
-| Phase | Task                | Duration | Checklist                                         |
-| ----- | ------------------- | -------- | ------------------------------------------------- |
-| 2.1   | Developer practice  | 1.5 hrs  | Feature branch → PR → CI → merge → staging deploy |
-| 2.3   | Production practice | 2 hrs    | Test tag → CI → approval → deploy → health checks |
-| 2.4   | Rollback practice   | 1 hr     | Trigger rollback → approval → verify              |
+| Phase | Task | Duration | Checklist |
+|-------|------|----------|-----------|
+| 2.1 | Developer practice | 1.5 hrs | Feature branch → PR → CI → merge → staging deploy |
+| 2.2 | QA validation | 1.5 hrs | Staging validation checklist, Slack post |
+| 2.3 | Production practice | 2 hrs | Test tag → CI → approval → deploy → health checks |
+| 2.4 | Rollback practice | 1 hr | Trigger rollback → approval → verify |
 
 **Result**: All workflows confirmed working, team practiced procedures
 
@@ -131,13 +134,15 @@ To begin the 3-week implementation, follow these steps in order:
 ### Week 3: Production Readiness (2-4 hours)
 
 **Participants**: All teams
+**Deliverables**: Final verification, team ready, Slack ready
 
-| Step | Task                     | Duration | Checklist                                        |
-| ---- | ------------------------ | -------- | ------------------------------------------------ |
-| 3.1  | Configuration review     | 1 hr     | Secrets, environments, workflows verified        |
-| 3.2  | Documentation review     | 45 min   | All docs reviewed, updated, shared               |
-| 3.3  | Team preparation         | 45 min   | Team reads docs, Q&A session, questions resolved |
-| 3.5  | Pre-production checklist | 30 min   | All 35+ items verified                           |
+| Step | Task | Duration | Checklist |
+|------|------|----------|-----------|
+| 3.1 | Configuration review | 1 hr | Secrets, environments, workflows verified |
+| 3.2 | Documentation review | 45 min | All docs reviewed, updated, shared |
+| 3.3 | Team preparation | 45 min | Team reads docs, Q&A session, questions resolved |
+| 3.4 | Slack setup | 30 min | 4 channels created, docs pinned |
+| 3.5 | Pre-production checklist | 30 min | All 35+ items verified |
 
 **Result**: System and team ready for production use
 
@@ -248,6 +253,7 @@ After completing Week 3, you should be able to:
 - [ ] Answer "Are all environments created?" ✅ Yes
 - [ ] Answer "Has team read assigned documentation?" ✅ Yes
 - [ ] Answer "Is team confident in procedures?" ✅ Yes
+- [ ] Answer "Are Slack channels ready?" ✅ Yes
 
 ---
 
@@ -302,7 +308,7 @@ mkdir -p config/environments
 
 - Verify: GitHub environment "production" exists
 - Check: Environment has approval requirement (Settings → Environments → production)
-- Create: v*.*.\* tag (must use semantic versioning)
+- Create: v*.*.* tag (must use semantic versioning)
 
 ### Week 3 Issues
 
@@ -312,6 +318,9 @@ mkdir -p config/environments
 - Share: TEAM_RUNBOOKS.md for their role
 - Schedule: 30-minute Q&A session in #dev-help
 
+**Slack channels not created**
+
+- Go to: Slack workspace → Create new channel
 - Create: #dev-alerts, #prod-alerts, #incidents, #dev-help
 
 ---
@@ -339,6 +348,7 @@ mkdir -p config/environments
 - ✅ All 35+ pre-production checklist items verified
 - ✅ All documentation reviewed and accurate
 - ✅ All team members confirmed understanding
+- ✅ Slack channels ready with pinned docs
 - ✅ Zero blockers, system ready for production
 
 ---

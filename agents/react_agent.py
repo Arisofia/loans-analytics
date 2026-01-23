@@ -147,13 +147,9 @@ Begin!
         descriptions = []
         for name, tool in self.tools.items():
             param_desc = (
-                json.dumps(tool.parameters, indent=2)
-                if tool.parameters
-                else "No parameters"
+                json.dumps(tool.parameters, indent=2) if tool.parameters else "No parameters"
             )
-            descriptions.append(
-                f"- {name}: {tool.description}\n  Parameters: {param_desc}"
-            )
+            descriptions.append(f"- {name}: {tool.description}\n  Parameters: {param_desc}")
 
         return "\n".join(descriptions)
 
@@ -189,9 +185,7 @@ Begin!
                         else:
                             tool_input = json.loads(input_text)
                     except json.JSONDecodeError:
-                        logger.warning(
-                            f"Failed to parse action input: {input_match.group(1)}"
-                        )
+                        logger.warning(f"Failed to parse action input: {input_match.group(1)}")
 
                 return ReasoningStep(
                     step_type=StepType.ACTION,
@@ -207,11 +201,7 @@ Begin!
         return ReasoningStep(step_type=StepType.THOUGHT, content=content)
 
     def solve(
-        self,
-        task: Task,
-        system_prompt: str,
-        tools: List[Dict[str, Any]],
-        tool_executor: Callable,
+        self, task: Task, system_prompt: str, tools: List[Dict[str, Any]], tool_executor: Callable
     ) -> Task:
         """Solve a task using the ReAct framework.
 
@@ -269,15 +259,11 @@ Begin!
                     task.reasoning_trace.append(observation)
 
                     # Add to messages
-                    messages.append(
-                        {"role": "assistant", "content": llm_response.content}
-                    )
+                    messages.append({"role": "assistant", "content": llm_response.content})
                     messages.append({"role": "user", "content": observation})
                 else:
                     # Continue reasoning
-                    messages.append(
-                        {"role": "assistant", "content": llm_response.content}
-                    )
+                    messages.append({"role": "assistant", "content": llm_response.content})
                     messages.append(
                         {
                             "role": "user",
@@ -295,9 +281,7 @@ Begin!
         task.result = "Max iterations reached without answer"
         return task
 
-    def run(
-        self, task_description: str, context: Optional[Dict] = None
-    ) -> Dict[str, Any]:
+    def run(self, task_description: str, context: Optional[Dict] = None) -> Dict[str, Any]:
         """Legacy run method for backward compatibility."""
         task = Task(
             id=f"task_{datetime.now().strftime('%Y%m%d%H%M%S')}",
