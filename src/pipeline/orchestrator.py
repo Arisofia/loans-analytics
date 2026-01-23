@@ -14,7 +14,6 @@ from src.pipeline.data_transformation import UnifiedTransformation
 from src.pipeline.kpi_calculation import UnifiedCalculationV2
 from src.pipeline.output import UnifiedOutput
 from src.pipeline.utils import ensure_dir, utc_now, write_json
-from src.tracing_setup import get_tracer
 
 logger = logging.getLogger(__name__)
 tracer = get_tracer(__name__)
@@ -107,15 +106,14 @@ class UnifiedPipeline:
 
             run_cfg = self.config.get("run", default={}) or {}
             artifacts_dir = Path(run_cfg.get("artifacts_dir", "logs/runs"))
-            raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/cascade"))
-            cascade_cfg = self.config.get("cascade", default={}) or {}
+            raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/raw"))
 
             span.set_attribute("pipeline.user", user)
             span.set_attribute("pipeline.action", action)
 
             try:
                 # 1. Ingestion
-                ingestion_result = self._ingestion_phase(input_file, raw_archive_dir, cascade_cfg)
+                ingestion_result = self._ingestion_phase(input_file, raw_archive_dir)
 
                 # 2. Update Run ID and Components
                 self.run_id = self._generate_run_id(ingestion_result.source_hash)
@@ -181,11 +179,11 @@ class UnifiedPipeline:
         self.output.run_id = self.run_id
 
     def _ingestion_phase(
-        self, input_file: Path, archive_dir: Path, cascade_cfg: Dict[str, Any]
+        self, input_file: Path, archive_dir: Path
     ) -> IngestionResult:
         with tracer.start_as_current_span("pipeline.ingestion") as span:
             result = self.ingestor.ingest(
-                input_file, archive_dir=archive_dir, cascade_config=cascade_cfg
+                input_file, archive_dir=archive_dir
             )
             span.set_attribute("ingestion.row_count", len(result.df))
             return result
@@ -308,9 +306,8 @@ class UnifiedPipeline:
 @task(name="Ingest Loan Tape", retries=3, retry_delay_seconds=60)
 def ingest_task(pipeline: UnifiedPipeline, input_file: Path) -> IngestionResult:
     run_cfg = pipeline.config.get("run", default={}) or {}
-    archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/cascade"))
-    cascade_cfg = pipeline.config.get("cascade", default={}) or {}
-    return pipeline._ingestion_phase(input_file, archive_dir, cascade_cfg)
+    archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/raw"))
+    return pipeline._ingestion_phase(input_file, archive_dir)
 
 
 @task(name="Transform Data")

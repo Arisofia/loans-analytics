@@ -8,7 +8,7 @@ Test Cases:
 
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Dict
 
 import pandas as pd
 import pytest
@@ -78,10 +78,7 @@ class TestKPICorrectness:
                     )
 
         if failures:
-            pytest.fail(
-                f"KPI values outside tolerance (±{tolerance:.0%}):\n"
-                + "\n".join(failures)
-            )
+            pytest.fail(f"KPI values outside tolerance (±{tolerance:.0%}):\n" + "\n".join(failures))
 
     def test_b01_no_nan_or_inf_values(self, run_analytics_pipeline: Path) -> None:
         """Verify no NaN or infinite values in computed KPIs."""
@@ -157,23 +154,25 @@ class TestKPICorrectness:
 
                 if tr != 0:
                     collection_rate = (tr - data.get("dpd_90_plus_usd", 0)) / tr
-                    assert pd.notna(collection_rate), (
-                        f"Collection rate is NaN for: {test_case['name']}"
-                    )
-                    assert not (collection_rate == float("inf") or collection_rate == float("-inf")), (
-                        f"Collection rate is infinite for: {test_case['name']}"
-                    )
+                    assert pd.notna(
+                        collection_rate
+                    ), f"Collection rate is NaN for: {test_case['name']}"
+                    assert not (
+                        collection_rate == float("inf") or collection_rate == float("-inf")
+                    ), f"Collection rate is infinite for: {test_case['name']}"
 
             except ZeroDivisionError:
                 if test_case["expect_safe"]:
-                    pytest.fail(
-                        f"Should handle division by zero safely: {test_case['name']}"
-                    )
+                    pytest.fail(f"Should handle division by zero safely: {test_case['name']}")
 
     def test_b02_negative_value_handling(self) -> None:
         """Verify KPI calculations handle negative values appropriately."""
         test_cases = [
-            {"name": "Negative receivable", "value": -100, "field": "total_receivable_usd"},
+            {
+                "name": "Negative receivable",
+                "value": -100,
+                "field": "total_receivable_usd",
+            },
             {"name": "Negative cash", "value": -50, "field": "cash_available_usd"},
         ]
 

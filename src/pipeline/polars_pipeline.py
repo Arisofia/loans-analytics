@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import polars as pl
 
@@ -23,7 +23,7 @@ class PolarsPipeline:
             "clients": CLIENT_SCHEMA,
         }
 
-    def scan_file(self, path: Path) -> pl.LazyFrame:
+    def scan_file(self, path: Path, schema_type: Optional[str] = None) -> pl.LazyFrame:
         """
         Scan a file into a Polars LazyFrame.
         """
@@ -39,15 +39,13 @@ class PolarsPipeline:
             # scan_ndjson is available for newline-delimited JSON
             try:
                 return pl.scan_ndjson(path)
-            except (pl.PolarsError, AttributeError):
+            except Exception:
                 # Fallback for standard JSON
                 return pl.read_json(path).lazy()
         else:
             raise ValueError(f"Unsupported file format: {path.suffix}")
 
-    def normalize_columns(
-        self, lf: pl.LazyFrame, mapping: Dict[str, List[str]]
-    ) -> pl.LazyFrame:
+    def normalize_columns(self, lf: pl.LazyFrame, mapping: Dict[str, List[str]]) -> pl.LazyFrame:
         """
         Normalize column names using Polars expressions.
         """
@@ -60,16 +58,16 @@ class PolarsPipeline:
                 # Case-insensitive match check (Polars is case-sensitive by default)
                 # This is a bit tricky with LazyFrame without collecting,
                 # but we can use schema names.
-                if matched_col := next(
-                    (c for c in existing_cols if c.lower() == cand.lower()), None
-                ):
+                matched_col = next((c for c in existing_cols if c.lower() == cand.lower()), None)
+                if matched_col:
                     rename_dict[matched_col] = internal_name
                     break
-        return lf.rename(rename_dict) if rename_dict else lf
 
-    def enforce_precision(
-        self, lf: pl.LazyFrame, decimal_cols: List[str]
-    ) -> pl.LazyFrame:
+        if rename_dict:
+            return lf.rename(rename_dict)
+        return lf
+
+    def enforce_precision(self, lf: pl.LazyFrame, decimal_cols: List[str]) -> pl.LazyFrame:
         """
         Enforce Decimal precision for monetary columns.
         """
@@ -78,7 +76,9 @@ class PolarsPipeline:
             for col in decimal_cols
             if col in lf.collect_schema().names()
         ]
-        return lf.with_columns(expressions) if expressions else lf
+        if expressions:
+            return lf.with_columns(expressions)
+        return lf
 
     def filter_active_loans(self, lf: pl.LazyFrame) -> pl.LazyFrame:
         """
@@ -117,9 +117,7 @@ class PolarsPipeline:
 
         # Enforce precision on monetary columns
         monetary_cols = [
-            name
-            for name, dtype in (schema or {}).items()
-            if isinstance(dtype, pl.Decimal)
+            name for name, dtype in (schema or {}).items() if isinstance(dtype, pl.Decimal)
         ]
         lf = self.enforce_precision(lf, monetary_cols)
 

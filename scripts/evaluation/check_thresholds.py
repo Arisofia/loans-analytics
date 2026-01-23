@@ -207,7 +207,11 @@ def main():
         "--config", type=Path, required=True, help="Path to YAML threshold configuration file"
     )
     parser.add_argument(
-        "--output", type=Path, required=True, help="Path to save validation results JSON"
+<<<<<<< HEAD
+        "--output",
+        type=Path,
+        required=True,
+        help="Path to save validation results JSON",
     )
     parser.add_argument("--strict", action="store_true", help="Treat warnings as failures")
 

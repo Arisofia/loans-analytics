@@ -4,6 +4,14 @@ from typing import Dict, Optional, Protocol, runtime_checkable
 import numpy as np
 import pandas as pd
 
+from src.analytics.enterprise_analytics_engine_helpers import (
+    LoanPosition,
+    PortfolioKPIs,
+    calculate_monthly_payment,
+    calculate_portfolio_kpis,
+    expected_loss,
+    portfolio_interest_and_risk,
+)
 logger = logging.getLogger(__name__)
 
 
@@ -189,7 +197,20 @@ class LoanAnalyticsEngine:
         }
 
     def risk_alerts(self, ltv_threshold: float = 80.0, dti_threshold: float = 50.0) -> pd.DataFrame:
+<<<<<<< HEAD
         """Identifies high-risk loans based on LTV and DTI thresholds."""
+=======
+        """
+        Identifies high-risk loans based on LTV and DTI thresholds.
+
+        Args:
+            ltv_threshold: LTV ratio threshold (default 80%)
+            dti_threshold: DTI ratio threshold (default 50%)
+
+        Returns:
+            DataFrame with high-risk loans and their risk scores
+        """
+>>>>>>> d08ccf69f (Apply lint fixes)
         if "ltv_ratio" not in self.loan_data.columns:
             self.compute_loan_to_value()
         if "dti_ratio" not in self.loan_data.columns:

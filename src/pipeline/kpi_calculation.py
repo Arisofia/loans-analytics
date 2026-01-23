@@ -28,16 +28,6 @@ class CalculationResultV2:
     extended_kpis: Optional[Dict[str, Any]] = None
 
 
-class KPIFunctionRegistry:
-    """Registry and loader for KPI computation functions."""
-
-    @staticmethod
-    def import_function(dotted_path: str) -> Callable:
-        module_path, func_name = dotted_path.rsplit(".", 1)
-        module = importlib.import_module(module_path)
-        return getattr(module, func_name)
-
-
 class AnomalyDetector:
     """Handles detection of anomalies in KPI results compared to baseline."""
 
@@ -73,7 +63,12 @@ class MetricCalculator:
     def __init__(self, config: Dict[str, Any], kpi_definitions: Dict[str, Any]):
         self.config = config
         self.kpi_definitions = kpi_definitions
-        self.registry = KPIFunctionRegistry()
+
+    @staticmethod
+    def import_function(dotted_path: str) -> Callable:
+        module_path, func_name = dotted_path.rsplit(".", 1)
+        module = importlib.import_module(module_path)
+        return getattr(module, func_name)
 
     def get_status(self, value: float, thresholds: Dict[str, List[float]]) -> str:
         if not thresholds:
@@ -99,7 +94,7 @@ class MetricCalculator:
             val = calc_engine.get_metric(name)
             context = {"source": "KPIEngineV2"}
         else:
-            func = self.registry.import_function(func_path)
+            func = self.import_function(func_path)
             val, context = func(df)
 
         value = float(val) if val is not None else None
@@ -128,7 +123,7 @@ class MetricCalculator:
         if not func_path:
             raise ValueError(f"Missing function for composite metric {name}")
 
-        func = self.registry.import_function(func_path)
+        func = self.import_function(func_path)
 
         # Dynamic input resolution from config
         input_names = metric_cfg.get("inputs", ["PAR30", "CollectionRate"])

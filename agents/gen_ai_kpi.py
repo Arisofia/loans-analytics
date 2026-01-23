@@ -45,11 +45,7 @@ class KPIQuestionAnsweringAgent:
         """
         # Simplify context for the prompt
         context_str = "\n".join(
-            [
-                f"{k}: {v}"
-                for k, v in metrics.items()
-                if isinstance(v, (int, float, str))
-            ]
+            [f"{k}: {v}" for k, v in metrics.items() if isinstance(v, (int, float, str))]
         )
 
         prompt = f"""

@@ -105,7 +105,8 @@ class MYPEBusinessRules:
         is_high_risk, reasons = cls.classify_high_risk(customer_metrics)
         dpd = customer_metrics.get("dpd", 0)
         pod = min(
-            1.0, (dpd / cls.NPL_DAYS_THRESHOLD) * 0.8 + customer_metrics.get("npl_ratio", 0.02)
+            1.0,
+            (dpd / cls.NPL_DAYS_THRESHOLD) * 0.8 + customer_metrics.get("npl_ratio", 0.02),
         )
 
         risk_level = cls.calculate_risk_level(pod)

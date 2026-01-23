@@ -15,9 +15,7 @@ def render_advanced_intelligence(dashboard_metrics):
 
     with adv_tabs[0]:
         st.subheader("Client Segment Distribution (2025)")
-        seg_data = dashboard_metrics.get("extended_kpis", {}).get(
-            "segmentation_summary", []
-        )
+        seg_data = dashboard_metrics.get("extended_kpis", {}).get("segmentation_summary", [])
         if seg_data:
             df_seg = pd.DataFrame(seg_data)
             df_seg_display = df_seg.rename(
@@ -59,9 +57,7 @@ def render_advanced_intelligence(dashboard_metrics):
 
     with adv_tabs[1]:
         st.subheader("90-Day Churn Analysis")
-        churn_data = dashboard_metrics.get("extended_kpis", {}).get(
-            "churn_90d_metrics", []
-        )
+        churn_data = dashboard_metrics.get("extended_kpis", {}).get("churn_90d_metrics", [])
         if churn_data:
             df_churn = pd.DataFrame(churn_data)
             if "month" in df_churn.columns:

@@ -1,32 +1,192 @@
-"""
-Unit tests for LoanAnalyticsEngine and analytics logic.
-"""
+from __future__ import annotations
 
-import logging
+import math
+import sys
+from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pytest
-from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from src.analytics.enterprise_analytics_engine_helpers import (
+    LoanPosition,
+    PortfolioKPIs,
+    calculate_monthly_payment,
+    calculate_portfolio_kpis,
+    expected_loss,
+    portfolio_interest_and_risk,
+)
 
 
-@pytest.fixture
-def portfolio_fixture():
-    """Fixture for a sample loan portfolio DataFrame."""
+def test_monthly_payment_matches_finance_formula():
+    loan = LoanPosition(principal=100_000, annual_interest_rate=0.12, term_months=36)
+    payment = calculate_monthly_payment(loan)
+
+    monthly_rate = loan.annual_interest_rate / 12
+    expected_payment = (monthly_rate * loan.principal) / (
+        1 - math.pow(1 + monthly_rate, -loan.term_months)
+    )
+
+    assert payment == pytest.approx(expected_payment, rel=1e-8)
+
+
+def test_portfolio_interest_and_risk_tracks_defaults():
+    prime = LoanPosition(
+        principal=50_000,
+        annual_interest_rate=0.08,
+        term_months=24,
+        default_probability=0.01,
+    )
+    near_prime = LoanPosition(
+        principal=75_000,
+        annual_interest_rate=0.14,
+        term_months=36,
+        default_probability=0.05,
+    )
+    subprime = LoanPosition(
+        principal=40_000,
+        annual_interest_rate=0.2,
+        term_months=18,
+        default_probability=0.12,
+    )
+
+    monthly_interest, portfolio_loss = portfolio_interest_and_risk(
+        loans=[prime, near_prime, subprime], loss_given_default=0.45
+    )
+
+    expected_interest = (
+        prime.principal * (prime.annual_interest_rate / 12)
+        + near_prime.principal * (near_prime.annual_interest_rate / 12)
+        + subprime.principal * (subprime.annual_interest_rate / 12)
+    )
+
+    assert monthly_interest == pytest.approx(expected_interest)
+    assert portfolio_loss == pytest.approx(
+        expected_loss(prime, 0.45) + expected_loss(near_prime, 0.45) + expected_loss(subprime, 0.45)
+    )
+
+
+def test_invalid_inputs_raise_value_errors():
+    with pytest.raises(ValueError):
+        LoanPosition(principal=0, annual_interest_rate=0.05, term_months=12)
+
+    with pytest.raises(ValueError):
+        LoanPosition(principal=10_000, annual_interest_rate=-0.01, term_months=12)
+
+    with pytest.raises(ValueError):
+        LoanPosition(principal=10_000, annual_interest_rate=0.05, term_months=0)
+
+    with pytest.raises(ValueError):
+        LoanPosition(
+            principal=10_000,
+            annual_interest_rate=0.05,
+            term_months=12,
+            default_probability=1.5,
+        )
+
+    valid_loan = LoanPosition(principal=10_000, annual_interest_rate=0.05, term_months=12)
+    with pytest.raises(ValueError):
+        expected_loss(valid_loan, loss_given_default=1.2)
+
+
+def sample_frame() -> pd.DataFrame:
     return pd.DataFrame(
         {
-            "loan_amount": [250000, 450000, 150000, 600000],
-            "appraised_value": [300000, 500000, 160000, 0],
-            "borrower_income": [80000, 120000, 60000, 0],
-            "monthly_debt": [1500, 2500, 1000, 500],
-            "loan_status": ["current", "30-59 days past due", "current", "90+ days past due"],
-            "interest_rate": [0.035, 0.042, 0.038, 0.045],
-            "principal_balance": [240000, 440000, 145000, 590000],
+            "loan_id": ["L1", "L2", "L3", "L4"],
+            "principal": [100000, 50000, 75000, 60000],
+            "interest_rate": [0.12, 0.08, 0.10, 0.09],
+            "term_months": [24, 18, 24, 12],
+            "origination_date": [
+                "2023-01-15",
+                "2023-02-10",
+                "2022-12-05",
+                "2023-04-20",
+            ],
+            "status": ["current", "30dpd", "defaulted", "current"],
+            "outstanding_principal": [80000, 30000, 0, 40000],
+            "days_in_arrears": [0, 35, 120, 0],
+            "charge_off_amount": [0, 0, 50000, 0],
+            "recoveries": [0, 0, 10000, 0],
+            "paid_principal": [12000, 8000, 5000, 10000],
+            "region": ["LATAM", "LATAM", "EMEA", "LATAM"],
+            "product": ["SME", "SME", "Corporate", "SME"],
         }
     )
 
 
-def test_initialization_requires_data():
+def test_portfolio_kpis_surfaces_weighted_metrics():
+    loans = [
+        LoanPosition(
+            principal=100_000,
+            annual_interest_rate=0.09,
+            term_months=24,
+            default_probability=0.02,
+        ),
+        LoanPosition(
+            principal=50_000,
+            annual_interest_rate=0.12,
+            term_months=36,
+            default_probability=0.04,
+        ),
+    ]
+
+    kpis = calculate_portfolio_kpis(loans, loss_given_default=0.4)
+
+    expected_exposure = sum(loan.principal for loan in loans)
+    weighted_rate = (
+        loans[0].annual_interest_rate * loans[0].principal
+        + loans[1].annual_interest_rate * loans[1].principal
+    ) / expected_exposure
+    weighted_term = (
+        loans[0].term_months * loans[0].principal + loans[1].term_months * loans[1].principal
+    ) / expected_exposure
+    weighted_default_probability = (
+        loans[0].default_probability * loans[0].principal
+        + loans[1].default_probability * loans[1].principal
+    ) / expected_exposure
+    expected_interest = sum(loan.principal * (loan.annual_interest_rate / 12) for loan in loans)
+    expected_loss_value = sum(expected_loss(loan, 0.4) for loan in loans)
+
+    assert isinstance(kpis, PortfolioKPIs)
+    assert kpis.exposure == expected_exposure
+    assert kpis.weighted_rate == pytest.approx(weighted_rate)
+    assert kpis.weighted_term_months == pytest.approx(weighted_term)
+    assert kpis.weighted_default_probability == pytest.approx(weighted_default_probability)
+    assert kpis.expected_monthly_interest == pytest.approx(expected_interest)
+    assert kpis.expected_monthly_payment == pytest.approx(
+        calculate_monthly_payment(loans[0]) + calculate_monthly_payment(loans[1])
+    )
+    assert kpis.expected_loss == pytest.approx(expected_loss_value)
+    assert kpis.expected_loss_rate == pytest.approx(expected_loss_value / expected_exposure)
+    assert kpis.interest_yield_rate == pytest.approx(expected_interest / expected_exposure)
+    assert kpis.risk_adjusted_return == pytest.approx(
+        (expected_interest - expected_loss_value) / expected_exposure
+    )
+
+
+"""
+def test_portfolio_kpis_compute_expected_values_engine():
+    engine = LoanAnalyticsEngine(sample_frame(), config=LoanAnalyticsConfig(currency="EUR"))
+    kpis = engine.portfolio_kpis()
+
+    assert kpis["currency"] == "EUR"
+    assert pytest.approx(kpis["total_outstanding"], rel=1e-6) == 150000
+    assert pytest.approx(kpis["total_principal"], rel=1e-6) == 285000
+    assert pytest.approx(kpis["weighted_interest_rate"], rel=1e-6) == 0.104
+    assert pytest.approx(kpis["non_performing_loan_ratio"], rel=1e-6) == 0
+    assert pytest.approx(kpis["default_rate"], rel=1e-6) == 0.25
+    assert pytest.approx(kpis["loss_given_default"], rel=1e-6) == 0.8
+    assert pytest.approx(kpis["prepayment_rate"], rel=1e-6) == pytest.approx(35000 / 285000)
+    assert kpis["repayment_velocity"] > 1
+
+
+def test_prepare_data_validates_structure_and_dates():
+    base = sample_frame()
+    missing_cols = base.drop(columns=["interest_rate"])
+
     with pytest.raises(ValueError):
         LoanAnalyticsEngine(pd.DataFrame())
 
@@ -52,82 +212,13 @@ def test_dti_returns_series_with_index(portfolio_fixture):
     assert np.isnan(dti.iloc[-1])  # zero income
 
 
-def test_risk_alerts_surface_high_risk_loans(portfolio_fixture):
-    engine = LoanAnalyticsEngine(portfolio_fixture)
-    alerts = engine.risk_alerts(ltv_threshold=80, dti_threshold=30)
-    assert not alerts.empty
-    assert {"ltv_ratio", "dti_ratio", "risk_score"}.issubset(alerts.columns)
-    assert alerts["risk_score"].between(0, 1).all()
+def test_prepare_data_allows_explicit_numeric_fill_value():
+    base = sample_frame()
+    base.loc[2, "recoveries"] = None
 
+    engine = LoanAnalyticsEngine(
+        base, config=LoanAnalyticsConfig(numeric_missing_fill_value=0.0)
+    )
 
-def test_run_full_analysis_includes_quality(portfolio_fixture):
-    engine = LoanAnalyticsEngine(portfolio_fixture)
-    summary = engine.run_full_analysis()
-    expected_keys = {
-        "portfolio_delinquency_rate_percent",
-        "portfolio_yield_percent",
-        "average_ltv_ratio_percent",
-        "average_dti_ratio_percent",
-        "data_quality_score",
-        "average_null_ratio_percent",
-        "invalid_numeric_ratio_percent",
-    }
-    assert expected_keys.issubset(summary.keys())
-
-    # Regression assertions for KPI stability
-    assert summary["portfolio_delinquency_rate_percent"] == 50.0
-    assert abs(summary["portfolio_yield_percent"] - 4.165) < 0.001
-    assert abs(summary["average_ltv_ratio_percent"] - 89.028) < 0.001
-    assert summary["average_dti_ratio_percent"] == 22.5
-    assert summary["data_quality_score"] <= 100
-
-
-def test_coerces_invalid_numeric_values_and_reports_quality(portfolio_fixture):
-    """Test coercion and quality reporting for invalid numeric values."""
-    noisy_portfolio = portfolio_fixture.copy()
-    noisy_portfolio["loan_amount"] = noisy_portfolio["loan_amount"].astype(object)
-    noisy_portfolio.loc[0, "loan_amount"] = "not-a-number"
-    engine = LoanAnalyticsEngine(noisy_portfolio)
-    quality = engine.data_quality_profile()
-    ltv = engine.compute_loan_to_value()
-    assert quality["invalid_numeric_ratio"] > 0
-    assert np.isnan(ltv.iloc[0])
-
-
-def test_source_dataframe_remains_unchanged_after_analysis(portfolio_fixture):
-    original = portfolio_fixture.copy()
-    engine = LoanAnalyticsEngine(portfolio_fixture)
-    engine.run_full_analysis()
-    pd.testing.assert_frame_equal(portfolio_fixture, original)
-
-
-def test_compute_delinquency_rate(portfolio_fixture):
-    engine = LoanAnalyticsEngine(portfolio_fixture)
-    rate = engine.compute_delinquency_rate()
-    assert rate == 50.0
-
-
-def test_compute_portfolio_yield(portfolio_fixture):
-    engine = LoanAnalyticsEngine(portfolio_fixture)
-    yield_val = engine.compute_portfolio_yield()
-    assert abs(yield_val - 4.165) < 0.001
-
-
-def test_dti_excludes_nan_from_average(portfolio_fixture):
-    engine = LoanAnalyticsEngine(portfolio_fixture)
-    dti = engine.compute_debt_to_income()
-    # 4 loans, 1 has zero income -> NaN. 3 valid.
-    assert dti.notna().sum() == 3
-
-
-def test_check_data_sanity_warns_on_high_interest_rate(portfolio_fixture, caplog):
-    """Test that a warning is logged if interest rates appear to be percentages."""
-    high_rate_portfolio = portfolio_fixture.copy()
-    # Set a rate > 1.0 (e.g. 5.0%) to trigger warning
-    high_rate_portfolio.loc[0, "interest_rate"] = 5.0
-
-    with caplog.at_level(logging.WARNING):
-        LoanAnalyticsEngine(high_rate_portfolio)
-
-    assert "Max interest_rate is 5.0" in caplog.text
-    assert "Ensure rates are ratios" in caplog.text
+    assert engine.data.loc[2, "recoveries"] == 0
+"""

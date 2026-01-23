@@ -6,9 +6,12 @@ from typing import Any, Dict, Iterable
 import numpy as np
 import pandas as pd
 
-from src.pipeline.data_validation import (ANALYTICS_NUMERIC_COLUMNS,
-                                          REQUIRED_ANALYTICS_COLUMNS,
-                                          safe_numeric, validate_dataframe)
+from src.pipeline.data_validation import (
+    ANALYTICS_NUMERIC_COLUMNS,
+    REQUIRED_ANALYTICS_COLUMNS,
+    safe_numeric,
+    validate_dataframe,
+)
 
 # Alias for backward compatibility and clarity within this module
 REQUIRED_KPI_COLUMNS = REQUIRED_ANALYTICS_COLUMNS
@@ -120,6 +123,28 @@ def portfolio_delinquency_rate(statuses: Iterable[str]) -> float:
     return (delinquent_count / total) * 100 if total else 0.0
 
 
+def weighted_portfolio_delinquency_rate(
+    statuses: pd.Series, principal_balances: pd.Series
+) -> float:
+    """
+    Calculate the delinquency rate weighted by principal balance.
+
+    Args:
+        statuses: Series of loan statuses.
+        principal_balances: Series of principal balances.
+
+    Returns:
+        float: Weighted delinquency rate percentage.
+    """
+    sanitized_principal = _coerce_numeric(principal_balances, "principal_balance").fillna(0)
+    total_principal = sanitized_principal.sum()
+    if total_principal == 0:
+        return 0.0
+
+    is_delinquent = statuses.isin(DELINQUENT_STATUSES)
+    delinquent_principal = sanitized_principal[is_delinquent].sum()
+
+    return (delinquent_principal / total_principal) * 100
 def weighted_portfolio_yield(interest_rates: pd.Series, principal_balances: pd.Series) -> float:
     """
     Calculate weighted portfolio yield, returning zero when principal is
