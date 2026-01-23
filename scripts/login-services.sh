@@ -45,7 +45,7 @@ echo "   ✓ HUBSPOT_TOKEN"
 echo "   ✓ HUGGING_TOKEN"
 echo "   ✓ META_ABACO"
 echo "   ✓ OPEN_AI"
-echo "   ✓ SLACK_TOKEN"
+
 echo "   ✓ SONARQUBE_KEY (via GitHub Actions)"
 echo ""
 

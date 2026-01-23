@@ -161,7 +161,7 @@ verify_setup() {
   echo ""
   echo -e "${YELLOW}Next Steps:${NC}"
   echo "  1. Configure email for $EMAIL to receive alerts"
-  echo "  2. Add Slack webhooks to action group for real-time notifications"
+
   echo "  3. Create PowerBI dashboard for executive reporting"
   echo "  4. Set up daily health report via automation"
   echo ""
