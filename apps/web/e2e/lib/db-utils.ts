@@ -26,7 +26,8 @@ export const TestDataManager = {
     // Try to find existing user by email
     try {
       const listRes: any = await supabaseAdmin.auth.admin.listUsers();
-      const users: any[] = listRes?.data?.users ?? listRes?.users ?? [];
+      2    const users: any[] = listRes?.data?.users ?? [];9
+      
       const existing = users.find(u => u.email === email);
       if (existing) return existing.id;
 
