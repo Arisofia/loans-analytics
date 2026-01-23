@@ -7,16 +7,22 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
+import yaml
 
 try:
     from src.azure_tracing import setup_azure_tracing
-
-    logger, _ = setup_azure_tracing()
-    logger.info("Azure tracing initialized for generate_executive_report")
+    from src.pipeline.utils import load_yaml
 except (ImportError, Exception) as tracing_err:
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     logger.warning("Azure tracing not initialized: %s", tracing_err)
+
+def load_business_rules():
+    """Load business rules from config."""
+    rules_path = Path(__file__).parent / "config" / "business_rules.yaml"
+    if rules_path.exists():
+        return load_yaml(rules_path)
+    return {}
 
 
 def load_and_analyze_loans():
@@ -26,13 +32,7 @@ def load_and_analyze_loans():
     df = pd.read_csv(data_path)
 
     # Clean numeric columns
-    numeric_cols = [
-        "outstanding_balance",
-        "disburse_principal",
-        "interest_rate",
-        "dpd",
-        "term",
-    ]
+    numeric_cols = ["outstanding_balance", "disburse_principal", "interest_rate", "dpd", "term"]
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
@@ -95,6 +95,16 @@ def calculate_metrics(df):
 
 def generate_html_report(metrics, df):
     """Generate HTML executive report."""
+    rules = load_business_rules()
+    risk_colors = rules.get("risk_colors", {
+        "high": "#e74c3c",
+        "medium": "#f39c12",
+        "low": "#27ae60"
+    })
+    chart_colors = rules.get("ui_theme", {}).get("chart_colors", ["#667eea", "#764ba2"])
+    primary_color = chart_colors[0]
+    secondary_color = chart_colors[1] if len(chart_colors) > 1 else primary_color
+
     html = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -107,7 +117,7 @@ def generate_html_report(metrics, df):
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 margin: 0;
                 padding: 40px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, {primary_color} 0%, {secondary_color} 100%);
                 color: #333;
             }}
             .container {{
@@ -119,12 +129,12 @@ def generate_html_report(metrics, df):
                 box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             }}
             header {{
-                border-bottom: 3px solid #667eea;
+                border-bottom: 3px solid {primary_color};
                 padding-bottom: 30px;
                 margin-bottom: 40px;
             }}
             h1 {{
-                color: #667eea;
+                color: {primary_color};
                 margin: 0;
                 font-size: 2.5em;
             }}
@@ -137,8 +147,8 @@ def generate_html_report(metrics, df):
                 margin-bottom: 50px;
             }}
             .section h2 {{
-                color: #764ba2;
-                border-left: 4px solid #667eea;
+                color: {secondary_color};
+                border-left: 4px solid {primary_color};
                 padding-left: 15px;
                 margin-top: 0;
                 font-size: 1.8em;
@@ -150,7 +160,7 @@ def generate_html_report(metrics, df):
                 margin-bottom: 30px;
             }}
             .metric-card {{
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, {primary_color} 0%, {secondary_color} 100%);
                 color: white;
                 padding: 25px;
                 border-radius: 8px;
@@ -167,9 +177,9 @@ def generate_html_report(metrics, df):
                 opacity: 0.9;
                 text-transform: uppercase;
             }}
-            .risk-high {{ color: #e74c3c; }}
-            .risk-medium {{ color: #f39c12; }}
-            .risk-low {{ color: #27ae60; }}
+            .risk-high {{ color: {risk_colors['high']}; }}
+            .risk-medium {{ color: {risk_colors['medium']}; }}
+            .risk-low {{ color: {risk_colors['low']}; }}
             table {{
                 width: 100%;
                 border-collapse: collapse;
@@ -183,14 +193,14 @@ def generate_html_report(metrics, df):
             th {{
                 background: #f8f9fa;
                 font-weight: bold;
-                color: #667eea;
+                color: {primary_color};
             }}
             tr:hover {{
                 background: #f8f9fa;
             }}
             .summary-box {{
                 background: #f0f4ff;
-                border-left: 4px solid #667eea;
+                border-left: 4px solid {primary_color};
                 padding: 20px;
                 margin: 20px 0;
                 border-radius: 4px;
@@ -230,7 +240,7 @@ def generate_html_report(metrics, df):
         <div class="container">
             <header>
                 <h1>💰 ABACO Loans Analytics</h1>
-                <h2 style="margin: 10px 0; color: #764ba2;">Executive Summary Report</h2>
+                <h2 style="margin: 10px 0; color: {secondary_color};">Executive Summary Report</h2>
                 <div class="report-meta">
                     <p>Report Generated: {datetime.now().strftime('%B %d, %Y at %H:%M:%S')}</p>
                 </div>

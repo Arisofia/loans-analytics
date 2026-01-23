@@ -30,16 +30,16 @@ This guide provides comprehensive documentation for all code quality tools confi
 
 Our repository uses multiple complementary tools for code quality analysis:
 
-| Tool | Language | Purpose | When It Runs |
-|------|----------|---------|--------------|
-| **ESLint** | TypeScript/JavaScript | Linting, code style, best practices | Pre-commit, CI, Local |
-| **Pylint** | Python | Linting, code style, complexity | Pre-commit, CI, Local |
-| **SonarQube** | All | Security, bugs, code smells, tech debt | CI (main branch, see `.github/workflows/sonarqube.yml`) |
-| **Code Climate** | All | Maintainability, complexity, duplication | On-demand, CI |
-| **Black** | Python | Code formatting | Pre-commit, CI |
-| **isort** | Python | Import sorting | Pre-commit, CI |
-| **Bandit** | Python | Security vulnerabilities | Code Climate |
-| **Gitleaks** | All | Secret scanning | Pre-commit |
+| Tool             | Language              | Purpose                                  | When It Runs                                            |
+| ---------------- | --------------------- | ---------------------------------------- | ------------------------------------------------------- |
+| **ESLint**       | TypeScript/JavaScript | Linting, code style, best practices      | Pre-commit, CI, Local                                   |
+| **Pylint**       | Python                | Linting, code style, complexity          | Pre-commit, CI, Local                                   |
+| **SonarQube**    | All                   | Security, bugs, code smells, tech debt   | CI (main branch, see `.github/workflows/sonarqube.yml`) |
+| **Code Climate** | All                   | Maintainability, complexity, duplication | On-demand, CI                                           |
+| **Black**        | Python                | Code formatting                          | Pre-commit, CI                                          |
+| **isort**        | Python                | Import sorting                           | Pre-commit, CI                                          |
+| **Bandit**       | Python                | Security vulnerabilities                 | Code Climate                                            |
+| **Gitleaks**     | All                   | Secret scanning                          | Pre-commit                                              |
 
 ---
 
@@ -86,38 +86,46 @@ npm run check-all --prefix apps/web
 ### Common ESLint Issues and Solutions
 
 #### Issue: `@typescript-eslint/no-explicit-any`
+
 ```typescript
 // ❌ Bad
-function process(data: any) { }
+function process(data: any) {}
 
 // ✅ Good
-function process(data: unknown) { }
-function process<T>(data: T) { }
+function process(data: unknown) {}
+function process<T>(data: T) {}
 ```
 
 #### Issue: `@typescript-eslint/no-floating-promises`
+
 ```typescript
 // ❌ Bad
-fetchData();
+fetchData()
 
 // ✅ Good
-await fetchData();
-void fetchData();
-fetchData().catch(console.error);
+await fetchData()
+void fetchData()
+fetchData().catch(console.error)
 ```
 
 #### Issue: `@typescript-eslint/no-unused-vars`
+
 ```typescript
 // ❌ Bad
-function handler(event, context) { /* only uses event */ }
+function handler(event, context) {
+  /* only uses event */
+}
 
 // ✅ Good
-function handler(event, _context) { /* context ignored */ }
+function handler(event, _context) {
+  /* context ignored */
+}
 ```
 
 ### ESLint in CI
 
 ESLint runs automatically in the CI pipeline:
+
 - `.github/workflows/ci.yml` - On PR and push to main
 - `apps/web/.github/workflows/ci.yml` - Web-specific checks
 
@@ -166,6 +174,7 @@ pylint --disable=all --enable=E python/
 ### Common Pylint Issues and Solutions
 
 #### Issue: `too-many-arguments` (R0913)
+
 ```python
 # ❌ Bad
 def calculate(a, b, c, d, e, f, g, h):
@@ -185,6 +194,7 @@ def calculate(config: CalculationConfig):
 ```
 
 #### Issue: `unused-variable` (W0612)
+
 ```python
 # ❌ Bad
 def process():
@@ -198,6 +208,7 @@ def process():
 ```
 
 #### Issue: `line-too-long` (C0301)
+
 ```python
 # ❌ Bad (> 88 characters)
 def calculate_portfolio_metrics(total_receivable, eligible_amount, delinquent_bucket, current_date):
@@ -216,6 +227,7 @@ def calculate_portfolio_metrics(
 ### Pylint in CI
 
 Pylint runs in:
+
 - Pre-commit hooks (`.pre-commit-config.yaml`)
 - CI pipeline (`.github/workflows/archived/ci-main.yml`)
 - Makefile (`make lint`)
@@ -280,6 +292,7 @@ sonar.javascript.lcov.reportPaths=apps/web/coverage/lcov.info
 ### SonarQube Quality Gates
 
 Default quality gate requirements:
+
 - Coverage ≥ 80%
 - Duplicated Lines < 3%
 - Maintainability Rating ≥ A
@@ -334,15 +347,15 @@ In the Code Climate dashboard:
 
 ```yaml
 plugins:
-  pylint:          # Python linting
+  pylint: # Python linting
     enabled: true
-  bandit:          # Python security
+  bandit: # Python security
     enabled: true
-  eslint:          # JavaScript/TypeScript
+  eslint: # JavaScript/TypeScript
     enabled: true
   sonar-javascript: # JS code smells
     enabled: true
-  duplication:     # Code duplication
+  duplication: # Code duplication
     enabled: true
 ```
 
@@ -351,13 +364,14 @@ plugins:
 1. **Dashboard**: https://codeclimate.com/github/Arisofia/abaco-loans-analytics
 2. **Pull Requests**: Automatic comments on PRs with issues
 3. **CLI Analysis** (local):
+
    ```bash
    # Install Code Climate CLI
    brew install codeclimate/formulae/codeclimate
-   
+
    # Run analysis locally
    codeclimate analyze
-   
+
    # Validate configuration
    codeclimate validate-config
    ```
@@ -365,16 +379,17 @@ plugins:
 ### Understanding Code Climate Ratings
 
 | Rating | Maintainability | Technical Debt |
-|--------|----------------|----------------|
-| **A** | Excellent | < 5% |
-| **B** | Good | 5-10% |
-| **C** | Satisfactory | 10-20% |
-| **D** | Poor | 20-50% |
-| **F** | Critical | > 50% |
+| ------ | --------------- | -------------- |
+| **A**  | Excellent       | < 5%           |
+| **B**  | Good            | 5-10%          |
+| **C**  | Satisfactory    | 10-20%         |
+| **D**  | Poor            | 20-50%         |
+| **F**  | Critical        | > 50%          |
 
 ### Common Code Climate Issues
 
 #### High Complexity
+
 ```python
 # ❌ Bad - Cyclomatic Complexity: 15
 def process_loan(loan, status, type, risk, amount):
@@ -396,7 +411,7 @@ def process_loan(loan, status, type, risk, amount):
 def process_loan(loan):
     if not loan.is_active():
         return None
-    
+
     calculator = get_loan_calculator(loan)
     return calculator.calculate()
 
@@ -407,6 +422,7 @@ def get_loan_calculator(loan):
 ```
 
 #### Code Duplication
+
 ```python
 # ❌ Bad - Duplicated logic
 def calculate_par_30(data):
@@ -535,26 +551,31 @@ Create `.github/pull_request_template.md`:
 
 ```markdown
 ## Description
+
 <!-- Brief description of changes -->
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 - [ ] Tests pass locally
 - [ ] New tests added
 - [ ] Manual testing completed
 
 ## Code Quality
+
 - [ ] ESLint passes
 - [ ] Pylint passes
 - [ ] Pre-commit hooks pass
 - [ ] Code Climate checks pass
 
 ## Checklist
+
 - [ ] Self-review completed
 - [ ] Documentation updated
 - [ ] No breaking changes (or documented)
@@ -728,9 +749,10 @@ yamllint .codeclimate.yml
 #### Issue: "Plugin not running"
 
 Check exclusion patterns in `.codeclimate.yml`:
+
 ```yaml
 exclude_patterns:
-  - "path/to/exclude/**"
+  - 'path/to/exclude/**'
 ```
 
 ---
@@ -756,6 +778,7 @@ exclude_patterns:
 ### Support
 
 For questions or issues:
+
 1. Check this guide and troubleshooting section
 2. Review CI logs for specific errors
 3. Consult code owners: @Arisofia
@@ -765,6 +788,7 @@ For questions or issues:
 ## Changelog
 
 ### Version 1.0 (2026-01-21)
+
 - Initial comprehensive code quality guide
 - Added Code Climate configuration
 - Added Pylint configuration

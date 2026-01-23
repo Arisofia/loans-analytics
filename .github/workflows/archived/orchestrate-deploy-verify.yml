@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       target_url:
-        description: "Target URL to verify (e.g., https://app.example.com)"
+        description: 'Target URL to verify (e.g., https://app.example.com)'
         required: true
         type: string
       ref:
-        description: "Git ref to inspect (defaults to HEAD/main)"
+        description: 'Git ref to inspect (defaults to HEAD/main)'
         required: false
         type: string
 

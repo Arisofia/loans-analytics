@@ -16,12 +16,7 @@ from src.pipeline.data_validation import (
 # Alias for backward compatibility and clarity within this module
 REQUIRED_KPI_COLUMNS = REQUIRED_ANALYTICS_COLUMNS
 
-DELINQUENT_STATUSES = [
-    "30-59 days past due",
-    "60-89 days past due",
-    "90+ days past due",
-    "delinquent",  # Added for compatibility with test data
-]
+DELINQUENT_STATUSES = ["30-59 days past due", "60-89 days past due", "90+ days past due"]
 
 
 def _coerce_numeric(series: pd.Series, field_name: str) -> pd.Series:
@@ -58,9 +53,7 @@ def validate_kpi_columns(loan_data: pd.DataFrame) -> None:
 
     # Use centralized validation for structure and types
     validate_dataframe(
-        loan_data,
-        required_columns=REQUIRED_KPI_COLUMNS,
-        numeric_columns=ANALYTICS_NUMERIC_COLUMNS,
+        loan_data, required_columns=REQUIRED_KPI_COLUMNS, numeric_columns=ANALYTICS_NUMERIC_COLUMNS
     )
 
     # Granular checks: NaN, data types, value ranges - log instead of raise for flexibility in tests
@@ -116,7 +109,7 @@ def debt_to_income_ratio(monthly_debts: pd.Series, borrower_incomes: pd.Series) 
 
 def portfolio_delinquency_rate(statuses: Iterable[str]) -> float:
     """
-    Calculate the delinquency rate as a percentage of total loans (count-based).
+    Calculate the delinquency rate as a percentage of total loans.
 
     Args:
         statuses (Iterable[str]): Iterable of loan status strings.
@@ -128,30 +121,6 @@ def portfolio_delinquency_rate(statuses: Iterable[str]) -> float:
     delinquent_count = series.isin(DELINQUENT_STATUSES).sum()
     total = len(series)
     return (delinquent_count / total) * 100 if total else 0.0
-
-
-def weighted_portfolio_delinquency_rate(
-    statuses: pd.Series, principal_balances: pd.Series
-) -> float:
-    """
-    Calculate the delinquency rate weighted by principal balance.
-
-    Args:
-        statuses: Series of loan statuses.
-        principal_balances: Series of principal balances.
-
-    Returns:
-        float: Weighted delinquency rate percentage.
-    """
-    sanitized_principal = _coerce_numeric(principal_balances, "principal_balance").fillna(0)
-    total_principal = sanitized_principal.sum()
-    if total_principal == 0:
-        return 0.0
-
-    is_delinquent = statuses.isin(DELINQUENT_STATUSES)
-    delinquent_principal = sanitized_principal[is_delinquent].sum()
-
-    return (delinquent_principal / total_principal) * 100
 
 
 def weighted_portfolio_yield(interest_rates: pd.Series, principal_balances: pd.Series) -> float:
@@ -207,7 +176,7 @@ def _data_quality_metrics(loan_data: pd.DataFrame) -> Dict[str, float]:
     }
 
 
-def portfolio_kpis(loan_data: pd.DataFrame, return_enriched: bool = True) -> Any:
+def portfolio_kpis(loan_data: pd.DataFrame, return_enriched: bool = False) -> Any:
     """
     Aggregate portfolio KPIs used across analytics modules.
 
@@ -251,21 +220,18 @@ def portfolio_kpis(loan_data: pd.DataFrame, return_enriched: bool = True) -> Any
     avg_ltv = ltv_series.mean(skipna=True)
     avg_dti = dti_series.mean(skipna=True)
 
-    # Use weighted delinquency rate for "delinquency_rate" to match financial logic and test expectations
-    weighted_delinq = weighted_portfolio_delinquency_rate(
-        sanitized_data["loan_status"], sanitized_data["principal_balance"]
-    )
-
     kpis = {
         # Short keys (expected by test_analytics_metrics.py)
-        "delinquency_rate": weighted_delinq,
+        "delinquency_rate": portfolio_delinquency_rate(sanitized_data["loan_status"]),
         "portfolio_yield": weighted_portfolio_yield(
             sanitized_data["interest_rate"], sanitized_data["principal_balance"]
         ),
         "average_ltv": float(avg_ltv if not np.isnan(avg_ltv) else 0.0),
         "average_dti": float(avg_dti if not np.isnan(avg_dti) else 0.0),
         # Long keys (expected by test_metrics_utils_extended.py)
-        "portfolio_delinquency_rate_percent": weighted_delinq,
+        "portfolio_delinquency_rate_percent": portfolio_delinquency_rate(
+            sanitized_data["loan_status"]
+        ),
         "portfolio_yield_percent": weighted_portfolio_yield(
             sanitized_data["interest_rate"], sanitized_data["principal_balance"]
         ),

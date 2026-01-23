@@ -41,5 +41,5 @@ def md_table_to_csv(md_path, csv_path):
 
 if __name__ == "__main__":
     md_table_to_csv(KPI_MD_PATH, CSV_EXPORT_PATH)
-    # ...existing code...
+    # Optionally, add timestamp or sync logic for Figma API integration
     print(f"KPI table export completed at {datetime.now().isoformat()}")

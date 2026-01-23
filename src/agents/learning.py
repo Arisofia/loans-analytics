@@ -13,11 +13,7 @@ class FeedbackStore:
         os.makedirs(self.storage_dir, exist_ok=True)
 
     def collect_feedback(
-        self,
-        agent_name: str,
-        run_id: str,
-        feedback_score: float,
-        comments: Optional[str] = None,
+        self, agent_name: str, run_id: str, feedback_score: float, comments: Optional[str] = None
     ):
         """Collect and store feedback for a specific agent run."""
         timestamp = datetime.now(timezone.utc).isoformat()
@@ -50,8 +46,7 @@ class FeedbackStore:
                     data = json.load(f)
                 if not isinstance(data, dict):
                     logger.warning(
-                        "Skipping malformed feedback file (not an object): %s",
-                        file_path,
+                        "Skipping malformed feedback file (not an object): %s", file_path
                     )
                     continue
                 if "score" not in data:
@@ -65,10 +60,7 @@ class FeedbackStore:
         if not scores:
             return {"average_score": 0.0, "total_feedbacks": 0}
 
-        return {
-            "average_score": sum(scores) / len(scores),
-            "total_feedbacks": len(scores),
-        }
+        return {"average_score": sum(scores) / len(scores), "total_feedbacks": len(scores)}
 
 
 class LearningEngine:

@@ -22,20 +22,20 @@ TARGET_BRANCH="main"
 
 # --- Helper Functions ---
 info() {
-    echo -e "${BLUE}[INFO] $1${NC}"
+  echo -e "${BLUE}[INFO] $1${NC}"
 }
 
 success() {
-    echo -e "${GREEN}[SUCCESS] $1${NC}"
+  echo -e "${GREEN}[SUCCESS] $1${NC}"
 }
 
 warn() {
-    echo -e "${YELLOW}[WARNING] $1${NC}"
+  echo -e "${YELLOW}[WARNING] $1${NC}"
 }
 
 fail() {
-    echo -e "${RED}[ERROR] $1${NC}"
-    exit 1
+  echo -e "${RED}[ERROR] $1${NC}"
+  exit 1
 }
 
 # --- Main Logic ---
@@ -43,14 +43,14 @@ fail() {
 # 1. Check for clean working directory
 info "Step 1: Checking for a clean working directory..."
 if [[ -n $(git status --porcelain) ]]; then
-    fail "Your working directory is not clean. Please commit or stash your changes before running this script."
+  fail "Your working directory is not clean. Please commit or stash your changes before running this script."
 fi
 success "Working directory is clean."
 
 # 2. Get current branch name
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 if [ "$CURRENT_BRANCH" == "$TARGET_BRANCH" ]; then
-    fail "You are on the '$TARGET_BRANCH' branch. This script should be run from a feature branch."
+  fail "You are on the '$TARGET_BRANCH' branch. This script should be run from a feature branch."
 fi
 info "Current feature branch is '$CURRENT_BRANCH'."
 
@@ -62,12 +62,12 @@ success "Latest changes have been fetched."
 # 4. Rebase the current branch onto the target branch
 info "Step 3: Rebasing '$CURRENT_BRANCH' onto 'origin/$TARGET_BRANCH'..."
 if git rebase "origin/$TARGET_BRANCH"; then
-    success "Rebase completed successfully."
+  success "Rebase completed successfully."
 else
-    warn "Rebase failed. This is likely due to merge conflicts."
-    warn "Please resolve the conflicts manually, then run 'git rebase --continue'."
-    warn "If you want to abort, run 'git rebase --abort'."
-    exit 1
+  warn "Rebase failed. This is likely due to merge conflicts."
+  warn "Please resolve the conflicts manually, then run 'git rebase --continue'."
+  warn "If you want to abort, run 'git rebase --abort'."
+  exit 1
 fi
 
 # 5. Force-push the rebased branch to the cloud
@@ -76,7 +76,7 @@ warn "A rebase requires a force-push. This will overwrite the remote branch '$CU
 read -p "Do you want to proceed? (y/n) " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    fail "Push aborted by user."
+  fail "Push aborted by user."
 fi
 
 # Using --force-with-lease is safer than a standard --force

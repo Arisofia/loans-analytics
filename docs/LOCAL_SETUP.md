@@ -92,9 +92,8 @@ nano .env
 
 ```ini
 # Supabase (data source)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key-here
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+## SUPABASE_URL should be set in your environment, not in this file.
+## SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY should be set in your environment, not in this file.
 
 # Optional: LLM keys (for AI features)
 # Set ANTHROPIC_API_KEY and OPENAI_API_KEY in your environment or GitHub Secrets. Do not commit them to source control.
@@ -175,6 +174,7 @@ If tracing errors appear, this is expected in local dev (Azure/Jaeger endpoints 
 ### 6.1 Navigate Dashboard
 
 - **Home** — KPI overview and summary metrics
+- **Cascade Analysis** — Loan cascade predictions
 - **Portfolio Analytics** — KPI trends and analysis
 - **Settings** — Configure Supabase connection
 

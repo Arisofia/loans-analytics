@@ -218,9 +218,8 @@ class PerformanceStressTest:
             "tests_passed": sum(1 for _ in [load_test, sustained, resource] if _),
             "performance_assessment": {
                 "scalability": "EXCELLENT" if load_test else "UNKNOWN",
-                "stability": (
-                    "STABLE" if sustained.get("memory", {}).get("stable") else "VARIABLE"
-                ),
+<<<<<<< HEAD
+                "stability": "STABLE" if sustained.get("memory", {}).get("stable") else "VARIABLE",
                 "resource_efficiency": "EFFICIENT" if resource else "UNKNOWN",
             },
             "recommendations": self._generate_recommendations(),

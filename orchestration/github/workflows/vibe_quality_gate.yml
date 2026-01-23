@@ -49,7 +49,18 @@ jobs:
         run: |
           flake8 .
 
+      - name: Check Sourcery token availability
+        id: check-sourcery
+        run: |
+          if [ -n "${{ secrets.SOURCERY_TOKEN }}" ]; then
+            echo "secrets_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "secrets_available=false" >> $GITHUB_OUTPUT
+            echo "::warning::SOURCERY_TOKEN not configured - skipping Sourcery review"
+            echo "Skipping Sourcery review (missing SOURCERY_TOKEN)" >> $GITHUB_STEP_SUMMARY
+          fi
       - name: Sourcery review
+        if: steps.check-sourcery.outputs.secrets_available == 'true'
         env:
           SOURCERY_TOKEN: ${{ secrets.SOURCERY_TOKEN }}
         run: |

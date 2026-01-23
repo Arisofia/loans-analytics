@@ -63,6 +63,7 @@
   - Environment setup
   - Troubleshooting guide
 
+- [x] **DEPLOYMENT_COORDINATION.md** (Slack guidelines)
   - Channel assignments
   - Notification templates
   - Incident escalation matrix
@@ -225,6 +226,7 @@
   - [ ] Discuss edge cases
   - [ ] Plan for common scenarios
 
+#### Slack Setup
 
 - [ ] **Communications/Admin**: Create required channels (if not exist)
   - [ ] #dev-alerts
@@ -277,6 +279,7 @@ Complete this before first production deployment:
 
 - [ ] All team members have repository access
 - [ ] All team members read assigned documentation
+- [ ] Slack channels ready
 - [ ] Incident response procedures documented
 - [ ] On-call rotation established (if applicable)
 
@@ -297,6 +300,7 @@ Complete this before first production deployment:
 - [ ] First staging deployment successful (auto on develop merge)
 - [ ] QA completes 24-hour validation
 - [ ] No critical issues found in staging
+- [ ] Team posts updates in Slack as expected
 
 ### Week 2 (Deployment 2)
 
@@ -366,6 +370,7 @@ Complete this before first production deployment:
 - Success/failure rates
 - Historical performance
 
+**Slack**:
 
 - Deployment frequency (count #prod-alerts messages)
 - Incident frequency (count #incidents messages)
@@ -383,6 +388,7 @@ Complete this before first production deployment:
 ### Weekly
 
 - [ ] Review GitHub Actions for any failures
+- [ ] Check Slack for common questions
 - [ ] Monitor deployment metrics
 
 ### Monthly
@@ -435,6 +441,7 @@ Complete this before first production deployment:
 
 - **TEAM_RUNBOOKS.md**: Validation checklist and procedures
 - **#dev-alerts**: Deployment notifications
+- **Slack thread**: Ask questions about specific deployment
 
 ### For DevOps
 
@@ -445,6 +452,7 @@ Complete this before first production deployment:
 ### For All
 
 - **.github/README.md**: Documentation index
+- **DEPLOYMENT_COORDINATION.md**: Slack communication guide
 - **IMPLEMENTATION_SUMMARY.md**: High-level overview
 
 ---

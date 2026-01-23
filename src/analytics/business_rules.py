@@ -100,16 +100,12 @@ class MYPEBusinessRules:
 
     @classmethod
     def evaluate_facility_approval(
-        cls,
-        facility_amount: float,
-        customer_metrics: Dict,
-        collateral_value: float = 0.0,
+        cls, facility_amount: float, customer_metrics: Dict, collateral_value: float = 0.0
     ) -> ApprovalDecision:
         is_high_risk, reasons = cls.classify_high_risk(customer_metrics)
         dpd = customer_metrics.get("dpd", 0)
         pod = min(
-            1.0,
-            (dpd / cls.NPL_DAYS_THRESHOLD) * 0.8 + customer_metrics.get("npl_ratio", 0.02),
+            1.0, (dpd / cls.NPL_DAYS_THRESHOLD) * 0.8 + customer_metrics.get("npl_ratio", 0.02)
         )
 
         risk_level = cls.calculate_risk_level(pod)
@@ -117,15 +113,11 @@ class MYPEBusinessRules:
             risk_level = RiskLevel.CRITICAL
         elif is_high_risk:
             risk_level = max(
-                risk_level,
-                RiskLevel.HIGH,
-                key=lambda level: list(RiskLevel).index(level),
+                risk_level, RiskLevel.HIGH, key=lambda level: list(RiskLevel).index(level)
             )
         elif customer_metrics.get("utilization", 0) > 0.75:
             risk_level = max(
-                risk_level,
-                RiskLevel.MEDIUM,
-                key=lambda level: list(RiskLevel).index(level),
+                risk_level, RiskLevel.MEDIUM, key=lambda level: list(RiskLevel).index(level)
             )
 
         industry = customer_metrics.get("industry", cls.default_industry())

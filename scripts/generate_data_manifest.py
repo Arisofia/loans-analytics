@@ -21,11 +21,7 @@ def generate_manifest(data_dir: Optional[str] = None) -> Dict:
     Returns:
         Dictionary with manifest metadata
     """
-    manifest = {
-        "generated_at": datetime.now().isoformat(),
-        "version": "1.0",
-        "datasets": [],
-    }
+    manifest = {"generated_at": datetime.now().isoformat(), "version": "1.0", "datasets": []}
 
     data_path = Path(data_dir) if data_dir else Paths.data_dir()
     if data_path.exists():

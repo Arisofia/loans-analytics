@@ -251,6 +251,7 @@ Post comment on GitHub Actions:
 When validation is complete:
 
 1. Post ✅ approval in GitHub Actions
+2. Notify #dev-alerts Slack channel
 3. Production team proceeds with deployment tag
 
 ---
@@ -321,6 +322,7 @@ Workflow automatically runs health checks. If they pass:
 
 **6. Notify Team**
 
+Post to Slack #prod-alerts:
 
 ```
 🚀 Production Deployment Complete
@@ -373,6 +375,7 @@ Expected timeline:
 
 **3. Post-Rollback**
 
+Post to Slack #incidents:
 
 ```
 🔄 Emergency Rollback Completed
@@ -422,14 +425,14 @@ AZURE_STATIC_WEB_APPS_TOKEN_PROD
 4. Enter name and value
 5. Click "Add secret"
 
+⚠️ **Never** share secrets in Slack, email, or commit to repo
 
 #### Environment Configuration
 
 **Staging `.env.staging`**:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://[staging].supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[staging-key]
+## NEXT_PUBLIC_SUPABASE_URL should be set in your environment, not in this file.
 NEXT_PUBLIC_SITE_URL=https://staging.abaco-loans-analytics.com
 NODE_ENV=production
 ```
@@ -437,10 +440,9 @@ NODE_ENV=production
 **Production `.env.production`**:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://[prod].supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[prod-key]
+## NEXT_PUBLIC_SUPABASE_URL should be set in your environment, not in this file.
 NEXT_PUBLIC_SITE_URL=https://abaco-loans-analytics.com
-NEXT_PUBLIC_SENTRY_DSN=[sentry-dsn]
+## NEXT_PUBLIC_SENTRY_DSN should be set in your environment, not in this file.
 NODE_ENV=production
 ```
 
@@ -611,6 +613,7 @@ git push origin develop
 **Immediate Actions** (< 5 min):
 
 1. Create GitHub issue: [CRITICAL] Issue title
+2. Post #incidents Slack: Issue description + link
 3. Trigger rollback if needed (see Scenario 5)
 4. Page on-call engineer
 
@@ -630,6 +633,7 @@ git push origin develop
 **Immediate Actions** (< 15 min):
 
 1. Create GitHub issue with reproduction steps
+2. Post #dev-alerts Slack
 3. Assess if rollback needed
 4. Notify team lead
 
@@ -732,6 +736,7 @@ git push origin develop
 **Questions?**
 
 1. Check this guide and related docs
+2. Ask in #dev-help Slack
 3. Create GitHub issue with `question` label
 4. Contact team lead
 

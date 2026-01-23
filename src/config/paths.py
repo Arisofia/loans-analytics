@@ -47,9 +47,7 @@ class Paths:
     @staticmethod
     def raw_data_dir(create: bool = False) -> Path:
         return resolve_path(
-            os.getenv("DATA_RAW_PATH", "./data/raw"),
-            env_var="DATA_RAW_DIR",
-            create=create,
+            os.getenv("DATA_RAW_PATH", "./data/raw"), env_var="DATA_RAW_DIR", create=create
         )
 
     @staticmethod
@@ -63,9 +61,7 @@ class Paths:
     @staticmethod
     def metrics_dir(create: bool = False) -> Path:
         return resolve_path(
-            os.getenv("DATA_METRICS_PATH", "./data/metrics"),
-            env_var="METRICS_DIR",
-            create=create,
+            os.getenv("DATA_METRICS_PATH", "./data/metrics"), env_var="METRICS_DIR", create=create
         )
 
     @staticmethod

@@ -11,8 +11,8 @@ Documenting GitHub Copilot usage under the Enterprise trial keeps the team align
 
 ## 2. Copilot + workflow integration
 
-- Onboarding doc `docs/ContosoTeamStats-setup.md` already points to the main validation steps—mention Copilot there so people know to ask it to summarize SQL migrations, Docker builds, and workflow triggers.
-- Ask Copilot to inspect files by referencing them (e.g., “Use @docs/ContosoTeamStats-setup.md to explain how we run `dotnet ef database update`).
+- Onboarding doc `docs/LOCAL_SETUP.md` already points to the main validation steps—mention Copilot there so people know to ask it to summarize SQL migrations, Docker builds, and workflow triggers.
+- Ask Copilot to inspect files by referencing them (e.g., “Use @docs/LOCAL_SETUP.md to explain how we run tests”).
 - Log any Copilot-assisted code/commands in your project board to keep traceability for audits.
 
 ## 3. Advance security while Copilot learns

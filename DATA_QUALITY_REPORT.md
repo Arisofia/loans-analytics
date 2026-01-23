@@ -45,6 +45,7 @@ This report summarizes the state of data quality within the Abaco Loans Analytic
 
 ## 5. Continuous Monitoring Plan
 
+- **Real-time Alerts**: Critical KPI failures trigger Slack/Teams notifications.
 - **Daily Audits**: Manifests are automatically reviewed for "warning" or "critical" status tags.
 - **Weekly Parity Tests**: `make test-kpi-parity` ensures code and database remain in sync.
 

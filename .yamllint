@@ -1,13 +1,21 @@
 extends: default
 ignore: |
-  .github/workflows/
   pnpm-lock.yaml
   apps/web/pnpm-lock.yaml
 rules:
   line-length:
     max: 120
+    allow-non-breakable-words: true
     level: warning
+  quoted-strings:
+    required: false
+  indentation: disable
+  braces: disable
+  brackets: disable
   comments-indentation: disable
   comments: disable
   document-start: disable
   new-line-at-end-of-file: disable
+  truthy:
+    level: warning
+    check-keys: false

@@ -1,60 +1,37 @@
-<<<<<<< HEAD
 import hashlib
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Optional
-
-
-class CircuitBreaker:
-    def __init__(self, failure_threshold: int = 3, reset_seconds: int = 60):
-        self.failure_threshold = failure_threshold
-        self.reset_seconds = reset_seconds
-        self._failures = 0
-        self._last_failure_time: Optional[float] = None
-
-    def allow(self) -> bool:
-        if self._failures < self.failure_threshold:
-            return True
-        if self._last_failure_time is None:
-            return False
-        if time.time() - self._last_failure_time > self.reset_seconds:
-            # reset
-            self._failures = 0
-            self._last_failure_time = None
-            return True
-        return False
-
-    def record_failure(self) -> None:
-        self._failures += 1
-        self._last_failure_time = time.time()
-
-    def record_success(self) -> None:
-        self._failures = 0
-        self._last_failure_time = None
+from typing import Any, Callable, Dict, Optional
 
 
 class RateLimiter:
     def __init__(self, max_requests_per_minute: int = 60):
         self.max_requests_per_minute = max_requests_per_minute
-        # Simple no-op limiter for tests; implementations can add sleep logic
+        self.last_request_ts: Optional[float] = None
 
     def wait(self) -> None:
-        return None
+        if self.max_requests_per_minute <= 0:
+            return
+        interval = 60.0 / float(self.max_requests_per_minute)
+        now = time.time()
+        if self.last_request_ts is None:
+            self.last_request_ts = now
+            return
+        elapsed = now - self.last_request_ts
+        if elapsed < interval:
+            time.sleep(interval - elapsed)
+        self.last_request_ts = time.time()
 
 
 class RetryPolicy:
-    def __init__(
-        self,
-        max_retries: int = 3,
-        backoff_seconds: float = 1.0,
-        jitter_seconds: float = 0.0,
-    ):
-        self.max_retries = max_retries
-        self.backoff_seconds = backoff_seconds
-        self.jitter_seconds = jitter_seconds
+    max_retries: int = 3
+    backoff_seconds: float = 1.0
+    jitter_seconds: float = 0.0
 
-    def execute(self, func: Callable, on_retry: Optional[Callable] = None):
+    def execute(
+        self, func: Callable[[], Any], on_retry: Optional[Callable[[int, Exception], None]] = None
+    ) -> Any:
         attempt = 0
         while True:
             try:
@@ -71,6 +48,17 @@ class RetryPolicy:
                 time.sleep(self.backoff_seconds)
 
 
+def deep_merge(base_dict: Dict[str, Any], override_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Deep merge override_dict into base_dict, with override taking precedence."""
+    result = base_dict.copy()
+    for key, value in override_dict.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
 def hash_file(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -81,16 +69,3 @@ def hash_file(path: Path) -> str:
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
-=======
-"""Compatibility helpers for legacy python.pipeline imports."""
-
-from src.pipeline.utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
-
-__all__ = [
-    "CircuitBreaker",
-    "RateLimiter",
-    "RetryPolicy",
-    "hash_file",
-    "utc_now",
-]
->>>>>>> origin/fix/workflows-and-tests

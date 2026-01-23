@@ -67,5 +67,5 @@
 
 :root {
   --bg-surface: #f8fafc;
-  --text-strong: #0f172a; /* WCAG AAA on light backgrounds (tested: #0f172a on #f8fafc, contrast ratio ≈ 14.9:1, AAA requires ≥ 7:1 for normal text) */
+  --text-strong: #0f172a;   /* WCAG AAA on light backgrounds (tested: #0f172a on #f8fafc, contrast ratio ≈ 14.9:1, AAA requires ≥ 7:1 for normal text) */
 }

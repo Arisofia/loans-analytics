@@ -67,7 +67,9 @@
   - `config/environments/production.yml` (64 lines)
 
 - Consolidated all integrations into pipeline.yml:
+  - Cascade (data source)
   - Meta (marketing analytics)
+  - Slack (communication)
   - Perplexity/Comet (web crawling)
 
 - Consolidated all agent specifications:
@@ -81,6 +83,7 @@
   - Growth stack (Origination Volume, Active Clients, Client Retention)
   - Finance stack (ARR, Write-Off Rate)
   - Compliance stack (Audit Flags, Data Quality Score)
+  - Cascade-specific KPIs (Loan Tape Balance, Count, Roll Rate)
 
 #### Legacy Config Archival
 

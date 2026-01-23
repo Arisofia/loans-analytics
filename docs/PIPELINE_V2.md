@@ -12,6 +12,7 @@ It lives alongside the existing v1 pipeline to avoid breaking current workflows.
 
 ## What is not included (yet)
 
+- Production ingestion logic (Cascade API client, Looker import orchestration).
 - Full KPI engine implementation.
 - Database writer implementations.
 - Full orchestration beyond the daily/backfill GitHub Actions workflows.

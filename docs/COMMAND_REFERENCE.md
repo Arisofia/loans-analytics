@@ -13,7 +13,7 @@ cd abaco-loans-analytics
 # Copy environment configuration
 cp .env.example .env
 
-# Edit .env with your credentials (Azure, Supabase, etc.)
+# Edit .env with your credentials (Azure, Supabase, HubSpot, etc.)
 # Required: APPLICATIONINSIGHTS_CONNECTION_STRING
 nano .env  # or your preferred editor
 ```
@@ -258,14 +258,15 @@ git push origin v1.0.0
 ### Required for Full Operations
 ```bash
 # Azure
-export APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=...;IngestionEndpoint=..."
+## export APPLICATIONINSIGHTS_CONNECTION_STRING should be set in your environment, not in this file.
 
 # Supabase (Data Layer)
-export SUPABASE_URL="https://your-project.supabase.co"
+## export SUPABASE_URL should be set in your environment, not in this file.
 export SUPABASE_KEY="your-api-key"
 export SUPABASE_SERVICE_KEY="your-service-key"
 
-# ...existing code...
+# HubSpot CRM
+export HUBSPOT_API_TOKEN="pat-..."
 
 # OpenAI/Anthropic
 # OPENAI_API_KEY: REPLACE_WITH_OPENAI_API_KEY  # set as environment variable
@@ -275,9 +276,13 @@ export SUPABASE_SERVICE_KEY="your-service-key"
 export META_ACCESS_TOKEN="..."
 export META_APP_ID="..."
 
-# ...existing code...
+# Figma
+export FIGMA_TOKEN="..."
+export FIGMA_FILE_ID="..."
 
-# ...existing code...
+# Slack Notifications
+export SLACK_WEBHOOK_URL="https://hooks.slack.com/..."
+export SLACK_BOT_TOKEN="xoxb-..."
 ```
 
 Store these in `.env` (git-ignored).

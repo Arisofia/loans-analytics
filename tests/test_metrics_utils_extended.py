@@ -5,16 +5,11 @@ Unit tests for metrics utility functions in analytics.
 import numpy as np
 import pandas as pd
 import pytest
-
-from src.analytics.metrics_utils import (
-    _coerce_numeric,
-    debt_to_income_ratio,
-    loan_to_value,
-    portfolio_delinquency_rate,
-    portfolio_kpis,
-    validate_kpi_columns,
-    weighted_portfolio_yield,
-)
+from src.analytics.metrics_utils import (_coerce_numeric, debt_to_income_ratio,
+                                         loan_to_value,
+                                         portfolio_delinquency_rate,
+                                         portfolio_kpis, validate_kpi_columns,
+                                         weighted_portfolio_yield)
 
 
 def test_coerce_numeric_all_nan():
@@ -80,40 +75,42 @@ def test_weighted_portfolio_yield_nan_values():
     yield_rate = weighted_portfolio_yield(rates, principals)
     assert yield_rate >= 0.0
 
-    def test_portfolio_kpis_with_precalculated_ratios():
-        # Test: portfolio_kpis with pre-calculated LTV and DTI ratios.
-        df = pd.DataFrame(
-            {
-                "loan_amount": [250000, 450000, 150000],
-                "appraised_value": [300000, 500000, 160000],
-                "borrower_income": [80000, 120000, 60000],
-                "monthly_debt": [1500, 2500, 1000],
-                "loan_status": ["current", "current", "current"],
-                "interest_rate": [0.035, 0.042, 0.038],
-                "principal_balance": [240000, 440000, 145000],
-                "ltv_ratio": [83.3, 90.0, 93.75],
-                "dti_ratio": [22.5, 25.0, 20.0],
-            }
-        )
-        kpis, _ = portfolio_kpis(df)
-        assert "portfolio_delinquency_rate_percent" in kpis
-        assert kpis["portfolio_delinquency_rate_percent"] == pytest.approx(0.0)
 
-    def test_portfolio_kpis_handles_nan_in_ratios():
-        df = pd.DataFrame(
-            {
-                "loan_amount": [250000, 450000, 150000],
-                "appraised_value": [300000, 500000, 0],
-                "borrower_income": [80000, 0, 60000],
-                "monthly_debt": [1500, 2500, 1000],
-                "loan_status": ["current", "current", "current"],
-                "interest_rate": [0.035, 0.042, 0.038],
-                "principal_balance": [240000, 440000, 145000],
-            }
-        )
-        kpis, _ = portfolio_kpis(df)
-        assert kpis["average_ltv_ratio_percent"] >= 0
-        assert kpis["average_dti_ratio_percent"] >= 0
+def test_portfolio_kpis_with_precalculated_ratios():
+    # Test: portfolio_kpis with pre-calculated LTV and DTI ratios.
+    df = pd.DataFrame(
+        {
+            "loan_amount": [250000, 450000, 150000],
+            "appraised_value": [300000, 500000, 160000],
+            "borrower_income": [80000, 120000, 60000],
+            "monthly_debt": [1500, 2500, 1000],
+            "loan_status": ["current", "current", "current"],
+            "interest_rate": [0.035, 0.042, 0.038],
+            "principal_balance": [240000, 440000, 145000],
+            "ltv_ratio": [83.3, 90.0, 93.75],
+            "dti_ratio": [22.5, 25.0, 20.0],
+        }
+    )
+    kpis = portfolio_kpis(df)
+    assert "portfolio_delinquency_rate_percent" in kpis
+    assert kpis["portfolio_delinquency_rate_percent"] == pytest.approx(0.0)
+
+
+def test_portfolio_kpis_handles_nan_in_ratios():
+    df = pd.DataFrame(
+        {
+            "loan_amount": [250000, 450000, 150000],
+            "appraised_value": [300000, 500000, 0],
+            "borrower_income": [80000, 0, 60000],
+            "monthly_debt": [1500, 2500, 1000],
+            "loan_status": ["current", "current", "current"],
+            "interest_rate": [0.035, 0.042, 0.038],
+            "principal_balance": [240000, 440000, 145000],
+        }
+    )
+    kpis = portfolio_kpis(df)
+    assert kpis["average_ltv_ratio_percent"] >= 0
+    assert kpis["average_dti_ratio_percent"] >= 0
 
 
 def test_coerce_numeric_mixed_valid_invalid():

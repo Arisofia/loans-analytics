@@ -102,6 +102,7 @@ This measures the total processed volume from clients who repeat, reflecting ret
 ## 9. NSM benchmarks in the industry
 
 - **Recurrent TPV/GMV:** Stripe, Square, PayPal, Shopify, MercadoPago, Konfio.
+- **Recurrent activity (SaaS):** Slack (Weekly Active Teams), Dropbox (files shared), Zoom (meetings), HubSpot (MQLs per user).
 
 ## 10. Next steps
 

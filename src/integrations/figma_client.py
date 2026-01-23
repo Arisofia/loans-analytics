@@ -12,7 +12,7 @@ import json
 import logging
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import requests
@@ -29,7 +29,7 @@ def _extract_file_key(value: Optional[str]) -> Optional[str]:
         if match:
             return match.group(2)
         return None
-    return raw.split("?")[0]
+    return raw.split("?", maxsplit=1)[0]
 
 
 class FigmaClient:
@@ -49,7 +49,7 @@ class FigmaClient:
             or os.getenv("FIGMA_FILE_URL")
             or os.getenv("FIGMA_FILE_LINK")
         )
-        self.file_key = _extract_file_key(raw_file_key)
+        self.file_key = _extract_file_key(raw_file_key) or file_key
         self.base_url = "https://api.figma.com/v1"
         self.headers = {"Content-Type": "application/json"}
         if self.api_token:
@@ -60,18 +60,19 @@ class FigmaClient:
 
     def _request(self, method: str, endpoint: str, **kwargs: Any) -> Dict[str, Any]:
         """Make authenticated request to Figma API."""
-        if not self.api_token:
-            logger.warning("Figma credentials not configured. Figma export disabled.")
-            return {}
         url = f"{self.base_url}{endpoint}"
         kwargs.setdefault("headers", self.headers)
 
         try:
             response = requests.request(method, url, timeout=30, **kwargs)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            if not isinstance(data, dict):
+                logger.error("Figma API returned unexpected type: %s for %s", type(data), url)
+                return {}
+            return data
         except requests.RequestException as e:
-            logger.error(f"Figma API error: {e}")
+            logger.error("Figma API error: %s", e)
             return {}
 
     def get_file_data(self) -> Dict[str, Any]:
@@ -89,7 +90,11 @@ class FigmaClient:
             "commits": [
                 {
                     "message": f"KPI Update from Analytics Pipeline (run: {run_id})",
+<<<<<<< HEAD
                     "timestamp": datetime.utcnow().isoformat(),
+=======
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+>>>>>>> origin/main
                 }
             ],
             "edits": [
@@ -177,7 +182,11 @@ class FigmaClient:
 
         metadata = {
             "snapshot_type": "kpi_dashboard",
+<<<<<<< HEAD
             "generated_at": datetime.utcnow().isoformat(),
+=======
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+>>>>>>> origin/main
             "run_id": run_id,
             "metrics": dashboard_data,
         }

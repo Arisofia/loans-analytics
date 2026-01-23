@@ -17,13 +17,7 @@ def save_agent_output(
     path = os.path.join(storage_dir, filename)
     with open(path, "w") as f:
         json.dump(
-            {
-                "agent": agent_name,
-                "version": version,
-                "output": output,
-                "timestamp": timestamp,
-            },
-            f,
+            {"agent": agent_name, "version": version, "output": output, "timestamp": timestamp}, f
         )
     return path
 

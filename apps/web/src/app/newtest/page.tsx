@@ -1,4 +1,4 @@
-import { login, signup } from './actions'
+import { login, signup } from './actions';
 export default function LoginPage() {
   return (
     <form>
@@ -9,5 +9,5 @@ export default function LoginPage() {
       <button formAction={login}>Log in</button>
       <button formAction={signup}>Sign up</button>
     </form>
-  )
+  );
 }

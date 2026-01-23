@@ -201,11 +201,7 @@ Begin!
         return ReasoningStep(step_type=StepType.THOUGHT, content=content)
 
     def solve(
-        self,
-        task: Task,
-        system_prompt: str,
-        tools: List[Dict[str, Any]],
-        tool_executor: Callable,
+        self, task: Task, system_prompt: str, tools: List[Dict[str, Any]], tool_executor: Callable
     ) -> Task:
         """Solve a task using the ReAct framework.
 

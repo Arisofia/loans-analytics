@@ -61,9 +61,7 @@ class AzureStorageClient:
             self.client = None
             return
 
-        self.connection_string = connection_string or os.getenv(
-            "AZURE_STORAGE_CONNECTION_STRING"
-        )
+        self.connection_string = connection_string or os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         self.container_name = os.getenv("AZURE_STORAGE_CONTAINER", "analytics-exports")
 
         account_name = os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
@@ -86,10 +84,6 @@ class AzureStorageClient:
             )
 
         if self.connection_string:
-<<<<<<< HEAD
-            self.client = BlobServiceClient.from_connection_string(
-                self.connection_string
-=======
             self.client = BlobServiceClient.from_connection_string(self.connection_string)
         elif account_url and account_key and AzureNamedKeyCredential and account_name:
             credential = AzureNamedKeyCredential(account_name, account_key)
@@ -101,7 +95,6 @@ class AzureStorageClient:
         elif account_url and DefaultAzureCredential:
             self.client = BlobServiceClient(
                 account_url=account_url, credential=DefaultAzureCredential()
->>>>>>> origin/fix/workflows-and-tests
             )
         else:
             logger.warning("Azure Storage credentials not configured")
@@ -214,13 +207,6 @@ class AzureDashboardClient:
     """Create and update Azure Monitor Dashboards with KPI metrics."""
 
     def __init__(self, subscription_id: Optional[str] = None):
-<<<<<<< HEAD
-        self.subscription_id = subscription_id or os.getenv("AZURE_SUBSCRIPTION_ID")
-        self.resource_group = os.getenv("AZURE_RESOURCE_GROUP")
-        self.dashboard_name = os.getenv(
-            "AZURE_DASHBOARD_NAME", "abaco-analytics-dashboard"
-        )
-=======
         self.subscription_id = (
             subscription_id
             or os.getenv("AZURE_SUBSCRIPTION_ID")
@@ -230,7 +216,6 @@ class AzureDashboardClient:
             "AZURE_RESOURCE_GROUP_NAME"
         )
         self.dashboard_name = os.getenv("AZURE_DASHBOARD_NAME", "abaco-analytics-dashboard")
->>>>>>> origin/fix/workflows-and-tests
 
         if not HAS_AZURE or DefaultAzureCredential is None:
             logger.warning("Azure SDK not installed. Azure Dashboard disabled.")
@@ -252,13 +237,17 @@ class AzureDashboardClient:
         change_pct = (change / previous_value * 100) if previous_value != 0 else 0
 
         return {
-            "properties": {"markdown": {"content": f"""
+            "properties": {
+                "markdown": {
+                    "content": f"""
 ### {kpi_name}
 **Current**: {current_value:.2f}{unit}
 **Previous**: {previous_value:.2f}{unit}
 **Change**: {change:+.2f}{unit} ({change_pct:+.1f}%)
 **Updated**: {datetime.utcnow().isoformat()}
-"""}},
+"""
+                }
+            },
             "position": {"x": 0, "y": 0, "width": 3, "height": 2},
         }
 

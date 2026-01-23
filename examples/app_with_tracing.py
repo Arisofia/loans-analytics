@@ -10,7 +10,7 @@ import logging
 import sys
 
 # Initialize tracing FIRST before importing any other application modules
-from python.tracing_setup import configure_tracing, is_tracing_enabled
+from src.tracing_setup import configure_tracing, is_tracing_enabled
 
 # Configure logging
 logging.basicConfig(
@@ -33,8 +33,8 @@ def main():
 
     # Now import and use your application modules
     # They will automatically benefit from tracing
-    from python.agents.orchestrator import AgentOrchestrator
-    from python.pipeline.orchestrator import PipelineOrchestrator
+    from src.agents.orchestrator import AgentOrchestrator
+    from src.pipeline.orchestrator import UnifiedPipeline
 
     # Example: Run agent
     logger.info("Running agent orchestrator...")
@@ -51,7 +51,7 @@ def main():
 
     # Example: Run pipeline (if you have input data)
     # logger.info("Running pipeline...")
-    # pipeline = PipelineOrchestrator()
+    # pipeline = UnifiedPipeline()
     # pipeline_result = pipeline.execute(
     #     input_file=Path("data/input.csv"),
     #     user="example_user",

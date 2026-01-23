@@ -57,10 +57,7 @@ class ThresholdValidator:
 
             # Check warning threshold
             if warning_threshold is not None and actual_value < warning_threshold:
-                return (
-                    "warning",
-                    f"below warning level ({actual_value:.4f} < {warning_threshold})",
-                )
+                return "warning", f"below warning level ({actual_value:.4f} < {warning_threshold})"
 
         return True, f"meets threshold ({actual_value:.4f})"
 
@@ -207,16 +204,11 @@ def main():
         help="Path to JSON file containing evaluation metrics",
     )
     parser.add_argument(
-        "--config",
-        type=Path,
-        required=True,
-        help="Path to YAML threshold configuration file",
+        "--config", type=Path, required=True, help="Path to YAML threshold configuration file"
     )
     parser.add_argument(
-        "--output",
-        type=Path,
-        required=True,
-        help="Path to save validation results JSON",
+<<<<<<< HEAD
+        "--output", type=Path, required=True, help="Path to save validation results JSON"
     )
     parser.add_argument("--strict", action="store_true", help="Treat warnings as failures")
 

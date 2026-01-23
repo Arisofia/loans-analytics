@@ -1,7 +1,6 @@
 import pandas as pd
-
-from python.kpis.collection_rate import calculate_collection_rate
-from python.kpis.par_90 import calculate_par_90
+from src.kpis.collection_rate import calculate_collection_rate
+from src.kpis.par_90 import calculate_par_90
 
 SAMPLE_PATH = "data_samples/abaco_portfolio_sample.csv"
 

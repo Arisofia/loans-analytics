@@ -2,7 +2,7 @@ name: Brand Monitoring
 
 on:
   schedule:
-    - cron: "0 9 * * *" # 10:00 AM CET daily
+    - cron: '0 9 * * *' # 10:00 AM CET daily
   workflow_dispatch:
 
 jobs:
@@ -14,8 +14,8 @@ jobs:
       - name: Setup Python Environment
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: "pip"
+          python-version: '3.11'
+          cache: 'pip'
       - name: Check secrets availability
         id: check-secrets
         env:

@@ -29,26 +29,26 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "ignoreDeprecations": "6.0",
     "typeRoots": [
       "./node_modules/@types"
     ],
+    // Removed invalid ignoreDeprecations
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "./src/*"
+        "./*"
       ],
       "@/components/*": [
-        "./src/components/*"
+        "./components/*"
       ],
       "@/lib/*": [
-        "./src/lib/*"
+        "./lib/*"
       ],
       "@/types/*": [
-        "./src/types/*"
+        "./types/*"
       ],
       "@/app/*": [
-        "./src/app/*"
+        "./app/*"
       ]
     },
     "plugins": [

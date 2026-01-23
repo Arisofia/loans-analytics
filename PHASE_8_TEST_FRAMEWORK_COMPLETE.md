@@ -293,7 +293,7 @@ Add to `.github/workflows/ci.yml`:
 ### Sprint 1: Integration & Tracing (Weeks 2-3)
 
 Implement 8 additional tests:
-- C-01 to C-04: Mocked integrations (Notion, Meta)
+- C-01 to C-04: Mocked integrations (Figma, Notion, Meta)
 - D-01, D-02: OTLP tracing validation
 - F-01, F-02: Secret handling & security
 
@@ -335,7 +335,7 @@ Implement 8 final tests:
 - **Effort**: <1 hour
 
 ### 3. Mock Services Sprint 1
-- **Issue**: Integration tests (Notion, Meta, OTLP) not included in Sprint 0
+- **Issue**: Integration tests (Figma, Notion, Meta, OTLP) not included in Sprint 0
 - **Status**: ✅ Planned for Sprint 1
 - **Impact**: None (tests deferred, not blocked)
 

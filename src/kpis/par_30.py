@@ -28,12 +28,7 @@ class PAR30Calculator(KPICalculator):
             )
 
         # Check for required columns or fallback to loan_status
-        required = [
-            "dpd_30_60_usd",
-            "dpd_60_90_usd",
-            "dpd_90_plus_usd",
-            "total_receivable_usd",
-        ]
+        required = ["dpd_30_60_usd", "dpd_60_90_usd", "dpd_90_plus_usd", "total_receivable_usd"]
         has_dpd_cols = all(col in df.columns for col in required)
 
         if has_dpd_cols:

@@ -12,14 +12,8 @@ from .tools import (analyze_brand_sentiment, analyze_customer_behavior,
                     identify_process_bottlenecks, monitor_sla_performance,
                     predict_employee_performance, prioritize_product_roadmap,
                     retrieve_document, run_portfolio_analysis, run_sql_query,
-<<<<<<< HEAD
                     score_leads, send_slack_notification,
                     simulate_portfolio_scenario, track_campaign_performance)
-from .gemini_agent import GeminiAgent
-=======
-                    score_leads, send_slack_notification,
-                    simulate_portfolio_scenario, track_campaign_performance)
->>>>>>> origin/fix/final-workflow-fixes
 
 __all__ = [
     "AgentOrchestrator",
@@ -28,6 +22,7 @@ __all__ = [
     "run_portfolio_analysis",
     "simulate_portfolio_scenario",
     "analyze_customer_behavior",
+    "send_slack_notification",
     "create_notion_page",
     "compute_investor_kpis",
     "generate_roi_report",

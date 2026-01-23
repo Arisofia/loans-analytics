@@ -1,7 +1,7 @@
 name: Operations Dashboard
 on:
   schedule:
-    - cron: "0 */6 * * *" # Every 6 hours
+    - cron: '0 */6 * * *' # Every 6 hours
   workflow_dispatch:
 
 env:
@@ -18,7 +18,7 @@ jobs:
       - name: Setup Python Environment
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt

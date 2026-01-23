@@ -36,9 +36,9 @@ title: {
 
 Campos a llenar:
 
-subtitle: "Reporte Ejecutivo ****\_**** 2025"
+subtitle: "Reporte Ejecutivo \***\*\_\*\*** 2025"
 
-year: "****\_**** 2025"
+year: "\***\*\_\*\*** 2025"
 
 📌 SLIDE 2: TAM Funnel (No requiere actualización mensual)
 
@@ -202,7 +202,7 @@ defaultRate = Default % (de portfolioBreakdown)
 
 Footer
 Always show details
-footer: "Datos actualizados al **\_ de **\_**** 2025. Default calculado como % del AUM total con mora > 90 días."
+footer: "Datos actualizados al **\_ de **\_\*\*\*\* 2025. Default calculado como % del AUM total con mora > 90 días."
 
 📌 SLIDE 6: Risk Concentration
 
@@ -234,7 +234,7 @@ list: [
 
 Footer
 Always show details
-footer: "Datos de concentración al **\_ de **\_**** 2025. Ordenados por exposure de AUM."
+footer: "Datos de concentración al **\_ de **\_\*\*\*\* 2025. Ordenados por exposure de AUM."
 
 📌 SLIDE 13: Monthly Growth
 
@@ -246,8 +246,8 @@ Always show details
 month: "[MES] 2025",
 aum: "$___M",
   netChange: "$\_**M",
-percentGrowth: "****_%",
-newClients: _**
+percentGrowth: "\*\***_%",
+newClients: _\*\*
 }
 
 Cálculos
@@ -275,10 +275,10 @@ defaultRate: "**\_\*\*%"
 📌 SLIDE 29: AUM Live Portfolio
 Always show details
 currentSnapshot: {
-date: "**\_ de **\_\_**** 2025",
+date: "**\_ de **\_\_\***\* 2025",
 totalAUM: "$___M",
   activeClients: ___,
-  avgClientAUM: "$**\_**"
+  avgClientAUM: "$**\_\*\*"
 }
 
 Cálculo: avgClientAUM = totalAUM / activeClients

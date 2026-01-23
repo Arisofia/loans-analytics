@@ -134,10 +134,7 @@ class BaseAgent(ABC):
 
             # Execute using ReAct
             result = self.react_agent.solve(
-                task=task,
-                system_prompt=system_prompt,
-                tools=tools,
-                tool_executor=self.execute_tool,
+                task=task, system_prompt=system_prompt, tools=tools, tool_executor=self.execute_tool
             )
 
             # Record execution

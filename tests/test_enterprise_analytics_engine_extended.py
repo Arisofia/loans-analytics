@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, Mock
 import numpy as np
 import pandas as pd
 import pytest
-
 from src.analytics.azure_blob_exporter import AzureBlobKPIExporter
 from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
 
@@ -20,7 +19,7 @@ def test_engine_from_dict():
     dictionary and that the resulting object is a LoanAnalyticsEngine with
     the expected data length.
     """
-    from python.testing.fixtures import SAMPLE_LOAN_DATA
+    from tests.test_data_shared import SAMPLE_LOAN_DATA
 
     engine = LoanAnalyticsEngine.from_dict(SAMPLE_LOAN_DATA)
     assert isinstance(engine, LoanAnalyticsEngine)

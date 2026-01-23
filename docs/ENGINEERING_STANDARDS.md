@@ -196,6 +196,8 @@ RATE_LIMIT_RPS = 60
 
 def configure_retry_policy(config: Dict[str, Any]) -> RetryPolicy:
     return RetryPolicy(
+        max_retries=config.get("cascade", {}).get("http", {}).get("retry", {}).get("max_retries", MAX_RETRIES),
+        backoff_seconds=config.get("cascade", {}).get("http", {}).get("retry", {}).get("backoff_seconds", BACKOFF_SECONDS),
     )
 
 # Avoid: Magic numbers embedded in code
@@ -265,6 +267,7 @@ def minimal_config() -> Dict[str, Any]:
                 "transformation": {...},
             }
         },
+        "cascade": {...}
     }
 
 # Usage in tests

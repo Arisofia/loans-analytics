@@ -19,8 +19,7 @@ try:
     logger.info("Azure tracing initialized for validate_azure_connection")
 except (ImportError, Exception) as tracing_err:
     logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     logger = logging.getLogger(__name__)
     logger.warning("Azure tracing not initialized: %s", tracing_err)
@@ -50,8 +49,7 @@ def validate_all() -> bool:
 
 if __name__ == "__main__":
     logging.basicConfig(
-        level=logging.INFO,
-        format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s"),
+        level=logging.INFO, format=("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     )
     exit_code = 0 if validate_all() else 1
     sys.exit(exit_code)

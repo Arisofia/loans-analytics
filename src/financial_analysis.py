@@ -160,11 +160,7 @@ class FinancialAnalyzer:
                 result["client_type"] = result.apply(
                     lambda row: Classification.client_type_rules(
                         int(row[count_col]) if pd.notna(row[count_col]) else 0,
-                        (
-                            int(row["days_since_active"])
-                            if pd.notna(row["days_since_active"])
-                            else 0
-                        ),
+                        int(row["days_since_active"]) if pd.notna(row["days_since_active"]) else 0,
                     ),
                     axis=1,
                 )
@@ -227,18 +223,11 @@ class FinancialAnalyzer:
         result_df = loan_df.copy()
 
         credit_col = find_column(
-            result_df,
-            [credit_line_field, "credit_line", "line_limit", "limite_credito"],
+            result_df, [credit_line_field, "credit_line", "line_limit", "limite_credito"]
         )
         loan_col = find_column(
             result_df,
-            [
-                loan_amount_field,
-                "outstanding_balance",
-                "olb",
-                "current_balance",
-                "loan_amount",
-            ],
+            [loan_amount_field, "outstanding_balance", "olb", "current_balance", "loan_amount"],
         )
 
         if not credit_col or not loan_col:
@@ -246,9 +235,7 @@ class FinancialAnalyzer:
             return result_df
 
         result_df["line_utilization"] = np.where(
-            result_df[credit_col] > 0,
-            result_df[loan_col] / result_df[credit_col],
-            np.nan,
+            result_df[credit_col] > 0, result_df[loan_col] / result_df[credit_col], np.nan
         ).clip(0.0, 1.0)
 
         return result_df
@@ -290,13 +277,7 @@ class FinancialAnalyzer:
 
         result = self.calculate_line_utilization(result)
 
-        key_metrics = [
-            "apr",
-            "term",
-            "days_past_due",
-            "outstanding_balance",
-            "line_utilization",
-        ]
+        key_metrics = ["apr", "term", "days_past_due", "outstanding_balance", "line_utilization"]
         for metric in key_metrics:
             if metric in result.columns and pd.api.types.is_numeric_dtype(result[metric]):
                 std_dev = result[metric].std()

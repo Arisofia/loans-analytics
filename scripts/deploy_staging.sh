@@ -24,8 +24,8 @@ echo "[$(date)] Starting staging deployment" | tee -a "$LOG_FILE"
 echo ""
 echo "Step 1: Activating virtual environment..."
 if [ ! -d "$STAGING_ENV" ]; then
-  echo "ERROR: Virtual environment not found at $STAGING_ENV"
-  exit 1
+    echo "ERROR: Virtual environment not found at $STAGING_ENV"
+    exit 1
 fi
 source "$STAGING_ENV/bin/activate"
 echo "✓ Virtual environment activated" | tee -a "$LOG_FILE"
@@ -39,22 +39,22 @@ echo "✓ Dependencies installed" | tee -a "$LOG_FILE"
 # 3. Run all v2 tests to verify deployment readiness
 echo ""
 echo "Step 3: Running v2 test suite..."
-python -m pytest tests/test_kpi_base.py tests/test_kpi_calculators_v2.py tests/test_kpi_engine_v2.py tests/test_pipeline_orchestrator.py -q --tb=line >"$STAGING_DIR/test_results.txt" 2>&1
+python -m pytest tests/test_kpi_base.py tests/test_kpi_calculators_v2.py tests/test_kpi_engine_v2.py tests/test_pipeline_orchestrator.py -q --tb=line > "$STAGING_DIR/test_results.txt" 2>&1
 TEST_EXIT=$?
 
 if [ $TEST_EXIT -eq 0 ]; then
-  TEST_COUNT=$(grep -c "passed" "$STAGING_DIR/test_results.txt" || echo "0")
-  echo "✓ All tests passed ($TEST_COUNT tests)" | tee -a "$LOG_FILE"
+    TEST_COUNT=$(grep -c "passed" "$STAGING_DIR/test_results.txt" || echo "0")
+    echo "✓ All tests passed ($TEST_COUNT tests)" | tee -a "$LOG_FILE"
 else
-  echo "✗ Tests failed - see $STAGING_DIR/test_results.txt"
-  cat "$STAGING_DIR/test_results.txt"
-  exit 1
+    echo "✗ Tests failed - see $STAGING_DIR/test_results.txt"
+    cat "$STAGING_DIR/test_results.txt"
+    exit 1
 fi
 
 # 4. Create staging configuration
 echo ""
 echo "Step 4: Creating staging configuration..."
-cat >"$STAGING_DIR/config_staging.yml" <<'STAGING_CONFIG'
+cat > "$STAGING_DIR/config_staging.yml" << 'STAGING_CONFIG'
 version: "1.0"
 environment: "staging"
 name: "abaco_unified_pipeline_staging"

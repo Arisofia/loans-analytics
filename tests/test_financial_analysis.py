@@ -2,7 +2,6 @@ import unittest
 from datetime import date, timedelta
 
 import pandas as pd
-
 from src.financial_analysis import FinancialAnalyzer
 
 
@@ -78,10 +77,7 @@ class TestFinancialAnalyzer(unittest.TestCase):
         self.assertListEqual(result["client_type"].tolist(), expected)
 
     def test_calculate_line_utilization(self):
-        data = {
-            "line_amount": [10000, 10000, 10000],
-            "outstanding_balance": [5000, 12000, 0],
-        }
+        data = {"line_amount": [10000, 10000, 10000], "outstanding_balance": [5000, 12000, 0]}
         df = pd.DataFrame(data)
         result = self.analyzer.calculate_line_utilization(df)
 

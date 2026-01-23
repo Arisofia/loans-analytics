@@ -1,0 +1,31 @@
+# .sonarqube/conf/.gitignore
+# Ignore all non-configuration, non-metadata files
+# Do not store logs, reports, or temporary files here
+
+# Ignore all files by default
+*
+
+# Allow configuration files
+!sonar-project.properties
+!*.yml
+!*.yaml
+!*.json
+!*.properties
+
+# Allow README and policy docs
+!README.md
+
+# Never allow secrets or credentials
+secrets*
+*.key
+*.pem
+*.env
+*.token
+*.secret
+
+# Ignore all logs and reports
+*.log
+*.report
+*.out
+*.xml
+*.html

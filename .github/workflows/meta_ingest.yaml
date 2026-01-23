@@ -1,6 +1,6 @@
 name: Meta Marketing Insights Ingest
 
-on:
+"on":
   schedule:
     - cron: "0 * * * *" # Every hour
   workflow_dispatch:

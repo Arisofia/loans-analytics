@@ -11,9 +11,7 @@ class TestStandaloneAIEngine(unittest.TestCase):
         self.mock_gemini = MagicMock()
         # Set a small limit to easily test routing and truncation
         self.engine = StandaloneAIEngine(
-            grok_client=self.mock_grok,
-            gemini_client=self.mock_gemini,
-            max_prompt_chars=100,
+            grok_client=self.mock_grok, gemini_client=self.mock_gemini, max_prompt_chars=100
         )
 
     def test_routes_small_payload_to_grok(self):

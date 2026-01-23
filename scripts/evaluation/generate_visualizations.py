@@ -54,11 +54,7 @@ def plot_classification_metrics(metrics: Dict, output_dir: Path):
     for bar in bars:
         height = bar.get_height()
         ax.text(
-            bar.get_x() + bar.get_width() / 2.0,
-            height,
-            f"{height:.3f}",
-            ha="center",
-            va="bottom",
+            bar.get_x() + bar.get_width() / 2.0, height, f"{height:.3f}", ha="center", va="bottom"
         )
 
     ax.set_ylim([0, 1.1])
@@ -180,12 +176,7 @@ def plot_metrics_trend(metrics: Dict, output_dir: Path):
 
     for metric in ["accuracy", "precision", "recall", "f1_score"]:
         if metric in hist_data.columns:
-            ax.plot(
-                hist_data.index,
-                hist_data[metric],
-                marker="o",
-                label=metric.capitalize(),
-            )
+            ax.plot(hist_data.index, hist_data[metric], marker="o", label=metric.capitalize())
 
     ax.set_xlabel("Evaluation Run", fontsize=12)
     ax.set_ylabel("Score", fontsize=12)
@@ -256,10 +247,7 @@ def main():
         help="Path to JSON file containing evaluation metrics",
     )
     parser.add_argument(
-        "--output-dir",
-        type=Path,
-        required=True,
-        help="Directory to save visualization outputs",
+        "--output-dir", type=Path, required=True, help="Directory to save visualization outputs"
     )
 
     args = parser.parse_args()

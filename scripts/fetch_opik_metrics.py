@@ -52,11 +52,7 @@ def generate_placeholder_metrics():
             "failed_runs": 2,
             "average_duration_seconds": 125.5,
         },
-        "agents": {
-            "total_executions": 156,
-            "average_response_time_ms": 850,
-            "error_rate": 0.02,
-        },
+        "agents": {"total_executions": 156, "average_response_time_ms": 850, "error_rate": 0.02},
         "data_quality": {
             "completeness_score": 0.98,
             "validity_score": 0.96,

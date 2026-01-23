@@ -1,16 +1,20 @@
+# Cascade Debt Analytics Integration
 
 ## Overview
 
+This directory contains Abaco Capital's analytics data exported from Cascade Debt platform. These exports are integrated into our repository to maintain historical records, enable dashboard development, and support automated reporting.
 
 ## Files
 
 ### `abaco_risk_overview.json`
 
+Comprehensive JSON export of all risk metrics and analytics views from Cascade Debt.
 
 **Contains:**
 
 - Risk Overview snapshot (Traction, Delinquency, Characteristics, Collection)
 - Key Indicators (Cumulative & Current Traction, Portfolio Performance)
+- Configuration for all 11 available Cascade views
 - API integration notes for automation
 
 **Data Freshness:**
@@ -59,7 +63,9 @@ Collection Rate (Latest): 2.57%
 Month-over-Month Change: -104.07% (-97.59%)
 ```
 
+## Available Views in Cascade
 
+All of these views are accessible via Cascade API:
 
 1. **Risk Overview** - High-level risk metrics summary
 2. **Key Indicators** - Detailed performance indicators
@@ -80,22 +86,31 @@ Month-over-Month Change: -104.07% (-97.59%)
 These files should be updated daily via GitHub Actions workflow:
 
 ```yaml
+name: Update Cascade Data
 on:
   schedule:
     - cron: '0 2 * * *' # Daily at 2 AM UTC
 jobs:
+  update-cascade:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Fetch latest from Cascade
         run: |
+          # Call Cascade API with OAuth 2.0 or API Key
+          # Parse JSON and update exports/cascade/abaco_risk_overview.json
       - name: Commit changes
         run: |
+          git add exports/cascade/
+          git commit -m "chore(cascade): update analytics data"
           git push
 ```
 
 ### API Credentials
 
+Store Cascade API credentials in GitHub Secrets:
 
+- `CASCADE_API_KEY` - Cascade Debt API key
 - `CASCADE_PARTNER_ID` - Should be "abaco"
 
 ### Error Handling
@@ -115,8 +130,10 @@ When updating:
 To use this data in React dashboards:
 
 ```typescript
+import cascadeData from '../exports/cascade/abaco_risk_overview.json';
 
 function RiskDashboard() {
+  const { overview, key_indicators } = cascadeData;
 
   return (
     <div>
@@ -136,6 +153,7 @@ function RiskDashboard() {
 
 ## Data Quality Checks
 
+Before merging PR with updated Cascade data:
 
 - [ ] All numeric fields are positive (no negative portfolio values)
 - [ ] Percentages are between 0 and 100
@@ -150,6 +168,8 @@ function RiskDashboard() {
 
 1. Check GitHub Actions workflow logs for API errors
 2. Verify CASCADE_API_KEY and CASCADE_PARTNER_ID are set
+3. Test API connection: `curl https://api.cascadedebt.com/health`
+4. Check Cascade Debt status page for any outages
 
 ### Stale Data Warning
 
@@ -157,4 +177,6 @@ If no update for > 24 hours, PR comment will be added with warning.
 
 ## References
 
+- [Cascade Debt Documentation](https://docs.cascadedebt.com)
+- [Cascade API Endpoints](https://api.cascadedebt.com/docs)
 - [GitHub Actions Workflows](.../../.github/workflows)

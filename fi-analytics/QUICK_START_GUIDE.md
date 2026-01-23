@@ -214,7 +214,7 @@ pytest tests/fi-analytics/ -v
 ## 🎯 Next Phase (Sprint 1)
 
 Coming in next sprint:
-- Integration tests with mocked APIs (Notion, Meta)
+- Integration tests with mocked APIs (Figma, Notion, Meta)
 - Tracing/observability validation
 - Security tests (secret handling)
 - **Estimated**: +12 hours of work

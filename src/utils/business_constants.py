@@ -24,11 +24,7 @@ def _load_business_constants() -> Dict[str, Any]:
     # Fallback to defaults if config is missing
     return {
         "delinquency": {
-            "statuses": [
-                "30-59 days past due",
-                "60-89 days past due",
-                "90+ days past due",
-            ],
+            "statuses": ["30-59 days past due", "60-89 days past due", "90+ days past due"],
             "thresholds": {
                 "par30_warning": 5.0,
                 "par30_critical": 8.0,

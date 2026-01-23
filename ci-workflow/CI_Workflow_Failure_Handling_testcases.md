@@ -376,7 +376,7 @@ Test Steps - Data - Expected Result: [Detailed execution]
 
 | Step | Data | Expected Result |
 |------|------|-----------------|
-| 1 | Add test secret to temporary file: `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` | Secret written to file |
+| 1 | Add test secret to temporary file: `SLACK_BOT_TOKEN=<REDACTED_SLACK_TOKEN>` | Secret written to file |
 | 2 | Run gitleaks scan: `gitleaks detect --source . --config .gitleaks.toml` | Gitleaks detects the secret |
 | 3 | Verify detection pattern matches configuration | Secret matches known patterns |
 | 4 | Remove test secret | Secret removed from file |
@@ -407,10 +407,10 @@ Test Steps - Data - Expected Result: [Detailed execution]
 
 | Step | Data | Expected Result |
 |------|------|-----------------|
-| 1 | Set env: `OTEL_EXPORTER_OTLP_ENDPOINT=CHANGEME` | Variable set |
+| 1 | Set env: `SLACK_WEBHOOK_URL=CHANGEME` | Variable set |
 | 2 | Run sanitization function | Function executes |
 | 3 | Check sanitized value | Value becomes empty string `""` |
-| 4 | Set env: `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` | Valid secret set |
+| 4 | Set env: `SLACK_WEBHOOK_URL=<REDACTED_SLACK_TOKEN>` | Valid secret set |
 | 5 | Run sanitization function | Function preserves valid secret |
 
 ---
@@ -448,8 +448,11 @@ Test Steps - Data - Expected Result: [Detailed execution]
 
 ## Test Case CI-FH-031
 
+**Test Case Title**: Web Build Failure Triggers Slack Notification  
 **Priority**: Critical  
 **Type**: Functional  
+**Preconditions**: Slack webhook configured, mock web build failure  
+**Tags**: `failure-handling`, `notifications`, `slack`  
 **Test Data Requirements**: None  
 **Parameters**: None
 
@@ -460,14 +463,18 @@ Test Steps - Data - Expected Result: [Detailed execution]
 | 1 | Introduce build error: syntax error in TypeScript | Build file modified with error |
 | 2 | Push to feature branch | Workflow triggered |
 | 3 | Wait for web job to fail | Job status: FAILED |
+| 4 | Monitor Slack channel | Notification arrives within 60s |
 | 5 | Verify notification content | Includes repo, branch, commit URL, error type |
 
 ---
 
 ## Test Case CI-FH-034
 
+**Test Case Title**: Slack Notification Delivers Within 60 Seconds  
 **Priority**: High  
 **Type**: Performance  
+**Preconditions**: Failure occurs, Slack webhook valid  
+**Tags**: `notifications`, `performance`, `slack`  
 **Test Data Requirements**: None  
 **Parameters**: `timeout: 60`
 
@@ -477,6 +484,7 @@ Test Steps - Data - Expected Result: [Detailed execution]
 |------|------|-----------------|
 | 1 | Record failure timestamp: T_fail | Time recorded |
 | 2 | Trigger workflow failure | Job fails |
+| 3 | Monitor Slack for notification | Check timestamp of Slack message |
 | 4 | Record notification timestamp: T_notify | Time recorded |
 | 5 | Calculate latency: T_notify - T_fail | Latency <= 60 seconds |
 
@@ -484,8 +492,11 @@ Test Steps - Data - Expected Result: [Detailed execution]
 
 ## Test Case CI-FH-036
 
+**Test Case Title**: Slack Notification Skips Gracefully Without Webhook  
 **Priority**: Medium  
 **Type**: Functional  
+**Preconditions**: Slack webhook not configured, workflow fails  
+**Tags**: `failure-handling`, `slack`, `graceful-degradation`  
 **Test Data Requirements**: None  
 **Parameters**: None
 
@@ -493,7 +504,7 @@ Test Steps - Data - Expected Result: [Detailed execution]
 
 | Step | Data | Expected Result |
 |------|------|-----------------|
-| 1 | Unset `OTEL_EXPORTER_OTLP_ENDPOINT` secret | Secret unavailable |
+| 1 | Unset `SLACK_WEBHOOK_URL` secret | Secret unavailable |
 | 2 | Trigger workflow failure | Workflow fails |
 | 3 | Check notification job status | Job completes with status: SKIPPED |
 | 4 | Verify no errors in logs | No connection errors, no warnings |
@@ -531,11 +542,11 @@ Test Steps - Data - Expected Result: [Detailed execution]
 
 ## Test Case CI-FH-040
 
-**Test Case Title**: Notion Sync Skips Gracefully When API Key Invalid  
+**Test Case Title**: Figma Sync Skips Gracefully When API Key Invalid  
 **Priority**: Medium  
 **Type**: Functional  
-**Preconditions**: Notion API key missing or invalid  
-**Tags**: `external-integration`, `notion`  
+**Preconditions**: Figma API key missing or invalid  
+**Tags**: `external-integration`, `figma`  
 **Test Data Requirements**: None  
 **Parameters**: None
 
@@ -543,9 +554,9 @@ Test Steps - Data - Expected Result: [Detailed execution]
 
 | Step | Data | Expected Result |
 |------|------|-----------------|
-| 1 | Set invalid Notion token: `NOTION_TOKEN=invalid_token_123` | Token set to invalid value |
+| 1 | Set invalid Figma token: `FIGMA_TOKEN=invalid_token_123` | Token set to invalid value |
 | 2 | Trigger CI workflow | Workflow runs |
-| 3 | Check update-notion-dashboard job | Job status: SKIPPED (secrets_available=false) or SUCCEEDED (graceful error handling) |
+| 3 | Check update-figma-slides job | Job status: SKIPPED (secrets_available=false) or SUCCEEDED (graceful error handling) |
 | 4 | Verify no API calls made | No 401/403 errors in logs |
 | 5 | Confirm CI workflow completes | Overall workflow status: SUCCEEDED |
 
@@ -671,7 +682,7 @@ Test Steps - Data - Expected Result: [Detailed execution]
 
 | Step | Data | Expected Result |
 |------|------|-----------------|
-| 1 | Set secret in environment: `export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"` | Secret exported |
+| 1 | Set secret in environment: `export SLACK_WEBHOOK_URL="<REDACTED_SLACK_TOKEN>"` | Secret exported |
 | 2 | Run workflow step that accesses secret | Step executes |
 | 3 | Download workflow logs from GitHub | Logs contain no secret value |
 | 4 | Search logs for secret substring "<REDACTED_SECRET_SUBSTRING>" | No matches found |

@@ -95,10 +95,7 @@ class KPIEngineV2:
         cr = collection_rate if collection_rate is not None else self.get_metric("CollectionRate")
 
         if p30 is None or cr is None:
-            return 0.0, {
-                "error": "Missing inputs for PortfolioHealth",
-                "metric": "PortfolioHealth",
-            }
+            return 0.0, {"error": "Missing inputs for PortfolioHealth", "metric": "PortfolioHealth"}
 
         val, ctx = calculate_portfolio_health_logic(p30, cr)
         ctx.setdefault("metric", "PortfolioHealth")
@@ -147,8 +144,20 @@ class KPIEngineV2:
 
         calculator = self.KPI_FUNCTIONS.get(name) or self.ON_DEMAND_KPI_FUNCTIONS.get(name)
         if calculator is not None:
-            val, _ = calculator(self.df)
-            return float(val) if val is not None else None
+            try:
+                val, context = calculator(self.df)
+                value = float(val) if val is not None else None
+                context.setdefault("metric", name)
+                self.metrics[name] = {
+                    "value": value,
+                    **context,
+                }
+                self._log_event("kpi_calculated", "success", kpi=name, value=value)
+                return value
+            except Exception as e:
+                self._log_event("kpi_calculation_failed", "error", kpi=name, error=str(e))
+                self.metrics[name] = {"value": None, "error": str(e)}
+                return None
 
         raise ValueError(f"KPI '{name}' not supported by engine")
 

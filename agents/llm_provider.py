@@ -117,11 +117,7 @@ class AnthropicProvider(BaseLLMProvider):
         return ANTHROPIC_AVAILABLE and self.api_key is not None
 
     def complete(
-        self,
-        messages: List[Dict],
-        temperature: float = 0.7,
-        max_tokens: int = 4096,
-        **kwargs,
+        self, messages: List[Dict], temperature: float = 0.7, max_tokens: int = 4096, **kwargs
     ) -> LLMResponse:
         """Complete using Anthropic API."""
         if not self.is_available():

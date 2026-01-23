@@ -4,6 +4,7 @@
 
 - `GEMINI_API_KEY_SIMPLE`: Gemini PR review
 - `PERPLEXITY_API_KEY`: Perplexity review
+- `SLACK_WEBHOOK_URL`: Slack notifications
 
 ## Workflow Logic
 

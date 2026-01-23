@@ -1,4 +1,6 @@
+# Looker + EEFF Ingest (Cascade Disabled)
 
+This workflow runs the unified pipeline using Looker exports while Cascade ingestion is offline.
 
 ## Required Files
 
@@ -239,3 +241,4 @@ After Looker ingestion completes:
 2. **Transform to marts** — Execute dbt models: `dbt run --select tag:looker_dependent`
 3. **Update dashboards** — Refresh Streamlit dashboard to show new KPIs
 4. **Monitor freshness** — Set up alerts if new PAR files don't arrive by expected time
+5. **Plan Cascade migration** — Once Cascade comes online, gradual cutover to `ingest_cascade()` source

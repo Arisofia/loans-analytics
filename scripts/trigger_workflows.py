@@ -48,6 +48,11 @@ def parse_args():
         default=0.0,
         help="Seconds to wait between dispatch calls",
     )
+    parser.add_argument(
+        "--inputs",
+        action="append",
+        help="Inputs in the format key=value (can be specified multiple times)",
+    )
     return parser.parse_args()
 
 
@@ -78,8 +83,7 @@ def resolve_workflow_targets(workflows, requested):
             match = next((wf for wf in workflows if str(wf.get("id")) == item), None)
         else:
             match = next(
-                (wf for wf in workflows if wf.get("name", "").lower() == item.lower()),
-                None,
+                (wf for wf in workflows if wf.get("name", "").lower() == item.lower()), None
             )
         if not match:
             raise ValueError(f"Workflow '{item}' not found")
@@ -87,7 +91,20 @@ def resolve_workflow_targets(workflows, requested):
     return resolved
 
 
-def trigger_workflow(repo, workflow, ref, token):
+def parse_inputs(input_list):
+    if not input_list:
+        return {}
+    inputs = {}
+    for item in input_list:
+        if "=" in item:
+            key, value = item.split("=", 1)
+            inputs[key] = value
+        else:
+            sys.stderr.write(f"Warning: Ignoring malformed input '{item}' (expected key=value)\n")
+    return inputs
+
+
+def trigger_workflow(repo, workflow, ref, token, inputs=None):
     identifier = workflow.get("id") or workflow.get("file_name")
     url = f"{API_ROOT}/repos/{repo}/actions/workflows/{identifier}/dispatches"
     headers = {
@@ -96,6 +113,8 @@ def trigger_workflow(repo, workflow, ref, token):
         "X-GitHub-Api-Version": "2022-11-28",
     }
     payload = {"ref": ref}
+    if inputs:
+        payload["inputs"] = inputs
     try:
         response = SESSION.post(url, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
@@ -116,10 +135,12 @@ def main():
     if not targets:
         sys.stderr.write("No workflows available to dispatch\n")
         sys.exit(1)
+
+    dispatch_inputs = parse_inputs(args.inputs)
     successes = 0
     for wf in targets:
         name = wf.get("name") or wf.get("path")
-        if trigger_workflow(args.repo, wf, args.ref, token):
+        if trigger_workflow(args.repo, wf, args.ref, token, dispatch_inputs):
             print(f"Dispatched {name} on {args.ref}")
             successes += 1
         else:

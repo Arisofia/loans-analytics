@@ -52,7 +52,7 @@ Set the following environment variables in your deployment:
 
 ```bash
 # Required: Application Insights connection string from Azure Portal
-APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=xxx;IngestionEndpoint=https://...
+## APPLICATIONINSIGHTS_CONNECTION_STRING should be set in your environment, not in this file.
 
 # Optional: Custom service name (defaults to 'abaco-loans-analytics')
 AZURE_APPINSIGHTS_SERVICE_NAME=abaco-loans-analytics

@@ -8,7 +8,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for setting up all secrets required by the batch export pipelines and output integrations to Azure, Supabase, Meta, and Notion.
+This guide provides step-by-step instructions for setting up all secrets required by the batch export pipelines and output integrations to Azure, Supabase, and Meta.
 
 **Note**: Never commit secrets to the repository. All credentials should be stored in GitHub Actions Secrets only.
 
@@ -51,6 +51,7 @@ postgres://postgres:[PASSWORD]@db.zpowfbeftxexzidlxndy.supabase.co:6543/postgres
 **To Add to GitHub**:
 
 1. Go to repository → Settings → Secrets and variables → Actions
+2. Click "New repository secret"
 3. Name: `DATABASE_URL`
 4. Value: [paste connection string]
 5. Click "Add secret"
@@ -68,6 +69,7 @@ postgres://postgres:[PASSWORD]@db.zpowfbeftxexzidlxndy.supabase.co:6543/postgres
 - Azure Dashboard creation
 - Azure Monitor operations
 
+**How to create**:
 
 Run this Azure CLI command (requires Azure CLI installed and authenticated):
 
@@ -81,6 +83,7 @@ az ad sp create-for-rbac \
 
 **Output** (copy entire JSON):
 
+```json
 {
   "clientId": "00000000-0000-0000-0000-000000000000",
   "clientSecret": "secret-value-here",
@@ -93,7 +96,9 @@ az ad sp create-for-rbac \
   "galleryEndpointUrl": "https://gallery.azure.com/",
   "managementEndpointUrl": "https://management.core.windows.net/"
 }
+```
 
+**To Add to GitHub**:
 
 1. Go to repository → Settings → Secrets and variables → Actions
 2. Click "New repository secret"
@@ -110,6 +115,7 @@ az ad sp create-for-rbac \
 **Why**: Direct access to Azure Blob Storage for exporting files.
 
 **How to get**:
+
 1. Azure Portal → Storage account `abacostgprod` (or your storage account)
 2. Settings → Access keys
 3. Copy "Connection string" under "key1"
@@ -122,6 +128,7 @@ DefaultEndpointsProtocol=https;AccountName=abacostgprod;AccountKey=...;EndpointS
 
 **To Add to GitHub**:
 
+1. Settings → Secrets and variables → Actions
 2. Name: `AZURE_STORAGE_CONNECTION_STRING`
 3. Value: [paste connection string]
 
@@ -139,7 +146,9 @@ DefaultEndpointsProtocol=https;AccountName=abacostgprod;AccountKey=...;EndpointS
 - `AZURE_SUBSCRIPTION_ID`
 - `AZURE_RESOURCE_GROUP`
 - `AZURE_DASHBOARD_NAME`
+
 **To get**:
+
 1. Azure Portal → Your resource group `AI-MultiAgent-Ecosystem-RG`
 2. Copy the Resource Group ID
 3. Subscription ID: visible in the portal URL or Settings
@@ -155,7 +164,9 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 **To Add to GitHub**: Add each as a separate secret in Actions Secrets.
 
 ---
+
 ## 📋 Secondary Secrets (For Full Integrations)
+
 ### 5. Supabase Service Role Key
 
 **Environment Variable**: `SUPABASE_SERVICE_ROLE`
@@ -164,34 +175,45 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 **How to get**:
 
+1. Supabase Dashboard → Settings → API
 2. Copy the "service_role secret"
 
+**To Add to GitHub**:
+
 1. Settings → Secrets → New repository secret
+2. Name: `SUPABASE_SERVICE_ROLE`
 3. Value: [paste key]
 
 ---
 
 ### 6. Meta (Facebook) Integration
+
 #### 6a. Meta Access Token
 
 **Environment Variable**: `META_ACCESS_TOKEN`
 
 **Why**: Required for Facebook Pixel tracking and Ads Manager API access.
+
 **How to get**:
 
 1. [Meta Business Suite](https://business.facebook.com/) → Settings → Apps and websites
 2. Select your app → Settings → Tokens
 3. Copy "User access token" (long-lived, 60+ days)
+
 **To Add**:
 
 - Name: `META_ACCESS_TOKEN`
 
+#### 6b. Meta Pixel ID
 
 **Environment Variable**: `META_PIXEL_ID`
 
 **How to get**:
+
+1. Meta Business Suite → Data sources → Pixels
 2. Click your pixel → Settings
 3. Copy Pixel ID
+
 **To Add**:
 
 - Name: `META_PIXEL_ID`
@@ -211,89 +233,11 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 ---
 
-### 7. Notion Integration
 
-#### 7a. Notion API Key
 
-**Environment Variable**: `NOTION_API_KEY`
+### 7. OpenAI
 
-**How to get**:
-
-1. [Notion Settings](https://notion.so/profile/settings) → Integrations → Develop your own integrations
-2. Click "New integration"
-3. Name: `Abaco Analytics Export`
-
-**To Add**:
-
-- Name: `NOTION_API_KEY`
-
-**Also accepted**: `NOTION_TOKEN`, `NOTION_INTEGRATION_TOKEN`
-
-#### 7b. Notion Database ID
-
-**Environment Variable**: `NOTION_DATABASE_ID`
-
-**How to get**:
-
-1. Open your Notion database in browser
-2. Copy the 32-character ID from the URL: `https://notion.so/{YOUR_WORKSPACE}/{DATABASE_ID}?v=...`
-**To Add**:
-
-- Name: `NOTION_DATABASE_ID`
-
-**Also accepted**: set `NOTION_DATABASE_URL` (full Notion link) or paste the full URL into `NOTION_DATABASE_ID`; the integration extracts the ID automatically.
-
-#### 7c. Notion Reports Page ID
-
-**Environment Variable**: `NOTION_REPORTS_PAGE_ID`
-
-**How to get**:
-
-1. Create a page in Notion for analytics reports
-2. Copy the page ID from the URL
-
-**To Add**:
-
-- Name: `NOTION_REPORTS_PAGE_ID`
-
----
-
-<<<<<<< HEAD
-### 8. Other Integration Secrets
-=======
-### 8. Figma Additional Configuration
-
-#### 8a. Figma Node ID (Optional)
-
-**Environment Variable**: `FIGMA_DASHBOARD_FRAME_ID`
-
-**How to get**:
-
-1. Open your Figma file
-2. Right-click on the frame where you want metric updates
-3. Copy "Link to frame" and extract the node ID
-
-**To Add** (optional):
-
-- Name: `FIGMA_DASHBOARD_FRAME_ID`
-
-**Token aliases**: `FIGMA_OAUTH_TOKEN`, `FIGMA_API_TOKEN`, `FIGMA_PERSONAL_ACCESS_TOKEN` are accepted when `FIGMA_TOKEN` is not set.
-
-**File URL option**: set `FIGMA_FILE_URL` to a full Figma file link instead of `FIGMA_FILE_KEY`.
-
----
-
-### 9. Other Integration Secrets
-
-#### HubSpot
-
-- `HUBSPOT_API_KEY`: [HubSpot Account Settings → Integrations → API key](https://app.hubspot.com/l/integrations)
->>>>>>> origin/fix/workflows-and-tests
-
-#### OpenAI
-
-- `OPENAI_API_KEY`: [OpenAI API Keys](https://platform.openai.com/api-keys)
-
+## 🛠️ Implementation Checklist
 
 ### Before Production Deployment
 
@@ -314,11 +258,6 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
   - [ ] `META_PIXEL_ID` - Facebook Pixel ID
   - [ ] `META_AD_ACCOUNT_ID` - Ad account ID
 
-- [ ] **Notion Secrets Added**
-  - [ ] `NOTION_API_KEY` - Internal integration token
-  - [ ] `NOTION_DATABASE_ID` - Analytics metrics database
-  - [ ] `NOTION_REPORTS_PAGE_ID` - Reports page
-
 ---
 
 ## 🚀 Quick Setup Commands
@@ -337,11 +276,10 @@ Before deploying to production:
 ```bash
 # Set up environment variables locally
 export DATABASE_URL="postgres://..."
-export SUPABASE_URL="https://..."
+## export SUPABASE_URL should be set in your environment, not in this file.
 export SUPABASE_SERVICE_ROLE="..."
 export META_ACCESS_TOKEN="..."
-export NOTION_API_KEY="..."
-export AZURE_STORAGE_CONNECTION_STRING="..."
+## export AZURE_STORAGE_CONNECTION_STRING should be set in your environment, not in this file.
 
 # Run batch export runner
 python src/integrations/batch_export_runner.py --type full --verbose
@@ -362,22 +300,12 @@ All secrets should be rotated on a regular basis:
 | META_ACCESS_TOKEN | 90 days | Generate new token in Meta Business Suite |
 | AZURE_CREDENTIALS | 90 days | Run `az ad sp create-for-rbac` again |
 | OPENAI_API_KEY | 90 days | Generate new key in OpenAI → API Keys |
-| NOTION_API_KEY | 180 days | Regenerate in Notion → Integrations |
-| AZURE_STORAGE_CONNECTION_STRING | 180 days | Rotate key in Azure Portal |
 
 ---
 
 ## ❌ Troubleshooting
 
-### Secret Not Found in Workflow
 
-**Error**: `Error: Secret FIGMA_TOKEN not found`
-
-**Solution**:
-
-1. Verify secret is added: Settings → Secrets → Check the list
-2. Check spelling (case-sensitive)
-3. If using environment variables, ensure they're properly referenced: `${{ secrets.FIGMA_TOKEN }}`
 
 ### Access Denied to Azure
 
@@ -415,8 +343,6 @@ All secrets should be rotated on a regular basis:
 - [Supabase Connection Pooling](https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pooler)
 - [Azure Service Principals](https://learn.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals)
 - [Meta Graph API](https://developers.facebook.com/docs/graph-api)
-- [Notion API](https://developers.notion.com/)
-- [Figma API](https://www.figma.com/developers/api)
 
 ---
 

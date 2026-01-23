@@ -3,7 +3,6 @@
 import os
 
 import pytest
-
 from src.config.secrets import SecretsManager, get_secrets_manager
 
 

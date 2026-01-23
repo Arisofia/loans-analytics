@@ -17,15 +17,18 @@ Move all ingestion, transformation, and KPI computation to the unified pipeline 
 **Old**
 
 ```bash
+python scripts/ingest_cascade.py --file input.csv
 ```
 
 **New**
 
 ```bash
+python scripts/run_data_pipeline.py --input data/archives/cascade/loan_tape.csv
 ```
 
 ### 2. Validate Schemas
 
+- Ensure `config/data_schemas/loan_tape.json` matches Cascade export columns.
 - Confirm required numeric columns exist before moving to strict mode.
 
 ### 3. Run Dual Mode (1-2 weeks)
@@ -58,6 +61,7 @@ Move all ingestion, transformation, and KPI computation to the unified pipeline 
 
 **Risks**
 
+- Schema drift from Cascade exports.
 - Hidden dependencies on legacy output locations.
 - KPI deltas caused by normalization changes.
 

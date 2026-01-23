@@ -4,7 +4,7 @@ Use this checklist to connect the project’s external services and to start the
 
 ## 1. Azure data plane (SQL/Cosmos/Storage)
 
-- Confirm you have an Azure subscription and resource group that matches the values referenced in docs/ContosoTeamStats-setup.md.
+- Confirm you have an Azure subscription and resource group that matches the values referenced in docs/LOCAL_SETUP.md.
 - Create or reuse Azure SQL, Cosmos DB, and Storage resources; record the connection strings.
 - Export secrets to your shell (or a `.env`) before running any tooling:
   - `AZURE_SQL_CONNECTION_STRING`

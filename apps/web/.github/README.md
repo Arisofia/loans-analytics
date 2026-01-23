@@ -26,6 +26,7 @@
    - **Infrastructure**: Secrets management, environment config
    - **Read time**: 15-30 minutes (read your role section)
 
+2. **[DEPLOYMENT_COORDINATION.md](./DEPLOYMENT_COORDINATION.md)** (Slack notifications)
    - What to post in which channel
    - Notification templates
    - Incident escalation
@@ -135,6 +136,7 @@
 
 1. Go to DEPLOYMENT_COORDINATION.md
 2. Find appropriate severity level (P1/P2/P3)
+3. Post in correct Slack channel
 4. Include GitHub Actions link
 5. Follow up with root cause analysis
 
@@ -275,6 +277,7 @@
 
 1. Start: QUICK_START.md
 2. Daily: TEAM_RUNBOOKS.md → "Frontend Developer"
+3. Issues: Slack #dev-help
 4. Reference: TEAM_RUNBOOKS.md → "Common Scenarios"
 
 ### QA / Testing
@@ -331,15 +334,18 @@ See: TEAM_RUNBOOKS.md → "Checklists"
 
 ### Quick Questions
 
+- Slack: #dev-help
 - Response: Real-time (team members)
 
 ### CI/CD Issues
 
 - GitHub issue: Label `deployment`
 - Read: QUICK_START.md → "CI Check Failures"
+- Slack: #dev-alerts
 
 ### Production Issues
 
+- Slack: #incidents (P1/P2 only)
 - Read: TEAM_RUNBOOKS.md → "Incident Response"
 - GitHub: Create issue + link in #incidents
 

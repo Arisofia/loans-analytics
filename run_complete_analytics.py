@@ -28,12 +28,7 @@ except (ImportError, Exception) as tracing_err:
     logger = logging.getLogger(__name__)
     logger.warning("Azure tracing not initialized: %s", tracing_err)
 
-spec = importlib.util.spec_from_file_location(
-    "kpi_calc", project_root / "src" / "analytics" / "kpi_calculator_complete.py"
-)
-kpi_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(kpi_module)
-ABACOKPICalculator = kpi_module.ABACOKPICalculator
+from src.pipeline.orchestrator import UnifiedPipeline
 
 
 def load_real_data():
@@ -227,10 +222,36 @@ def main():
     else:
         print("⚠️ No schedule data loaded\n")
 
-    # Calculate Standard KPIs
-    print("🧮 Calculating Standard KPIs...\n")
-    calc = ABACOKPICalculator(loans_df, payments_df, customers_df)
-    dashboard = calc.get_complete_kpi_dashboard(cac_usd=350)
+    # Calculate Core KPIs using the Unified Pipeline
+    print("🧮 Calculating Core KPIs via Unified Pipeline...\n")
+    temp_loan_path = project_root / "data" / "raw" / "temp_analytics_input.csv"
+    temp_loan_path.parent.mkdir(parents=True, exist_ok=True)
+    loans_df.to_csv(temp_loan_path, index=False)
+
+    pipeline = UnifiedPipeline()
+    pipeline_res = pipeline.execute(temp_loan_path, user="cli-analytics", action="run-complete")
+
+    # Load metrics from manifest
+    manifest_path = Path(pipeline_res["phases"]["output"]["manifest"])
+    manifest = json.loads(manifest_path.read_text())
+    dashboard = manifest.get("metrics", {})
+    dashboard["timestamp"] = datetime.now().isoformat()
+
+    # Fill in missing expected fields with defaults for display compatibility
+    dashboard.setdefault("active_clients", len(loans_df["customer_id"].unique()) if "customer_id" in loans_df.columns else 0)
+    dashboard.setdefault("total_aum_usd", dashboard.get("total_receivable_usd", 0.0))
+    dashboard.setdefault("replines_percentage", 0.0)
+    dashboard.setdefault("monthly_revenue_usd", 0.0)
+    dashboard.setdefault("revenue_per_active_client_monthly", 0.0)
+    dashboard.setdefault("revenue_per_active_client_annual", 0.0)
+    dashboard.setdefault("mom_growth_pct", 0.0)
+    dashboard.setdefault("yoy_growth_pct", 0.0)
+    dashboard.setdefault("ltv_cac_ratio", 0.0)
+    dashboard.setdefault("cac_usd", 350.0)
+    dashboard.setdefault("delinquency_rate_30_pct", dashboard.get("delinquency_rate_pct", 0.0))
+    dashboard.setdefault("delinquency_rate_90_pct", dashboard.get("par_90_pct", 0.0))
+    dashboard.setdefault("par_90_ratio_pct", dashboard.get("par_90_pct", 0.0))
+    dashboard.setdefault("portfolio_by_product", [])
 
     # Calculate Extended KPIs from Catalog
     print("📊 Calculating Extended KPIs from Catalog...\n")
@@ -240,12 +261,43 @@ def main():
         dashboard["extended_kpis"] = extended_kpis
         print("✅ Extended KPIs calculated successfully")
 
-        # Export Analytics Facts CSV
-        print("📝 Exporting Analytics Facts CSV...")
-        facts_df = catalog_proc.get_analytics_facts_df()
+        # Map metrics from extended_kpis to dashboard root for display
+        exec_strip = extended_kpis.get("executive_strip", {})
+        dashboard["total_aum_usd"] = exec_strip.get("total_outstanding", 0.0)
+        dashboard["active_clients"] = exec_strip.get("active_clients", dashboard.get("active_clients", 0))
+        dashboard["collection_rate_pct"] = exec_strip.get("collection_rate", 0.0) * 100
+        
+        # Map monthly revenue from latest month in pricing
+        pricing = extended_kpis.get("monthly_pricing", [])
+        if pricing:
+            latest_pricing = pricing[-1]
+            dashboard["monthly_revenue_usd"] = latest_pricing.get("true_interest_payment", 0.0) + \
+                                              latest_pricing.get("true_fee_payment", 0.0) + \
+                                              latest_pricing.get("true_other_payment", 0.0) - \
+                                              latest_pricing.get("true_rebates", 0.0)
+            
+            if dashboard["active_clients"] > 0:
+                dashboard["revenue_per_active_client_monthly"] = dashboard["monthly_revenue_usd"] / dashboard["active_clients"]
+                dashboard["revenue_per_active_client_annual"] = dashboard["revenue_per_active_client_monthly"] * 12
+
+        # Map growth metrics if available
+        if len(pricing) >= 2:
+            prev_rev = pricing[-2].get("true_interest_payment", 0.0) # Simplified
+            curr_rev = pricing[-1].get("true_interest_payment", 0.0)
+            if prev_rev > 0:
+                dashboard["mom_growth_pct"] = ((curr_rev / prev_rev) - 1) * 100
+
+        # Map Risk Metrics from Pipeline
+        dashboard["delinquency_rate_30_pct"] = dashboard.get("PAR30", {}).get("value", 0.0)
+        dashboard["delinquency_rate_90_pct"] = dashboard.get("PAR90", {}).get("value", 0.0)
+        dashboard["par_90_ratio_pct"] = dashboard.get("PAR90", {}).get("value", 0.0)
+
+        # Export Figma Dashboard CSV
+        print("📝 Exporting Figma Dashboard CSV...")
+        figma_df = catalog_proc.get_figma_dashboard_df()
         csv_path = project_root / "exports" / "analytics_facts.csv"
-        facts_df.to_csv(csv_path, index=False)
-        print(f"✅ Analytics Facts CSV saved to: {csv_path}")
+        figma_df.to_csv(csv_path, index=False)
+        print(f"✅ Figma Dashboard CSV saved to: {csv_path}")
 
         # Export Quarterly Scorecard CSV
         print("📝 Exporting Quarterly Scorecard CSV...")
@@ -314,6 +366,11 @@ def main():
         json.dump(dashboard, f, indent=2, default=str)
 
     print(f"✅ Dashboard saved to: {output_path}")
+
+    # Clean up temp file
+    if temp_loan_path.exists():
+        temp_loan_path.unlink()
+
     print("\n" + "=" * 80)
     print(f"Report Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 80 + "\n")

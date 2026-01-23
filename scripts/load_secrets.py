@@ -1,26 +1,26 @@
-import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict
 
 from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-logger = logging.getLogger("abaco.scripts.load_secrets")
+from src.config.secrets import get_secrets_manager
+
+load_dotenv()
 
 
-def redact_dict(
-    d: Dict[str, Any],
-    redact_keys: tuple = ("secret", "token", "password", "key"),
-) -> Dict[str, Any]:
+def redact_dict(d: dict, redact_keys: tuple = ("secret", "token", "password", "key")) -> dict:
+    """Return a copy of d with values for keys containing sensitive substrings replaced.
+
+    This is used by tests and logging to avoid printing secrets.
+    """
     redacted = {}
 
     for k, v in d.items():
         if any(sub in k.lower() for sub in redact_keys):
             redacted[k] = "<redacted>"
         else:
-            # keep non-sensitive values
             redacted[k] = v
     return redacted
 

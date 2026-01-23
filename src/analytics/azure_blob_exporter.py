@@ -45,8 +45,7 @@ class AzureBlobKPIExporter:
                 self.blob_service_client = blob_service
             else:
                 self.blob_service_client = BlobServiceClient(
-                    account_url=account_url,
-                    credential=credential or DefaultAzureCredential(),
+                    account_url=account_url, credential=credential or DefaultAzureCredential()
                 )
         self.container_name = str(container_name).strip()
 
@@ -57,7 +56,6 @@ class AzureBlobKPIExporter:
 
         if blob_name is not None and not isinstance(blob_name, str):
             raise ValueError("blob_name must be a string if provided.")
-
         normalized_metrics: Dict[str, float] = {}
         for key, value in metrics.items():
             if not isinstance(key, str) or not key.strip():

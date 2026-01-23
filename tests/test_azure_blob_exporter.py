@@ -2,7 +2,6 @@ import json
 from unittest.mock import Mock
 
 import pytest
-
 from src.analytics.azure_blob_exporter import AzureBlobKPIExporter
 from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
 

@@ -21,9 +21,7 @@ class SegmentManagerAgent(BaseAgent):
     """
 
     def __init__(
-        self,
-        config: Optional[AgentConfig] = None,
-        context: Optional[AgentContext] = None,
+        self, config: Optional[AgentConfig] = None, context: Optional[AgentContext] = None
     ):
         """Initialize HubSpot Segment Manager Agent.
 
@@ -99,11 +97,7 @@ class SegmentManagerAgent(BaseAgent):
                 "description": "Create segment for contacts created today",
                 "parameters": {"name_suffix": "Optional suffix for segment name"},
             },
-            {
-                "name": "list_segments",
-                "description": "List all contact segments",
-                "parameters": {},
-            },
+            {"name": "list_segments", "description": "List all contact segments", "parameters": {}},
             {
                 "name": "get_segment_contacts",
                 "description": "Get contacts in a specific segment",
@@ -112,10 +106,7 @@ class SegmentManagerAgent(BaseAgent):
             {
                 "name": "update_segment",
                 "description": "Update segment filters or properties",
-                "parameters": {
-                    "list_id": "Segment/list ID",
-                    "updates": "Updated properties",
-                },
+                "parameters": {"list_id": "Segment/list ID", "updates": "Updated properties"},
             },
         ]
 
@@ -178,11 +169,7 @@ class SegmentManagerAgent(BaseAgent):
         """
         url = f"{self.base_url}/contacts/v1/lists"
 
-        payload = {
-            "name": name,
-            "dynamic": True,
-            "filters": filters,
-        }  # Dynamic list (auto-updates)
+        payload = {"name": name, "dynamic": True, "filters": filters}  # Dynamic list (auto-updates)
 
         headers, params = self._get_auth_headers_and_params()
 
@@ -250,10 +237,7 @@ class SegmentManagerAgent(BaseAgent):
                     for lst in lists
                 ],
             }
-        return {
-            "success": False,
-            "error": f"Failed to list segments: {response.status_code}",
-        }
+        return {"success": False, "error": f"Failed to list segments: {response.status_code}"}
 
     def _get_segment_contacts(self, list_id: str) -> dict:
         """Get contacts in a specific segment.
@@ -291,10 +275,7 @@ class SegmentManagerAgent(BaseAgent):
                     for contact in contacts
                 ],
             }
-        return {
-            "success": False,
-            "error": f"Failed to get contacts: {response.status_code}",
-        }
+        return {"success": False, "error": f"Failed to get contacts: {response.status_code}"}
 
     def _update_segment(self, list_id: str, updates: dict) -> dict:
         """Update segment properties.
@@ -313,12 +294,5 @@ class SegmentManagerAgent(BaseAgent):
         response = requests.post(url, json=updates, headers=headers, params=params, timeout=10)
 
         if response.status_code == 200:
-            return {
-                "success": True,
-                "list_id": list_id,
-                "message": "Segment updated successfully",
-            }
-        return {
-            "success": False,
-            "error": f"Failed to update segment: {response.status_code}",
-        }
+            return {"success": True, "list_id": list_id, "message": "Segment updated successfully"}
+        return {"success": False, "error": f"Failed to update segment: {response.status_code}"}

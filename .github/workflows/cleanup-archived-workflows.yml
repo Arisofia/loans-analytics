@@ -1,0 +1,18 @@
+name: Cleanup Archived Workflows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Delete archived workflows folder
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git rm -r .github/workflows/archived
+          git commit -m "chore: remove archived workflows folder"
+          git push

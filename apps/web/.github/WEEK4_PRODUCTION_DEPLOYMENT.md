@@ -46,6 +46,7 @@ Before starting Week 4 deployment, verify:
 - [ ] DevOps lead is present and ready
 - [ ] Team lead/manager standing by
 - [ ] QA ready to monitor post-deployment
+- [ ] Slack channels ready (#prod-alerts, #incidents)
 
 ### External Systems
 
@@ -117,6 +118,7 @@ cat > RELEASE_NOTES_v1.0.0.md << 'EOF'
 - [ ] Production approval obtained
 - [ ] Post-deployment health checks pass
 - [ ] No errors in monitoring
+- [ ] Slack notifications working
 
 ## Rollback Plan
 If critical issues found:
@@ -136,12 +138,14 @@ If critical issues found:
 ## Contact
 - **On-Call**: [Name/Number]
 - **Escalation**: [Name/Number]
+- **Emergency**: #incidents Slack channel
 EOF
 cat RELEASE_NOTES_v1.0.0.md
 ```
 
 ### 1.3 Notify Team
 
+Post in Slack channels:
 
 **#prod-alerts**
 
@@ -418,6 +422,7 @@ Team Status
 [ ] DevOps confirms no issues
 [ ] Tech lead gives go/no-go
 
+Slack Notifications
 [ ] #prod-alerts shows success
 [ ] Team acknowledged deployment
 [ ] No critical issues reported
@@ -429,6 +434,7 @@ Team Status
 
 ---
 
+## Phase 6: Slack Notifications (Ongoing)
 
 ### 6.1 Deployment Success Notification
 
@@ -675,6 +681,7 @@ Feedback:
 
 ## Team Feedback Collection (End of Week 4)
 
+### Slack Survey (Friday)
 
 Post in **#dev-help**:
 
@@ -860,6 +867,7 @@ Based on feedback:
 4. If persists, execute rollback
 5. Investigate root cause
 
+### Slack Notifications Not Working
 
 **Symptoms**: No messages in #prod-alerts
 
@@ -867,6 +875,7 @@ Based on feedback:
 
 1. Manually post update in #prod-alerts
 2. Check webhook URLs in GitHub secrets
+3. Verify Slack channel exists and bot has access
 4. Test webhook manually
 5. Fix secrets and redeploy
 
@@ -881,6 +890,7 @@ Based on feedback:
 - [ ] Team readiness confirmed
 - [ ] External systems accessible
 - [ ] Release notes prepared
+- [ ] Slack notification ready
 
 **Deployment**:
 
@@ -897,6 +907,7 @@ Based on feedback:
 - [ ] Manual verification done
 - [ ] Monitoring systems active
 - [ ] Team verified functionality
+- [ ] Slack notifications posted
 - [ ] 24-hour monitoring ongoing
 
 **Follow-up**:
@@ -915,6 +926,7 @@ Based on feedback:
 
 - WEEK4_PRODUCTION_DEPLOYMENT.md (this file)
 - TEAM_RUNBOOKS.md (reference for procedures)
+- DEPLOYMENT_COORDINATION.md (Slack templates)
 - DEPLOYMENT_CONFIG.md (technical reference)
 
 **External**:
@@ -922,6 +934,7 @@ Based on feedback:
 - GitHub Actions dashboard (workflow monitoring)
 - Sentry dashboard (error tracking)
 - Azure portal (deployment status)
+- Slack channels (#prod-alerts, #incidents)
 
 ---
 

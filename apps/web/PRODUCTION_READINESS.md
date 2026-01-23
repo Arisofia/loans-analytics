@@ -1,8 +1,8 @@
 # Production Readiness Summary
 
-- **Status**: ✅ **READY FOR PRODUCTION**
-- **Last Updated**: 2025-12-14
-- **Commit**: `3612fa20` (feat: add data pipeline validation)
+**Status**: ✅ **READY FOR PRODUCTION**
+**Last Updated**: 2025-12-14
+**Commit**: `3612fa20` (feat: add data pipeline validation)
 
 ---
 
@@ -80,7 +80,7 @@ All checks pass ✅:
 
 You must configure these GitHub Secrets before deploying:
 
-```env
+```text
 NEXT_PUBLIC_SUPABASE_URL        (required)
 NEXT_PUBLIC_SUPABASE_ANON_KEY   (required)
 VERCEL_TOKEN                     (required)
@@ -120,13 +120,13 @@ This automatically:
 
 ```bash
 # Check CI/CD status
-<https://github.com/your-org/abaco-loans-analytics/actions>
+https://github.com/your-org/abaco-loans-analytics/actions
 
 # Check production deployment
-<https://abaco-loans-analytics.vercel.app>
+https://abaco-loans-analytics.vercel.app
 
 # Check error tracking
-<https://sentry.io> → select project → Errors
+https://sentry.io → select project → Errors
 ```
 
 ---
@@ -338,7 +338,7 @@ These are mostly in dev dependencies and should be addressed:
 
 ```bash
 # View vulnerabilities
-<https://github.com/Abaco-Technol/abaco-loans-analytics/security/dependabot>
+https://github.com/Abaco-Technol/abaco-loans-analytics/security/dependabot
 
 # Update dependencies (carefully test)
 npm update

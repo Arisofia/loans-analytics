@@ -28,7 +28,7 @@ Common secrets referenced by workflows:
 
 - `DATABASE_URL` (Postgres/Supabase)
 - `META_SYSTEM_USER_TOKEN` / Meta token(s)
-
+- `HUBSPOT_API_KEY`
 - `AZURE_CREDENTIALS` / publish profiles (deploy workflows)
 
 Quick validation:

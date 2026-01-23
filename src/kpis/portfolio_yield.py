@@ -36,9 +36,7 @@ class PortfolioYieldCalculator(KPICalculator):
         total_principal = principal_balance.sum()
         if total_principal == 0:
             return 0.0, create_context(
-                self.METADATA.formula,
-                rows_processed=len(df),
-                reason="Zero total principal",
+                self.METADATA.formula, rows_processed=len(df), reason="Zero total principal"
             )
 
         weighted_interest = (interest_rate * principal_balance).sum()

@@ -1,4 +1,4 @@
-version: "2"
+version: '2'
 
 checks:
   # Cyclomatic complexity threshold
@@ -51,29 +51,29 @@ plugins:
       disable:
         - missing-docstring
         - too-few-public-methods
-  
+
   bandit:
     enabled: true
     config:
       exclude_paths:
         - tests/**
-        - "**/test_*.py"
-  
+        - '**/test_*.py'
+
   # JavaScript/TypeScript analysis
   eslint:
     enabled: true
-    channel: "eslint-9"
+    channel: 'eslint-9'
     config:
       extensions:
         - .js
         - .jsx
         - .ts
         - .tsx
-  
+
   # SonarJS for JavaScript code smells
   sonar-javascript:
     enabled: true
-  
+
   # Duplication detection
   duplication:
     enabled: true
@@ -85,36 +85,36 @@ plugins:
 
 exclude_patterns:
   # Dependencies
-  - "**/node_modules/**"
-  - "**/dist/**"
-  - "**/.next/**"
-  - "**/build/**"
-  - "**/.turbo/**"
-  - "**/.gradle/**"
-  - "**/target/**"
-  
+  - '**/node_modules/**'
+  - '**/dist/**'
+  - '**/.next/**'
+  - '**/build/**'
+  - '**/.turbo/**'
+  - '**/.gradle/**'
+  - '**/target/**'
+
   # Test and mock data
-  - "**/tests/**"
-  - "**/__tests__/**"
-  - "**/*.test.*"
-  - "**/*.spec.*"
-  - "**/test_*.py"
-  - "**/data_samples/**"
-  - "**/fixtures/**"
-  
+  - '**/tests/**'
+  - '**/__tests__/**'
+  - '**/*.test.*'
+  - '**/*.spec.*'
+  - '**/test_*.py'
+  - '**/data_samples/**'
+  - '**/fixtures/**'
+
   # Configuration and generated files
-  - "**/coverage/**"
-  - "**/*.config.js"
-  - "**/*.config.ts"
-  - "**/next-env.d.ts"
-  - "**/global.d.ts"
-  
+  - '**/coverage/**'
+  - '**/*.config.js'
+  - '**/*.config.ts'
+  - '**/next-env.d.ts'
+  - '**/global.d.ts'
+
   # Documentation
-  - "**/*.md"
-  - "**/docs/**"
-  
+  - '**/*.md'
+  - '**/docs/**'
+
   # Infrastructure
-  - "**/infra/**"
-  - "**/.github/**"
-  - "**/ci/**"
-  - "**/scripts/**"
+  - '**/infra/**'
+  - '**/.github/**'
+  - '**/ci/**'
+  - '**/scripts/**'

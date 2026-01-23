@@ -3,7 +3,7 @@ name: Validate Workflows
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   syntax-validation:
@@ -16,7 +16,6 @@ jobs:
         with:
           path: .github/workflows
           # fail_on_error: true  # defaults to failing the step on errors
-
 
   structure-validation:
     name: YAML Structure Validation

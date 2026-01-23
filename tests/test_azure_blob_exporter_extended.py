@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from azure.core.exceptions import ResourceExistsError
 from azure.storage.blob import BlobServiceClient
-
 from src.analytics.azure_blob_exporter import AzureBlobKPIExporter
 
 

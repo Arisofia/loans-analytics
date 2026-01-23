@@ -10,38 +10,40 @@ FOUND_ISSUES=0
 
 # Patterns to check for
 PATTERNS=(
-  "sk-""proj-" # OpenAI keys
-  "sk-""ant-"  # Anthropic keys
-  "HUBSPOT_TOKEN="
+    "sk-""proj-"  # OpenAI-style keys (obfuscated to avoid committing literals)
+    "sk-""ant-"   # Anthropic-style keys (obfuscated to avoid committing literals)
+    "HUBSPOT_TOKEN="
 )
 
 echo "Scanning codebase for exposed credentials..."
 echo ""
 
+tmpfile=$(mktemp)
+trap 'rm -f "$tmpfile"' EXIT
+
 for pattern in "${PATTERNS[@]}"; do
-  echo -n "Checking for '$pattern': "
-  if grep -r "$pattern" --include="*.py" --include="*.sh" --include="*.yml" --include="*.yaml" \
-    --exclude-dir=node_modules --exclude-dir=.venv --exclude-dir=__pycache__ . 2>/dev/null |
-    grep -v "^Binary" >/tmp/scan_results.txt; then
-    echo "⚠️  FOUND"
-    cat /tmp/scan_results.txt | head -5
-    FOUND_ISSUES=$((FOUND_ISSUES + 1))
-    echo ""
-  else
-    echo "✅ OK"
-  fi
+    printf '%b' "Checking for '$pattern': "
+    if grep -r --no-messages "$pattern" --include="*.py" --include="*.sh" --include="*.yml" --include="*.yaml" \
+        --exclude-dir=node_modules --exclude-dir=.venv --exclude-dir=__pycache__ . > "$tmpfile" 2>/dev/null && [ -s "$tmpfile" ]; then
+        printf '%b\n' "⚠️  FOUND"
+        head -n 5 "$tmpfile"
+        FOUND_ISSUES=$((FOUND_ISSUES + 1))
+        printf '%b\n' ""
+    else
+        printf '%b\n' "✅ OK"
+    fi
 done
 
 if [ $FOUND_ISSUES -eq 0 ]; then
-  echo ""
-  echo "=========================================="
-  echo "✅ No obvious exposed credentials found"
-  echo "=========================================="
+    echo ""
+    echo "=========================================="
+    echo "✅ No obvious exposed credentials found"
+    echo "=========================================="
 else
-  echo ""
-  echo "=========================================="
-  echo "⚠️  $FOUND_ISSUES potential issues found"
-  echo "=========================================="
-  echo ""
-  echo "Review these findings and remove any exposed credentials."
+    echo ""
+    echo "=========================================="
+    echo "⚠️  $FOUND_ISSUES potential issues found"
+    echo "=========================================="
+    echo ""
+    echo "Review these findings and remove any exposed credentials."
 fi
