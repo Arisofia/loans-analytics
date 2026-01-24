@@ -248,14 +248,17 @@ except Exception as e:
 ### Common Issues
 
 1. **"Storage account name is not available"**
+
    - Choose a different, unique storage account name
    - Must be 3-24 characters, lowercase letters and numbers only
 
 2. **"Insufficient permissions"**
+
    - Ensure you have Owner or Contributor role on the subscription
    - Check RBAC assignments: `az role assignment list --assignee <your-email>`
 
 3. **"Key Vault access denied"**
+
    - Verify managed identity is enabled
    - Check role assignments for Key Vault
    - Ensure Key Vault is using RBAC authorization
@@ -293,7 +296,7 @@ Azure Connection Validator
 ## Next Steps
 
 1. Configure Supabase connection (see main README)
-2. Set up API keys for LLM providers
+2. Set up API keys for LanguageModel providers
 3. Run the batch analytics pipeline
 4. Deploy to Azure App Service
 
@@ -304,3 +307,61 @@ For issues:
 1. Check validation script output: `python scripts/validate_azure_connection.py`
 2. Review Azure Portal logs
 3. Check GitHub workflow runs for deployment errors
+
+---
+
+# Azure OpenAI Provider Integration Setup
+
+## 1. Install Required Python Packages
+
+```bash
+pip install azure-identity azure-ai-ml azure-core openai python-dotenv
+```
+
+## 2. Set Azure OpenAI Required Environment Variables
+
+Add these to your `.env` file or CI environment:
+
+```
+AZURE_OPENAI_API_KEY=your-azure-openai-api-key
+AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT=your-deployment-name
+AZURE_OPENAI_API_VERSION=2024-02-15-preview
+```
+
+## 3. Export Environment Variables (optional)
+
+```bash
+export AZURE_OPENAI_API_KEY="your-azure-openai-api-key"
+export AZURE_OPENAI_ENDPOINT="https://your-resource-name.openai.azure.com/"
+export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+export AZURE_OPENAI_API_VERSION="2024-02-15-preview"
+```
+
+## 4. Test Azure OpenAI API Connectivity
+
+```python
+import os
+import openai
+
+openai.api_type = "azure"
+openai.api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
+openai.api_version = os.getenv("AZURE_OPENAI_API_VERSION")
+openai.api_key = os.getenv("AZURE_OPENAI_API_KEY")
+
+response = openai.ChatCompletion.create(
+    engine=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
+    messages=[{"role": "user", "content": "Hello from Azure OpenAI!"}]
+)
+print(response["choices"][0]["message"]["content"])
+```
+
+## 5. CI Setup Example (GitHub Actions)
+
+```yaml
+env:
+  AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+  AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+  AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+  AZURE_OPENAI_API_VERSION: '2024-02-15-preview'
+```
