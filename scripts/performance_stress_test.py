@@ -221,3 +221,27 @@ class PerformanceStressTest:
                 "stability": (
                     "STABLE" if sustained.get("memory", {}).get("stable") else "VARIABLE"
                 ),
+                "resource_efficiency": {
+                    "avg_execution_time_s": resource.get("execution_time_s"),
+                    "memory_used_mb": resource.get("memory_used_mb"),
+                    "cpu_user_seconds": resource.get("cpu_user_seconds"),
+                },
+            },
+        }
+
+        # Compose final results
+        self.results["summary"] = summary
+        self.results["tests"]["load_scalability_summary"] = {
+            "sizes_tested": list(self.results["tests"].get("load_scalability", {}).keys())
+        }
+
+        # Write report
+        try:
+            output_path = Path(output_file)
+            with output_path.open("w") as fh:
+                json.dump(self.results, fh, indent=2, default=str)
+            logger.info(f"Report written to {output_path}")
+        except Exception as e:
+            logger.error(f"Failed to write report: {e}")
+
+        return self.results

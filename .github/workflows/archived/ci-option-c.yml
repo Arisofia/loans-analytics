@@ -4,9 +4,7 @@ on:
   push:
   pull_request:
 
-permissions:
-  contents: read
-
+# Workflow-level permissions removed to follow least-privilege: grant permissions per-job when required.
 concurrency:
   group: ci-option-c-${{ github.ref }}
   cancel-in-progress: true
@@ -44,9 +42,10 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: abaco_test
+          # Set these secrets in repository settings: POSTGRES_PASSWORD, POSTGRES_USER, POSTGRES_DB
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
         ports: ['5432:5432']
         options: >-
           --health-cmd="pg_isready -U postgres"

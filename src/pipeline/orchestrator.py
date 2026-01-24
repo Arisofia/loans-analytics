@@ -14,6 +14,7 @@ from src.pipeline.data_transformation import UnifiedTransformation
 from src.pipeline.kpi_calculation import UnifiedCalculationV2
 from src.pipeline.output import UnifiedOutput
 from src.pipeline.utils import ensure_dir, utc_now, write_json
+from src.tracing_setup import get_tracer
 
 logger = logging.getLogger(__name__)
 tracer = get_tracer(__name__)
