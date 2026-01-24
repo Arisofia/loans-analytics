@@ -81,7 +81,9 @@ class AzureStorageClient:
         if conn_str:
             return conn_str
 
-        account_name = os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
+        account_name = (
+            os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
+        )
         account_key = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
 
         if account_name and account_key:
@@ -92,7 +94,9 @@ class AzureStorageClient:
         return None
 
     def _init_from_url_credentials(self) -> Optional[BlobServiceClient]:
-        account_name = os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
+        account_name = (
+            os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
+        )
         account_key = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
         sas_token = os.getenv("AZURE_STORAGE_SAS_TOKEN")
         raw_account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
@@ -153,7 +157,10 @@ class AzureStorageClient:
                     content_settings=ContentSettings(content_type=content_type),
                 )
 
-            blob_url = f"https://{self.client.account_name}.blob.core.windows.net/{self.container_name}/{blob_name}"
+            blob_url = (
+                f"https://{self.client.account_name}.blob.core.windows.net/"
+                f"{self.container_name}/{blob_name}"
+            )
             logger.info("Uploaded %s to Azure: %s", file_path.name, blob_url)
             return blob_url
 
@@ -184,7 +191,10 @@ class AzureStorageClient:
                 content_settings=ContentSettings(content_type="text/csv"),
             )
 
-            blob_url = f"https://{self.client.account_name}.blob.core.windows.net/{self.container_name}/{blob_name}"
+            blob_url = (
+                f"https://{self.client.account_name}.blob.core.windows.net/"
+                f"{self.container_name}/{blob_name}"
+            )
             logger.info("Uploaded DataFrame to Azure: %s", blob_url)
             return blob_url
 
@@ -271,41 +281,17 @@ class AzureDashboardClient:
         }
 
     def create_metric_chart_tile(
-        self,
-        metric_name: str,
-        metric_id: str,
-    ) -> Dict[str, Any]:
-        """Create a dashboard tile for metric time-series chart."""
-        return {
-            "properties": {
-                "metrics": {
-                    "resourceMetadata": {"id": metric_id},
-                    "metrics": [{"name": metric_name, "resourceId": metric_id}],
-                    "title": f"{metric_name} - Last 24 Hours",
-                    "timespan": "PT24H",
-                    "visualization": {"chartType": 2},
-                }
-            },
-            "position": {"x": 0, "y": 0, "width": 6, "height": 3},
-        }
-
-    def build_dashboard_payload(self, kpi_metrics: Dict[str, Any]) -> Dict[str, Any]:
-        """Build complete dashboard JSON payload with KPI tiles."""
-        tiles = []
-
-        for idx, (kpi_name, metric_data) in enumerate(kpi_metrics.items()):
-            tile = self.create_kpi_tile(
-                kpi_name=kpi_name,
-                current_value=metric_data.get("current_value", 0),
-                previous_value=metric_data.get("previous_value", 0),
-                unit=metric_data.get("unit", ""),
-            )
-            tile["position"]["y"] = (idx % 3) * 3
-            tile["position"]["x"] = (idx // 3) * 3
+# ...
             tiles.append(tile)
 
+        dashboard_id = (
+            f"/subscriptions/{self.subscription_id}/resourceGroups/"
+            f"{self.resource_group}/providers/Microsoft.Portal/dashboards/"
+            f"{self.dashboard_name}"
+        )
+
         return {
-            "id": f"/subscriptions/{self.subscription_id}/resourceGroups/{self.resource_group}/providers/Microsoft.Portal/dashboards/{self.dashboard_name}",
+            "id": dashboard_id,
             "name": self.dashboard_name,
             "type": "Microsoft.Portal/dashboards",
             "location": "eastus",
