@@ -4,7 +4,7 @@ langchain-openai
 langchain-anthropic
 langchain-community
 # ensure langchain-core is new enough for other langchain adaptors
-langchain-core>=0.3.34,<0.4.0
+langchain-core>=0.3.34,<1.3.0
 
 # project runtime dependencies
 pandas>=2.2.0
