@@ -127,7 +127,7 @@ class AnthropicProvider(BaseLLMProvider):
             self.client = None
 
     def is_available(self) -> bool:
-        return ANTHROPIC_AVAILABLE and self.api_key is not None
+        return ANTHROPIC_AVAILABLE and self.client is not None
 
     def complete(
         self,
@@ -140,10 +140,9 @@ class AnthropicProvider(BaseLLMProvider):
         if not self.is_available():
             raise RuntimeError("Anthropic provider not available")
 
-        # Convert messages to Anthropic format
+        # Convert messages to Anthropic format (Claude v3 expects system as string, rest as list)
         system_message = ""
         converted_messages = []
-
         for msg in messages:
             if msg["role"] == "system":
                 system_message = msg["content"]
@@ -159,18 +158,25 @@ class AnthropicProvider(BaseLLMProvider):
                 messages=converted_messages,
                 **kwargs,
             )
-
-            return LLMResponse(
-                content=response.content[0].text,
-                model=self.model,
-                provider="anthropic",
-                tokens_used=response.usage.input_tokens + response.usage.output_tokens,
-                metadata={
-                    "stop_reason": response.stop_reason,
-                    "input_tokens": response.usage.input_tokens,
-                    "output_tokens": response.usage.output_tokens,
-                },
-            )
+            try:
+                content_text = response.content[0].text if getattr(response, "content", None) and len(response.content) > 0 else ""
+                input_tokens = getattr(getattr(response, "usage", None), "input_tokens", 0)
+                output_tokens = getattr(getattr(response, "usage", None), "output_tokens", 0)
+                stop_reason = getattr(response, "stop_reason", None)
+                return LLMResponse(
+                    content=content_text,
+                    model=self.model,
+                    provider="anthropic",
+                    tokens_used=input_tokens + output_tokens,
+                    metadata={
+                        "stop_reason": stop_reason,
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                    },
+                )
+            except Exception as e:
+                logger.error("Error constructing LLMResponse from Anthropic: %s", e)
+                raise
         except Exception as e:
             logger.error("Anthropic API error: %s", e)
             raise
@@ -205,21 +211,24 @@ class LLMManager:
         """Complete with automatic fallback."""
         provider_name = provider or self.primary_provider
 
-        openai_error = None
-        anthropic_error = None
-        if OPENAI_AVAILABLE:
-            import openai
-            openai_error = getattr(openai.error, "APIError", Exception)
-        if ANTHROPIC_AVAILABLE:
-            anthropic_error = getattr(__import__("anthropic.error", fromlist=["APIError"]), "APIError", Exception)
+        # Only import errors if provider is available
+        openai_error, anthropic_error = Exception, Exception
+        if provider_name == "openai" and OPENAI_AVAILABLE:
+            try:
+                import openai
+                openai_error = getattr(openai.error, "APIError", Exception)
+            except Exception:
+                pass
+        if provider_name == "anthropic" and ANTHROPIC_AVAILABLE:
+            try:
+                import anthropic
+                anthropic_error = getattr(getattr(anthropic, "error", anthropic), "APIError", Exception)
+            except Exception:
+                pass
 
         if self._is_provider_available(provider_name):
             try:
-                return self._try_provider(
-                    provider_name,
-                    messages,
-                    **kwargs
-                )
+                return self._try_provider(provider_name, messages, **kwargs)
             except (openai_error, anthropic_error) as e:
                 logger.warning("%s failed: %s", provider_name, e)
                 if not self.fallback_enabled:
