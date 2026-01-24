@@ -3,9 +3,7 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
-
 from prefect import flow, task
-
 from src.compliance import build_compliance_report, write_compliance_report
 from src.pipeline.config import PipelineConfig
 from src.pipeline.data_ingestion import IngestionResult, UnifiedIngestion
@@ -14,6 +12,17 @@ from src.pipeline.kpi_calculation import UnifiedCalculationV2
 from src.pipeline.output import UnifiedOutput
 from src.pipeline.utils import ensure_dir, utc_now, write_json
 from src.tracing_setup import get_tracer
+
+# Constants
+CONF_RUN = "run"
+CONF_ARTIFACTS_DIR = "artifacts_dir"
+DEFAULT_ARTIFACTS_DIR = "logs/runs"
+CONF_RAW_ARCHIVE_DIR = "raw_archive_dir"
+DEFAULT_RAW_ARCHIVE_DIR = "data/archives/raw"
+DEFAULT_USER = "system"
+DEFAULT_ACTION = "manual"
+KEY_METRICS = "metrics"
+ENC_UTF8 = "utf-8"
 
 logger = logging.getLogger(__name__)
 tracer = get_tracer(__name__)
@@ -41,7 +50,7 @@ class UnifiedPipeline:
         self.output = UnifiedOutput(self.config.config, run_id=self.run_id)
 
     def _generate_run_id(self, source_hash: Optional[str]) -> str:
-        strategy = self.config.get("run", "id_strategy", default="timestamp")
+        strategy = self.config.get(CONF_RUN, "id_strategy", default="timestamp")
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         if strategy == "deterministic" and source_hash:
             return f"run_{source_hash[:12]}"
@@ -65,8 +74,8 @@ class UnifiedPipeline:
             if current_run_id in manifest_path.as_posix():
                 continue
             try:
-                payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-                return payload.get("metrics")
+                payload = json.loads(manifest_path.read_text(encoding=ENC_UTF8))
+                return payload.get(KEY_METRICS)
             except (json.JSONDecodeError, OSError) as e:
                 # Handle expected file/parsing errors gracefully by logging a warning
                 # and trying the next available manifest.
@@ -110,15 +119,15 @@ class UnifiedPipeline:
             logger.warning("Pipeline Alerts: %s", alerts)
 
     def execute(
-        self, input_file: Path, user: str = "system", action: str = "manual"
+        self, input_file: Path, user: str = DEFAULT_USER, action: str = DEFAULT_ACTION
     ) -> Dict[str, Any]:
         with tracer.start_as_current_span("pipeline.execute") as span:
             logger.info("Starting unified pipeline execution")
             run_started = utc_now()
 
-            run_cfg = self.config.get("run", default={}) or {}
-            artifacts_dir = Path(run_cfg.get("artifacts_dir", "logs/runs"))
-            raw_archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/raw"))
+            run_cfg = self.config.get(CONF_RUN, default={}) or {}
+            artifacts_dir = Path(run_cfg.get(CONF_ARTIFACTS_DIR, DEFAULT_ARTIFACTS_DIR))
+            raw_archive_dir = Path(run_cfg.get(CONF_RAW_ARCHIVE_DIR, DEFAULT_RAW_ARCHIVE_DIR))
 
             span.set_attribute("pipeline.user", user)
             span.set_attribute("pipeline.action", action)
@@ -305,16 +314,16 @@ class UnifiedPipeline:
 
     def run(self, input_file: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         context = context or {}
-        user = context.get("user", "system")
-        action = context.get("action", "manual")
+        user = context.get("user", DEFAULT_USER)
+        action = context.get("action", DEFAULT_ACTION)
         return self.execute(Path(input_file), user=user, action=action)
 
 
 # Prefect Tasks for Engineering Excellence and Lineage
 @task(name="Ingest Loan Tape", retries=3, retry_delay_seconds=60)
 def ingest_task(pipeline: UnifiedPipeline, input_file: Path) -> IngestionResult:
-    run_cfg = pipeline.config.get("run", default={}) or {}
-    archive_dir = Path(run_cfg.get("raw_archive_dir", "data/archives/raw"))
+    run_cfg = pipeline.config.get(CONF_RUN, default={}) or {}
+    archive_dir = Path(run_cfg.get(CONF_RAW_ARCHIVE_DIR, DEFAULT_RAW_ARCHIVE_DIR))
     return pipeline._ingestion_phase(input_file, archive_dir)
 
 
@@ -353,12 +362,12 @@ def output_task(
 
 
 @flow(name="Abaco Data Pipeline V2")
-def abaco_pipeline_flow(input_file: str, user: str = "system"):
+def abaco_pipeline_flow(input_file: str, user: str = DEFAULT_USER):
     pipeline = UnifiedPipeline()
     input_path = Path(input_file)
 
-    run_cfg = pipeline.config.get("run", default={}) or {}
-    artifacts_dir = Path(run_cfg.get("artifacts_dir", "logs/runs"))
+    run_cfg = pipeline.config.get(CONF_RUN, default={}) or {}
+    artifacts_dir = Path(run_cfg.get(CONF_ARTIFACTS_DIR, DEFAULT_ARTIFACTS_DIR))
 
     # Execute tasks
     ingest_res = ingest_task(pipeline, input_path)
