@@ -77,7 +77,9 @@ class PAR30Calculator(KPICalculator):
             raise ValueError(f"Missing required columns: {', '.join(required)} or 'loan_status'")
 
 
-def calculate_par_30(df: pd.DataFrame) -> Tuple[float, Dict[str, Any]]:
-    """Legacy interface for PAR30 calculation."""
+def calculate_par_30(df: pd.DataFrame) -> Dict[str, Any]:
+    """
+    PAR 30+ % = (Sum of Outstanding Principal for Loans 30+ DPD) / (Total Outstanding Principal)
+    """
     calculator = PAR30Calculator()
     return calculator.calculate(df)

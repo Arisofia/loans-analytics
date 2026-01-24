@@ -229,18 +229,18 @@ with st.sidebar:
     st.title("Data Ingestion")
     data_source = st.radio(
         "Data Source",
-        [" exports (auto)", "Manual upload"],
+        ["Local artifacts (auto)", "Manual upload"],
         index=0,
     )
 
-    if data_source == " exports (auto)":
-        _data = load__exports()
+    if data_source == "Local artifacts (auto)":
+        _data = load_raw_data_exports()
         if _data:
             st.session_state["data"] = _data
             st.session_state["loaded"] = True
-            st.caption(f"Loaded  exports: {', '.join(_data.keys())}")
+            st.caption(f"Loaded artifacts: {', '.join(_data.keys())}")
             if st.button("Generate KPI exports"):
-                with st.spinner("Generating KPI exports from  data..."):
+                with st.spinner("Generating KPI exports from artifacts..."):
                     try:
                         output_path = generate_kpi_exports(_data)
                         st.cache_data.clear()
@@ -249,8 +249,8 @@ with st.sidebar:
                         st.error(f"Failed to generate KPI exports: {exc}")
         else:
             st.session_state["loaded"] = False
-            st.warning("No  exports found in data/archives/_exports.")
-            st.caption("Upload  exports or switch to Manual upload.")
+            st.warning("No data artifacts found in data/raw.")
+            st.caption("Upload data or switch to Manual upload.")
     else:
         uploaded_files = st.file_uploader(
             "Upload Loan Tape CSVs and Financial XLSX",

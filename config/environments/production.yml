@@ -21,7 +21,7 @@ pipeline:
   phases:
     ingestion:
       file:
-        default_path: data/archives/cascade/loan_tape.csv
+        default_path: data/archives/raw/loan_tape.csv
       validation:
         strict: true
     outputs:

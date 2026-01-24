@@ -1,5 +1,5 @@
 """
-Unified output integrations for Figma, Azure, Supabase, Meta, Notion, and other platforms.
+Unified output integrations for Azure, Supabase, Meta, and other platforms.
 
 This module provides a factory pattern for creating and managing output handlers
 for scheduled batch exports (daily/hourly) and real-time KPI/analytics syncs.

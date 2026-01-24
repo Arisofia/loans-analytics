@@ -3,7 +3,6 @@ from typing import Any, Dict, Union
 
 from prefect import flow, get_run_logger, task
 
-from src.agents.tools import send_slack_notification
 from src.pipeline.data_ingestion import IngestionResult, UnifiedIngestion
 from src.pipeline.data_transformation import (TransformationResult,
                                               UnifiedTransformation)
@@ -20,17 +19,13 @@ def ingestion_task(config: Dict[str, Any], input_file: Path) -> IngestionResult:
     logger.info("Starting ingestion for %s", input_file)
     ingestion = UnifiedIngestion(config)
     # Assume file source for now
-    raw_archive_dir = Path(config.get("run", {}).get("raw_archive_dir", "data/archives/cascade"))
+    raw_archive_dir = Path(config.get("run", {}).get("raw_archive_dir", "data/archives/raw"))
     result = ingestion.ingest_file(input_file, archive_dir=raw_archive_dir)
 
     # Integrate Great Expectations
     dq_passed = validate_loan_data(result.df)
     if not dq_passed:
         logger.warning("Great Expectations validation failed!")
-        send_slack_notification(
-            f"⚠️ *Data Quality Alert*: GX validation failed for {input_file}",
-            channel="kpi-compliance",
-        )
 
     # Map to typed container if needed (UnifiedIngestion returns a dataclass-like object)
     if isinstance(result, IngestionResult):

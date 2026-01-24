@@ -50,9 +50,7 @@ class PipelineConfig:
                 "Environment config not found: %s, using base config only", env_config_path
             )
 
-        context = {
-            "portfolio_id": base_config.get("cascade", {}).get("portfolio_id", ""),
-        }
+        context = {}
         return resolve_placeholders(base_config, context)
 
     def _default_config(self) -> Dict[str, Any]:

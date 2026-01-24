@@ -16,7 +16,7 @@ observability:
 pipeline:
   phases:
     ingestion:
-      source: 
+      source: file
       validation:
         strict: true
     outputs:
@@ -25,4 +25,4 @@ pipeline:
       supabase:
         enabled: false
 run:
-  raw_archive_dir: data/archives/_exports/archive
+  raw_archive_dir: data/archives/raw

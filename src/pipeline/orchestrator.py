@@ -94,8 +94,7 @@ class UnifiedPipeline:
 
         if alerts:
             message = f"📢 *Pipeline Alert - Run {self.run_id}*\n\n" + "\n".join(alerts)
-            logger.warning("Triggering Slack alerts: %s", alerts)
-            send_slack_notification(message, channel="kpi-compliance")
+            logger.warning("Pipeline Alerts: %s", alerts)
 
     def execute(
         self, input_file: Path, user: str = "system", action: str = "manual"
