@@ -106,10 +106,22 @@ class OpenAIProvider(BaseLLMProvider):
 class AnthropicProvider(BaseLLMProvider):
     """Anthropic Claude provider."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-5-haiku-20241022"):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: str = "claude-3-5-haiku-20241022",
+    ):
+        """
+        Initialize AnthropicProvider with API key and model.
+        If api_key is not provided, it uses the ANTHROPIC_API_KEY environment variable.
+        Sets up the Anthropic client if the library and key are available.
+        """
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         self.model = model
-        if ANTHROPIC_AVAILABLE and self.api_key:
+        should_create_client = (
+            ANTHROPIC_AVAILABLE and self.api_key
+        )
+        if should_create_client:
             self.client = anthropic.Anthropic(api_key=self.api_key)
         else:
             self.client = None
