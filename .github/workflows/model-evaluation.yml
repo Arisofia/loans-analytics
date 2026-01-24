@@ -1,9 +1,8 @@
 name: Model Evaluation Pipeline
-permissions:
-  contents: read
-  pull-requests: write
 
+# Workflow-level permissions removed — granting permissions only to jobs that need them.
 "on":
+
   push:
     branches: [main, develop]
     paths:
@@ -22,6 +21,9 @@ jobs:
   evaluate-models:
     name: Evaluate ML Models
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
