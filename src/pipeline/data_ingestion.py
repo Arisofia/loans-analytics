@@ -17,6 +17,8 @@ import polars as pl
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+import requests
+
 from src.pipeline.data_validation import DataQualityReport
 from src.pipeline.schema import LoanTapeSchema
 from src.pipeline.utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
