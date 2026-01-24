@@ -10,9 +10,6 @@ name: Automatic Dependency Submission (Python)
   pull_request:
     branches: [main]
 
-permissions:
-  contents: write
-
 jobs:
   submit-pypi:
     runs-on: ubuntu-latest
