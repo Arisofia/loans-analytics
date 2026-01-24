@@ -61,7 +61,7 @@ pip install -r requirements.txt
 - Pandas, Numpy, Altair (data processing & visualization)
 - Azure SDK (credentials, storage, Key Vault)
 - OpenTelemetry (tracing & observability)
-- Anthropic, OpenAI, Google (LLM clients)
+- Anthropic, OpenAI, Google (LanguageModel clients)
 - Supabase (PostgREST client)
 
 ### 3.2 Verify Installation
@@ -95,7 +95,7 @@ nano .env
 ## SUPABASE_URL should be set in your environment, not in this file.
 ## SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY should be set in your environment, not in this file.
 
-# Optional: LLM keys (for AI features)
+# Optional: LanguageModel keys (for AI features)
 # Set ANTHROPIC_API_KEY and OPENAI_API_KEY in your environment or GitHub Secrets. Do not commit them to source control.
 
 # Optional: Azure (for cloud tracing)
@@ -109,7 +109,7 @@ nano .env
 4. Copy `anon public` key → `SUPABASE_ANON_KEY`
 5. Copy `service_role secret` → `SUPABASE_SERVICE_ROLE_KEY`
 
-**Optional: Getting LLM keys**:
+**Optional: Getting LanguageModel keys**:
 
 - **Anthropic**: [https://console.anthropic.com](https://console.anthropic.com) → API Keys
 - **OpenAI**: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
@@ -430,3 +430,38 @@ abaco-loans-analytics/
 - **Supabase issues**: Test connection in Settings tab
 - **Azure deployment**: Refer to [DEPLOYMENT.md](./DEPLOYMENT.md)
 - **Team chat**: Reach out to @data-engineering or @analytics-ops
+
+---
+
+# Local Setup for Azure OpenAI Provider
+
+## 1. Install Python SDKs
+
+```bash
+pip install azure-identity azure-ai-ml azure-core openai python-dotenv
+```
+
+## 2. Add to .env
+
+```
+AZURE_OPENAI_API_KEY=your-azure-openai-api-key
+AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT=your-deployment-name
+AZURE_OPENAI_API_VERSION=2024-02-15-preview
+```
+
+## 3. Test Connectivity
+
+```python
+import os
+import openai
+openai.api_type = "azure"
+openai.api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
+openai.api_version = os.getenv("AZURE_OPENAI_API_VERSION")
+openai.api_key = os.getenv("AZURE_OPENAI_API_KEY")
+response = openai.ChatCompletion.create(
+    engine=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
+    messages=[{"role": "user", "content": "Hello from Azure OpenAI!"}]
+)
+print(response["choices"][0]["message"]["content"])
+```
