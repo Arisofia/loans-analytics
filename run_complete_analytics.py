@@ -92,7 +92,7 @@ def load_real_data():
     # Try to find payment data
     payment_files = [
         base_path / "data" / "abaco" / "real_payment.csv",
-        base_path / "data" / "raw" / "_exports" / "payments.csv",
+        base_path / "data" / "raw" / "payments.csv",
         base_path / "Abaco - Loan Tape_Historic Real Payment_Table (6).csv",
     ]
 
@@ -291,13 +291,6 @@ def main():
         dashboard["delinquency_rate_30_pct"] = dashboard.get("PAR30", {}).get("value", 0.0)
         dashboard["delinquency_rate_90_pct"] = dashboard.get("PAR90", {}).get("value", 0.0)
         dashboard["par_90_ratio_pct"] = dashboard.get("PAR90", {}).get("value", 0.0)
-
-        # Export Figma Dashboard CSV
-        print("📝 Exporting Figma Dashboard CSV...")
-        figma_df = catalog_proc.get_figma_dashboard_df()
-        csv_path = project_root / "exports" / "analytics_facts.csv"
-        figma_df.to_csv(csv_path, index=False)
-        print(f"✅ Figma Dashboard CSV saved to: {csv_path}")
 
         # Export Quarterly Scorecard CSV
         print("📝 Exporting Quarterly Scorecard CSV...")

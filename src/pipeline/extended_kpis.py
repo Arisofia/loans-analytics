@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExtendedKPIGenerator:
-    """Generate nested extended_kpis structures for Figma integration across 3 Tiers."""
+    """Generate nested extended_kpis structures across 3 Tiers."""
 
     def __init__(self, df: pd.DataFrame, metrics: Dict[str, Any]):
         """Initialize with portfolio data and calculated metrics.
@@ -301,13 +301,6 @@ class ExtendedKPIGenerator:
                 }
                 for i in range(23, -1, -1)
             ]
-
-            extended_kpis["figma_dashboard"] = {
-                "last_updated": datetime.now().isoformat(),
-                "data_quality_score": 98,
-                "completeness_pct": 100,
-                "tier_level": self.tier_level,
-            }
 
         if self.tier_level >= 3:
             extended_kpis.update(self._extract_segmentation())

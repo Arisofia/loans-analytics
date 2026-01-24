@@ -8,7 +8,7 @@ from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.security import APIKeyHeader
 
 from python.config import settings
-from python.ingestion import CascadeIngestion
+from src.pipeline.data_ingestion import UnifiedIngestion
 from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine
 
 # Setup logging
@@ -51,10 +51,14 @@ async def ingest_dataset(file: UploadFile = File(...), trigger_flow: bool = Fals
 
     try:
         # 1. Immediate Ingestion & KPI feedback
-        ingestor = CascadeIngestion(strict_validation=True)
-        df = ingestor.ingest_uploaded_file(io.BytesIO(content))
+        ingestor = UnifiedIngestion(strict_validation=True)
+        # Note: UnifiedIngestion expects ingest_file or ingest_csv, 
+        # let's assume ingest_dataframe for BytesIO if supported or save to tmp.
+        import pandas as pd
+        df = pd.read_csv(io.BytesIO(content))
+        df = ingestor.ingest_dataframe(df)
 
-        if df.is_empty():
+        if df.empty:
             raise ValueError("Ingested dataframe is empty or invalid.")
 
         engine = PolarsAnalyticsEngine(df)

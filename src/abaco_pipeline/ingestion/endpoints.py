@@ -12,7 +12,7 @@ class Endpoint:
 
 
 def load_endpoints(cfg: dict) -> list[Endpoint]:
-    endpoints_cfg = (cfg.get("cascade") or {}).get("endpoints") or {}
+    endpoints_cfg = cfg.get("endpoints") or {}
     endpoints: list[Endpoint] = []
     for name, path in endpoints_cfg.items():
         endpoints.append(Endpoint(name=str(name), path=str(path)))

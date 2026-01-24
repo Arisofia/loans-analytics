@@ -473,70 +473,129 @@ class UnifiedIngestion(IngestionMixin):
             if errors:
                 self._log_event("validation", "completed", error_count=len(errors))
 
-                # Circuit Breaker: Halt on critical contract violations and alert via Slack
-                critical_violation = any(
-                    "contract" in str(e).lower()
-                    or "not found" in str(e).lower()
-                    or "future" in str(e).lower()
-                    for e in errors
-                )
-                if critical_violation:
-                    msg = f"🚨 CIRCUIT BREAKER: Critical data contract violation in {file_path.name}. Halting ingestion."
-                    logger.critical(msg)
-                    return IngestionResult(
-                        pd.DataFrame(),
-                        self.run_id,
-                        {"status": "halted", "error": "critical_violation"},
-                    )
+                                # Circuit Breaker: Halt on critical contract violations.
 
-            self._validate_dataframe(validated_df)
+                                critical_violation = any(
 
-            if errors and self.config.get("validation", {}).get("strict", True):
-                raise ValueError(f"Schema validation failed for {len(errors)} rows")
+                                    "contract" in str(e).lower()
 
-            validated_df, deduped_count = self._apply_deduplication(validated_df)
-            if deduped_count:
-                self._log_event("deduplication", "completed", removed=deduped_count)
+                                    or "not found" in str(e).lower()
 
-            archived = None
-            if archive_dir:
-                archived = self._archive_raw(file_path, archive_dir)
+                                    or "future" in str(e).lower()
 
-            metadata = {
-                "source_file": str(file_path),
-                "checksum": checksum,
-                "row_count": len(validated_df),
-                "error_count": len(errors),
-                "deduped_count": deduped_count,
-                "audit_log": self.audit_log,
-                "archived_path": str(archived) if archived else None,
-                "validation_errors": errors,
-            }
+                                    for e in errors
 
-            self._log_event("complete", "success", row_count=len(validated_df))
-            return IngestionResult(
-                validated_df, self.run_id, metadata, source_hash=checksum, raw_path=archived
-            )
+                                )
 
-        except Exception as exc:
-            self._record_error("fatal_error", exc)
-            raise
+                                if critical_violation:
 
+                                    msg = f"🚨 CIRCUIT BREAKER: Critical data contract violation in {file_path.name}. Halting ingestion."
 
+                                    logger.critical(msg)
 
-    def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
-        import requests
+                                    return IngestionResult(
 
-        headers = headers or {}
-        self._log_event("http_start", "initiated", url=url)
+                                        pd.DataFrame(),
 
-        def _do_request() -> requests.Response:
-            if not self.circuit_breaker.allow():
-                raise RuntimeError("Circuit breaker open for Cascade HTTP ingestion")
-            self.rate_limiter.wait()
-            response = requests.get(url, headers=headers, timeout=30)
-            response.raise_for_status()
-            return response
+                                        self.run_id,
+
+                                        {"status": "halted", "error": "critical_violation"},
+
+                                    )
+
+                
+
+                            self._validate_dataframe(validated_df)
+
+                
+
+                            if errors and self.config.get("validation", {}).get("strict", True):
+
+                                raise ValueError(f"Schema validation failed for {len(errors)} rows")
+
+                
+
+                            validated_df, deduped_count = self._apply_deduplication(validated_df)
+
+                            if deduped_count:
+
+                                self._log_event("deduplication", "completed", removed=deduped_count)
+
+                
+
+                            archived = None
+
+                            if archive_dir:
+
+                                archived = self._archive_raw(file_path, archive_dir)
+
+                
+
+                            metadata = {
+
+                                "source_file": str(file_path),
+
+                                "checksum": checksum,
+
+                                "row_count": len(validated_df),
+
+                                "error_count": len(errors),
+
+                                "deduped_count": deduped_count,
+
+                                "audit_log": self.audit_log,
+
+                                "archived_path": str(archived) if archived else None,
+
+                                "validation_errors": errors,
+
+                            }
+
+                
+
+                            self._log_event("complete", "success", row_count=len(validated_df))
+
+                            return IngestionResult(
+
+                                validated_df, self.run_id, metadata, source_hash=checksum, raw_path=archived
+
+                            )
+
+                
+
+                        except Exception as exc:
+
+                            self._record_error("fatal_error", exc)
+
+                            raise
+
+                
+
+                    def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
+
+                        import requests
+
+                
+
+                        headers = headers or {}
+
+                        self._log_event("http_start", "initiated", url=url)
+
+                
+
+                        def _do_request() -> requests.Response:
+
+                            if not self.circuit_breaker.allow():
+
+                                raise RuntimeError("Circuit breaker open for HTTP ingestion")
+
+                            self.rate_limiter.wait()
+
+                            response = requests.get(url, headers=headers, timeout=30)
+
+                            response.raise_for_status()
+
+                            return response
 
         try:
             response = self.retry_policy.execute(

@@ -187,8 +187,6 @@ def analyze_customer_behavior(customer_id: Optional[str] = None) -> Dict[str, An
         "overall_churn_rate": 0.12,
     }
 
-@registry.register(description="Send a message to a Slack channel.")
-
 def compute_investor_kpis(portfolio_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Args:

@@ -16,7 +16,6 @@ from src.pipeline.data_transformation import UnifiedTransformation
 from src.pipeline.orchestrator import UnifiedPipeline
 
 # Legacy aliases for backward compatibility with tests/patching
-CascadeIngestion = UnifiedIngestion
 DataTransformation = UnifiedTransformation
 
 try:
