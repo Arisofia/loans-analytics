@@ -10,7 +10,7 @@ on:
       - 'config/**'
       - 'requirements.txt'
       - 'startup.sh'
-      - '.github/workflows/main_abaco-analytics-dashboard.yml'
+      - '.github/workflows/main_abaco_analytics_dashboard.yml'
   workflow_dispatch:
 
 concurrency:

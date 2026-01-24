@@ -16,12 +16,12 @@ on:
 jobs:
   pr-hygiene:
     if: github.event_name == 'pull_request'
-    uses: ./.github/workflows/pr-assignee-check.yml
+    uses: ./.github/workflows/pr_assignee_check.yml
     secrets: inherit
 
   codex-pr-review:
     if: github.event_name == 'pull_request'
-    uses: ./.github/workflows/codex-pull-request-review.yml
+    uses: ./.github/workflows/codex_pull_request_review.yml
     secrets: inherit
 
   build:

@@ -42,7 +42,7 @@ jobs:
       analytics: ${{ steps.filter.outputs.analytics || steps.force.outputs.analytics }}
       checks: ${{ steps.filter.outputs.checks || steps.force.outputs.checks }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
       - name: Force all checks for schedule/manual runs
         id: force
@@ -54,7 +54,7 @@ jobs:
       - name: Filter paths
         id: filter
         if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
         with:
           filters: |
             web:
@@ -92,13 +92,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 10
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd67 # v4.0.0
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c483a26c91 # v4.2.0
         with:
           node-version: "20"
           cache: pnpm
@@ -107,7 +105,7 @@ jobs:
         # Allow non-frozen install temporarily to tolerate lockfile drift; update pnpm-lock.yaml in a follow-up commit
         run: pnpm -C apps/web install --no-frozen-lockfile
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -127,8 +125,8 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -161,7 +159,7 @@ jobs:
       - name: Upload Demo Output
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: financial-analysis-demo
           path: |
@@ -175,13 +173,11 @@ jobs:
     if: needs.changes.outputs.web == true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 10
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd67 # v4.0.0
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c483a26c91 # v4.2.0
         with:
           node-version: 20
           cache: "pnpm"
@@ -210,8 +206,8 @@ jobs:
     if: needs.changes.outputs.analytics == true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -231,7 +227,7 @@ jobs:
         run: |
           pytest --cov=src --cov-report=xml:coverage-src.xml tests/
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: analytics-coverage
           path: coverage-src.xml

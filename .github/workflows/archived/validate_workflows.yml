@@ -50,7 +50,7 @@ jobs:
           echo "ok"
 
   secrets-presence:
-    uses: ./.github/workflows/reusable-secret-check.yml
+    uses: ./.github/workflows/reusable_secret_check.yml
     with:
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
