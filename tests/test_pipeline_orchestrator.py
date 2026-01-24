@@ -67,8 +67,8 @@ class TestUnifiedPipeline:
             assert "phases" in result
 
     @pytest.fixture
-    def sample_looker_par_file(self):
-        """Create a sample Looker PAR balance file for testing."""
+    def sample__par_file(self):
+        """Create a sample  PAR balance file for testing."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             df = pd.DataFrame(
                 {
@@ -83,16 +83,16 @@ class TestUnifiedPipeline:
             df.to_csv(f, index=False)
             return Path(f.name)
 
-    def test_pipeline_execute_with_looker_source(self, sample_looker_par_file, tmp_path):
-        """Test pipeline execution with Looker data source."""
+    def test_pipeline_execute_with__source(self, sample__par_file, tmp_path):
+        """Test pipeline execution with  data source."""
         config_dict = {
-            "name": "test_looker_pipeline",
+            "name": "test__pipeline",
             "pipeline": {
                 "phases": {
                     "ingestion": {
-                        "source": "looker",
-                        "looker": {
-                            "loans_par_path": str(sample_looker_par_file),
+                        "source": "",
+                        "": {
+                            "loans_par_path": str(sample__par_file),
                             "loans_path": None,
                             "financials_path": None,
                         },
@@ -103,12 +103,12 @@ class TestUnifiedPipeline:
                 }
             },
         }
-        config_file = tmp_path / "looker_config.yml"
+        config_file = tmp_path / "_config.yml"
         with open(config_file, "w") as f:
             yaml.safe_dump(config_dict, f)
 
         pipeline = UnifiedPipeline(config_path=config_file)
-        result = pipeline.execute(sample_looker_par_file)
+        result = pipeline.execute(sample__par_file)
 
         assert "status" in result
         assert "run_id" in result

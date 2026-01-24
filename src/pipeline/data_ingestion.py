@@ -19,7 +19,6 @@ import polars as pl
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from src.agents.tools import send_slack_notification
 from src.pipeline.data_validation import DataQualityReport
 from src.pipeline.schema import LoanTapeSchema
 from src.pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
@@ -291,7 +290,7 @@ class UnifiedIngestion(IngestionMixin):
         }
 
     def _build_retry_policy(self, config: Dict[str, Any]) -> RetryPolicy:
-        retry_cfg = config.get("cascade", {}).get("http", {}).get("retry", {})
+        retry_cfg = config.get("http", {}).get("retry", {})
         return RetryPolicy(
             max_retries=retry_cfg.get("max_retries", 3),
             backoff_seconds=retry_cfg.get("backoff_seconds", 1.0),
@@ -299,11 +298,11 @@ class UnifiedIngestion(IngestionMixin):
         )
 
     def _build_rate_limiter(self, config: Dict[str, Any]) -> RateLimiter:
-        rate_cfg = config.get("cascade", {}).get("http", {}).get("rate_limit", {})
+        rate_cfg = config.get("http", {}).get("rate_limit", {})
         return RateLimiter(max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60))
 
     def _build_circuit_breaker(self, config: Dict[str, Any]) -> CircuitBreaker:
-        cb_cfg = config.get("cascade", {}).get("http", {}).get("circuit_breaker", {})
+        cb_cfg = config.get("http", {}).get("circuit_breaker", {})
         return CircuitBreaker(
             failure_threshold=cb_cfg.get("failure_threshold", 3),
             reset_seconds=cb_cfg.get("reset_seconds", 60),
@@ -425,399 +424,24 @@ class UnifiedIngestion(IngestionMixin):
                     return key
         return None
 
-    def _default_financials_mapping(self) -> Dict[str, List[str]]:
-        return {
-            "cash_balance_usd": [
-                "cash_balance_usd",
-                "cash_balance",
-                "cash_usd",
-                "cash",
-                "cash_on_hand",
-                "efectivo",
-                "caja",
-            ],
-            "total_assets_usd": [
-                "total_assets_usd",
-                "total_assets",
-                "assets_total",
-                "total_activos",
-                "activos_totales",
-            ],
-            "total_liabilities_usd": [
-                "total_liabilities_usd",
-                "total_liabilities",
-                "liabilities_total",
-                "total_pasivos",
-                "pasivos_totales",
-            ],
-            "net_worth_usd": [
-                "net_worth_usd",
-                "net_worth",
-                "equity",
-                "total_equity",
-                "equity_total",
-                "patrimonio",
-                "patrimonio_total",
-            ],
-            "net_income_usd": [
-                "net_income_usd",
-                "net_income",
-                "net_profit",
-                "utilidad_neta",
-                "utilidad",
-                "resultado_neto",
-            ],
-            "runway_months": [
-                "runway_months",
-                "runway",
-                "months_of_runway",
-                "meses_runway",
-            ],
-            "debt_to_equity_ratio": [
-                "debt_to_equity_ratio",
-                "debt_equity_ratio",
-                "debt_to_equity",
-                "deuda_patrimonio",
-            ],
-        }
 
-    def _load_looker_financials(
-        self, financials_path: Optional[Path]
-    ) -> Tuple[Dict[str, Dict[str, float]], Dict[str, Any]]:
-        if not financials_path:
-            return {}, {"files": [], "dates": 0, "metrics": []}
-        path = Path(financials_path)
-        files: List[Path] = []
-        if path.is_dir():
-            files = sorted(
-                [
-                    *path.glob("*.csv"),
-                    *path.glob("*.xlsx"),
-                    *path.glob("*.xls"),
-                ],
-                key=lambda p: p.stat().st_mtime,
-            )
-        elif path.exists():
-            files = [path]
-        if not files:
-            self._log_event("looker_financials", "skipped", reason="no_files_found")
-            return {}, {"files": [], "dates": 0, "metrics": []}
 
-        looker_cfg = self.config.get("looker", {})
-        mapping = looker_cfg.get("financials_metrics") or self._default_financials_mapping()
-        date_candidates = looker_cfg.get(
-            "financials_date_column_candidates",
-            ["reporting_date", "as_of_date", "date", "fecha", "fecha_corte"],
-        )
-        metric_candidates = looker_cfg.get(
-            "financials_metric_column_candidates",
-            ["metric", "account", "line_item", "concept", "concepto", "cuenta", "name"],
-        )
-        value_candidates = looker_cfg.get(
-            "financials_value_column_candidates",
-            ["value", "amount", "balance", "saldo", "total", "monto", "usd"],
-        )
-        format_mode = str(looker_cfg.get("financials_format", "auto")).lower()
-        default_date_strategy = str(
-            looker_cfg.get("financials_default_date_strategy", "file_mtime")
-        ).lower()
 
-        financials_by_date: Dict[str, Dict[str, float]] = {}
-        for file_path in files:
-            try:
-                if file_path.suffix.lower() in {".xlsx", ".xls"}:
-                    financials_df = pd.read_excel(file_path)
-                else:
-                    financials_df = pd.read_csv(file_path)
-            except Exception as exc:
-                self._record_error("looker_financials_read", exc, file=str(file_path))
-                continue
-            if financials_df.empty:
-                continue
 
-            columns = list(financials_df.columns)
-            date_col = self._select_column(columns, date_candidates)
-            metric_col = self._select_column(columns, metric_candidates)
-            value_col = self._select_column(columns, value_candidates)
 
-            if format_mode == "auto":
-                is_long = bool(metric_col and value_col)
-            else:
-                is_long = format_mode == "long"
 
-            if date_col:
-                date_series = pd.to_datetime(financials_df[date_col], errors="coerce").dt.strftime(
-                    "%Y-%m-%d"
-                )
-            else:
-                if default_date_strategy == "file_mtime":
-                    default_date = (
-                        datetime.fromtimestamp(file_path.stat().st_mtime, timezone.utc)
-                        .date()
-                        .isoformat()
-                    )
-                else:
-                    default_date = datetime.now(timezone.utc).date().isoformat()
-                date_series = pd.Series(
-                    [default_date] * len(financials_df), index=financials_df.index
-                )
 
-            if is_long:
-                if not metric_col or not value_col:
-                    self._log_event(
-                        "looker_financials",
-                        "skipped",
-                        reason="missing_metric_or_value",
-                        file=str(file_path),
-                    )
-                    continue
-                values = pd.to_numeric(financials_df[value_col], errors="coerce")
-                for idx, metric_name in financials_df[metric_col].items():
-                    metric_key = self._match_metric(metric_name, mapping)
-                    if not metric_key:
-                        continue
-                    metric_value = values[idx]
-                    if pd.isna(metric_value):
-                        continue
-                    date_value = date_series[idx]
-                    if not date_value or pd.isna(date_value):
-                        continue
-                    metrics = financials_by_date.setdefault(str(date_value), {})
-                    metrics[metric_key] = float(metric_value)
-            else:
-                for metric_key, candidates in mapping.items():
-                    column = self._select_column(columns, candidates)
-                    if not column:
-                        continue
-                    values = pd.to_numeric(financials_df[column], errors="coerce")
-                    for idx, metric_value in values.items():
-                        if pd.isna(metric_value):
-                            continue
-                        date_value = date_series[idx]
-                        if not date_value or pd.isna(date_value):
-                            continue
-                        metrics = financials_by_date.setdefault(str(date_value), {})
-                        metrics[metric_key] = float(metric_value)
 
-        for metrics in financials_by_date.values():
-            assets = metrics.get("total_assets_usd")
-            liabilities = metrics.get("total_liabilities_usd")
-            if (
-                metrics.get("net_worth_usd") is None
-                and assets is not None
-                and liabilities is not None
-            ):
-                metrics["net_worth_usd"] = float(assets) - float(liabilities)
-            net_worth = metrics.get("net_worth_usd")
-            if (
-                metrics.get("debt_to_equity_ratio") is None
-                and liabilities is not None
-                and net_worth not in (None, 0)
-            ):
-                metrics["debt_to_equity_ratio"] = float(liabilities or 0.0) / float(
-                    net_worth or 1.0
-                )
 
-        metrics_set = sorted({key for values in financials_by_date.values() for key in values})
-        meta = {
-            "files": [str(p) for p in files],
-            "dates": len(financials_by_date),
-            "metrics": metrics_set,
-        }
-        if financials_by_date:
-            self._log_event("looker_financials", "loaded", dates=len(financials_by_date))
-        return financials_by_date, meta
-
-    def _apply_financials_to_snapshot(
-        self, df: pd.DataFrame, financials_by_date: Dict[str, Dict[str, float]]
-    ) -> pd.DataFrame:
-        if df.empty:
-            return df
-        metrics = [
-            "cash_balance_usd",
-            "total_assets_usd",
-            "total_liabilities_usd",
-            "net_worth_usd",
-            "net_income_usd",
-            "runway_months",
-            "debt_to_equity_ratio",
-        ]
-        for metric in metrics:
-            df[metric] = df["measurement_date"].map(
-                lambda date, m=metric: financials_by_date.get(str(date), {}).get(m)
-            )
-        if "cash_available_usd" not in df.columns:
-            df["cash_available_usd"] = 0.0
-        if "cash_balance_usd" in df.columns:
-            df["cash_available_usd"] = df["cash_available_usd"].fillna(df["cash_balance_usd"])
-        df["cash_available_usd"] = df["cash_available_usd"].fillna(0.0)
-        return df
-
-    def _looker_par_balances_to_loan_tape(
-        self, df: pd.DataFrame, financials_by_date: Dict[str, Dict[str, float]]
-    ) -> pd.DataFrame:
-        column_map = {col.lower(): col for col in df.columns}
-        reporting_col = column_map.get("reporting_date")
-        outstanding_col = column_map.get("outstanding_balance_usd") or column_map.get(
-            "outstanding_balance"
-        )
-        par_7_col = column_map.get("par_7_balance_usd")
-        par_30_col = column_map.get("par_30_balance_usd")
-        par_60_col = column_map.get("par_60_balance_usd")
-        par_90_col = column_map.get("par_90_balance_usd")
-
-        missing = [
-            name
-            for name, col in {
-                "reporting_date": reporting_col,
-                "outstanding_balance_usd": outstanding_col,
-                "par_7_balance_usd": par_7_col,
-                "par_30_balance_usd": par_30_col,
-                "par_60_balance_usd": par_60_col,
-                "par_90_balance_usd": par_90_col,
-            }.items()
-            if col is None
-        ]
-        if missing:
-            raise ValueError(f"Missing Looker PAR columns: {', '.join(missing)}")
-
-        measurement_date = pd.to_datetime(df[reporting_col], errors="coerce").dt.strftime(
-            "%Y-%m-%d"
-        )
-        total_receivable = pd.to_numeric(df[outstanding_col], errors="coerce")
-        par_7 = pd.to_numeric(df[par_7_col], errors="coerce")
-        par_30 = pd.to_numeric(df[par_30_col], errors="coerce")
-        par_60 = pd.to_numeric(df[par_60_col], errors="coerce")
-        par_90 = pd.to_numeric(df[par_90_col], errors="coerce")
-
-        frame = pd.DataFrame(
-            {
-                "measurement_date": measurement_date,
-                "total_receivable_usd": total_receivable,
-                "dpd_90_plus_usd": par_90,
-                "dpd_60_90_usd": (par_60 - par_90).clip(lower=0),
-                "dpd_30_60_usd": (par_30 - par_60).clip(lower=0),
-                "dpd_7_30_usd": (par_7 - par_30).clip(lower=0),
-                "dpd_0_7_usd": (total_receivable - par_7).clip(lower=0),
-            }
-        ).dropna(subset=["measurement_date"])
-
-        grouped = (
-            frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
-        )
-        grouped["total_eligible_usd"] = grouped["total_receivable_usd"]
-        grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
-        grouped["loan_id"] = grouped["measurement_date"].apply(
-            lambda date: f"looker_snapshot_{str(date).replace('-', '')}"
-        )
-        grouped = self._apply_financials_to_snapshot(grouped, financials_by_date)
-        return grouped
-
-    def _looker_dpd_to_loan_tape(
-        self, df: pd.DataFrame, financials_by_date: Dict[str, Dict[str, float]]
-    ) -> pd.DataFrame:
-        column_map = {col.lower(): col for col in df.columns}
-        dpd_col = column_map.get("dpd") or column_map.get("days_past_due")
-        balance_col = column_map.get("outstanding_balance_usd") or column_map.get(
-            "outstanding_balance"
-        )
-        if not dpd_col or not balance_col:
-            raise ValueError("Missing Looker loan columns: dpd, outstanding_balance")
-
-        looker_cfg = self.config.get("looker", {})
-        measurement_col = looker_cfg.get("measurement_date_column")
-        strategy = looker_cfg.get("measurement_date_strategy", "today")
-
-        measurement_date = None
-        if measurement_col:
-            resolved = self._select_column(list(df.columns), [measurement_col])
-            if resolved:
-                measurement_date = pd.to_datetime(df[resolved], errors="coerce").dt.strftime(
-                    "%Y-%m-%d"
-                )
-        if measurement_date is None:
-            if strategy == "max_disburse_date":
-                resolved = self._select_column(
-                    list(df.columns), ["disburse_date", "disbursement_date"]
-                )
-            elif strategy == "max_maturity_date":
-                resolved = self._select_column(list(df.columns), ["maturity_date", "loan_end_date"])
-            else:
-                resolved = None
-            if resolved:
-                max_date = pd.to_datetime(df[resolved], errors="coerce").max()
-                date_value = max_date.date().isoformat() if pd.notna(max_date) else None
-            else:
-                date_value = None
-            if not date_value:
-                date_value = datetime.now(timezone.utc).date().isoformat()
-            measurement_date = pd.Series([date_value] * len(df), index=df.index)
-
-        balance = pd.to_numeric(df[balance_col], errors="coerce").fillna(0.0)
-        dpd = pd.to_numeric(df[dpd_col], errors="coerce").fillna(0.0)
-
-        frame = pd.DataFrame(
-            {
-                "measurement_date": measurement_date,
-                "total_receivable_usd": balance,
-                "dpd_90_plus_usd": balance.where(dpd >= 90, 0.0),
-                "dpd_60_90_usd": balance.where((dpd >= 60) & (dpd < 90), 0.0),
-                "dpd_30_60_usd": balance.where((dpd >= 30) & (dpd < 60), 0.0),
-                "dpd_7_30_usd": balance.where((dpd >= 7) & (dpd < 30), 0.0),
-                "dpd_0_7_usd": balance.where(dpd < 7, 0.0),
-            }
-        ).dropna(subset=["measurement_date"])
-
-        grouped = (
-            frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
-        )
-        grouped["total_eligible_usd"] = grouped["total_receivable_usd"]
-        grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
-        grouped["loan_id"] = grouped["measurement_date"].apply(
-            lambda date: f"looker_snapshot_{str(date).replace('-', '')}"
-        )
-        grouped = self._apply_financials_to_snapshot(grouped, financials_by_date)
-        return grouped
 
     def ingest(
         self,
         input_file: Path,
         archive_dir: Optional[Path] = None,
-        cascade_config: Optional[Dict[str, Any]] = None,
     ) -> IngestionResult:
         """Execute ingestion based on configuration source."""
         source = self.config.get("source", "file")
         logger.info("Starting ingestion from source: %s", source)
-
-        if source == "cascade_http":
-            cascade_cfg = cascade_config or {}
-            base_url = cascade_cfg.get("base_url", "")
-            endpoint = cascade_cfg.get("endpoints", {}).get("loan_tape", "")
-            token_env = cascade_cfg.get("auth", {}).get("token_secret")
-            token_value = os.getenv(token_env, "") if token_env else ""
-            headers = {"Authorization": f"Bearer {token_value}"} if token_value else {}
-            url = f"{base_url}{endpoint}"
-            return self.ingest_http(url, headers=headers)
-
-        if source == "looker":
-            looker_cfg = self.config.get("looker", {}) or {}
-            loans_par_path = looker_cfg.get("loans_par_path")
-            loans_fallback_path = looker_cfg.get("loans_path")
-            selected_path = None
-            if loans_par_path:
-                candidate = Path(loans_par_path)
-                if candidate.exists():
-                    selected_path = candidate
-            if selected_path is None and loans_fallback_path:
-                selected_path = Path(loans_fallback_path)
-            if selected_path is None:
-                selected_path = input_file
-            financials_path = looker_cfg.get("financials_path")
-            return self.ingest_looker(
-                selected_path,
-                financials_path=Path(financials_path) if financials_path else None,
-                archive_dir=archive_dir,
-            )
 
         # Default: File source
         return self.ingest_file(input_file, archive_dir=archive_dir)
@@ -859,10 +483,6 @@ class UnifiedIngestion(IngestionMixin):
                 if critical_violation:
                     msg = f"🚨 CIRCUIT BREAKER: Critical data contract violation in {file_path.name}. Halting ingestion."
                     logger.critical(msg)
-                    try:
-                        send_slack_notification(msg, channel="#data-engineering-alerts")
-                    except Exception as slack_err:
-                        logger.error("Failed to send Slack alert: %s", slack_err)
                     return IngestionResult(
                         pd.DataFrame(),
                         self.run_id,
@@ -902,98 +522,7 @@ class UnifiedIngestion(IngestionMixin):
             self._record_error("fatal_error", exc)
             raise
 
-    def ingest_looker(
-        self,
-        loans_path: Path,
-        financials_path: Optional[Path] = None,
-        archive_dir: Optional[Path] = None,
-    ) -> IngestionResult:
-        self._log_event(
-            "looker_start",
-            "initiated",
-            loans_path=str(loans_path),
-            financials_path=str(financials_path) if financials_path else None,
-        )
-        if not loans_path.exists():
-            self._log_event("looker_file_check", "failed", error="Loans file not found")
-            raise FileNotFoundError(f"Looker loans file not found: {loans_path}")
 
-        checksum = hash_file(loans_path)
-        try:
-            df = pd.read_csv(loans_path)
-            financials_by_date, financials_meta = self._load_looker_financials(financials_path)
-
-            columns_lower = {col.lower() for col in df.columns}
-            has_par = {
-                "reporting_date",
-                "par_7_balance_usd",
-                "par_30_balance_usd",
-                "par_60_balance_usd",
-                "par_90_balance_usd",
-            }.issubset(columns_lower)
-            has_dpd = (
-                {"dpd", "outstanding_balance"}.issubset(columns_lower)
-                or {
-                    "dpd",
-                    "outstanding_balance_usd",
-                }.issubset(columns_lower)
-                or {"days_past_due", "outstanding_balance"}.issubset(columns_lower)
-            )
-
-            if has_par:
-                normalized_df = self._looker_par_balances_to_loan_tape(df, financials_by_date)
-                source_mode = "looker_par_balances"
-            elif has_dpd:
-                normalized_df = self._looker_dpd_to_loan_tape(df, financials_by_date)
-                source_mode = "looker_loans"
-            else:
-                raise ValueError(
-                    "Looker loans file missing required PAR or DPD columns for conversion"
-                )
-            if normalized_df.empty:
-                raise ValueError("Looker loan tape conversion produced no rows")
-
-            schema_errors = self._validate_schema(normalized_df)
-            validated_df, record_errors = self._validate_records(normalized_df)
-            errors = schema_errors + record_errors
-            if errors:
-                self._log_event("validation", "completed", error_count=len(errors))
-
-            self._validate_dataframe(validated_df)
-
-            if errors and self.config.get("validation", {}).get("strict", True):
-                raise ValueError(f"Schema validation failed for {len(errors)} rows")
-
-            validated_df, deduped_count = self._apply_deduplication(validated_df)
-            if deduped_count:
-                self._log_event("deduplication", "completed", removed=deduped_count)
-
-            archived = None
-            if archive_dir:
-                archived = self._archive_raw(loans_path, archive_dir)
-
-            metadata = {
-                "source_looker_loans": str(loans_path),
-                "financials_path": str(financials_path) if financials_path else None,
-                "source_mode": source_mode,
-                "checksum": checksum,
-                "row_count": len(validated_df),
-                "error_count": len(errors),
-                "deduped_count": deduped_count,
-                "audit_log": self.audit_log,
-                "archived_path": str(archived) if archived else None,
-                "validation_errors": errors,
-                "financials": financials_meta,
-            }
-
-            self._log_event("looker_complete", "success", row_count=len(validated_df))
-            return IngestionResult(
-                validated_df, self.run_id, metadata, source_hash=checksum, raw_path=archived
-            )
-
-        except Exception as exc:
-            self._record_error("looker_fatal_error", exc)
-            raise
 
     def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
         import requests

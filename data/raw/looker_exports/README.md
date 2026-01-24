@@ -1,12 +1,12 @@
-# Looker Studio Datasets
+#  Studio Datasets
 
-This directory contains loan tape data exported from Looker Studio dashboard.
+This directory contains loan tape data exported from  Studio dashboard.
 
 ## Dataset Description
 
-The Looker Studio report contains comprehensive loan portfolio analytics:
+The  Studio report contains comprehensive loan portfolio analytics:
 
-- **Dashboard URL**: Obtain the production Looker Studio link from the team's secure analytics documentation or access management system (report name: "Loan Portfolio Analytics").
+- **Dashboard URL**: Obtain the production  Studio link from the team's secure analytics documentation or access management system (report name: "Loan Portfolio Analytics").
 
 ## Files (To be uploaded)
 
@@ -15,36 +15,36 @@ Three primary datasets should be placed in this directory using standardized fil
 ### 1. loan_data.csv
 
 - **Description**: Core loan tape data including loan amounts, rates, terms, and portfolio metrics
-- **Source**: Looker Studio - Loan Data Table
+- **Source**:  Studio - Loan Data Table
 - **Update Frequency**: Daily
 
 ### 2. customer_data.csv
 
 - **Description**: Customer information and demographics
-- **Source**: Looker Studio - Customer Data Table
+- **Source**:  Studio - Customer Data Table
 - **Update Frequency**: Daily
 
 ### 3. historic_payment_data.csv
 
 - **Description**: Historical payment records and transaction data
-- **Source**: Looker Studio - Historic Payment Table
+- **Source**:  Studio - Historic Payment Table
 - **Update Frequency**: Daily
 
-### Looker Studio export filenames
+###  Studio export filenames
 
-Looker Studio exports may use tool-generated filenames following the pattern:
+ Studio exports may use tool-generated filenames following the pattern:
 
 - `Abaco-Loan-Tape_[Category]_Table-6.csv`
 
-These export names are artifacts of Looker Studio and may change if the report is modified. The table below documents the mapping between the export filenames and the standardized filenames used in this repository:
+These export names are artifacts of  Studio and may change if the report is modified. The table below documents the mapping between the export filenames and the standardized filenames used in this repository:
 
-| Looker export filename                               | Standardized filename         |
+|  export filename                               | Standardized filename         |
 | ---------------------------------------------------- | ----------------------------- |
 | `Abaco-Loan-Tape_Loan-Data_Table-6.csv`              | `loan_data.csv`               |
 | `Abaco-Loan-Tape_Customer-Data_Table-6.csv`          | `customer_data.csv`           |
 | `Abaco-Loan-Tape_Historic-Real-Payment_Table-6.csv`  | `historic_payment_data.csv`   |
 
-When adding data to this directory, you may need to rename the exported CSVs from their Looker names to the standardized filenames above.
+When adding data to this directory, you may need to rename the exported CSVs from their  names to the standardized filenames above.
 
 ## Usage
 
@@ -76,7 +76,7 @@ The following metadata is required by the analytics data governance standards. F
 
 ### Data retention policy
 
-- Retain daily Looker exports in this directory for **24 months** unless a stricter retention period is mandated by `docs/analytics/governance.md` or legal/compliance requirements.
+- Retain daily  exports in this directory for **24 months** unless a stricter retention period is mandated by `docs/analytics/governance.md` or legal/compliance requirements.
 - Older files should be purged on at least a **monthly** basis by the data platform operations process.
 - Downstream systems must not rely on files older than the documented retention window.
 
@@ -87,11 +87,11 @@ The following metadata is required by the analytics data governance standards. F
   - Customer relationship management (CRM) / customer master data (customer profiles and demographics)
 - **Transformation path**:
   - Source data is ingested into the central analytics data warehouse according to the processes defined in `docs/analytics/governance.md`.
-  - Curated warehouse views are exposed to Looker Studio dashboards.
-  - These CSV files are exported from those Looker Studio dashboards and placed into this directory without manual modification.
+  - Curated warehouse views are exposed to  Studio dashboards.
+  - These CSV files are exported from those  Studio dashboards and placed into this directory without manual modification.
 - **Prohibited actions**:
   - Do **not** manually edit these CSVs after export.
-  - Any required corrections must be made upstream (source systems, warehouse models, or Looker definitions) and then re-exported.
+  - Any required corrections must be made upstream (source systems, warehouse models, or  definitions) and then re-exported.
 
 ### Freshness SLA
 
@@ -138,6 +138,6 @@ The following validations should be applied before files are considered ready fo
 
 ## Notes
 
-- Files are CSV format exported from Looker Studio.
+- Files are CSV format exported from  Studio.
 - Data contains production loan portfolio information and should be handled according to internal data classification and handling standards.
 - Upload CSV files directly to this directory via GitHub CLI or desktop client; do not modify files after upload.

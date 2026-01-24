@@ -69,9 +69,9 @@
   },
   "metadata": {
     "ingestion": {
-      "source_looker_loans": "data/raw/looker_exports/loan_par_balances.csv",
+      "source__loans": "data/raw/_exports/loan_par_balances.csv",
       "financials_path": "data/raw/financial_statements",
-      "source_mode": "looker_par_balances",
+      "source_mode": "_par_balances",
       "checksum": "2466a2d12357a052fc47869062ec01a0afb33ea928b65f35a20b0064c9c6786f",
       "row_count": 36,
       "error_count": 0,
@@ -79,15 +79,15 @@
       "audit_log": [
         {
           "run_id": "ingest_9345ea57d75e",
-          "event": "looker_start",
+          "event": "_start",
           "status": "initiated",
           "timestamp": "2026-01-22T10:34:15.112686+00:00",
-          "loans_path": "data/raw/looker_exports/loan_par_balances.csv",
+          "loans_path": "data/raw/_exports/loan_par_balances.csv",
           "financials_path": "data/raw/financial_statements"
         },
         {
           "run_id": "ingest_9345ea57d75e",
-          "event": "looker_financials",
+          "event": "_financials",
           "status": "skipped",
           "timestamp": "2026-01-22T10:34:15.139915+00:00",
           "reason": "no_files_found"
@@ -97,12 +97,12 @@
           "event": "archive",
           "status": "success",
           "timestamp": "2026-01-22T10:34:15.166105+00:00",
-          "file": "data/raw/looker_exports/loan_par_balances.csv",
+          "file": "data/raw/_exports/loan_par_balances.csv",
           "archived": "data/raw/warehouse/loan_par_balances.csv"
         },
         {
           "run_id": "ingest_9345ea57d75e",
-          "event": "looker_complete",
+          "event": "_complete",
           "status": "success",
           "timestamp": "2026-01-22T10:34:15.166457+00:00",
           "row_count": 36

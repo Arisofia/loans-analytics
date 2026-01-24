@@ -25,7 +25,7 @@ def load_business_rules():
 
 def load_and_analyze_loans():
     """Load loan data and generate comprehensive analysis."""
-    data_path = Path(__file__).parent / "data" / "raw" / "looker_exports" / "loans.csv"
+    data_path = Path(__file__).parent / "data" / "raw" / "_exports" / "loans.csv"
 
     df = pd.read_csv(data_path)
 

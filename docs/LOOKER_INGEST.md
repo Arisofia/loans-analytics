@@ -1,16 +1,16 @@
-# Looker + EEFF Ingest (Cascade Disabled)
+#  + EEFF Ingest (Cascade Disabled)
 
-This workflow runs the unified pipeline using Looker exports while Cascade ingestion is offline.
+This workflow runs the unified pipeline using  exports while Cascade ingestion is offline.
 
 ## Required Files
 
-- `data/archives/looker_exports/loan_par_balances.csv` (preferred PAR snapshot)
-- `data/archives/looker_exports/loans.csv` (fallback when PAR balances are missing)
+- `data/archives/_exports/loan_par_balances.csv` (preferred PAR snapshot)
+- `data/archives/_exports/loans.csv` (fallback when PAR balances are missing)
 - `data/archives/financial_statements/*` (optional EEFF exports; CSV/XLSX/XLS)
 
-## Looker Mapping (PAR Balances)
+##  Mapping (PAR Balances)
 
-The ingestion layer converts Looker PAR balances into the loan tape schema expected by the pipeline:
+The ingestion layer converts  PAR balances into the loan tape schema expected by the pipeline:
 
 - `reporting_date` -> `measurement_date`
 - `outstanding_balance_usd` -> `total_receivable_usd`
@@ -31,7 +31,7 @@ reporting_date,outstanding_balance_usd,par_0_balance_usd,par_7_balance_usd,par_3
 
 ## EEFF Mapping (Financial Statements)
 
-EEFF files are optional. If present, the ingestion step maps financial statement metrics into the snapshot using the `pipeline.phases.ingestion.looker.financials_*` settings in `config/pipeline.yml`.
+EEFF files are optional. If present, the ingestion step maps financial statement metrics into the snapshot using the `pipeline.phases.ingestion..financials_*` settings in `config/pipeline.yml`.
 
 Supported metrics (canonical keys):
 
@@ -73,10 +73,10 @@ If no date column exists, the pipeline uses the file modification date (configur
 pipeline:
   phases:
     ingestion:
-      source: looker
-      looker:
-        loans_par_path: data/archives/looker_exports/loan_par_balances.csv
-        loans_path: data/archives/looker_exports/loans.csv  # fallback
+      source: 
+      :
+        loans_par_path: data/archives/_exports/loan_par_balances.csv
+        loans_path: data/archives/_exports/loans.csv  # fallback
         financials_path: data/archives/financial_statements/
         financials_format: auto  # auto|wide|long
         financials_date_column: reporting_date
@@ -91,8 +91,8 @@ In `config/environments/development.yml`:
 pipeline:
   phases:
     ingestion:
-      looker:
-        loans_par_path: ${DATA_DIR:-data/raw}/looker_exports/loan_par_balances.csv
+      :
+        loans_par_path: ${DATA_DIR:-data/raw}/_exports/loan_par_balances.csv
         financials_path: ${DATA_DIR:-data/raw}/financial_statements/
 ```
 
@@ -102,7 +102,7 @@ pipeline:
 
 ```bash
 PIPELINE_ENV=development python scripts/run_data_pipeline.py \
-  --input data/raw/looker_exports/loan_par_balances.csv
+  --input data/raw/_exports/loan_par_balances.csv
 ```
 
 ### Override PAR Path
@@ -117,7 +117,7 @@ python scripts/run_data_pipeline.py \
 
 ```bash
 python scripts/run_data_pipeline.py \
-  --input data/raw/looker_exports/loan_par_balances.csv \
+  --input data/raw/_exports/loan_par_balances.csv \
   --dry-run
 ```
 
@@ -125,20 +125,20 @@ This validates:
 
 - ✓ File paths exist
 - ✓ CSV schema matches expectations
-- ✓ Looker columns map to pipeline schema
+- ✓  columns map to pipeline schema
 - ✓ Financial metrics are recognized
 
 ## Ingestion Architecture
 
-The `ingest_looker()` function in `src/pipeline/ingestion.py`:
+The `ingest_()` function in `src/pipeline/ingestion.py`:
 
 1. **Validate PAR file** — Check for required columns, null percentages, date range
-2. **Map PAR columns** — Convert Looker naming to pipeline schema (`par_90_balance_usd` → `dpd_90_plus_usd`)
+2. **Map PAR columns** — Convert  naming to pipeline schema (`par_90_balance_usd` → `dpd_90_plus_usd`)
 3. **Load financial statements** (if provided)
    - Auto-detect format (wide vs. long) from structure
    - Map financial metric names to canonical keys
    - Merge with PAR snapshot on `measurement_date`
-4. **Archive raw files** — Copy to `data/archive/looker/{date}/` with metadata
+4. **Archive raw files** — Copy to `data/archive//{date}/` with metadata
 5. **Emit snapshot** — Output normalized loan tape ready for staging layer
 
 ## Ingestion Metadata (Legacy Helpers)
@@ -167,7 +167,7 @@ If both missing:
 
 ```text
 [ERROR] Neither loan_par_balances.csv nor loans.csv found
-[ERROR] Ingestion failed; check config.pipeline.phases.ingestion.looker.loans_par_path
+[ERROR] Ingestion failed; check config.pipeline.phases.ingestion..loans_par_path
 ```
 
 **Solution**: Ensure files exist or verify paths in `config/pipeline.yml`.
@@ -204,7 +204,7 @@ To fail on nulls:
 pipeline:
   phases:
     ingestion:
-      looker:
+      :
         financials_null_policy: error  # fail if any metric missing
 ```
 
@@ -213,7 +213,7 @@ pipeline:
 After successful ingestion:
 
 - **Loan tape** — Normalized snapshot at `data/staging/loan_tape/{date}/`
-- **Archive** — Raw files preserved at `data/archive/looker/{date}/`
+- **Archive** — Raw files preserved at `data/archive//{date}/`
 - **Metadata** — Ingestion log with row counts, null stats, schema validation results
 
 Example output structure:
@@ -226,7 +226,7 @@ data/
 │           ├── snapshot.parquet  (normalized loans with dpd bands)
 │           └── metadata.json      (schema, row count, validation results)
 ├── archive/
-│   └── looker/
+│   └── /
 │       └── 2025-12-31/
 │           ├── loan_par_balances.csv  (original)
 │           ├── financial_statements.xlsx
@@ -235,10 +235,10 @@ data/
 
 ## Next Steps
 
-After Looker ingestion completes:
+After  ingestion completes:
 
 1. **Validate staging** — Run `python scripts/validate_staging.py` to check data quality
-2. **Transform to marts** — Execute dbt models: `dbt run --select tag:looker_dependent`
+2. **Transform to marts** — Execute dbt models: `dbt run --select tag:_dependent`
 3. **Update dashboards** — Refresh Streamlit dashboard to show new KPIs
 4. **Monitor freshness** — Set up alerts if new PAR files don't arrive by expected time
 5. **Plan Cascade migration** — Once Cascade comes online, gradual cutover to `ingest_cascade()` source

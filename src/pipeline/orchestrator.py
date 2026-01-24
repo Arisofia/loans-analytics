@@ -6,7 +6,6 @@ from typing import Any, Dict, Optional
 
 from prefect import flow, task
 
-from src.agents.tools import send_slack_notification
 from src.compliance import build_compliance_report, write_compliance_report
 from src.pipeline.config import PipelineConfig
 from src.pipeline.data_ingestion import IngestionResult, UnifiedIngestion

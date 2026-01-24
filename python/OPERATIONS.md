@@ -70,7 +70,7 @@ python3 generate_executive_report.py
 Place CSV exports in the following directories for automated pick-up:
 
 - `data/abaco/`: Core loan tapes and payment records.
-- `data/raw/looker_exports/`: Direct exports from Looker.
+- `data/raw/_exports/`: Direct exports from .
 
 ---
 

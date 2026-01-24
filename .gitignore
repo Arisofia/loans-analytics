@@ -134,3 +134,22 @@ logs/runs/run_*/
 .rollback/
 .zencoder/
 .zenflow/
+
+# ============================================
+# Temporary run data (should not be committed)
+# ============================================
+data/archives/raw/tmp*.csv
+data/metrics/run_*.csv
+data/metrics/run_*.parquet
+data/metrics/run_*_metrics.json
+data/metrics/timeseries/run_*.parquet
+logs/runs/run_*/
+
+# Integration backups (cleanup artifacts)
+*.cleanup-backup
+*.backup
+
+# Hidden tool folders
+.rollback/
+.zencoder/
+.zenflow/

@@ -54,9 +54,9 @@
   },
   "metadata": {
     "ingestion": {
-      "source_looker_loans": "/tmp/tmpxk8_jc7_.csv",
+      "source__loans": "/tmp/tmpxk8_jc7_.csv",
       "financials_path": null,
-      "source_mode": "looker_par_balances",
+      "source_mode": "_par_balances",
       "checksum": "a6dcf6ee6503fbcadc082745a62824f56dd6b969ab994073b153889fc7bc9556",
       "row_count": 2,
       "error_count": 0,
@@ -64,7 +64,7 @@
       "audit_log": [
         {
           "run_id": "ingest_68f511083344",
-          "event": "looker_start",
+          "event": "_start",
           "status": "initiated",
           "timestamp": "2026-01-22T11:11:14.645696+00:00",
           "loans_path": "/tmp/tmpxk8_jc7_.csv"
@@ -79,7 +79,7 @@
         },
         {
           "run_id": "ingest_68f511083344",
-          "event": "looker_complete",
+          "event": "_complete",
           "status": "success",
           "timestamp": "2026-01-22T11:11:14.652905+00:00",
           "row_count": 2
