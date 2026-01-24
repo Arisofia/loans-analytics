@@ -41,18 +41,19 @@ class PerformanceStressTest:
             "summary": {},
         }
         self.process = psutil.Process(os.getpid())
+        # Use a per-instance RNG (Generator) for reproducible and thread-safe randomness
+        self.rng = np.random.default_rng(42)
 
     def create_test_dataset(self, size: int) -> pd.DataFrame:
-        """Create realistic test dataset"""
-        np.random.seed(42)
+        """Create realistic test dataset using a per-instance RNG (Generator)"""
         return pd.DataFrame(
             {
-                "dpd_30_60_usd": np.random.uniform(0, 20000, size),
-                "dpd_60_90_usd": np.random.uniform(0, 10000, size),
-                "dpd_90_plus_usd": np.random.uniform(0, 5000, size),
-                "total_receivable_usd": np.random.uniform(100000, 1500000, size),
-                "cash_available_usd": np.random.uniform(1000, 150000, size),
-                "total_eligible_usd": np.random.uniform(50000, 1200000, size),
+                "dpd_30_60_usd": self.rng.uniform(0, 20000, size=size),
+                "dpd_60_90_usd": self.rng.uniform(0, 10000, size=size),
+                "dpd_90_plus_usd": self.rng.uniform(0, 5000, size=size),
+                "total_receivable_usd": self.rng.uniform(100000, 1500000, size=size),
+                "cash_available_usd": self.rng.uniform(1000, 150000, size=size),
+                "total_eligible_usd": self.rng.uniform(50000, 1200000, size=size),
             }
         )
 

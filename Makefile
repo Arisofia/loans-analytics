@@ -117,11 +117,7 @@ vscode-envfile-info:
 # ------------------------------------------------------------------------------
 
 clean:
-	rm -rf __pycache__ .pytest_cache
-	find . -name "*.pyc" -delete
-	find . -name "*.pyo" -delete
-	rm -rf .coverage htmlcov
-	find . -type d -name ".mypy_cache" -exec rm -rf {} +
+	./scripts/cleanup.sh
 
 # ------------------------------------------------------------------------------
 # Help
