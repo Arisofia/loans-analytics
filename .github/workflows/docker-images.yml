@@ -12,10 +12,6 @@ name: Build & Push Docker Images
       - ".github/workflows/docker-images.yml"
   workflow_dispatch:
 
-permissions:
-  contents: read
-  packages: write
-
 env:
   REGISTRY: ghcr.io
   IMAGE_WEB: ${{ github.repository }}-web
@@ -34,6 +30,9 @@ jobs:
       AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
 
   build-and-push:
+    permissions:
+      contents: read
+      packages: write
     runs-on: ubuntu-latest
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
