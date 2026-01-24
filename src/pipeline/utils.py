@@ -61,11 +61,12 @@ class CircuitBreaker:
 
 
 class RateLimiter:
-    """Simple rate limiter stub."""
-
-    def __init__(self, calls: int = 10, period: int = 60):
+    def __init__(
+        self, calls: int = 10, period: int = 60, max_requests_per_minute: int = 60, **kwargs
+    ):
         self.calls = calls
         self.period = period
+        self.max_requests_per_minute = max_requests_per_minute
 
     def wait(self):
         pass

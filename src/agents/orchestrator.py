@@ -16,12 +16,12 @@ from sqlalchemy import (
     Text,
     create_engine,
 )
-from sqlalchemy.orm import declarative_base, sessionmaker  # noqa: E402
 
-from src.agents.agent import Agent  # noqa: E402
-from src.agents.llm_provider import MockLanguageModel  # noqa: E402
-from src.agents.tools import registry as global_registry  # noqa: E402
-from src.tracing_setup import get_tracer  # noqa: E402
+from sqlalchemy.orm import declarative_base, sessionmaker
+from src.agents.agent import Agent
+from src.agents.llm_provider import MockLanguageModel
+from src.agents.tools import registry as global_registry
+from src.tracing_setup import get_tracer
 
 tracer = get_tracer(__name__)
 

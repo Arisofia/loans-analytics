@@ -23,7 +23,7 @@ def _enrich_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     payload.setdefault("kpi_def_version", "v1")
 
     try:
-        sha = subprocess.check_output(["git", "rev-parse", "HEAD"])  # type: ignore
+        sha = subprocess.check_output(["git", "rev-parse", "HEAD"])
         payload["git_sha"] = sha.decode().strip()
     except Exception:
         payload["git_sha"] = "unknown"

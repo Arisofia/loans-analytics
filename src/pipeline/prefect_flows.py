@@ -4,7 +4,7 @@ from pathlib import Path
 import polars as pl
 from prefect import flow, task
 
-from src.pipeline.data_validation import DataValidator
+from src.pipeline.data_validation import DataValidator  # type: ignore  # type: ignore
 from src.pipeline.event_store import EventStore
 from src.pipeline.polars_pipeline import PolarsPipeline
 from src.utils.data_normalization import COLUMN_MAPPING

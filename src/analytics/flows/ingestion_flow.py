@@ -12,7 +12,7 @@ from pathlib import Path  # noqa: E402
 
 import polars as pl  # noqa: E402
 
-from python.ingestion import AbacoIngestion  # noqa: E402
+from python.ingestion import AbacoIngestion  # type: ignore # noqa: E402  # type: ignore # noqa: E402
 from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine  # noqa: E402
 
 
@@ -73,7 +73,7 @@ def publish_ingestion_summary(kpis: dict, row_count: int, file_path: str):
 **Source File:** `{file_path}`
 **Rows Processed:** {row_count}
 
-## 📈 Core KPIs
+# # 📈 Core KPIs
 | Metric | Value |
 | :--- | :--- |
 | Delinquency Rate | {kpis.get('delinquency_rate', 0):.2f}% |
@@ -81,7 +81,7 @@ def publish_ingestion_summary(kpis: dict, row_count: int, file_path: str):
 | Avg LTV | {kpis.get('avg_ltv', 0):.1f}% |
 | Avg DTI | {kpis.get('avg_dti', 0):.1f}% |
 
-## 🛡️ Integrity Status
+# # 🛡️ Integrity Status
 - ✅ Schema Validation: Passed
 - ✅ Contract Enforcement: Active
 - ✅ Lineage: Tracked
