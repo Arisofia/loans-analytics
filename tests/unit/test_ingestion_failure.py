@@ -1,5 +1,4 @@
 import stat
-import pytest
 from src.pipeline.data_ingestion import UnifiedIngestion
 
 def test_archive_failure_records_error(tmp_path):

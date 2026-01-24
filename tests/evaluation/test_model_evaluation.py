@@ -11,14 +11,18 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 class TestModelEvaluation:
     """Test suite for model evaluation metrics and thresholds."""
 
+    @pytest.fixture(scope="class")
+    def rng(self):
+        """Create a NumPy Generator for reproducible testing."""
+        return np.random.default_rng(42)
+
     @pytest.fixture
-    def sample_predictions(self):
+    def sample_predictions(self, rng):
         """Generate sample predictions for testing."""
-        np.random.seed(42)
         return {
-            "y_true": np.random.randint(0, 2, 1000),
-            "y_pred": np.random.randint(0, 2, 1000),
-            "y_proba": np.random.rand(1000),
+            "y_true": rng.integers(0, 2, 1000),
+            "y_pred": rng.integers(0, 2, 1000),
+            "y_proba": rng.random(1000),
         }
 
     @pytest.fixture
@@ -142,10 +146,10 @@ class TestModelEvaluation:
             ("roc_auc", (0, 1)),
         ],
     )
-    def test_metric_ranges(self, metric_name, expected_range):
+    def test_metric_ranges(self, metric_name, expected_range, rng):
         """Test that metrics fall within expected ranges."""
         # Generate random metric value for testing
-        metric_value = np.random.rand()
+        metric_value = rng.random()
         min_val, max_val = expected_range
 
         assert min_val <= metric_value <= max_val, f"{metric_name} outside expected range"

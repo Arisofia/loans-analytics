@@ -101,6 +101,7 @@ fi
 
 if [ "$HAS_ISSUES" = false ]; then
   success "Workflow scan completed with no major issues found."
+
 fi
 
 # 5. Commit and Push Changes

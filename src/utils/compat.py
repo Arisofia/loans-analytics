@@ -5,8 +5,10 @@ from typing import Optional
 try:
     from requests.exceptions import RequestsDependencyWarning
 except ImportError:
+
     class RequestsDependencyWarning(Warning):
         pass
+
 
 try:
     from packaging.version import InvalidVersion, Version

@@ -8,20 +8,20 @@
 # ------------------------------------------------------------------------------
 
 install:
-	python3 -m pip install -r requirements.txt
+	python3.12 -m pip install -r requirements.txt
 
 install-dev:
-	python3 -m pip install -r requirements.txt -r dev-requirements.txt
+	python3.12 -m pip install -r requirements.txt -r dev-requirements.txt
 
 # ------------------------------------------------------------------------------
 # Testing targets
 # ------------------------------------------------------------------------------
 
 test:
-	python3 -m pytest
+	python3.12 -m pytest
 
 test-cov:
-	python3 -m pytest --cov=src --cov-report=html --cov-report=term
+	python3.12 -m pytest --cov=src --cov-report=html --cov-report=term
 
 # ------------------------------------------------------------------------------
 # Code quality targets
@@ -29,21 +29,21 @@ test-cov:
 
 lint:
 	@echo "Running pylint..."
-	PYTHONPATH=src python3 -m pylint src --exit-zero
+	PYTHONPATH=src python3.12 -m pylint src --exit-zero
 	@echo "\nRunning flake8..."
-	PYTHONPATH=src python3 -m flake8 src --exit-zero
+	PYTHONPATH=src python3.12 -m flake8 src --exit-zero
 	@echo "\nRunning ruff check..."
-	PYTHONPATH=src python3 -m ruff check src --exit-zero
+	PYTHONPATH=src python3.12 -m ruff check src --exit-zero
 
 format:
 	@echo "Running black..."
-	PYTHONPATH=src python3 -m black src
+	PYTHONPATH=src python3.12 -m black src
 	@echo "\nRunning isort..."
-	PYTHONPATH=src python3 -m isort src
+	PYTHONPATH=src python3.12 -m isort src
 
 type-check:
 	@echo "Running mypy..."
-	PYTHONPATH=src python3 -m mypy src --ignore-missing-imports
+	PYTHONPATH=src python3.12 -m mypy src --ignore-missing-imports
 
 audit-code: lint type-check test-cov
 	@echo "\n✅ Code audit complete: linting, type checking, and tests"
@@ -56,7 +56,7 @@ quality: format lint type-check test
 # ------------------------------------------------------------------------------
 
 run-pipeline:
-	python3 scripts/run_data_pipeline.py
+	python3.12 scripts/run_data_pipeline.py
 
 run-dashboard:
 	streamlit run streamlit_app/app.py
@@ -67,14 +67,14 @@ run-dashboard:
 
 audit-dry-run:
 	@echo "Dry run is now integrated into the unified pipeline. Use --dry-run if implemented or check logs."
-	python3 scripts/run_data_pipeline.py --input data/raw/abaco_portfolio_calculations.csv
+	python3.12 scripts/run_data_pipeline.py --input data/raw/abaco_portfolio_calculations.csv
 
 audit-write:
 	@echo "Audit writing is now integrated into the unified pipeline's output phase."
-	python3 scripts/run_data_pipeline.py --input data/raw/abaco_portfolio_calculations.csv
+	python3.12 scripts/run_data_pipeline.py --input data/raw/abaco_portfolio_calculations.csv
 
 check-maturity:
-	python3 repo_maturity_summary.py
+	python3.12 repo_maturity_summary.py
 
 # ------------------------------------------------------------------------------
 # Python environment management
@@ -85,25 +85,25 @@ env-clean:
 
 venv:
 	$(MAKE) env-clean
-	python3 -m venv .venv
+	python3.12 -m venv .venv
 	@echo "Activate with: source .venv/bin/activate"
 
 venv-install: venv
 	@echo "Setting up virtualenv with project dependencies..."
 	. .venv/bin/activate && \
-	  python3 -m pip install --upgrade pip && \
-	  python3 -m pip install -r requirements.txt -r dev-requirements.txt
+	python3.12 -m pip install --upgrade pip && \
+	python3.12 -m pip install -r requirements.txt -r dev-requirements.txt
 
 # KPI parity test (dual-engine governance)
 test-kpi-parity:
-	. .venv/bin/activate && RUN_KPI_PARITY_TESTS=1 python3 -m pytest -q tests/test_kpi_parity.py
+	. .venv/bin/activate && RUN_KPI_PARITY_TESTS=1 python3.12 -m pytest -q tests/test_kpi_parity.py
 
 # Analytics validation and execution
 analytics-run:
-	. .venv/bin/activate && python3 run_complete_analytics.py
+	. .venv/bin/activate && python3.12 run_complete_analytics.py
 
 analytics-sync:
-	. .venv/bin/activate && python3 tools/check_kpi_sync.py --print-json
+	. .venv/bin/activate && python3.12 tools/check_kpi_sync.py --print-json
 
 # ------------------------------------------------------------------------------
 # VS Code .env warning info
@@ -117,11 +117,7 @@ vscode-envfile-info:
 # ------------------------------------------------------------------------------
 
 clean:
-	rm -rf __pycache__ .pytest_cache
-	find . -name "*.pyc" -delete
-	find . -name "*.pyo" -delete
-	rm -rf .coverage htmlcov
-	find . -type d -name ".mypy_cache" -exec rm -rf {} +
+	./scripts/cleanup.sh
 
 # ------------------------------------------------------------------------------
 # Help

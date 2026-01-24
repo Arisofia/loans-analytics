@@ -1,7 +1,6 @@
 import pandas as pd
 import polars as pl
 import pytest
-from polars.testing import assert_frame_equal as pl_assert_frame_equal
 
 from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
 from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine

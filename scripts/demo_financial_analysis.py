@@ -125,7 +125,7 @@ def main():
     if HAS_MATPLOTLIB and "dpd_bucket" in enriched_df.columns:
         print("\n[4] Generating DPD Distribution Chart...")
         counts = enriched_df["dpd_bucket"].value_counts()
-        order = ["Current", "1-29", "30-59", "60-89", "90-119", "120-149", "150-179", "180+"]
+        order = ["Current", "1-29", "30-59", "60-89", "90-119", "150-179", "180+"]
         counts = counts.reindex(order).fillna(0)
 
         # Ensure non-interactive backend is enforced immediately before plotting.

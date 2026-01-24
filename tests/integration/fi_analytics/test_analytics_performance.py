@@ -141,10 +141,10 @@ class TestAnalyticsPerformanceRobustness:
                     "outputs": {
                         "dashboard_triggers": {
                             "enabled": True,
-                            "outputs": ["figma", "notion"],
+                            "outputs": ["azure", "supabase"],
                             "clients": {
-                                "figma": {"enabled": True, "token": "test_token"},
-                                "notion": {"enabled": True, "api_token": "test_token"},
+                                "azure": {"enabled": True, "subscription_id": "test_id"},
+                                "supabase": {"enabled": True, "url": "test_url"},
                             },
                         }
                     },
@@ -191,8 +191,8 @@ class TestAnalyticsPerformanceRobustness:
             assert "dashboard_trigger" in manifest["triggers"]
             trigger_res = manifest["triggers"]["dashboard_trigger"]
             assert "outputs" in trigger_res
-            assert "figma" in trigger_res["outputs"]
-            assert "notion" in trigger_res["outputs"]
+            assert "azure" in trigger_res["outputs"]
+            assert "supabase" in trigger_res["outputs"]
 
         assert (Path("data/metrics") / f"{run_id}_metrics.json").exists()
         assert (Path("data/metrics") / f"{run_id}.csv").exists()

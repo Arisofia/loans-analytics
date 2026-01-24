@@ -43,7 +43,7 @@ par30_val = calculate_par_30(df)
 **New (v2):**
 
 ```python
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis.engine import KPIEngineV2
 
 engine = KPIEngineV2(df, actor="reporting_service")
 metrics = engine.calculate_all()

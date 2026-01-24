@@ -207,7 +207,6 @@ def main():
         "--config", type=Path, required=True, help="Path to YAML threshold configuration file"
     )
     parser.add_argument(
-<<<<<<< HEAD
         "--output",
         type=Path,
         required=True,

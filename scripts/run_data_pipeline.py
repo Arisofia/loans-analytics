@@ -4,15 +4,13 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.compliance import build_compliance_report, write_compliance_report
 from src.config.paths import Paths
-from src.kpi_engine_v2 import KPIEngineV2 as KPIEngine
 from src.pipeline.data_ingestion import UnifiedIngestion
 from src.pipeline.data_transformation import UnifiedTransformation
 from src.pipeline.orchestrator import UnifiedPipeline
@@ -26,7 +24,7 @@ try:
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for run_data_pipeline")
-except (ImportError, Exception) as tracing_err:
+except Exception as tracing_err:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -37,6 +35,7 @@ except (ImportError, Exception) as tracing_err:
 DEFAULT_INPUT = os.getenv(
     "PIPELINE_INPUT_FILE", str(Paths.raw_data_dir() / "abaco_portfolio_calculations.csv")
 )
+
 
 def main(
     input_file: str = DEFAULT_INPUT,
@@ -71,23 +70,29 @@ def main(
 
         if status == "success":
             # Post-pipeline actions
-            run_dir = Path(
-                result.get("run_id", "unknown")
-            )  # In reality this might need resolving if just ID
-            # Use summary output paths
-            outputs = result.get("phases", {}).get("output", {}).get("outputs", {})
-            metrics_json_path = outputs.get("metrics_json")
-            csv_path = outputs.get("csv")
+            run_id = result.get("run_id", "unknown")
+            print(f"RUN_ID: {run_id}")
+            output_path = Paths.metrics_dir(create=True)
+            metrics_json_path = output_path / f"{run_id}_metrics.json"
+            csv_path = output_path / f"{run_id}.csv"
+            parquet_path = output_path / f"{run_id}.parquet"
 
-            if train_model and csv_path:
+            # Re-generate outputs for post-pipeline actions if they exist
+            if not parquet_path.exists() or not metrics_json_path.exists():
+                logger.warning("Post-pipeline artifacts missing. Skipping supplemental actions.")
+                return True
+
+            kpi_df = pd.read_parquet(parquet_path)
+            metrics_data = json.loads(metrics_json_path.read_text())
+
+            if train_model:
                 try:
                     logger.info("Starting ML Model Training...")
-                    sys.path.append(str(Path(__file__).parent.parent))
+                    # Adjust sys.path for local imports if necessary, or ensure proper package structure
                     from apps.analytics.risk_model import LoanRiskModel
 
-                    df = pd.read_csv(csv_path)
                     model = LoanRiskModel()
-                    metrics = model.train(df)
+                    metrics = model.train(kpi_df) # Pass the processed dataframe
                     logger.info("ML Training Finished. Metrics: %s", metrics)
                 except Exception as e:
                     logger.error("ML Training failed: %s", e)
@@ -95,11 +100,9 @@ def main(
             if ask_kpi and metrics_json_path:
                 try:
                     logger.info("Processing Gen AI Query: %s", ask_kpi)
-                    sys.path.append(str(Path(__file__).parent.parent))
                     from agents.gen_ai_kpi import KPIQuestionAnsweringAgent
 
-                    metrics_data = json.loads(Path(metrics_json_path).read_text())
-                    # metrics_data structure might be nested, flatten key values for agent
+                    # metrics_data is already loaded above
                     flat_metrics = {}
                     for k, v in metrics_data.items():
                         if isinstance(v, dict) and "value" in v:

@@ -4,14 +4,6 @@ from typing import Dict, Optional, Protocol, runtime_checkable
 import numpy as np
 import pandas as pd
 
-from src.analytics.enterprise_analytics_engine_helpers import (
-    LoanPosition,
-    PortfolioKPIs,
-    calculate_monthly_payment,
-    calculate_portfolio_kpis,
-    expected_loss,
-    portfolio_interest_and_risk,
-)
 logger = logging.getLogger(__name__)
 
 
@@ -137,7 +129,8 @@ class LoanAnalyticsEngine:
 
     def compute_delinquency_rate(self) -> float:
         """Computes the portfolio delinquency rate using KPIEngineV2."""
-        from src.kpi_engine_v2 import KPIEngineV2  # pylint: disable=import-outside-toplevel
+        from src.kpis.engine import \
+            KPIEngineV2  # pylint: disable=import-outside-toplevel
 
         engine_v2 = KPIEngineV2(self.loan_data, actor="enterprise_engine")
         val, _ = engine_v2.calculate_par_30()
@@ -145,7 +138,8 @@ class LoanAnalyticsEngine:
 
     def compute_portfolio_yield(self) -> float:
         """Computes the weighted average portfolio yield using KPIEngineV2."""
-        from src.kpi_engine_v2 import KPIEngineV2  # pylint: disable=import-outside-toplevel
+        from src.kpis.engine import \
+            KPIEngineV2  # pylint: disable=import-outside-toplevel
 
         engine_v2 = KPIEngineV2(self.loan_data, actor="enterprise_engine")
         val, _ = engine_v2.calculate_portfolio_yield()
@@ -197,9 +191,6 @@ class LoanAnalyticsEngine:
         }
 
     def risk_alerts(self, ltv_threshold: float = 80.0, dti_threshold: float = 50.0) -> pd.DataFrame:
-<<<<<<< HEAD
-        """Identifies high-risk loans based on LTV and DTI thresholds."""
-=======
         """
         Identifies high-risk loans based on LTV and DTI thresholds.
 
@@ -210,7 +201,6 @@ class LoanAnalyticsEngine:
         Returns:
             DataFrame with high-risk loans and their risk scores
         """
->>>>>>> d08ccf69f (Apply lint fixes)
         if "ltv_ratio" not in self.loan_data.columns:
             self.compute_loan_to_value()
         if "dti_ratio" not in self.loan_data.columns:
@@ -237,7 +227,8 @@ class LoanAnalyticsEngine:
 
         Delegates core computations to KPIEngineV2 for consistency.
         """
-        from src.kpi_engine_v2 import KPIEngineV2  # pylint: disable=import-outside-toplevel
+        from src.kpis.engine import \
+            KPIEngineV2  # pylint: disable=import-outside-toplevel
 
         engine_v2 = KPIEngineV2(self.loan_data, actor="enterprise_engine")
         results = engine_v2.calculate_all()
@@ -255,11 +246,13 @@ class LoanAnalyticsEngine:
         }
 
         quality = self.data_quality_profile()
-        dashboard.update({
-            "data_quality_score": quality["data_quality_score"],
-            "average_null_ratio_percent": quality["average_null_ratio"],
-            "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio"],
-        })
+        dashboard.update(
+            {
+                "data_quality_score": quality["data_quality_score"],
+                "average_null_ratio_percent": quality["average_null_ratio"],
+                "invalid_numeric_ratio_percent": quality["invalid_numeric_ratio"],
+            }
+        )
 
         return dashboard
 

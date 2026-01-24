@@ -44,8 +44,8 @@ class LLMResponse:
     provider: str
     tokens_used: int
     confidence: float = 0.0
-    reasoning_steps: List[str] = None
-    metadata: Dict[str, Any] = None
+    reasoning_steps: Optional[List[str]] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class BaseLLMProvider(ABC):

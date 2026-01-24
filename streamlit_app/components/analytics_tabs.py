@@ -2,7 +2,6 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from src.utils.dashboard_utils import format_kpi_value, kpi_label
 
 from .visualizations import apply_theme, styled_df
 

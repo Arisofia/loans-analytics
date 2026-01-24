@@ -18,14 +18,14 @@ import psutil
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis.engine import KPIEngineV2
 
 try:
     from src.azure_tracing import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for performance_stress_test")
-except (ImportError, Exception) as tracing_err:
+except Exception as tracing_err:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     logger = logging.getLogger(__name__)
     logger.warning("Azure tracing not initialized: %s", tracing_err)
@@ -41,18 +41,19 @@ class PerformanceStressTest:
             "summary": {},
         }
         self.process = psutil.Process(os.getpid())
+        # Use a per-instance RNG (Generator) for reproducible and thread-safe randomness - Updated to modern NumPy API
+        self.rng = np.random.default_rng(42)
 
     def create_test_dataset(self, size: int) -> pd.DataFrame:
-        """Create realistic test dataset"""
-        np.random.seed(42)
+        """Create realistic test dataset using a per-instance RNG (Generator)"""
         return pd.DataFrame(
             {
-                "dpd_30_60_usd": np.random.uniform(0, 20000, size),
-                "dpd_60_90_usd": np.random.uniform(0, 10000, size),
-                "dpd_90_plus_usd": np.random.uniform(0, 5000, size),
-                "total_receivable_usd": np.random.uniform(100000, 1500000, size),
-                "cash_available_usd": np.random.uniform(1000, 150000, size),
-                "total_eligible_usd": np.random.uniform(50000, 1200000, size),
+                "dpd_30_60_usd": self.rng.uniform(0, 20000, size=size),
+                "dpd_60_90_usd": self.rng.uniform(0, 10000, size=size),
+                "dpd_90_plus_usd": self.rng.uniform(0, 5000, size=size),
+                "total_receivable_usd": self.rng.uniform(100000, 1500000, size=size),
+                "cash_available_usd": self.rng.uniform(1000, 150000, size=size),
+                "total_eligible_usd": self.rng.uniform(50000, 1200000, size=size),
             }
         )
 
@@ -221,3 +222,70 @@ class PerformanceStressTest:
                 "stability": (
                     "STABLE" if sustained.get("memory", {}).get("stable") else "VARIABLE"
                 ),
+                "resource_efficiency": "EFFICIENT" if resource else "UNKNOWN",
+            },
+            "recommendations": self._generate_recommendations(),
+        }
+
+        self.results["summary"] = summary
+
+        # Save report
+        with open(output_file, "w") as f:
+            json.dump(self.results, f, indent=2, default=str)
+
+        logger.info(f"\n✓ Report saved to {output_file}")
+
+        # Print summary
+        print("\n" + "=" * 70)
+        print("PERFORMANCE STRESS TEST SUMMARY")
+        print("=" * 70)
+        print(f"\nOverall Status: {summary['overall_status']}")
+        print(f"Tests Executed: {summary['tests_passed']}")
+        print("\nPerformance Assessment:")
+        for aspect, rating in summary["performance_assessment"].items():
+            print(f"  {aspect}: {rating}")
+        print("\nRecommendations:")
+        for rec in summary["recommendations"]:
+            print(f"  • {rec}")
+        print("=" * 70)
+
+    def _generate_recommendations(self):
+        """Generate recommendations based on test results"""
+        recs = []
+
+        sustained = self.results["tests"].get("sustained_load", {})
+        if sustained.get("errors", 0) > 0:
+            recs.append("Investigate errors in sustained load test")
+
+        if not sustained.get("memory", {}).get("stable"):
+            recs.append("Memory usage is variable - monitor for leaks")
+
+        load = self.results["tests"].get("load_scalability", {})
+        if load:
+            results = list(load.values())
+            if results and results[-1]["execution_time_s"] > 10:
+                recs.append("Consider optimization for 100k+ row datasets")
+
+        if not recs:
+            recs.append("✓ All performance tests passed - ready for production")
+
+        return recs
+
+
+def main():
+    logger.info("Starting Performance Stress Test Suite")
+    logger.info("=" * 70)
+
+    tester = PerformanceStressTest()
+
+    # Run all tests
+    tester.test_load_scalability()
+    tester.test_sustained_load(duration_seconds=30)  # 30s for quick test
+    tester.test_resource_usage()
+
+    # Generate report
+    tester.generate_report()
+
+
+if __name__ == "__main__":
+    main()

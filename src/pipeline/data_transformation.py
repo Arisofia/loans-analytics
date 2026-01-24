@@ -8,12 +8,10 @@ import pandas as pd
 import yaml
 
 from src.compliance import create_access_log_entry, mask_pii_in_dataframe
-from src.pipeline.data_validation import (
-    validate_iso8601_dates,
-    validate_no_nulls,
-    validate_numeric_bounds,
-    validate_percentage_bounds,
-)
+from src.pipeline.data_validation import (validate_iso8601_dates,
+                                          validate_no_nulls,
+                                          validate_numeric_bounds,
+                                          validate_percentage_bounds)
 from src.pipeline.utils import hash_dataframe, utc_now
 
 logger = logging.getLogger(__name__)
@@ -74,6 +72,7 @@ class ComplianceProcessor:
 
     def _load_pii_config(self) -> Dict[str, Any]:
         from src.config.paths import get_project_root
+
         config_path = get_project_root() / "config" / "pii_fields.yaml"
         if config_path.exists():
             try:
@@ -219,51 +218,3 @@ class UnifiedTransformation:
             access_log.append(create_access_log_entry("transformation", user, "error", "failed"))
             self._log_step("fatal_error", "failed", error=str(exc))
             raise
-
-    # Legacy helper methods preserved for compatibility if needed,
-    # but could be moved to specialized processors in a future iteration.
-    def calculate_receivables_metrics(self, df: pd.DataFrame) -> Dict[str, float]:
-        rules = self.config.get("business_rules", {}).get("loan_tape_columns", {})
-        required = rules.get("receivables", ["total_receivable_usd", "total_eligible_usd", "discounted_balance_usd"])
-        
-        missing = [col for col in required if col not in df.columns]
-        if missing:
-            raise ValueError(f"missing required columns: {missing}")
-        return {
-            "total_receivable": float(pd.to_numeric(df[required[0]]).sum()),
-            "total_eligible": float(pd.to_numeric(df[required[1]]).sum()),
-            "discounted_balance": float(pd.to_numeric(df[required[2]]).sum()),
-        }
-
-    def transform_to_kpi_dataset(self, df: pd.DataFrame) -> pd.DataFrame:
-        # Legacy transformation logic for KPIEngine v1 compatibility
-        from src.pipeline.data_validation import LoanTapeSchema
-        
-        rules = self.config.get("business_rules", {}).get("loan_tape_columns", {})
-        aliases = rules.get("aliases", {})
-
-        required = LoanTapeSchema.REQUIRED_COLUMNS[3:]  # Skip metadata for validation
-        missing = [col for col in required if col not in df.columns]
-        if missing:
-            raise ValueError(f"missing required columns: {missing}")
-
-        out = pd.DataFrame(index=df.index)
-        for col in required:
-            out[col] = pd.to_numeric(df[col], errors="raise")
-
-        # Apply aliases from config
-        for target, source in aliases.items():
-            if source in out.columns:
-                out[target] = out[source]
-
-        denom = out.get("receivable_amount", out.get("total_receivable_usd", pd.Series(dtype=float))).replace({0: np.nan})
-        dpd_cols = [c for c in required if "dpd_" in c]
-        for col in dpd_cols:
-            pct_name = f"{col}_pct"
-            out[pct_name] = (out[col] / denom) * 100.0
-            out[pct_name] = out[pct_name].fillna(0.0)
-
-        out["_transform_run_id"] = self.run_id
-        out["_transform_timestamp"] = utc_now()
-        self.transformations_count += 1
-        return out

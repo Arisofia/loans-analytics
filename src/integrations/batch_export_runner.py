@@ -115,7 +115,7 @@ class BatchExportRunner:
         results = self.manager.export_kpi_metrics_only(
             metrics,
             self.run_id,
-            enabled_outputs=["figma", "azure", "supabase", "meta", "notion"],
+            enabled_outputs=["azure", "supabase", "meta"],
         )
 
         self._save_results(results, "kpi_only")
@@ -132,7 +132,7 @@ class BatchExportRunner:
             metrics,
             summary,
             self.run_id,
-            enabled_outputs=["figma", "azure", "supabase", "meta", "notion"],
+            enabled_outputs=["azure", "supabase", "meta"],
         )
 
         self._save_results(results, "dashboard")
@@ -157,7 +157,7 @@ class BatchExportRunner:
             summary,
             findings,
             self.run_id,
-            enabled_outputs=["figma", "azure", "supabase", "meta", "notion"],
+            enabled_outputs=["azure", "supabase", "meta"],
         )
 
         self._save_results(results, "full")

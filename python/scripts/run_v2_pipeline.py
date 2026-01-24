@@ -10,7 +10,7 @@ sys.path.insert(0, root_dir)
 sys.path.insert(0, python_dir)
 
 from pipeline.ingestion import UnifiedIngestion  # noqa: E402
-from src.kpi_engine_v2 import KPIEngineV2  # noqa: E402
+from src.kpis.engine import KPIEngineV2  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,

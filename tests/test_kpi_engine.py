@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis.engine import KPIEngineV2
 
 
 def sample_portfolio():

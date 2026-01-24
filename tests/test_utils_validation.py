@@ -1,4 +1,3 @@
-import pytest
 
 from src.utils.validation import is_valid_iban, validate_iban
 

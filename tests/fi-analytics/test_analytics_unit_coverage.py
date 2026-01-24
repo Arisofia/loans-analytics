@@ -77,9 +77,9 @@ class TestAnalyticsUnitCoverage:
             timeout=900,
         )
 
-        assert (
-            "TOTAL" in result.stdout or "passed" in result.stdout
-        ), "Coverage report not generated"
+        assert "TOTAL" in result.stdout or "passed" in result.stdout, (
+            "Coverage report not generated"
+        )
 
         htmlcov_dir = repo_root / "htmlcov"
         if htmlcov_dir.exists():
@@ -90,8 +90,8 @@ class TestAnalyticsUnitCoverage:
         """Verify analytics modules import without errors."""
         try:
             import src.analytics
-            import src.analytics.enterprise_analytics_engine
             import src.analytics.kpi_calculator_complete
+            import src.analytics.enterprise_analytics_engine
             import src.analytics.metrics_utils
 
             assert hasattr(src.analytics, "__path__"), "Analytics module not properly initialized"
@@ -104,14 +104,7 @@ class TestAnalyticsUnitCoverage:
         repo_root = Path(__file__).parent.parent.parent
 
         result = subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "pytest",
-                "tests/fi-analytics/",
-                "--collect-only",
-                "-q",
-            ],
+            [sys.executable, "-m", "pytest", "tests/fi-analytics/", "--collect-only", "-q"],
             cwd=repo_root,
             capture_output=True,
             text=True,
@@ -121,9 +114,9 @@ class TestAnalyticsUnitCoverage:
         test_count = result.stdout.count("test_")
         baseline_test_count = 6
 
-        assert (
-            test_count >= baseline_test_count
-        ), f"Test count ({test_count}) below baseline ({baseline_test_count})"
+        assert test_count >= baseline_test_count, (
+            f"Test count ({test_count}) below baseline ({baseline_test_count})"
+        )
 
 
 class TestAnalyticsTypeCheck:
@@ -143,13 +136,7 @@ class TestAnalyticsTypeCheck:
         assert analytics_dir.exists(), f"Analytics directory not found: {analytics_dir}"
 
         result = subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "mypy",
-                str(analytics_dir),
-                "--ignore-missing-imports",
-            ],
+            [sys.executable, "-m", "mypy", str(analytics_dir), "--ignore-missing-imports"],
             cwd=repo_root,
             capture_output=True,
             text=True,
@@ -158,7 +145,9 @@ class TestAnalyticsTypeCheck:
 
         assert (
             result.returncode == 0 or "error:" in result.stdout.lower() or "error:" in result.stderr
-        ), "mypy check did not complete (unexpected failure mode)"
+        ), (
+            "mypy check did not complete (unexpected failure mode)"
+        )
 
     def test_h02_module_type_hints_present(self) -> None:
         """Verify key analytics modules have type hints."""
@@ -194,6 +183,6 @@ class TestAnalyticsTypeCheck:
                 content = f.read()
 
             has_docstrings = '"""' in content or "'''" in content
-            assert (
-                has_docstrings or len(content) < 100
-            ), f"Module {py_file.name} should have docstrings"
+            assert has_docstrings or len(content) < 100, (
+                f"Module {py_file.name} should have docstrings"
+            )

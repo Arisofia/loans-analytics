@@ -6,26 +6,87 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
+
 import streamlit as st
 
+
+
 # Add repository root to sys.path to ensure correct module resolution
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
+
 if str(ROOT_DIR) not in sys.path:
+
     sys.path.insert(0, str(ROOT_DIR))
 
 
-# --- Data Ingestion Simulation ---
-@st.cache_data
-def load_and_prepare_data():
-    # In a real-world scenario, this would load data from a database or data warehouse.
-    data = {
-        "customer_id": range(100),
-        "revenue": np.random.uniform(10000, 150000, 100),
-        "balance": np.random.uniform(1000, 50000, 100),
-        "limit": np.random.uniform(20000, 100000, 100),
-        "dpd": np.random.choice([-1, 0, 15, 45, 75, 100], 100, p=[0.1, 0.6, 0.1, 0.1, 0.05, 0.05]),
+
+from src.utils.data_normalization import normalize_dataframe_complete  # noqa: E402
+
+from src.theme import ABACO_THEME  # noqa: E402
+
+from src.config.paths import Paths  # noqa: E402
+
+from streamlit_app.components.kpi_metrics import (  # noqa: E402
+
+    render_kpi_snapshot,
+
+    render_executive_summary,
+
+)
+
+from streamlit_app.components.charts import (  # noqa: E402
+
+    render_cashflow_trends,
+
+    render_growth_analysis,
+
+    render_category_breakdown,
+
+)
+
+from streamlit_app.components.sales_risk import (  # noqa: E402
+
+    render_sales_performance,
+
+    render_risk_analysis,
+
+)
+
+from streamlit_app.components.analytics_tabs import render_advanced_intelligence  # noqa: E402
+
+from src.utils.dashboard_utils import format_kpi_value, kpi_label  # noqa: E402
+
+EXPORTS_DIR = Paths.exports_dir()
+SUPPORT_DIR = Paths.data_dir() / "support"
+LOOKER_DIR = Paths.raw_data_dir() / "looker_exports"
+
+
+@st.cache_data(show_spinner=False)
+def load_looker_exports():
+    candidates = {
+        "loan_data": [
+            LOOKER_DIR / "loan_data.csv",
+            LOOKER_DIR / "Abaco-Loan-Tape_Loan-Data_Table-6.csv",
+            Paths.data_dir() / "abaco" / "loan_data.csv",
+        ],
+        "customer_data": [
+            LOOKER_DIR / "customer_data.csv",
+            LOOKER_DIR / "Abaco-Loan-Tape_Customer-Data_Table-6.csv",
+            Paths.data_dir() / "abaco" / "customer_data.csv",
+        ],
+        "historic_payment_data": [
+            LOOKER_DIR / "historic_payment_data.csv",
+            LOOKER_DIR / "Abaco-Loan-Tape_Historic-Real-Payment_Table-6.csv",
+            Paths.data_dir() / "abaco" / "real_payment.csv",
+        ],
+        "schedule_data": [
+            LOOKER_DIR / "schedules.csv",
+            LOOKER_DIR / "payment_schedule.csv",
+            LOOKER_DIR / "Abaco-Loan-Tape_Payment Schedule_Table-6.csv",
+            Paths.data_dir() / "abaco" / "payment_schedule.csv",
+        ],
     }
     data = {}
     for key, paths in candidates.items():

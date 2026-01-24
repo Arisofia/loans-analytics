@@ -14,6 +14,7 @@ from src.pipeline.data_transformation import UnifiedTransformation
 from src.pipeline.kpi_calculation import UnifiedCalculationV2
 from src.pipeline.output import UnifiedOutput
 from src.pipeline.utils import ensure_dir, utc_now, write_json
+from src.tracing_setup import get_tracer
 
 logger = logging.getLogger(__name__)
 tracer = get_tracer(__name__)
@@ -27,8 +28,8 @@ class UnifiedPipeline:
     calculator: UnifiedCalculationV2
     output: UnifiedOutput
 
-    def __init__(self, config_path: Optional[Path] = None):
-        self.config = PipelineConfig(config_path)
+    def __init__(self, config_path: Optional[Path] = None, config_overrides: Optional[Dict[str, Any]] = None):
+        self.config = PipelineConfig(config_path, overrides=config_overrides)
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         self.run_id: str = f"pipeline_{timestamp}"
 
@@ -178,13 +179,9 @@ class UnifiedPipeline:
         self.calculator.run_id = self.run_id
         self.output.run_id = self.run_id
 
-    def _ingestion_phase(
-        self, input_file: Path, archive_dir: Path
-    ) -> IngestionResult:
+    def _ingestion_phase(self, input_file: Path, archive_dir: Path) -> IngestionResult:
         with tracer.start_as_current_span("pipeline.ingestion") as span:
-            result = self.ingestor.ingest(
-                input_file, archive_dir=archive_dir
-            )
+            result = self.ingestor.ingest(input_file, archive_dir=archive_dir)
             span.set_attribute("ingestion.row_count", len(result.df))
             return result
 

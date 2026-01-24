@@ -20,11 +20,11 @@ from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from src.agents.tools import send_slack_notification
+from src.pipeline.data_validation import DataQualityReport
 from src.pipeline.schema import LoanTapeSchema
-from src.pipeline.data_validation import (DataQualityReport,
-                                         validate_dataframe)
 from src.pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
                                 hash_file, utc_now)
+from src.pipeline.mixins import IngestionMixin
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class IngestionResult:
     quality_report: Optional[DataQualityReport] = None
 
 
-class UnifiedIngestion:
+class UnifiedIngestion(IngestionMixin):
     """Phase 1: Robust ingestion with validation, checksum, and auditability."""
 
     def __init__(
@@ -388,25 +388,6 @@ class UnifiedIngestion:
 
         return pd.DataFrame(validated_records), errors
 
-    def _validate_dataframe(self, df: pd.DataFrame) -> None:
-        validation_cfg = self.config.get("validation", {})
-        validate_dataframe(
-            df,
-            required_columns=validation_cfg.get("required_columns"),
-            numeric_columns=validation_cfg.get("numeric_columns"),
-            date_columns=validation_cfg.get("date_columns"),
-        )
-
-    def _apply_deduplication(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
-        dedup_cfg = self.config.get("deduplication", {})
-        if not dedup_cfg.get("enabled", False):
-            return df, 0
-        keys = dedup_cfg.get("key_columns")
-        if not keys:
-            return df, 0
-        before = len(df)
-        deduped = df.drop_duplicates(subset=keys)
-        return deduped, before - len(deduped)
 
     def _normalize_token(self, value: str) -> str:
         return re.sub(r"[^a-z0-9]+", " ", str(value).lower()).strip()

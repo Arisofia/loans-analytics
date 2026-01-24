@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import polars as pl
 
@@ -23,7 +23,7 @@ class PolarsPipeline:
             "clients": CLIENT_SCHEMA,
         }
 
-    def scan_file(self, path: Path, schema_type: Optional[str] = None) -> pl.LazyFrame:
+    def scan_file(self, path: Path) -> pl.LazyFrame:
         """
         Scan a file into a Polars LazyFrame.
         """
@@ -39,7 +39,7 @@ class PolarsPipeline:
             # scan_ndjson is available for newline-delimited JSON
             try:
                 return pl.scan_ndjson(path)
-            except Exception:
+            except (pl.PolarsError, AttributeError):
                 # Fallback for standard JSON
                 return pl.read_json(path).lazy()
         else:
@@ -58,14 +58,12 @@ class PolarsPipeline:
                 # Case-insensitive match check (Polars is case-sensitive by default)
                 # This is a bit tricky with LazyFrame without collecting,
                 # but we can use schema names.
-                matched_col = next((c for c in existing_cols if c.lower() == cand.lower()), None)
-                if matched_col:
+                if matched_col := next(
+                    (c for c in existing_cols if c.lower() == cand.lower()), None
+                ):
                     rename_dict[matched_col] = internal_name
                     break
-
-        if rename_dict:
-            return lf.rename(rename_dict)
-        return lf
+        return lf.rename(rename_dict) if rename_dict else lf
 
     def enforce_precision(self, lf: pl.LazyFrame, decimal_cols: List[str]) -> pl.LazyFrame:
         """
@@ -76,9 +74,7 @@ class PolarsPipeline:
             for col in decimal_cols
             if col in lf.collect_schema().names()
         ]
-        if expressions:
-            return lf.with_columns(expressions)
-        return lf
+        return lf.with_columns(expressions) if expressions else lf
 
     def filter_active_loans(self, lf: pl.LazyFrame) -> pl.LazyFrame:
         """

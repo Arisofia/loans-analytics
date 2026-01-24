@@ -15,7 +15,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis.engine import KPIEngineV2
 
 try:
     from src.azure_tracing import setup_azure_tracing
@@ -247,17 +247,17 @@ class ShadowModeValidator:
 
 if __name__ == "__main__":
     # Create test dataset
-    np.random.seed(42)
+    rng = rng.default_rng(42)
     n_rows = 1000
 
     test_df = pd.DataFrame(
         {
-            "dpd_30_60_usd": np.random.uniform(0, 20000, n_rows),
-            "dpd_60_90_usd": np.random.uniform(0, 10000, n_rows),
-            "dpd_90_plus_usd": np.random.uniform(0, 5000, n_rows),
-            "total_receivable_usd": np.random.uniform(100000, 1500000, n_rows),
-            "cash_available_usd": np.random.uniform(1000, 150000, n_rows),
-            "total_eligible_usd": np.random.uniform(50000, 1200000, n_rows),
+            "dpd_30_60_usd": rng.uniform(0, 20000, n_rows),
+            "dpd_60_90_usd": rng.uniform(0, 10000, n_rows),
+            "dpd_90_plus_usd": rng.uniform(0, 5000, n_rows),
+            "total_receivable_usd": rng.uniform(100000, 1500000, n_rows),
+            "cash_available_usd": rng.uniform(1000, 150000, n_rows),
+            "total_eligible_usd": rng.uniform(50000, 1200000, n_rows),
         }
     )
 

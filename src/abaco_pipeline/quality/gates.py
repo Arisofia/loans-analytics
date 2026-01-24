@@ -1,4 +1,5 @@
 """Quality gate helpers used in pipeline health checks."""
+
 from __future__ import annotations
 
 from datetime import datetime

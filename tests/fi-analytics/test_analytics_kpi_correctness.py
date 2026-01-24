@@ -154,12 +154,12 @@ class TestKPICorrectness:
 
                 if tr != 0:
                     collection_rate = (tr - data.get("dpd_90_plus_usd", 0)) / tr
-                    assert pd.notna(
-                        collection_rate
-                    ), f"Collection rate is NaN for: {test_case['name']}"
-                    assert not (
-                        collection_rate == float("inf") or collection_rate == float("-inf")
-                    ), f"Collection rate is infinite for: {test_case['name']}"
+                    assert pd.notna(collection_rate), (
+                        f"Collection rate is NaN for: {test_case['name']}"
+                    )
+                    assert not (collection_rate == float("inf") or collection_rate == float("-inf")), (
+                        f"Collection rate is infinite for: {test_case['name']}"
+                    )
 
             except ZeroDivisionError:
                 if test_case["expect_safe"]:
@@ -168,17 +168,13 @@ class TestKPICorrectness:
     def test_b02_negative_value_handling(self) -> None:
         """Verify KPI calculations handle negative values appropriately."""
         test_cases = [
-            {
-                "name": "Negative receivable",
-                "value": -100,
-                "field": "total_receivable_usd",
-            },
+            {"name": "Negative receivable", "value": -100, "field": "total_receivable_usd"},
             {"name": "Negative cash", "value": -50, "field": "cash_available_usd"},
         ]
 
         for test_case in test_cases:
             value = test_case["value"]
-            assert isinstance(value, (int, float)), f"Test value must be numeric"
+            assert isinstance(value, (int, float)), "Test value must be numeric"
 
     def test_b02_large_value_handling(self) -> None:
         """Verify KPI calculations handle very large values without overflow."""

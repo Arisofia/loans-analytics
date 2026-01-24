@@ -8,7 +8,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for setting up all secrets required by the batch export pipelines and output integrations to Figma, Azure, Supabase, Meta, and Notion.
+This guide provides step-by-step instructions for setting up all secrets required by the batch export pipelines and output integrations to Azure, Supabase, and Meta.
 
 **Note**: Never commit secrets to the repository. All credentials should be stored in GitHub Actions Secrets only.
 
@@ -21,8 +21,6 @@ These secrets are documented as previously set:
 ```text
 SUPABASE_URL: https://zpowfbeftxexzidlxndy.supabase.co
 SUPABASE_ANON_KEY: <REDACTED>
-FIGMA_TOKEN: <REDACTED>
-FIGMA_FILE_KEY: <REDACTED>
 ```
 
 ---
@@ -136,6 +134,11 @@ DefaultEndpointsProtocol=https;AccountName=abacostgprod;AccountKey=...;EndpointS
 
 ---
 
+**Alternative inputs** (if you prefer not to use a connection string):
+
+- `AZURE_STORAGE_ACCOUNT_NAME` + `AZURE_STORAGE_ACCOUNT_KEY`
+- `AZURE_STORAGE_ACCOUNT_URL` with managed identity or `AZURE_STORAGE_SAS_TOKEN`
+
 ### 4. Azure Resource IDs (For Dashboard & Monitoring)
 
 **Environment Variables**:
@@ -230,85 +233,9 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
 
 ---
 
-### 7. Notion Integration
 
-#### 7a. Notion API Key
 
-**Environment Variable**: `NOTION_API_KEY`
-
-**How to get**:
-
-1. [Notion Settings](https://notion.so/profile/settings) → Integrations → Develop your own integrations
-2. Click "New integration"
-3. Name: `Abaco Analytics Export`
-4. Copy the "Internal Integration Token"
-
-**To Add**:
-
-- Name: `NOTION_API_KEY`
-
-#### 7b. Notion Database ID
-
-**Environment Variable**: `NOTION_DATABASE_ID`
-
-**How to get**:
-
-1. Open your Notion database in browser
-2. Copy the 32-character ID from the URL: `https://notion.so/{YOUR_WORKSPACE}/{DATABASE_ID}?v=...`
-
-**To Add**:
-
-- Name: `NOTION_DATABASE_ID`
-
-#### 7c. Notion Reports Page ID
-
-**Environment Variable**: `NOTION_REPORTS_PAGE_ID`
-
-**How to get**:
-
-1. Create a page in Notion for analytics reports
-2. Copy the page ID from the URL
-
-**To Add**:
-
-- Name: `NOTION_REPORTS_PAGE_ID`
-
----
-
-### 8. Figma Additional Configuration
-
-#### 8a. Figma Node ID (Optional)
-
-**Environment Variable**: `FIGMA_DASHBOARD_FRAME_ID`
-
-**How to get**:
-
-1. Open your Figma file
-2. Right-click on the frame where you want metric updates
-3. Copy "Link to frame" and extract the node ID
-
-**To Add** (optional):
-
-- Name: `FIGMA_DASHBOARD_FRAME_ID`
-
----
-
-### 9. Other Integration Secrets
-
-#### HubSpot
-
-- `HUBSPOT_API_KEY`: [HubSpot Account Settings → Integrations → API key](https://app.hubspot.com/l/integrations)
-
-#### OpenAI
-
-- `OPENAI_API_KEY`: [OpenAI API Keys](https://platform.openai.com/api-keys)
-
-#### Slack Webhooks
-
-- `SLACK_WEBHOOK_URL`: Incoming webhook for notifications
-- `SLACK_WEBHOOK_OPS`: Separate webhook for operations notifications
-
----
+### 7. OpenAI
 
 ## 🛠️ Implementation Checklist
 
@@ -331,16 +258,6 @@ AZURE_DASHBOARD_NAME: abaco-analytics-dashboard
   - [ ] `META_PIXEL_ID` - Facebook Pixel ID
   - [ ] `META_AD_ACCOUNT_ID` - Ad account ID
 
-- [ ] **Notion Secrets Added**
-  - [ ] `NOTION_API_KEY` - Internal integration token
-  - [ ] `NOTION_DATABASE_ID` - Analytics metrics database
-  - [ ] `NOTION_REPORTS_PAGE_ID` - Reports page
-
-- [ ] **Figma Secrets Added**
-  - [ ] `FIGMA_TOKEN` - Already configured
-  - [ ] `FIGMA_FILE_KEY` - Already configured
-  - [ ] `FIGMA_DASHBOARD_FRAME_ID` - (Optional)
-
 ---
 
 ## 🚀 Quick Setup Commands
@@ -361,10 +278,7 @@ Before deploying to production:
 export DATABASE_URL="postgres://..."
 ## export SUPABASE_URL should be set in your environment, not in this file.
 export SUPABASE_SERVICE_ROLE="..."
-export FIGMA_TOKEN="figd-..."
-export FIGMA_FILE_KEY="..."
 export META_ACCESS_TOKEN="..."
-export NOTION_API_KEY="..."
 ## export AZURE_STORAGE_CONNECTION_STRING should be set in your environment, not in this file.
 
 # Run batch export runner
@@ -386,22 +300,12 @@ All secrets should be rotated on a regular basis:
 | META_ACCESS_TOKEN | 90 days | Generate new token in Meta Business Suite |
 | AZURE_CREDENTIALS | 90 days | Run `az ad sp create-for-rbac` again |
 | OPENAI_API_KEY | 90 days | Generate new key in OpenAI → API Keys |
-| NOTION_API_KEY | 180 days | Regenerate in Notion → Integrations |
-| FIGMA_TOKEN | 180 days | Generate new token in Figma account settings |
 
 ---
 
 ## ❌ Troubleshooting
 
-### Secret Not Found in Workflow
 
-**Error**: `Error: Secret FIGMA_TOKEN not found`
-
-**Solution**:
-
-1. Verify secret is added: Settings → Secrets → Check the list
-2. Check spelling (case-sensitive)
-3. If using environment variables, ensure they're properly referenced: `${{ secrets.FIGMA_TOKEN }}`
 
 ### Access Denied to Azure
 
@@ -439,8 +343,6 @@ All secrets should be rotated on a regular basis:
 - [Supabase Connection Pooling](https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pooler)
 - [Azure Service Principals](https://learn.microsoft.com/en-us/azure/active-directory/develop/app-objects-and-service-principals)
 - [Meta Graph API](https://developers.facebook.com/docs/graph-api)
-- [Notion API](https://developers.notion.com/)
-- [Figma API](https://www.figma.com/developers/api)
 
 ---
 

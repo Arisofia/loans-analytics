@@ -4,7 +4,7 @@ import os
 import requests
 
 FIGMA_FILE_ID = "nuVKwuPuLS7VmLFvqzOX1G"
-# FIGMA_TOKEN = os.environ.get("FIGMA_TOKEN")
+FIGMA_TOKEN = os.environ.get("FIGMA_TOKEN")
 FIGMA_API_URL = os.environ.get("FIGMA_API_URL")
 
 try:

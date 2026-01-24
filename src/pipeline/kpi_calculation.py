@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional
 import pandas as pd
 import yaml
 
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis.engine import KPIEngineV2
 from src.pipeline.extended_kpis import ExtendedKPIGenerator
 from src.pipeline.utils import utc_now
 
@@ -272,7 +272,9 @@ class UnifiedCalculationV2:
             for metric_cfg in base_cfgs:
                 name = metric_cfg.get("name")
                 try:
-                    metrics[name] = self.calculator.compute_metric(df, metric_cfg, engine=kpi_engine)
+                    metrics[name] = self.calculator.compute_metric(
+                        df, metric_cfg, engine=kpi_engine
+                    )
                     self._log_event("metric_computed", "success", metric=name)
                 except Exception as exc:
                     self._log_event("metric_failed", "error", metric=name, error=str(exc))

@@ -1,8 +1,6 @@
 import re
 from typing import Iterable, List, Optional
 
-import pandas as pd
-
 
 def normalize_token(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()

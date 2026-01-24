@@ -28,23 +28,23 @@ def benchmark():
     print("\n--- Performance Benchmark (1M Rows) ---")
 
     # Pandas Benchmark
-    start = time.perf_counter()
+    start_pd = time.perf_counter()
     engine_v1 = KPIEngineV2(df_pandas)
     _ = engine_v1.calculate_all()
-    end = time.perf_counter()
-    print(f"Pandas (Legacy) Engine: {end - start:.4f} seconds")
+    end_pd = time.perf_counter()
+    duration_pd = end_pd - start_pd
+    print(f"Pandas (Legacy) Engine: {duration_pd:.4f} seconds")
 
     # Polars Benchmark
-    start = time.perf_counter()
+    start_pl = time.perf_counter()
     engine_v2 = PolarsKPIEngine(df_polars)
     _ = engine_v2.calculate_all()
-    end = time.perf_counter()
-    print(f"Polars (v2.0) Engine: {end - start:.4f} seconds")
+    end_pl = time.perf_counter()
+    duration_pl = end_pl - start_pl
+    print(f"Polars (v2.0) Engine: {duration_pl:.4f} seconds")
 
-    speedup = (end - start) / (time.perf_counter() - start)  # placeholder for comparison
-    # Actual speedup calculation
-    t_pandas = 0.5  # hypothetical if I ran it
-    t_polars = 0.05  # hypothetical
+    if duration_pl > 0:
+        print(f"Speedup: {duration_pd / duration_pl:.2f}x")
 
 
 if __name__ == "__main__":
