@@ -32,7 +32,7 @@ jobs:
       - name: Upload growth chart artifact
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: growth-chart
           path: exports/presentation/growth-path.html

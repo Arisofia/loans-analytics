@@ -108,7 +108,7 @@ jobs:
 
       - name: Upload orchestration output
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: orchestrator_result
           path: exports/orchestrator_result.json

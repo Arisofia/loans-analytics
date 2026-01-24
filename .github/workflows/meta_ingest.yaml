@@ -43,7 +43,7 @@ jobs:
           node dist/ingest.js
       - name: Upload raw data
         if: steps.meta_token.outputs.run == true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: meta-raw
           path: data/raw/meta/
@@ -59,7 +59,7 @@ jobs:
           python src/ingestion/meta_to_warehouse.py
       - name: Upload warehouse parquet
         if: steps.meta_token.outputs.run == true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: meta-warehouse
           path: data/warehouse/fact_marketing_spend.parquet

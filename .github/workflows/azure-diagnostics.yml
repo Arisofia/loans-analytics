@@ -89,7 +89,7 @@ jobs:
           ls -lah diagnostics >> diagnostics/summary.txt || true
 
       - name: Upload diagnostics artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: azure-diagnostics
           path: diagnostics

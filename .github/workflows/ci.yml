@@ -165,7 +165,7 @@ jobs:
       - name: Upload Demo Output
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: financial-analysis-demo
           path: |
@@ -236,7 +236,7 @@ jobs:
         run: |
           pytest --cov=src --cov-report=xml:coverage-src.xml tests/
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: analytics-coverage
           path: coverage-src.xml
