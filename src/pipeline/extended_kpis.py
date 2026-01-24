@@ -48,10 +48,10 @@ class ExtendedKPIGenerator:
 
         buckets = []
         if not self.df.empty:
-            total_outstanding = 0
+            total_outstanding = 0.0
             if "total_receivable_usd" in self.df.columns:
                 val = self.df["total_receivable_usd"].iloc[0]
-                total_outstanding = float(val) if pd.notna(val) else 0
+                total_outstanding = float(val) if pd.notna(val) else 0.0
 
             for label, col in dpd_columns.items():
                 if col in self.df.columns:
@@ -280,7 +280,7 @@ class ExtendedKPIGenerator:
             extended_kpis["unit_economics"] = self._extract_unit_economics()
             extended_kpis["customer_types"] = self._extract_customer_types()
             extended_kpis["customer_classification"] = self._extract_customer_classification()
-            extended_kpis["customer_retention"] = self._extract_customer_retention()
+            extended_kpis["customer_retention"] = [self._extract_customer_retention()]
             extended_kpis["payment_timing"] = self._extract_payment_timing()
             extended_kpis["collection_rate"] = [
                 {
