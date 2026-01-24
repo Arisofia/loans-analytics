@@ -12,17 +12,16 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional
 
+try:
+    import anthropic
+    ANTHROPIC_AVAILABLE = True
+except ImportError:
+    ANTHROPIC_AVAILABLE = False
+
 if importlib.util.find_spec("openai") is not None:
     OPENAI_AVAILABLE = True
 else:
     OPENAI_AVAILABLE = False
-
-if importlib.util.find_spec("anthropic") is not None:
-    import anthropic
-
-    ANTHROPIC_AVAILABLE = True
-else:
-    ANTHROPIC_AVAILABLE = False
 
 
 class LLMProvider(Enum):
