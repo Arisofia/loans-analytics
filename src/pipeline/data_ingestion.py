@@ -3,12 +3,10 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import os
 import re
 import shutil
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from io import BytesIO, StringIO
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -21,8 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from src.pipeline.data_validation import DataQualityReport
 from src.pipeline.schema import LoanTapeSchema
-from src.pipeline.utils import (CircuitBreaker, RateLimiter, RetryPolicy,
-                                hash_file, utc_now)
+from src.pipeline.utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
 from src.pipeline.mixins import IngestionMixin
 
 logger = logging.getLogger(__name__)
@@ -204,56 +201,16 @@ class UnifiedIngestion(IngestionMixin):
         ingested.columns = pd.Index([str(c).strip() for c in ingested.columns])
 
         self._update_summary(len(ingested))
-        ts = utc_now()
-        ingested["_ingest_run_id"] = self.run_id
-        ingested["_ingest_timestamp"] = ts
-        return ingested
-
-    def validate_loans(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Legacy helper used by unit tests.
-
-        Adds a boolean `_validation_passed` column; does not raise.
-        """
-
-        required_columns = [
-            "loan_id",
-            "period",
-            "measurement_date",
-            "total_receivable_usd",
-            "total_eligible_usd",
-            "discounted_balance_usd",
-            "dpd_0_7_usd",
-            "dpd_7_30_usd",
-            "dpd_30_60_usd",
-            "dpd_60_90_usd",
-            "dpd_90_plus_usd",
-        ]
+        # Example numeric columns to check; adjust as needed for your schema
         numeric_columns = [
             "total_receivable_usd",
             "total_eligible_usd",
             "discounted_balance_usd",
+            "cash_available_usd",
             "dpd_0_7_usd",
-            "dpd_7_30_usd",
-            "dpd_30_60_usd",
-            "dpd_60_90_usd",
-            "dpd_90_plus_usd",
         ]
-
-        validated = df.copy()
+        validated = ingested.copy()
         passed = True
-
-        missing = [c for c in required_columns if c not in validated.columns]
-        if missing:
-            passed = False
-            self.errors.append(
-                {
-                    "run_id": self.run_id,
-                    "timestamp": utc_now(),
-                    "stage": "validation_schema_assertion",
-                    "error": f"missing required columns: {', '.join(missing)}",
-                }
-            )
-
         for col in numeric_columns:
             if col not in validated.columns:
                 continue
@@ -269,7 +226,6 @@ class UnifiedIngestion(IngestionMixin):
                         "error": f"non-numeric column: {col} ({exc})",
                     }
                 )
-
         validated["_validation_passed"] = passed
         return validated
 
@@ -387,7 +343,6 @@ class UnifiedIngestion(IngestionMixin):
 
         return pd.DataFrame(validated_records), errors
 
-
     def _normalize_token(self, value: str) -> str:
         return re.sub(r"[^a-z0-9]+", " ", str(value).lower()).strip()
 
@@ -423,16 +378,6 @@ class UnifiedIngestion(IngestionMixin):
                 if cand_norm and (cand_norm in metric_norm or metric_norm in cand_norm):
                     return key
         return None
-
-
-
-
-
-
-
-
-
-
 
     def ingest(
         self,
@@ -473,129 +418,69 @@ class UnifiedIngestion(IngestionMixin):
             if errors:
                 self._log_event("validation", "completed", error_count=len(errors))
 
-                                # Circuit Breaker: Halt on critical contract violations.
+                # Circuit Breaker: Halt on critical contract violations.
+                critical_violation = any(
+                    "contract" in str(e).lower()
+                    or "not found" in str(e).lower()
+                    or "future" in str(e).lower()
+                    for e in errors
+                )
+                if critical_violation:
+                    msg = f"🚨 CIRCUIT BREAKER: Critical data contract violation in {file_path.name}. Halting ingestion."
+                    logger.critical(msg)
+                    return IngestionResult(
+                        pd.DataFrame(),
+                        self.run_id,
+                        {"status": "halted", "error": "critical_violation"},
+                    )
 
-                                critical_violation = any(
+                self._validate_dataframe(validated_df)
 
-                                    "contract" in str(e).lower()
+                if errors and self.config.get("validation", {}).get("strict", True):
+                    raise ValueError(f"Schema validation failed for {len(errors)} rows")
 
-                                    or "not found" in str(e).lower()
+                validated_df, deduped_count = self._apply_deduplication(validated_df)
 
-                                    or "future" in str(e).lower()
+                if deduped_count:
+                    self._log_event("deduplication", "completed", removed=deduped_count)
 
-                                    for e in errors
+            archived = None
+            if archive_dir:
+                archived = self._archive_raw(file_path, archive_dir)
 
-                                )
+            metadata = {
+                "source_file": str(file_path),
+                "checksum": checksum,
+                "row_count": len(validated_df),
+                "error_count": len(errors),
+                "deduped_count": deduped_count,
+                "audit_log": self.audit_log,
+                "archived_path": str(archived) if archived else None,
+                "validation_errors": errors,
+            }
 
-                                if critical_violation:
+            self._log_event("complete", "success", row_count=len(validated_df))
+            return IngestionResult(
+                validated_df, self.run_id, metadata, source_hash=checksum, raw_path=archived
+            )
 
-                                    msg = f"🚨 CIRCUIT BREAKER: Critical data contract violation in {file_path.name}. Halting ingestion."
+        except Exception as exc:
+            self._record_error("fatal_error", exc)
+            raise
 
-                                    logger.critical(msg)
+    def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
+        import requests
 
-                                    return IngestionResult(
+        headers = headers or {}
+        self._log_event("http_start", "initiated", url=url)
 
-                                        pd.DataFrame(),
-
-                                        self.run_id,
-
-                                        {"status": "halted", "error": "critical_violation"},
-
-                                    )
-
-                
-
-                            self._validate_dataframe(validated_df)
-
-                
-
-                            if errors and self.config.get("validation", {}).get("strict", True):
-
-                                raise ValueError(f"Schema validation failed for {len(errors)} rows")
-
-                
-
-                            validated_df, deduped_count = self._apply_deduplication(validated_df)
-
-                            if deduped_count:
-
-                                self._log_event("deduplication", "completed", removed=deduped_count)
-
-                
-
-                            archived = None
-
-                            if archive_dir:
-
-                                archived = self._archive_raw(file_path, archive_dir)
-
-                
-
-                            metadata = {
-
-                                "source_file": str(file_path),
-
-                                "checksum": checksum,
-
-                                "row_count": len(validated_df),
-
-                                "error_count": len(errors),
-
-                                "deduped_count": deduped_count,
-
-                                "audit_log": self.audit_log,
-
-                                "archived_path": str(archived) if archived else None,
-
-                                "validation_errors": errors,
-
-                            }
-
-                
-
-                            self._log_event("complete", "success", row_count=len(validated_df))
-
-                            return IngestionResult(
-
-                                validated_df, self.run_id, metadata, source_hash=checksum, raw_path=archived
-
-                            )
-
-                
-
-                        except Exception as exc:
-
-                            self._record_error("fatal_error", exc)
-
-                            raise
-
-                
-
-                    def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
-
-                        import requests
-
-                
-
-                        headers = headers or {}
-
-                        self._log_event("http_start", "initiated", url=url)
-
-                
-
-                        def _do_request() -> requests.Response:
-
-                            if not self.circuit_breaker.allow():
-
-                                raise RuntimeError("Circuit breaker open for HTTP ingestion")
-
-                            self.rate_limiter.wait()
-
-                            response = requests.get(url, headers=headers, timeout=30)
-
-                            response.raise_for_status()
-
-                            return response
+        def _do_request() -> requests.Response:
+            if not self.circuit_breaker.allow():
+                raise RuntimeError("Circuit breaker open for HTTP ingestion")
+            self.rate_limiter.wait()
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
+            return response
 
         try:
             response = self.retry_policy.execute(

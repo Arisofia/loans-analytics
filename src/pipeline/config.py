@@ -15,7 +15,9 @@ class PipelineConfig:
     DEFAULT_CONFIG_PATH = Paths.config_file()
     ENVIRONMENTS_DIR = Paths.config_file().parent.parent / "environments"
 
-    def __init__(self, config_path: Optional[Path] = None, overrides: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, config_path: Optional[Path] = None, overrides: Optional[Dict[str, Any]] = None
+    ):
         self.config_path = config_path or self.DEFAULT_CONFIG_PATH
         self.environment = os.getenv("PIPELINE_ENV", "development")
         self.config = self._load_config()

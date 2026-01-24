@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 
-class LLMResponse:
+class LanguageModelResponse:
     def __init__(
         self, content: str, raw_response: Any = None, usage: Optional[Dict[str, int]] = None
     ):
@@ -11,36 +11,36 @@ class LLMResponse:
         self.usage = usage or {}
 
 
-class BaseLLM(ABC):
+class BaseLanguageModel(ABC):
     @abstractmethod
-    def generate(self, messages: List[Dict[str, str]], **kwargs: Any) -> LLMResponse:
-        """Generate a response from the LLM based on a list of messages."""
+    def generate(self, messages: List[Dict[str, str]], **kwargs: Any) -> LanguageModelResponse:
+        """Generate a response from the LanguageModel based on a list of messages."""
 
 
-class MockLLM(BaseLLM):
-    def generate(self, messages: List[Dict[str, str]], **kwargs: Any) -> LLMResponse:
+class MockLanguageModel(BaseLanguageModel):
+    def generate(self, messages: List[Dict[str, str]], **kwargs: Any) -> LanguageModelResponse:
         """Return a mock response for testing."""
         last_message = messages[-1]["content"] if messages else ""
         content = f"Mock response to: {last_message[:50]}..."
-        return LLMResponse(content=content)
+        return LanguageModelResponse(content=content)
 
 
-class OpenAIProvider(BaseLLM):
+class OpenAIProvider(BaseLanguageModel):
     def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4"):
         self.api_key = api_key
         self.model = model
 
-    def generate(self, messages: List[Dict[str, str]], **kwargs: Any) -> LLMResponse:
+    def generate(self, messages: List[Dict[str, str]], **kwargs: Any) -> LanguageModelResponse:
         # Placeholder for actual OpenAI integration
         # In a real implementation, this would use the openai library
-        return LLMResponse(content=f"[OpenAI {self.model}] Simulated response")
+        return LanguageModelResponse(content=f"[OpenAI {self.model}] Simulated response")
 
 
-class AnthropicProvider(BaseLLM):
+class AnthropicProvider(BaseLanguageModel):
     def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-opus-20240229"):
         self.api_key = api_key
         self.model = model
 
-    def generate(self, messages: List[Dict[str, str]], **kwargs: Any) -> LLMResponse:
+    def generate(self, messages: List[Dict[str, str]], **kwargs: Any) -> LanguageModelResponse:
         # Placeholder for actual Anthropic integration
-        return LLMResponse(content=f"[Anthropic {self.model}] Simulated response")
+        return LanguageModelResponse(content=f"[Anthropic {self.model}] Simulated response")

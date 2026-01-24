@@ -154,7 +154,7 @@ Begin!
         return "\n".join(descriptions)
 
     def _parse_llm_response(self, response: str) -> ReasoningStep:
-        """Parse LLM response into reasoning step."""
+        """Parse LanguageModel response into reasoning step."""
         response = response.strip()
 
         # Check for final answer
@@ -224,7 +224,7 @@ Begin!
             logger.info(f"Iteration {task.iterations}/{self.max_iterations}")
 
             try:
-                # Get LLM response
+                # Get LanguageModel response
                 llm_response = self.llm_manager.complete(
                     messages=messages,
                     provider=self.provider.value,

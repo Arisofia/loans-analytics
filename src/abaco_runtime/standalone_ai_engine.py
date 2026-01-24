@@ -18,7 +18,7 @@ class StandaloneAIEngine:
         self.max_prompt_chars = max_prompt_chars
 
     def _truncate_payload(self, data: Dict[str, Any]) -> str:
-        """Ensure payload length stays within safe limits for LLM inputs."""
+        """Ensure payload length stays within safe limits for LanguageModel inputs."""
 
         payload = json.dumps(data, default=str)
         if len(payload) > self.max_prompt_chars:

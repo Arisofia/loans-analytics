@@ -9,8 +9,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from src.analytics.run_pipeline import (calculate_kpis,  # re-export
-                                        create_metrics_csv)
+from src.analytics.run_pipeline import calculate_kpis, create_metrics_csv  # re-export
 
 __all__ = ["calculate_kpis", "create_metrics_csv"]
 

@@ -1,16 +1,16 @@
 from typing import Any, Dict, List
 
-from src.agents.llm_provider import BaseLLM, LLMResponse
+from src.agents.llm_provider import BaseLanguageModel, LanguageModelResponse
 from src.agents.orchestrator import AgentOrchestrator
 
 
-class ReActMockLLM(BaseLLM):
-    """A mock LLM that follows the ReAct pattern for testing."""
+class ReActMockLanguageModel(BaseLanguageModel):
+    """A mock LanguageModel that follows the ReAct pattern for testing."""
 
     def __init__(self):
         self.step = 0
 
-    def generate(self, messages: List[Dict[str, str]], **kwargs: Any) -> LLMResponse:
+    def generate(self, messages: List[Dict[str, str]], **kwargs: Any) -> LanguageModelResponse:
         self.step += 1
         if self.step == 1:
             content = """Thought: I need to check the risk by running an SQL query.
@@ -26,14 +26,14 @@ Action Input: {"params": {"interest_rate": 0.05}}
             content = """Thought: I have all the information needed.
 Final Answer: The risk level for loan 123 is low based on the SQL query and scenario simulation.
 """
-        return LLMResponse(content=content)
+        return LanguageModelResponse(content=content)
 
 
 def test_agent_react_flow():
     print("Testing Agent ReAct Flow...")
     orchestrator = AgentOrchestrator()
-    # Override with ReActMockLLM for testing
-    orchestrator.llm = ReActMockLLM()
+    # Override with ReActMockLanguageModel for testing
+    orchestrator.language_model = ReActMockLanguageModel()
 
     input_data = {"query": "What is the risk for loan 123?"}
     agent_config = {

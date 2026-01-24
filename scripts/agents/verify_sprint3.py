@@ -1,17 +1,17 @@
 from typing import Any, Dict, List
 
-from src.agents.llm_provider import BaseLLM, LLMResponse
+from src.agents.llm_provider import BaseLanguageModel, LanguageModelResponse
 from src.agents.orchestrator import AgentOrchestrator
 
 
-class Sprint3MockLLM(BaseLLM):
-    """A mock LLM that follows the ReAct pattern for Sprint 3 agents."""
+class Sprint3MockLanguageModel(BaseLanguageModel):
+    """A mock LanguageModel that follows the ReAct pattern for Sprint 3 agents."""
 
     def __init__(self, agent_type: str):
         self.agent_type = agent_type
         self.step = 0
 
-    def generate(self, messages: List[Dict[str, str]], **kwargs: Any) -> LLMResponse:
+    def generate(self, messages: List[Dict[str, str]], **kwargs: Any) -> LanguageModelResponse:
         self.step += 1
         if self.agent_type == "risk":
             if self.step == 1:
@@ -36,13 +36,13 @@ Final Answer: A 1% rate increase would improve portfolio yield from 3.99% to 4.9
         else:
             content = "Final Answer: Done."
 
-        return LLMResponse(content=content)
+        return LanguageModelResponse(content=content)
 
 
 def test_risk_agent():
     print("Testing Risk Agent...")
     orchestrator = AgentOrchestrator()
-    orchestrator.llm = Sprint3MockLLM("risk")
+    orchestrator.language_model = Sprint3MockLanguageModel("risk")
 
     input_data = {"query": "What is the current portfolio risk?"}
     agent_config = {"name": "RiskAgent", "role": "Risk Analyst", "goal": "Analyze portfolio risk"}
@@ -56,7 +56,7 @@ def test_risk_agent():
 def test_financial_agent():
     print("\nTesting Financial Agent...")
     orchestrator = AgentOrchestrator()
-    orchestrator.llm = Sprint3MockLLM("financial")
+    orchestrator.language_model = Sprint3MockLanguageModel("financial")
 
     input_data = {"query": "What happens if interest rates rise by 1%?"}
     agent_config = {

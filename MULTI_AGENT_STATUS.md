@@ -8,19 +8,19 @@
 
 ## Executive Summary
 
-The Abaco platform has successfully established the **foundation for an autonomous multi-agent intelligence platform**. While the **11 specialized agents** have been implemented as CLI harnesses with a robust **ReAct (Reasoning + Acting) framework**, many remain in a **PROTOTYPE/EXPERIMENTAL** state, utilizing `MockLLM` and placeholder tool implementations for current development and testing.
+The Abaco platform has successfully established the **foundation for an autonomous multi-agent intelligence platform**. While the **11 specialized agents** have been implemented as CLI harnesses with a robust **ReAct (Reasoning + Acting) framework**, many remain in a **PROTOTYPE/EXPERIMENTAL** state, utilizing `MockLanguageModel` and placeholder tool implementations for current development and testing.
 
 ### Key Status Indicators
 
-| Component | Status | Readiness |
-|-----------|--------|-----------|
-| **V2 Analytics Engine** | ✅ Production | Integrated with Agent Framework |
-| **Agent Framework (ReAct)** | 🟡 Prototype | Full Thought-Action-Observation loop (Experimental) |
-| **Specialized Agents (11/11)** | 🟡 Stubs | All core agents implemented as CLI harnesses (Experimental) |
-| **Tool Registry** | 🟡 Prototype | 15+ specialized tools (Mix of real and placeholder) |
-| **LLM Abstraction** | ✅ Complete | Support for OpenAI, Anthropic, and Mock providers |
-| **Output Channels** | 🟡 Partial | Slack, Notion, and Figma (Stubs/Integration pending) |
-| **Continuous Learning** | 🟡 Conceptual | Feedback collection and performance tracking stubs |
+| Component                      | Status        | Readiness                                                   |
+| ------------------------------ | ------------- | ----------------------------------------------------------- |
+| **V2 Analytics Engine**        | ✅ Production | Integrated with Agent Framework                             |
+| **Agent Framework (ReAct)**    | 🟡 Prototype  | Full Thought-Action-Observation loop (Experimental)         |
+| **Specialized Agents (11/11)** | 🟡 Stubs      | All core agents implemented as CLI harnesses (Experimental) |
+| **Tool Registry**              | 🟡 Prototype  | 15+ specialized tools (Mix of real and placeholder)         |
+| **LanguageModel Abstraction**  | ✅ Complete   | Support for OpenAI, Anthropic, and Mock providers           |
+| **Output Channels**            | 🟡 Partial    | Slack, Notion, and Figma (Stubs/Integration pending)        |
+| **Continuous Learning**        | 🟡 Conceptual | Feedback collection and performance tracking stubs          |
 
 ---
 
@@ -33,6 +33,7 @@ The Abaco platform has successfully established the **foundation for an autonomo
 #### Core Components
 
 - **LoanAnalyticsEngine** (apps/analytics/src/enterprise_analytics_engine.py)
+
   - 299 lines of production code
   - Full V2 API implementation
   - Data quality profiling
@@ -40,6 +41,7 @@ The Abaco platform has successfully established the **foundation for an autonomo
   - LTV/DTI ratio computation
 
 - **KPI Calculators** (tests/test_kpi_calculators_v2.py)
+
   - PAR30 & PAR90 calculation
   - Collection Rate
   - Portfolio Health Score
@@ -69,7 +71,7 @@ src/agents/
 ├── agent.py                  # ReAct Reasoning Loop
 ├── orchestrator.py           # Multi-agent Orchestration
 ├── tools.py                  # 15+ Specialized Tools
-├── llm_provider.py           # OpenAI/Anthropic/Mock Providers
+├── language_model_provider.py           # OpenAI/Anthropic/Mock Providers
 ├── outputs.py                # Slack/Notion/Figma Channels
 ├── learning.py               # Feedback & Performance Tracking
 └── [11 Specialized Agents]   # Risk, Financial, Investor, etc.
@@ -78,7 +80,7 @@ src/agents/
 #### Completed Features
 
 - ✅ ReAct (Reasoning + Acting) pattern
-- ✅ Multi-provider LLM abstraction
+- ✅ Multi-provider LanguageModel abstraction
 - ✅ Centralized Tool Registry
 - ✅ Automated SQL & Simulation tools
 - ✅ Slack, Notion, and Figma output channels
@@ -191,12 +193,12 @@ src/agents/
 
 ## Phase 2.2: Infrastructure Components (✅ Complete)
 
-### LLM Integration Layer
+### LanguageModel Integration Layer
 
-**Status:** ✅ Complete (`src/agents/llm_provider.py`)
+**Status:** ✅ Complete (`src/agents/language_model_provider.py`)
 
 - Multi-provider support (OpenAI, Anthropic).
-- MockLLM for testing and ReAct flow verification.
+- MockLanguageModel for testing and ReAct flow verification.
 
 ### Tool Integration Framework
 
@@ -219,14 +221,14 @@ src/agents/
 - SQL-based logging of agent runs.
 - Feedback collection system and performance tracking.
 
-    def get_recent(self, agent_name: str, days: int = 7):
-        pass
+  def get_recent(self, agent_name: str, days: int = 7):
+  pass
 
 # agents/learning/model_registry.py
 
 class ModelRegistry:
-    def register(self, agent_name: str, model_version: str, metadata: Dict):
-        pass
+def register(self, agent_name: str, model_version: str, metadata: Dict):
+pass
 
     def promote_challenger(self, agent_name: str):
         pass
@@ -234,13 +236,8 @@ class ModelRegistry:
 # agents/learning/learning_engine.py
 
 class ContinuousLearningEngine:
-    def daily_learning_cycle(self):
-        # 1. Collect feedback
-        # 2. Retrain models
-        # 3. A/B test new models
-        # 4. Promote winners
-        # 5. Document learnings
-        pass
+def daily_learning_cycle(self): # 1. Collect feedback # 2. Retrain models # 3. A/B test new models # 4. Promote winners # 5. Document learnings
+pass
 
     def cross_agent_learning(self):
         # Share insights across agents
@@ -276,7 +273,7 @@ class ContinuousLearningEngine:
 ## Implementation Roadmap (✅ All Sprints Complete)
 
 ### Sprint 1-2: Core Agent Framework (✅ Complete)
-- [x] Build LLM provider abstraction (OpenAI, Claude, Gemini)
+- [x] Build LanguageModel provider abstraction (OpenAI, Claude, Gemini)
 - [x] Implement ReAct/Tool-use pattern
 - [x] Create comprehensive tool registry
 - [x] Build agent base class with reasoning loop
@@ -366,7 +363,7 @@ class ContinuousLearningEngine:
 ### Phase 2 (Agents): 🟡 Prototype (Harnesses Complete)
 - [x] All 11 agents implemented as CLI harnesses
 - [ ] 90%+ test coverage for agent logic (Harnesses only)
-- [x] Framework for sub-500ms p99 latency (MockLLM)
+- [x] Framework for sub-500ms p99 latency (MockLanguageModel)
 - [x] Grounding logic to minimize hallucinations (ReAct pattern)
 - [x] 95%+ uptime design (Stateless agents)
 
@@ -381,7 +378,7 @@ class ContinuousLearningEngine:
 
 ## Blockers & Risks (Mitigated)
 
-1. **LLM Cost Management** - ✅ Mitigated via caching and local MockLLM for testing.
+1. **LanguageModel Cost Management** - ✅ Mitigated via caching and local MockLanguageModel for testing.
 2. **Hallucination/Accuracy** - ✅ Mitigated via ReAct grounding and tool-based validation.
 3. **Agent Coordination** - ✅ Mitigated via centralized Orchestrator and SQLAlchemy logging.
 
@@ -410,11 +407,11 @@ anthropic >= 0.7.0
 ### Q: Are the agents fully functional?
 **A:** The core reasoning engine (ReAct) and 11 specialized agent harnesses are implemented. Actual domain logic is currently a mix of real analytics integration and placeholder/mocked responses.
 
-### Q: What is the current status of LLM integration?
-**A:** Multi-provider support is implemented. The orchestrator defaults to `MockLLM` for development, with OpenAI and Anthropic ready for activation via configuration.
+### Q: What is the current status of LanguageModel integration?
+**A:** Multi-provider support is implemented. The orchestrator defaults to `MockLanguageModel` for development, with OpenAI and Anthropic ready for activation via configuration.
 
 ### Q: Can agents work offline?
-**A:** Yes, using the `MockLLM` provider or local Ollama instances (planned). Production will use cloud LLMs.
+**A:** Yes, using the `MockLanguageModel` provider or local Ollama instances (planned). Production will use cloud LanguageModels.
 
 ### Q: How do agents handle conflicting recommendations?
 **A:** Consensus algorithm synthesis is conceptually designed; current prototype flags all high-risk decisions for human review.
@@ -437,3 +434,4 @@ anthropic >= 0.7.0
 **Document Status:** Draft
 **Approval Required From:** Product, Engineering, Finance
 **Next Review Date:** 2026-01-15
+```

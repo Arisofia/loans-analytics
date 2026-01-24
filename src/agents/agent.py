@@ -3,7 +3,7 @@ import json
 import re
 from typing import Dict, List, Optional
 
-from src.agents.llm_provider import BaseLLM
+from src.agents.language_model_provider import BaseLanguageModel
 from src.agents.tools import ToolRegistry
 
 
@@ -13,14 +13,14 @@ class Agent:
         name: str,
         role: str,
         goal: str,
-        llm: BaseLLM,
+        language_model: BaseLanguageModel,
         registry: ToolRegistry,
         system_prompt: Optional[str] = None,
     ):
         self.name = name
         self.role = role
         self.goal = goal
-        self.llm = llm
+        self.language_model = language_model
         self.registry = registry
         self.system_prompt = system_prompt or self._generate_default_system_prompt()
         self.memory: List[Dict[str, str]] = []
@@ -54,8 +54,8 @@ Begin!
         self.memory = [{"role": "system", "content": self.system_prompt}]
         self.memory.append({"role": "user", "content": user_input})
 
-        for i in range(max_iterations):
-            response = self.llm.generate(self.memory)
+        for _ in range(max_iterations):
+            response = self.language_model.generate(self.memory)
             content = response.content
             self.memory.append({"role": "assistant", "content": content})
 
@@ -87,7 +87,7 @@ Begin!
 
                 self.memory.append({"role": "system", "content": f"Observation: {observation}"})
             else:
-                # If no action is found and no final answer, we might be stuck or the LLM is just talking
+                # If no action is found and no final answer, we might be stuck or the LanguageModel is just talking
                 if "Thought:" not in content:
                     return content  # Fallback
 

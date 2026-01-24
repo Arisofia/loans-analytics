@@ -14,8 +14,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from src.abaco_pipeline.output.supabase_writer import (SupabaseAuth,
-                                                       SupabaseWriter)
+from src.abaco_pipeline.output.supabase_writer import SupabaseAuth, SupabaseWriter
 
 
 def _enrich_payload(payload: Dict[str, Any]) -> Dict[str, Any]:

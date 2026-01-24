@@ -4,11 +4,9 @@ from typing import Any, Dict, Union
 from prefect import flow, get_run_logger, task
 
 from src.pipeline.data_ingestion import IngestionResult, UnifiedIngestion
-from src.pipeline.data_transformation import (TransformationResult,
-                                              UnifiedTransformation)
+from src.pipeline.data_transformation import TransformationResult, UnifiedTransformation
 from src.pipeline.data_validation_gx import validate_loan_data
-from src.pipeline.kpi_calculation import (CalculationResultV2,
-                                          UnifiedCalculationV2)
+from src.pipeline.kpi_calculation import CalculationResultV2, UnifiedCalculationV2
 from src.pipeline.orchestrator import PipelineConfig
 from src.pipeline.output import OutputResult, UnifiedOutput
 

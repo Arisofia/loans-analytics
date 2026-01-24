@@ -62,6 +62,7 @@ class RetryPolicy:
 
 class CircuitBreakerError(Exception):
     """Raised when the circuit breaker is open."""
+
     pass
 
 
@@ -74,9 +75,7 @@ class CircuitBreaker:
     ):
         self.failure_threshold = failure_threshold
         # Use reset_seconds if provided (legacy support), otherwise recovery_timeout
-        self.recovery_timeout = (
-            reset_seconds if reset_seconds is not None else recovery_timeout
-        )
+        self.recovery_timeout = reset_seconds if reset_seconds is not None else recovery_timeout
 
         self.failures = 0
         self.last_failure_time: Optional[float] = None
@@ -118,9 +117,7 @@ class CircuitBreaker:
             raise
 
 
-def deep_merge(
-    base_dict: Dict[str, Any], override_dict: Dict[str, Any]
-) -> Dict[str, Any]:
+def deep_merge(base_dict: Dict[str, Any], override_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Deep merge override_dict into base_dict, with override taking precedence."""
     result = base_dict.copy()
     for key, value in override_dict.items():
