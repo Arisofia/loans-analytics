@@ -4,6 +4,7 @@ end-to-end tests (intentionally minimal, deterministic, and well-typed).
 This module restores the historical `src.analytics.run_pipeline` surface used
 by tests: `calculate_kpis`, `create_metrics_csv`, and `main`.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -61,8 +62,16 @@ def calculate_kpis(df: pd.DataFrame) -> Dict[str, Any]:
 
     # Segment-level aggregates (common segments in tests)
     seg_group = df.groupby(df.get("segment", pd.Series("unknown")))
-    consumer_receivable = float(seg_group.get_group("Consumer")["total_receivable_usd"].sum()) if "Consumer" in seg_group.groups else 0.0
-    sme_receivable = float(seg_group.get_group("SME")["total_receivable_usd"].sum()) if "SME" in seg_group.groups else 0.0
+    consumer_receivable = (
+        float(seg_group.get_group("Consumer")["total_receivable_usd"].sum())
+        if "Consumer" in seg_group.groups
+        else 0.0
+    )
+    sme_receivable = (
+        float(seg_group.get_group("SME")["total_receivable_usd"].sum())
+        if "SME" in seg_group.groups
+        else 0.0
+    )
 
     kpis: Dict[str, Any] = {
         "total_receivable_usd": total_receivable,
@@ -91,7 +100,6 @@ def calculate_kpis(df: pd.DataFrame) -> Dict[str, Any]:
     return kpis
 
 
-<<<<<<< HEAD
 def create_metrics_csv(df: pd.DataFrame, output_path: Path) -> None:
     """Create a metrics CSV summarizing per-segment and portfolio metrics."""
     metrics: List[Dict[str, Any]] = []
@@ -107,7 +115,9 @@ def create_metrics_csv(df: pd.DataFrame, output_path: Path) -> None:
         groups = df.groupby("segment")
         for seg, g in groups:
             seg_kpis = {
-                "total_receivable_usd": float(g.get("total_receivable_usd", pd.Series(dtype=float)).sum()),
+                "total_receivable_usd": float(
+                    g.get("total_receivable_usd", pd.Series(dtype=float)).sum()
+                ),
                 "count": int(len(g)),
             }
             for k, v in seg_kpis.items():
@@ -160,14 +170,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     kpis = calculate_kpis(df)
 
     # Add run metadata expected by smoke tests and JSON schema
-    from uuid import uuid4
     from datetime import datetime, timezone
+    from uuid import uuid4
 
     kpis_enriched = dict(kpis)
     kpis_enriched.setdefault("run_id", str(uuid4()))
     kpis_enriched.setdefault("timestamp", datetime.now(timezone.utc).isoformat())
     kpis_enriched.setdefault("pipeline_status", "success")
-    kpis_enriched.setdefault("num_segments", len(df.get("segment").unique()) if "segment" in df.columns else 1)
+    kpis_enriched.setdefault(
+        "num_segments", len(df.get("segment").unique()) if "segment" in df.columns else 1
+    )
 
     out_dir.mkdir(parents=True, exist_ok=True)
     kpi_file = out_dir / "kpi_results.json"
