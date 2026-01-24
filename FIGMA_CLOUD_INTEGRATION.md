@@ -2,13 +2,15 @@
 
 ## 🚀 Production Endpoints (Live)
 
-**KPI Dashboard**
-```
+### KPI Dashboard
+
+```text
 https://tugujujhcjyggmshtgoa.functions.supabase.co/figma-kpis
 ```
 
-**Marketing Dashboard**
-```
+### Marketing Dashboard
+
+```text
 https://tugujujhcjyggmshtgoa.functions.supabase.co/figma-marketing
 ```
 
@@ -21,14 +23,16 @@ Authorization: Bearer <SUPABASE_ANON_KEY>
 Content-Type: application/json
 ```
 
-**Get your Anon Key:**
-1. Go to https://supabase.com/dashboard/project/tugujujhcjyggmshtgoa/api?page=auth
+### Get your Anon Key
+
+1. Go to <https://supabase.com/dashboard/project/tugujujhcjyggmshtgoa/api?page=auth>
 2. Copy the `anon` key under "Project API keys"
 3. Use it as: `Bearer YOUR_ANON_KEY_HERE`
 
 ## 📊 Response Examples
 
 ### /figma-kpis Response
+
 ```json
 {
   "version": "2.0",
@@ -50,6 +54,7 @@ Content-Type: application/json
 ```
 
 ### /figma-marketing Response
+
 ```json
 {
   "version": "2.0",
@@ -73,68 +78,28 @@ Content-Type: application/json
 }
 ```
 
-## 🎯 Figma Integration Steps
+## 🎯 Current Status (January 2026)
 
-1. **In your Figma plugin code**, add:
-```javascript
-const ANON_KEY = 'YOUR_ANON_KEY_HERE';  // Get from Supabase dashboard
-const FIGMA_KPI_URL = 'https://tugujujhcjyggmshtgoa.functions.supabase.co/figma-kpis';
-const FIGMA_MARKETING_URL = 'https://tugujujhcjyggmshtgoa.functions.supabase.co/figma-marketing';
+### Deployed Components
 
-async function fetchKPIs() {
-  const response = await fetch(FIGMA_KPI_URL, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${ANON_KEY}`,
-      'Content-Type': 'application/json',
-    },
-  });
-  return response.json();
-}
+- Supabase Edge Functions live on production
+- CORS enabled for Figma domains
+- Demo mode fallback implemented
+- AI-generated agent insights included
 
-async function fetchMarketingData() {
-  const response = await fetch(FIGMA_MARKETING_URL, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${ANON_KEY}`,
-      'Content-Type': 'application/json',
-    },
-  });
-  return response.json();
-}
-```
+### What's Included
 
-2. **Test with curl**:
-```bash
-curl -X GET 'https://tugujujhcjyggmshtgoa.functions.supabase.co/figma-kpis' \
-  -H 'Authorization: Bearer YOUR_ANON_KEY' \
-  -H 'Content-Type: application/json'
-```
+#### KPI Dashboard
 
-## 🔄 Data Fallback Logic
-
-**All functions automatically fall back to demo data when:**
-- Backend (http://127.0.0.1:8000/api/kpis/latest) is unavailable
-- Timeout occurs (5 second timeout)
-- Network error occurs
-
-**Response indicates demo mode via:**
-- `metadata.demo_mode: true`
-- `X-Demo-Mode: true` HTTP header
-
-This ensures Figma **always** gets data, even when backend is down.
-
-## 📋 Available Metrics
-
-### KPI Dashboard (56 metrics)
-- Portfolio Overview (3 metrics): Active Clients, Total Outstanding, Avg Loan Size
-- Risk Metrics (2): PAR30, PAR90
-- Pricing Metrics (2): Weighted APR, Fee Rate
-- Growth Metrics (2): MoM Growth, Rotation Rate
+- Portfolio Metrics (5): NPL, Total Exposure, Weighted NPL%
+- Risk Metrics (9): Vintage Analysis, DPD Distribution, Stage Migration
+- Pricing Metrics (11): Avg Interest Rate, Fee Revenue
+- Growth Metrics (9): New Loans, Origination Volume
 - Customer Metrics (2): CAC, LTV
 - Quality Metrics (2): Collection Rate, Data Quality Score
 
-### Marketing Dashboard  
+### Marketing Dashboard
+
 - Unit Economics (36-month history)
 - Customer Acquisition & Retention
 - Segmentation (by intensity, line size, ticket band)
@@ -152,23 +117,32 @@ This ensures Figma **always** gets data, even when backend is down.
 - [ ] Response includes `metadata.demo_mode` flag
 - [ ] CORS headers allow cross-origin requests from Figma
 
-## 🆘 Troubleshooting
+## 🚨 Troubleshooting
 
-**401 Unauthorized**: Invalid or missing Anon Key
-- Get fresh key from https://supabase.com/dashboard/project/tugujujhcjyggmshtgoa/api?page=auth
+### 401 Unauthorized
 
-**CORS Error**: Check browser console
+Invalid or missing Anon Key
+
+- Get fresh key from <https://supabase.com/dashboard/project/tugujujhcjyggmshtgoa/api?page=auth>
+
+### CORS Errors
+
+Check browser console
+
 - Functions have `Access-Control-Allow-Origin: *` configured
 
-**Empty historical data**: Backend unavailable
+### Empty historical data
+
+Backend unavailable
+
 - Check `metadata.demo_mode: true`
 - Ensure backend is running (local dev)
 
-**Slow responses**: Backend timeout
+### Slow responses
+
+Backend timeout
+
 - Functions have 5-second timeout
 - Falls back to demo data automatically
 
 ---
-
-**Deployed**: 2026-01-05 20:02 UTC
-**Status**: 🟢 Production Ready
