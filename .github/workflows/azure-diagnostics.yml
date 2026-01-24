@@ -45,7 +45,7 @@ jobs:
           echo "diagnostics start: $(date -u)" > diagnostics/README.txt
 
       - name: Set up Azure CLI
-        uses: azure/CLI@v1
+        uses: azure/CLI@v2
         with:
           azcliversion: "2.49.0"
           inlineScript: az --version
