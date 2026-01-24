@@ -65,9 +65,9 @@ class OpenAIProvider(BaseLLMProvider):
     def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4-turbo-preview"):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.model = model
-        if OPENAI_AVAILABLE and self.api_key:
+        should_create_client = OPENAI_AVAILABLE and self.api_key
+        if should_create_client:
             from openai import OpenAI
-
             self.client = OpenAI(api_key=self.api_key)
         else:
             self.client = None
