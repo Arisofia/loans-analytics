@@ -1,17 +1,16 @@
-#!/usr/bin/env python3
-"""
-ABACO Complete Analytics - Load real data and calculate all KPIs
-Ready for production use and dashboard integration.
-"""
+# !/usr/bin/env python3
+# ABACO Complete Analytics - Load real data and calculate all KPIs
+# Ready for production use and dashboard integration.
+import numpy as np
 
-import importlib.util
-import json
-import logging
-import sys
-from datetime import datetime
-from pathlib import Path
+import importlib.util  # noqa: E402
+import json  # noqa: E402
+import logging  # noqa: E402
+import sys  # noqa: E402
+from datetime import datetime  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-import pandas as pd
+import pandas as pd  # noqa: E402
 
 # Add project to path
 project_root = Path(__file__).resolve().parent.parent
@@ -19,7 +18,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 try:
-    from src.azure_tracing import setup_azure_tracing
+    from src.azure_tracing import setup_azure_tracing  # noqa: E402
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for run_complete_analytics")
@@ -29,7 +28,6 @@ except (ImportError, Exception) as tracing_err:
     logger.warning("Azure tracing not initialized: %s", tracing_err)
 
 from src.pipeline.orchestrator import UnifiedPipeline  # noqa: E402
-
 
 
 def load_real_data():
@@ -52,9 +50,8 @@ def load_real_data():
 
     if loans_df is None:
         print("⚠️  No loan file found. Creating synthetic data.")
-        import numpy as np
 
-        rng = rng.default_rng(42)
+        rng = np.random.default_rng(42)
         loans_df = pd.DataFrame(
             {
                 "loan_id": [f"L{i:05d}" for i in range(100)],
@@ -106,8 +103,6 @@ def load_real_data():
 
     if payments_df is None:
         print("⚠️  No payment file found. Using synthetic payments.")
-        import numpy as np
-
         payments_df = pd.DataFrame(
             {
                 "payment_id": [f"P{i:06d}" for i in range(len(loans_df) * 2)],
@@ -146,8 +141,6 @@ def load_real_data():
 
     if customers_df is None:
         print("⚠️  No customer file found. Creating synthetic customer data.")
-        import numpy as np
-
         unique_customers = loans_df["customer_id"].unique()[:50]
         customers_df = pd.DataFrame(
             {
@@ -314,14 +307,14 @@ def main():
         print(f"✅ Quarterly Scorecard saved to: {scorecard_path}")
 
         # 6. Push to Supabase if enabled
-        from src.integrations.supabase_client import SupabaseOutputClient
+        from src.integrations.supabase_client import SupabaseOutputClient  # noqa: E402
 
         SupabaseOutputClient()
         # ...existing code...
 
     except Exception as e:
         print(f"⚠️  Error calculating extended KPIs: {e}")
-        import traceback
+        import traceback  # noqa: E402
 
         traceback.print_exc()
 

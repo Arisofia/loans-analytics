@@ -1,9 +1,9 @@
 """Tests for unified secrets management module."""
 
-import os
+import os  # noqa: E402
 
-import pytest
-from src.config.secrets import SecretsManager, get_secrets_manager
+import pytest  # noqa: E402
+from src.config.secrets import SecretsManager, get_secrets_manager  # noqa: E402
 
 
 class TestSecretsManagerGet:

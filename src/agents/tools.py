@@ -72,9 +72,9 @@ def simulate_portfolio_scenario(
     Returns:
         Dict[str, Any]: Comparison between baseline and simulated KPIs.
     """
-    import pandas as pd
+    import pandas as pd  # noqa: E402
 
-    from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
+    from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine  # noqa: E402
 
     if data_path:
         df = pd.read_csv(data_path)
@@ -124,9 +124,9 @@ def run_portfolio_analysis(data_path: Optional[str] = None) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: KPI dashboard and risk alerts.
     """
-    import pandas as pd
+    import pandas as pd  # noqa: E402
 
-    from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
+    from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine  # noqa: E402
 
     if data_path:
         df = pd.read_csv(data_path)
@@ -176,7 +176,7 @@ def analyze_customer_behavior(customer_id: Optional[str] = None) -> Dict[str, An
         Dict[str, Any]: Customer intelligence metrics (CLV, churn, segments).
     """
     # Placeholder for behavioral prediction logic
-    import random
+    import random  # noqa: E402
 
     if customer_id:
         return {
@@ -235,7 +235,7 @@ def score_leads(leads: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     Returns:
         List[Dict[str, Any]]: Leads with added 'sales_score' and 'priority'.
     """
-    import random
+    import random  # noqa: E402
 
     scored_leads = []
     for lead in leads:

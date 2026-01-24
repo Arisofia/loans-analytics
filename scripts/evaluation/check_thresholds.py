@@ -6,13 +6,13 @@ This script checks if model performance metrics meet minimum quality standards
 and produces a detailed pass/fail report for CI/CD integration.
 """
 
-import argparse
-import json
-import sys
-from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+import argparse  # noqa: E402
+import json  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any, Dict, List, Tuple, Union  # noqa: E402
 
-import yaml
+import yaml  # noqa: E402
 
 
 class ThresholdValidator:

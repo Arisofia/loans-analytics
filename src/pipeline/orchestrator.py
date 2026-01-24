@@ -67,16 +67,14 @@ class UnifiedPipeline:
             try:
                 payload = json.loads(manifest_path.read_text(encoding="utf-8"))
                 return payload.get("metrics")
-            except (json.JSONDecodeError, FileNotFoundError, OSError) as e:
+            except (json.JSONDecodeError, OSError) as e:
                 # Handle expected file/parsing errors gracefully by logging a warning
                 # and trying the next available manifest.
                 logger.warning(f"Skipping corrupt or missing manifest {manifest_path}: {e}")
                 continue
             except Exception as e:
                 # Log unexpected errors with a traceback but don't crash the pipeline
-                logger.error(
-                    f"Unexpected error reading {manifest_path}: {e}", exc_info=True
-                )
+                logger.error(f"Unexpected error reading {manifest_path}: {e}", exc_info=True)
                 continue
         return None
 
@@ -108,7 +106,7 @@ class UnifiedPipeline:
                 alerts.append(f"⚠️ *KPI Warning*: {disp} is {val} (Status: WARNING)")
 
         if alerts:
-            message = f"📢 *Pipeline Alert - Run {self.run_id}*\n\n" + "\n".join(alerts)
+            _ = f"📢 *Pipeline Alert - Run {self.run_id}*\n\n" + "\n".join(alerts)
             logger.warning("Pipeline Alerts: %s", alerts)
 
     def execute(

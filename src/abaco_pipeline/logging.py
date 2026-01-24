@@ -3,9 +3,9 @@
 Uses structlog when available; falls back to stdlib logging.
 """
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-import logging
+import logging  # noqa: E402
 
 
 def configure_logging(level: str | None = None) -> None:
@@ -13,7 +13,7 @@ def configure_logging(level: str | None = None) -> None:
     logging.basicConfig(level=getattr(logging, log_level, logging.INFO))
 
     try:
-        import structlog
+        import structlog  # noqa: E402
 
         structlog.configure(
             wrapper_class=structlog.make_filtering_bound_logger(

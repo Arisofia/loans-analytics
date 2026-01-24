@@ -4,14 +4,14 @@ This reproduces the small API surface used in unit tests: `SupabaseAuth` and
 `SupabaseWriter` with `upsert_pipeline_run` and `insert_kpi_values`.
 """
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-import json
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Any, Dict, List
+import json  # noqa: E402
+from dataclasses import dataclass  # noqa: E402
+from datetime import datetime  # noqa: E402
+from typing import Any, Dict, List  # noqa: E402
 
-import requests
+import requests  # noqa: E402
 
 
 @dataclass

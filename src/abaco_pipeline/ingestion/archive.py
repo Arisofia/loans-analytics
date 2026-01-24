@@ -1,12 +1,12 @@
 """Raw artifact archiving (v2 scaffold)."""
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-import hashlib
-import json
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
+import hashlib  # noqa: E402
+import json  # noqa: E402
+from dataclasses import dataclass  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any  # noqa: E402
 
 
 def sha256_bytes(payload: bytes) -> str:

@@ -54,7 +54,7 @@ async def ingest_dataset(file: UploadFile = File(...), trigger_flow: bool = Fals
         ingestor = UnifiedIngestion(strict_validation=True)
         # Note: UnifiedIngestion expects ingest_file or ingest_csv,
         # let's assume ingest_dataframe for BytesIO if supported or save to tmp.
-        import pandas as pd
+        import pandas as pd  # noqa: E402
 
         df = pd.read_csv(io.BytesIO(content))
         df = ingestor.ingest_dataframe(df)
@@ -98,6 +98,6 @@ async def ingest_dataset(file: UploadFile = File(...), trigger_flow: bool = Fals
 
 
 if __name__ == "__main__":
-    import uvicorn
+    import uvicorn  # noqa: E402
 
     uvicorn.run(app, host="0.0.0.0", port=8000)

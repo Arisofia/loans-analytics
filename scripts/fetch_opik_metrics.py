@@ -6,11 +6,11 @@ This script fetches system metrics from Opik (if configured) or generates
 placeholder metrics for observability monitoring.
 """
 
-import json
-import logging
-import os
-from datetime import datetime, timezone
-from pathlib import Path
+import json  # noqa: E402
+import logging  # noqa: E402
+import os  # noqa: E402
+from datetime import datetime, timezone  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

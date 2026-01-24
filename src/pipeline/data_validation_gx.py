@@ -1,22 +1,22 @@
 """Great Expectations validation helpers for pipeline checks."""
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-import logging
-from typing import Any, Dict, List
+import logging  # noqa: E402
+from typing import Any, Dict, List  # noqa: E402
 
-import pandas as pd
+import pandas as pd  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
 try:
-    import great_expectations as gx
-    from great_expectations.data_context import EphemeralDataContext
+    import great_expectations as gx  # noqa: E402
+    from great_expectations.data_context import EphemeralDataContext  # noqa: E402
 
     HAS_GE = True
 except Exception:  # pragma: no cover - optional dependency
-    gx = None  # type: ignore
-    EphemeralDataContext = None  # type: ignore
+    gx = None
+    EphemeralDataContext = None
     HAS_GE = False
 
 
@@ -29,7 +29,7 @@ def get_or_create_datasource(
         return context.get_datasource(datasource_name)
     except Exception:
         logger.info("Datasource '%s' not found; creating it.", datasource_name)
-        return context.sources.add_pandas(name=datasource_name)  # type: ignore
+        return context.sources.add_pandas(name=datasource_name)
 
 
 def create_validator_for_dataframe(

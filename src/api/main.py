@@ -3,7 +3,7 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 
 import pandas as pd
 import redis
@@ -17,14 +17,14 @@ from src.config.paths import Paths
 from src.config.settings import settings
 
 try:
-    from apps.analytics.risk_model import LoanRiskModel
+    from apps.analytics.risk_model import LoanRiskModel  # noqa: E402
 except ImportError:
     LoanRiskModel = None
 
 try:
-    from agents.gen_ai_kpi import KPIQuestionAnsweringAgent
+    from agents.gen_ai_kpi import KPIQuestionAnsweringAgent  # noqa: E402
 except ImportError:
-    KPIQuestionAnsweringAgent = None
+    KPIQuestionAnsweringAgent: Any = None
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ def get_risk_model():
 
 def get_kpi_agent():
     global _kpi_agent
-    if _kpi_agent is None and KPIQuestionAnsweringAgent:
+    if _kpi_agent is None and KPIQuestionAnsweringAgent is not None:
         _kpi_agent = KPIQuestionAnsweringAgent()
     return _kpi_agent
 

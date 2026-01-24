@@ -1,24 +1,23 @@
-#!/usr/bin/env python
-"""
-Shadow Mode Validator - Week 3 Day 3-4
-Runs V1 and V2 pipelines in parallel and compares outputs
-"""
-
-import json
-import logging
-import sys
-from datetime import datetime
-from pathlib import Path
-
+# !/usr/bin/env python
+# Shadow Mode Validator - Week 4
+# Validates V2 pipeline in shadow mode against production
 import numpy as np
-import pandas as pd
+
+import json  # noqa: E402
+import logging  # noqa: E402
+import sys  # noqa: E402
+from datetime import datetime  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+rng = np.random.default_rng(42)  # noqa: E402
+import pandas as pd  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.kpis.engine import KPIEngineV2
+from src.kpis.engine import KPIEngineV2  # noqa: E402
 
 try:
-    from src.azure_tracing import setup_azure_tracing
+    from src.azure_tracing import setup_azure_tracing  # noqa: E402
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for shadow_mode_validator")

@@ -18,7 +18,7 @@ import requests
 
 # Optional: Azure Application Insights tracing
 try:
-    from src.azure_tracing import setup_azure_tracing, trace_analytics_job
+    from src.azure_tracing import setup_azure_tracing, trace_analytics_job  # noqa: E402
 
     AZURE_TRACING_ENABLED = True
 except ImportError:

@@ -26,9 +26,9 @@ def test_sample_data_contract_compliance():
 
 def test_dirty_data_cleaning_and_validation():
     """Test that currency symbols and commas are cleaned before contract validation."""
-    import io
+    import io  # noqa: E402
 
-    from python.ingestion import AbacoIngestion
+    from python.ingestion import AbacoIngestion  # noqa: E402
 
     dirty_csv = """loan_id,loan_amount,appraised_value,borrower_income,monthly_debt,loan_status,interest_rate,principal_balance,measurement_date
 L1,"$1,000.00","$1,200.00","$50,000.00","$1,500.00",current,0.05,"$950.00",2025-01-01

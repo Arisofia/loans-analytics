@@ -4,28 +4,28 @@ Performance Stress Test - Week 3 Day 5-6
 Tests V2 pipeline with production-scale data and sustained load
 """
 
-import json
-import logging
-import os
-import sys
-import time
-from datetime import datetime
-from pathlib import Path
+import json  # noqa: E402
+import logging  # noqa: E402
+import os  # noqa: E402
+import sys  # noqa: E402
+import time  # noqa: E402
+from datetime import datetime  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-import numpy as np
-import pandas as pd
-import psutil
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+import psutil  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.kpis.engine import KPIEngineV2
+from src.kpis.engine import KPIEngineV2  # noqa: E402
 
 try:
-    from src.azure_tracing import setup_azure_tracing
+    from src.azure_tracing import setup_azure_tracing  # noqa: E402
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for performance_stress_test")
-except Exception as tracing_err:
+except Exception:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 

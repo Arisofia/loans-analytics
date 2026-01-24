@@ -4,13 +4,13 @@ Tests for src.tracing_setup.
 Validates OpenTelemetry tracing initialization and safe no-op behavior.
 """
 
-import os
-import unittest
-from unittest.mock import patch
+import os  # noqa: E402
+import unittest  # noqa: E402
+from unittest.mock import patch  # noqa: E402
 
-from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace import TracerProvider  # noqa: E402
 
-from src import tracing_setup
+from src import tracing_setup  # noqa: E402
 
 
 class TestTracingSetup(unittest.TestCase):

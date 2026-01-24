@@ -5,9 +5,9 @@ Unified metrics analysis script.
 Analyzes agent performance, pipeline health, and data quality trends from Opik metrics.
 """
 
-import json
-import logging
-from pathlib import Path
+import json  # noqa: E402
+import logging  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

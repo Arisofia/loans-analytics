@@ -33,18 +33,18 @@ class PipelineConfig:
             logger.warning("Config file not found: %s, using minimal defaults", self.config_path)
             return self._default_config()
 
-        base_config = load_yaml(self.config_path)
+        base_config = load_yaml(str(self.config_path))
         logger.info("Loaded base configuration from %s", self.config_path)
 
         # Load business rules if they exist
         rules_path = self.config_path.parent / "business_rules.yaml"
         if rules_path.exists():
-            base_config["business_rules"] = load_yaml(rules_path)
+            base_config["business_rules"] = load_yaml(str(rules_path))
             logger.info("Loaded business rules from %s", rules_path)
 
         env_config_path = self.ENVIRONMENTS_DIR / f"{self.environment}.yml"
         if env_config_path.exists():
-            env_config = load_yaml(env_config_path)
+            env_config = load_yaml(str(env_config_path))
             base_config = deep_merge(base_config, env_config)
             logger.info("Merged environment config from %s", env_config_path)
         else:
@@ -52,7 +52,7 @@ class PipelineConfig:
                 "Environment config not found: %s, using base config only", env_config_path
             )
 
-        context = {}
+        context: Dict[str, Any] = {}
         return resolve_placeholders(base_config, context)
 
     def _default_config(self) -> Dict[str, Any]:

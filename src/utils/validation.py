@@ -12,7 +12,7 @@ def _is_spanish_iban(iban: str) -> bool:
 
 
 try:
-    from stdnum import iban as iban_validator
+    from stdnum import iban as iban_validator  # noqa: E402
 
     def is_valid_iban(iban: str) -> bool:
         if iban is None:

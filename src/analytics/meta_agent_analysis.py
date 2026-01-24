@@ -7,12 +7,12 @@ Meta Agent Analysis Script
 - Export for dashboard/agent use
 """
 
-import os
-from datetime import datetime
+import os  # noqa: E402
+from datetime import datetime  # noqa: E402
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
 
 # Load Meta insights data (adjust path as needed)
 INSIGHTS_PATH = "data/warehouse/meta_insights.parquet"

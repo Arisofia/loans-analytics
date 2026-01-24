@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Validate dashboard dependencies for GitHub Actions smoke test."""
 
-import sys
-from pathlib import Path
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -10,7 +10,7 @@ try:
 
     print("✓ streamlit imported successfully")
 
-    from pathlib import Path
+    from pathlib import Path  # noqa: E402
 
     print("✓ pathlib imported successfully")
 
@@ -30,7 +30,7 @@ try:
 
 except Exception as e:
     print(f"✗ Import failed: {e}")
-    import traceback
+    import traceback  # noqa: E402
 
     traceback.print_exc()
     sys.exit(1)

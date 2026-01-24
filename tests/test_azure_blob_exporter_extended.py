@@ -2,13 +2,13 @@
 Unit tests for AzureBlobKPIExporter and related Azure Blob Storage integration.
 """
 
-import json
-from unittest.mock import MagicMock, patch
+import json  # noqa: E402
+from unittest.mock import MagicMock, patch  # noqa: E402
 
-import pytest
-from azure.core.exceptions import ResourceExistsError
-from azure.storage.blob import BlobServiceClient
-from src.analytics.azure_blob_exporter import AzureBlobKPIExporter
+import pytest  # noqa: E402
+from azure.core.exceptions import ResourceExistsError  # noqa: E402
+from azure.storage.blob import BlobServiceClient  # noqa: E402
+from src.analytics.azure_blob_exporter import AzureBlobKPIExporter  # noqa: E402
 
 
 def test_exporter_requires_non_empty_container():

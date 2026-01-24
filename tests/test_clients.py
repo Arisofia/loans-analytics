@@ -29,7 +29,7 @@ class TestGrokClient(unittest.TestCase):
         self.assertEqual(args[0], "https://")
 
         # Verify retry configuration
-        from requests.adapters import HTTPAdapter
+        from requests.adapters import HTTPAdapter  # noqa: E402
 
         self.assertIsInstance(args[1], HTTPAdapter)
         self.assertEqual(args[1].max_retries.total, 3)

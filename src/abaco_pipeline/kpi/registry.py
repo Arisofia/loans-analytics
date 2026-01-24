@@ -3,9 +3,9 @@
 Keeps the mapping from KPI names to compute functions.
 """
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-from collections.abc import Callable
+from collections.abc import Callable  # noqa: E402
 
 ComputeFn = Callable[..., object]
 

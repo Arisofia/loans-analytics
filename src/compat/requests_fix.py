@@ -5,8 +5,8 @@ from typing import Optional
 from requests.exceptions import RequestsDependencyWarning
 
 try:
-    from packaging.version import InvalidVersion
-    from packaging.version import Version as PackagingVersion
+    from packaging.version import InvalidVersion  # noqa: E402
+    from packaging.version import Version as PackagingVersion  # noqa: E402
 except ImportError:
     PackagingVersion = None  # type: ignore
 

@@ -6,12 +6,12 @@ Test Cases:
   - B-02: KPI boundary values & null handling
 """
 
-import json
-from pathlib import Path
-from typing import Dict
+import json  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Dict  # noqa: E402
 
-import pandas as pd
-import pytest
+import pandas as pd  # noqa: E402
+import pytest  # noqa: E402
 
 
 class TestKPICorrectness:
@@ -154,12 +154,12 @@ class TestKPICorrectness:
 
                 if tr != 0:
                     collection_rate = (tr - data.get("dpd_90_plus_usd", 0)) / tr
-                    assert pd.notna(collection_rate), (
-                        f"Collection rate is NaN for: {test_case['name']}"
-                    )
-                    assert not (collection_rate == float("inf") or collection_rate == float("-inf")), (
-                        f"Collection rate is infinite for: {test_case['name']}"
-                    )
+                    assert pd.notna(
+                        collection_rate
+                    ), f"Collection rate is NaN for: {test_case['name']}"
+                    assert not (
+                        collection_rate == float("inf") or collection_rate == float("-inf")
+                    ), f"Collection rate is infinite for: {test_case['name']}"
 
             except ZeroDivisionError:
                 if test_case["expect_safe"]:

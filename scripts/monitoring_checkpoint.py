@@ -4,16 +4,16 @@
 Executes validation and records metrics for each checkpoint
 """
 
-import json
-import subprocess
-import sys
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, Optional
+import json  # noqa: E402
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+from datetime import datetime  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any, Dict, Optional  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.config.paths import Paths, get_project_root
+from src.config.paths import Paths, get_project_root  # noqa: E402
 
 
 class MonitoringCheckpoint:
@@ -40,7 +40,7 @@ class MonitoringCheckpoint:
     def _get_system_metrics(self) -> Dict[str, Any]:
         """Gather system resource metrics"""
         try:
-            import psutil
+            import psutil  # noqa: E402
 
             process = psutil.Process()
             memory_info = process.memory_info()

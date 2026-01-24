@@ -6,11 +6,11 @@ Test Cases:
   - A-02: Output artifacts existence and schema validation
 """
 
-import subprocess
-import sys
-from typing import Any, Dict
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+from typing import Any, Dict  # noqa: E402
 
-import pytest
+import pytest  # noqa: E402
 
 
 class TestAnalyticsSmoke:

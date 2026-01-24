@@ -471,7 +471,6 @@ class UnifiedIngestion(IngestionMixin):
             raise
 
     def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
-        import requests
 
         headers = headers or {}
         self._log_event("http_start", "initiated", url=url)

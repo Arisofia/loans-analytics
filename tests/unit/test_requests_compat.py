@@ -4,9 +4,9 @@ from src.utils.compat import check_cryptography_robust
 
 # Try to import RequestsDependencyWarning, fallback to a mock if not available
 try:
-    from requests.exceptions import RequestsDependencyWarning
+    from requests.exceptions import RequestsDependencyWarning  # noqa: E402
 except ImportError:
-    from src.utils.compat import RequestsDependencyWarning
+    from src.utils.compat import RequestsDependencyWarning  # noqa: E402
 
 
 def test_check_cryptography_prerelease_and_none():

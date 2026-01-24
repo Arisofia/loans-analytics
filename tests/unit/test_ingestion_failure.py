@@ -1,6 +1,7 @@
 import stat
 from src.pipeline.data_ingestion import UnifiedIngestion
 
+
 def test_archive_failure_records_error(tmp_path):
     ui = UnifiedIngestion({"pipeline": {"phases": {"ingestion": {}}}})
     src = tmp_path / "data.csv"
@@ -10,7 +11,7 @@ def test_archive_failure_records_error(tmp_path):
     # make archive dir read-only to cause copy failure
     original_mode = archive_dir.stat().st_mode
     try:
-        archive_dir.chmod(stat.S_IREAD | stat.S_IEXEC) # Need exec to enter dir
+        archive_dir.chmod(stat.S_IREAD | stat.S_IEXEC)  # Need exec to enter dir
 
         archived = ui._archive_raw(src, archive_dir)
         assert archived is None

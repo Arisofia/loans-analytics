@@ -2,14 +2,19 @@
 Unit tests for the run_scoring CLI and analytics pipeline.
 """
 
-import json
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+import json  # noqa: E402
+from pathlib import Path  # noqa: E402
+from unittest.mock import MagicMock, patch  # noqa: E402
 
-import pandas as pd
-import pytest
+import pandas as pd  # noqa: E402
+import pytest  # noqa: E402
 
-from src.analytics.run_scoring import load_portfolio, main, parse_args, summarize_results
+from src.analytics.run_scoring import (
+    load_portfolio,
+    main,
+    parse_args,
+    summarize_results,
+)  # noqa: E402
 
 
 def test_parse_args_minimal_required():

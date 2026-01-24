@@ -1,9 +1,9 @@
 """Centralized path management with environment-specific overrides."""
 
-import os
-from functools import lru_cache
-from pathlib import Path
-from typing import Optional
+import os  # noqa: E402
+from functools import lru_cache  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Optional  # noqa: E402
 
 
 @lru_cache(maxsize=1)

@@ -5,16 +5,16 @@ This intentionally implements only the features exercised by unit tests: a
 via the `SupabaseWriter`.
 """
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-import argparse
-import json
-import os
-import subprocess
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+import argparse  # noqa: E402
+import json  # noqa: E402
+import os  # noqa: E402
+import subprocess  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any, Dict, List, Optional  # noqa: E402
 
-from src.abaco_pipeline.output.supabase_writer import SupabaseAuth, SupabaseWriter
+from src.abaco_pipeline.output.supabase_writer import SupabaseAuth, SupabaseWriter  # noqa: E402
 
 
 def _enrich_payload(payload: Dict[str, Any]) -> Dict[str, Any]:

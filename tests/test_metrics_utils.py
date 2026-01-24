@@ -2,11 +2,11 @@
 Unit tests for metrics utility functions in the analytics engine.
 """
 
-import unittest
+import unittest  # noqa: E402
 
-import pandas as pd
-from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
-from src.analytics.metrics_utils import (
+import pandas as pd  # noqa: E402
+from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine  # noqa: E402
+from src.analytics.metrics_utils import (  # noqa: E402
     debt_to_income_ratio,
     loan_to_value,
     portfolio_delinquency_rate,

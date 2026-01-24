@@ -2,13 +2,13 @@
 Unit tests for LoanAnalyticsEngine and related analytics logic.
 """
 
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock  # noqa: E402
 
-import numpy as np
-import pandas as pd
-import pytest
-from src.analytics.azure_blob_exporter import AzureBlobKPIExporter
-from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+import pytest  # noqa: E402
+from src.analytics.azure_blob_exporter import AzureBlobKPIExporter  # noqa: E402
+from src.analytics.enterprise_analytics_engine import LoanAnalyticsEngine  # noqa: E402
 
 
 def test_engine_from_dict():
@@ -19,7 +19,7 @@ def test_engine_from_dict():
     dictionary and that the resulting object is a LoanAnalyticsEngine with
     the expected data length.
     """
-    from tests.test_data_shared import SAMPLE_LOAN_DATA
+    from tests.test_data_shared import SAMPLE_LOAN_DATA  # noqa: E402
 
     engine = LoanAnalyticsEngine.from_dict(SAMPLE_LOAN_DATA)
     assert isinstance(engine, LoanAnalyticsEngine)

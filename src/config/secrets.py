@@ -1,7 +1,7 @@
 """Unified secrets management with validation and optional Azure Key Vault fallback."""
 
-import os
-from typing import Any, Dict, Optional
+import os  # noqa: E402
+from typing import Any, Dict, Optional  # noqa: E402
 
 
 class SecretsManager:
@@ -52,8 +52,8 @@ class SecretsManager:
     def _init_vault_client(self):
         """Initialize Azure Key Vault client (lazy load)."""
         try:
-            from azure.identity import ClientSecretCredential
-            from azure.keyvault.secrets import SecretClient
+            from azure.identity import ClientSecretCredential  # noqa: E402
+            from azure.keyvault.secrets import SecretClient  # noqa: E402
 
             tenant_id = os.getenv("AZURE_TENANT_ID")
             client_id = os.getenv("AZURE_CLIENT_ID")

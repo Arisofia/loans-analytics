@@ -7,15 +7,15 @@ This module provides a factory for coordinating outputs to:
 - Meta (pixel events, ads insights)
 """
 
-import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+import logging  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any, Dict, List, Optional  # noqa: E402
 
-import pandas as pd
+import pandas as pd  # noqa: E402
 
-from src.integrations.azure_outputs import AzureDashboardClient, AzureStorageClient
-from src.integrations.meta_client import MetaOutputClient
-from src.integrations.supabase_client import SupabaseOutputClient
+from src.integrations.azure_outputs import AzureDashboardClient, AzureStorageClient  # noqa: E402
+from src.integrations.meta_client import MetaOutputClient  # noqa: E402
+from src.integrations.supabase_client import SupabaseOutputClient  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

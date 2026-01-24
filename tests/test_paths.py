@@ -1,11 +1,11 @@
 """Tests for centralized path management module."""
 
-import os
-import tempfile
-from pathlib import Path
+import os  # noqa: E402
+import tempfile  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-import pytest
-from src.config.paths import Paths, get_project_root, resolve_path
+import pytest  # noqa: E402
+from src.config.paths import Paths, get_project_root, resolve_path  # noqa: E402
 
 
 class TestProjectRoot:

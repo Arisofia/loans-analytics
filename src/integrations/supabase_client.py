@@ -8,18 +8,18 @@ Handles:
 - Real-time KPI updates via Supabase Realtime
 """
 
-import json
-import logging
-import os
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+import json  # noqa: E402
+import logging  # noqa: E402
+import os  # noqa: E402
+from datetime import datetime, timezone  # noqa: E402
+from typing import Any, Dict, List, Optional  # noqa: E402
 
-import pandas as pd
+import pandas as pd  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
 try:
-    from supabase import create_client
+    from supabase import create_client  # noqa: E402
 
     HAS_SUPABASE = True
 except ImportError:
@@ -173,7 +173,7 @@ class SupabaseOutputClient:
                 .execute()
             )
 
-            return response.data if response.data else []  # type: ignore
+            return response.data if response.data else []
 
         except Exception as e:
             logger.error(f"Error retrieving metrics from Supabase: {e}")
