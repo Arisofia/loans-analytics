@@ -76,7 +76,7 @@ jobs:
         if: steps.check-secrets.outputs.secrets_available == true
         run: |
           mkdir -p apps/web/coverage
-          echo "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record" > apps/web/coverage/lcov.info
+          printf "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record\n" > apps/web/coverage/lcov.info
       - name: SonarCloud Scan
         if: steps.check-secrets.outputs.secrets_available == true
         uses: SonarSource/sonarcloud-github-action@v2.2.0
