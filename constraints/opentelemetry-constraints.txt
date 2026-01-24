@@ -1,6 +1,6 @@
 # Consistent OpenTelemetry set to avoid pip check conflicts
-opentelemetry-api==1.39.0
-opentelemetry-sdk==1.39.0
+opentelemetry-api==1.39.1
+opentelemetry-sdk==1.39.1
 opentelemetry-semantic-conventions==0.60b0
 opentelemetry-instrumentation-urllib3==0.60b0
 opentelemetry-instrumentation-requests==0.60b0
