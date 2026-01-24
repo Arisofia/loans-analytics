@@ -5,7 +5,7 @@ opentelemetry-semantic-conventions==0.60b0
 opentelemetry-instrumentation-urllib3==0.60b0
 opentelemetry-instrumentation-requests==0.60b0
 opentelemetry-instrumentation-httpx==0.60b0
-opentelemetry-instrumentation-sqlite3==0.60b0
+opentelemetry-instrumentation-sqlite3==0.60b1
 opentelemetry-instrumentation-dbapi==0.60b1
 opentelemetry-instrumentation-psycopg2==0.60b0
 # Match azure exporter to the older 1.39 series
