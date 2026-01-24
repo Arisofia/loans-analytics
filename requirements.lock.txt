@@ -317,7 +317,7 @@ webcolors==25.10.0
 webencodings==0.5.1
 websocket-client==1.9.0
 websockets==15.0.1
-Werkzeug==3.1.4
+Werkzeug==3.1.5
 wrapt==1.17.3
 xgboost==3.1.2
 yamllint==1.37.1
