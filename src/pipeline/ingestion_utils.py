@@ -1,7 +1,6 @@
 import re
 from typing import Iterable, List, Optional
 
-import pandas as pd
 
 
 def normalize_token(value: str) -> str:

@@ -1,5 +1,3 @@
-import plotly.express as px
-import streamlit as st
 
 from src.theme import ABACO_THEME
 

@@ -1,9 +1,8 @@
 import logging
 
 import polars as pl
-import pytest
 
-from python.schemas import INGESTION_SCHEMA, validate_ingestion_contract
+from python.schemas import validate_ingestion_contract
 
 logger = logging.getLogger(__name__)
 

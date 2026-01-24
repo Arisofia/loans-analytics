@@ -2,7 +2,6 @@
 
 import json
 import logging
-import re  # Added from HEAD
 from datetime import datetime
 from pathlib import Path
 
@@ -231,7 +230,6 @@ def generate_kpi_exports(looker_data):
     exports_dir.mkdir(parents=True, exist_ok=True)
 
     from src.pipeline.orchestrator import UnifiedPipeline
-    from src.pipeline.types import PipelineConfig
 
     # Run the unified pipeline on the loan data
     temp_loan_path = Path("data/raw/temp_dashboard_input.csv")

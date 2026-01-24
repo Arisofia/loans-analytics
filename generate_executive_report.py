@@ -7,7 +7,6 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-import yaml
 
 try:
     from src.azure_tracing import setup_azure_tracing

@@ -91,13 +91,9 @@ class UnifiedIngestion:
 
     def _build_rate_limiter(self, config: Dict[str, Any]) -> RateLimiter:
         rate_cfg = config.get("warehouse", {}).get("http", {}).get("rate_limit", {})
-<<<<<<< HEAD
-        return RateLimiter(max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60))
-=======
         return RateLimiter(
             max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60)
         )
->>>>>>> origin/main
 
     def _build_circuit_breaker(self, config: Dict[str, Any]) -> CircuitBreaker:
         cb_cfg = config.get("warehouse", {}).get("http", {}).get("circuit_breaker", {})
@@ -155,13 +151,9 @@ class UnifiedIngestion:
             archive_dir.mkdir(parents=True, exist_ok=True)
             archived = archive_dir / file_path.name
             shutil.copy2(file_path, archived)
-<<<<<<< HEAD
-            self._log_event("archive", "success", file=str(file_path), archived=str(archived))
-=======
             self._log_event(
                 "archive", "success", file=str(file_path), archived=str(archived)
             )
->>>>>>> origin/main
             return archived
         except Exception as exc:
             self._record_error("archive", exc, file=str(file_path))
@@ -186,13 +178,9 @@ class UnifiedIngestion:
                 clean_record = {str(k).strip().lower(): v for k, v in record.items()}
                 if "loan_id" not in clean_record:
                     clean_record["loan_id"] = f"agg_{idx}"
-<<<<<<< HEAD
-                validated_records.append(LoanRecord(**clean_record).model_dump(by_alias=True))
-=======
                 validated_records.append(
                     LoanRecord(**clean_record).model_dump(by_alias=True)
                 )
->>>>>>> origin/main
             except ValidationError as exc:
                 errors.append(f"row {idx}: {exc}")
 
@@ -227,13 +215,9 @@ class UnifiedIngestion:
         deduped = df.drop_duplicates(subset=keys)
         return deduped, before - len(deduped)
 
-<<<<<<< HEAD
-    def _select_column(self, columns: List[str], candidates: List[str]) -> Optional[str]:
-=======
     def _select_column(
         self, columns: List[str], candidates: List[str]
     ) -> Optional[str]:
->>>>>>> origin/main
         column_map = {col.lower(): col for col in columns}
         for candidate in candidates:
             key = candidate.lower()
@@ -241,9 +225,6 @@ class UnifiedIngestion:
                 return column_map[key]
         return None
 
-<<<<<<< HEAD
-    def _load_looker_financials(self, financials_path: Optional[Path]) -> Dict[str, float]:
-=======
     def _load_looker_financials(
         self, financials_path: Optional[Path]
     ) -> Dict[str, float]:
@@ -303,13 +284,6 @@ class UnifiedIngestion:
             return {}
 
         parsed = financials_df[[date_col, cash_col]].copy()
-<<<<<<< HEAD
-        parsed[date_col] = pd.to_datetime(parsed[date_col], errors="coerce").dt.strftime("%Y-%m-%d")
-        parsed[cash_col] = pd.to_numeric(parsed[cash_col], errors="coerce")
-        parsed = parsed.dropna(subset=[date_col])
-        grouped = parsed.groupby(date_col, dropna=False)[cash_col].last()
-        cash_by_date = {str(idx): float(val) for idx, val in grouped.items() if pd.notna(val)}
-=======
         parsed[date_col] = pd.to_datetime(
             parsed[date_col], errors="coerce"
         ).dt.strftime("%Y-%m-%d")
@@ -319,7 +293,7 @@ class UnifiedIngestion:
         cash_by_date = {
             str(idx): float(val) for idx, val in grouped.items() if pd.notna(val)
         }
->>>>>>> origin/main
+
         if cash_by_date:
             self._log_event(
                 "looker_financials",
@@ -358,9 +332,9 @@ class UnifiedIngestion:
             raise ValueError(f"Missing Looker PAR columns: {', '.join(missing)}")
 
 <<<<<<< HEAD
-        measurement_date = pd.to_datetime(df[reporting_col], errors="coerce").dt.strftime(
-            "%Y-%m-%d"
-        )
+        measurement_date = pd.to_datetime(
+            df[reporting_col], errors="coerce"
+        ).dt.strftime("%Y-%m-%d")
 =======
         measurement_date = pd.to_datetime(
             df[reporting_col], errors="coerce"

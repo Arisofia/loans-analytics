@@ -9,7 +9,7 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 
-print(f"🔍 Checking available models for your API key...")
+print("🔍 Checking available models for your API key...")
 try:
     found = False
     for m in genai.list_models():

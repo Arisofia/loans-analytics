@@ -34,7 +34,6 @@ def main():
     # Now import and use your application modules
     # They will automatically benefit from tracing
     from src.agents.orchestrator import AgentOrchestrator
-    from src.pipeline.orchestrator import UnifiedPipeline
 
     # Example: Run agent
     logger.info("Running agent orchestrator...")

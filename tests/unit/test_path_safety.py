@@ -1,6 +1,5 @@
 import pytest
 from apps.analytics.api.main import _sanitize_and_resolve
-from pathlib import Path
 
 
 def test_sanitize_and_resolve_valid(tmp_path):

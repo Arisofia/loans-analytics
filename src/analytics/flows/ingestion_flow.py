@@ -12,7 +12,6 @@ from pathlib import Path
 
 import polars as pl
 
-from python.config import settings
 from python.ingestion import AbacoIngestion
 from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine
 
