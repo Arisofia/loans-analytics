@@ -3,7 +3,7 @@ openai==2.15.0
 # anthropic==0.39.0  # removed to avoid conflict with later minimum requirement (anthropic>=0.7.0)
 hubspot-api-client==12.0.0
 python-dotenv==1.2.1
-langchain==0.3.13
+langchain==1.2.7
 langchain-openai==0.2.14
 langchain-anthropic==0.3.7
 langchain-community==0.4.1
