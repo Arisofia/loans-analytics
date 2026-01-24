@@ -154,7 +154,6 @@ class TestKPICorrectness:
 
                 if tr != 0:
                     collection_rate = (tr - data.get("dpd_90_plus_usd", 0)) / tr
-<<<<<<< HEAD
                     assert pd.notna(collection_rate), (
                         f"Collection rate is NaN for: {test_case['name']}"
                     )

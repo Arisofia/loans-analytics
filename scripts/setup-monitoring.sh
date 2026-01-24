@@ -156,16 +156,15 @@ verify_setup() {
     echo -e "${YELLOW}Created Alerts:${NC}"
     az monitor metrics alert list --resource-group $RESOURCE_GROUP --query "[].name" -o tsv | sed 's/^/  • /'
 
-<<<<<<< HEAD
-  echo ""
-  echo -e "${GREEN}✅ Monitoring setup complete!${NC}"
-  echo ""
-  echo -e "${YELLOW}Next Steps:${NC}"
-  echo "  1. Configure email for $EMAIL to receive alerts"
-
-  echo "  3. Create PowerBI dashboard for executive reporting"
-  echo "  4. Set up daily health report via automation"
-  echo ""
+    echo ""
+    echo -e "${GREEN}✅ Monitoring setup complete!${NC}"
+    echo ""
+    echo -e "${YELLOW}Next Steps:${NC}"
+    echo "  1. Configure email for $EMAIL to receive alerts"
+    echo "  2. Review Azure Monitor dashboard"
+    echo "  3. Create PowerBI dashboard for executive reporting"
+    echo "  4. Set up daily health report via automation"
+    echo ""
 }
 
 # Main execution

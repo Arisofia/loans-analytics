@@ -127,7 +127,6 @@ class TestAnalyticsSmoke:
         ]
 
         for field in required_fields:
-<<<<<<< HEAD
             assert field in kpi_data, (
                 f"Required field '{field}' missing from kpi_results.json"
             )
