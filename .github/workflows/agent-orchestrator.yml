@@ -13,8 +13,7 @@ name: Multi-Agent Orchestrator
           - "conflict_resolution"
           - "emergency_analysis"
 
-permissions:
-  contents: read
+# Workflow-level permissions removed to follow least-privilege; specific job-level permissions applied where needed.
 
 concurrency:
   group: orchestrator-${{ github.event.inputs.orchestration_mode }}
@@ -76,6 +75,8 @@ jobs:
     needs: validate-secrets
     if: needs.validate-secrets.outputs.run == true
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
