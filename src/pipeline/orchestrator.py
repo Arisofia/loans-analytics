@@ -60,18 +60,23 @@ class UnifiedPipeline:
             key=lambda p: p.stat().st_mtime,
             reverse=True,
         )
-        from json import JSONDecodeError
         for manifest_path in manifests:
+            # Skip the current run's manifest to avoid self-reference
             if current_run_id in manifest_path.as_posix():
                 continue
             try:
                 payload = json.loads(manifest_path.read_text(encoding="utf-8"))
                 return payload.get("metrics")
-            except (JSONDecodeError, FileNotFoundError) as e:
-                logger.warning(f"Error loading JSON data from {manifest_path}: {e}")
+            except (json.JSONDecodeError, FileNotFoundError, OSError) as e:
+                # Handle expected file/parsing errors gracefully by logging a warning
+                # and trying the next available manifest.
+                logger.warning(f"Skipping corrupt or missing manifest {manifest_path}: {e}")
                 continue
             except Exception as e:
-                logger.error(f"Unexpected error loading manifest {manifest_path}: {e}")
+                # Log unexpected errors with a traceback but don't crash the pipeline
+                logger.error(
+                    f"Unexpected error reading {manifest_path}: {e}", exc_info=True
+                )
                 continue
         return None
 
