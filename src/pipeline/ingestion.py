@@ -269,12 +269,8 @@ class UnifiedIngestion(IngestionMixin):
             self._record_error("fatal_error", exc)
             raise
 
-    def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
-
+    def _perform_http_request(self, url: str, headers: Dict[str, str]) -> Any:
         import requests
-
-        headers = headers or {}
-        self._log_event("http_start", "initiated", url=url)
 
         def _do_request() -> requests.Response:
             if not self.circuit_breaker.allow():
@@ -292,18 +288,20 @@ class UnifiedIngestion(IngestionMixin):
                 ),
             )
             self.circuit_breaker.record_success()
+            return response
         except Exception as exc:
             self.circuit_breaker.record_failure()
             self._record_error("http_failed", exc, url=url)
             raise
 
+    def _parse_http_response(self, response: Any, url: str) -> Tuple[pd.DataFrame, str]:
         content = response.content
         checksum = hashlib.sha256(content).hexdigest()
         content_type = response.headers.get("Content-Type", "").lower()
 
         df = None
-        # Try JSON first if headers indicate JSON or the content appears to be JSON
         is_json = "json" in content_type or content.lstrip().startswith((b"{", b"["))
+        
         if is_json:
             try:
                 stripped = content.lstrip()
@@ -319,35 +317,39 @@ class UnifiedIngestion(IngestionMixin):
                 df = None
 
         if df is None:
-            # Fall back to CSV parsing
             try:
                 encoding = response.encoding or "utf-8"
                 df = pd.read_csv(StringIO(content.decode(encoding)))
             except Exception as exc:
                 self._record_error("http_parse_csv", exc, url=url)
-                raise ValueError("Failed to parse HTTP response as JSON or CSV")
+                raise ValueError("Failed to parse HTTP response as JSON or CSV") from exc
+        
+        return df, checksum
+
+    def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
+        headers = headers or {}
+        self._log_event("http_start", "initiated", url=url)
+
+        response = self._perform_http_request(url, headers)
+        df, checksum = self._parse_http_response(response, url)
 
         # log parsed rows for observability
         try:
             self._log_event("http_parsed", "success", rows=len(df), checksum=checksum)
         except Exception:
-            # Best-effort logging - do not fail
             pass
 
         schema_errors = self._validate_schema(df)
         validated_df, record_errors = self._validate_records(df)
-        # If validation produced no validated records but original df had rows,
-        # fall back to using the parsed dataframe (best-effort recovery).
+        
         if validated_df.empty and len(df) > 0:
-            self._log_event(
-                "validation", "fallback", reason="using_parsed_df", rows=len(df)
-            )
-
+            self._log_event("validation", "fallback", reason="using_parsed_df", rows=len(df))
             parsed = df.copy()
             if "loan_id" not in {str(c).lower() for c in parsed.columns}:
                 parsed["loan_id"] = [f"agg_{i}" for i in range(len(parsed))]
             validated_df = parsed
             record_errors = record_errors or []
+            
         errors = schema_errors + record_errors
         if errors:
             self._log_event("validation", "completed", error_count=len(errors))
