@@ -2,14 +2,12 @@
 
 ## 🚀 Production Endpoints (Live)
 
-### KPI Dashboard
-
+### KPI Dashboard Endpoint
 ```text
 https://tugujujhcjyggmshtgoa.functions.supabase.co/figma-kpis
 ```
 
-### Marketing Dashboard
-
+### Marketing Dashboard Endpoint
 ```text
 https://tugujujhcjyggmshtgoa.functions.supabase.co/figma-marketing
 ```
