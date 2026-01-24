@@ -192,19 +192,19 @@ log "Testing V2 execution on sample data..."
 python -c "
 import pandas as pd
 import numpy as np
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis.engine import KPIEngineV2
 
-np.random.seed(42)
+rng = rng.default_rng(42)
 df = pd.DataFrame({
     'loan_id': [f'loan_{i}' for i in range(100)],
-    'total_receivable_usd': np.random.lognormal(9, 2, 100),
-    'dpd_0_7_usd': np.random.uniform(0, 10000, 100),
-    'dpd_7_30_usd': np.random.uniform(0, 10000, 100),
-    'dpd_30_60_usd': np.random.uniform(0, 50000, 100),
-    'dpd_60_90_usd': np.random.uniform(0, 50000, 100),
-    'dpd_90_plus_usd': np.random.uniform(0, 100000, 100),
-    'cash_available_usd': np.random.uniform(0, 50000, 100),
-    'total_eligible_usd': np.random.lognormal(9, 2, 100),
+    'total_receivable_usd': rng.lognormal(9, 2, 100),
+    'dpd_0_7_usd': rng.uniform(0, 10000, 100),
+    'dpd_7_30_usd': rng.uniform(0, 10000, 100),
+    'dpd_30_60_usd': rng.uniform(0, 50000, 100),
+    'dpd_60_90_usd': rng.uniform(0, 50000, 100),
+    'dpd_90_plus_usd': rng.uniform(0, 100000, 100),
+    'cash_available_usd': rng.uniform(0, 50000, 100),
+    'total_eligible_usd': rng.lognormal(9, 2, 100),
 })
 
 engine = KPIEngineV2(df)

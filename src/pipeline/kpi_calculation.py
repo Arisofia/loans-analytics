@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional
 import pandas as pd
 import yaml
 
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis.engine import KPIEngineV2
 from src.pipeline.extended_kpis import ExtendedKPIGenerator
 from src.pipeline.utils import utc_now
 

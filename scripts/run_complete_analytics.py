@@ -54,20 +54,20 @@ def load_real_data():
         print("⚠️  No loan file found. Creating synthetic data.")
         import numpy as np
 
-        np.random.seed(42)
+        rng = rng.default_rng(42)
         loans_df = pd.DataFrame(
             {
                 "loan_id": [f"L{i:05d}" for i in range(100)],
-                "customer_id": [f"C{np.random.randint(1, 51):04d}" for i in range(100)],
+                "customer_id": [f"C{rng.randint(1, 51):04d}" for i in range(100)],
                 "disbursement_date": pd.date_range("2023-01-01", periods=100, freq="3D"),
                 "loan_end_date": pd.date_range("2023-02-01", periods=100, freq="3D"),
-                "disburse_principal": np.random.uniform(1000, 50000, 100),
-                "outstanding_balance": np.random.uniform(500, 45000, 100),
-                "dpd": np.random.choice([0, 15, 45, 90], 100, p=[0.7, 0.15, 0.1, 0.05]),
-                "loan_status": np.random.choice(
+                "disburse_principal": rng.uniform(1000, 50000, 100),
+                "outstanding_balance": rng.uniform(500, 45000, 100),
+                "dpd": rng.choice([0, 15, 45, 90], 100, p=[0.7, 0.15, 0.1, 0.05]),
+                "loan_status": rng.choice(
                     ["Active", "Complete", "Defaulted"], 100, p=[0.6, 0.3, 0.1]
                 ),
-                "product_type": np.random.choice(["Factoring", "LOC", "Term Loan"], 100),
+                "product_type": rng.choice(["Factoring", "LOC", "Term Loan"], 100),
             }
         )
     else:
@@ -111,9 +111,9 @@ def load_real_data():
         payments_df = pd.DataFrame(
             {
                 "payment_id": [f"P{i:06d}" for i in range(len(loans_df) * 2)],
-                "loan_id": np.random.choice(loans_df["loan_id"], len(loans_df) * 2),
+                "loan_id": rng.choice(loans_df["loan_id"], len(loans_df) * 2),
                 "payment_date": pd.date_range("2023-01-01", periods=len(loans_df) * 2, freq="D"),
-                "payment_amount": np.random.uniform(100, 5000, len(loans_df) * 2),
+                "payment_amount": rng.uniform(100, 5000, len(loans_df) * 2),
             }
         )
     else:
@@ -152,7 +152,7 @@ def load_real_data():
         customers_df = pd.DataFrame(
             {
                 "customer_id": unique_customers,
-                "customer_type": np.random.choice(
+                "customer_type": rng.choice(
                     ["SME", "Corporate", "Individual"], len(unique_customers)
                 ),
             }

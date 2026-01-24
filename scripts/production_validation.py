@@ -17,7 +17,7 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis.engine import KPIEngineV2
 
 try:
     from src.azure_tracing import setup_azure_tracing
@@ -45,15 +45,15 @@ class ProductionValidator:
 
     def _generate_realistic_test_data(self, n_rows: int) -> pd.DataFrame:
         """Generate realistic test data with valid KPI ranges"""
-        np.random.seed(42)
+        rng = rng.default_rng(42)
 
-        total_receivable = np.random.lognormal(9, 2, n_rows)
+        total_receivable = rng.lognormal(9, 2, n_rows)
 
-        par_dpd_0_7 = total_receivable * np.random.uniform(0, 0.03, n_rows)
-        par_dpd_7_30 = total_receivable * np.random.uniform(0, 0.03, n_rows)
-        par_dpd_30_60 = total_receivable * np.random.uniform(0, 0.08, n_rows)
-        par_dpd_60_90 = total_receivable * np.random.uniform(0, 0.05, n_rows)
-        par_dpd_90_plus = total_receivable * np.random.uniform(0, 0.10, n_rows)
+        par_dpd_0_7 = total_receivable * rng.uniform(0, 0.03, n_rows)
+        par_dpd_7_30 = total_receivable * rng.uniform(0, 0.03, n_rows)
+        par_dpd_30_60 = total_receivable * rng.uniform(0, 0.08, n_rows)
+        par_dpd_60_90 = total_receivable * rng.uniform(0, 0.05, n_rows)
+        par_dpd_90_plus = total_receivable * rng.uniform(0, 0.10, n_rows)
 
         return pd.DataFrame(
             {
@@ -64,7 +64,7 @@ class ProductionValidator:
                 "dpd_30_60_usd": par_dpd_30_60,
                 "dpd_60_90_usd": par_dpd_60_90,
                 "dpd_90_plus_usd": par_dpd_90_plus,
-                "cash_available_usd": np.random.uniform(0, 50000, n_rows),
+                "cash_available_usd": rng.uniform(0, 50000, n_rows),
                 "total_eligible_usd": total_receivable * 0.95,
             }
         )

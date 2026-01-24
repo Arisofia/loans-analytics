@@ -18,7 +18,7 @@ import psutil
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.kpi_engine_v2 import KPIEngineV2
+from src.kpis.engine import KPIEngineV2
 
 try:
     from src.azure_tracing import setup_azure_tracing
@@ -41,7 +41,7 @@ class PerformanceStressTest:
             "summary": {},
         }
         self.process = psutil.Process(os.getpid())
-        # Use a per-instance RNG (Generator) for reproducible and thread-safe randomness
+        # Use a per-instance RNG (Generator) for reproducible and thread-safe randomness - Updated to modern NumPy API
         self.rng = np.random.default_rng(42)
 
     def create_test_dataset(self, size: int) -> pd.DataFrame:

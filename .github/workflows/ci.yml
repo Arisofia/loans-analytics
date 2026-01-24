@@ -77,7 +77,7 @@ jobs:
   assignee-check:
     if: github.event_name == 'pull_request' && needs.changes.outputs.web == true
     needs: changes
-    uses: ./.github/workflows/pr-assignee-check.yml
+    uses: ./.github/workflows/pr_assignee_check.yml
     permissions:
       contents: read
       pull-requests: read

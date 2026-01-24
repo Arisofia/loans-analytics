@@ -14,11 +14,11 @@ class TestModelEvaluation:
     @pytest.fixture
     def sample_predictions(self):
         """Generate sample predictions for testing."""
-        np.random.seed(42)
+        rng = rng.default_rng(42)
         return {
-            "y_true": np.random.randint(0, 2, 1000),
-            "y_pred": np.random.randint(0, 2, 1000),
-            "y_proba": np.random.rand(1000),
+            "y_true": rng.randint(0, 2, 1000),
+            "y_pred": rng.randint(0, 2, 1000),
+            "y_proba": rng.rand(1000),
         }
 
     @pytest.fixture
@@ -145,7 +145,7 @@ class TestModelEvaluation:
     def test_metric_ranges(self, metric_name, expected_range):
         """Test that metrics fall within expected ranges."""
         # Generate random metric value for testing
-        metric_value = np.random.rand()
+        metric_value = rng.rand()
         min_val, max_val = expected_range
 
         assert min_val <= metric_value <= max_val, f"{metric_name} outside expected range"
