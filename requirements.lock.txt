@@ -210,7 +210,7 @@ py-key-value-aio==0.3.0
 py-key-value-shared==0.3.0
 pyarrow==22.0.0
 pyasn1_modules==0.4.2
-pyasn1==0.6.1
+pyasn1==0.6.2
 pycodestyle==2.14.0
 pycparser==2.23
 pydantic_core==2.41.5
