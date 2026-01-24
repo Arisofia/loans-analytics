@@ -45,7 +45,7 @@ opentelemetry-instrumentation-httpx>=0.40b0
 opentelemetry-instrumentation-requests>=0.40b0
 opentelemetry-instrumentation-urllib3>=0.40b0
 opentelemetry-instrumentation-sqlite3>=0.40b0
-opentelemetry-instrumentation-psycopg2>=0.40b0
+opentelemetry-instrumentation-psycopg>=0.40b0
 
 # Cloud & Database
 azure-identity>=1.12.0
