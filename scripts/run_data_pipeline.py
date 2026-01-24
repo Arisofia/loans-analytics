@@ -24,7 +24,7 @@ try:
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for run_data_pipeline")
-except (ImportError, Exception) as tracing_err:
+except Exception as tracing_err:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -71,13 +71,18 @@ def main(
         if status == "success":
             # Post-pipeline actions
             run_id = result.get("run_id", "unknown")
+            print(f"RUN_ID: {run_id}")
             output_path = Paths.metrics_dir(create=True)
             metrics_json_path = output_path / f"{run_id}_metrics.json"
             csv_path = output_path / f"{run_id}.csv"
+            parquet_path = output_path / f"{run_id}.parquet"
 
-            # Re-generate outputs for post-pipeline actions
-            # This is a simplification; in a real scenario, pipeline.execute would return these directly
-            kpi_df = pd.read_parquet(output_path / f"{run_id}.parquet") # Assuming parquet was written
+            # Re-generate outputs for post-pipeline actions if they exist
+            if not parquet_path.exists() or not metrics_json_path.exists():
+                logger.warning("Post-pipeline artifacts missing. Skipping supplemental actions.")
+                return True
+
+            kpi_df = pd.read_parquet(parquet_path)
             metrics_data = json.loads(metrics_json_path.read_text())
 
             if train_model:

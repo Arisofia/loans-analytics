@@ -58,4 +58,6 @@ class TestRunDataPipeline(unittest.TestCase):
         )
 
         self.assertTrue(result)
-        mock_pipeline_cls.assert_called_once_with(config_path=Path("config/test.yml"))
+        mock_pipeline_cls.assert_called_once_with(
+            config_path=Path("config/test.yml"), config_overrides={}
+        )

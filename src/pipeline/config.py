@@ -15,10 +15,13 @@ class PipelineConfig:
     DEFAULT_CONFIG_PATH = Paths.config_file()
     ENVIRONMENTS_DIR = Paths.config_file().parent.parent / "environments"
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Optional[Path] = None, overrides: Optional[Dict[str, Any]] = None):
         self.config_path = config_path or self.DEFAULT_CONFIG_PATH
         self.environment = os.getenv("PIPELINE_ENV", "development")
         self.config = self._load_config()
+        if overrides:
+            self.config = deep_merge(self.config, overrides)
+            logger.info("Applied runtime configuration overrides")
         self._validate_config()
         logger.info("Pipeline configured for environment: %s", self.environment)
 

@@ -28,8 +28,8 @@ class UnifiedPipeline:
     calculator: UnifiedCalculationV2
     output: UnifiedOutput
 
-    def __init__(self, config_path: Optional[Path] = None):
-        self.config = PipelineConfig(config_path)
+    def __init__(self, config_path: Optional[Path] = None, config_overrides: Optional[Dict[str, Any]] = None):
+        self.config = PipelineConfig(config_path, overrides=config_overrides)
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         self.run_id: str = f"pipeline_{timestamp}"
 

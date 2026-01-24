@@ -9,6 +9,7 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 
 from src.config.paths import Paths
+from src.integrations.unified_output_manager import UnifiedOutputManager
 from src.pipeline.utils import ensure_dir, hash_file, utc_now, write_json
 
 logger = logging.getLogger(__name__)
@@ -230,6 +231,25 @@ class UnifiedOutput:
         }
 
         write_json(manifest_path, manifest)
+
+        # Handle dashboard triggers if enabled
+        trigger_config = self.config.get("dashboard_triggers", {})
+        if trigger_config.get("enabled"):
+            logger.info("Executing dashboard triggers...")
+            manager = UnifiedOutputManager()
+            manager.configure_clients(trigger_config.get("clients", {}))
+            
+            trigger_results = manager.export_complete_report(
+                df=df,
+                kpi_metrics=metrics,
+                summary=metadata.get("summary", {}),
+                findings=metadata.get("findings", []),
+                run_id=master_run_id,
+                timeseries=timeseries,
+                enabled_outputs=trigger_config.get("outputs")
+            )
+            manifest["triggers"] = {"dashboard_trigger": trigger_results}
+            write_json(manifest_path, manifest)
 
         azure_blobs = self.upload_to_azure(
             [parquet_path, csv_path, metrics_path, manifest_path], master_run_id

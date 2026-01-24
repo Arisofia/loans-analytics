@@ -2,11 +2,9 @@
 Unified output manager that orchestrates batch exports to all platforms.
 
 This module provides a factory for coordinating outputs to:
-- Figma (design/metrics sync)
 - Azure (dashboards, blob storage)
 - Supabase (data persistence)
 - Meta (pixel events, ads insights)
-- Notion (documentation, reports)
 """
 
 import logging
@@ -17,9 +15,7 @@ import pandas as pd
 
 from src.integrations.azure_outputs import (AzureDashboardClient,
                                             AzureStorageClient)
-from src.integrations.figma_client import FigmaClient
 from src.integrations.meta_client import MetaOutputClient
-from src.integrations.notion_client import NotionOutputClient
 from src.integrations.supabase_client import SupabaseOutputClient
 
 logger = logging.getLogger(__name__)
@@ -34,24 +30,15 @@ class UnifiedOutputManager:
     """
 
     def __init__(self):
-        self.figma_client = FigmaClient()
         self.azure_storage_client = AzureStorageClient()
         self.azure_dashboard_client = AzureDashboardClient()
         self.supabase_client = SupabaseOutputClient()
         self.meta_client = MetaOutputClient()
-        self.notion_client = NotionOutputClient()
 
         self.results = {}
 
     def configure_clients(self, config: Dict[str, Any]) -> None:
         """Configure output clients from config dict."""
-        figma_cfg = config.get("figma", {})
-        if figma_cfg.get("enabled"):
-            self.figma_client = FigmaClient(
-                api_token=figma_cfg.get("token"),
-                file_key=figma_cfg.get("file_key"),
-            )
-
         azure_cfg = config.get("azure", {})
         if azure_cfg.get("enabled"):
             self.azure_storage_client = AzureStorageClient(
@@ -76,13 +63,6 @@ class UnifiedOutputManager:
                 ad_account_id=meta_cfg.get("ad_account_id"),
             )
 
-        notion_cfg = config.get("notion", {})
-        if notion_cfg.get("enabled"):
-            self.notion_client = NotionOutputClient(
-                api_token=notion_cfg.get("api_token"),
-                database_id=notion_cfg.get("database_id"),
-            )
-
     def export_batch(
         self,
         export_data: Dict[str, Any],
@@ -96,7 +76,7 @@ class UnifiedOutputManager:
             export_data: Dict with 'kpi_metrics', 'raw_data_df', 'summary', 'findings', etc.
             run_id: Pipeline run ID
             enabled_outputs: List of output names to enable (None = all enabled outputs)
-                           Valid values: ['figma', 'azure', 'supabase', 'meta', 'notion']
+                           Valid values: ['azure', 'supabase', 'meta']
 
         Returns:
             Dict with results from each output platform
@@ -108,16 +88,10 @@ class UnifiedOutputManager:
         }
 
         enabled_outputs = enabled_outputs or [
-            "figma",
             "azure",
             "supabase",
             "meta",
-            "notion",
         ]
-
-        if "figma" in enabled_outputs:
-            logger.info("Exporting to Figma...")
-            results["outputs"]["figma"] = self.figma_client.sync_batch_export(export_data, run_id)
 
         if "azure" in enabled_outputs:
             logger.info("Exporting to Azure...")
@@ -139,10 +113,6 @@ class UnifiedOutputManager:
         if "meta" in enabled_outputs:
             logger.info("Exporting to Meta...")
             results["outputs"]["meta"] = self.meta_client.sync_batch_export(export_data)
-
-        if "notion" in enabled_outputs:
-            logger.info("Exporting to Notion...")
-            results["outputs"]["notion"] = self.notion_client.sync_batch_export(export_data, run_id)
 
         success_flags = [
             output.get("success")
@@ -223,11 +193,9 @@ class UnifiedOutputManager:
     def health_check(self) -> Dict[str, bool]:
         """Check health of all output clients."""
         checks = {
-            "figma": bool(self.figma_client.api_token),
             "azure": bool(self.azure_storage_client.client),
             "supabase": bool(self.supabase_client.client),
             "meta": bool(self.meta_client.access_token),
-            "notion": bool(self.notion_client.api_token),
         }
 
         logger.info("Output Client Health Check:")
