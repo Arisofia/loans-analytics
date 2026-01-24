@@ -13,11 +13,10 @@ name: Run Script
       - '.github/workflows/run-script.yml'
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   run-script:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

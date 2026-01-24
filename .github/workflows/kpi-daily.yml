@@ -7,11 +7,10 @@ name: KPI Daily Calculation
         inputs:
             snapshot_id: { required: false, type: string }
 
-permissions:
-    contents: read
-
 jobs:
     gate:
+        permissions:
+            contents: read
         runs-on: ubuntu-latest
         outputs:
             run: ${{ steps.gate.outputs.run }}
@@ -32,6 +31,8 @@ jobs:
     run:
         needs: gate
 
+        permissions:
+            contents: read
         runs-on: ubuntu-latest
         timeout-minutes: 30
         env:

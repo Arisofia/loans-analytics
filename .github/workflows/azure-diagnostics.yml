@@ -3,10 +3,6 @@ name: Azure Diagnostics (dispatchable)
 "on":
   workflow_dispatch:
 
-permissions:
-  contents: read
-  id-token: write
-
 jobs:
   validate-azure:
     uses: ./.github/workflows/reusable-secret-check.yml
@@ -34,6 +30,9 @@ jobs:
 
   diagnostics:
     needs: [validate-azure, validate-acr, validate-storage, validate-swa]
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
