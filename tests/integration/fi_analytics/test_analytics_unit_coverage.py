@@ -6,11 +6,11 @@ Test Cases:
   - H-02: mypy type-check for analytics modules (mock implementation)
 """
 
-import subprocess
-import sys
-from pathlib import Path
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-import pytest
+import pytest  # noqa: E402
 
 
 class TestAnalyticsUnitCoverage:

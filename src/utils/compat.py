@@ -3,15 +3,17 @@ import warnings
 from typing import Optional
 
 try:
-    from requests.exceptions import RequestsDependencyWarning
+    from requests.exceptions import RequestsDependencyWarning  # noqa: E402
 except ImportError:
 
-    class RequestsDependencyWarning(Warning):
-        pass
+    if "RequestsDependencyWarning" not in locals():
+
+        class RequestsDependencyWarning(Warning):
+            pass
 
 
 try:
-    from packaging.version import InvalidVersion, Version
+    from packaging.version import InvalidVersion, Version  # noqa: E402
 except ImportError:
     Version = None
 

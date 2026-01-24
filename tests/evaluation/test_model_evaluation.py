@@ -1,11 +1,19 @@
 """Tests for ML model evaluation functionality."""
 
-from pathlib import Path
+from pathlib import Path  # noqa: E402
 
-import numpy as np
-import pytest
-import yaml
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
+import numpy as np  # noqa: E402
+
+rng = np.random.default_rng(42)  # noqa: E402
+import pytest  # noqa: E402
+import yaml  # noqa: E402
+from sklearn.metrics import (  # noqa: E402
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)  # noqa: E402
 
 
 class TestModelEvaluation:

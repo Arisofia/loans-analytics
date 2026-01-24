@@ -5,40 +5,50 @@ This script generates sample loan data and applies segmentation,
 DPD bucketing, and weighted statistic calculations.
 """
 
-import argparse
-import logging
-import sys
-from datetime import datetime, timedelta
-from pathlib import Path
+import argparse  # noqa: E402
+import logging  # noqa: E402
+import sys  # noqa: E402
+from datetime import datetime, timedelta  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 try:
-    import matplotlib
+    import matplotlib  # noqa: E402
+
     # Use non-interactive backend for scripts/tests to avoid GUI/display-related errors
     matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # noqa: E402
+
     HAS_MATPLOTLIB = True
 except Exception:
     # Matplotlib may not be installed in lightweight CI/test environments.
     # Provide a minimal stub that exposes the attributes used by this script so tests can patch `plt`.
     HAS_MATPLOTLIB = False
+
     class _StubPlt:
         def figure(self, *args, **kwargs):
             return None
+
         def title(self, *args, **kwargs):
             pass
+
         def xlabel(self, *args, **kwargs):
             pass
+
         def ylabel(self, *args, **kwargs):
             pass
+
         def xticks(self, *args, **kwargs):
             pass
+
         def tight_layout(self, *args, **kwargs):
             pass
+
         def savefig(self, *args, **kwargs):
             pass
+
     plt = _StubPlt()
 
-import pandas as pd
+import pandas as pd  # noqa: E402
 
 # Project import moved into main() to avoid heavy imports during pytest collection.
 # (Importing src modules at import-time can cause side-effects like telemetry threads.)
@@ -91,7 +101,7 @@ def main():
         print(f"Generated {len(df)} sample loans.")
 
     # Import here to avoid import-time side-effects during pytest collection.
-    from src.financial_analysis import FinancialAnalyzer
+    from src.financial_analysis import FinancialAnalyzer  # noqa: E402
 
     analyzer = FinancialAnalyzer()
 

@@ -6,9 +6,9 @@ This is intentionally minimal; real implementation will likely target:
 - database sinks
 """
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-from pathlib import Path
+from pathlib import Path  # noqa: E402
 
 
 def ensure_dir(path: str | Path) -> Path:

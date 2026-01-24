@@ -1,12 +1,12 @@
 """Runtime harness to kick off the C-suite agent workflow."""
 
-import argparse
-import json
-import logging
-from pathlib import Path
-from typing import Any, Dict
+import argparse  # noqa: E402
+import json  # noqa: E402
+import logging  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any, Dict  # noqa: E402
 
-from src.agents.orchestrator import AgentOrchestrator
+from src.agents.orchestrator import AgentOrchestrator  # noqa: E402
 
 LOG = logging.getLogger("c_suite_agent")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")

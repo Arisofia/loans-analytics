@@ -2,7 +2,6 @@ import json
 import logging
 
 
-
 def test_batch_export_load_latest_metrics_invalid_json(tmp_path, caplog, monkeypatch):
     # Arrange: create data/metrics/latest_metrics.json with a non-dict JSON value
     metrics_dir = tmp_path / "data" / "metrics"
@@ -13,7 +12,7 @@ def test_batch_export_load_latest_metrics_invalid_json(tmp_path, caplog, monkeyp
     # Run from tmp_path so relative paths in the implementation resolve there
     monkeypatch.chdir(tmp_path)
 
-    from src.integrations.batch_export_runner import BatchExportRunner
+    from src.integrations.batch_export_runner import BatchExportRunner  # noqa: E402
 
     caplog.set_level(logging.ERROR)
 
@@ -35,7 +34,7 @@ def test_load_dashboard_metrics_invalid_json(tmp_path, caplog, capsys, monkeypat
     dashboard_file = exports_dir / "complete_kpi_dashboard.json"
     dashboard_file.write_text("123")  # valid JSON but not a dict
 
-    import src.analytics_metrics as analytics_metrics
+    import src.analytics_metrics as analytics_metrics  # noqa: E402
 
     monkeypatch.setattr(analytics_metrics, "DASHBOARD_JSON", dashboard_file)
 

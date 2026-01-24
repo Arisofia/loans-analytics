@@ -4,11 +4,11 @@ Validates that all field references in KPI formulas exist in the declared data s
 Usage: python validate_kpi_formulas.py config/kpi_definitions.yml
 """
 
-import re
-import sys
-from typing import Set
+import re  # noqa: E402
+import sys  # noqa: E402
+from typing import Set  # noqa: E402
 
-import yaml
+import yaml  # noqa: E402
 
 FIELD_PATTERN = re.compile(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\b")
 

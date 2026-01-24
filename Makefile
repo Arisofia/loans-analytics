@@ -1,52 +1,61 @@
-.PHONY: install install-dev test test-cov run-pipeline run-dashboard clean check-maturity \
-        lint format type-check audit-code quality env-clean venv venv-install \
-	test-kpi-parity analytics-sync analytics-run vscode-envfile-info \
-	audit-dry-run audit-write help
+# Configuration
+PYTHON := python3.12
+VENV_DIR := .venv
+VENV_BIN := $(VENV_DIR)/bin
 
-# ------------------------------------------------------------------------------
-# Installation targets
-# ------------------------------------------------------------------------------
+# Default target
+.PHONY: all
+all: install quality
 
-install:
-	python3.12 -m pip install -r requirements.txt
+# --- Setup & Installation ---
 
-install-dev:
-	python3.12 -m pip install -r requirements.txt -r dev-requirements.txt
+.PHONY: venv
+venv:
+	$(PYTHON) -m venv $(VENV_DIR)
+	@echo "Virtual environment created in $(VENV_DIR)"
 
-# ------------------------------------------------------------------------------
-# Testing targets
-# ------------------------------------------------------------------------------
+.PHONY: install
+install: venv
+	$(VENV_BIN)/pip install --upgrade pip
+	$(VENV_BIN)/pip install -r requirements.txt
+	$(VENV_BIN)/pip install black flake8 pytest pytest-cov mypy
+	@echo "Dependencies installed."
 
-test:
-	python3.12 -m pytest
+# --- Quality & Testing ---
 
-test-cov:
-	python3.12 -m pytest --cov=src --cov-report=html --cov-report=term
-
-# ------------------------------------------------------------------------------
-# Code quality targets
-# ------------------------------------------------------------------------------
-
-lint:
-	@echo "Running pylint..."
-	PYTHONPATH=src python3.12 -m pylint src --exit-zero
-	@echo "\nRunning flake8..."
-	PYTHONPATH=src python3.12 -m flake8 src --exit-zero
-	@echo "\nRunning ruff check..."
-	PYTHONPATH=src python3.12 -m ruff check src --exit-zero
-
+.PHONY: format
 format:
-	@echo "Running black..."
-	PYTHONPATH=src python3.12 -m black src
-	@echo "\nRunning isort..."
-	PYTHONPATH=src python3.12 -m isort src
+	@echo "Running Black..."
+	$(VENV_BIN)/black src tests scripts
 
-type-check:
-	@echo "Running mypy..."
-	PYTHONPATH=src python3.12 -m mypy src --ignore-missing-imports
+.PHONY: lint
+lint:
+	@echo "Running Flake8..."
+	$(VENV_BIN)/flake8 src tests scripts
+	@echo "Running MyPy..."
+	$(VENV_BIN)/mypy src
 
+.PHONY: test
+test:
+	@echo "Running Tests..."
+	$(VENV_BIN)/pytest tests/ --cov=src --cov-report=term-missing
+
+.PHONY: quality
+quality: format lint test
+	@echo "✅ Quality check passed!"
+
+# --- Cleanup ---
+
+.PHONY: clean
+clean:
+	rm -rf $(VENV_DIR)
+	find . -type f -name "*.pyc" -delete
 audit-code: lint type-check test-cov
-	@echo "\n✅ Code audit complete: linting, type checking, and tests"
+
+	find . -type d -name "__pycache__" -delete
+		rm -rf .pytest_cache
+		rm -rf .mypy_cache
+		rm -rf .coverage
 
 quality: format lint type-check test
 	@echo "\n✅ Full quality check complete"

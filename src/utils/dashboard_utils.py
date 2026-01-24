@@ -3,11 +3,11 @@
 Keep UI-free logic here so unit tests don't need to import `streamlit`.
 """
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-from typing import Any
+from typing import Any  # noqa: E402
 
-import pandas as pd
+import pandas as pd  # noqa: E402
 
 
 def compute_cat_agg(

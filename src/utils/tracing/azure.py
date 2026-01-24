@@ -3,14 +3,14 @@ Azure Application Insights Tracing Integration
 Enables distributed tracing, logging, and metrics collection for the analytics dashboard
 """
 
-import logging
-import os
-from typing import Any, Callable, Tuple
+import logging  # noqa: E402
+import os  # noqa: E402
+from typing import Any, Callable, Tuple  # noqa: E402
 
-from opencensus.ext.azure.log_exporter import AzureLogHandler
-from opencensus.ext.azure.trace_exporter import AzureExporter
-from opencensus.trace.samplers import ProbabilitySampler
-from opencensus.trace.tracer import Tracer
+from opencensus.ext.azure.log_exporter import AzureLogHandler  # noqa: E402
+from opencensus.ext.azure.trace_exporter import AzureExporter  # noqa: E402
+from opencensus.trace.samplers import ProbabilitySampler  # noqa: E402
+from opencensus.trace.tracer import Tracer  # noqa: E402
 
 
 def setup_azure_tracing() -> Tuple[logging.Logger, Tracer]:
@@ -72,11 +72,11 @@ def trace_analytics_job(
     """Decorator for tracing analytics batch jobs.
 
     Uses module-level `_tracer` and `_logger` that were initialized once at
-    import time to prevent resource leaks and duplicated handlers.
+    import time to prevent resource leaks and duplicated handlers.  # noqa: E402
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        from functools import wraps
+        from functools import wraps  # noqa: E402
 
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:

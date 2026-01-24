@@ -4,22 +4,22 @@ Enables distributed tracing, logging, and metrics collection for the analytics d
 This implementation uses OpenTelemetry, the current industry standard replacing OpenCensus.
 """
 
-import logging
-import os
-from typing import Any, Callable, Optional
+import logging  # noqa: E402
+import os  # noqa: E402
+from typing import Any, Callable, Optional  # noqa: E402
 
 try:
-    from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
-    from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor
-    from opentelemetry.sdk.trace.sampling import ParentBasedTraceIdRatio
+    from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter  # noqa: E402
+    from opentelemetry.sdk.resources import SERVICE_NAME, Resource  # noqa: E402
+    from opentelemetry.sdk.trace import TracerProvider  # noqa: E402
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor  # noqa: E402
+    from opentelemetry.sdk.trace.sampling import ParentBasedTraceIdRatio  # noqa: E402
 
     HAS_OTEL_AZURE = True
 except (ImportError, Exception):
     HAS_OTEL_AZURE = False
 
-from opentelemetry import trace
+from opentelemetry import trace  # noqa: E402
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ def trace_analytics_job(
     """Decorator for tracing analytics batch jobs using OpenTelemetry."""
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        from functools import wraps
+        from functools import wraps  # noqa: E402
 
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:

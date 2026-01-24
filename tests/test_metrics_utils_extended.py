@@ -2,11 +2,11 @@
 Unit tests for metrics utility functions in analytics.
 """
 
-import numpy as np
-import pandas as pd
-import pytest
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+import pytest  # noqa: E402
 
-from src.analytics.metrics_utils import (
+from src.analytics.metrics_utils import (  # noqa: E402
     _coerce_numeric,
     debt_to_income_ratio,
     loan_to_value,

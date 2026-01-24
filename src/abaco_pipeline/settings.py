@@ -1,9 +1,9 @@
 """Settings layer for the v2 canonical pipeline scaffold."""
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-import os
-from dataclasses import dataclass, field
+import os  # noqa: E402
+from dataclasses import dataclass, field  # noqa: E402
 
 
 @dataclass(frozen=True)

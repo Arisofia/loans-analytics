@@ -1,12 +1,12 @@
 """Utilities for normalizing dataframes for KPI calculation."""
 
-import logging
-import re
-from typing import Any, Dict, List, Optional
+import logging  # noqa: E402
+import re  # noqa: E402
+from typing import Any, Dict, List, Optional  # noqa: E402
 
-import pandas as pd
+import pandas as pd  # noqa: E402
 
-from src.utils.numeric import safe_numeric
+from src.utils.numeric import safe_numeric  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

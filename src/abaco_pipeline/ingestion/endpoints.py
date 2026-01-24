@@ -1,8 +1,8 @@
 """Endpoint registry helpers (v2 scaffold)."""
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-from dataclasses import dataclass
+from dataclasses import dataclass  # noqa: E402
 
 
 @dataclass(frozen=True)

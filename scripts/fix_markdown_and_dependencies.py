@@ -16,13 +16,13 @@ Arguments:
     --verbose: Enable verbose logging output
 """
 
-import argparse
-import logging
-import os
-import re
-import sys
-from pathlib import Path
-from typing import List, Set, Tuple
+import argparse  # noqa: E402
+import logging  # noqa: E402
+import os  # noqa: E402
+import re  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import List, Set, Tuple  # noqa: E402
 
 
 # Configure logging

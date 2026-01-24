@@ -13,7 +13,10 @@ def test_check_iban_invalid_example():
 def test_process_transaction_enriches_with_iban():
     txn = {
         "this_account": {
-            "account_routing": {"address": "DE89 3704 0044 0532 0130 00", "routing_number": "37040044"},
+            "account_routing": {
+                "address": "DE89 3704 0044 0532 0130 00",
+                "routing_number": "37040044",
+            },
             "account_id": "acct_1",
             "owner_name": "Alice",
         },

@@ -8,15 +8,15 @@ Test Cases:
   - I-01: Full End-to-End Acceptance
 """
 
-import json
-import os
-import subprocess
-import sys
-import time
-from pathlib import Path
-from typing import Any, Dict
+import json  # noqa: E402
+import os  # noqa: E402
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+import time  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any, Dict  # noqa: E402
 
-import pandas as pd
+import pandas as pd  # noqa: E402
 
 
 class TestAnalyticsPerformanceRobustness:
@@ -62,7 +62,7 @@ class TestAnalyticsPerformanceRobustness:
         """
         dataset = analytics_test_env["dataset_path"]
 
-        import re
+        import re  # noqa: E402
 
         results = []
         for i in range(2):
@@ -109,9 +109,9 @@ class TestAnalyticsPerformanceRobustness:
         I-01: Full End-to-End Acceptance.
         Smoke test for a full run with all features enabled (mocked).
         """
-        import re
+        import re  # noqa: E402
 
-        import yaml
+        import yaml  # noqa: E402
 
         dataset = analytics_test_env["dataset_path"]
 

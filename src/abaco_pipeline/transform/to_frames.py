@@ -1,8 +1,8 @@
 """Convert raw JSON payloads into typed DataFrames (v2 scaffold)."""
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-from typing import Any
+from typing import Any  # noqa: E402
 
 
 def to_frames(payload: Any) -> dict[str, Any]:

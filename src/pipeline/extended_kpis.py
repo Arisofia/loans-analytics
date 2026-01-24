@@ -1,10 +1,10 @@
 """Phase 3 Extension: Generate extended_kpis with real data across Tiers 1, 2, and 3."""
 
-import logging
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+import logging  # noqa: E402
+from datetime import datetime, timedelta  # noqa: E402
+from typing import Any, Dict, List, Optional  # noqa: E402
 
-import pandas as pd
+import pandas as pd  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

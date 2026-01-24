@@ -10,16 +10,15 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.config.paths import Paths
-from src.pipeline.data_ingestion import UnifiedIngestion
-from src.pipeline.data_transformation import UnifiedTransformation
-from src.pipeline.orchestrator import UnifiedPipeline
+from src.config.paths import Paths  # noqa: E402
+from src.pipeline.data_transformation import UnifiedTransformation  # noqa: E402
+from src.pipeline.orchestrator import UnifiedPipeline  # noqa: E402
 
 # Legacy aliases for backward compatibility with tests/patching
 DataTransformation = UnifiedTransformation
 
 try:
-    from src.azure_tracing import setup_azure_tracing
+    from src.azure_tracing import setup_azure_tracing  # noqa: E402
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for run_data_pipeline")
@@ -73,7 +72,7 @@ def main(
             print(f"RUN_ID: {run_id}")
             output_path = Paths.metrics_dir(create=True)
             metrics_json_path = output_path / f"{run_id}_metrics.json"
-            csv_path = output_path / f"{run_id}.csv"
+            _ = output_path / f"{run_id}.csv"
             parquet_path = output_path / f"{run_id}.parquet"
 
             # Re-generate outputs for post-pipeline actions if they exist
@@ -88,10 +87,10 @@ def main(
                 try:
                     logger.info("Starting ML Model Training...")
                     # Adjust sys.path for local imports if necessary, or ensure proper package structure
-                    from apps.analytics.risk_model import LoanRiskModel
+                    from apps.analytics.risk_model import LoanRiskModel  # noqa: E402
 
                     model = LoanRiskModel()
-                    metrics = model.train(kpi_df) # Pass the processed dataframe
+                    metrics = model.train(kpi_df)  # Pass the processed dataframe
                     logger.info("ML Training Finished. Metrics: %s", metrics)
                 except Exception as e:
                     logger.error("ML Training failed: %s", e)
@@ -99,7 +98,7 @@ def main(
             if ask_kpi and metrics_json_path:
                 try:
                     logger.info("Processing Gen AI Query: %s", ask_kpi)
-                    from agents.gen_ai_kpi import KPIQuestionAnsweringAgent
+                    from agents.gen_ai_kpi import KPIQuestionAnsweringAgent  # noqa: E402
 
                     # metrics_data is already loaded above
                     flat_metrics = {}

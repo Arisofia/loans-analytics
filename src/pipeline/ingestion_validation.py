@@ -3,7 +3,7 @@ from typing import List, Tuple
 import pandas as pd
 
 try:
-    from pandera import DataFrameSchema
+    from pandera import DataFrameSchema  # noqa: E402
 except ImportError:
     DataFrameSchema = None
 

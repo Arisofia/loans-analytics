@@ -4,8 +4,8 @@ repo_maturity_summary.py
 Analyzes the repository for maturity level and generates a summary report.
 """
 
-import os
-from pathlib import Path
+import os  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 # Constants for repeated string literals
 README = "README.md"

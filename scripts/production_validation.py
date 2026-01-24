@@ -4,23 +4,24 @@ Production Validation & Health Check Procedures - Week 4
 Monitors V2 pipeline in production and validates output integrity
 """
 
-import sys
-from pathlib import Path
+import numpy as np
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import json
-import logging
-from datetime import datetime
-from typing import Any, Dict
+import json  # noqa: E402
+import logging  # noqa: E402
+from datetime import datetime  # noqa: E402
+from typing import Any, Dict  # noqa: E402
 
-import numpy as np
-import pandas as pd
+rng = np.random.default_rng(42)  # noqa: E402
+import pandas as pd  # noqa: E402
 
-from src.kpis.engine import KPIEngineV2
+from src.kpis.engine import KPIEngineV2  # noqa: E402
 
 try:
-    from src.azure_tracing import setup_azure_tracing
+    from src.azure_tracing import setup_azure_tracing  # noqa: E402
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for production_validation")
@@ -45,7 +46,7 @@ class ProductionValidator:
 
     def _generate_realistic_test_data(self, n_rows: int) -> pd.DataFrame:
         """Generate realistic test data with valid KPI ranges"""
-        rng = rng.default_rng(42)
+        rng = np.random.default_rng(42)
 
         total_receivable = rng.lognormal(9, 2, n_rows)
 
@@ -132,7 +133,7 @@ class ProductionValidator:
         try:
             df = self._generate_realistic_test_data(1000)
 
-            import time
+            import time  # noqa: E402
 
             start = time.time()
             engine = KPIEngineV2(df)

@@ -1,6 +1,6 @@
 """KPI helpers for growth calculations."""
 
-from typing import Dict, Tuple
+from typing import Dict, Tuple  # noqa: E402
 
 
 def calculate_growth(current: float, previous: float) -> Tuple[float, Dict[str, float]]:

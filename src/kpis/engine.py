@@ -12,16 +12,24 @@ from src.kpis.collection_rate import calculate_collection_rate as calculate_coll
 from src.kpis.concentration import (
     calculate_concentration_top10 as calculate_concentration_top10_logic,
 )
-from src.kpis.default_rate import calculate_default_rate as calculate_default_rate_logic
-from src.kpis.dti import calculate_dti as calculate_dti_logic
-from src.kpis.ltv import calculate_ltv as calculate_ltv_logic
-from src.kpis.par_30 import calculate_par_30 as calculate_par_30_logic
-from src.kpis.par_90 import calculate_par_90 as calculate_par_90_logic
-from src.kpis.portfolio_health import calculate_portfolio_health as calculate_portfolio_health_logic
-from src.kpis.portfolio_yield import calculate_portfolio_yield as calculate_portfolio_yield_logic
-from src.kpis.recurrence import calculate_recurrence as calculate_recurrence_logic
-from src.kpis.weighted_apr import calculate_weighted_apr as calculate_weighted_apr_logic
-from src.utils.data_normalization import normalize_columns
+from src.kpis.default_rate import (
+    calculate_default_rate as calculate_default_rate_logic,
+)  # noqa: E402
+from src.kpis.dti import calculate_dti as calculate_dti_logic  # noqa: E402
+from src.kpis.ltv import calculate_ltv as calculate_ltv_logic  # noqa: E402
+from src.kpis.par_30 import calculate_par_30 as calculate_par_30_logic  # noqa: E402
+from src.kpis.par_90 import calculate_par_90 as calculate_par_90_logic  # noqa: E402
+from src.kpis.portfolio_health import (
+    calculate_portfolio_health as calculate_portfolio_health_logic,
+)  # noqa: E402
+from src.kpis.portfolio_yield import (
+    calculate_portfolio_yield as calculate_portfolio_yield_logic,
+)  # noqa: E402
+from src.kpis.recurrence import calculate_recurrence as calculate_recurrence_logic  # noqa: E402
+from src.kpis.weighted_apr import (
+    calculate_weighted_apr as calculate_weighted_apr_logic,
+)  # noqa: E402
+from src.utils.data_normalization import normalize_columns  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

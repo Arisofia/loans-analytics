@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 from apps.analytics.api import main as api_main
 
 
-
 def test_get_latest_kpis(tmp_path):
     # Arrange: create a fake manifest under a temporary artifacts dir
     run_dir = tmp_path / "logs" / "runs" / "run123"

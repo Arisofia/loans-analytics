@@ -3,15 +3,15 @@ Abaco Loans Analytics - Executive Report Runner
 Standard: Excellence & Vibe Solutioning
 """
 
-import argparse
-import logging
-import sys
-from pathlib import Path
-from typing import Any, Dict, Optional
+import argparse  # noqa: E402
+import logging  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any, Dict, Optional  # noqa: E402
 
 # Standard MIT-caliber engineering imports
-from src.pipeline.orchestrator import UnifiedPipeline
-from src.pipeline.utils import utc_now
+from src.pipeline.orchestrator import UnifiedPipeline  # noqa: E402
+from src.pipeline.utils import utc_now  # noqa: E402
 
 # Configure logging with structured clarity
 logging.basicConfig(

@@ -8,13 +8,13 @@ Handles:
 - Custom audience creation from analytics segments
 """
 
-import json
-import logging
-import os
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, cast
+import json  # noqa: E402
+import logging  # noqa: E402
+import os  # noqa: E402
+from datetime import datetime, timedelta, timezone  # noqa: E402
+from typing import Any, Dict, List, Optional, cast  # noqa: E402
 
-import requests
+import requests  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

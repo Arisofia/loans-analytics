@@ -2,18 +2,18 @@ from prefect import flow, get_run_logger, task
 from prefect.artifacts import create_markdown_artifact
 
 try:
-    from prefect.blocks.notifications import PagerDutyNotification
+    from prefect.blocks.notifications import PagerDutyNotification  # noqa: E402
 except ImportError:
     # Fallback for older prefect versions if necessary, though 2.x/3.x have these
     pass
-import io
-from datetime import datetime, timezone
-from pathlib import Path
+import io  # noqa: E402
+from datetime import datetime, timezone  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-import polars as pl
+import polars as pl  # noqa: E402
 
-from python.ingestion import AbacoIngestion
-from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine
+from python.ingestion import AbacoIngestion  # noqa: E402
+from src.analytics.polars_analytics_engine import PolarsAnalyticsEngine  # noqa: E402
 
 
 @task(name="Notify Incident")

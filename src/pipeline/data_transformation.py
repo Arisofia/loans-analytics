@@ -14,7 +14,7 @@ from src.pipeline.data_validation import (
     validate_numeric_bounds,
     validate_percentage_bounds,
 )
-from src.pipeline.utils import hash_dataframe, utc_now
+from src.pipeline.utils import hash_dataframe, utc_now  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class ComplianceProcessor:
         self.pii_config = self._load_pii_config()
 
     def _load_pii_config(self) -> Dict[str, Any]:
-        from src.config.paths import get_project_root
+        from src.config.paths import get_project_root  # noqa: E402
 
         config_path = get_project_root() / "config" / "pii_fields.yaml"
         if config_path.exists():

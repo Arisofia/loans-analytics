@@ -13,18 +13,18 @@ Standards:
 - Detailed logging for traceability
 """
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-import argparse
-import base64
-import json
-import logging
-import re
-import subprocess
-import sys
-import time
-from pathlib import Path
-from typing import Dict, Tuple
+import argparse  # noqa: E402
+import base64  # noqa: E402
+import json  # noqa: E402
+import logging  # noqa: E402
+import re  # noqa: E402
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+import time  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Dict, Tuple  # noqa: E402
 
 # Configuration Defaults
 DEFAULT_INPUT = "/tmp/ari_playwright.json"

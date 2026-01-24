@@ -1,9 +1,9 @@
 """Quality gate helpers used in pipeline health checks."""
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-from datetime import datetime
-from typing import Optional
+from datetime import datetime  # noqa: E402
+from typing import Optional  # noqa: E402
 
 
 def compute_freshness_hours(as_of: datetime, now: Optional[datetime] = None) -> float:

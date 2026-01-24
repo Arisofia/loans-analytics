@@ -63,7 +63,7 @@ class TestPRStatus(unittest.TestCase):
         mock_resp.json.return_value = [{"number": 1}, {"number": 2}]
         mock_session.get.return_value = mock_resp
 
-        from scripts.pr_status import list_open_prs
+        from scripts.pr_status import list_open_prs  # noqa: E402
 
         prs = list_open_prs("owner/repo")
         self.assertEqual(prs, [1, 2])

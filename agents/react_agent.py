@@ -1,4 +1,5 @@
 """ReAct Agent - Reasoning and Acting framework for multi-agent system.
+from typing import Dict, Any
 
 Implements the ReAct (Reasoning + Acting) pattern where agents:
 1. Think about the task (Reasoning)
@@ -119,7 +120,7 @@ Begin!
         self.max_iterations = max_iterations
         self.temperature = temperature
         self.name = name
-        self.tools = {}
+        self.tools: Dict[str, Any] = {}
         self.reasoning_chain: List[ReasoningStep] = []
 
     def register_tool(self, tool: Tool):

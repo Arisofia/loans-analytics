@@ -22,9 +22,9 @@ os.chdir(ROOT)
 def analytics_test_env(tmp_path_factory):
     """Analytics test environment with mocked integrations."""
     output_dir = tmp_path_factory.mktemp("output")
-    
+
     dataset_path = ROOT / "tests" / "data" / "archives" / "sample_small.csv"
-    
+
     return {
         "output_dir": output_dir,
         "dataset_path": dataset_path,
@@ -34,16 +34,18 @@ def analytics_test_env(tmp_path_factory):
 @pytest.fixture(scope="session")
 def run_analytics_pipeline(analytics_test_env):
     """Run the analytics pipeline once and return the output directory."""
-    import subprocess
-    import sys
-    
+    import subprocess  # noqa: E402
+    import sys  # noqa: E402
+
     dataset = analytics_test_env["dataset_path"]
     output_dir = analytics_test_env["output_dir"]
-    
+
     # Ensure dataset exists (create if missing - should be there from previous step)
     if not dataset.exists():
         dataset.parent.mkdir(parents=True, exist_ok=True)
-        dataset.write_text("segment,measurement_date,total_receivable_usd,total_eligible_usd,cash_available_usd\nConsumer,2024-01-31,1000,1000,970")
+        dataset.write_text(
+            "segment,measurement_date,total_receivable_usd,total_eligible_usd,cash_available_usd\nConsumer,2024-01-31,1000,1000,970"
+        )
 
     subprocess.run(
         [

@@ -3,13 +3,13 @@ CLI for running loan KPI analytics on CSV inputs
 with optional Azure export.
 """
 
-import argparse
-import json
-import sys
-from pathlib import Path
-from typing import Dict
+import argparse  # noqa: E402
+import json  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Dict  # noqa: E402
 
-import pandas as pd
+import pandas as pd  # noqa: E402
 
 REPO_ROOT = tuple(Path(__file__).resolve().parents)[2]
 if str(REPO_ROOT) not in sys.path:

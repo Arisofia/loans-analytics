@@ -10,7 +10,7 @@ for p in Path(".github/workflows").glob("*"):
             changed.append(str(p))
 print("Files updated:", changed)
 if changed:
-    import subprocess
+    import subprocess  # noqa: E402
 
     subprocess.run(["git", "add"] + changed, check=True)
     subprocess.run(

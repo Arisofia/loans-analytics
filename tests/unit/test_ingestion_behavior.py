@@ -56,7 +56,7 @@ def test_circuit_breaker_opens_after_failure(monkeypatch, base_config):
     # requests.get always raises an error
     def raise_error(*args, **kwargs):
         raise requests.ConnectionError("down")
-        
+
     monkeypatch.setattr("requests.get", raise_error)
 
     cfg = base_config.copy()

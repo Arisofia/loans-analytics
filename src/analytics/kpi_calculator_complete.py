@@ -5,11 +5,11 @@ This module provides a lightweight, well-typed surface so tests that import
 minimal implementations living in `src.analytics.run_pipeline` when possible.
 """
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-from typing import Any, Dict
+from typing import Any, Dict  # noqa: E402
 
-from src.analytics.run_pipeline import calculate_kpis, create_metrics_csv  # re-export
+from src.analytics.run_pipeline import calculate_kpis, create_metrics_csv  # re-export  # noqa: E402
 
 __all__ = ["calculate_kpis", "create_metrics_csv"]
 

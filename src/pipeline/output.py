@@ -64,11 +64,11 @@ class UnifiedOutput:
         if not self.azure_config.get("enabled"):
             return {}
 
-        import os
-        from concurrent.futures import ThreadPoolExecutor
+        import os  # noqa: E402
+        from concurrent.futures import ThreadPoolExecutor  # noqa: E402
 
-        from azure.core.exceptions import ResourceExistsError
-        from azure.storage.blob import BlobServiceClient, ContentSettings
+        from azure.core.exceptions import ResourceExistsError  # noqa: E402
+        from azure.storage.blob import BlobServiceClient, ContentSettings  # noqa: E402
 
         connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         if not connection_string:

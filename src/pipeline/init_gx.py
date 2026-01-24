@@ -7,7 +7,7 @@ def init_gx_project() -> None:
     context = gx.get_context()
 
     suite_name = "loan_tape_ingestion"
-    suite = context.add_or_update_expectation_suite(expectation_suite_name=suite_name)  # type: ignore
+    suite = context.add_or_update_expectation_suite(expectation_suite_name=suite_name)
 
     # 1. Schema Integrity: Required Columns
     required_columns = [
@@ -44,7 +44,7 @@ def init_gx_project() -> None:
         )
     )
 
-    context.save_expectation_suite(suite)  # type: ignore
+    context.save_expectation_suite(suite)
     print(f"Great Expectations suite '{suite_name}' initialized successfully.")
 
 

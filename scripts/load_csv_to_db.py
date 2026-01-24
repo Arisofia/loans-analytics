@@ -7,12 +7,12 @@ import pandas as pd
 import psycopg
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from src.config.paths import Paths
+from src.config.paths import Paths  # noqa: E402
 
 DB_DSN = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres")
 
 try:
-    from src.azure_tracing import setup_azure_tracing
+    from src.azure_tracing import setup_azure_tracing  # noqa: E402
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for load_csv_to_db")

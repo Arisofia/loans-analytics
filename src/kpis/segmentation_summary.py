@@ -13,7 +13,7 @@ from src.utils.data_normalization import (
     COL_OUTSTANDING_AMOUNT,
     normalize_columns,
 )
-from src.utils.numeric import safe_numeric
+from src.utils.numeric import safe_numeric  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

@@ -50,7 +50,7 @@ class PAR90Calculator(KPICalculator):
         )
 
 
-def calculate_par_90(df: pd.DataFrame) -> Dict[str, Any]:
+def calculate_par_90(df: pd.DataFrame) -> Tuple[float, Dict[str, Any]]:
     """
     PAR 90+ % = (Sum of Outstanding Principal for Loans 90+ DPD) / (Total Outstanding Principal)
     """

@@ -1,10 +1,10 @@
 """Data contracts and schemas using Pandera for Abaco Loans Analytics."""
 
-from typing import List, Optional
+from typing import List, Optional  # noqa: E402
 
-import pandas as pd
-import pandera as pa
-from pandera.typing import Series
+import pandas as pd  # noqa: E402
+import pandera as pa  # noqa: E402
+from pandera.typing import Series  # noqa: E402
 
 
 class LoanTapeSchema(pa.DataFrameModel):

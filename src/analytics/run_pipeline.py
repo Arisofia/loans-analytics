@@ -5,15 +5,15 @@ This module restores the historical `src.analytics.run_pipeline` surface used
 by tests: `calculate_kpis`, `create_metrics_csv`, and `main`.
 """
 
-from __future__ import annotations
+from __future__ import annotations  # noqa: E402
 
-import argparse
-import json
-import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+import argparse  # noqa: E402
+import json  # noqa: E402
+import logging  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import Any, Dict, List, Optional  # noqa: E402
 
-import pandas as pd
+import pandas as pd  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -170,8 +170,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     kpis = calculate_kpis(df)
 
     # Add run metadata expected by smoke tests and JSON schema
-    from datetime import datetime, timezone
-    from uuid import uuid4
+    from datetime import datetime, timezone  # noqa: E402
+    from uuid import uuid4  # noqa: E402
 
     kpis_enriched = dict(kpis)
     kpis_enriched.setdefault("run_id", str(uuid4()))
@@ -195,6 +195,6 @@ def main(argv: Optional[List[str]] = None) -> int:
 if __name__ == "__main__":
     # Allow `python -m src.analytics.run_pipeline --dataset ...` to execute the
     # pipeline in subprocess-based tests and local runs.
-    import sys
+    import sys  # noqa: E402
 
     raise SystemExit(main(sys.argv[1:]))

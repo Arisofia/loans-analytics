@@ -6,15 +6,15 @@ Configures distributed tracing with support for:
 - Auto-instrumentation of common libraries (httpx, requests, etc.)
 """
 
-import logging
-import os
-from typing import Optional
+import logging  # noqa: E402
+import os  # noqa: E402
+from typing import Optional  # noqa: E402
 
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry import trace  # noqa: E402
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter  # noqa: E402
+from opentelemetry.sdk.resources import Resource  # noqa: E402
+from opentelemetry.sdk.trace import TracerProvider  # noqa: E402
+from opentelemetry.sdk.trace.export import BatchSpanProcessor  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -90,11 +90,11 @@ def enable_auto_instrumentation() -> None:
         return
 
     try:
-        from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
-        from opentelemetry.instrumentation.psycopg import PsycopgInstrumentor
-        from opentelemetry.instrumentation.requests import RequestsInstrumentor
-        from opentelemetry.instrumentation.sqlite3 import SQLite3Instrumentor
-        from opentelemetry.instrumentation.urllib3 import URLLib3Instrumentor
+        from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor  # noqa: E402
+        from opentelemetry.instrumentation.psycopg import PsycopgInstrumentor  # noqa: E402
+        from opentelemetry.instrumentation.requests import RequestsInstrumentor  # noqa: E402
+        from opentelemetry.instrumentation.sqlite3 import SQLite3Instrumentor  # noqa: E402
+        from opentelemetry.instrumentation.urllib3 import URLLib3Instrumentor  # noqa: E402
 
         HTTPXClientInstrumentor().instrument()
         RequestsInstrumentor().instrument()

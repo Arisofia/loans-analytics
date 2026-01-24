@@ -3,9 +3,9 @@
 Adds a canonical shebang + strict mode and replaces 'cat file | cmd' with 'cmd < file'.
 """
 
-import re
-import sys
-from pathlib import Path
+import re  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 p = Path(".github/workflows/extracted_runs")
 if not p.exists():

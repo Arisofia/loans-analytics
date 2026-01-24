@@ -113,7 +113,7 @@ def test_find_column_edge_cases():
 
 def test_safe_numeric_empty():
     """Test safe_numeric with empty input."""
-    from src.pipeline.data_validation import safe_numeric
+    from src.pipeline.data_validation import safe_numeric  # noqa: E402
 
     s = pd.Series([], dtype=object)
     res = safe_numeric(s)
@@ -121,7 +121,7 @@ def test_safe_numeric_empty():
 
 
 def test_validate_percentage_bounds():
-    from src.pipeline.data_validation import validate_percentage_bounds
+    from src.pipeline.data_validation import validate_percentage_bounds  # noqa: E402
 
     df = pd.DataFrame(
         {
@@ -141,7 +141,7 @@ def test_validate_percentage_bounds():
 
 
 def test_validate_iso8601_dates():
-    from src.pipeline.data_validation import validate_iso8601_dates
+    from src.pipeline.data_validation import validate_iso8601_dates  # noqa: E402
 
     df = pd.DataFrame(
         {

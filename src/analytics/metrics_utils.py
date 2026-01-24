@@ -1,8 +1,7 @@
 """Utility functions for common loan analytics KPIs."""
 
 import logging
-from typing import Any, Dict, Iterable
-
+from typing import Any, Dict, Iterable, List, Optional
 import numpy as np
 import pandas as pd
 
@@ -288,3 +287,12 @@ def calculate_quality_score(df: pd.DataFrame) -> float:
         return 0.0
     null_ratio = df.isna().mean().mean()
     return float((1.0 - null_ratio) * 100)
+
+
+def find_column(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
+    """Finds the first matching column from candidates in the dataframe (case-insensitive)."""
+    cols = {c.lower(): c for c in df.columns}
+    for cand in candidates:
+        if cand.lower() in cols:
+            return cols[cand.lower()]
+    return None
