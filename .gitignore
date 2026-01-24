@@ -45,6 +45,7 @@ htmlcov/
 
 # Data outputs (NO versionar)
 data/metrics/
+data/archives/
 data_samples/*.csv
 logs/
 exports/
