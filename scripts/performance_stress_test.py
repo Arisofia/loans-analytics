@@ -27,8 +27,6 @@ try:
     logger.info("Azure tracing initialized for performance_stress_test")
 except Exception as tracing_err:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-    logger = logging.getLogger(__name__)
-    logger.warning("Azure tracing not initialized: %s", tracing_err)
 
 
 class PerformanceStressTest:

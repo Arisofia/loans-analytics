@@ -8,7 +8,7 @@ on:
 
 jobs:
   validate-secrets:
-    uses: ./.github/workflows/reusable-secret-check.yml
+    uses: ./.github/workflows/reusable_secret_check.yml
     with:
       secret_names: 'DOCKER_USERNAME,DOCKER_PASSWORD,ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD,AZURE_WEBAPP_PUBLISH_PROFILE'
     secrets: inherit

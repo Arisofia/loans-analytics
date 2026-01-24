@@ -9,7 +9,7 @@ on:
       - main
     paths:
       - 'apps/web/**'
-      - '.github/workflows/azure-static-web-apps-yellow-cliff-03015b20f.yml'
+      - '.github/workflows/azure_static_web_apps_yellow_cliff_03015b20f.yml'
   workflow_dispatch:
 
   # View Visual
