@@ -8,7 +8,7 @@ except ImportError:
 
     if "RequestsDependencyWarning" not in locals():
 
-        class RequestsDependencyWarning(Warning):
+        class RequestsDependencyWarning(Warning):  # type: ignore[no-redef]  # type: ignore[no-redef]
             pass
 
 

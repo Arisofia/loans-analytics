@@ -19,7 +19,7 @@ import pandas as pd  # noqa: E402
 logger = logging.getLogger(__name__)
 
 try:
-    from supabase import create_client  # noqa: E402
+    from supabase import create_client  # type: ignore # noqa: E402  # type: ignore # noqa: E402
 
     HAS_SUPABASE = True
 except ImportError:

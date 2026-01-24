@@ -52,8 +52,8 @@ class PipelineConfig:
                 "Environment config not found: %s, using base config only", env_config_path
             )
 
-        context: Dict[str, Any] = {}
-        return resolve_placeholders(base_config, context)
+        # context: Dict[str, Any] = {}
+        return resolve_placeholders(base_config)  # Context ignored for now
 
     def _default_config(self) -> Dict[str, Any]:
         return {

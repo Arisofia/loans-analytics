@@ -3,7 +3,7 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Optional, Any
+from typing import Optional
 
 import pandas as pd
 import redis
@@ -24,7 +24,7 @@ except ImportError:
 try:
     from agents.gen_ai_kpi import KPIQuestionAnsweringAgent  # noqa: E402
 except ImportError:
-    KPIQuestionAnsweringAgent: Any = None
+    pass  # # KPIQuestionAnsweringAgent: Any = None  # Redundant definition removed
 
 logger = logging.getLogger(__name__)
 

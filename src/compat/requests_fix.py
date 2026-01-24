@@ -8,7 +8,7 @@ try:
     from packaging.version import InvalidVersion  # noqa: E402
     from packaging.version import Version as PackagingVersion  # noqa: E402
 except ImportError:
-    PackagingVersion = None  # type: ignore
+    PackagingVersion = None
 
 
 def check_cryptography_robust(cryptography_version: Optional[str]) -> None:

@@ -3,7 +3,7 @@
 import argparse  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
-from datetime import datetime  # noqa: E402
+from datetime import datetime, timezone  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Any, Dict  # noqa: E402
 
@@ -60,7 +60,7 @@ def main() -> None:
         "run_id": args.run_id,
         "lead_budget": args.lead_budget,
         "result": result,
-        "launched_at": datetime.utcnow().isoformat() + "Z",
+        "launched_at": datetime.now(timezone.utc).isoformat(),
     }
 
     output_path = write_result(args.run_id, payload)
