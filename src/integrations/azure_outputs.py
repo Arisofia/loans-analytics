@@ -18,8 +18,7 @@ from urllib.parse import urlparse
 logger = logging.getLogger(__name__)
 
 try:
-    from azure.core.credentials import (AzureNamedKeyCredential,
-                                        AzureSasCredential)
+    from azure.core.credentials import AzureNamedKeyCredential, AzureSasCredential
     from azure.identity import DefaultAzureCredential
     from azure.storage.blob import BlobServiceClient, ContentSettings
 
@@ -81,9 +80,7 @@ class AzureStorageClient:
         if conn_str:
             return conn_str
 
-        account_name = (
-            os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
-        )
+        account_name = os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
         account_key = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
 
         if account_name and account_key:
@@ -94,9 +91,7 @@ class AzureStorageClient:
         return None
 
     def _init_from_url_credentials(self) -> Optional[BlobServiceClient]:
-        account_name = (
-            os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
-        )
+        account_name = os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
         account_key = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
         sas_token = os.getenv("AZURE_STORAGE_SAS_TOKEN")
         raw_account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
@@ -124,9 +119,7 @@ class AzureStorageClient:
                 account_url=account_url, credential=AzureSasCredential(sas_token)
             )
         if DefaultAzureCredential:
-            return BlobServiceClient(
-                account_url=account_url, credential=DefaultAzureCredential()
-            )
+            return BlobServiceClient(account_url=account_url, credential=DefaultAzureCredential())
         return None
 
     def upload_file(
@@ -280,9 +273,9 @@ class AzureDashboardClient:
             "position": {"x": 0, "y": 0, "width": 3, "height": 2},
         }
 
-    def create_metric_chart_tile(
-# ...
-            tiles.append(tile)
+        # def create_metric_chart_tile(...):
+        #     (Function not implemented)
+        #     pass
 
         dashboard_id = (
             f"/subscriptions/{self.subscription_id}/resourceGroups/"
