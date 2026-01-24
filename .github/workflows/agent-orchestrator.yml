@@ -116,7 +116,7 @@ jobs:
           retention-days: 30
 
       - name: Notify Leadership on success
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v2.1.1
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
         if: success() && needs.validate-secrets.outputs.slack_available == true
@@ -136,7 +136,7 @@ jobs:
             }
 
       - name: Notify Leadership on failure
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v2.1.1
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
         if: failure() && needs.validate-secrets.outputs.slack_available == true
