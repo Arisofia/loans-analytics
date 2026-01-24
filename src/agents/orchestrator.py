@@ -5,12 +5,21 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import yaml
-from sqlalchemy import (JSON, Boolean, Column, DateTime, Integer, Numeric,
-                        String, Text, create_engine)
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    create_engine,
+)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from src.agents.agent import Agent
-from src.agents.llm_provider import MockLLM
+from src.agents.llm_provider import MockLanguageModel
 from src.agents.tools import registry as global_registry
 from src.tracing_setup import get_tracer
 
@@ -52,8 +61,8 @@ class AgentOrchestrator:
         self.engine = create_engine(self.db_url) if self.db_url else None
         self.session_local = sessionmaker(bind=self.engine) if self.engine else None
 
-        # Default LLM provider (Mock for now)
-        self.llm = MockLLM()
+        # Default LanguageModel provider (Mock for now)
+        self.language_model = MockLanguageModel()
         self.registry = global_registry
 
     def run(
@@ -65,7 +74,7 @@ class AgentOrchestrator:
         """
         Run the agent orchestrator.
         NOTE: This is currently in PROTOTYPE/EXPERIMENTAL state.
-        It uses MockLLM by default and may return placeholder results.
+        It uses MockLanguageModel by default and may return placeholder results.
         """
         with tracer.start_as_current_span("agent_orchestrator.run") as span:
             start_time = datetime.now(timezone.utc)
@@ -89,7 +98,13 @@ class AgentOrchestrator:
             span.set_attribute("agent.max_retries", max_retries)
             span.set_attribute("input.data_hash", _hash_input(input_data))
 
-            agent = Agent(name=name, role=role, goal=goal, llm=self.llm, registry=self.registry)
+            agent = Agent(
+                name=name,
+                role=role,
+                goal=goal,
+                language_model=self.language_model,
+                registry=self.registry,
+            )
 
             user_query = input_data.get("query", str(input_data))
 
@@ -114,7 +129,7 @@ class AgentOrchestrator:
                 "output": agent_output,
                 "input": input_data,
                 "prompt_version": self.spec.get("version", "v2.0"),
-                "model_used": "mock-llm",
+                "model_used": "mock-language-model",
                 "citations": [],
                 "accuracy_score": None,
                 "requires_human_review": agent_output.startswith("Error:"),

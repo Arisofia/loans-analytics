@@ -12,10 +12,8 @@ import pandas as pd
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel, Field, ValidationError
 
-from src.pipeline.utils import (
-    CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
-)
-from src.pipeline.validation import (DataQualityReport, DataQualityReporter)
+from src.pipeline.utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
+from src.pipeline.validation import DataQualityReport, DataQualityReporter
 from src.pipeline.mixins import IngestionMixin
 
 logger = logging.getLogger("abaco.ingestion")
@@ -82,14 +80,10 @@ class UnifiedIngestion(IngestionMixin):
 
     def _build_rate_limiter(self, config: Dict[str, Any]) -> RateLimiter:
         rate_cfg = config.get("warehouse", {}).get("http", {}).get("rate_limit", {})
-        return RateLimiter(
-            max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60)
-        )
+        return RateLimiter(max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60))
 
     def _build_circuit_breaker(self, config: Dict[str, Any]) -> CircuitBreaker:
-        cb_cfg = (
-            config.get("warehouse", {}).get("http", {}).get("circuit_breaker", {})
-        )
+        cb_cfg = config.get("warehouse", {}).get("http", {}).get("circuit_breaker", {})
         return CircuitBreaker(
             failure_threshold=cb_cfg.get("failure_threshold", 3),
             reset_seconds=cb_cfg.get("reset_seconds", 60),
@@ -144,9 +138,7 @@ class UnifiedIngestion(IngestionMixin):
             archive_dir.mkdir(parents=True, exist_ok=True)
             archived = archive_dir / file_path.name
             shutil.copy2(file_path, archived)
-            self._log_event(
-                "archive", "success", file=str(file_path), archived=str(archived)
-            )
+            self._log_event("archive", "success", file=str(file_path), archived=str(archived))
             return archived
         except Exception as exc:
             self._record_error("archive", exc, file=str(file_path))
@@ -171,14 +163,11 @@ class UnifiedIngestion(IngestionMixin):
                 clean_record = {str(k).strip().lower(): v for k, v in record.items()}
                 if "loan_id" not in clean_record:
                     clean_record["loan_id"] = f"agg_{idx}"
-                validated_records.append(
-                    LoanRecord(**clean_record).model_dump(by_alias=True)
-                )
+                validated_records.append(LoanRecord(**clean_record).model_dump(by_alias=True))
             except ValidationError as exc:
                 errors.append(f"row {idx}: {exc}")
 
         return pd.DataFrame(validated_records), errors
-
 
     def _run_quality_audit(self, df: pd.DataFrame) -> DataQualityReport:
         validation_cfg = self.config.get("validation", {})
@@ -189,10 +178,7 @@ class UnifiedIngestion(IngestionMixin):
             date_columns=validation_cfg.get("date_columns"),
         )
 
-
-    def _select_column(
-        self, columns: List[str], candidates: List[str]
-    ) -> Optional[str]:
+    def _select_column(self, columns: List[str], candidates: List[str]) -> Optional[str]:
         column_map = {col.lower(): col for col in columns}
         for candidate in candidates:
             key = candidate.lower()
@@ -200,9 +186,7 @@ class UnifiedIngestion(IngestionMixin):
                 return column_map[key]
         return None
 
-    def ingest_file(
-        self, file_path: Path, archive_dir: Optional[Path] = None
-    ) -> IngestionResult:
+    def ingest_file(self, file_path: Path, archive_dir: Optional[Path] = None) -> IngestionResult:
 
         self._log_event("start", "initiated", file_path=str(file_path))
         if not file_path.exists():
@@ -306,7 +290,7 @@ class UnifiedIngestion(IngestionMixin):
 
         df = None
         is_json = "json" in content_type or content.lstrip().startswith((b"{", b"["))
-        
+
         if is_json:
             try:
                 stripped = content.lstrip()
@@ -329,12 +313,10 @@ class UnifiedIngestion(IngestionMixin):
                 self._record_error("http_parse_csv", exc, url=url)
                 msg = "Failed to parse HTTP response as JSON or CSV"
                 raise ValueError(msg) from exc
-        
+
         return df, checksum
 
-    def ingest_http(
-        self, url: str, headers: Optional[Dict[str, str]] = None
-    ) -> IngestionResult:
+    def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
         headers = headers or {}
         self._log_event("http_start", "initiated", url=url)
 
@@ -349,17 +331,15 @@ class UnifiedIngestion(IngestionMixin):
 
         schema_errors = self._validate_schema(df)
         validated_df, record_errors = self._validate_records(df)
-        
+
         if validated_df.empty and len(df) > 0:
-            self._log_event(
-                "validation", "fallback", reason="using_parsed_df", rows=len(df)
-            )
+            self._log_event("validation", "fallback", reason="using_parsed_df", rows=len(df))
             parsed = df.copy()
             if "loan_id" not in {str(c).lower() for c in parsed.columns}:
                 parsed["loan_id"] = [f"agg_{i}" for i in range(len(parsed))]
             validated_df = parsed
             record_errors = record_errors or []
-            
+
         errors = schema_errors + record_errors
         if errors:
             self._log_event("validation", "completed", error_count=len(errors))

@@ -1,4 +1,4 @@
-"""Base agent template integrating LLM provider and ReAct framework."""
+"""Base agent template integrating LanguageModel provider and ReAct framework."""
 
 import logging
 from abc import ABC, abstractmethod
@@ -43,7 +43,7 @@ class BaseAgent(ABC):
     """Abstract base class for all agents in the system.
 
     Integrates:
-    - LLM provider management
+    - LanguageModel provider management
     - ReAct reasoning framework
     - Tool/action execution
     - State management
@@ -60,7 +60,7 @@ class BaseAgent(ABC):
         self.config = config
         self.context = context or AgentContext()
 
-        # Initialize LLM manager
+        # Initialize LanguageModel manager
         self.llm_manager = LLMManager()
 
         # Initialize ReAct agent

@@ -13,8 +13,7 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from src.integrations.azure_outputs import (AzureDashboardClient,
-                                            AzureStorageClient)
+from src.integrations.azure_outputs import AzureDashboardClient, AzureStorageClient
 from src.integrations.meta_client import MetaOutputClient
 from src.integrations.supabase_client import SupabaseOutputClient
 

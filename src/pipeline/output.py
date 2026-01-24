@@ -238,7 +238,7 @@ class UnifiedOutput:
             logger.info("Executing dashboard triggers...")
             manager = UnifiedOutputManager()
             manager.configure_clients(trigger_config.get("clients", {}))
-            
+
             trigger_results = manager.export_complete_report(
                 df=df,
                 kpi_metrics=metrics,
@@ -246,7 +246,7 @@ class UnifiedOutput:
                 findings=metadata.get("findings", []),
                 run_id=master_run_id,
                 timeseries=timeseries,
-                enabled_outputs=trigger_config.get("outputs")
+                enabled_outputs=trigger_config.get("outputs"),
             )
             manifest["triggers"] = {"dashboard_trigger": trigger_results}
             write_json(manifest_path, manifest)
