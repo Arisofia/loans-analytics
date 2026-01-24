@@ -188,6 +188,14 @@ class LLMManager:
         """Complete with automatic fallback."""
         provider_name = provider or self.primary_provider
 
+        openai_error = None
+        anthropic_error = None
+        if OPENAI_AVAILABLE:
+            import openai
+            openai_error = getattr(openai.error, "APIError", Exception)
+        if ANTHROPIC_AVAILABLE:
+            anthropic_error = getattr(__import__("anthropic.error", fromlist=["APIError"]), "APIError", Exception)
+
         if self._is_provider_available(provider_name):
             try:
                 return self._try_provider(
@@ -195,10 +203,13 @@ class LLMManager:
                     messages,
                     **kwargs
                 )
-            except Exception as e:
+            except (openai_error, anthropic_error) as e:
                 logger.warning("%s failed: %s", provider_name, e)
                 if not self.fallback_enabled:
                     raise
+            except Exception as e:
+                logger.error("Unexpected exception: %s", type(e))
+                raise
         if self.fallback_enabled:
             return self._fallback_to_available_providers(provider_name, messages, **kwargs)
         raise RuntimeError("All LLM providers failed or unavailable")
@@ -211,14 +222,24 @@ class LLMManager:
         return provider_obj.complete(messages, **kwargs)
 
     def _fallback_to_available_providers(self, primary_name: str, messages: List[Dict], **kwargs) -> LLMResponse:
+        openai_error = None
+        anthropic_error = None
+        if OPENAI_AVAILABLE:
+            import openai
+            openai_error = getattr(openai.error, "APIError", Exception)
+        if ANTHROPIC_AVAILABLE:
+            anthropic_error = getattr(__import__("anthropic.error", fromlist=["APIError"]), "APIError", Exception)
         for fallback_name, fallback_provider in self.providers.items():
             if fallback_name != primary_name and fallback_provider.is_available():
                 logger.info("Falling back to %s", fallback_name)
                 try:
                     return fallback_provider.complete(messages, **kwargs)
-                except Exception as e:
+                except (openai_error, anthropic_error) as e:
                     logger.warning("%s also failed: %s", fallback_name, e)
                     continue
+                except Exception as e:
+                    logger.error("Unexpected exception: %s", type(e))
+                    raise
         raise RuntimeError("All LLM providers failed or unavailable")
 
     def get_available_providers(self) -> List[str]:
