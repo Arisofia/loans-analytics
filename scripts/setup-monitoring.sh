@@ -156,7 +156,6 @@ verify_setup() {
     echo -e "${YELLOW}Created Alerts:${NC}"
     az monitor metrics alert list --resource-group $RESOURCE_GROUP --query "[].name" -o tsv | sed 's/^/  • /'
 
-<<<<<<< HEAD
   echo ""
   echo -e "${GREEN}✅ Monitoring setup complete!${NC}"
   echo ""

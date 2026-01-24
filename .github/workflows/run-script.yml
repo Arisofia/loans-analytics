@@ -4,13 +4,13 @@ name: Run Script
   push:
     branches: [main]
     paths:
-      - 'scripts/**'
-      - '.github/workflows/run-script.yml'
+      - "scripts/**"
+      - ".github/workflows/run-script.yml"
   pull_request:
     branches: [main]
     paths:
-      - 'scripts/**'
-      - '.github/workflows/run-script.yml'
+      - "scripts/**"
+      - ".github/workflows/run-script.yml"
   workflow_dispatch:
 
 jobs:

@@ -9,7 +9,6 @@ Test Cases:
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -146,7 +145,6 @@ class TestAnalyticsTypeCheck:
 
         assert (
             result.returncode == 0 or "error:" in result.stdout.lower() or "error:" in result.stderr
-<<<<<<< HEAD
         ), (
             "mypy check did not complete (unexpected failure mode)"
         )

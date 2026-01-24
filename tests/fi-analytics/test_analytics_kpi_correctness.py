@@ -8,7 +8,7 @@ Test Cases:
 
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Dict
 
 import pandas as pd
 import pytest
@@ -154,7 +154,6 @@ class TestKPICorrectness:
 
                 if tr != 0:
                     collection_rate = (tr - data.get("dpd_90_plus_usd", 0)) / tr
-<<<<<<< HEAD
                     assert pd.notna(collection_rate), (
                         f"Collection rate is NaN for: {test_case['name']}"
                     )
@@ -175,7 +174,7 @@ class TestKPICorrectness:
 
         for test_case in test_cases:
             value = test_case["value"]
-            assert isinstance(value, (int, float)), f"Test value must be numeric"
+            assert isinstance(value, (int, float)), "Test value must be numeric"
 
     def test_b02_large_value_handling(self) -> None:
         """Verify KPI calculations handle very large values without overflow."""

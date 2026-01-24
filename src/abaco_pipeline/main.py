@@ -4,6 +4,7 @@ This intentionally implements only the features exercised by unit tests: a
 `write-audit` subcommand that can either print an enriched payload or send it
 via the `SupabaseWriter`.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -13,7 +14,8 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from src.abaco_pipeline.output.supabase_writer import SupabaseAuth, SupabaseWriter
+from src.abaco_pipeline.output.supabase_writer import (SupabaseAuth,
+                                                       SupabaseWriter)
 
 
 def _enrich_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
