@@ -1,5 +1,6 @@
 import hashlib
 import json
+import math
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,64 +11,35 @@ import pandas as pd
 
 
 class RateLimiter:
-    def __init__(self, max_requests_per_minute: int = 60):
-        self.max_requests_per_minute = max_requests_per_minute
-        self.last_request_ts: Optional[float] = None
-
-    def wait(self) -> None:
-        if self.max_requests_per_minute <= 0:
-            return
-        interval = 60.0 / float(self.max_requests_per_minute)
-        now = time.time()
-        if self.last_request_ts is None:
-            self.last_request_ts = now
-            return
-        elapsed = now - self.last_request_ts
-        if elapsed < interval:
-            time.sleep(interval - elapsed)
-        self.last_request_ts = time.time()
-
-
-class RetryPolicy:
-    def __init__(self, max_retries: int = 3, backoff_seconds: float = 1.0, jitter_seconds: float = 0.0):
-        self.max_retries = max_retries
-        self.backoff_seconds = backoff_seconds
-        self.jitter_seconds = jitter_seconds
-
-    def execute(
-        self, func: Callable[[], Any], on_retry: Optional[Callable[[int, Exception], None]] = None
-    ) -> Any:
-        attempt = 0
-        while True:
-            try:
-                return func()
-            except Exception as exc:
-                attempt += 1
-                if attempt > self.max_retries:
-                    raise
-                if on_retry:
-                    try:
-                        on_retry(attempt, exc)
-                    except Exception:
-                        pass
-                time.sleep(self.backoff_seconds)
+# ... (skipping to CircuitBreaker)
+class CircuitBreakerError(Exception):
+    """Raised when the circuit breaker is open."""
+    pass
 
 
 class CircuitBreaker:
-    def __init__(self, failure_threshold: int = 5, recovery_timeout: float = 60.0, reset_seconds: float = 60.0):
+    def __init__(
+        self,
+        failure_threshold: int = 5,
+        recovery_timeout: float = 60.0,
+        reset_seconds: Optional[float] = None,
+    ):
         self.failure_threshold = failure_threshold
-        # Use reset_seconds if recovery_timeout is default, assuming reset_seconds was intended
-        self.recovery_timeout = recovery_timeout
-        if reset_seconds != 60.0 and recovery_timeout == 60.0:
-             self.recovery_timeout = reset_seconds
-        
+        # Use reset_seconds if provided (legacy support), otherwise recovery_timeout
+        self.recovery_timeout = (
+            reset_seconds if reset_seconds is not None else recovery_timeout
+        )
+
         self.failures = 0
         self.last_failure_time: Optional[float] = None
         self.state = "CLOSED"  # CLOSED, OPEN, HALF-OPEN
 
     def allow(self) -> bool:
         if self.state == "OPEN":
-            if self.last_failure_time and (time.time() - self.last_failure_time) > self.recovery_timeout:
+            if (
+                self.last_failure_time
+                and (time.time() - self.last_failure_time) > self.recovery_timeout
+            ):
                 self.state = "HALF-OPEN"
                 return True
             return False
@@ -88,7 +60,7 @@ class CircuitBreaker:
 
     def call(self, func: Callable[[], Any]) -> Any:
         if not self.allow():
-             raise Exception("CircuitBreaker is OPEN")
+            raise CircuitBreakerError("CircuitBreaker is OPEN")
         try:
             result = func()
             self.record_success()
