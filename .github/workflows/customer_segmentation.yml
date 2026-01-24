@@ -31,8 +31,6 @@ jobs:
               env:
                 OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                 SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-                NOTION_API_KEY: ${{ secrets.NOTION_API_KEY || secrets.NOTION_TOKEN || secrets.NOTION_INTEGRATION_TOKEN }}
-                NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID || secrets.NOTION_DATABASE_URL || secrets.NOTION_DATABASE }}
               run: |
                 sanitize_secret() {
                   local var_name="$1"
@@ -50,8 +48,6 @@ jobs:
                 }
                 sanitize_secret OPENAI_API_KEY "$OPENAI_API_KEY"
                 sanitize_secret SUPABASE_SERVICE_ROLE "$SUPABASE_SERVICE_ROLE"
-                sanitize_secret NOTION_API_KEY "$NOTION_API_KEY"
-                sanitize_secret NOTION_DATABASE_ID "$NOTION_DATABASE_ID"
 
                   missing=""
                   [ -z "$OPENAI_API_KEY" ] && missing="$missing OPENAI_API_KEY"
@@ -62,10 +58,7 @@ jobs:
                     echo "can_run=false" >> $GITHUB_OUTPUT
                     echo "::warning::Missing required secrets:$missing - skipping customer segmentation"
                   fi
-                  if [ -n "$NOTION_API_KEY" ] && [ -n "$NOTION_DATABASE_ID" ]; then
-                    echo "notion_available=true" >> $GITHUB_OUTPUT
                   else
-                    echo "notion_available=false" >> $GITHUB_OUTPUT
                   fi
             - name: Checkout Repository
               if: steps.check-secrets.outputs.can_run == 'true'
@@ -90,11 +83,6 @@ jobs:
                   OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
               run: |
                   python scripts/customer_segmentation.py
-            - name: Post to Notion
-              if: steps.check-secrets.outputs.can_run == 'true' && steps.check-secrets.outputs.notion_available == 'true' && hashFiles('scripts/post_to_notion.py') != ''
               env:
-                  NOTION_API_KEY: ${{ secrets.NOTION_API_KEY || secrets.NOTION_TOKEN || secrets.NOTION_INTEGRATION_TOKEN }}
-                  NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID || secrets.NOTION_DATABASE_URL || secrets.NOTION_DATABASE }}
                   SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
               run: |
-                  python scripts/post_to_notion.py

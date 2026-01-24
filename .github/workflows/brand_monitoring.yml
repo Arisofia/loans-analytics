@@ -21,7 +21,6 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           META_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: |
           missing_required=""
           [ -z "$OPENAI_API_KEY" ] && missing_required="$missing_required OPENAI_API_KEY"
@@ -34,11 +33,7 @@ jobs:
             echo "::warning::Missing required secrets:$missing_required - skipping monitoring"
           fi
 
-          if [ -n "$SLACK_BOT_TOKEN" ]; then
-            echo "slack_available=true" >> "$GITHUB_OUTPUT"
           else
-            echo "slack_available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::SLACK_BOT_TOKEN not configured - skipping Slack notification"
           fi
       - name: Install Dependencies
         if: steps.check-secrets.outputs.can_run == 'true'
@@ -52,12 +47,8 @@ jobs:
           META_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
         run: |
           python scripts/brand_monitoring.py
-      - name: Post to Slack
-        if: steps.check-secrets.outputs.can_run == 'true' && steps.check-secrets.outputs.slack_available == 'true' && hashFiles('scripts/post_to_slack.py') != ''
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         run: |
-          python scripts/post_to_slack.py --channel "#brand-monitoring"
       - name: Monitoring Summary
         if: always()
         run: |
@@ -68,8 +59,5 @@ jobs:
           else
             echo "- **Monitoring**: ⚠️ Skipped (missing required secrets)" >> $GITHUB_STEP_SUMMARY
           fi
-          if [ "${{ steps.check-secrets.outputs.slack_available }}" == "true" ]; then
-            echo "- **Slack Notification**: ✅ Configured" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- **Slack Notification**: ⚠️ Not configured" >> $GITHUB_STEP_SUMMARY
           fi

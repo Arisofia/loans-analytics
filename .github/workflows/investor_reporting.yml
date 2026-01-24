@@ -31,7 +31,6 @@ jobs:
               env:
                 OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                 SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-                FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
               run: |
                 sanitize_secret() {
                   local var_name="$1"
@@ -49,7 +48,6 @@ jobs:
                 }
                 sanitize_secret OPENAI_API_KEY "$OPENAI_API_KEY"
                 sanitize_secret SUPABASE_SERVICE_ROLE "$SUPABASE_SERVICE_ROLE"
-                sanitize_secret FIGMA_TOKEN "$FIGMA_TOKEN"
 
                   missing=""
                   [ -z "$OPENAI_API_KEY" ] && missing="$missing OPENAI_API_KEY"
@@ -60,10 +58,7 @@ jobs:
                     echo "can_run=false" >> $GITHUB_OUTPUT
                     echo "::warning::Missing required secrets:$missing - skipping investor report"
                   fi
-                  if [ -n "$FIGMA_TOKEN" ]; then
-                    echo "figma_available=true" >> $GITHUB_OUTPUT
                   else
-                    echo "figma_available=false" >> $GITHUB_OUTPUT
                   fi
             - name: Checkout Repository
               if: steps.check-secrets.outputs.can_run == 'true'
@@ -86,10 +81,6 @@ jobs:
                 PHOENIX_TOKEN: ${{ secrets.PHOENIX_TOKEN }}
               run: |
                   python scripts/investor_reporting.py
-            - name: Post to Figma
-              if: steps.check-secrets.outputs.can_run == 'true' && steps.check-secrets.outputs.figma_available == 'true' && hashFiles('scripts/post_to_figma.py') != ''
               env:
-                FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
                 SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
               run: |
-                  python scripts/post_to_figma.py

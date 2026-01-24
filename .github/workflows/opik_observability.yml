@@ -9,7 +9,6 @@ name: Opik Observability & Monitoring
 env:
   OPIKTOKEN: ${{ secrets.OPIK_TOKEN }}
   SUPABASESERVICEROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-  SLACKBOTTOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
 jobs:
   # Job 1: Fetch system metrics from Opik
@@ -214,7 +213,6 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - name: Send critical alert to Slack
         run: |
           echo "🚨 Critical issue detected, sending alert..."
           ALERT_MESSAGE="🚨 CRITICAL ALERT: System health issues detected\n"
@@ -222,7 +220,6 @@ jobs:
           ALERT_MESSAGE+="Agents: ${{ needs.analyze-agent-performance.outputs.agent-status }}\n"
           ALERT_MESSAGE+="Data Quality: ${{ needs.check-data-quality-trends.outputs.quality-trend }}"
 
-          curl -X POST ${{ secrets.SLACK_BOT_TOKEN }} \
             -H 'Content-Type: application/json' \
             -d "{\"text\":\"$ALERT_MESSAGE\"}"
 
@@ -232,7 +229,6 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - name: Send daily health summary to Slack
         run: |
           echo "📊 Sending daily system health summary..."
           SUMMARY="🔍 Daily System Health Report ($(date +%Y-%m-%d))\n\n"
@@ -241,6 +237,5 @@ jobs:
           SUMMARY+="📊 Data Quality: ${{ needs.check-data-quality-trends.outputs.quality-trend }}\n\n"
           SUMMARY+="View detailed dashboard in GitHub Actions artifacts."
 
-          curl -X POST ${{ secrets.SLACK_BOT_TOKEN }} \
             -H 'Content-Type: application/json' \
             -d "{\"text\":\"$SUMMARY\"}"

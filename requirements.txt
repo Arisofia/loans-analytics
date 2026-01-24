@@ -1,7 +1,6 @@
 # Multi-Agent System Dependencies
 openai==2.15.0
 # anthropic==0.39.0  # removed to avoid conflict with later minimum requirement (anthropic>=0.7.0)
-hubspot-api-client==12.0.0
 python-dotenv==1.2.1
 langchain>=0.3.13,<2.0.0
 langchain-openai>=0.2.14,<1.0.0
@@ -32,7 +31,6 @@ scikit-learn>=1.0.0
 anthropic>=0.7.0
 openai>=1.3.0
 google-generativeai>=0.3.0
-hubspot-api-client>=9.0.0
 
 # Observability / Tracing
 opencensus-ext-azure==1.1.15

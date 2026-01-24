@@ -41,9 +41,5 @@ jobs:
         run: |
           python scripts/product_analytics.py
 
-      - name: Post to Figma
-        if: steps.check-secrets.outputs.secrets_available == 'true' && hashFiles('scripts/post_to_figma.py') != ''
         env:
-          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
         run: |
-          python scripts/post_to_figma.py

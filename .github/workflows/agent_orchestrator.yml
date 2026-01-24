@@ -24,7 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       run: ${{ steps.gate.outputs.run }}
-      slack_available: ${{ steps.gate.outputs.slack_available }}
     steps:
       - name: Gate execution on secrets and scripts
         id: gate
@@ -35,7 +34,6 @@ jobs:
           PHOENIX_TOKEN: ${{ secrets.PHOENIX_TOKEN }}
           CLAUDE_ROCKET_TOKEN: ${{ secrets.CLAUDE_ROCKET_TOKEN }}
           XAI_TOKEN: ${{ secrets.XAI_TOKEN }}
-          SLACK_WEBHOOK_LEADERSHIP: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
         run: |
           python3 << 'VALIDATION'
           import os
@@ -51,7 +49,6 @@ jobs:
 
           script_path = Path("src/agents/orchestrator.py")
           script_missing = not script_path.exists()
-          slack_available = "true" if os.getenv("SLACK_WEBHOOK_LEADERSHIP") else "false"
 
           if missing_required:
               print(f"CRITICAL: Missing required secrets: {', '.join(missing_required)}")
@@ -59,8 +56,6 @@ jobs:
               print(f"WARNING: Missing optional agent tokens: {', '.join(missing_optional)}")
           if script_missing:
               print(f"ERROR: Orchestration script {script_path} not found. Fallback to dummy mode if needed.")
-          if slack_available == "false":
-              print("WARNING: SLACK_WEBHOOK_LEADERSHIP not configured - notifications will be skipped")
 
           # Fallback logic: allow execution if we have at least OpenAI and the script,
           # otherwise fail gracefully.
@@ -68,7 +63,6 @@ jobs:
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as handle:
               handle.write(f"run={run}\n")
-              handle.write(f"slack_available={slack_available}\n")
           VALIDATION
 
   orchestrate:
@@ -117,10 +111,7 @@ jobs:
           retention-days: 30
 
       - name: Notify Leadership on success
-        uses: slackapi/slack-github-action@v2.1.1
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
-        if: success() && needs.validate-secrets.outputs.slack_available == true
         with:
           payload: |
             {
@@ -137,10 +128,7 @@ jobs:
             }
 
       - name: Notify Leadership on failure
-        uses: slackapi/slack-github-action@v2.1.1
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
-        if: failure() && needs.validate-secrets.outputs.slack_available == true
         with:
           payload: |
             {

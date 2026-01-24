@@ -1,7 +1,6 @@
 import inspect
 from typing import Any, Callable, Dict, List, Optional
 
-
 class Tool:
     def __init__(self, name: str, func: Callable[..., Any], description: str):
         self.name = name
@@ -17,7 +16,6 @@ class Tool:
             "description": self.description,
             "parameters": str(inspect.signature(self.func)),
         }
-
 
 class ToolRegistry:
     def __init__(self):
@@ -40,9 +38,7 @@ class ToolRegistry:
     def list_tools(self) -> List[Dict[str, str]]:
         return [tool.to_dict() for tool in self.tools.values()]
 
-
 registry = ToolRegistry()
-
 
 @registry.register(description="Simulate execution of an SQL query and return a sample result.")
 def run_sql_query(query: str) -> List[Dict[str, Any]]:
@@ -55,7 +51,6 @@ def run_sql_query(query: str) -> List[Dict[str, Any]]:
     """
     # Placeholder for actual DB integration
     return [{"result": "Sample result for query: " + query}]
-
 
 @registry.register(
     description="Simulate a portfolio scenario by adjusting interest rates or principal balances."
@@ -114,7 +109,6 @@ def simulate_portfolio_scenario(
         },
     }
 
-
 @registry.register(description="Run a full portfolio analysis using the LoanAnalyticsEngine.")
 def run_portfolio_analysis(data_path: Optional[str] = None) -> Dict[str, Any]:
     """
@@ -163,7 +157,6 @@ def run_portfolio_analysis(data_path: Optional[str] = None) -> Dict[str, Any]:
         ),
     }
 
-
 @registry.register(
     description="Analyze customer behavior including CLV, churn probability, and segmentation."
 )
@@ -194,42 +187,8 @@ def analyze_customer_behavior(customer_id: Optional[str] = None) -> Dict[str, An
         "overall_churn_rate": 0.12,
     }
 
-
 @registry.register(description="Send a message to a Slack channel.")
-def send_slack_notification(message: str, channel: Optional[str] = None) -> bool:
-    """
-    Args:
-        message (str): The message to send.
-        channel (Optional[str]): Target channel name or ID.
 
-    Returns:
-        bool: True if sent successfully.
-    """
-    from src.agents.outputs import SlackOutput
-
-    output = SlackOutput()
-    return output.publish(message, channel=channel)
-
-
-@registry.register(description="Create a new page in Notion.")
-def create_notion_page(title: str, content: str) -> bool:
-    """
-    Args:
-        title (str): The title of the page.
-        content (str): Markdown or plain text content.
-
-    Returns:
-        bool: True if created successfully.
-    """
-    from src.agents.outputs import NotionOutput
-
-    output = NotionOutput()
-    return output.publish(content, title=title)
-
-
-@registry.register(
-    description="Compute investor-specific KPIs including ROI, capital efficiency, and IRR."
-)
 def compute_investor_kpis(portfolio_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Args:
@@ -246,7 +205,6 @@ def compute_investor_kpis(portfolio_data: Optional[Dict[str, Any]] = None) -> Di
         "valuation_estimate_m_usd": 45.0,
     }
 
-
 @registry.register(description="Generate an ROI analysis report for board-level review.")
 def generate_roi_report(timeframe: str = "yearly") -> str:
     """
@@ -257,7 +215,6 @@ def generate_roi_report(timeframe: str = "yearly") -> str:
         str: Markdown formatted report.
     """
     return f"# ROI Report - {timeframe.capitalize()}\n\nDetailed analysis of portfolio returns and capital allocation efficiency."
-
 
 @registry.register(
     description="Score a list of leads based on historical conversion data and profile matching."
@@ -284,7 +241,6 @@ def score_leads(leads: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         )
     return sorted(scored_leads, key=lambda x: x["sales_score"], reverse=True)
 
-
 @registry.register(description="Analyze the sales funnel to identify conversion bottlenecks.")
 def analyze_sales_funnel(date_range: Optional[str] = None) -> Dict[str, Any]:
     """
@@ -303,7 +259,6 @@ def analyze_sales_funnel(date_range: Optional[str] = None) -> Dict[str, Any]:
             "overall": 0.045,
         },
     }
-
 
 @registry.register(
     description="Fetch data about market competitors including pricing and market share."
@@ -325,7 +280,6 @@ def fetch_market_competitors(sector: str = "fintech") -> Dict[str, Any]:
         ],
     }
 
-
 @registry.register(
     description="Get current economic indicators such as inflation and central bank rates."
 )
@@ -338,7 +292,6 @@ def get_economic_indicators(region: str = "US") -> Dict[str, float]:
         Dict[str, float]: Key economic metrics.
     """
     return {"inflation_rate": 0.032, "central_bank_rate": 0.0525, "gdp_growth": 0.021}
-
 
 @registry.register(description="Monitor real-time SLA performance for operational processes.")
 def monitor_sla_performance() -> Dict[str, Any]:
@@ -354,7 +307,6 @@ def monitor_sla_performance() -> Dict[str, Any]:
             {"name": "Verification", "count": 12, "status": "Normal"},
         ],
     }
-
 
 @registry.register(
     description="Identify operational process bottlenecks using process mining techniques."
@@ -377,7 +329,6 @@ def identify_process_bottlenecks() -> List[Dict[str, str]]:
         },
     ]
 
-
 @registry.register(description="Analyze brand sentiment across social media and news sources.")
 def analyze_brand_sentiment(brand_name: str = "Abaco Capital") -> Dict[str, Any]:
     """
@@ -394,7 +345,6 @@ def analyze_brand_sentiment(brand_name: str = "Abaco Capital") -> Dict[str, Any]
         "sentiment_distribution": {"positive": 0.65, "neutral": 0.25, "negative": 0.10},
     }
 
-
 @registry.register(description="Track the performance of marketing campaigns.")
 def track_campaign_performance(campaign_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """
@@ -409,7 +359,6 @@ def track_campaign_performance(campaign_id: Optional[str] = None) -> List[Dict[s
         {"campaign": "Referral Program", "ctr": 0.040, "cpc": 0.50, "conversions": 300},
     ]
 
-
 @registry.register(description="Get usage metrics for specific product features.")
 def get_feature_usage_metrics() -> List[Dict[str, Any]]:
     """
@@ -421,7 +370,6 @@ def get_feature_usage_metrics() -> List[Dict[str, Any]]:
         {"feature": "Scenario Simulator", "adoption_rate": 0.45, "retention_rate": 0.60},
         {"feature": "Automated Reporting", "adoption_rate": 0.70, "retention_rate": 0.88},
     ]
-
 
 @registry.register(description="Prioritize the product roadmap using RICE scoring.")
 def prioritize_product_roadmap(features: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -441,7 +389,6 @@ def prioritize_product_roadmap(features: List[Dict[str, Any]]) -> List[Dict[str,
         scored_features.append({**f, "rice_score": round(score, 2)})
     return sorted(scored_features, key=lambda x: x["rice_score"], reverse=True)
 
-
 @registry.register(
     description="Predict employee performance based on historical KPIs and engagement scores."
 )
@@ -460,7 +407,6 @@ def predict_employee_performance(employee_id: str) -> Dict[str, Any]:
         "coaching_tips": ["Focus on leadership opportunities", "Expand technical mentorship"],
     }
 
-
 @registry.register(description="Assess retention risk for an employee or department.")
 def assess_retention_risk(target_id: str) -> Dict[str, Any]:
     """
@@ -476,7 +422,6 @@ def assess_retention_risk(target_id: str) -> Dict[str, Any]:
         "risk_score": 0.45,
         "primary_drivers": ["Market compensation divergence", "Workload balance"],
     }
-
 
 @registry.register(description="Retrieve the content of a document by its ID.")
 def retrieve_document(doc_id: str) -> str:

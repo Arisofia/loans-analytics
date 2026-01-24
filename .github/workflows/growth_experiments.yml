@@ -15,8 +15,6 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY || secrets.NOTION_TOKEN || secrets.NOTION_INTEGRATION_TOKEN }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID || secrets.NOTION_DATABASE_URL || secrets.NOTION_DATABASE }}
         run: |
           missing=""
           if [ -z "$OPENAI_API_KEY" ]; then
@@ -33,10 +31,7 @@ jobs:
             echo "::warning::Missing required secrets:$missing"
           fi
 
-          if [ -n "$NOTION_API_KEY" ] && [ -n "$NOTION_DATABASE_ID" ]; then
-            echo "notion_available=true" >> "$GITHUB_OUTPUT"
           else
-            echo "notion_available=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Setup Python Environment
         if: steps.check-secrets.outputs.run == 'true'
@@ -54,11 +49,6 @@ jobs:
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
         run: |
           python scripts/growth_experiments.py
-      - name: Post to Notion
         env:
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY || secrets.NOTION_TOKEN || secrets.NOTION_INTEGRATION_TOKEN }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID || secrets.NOTION_DATABASE_URL || secrets.NOTION_DATABASE }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-        if: steps.check-secrets.outputs.run == 'true' && steps.check-secrets.outputs.notion_available == 'true'
         run: |
-          python scripts/post_to_notion.py

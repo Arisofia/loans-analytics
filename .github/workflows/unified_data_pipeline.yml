@@ -45,9 +45,6 @@ jobs:
         id: pipeline
         if: env.SUPABASE_SERVICE_ROLE != ''
         env:
-          CASCADE_USERNAME: ${{ secrets.CASCADE_USERNAME }}
-          CASCADE_PASSWORD: ${{ secrets.CASCADE_PASSWORD }}
-          HUBSPOT_TOKEN: ${{ secrets.HUBSPOT_API_TOKEN }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
           AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
@@ -55,9 +52,6 @@ jobs:
           echo "Running unified data pipeline (orchestrator)..."
           python scripts/run_data_pipeline.py --action github-action
 
-      - name: Notify Slack on Success
-        if: success() && env.SLACK_WEBHOOK_URL != ''
-        uses: slackapi/slack-github-action@v2.1.1
         with:
           payload: |
             {
@@ -73,11 +67,7 @@ jobs:
               ]
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-      - name: Notify Slack on Failure
-        if: failure() && env.SLACK_WEBHOOK_URL != ''
-        uses: slackapi/slack-github-action@v2.1.1
         with:
           payload: |
             {
@@ -93,7 +83,6 @@ jobs:
               ]
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Upload Pipeline Artifacts
         uses: actions/upload-artifact@v6
