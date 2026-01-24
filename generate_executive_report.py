@@ -9,7 +9,6 @@ from pathlib import Path
 import pandas as pd
 
 try:
-    from src.azure_tracing import setup_azure_tracing
     from src.pipeline.utils import load_yaml
 except (ImportError, Exception) as tracing_err:
     logging.basicConfig(level=logging.INFO)

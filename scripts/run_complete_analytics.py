@@ -28,7 +28,8 @@ except (ImportError, Exception) as tracing_err:
     logger = logging.getLogger(__name__)
     logger.warning("Azure tracing not initialized: %s", tracing_err)
 
-from src.pipeline.orchestrator import UnifiedPipeline
+from src.pipeline.orchestrator import UnifiedPipeline  # noqa: E402
+
 
 
 def load_real_data():
