@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       can_run: ${{ steps.validate.outputs.can_run }}
+      slack_ops_available: ${{ steps.validate.outputs.slack_ops_available }}
     steps:
       - name: Validate required secrets
         id: validate
@@ -27,6 +28,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          SLACK_WEBHOOK_OPS: ${{ secrets.SLACK_WEBHOOK_OPS }}
         run: |
           missing=""
           [ -z "$DATABASE_URL" ] && missing="$missing DATABASE_URL"
@@ -38,6 +40,13 @@ jobs:
           else
             echo "can_run=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Missing required secrets:${missing}"
+          fi
+
+          if [ -n "$SLACK_WEBHOOK_OPS" ]; then
+            echo "slack_ops_available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "slack_ops_available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::SLACK_WEBHOOK_OPS not configured - notifications disabled"
           fi
 
   batch-export:
@@ -68,8 +77,27 @@ jobs:
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          HUBSPOT_API_KEY: ${{ secrets.HUBSPOT_API_TOKEN }}
+          META_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
+          META_PIXEL_ID: ${{ secrets.META_PIXEL_ID }}
+<<<<<<< HEAD:.github/workflows/archived/batch-export-scheduled.yml
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID || secrets.FACEBOOK_AD_ACCOUNT_ID }}
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY || secrets.FIGMA_FILE_URL || secrets.FIGMA_FILE_LINK }}
           AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY || secrets.NOTION_TOKEN || secrets.NOTION_INTEGRATION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID || secrets.NOTION_DATABASE_URL || secrets.NOTION_DATABASE }}
+=======
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID || secrets.FACEBOOK_AD_ACCOUNT_ID }}
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY || secrets.FIGMA_FILE_URL || secrets.FIGMA_FILE_LINK }}
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY || secrets.NOTION_TOKEN || secrets.NOTION_INTEGRATION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID || secrets.NOTION_DATABASE_URL || secrets.NOTION_DATABASE }}
+>>>>>>> origin/fix/workflows-and-tests:.github/workflows/batch-export-scheduled.yml
+          NOTION_REPORTS_PAGE_ID: ${{ secrets.NOTION_REPORTS_PAGE_ID }}
           EXPORT_TYPE: ${{ github.event.inputs.export_type || 'full' }}
         run: |
           python src/integrations/batch_export_runner.py \
@@ -86,6 +114,26 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+      - name: Notify on success
+        if: success() && needs.check-secrets.outputs.slack_ops_available == true
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: "Batch export workflow completed successfully"
+          fields: repo,message,commit
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_OPS }}
+
+      - name: Notify on failure
+        if: failure() && needs.check-secrets.outputs.slack_ops_available == true
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: "Batch export workflow failed"
+          fields: repo,message,commit,author
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_OPS }}
+
       - name: Export Summary
         if: always()
         run: |
@@ -96,3 +144,8 @@ jobs:
             echo "- **Status**: ${{ job.status }}"
             echo "- **Run ID**: ${{ github.run_id }}"
           } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ needs.check-secrets.outputs.slack_ops_available }}" == "true" ]; then
+            echo "- **Notifications**: ✅ Configured" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- **Notifications**: ⚠️ Not configured" >> "$GITHUB_STEP_SUMMARY"
+          fi

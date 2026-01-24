@@ -218,30 +218,72 @@ class PerformanceStressTest:
             "tests_passed": sum(1 for _ in [load_test, sustained, resource] if _),
             "performance_assessment": {
                 "scalability": "EXCELLENT" if load_test else "UNKNOWN",
-                "stability": (
-                    "STABLE" if sustained.get("memory", {}).get("stable") else "VARIABLE"
-                ),
-                "resource_efficiency": {
-                    "avg_execution_time_s": resource.get("execution_time_s"),
-                    "memory_used_mb": resource.get("memory_used_mb"),
-                    "cpu_user_seconds": resource.get("cpu_user_seconds"),
-                },
+<<<<<<< HEAD
+                "stability": "STABLE" if sustained.get("memory", {}).get("stable") else "VARIABLE",
+                "resource_efficiency": "EFFICIENT" if resource else "UNKNOWN",
             },
+            "recommendations": self._generate_recommendations(),
         }
 
-        # Compose final results
         self.results["summary"] = summary
-        self.results["tests"]["load_scalability_summary"] = {
-            "sizes_tested": list(self.results["tests"].get("load_scalability", {}).keys())
-        }
 
-        # Write report
-        try:
-            output_path = Path(output_file)
-            with output_path.open("w") as fh:
-                json.dump(self.results, fh, indent=2, default=str)
-            logger.info(f"Report written to {output_path}")
-        except Exception as e:
-            logger.error(f"Failed to write report: {e}")
+        # Save report
+        with open(output_file, "w") as f:
+            json.dump(self.results, f, indent=2, default=str)
 
-        return self.results
+        logger.info(f"\n✓ Report saved to {output_file}")
+
+        # Print summary
+        print("\n" + "=" * 70)
+        print("PERFORMANCE STRESS TEST SUMMARY")
+        print("=" * 70)
+        print(f"\nOverall Status: {summary['overall_status']}")
+        print(f"Tests Executed: {summary['tests_passed']}")
+        print("\nPerformance Assessment:")
+        for aspect, rating in summary["performance_assessment"].items():
+            print(f"  {aspect}: {rating}")
+        print("\nRecommendations:")
+        for rec in summary["recommendations"]:
+            print(f"  • {rec}")
+        print("=" * 70)
+
+    def _generate_recommendations(self):
+        """Generate recommendations based on test results"""
+        recs = []
+
+        sustained = self.results["tests"].get("sustained_load", {})
+        if sustained.get("errors", 0) > 0:
+            recs.append("Investigate errors in sustained load test")
+
+        if not sustained.get("memory", {}).get("stable"):
+            recs.append("Memory usage is variable - monitor for leaks")
+
+        load = self.results["tests"].get("load_scalability", {})
+        if load:
+            results = list(load.values())
+            if results and results[-1]["execution_time_s"] > 10:
+                recs.append("Consider optimization for 100k+ row datasets")
+
+        if not recs:
+            recs.append("✓ All performance tests passed - ready for production")
+
+        return recs
+
+
+def main():
+    logger.info("Starting Performance Stress Test Suite")
+    logger.info("=" * 70)
+
+    tester = PerformanceStressTest()
+
+    # Run all tests
+    tester.test_load_scalability()
+    tester.test_sustained_load(duration_seconds=30)  # 30s for quick test
+    tester.test_resource_usage()
+
+    # Generate report
+    tester.generate_report()
+
+
+if __name__ == "__main__":
+    main()

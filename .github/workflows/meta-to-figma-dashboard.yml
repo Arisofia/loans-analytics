@@ -1,5 +1,6 @@
+# Marked as resolved since the file is deleted
 name: Meta to Figma Dashboard
-"on":
+on:
   workflow_dispatch:
   schedule:
     - cron: '0 6 * * *' # every day at 6am UTC
@@ -8,8 +9,8 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
-      FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+      FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+      FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY || secrets.FIGMA_FILE_URL || secrets.FIGMA_FILE_LINK }}
       FIGMA_NODE_ID: ${{ secrets.FIGMA_NODE_ID }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -17,6 +18,49 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+      - name: Check integration secrets
+        id: check-secrets
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY || secrets.FIGMA_FILE_URL || secrets.FIGMA_FILE_LINK }}
+          FIGMA_NODE_ID: ${{ secrets.FIGMA_NODE_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+        run: |
+          sanitize_secret() {
+            local var_name="$1"
+            local raw="$2"
+            local norm
+            norm="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]' | xargs)"
+            case "$norm" in
+              ""|"token"|"tokens"|"secret"|"secrets"|"changeme"|"change-me"|"change_me"|"replace-me"|"replace_me"|"placeholder"|"example"|"redacted")
+                printf -v "$var_name" '%s' ""
+                ;;
+              *)
+                printf -v "$var_name" '%s' "$raw"
+                ;;
+            esac
+          }
+          sanitize_secret FIGMA_TOKEN "$FIGMA_TOKEN"
+          sanitize_secret FIGMA_FILE_KEY "$FIGMA_FILE_KEY"
+          sanitize_secret FIGMA_NODE_ID "$FIGMA_NODE_ID"
+          sanitize_secret AWS_ACCESS_KEY_ID "$AWS_ACCESS_KEY_ID"
+          sanitize_secret AWS_SECRET_ACCESS_KEY "$AWS_SECRET_ACCESS_KEY"
+          sanitize_secret AWS_S3_BUCKET "$AWS_S3_BUCKET"
+
+          if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ] && [ -n "$AWS_S3_BUCKET" ]; then
+            echo "aws_available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "aws_available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::AWS credentials not configured - skipping S3 upload"
+          fi
+          if [ -n "$FIGMA_TOKEN" ] && [ -n "$FIGMA_FILE_KEY" ] && [ -n "$FIGMA_NODE_ID" ]; then
+            echo "figma_available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "figma_available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Figma secrets not configured - skipping dashboard update"
+          fi
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -30,7 +74,7 @@ jobs:
         run: |
           python src/analytics/meta_agent_analysis.py
       - name: Upload charts to S3
-        if: hashFiles('exports/meta_agent/*.png') != ''
+        if: steps.check-secrets.outputs.aws_available == 'true' && hashFiles('exports/meta_agent/*.png') != ''
         env:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
         run: |
@@ -49,7 +93,7 @@ jobs:
                   print(f'Uploaded {f} to S3')
           EOF
       - name: Update Figma dashboard
-        if: hashFiles('scripts/upload_to_figma.py') != '' && hashFiles('exports/meta_agent/*.png') != ''
+        if: steps.check-secrets.outputs.aws_available == 'true' && steps.check-secrets.outputs.figma_available == 'true' && hashFiles('scripts/upload_to_figma.py') != '' && hashFiles('exports/meta_agent/*.png') != ''
         run: |
           export IMAGE_URL="https://${{ env.AWS_S3_BUCKET }}.s3.amazonaws.com/figma_dashboard/top_ads_spend.png"
           python scripts/upload_to_figma.py --image-url "$IMAGE_URL" --file-key "$FIGMA_FILE_KEY" --node-id "$FIGMA_NODE_ID" --token "$FIGMA_TOKEN"

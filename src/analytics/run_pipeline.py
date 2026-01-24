@@ -91,6 +91,7 @@ def calculate_kpis(df: pd.DataFrame) -> Dict[str, Any]:
     return kpis
 
 
+<<<<<<< HEAD
 def create_metrics_csv(df: pd.DataFrame, output_path: Path) -> None:
     """Create a metrics CSV summarizing per-segment and portfolio metrics."""
     metrics: List[Dict[str, Any]] = []

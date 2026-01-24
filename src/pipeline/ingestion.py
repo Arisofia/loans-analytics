@@ -1,3 +1,12 @@
+<<<<<<< HEAD
+"""Compatibility helpers for legacy python.pipeline imports."""
+
+from src.pipeline.ingestion import *
+
+<<<<<<<< HEAD:src/pipeline/ingestion.py
+from .utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
+from .validation import DataQualityReport, DataQualityReporter, validate_dataframe
+=======
 import hashlib
 import json
 import logging
@@ -16,6 +25,7 @@ from pydantic import BaseModel, Field, ValidationError
 from .utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
 from .validation import (DataQualityReport, DataQualityReporter,
                          validate_dataframe)
+>>>>>>> origin/main
 
 logger = logging.getLogger("abaco.ingestion")
 
@@ -81,9 +91,13 @@ class UnifiedIngestion:
 
     def _build_rate_limiter(self, config: Dict[str, Any]) -> RateLimiter:
         rate_cfg = config.get("warehouse", {}).get("http", {}).get("rate_limit", {})
+<<<<<<< HEAD
+        return RateLimiter(max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60))
+=======
         return RateLimiter(
             max_requests_per_minute=rate_cfg.get("max_requests_per_minute", 60)
         )
+>>>>>>> origin/main
 
     def _build_circuit_breaker(self, config: Dict[str, Any]) -> CircuitBreaker:
         cb_cfg = config.get("warehouse", {}).get("http", {}).get("circuit_breaker", {})
@@ -141,9 +155,13 @@ class UnifiedIngestion:
             archive_dir.mkdir(parents=True, exist_ok=True)
             archived = archive_dir / file_path.name
             shutil.copy2(file_path, archived)
+<<<<<<< HEAD
+            self._log_event("archive", "success", file=str(file_path), archived=str(archived))
+=======
             self._log_event(
                 "archive", "success", file=str(file_path), archived=str(archived)
             )
+>>>>>>> origin/main
             return archived
         except Exception as exc:
             self._record_error("archive", exc, file=str(file_path))
@@ -168,9 +186,13 @@ class UnifiedIngestion:
                 clean_record = {str(k).strip().lower(): v for k, v in record.items()}
                 if "loan_id" not in clean_record:
                     clean_record["loan_id"] = f"agg_{idx}"
+<<<<<<< HEAD
+                validated_records.append(LoanRecord(**clean_record).model_dump(by_alias=True))
+=======
                 validated_records.append(
                     LoanRecord(**clean_record).model_dump(by_alias=True)
                 )
+>>>>>>> origin/main
             except ValidationError as exc:
                 errors.append(f"row {idx}: {exc}")
 
@@ -205,9 +227,13 @@ class UnifiedIngestion:
         deduped = df.drop_duplicates(subset=keys)
         return deduped, before - len(deduped)
 
+<<<<<<< HEAD
+    def _select_column(self, columns: List[str], candidates: List[str]) -> Optional[str]:
+=======
     def _select_column(
         self, columns: List[str], candidates: List[str]
     ) -> Optional[str]:
+>>>>>>> origin/main
         column_map = {col.lower(): col for col in columns}
         for candidate in candidates:
             key = candidate.lower()
@@ -215,9 +241,13 @@ class UnifiedIngestion:
                 return column_map[key]
         return None
 
+<<<<<<< HEAD
+    def _load_looker_financials(self, financials_path: Optional[Path]) -> Dict[str, float]:
+=======
     def _load_looker_financials(
         self, financials_path: Optional[Path]
     ) -> Dict[str, float]:
+>>>>>>> origin/main
         if not financials_path:
             return {}
         path = Path(financials_path)
@@ -273,6 +303,13 @@ class UnifiedIngestion:
             return {}
 
         parsed = financials_df[[date_col, cash_col]].copy()
+<<<<<<< HEAD
+        parsed[date_col] = pd.to_datetime(parsed[date_col], errors="coerce").dt.strftime("%Y-%m-%d")
+        parsed[cash_col] = pd.to_numeric(parsed[cash_col], errors="coerce")
+        parsed = parsed.dropna(subset=[date_col])
+        grouped = parsed.groupby(date_col, dropna=False)[cash_col].last()
+        cash_by_date = {str(idx): float(val) for idx, val in grouped.items() if pd.notna(val)}
+=======
         parsed[date_col] = pd.to_datetime(
             parsed[date_col], errors="coerce"
         ).dt.strftime("%Y-%m-%d")
@@ -282,6 +319,7 @@ class UnifiedIngestion:
         cash_by_date = {
             str(idx): float(val) for idx, val in grouped.items() if pd.notna(val)
         }
+>>>>>>> origin/main
         if cash_by_date:
             self._log_event(
                 "looker_financials",
@@ -319,9 +357,15 @@ class UnifiedIngestion:
         if missing:
             raise ValueError(f"Missing Looker PAR columns: {', '.join(missing)}")
 
+<<<<<<< HEAD
+        measurement_date = pd.to_datetime(df[reporting_col], errors="coerce").dt.strftime(
+            "%Y-%m-%d"
+        )
+=======
         measurement_date = pd.to_datetime(
             df[reporting_col], errors="coerce"
         ).dt.strftime("%Y-%m-%d")
+>>>>>>> origin/main
         total_receivable = pd.to_numeric(df[outstanding_col], errors="coerce")
         par_7 = pd.to_numeric(df[par_7_col], errors="coerce")
         par_30 = pd.to_numeric(df[par_30_col], errors="coerce")
@@ -341,6 +385,13 @@ class UnifiedIngestion:
         ).dropna(subset=["measurement_date"])
 
         grouped = (
+<<<<<<< HEAD
+            frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
+        )
+        grouped["total_eligible_usd"] = grouped["total_receivable_usd"]
+        grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
+        grouped["cash_available_usd"] = grouped["measurement_date"].map(cash_by_date).fillna(0.0)
+=======
             frame.groupby("measurement_date", dropna=False)
             .sum(numeric_only=True)
             .reset_index()
@@ -350,6 +401,7 @@ class UnifiedIngestion:
         grouped["cash_available_usd"] = (
             grouped["measurement_date"].map(cash_by_date).fillna(0.0)
         )
+>>>>>>> origin/main
         grouped["loan_id"] = grouped["measurement_date"].apply(
             lambda date: f"looker_snapshot_{str(date).replace('-', '')}"
         )
@@ -374,18 +426,28 @@ class UnifiedIngestion:
         if measurement_col:
             resolved = self._select_column(list(df.columns), [measurement_col])
             if resolved:
+<<<<<<< HEAD
+                measurement_date = pd.to_datetime(df[resolved], errors="coerce").dt.strftime(
+                    "%Y-%m-%d"
+                )
+=======
                 measurement_date = pd.to_datetime(
                     df[resolved], errors="coerce"
                 ).dt.strftime("%Y-%m-%d")
+>>>>>>> origin/main
         if measurement_date is None:
             if strategy == "max_disburse_date":
                 resolved = self._select_column(
                     list(df.columns), ["disburse_date", "disbursement_date"]
                 )
             elif strategy == "max_maturity_date":
+<<<<<<< HEAD
+                resolved = self._select_column(list(df.columns), ["maturity_date", "loan_end_date"])
+=======
                 resolved = self._select_column(
                     list(df.columns), ["maturity_date", "loan_end_date"]
                 )
+>>>>>>> origin/main
             else:
                 resolved = None
             if resolved:
@@ -419,6 +481,13 @@ class UnifiedIngestion:
         ).dropna(subset=["measurement_date"])
 
         grouped = (
+<<<<<<< HEAD
+            frame.groupby("measurement_date", dropna=False).sum(numeric_only=True).reset_index()
+        )
+        grouped["total_eligible_usd"] = grouped["total_receivable_usd"]
+        grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
+        grouped["cash_available_usd"] = grouped["measurement_date"].map(cash_by_date).fillna(0.0)
+=======
             frame.groupby("measurement_date", dropna=False)
             .sum(numeric_only=True)
             .reset_index()
@@ -428,14 +497,19 @@ class UnifiedIngestion:
         grouped["cash_available_usd"] = (
             grouped["measurement_date"].map(cash_by_date).fillna(0.0)
         )
+>>>>>>> origin/main
         grouped["loan_id"] = grouped["measurement_date"].apply(
             lambda date: f"looker_snapshot_{str(date).replace('-', '')}"
         )
         return grouped
 
+<<<<<<< HEAD
+    def ingest_file(self, file_path: Path, archive_dir: Optional[Path] = None) -> IngestionResult:
+=======
     def ingest_file(
         self, file_path: Path, archive_dir: Optional[Path] = None
     ) -> IngestionResult:
+>>>>>>> origin/main
         self._log_event("start", "initiated", file_path=str(file_path))
         if not file_path.exists():
             self._log_event("file_check", "failed", error="File not found")
@@ -547,8 +621,12 @@ class UnifiedIngestion:
                 source_mode = "looker_loans"
             else:
                 raise ValueError(
+<<<<<<< HEAD
+                    "Looker loans file missing required PAR or DPD columns " "for conversion"
+=======
                     "Looker loans file missing required PAR or DPD columns "
                     "for conversion"
+>>>>>>> origin/main
                 )
             if normalized_df.empty:
                 raise ValueError("Looker loan tape conversion produced no rows")
@@ -601,9 +679,13 @@ class UnifiedIngestion:
             self._record_error("looker_fatal_error", exc)
             raise
 
+<<<<<<< HEAD
+    def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
+=======
     def ingest_http(
         self, url: str, headers: Optional[Dict[str, str]] = None
     ) -> IngestionResult:
+>>>>>>> origin/main
         import requests
 
         headers = headers or {}
@@ -672,9 +754,13 @@ class UnifiedIngestion:
         # If validation produced no validated records but original df had rows,
         # fall back to using the parsed dataframe (best-effort recovery).
         if validated_df.empty and len(df) > 0:
+<<<<<<< HEAD
+            self._log_event("validation", "fallback", reason="using_parsed_df", rows=len(df))
+=======
             self._log_event(
                 "validation", "fallback", reason="using_parsed_df", rows=len(df)
             )
+>>>>>>> origin/main
             parsed = df.copy()
             if "loan_id" not in {str(c).lower() for c in parsed.columns}:
                 parsed["loan_id"] = [f"agg_{i}" for i in range(len(parsed))]
@@ -713,3 +799,12 @@ class UnifiedIngestion:
             raw_path=None,
             quality_report=quality_report,
         )
+<<<<<<< HEAD
+========
+__all__ = [
+    "LoanRecord",
+    "UnifiedIngestion",
+]
+>>>>>>>> origin/main:python/pipeline/ingestion.py
+=======
+>>>>>>> origin/main

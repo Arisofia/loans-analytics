@@ -10,12 +10,34 @@ Handles:
 
 import logging
 import os
+<<<<<<< HEAD
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, cast
+=======
+import re
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+>>>>>>> origin/fix/workflows-and-tests
 
 import requests
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_notion_id(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+    raw = value.strip()
+    match = re.search(r"[0-9a-fA-F]{32}", raw)
+    if match:
+        return match.group(0)
+    match = re.search(
+        r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+        raw,
+    )
+    if match:
+        return match.group(0).replace("-", "")
+    return raw
 
 
 class NotionOutputClient:
@@ -26,8 +48,19 @@ class NotionOutputClient:
         api_token: Optional[str] = None,
         database_id: Optional[str] = None,
     ):
-        self.api_token = api_token or os.getenv("NOTION_API_KEY")
-        self.database_id = database_id or os.getenv("NOTION_DATABASE_ID")
+        self.api_token = (
+            api_token
+            or os.getenv("NOTION_API_KEY")
+            or os.getenv("NOTION_TOKEN")
+            or os.getenv("NOTION_INTEGRATION_TOKEN")
+        )
+        raw_database_id = (
+            database_id
+            or os.getenv("NOTION_DATABASE_ID")
+            or os.getenv("NOTION_DATABASE_URL")
+            or os.getenv("NOTION_DATABASE")
+        )
+        self.database_id = _normalize_notion_id(raw_database_id)
 
         self.base_url = "https://api.notion.com/v1"
         self.headers = {
@@ -315,7 +348,8 @@ class NotionOutputClient:
         }
 
         try:
-            parent_page_id = parent_page_id or os.getenv("NOTION_REPORTS_PAGE_ID")
+            raw_parent_page = parent_page_id or os.getenv("NOTION_REPORTS_PAGE_ID")
+            parent_page_id = _normalize_notion_id(raw_parent_page)
 
             if parent_page_id:
                 report_title = f"Analytics Report - {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"

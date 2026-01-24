@@ -18,8 +18,13 @@ venv/
 *.egg-info/
 .eggs/
 
-# Test/coverage output
+# Config
+config/*.yaml
+
+# Logs
 *.log
+
+# Test/coverage output
 *.coverage
 .coverage.*
 htmlcov/
@@ -54,15 +59,10 @@ out/
 
 # IDE
 .vscode/tasks.json
+
+# Node modules
+.python_packagesnode_modules/
 node_modules/
-
-clean_settings.json
-tailwind.config.js
-
-# Coverage
-.coverage
-.coverage.*
-htmlcov/
 
 # Project-specific artifacts
 apps/.DS_Store
@@ -84,6 +84,7 @@ failed_workflows.csv
 scripts/test_hubspot_simple.py
 
 .env
+.env.example
 
 # Python virtual environments
 .venv/
@@ -96,6 +97,9 @@ AzuriteConfig
 __azurite_db_*.json
 __azurite_db_*_extent__.json
 scripts/setup_azure.sh
+.azure
+tmp/
+data/archives/cascade/tmp*.csv
 
 # Playwright artifacts and test caches
 apps/web/playwright-report/
@@ -106,7 +110,7 @@ playwright/.auth
 pytest-report/
 coverage.xml
 
-.azure
-tmp/
-data/archives/cascade/tmp*.csv
-.env.example
+# Ignore generated media files
+*.mp4
+*.mov
+*.mp3

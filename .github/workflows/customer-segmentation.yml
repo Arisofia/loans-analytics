@@ -1,8 +1,8 @@
 # Marked as resolved since the file is deleted
-name: Investor Reporting
+name: Customer Segmentation
 on:
     schedule:
-        - cron: "0 9 1 * *" # 10:00 AM CET, 1st of month
+        - cron: "0 10 * * *" # 11:00 AM CET daily
     workflow_dispatch:
 
 jobs:
@@ -14,14 +14,14 @@ jobs:
             - uses: actions/checkout@v4
             - id: check
               run: |
-                  if [ -f "scripts/investor_reporting.py" ]; then
+                  if [ -f "scripts/customer_segmentation.py" ]; then
                     echo "run=true" >> $GITHUB_OUTPUT
                   else
                     echo "run=false" >> $GITHUB_OUTPUT
-                    echo "WARNING: scripts/investor_reporting.py missing"
+                    echo "WARNING: scripts/customer_segmentation.py missing"
                   fi
 
-    investor-report:
+    customer-segmentation:
         needs: validate
         if: needs.validate.outputs.run == 'true'
         runs-on: ubuntu-latest
@@ -31,7 +31,8 @@ jobs:
               env:
                 OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                 SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-                FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+                NOTION_API_KEY: ${{ secrets.NOTION_API_KEY || secrets.NOTION_TOKEN || secrets.NOTION_INTEGRATION_TOKEN }}
+                NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID || secrets.NOTION_DATABASE_URL || secrets.NOTION_DATABASE }}
               run: |
                 sanitize_secret() {
                   local var_name="$1"
@@ -49,7 +50,8 @@ jobs:
                 }
                 sanitize_secret OPENAI_API_KEY "$OPENAI_API_KEY"
                 sanitize_secret SUPABASE_SERVICE_ROLE "$SUPABASE_SERVICE_ROLE"
-                sanitize_secret FIGMA_TOKEN "$FIGMA_TOKEN"
+                sanitize_secret NOTION_API_KEY "$NOTION_API_KEY"
+                sanitize_secret NOTION_DATABASE_ID "$NOTION_DATABASE_ID"
 
                   missing=""
                   [ -z "$OPENAI_API_KEY" ] && missing="$missing OPENAI_API_KEY"
@@ -58,12 +60,12 @@ jobs:
                     echo "can_run=true" >> $GITHUB_OUTPUT
                   else
                     echo "can_run=false" >> $GITHUB_OUTPUT
-                    echo "::warning::Missing required secrets:$missing - skipping investor report"
+                    echo "::warning::Missing required secrets:$missing - skipping customer segmentation"
                   fi
-                  if [ -n "$FIGMA_TOKEN" ]; then
-                    echo "figma_available=true" >> $GITHUB_OUTPUT
+                  if [ -n "$NOTION_API_KEY" ] && [ -n "$NOTION_DATABASE_ID" ]; then
+                    echo "notion_available=true" >> $GITHUB_OUTPUT
                   else
-                    echo "figma_available=false" >> $GITHUB_OUTPUT
+                    echo "notion_available=false" >> $GITHUB_OUTPUT
                   fi
             - name: Checkout Repository
               if: steps.check-secrets.outputs.can_run == 'true'
@@ -77,19 +79,22 @@ jobs:
               if: steps.check-secrets.outputs.can_run == 'true'
               run: |
                   pip install -r requirements.txt
-            - name: Generate Investor Dashboards
-              if: steps.check-secrets.outputs.can_run == 'true' && hashFiles('scripts/investor_reporting.py') != ''
+            - name: Run Segmentation Analysis
+              if: steps.check-secrets.outputs.can_run == 'true' && hashFiles('scripts/customer_segmentation.py') != ''
               env:
-                OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-                SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-                OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
-                PHOENIX_TOKEN: ${{ secrets.PHOENIX_TOKEN }}
+                  CLAUDE_ROCKET_TOKEN: ${{ secrets.CLAUDE_ROCKET_TOKEN }}
+                  XAI_TOKEN: ${{ secrets.XAI_TOKEN }}
+                  OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
+                  PHOENIX_TOKEN: ${{ secrets.PHOENIX_TOKEN }}
+                  SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+                  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
               run: |
-                  python scripts/investor_reporting.py
-            - name: Post to Figma
-              if: steps.check-secrets.outputs.can_run == 'true' && steps.check-secrets.outputs.figma_available == 'true' && hashFiles('scripts/post_to_figma.py') != ''
+                  python scripts/customer_segmentation.py
+            - name: Post to Notion
+              if: steps.check-secrets.outputs.can_run == 'true' && steps.check-secrets.outputs.notion_available == 'true' && hashFiles('scripts/post_to_notion.py') != ''
               env:
-                FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
-                SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+                  NOTION_API_KEY: ${{ secrets.NOTION_API_KEY || secrets.NOTION_TOKEN || secrets.NOTION_INTEGRATION_TOKEN }}
+                  NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID || secrets.NOTION_DATABASE_URL || secrets.NOTION_DATABASE }}
+                  SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
               run: |
-                  python scripts/post_to_figma.py
+                  python scripts/post_to_notion.py

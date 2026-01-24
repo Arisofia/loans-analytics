@@ -38,6 +38,7 @@ DEFAULT_INPUT = os.getenv(
     "PIPELINE_INPUT_FILE", str(Paths.raw_data_dir() / "abaco_portfolio_calculations.csv")
 )
 
+
 def main(
     input_file: str = DEFAULT_INPUT,
     user: Optional[str] = None,
@@ -71,23 +72,24 @@ def main(
 
         if status == "success":
             # Post-pipeline actions
-            run_dir = Path(
-                result.get("run_id", "unknown")
-            )  # In reality this might need resolving if just ID
-            # Use summary output paths
-            outputs = result.get("phases", {}).get("output", {}).get("outputs", {})
-            metrics_json_path = outputs.get("metrics_json")
-            csv_path = outputs.get("csv")
+            run_id = result.get("run_id", "unknown")
+            output_path = Paths.metrics_dir(create=True)
+            metrics_json_path = output_path / f"{run_id}_metrics.json"
+            csv_path = output_path / f"{run_id}.csv"
 
-            if train_model and csv_path:
+            # Re-generate outputs for post-pipeline actions
+            # This is a simplification; in a real scenario, pipeline.execute would return these directly
+            kpi_df = pd.read_parquet(output_path / f"{run_id}.parquet") # Assuming parquet was written
+            metrics_data = json.loads(metrics_json_path.read_text())
+
+            if train_model:
                 try:
                     logger.info("Starting ML Model Training...")
-                    sys.path.append(str(Path(__file__).parent.parent))
+                    # Adjust sys.path for local imports if necessary, or ensure proper package structure
                     from apps.analytics.risk_model import LoanRiskModel
 
-                    df = pd.read_csv(csv_path)
                     model = LoanRiskModel()
-                    metrics = model.train(df)
+                    metrics = model.train(kpi_df) # Pass the processed dataframe
                     logger.info("ML Training Finished. Metrics: %s", metrics)
                 except Exception as e:
                     logger.error("ML Training failed: %s", e)
@@ -95,11 +97,9 @@ def main(
             if ask_kpi and metrics_json_path:
                 try:
                     logger.info("Processing Gen AI Query: %s", ask_kpi)
-                    sys.path.append(str(Path(__file__).parent.parent))
                     from agents.gen_ai_kpi import KPIQuestionAnsweringAgent
 
-                    metrics_data = json.loads(Path(metrics_json_path).read_text())
-                    # metrics_data structure might be nested, flatten key values for agent
+                    # metrics_data is already loaded above
                     flat_metrics = {}
                     for k, v in metrics_data.items():
                         if isinstance(v, dict) and "value" in v:

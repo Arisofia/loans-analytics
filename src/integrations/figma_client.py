@@ -11,6 +11,7 @@ Handles:
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
@@ -19,17 +20,40 @@ import requests
 logger = logging.getLogger(__name__)
 
 
+def _extract_file_key(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+    raw = value.strip()
+    if "figma.com" in raw:
+        match = re.search(r"/(file|design|proto)/([A-Za-z0-9_-]+)", raw)
+        if match:
+            return match.group(2)
+        return None
+    return raw.split("?", maxsplit=1)[0]
+
+
 class FigmaClient:
     """Sync analytics metrics, KPI updates, and dashboard data to Figma designs."""
 
     def __init__(self, api_token: Optional[str] = None, file_key: Optional[str] = None):
-        self.api_token = api_token or os.getenv("FIGMA_TOKEN")
-        self.file_key = file_key or os.getenv("FIGMA_FILE_KEY")
+        self.api_token = (
+            api_token
+            or os.getenv("FIGMA_TOKEN")
+            or os.getenv("FIGMA_OAUTH_TOKEN")
+            or os.getenv("FIGMA_API_TOKEN")
+            or os.getenv("FIGMA_PERSONAL_ACCESS_TOKEN")
+        )
+        raw_file_key = (
+            file_key
+            or os.getenv("FIGMA_FILE_KEY")
+            or os.getenv("FIGMA_FILE_URL")
+            or os.getenv("FIGMA_FILE_LINK")
+        )
+        self.file_key = _extract_file_key(raw_file_key) or file_key
         self.base_url = "https://api.figma.com/v1"
-        self.headers = {
-            "X-Figma-Token": self.api_token,
-            "Content-Type": "application/json",
-        }
+        self.headers = {"Content-Type": "application/json"}
+        if self.api_token:
+            self.headers["X-Figma-Token"] = self.api_token
 
         if not self.api_token or not self.file_key:
             logger.warning("Figma credentials not configured. Figma export disabled.")
@@ -66,7 +90,11 @@ class FigmaClient:
             "commits": [
                 {
                     "message": f"KPI Update from Analytics Pipeline (run: {run_id})",
+<<<<<<< HEAD
+                    "timestamp": datetime.utcnow().isoformat(),
+=======
                     "timestamp": datetime.now(timezone.utc).isoformat(),
+>>>>>>> origin/main
                 }
             ],
             "edits": [
@@ -154,7 +182,11 @@ class FigmaClient:
 
         metadata = {
             "snapshot_type": "kpi_dashboard",
+<<<<<<< HEAD
+            "generated_at": datetime.utcnow().isoformat(),
+=======
             "generated_at": datetime.now(timezone.utc).isoformat(),
+>>>>>>> origin/main
             "run_id": run_id,
             "metrics": dashboard_data,
         }

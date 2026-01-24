@@ -197,9 +197,6 @@ class LoanAnalyticsEngine:
         }
 
     def risk_alerts(self, ltv_threshold: float = 80.0, dti_threshold: float = 50.0) -> pd.DataFrame:
-<<<<<<< HEAD
-        """Identifies high-risk loans based on LTV and DTI thresholds."""
-=======
         """
         Identifies high-risk loans based on LTV and DTI thresholds.
 
@@ -210,7 +207,6 @@ class LoanAnalyticsEngine:
         Returns:
             DataFrame with high-risk loans and their risk scores
         """
->>>>>>> d08ccf69f (Apply lint fixes)
         if "ltv_ratio" not in self.loan_data.columns:
             self.compute_loan_to_value()
         if "dti_ratio" not in self.loan_data.columns:

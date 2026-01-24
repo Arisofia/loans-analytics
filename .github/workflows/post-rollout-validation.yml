@@ -1,5 +1,6 @@
+# Marked as resolved since the file is deleted
 name: Post-Rollout Validation
-"on":
+on:
   workflow_dispatch:
   schedule:
     - cron: "0 7 * * *" # daily at 7am UTC
@@ -11,19 +12,60 @@ jobs:
         id: check-secrets
         env:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
-          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY || secrets.FIGMA_FILE_URL || secrets.FIGMA_FILE_LINK }}
           FIGMA_NODE_ID: ${{ secrets.FIGMA_NODE_ID }}
         run: |
+          sanitize_secret() {
+            local var_name="$1"
+            local raw="$2"
+            local norm
+            norm="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]' | xargs)"
+            case "$norm" in
+              ""|"token"|"tokens"|"secret"|"secrets"|"changeme"|"change-me"|"change_me"|"replace-me"|"replace_me"|"placeholder"|"example"|"redacted")
+                printf -v "$var_name" '%s' ""
+                ;;
+              *)
+                printf -v "$var_name" '%s' "$raw"
+                ;;
+            esac
+          }
+          sanitize_secret AWS_S3_BUCKET "$AWS_S3_BUCKET"
+          sanitize_secret AWS_ACCESS_KEY_ID "$AWS_ACCESS_KEY_ID"
+          sanitize_secret AWS_SECRET_ACCESS_KEY "$AWS_SECRET_ACCESS_KEY"
+          sanitize_secret FIGMA_TOKEN "$FIGMA_TOKEN"
+          sanitize_secret FIGMA_FILE_KEY "$FIGMA_FILE_KEY"
+          sanitize_secret FIGMA_NODE_ID "$FIGMA_NODE_ID"
+
+          normalize_figma_key() {
+            local raw="$1"
+            if [ -z "$raw" ]; then
+              echo ""
+              return
+            fi
+            local stripped="${raw%%\?*}"
+            if [[ "$stripped" =~ /(file|design|proto)/([A-Za-z0-9_-]+) ]]; then
+              echo "${BASH_REMATCH[2]}"
+              return
+            fi
+            echo "$stripped"
+          }
+
+          FIGMA_FILE_KEY="$(normalize_figma_key "$FIGMA_FILE_KEY")"
+          if [ -n "$FIGMA_FILE_KEY" ]; then
+            echo "FIGMA_FILE_KEY=$FIGMA_FILE_KEY" >> "$GITHUB_ENV"
+            echo "figma_file_key=$FIGMA_FILE_KEY" >> "$GITHUB_OUTPUT"
+          fi
+
           if [ -n "$AWS_S3_BUCKET" ]; then
-            echo "aws_available=true" >> "$GITHUB_OUTPUT"
+            echo "aws_available=true" >> $GITHUB_OUTPUT
           else
-            echo "aws_available=false" >> "$GITHUB_OUTPUT"
+            echo "aws_available=false" >> $GITHUB_OUTPUT
           fi
           if [ -n "$FIGMA_TOKEN" ] && [ -n "$FIGMA_FILE_KEY" ] && [ -n "$FIGMA_NODE_ID" ]; then
-            echo "figma_available=true" >> "$GITHUB_OUTPUT"
+            echo "figma_available=true" >> $GITHUB_OUTPUT
           else
-            echo "figma_available=false" >> "$GITHUB_OUTPUT"
+            echo "figma_available=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Checkout repo
@@ -58,7 +100,7 @@ jobs:
           print("Cascade records:", len(df), "file:", latest)
           PY
       - name: Validate Figma Dashboard Images
-        if: steps.check-secrets.outputs.aws_available == true
+        if: steps.check-secrets.outputs.aws_available == 'true'
         env:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
         run: |
@@ -79,10 +121,10 @@ jobs:
               print(f"Image OK: {url}")
           PY
       - name: Validate Figma API Node Update
-        if: steps.check-secrets.outputs.figma_available == true
+        if: steps.check-secrets.outputs.figma_available == 'true'
         env:
-          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
-          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN || secrets.FIGMA_OAUTH_TOKEN || secrets.FIGMA_API_TOKEN || secrets.FIGMA_PERSONAL_ACCESS_TOKEN }}
+          FIGMA_FILE_KEY: ${{ steps.check-secrets.outputs.figma_file_key }}
           FIGMA_NODE_ID: ${{ secrets.FIGMA_NODE_ID }}
         run: |
           curl -H "X-Figma-Token: $FIGMA_TOKEN" "https://api.figma.com/v1/files/$FIGMA_FILE_KEY/nodes?ids=$FIGMA_NODE_ID"

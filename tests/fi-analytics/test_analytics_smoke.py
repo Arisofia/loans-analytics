@@ -60,9 +60,9 @@ class TestAnalyticsSmoke:
                 f"stderr: {result.stderr}"
             )
 
-            assert (
-                "Pipeline start" in result.stderr or "Pipeline start" in result.stdout
-            ), "Pipeline start message not found in logs"
+            assert "Pipeline start" in result.stderr or "Pipeline start" in result.stdout, (
+                "Pipeline start message not found in logs"
+            )
 
         except subprocess.TimeoutExpired:
             pytest.fail("Pipeline execution exceeded 60 second timeout")
@@ -88,12 +88,12 @@ class TestAnalyticsSmoke:
         assert kpi_json_path.exists(), f"kpi_results.json not found at {kpi_json_path}"
         assert metrics_csv_path.exists(), f"metrics.csv not found at {metrics_csv_path}"
 
-        assert (
-            kpi_json_path.stat().st_size > 100
-        ), f"kpi_results.json too small: {kpi_json_path.stat().st_size} bytes"
-        assert (
-            metrics_csv_path.stat().st_size > 100
-        ), f"metrics.csv too small: {metrics_csv_path.stat().st_size} bytes"
+        assert kpi_json_path.stat().st_size > 100, (
+            f"kpi_results.json too small: {kpi_json_path.stat().st_size} bytes"
+        )
+        assert metrics_csv_path.stat().st_size > 100, (
+            f"metrics.csv too small: {metrics_csv_path.stat().st_size} bytes"
+        )
 
         with open(kpi_json_path) as f:
             kpi_data = json.load(f)
@@ -127,10 +127,13 @@ class TestAnalyticsSmoke:
         ]
 
         for field in required_fields:
-            assert field in kpi_data, f"Required field '{field}' missing from kpi_results.json"
-            assert isinstance(
-                kpi_data[field], (int, float)
-            ), f"Field '{field}' must be numeric, got {type(kpi_data[field])}"
+<<<<<<< HEAD
+            assert field in kpi_data, (
+                f"Required field '{field}' missing from kpi_results.json"
+            )
+            assert isinstance(kpi_data[field], (int, float)), (
+                f"Field '{field}' must be numeric, got {type(kpi_data[field])}"
+            )
 
     def test_a02_csv_valid_structure(self, run_analytics_pipeline: Path) -> None:
         """Verify metrics.csv has valid structure and data types."""
@@ -143,10 +146,9 @@ class TestAnalyticsSmoke:
         for col in required_columns:
             assert col in df.columns, f"Column '{col}' missing from metrics.csv"
 
-        assert df["value"].dtype in [
-            "float64",
-            "int64",
-        ], f"Value column must be numeric, got {df['value'].dtype}"
+        assert df["value"].dtype in ["float64", "int64"], (
+            f"Value column must be numeric, got {df['value'].dtype}"
+        )
 
         assert not df["metric_name"].isnull().any(), "metric_name contains nulls"
         assert not df["value"].isnull().any(), "value contains nulls"

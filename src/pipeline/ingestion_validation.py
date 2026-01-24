@@ -29,11 +29,13 @@ def validate_records(df: pd.DataFrame, record_model) -> Tuple[pd.DataFrame, List
             clean_record = {str(k).strip().lower(): v for k, v in record.items()}
             if "loan_id" not in clean_record:
                 clean_record["loan_id"] = f"auto_{idx}"
-<<<<<<< HEAD
-            validated_records.append(
-                record_model(**clean_record).model_dump(by_alias=True)
-            )
-        except (TypeError, ValueError, AttributeError) as exc:
+            try:
+                validated_records.append(
+                    record_model(**clean_record).model_dump(by_alias=True)
+                )
+            except (TypeError, ValueError, AttributeError) as exc:
+                errors.append(f"row {idx}: {str(exc)}")
+                continue
     return pd.DataFrame(validated_records), errors
 
 
