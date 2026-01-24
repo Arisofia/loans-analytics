@@ -60,11 +60,11 @@ from src.utils.dashboard_utils import format_kpi_value, kpi_label  # noqa: E402
 
 EXPORTS_DIR = Paths.exports_dir()
 SUPPORT_DIR = Paths.data_dir() / "support"
-LOOKER_DIR = Paths.raw_data_dir() / "looker_exports"
+LOOKER_DIR = Paths.raw_data_dir() / "_exports"
 
 
 @st.cache_data(show_spinner=False)
-def load_looker_exports():
+def load__exports():
     candidates = {
         "loan_data": [
             LOOKER_DIR / "loan_data.csv",
@@ -117,11 +117,11 @@ def load_kpi_dashboard():
     return json.loads(dashboard_path.read_text())
 
 
-def generate_kpi_exports(looker_data):
+def generate_kpi_exports(_data):
     required = ["loan_data", "customer_data", "historic_payment_data"]
-    missing = [key for key in required if key not in looker_data]
+    missing = [key for key in required if key not in _data]
     if missing:
-        raise ValueError(f"Missing required Looker exports: {', '.join(missing)}")
+        raise ValueError(f"Missing required  exports: {', '.join(missing)}")
 
     exports_dir = EXPORTS_DIR
     exports_dir.mkdir(parents=True, exist_ok=True)
@@ -129,10 +129,10 @@ def generate_kpi_exports(looker_data):
     from src.analytics.kpi_catalog_processor import KPICatalogProcessor
 
     catalog_proc = KPICatalogProcessor(
-        looker_data["loan_data"],
-        looker_data["historic_payment_data"],
-        looker_data["customer_data"],
-        looker_data.get("schedule_data"),
+        _data["loan_data"],
+        _data["historic_payment_data"],
+        _data["customer_data"],
+        _data.get("schedule_data"),
     )
 
     dashboard = {
@@ -229,28 +229,28 @@ with st.sidebar:
     st.title("Data Ingestion")
     data_source = st.radio(
         "Data Source",
-        ["Looker exports (auto)", "Manual upload"],
+        [" exports (auto)", "Manual upload"],
         index=0,
     )
 
-    if data_source == "Looker exports (auto)":
-        looker_data = load_looker_exports()
-        if looker_data:
-            st.session_state["data"] = looker_data
+    if data_source == " exports (auto)":
+        _data = load__exports()
+        if _data:
+            st.session_state["data"] = _data
             st.session_state["loaded"] = True
-            st.caption(f"Loaded Looker exports: {', '.join(looker_data.keys())}")
+            st.caption(f"Loaded  exports: {', '.join(_data.keys())}")
             if st.button("Generate KPI exports"):
-                with st.spinner("Generating KPI exports from Looker data..."):
+                with st.spinner("Generating KPI exports from  data..."):
                     try:
-                        output_path = generate_kpi_exports(looker_data)
+                        output_path = generate_kpi_exports(_data)
                         st.cache_data.clear()
                         st.success(f"KPI exports generated: {output_path}")
                     except Exception as exc:
                         st.error(f"Failed to generate KPI exports: {exc}")
         else:
             st.session_state["loaded"] = False
-            st.warning("No Looker exports found in data/archives/looker_exports.")
-            st.caption("Upload Looker exports or switch to Manual upload.")
+            st.warning("No  exports found in data/archives/_exports.")
+            st.caption("Upload  exports or switch to Manual upload.")
     else:
         uploaded_files = st.file_uploader(
             "Upload Loan Tape CSVs and Financial XLSX",

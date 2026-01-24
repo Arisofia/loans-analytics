@@ -185,7 +185,7 @@ curl file:///Users/jenineferderas/Documents/abaco-loans-analytics/exports/portfo
 
 **Data Source:**
 
-- Real CSV loan data from Looker exports
+- Real CSV loan data from  exports
 - 17,688 loan records
 - 29 data columns (comprehensive loan information)
 

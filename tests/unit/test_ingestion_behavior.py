@@ -87,11 +87,11 @@ def test_rate_limiter_wait_called(monkeypatch, base_config):
     assert called["wait"] is True
 
 
-def test_ingest_looker_missing_columns_raises(monkeypatch, base_config, tmp_path):
+def test_ingest__missing_columns_raises(monkeypatch, base_config, tmp_path):
     ui = UnifiedIngestion(base_config)
     # create a CSV missing PAR and DPD columns
     p = tmp_path / "loans.csv"
     p.write_text("loan_id,outstanding_balance\n1,100\n")
 
     with pytest.raises(ValueError):
-        ui.ingest_looker(p)
+        ui.ingest_(p)

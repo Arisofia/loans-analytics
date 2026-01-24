@@ -189,7 +189,7 @@ class UnifiedIngestion(IngestionMixin):
                 return column_map[key]
         return None
 
-    def _load_looker_financials(self, financials_path: Optional[Path]) -> Dict[str, float]:
+    def _load__financials(self, financials_path: Optional[Path]) -> Dict[str, float]:
         if not financials_path:
             return {}
         path = Path(financials_path)
@@ -203,12 +203,12 @@ class UnifiedIngestion(IngestionMixin):
                 key=lambda p: p.stat().st_mtime,
             )
             if not candidates:
-                self._log_event("looker_financials", "skipped", reason="no_files_found")
+                self._log_event("_financials", "skipped", reason="no_files_found")
                 return {}
             path = candidates[-1]
         if not path.exists():
             self._log_event(
-                "looker_financials",
+                "_financials",
                 "skipped",
                 reason="path_missing",
                 path=str(path),
@@ -221,15 +221,15 @@ class UnifiedIngestion(IngestionMixin):
             else:
                 financials_df = pd.read_csv(path)
         except Exception as exc:
-            self._record_error("looker_financials_read", exc, file=str(path))
+            self._record_error("_financials_read", exc, file=str(path))
             return {}
 
-        looker_cfg = self.config.get("looker", {})
-        date_candidates = looker_cfg.get(
+        _cfg = self.config.get("", {})
+        date_candidates = _cfg.get(
             "date_column_candidates",
             ["reporting_date", "as_of_date", "date", "fecha", "fecha_corte"],
         )
-        cash_candidates = looker_cfg.get(
+        cash_candidates = _cfg.get(
             "cash_column_candidates",
             ["cash_balance_usd", "cash_balance", "cash_usd", "cash"],
         )
@@ -237,7 +237,7 @@ class UnifiedIngestion(IngestionMixin):
         cash_col = self._select_column(list(financials_df.columns), cash_candidates)
         if not date_col or not cash_col:
             self._log_event(
-                "looker_financials",
+                "_financials",
                 "skipped",
                 reason="missing_columns",
                 available_columns=list(financials_df.columns),
@@ -253,14 +253,14 @@ class UnifiedIngestion(IngestionMixin):
 
         if cash_by_date:
             self._log_event(
-                "looker_financials",
+                "_financials",
                 "loaded",
                 file=str(path),
                 dates=len(cash_by_date),
             )
         return cash_by_date
 
-    def _looker_par_balances_to_loan_tape(
+    def __par_balances_to_loan_tape(
         self, df: pd.DataFrame, cash_by_date: Dict[str, float]
     ) -> pd.DataFrame:
         column_map = {col.lower(): col for col in df.columns}
@@ -286,7 +286,7 @@ class UnifiedIngestion(IngestionMixin):
             if col is None
         ]
         if missing:
-            raise ValueError(f"Missing Looker PAR columns: {', '.join(missing)}")
+            raise ValueError(f"Missing  PAR columns: {', '.join(missing)}")
 
         measurement_date = pd.to_datetime(df[reporting_col], errors="coerce").dt.strftime(
             "%Y-%m-%d"
@@ -317,11 +317,11 @@ class UnifiedIngestion(IngestionMixin):
         grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
         grouped["cash_available_usd"] = grouped["measurement_date"].map(cash_by_date).fillna(0.0)
         grouped["loan_id"] = grouped["measurement_date"].apply(
-            lambda date: f"looker_snapshot_{str(date).replace('-', '')}"
+            lambda date: f"_snapshot_{str(date).replace('-', '')}"
         )
         return grouped
 
-    def _looker_dpd_to_loan_tape(
+    def __dpd_to_loan_tape(
         self, df: pd.DataFrame, cash_by_date: Dict[str, float]
     ) -> pd.DataFrame:
         column_map = {col.lower(): col for col in df.columns}
@@ -330,11 +330,11 @@ class UnifiedIngestion(IngestionMixin):
             "outstanding_balance"
         )
         if not dpd_col or not balance_col:
-            raise ValueError("Missing Looker loan columns: dpd, outstanding_balance")
+            raise ValueError("Missing  loan columns: dpd, outstanding_balance")
 
-        looker_cfg = self.config.get("looker", {})
-        measurement_col = looker_cfg.get("measurement_date_column")
-        strategy = looker_cfg.get("measurement_date_strategy", "today")
+        _cfg = self.config.get("", {})
+        measurement_col = _cfg.get("measurement_date_column")
+        strategy = _cfg.get("measurement_date_strategy", "today")
 
         measurement_date = None
         if measurement_col:
@@ -391,7 +391,7 @@ class UnifiedIngestion(IngestionMixin):
         grouped["discounted_balance_usd"] = grouped["total_receivable_usd"]
         grouped["cash_available_usd"] = grouped["measurement_date"].map(cash_by_date).fillna(0.0)
         grouped["loan_id"] = grouped["measurement_date"].apply(
-            lambda date: f"looker_snapshot_{str(date).replace('-', '')}"
+            lambda date: f"_snapshot_{str(date).replace('-', '')}"
         )
         return grouped
 
@@ -467,26 +467,26 @@ class UnifiedIngestion(IngestionMixin):
             self._record_error("fatal_error", exc)
             raise
 
-    def ingest_looker(
+    def ingest_(
         self,
         loans_path: Path,
         financials_path: Optional[Path] = None,
         archive_dir: Optional[Path] = None,
     ) -> IngestionResult:
         self._log_event(
-            "looker_start",
+            "_start",
             "initiated",
             loans_path=str(loans_path),
             financials_path=str(financials_path) if financials_path else None,
         )
         if not loans_path.exists():
-            self._log_event("looker_file_check", "failed", error="Loans file not found")
-            raise FileNotFoundError(f"Looker loans file not found: {loans_path}")
+            self._log_event("_file_check", "failed", error="Loans file not found")
+            raise FileNotFoundError(f" loans file not found: {loans_path}")
 
         checksum = hash_file(loans_path)
         try:
             df = pd.read_csv(loans_path)
-            cash_by_date = self._load_looker_financials(financials_path)
+            cash_by_date = self._load__financials(financials_path)
             columns_lower = {col.lower() for col in df.columns}
             has_par = {
                 "reporting_date",
@@ -501,17 +501,17 @@ class UnifiedIngestion(IngestionMixin):
             }.issubset(columns_lower)
 
             if has_par:
-                normalized_df = self._looker_par_balances_to_loan_tape(df, cash_by_date)
-                source_mode = "looker_par_balances"
+                normalized_df = self.__par_balances_to_loan_tape(df, cash_by_date)
+                source_mode = "_par_balances"
             elif has_dpd:
-                normalized_df = self._looker_dpd_to_loan_tape(df, cash_by_date)
-                source_mode = "looker_loans"
+                normalized_df = self.__dpd_to_loan_tape(df, cash_by_date)
+                source_mode = "_loans"
             else:
                 raise ValueError(
-                    "Looker loans file missing required PAR or DPD columns " "for conversion"
+                    " loans file missing required PAR or DPD columns " "for conversion"
                 )
             if normalized_df.empty:
-                raise ValueError("Looker loan tape conversion produced no rows")
+                raise ValueError(" loan tape conversion produced no rows")
 
             schema_errors = self._validate_schema(normalized_df)
             validated_df, record_errors = self._validate_records(normalized_df)
@@ -533,7 +533,7 @@ class UnifiedIngestion(IngestionMixin):
                 archived = self._archive_raw(loans_path, archive_dir)
 
             metadata = {
-                "source_looker_loans": str(loans_path),
+                "source__loans": str(loans_path),
                 "financials_path": (str(financials_path) if financials_path else None),
                 "source_mode": source_mode,
                 "checksum": checksum,
@@ -546,7 +546,7 @@ class UnifiedIngestion(IngestionMixin):
                 "cash_dates": len(cash_by_date),
             }
 
-            self._log_event("looker_complete", "success", row_count=len(validated_df))
+            self._log_event("_complete", "success", row_count=len(validated_df))
             quality_report = self._run_quality_audit(validated_df)
             return IngestionResult(
                 validated_df,
@@ -558,7 +558,7 @@ class UnifiedIngestion(IngestionMixin):
             )
 
         except Exception as exc:
-            self._record_error("looker_fatal_error", exc)
+            self._record_error("_fatal_error", exc)
             raise
 
     def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:

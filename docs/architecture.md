@@ -14,7 +14,7 @@ The Abaco Loans Analytics platform is a unified system for ingesting loan tape d
 
 ### 2.1. Analytics Pipeline (Python Backend)
 The core logic resides in a modular Python pipeline that follows a 4-phase execution model:
-1.  **Ingestion**: Supports CSV files (local/Azure Blob) and Looker exports.
+1.  **Ingestion**: Supports CSV files (local/Azure Blob) and  exports.
 2.  **Transformation**: Normalization, PII masking, outlier detection, and data quality checks.
 3.  **Calculation**: KPI computation using `KPIEngineV2` and custom composite logic.
 4.  **Output**: Generates Parquet, CSV, and JSON artifacts with full audit trails and lineage.

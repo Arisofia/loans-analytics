@@ -38,7 +38,7 @@ def load_real_data():
     # Try to find loan data
     loan_files = [
         base_path / "data" / "abaco" / "loan_data.csv",
-        base_path / "data" / "raw" / "looker_exports" / "loans.csv",
+        base_path / "data" / "raw" / "_exports" / "loans.csv",
         base_path / "data_samples" / "abaco_portfolio_sample.csv",
     ]
 
@@ -92,7 +92,7 @@ def load_real_data():
     # Try to find payment data
     payment_files = [
         base_path / "data" / "abaco" / "real_payment.csv",
-        base_path / "data" / "raw" / "looker_exports" / "payments.csv",
+        base_path / "data" / "raw" / "_exports" / "payments.csv",
         base_path / "Abaco - Loan Tape_Historic Real Payment_Table (6).csv",
     ]
 

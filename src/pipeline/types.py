@@ -4,7 +4,7 @@ from typing import TypedDict
 
 
 class ParRow(TypedDict, total=False):
-    """TypedDict for a Looker PAR row (partial keys are allowed)."""
+    """TypedDict for a  PAR row (partial keys are allowed)."""
 
     reporting_date: str
     outstanding_balance_usd: float
@@ -16,7 +16,7 @@ class ParRow(TypedDict, total=False):
 
 
 class FinancialsRow(TypedDict, total=False):
-    """TypedDict for Looker/EFF financials row."""
+    """TypedDict for /EFF financials row."""
 
     reporting_date: str
     cash_balance_usd: float
