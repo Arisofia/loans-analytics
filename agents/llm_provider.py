@@ -98,7 +98,7 @@ class OpenAIProvider(BaseLLMProvider):
                 },
             )
         except Exception as e:
-            logger.error(f"OpenAI API error: {e}")
+            logger.error("OpenAI API error: %s", e)
             raise
 
 
@@ -155,7 +155,7 @@ class AnthropicProvider(BaseLLMProvider):
                 },
             )
         except Exception as e:
-            logger.error(f"Anthropic API error: {e}")
+            logger.error("Anthropic API error: %s", e)
             raise
 
 
