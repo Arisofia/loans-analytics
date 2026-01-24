@@ -1,7 +1,7 @@
 name: Investor Reporting
 on:
   schedule:
-    - cron: '0 9 1 * *' # 10:00 AM CET, 1st of month
+    - cron: "0 9 1 * *" # 10:00 AM CET, 1st of month
   workflow_dispatch:
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
       - name: Setup Python Environment
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt

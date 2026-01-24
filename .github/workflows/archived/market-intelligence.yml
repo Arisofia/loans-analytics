@@ -1,7 +1,7 @@
 name: Market Intelligence
 on:
   schedule:
-    - cron: '30 8 * * *' # 9:30 AM CET daily
+    - cron: "30 8 * * *" # 9:30 AM CET daily
   workflow_dispatch:
 
 jobs:
@@ -13,7 +13,7 @@ jobs:
       - name: Setup Python Environment
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt

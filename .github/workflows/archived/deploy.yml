@@ -6,11 +6,11 @@ on:
     branches:
       - main
     paths:
-      - 'apps/web/src/**'
-      - 'apps/web/public/**'
-      - 'apps/web/package.json'
-      - 'apps/web/next.config.js'
-      - 'package.json'
+      - "apps/web/src/**"
+      - "apps/web/public/**"
+      - "apps/web/package.json"
+      - "apps/web/next.config.js"
+      - "package.json"
 
 jobs:
   deploy:
@@ -23,7 +23,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
           cache-dependency-path: apps/web/pnpm-lock.yaml
 
       - name: Check Vercel secrets
@@ -89,8 +89,8 @@ jobs:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: 'us-east-1'
-          SOURCE_DIR: 'apps/web/.next'
+          AWS_REGION: "us-east-1"
+          SOURCE_DIR: "apps/web/.next"
 
       - name: Deploy to Vercel
         if: steps.vercel_secrets.outputs.present == true
@@ -99,7 +99,7 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod --cwd apps/web'
+          vercel-args: "--prod --cwd apps/web"
         env:
           VERCEL_GIT_REPO_OWNER: ${{ github.repository_owner }}
           VERCEL_GIT_REPO_SLUG: ${{ github.event.repository.name }}

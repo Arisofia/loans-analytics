@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'Pull request number to sync with the base branch'
+        description: "Pull request number to sync with the base branch"
         required: true
   issue_comment:
     types: [created]

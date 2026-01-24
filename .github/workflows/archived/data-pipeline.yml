@@ -4,17 +4,17 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'data/**'
-      - 'src/**'
-      - 'scripts/**'
+      - "data/**"
+      - "src/**"
+      - "scripts/**"
   pull_request:
     branches: [main]
     paths:
-      - 'data/**'
-      - 'src/**'
-      - 'scripts/**'
+      - "data/**"
+      - "src/**"
+      - "scripts/**"
   schedule:
-    - cron: '0 6 * * *'
+    - cron: "0 6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -27,8 +27,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |

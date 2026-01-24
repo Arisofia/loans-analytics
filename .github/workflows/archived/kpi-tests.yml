@@ -3,15 +3,15 @@ name: KPI tests
 on:
   push:
     paths:
-      - 'src/kpis/**'
-      - 'tests/test_kpis_*.py'
-      - 'tests/test_manifest_segmentation.py'
-      - 'tests/test_api_kpis.py'
+      - "src/kpis/**"
+      - "tests/test_kpis_*.py"
+      - "tests/test_manifest_segmentation.py"
+      - "tests/test_api_kpis.py"
   pull_request:
     paths:
-      - 'src/kpis/**'
-      - 'tests/test_kpis_*.py'
-      - 'tests/test_api_kpis.py'
+      - "src/kpis/**"
+      - "tests/test_kpis_*.py"
+      - "tests/test_api_kpis.py"
 
 permissions:
   contents: read
@@ -27,9 +27,9 @@ jobs:
     strategy:
       matrix:
         test-path:
-          - 'tests/test_kpis*'
-          - 'tests/test_manifest_segmentation.py'
-          - 'tests/test_api_kpis.py'
+          - "tests/test_kpis*"
+          - "tests/test_manifest_segmentation.py"
+          - "tests/test_api_kpis.py"
       fail-fast: false
     timeout-minutes: 20
 
@@ -47,7 +47,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Cache pip
         uses: actions/cache@v4

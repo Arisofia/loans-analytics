@@ -4,23 +4,23 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'scripts/**'
-      - 'python/**'
-      - 'tests/evaluation/**'
-      - '.github/workflows/ci-checks.yml'
+      - "scripts/**"
+      - "python/**"
+      - "tests/evaluation/**"
+      - ".github/workflows/ci-checks.yml"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-      - 'scripts/**'
-      - 'python/**'
-      - 'tests/evaluation/**'
-      - '.github/workflows/ci-checks.yml'
+      - "scripts/**"
+      - "python/**"
+      - "tests/evaluation/**"
+      - ".github/workflows/ci-checks.yml"
   workflow_dispatch:
     inputs:
       DATA_FILE:
-        description: 'Path to CSV data file (relative to repo root)'
+        description: "Path to CSV data file (relative to repo root)"
         required: false
-        default: ''
+        default: ""
 
 permissions:
   contents: read
@@ -34,8 +34,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip

@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       target_url:
-        description: 'Full URL to verify (e.g., https://app.example.com)'
+        description: "Full URL to verify (e.g., https://app.example.com)"
         required: true
-        default: 'https://your-prod.example.com'
+        default: "https://your-prod.example.com"
 
 jobs:
   verify:

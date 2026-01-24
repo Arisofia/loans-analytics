@@ -2,15 +2,15 @@ name: Docker Images CI
 
 on:
   push:
-    branches: [ main, 'fix/**', 'feat/**' ]
+    branches: [main, "fix/**", "feat/**"]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   validate-secrets:
     uses: ./.github/workflows/reusable-secret-check.yml
     with:
-      secret_names: 'DOCKER_USERNAME,DOCKER_PASSWORD,ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD,AZURE_WEBAPP_PUBLISH_PROFILE'
+      secret_names: "DOCKER_USERNAME,DOCKER_PASSWORD,ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD,AZURE_WEBAPP_PUBLISH_PROFILE"
     secrets: inherit
 
   build-and-push-dockerhub:
@@ -49,12 +49,12 @@ jobs:
     if: fromJSON(needs.validate-secrets.outputs.all_secrets_present)
     runs-on: ubuntu-latest
     environment:
-      name: 'production'
+      name: "production"
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     steps:
       - id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'abaco-analytics-dashboard-gbbjege0gxcbhyg9'
+          app-name: "abaco-analytics-dashboard-gbbjege0gxcbhyg9"
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: '${{ secrets.ACR_LOGIN_SERVER }}/abaco-loans-analytics:${{ github.sha }}'
+          images: "${{ secrets.ACR_LOGIN_SERVER }}/abaco-loans-analytics:${{ github.sha }}"

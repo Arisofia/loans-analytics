@@ -3,7 +3,7 @@ name: PR Monitor
 on:
   schedule:
     # Run every hour from 9am to 5pm UTC on weekdays
-    - cron: '0 9-17 * * 1-5'
+    - cron: "0 9-17 * * 1-5"
   workflow_dispatch:
 
 jobs:
@@ -14,8 +14,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
       - name: Install dependencies
         run: pip install requests
       - name: Run PR Status Report

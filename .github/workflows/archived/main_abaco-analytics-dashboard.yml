@@ -5,12 +5,12 @@ on:
     branches:
       - main
     paths:
-      - 'streamlit_app.py'
-      - 'src/**'
-      - 'config/**'
-      - 'requirements.txt'
-      - 'startup.sh'
-      - '.github/workflows/main_abaco-analytics-dashboard.yml'
+      - "streamlit_app.py"
+      - "src/**"
+      - "config/**"
+      - "requirements.txt"
+      - "startup.sh"
+      - ".github/workflows/main_abaco-analytics-dashboard.yml"
   workflow_dispatch:
 
 concurrency:
@@ -29,7 +29,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       # 🛠️ Local Build Section
       - name: Prepare files for Azure deployment
