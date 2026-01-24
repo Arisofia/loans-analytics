@@ -179,13 +179,9 @@ class UnifiedPipeline:
         self.calculator.run_id = self.run_id
         self.output.run_id = self.run_id
 
-    def _ingestion_phase(
-        self, input_file: Path, archive_dir: Path
-    ) -> IngestionResult:
+    def _ingestion_phase(self, input_file: Path, archive_dir: Path) -> IngestionResult:
         with tracer.start_as_current_span("pipeline.ingestion") as span:
-            result = self.ingestor.ingest(
-                input_file, archive_dir=archive_dir
-            )
+            result = self.ingestor.ingest(input_file, archive_dir=archive_dir)
             span.set_attribute("ingestion.row_count", len(result.df))
             return result
 

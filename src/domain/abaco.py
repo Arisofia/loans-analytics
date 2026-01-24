@@ -1,5 +1,3 @@
-
-
 class AbacoEligibilityEvaluator:
     """
     Implementación oficial de reglas de colateral del BCE

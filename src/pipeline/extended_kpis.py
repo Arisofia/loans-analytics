@@ -56,15 +56,17 @@ class ExtendedKPIGenerator:
             for label, col in dpd_columns.items():
                 if col in self.df.columns:
                     value = self.df[col].iloc[0] if not self.df.empty else 0
-                    buckets.append({
-                        "days_past_due": label,
-                        "outstanding_balance_usd": float(value) if pd.notna(value) else 0,
-                        "percentage_of_portfolio": (
-                            float(value) / total_outstanding * 100
-                            if total_outstanding and pd.notna(value)
-                            else 0
-                        ),
-                    })
+                    buckets.append(
+                        {
+                            "days_past_due": label,
+                            "outstanding_balance_usd": float(value) if pd.notna(value) else 0,
+                            "percentage_of_portfolio": (
+                                float(value) / total_outstanding * 100
+                                if total_outstanding and pd.notna(value)
+                                else 0
+                            ),
+                        }
+                    )
         return buckets
 
     def _extract_churn_90d_metrics(self) -> List[Dict[str, Any]]:
@@ -77,12 +79,14 @@ class ExtendedKPIGenerator:
             date = datetime.now() - timedelta(days=30 * months_ago)
             churn_rate = max(0, base_churn + (trend * months_ago))
 
-            metrics_list.append({
-                "period": date.strftime("%Y-%m-%d"),
-                "churn_rate_pct": round(churn_rate, 2),
-                "customers_lost": max(0, int(churn_rate * 5)),
-                "month_label": date.strftime("%b %Y"),
-            })
+            metrics_list.append(
+                {
+                    "period": date.strftime("%Y-%m-%d"),
+                    "churn_rate_pct": round(churn_rate, 2),
+                    "customers_lost": max(0, int(churn_rate * 5)),
+                    "month_label": date.strftime("%b %Y"),
+                }
+            )
 
         return metrics_list
 
@@ -99,14 +103,16 @@ class ExtendedKPIGenerator:
             ltv = ltv_base + (months_ago * 3)
             payback = max(6, payback_base - (months_ago * 0.1))
 
-            economics_list.append({
-                "period": date.strftime("%Y-%m-%d"),
-                "customer_acquisition_cost_usd": round(max(100, cac), 2),
-                "lifetime_value_usd": round(ltv, 2),
-                "payback_period_months": round(payback, 2),
-                "cac_to_ltv_ratio": round(max(0.1, ltv / max(1, cac)), 2),
-                "month_label": date.strftime("%b %Y"),
-            })
+            economics_list.append(
+                {
+                    "period": date.strftime("%Y-%m-%d"),
+                    "customer_acquisition_cost_usd": round(max(100, cac), 2),
+                    "lifetime_value_usd": round(ltv, 2),
+                    "payback_period_months": round(payback, 2),
+                    "cac_to_ltv_ratio": round(max(0.1, ltv / max(1, cac)), 2),
+                    "month_label": date.strftime("%b %Y"),
+                }
+            )
 
         return economics_list
 
@@ -238,14 +244,16 @@ class ExtendedKPIGenerator:
             date = datetime.now() - timedelta(days=30 * months_ago)
             par30 = max(2, base_par30 + (trend * months_ago))
 
-            risk_list.append({
-                "period": date.strftime("%Y-%m-%d"),
-                "par30_pct": round(par30, 2),
-                "par60_pct": round(max(1, par30 * 0.6), 2),
-                "par90_pct": round(max(0.5, par30 * 0.25), 2),
-                "default_rate_pct": round(max(0, par30 * 0.05), 2),
-                "month_label": date.strftime("%b %Y"),
-            })
+            risk_list.append(
+                {
+                    "period": date.strftime("%Y-%m-%d"),
+                    "par30_pct": round(par30, 2),
+                    "par60_pct": round(max(1, par30 * 0.6), 2),
+                    "par90_pct": round(max(0.5, par30 * 0.25), 2),
+                    "default_rate_pct": round(max(0, par30 * 0.05), 2),
+                    "month_label": date.strftime("%b %Y"),
+                }
+            )
 
         return risk_list
 

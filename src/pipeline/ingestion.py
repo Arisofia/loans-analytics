@@ -14,7 +14,8 @@ from jsonschema import Draft202012Validator
 from pydantic import BaseModel, Field, ValidationError
 
 from .utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
-from .validation import DataQualityReport, DataQualityReporter, validate_dataframe
+from .validation import (DataQualityReport, DataQualityReporter,
+                         validate_dataframe)
 
 logger = logging.getLogger("abaco.ingestion")
 

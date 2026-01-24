@@ -1,8 +1,9 @@
 """Helpers for writing run manifests and other output artifacts."""
+
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict

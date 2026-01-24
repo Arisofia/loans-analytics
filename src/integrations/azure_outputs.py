@@ -18,7 +18,8 @@ from urllib.parse import urlparse
 logger = logging.getLogger(__name__)
 
 try:
-    from azure.core.credentials import AzureNamedKeyCredential, AzureSasCredential
+    from azure.core.credentials import (AzureNamedKeyCredential,
+                                        AzureSasCredential)
     from azure.identity import DefaultAzureCredential
     from azure.storage.blob import BlobServiceClient, ContentSettings
 
@@ -69,7 +70,11 @@ class AzureStorageClient:
         sas_token = os.getenv("AZURE_STORAGE_SAS_TOKEN")
         raw_account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
 
-        if raw_account_url and not raw_account_url.startswith("http") and "." not in raw_account_url:
+        if (
+            raw_account_url
+            and not raw_account_url.startswith("http")
+            and "." not in raw_account_url
+        ):
             account_name = account_name or raw_account_url
             raw_account_url = None
 
@@ -208,9 +213,7 @@ class AzureDashboardClient:
 
     def __init__(self, subscription_id: Optional[str] = None):
         self.subscription_id = (
-            subscription_id
-            or os.getenv("AZURE_SUBSCRIPTION_ID")
-            or os.getenv("AZURE_SUBSCRIPTION")
+            subscription_id or os.getenv("AZURE_SUBSCRIPTION_ID") or os.getenv("AZURE_SUBSCRIPTION")
         )
         self.resource_group = os.getenv("AZURE_RESOURCE_GROUP") or os.getenv(
             "AZURE_RESOURCE_GROUP_NAME"
@@ -237,17 +240,13 @@ class AzureDashboardClient:
         change_pct = (change / previous_value * 100) if previous_value != 0 else 0
 
         return {
-            "properties": {
-                "markdown": {
-                    "content": f"""
+            "properties": {"markdown": {"content": f"""
 ### {kpi_name}
 **Current**: {current_value:.2f}{unit}
 **Previous**: {previous_value:.2f}{unit}
 **Change**: {change:+.2f}{unit} ({change_pct:+.1f}%)
 **Updated**: {datetime.utcnow().isoformat()}
-"""
-                }
-            },
+"""}},
             "position": {"x": 0, "y": 0, "width": 3, "height": 2},
         }
 

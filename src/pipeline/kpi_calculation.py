@@ -272,7 +272,9 @@ class UnifiedCalculationV2:
             for metric_cfg in base_cfgs:
                 name = metric_cfg.get("name")
                 try:
-                    metrics[name] = self.calculator.compute_metric(df, metric_cfg, engine=kpi_engine)
+                    metrics[name] = self.calculator.compute_metric(
+                        df, metric_cfg, engine=kpi_engine
+                    )
                     self._log_event("metric_computed", "success", metric=name)
                 except Exception as exc:
                     self._log_event("metric_failed", "error", metric=name, error=str(exc))
