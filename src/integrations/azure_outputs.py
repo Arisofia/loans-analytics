@@ -53,6 +53,9 @@ def _normalize_account_url(raw_url: Optional[str], account_name: Optional[str]) 
     return None
 
 
+AZURE_NOT_INITIALIZED = "Azure Storage client not initialized"
+
+
 class AzureStorageClient:
     """Handle uploading analytics data to Azure Blob Storage."""
 
@@ -62,9 +65,33 @@ class AzureStorageClient:
             self.client = None
             return
 
-        self.connection_string = connection_string or os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         self.container_name = os.getenv("AZURE_STORAGE_CONTAINER", "analytics-exports")
+        self.connection_string = connection_string or self._build_connection_string()
 
+        if self.connection_string:
+            self.client = BlobServiceClient.from_connection_string(self.connection_string)
+        else:
+            self.client = self._init_from_url_credentials()
+
+        if not self.client:
+            logger.warning("Azure Storage credentials not configured")
+
+    def _build_connection_string(self) -> Optional[str]:
+        conn_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        if conn_str:
+            return conn_str
+
+        account_name = os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
+        account_key = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
+
+        if account_name and account_key:
+            return (
+                f"DefaultEndpointsProtocol=https;AccountName={account_name};"
+                f"AccountKey={account_key};EndpointSuffix=core.windows.net"
+            )
+        return None
+
+    def _init_from_url_credentials(self) -> Optional[BlobServiceClient]:
         account_name = os.getenv("AZURE_STORAGE_ACCOUNT_NAME") or os.getenv("AZURE_STORAGE_ACCOUNT")
         account_key = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
         sas_token = os.getenv("AZURE_STORAGE_SAS_TOKEN")
@@ -79,31 +106,24 @@ class AzureStorageClient:
             raw_account_url = None
 
         account_url = _normalize_account_url(raw_account_url, account_name)
-        if not account_name and account_url:
+        if not account_url:
+            return None
+
+        if not account_name:
             account_name = _extract_account_name(account_url)
 
-        if not self.connection_string and account_name and account_key:
-            self.connection_string = (
-                f"DefaultEndpointsProtocol=https;AccountName={account_name};"
-                f"AccountKey={account_key};EndpointSuffix=core.windows.net"
-            )
-
-        if self.connection_string:
-            self.client = BlobServiceClient.from_connection_string(self.connection_string)
-        elif account_url and account_key and AzureNamedKeyCredential and account_name:
+        if account_key and AzureNamedKeyCredential and account_name:
             credential = AzureNamedKeyCredential(account_name, account_key)
-            self.client = BlobServiceClient(account_url=account_url, credential=credential)
-        elif account_url and sas_token and AzureSasCredential:
-            self.client = BlobServiceClient(
+            return BlobServiceClient(account_url=account_url, credential=credential)
+        if sas_token and AzureSasCredential:
+            return BlobServiceClient(
                 account_url=account_url, credential=AzureSasCredential(sas_token)
             )
-        elif account_url and DefaultAzureCredential:
-            self.client = BlobServiceClient(
+        if DefaultAzureCredential:
+            return BlobServiceClient(
                 account_url=account_url, credential=DefaultAzureCredential()
             )
-        else:
-            logger.warning("Azure Storage credentials not configured")
-            self.client = None
+        return None
 
     def upload_file(
         self,
@@ -113,11 +133,11 @@ class AzureStorageClient:
     ) -> Optional[str]:
         """Upload a single file to Azure Blob Storage."""
         if not self.client:
-            logger.warning("Azure Storage client not initialized")
+            logger.warning(AZURE_NOT_INITIALIZED)
             return None
 
         if not file_path.exists():
-            logger.error(f"File not found: {file_path}")
+            logger.error("File not found: %s", file_path)
             return None
 
         try:
@@ -134,11 +154,11 @@ class AzureStorageClient:
                 )
 
             blob_url = f"https://{self.client.account_name}.blob.core.windows.net/{self.container_name}/{blob_name}"
-            logger.info(f"Uploaded {file_path.name} to Azure: {blob_url}")
+            logger.info("Uploaded %s to Azure: %s", file_path.name, blob_url)
             return blob_url
 
         except Exception as e:
-            logger.error(f"Failed to upload {file_path.name} to Azure: {e}")
+            logger.error("Failed to upload %s to Azure: %s", file_path.name, e)
             return None
 
     def upload_dataframe_csv(
@@ -149,7 +169,7 @@ class AzureStorageClient:
     ) -> Optional[str]:
         """Upload pandas DataFrame as CSV to Azure Blob Storage."""
         if not self.client:
-            logger.warning("Azure Storage client not initialized")
+            logger.warning(AZURE_NOT_INITIALIZED)
             return None
 
         try:
@@ -165,11 +185,11 @@ class AzureStorageClient:
             )
 
             blob_url = f"https://{self.client.account_name}.blob.core.windows.net/{self.container_name}/{blob_name}"
-            logger.info(f"Uploaded DataFrame to Azure: {blob_url}")
+            logger.info("Uploaded DataFrame to Azure: %s", blob_url)
             return blob_url
 
         except Exception as e:
-            logger.error(f"Failed to upload DataFrame to Azure: {e}")
+            logger.error("Failed to upload DataFrame to Azure: %s", e)
             return None
 
     def upload_batch_exports(
@@ -180,7 +200,7 @@ class AzureStorageClient:
     ) -> Dict[str, str]:
         """Upload all exported files matching patterns to Azure Blob Storage."""
         if not self.client:
-            logger.warning("Azure Storage client not initialized")
+            logger.warning(AZURE_NOT_INITIALIZED)
             return {}
 
         patterns = patterns or ["*.csv", "*.json", "*.parquet"]
@@ -245,7 +265,7 @@ class AzureDashboardClient:
 **Current**: {current_value:.2f}{unit}
 **Previous**: {previous_value:.2f}{unit}
 **Change**: {change:+.2f}{unit} ({change_pct:+.1f}%)
-**Updated**: {datetime.utcnow().isoformat()}
+**Updated**: {datetime.now(datetime.UTC).isoformat()}
 """}},
             "position": {"x": 0, "y": 0, "width": 3, "height": 2},
         }
@@ -328,11 +348,11 @@ class AzureDashboardClient:
                 dashboard=payload,
             )
 
-            logger.info(f"Updated Azure Dashboard: {dashboard.id}")
+            logger.info("Updated Azure Dashboard: %s", dashboard.id)
             return True
 
         except Exception as e:
-            logger.error(f"Failed to update Azure Dashboard: {e}")
+            logger.error("Failed to update Azure Dashboard: %s", e)
             return False
 
     def sync_batch_export(self, export_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -362,7 +382,7 @@ class AzureDashboardClient:
             results["success"] = True
 
         except Exception as e:
-            logger.error(f"Azure batch sync failed: {e}")
+            logger.error("Azure batch sync failed: %s", e)
             results["error"] = str(e)
 
         return results
