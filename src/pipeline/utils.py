@@ -1,3 +1,77 @@
+import time
+import os
+import hashlib
+import json
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional
+
+
+class CircuitBreaker:
+    """
+    A simple circuit breaker implementation to prevent cascading failures.
+
+    Args:
+        failure_threshold (int): Number of failures allowed before opening the circuit.
+        reset_seconds (int): Seconds to wait before attempting to close the circuit.
+    """
+
+    def __init__(self, failure_threshold: int = 3, reset_seconds: int = 60):
+        self.failure_threshold = failure_threshold
+        self.reset_seconds = reset_seconds
+        self.failures = 0
+        self.last_failure_time = 0
+
+    def record_failure(self):
+        """Increments the failure count and updates the timestamp."""
+        self.failures += 1
+        self.last_failure_time = time.time()
+
+    def is_open(self) -> bool:
+        """
+        Checks if the circuit is currently open (blocking requests).
+
+        Returns:
+            bool: True if the circuit is open, False otherwise.
+        """
+        if self.failures < self.failure_threshold:
+            return False
+
+        # If enough time has passed, tentatively close the circuit (reset failures)
+        if time.time() - self.last_failure_time > self.reset_seconds:
+            self.failures = 0
+            return False
+
+        return True
+
+
+# --- Other existing utilities likely needed in this file ---
+
+
+def utc_now() -> str:
+    """Returns current UTC timestamp in ISO format."""
+    return datetime.now(timezone.utc).isoformat()
+
+
+def hash_file(filepath: str) -> str:
+    """Calculates SHA256 hash of a file."""
+    sha256_hash = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
+
+def ensure_dir(path: str) -> None:
+    """Ensures a directory exists."""
+    os.makedirs(path, exist_ok=True)
+
+
+def write_json(filepath: str, data: Any) -> None:
+    """Writes data to a JSON file."""
+    with open(filepath, "w") as f:
+        json.dump(data, f, indent=2, default=str)
+
+
 import hashlib
 import json
 import time
