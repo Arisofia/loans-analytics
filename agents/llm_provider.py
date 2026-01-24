@@ -177,7 +177,10 @@ class LLMManager:
         if ANTHROPIC_AVAILABLE:
             self.providers["anthropic"] = AnthropicProvider()
 
-        logger.info(f"Initialized LLM Manager with providers: {list(self.providers.keys())}")
+        logger.info(
+            "Initialized LLM Manager with providers: %s",
+            list(self.providers.keys()),
+        )
 
     def complete(
         self, messages: List[Dict], provider: Optional[str] = None, **kwargs
@@ -185,28 +188,33 @@ class LLMManager:
         """Complete with automatic fallback."""
         provider_name = provider or self.primary_provider
 
-        # Try primary provider
-        if provider_name in self.providers:
-            provider_obj = self.providers[provider_name]
-            if provider_obj.is_available():
-                try:
-                    return provider_obj.complete(messages, **kwargs)
-                except Exception as e:
-                    logger.warning(f"{provider_name} failed: {e}")
-                    if not self.fallback_enabled:
-                        raise
-
-        # Try fallback providers
+        if self._is_provider_available(provider_name):
+            try:
+                return self._try_provider(provider_name, messages, **kwargs)
+            except Exception as e:
+                logger.warning("%s failed: %s", provider_name, e)
+                if not self.fallback_enabled:
+                    raise
         if self.fallback_enabled:
-            for fallback_name, fallback_provider in self.providers.items():
-                if fallback_name != provider_name and fallback_provider.is_available():
-                    try:
-                        logger.info(f"Falling back to {fallback_name}")
-                        return fallback_provider.complete(messages, **kwargs)
-                    except Exception as e:
-                        logger.warning(f"{fallback_name} also failed: {e}")
-                        continue
+            return self._fallback_to_available_providers(provider_name, messages, **kwargs)
+        raise RuntimeError("All LLM providers failed or unavailable")
 
+    def _is_provider_available(self, provider_name: str) -> bool:
+        return provider_name in self.providers and self.providers[provider_name].is_available()
+
+    def _try_provider(self, provider_name: str, messages: List[Dict], **kwargs) -> LLMResponse:
+        provider_obj = self.providers[provider_name]
+        return provider_obj.complete(messages, **kwargs)
+
+    def _fallback_to_available_providers(self, primary_name: str, messages: List[Dict], **kwargs) -> LLMResponse:
+        for fallback_name, fallback_provider in self.providers.items():
+            if fallback_name != primary_name and fallback_provider.is_available():
+                logger.info("Falling back to %s", fallback_name)
+                try:
+                    return fallback_provider.complete(messages, **kwargs)
+                except Exception as e:
+                    logger.warning("%s also failed: %s", fallback_name, e)
+                    continue
         raise RuntimeError("All LLM providers failed or unavailable")
 
     def get_available_providers(self) -> List[str]:
