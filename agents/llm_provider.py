@@ -190,7 +190,11 @@ class LLMManager:
 
         if self._is_provider_available(provider_name):
             try:
-                return self._try_provider(provider_name, messages, **kwargs)
+                return self._try_provider(
+                    provider_name,
+                    messages,
+                    **kwargs
+                )
             except Exception as e:
                 logger.warning("%s failed: %s", provider_name, e)
                 if not self.fallback_enabled:
