@@ -4,7 +4,6 @@ import logging
 import shutil
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from io import BytesIO, StringIO
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -13,7 +12,9 @@ import pandas as pd
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel, Field, ValidationError
 
-from src.pipeline.utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
+from src.pipeline.utils import (
+    CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
+)
 from src.pipeline.validation import (DataQualityReport, DataQualityReporter)
 from src.pipeline.mixins import IngestionMixin
 
@@ -189,7 +190,9 @@ class UnifiedIngestion(IngestionMixin):
         )
 
 
-    def _select_column(self, columns: List[str], candidates: List[str]) -> Optional[str]:
+    def _select_column(
+        self, columns: List[str], candidates: List[str]
+    ) -> Optional[str]:
         column_map = {col.lower(): col for col in columns}
         for candidate in candidates:
             key = candidate.lower()
@@ -197,7 +200,9 @@ class UnifiedIngestion(IngestionMixin):
                 return column_map[key]
         return None
 
-    def ingest_file(self, file_path: Path, archive_dir: Optional[Path] = None) -> IngestionResult:
+    def ingest_file(
+        self, file_path: Path, archive_dir: Optional[Path] = None
+    ) -> IngestionResult:
 
         self._log_event("start", "initiated", file_path=str(file_path))
         if not file_path.exists():
@@ -322,11 +327,14 @@ class UnifiedIngestion(IngestionMixin):
                 df = pd.read_csv(StringIO(content.decode(encoding)))
             except Exception as exc:
                 self._record_error("http_parse_csv", exc, url=url)
-                raise ValueError("Failed to parse HTTP response as JSON or CSV") from exc
+                msg = "Failed to parse HTTP response as JSON or CSV"
+                raise ValueError(msg) from exc
         
         return df, checksum
 
-    def ingest_http(self, url: str, headers: Optional[Dict[str, str]] = None) -> IngestionResult:
+    def ingest_http(
+        self, url: str, headers: Optional[Dict[str, str]] = None
+    ) -> IngestionResult:
         headers = headers or {}
         self._log_event("http_start", "initiated", url=url)
 
@@ -343,7 +351,9 @@ class UnifiedIngestion(IngestionMixin):
         validated_df, record_errors = self._validate_records(df)
         
         if validated_df.empty and len(df) > 0:
-            self._log_event("validation", "fallback", reason="using_parsed_df", rows=len(df))
+            self._log_event(
+                "validation", "fallback", reason="using_parsed_df", rows=len(df)
+            )
             parsed = df.copy()
             if "loan_id" not in {str(c).lower() for c in parsed.columns}:
                 parsed["loan_id"] = [f"agg_{i}" for i in range(len(parsed))]

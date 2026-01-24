@@ -1,6 +1,5 @@
 import hashlib
 import json
-import math
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,7 +10,56 @@ import pandas as pd
 
 
 class RateLimiter:
-# ... (skipping to CircuitBreaker)
+    def __init__(self, max_requests_per_minute: int = 60):
+        self.max_requests_per_minute = max_requests_per_minute
+        self.last_request_ts: Optional[float] = None
+
+    def wait() -> None:
+        if self.max_requests_per_minute <= 0:
+            return
+        interval = 60.0 / float(self.max_requests_per_minute)
+        now = time.time()
+        if self.last_request_ts is None:
+            self.last_request_ts = now
+            return
+        elapsed = now - self.last_request_ts
+        if elapsed < interval:
+            time.sleep(interval - elapsed)
+        self.last_request_ts = time.time()
+
+
+class RetryPolicy:
+    def __init__(
+        self,
+        max_retries: int = 3,
+        backoff_seconds: float = 1.0,
+        jitter_seconds: float = 0.0,
+    ):
+        self.max_retries = max_retries
+        self.backoff_seconds = backoff_seconds
+        self.jitter_seconds = jitter_seconds
+
+    def execute(
+        self,
+        func: Callable[[], Any],
+        on_retry: Optional[Callable[[int, Exception], None]] = None,
+    ) -> Any:
+        attempt = 0
+        while True:
+            try:
+                return func()
+            except Exception as exc:
+                attempt += 1
+                if attempt > self.max_retries:
+                    raise
+                if on_retry:
+                    try:
+                        on_retry(attempt, exc)
+                    except Exception:
+                        pass
+                time.sleep(self.backoff_seconds)
+
+
 class CircuitBreakerError(Exception):
     """Raised when the circuit breaker is open."""
     pass
@@ -45,14 +93,14 @@ class CircuitBreaker:
             return False
         return True
 
-    def record_success(self) -> None:
+    def record_success() -> None:
         if self.state == "HALF-OPEN":
             self.state = "CLOSED"
             self.failures = 0
         elif self.state == "CLOSED":
             self.failures = 0
 
-    def record_failure(self) -> None:
+    def record_failure() -> None:
         self.failures += 1
         self.last_failure_time = time.time()
         if self.failures >= self.failure_threshold:
@@ -70,7 +118,9 @@ class CircuitBreaker:
             raise
 
 
-def deep_merge(base_dict: Dict[str, Any], override_dict: Dict[str, Any]) -> Dict[str, Any]:
+def deep_merge(
+    base_dict: Dict[str, Any], override_dict: Dict[str, Any]
+) -> Dict[str, Any]:
     """Deep merge override_dict into base_dict, with override taking precedence."""
     result = base_dict.copy()
     for key, value in override_dict.items():
@@ -103,13 +153,13 @@ def ensure_dir(path: Path) -> Path:
 def write_json(path: Path, data: Any) -> None:
     """Write data to JSON file."""
     ensure_dir(path.parent)
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, default=str)
 
 
 def load_yaml(path: Path) -> Any:
     """Load YAML file."""
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
