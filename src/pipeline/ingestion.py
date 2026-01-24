@@ -14,8 +14,8 @@ from jsonschema import Draft202012Validator
 from pydantic import BaseModel, Field, ValidationError
 
 from .utils import CircuitBreaker, RateLimiter, RetryPolicy, hash_file, utc_now
-from .validation import (DataQualityReport, DataQualityReporter,
-                         validate_dataframe)
+from .validation import (DataQualityReport, DataQualityReporter)
+from .mixins import IngestionMixin
 
 logger = logging.getLogger("abaco.ingestion")
 
@@ -58,7 +58,7 @@ class IngestionResult:
     quality_report: Optional[DataQualityReport] = None
 
 
-class UnifiedIngestion:
+class UnifiedIngestion(IngestionMixin):
     """Phase 1: Robust ingestion with validation, checksum, and auditability."""
 
     def __init__(self, config: Dict[str, Any], run_id: Optional[str] = None):
@@ -170,14 +170,6 @@ class UnifiedIngestion:
 
         return pd.DataFrame(validated_records), errors
 
-    def _validate_dataframe(self, df: pd.DataFrame) -> None:
-        validation_cfg = self.config.get("validation", {})
-        validate_dataframe(
-            df,
-            required_columns=validation_cfg.get("required_columns"),
-            numeric_columns=validation_cfg.get("numeric_columns"),
-            date_columns=validation_cfg.get("date_columns"),
-        )
 
     def _run_quality_audit(self, df: pd.DataFrame) -> DataQualityReport:
         validation_cfg = self.config.get("validation", {})
@@ -188,16 +180,6 @@ class UnifiedIngestion:
             date_columns=validation_cfg.get("date_columns"),
         )
 
-    def _apply_deduplication(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
-        dedup_cfg = self.config.get("deduplication", {})
-        if not dedup_cfg.get("enabled", False):
-            return df, 0
-        keys = dedup_cfg.get("key_columns")
-        if not keys:
-            return df, 0
-        before = len(df)
-        deduped = df.drop_duplicates(subset=keys)
-        return deduped, before - len(deduped)
 
     def _select_column(self, columns: List[str], candidates: List[str]) -> Optional[str]:
         column_map = {col.lower(): col for col in columns}

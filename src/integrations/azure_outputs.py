@@ -25,11 +25,11 @@ try:
 
     HAS_AZURE = True
 except ImportError:
-    AzureNamedKeyCredential = None
-    AzureSasCredential = None
-    DefaultAzureCredential = None
-    BlobServiceClient = None
-    ContentSettings = None
+    AzureNamedKeyCredential: Any = None
+    AzureSasCredential: Any = None
+    DefaultAzureCredential: Any = None
+    BlobServiceClient: Any = None
+    ContentSettings: Any = None
     HAS_AZURE = False
 
 

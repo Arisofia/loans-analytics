@@ -11,11 +11,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-# Ensure root path is in sys.path to import from apps and agents
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-if str(ROOT_DIR) not in sys.path:
-    sys.path.append(str(ROOT_DIR))
-
+# Rely on PYTHONPATH or test runner configuration for local imports. If you need to run this module directly,
+# set PYTHONPATH or run from project root. Avoid modifying sys.path at module import time.
 from src.config.paths import Paths
 from src.config.settings import settings
 
@@ -204,3 +201,11 @@ def ask_kpi_agent(request: QueryRequest):
 
     answer = agent.answer_query(request.query, context)
     return {"query": request.query, "answer": answer}
+
+
+if __name__ == "__main__":
+    # Helpful when running this file directly for local dev (not for production).
+    ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+    if str(ROOT_DIR) not in sys.path:
+        sys.path.append(str(ROOT_DIR))
+    print("Run this application with a proper ASGI server, e.g., 'uvicorn src.api.main:app'")
