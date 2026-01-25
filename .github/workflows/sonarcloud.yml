@@ -64,7 +64,7 @@ jobs:
           mkdir -p coverage
           echo "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record" > coverage/lcov.info
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v5
+        uses: SonarSource/sonarcloud-github-action@v5.0.0
         with:
           args: >
             -Dsonar.verbose=true

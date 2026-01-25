@@ -34,7 +34,7 @@ jobs:
     if: ${{ github.event_name != 'pull_request' }}
     steps:
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2.2.0
+        uses: SonarSource/sonarcloud-github-action@v5.0.0
         with:
           projectBaseDir: .
         env:
