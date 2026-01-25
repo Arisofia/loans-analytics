@@ -1,62 +1,66 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  name: CI
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  on:
+    push:
+      branches: [main]
+    pull_request:
+      branches: [main]
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+  jobs:
+    changes:
+      runs-on: ubuntu-latest
+      outputs:
+        analytics: ${{ steps.filter.outputs.analytics }}
+        web: ${{ steps.filter.outputs.web }}
+      steps:
+        - uses: actions/checkout@v4
+        - uses: dorny/paths-filter@v3
+          id: filter
+          with:
+            filters: |
+              analytics:
+                - 'python/**'
+                - 'src/**'
+                - 'tests/**'
+              web:
+                - 'apps/web/**'
 
-      - name: Install dependencies
-        run: npm install
+    analytics:
+      needs: changes
+      if: ${{ needs.changes.outputs.analytics == 'true' }}
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - name: Set up Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: "3.12"
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install -e .
+            pip install pytest pytest-cov
+        - name: Run tests
+          run: |
+            python -m pytest --cov=src --cov-report=xml
+        - name: Upload coverage to Codecov
+          uses: codecov/codecov-action@v4
+          with:
+            files: ./coverage.xml
+            flags: unittests
+            name: codecov-umbrella
+            fail_ci_if_error: true
+            verbose: true
+          env:
+            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Run tests
-        run: npm test
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: true
-          verbose: true
-
-      - name: Generate placeholder coverage (lcov)
-        run: |
-          mkdir -p apps/web/coverage
-          echo "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record" > apps/web/coverage/lcov.info
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./apps/web/coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: true
-          verbose: true
-
-  notify:
-    needs: [test]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Slack Notification
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}
-          SLACK_MESSAGE: "CI Pipeline :rocket:"
-          SLACK_TITLE: "CI Status"
+    notify-on-failure:
+      needs: [analytics]
+      runs-on: ubuntu-latest
+      if: failure()
+      steps:
+        - name: Notify failure
+          run: echo "CI failed! Please check the logs."
