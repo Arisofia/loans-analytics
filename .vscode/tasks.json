@@ -4,7 +4,7 @@
     {
       "label": "Run tests (pytest)",
       "type": "shell",
-      "command": "bash -lc 'source ${workspaceFolder}/.venv/bin/activate && pytest -q'",
+      "command": "bash -c 'source \"${workspaceFolder}/.venv/bin/activate\" && exec pytest -q'",
       "group": {
         "kind": "test",
         "isDefault": true

@@ -19,12 +19,15 @@ class RetryPolicy:
 
     def execute(self, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
         """Executes a function with retry logic."""
+        on_retry = kwargs.pop("on_retry", None)
         last_exception = None
         for attempt in range(self.max_retries + 1):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
                 last_exception = e
+                if on_retry:
+                    on_retry(e)
                 if attempt < self.max_retries:
                     time.sleep(self.backoff_seconds * (2**attempt))
         if last_exception:
