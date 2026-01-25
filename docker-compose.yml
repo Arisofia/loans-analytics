@@ -33,12 +33,26 @@ services:
       # Streamlit dashboard does not require Supabase by default, but supports env wiring if added later
       PORT: 8000
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-      HUBSPOT_API_KEY: ${HUBSPOT_API_KEY}
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8000/?page=health | grep -q ok"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-n8n}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:-changeme}
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678}
+    volumes:
+      - n8n-data:/home/node/.n8n
 
   db:
     profiles: ["db"]
@@ -52,3 +66,4 @@ services:
 
 volumes:
   db-data:
+  n8n-data:
