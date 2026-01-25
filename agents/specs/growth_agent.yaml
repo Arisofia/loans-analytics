@@ -1,0 +1,10 @@
+id: growth_agent
+capabilities:
+  - kpi_timeseries
+  - meta_insights
+  - cascade_ingest
+  - figma_sync
+  - slack_notify
+meta:
+  tool: meta-connector
+  description: "Fetches and analyzes Meta marketing insights for growth analytics."
