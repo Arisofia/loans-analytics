@@ -58,8 +58,6 @@ jobs:
                     echo "can_run=false" >> $GITHUB_OUTPUT
                     echo "::warning::Missing required secrets:$missing - skipping investor report"
                   fi
-                  else
-                  fi
             - name: Checkout Repository
               if: steps.check-secrets.outputs.can_run == 'true'
               uses: actions/checkout@v4
@@ -81,6 +79,3 @@ jobs:
                 PHOENIX_TOKEN: ${{ secrets.PHOENIX_TOKEN }}
               run: |
                   python scripts/investor_reporting.py
-              env:
-                SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-              run: |
