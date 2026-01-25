@@ -1,66 +1,35 @@
 name: CI
 
-on:
-  name: CI
+name: CI
 
-  on:
-    push:
-      branches: [main]
-    pull_request:
-      branches: [main]
-
-  jobs:
-    changes:
-      runs-on: ubuntu-latest
-      outputs:
-        analytics: ${{ steps.filter.outputs.analytics }}
-        web: ${{ steps.filter.outputs.web }}
-      steps:
-        - uses: actions/checkout@v4
-        - uses: dorny/paths-filter@v3
-          id: filter
-          with:
-            filters: |
-              analytics:
-                - 'python/**'
-                - 'src/**'
-                - 'tests/**'
-              web:
-                - 'apps/web/**'
-
-    analytics:
-      needs: changes
-      if: ${{ needs.changes.outputs.analytics == 'true' }}
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v4
-        - name: Set up Python
-          uses: actions/setup-python@v5
-          with:
-            python-version: "3.12"
-        - name: Install dependencies
-          run: |
-            python -m pip install --upgrade pip
-            pip install -e .
-            pip install pytest pytest-cov
-        - name: Run tests
-          run: |
-            python -m pytest --cov=src --cov-report=xml
-        - name: Upload coverage to Codecov
-          uses: codecov/codecov-action@v4
-          with:
-            files: ./coverage.xml
-            flags: unittests
-            name: codecov-umbrella
-            fail_ci_if_error: true
-            verbose: true
-          env:
-            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-    notify-on-failure:
-      needs: [analytics]
-      runs-on: ubuntu-latest
-      if: failure()
-      steps:
-        - name: Notify failure
           run: echo "CI failed! Please check the logs."
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      analytics: ${{ steps.filter.outputs.analytics }}
+      web: ${{ steps.filter.outputs.web }}
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            analytics:
+              - 'python/**'
+              - 'src/**'
+              - 'tests/**'
+            web:
+              - 'apps/web/**'
+
+  analytics:
+          - name: Upload coverage artifact
+            uses: actions/upload-artifact@v4
+            with:
+              name: analytics-coverage
+              path: coverage-src.xml
+      - name: Set up Python
