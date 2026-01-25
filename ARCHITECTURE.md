@@ -17,7 +17,6 @@ The Fintech Factory is an **agentic fintech ecosystem** designed for autonomous 
 
 Source of truth for all KPI calculations
 
-- `raw/cascade/` - Raw exports from Cascade Debt platform
 - `warehouse/` - Computed metrics in BigQuery
 - `snapshots/` - Daily immutable snapshots for regression testing
 - `validation/` - Data quality checks and anomaly detection
@@ -42,7 +41,6 @@ Business logic definitions
 
 **Python** (`/python`)
 
-- `ingestion/` - Cascade data extraction
 - `transform/` - KPI calculation engines
 - `models/` - Pandas DataFrames for analysis
 - `agents/` - Agent integrations
@@ -50,8 +48,6 @@ Business logic definitions
 
 **Node.js/TypeScript** (`/services`)
 
-- `slack_bot/` - Real-time alerts
-- `hubspot_sync/` - CRM integration
 - `meta_business/` - Advertising sync
 - `webhooks/` - Event handlers
 
@@ -138,8 +134,6 @@ Business logic definitions
 
 **Multi-Format Exports** (`/templates`)
 
-- Notion page templates
-- Slack message formats
 - Email templates
 - API response schemas
 
@@ -189,27 +183,20 @@ Business logic definitions
 
 ## Integration Ecosystem
 
-- **Cascade Debt**: Loan data source (CSV/JSON exports)
-- **Notion**: Collaborative workspace & database
-- **Slack**: Real-time alerts & notifications
-- **HubSpot**: CRM & sales pipeline
 - **Meta**: Advertising & campaign tracking
 - **Azure**: Cloud infrastructure
 - **Google Workspace**: Documentation & collaboration
-- **Figma**: Design & presentation templates
 
 ## Deployment Phases
 
 ### Phase 1: Foundation (Week 1-2)
 
 - Set up PostgreSQL, BigQuery, Airflow
-- Configure Cascade data ingestion
 - Deploy initial KPI calculations
 
 ### Phase 2: Integrations (Week 3-4)
 
 - Connect all 8+ external services
-- Build alerting system (Slack/Email)
 - Test data flows end-to-end
 
 ### Phase 3: Agents (Week 5-6)

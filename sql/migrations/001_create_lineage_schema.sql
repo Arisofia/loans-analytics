@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS ingest_runs (
 
 CREATE TABLE IF NOT EXISTS data_quality_issues (
     id BIGSERIAL PRIMARY KEY,
-    ingest_run_id BIGINT REFERENCES ingest_runs(id) ON DELETE CASCADE,
     detected_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     severity TEXT NOT NULL,
     kpi_id TEXT,
@@ -34,7 +33,6 @@ CREATE TABLE IF NOT EXISTS kpi_snapshots (
 
 CREATE TABLE IF NOT EXISTS kpi_calculation_lineage (
     id BIGSERIAL PRIMARY KEY,
-    kpi_snapshot_id BIGINT REFERENCES kpi_snapshots(id) ON DELETE CASCADE,
     step_order INT NOT NULL,
     step_name TEXT NOT NULL,
     input_table TEXT,

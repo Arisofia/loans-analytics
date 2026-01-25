@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+
+# ==============================================================================
+# abaco
+# ------------------------------------------------------------------------------
+# Master orchestration CLI for the Abaco Loans Analytics Monorepo.
+# Handles Python (Analytics), Node (Web/Services), Java (Gradle), and Docker.
+# ==============================================================================
+
+set -eo pipefail
+
+# --- Configuration ---
+VENV_DIR=".venv"
+PYTHON_CMD="python3"
+REQUIREMENTS="requirements.txt"
+DOCKER_COMPOSE="docker-compose.yml"
+STREAMLIT_APP="streamlit_app/app.py" # Updated path based on your file list
+GRADLEW="./gradlew"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# --- Helper Functions ---
+log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+ensure_venv() {
+    if [ ! -d "$VE    if [ ! -d "$VE       if [ ! -d "$VE    if [ ! -d "$VE       if [ ! -d "$VE    if [ ! -d "$VE    v     if_D    if [ ! -d "$VE    if [ ! -d "$VE       if [ ! -d "$VE    if [ ! -d "$VE    "
+    if [ ! -d "$VE    if [ ! -d "$VE       if [ ! -d "$VE    if [      if [ ! -d "$VE    if [ ! -d "$VE       if [ ! -d "$VE    if [      if [ he    if [ ! -d "$VE    if [o "npm"
+    fi
+}
+
+# --- Commands ---
+
+cmd_setup() {
+                   ing     repo Setup..."
+
+                  tu                  t_v                  tu   lling Roo                  tu              P_                  tu                  t_v                  tu   lling Roo IP                  $RE       NTS"
+        "$PIP_        "$PIP_   nt        "$PIP_  te        "    fi
+
+              Set              Set         pkg_mgr=$(detect_pkg_manager)
+    if command -v "    if command -v "    if command -v "    if command ling Node dependencies using $pkg_mgr..."
+        $p        $p        $p        $p        $p       mgr        $p  Skipping Node setup."
+    fi
+
+    # 3. Microservices Setup (Optional iteration)
+    for service in services/* node/services/*; do
+        if [ -d "$service" ] && [ -f "$service/package.json" ]; then
+            log_info "Installing dependencies for $service..."
+            (cd "$service" && npm install)
+        fi
+    done
+
+    log_success "Setup complete."
+}
+
+cmd_git_fix() {
+    log_info     lng Gi    log_info  (403 Forbidden)..."
+    log_info     lng Gi    log_info  (40Acc    log_info     lng Gi    log_info  (40Acc    log_info     lng Gi    log_info  (40Acc    log_info     lng Gi    log_info  (40Acc    log_info     lng Gi    log_info  (40Acc    log_info     lng Gi    log_info  (40Acc "R    log_info     lng Gi    log_info  (40Acc    log_info     lng Gn c    log_info     lng Gi    log_info  (40Acc    log_info     lng Gi    get=${1:-all}
+
+    case "$target" in
+        "docker")
+            log_info "Starting Infrastructure (Docker)..."
+                                                                                               ting Analytics Dashboard (Streamlit)..."
+            # Check for app.py or streamlit_app.py
+            if [ -            if [ -            if [ -            if [ -            iea            if [ -            if [ -            if [ -       ml            if [ -            if [ -     _DIR/bin/stre       run            if [ -            ifelse
+            if              if              if              if         i
+            if              if              if              if         i
+           iea            if [ -            if [ -            if [ -       ml            if [ -            if [ -     _DIR/bin/stre       run            if [ -            ifelse
+       export PYTHONPATH=$PYTHONPATH:.
+            if [ -f "abaco_runtime/standalone_ai.py" ]; then
+                "$PYTHON_BIN" abaco_runtime/standalone_ai.py
+                      "python/agents/orche                      "python/agents/orche               ag                      "python/agents/orche                      "python/agents/orche               ag                      "python/age")                      "python/agents/orche                               "python/agents/orche                      "python/agents/orche               ag                      "python/agents/orche                      "python/agents/orche               ag                      "python/age")                                    "python/agents/orche                      "pythonlocal scope=${1:-all}
+    
+    case "$scope" in
+        "python"|"all")
+            log_info "Running Python Tests..."
+            "$PYTEST_BIN" tests/ python/
+            ;;
+        "node"|"all")
+            log_info "Running Node Tests..."
+                                                cm                                                cm        nte                                                cm         "                                                 cm                                                cm        nte                                                cm         "                                                 cm                                                cm        nte                                                cm         "                                                 cm                                                cm        nte                                                cm         "                                                 cm                                                cm        nte   Mi   se                o "                        403 permission errors"
+    echo "  start      Sta    echo "  start      Sta    echo "  s)"    echo "  stest       Run tests (py    echo "  start      Sta    echo nt       Run code linters and formatters"
+    echo "  clean      Deep clean the repository"
+}
+
+# --- Main ---
+if [ $# -eq 0 ]; then cmd_help; exit 1; fi
+COMMAND="$1"; shift
+case "$COMMAND" in
+    setup)   cmd_setup "$@" ;;
+    git-fix) cmd_git_fix "$@" ;;
+    start)   cmd_start "$@" ;;
+    test)    cmd_test "$@" ;;
+    lint)    cmd_lint "$@" ;;
+    clean)   cmd_clean "$@" ;;
+    help)    cmd_help ;;
+    *)       log_error "Unknown command: $COMMAND"; cmd_help; exit 1 ;;
+esac

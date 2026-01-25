@@ -5,15 +5,12 @@ This document keeps workflow steps, roles, and review requirements in one place.
 ## Workflows in scope
 - CI: `.github/workflows/ci-main.yml` (apps/web lint/build/type-check)
 - Deploy: `.github/workflows/deploy.yml` (Vercel deploy; Supabase env injection)
-- Data: `.github/workflows/daily-ingest.yml`, `.github/workflows/demo-scripts.yml` (scripts/demo execution + Slack)
 - Security/Quality: `.github/workflows/dependency-submission.yml`, `.github/workflows/sonarqube.yml`, `.github/workflows/snyk.yml`
 - Review bots: `.github/workflows/coderabbit-pr-review.yml`, `.github/workflows/gemini-pr-review.yml`, `.github/workflows/perplexity-review.yml`
-- Notifications: `.github/workflows/slack_notify.yml`
 
 ## Secrets and environment
 - Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE`, `SUPABASE_TOKEN`
 - Deploy: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
-- Compliance/alerts: `SLACK_TOKEN` / `SLACK_WEBHOOK_URL`
 - QA/Security: `SONAR_TOKEN`, `SENTRY_AUTH_TOKEN`, `CODECOV_TOKEN`, `SNYK_TOKEN`
 - Keep secrets server-side only; do not expose service-role keys to clients.
 

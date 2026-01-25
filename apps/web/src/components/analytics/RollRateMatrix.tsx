@@ -11,7 +11,6 @@ export function RollRateMatrix({ rows }: Props) {
   return (
     <section className={styles.section}>
       <div className={styles.sectionHeader}>
-        <p className={styles.sectionTitle}>Roll-rate cascade</p>
         <p className={styles.sectionCopy}>
           Monitor DPD transitions with structured tiers and alert probabilities.
         </p>

@@ -21,14 +21,10 @@ primaryResponsibilities:
   - Identify at-risk segments for targeted intervention
 
 knowledgeSources:
-  - cascade.loan_status: Live loan performance data
-  - cascade.collections: Collection activity tracking
-  - cascade.recovery_tracking: Recovery metrics by cohort
   - historical.risk_snapshots: Historical snapshots for trend analysis
   - config.kpis.risk_definitions: Risk KPI definitions
 
 outputFormats:
-  - daily_risk_report: Markdown for Slack/email
   - weekly_summary: PDF slides for stakeholders
   - alerts: JSON for alerting systems
   - predictions: CSV for archival
@@ -39,9 +35,7 @@ refreshSchedule:
   continuous_monitoring: '*/15 * * * *' # Every 15 minutes
 
 integrations:
-  - slack: slack_notify_alerts
   - email: daily_report_recipients
-  - notion: risk_database_sync
   - datadog: metrics_export
 
 dataValidation:

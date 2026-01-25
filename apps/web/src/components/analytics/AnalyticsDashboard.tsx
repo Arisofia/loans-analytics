@@ -74,7 +74,6 @@ export function AnalyticsDashboard() {
   const drilldownBase =
     process.env.NEXT_PUBLIC_DRILLDOWN_BASE_URL ??
     'https://github.com/Abaco-Technol/abaco-loans-analytics/tree/main/docs'
-  const alertSlack = process.env.NEXT_PUBLIC_ALERT_SLACK_WEBHOOK
   const alertEmail = process.env.NEXT_PUBLIC_ALERT_EMAIL ?? 'alerts@abaco.loans'
 
   const runbookLinks = [
@@ -160,7 +159,6 @@ export function AnalyticsDashboard() {
                   threshold, runbook link, and ETA.
                 </p>
                 <p className={styles.linkDescription}>
-                  Slack: {alertSlack ? 'configured' : 'not set (NEXT_PUBLIC_ALERT_SLACK_WEBHOOK)'} ·
                   Email routing: {alertEmail}
                 </p>
               </div>

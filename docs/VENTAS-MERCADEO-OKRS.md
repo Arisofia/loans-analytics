@@ -4,7 +4,6 @@
 
 ## Estructura de Bases de Datos
 
-Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo Notion con los siguientes componentes:
 
 ### **[Objectives](objectives/)** - Objetivos
 
@@ -60,7 +59,6 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 
 **Ventas:**
 
-- Implementación de nuevo CRM (Salesforce/HubSpot)
 - Programa de capacitación de equipo comercial
 - Apertura de nuevas sucursales/canales
 - Estrategia de partners y alianzas estratégicas
@@ -156,7 +154,6 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 
 ## Guía del Template
 
-[Ver la guía del template aquí →](https://www.notion.so/help/guides/using-notion-for-product-and-engineering-okrs)
 
 ---
 

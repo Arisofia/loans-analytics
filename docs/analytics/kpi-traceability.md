@@ -13,7 +13,6 @@ This playbook keeps every KPI, dashboard, and visualization traceable end-to-end
 2. **Data lineage**: Document table/contract, upstream system, and refresh cadence in the PR description; add data-quality checks (freshness, null %, duplicates, schema drift).
 3. **Dashboard contract**: Each chart records owner, drill-down table, alert channel, and runbook link in `docs/analytics/dashboards.md`.
 4. **Versioned artifacts**: Tag dashboard releases or dbt model versions in PRs; keep a changelog entry when thresholds or filters change.
-5. **Observability**: Emit metrics for data freshness, query latency, and alert MTTR/MTTD; route alerts to Slack/email configured via `NEXT_PUBLIC_ALERT_*`.
 ## GitHub workflow (standardized)
 
 1. Branch naming: `feature/kpi-*`, `fix/dashboard-*`, or `chore/data-*` with issue reference.

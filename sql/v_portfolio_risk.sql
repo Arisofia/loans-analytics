@@ -1,11 +1,9 @@
 -- BigQuery Portfolio Risk Model
 -- Implements PAR_90 and Portfolio Health calculations
--- Source: Cascade Debt loan-level data
 -- Version: 1.0 (Fintech Factory Agentic Ecosystem)
 
 CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.v_portfolio_risk` AS
 WITH base_loans AS (
-  -- Extract base loan portfolio from cascade data
   SELECT
     loan_id,
     client_id,
@@ -24,7 +22,6 @@ WITH base_loans AS (
     total_collections_30_days,
     CURRENT_TIMESTAMP() AS _processed_at,
     '1.0' AS _data_version
-  FROM `{project_id}.{dataset_id}.cascade_loans`
   WHERE date_load = CURRENT_DATE()
 ),
 

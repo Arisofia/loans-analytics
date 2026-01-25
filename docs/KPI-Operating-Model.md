@@ -44,7 +44,6 @@ Each KPI definition includes owner, formula, data sources, refresh cadence, and 
 ## Dashboards and visual standards
 
 - **Executive overview**: Headline KPIs with sparkline trends, target vs. actual variances, and a risk heatmap by segment.
-- **Operations**: Roll-rate cascade, DPD waterfall, collections queue performance, and exception queues with drill-through to account lists.
 - **Growth**: Target gap analysis, projected trajectory (monthly interpolation), campaign-level ROI, and regional/channel treemaps.
 - **Data quality**: Ingestion scorecards, schema drift alerts, and freshness timelines with SLA badges.
 - **Design**: Apply the shared ABACO theme, ordered typography, and consistent number formatting; every chart lists source tables, refresh time, and owner.

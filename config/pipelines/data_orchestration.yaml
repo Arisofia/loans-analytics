@@ -10,18 +10,14 @@ global_settings:
   timezone: UTC
   retry_policy: exponential_backoff
   max_retries: 3
-  error_notification: slack
   enable_audit_logging: true
 
 # Data ingestion pipeline
 ingestion_pipeline:
-  name: cascade_data_ingestion
   schedule: '0 3 * * *' # Daily at 03:00 UTC
-  source: cascade_debt_export
   target: raw_data_warehouse
 
   steps:
-    - name: extract_cascade_export
       type: file_import
       config:
         format: csv
@@ -43,14 +39,12 @@ ingestion_pipeline:
       type: bigquery_load
       config:
         dataset: raw_layer
-        table: cascade_loans_raw
         mode: replace
 
 # Transformation pipeline
 transformation_pipeline:
   name: kpi_calculation_engine
   dependencies:
-    - cascade_data_ingestion
   schedule: '0 4 * * *' # 04:00 UTC (after ingestion)
 
   steps:
@@ -120,7 +114,6 @@ distribution_pipeline:
       type: report_generator
       template: templates/risk_analysis.html
       destinations:
-        - slack: '#risk-monitoring'
         - email: 'risk-team@company.com'
 
     - name: generate_compliance_brief
@@ -129,8 +122,6 @@ distribution_pipeline:
       recipients:
         - compliance@company.com
 
-    - name: sync_to_notion_workspace
-      type: notion_sync
       database_id: 'compliance_dashboard'
       refresh: true
 
@@ -139,17 +130,14 @@ alert_rules:
   - rule_name: par_90_critical
     condition: 'par_90_pct > 5.0'
     severity: critical
-    notification: [slack, email]
 
   - rule_name: collection_rate_low
     condition: 'collection_rate_pct < 0.5'
     severity: warning
-    notification: [slack]
 
   - rule_name: compliance_breach
     condition: 'compliance_status = BREACH'
     severity: critical
-    notification: [slack, email, sms]
 
 # Monitoring and observability
 monitoring:

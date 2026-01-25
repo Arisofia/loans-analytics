@@ -12,9 +12,6 @@ def _hash_payload(payload: Dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
 
-def download_cascade_exports(**context):
-    logging.info("Downloading Cascade exports")
-    payload = {"source": "cascade", "date": context["ds"]}
     context["ti"].xcom_push(key="ingest_payload_hash", value=_hash_payload(payload))
 
 
@@ -57,8 +54,6 @@ def build_refresh_dag():
         tags=["kpi", "contracts", "agents"],
     ) as dag:
         download = PythonOperator(
-            task_id="download_cascade_exports",
-            python_callable=download_cascade_exports,
         )
 
         validate = PythonOperator(

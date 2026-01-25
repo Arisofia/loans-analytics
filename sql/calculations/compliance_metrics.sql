@@ -18,7 +18,6 @@ FROM (
     SUM(balance) as portfolio_balance,
     COUNT(*) as total_loans
   FROM
-    raw_layer.cascade_loans_raw
   WHERE
     date_load = CURRENT_DATE()
 ) compliance_subquery

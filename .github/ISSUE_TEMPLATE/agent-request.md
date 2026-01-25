@@ -9,11 +9,9 @@ assignees: ''
 
 ## Summary
 - [ ] Describe the desired capability or fix
-- [ ] Outline the expected outputs (e.g., Notion page, Figma deck, Slack alert)
 
 ## Details
 - Agent name / spec: (e.g., C-suite Agent v1)
-- Trigger cadence: (e.g., daily after Cascade ingest)
 - Inputs / data sources: (list tables, KPIs, APIs)
 - Tools & guardrails: (SQL runners, API integrations, tone constraints)
 

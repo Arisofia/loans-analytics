@@ -3,8 +3,6 @@
 <<<<<<< HEAD
 This guide consolidates the dashboard requirements and maps them to the monorepo layout (`apps/web` for the Next.js UI and `apps/analytics` for Python analytics). Follow it end-to-end to deliver the KPI/AI dashboard without placeholder data.
 
-## 1) Design & Assets (Figma-first)
-- Build the UX in Figma before coding: sidebar navigation, header KPIs, Plotly-ready chart areas, upload widgets, and AI insight panels for **KPIs, Portfolio, Financial, Risk, Growth, Marketing & Sales, Data Quality, AI Insights, Reports**.
 - Corporate theming only: **Black (#000000), Grayscale (#808080), Purple (#4B0082)**. Avoid blue, green, or non-corporate reds.
 - Typography: long, thin, professional fonts (for example, **Roboto Condensed**, **Montserrat**, **Open Sans Condensed**).
 - Export assets for the app: `public/logo.svg`, `public/icons/*.png`, `public/palette.json`, and `public/fonts/RobotoCondensed.ttf`.
@@ -19,9 +17,7 @@ This guide consolidates the dashboard requirements and maps them to the monorepo
 =======
 This guide consolidates the dashboard requirements and maps them to the existing monorepo layout (`apps/web` for the Next.js UI and `apps/analytics` for Python analytics). Follow it end-to-end to deliver the KPI/AI dashboard without placeholder data.
 
-## 1) Design & Assets (Figma-first)
 
-- Build the UX in Figma before coding: sidebar navigation, header KPIs, Plotly-ready chart areas, upload widgets, and AI insight panels for **KPIs, Portfolio, Financial, Risk, Growth, Marketing & Sales, Data Quality, AI Insights, Reports**.
 - Corporate theming only: **Black (#000000), Grayscale (#808080), Purple (#4B0082)**. Avoid blue, green, or non-corporate reds.
 - Typography: long, thin, professional fonts (e.g., **Roboto Condensed**, **Montserrat**, **Open Sans Condensed**).
 - Export assets for the app using a consistent naming convention:
@@ -112,7 +108,6 @@ This guide consolidates the dashboard requirements and maps them to the existing
 - Monitor error rates and add synthetic checks for key endpoints.
 
 ## 7) Quick Checklist (All Points)
-- [x] Figma design and exported assets (black/gray/purple, condensed fonts).
 - [x] Next.js/React pages for all views; shared layout/components; Plotly integrated.
 - [x] FastAPI backend with real KPI/analytics endpoints and AI hooks.
 - [x] Frontend-backend connectivity with filters, widgets, tooltips, onboarding, and explanations per section.
@@ -127,7 +122,6 @@ This guide consolidates the dashboard requirements and maps them to the existing
 
 ## 7) Quick Checklist (All Points)
 
-- [ ] Figma design + exported assets (black/gray/purple, condensed fonts).
 - [ ] Next.js/React pages for all views; shared layout/components; Plotly integrated.
 - [ ] FastAPI backend with real KPI/analytics endpoints and AI hooks.
 - [ ] Frontend-backend connectivity with filters, widgets, tooltips, onboarding, and explanations per section.

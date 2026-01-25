@@ -128,10 +128,7 @@ jobs:
               console.error('Comment creation error:', error.message);
             }
 
-      - name: Send Slack notification on failure
-        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
         continue-on-error: true
-        uses: slackapi/slack-github-action@v1
         with:
           payload: |
             {
@@ -147,4 +144,3 @@ jobs:
               ]
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

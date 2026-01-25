@@ -299,7 +299,6 @@ def test_metric_definition():
 
 # Test error handling
 def test_handle_ingestion_error():
-    ingestion = CascadeIngestion()
     result = ingestion._handle_ingestion_error(Path('test.csv'), 'test.csv', 'missing', 'Not found')
     assert result.empty
     assert len(ingestion.errors) == 1

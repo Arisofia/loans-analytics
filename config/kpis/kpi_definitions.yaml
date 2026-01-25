@@ -17,7 +17,6 @@ kpis:
     threshold_warning: 3.0
     threshold_critical: 5.0
     refresh_frequency: 'daily'
-    data_source: 'cascade.loan_status'
 
   risk.rdr_90:
     name: 'Recovered Default Rate (90+ days)'
@@ -27,7 +26,6 @@ kpis:
     threshold_warning: 50.0
     threshold_critical: 25.0
     refresh_frequency: 'daily'
-    data_source: 'cascade.recovery_tracking'
 
   risk.collection_rate:
     name: 'Effective Collection Rate'
@@ -37,7 +35,6 @@ kpis:
     threshold_warning: 1.5
     threshold_critical: 1.0
     refresh_frequency: 'daily'
-    data_source: 'cascade.collections'
 
   risk.portfolio_health:
     name: 'Portfolio Health Score'
@@ -58,7 +55,6 @@ kpis:
     threshold_warning: null
     threshold_critical: null
     refresh_frequency: 'daily'
-    data_source: 'cascade.loan_origination'
 
   growth.active_clients:
     name: 'Active Client Count'
@@ -68,7 +64,6 @@ kpis:
     threshold_warning: null
     threshold_critical: null
     refresh_frequency: 'weekly'
-    data_source: 'cascade.client_activity'
 
   growth.client_retention:
     name: 'Client Retention Rate'
@@ -78,7 +73,6 @@ kpis:
     threshold_warning: 75.0
     threshold_critical: 50.0
     refresh_frequency: 'monthly'
-    data_source: 'cascade.client_lifecycle'
 
   # FINANCE STACK KPIS
   finance.arr:
@@ -89,7 +83,6 @@ kpis:
     threshold_warning: null
     threshold_critical: null
     refresh_frequency: 'daily'
-    data_source: 'cascade.loan_performance'
 
   finance.write_off_rate:
     name: 'Write-Off Rate'
@@ -99,7 +92,6 @@ kpis:
     threshold_warning: 2.0
     threshold_critical: 3.5
     refresh_frequency: 'monthly'
-    data_source: 'cascade.write_offs'
 
   # COMPLIANCE STACK KPIS
   compliance.audit_flags:
@@ -122,9 +114,6 @@ kpis:
     refresh_frequency: 'hourly'
     data_source: 'data.validation_results'
 
-  cascade.loan_tape_balance:
-    name: 'Cascade Loan Tape Balance'
-    description: 'Total outstanding balance captured from the latest Cascade pull'
     formula: 'SUM(v_loans_overview.balance)'
     unit: 'USD'
     threshold_warning: null
@@ -132,8 +121,6 @@ kpis:
     refresh_frequency: 'daily'
     data_source: 'analytics.v_loans_overview'
 
-  cascade.loan_tape_count:
-    name: 'Cascade Loan Count'
     description: 'Number of active loans surfaced in the loan tape'
     formula: 'COUNT(DISTINCT v_loans_overview.loan_id)'
     unit: 'count'
@@ -142,7 +129,6 @@ kpis:
     refresh_frequency: 'daily'
     data_source: 'analytics.v_loans_overview'
 
-  cascade.roll_rate_30:
     name: '30-Day Roll Rate'
     description: 'Percent of loans that rolled 30 days deeper in delinquency over the period'
     formula: '(SUM(v_loans_overview.days_past_due >= 30) - SUM(v_loans_overview.days_past_due >= 60)) / SUM(v_loans_overview.loan_id)'
@@ -158,9 +144,6 @@ departmental_kpi_mappings:
     - risk.rdr_90
     - risk.collection_rate
     - risk.portfolio_health
-    - cascade.loan_tape_balance
-    - cascade.loan_tape_count
-    - cascade.roll_rate_30
   growth:
     - growth.origination_volume
     - growth.active_clients

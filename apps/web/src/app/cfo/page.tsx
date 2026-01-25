@@ -77,7 +77,6 @@ export default function CFODashboard() {
         ))}
       </div>
       <div className="mt-4 text-sm text-gray-400 text-center">
-        Data last refreshed: 2025-01-15 07:00 UTC · Source: Cascade exports · Contracted via
         config/personas.yml
       </div>
     </div>

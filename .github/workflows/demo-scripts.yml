@@ -69,10 +69,7 @@ jobs:
             demo_output.txt
             demo_report.md
           if-no-files-found: ignore
-      - name: Notify Slack on Failure
-        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
         continue-on-error: true
-        uses: slackapi/slack-github-action@v1
         with:
           webhook-type: INCOMING_WEBHOOK
           payload: |
@@ -89,4 +86,3 @@ jobs:
               ]
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

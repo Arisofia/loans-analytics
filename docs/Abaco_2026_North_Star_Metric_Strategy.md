@@ -107,7 +107,6 @@ This measures the total processed volume from clients who repeat, reflecting ret
 - **LTV/CAC:** Critical for unit economics and investor reporting, but slow and aggregated; it does not govern weekly pulse or portfolio quality. SaaS/fintech leaders use it as a complementary metric, not as the NSM.
 ## 9. NSM benchmarks in the industry
 - **Recurrent TPV/GMV:** Stripe, Square, PayPal, Shopify, MercadoPago, Konfio.
-- **Recurrent activity (SaaS):** Slack (Weekly Active Teams), Dropbox (files shared), Zoom (meetings), HubSpot (MQLs per user).
 ## 10. Next steps
 =======
 
@@ -144,7 +143,6 @@ This measures the total processed volume from clients who repeat, reflecting ret
 ## 9. NSM benchmarks in the industry
 
 - **Recurrent TPV/GMV:** Stripe, Square, PayPal, Shopify, MercadoPago, Konfio.
-- **Recurrent activity (SaaS):** Slack (Weekly Active Teams), Dropbox (files shared), Zoom (meetings), HubSpot (MQLs per user).
 
 ## 10. Next steps
 
@@ -252,7 +250,6 @@ Esta métrica mide el volumen total procesado por clientes que repiten, reflejan
 - **LTV/CAC:** Crítico para unit economics y reporting, pero es un ratio lento y agregado; no gobierna el pulso semanal ni la calidad de cartera. SaaS/fintech líderes lo usan como métrica complementaria, no como NSM.
 ## 9. Benchmarks de NSM en la industria
 - **TPV/GMV recurrente:** Stripe, Square, PayPal, Shopify, MercadoPago, Konfio.
-- **Actividad recurrente (SaaS):** Slack (Weekly Active Teams), Dropbox (files shared), Zoom (meetings), HubSpot (MQLs por usuario).
 ## 10. Próximos pasos
 1. Publicar panel de TPV recurrente con cortes por cliente (nuevo/recurrente/recuperado), bucket y pagador.
 2. Activar alertas de concentración y caídas de rotación/replines vs. plan.

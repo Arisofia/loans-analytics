@@ -1,4 +1,3 @@
-name: "Cascade Ingest — Daily (Production)"
 
 on:
   schedule:
@@ -11,12 +10,9 @@ permissions:
   id-token: write
 
 jobs:
-  cascade_ingest:
-    name: "Cascade ingest & validate"
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      OUTPUT_PREFIX: "data/raw/cascade/loan_tapes/${{ github.run_id }}"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,34 +29,21 @@ jobs:
           pip install pandas playwright backoff pyarrow
           playwright install chromium
 
-      - name: Run cascade ingest
         env:
-          CASCADE_SESSION_COOKIE: ${{ secrets.CASCADE_SESSION_COOKIE }}
-          CASCADE_EXPORT_URL: ${{ secrets.CASCADE_EXPORT_URL }}
         run: |
-          python3 scripts/cascade_ingest.py \
-            --export-url "${{ secrets.CASCADE_EXPORT_URL }}" \
             --output-prefix "${{ env.OUTPUT_PREFIX }}"
 
       - name: Upload artifact (parquet)
         uses: actions/upload-artifact@v4
         with:
-          name: cascade-parquet-${{ github.run_id }}
-          path: data/raw/cascade/loan_tapes/*.parquet
 
       - name: Notify success
         if: success()
-        uses: peter-evans/slack-webhook@v1
         with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_INGEST }}
-          message: "Cascade ingest succeeded: run ${{ github.run_id }} - produced artifact."
 
       - name: Trigger C-suite agent
         if: success()
         env:
-          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          SLACK_WEBHOOK_OPS: ${{ secrets.SLACK_WEBHOOK_OPS }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           python3 python/agents/c_suite_agent.py \

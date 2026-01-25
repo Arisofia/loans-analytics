@@ -1,4 +1,3 @@
-name: Export Growth Chart to Figma
 
 on:
   push:

@@ -35,7 +35,6 @@ jobs:
       - name: Run Build
         run: pnpm build
 
-  update-figma-slides:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -55,31 +54,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Update Figma Slides
         run: |
           const cron = require('node-cron');
           const axios = require('axios');
-          const { Client } = require('figma-js');
 
-          const FIGMA_TOKEN = 'YOUR_FIGMA_API_TOKEN';
-          const FILE_KEY = 'YOUR_FIGMA_FILE_KEY';
           const ANALYTICS_URL = 'URL_TO_YOUR_ANALYTICS_JSON';
 
-          const client = Client({ personalAccessToken: FIGMA_TOKEN });
 
           async function updateSlides() {
             const { data } = await axios.get(ANALYTICS_URL);
 
             // Example: Update slide for Total Customers
-            // Find the node in Figma and update its text with data.traction.total_customers
             // Repeat for each KPI in your mapping table
 
-            // Example Figma API usage:
             // const file = await client.file(FILE_KEY);
             // Find node by name, update text, etc.
           }
 
           cron.schedule('0 8 * * *', () => {
             updateSlides();
-            console.log('Figma slides updated at 8am');
           });
