@@ -1,0 +1,63 @@
+name: codeql
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'apps/**'
+      - 'packages/**'
+      - 'streamlit_app.py'
+      - 'requirements*.txt'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'tsconfig.json'
+      - 'next.config.js'
+      - '.github/workflows/codeql.yml'
+  pull_request:
+    branches: ['main']
+  schedule:
+    - cron: '0 3 * * 1'
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      pull-requests: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript', 'python']
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up CodeQL
+        uses: github/codeql-action/init@v3.31.5
+        with:
+          languages: ${{ matrix.language }}
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3.31.5
+
+      - name: Perform CodeQL Analysis (no upload while default setup is active)
+        uses: github/codeql-action/analyze@v3.31.5
+        with:
+          category: '/language:${{ matrix.language }}'
+          # CodeQL upload is disabled while the default setup is active.
+          # This means analysis results will NOT be uploaded to GitHub Security and will not appear in the Security tab.
+          # Enable upload (set to true or remove this line) when you want results to be visible in GitHub Security,
+          # such as after customizing the CodeQL configuration or moving out of default setup.
+          upload: false

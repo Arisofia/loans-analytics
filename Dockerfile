@@ -1,5 +1,5 @@
 # Base image
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Set working directory
 WORKDIR /app
@@ -19,6 +19,11 @@ COPY . .
 
 # Expose Streamlit port
 EXPOSE 8501
+
+# Create non-root user and set permissions
+RUN useradd --system --create-home --home-dir /app appuser \
+  && chown -R appuser:appuser /app
+USER appuser
 
 # Healthcheck and Entrypoint
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health || exit 1

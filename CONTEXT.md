@@ -10,13 +10,13 @@ This document confirms the **Fintech Factory Architecture** - a production-ready
 1. DATA LAYER - Cascade Debt exports, feature tables, KPI baselines
 2. ACCESS & CREDENTIALS - OAuth configs, integration manifests
 3. SCHEMAS & MANIFESTS - KPI definitions, data contracts, validation rules
-4. POLYGLOT CODEBASE - Python, Node.js, Kotlin, SQL execution engines
-5. AGENTS & ORCHESTRATION - Risk, Growth, Compliance, C-Suite agents
-6. KNOWLEDGE & BRANDING - Vibe Solutioning philosophy, case studies
-7. DASHBOARDS & VISUALIZATIONS - Risk, Finance, Growth, Compliance views
-8. COMPLIANCE & AUDITABILITY - Audit logging, data governance
-9. DOCUMENTATION & RUNBOOKS - Architecture, contribution standards
-10. OUTPUT TEMPLATES - Investor decks, daily briefs, compliance reports
+4. POLYGLOT CODEBASE - Python, Node.js (SQL execution engines; Kotlin PLANNED)
+5. AGENTS & ORCHESTRATION - Prototype ReAct agents (Risk, Growth, etc. using MockLLM)
+6. KNOWLEDGE & BRANDING - Vibe Solutioning philosophy (Case studies PLANNED)
+7. DASHBOARDS & VISUALIZATIONS - Streamlit Analytics (Advanced Agent-driven views PLANNED)
+8. COMPLIANCE & AUDITABILITY - Basic audit logging (Advanced governance PLANNED)
+9. DOCUMENTATION & RUNBOOKS - Architecture, operational guides (In progress)
+10. OUTPUT TEMPLATES - Export logic for reports (Investor deck automation PLANNED)
 
 **7 Departmental Intelligence Stacks:**
 - Marketing (GA, Meta, HubSpot → Daily CMO Brief)

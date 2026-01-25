@@ -1,0 +1,57 @@
+name: KPI Daily Calculation
+
+"on":
+    schedule:
+        - cron: "0 5 * * *" # 6:00 AM CET (5:00 UTC)
+    workflow_dispatch:
+        inputs:
+            snapshot_id: { required: false, type: string }
+
+jobs:
+    gate:
+        permissions:
+            contents: read
+        runs-on: ubuntu-latest
+        outputs:
+            run: ${{ steps.gate.outputs.run }}
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v5
+              with: { python-version: "3.11" }
+            - run: pip install -r requirements.txt
+            - id: gate
+              run: |
+                  if [ ! -f scripts/should_run_now.py ]; then
+                    echo "run=false" >> $GITHUB_OUTPUT
+                    exit 0
+                  fi
+                  python scripts/should_run_now.py --at "06:00" --tz "Europe/Madrid" --days "mon,tue,wed,thu,fri,sat,sun" \
+                  && echo "run=true" >> $GITHUB_OUTPUT || echo "run=false" >> $GITHUB_OUTPUT
+
+    run:
+        needs: gate
+
+        permissions:
+            contents: read
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        env:
+            TZ: Europe/Madrid
+            RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+            SNAPSHOT_ID: ${{ inputs.snapshot_id }}
+            SUPABASE_DB_URI: ${{ secrets.SUPABASE_DB_URI_MONITORING }}
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v5
+              with: { python-version: "3.11" }
+            - run: |
+                  python -m pip install --upgrade pip
+                  pip install -r requirements.txt
+            - if: hashFiles('scripts/run_kpis.py') != '' && env.SUPABASE_DB_URI != ''
+              env:
+                  SUPABASE_DB_URI: ${{ secrets.SUPABASE_DB_URI_MONITORING }}
+                  OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
+                  PHOENIX_TOKEN: ${{ secrets.PHOENIX_TOKEN }}
+                  SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+              run: |
+                  python scripts/run_kpis.py --run-id "${RUN_ID}" --snapshot-id "${SNAPSHOT_ID}"

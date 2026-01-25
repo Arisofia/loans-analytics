@@ -1,37 +1,46 @@
 version: 2
 updates:
   # Maintain GitHub Actions
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: 'weekly'
+      interval: "weekly"
     open-pull-requests-limit: 5
     assignees:
-      - 'codex'
+      - "codex"
     groups:
       minor-and-patch:
-        update-types: ['minor', 'patch']
+        update-types: ["minor", "patch"]
 
   # Maintain Python dependencies (pip)
-  - package-ecosystem: 'pip'
-    directory: '/'
+  - package-ecosystem: "pip"
+    directory: "/"
     schedule:
-      interval: 'weekly'
+      interval: "weekly"
     open-pull-requests-limit: 10
     assignees:
-      - 'codex'
+      - "codex"
     groups:
       minor-and-patch:
-        update-types: ['minor', 'patch']
+        update-types: ["minor", "patch"]
 
   # Maintain JavaScript dependencies (npm)
-  - package-ecosystem: 'npm'
-    directory: '/'
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
-      interval: 'weekly'
+      interval: "weekly"
     open-pull-requests-limit: 10
     assignees:
-      - 'codex'
+      - "codex"
     groups:
       minor-and-patch:
-        update-types: ['minor', 'patch']
+        update-types: ["minor", "patch"]
+
+  # Maintain Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    assignees:
+      - "codex"

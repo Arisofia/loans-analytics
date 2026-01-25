@@ -1,0 +1,7 @@
+# Development / test dependencies
+pytest==8.2.1
+pandas>=2.2.0
+openpyxl>=3.1.0
+requests>=2.30.0
+jsonschema>=4.0.0
+pydantic>=1.10.0

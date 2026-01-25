@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "KPI Results Schema",
+  "type": "object",
+  "required": [
+    "run_id",
+    "timestamp",
+    "total_receivable_usd",
+    "collection_rate_pct",
+    "par_90_pct",
+    "num_records",
+    "pipeline_status"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "description": "Unique identifier for this pipeline run"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when pipeline completed"
+    },
+    "total_receivable_usd": {
+      "type": "number",
+      "description": "Total receivable amount in USD"
+    },
+    "total_eligible_usd": {
+      "type": "number",
+      "description": "Total eligible amount in USD"
+    },
+    "total_cash_available_usd": {
+      "type": "number",
+      "description": "Total cash available in USD"
+    },
+    "num_records": {
+      "type": "integer",
+      "description": "Number of records processed"
+    },
+    "num_segments": {
+      "type": "integer",
+      "description": "Number of portfolio segments"
+    },
+    "avg_deal_size_usd": {
+      "type": "number",
+      "description": "Average deal size in USD"
+    },
+    "collection_rate_pct": {
+      "type": "number",
+      "description": "Collection rate as percentage"
+    },
+    "par_90_pct": {
+      "type": "number",
+      "description": "Percentage at risk >90 days"
+    },
+    "delinquency_rate_pct": {
+      "type": "number",
+      "description": "Delinquency rate as percentage"
+    },
+    "par_0_7_pct": {
+      "type": "number"
+    },
+    "par_7_30_pct": {
+      "type": "number"
+    },
+    "par_30_60_pct": {
+      "type": "number"
+    },
+    "par_60_90_pct": {
+      "type": "number"
+    },
+    "par_90_plus_usd": {
+      "type": "number",
+      "description": "Amount at risk >90 days in USD"
+    },
+    "consumer_receivable_usd": {
+      "type": "number"
+    },
+    "sme_receivable_usd": {
+      "type": "number"
+    },
+    "consumer_collection_rate_pct": {
+      "type": "number"
+    },
+    "sme_collection_rate_pct": {
+      "type": "number"
+    },
+    "cash_efficiency_ratio": {
+      "type": "number",
+      "description": "Ratio of cash available to receivable"
+    },
+    "risk_concentration": {
+      "type": "number",
+      "description": "Risk concentration metric"
+    },
+    "portfolio_health_score": {
+      "type": "number",
+      "description": "Overall portfolio health 0-10"
+    },
+    "trend_collection_rate": {
+      "type": "number",
+      "description": "Collection rate trend (percentage change)"
+    },
+    "trend_delinquency_rate": {
+      "type": "number",
+      "description": "Delinquency rate trend (percentage change)"
+    },
+    "pipeline_status": {
+      "type": "string",
+      "enum": ["success", "partial_failure", "failure"],
+      "description": "Overall pipeline execution status"
+    },
+    "figma_sync_status": {
+      "type": "string",
+      "enum": ["success", "failed", "skipped"]
+    },
+    "notion_sync_status": {
+      "type": "string",
+      "enum": ["success", "failed", "skipped"]
+    },
+    "meta_sync_status": {
+      "type": "string",
+      "enum": ["success", "failed", "skipped"]
+    },
+    "error_count": {
+      "type": "integer",
+      "description": "Number of errors encountered"
+    },
+    "warnings_count": {
+      "type": "integer",
+      "description": "Number of warnings"
+    }
+  }
+}

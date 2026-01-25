@@ -1,0 +1,811 @@
+openapi: 3.0.3
+info:
+  title: Abaco Loans Analytics API
+  version: 1.0.0
+  description: |
+    REST API for the Abaco Loans Analytics platform providing portfolio KPI calculations,
+    drilldown analytics, authentication, and data quality insights.
+  contact:
+    name: Abaco Technology
+    email: support@abaco-tech.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: /api
+    description: Production API server
+  - url: http://localhost:3000/api
+    description: Local development server
+
+tags:
+  - name: Drilldowns
+    description: Analytics drilldown module operations
+  - name: Authentication
+    description: User authentication and session management
+  - name: KPIs
+    description: Key Performance Indicator calculations
+  - name: Analytics
+    description: Portfolio analytics and insights
+  - name: Data Quality
+    description: Data validation and quality scoring
+
+paths:
+  /drilldowns/status:
+    get:
+      summary: Get drilldown module statuses
+      description: Returns the operational status of each analytics drilldown module.
+      operationId: getDrilldownStatuses
+      tags:
+        - Drilldowns
+      responses:
+        "200":
+          description: Status of all drilldown modules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DrilldownStatusResponse"
+              example:
+                /delinquency: ok
+                /roll-rate: ok
+                /collections: ok
+                /ingestion-errors: ok
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/signout:
+    post:
+      summary: Sign out user
+      description: Terminates the current user session and invalidates the authentication token.
+      operationId: signOut
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        "302":
+          description: Redirect to login page after successful sign out
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Redirect URL to login page
+        "401":
+          description: Unauthorized - no active session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/confirm:
+    get:
+      summary: Confirm email OTP
+      description: Verifies the email one-time password token and activates the user account.
+      operationId: confirmEmailOtp
+      tags:
+        - Authentication
+      parameters:
+        - name: token_hash
+          in: query
+          required: true
+          description: The hashed OTP token received via email
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: true
+          description: The type of OTP verification
+          schema:
+            type: string
+            enum:
+              - signup
+              - recovery
+              - invite
+              - magiclink
+              - email_change
+        - name: next
+          in: query
+          required: false
+          description: URL to redirect after successful confirmation
+          schema:
+            type: string
+            default: /account
+      responses:
+        "302":
+          description: Redirect to account page or specified next URL
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Redirect URL after confirmation
+        "400":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analytics/kpis:
+    post:
+      summary: Calculate all portfolio KPIs
+      description: |
+        Computes all key performance indicators for the provided loan portfolio data.
+        Returns PAR30, PAR90, Collection Rate, Portfolio Health, LTV, DTI, and Portfolio Yield.
+      operationId: calculateKpis
+      tags:
+        - KPIs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanPortfolioRequest"
+      responses:
+        "200":
+          description: Successfully calculated KPIs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KpiResponse"
+        "400":
+          description: Invalid request - missing required fields or invalid data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Unprocessable entity - data validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+  /analytics/kpis/par30:
+    post:
+      summary: Calculate PAR30
+      description: |
+        Calculates the Portfolio at Risk 30 days metric - percentage of loans
+        that are 30+ days past due.
+      operationId: calculatePar30
+      tags:
+        - KPIs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanPortfolioRequest"
+      responses:
+        "200":
+          description: PAR30 calculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KpiSingleResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analytics/kpis/par90:
+    post:
+      summary: Calculate PAR90
+      description: |
+        Calculates the Portfolio at Risk 90 days metric - percentage of loans
+        that are 90+ days past due.
+      operationId: calculatePar90
+      tags:
+        - KPIs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanPortfolioRequest"
+      responses:
+        "200":
+          description: PAR90 calculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KpiSingleResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analytics/kpis/collection-rate:
+    post:
+      summary: Calculate Collection Rate
+      description: |
+        Calculates the loan collection rate as a percentage of expected payments
+        that were actually collected.
+      operationId: calculateCollectionRate
+      tags:
+        - KPIs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanPortfolioRequest"
+      responses:
+        "200":
+          description: Collection rate calculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KpiSingleResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analytics/kpis/portfolio-health:
+    post:
+      summary: Calculate Portfolio Health Score
+      description: |
+        Calculates a composite portfolio health score based on PAR30 and collection rate metrics.
+      operationId: calculatePortfolioHealth
+      tags:
+        - KPIs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanPortfolioRequest"
+      responses:
+        "200":
+          description: Portfolio health calculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KpiSingleResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analytics/kpis/ltv:
+    post:
+      summary: Calculate Loan-to-Value Ratio
+      description: |
+        Calculates the average Loan-to-Value (LTV) ratio across the portfolio.
+      operationId: calculateLtv
+      tags:
+        - KPIs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanPortfolioRequest"
+      responses:
+        "200":
+          description: LTV calculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KpiSingleResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analytics/kpis/dti:
+    post:
+      summary: Calculate Debt-to-Income Ratio
+      description: |
+        Calculates the average Debt-to-Income (DTI) ratio across borrowers in the portfolio.
+      operationId: calculateDti
+      tags:
+        - KPIs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanPortfolioRequest"
+      responses:
+        "200":
+          description: DTI calculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KpiSingleResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analytics/kpis/portfolio-yield:
+    post:
+      summary: Calculate Portfolio Yield
+      description: |
+        Calculates the weighted average portfolio yield based on interest rates and principal balances.
+      operationId: calculatePortfolioYield
+      tags:
+        - KPIs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanPortfolioRequest"
+      responses:
+        "200":
+          description: Portfolio yield calculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KpiSingleResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analytics/risk-alerts:
+    post:
+      summary: Get high-risk loan alerts
+      description: |
+        Identifies loans that exceed specified LTV and DTI thresholds,
+        returning a list of high-risk loans with computed risk scores.
+      operationId: getRiskAlerts
+      tags:
+        - Analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/LoanPortfolioRequest"
+                - type: object
+                  properties:
+                    ltv_threshold:
+                      type: number
+                      format: float
+                      default: 80.0
+                      description: LTV threshold percentage for high-risk classification
+                    dti_threshold:
+                      type: number
+                      format: float
+                      default: 50.0
+                      description: DTI threshold percentage for high-risk classification
+      responses:
+        "200":
+          description: List of high-risk loans
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskAlertsResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analytics/full-analysis:
+    post:
+      summary: Run comprehensive portfolio analysis
+      description: |
+        Executes a full portfolio analysis including all KPIs, data quality metrics,
+        and risk assessments. Returns a complete dashboard-ready response.
+      operationId: runFullAnalysis
+      tags:
+        - Analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanPortfolioRequest"
+      responses:
+        "200":
+          description: Complete portfolio analysis results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FullAnalysisResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /data-quality/profile:
+    post:
+      summary: Generate data quality profile
+      description: |
+        Analyzes the uploaded loan data for quality issues including duplicates,
+        null values, and invalid numeric conversions.
+      operationId: getDataQualityProfile
+      tags:
+        - Data Quality
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanPortfolioRequest"
+      responses:
+        "200":
+          description: Data quality profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataQualityResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /data-quality/validate:
+    post:
+      summary: Validate loan data schema
+      description: |
+        Validates that the provided loan data contains all required columns
+        and meets schema requirements.
+      operationId: validateLoanData
+      tags:
+        - Data Quality
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanPortfolioRequest"
+      responses:
+        "200":
+          description: Validation passed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResponse"
+        "422":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from authentication
+
+  schemas:
+    DrilldownStatusResponse:
+      type: object
+      additionalProperties:
+        type: string
+        enum:
+          - ok
+          - error
+      example:
+        /delinquency: ok
+        /roll-rate: ok
+        /collections: ok
+        /ingestion-errors: ok
+
+    LoanRecord:
+      type: object
+      required:
+        - loan_amount
+        - appraised_value
+        - borrower_income
+        - monthly_debt
+        - loan_status
+        - interest_rate
+        - principal_balance
+      properties:
+        loan_amount:
+          type: number
+          format: float
+          description: Original loan amount
+          example: 250000
+        appraised_value:
+          type: number
+          format: float
+          description: Appraised value of the collateral property
+          example: 300000
+        borrower_income:
+          type: number
+          format: float
+          description: Annual borrower income
+          example: 80000
+        monthly_debt:
+          type: number
+          format: float
+          description: Monthly debt obligations
+          example: 1500
+        loan_status:
+          type: string
+          description: Current loan status
+          enum:
+            - current
+            - 30-59 days past due
+            - 60-89 days past due
+            - 90+ days past due
+            - default
+            - paid off
+          example: current
+        interest_rate:
+          type: number
+          format: float
+          description: Annual interest rate as decimal (e.g., 0.035 for 3.5%)
+          minimum: 0
+          maximum: 1
+          example: 0.035
+        principal_balance:
+          type: number
+          format: float
+          description: Current outstanding principal balance
+          example: 240000
+
+    LoanPortfolioRequest:
+      type: object
+      required:
+        - loans
+      properties:
+        loans:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/LoanRecord"
+          description: Array of loan records for analysis
+
+    KpiContext:
+      type: object
+      properties:
+        metric:
+          type: string
+          description: Name of the KPI metric
+        timestamp:
+          type: string
+          format: date-time
+          description: Calculation timestamp
+        formula:
+          type: string
+          description: Formula used for calculation
+        sample_size:
+          type: integer
+          description: Number of records used in calculation
+
+    KpiSingleResponse:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          type: number
+          format: float
+          description: Calculated KPI value
+        context:
+          $ref: "#/components/schemas/KpiContext"
+      example:
+        value: 5.25
+        context:
+          metric: PAR30
+          timestamp: "2026-01-02T10:30:00Z"
+          sample_size: 1000
+
+    KpiResponse:
+      type: object
+      properties:
+        PAR30:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        PAR90:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        CollectionRate:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        PortfolioHealth:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        LTV:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        DTI:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        PortfolioYield:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        audit_trail:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEntry"
+
+    AuditEntry:
+      type: object
+      properties:
+        event:
+          type: string
+          description: Event name
+        status:
+          type: string
+          enum:
+            - started
+            - success
+            - error
+            - completed
+            - failed
+        timestamp:
+          type: string
+          format: date-time
+        actor:
+          type: string
+          description: System or user that triggered the event
+        action:
+          type: string
+          description: Action being performed
+
+    RiskLoan:
+      type: object
+      properties:
+        loan_amount:
+          type: number
+          format: float
+        ltv_ratio:
+          type: number
+          format: float
+        dti_ratio:
+          type: number
+          format: float
+        risk_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Normalized risk score (0-1)
+        loan_status:
+          type: string
+
+    RiskAlertsResponse:
+      type: object
+      properties:
+        high_risk_count:
+          type: integer
+          description: Number of high-risk loans identified
+        total_loans:
+          type: integer
+          description: Total loans analyzed
+        risk_ratio:
+          type: number
+          format: float
+          description: Percentage of portfolio flagged as high-risk
+        high_risk_loans:
+          type: array
+          items:
+            $ref: "#/components/schemas/RiskLoan"
+
+    FullAnalysisResponse:
+      type: object
+      properties:
+        portfolio_delinquency_rate_percent:
+          type: number
+          format: float
+        portfolio_yield_percent:
+          type: number
+          format: float
+        average_ltv_ratio_percent:
+          type: number
+          format: float
+        average_dti_ratio_percent:
+          type: number
+          format: float
+        data_quality_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        average_null_ratio_percent:
+          type: number
+          format: float
+        invalid_numeric_ratio_percent:
+          type: number
+          format: float
+        coercion_report:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Count of invalid values coerced per column
+
+    DataQualityResponse:
+      type: object
+      properties:
+        duplicate_ratio:
+          type: number
+          format: float
+          description: Percentage of duplicate rows
+        average_null_ratio:
+          type: number
+          format: float
+          description: Average null ratio across all columns
+        invalid_numeric_ratio:
+          type: number
+          format: float
+          description: Percentage of invalid numeric values
+        data_quality_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Overall data quality score (0-100)
+
+    ValidationResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          description: Whether validation passed
+        message:
+          type: string
+          description: Validation message
+        columns_present:
+          type: array
+          items:
+            type: string
+          description: List of required columns found
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          default: false
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+              code:
+                type: string
+        missing_columns:
+          type: array
+          items:
+            type: string
+          description: List of missing required columns
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details

@@ -1,11 +1,5 @@
-# Fintech Factory KPI Definitions
-# Complete taxonomy of Key Performance Indicators for all stakeholders
-# Vibe Solutioning: All KPIs recomputed from base data, deterministic design
-
-version: '1.0'
-namespace: fintech.factory
-last_updated: '2025-12-04T15:00:00Z'
-audit_required: true
+# KPI Definitions and Thresholds
+# Source of truth for KPI formulas and risk alerting thresholds
 
 kpis:
   # RISK STACK KPIS
@@ -36,15 +30,14 @@ kpis:
     threshold_critical: 1.0
     refresh_frequency: 'daily'
 
-  risk.portfolio_health:
-    name: 'Portfolio Health Score'
-    description: 'Composite score (0-10) reflecting portfolio quality'
-    formula: '(10 - PAR_90) * (RDR_90/100) * (CollectionRate * 10)'
-    unit: 'score'
-    threshold_warning: 5.0
-    threshold_critical: 3.0
-    refresh_frequency: 'daily'
-    data_source: 'computed'
+  PortfolioHealth:
+    display_name: "Portfolio Health Score"
+    formula: "composite(PAR30, CollectionRate)"
+    type: "composite"
+    thresholds:
+      ok: [90, 100]
+      warning: [75, 90]
+      critical: [0, 75]
 
   # GROWTH STACK KPIS
   growth.origination_volume:

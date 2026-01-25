@@ -1,6 +1,6 @@
-# ABACO Financial Intelligence Platform
+# AI-MultiAgent-Ecosystem – Abaco Analytics
 
-ABACO delivers an executive-grade analytics and governance stack for lending teams. The platform pairs a Next.js dashboard with Python risk pipelines, Azure deployment scripts, and traceable KPI governance. A dual interface is available: Streamlit for rapid exploration and an automated data pipeline for KPI computation and audit trailing.
+This repository hosts the Abaco Financial Intelligence Platform, including:
 
 ## Stack map
 - **apps/web**: Next.js dashboard for portfolio, risk, and growth views.
