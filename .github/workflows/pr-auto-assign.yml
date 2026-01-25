@@ -9,7 +9,7 @@ jobs:
   assign:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v6
+      - uses: actions/github-script@v8
         with:
           script: |
             const desiredReviewers = ['Arisofia'];
