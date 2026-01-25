@@ -97,4 +97,4 @@ def test_ingest__missing_columns_raises(monkeypatch, base_config, tmp_path):
     p.write_text("loan_id,outstanding_balance\n1,100\n")
 
     with pytest.raises(ValueError):
-        ui.ingest_file(p)
+        ui.ingest(p)

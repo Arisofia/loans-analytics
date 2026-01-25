@@ -265,7 +265,7 @@ class UnifiedIngestion(IngestionMixin):
         headers = headers or {}
         self._log_event("http_start", "initiated", url=url)
 
-        def _do_request(self) -> requests.Response:
+        def _do_request() -> requests.Response:
             """
             Performs a HTTP request after checking the circuit breaker and rate limiter.
 
