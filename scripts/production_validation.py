@@ -4,24 +4,23 @@ Production Validation & Health Check Procedures - Week 4
 Monitors V2 pipeline in production and validates output integrity
 """
 
-import numpy as np
-import sys  # noqa: E402
-from pathlib import Path  # noqa: E402
+import sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import json  # noqa: E402
-import logging  # noqa: E402
-from datetime import datetime  # noqa: E402
-from typing import Any, Dict  # noqa: E402
+import json
+import logging
+from datetime import datetime
+from typing import Any, Dict
 
-rng = np.random.default_rng(42)  # noqa: E402
-import pandas as pd  # noqa: E402
+import numpy as np
+import pandas as pd
 
-from src.kpis.engine import KPIEngineV2  # noqa: E402
+from src.kpi_engine_v2 import KPIEngineV2
 
 try:
-    from src.azure_tracing import setup_azure_tracing  # noqa: E402
+    from src.azure_tracing import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for production_validation")
@@ -46,15 +45,15 @@ class ProductionValidator:
 
     def _generate_realistic_test_data(self, n_rows: int) -> pd.DataFrame:
         """Generate realistic test data with valid KPI ranges"""
-        rng = np.random.default_rng(42)
+        np.random.seed(42)
 
-        total_receivable = rng.lognormal(9, 2, n_rows)
+        total_receivable = np.random.lognormal(9, 2, n_rows)
 
-        par_dpd_0_7 = total_receivable * rng.uniform(0, 0.03, n_rows)
-        par_dpd_7_30 = total_receivable * rng.uniform(0, 0.03, n_rows)
-        par_dpd_30_60 = total_receivable * rng.uniform(0, 0.08, n_rows)
-        par_dpd_60_90 = total_receivable * rng.uniform(0, 0.05, n_rows)
-        par_dpd_90_plus = total_receivable * rng.uniform(0, 0.10, n_rows)
+        par_dpd_0_7 = total_receivable * np.random.uniform(0, 0.03, n_rows)
+        par_dpd_7_30 = total_receivable * np.random.uniform(0, 0.03, n_rows)
+        par_dpd_30_60 = total_receivable * np.random.uniform(0, 0.08, n_rows)
+        par_dpd_60_90 = total_receivable * np.random.uniform(0, 0.05, n_rows)
+        par_dpd_90_plus = total_receivable * np.random.uniform(0, 0.10, n_rows)
 
         return pd.DataFrame(
             {
@@ -65,7 +64,7 @@ class ProductionValidator:
                 "dpd_30_60_usd": par_dpd_30_60,
                 "dpd_60_90_usd": par_dpd_60_90,
                 "dpd_90_plus_usd": par_dpd_90_plus,
-                "cash_available_usd": rng.uniform(0, 50000, n_rows),
+                "cash_available_usd": np.random.uniform(0, 50000, n_rows),
                 "total_eligible_usd": total_receivable * 0.95,
             }
         )
@@ -133,7 +132,7 @@ class ProductionValidator:
         try:
             df = self._generate_realistic_test_data(1000)
 
-            import time  # noqa: E402
+            import time
 
             start = time.time()
             engine = KPIEngineV2(df)

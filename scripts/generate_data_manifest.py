@@ -1,14 +1,14 @@
 """Generate data manifest with metadata about datasets."""
 
-import json  # noqa: E402
-import os  # noqa: E402
-import sys  # noqa: E402
-from datetime import datetime  # noqa: E402
-from pathlib import Path  # noqa: E402
-from typing import Dict, Optional  # noqa: E402
+import json
+import os
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, Optional
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from src.config.paths import Paths  # noqa: E402
+from src.config.paths import Paths
 
 
 def generate_manifest(data_dir: Optional[str] = None) -> Dict:

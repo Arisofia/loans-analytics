@@ -1,15 +1,14 @@
 #!/bin/bash
-set -euo pipefail
 # Service Login Helper Script
 
-printf '%b\n' "🔐 Service Authentication Status"
-printf '%b\n' "================================"
-printf '%b\n' ""
+echo "🔐 Service Authentication Status"
+echo "================================"
+echo ""
 
 # GitHub
-printf '%b\n' "✅ GitHub: Already authenticated"
-printf '%b\n' "   Account: JenineferDeras"
-printf '%b\n' ""
+echo "✅ GitHub: Already authenticated"
+echo "   Account: JenineferDeras"
+echo ""
 
 # Vercel
 echo "✅ Vercel: Already authenticated"
@@ -47,7 +46,7 @@ echo "   ✓ HUBSPOT_TOKEN"
 echo "   ✓ HUGGING_TOKEN"
 echo "   ✓ META_ABACO"
 echo "   ✓ OPEN_AI"
-
+echo "   ✓ SLACK_TOKEN"
 echo "   ✓ SONARQUBE_KEY (via GitHub Actions)"
 echo ""
 

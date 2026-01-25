@@ -5,15 +5,15 @@ Key Vault connectivity, plus Supabase API access, with proper error
 handling and logging.
 """
 
-import logging  # noqa: E402
-import sys  # noqa: E402
-from pathlib import Path  # noqa: E402
+import logging
+import sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from src.config.secrets import get_secrets_manager  # noqa: E402
+from src.config.secrets import get_secrets_manager
 
 try:
-    from src.azure_tracing import setup_azure_tracing  # noqa: E402
+    from src.azure_tracing import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for validate_azure_connection")

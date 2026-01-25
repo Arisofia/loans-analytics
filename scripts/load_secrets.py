@@ -5,24 +5,9 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.config.secrets import get_secrets_manager  # noqa: E402
+from src.config.secrets import get_secrets_manager
 
 load_dotenv()
-
-
-def redact_dict(d: dict, redact_keys: tuple = ("secret", "token", "password", "key")) -> dict:
-    """Return a copy of d with values for keys containing sensitive substrings replaced.
-
-    This is used by tests and logging to avoid printing secrets.
-    """
-    redacted = {}
-
-    for k, v in d.items():
-        if any(sub in k.lower() for sub in redact_keys):
-            redacted[k] = "<redacted>"
-        else:
-            redacted[k] = v
-    return redacted
 
 
 def load_secrets(use_vault_fallback: bool = True) -> dict:

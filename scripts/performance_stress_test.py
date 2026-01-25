@@ -4,29 +4,31 @@ Performance Stress Test - Week 3 Day 5-6
 Tests V2 pipeline with production-scale data and sustained load
 """
 
-import json  # noqa: E402
-import logging  # noqa: E402
-import os  # noqa: E402
-import sys  # noqa: E402
-import time  # noqa: E402
-from datetime import datetime  # noqa: E402
-from pathlib import Path  # noqa: E402
+import json
+import logging
+import os
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
 
-import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
-import psutil  # noqa: E402
+import numpy as np
+import pandas as pd
+import psutil
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.kpis.engine import KPIEngineV2  # noqa: E402
+from src.kpi_engine_v2 import KPIEngineV2
 
 try:
-    from src.azure_tracing import setup_azure_tracing  # noqa: E402
+    from src.azure_tracing import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for performance_stress_test")
-except Exception:
+except (ImportError, Exception) as tracing_err:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    logger = logging.getLogger(__name__)
+    logger.warning("Azure tracing not initialized: %s", tracing_err)
 
 
 class PerformanceStressTest:
@@ -39,19 +41,18 @@ class PerformanceStressTest:
             "summary": {},
         }
         self.process = psutil.Process(os.getpid())
-        # Use a per-instance RNG (Generator) for reproducible and thread-safe randomness - Updated to modern NumPy API
-        self.rng = np.random.default_rng(42)
 
     def create_test_dataset(self, size: int) -> pd.DataFrame:
-        """Create realistic test dataset using a per-instance RNG (Generator)"""
+        """Create realistic test dataset"""
+        np.random.seed(42)
         return pd.DataFrame(
             {
-                "dpd_30_60_usd": self.rng.uniform(0, 20000, size=size),
-                "dpd_60_90_usd": self.rng.uniform(0, 10000, size=size),
-                "dpd_90_plus_usd": self.rng.uniform(0, 5000, size=size),
-                "total_receivable_usd": self.rng.uniform(100000, 1500000, size=size),
-                "cash_available_usd": self.rng.uniform(1000, 150000, size=size),
-                "total_eligible_usd": self.rng.uniform(50000, 1200000, size=size),
+                "dpd_30_60_usd": np.random.uniform(0, 20000, size),
+                "dpd_60_90_usd": np.random.uniform(0, 10000, size),
+                "dpd_90_plus_usd": np.random.uniform(0, 5000, size),
+                "total_receivable_usd": np.random.uniform(100000, 1500000, size),
+                "cash_available_usd": np.random.uniform(1000, 150000, size),
+                "total_eligible_usd": np.random.uniform(50000, 1200000, size),
             }
         )
 
@@ -217,9 +218,7 @@ class PerformanceStressTest:
             "tests_passed": sum(1 for _ in [load_test, sustained, resource] if _),
             "performance_assessment": {
                 "scalability": "EXCELLENT" if load_test else "UNKNOWN",
-                "stability": (
-                    "STABLE" if sustained.get("memory", {}).get("stable") else "VARIABLE"
-                ),
+                "stability": "STABLE" if sustained.get("memory", {}).get("stable") else "VARIABLE",
                 "resource_efficiency": "EFFICIENT" if resource else "UNKNOWN",
             },
             "recommendations": self._generate_recommendations(),
