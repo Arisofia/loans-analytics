@@ -22,7 +22,7 @@ def get_pr_diff():
 
 def get_gemini_review(diff):
     genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-2.5-flash")
     prompt = f"Actúa como experto DevSecOps. Revisa este diff de PR. Identifica bugs críticos o problemas de seguridad. Sé conciso. DIFF:\n{diff[:30000]}"
     response = model.generate_content(prompt)
     return response.text
