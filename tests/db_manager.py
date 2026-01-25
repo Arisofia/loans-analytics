@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from psycopg import connect
+from psycopg import connect, OperationalError
 
 load_dotenv()
 
@@ -48,13 +48,15 @@ class DBManager:
         conn = self.get_connection()
         try:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO public.kpis (label, value, trend, status)
                     VALUES
                         ('Total Loan Volume', '$5,400,000', 12.5, 'positive'),
                         ('Active Borrowers', '142', 5.2, 'neutral'),
                         ('Risk Score', '85/100', -2.1, 'negative');
-                    """)
+                    """
+                )
             conn.commit()
             print("✅ [Python] KPI data seeded.")
         except Exception as e:
