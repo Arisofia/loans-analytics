@@ -7,16 +7,9 @@ ABACO delivers an executive-grade analytics and governance stack for lending tea
 - **infra/azure**: Azure infra-as-code and deployment scripts.
 - **data_samples**: Anonymized datasets for repeatable development and testing.
 
-## Observability, KPIs, and lineage
-- **KPI catalog**: Use `docs/KPI-Operating-Model.md` to define owners, formulas, and lineage links for every metric; keep PR and issue references for auditability.
-- **Dashboards**: Ensure every visualization lists source tables, refresh timestamp, and on-call owner. Target vs. actual, sparkline trends, and SLA badges should be present on executive views.
-- **Data quality**: Track null/invalid rates, schema drift counts, ingestion success %, and freshness lag; surface alerts into the dashboard and CI comments.
+  contains ContosoTeamStats, a .NET 6 Web API for managing sports teams that ships with Docker, Azure deployment scripts, SendGrid/Twilio integrations, and SQL Server migrations. Follow docs/ContosoTeamStats-setup.md for local setup, secrets, database provisioning, and container validation.
 
-## Governance and compliance guardrails
-- Enforce PR reviews, lint/test gates, and SonarQube quality gates before merging to main.
-- Store secrets in GitHub or cloud KMS; never commit credentials or sample PII.
-- Require audit logs for dashboard publishes/exports and validate access controls for sensitive fields.
-- Align contributions to the `docs/Analytics-Vision.md` narrative to keep KPIs, prompts, and dashboards within fintech standards.
+## Java and Gradle setup
 
 ## Getting started
 - Validate repository structure before running tooling:
