@@ -136,7 +136,7 @@ def test_ingest__with_par_balances(tmp_path, minimal_config):
     loans_file.write_text(par_csv)
 
     ingestion = UnifiedIngestion(minimal_config)
-    result = ingestion.ingest_(loans_file)
+    result = ingestion.ingest(loans_file)
 
     assert isinstance(result.df, pd.DataFrame)
     assert not result.df.empty
@@ -154,7 +154,7 @@ def test_ingest__with_dpd_data(tmp_path, minimal_config):
     loans_file.write_text(dpd_csv)
 
     ingestion = UnifiedIngestion(minimal_config)
-    result = ingestion.ingest_(loans_file)
+    result = ingestion.ingest(loans_file)
 
     assert isinstance(result.df, pd.DataFrame)
     assert not result.df.empty

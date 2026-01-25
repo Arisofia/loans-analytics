@@ -157,7 +157,27 @@ class TestAnalyticsPerformanceRobustness:
         with open(config_path, "w") as f:
             yaml.dump(config, f)
 
+        # FIX: Point to the existing pipeline script
+        pipeline_script = "python/scripts/run_v2_pipeline.py"
+        if not Path(pipeline_script).exists():
+            assert False, f"Pipeline script not found at {pipeline_script}"
+
         result = subprocess.run(
+            [
+                sys.executable,
+                pipeline_script,
+                "--input",
+                str(dataset),
+                "--config",
+                str(config_path),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            env={**os.environ, "OTEL_SDK_DISABLED": "true"},
+        )
+
+        assert result.returncode == 0, f"Pipeline failed with stderr: {result.stderr}"
             [
                 sys.executable,
                 "scripts/run_data_pipeline.py",
