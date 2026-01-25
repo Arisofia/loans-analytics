@@ -4,19 +4,19 @@ These lightweight wrappers keep network concerns isolated from the business
 logic while providing minimal ergonomics for invoking Grok or Gemini models.
 """
 
-import json  # noqa: E402
-import logging  # noqa: E402
-import os  # noqa: E402
-import warnings  # noqa: E402
-from dataclasses import dataclass  # noqa: E402
-from typing import Any, Dict, Optional  # noqa: E402
+import json
+import logging
+import os
+import warnings
+from dataclasses import dataclass
+from typing import Any, Dict, Optional
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", FutureWarning)
-    import google.generativeai as genai  # noqa: E402
-import requests  # noqa: E402
-from requests.adapters import HTTPAdapter  # noqa: E402
-from urllib3.util.retry import Retry  # noqa: E402
+    import google.generativeai as genai
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ class GeminiClient:
         logger.debug("Sending Gemini request", extra={"model": self.model.model_name})
         gen_context = context or {}
         # Casting to Any to avoid mypy type mismatch with Google SDK's internal types
-        from typing import cast  # noqa: E402
+        from typing import cast
 
         response = self.model.generate_content(prompt, generation_config=cast(Any, gen_context))
 

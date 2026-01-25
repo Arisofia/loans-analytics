@@ -7,12 +7,12 @@ import pandas as pd
 import psycopg
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from src.config.paths import Paths  # noqa: E402
+from src.config.paths import Paths
 
 DB_DSN = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres")
 
 try:
-    from src.azure_tracing import setup_azure_tracing  # noqa: E402
+    from src.azure_tracing import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for load_csv_to_db")
@@ -20,7 +20,6 @@ except (ImportError, Exception) as tracing_err:
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     logger.warning("Azure tracing not initialized: %s", tracing_err)
-
 
 def load_data():
     data_dir = Paths.data_dir() / "abaco"

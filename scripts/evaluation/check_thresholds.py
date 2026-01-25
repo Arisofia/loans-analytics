@@ -6,13 +6,13 @@ This script checks if model performance metrics meet minimum quality standards
 and produces a detailed pass/fail report for CI/CD integration.
 """
 
-import argparse  # noqa: E402
-import json  # noqa: E402
-import sys  # noqa: E402
-from pathlib import Path  # noqa: E402
-from typing import Any, Dict, List, Tuple, Union  # noqa: E402
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any, Dict, List, Tuple, Union
 
-import yaml  # noqa: E402
+import yaml
 
 
 class ThresholdValidator:
@@ -207,10 +207,7 @@ def main():
         "--config", type=Path, required=True, help="Path to YAML threshold configuration file"
     )
     parser.add_argument(
-        "--output",
-        type=Path,
-        required=True,
-        help="Path to save validation results JSON",
+        "--output", type=Path, required=True, help="Path to save validation results JSON"
     )
     parser.add_argument("--strict", action="store_true", help="Treat warnings as failures")
 

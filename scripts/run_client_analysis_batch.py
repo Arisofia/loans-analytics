@@ -18,7 +18,7 @@ import requests
 
 # Optional: Azure Application Insights tracing
 try:
-    from src.azure_tracing import setup_azure_tracing, trace_analytics_job  # noqa: E402
+    from src.azure_tracing import setup_azure_tracing, trace_analytics_job
 
     AZURE_TRACING_ENABLED = True
 except ImportError:
@@ -29,8 +29,6 @@ except ImportError:
             return func
 
         return decorator
-
-
 # -----------------
 # Logging
 # -----------------
@@ -53,7 +51,6 @@ def _setup_logger(level: str) -> logging.Logger:
     h.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
     logger.addHandler(h)
     return logger
-
 
 def _env(name: str) -> str:
     v = os.getenv(name)

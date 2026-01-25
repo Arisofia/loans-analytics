@@ -6,11 +6,11 @@ Script to validate KPI mapping table against codebase data sources and KPI defin
 Usage: python validate_kpi_mapping.py exports/KPI_Mapping_Table_for_Presentation.md config/kpi_definitions.yml
 """
 
-import re  # noqa: E402
-import sys  # noqa: E402
-from typing import Set  # noqa: E402
+import re
+import sys
+from typing import Set
 
-import yaml  # noqa: E402
+import yaml
 
 MAPPING_ROW_PATTERN = re.compile(
     r"^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$"

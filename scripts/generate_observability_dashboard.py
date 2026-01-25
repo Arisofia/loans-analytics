@@ -5,10 +5,10 @@ Generate observability dashboard script.
 This script generates an HTML observability dashboard from collected metrics.
 """
 
-import json  # noqa: E402
-import logging  # noqa: E402
-from datetime import datetime, timezone  # noqa: E402
-from pathlib import Path  # noqa: E402
+import json
+import logging
+from datetime import datetime, timezone
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 
 def _calculate_success_rate(metrics):
     """Calculate success rate from metrics."""
-    pipeline = metrics.get("pipeline", {})
-    total = pipeline.get("total_runs", 0)
-    failed = pipeline.get("failed_runs", 0)
-
+    pipeline = metrics.get('pipeline', {})
+    total = pipeline.get('total_runs', 0)
+    failed = pipeline.get('failed_runs', 0)
+    
     if total == 0:
         return 0
-
+    
     success_rate = ((total - failed) / total) * 100
     return round(success_rate, 1)
 
@@ -31,7 +31,7 @@ def generate_dashboard(pipeline_status=None, agent_status=None, quality_trend=No
     """Generate observability dashboard HTML."""
     output_dir = Path("outputs")
     output_dir.mkdir(exist_ok=True)
-
+    
     # Load all metric files
     metrics_file = output_dir / "opik_metrics.json"
     if metrics_file.exists():
@@ -39,10 +39,10 @@ def generate_dashboard(pipeline_status=None, agent_status=None, quality_trend=No
             metrics = json.load(f)
     else:
         metrics = {}
-
+    
     # Calculate success rate before using it in HTML
     success_rate = _calculate_success_rate(metrics)
-
+    
     # Generate HTML dashboard
     html = f"""
 <!DOCTYPE html>
@@ -135,7 +135,7 @@ def generate_dashboard(pipeline_status=None, agent_status=None, quality_trend=No
     <div class="container">
         <h1>🔍 Abaco Analytics - Observability Dashboard</h1>
         <p class="timestamp">Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
-
+        
         <h2>System Status</h2>
         <div class="metrics-grid">
             <div class="metric-card success">
@@ -143,50 +143,50 @@ def generate_dashboard(pipeline_status=None, agent_status=None, quality_trend=No
                 <div class="metric-value">{pipeline_status or 'healthy'}</div>
                 <span class="status-badge healthy">{pipeline_status or 'healthy'}</span>
             </div>
-
+            
             <div class="metric-card success">
                 <div class="metric-label">Agent Performance</div>
                 <div class="metric-value">{agent_status or 'optimal'}</div>
                 <span class="status-badge healthy">{agent_status or 'optimal'}</span>
             </div>
-
+            
             <div class="metric-card success">
                 <div class="metric-label">Data Quality</div>
                 <div class="metric-value">{quality_trend or 'stable'}</div>
                 <span class="status-badge healthy">{quality_trend or 'stable'}</span>
             </div>
         </div>
-
+        
         <h2>Pipeline Metrics</h2>
         <div class="metrics-grid">
             <div class="metric-card">
                 <div class="metric-label">Total Runs</div>
                 <div class="metric-value">{metrics.get('pipeline', {}).get('total_runs', 0)}</div>
             </div>
-
+            
             <div class="metric-card">
                 <div class="metric-label">Success Rate</div>
                 <div class="metric-value">{success_rate}%</div>
             </div>
-
+            
             <div class="metric-card">
                 <div class="metric-label">Avg Duration</div>
                 <div class="metric-value">{metrics.get('pipeline', {}).get('average_duration_seconds', 0):.1f}s</div>
             </div>
         </div>
-
+        
         <h2>Agent Metrics</h2>
         <div class="metrics-grid">
             <div class="metric-card">
                 <div class="metric-label">Total Executions</div>
                 <div class="metric-value">{metrics.get('agents', {}).get('total_executions', 0)}</div>
             </div>
-
+            
             <div class="metric-card">
                 <div class="metric-label">Avg Response Time</div>
                 <div class="metric-value">{metrics.get('agents', {}).get('average_response_time_ms', 0):.0f}ms</div>
             </div>
-
+            
             <div class="metric-card">
                 <div class="metric-label">Error Rate</div>
                 <div class="metric-value">{metrics.get('agents', {}).get('error_rate', 0) * 100:.1f}%</div>
@@ -196,25 +196,25 @@ def generate_dashboard(pipeline_status=None, agent_status=None, quality_trend=No
 </body>
 </html>
 """
-
+    
     # Write dashboard
     dashboard_file = output_dir / "dashboard.html"
     with open(dashboard_file, "w") as f:
         f.write(html)
-
+    
     logger.info(f"Dashboard generated: {dashboard_file}")
     return dashboard_file
 
 
 if __name__ == "__main__":
-    import sys  # noqa: E402
-
+    import sys
+    
     try:
         # Parse command line arguments
         pipeline_status = None
         agent_status = None
         quality_trend = None
-
+        
         for arg in sys.argv[1:]:
             if arg.startswith("--pipeline-status") and "=" in arg:
                 value = arg.split("=", 1)[1]
@@ -225,7 +225,7 @@ if __name__ == "__main__":
             elif arg.startswith("--quality-trend") and "=" in arg:
                 value = arg.split("=", 1)[1]
                 quality_trend = value if value else None
-
+        
         dashboard_file = generate_dashboard(pipeline_status, agent_status, quality_trend)
         print(f"✓ Dashboard generated: {dashboard_file}")
     except Exception as e:

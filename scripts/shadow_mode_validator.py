@@ -1,23 +1,24 @@
-# !/usr/bin/env python
-# Shadow Mode Validator - Week 4
-# Validates V2 pipeline in shadow mode against production
+#!/usr/bin/env python
+"""
+Shadow Mode Validator - Week 3 Day 3-4
+Runs V1 and V2 pipelines in parallel and compares outputs
+"""
+
+import json
+import logging
+import sys
+from datetime import datetime
+from pathlib import Path
+
 import numpy as np
-
-import json  # noqa: E402
-import logging  # noqa: E402
-import sys  # noqa: E402
-from datetime import datetime  # noqa: E402
-from pathlib import Path  # noqa: E402
-
-rng = np.random.default_rng(42)  # noqa: E402
-import pandas as pd  # noqa: E402
+import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.kpis.engine import KPIEngineV2  # noqa: E402
+from src.kpi_engine_v2 import KPIEngineV2
 
 try:
-    from src.azure_tracing import setup_azure_tracing  # noqa: E402
+    from src.azure_tracing import setup_azure_tracing
 
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for shadow_mode_validator")
@@ -246,17 +247,17 @@ class ShadowModeValidator:
 
 if __name__ == "__main__":
     # Create test dataset
-    rng = rng.default_rng(42)
+    np.random.seed(42)
     n_rows = 1000
 
     test_df = pd.DataFrame(
         {
-            "dpd_30_60_usd": rng.uniform(0, 20000, n_rows),
-            "dpd_60_90_usd": rng.uniform(0, 10000, n_rows),
-            "dpd_90_plus_usd": rng.uniform(0, 5000, n_rows),
-            "total_receivable_usd": rng.uniform(100000, 1500000, n_rows),
-            "cash_available_usd": rng.uniform(1000, 150000, n_rows),
-            "total_eligible_usd": rng.uniform(50000, 1200000, n_rows),
+            "dpd_30_60_usd": np.random.uniform(0, 20000, n_rows),
+            "dpd_60_90_usd": np.random.uniform(0, 10000, n_rows),
+            "dpd_90_plus_usd": np.random.uniform(0, 5000, n_rows),
+            "total_receivable_usd": np.random.uniform(100000, 1500000, n_rows),
+            "cash_available_usd": np.random.uniform(1000, 150000, n_rows),
+            "total_eligible_usd": np.random.uniform(50000, 1200000, n_rows),
         }
     )
 
