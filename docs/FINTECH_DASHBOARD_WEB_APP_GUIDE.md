@@ -16,6 +16,7 @@ This guide consolidates the dashboard requirements and maps them to the existing
   npm install @heroicons/react axios react-plotly.js plotly.js @headlessui/react react-tooltip
   npm install --save-dev @types/react-plotly.js
   ```
+
 - Extend `tailwind.config.{js,ts}` with the corporate palette and condensed fonts; import Google Fonts in `src/app/globals.css` and apply dark-mode defaults (black background, gray text, purple accents).
 - Build shared components:
   - `Layout` with sidebar + top-level navigation.
@@ -33,6 +34,7 @@ This guide consolidates the dashboard requirements and maps them to the existing
   - `POST /ai/summary` and `POST /ai/chat` for AI insights using OpenAI/Gemini models (keys via environment variables).
   - `POST /retrain` to trigger retraining scripts for continuous learning workflows.
 - Add CORS to allow the Next.js domain. Run locally with:
+
   ```bash
   uvicorn apps.analytics.api.main:app --reload --host 0.0.0.0 --port 8000
   ```

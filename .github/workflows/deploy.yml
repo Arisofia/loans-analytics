@@ -1,16 +1,16 @@
 name: Deploy to Vercel and Azure
 
-on:
+"on":
   workflow_dispatch:
   push:
     branches:
       - main
     paths:
-      - 'apps/web/src/**'
-      - 'apps/web/public/**'
-      - 'apps/web/package.json'
-      - 'apps/web/next.config.js'
-      - 'package.json'
+      - "apps/web/src/**"
+      - "apps/web/public/**"
+      - "apps/web/package.json"
+      - "apps/web/next.config.js"
+      - "package.json"
 
 jobs:
   deploy-vercel:
@@ -18,54 +18,76 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
 
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "pnpm"
+          cache-dependency-path: apps/web/pnpm-lock.yaml
 
       - name: Check Vercel secrets
         id: vercel_secrets
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           missing=""
-          [ -z "${{ secrets.VERCEL_TOKEN }}" ] && missing="$missing VERCEL_TOKEN"
-          [ -z "${{ secrets.VERCEL_ORG_ID }}" ] && missing="$missing VERCEL_ORG_ID"
-          [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ] && missing="$missing VERCEL_PROJECT_ID"
+          [ -z "$VERCEL_TOKEN" ] && missing="$missing VERCEL_TOKEN"
+          [ -z "$VERCEL_ORG_ID" ] && missing="$missing VERCEL_ORG_ID"
+          [ -z "$VERCEL_PROJECT_ID" ] && missing="$missing VERCEL_PROJECT_ID"
           if [ -z "$missing" ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "Missing secrets:$missing"
+            echo "::warning::Missing Vercel secrets:$missing"
           fi
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Check AWS secrets
+        id: aws_secrets
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          if [ -n "$AWS_S3_BUCKET" ] && [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::AWS secrets not fully configured, skipping S3 upload"
+          fi
+
       - name: Install dependencies
         run: |
-          pnpm install --frozen-lockfile
+          pnpm -C apps/web install --frozen-lockfile
 
       - name: Pull Vercel project settings
-        if: steps.vercel_secrets.outputs.present == 'true'
+        if: steps.vercel_secrets.outputs.present == true
+        working-directory: apps/web
         run: npx vercel pull --yes --environment=production --token "${{ secrets.VERCEL_TOKEN }}"
-
 
       - name: Build
         run: |
-          pnpm build
+          pnpm -C apps/web build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Upload build artifact (local)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: web-build
-          path: .next
+          path: apps/web/.next
 
       - name: Upload build to S3 (cloud)
-        if: env.AWS_S3_BUCKET != ''
+        if: steps.aws_secrets.outputs.present == true
         uses: jakejarvis/s3-sync-action@master
         with:
           args: --acl private --follow-symlinks
@@ -73,17 +95,18 @@ jobs:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: 'us-east-1'
-          SOURCE_DIR: '.next'
+          AWS_REGION: "us-east-1"
+          SOURCE_DIR: "apps/web/.next"
 
       - name: Deploy to Vercel
-        if: steps.vercel_secrets.outputs.present == 'true'
+        if: steps.vercel_secrets.outputs.present == true
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
+          vercel-args: "--prod"
+          working-directory: apps/web
 
   deploy-azure:
     name: Deploy to Azure (fallback)

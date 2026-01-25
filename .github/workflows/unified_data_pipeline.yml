@@ -1,0 +1,96 @@
+name: Unified Multi-Agent Data Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "data/**"
+      - "src/**"
+      - "scripts/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "data/**"
+      - "src/**"
+      - "scripts/**"
+  schedule:
+    # Run daily at 4:00 AM CET (3:00 AM UTC) - before agent workflows
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    name: Execute Unified Pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute Unified Data Pipeline
+        id: pipeline
+        if: env.SUPABASE_SERVICE_ROLE != ''
+        env:
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+        run: |
+          echo "Running unified data pipeline (orchestrator)..."
+          python scripts/run_data_pipeline.py --action github-action
+
+        with:
+          payload: |
+            {
+              "text": "✅ Unified Data Pipeline completed successfully",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Status:* SUCCESS\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>"
+                  }
+                }
+              ]
+            }
+        env:
+
+        with:
+          payload: |
+            {
+              "text": "🚨 Unified Data Pipeline FAILED",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Status:* FAILED\n*Workflow:* `${{ github.workflow }}`\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>"
+                  }
+                }
+              ]
+            }
+        env:
+
+      - name: Upload Pipeline Artifacts
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: data-pipeline-results
+          path: |
+            logs
+            data/manifest.json
+            exports
+          retention-days: 14

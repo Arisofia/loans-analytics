@@ -15,13 +15,15 @@ param sqlFirewallRules array = []
 param allowAzureServices bool = true
 
 var firewallRules = concat(
-  allowAzureServices ? [
-    {
-      name: 'AllowAzureServices'
-      startIpAddress: '0.0.0.0'
-      endIpAddress: '0.0.0.0'
-    }
-  ] : [],
+  allowAzureServices
+    ? [
+        {
+          name: 'AllowAzureServices'
+          startIpAddress: '0.0.0.0'
+          endIpAddress: '0.0.0.0'
+        }
+      ]
+    : [],
   sqlFirewallRules
 )
 
@@ -64,13 +66,15 @@ resource sqlserver 'Microsoft.Sql/servers@2022-02-01-preview' = {
   }
 }
 
-resource sqlFirewall 'Microsoft.Sql/servers/firewallRules@2022-02-01-preview' = [for rule in firewallRules: {
-  name: rule.name
-  properties: {
-    startIpAddress: rule.startIpAddress
-    endIpAddress: rule.endIpAddress
+resource sqlFirewall 'Microsoft.Sql/servers/firewallRules@2022-02-01-preview' = [
+  for rule in firewallRules: {
+    name: rule.name
+    properties: {
+      startIpAddress: rule.startIpAddress
+      endIpAddress: rule.endIpAddress
+    }
   }
-}]
+]
 
 resource sqldb 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
   name: sqlDbName
@@ -86,6 +90,43 @@ resource sqldb 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
   }
 }
 
+resource keyvault 'Microsoft.KeyVault/vaults@2023-02-01' = {
+  name: '${webAppName}-kv'
+  location: location
+  properties: {
+    sku: {
+      family: 'A'
+      name: 'standard'
+    }
+    tenantId: subscription().tenantId
+    enableRbacAuthorization: true
+    enabledForDeployment: true
+    enabledForTemplateDeployment: true
+  }
+}
+
+resource appinsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: '${webAppName}-insights'
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    RetentionInDays: 90
+  }
+}
+
+resource webappconfig 'Microsoft.Web/sites/config@2022-09-01' = {
+  parent: webapp
+  name: 'appsettings'
+  properties: {
+    APPLICATIONINSIGHTS_CONNECTION_STRING: appinsights.properties.ConnectionString
+    AZURE_STORAGE_CONNECTION_STRING: 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${storage.listKeys().keys[0].value};EndpointSuffix=core.windows.net'
+    AZURE_KEY_VAULT_URL: keyvault.properties.vaultUri
+  }
+}
+
 output webAppUrl string = webapp.properties.defaultHostName
 output storageAccount string = storage.name
 output sqlDb string = sqldb.name
+output keyVaultUrl string = keyvault.properties.vaultUri
+output appInsightsKey string = appinsights.properties.InstrumentationKey

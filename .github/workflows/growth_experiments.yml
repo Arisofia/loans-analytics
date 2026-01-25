@@ -1,0 +1,51 @@
+name: Growth Experiments
+"on":
+  schedule:
+    - cron: "0 13 * * *" # 2:00 PM CET daily
+  workflow_dispatch:
+
+jobs:
+  growth-experiments:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Check secrets availability
+        id: check-secrets
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+        run: |
+          missing=""
+          if [ -z "$OPENAI_API_KEY" ]; then
+            missing="$missing OPENAI_API_KEY"
+          fi
+          if [ -z "$SUPABASE_SERVICE_ROLE" ]; then
+            missing="$missing SUPABASE_SERVICE_ROLE"
+          fi
+
+          if [ -z "$missing" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Missing required secrets:$missing"
+          fi
+
+          else
+          fi
+      - name: Setup Python Environment
+        if: steps.check-secrets.outputs.run == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Dependencies
+        if: steps.check-secrets.outputs.run == 'true'
+        run: |
+          pip install -r requirements.txt
+      - name: Run Growth Experiment Analysis
+        if: steps.check-secrets.outputs.run == 'true' && hashFiles('scripts/growth_experiments.py') != ''
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+        run: |
+          python scripts/growth_experiments.py

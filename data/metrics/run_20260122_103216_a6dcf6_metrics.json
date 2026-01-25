@@ -1,0 +1,45 @@
+{
+  "PAR30": {
+    "value": 3.0,
+    "formula": "SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100",
+    "rows_processed": 2,
+    "null_count": 0,
+    "timestamp": "2026-01-22T10:32:16.720185+00:00",
+    "dpd_30_60_sum": 250.0,
+    "dpd_60_90_sum": 250.0,
+    "dpd_90_plus_sum": 250.0,
+    "total_receivable_sum": 25000.0,
+    "metric": "PAR30"
+  },
+  "PAR90": {
+    "value": 1.0,
+    "formula": "SUM(dpd_90_plus_usd) / SUM(total_receivable_usd) * 100",
+    "rows_processed": 2,
+    "null_count": 0,
+    "timestamp": "2026-01-22T10:32:16.720372+00:00",
+    "dpd_sum": 250.0,
+    "total_receivable_sum": 25000.0,
+    "metric": "PAR90"
+  },
+  "CollectionRate": {
+    "value": 0.0,
+    "formula": "SUM(cash_available) / SUM(total_eligible) * 100",
+    "rows_processed": 2,
+    "null_count": 0,
+    "timestamp": "2026-01-22T10:32:16.720590+00:00",
+    "cash_sum": 0.0,
+    "eligible_sum": 25000.0,
+    "metric": "CollectionRate"
+  },
+  "PortfolioHealth": {
+    "value": 0.0,
+    "formula": "(10 - PAR30/10) * (CollectionRate/10)",
+    "rows_processed": 2,
+    "null_count": 0,
+    "timestamp": "2026-01-22T10:32:16.720624+00:00",
+    "par_30_input": 3.0,
+    "collection_rate_input": 0.0,
+    "par_component": 9.7,
+    "coll_component": 0.0
+  }
+}

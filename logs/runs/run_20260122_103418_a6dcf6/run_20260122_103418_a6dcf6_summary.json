@@ -1,0 +1,30 @@
+{
+  "status": "success",
+  "run_id": "run_20260122_103418_a6dcf6",
+  "started_at": "2026-01-22T10:34:18.756964+00:00",
+  "completed_at": "2026-01-22T10:34:18.798863+00:00",
+  "phases": {
+    "ingestion": {
+      "run_id": "ingest_4c6bd098486d",
+      "rows": 2
+    },
+    "transformation": {
+      "run_id": "run_20260122_103418_a6dcf6",
+      "rows": 2,
+      "masked_columns": []
+    },
+    "calculation": {
+      "run_id": "run_20260122_103418_a6dcf6",
+      "metrics": ["PAR30", "PAR90", "CollectionRate", "PortfolioHealth"],
+      "anomalies": {}
+    },
+    "output": {
+      "manifest": "/private/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/zenflow/worktrees/new-task-gemini-fed3/logs/runs/run_20260122_103418_a6dcf6/run_20260122_103418_a6dcf6_manifest.json",
+      "outputs": {
+        "parquet": "/private/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/zenflow/worktrees/new-task-gemini-fed3/data/metrics/run_20260122_103418_a6dcf6.parquet",
+        "csv": "/private/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/zenflow/worktrees/new-task-gemini-fed3/data/metrics/run_20260122_103418_a6dcf6.csv",
+        "metrics_json": "/private/var/folders/p6/1l1l131j1r9dbc_0xgdqbshr0000gn/T/zenflow/worktrees/new-task-gemini-fed3/data/metrics/run_20260122_103418_a6dcf6_metrics.json"
+      }
+    }
+  }
+}

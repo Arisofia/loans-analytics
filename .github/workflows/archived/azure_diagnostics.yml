@@ -1,0 +1,101 @@
+name: Azure Diagnostics (dispatchable)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate-azure:
+    uses: ./.github/workflows/reusable_secret_check.yml
+    with:
+      secret_names: 'AZURE_CREDENTIALS'
+    secrets: inherit
+
+  validate-acr:
+    uses: ./.github/workflows/reusable_secret_check.yml
+    with:
+      secret_names: 'ACR_LOGIN_SERVER,ACR_USERNAME,ACR_PASSWORD'
+    secrets: inherit
+
+  validate-storage:
+    uses: ./.github/workflows/reusable_secret_check.yml
+    with:
+      secret_names: 'AZURE_STORAGE_ACCOUNT_NAME,AZURE_STORAGE_CONNECTION_STRING'
+    secrets: inherit
+
+  validate-swa:
+    uses: ./.github/workflows/reusable_secret_check.yml
+    with:
+      secret_names: 'AZURE_STATIC_WEB_APPS_API_TOKEN'
+    secrets: inherit
+
+  diagnostics:
+    needs: [validate-azure, validate-acr, validate-storage, validate-swa]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare diagnostics folder
+        run: |
+          mkdir -p diagnostics
+          echo "diagnostics start: $(date -u)" > diagnostics/README.txt
+
+      - name: Set up Azure CLI
+        uses: azure/CLI@v1
+        with:
+          azcliversion: '2.49.0'
+
+      - name: Azure login (service principal)
+        if: ${{ needs.validate-azure.outputs.all_secrets_present == true }}
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Capture Azure account
+        if: ${{ needs.validate-azure.outputs.all_secrets_present == true }}
+        run: |
+          az account show --output json > diagnostics/az_account.json || echo '{}' > diagnostics/az_account.json
+
+      - name: ACR repositories (if available)
+        if: ${{ needs.validate-acr.outputs.all_secrets_present == true && needs.validate-azure.outputs.all_secrets_present == true }}
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+        run: |
+          registry=$(echo "$ACR_LOGIN_SERVER" | cut -d'.' -f1)
+          az acr repository list --name "$registry" --output json > diagnostics/acr_repos.json || echo '[]' > diagnostics/acr_repos.json
+
+      - name: Storage containers (if available)
+        if: ${{ needs.validate-storage.outputs.all_secrets_present == true }}
+        run: |
+          echo "Listing containers using AZURE_STORAGE_CONNECTION_STRING"
+          az storage container list --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --output json > diagnostics/storage_containers.json || echo '[]' > diagnostics/storage_containers.json
+
+      - name: SWA token check
+        if: ${{ needs.validate-swa.outputs.all_secrets_present == true }}
+        run: echo "SWA token present" > diagnostics/swa_status.txt
+
+      - name: Summarize diagnostics
+        run: |
+          echo "Diagnostics summary:" > diagnostics/summary.txt
+          echo "validate-azure: ${{ needs.validate-azure.outputs.all_secrets_present }}" >> diagnostics/summary.txt
+          echo "validate-acr: ${{ needs.validate-acr.outputs.all_secrets_present }}" >> diagnostics/summary.txt
+          echo "validate-storage: ${{ needs.validate-storage.outputs.all_secrets_present }}" >> diagnostics/summary.txt
+          echo "validate-swa: ${{ needs.validate-swa.outputs.all_secrets_present }}" >> diagnostics/summary.txt
+          ls -lah diagnostics >> diagnostics/summary.txt || true
+
+      - name: Upload diagnostics artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: azure-diagnostics
+          path: diagnostics
+
+      - name: Output availability as job summary
+        run: |
+          echo "Azure available: ${{ needs.validate-azure.outputs.all_secrets_present }}"
+          echo "ACR available: ${{ needs.validate-acr.outputs.all_secrets_present }}"
+          echo "Storage available: ${{ needs.validate-storage.outputs.all_secrets_present }}"
+          echo "SWA available: ${{ needs.validate-swa.outputs.all_secrets_present }}"

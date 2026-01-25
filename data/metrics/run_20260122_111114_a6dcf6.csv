@@ -1,0 +1,3 @@
+loan_id,total_receivable_usd,total_eligible_usd,discounted_balance_usd,cash_available_usd,dpd_0_7_usd,dpd_7_30_usd,dpd_30_60_usd,dpd_60_90_usd,dpd_90_plus_usd,measurement_date,_tx_run_id,_tx_timestamp
+looker_snapshot_20251201,10000.0,10000.0,10000.0,0.0,9500.0,200.0,100.0,100.0,100.0,2025-12-01,run_20260122_111114_a6dcf6,2026-01-22T11:11:14.659532+00:00
+looker_snapshot_20251202,15000.0,15000.0,15000.0,0.0,14250.0,300.0,150.0,150.0,150.0,2025-12-02,run_20260122_111114_a6dcf6,2026-01-22T11:11:14.659532+00:00

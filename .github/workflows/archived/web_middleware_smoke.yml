@@ -1,0 +1,26 @@
+name: Web middleware smoke tests
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/**'
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: apps/web
+
+      - name: Run unit tests
+        run: npm run test:unit
+        working-directory: apps/web
