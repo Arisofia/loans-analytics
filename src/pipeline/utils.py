@@ -26,13 +26,19 @@ class RetryPolicy:
                 return func(*args, **kwargs)
             except Exception as e:
                 last_exception = e
-                if on_retry:
-                    on_retry(attempt, e)
+                    if on_retry:
+                        on_retry(e)
                 if attempt < self.max_retries:
                     time.sleep(self.backoff_seconds * (2**attempt))
         if last_exception:
             raise last_exception
         raise Exception("Retry failed without exception")
+            import random
+            if attempt < self.max_retries:
+                sleep_time = self.backoff_seconds * (2 ** attempt)
+                if self.jitter_seconds > 0:
+                    sleep_time += random.uniform(0, self.jitter_seconds)
+                time.sleep(sleep_time)
 
 
 class CircuitBreaker:
