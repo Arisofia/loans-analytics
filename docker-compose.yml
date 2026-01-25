@@ -22,6 +22,8 @@ services:
       retries: 3
     depends_on:
       - backend
+    networks:
+      - analytics_net
 
   backend:
     build:
@@ -39,6 +41,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - analytics_net
 
   db:
     profiles: ["db"]
@@ -49,6 +53,30 @@ services:
       - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks:
+      - analytics_net
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n_automation
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASS:-password}
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - WEBHOOK_URL=http://${N8N_HOST:-localhost}:5678/
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - analytics_net
 
 volumes:
   db-data:
+  n8n_data:
+
+networks:
+  analytics_net:
+    driver: bridge

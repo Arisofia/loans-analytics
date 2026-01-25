@@ -8,11 +8,14 @@ This repository hosts the Abaco Financial Intelligence Platform, including:
 - Python/Streamlit dashboard under dashboard/
 - Observability and tracing with Azure Monitor OpenTelemetry
 
+Core flow: **Azure Web Form → n8n Webhook → Supabase → Analytics**.
+
 ## Documentation
 
 See docs/DATA_DICTIONARY.md for table documentation.
 See docs/KPI_CATALOG.md for KPI definitions and SQL.
 See docs/TRACING.md for observability and tracing setup.
+See docs/WEBHOOKS.md for the Azure ingestion webhook contract.
 
 ## Quick Start
 
