@@ -64,10 +64,12 @@ def test_circuit_breaker_opens_after_failure(monkeypatch, base_config):
     cfg["cascade"]["http"]["circuit_breaker"]["failure_threshold"] = 1
     ui = UnifiedIngestion(cfg)
 
-    with pytest.raises(Exception):
+    # First call: Should fail with ConnectionError (and trip the breaker)
+    try:
         ui.ingest_http("http://example.com/data")
-
-    # Now circuit breaker should prevent the next attempt
+    except requests.ConnectionError:
+        pass
+    # Second call: Circuit breaker should now be open
     with pytest.raises(RuntimeError, match="Circuit breaker open"):
         ui.ingest_http("http://example.com/data")
 

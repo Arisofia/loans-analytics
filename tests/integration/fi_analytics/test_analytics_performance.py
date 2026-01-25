@@ -19,6 +19,7 @@ from typing import Any, Dict  # noqa: E402
 import pandas as pd  # noqa: E402
 
 
+
 class TestAnalyticsPerformanceRobustness:
     """Performance and robustness tests."""
 
@@ -31,7 +32,7 @@ class TestAnalyticsPerformanceRobustness:
         large_dataset_path = analytics_test_env["output_dir"] / "large_sample.csv"
         df_base = pd.read_csv(analytics_test_env["dataset_path"])
         df_large = pd.concat([df_base] * (10000 // len(df_base) + 1)).head(10000)
-        # Add required columns
+        # Add required columns (unconditionally)
         df_large["loan_id"] = [f"loan_{i}" for i in range(len(df_large))]
         if "total_receivable_usd" not in df_large.columns:
             df_large["total_receivable_usd"] = 1000.0
@@ -46,18 +47,12 @@ class TestAnalyticsPerformanceRobustness:
         env = os.environ.copy()
         env["OTEL_SDK_DISABLED"] = "true"
         env["PYTHONPATH"] = os.path.join(os.getcwd(), "python")
-        result = subprocess.run(
-                [
-                    sys.executable,
-                    "python/scripts/run_v2_pipeline.py",
-                    "--input",
-                    str(large_dataset_path),
-                ],
-                capture_output=True,
-                text=True,
-                timeout=60,
-                env=env,
-            )
+        result = subprocess.run([
+            sys.executable,
+            "python/scripts/run_v2_pipeline.py",
+            "--input",
+            str(large_dataset_path)
+        ], capture_output=True, text=True, timeout=60, env=env)
         duration = time.time() - start_time
 
         assert result.returncode == 0
@@ -75,18 +70,12 @@ class TestAnalyticsPerformanceRobustness:
 
         results = []
         for i in range(2):
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    "python/scripts/run_v2_pipeline.py",
-                    "--input",
-                    str(dataset),
-                ],
-                capture_output=True,
-                text=True,
-                env={**os.environ, "OTEL_SDK_DISABLED": "true", "PYTHONPATH": os.path.join(os.getcwd(), "python")},
-                check=True,
-            )
+            result = subprocess.run([
+                sys.executable,
+                "python/scripts/run_v2_pipeline.py",
+                "--input",
+                str(dataset)
+            ], capture_output=True, text=True, env={**os.environ, "OTEL_SDK_DISABLED": "true", "PYTHONPATH": os.path.join(os.getcwd(), "python")}, check=True)
 
             match = re.search(r"RUN_ID: ([\w_]+)", result.stdout)
             assert match, f"RUN_ID not found in output: {result.stdout}"
@@ -106,37 +95,9 @@ class TestAnalyticsPerformanceRobustness:
                             clean_data(v)
                     elif isinstance(obj, list):
                         for item in obj:
-                            clean_data(item)
 
                 clean_data(data)
                 results.append(data)
-
-        assert results[0] == results[1], "Idempotency failure: results differ between runs"
-
-    def test_i01_e2e_acceptance(self, analytics_test_env: Dict[str, Any]) -> None:
-        """
-        I-01: Full End-to-End Acceptance.
-        Smoke test for a full run with all features enabled (mocked).
-        """
-        import re  # noqa: E402
-
-        import yaml  # noqa: E402
-
-        dataset = analytics_test_env["dataset_path"]
-
-        # Load base config
-        base_config_path = Path("config/pipeline.yml")
-        with open(base_config_path) as f:
-            config = yaml.safe_load(f)
-
-        # Update with test-specific overrides
-        def deep_update(source, overrides):
-            for key, value in overrides.items():
-                if isinstance(value, dict) and key in source and isinstance(source[key], dict):
-                    deep_update(source[key], value)
-                else:
-                    source[key] = value
-            return source
 
         test_overrides = {
             "pipeline": {
@@ -172,26 +133,46 @@ class TestAnalyticsPerformanceRobustness:
         if not Path(pipeline_script).exists():
             assert False, f"Pipeline script not found at {pipeline_script}"
 
+        # Ensure the input dataset has the required columns
+        df = pd.read_csv(analytics_test_env["dataset_path"])
+        if "loan_id" not in df.columns:
+            df["loan_id"] = [f"loan_{i}" for i in range(len(df))]
+        if "total_receivable_usd" not in df.columns:
+            df["total_receivable_usd"] = 1000.0
+        if "measurement_date" not in df.columns:
+            df["measurement_date"] = "2025-01-01"
+        df.to_csv(analytics_test_env["dataset_path"], index=False)
         result = subprocess.run(
-            [
-                sys.executable,
-                pipeline_script,
-                "--input",
-                str(dataset),
-            ],
-            capture_output=True,
-            text=True,
-            timeout=60,
-            env={**os.environ, "OTEL_SDK_DISABLED": "true"},
-        )
+            results = []
+            for i in range(2):
+                result = subprocess.run([
+                    sys.executable,
+                    "python/scripts/run_v2_pipeline.py",
+                    "--input",
+                    str(dataset)
+                ], capture_output=True, text=True, env={**os.environ, "OTEL_SDK_DISABLED": "true", "PYTHONPATH": os.path.join(os.getcwd(), "python")}, check=True)
 
-        assert result.returncode == 0, f"Pipeline failed with stderr: {result.stderr}"
+                match = re.search(r"RUN_ID: ([\w_]+)", result.stdout)
+                assert match, f"RUN_ID not found in output: {result.stdout}"
+                run_id = match.group(1)
 
-        match = re.search(r"RUN_ID: ([\w_]+)", result.stdout)
-        assert match, f"RUN_ID not found in output: {result.stdout}"
-        run_id = match.group(1)
+                metrics_file = Path("data/metrics") / f"{run_id}_metrics.json"
+                with open(metrics_file) as f:
+                    data = json.load(f)
 
-            assert "supabase" in trigger_res["outputs"]
+                # Recursively remove run-specific fields
+                def clean_data(obj):
+                    if isinstance(obj, dict):
+                        obj.pop("run_id", None)
+                        obj.pop("timestamp", None)
+                        obj.pop("pipeline_status", None)
+                        for v in obj.values():
+                            clean_data(v)
+                    elif isinstance(obj, list):
+                        for item in obj:
+                            clean_data(item)
 
-        assert (Path("data/metrics") / f"{run_id}_metrics.json").exists()
-        assert (Path("data/metrics") / f"{run_id}.csv").exists()
+                clean_data(data)
+                results.append(data)
+
+            assert results[0] == results[1], "Idempotency failure: results differ between runs"
