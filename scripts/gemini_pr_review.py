@@ -29,10 +29,7 @@ def get_gemini_review(diff):
 
 
 def post_comment(comment):
-    headers = {
-        "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
+    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
     url = f"https://api.github.com/repos/{REPO}/issues/{PR_NUMBER}/comments"
     data = {"body": f"## 🤖 Gemini Code Review\n\n{comment}"}
     requests.post(url, headers=headers, json=data).raise_for_status()
