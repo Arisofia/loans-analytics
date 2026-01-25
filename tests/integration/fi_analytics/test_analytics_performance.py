@@ -16,6 +16,8 @@ import time  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Any, Dict  # noqa: E402
 
+
+import yaml  # noqa: E402
 import pandas as pd  # noqa: E402
 
 
@@ -81,6 +83,15 @@ class TestAnalyticsPerformanceRobustness:
             assert match, f"RUN_ID not found in output: {result.stdout}"
             run_id = match.group(1)
 
+            def deep_update(d, u):
+                for k, v in u.items():
+                    if isinstance(v, dict):
+                        d[k] = deep_update(d.get(k, {}), v)
+                    else:
+                        d[k] = v
+                return d
+
+
             metrics_file = Path("data/metrics") / f"{run_id}_metrics.json"
             with open(metrics_file) as f:
                 data = json.load(f)
@@ -95,6 +106,7 @@ class TestAnalyticsPerformanceRobustness:
                             clean_data(v)
                     elif isinstance(obj, list):
                         for item in obj:
+                            clean_data(item)
 
                 clean_data(data)
                 results.append(data)
@@ -142,37 +154,37 @@ class TestAnalyticsPerformanceRobustness:
         if "measurement_date" not in df.columns:
             df["measurement_date"] = "2025-01-01"
         df.to_csv(analytics_test_env["dataset_path"], index=False)
-        result = subprocess.run(
-            results = []
-            for i in range(2):
-                result = subprocess.run([
-                    sys.executable,
-                    "python/scripts/run_v2_pipeline.py",
-                    "--input",
-                    str(dataset)
-                ], capture_output=True, text=True, env={**os.environ, "OTEL_SDK_DISABLED": "true", "PYTHONPATH": os.path.join(os.getcwd(), "python")}, check=True)
+        results = []
+        for i in range(2):
+            result = subprocess.run([
+                sys.executable,
+                "python/scripts/run_v2_pipeline.py",
+                "--input",
+                str(dataset)
+            ], capture_output=True, text=True, env={**os.environ, "OTEL_SDK_DISABLED": "true", "PYTHONPATH": os.path.join(os.getcwd(), "python")}, check=True)
 
-                match = re.search(r"RUN_ID: ([\w_]+)", result.stdout)
-                assert match, f"RUN_ID not found in output: {result.stdout}"
-                run_id = match.group(1)
+            match = re.search(r"RUN_ID: ([\w_]+)", result.stdout)
+            assert match, f"RUN_ID not found in output: {result.stdout}"
+            run_id = match.group(1)
 
-                metrics_file = Path("data/metrics") / f"{run_id}_metrics.json"
-                with open(metrics_file) as f:
-                    data = json.load(f)
+            metrics_file = Path("data/metrics") / f"{run_id}_metrics.json"
 
-                # Recursively remove run-specific fields
-                def clean_data(obj):
-                    if isinstance(obj, dict):
-                        obj.pop("run_id", None)
-                        obj.pop("timestamp", None)
-                        obj.pop("pipeline_status", None)
-                        for v in obj.values():
-                            clean_data(v)
-                    elif isinstance(obj, list):
-                        for item in obj:
-                            clean_data(item)
+            with open(metrics_file) as f:
+                data = json.load(f)
 
-                clean_data(data)
-                results.append(data)
+            # Recursively remove run-specific fields
+            def clean_data(obj):
+                if isinstance(obj, dict):
+                    obj.pop("run_id", None)
+                    obj.pop("timestamp", None)
+                    obj.pop("pipeline_status", None)
+                    for v in obj.values():
+                        clean_data(v)
+                elif isinstance(obj, list):
+                    for item in obj:
+                        clean_data(item)
+
+            clean_data(data)
+            results.append(data)
 
             assert results[0] == results[1], "Idempotency failure: results differ between runs"
