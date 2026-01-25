@@ -1,6 +1,6 @@
 import pytest
 import requests
-from src.pipeline.data_ingestion import UnifiedIngestion
+from src.pipeline.ingestion import UnifiedIngestion
 
 
 @pytest.fixture
@@ -88,10 +88,13 @@ def test_rate_limiter_wait_called(monkeypatch, base_config):
 
 
 def test_ingest__missing_columns_raises(monkeypatch, base_config, tmp_path):
-    ui = UnifiedIngestion(base_config)
+    # Set strict to True to ensure ValueError is raised for missing columns
+    config = base_config.copy()
+    config["pipeline"]["phases"]["ingestion"]["validation"]["strict"] = True
+    ui = UnifiedIngestion(config)
     # create a CSV missing PAR and DPD columns
     p = tmp_path / "loans.csv"
     p.write_text("loan_id,outstanding_balance\n1,100\n")
 
     with pytest.raises(ValueError):
-        ui.ingest_(p)
+        ui.ingest_file(p)
