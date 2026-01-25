@@ -258,10 +258,10 @@ git push origin v1.0.0
 ### Required for Full Operations
 ```bash
 # Azure
-## export APPLICATIONINSIGHTS_CONNECTION_STRING should be set in your environment, not in this file.
+export APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=...;IngestionEndpoint=..."
 
 # Supabase (Data Layer)
-## export SUPABASE_URL should be set in your environment, not in this file.
+export SUPABASE_URL="https://your-project.supabase.co"
 export SUPABASE_KEY="your-api-key"
 export SUPABASE_SERVICE_KEY="your-service-key"
 
