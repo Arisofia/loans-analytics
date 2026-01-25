@@ -10,6 +10,8 @@ jobs:
     steps:
         continue-on-error: true
         with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": "*CI Workflow Completed*\nRepository: ${{ github.repository }}\nWorkflow: ${{ github.workflow }}\nStatus: ${{ github.event.workflow_run.conclusion }}\nRun: ${{ github.run_id }}"
