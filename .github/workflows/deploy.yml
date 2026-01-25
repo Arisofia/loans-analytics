@@ -1,4 +1,4 @@
-name: Deploy to Vercel
+name: Deploy to Vercel and Azure
 
 on:
   workflow_dispatch:
@@ -13,7 +13,8 @@ on:
       - 'package.json'
 
 jobs:
-  deploy:
+  deploy-vercel:
+    name: Deploy to Vercel
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -84,7 +85,35 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
 
-      - name: Skip deploy (missing Vercel secrets)
-        if: steps.vercel_secrets.outputs.present != 'true'
-        run: |
-          echo "Skipping Vercel deploy: VERCEL_TOKEN/ORG_ID/PROJECT_ID not configured."
+  deploy-azure:
+    name: Deploy to Azure (fallback)
+    runs-on: ubuntu-latest
+    needs: deploy-vercel
+    if: failure()
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep
+        uses: azure/arm-deploy@v1
+        with:
+          resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          template: infra/azure/main.bicep
+          parameters: |
+            webAppName=${{ secrets.AZURE_WEBAPP_NAME }}
+            storageAccountName=${{ secrets.AZURE_STORAGE_NAME }}
+            sqlServerName=${{ secrets.AZURE_SQLSERVER_NAME }}
+            sqlDbName=${{ secrets.AZURE_SQLDB_NAME }}
+            sqlAdminLogin=${{ secrets.AZURE_SQL_ADMIN_LOGIN }}
+            sqlAdminPassword=${{ secrets.AZURE_SQL_ADMIN_PASSWORD }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          package: ./apps/web
