@@ -130,6 +130,7 @@ jobs:
 
         continue-on-error: true
         with:
+          webhook-type: INCOMING_WEBHOOK
           payload: |
             {
               "text": "🚨 Model Evaluation Failed",
