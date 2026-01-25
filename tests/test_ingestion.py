@@ -85,7 +85,8 @@ def test__par_balances_to_loan_tape(tmp_path, minimal_config):
     ingestion = UnifiedIngestion(minimal_config)
     df = pd.read_csv(csv_file)
     cash_by_date = {}
-    result = ingestion.__par_balances_to_loan_tape(df, cash_by_date)
+    # Access private method using name mangling
+    result = ingestion._UnifiedIngestion__par_balances_to_loan_tape(df, cash_by_date)
 
     assert "measurement_date" in result.columns
     assert "total_receivable_usd" in result.columns
@@ -113,7 +114,8 @@ def test__dpd_to_loan_tape(tmp_path, minimal_config):
     ingestion = UnifiedIngestion(minimal_config)
     df = pd.read_csv(csv_file)
     cash_by_date = {}
-    result = ingestion.__dpd_to_loan_tape(df, cash_by_date)
+    # Access private method using name mangling
+    result = ingestion._UnifiedIngestion__dpd_to_loan_tape(df, cash_by_date)
 
     assert "dpd_0_7_usd" in result.columns
     assert "dpd_7_30_usd" in result.columns
@@ -130,8 +132,8 @@ def test__dpd_to_loan_tape(tmp_path, minimal_config):
 
 def test_ingest__with_par_balances(tmp_path, minimal_config):
     """Test  ingestion with PAR balance data."""
-    par_csv = """reporting_date,outstanding_balance_usd,par_7_balance_usd,par_30_balance_usd,par_60_balance_usd,par_90_balance_usd
-2025-12-01,10000.0,500.0,300.0,200.0,100.0"""
+    par_csv = """reporting_date,outstanding_balance_usd,par_7_balance_usd,par_30_balance_usd,par_60_balance_usd,par_90_balance_usd,total_receivable_usd,total_eligible_usd,discounted_balance_usd
+2025-12-01,10000.0,500.0,300.0,200.0,100.0,10000.0,10000.0,9000.0"""
     loans_file = tmp_path / "par_balances.csv"
     loans_file.write_text(par_csv)
 
@@ -147,9 +149,9 @@ def test_ingest__with_par_balances(tmp_path, minimal_config):
 
 def test_ingest__with_dpd_data(tmp_path, minimal_config):
     """Test  ingestion with DPD-based loan data."""
-    dpd_csv = """dpd,outstanding_balance_usd
-10,1000.0
-50,500.0"""
+    dpd_csv = """dpd,outstanding_balance_usd,total_receivable_usd,total_eligible_usd,discounted_balance_usd
+10,1000.0,1000.0,1000.0,900.0
+50,500.0,500.0,500.0,450.0"""
     loans_file = tmp_path / "loans_dpd.csv"
     loans_file.write_text(dpd_csv)
 

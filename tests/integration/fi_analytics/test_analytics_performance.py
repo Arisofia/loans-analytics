@@ -37,18 +37,21 @@ class TestAnalyticsPerformanceRobustness:
         output_dir.mkdir(parents=True, exist_ok=True)
 
         start_time = time.time()
+        env = os.environ.copy()
+        env["OTEL_SDK_DISABLED"] = "true"
+        env["PYTHONPATH"] = os.path.join(os.getcwd(), "python")
         result = subprocess.run(
-            [
-                sys.executable,
-                "scripts/run_data_pipeline.py",
-                "--input",
-                str(large_dataset_path),
-            ],
-            capture_output=True,
-            text=True,
-            timeout=60,
-            env={**os.environ, "OTEL_SDK_DISABLED": "true"},
-        )
+                [
+                    sys.executable,
+                    "python/scripts/run_v2_pipeline.py",
+                    "--input",
+                    str(large_dataset_path),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=60,
+                env=env,
+            )
         duration = time.time() - start_time
 
         assert result.returncode == 0
