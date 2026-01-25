@@ -19,7 +19,7 @@ env:
 
 jobs:
   validate-secrets:
-    uses: ./.github/workflows/reusable_secret_check.yml
+    uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secrets: DOCKER_USERNAME,DOCKER_PASSWORD,AZURE_ACR_LOGIN_SERVER,AZURE_ACR_USERNAME,AZURE_ACR_PASSWORD
     secrets:

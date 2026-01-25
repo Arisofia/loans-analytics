@@ -6,7 +6,7 @@ on:
 
 jobs:
   validate-secrets:
-    uses: ./.github/workflows/reusable_secret_check.yml
+    uses: ./.github/workflows/reusable-secret-check.yml
     with:
       secret_names: 'CODERABBIT_TOKEN,OPENAI_API_KEY'
     secrets: inherit

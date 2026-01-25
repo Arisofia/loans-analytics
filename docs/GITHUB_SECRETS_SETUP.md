@@ -18,6 +18,10 @@ If you only do one pass, start with these:
 - `DATABASE_URL` (KPI parity + pipeline DB writes)
 - `OPENAI_API_KEY` (multiple analytics/agent workflows)
 
+## Workflow secret validation
+
+Several workflows call the reusable secret check utility (`.github/workflows/reusable-secret-check.yml`) with a comma/space-separated list of required secret names. The validation fails fast when any named secret is missing, so keep repository secrets aligned with each workflow’s `secrets:` list to avoid unexpected pipeline failures.
+
 ## Managing secrets via GitHub CLI
 
 Recommended scopes for `gh secret set`:
