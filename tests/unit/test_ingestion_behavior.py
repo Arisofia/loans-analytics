@@ -1,6 +1,6 @@
 import pytest
 import requests
-from src.pipeline.ingestion import UnifiedIngestion
+from src.pipeline.data_ingestion import UnifiedIngestion
 
 
 @pytest.fixture
