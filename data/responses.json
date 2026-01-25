@@ -1,0 +1,58 @@
+{
+  "ltv": [
+    83.33333333333334,
+    90.0,
+    93.75,
+    NaN,
+    83.33333333333334,
+    80.0,
+    NaN,
+    87.5
+  ],
+  "dti": [
+    22.499999999999996,
+    25.0,
+    20.0,
+    NaN,
+    19.2,
+    NaN,
+    22.499999999999996,
+    0.0
+  ],
+  "risk_alerts": [
+    {
+      "ltv_ratio": 83.33333333333334,
+      "dti_ratio": 22.499999999999996,
+      "risk_score": 0.10000000000000027
+    },
+    {
+      "ltv_ratio": 90.0,
+      "dti_ratio": 25.0,
+      "risk_score": 0.3
+    },
+    {
+      "ltv_ratio": 93.75,
+      "dti_ratio": 20.0,
+      "risk_score": 0.4125
+    },
+    {
+      "ltv_ratio": 83.33333333333334,
+      "dti_ratio": 19.2,
+      "risk_score": 0.10000000000000027
+    },
+    {
+      "ltv_ratio": 87.5,
+      "dti_ratio": 0.0,
+      "risk_score": 0.22499999999999998
+    }
+  ],
+  "full_analysis": {
+    "portfolio_delinquency_rate_percent": 25.0,
+    "portfolio_yield_percent": 3.9910480349344977,
+    "average_ltv_ratio_percent": 86.31944444444446,
+    "average_dti_ratio_percent": 18.2,
+    "data_quality_score": 98.21,
+    "average_null_ratio_percent": 1.79,
+    "invalid_numeric_ratio_percent": 2.08
+  }
+}
