@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS ingest_runs (
     input_hash TEXT,
     details JSONB DEFAULT '{}'::jsonb
 );
-
 CREATE TABLE IF NOT EXISTS data_quality_issues (
     id BIGSERIAL PRIMARY KEY,
     detected_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -19,7 +18,6 @@ CREATE TABLE IF NOT EXISTS data_quality_issues (
     issue_payload JSONB DEFAULT '{}'::jsonb,
     resolved_at TIMESTAMP WITH TIME ZONE
 );
-
 CREATE TABLE IF NOT EXISTS kpi_snapshots (
     id BIGSERIAL PRIMARY KEY,
     kpi_id TEXT NOT NULL,
@@ -30,7 +28,6 @@ CREATE TABLE IF NOT EXISTS kpi_snapshots (
     lineage JSONB DEFAULT '{}'::jsonb,
     ingest_run_id BIGINT REFERENCES ingest_runs(id) ON DELETE SET NULL
 );
-
 CREATE TABLE IF NOT EXISTS kpi_calculation_lineage (
     id BIGSERIAL PRIMARY KEY,
     step_order INT NOT NULL,
@@ -40,7 +37,6 @@ CREATE TABLE IF NOT EXISTS kpi_calculation_lineage (
     checksum TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 CREATE TABLE IF NOT EXISTS agent_runs (
     id BIGSERIAL PRIMARY KEY,
     started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -55,7 +51,6 @@ CREATE TABLE IF NOT EXISTS agent_runs (
     metadata JSONB DEFAULT '{}'::jsonb,
     kpi_snapshot_id BIGINT REFERENCES kpi_snapshots(id) ON DELETE SET NULL
 );
-
 CREATE INDEX IF NOT EXISTS idx_kpi_snapshots_kpi_id ON kpi_snapshots(kpi_id);
 CREATE INDEX IF NOT EXISTS idx_agent_runs_kpi_snapshot_id ON agent_runs(kpi_snapshot_id);
 CREATE INDEX IF NOT EXISTS idx_dq_issues_ingest_run_id ON data_quality_issues(ingest_run_id);

@@ -3,3 +3,8 @@ node_modules
 dist
 build
 package-lock.json
+.cache
+coverage
+.turbo
+.venv
+out
