@@ -5,11 +5,16 @@ name: Codex Pull Request Review
     secrets:
       OPENAI_API_KEY:
         required: false
+    inputs:
+      is_fork:
+        description: Whether the pull request originates from a fork.
+        required: true
+        type: boolean
 
 jobs:
   assign_metadata:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == false && secrets.OPENAI_API_KEY != ''
+    if: ${{ inputs.is_fork == false && secrets.OPENAI_API_KEY != '' }}
     permissions:
       pull-requests: write
     steps:
@@ -31,7 +36,7 @@ jobs:
     name: Run Codex Review
     needs: assign_metadata
     runs-on: ubuntu-latest
-    if: secrets.OPENAI_API_KEY != ''
+    if: ${{ secrets.OPENAI_API_KEY != '' }}
 
     permissions:
       contents: read
@@ -57,7 +62,7 @@ jobs:
     name: Post Codex Feedback
     needs: codex_review
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == false && secrets.OPENAI_API_KEY != '' && needs.codex_review.outputs.final_message != ''
+    if: ${{ inputs.is_fork == false && secrets.OPENAI_API_KEY != '' && needs.codex_review.outputs.final_message != '' }}
     permissions:
       pull-requests: write
     steps:

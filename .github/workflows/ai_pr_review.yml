@@ -15,6 +15,7 @@ jobs:
     secrets:
       GEMINI_API_KEY_SIMPLE: ${{ secrets.GEMINI_API_KEY_SIMPLE }}
     with:
+      is_fork: ${{ github.event.pull_request.head.repo.fork }}
       gemini_model: ${{ vars.GEMINI_MODEL }}
 
   codex_review:
@@ -23,3 +24,5 @@ jobs:
     uses: ./.github/workflows/codex_pull_request_review.yml
     secrets:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    with:
+      is_fork: ${{ github.event.pull_request.head.repo.fork }}
