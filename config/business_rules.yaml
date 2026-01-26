@@ -1,0 +1,46 @@
+# Abaco Loans Business Rules and Constants
+# Consolidated source of truth for statuses, buckets, and business assumptions
+
+loan_statuses:
+  delinquent:
+    - "30-59 days past due"
+    - "60-89 days past due"
+    - "90+ days past due"
+  current:
+    - "Current"
+  grace_period:
+    - "1-29 days past due"
+
+dpd_buckets:
+  - "0-7"
+  - "7-30"
+  - "30-60"
+  - "60-90"
+  - "90+"
+
+growth_projections:
+  default_yield: 1.2
+  monthly_increment: 0.15
+  volume_increment: 15
+
+ui_theme:
+  chart_colors:
+    - "#C1A6FF"
+    - "#5F4896"
+    - "#22c55e"
+    - "#2563eb"
+    - "#0C2742"
+  risk_colors:
+    high: "#e74c3c"
+    medium: "#f39c12"
+    low: "#27ae60"
+
+loan_tape_columns:
+  receivables:
+    - total_receivable_usd
+    - total_eligible_usd
+    - discounted_balance_usd
+  aliases:
+    receivable_amount: total_receivable_usd
+    eligible_amount: total_eligible_usd
+    discounted_amount: discounted_balance_usd

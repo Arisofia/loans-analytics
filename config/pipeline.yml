@@ -1,0 +1,49 @@
+pipeline:
+  name: abaco_unified_pipeline
+
+cascade:
+  base_url: https://app.cascadedebt.com
+  portfolio_id: abaco
+  endpoints:
+    risk_analytics: /analytics/risk/traction?pid=${portfolio_id}
+    par_rates: /analytics/risk/delinquency?pid=${portfolio_id}
+    collection_rates: /analytics/risk/collection?pid=${portfolio_id}
+    borrowing_base: /manage/monitor/borrowing-base?pid=${portfolio_id}
+    covenants: /manage/monitor/portfolio-covenants?pid=${portfolio_id}
+  auth:
+    token_secret: CASCADE_TOKEN
+    refresh_threshold_hours: 23
+
+transformations:
+  kpis:
+    - name: PAR90
+      description: Portfolio at risk over 90 days
+      formula: "SUM(principal WHERE dpd >= 90) / SUM(principal)"
+      source_table: fact_loans
+      validation:
+        validation_range: [0, 1]
+        precision: 4
+    - name: COLLECTION_RATE
+      description: Cash collected vs scheduled
+      formula: "SUM(collected) / SUM(scheduled)"
+      source_table: fact_collections
+      validation:
+        validation_range: [0, 1]
+        precision: 4
+
+validation:
+  quality_gates:
+    - name: completeness
+      threshold: 0.95
+    - name: freshness
+      max_age_hours: 24
+    - name: referential_integrity
+      foreign_keys: [client_id, loan_id]
+
+outputs:
+  database:
+    schema: analytics
+    tables:
+      - fact_loans
+      - fact_collections
+      - kpi_timeseries_daily

@@ -1,13 +1,12 @@
 #!/bin/bash
-# This script merges all branches that have already been merged into main, then deletes them (except main).
+# This script merges all branches that have already been merged into main, then deletes them (except main/master/dev/etc.).
 # Usage: Run from the root of your git repository.
-
 set -e
 
 echo "Fetching latest branches..."
 git fetch --all --prune
 
-echo "Checking out main branch..."
+echo "Switching to main branch..."
 git checkout main
 echo "Pulling latest changes for main..."
 git pull
@@ -20,7 +19,7 @@ if [ -z "$merged_branches" ]; then
   exit 0
 fi
 
-echo "Merging and deleting merged branches:"
+echo "Deleting merged branches:"
 echo "$merged_branches"
 
 for branch in $merged_branches; do

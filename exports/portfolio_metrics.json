@@ -1,0 +1,32 @@
+{
+  "total_loans": 17688,
+  "active_loans": 1132,
+  "unique_customers": 331,
+  "total_principal_usd": 55791482.150000006,
+  "outstanding_balance_usd": 6970758.32,
+  "collection_rate_pct": 87.50569432577801,
+  "avg_interest_rate_pct": 65.22974898236093,
+  "avg_loan_size_usd": 3154.199578810493,
+  "weighted_avg_term_days": 52.45013752946156,
+  "dpd_30_plus_count": 219,
+  "dpd_90_plus_count": 198,
+  "dpd_30_rate_pct": 1.2381275440976933,
+  "dpd_90_rate_pct": 1.1194029850746268,
+  "par_90_balance_usd": 380387.66,
+  "par_90_ratio_pct": 5.4569050100133145,
+  "product_breakdown": {
+    "factoring": 17688
+  },
+  "status_breakdown": {
+    "Complete": 16556,
+    "Current": 854,
+    "Default": 278
+  },
+  "top_locations": {
+    "San Salvador": 14018,
+    "La Libertad": 2898,
+    "Santa Ana": 195,
+    "Not Provided": 170,
+    "Sonsonate": 154
+  }
+}

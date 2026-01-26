@@ -1,0 +1,35 @@
+# Production Environment Configuration
+# Version: 2.0
+# Purpose: Configuration for production deployment environment
+# Note: All secrets are injected via GitHub Actions at build time
+
+environment: production
+
+cascade:
+  base_url: https://app.cascadedebt.com
+  portfolio_id: abaco
+
+supabase:
+  url: ${NEXT_PUBLIC_SUPABASE_URL}
+  anon_key: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+
+sentry:
+  enabled: true
+  dsn: ${NEXT_PUBLIC_SENTRY_DSN}
+
+azure:
+  enabled: true
+  environment: production
+  deployment_url: https://abaco-loans-analytics.com
+
+features:
+  debug: false
+  verbose_logging: false
+  validation_strict: true
+
+deployment:
+  branch: main
+  auto_deploy: false
+  approval_required: true
+  trigger: semantic_version_tags
+  health_check_url: https://abaco-loans-analytics.com

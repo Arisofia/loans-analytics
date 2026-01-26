@@ -1,0 +1,26 @@
+name: PR Assignee Check
+
+on:
+  workflow_call:
+    inputs:
+      fail_on_error:
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  check-assignee:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if PR has assignees
+        if: github.event_name == 'pull_request'
+        run: |
+          ASSIGNEES="${{ join(github.event.pull_request.assignees.*.login, ', ') }}"
+          if [ -z "$ASSIGNEES" ]; then
+            echo "::warning::No assignees found for this Pull Request."
+            if [ "${{ inputs.fail_on_error }}" == "true" ]; then
+              echo "::error::Validation failed: PR must have at least one assignee."
+              exit 1
+            fi
+          else
+            echo "✅ PR is assigned to: $ASSIGNEES"
