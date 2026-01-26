@@ -19,20 +19,24 @@ jobs:
           else
             echo "secrets_available=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Required secrets not configured - skipping product analytics"
+            exit 1
           fi
 
       - name: Checkout Repository
         if: steps.check-secrets.outputs.secrets_available == 'true'
         uses: actions/checkout@v4
+
       - name: Setup Python Environment
         if: steps.check-secrets.outputs.secrets_available == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: Install Dependencies
         if: steps.check-secrets.outputs.secrets_available == 'true'
         run: |
           pip install -r requirements.txt
+
       - name: Run Product Analytics
         if: steps.check-secrets.outputs.secrets_available == 'true' && hashFiles('scripts/product_analytics.py') != ''
         env:
