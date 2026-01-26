@@ -1,5 +1,4 @@
 """Shared theme tokens for the Streamlit dashboards."""
-
 ABACO_THEME = {
     "colors": {
         "primary_purple": "#C1A6FF",

@@ -6,26 +6,20 @@ Meta Agent Analysis Script
 - Natural language summary
 - Export for dashboard/agent use
 """
-
 import os
 from datetime import datetime
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 # Load Meta insights data (adjust path as needed)
 INSIGHTS_PATH = "data/warehouse/meta_insights.parquet"
 EXPORT_DIR = "exports/meta_agent/"
-
 try:
     df = pd.read_parquet(INSIGHTS_PATH)
 except Exception as e:
     print(f"Error loading {INSIGHTS_PATH}: {e}")
     exit(1)
-
 os.makedirs(EXPORT_DIR, exist_ok=True)
-
 # 1. Top performing ads/posts
 ad_perf = (
     df.groupby(["ad_id", "ad_name"])
@@ -35,7 +29,6 @@ ad_perf = (
 )
 ad_perf["ctr"] = ad_perf["clicks"] / ad_perf["impressions"]
 ad_perf.to_csv(EXPORT_DIR + "top_ads.csv")
-
 # Chart: Top 10 Ads by Spend
 top10 = ad_perf.head(10).reset_index()
 plt.figure(figsize=(12, 6))
@@ -46,7 +39,6 @@ plt.gca().invert_yaxis()
 plt.tight_layout()
 plt.savefig(EXPORT_DIR + "top_ads_spend.png")
 plt.close()
-
 # 2. Campaign/adset strategy review
 campaigns = df.groupby(["campaign_id", "campaign_name"]).agg(
     {"spend": "sum", "impressions": "sum", "clicks": "sum", "ad_id": "nunique"}
@@ -54,7 +46,6 @@ campaigns = df.groupby(["campaign_id", "campaign_name"]).agg(
 campaigns["ctr"] = campaigns["clicks"] / campaigns["impressions"]
 campaigns["cpc"] = campaigns["spend"] / campaigns["clicks"].replace(0, np.nan)
 campaigns.to_csv(EXPORT_DIR + "campaigns_overview.csv")
-
 # 3. Trend detection (spend, impressions, clicks)
 df["date_start"] = pd.to_datetime(df["date_start"])
 daily = df.groupby("date_start").agg({"spend": "sum", "impressions": "sum", "clicks": "sum"})
@@ -62,7 +53,6 @@ daily["spend_ma7"] = daily["spend"].rolling(7).mean()
 daily["impressions_ma7"] = daily["impressions"].rolling(7).mean()
 daily["clicks_ma7"] = daily["clicks"].rolling(7).mean()
 daily.to_csv(EXPORT_DIR + "daily_trends.csv")
-
 # Chart: Daily Spend and 7-day MA
 plt.figure(figsize=(14, 6))
 plt.plot(daily.index, daily["spend"], label="Daily Spend")
@@ -74,12 +64,10 @@ plt.legend()
 plt.tight_layout()
 plt.savefig(EXPORT_DIR + "daily_spend_trend.png")
 plt.close()
-
 # 4. Anomaly detection (simple z-score on spend)
 daily["spend_z"] = (daily["spend"] - daily["spend"].mean()) / daily["spend"].std()
 anomalies = daily[np.abs(daily["spend_z"]) > 2]
 anomalies.to_csv(EXPORT_DIR + "spend_anomalies.csv")
-
 # Chart: Highlight Spend Anomalies
 plt.figure(figsize=(14, 6))
 plt.plot(daily.index, daily["spend"], label="Daily Spend")
@@ -91,8 +79,6 @@ plt.legend()
 plt.tight_layout()
 plt.savefig(EXPORT_DIR + "spend_anomalies.png")
 plt.close()
-
-
 # 5. Natural language summary
 def nl_summary():
     top_ad = ad_perf.head(1)
@@ -119,9 +105,6 @@ def nl_summary():
             f"{', '.join(str(d.date()) for d in anomalies.index)}\n"
         )
     return summary
-
-
 with open(EXPORT_DIR + "summary.txt", "w") as f:
     f.write(nl_summary())
-
 print("Meta agent analysis complete. Results in:", EXPORT_DIR)

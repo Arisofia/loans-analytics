@@ -17,6 +17,9 @@ concurrency:
   group: deploy-dashboard-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  WEBAPP_NAME: abaco-analytics-dashboard
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -49,6 +52,10 @@ jobs:
           path: |
             .
             !antenv/
+            !.git/
+            !.github/
+            !node_modules/
+            !.next/
 
   deploy:
     runs-on: ubuntu-latest
@@ -91,14 +98,14 @@ jobs:
         if: steps.check_secrets.outputs.has_creds == 'true'
         uses: azure/webapps-deploy@v3
         with:
-          app-name: abaco-analytics-dashboard
+          app-name: ${{ env.WEBAPP_NAME }}
           package: ./python-app
 
       - name: Deploy to Azure Web App (publish profile)
         if: steps.check_secrets.outputs.has_creds != 'true' && steps.check_secrets.outputs.has_publish_profile == 'true'
         uses: azure/webapps-deploy@v3
         with:
-          app-name: abaco-analytics-dashboard
+          app-name: ${{ env.WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./python-app
 

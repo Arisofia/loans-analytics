@@ -1,22 +1,17 @@
 #!/usr/bin/env python
 """
 Helper script for Zencoder / code agents to validate the Abaco dual-engine (Python + SQL) KPI setup.
-
 Features:
 - Detect repository root.
 - Check presence of core files (KPI catalog, SQL migration, Python processor, parity tests).
 - Optionally regenerate exports/complete_kpi_dashboard.json via run_complete_analytics.py.
 - Validate JSON structure (extended_kpis.* keys).
 - Optionally run pytest parity tests.
-
 Usage examples:
-
   python tools/check_kpi_sync.py
   python tools/check_kpi_sync.py --no-regenerate --no-tests
 """
-
 from __future__ import annotations
-
 import argparse
 import json
 import subprocess
@@ -24,18 +19,13 @@ import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import List, Optional
-
 # ---------------------------------------------------------------------------
 # Data structures
 # ---------------------------------------------------------------------------
-
-
 @dataclass
 class FileCheckResult:
     path: str
     exists: bool
-
-
 @dataclass
 class JsonCheckResult:
     path: str
@@ -43,8 +33,6 @@ class JsonCheckResult:
     valid_json: bool
     has_extended_kpis: bool
     kpi_groups: List[str]
-
-
 @dataclass
 class CommandResult:
     command: str
@@ -52,8 +40,6 @@ class CommandResult:
     returncode: int
     stdout: str
     stderr: str
-
-
 @dataclass
 class KpiSyncReport:
     repo_root: str
@@ -61,13 +47,9 @@ class KpiSyncReport:
     json_check: Optional[JsonCheckResult]
     regenerate_json: Optional[CommandResult]
     pytest_result: Optional[CommandResult]
-
-
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
-
-
 def find_repo_root(start: Path) -> Path:
     """
     Walk up from `start` until we find a directory that looks like the repo root
@@ -81,8 +63,6 @@ def find_repo_root(start: Path) -> Path:
             break
         current = current.parent
     return start.resolve()
-
-
 def run_command(cmd: List[str], cwd: Path) -> CommandResult:
     # Use argument list, never shell=True, and do not interpolate untrusted input
     proc = subprocess.Popen(
@@ -96,8 +76,6 @@ def run_command(cmd: List[str], cwd: Path) -> CommandResult:
         stdout=stdout.strip(),
         stderr=stderr.strip(),
     )
-
-
 def check_files(repo_root: Path) -> List[FileCheckResult]:
     """
     Check presence of the core files required for the dual-engine analytics setup.
@@ -116,8 +94,6 @@ def check_files(repo_root: Path) -> List[FileCheckResult]:
         p = repo_root / rel
         results.append(FileCheckResult(path=str(p.relative_to(repo_root)), exists=p.is_file()))
     return results
-
-
 def check_json_structure(repo_root: Path) -> JsonCheckResult:
     json_path = repo_root / "exports" / "complete_kpi_dashboard.json"
     if not json_path.is_file():
@@ -128,7 +104,6 @@ def check_json_structure(repo_root: Path) -> JsonCheckResult:
             has_extended_kpis=False,
             kpi_groups=[],
         )
-
     try:
         with json_path.open("r", encoding="utf-8") as f:
             obj = json.load(f)
@@ -141,11 +116,9 @@ def check_json_structure(repo_root: Path) -> JsonCheckResult:
             has_extended_kpis=False,
             kpi_groups=[],
         )
-
     extended = obj.get("extended_kpis") or {}
     has_extended = isinstance(extended, dict)
     groups = sorted(extended.keys()) if has_extended else []
-
     return JsonCheckResult(
         path=str(json_path.relative_to(repo_root)),
         exists=True,
@@ -153,13 +126,9 @@ def check_json_structure(repo_root: Path) -> JsonCheckResult:
         has_extended_kpis=has_extended,
         kpi_groups=groups,
     )
-
-
 # ---------------------------------------------------------------------------
 # Main routine
 # ---------------------------------------------------------------------------
-
-
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
         description="Validate KPI dual-engine setup for Zencoder/code agents."
@@ -179,18 +148,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="Print the report as JSON for consumption by other agents.",
     )
-
     args = parser.parse_args(argv)
-
     cwd = Path.cwd()
     repo_root = find_repo_root(cwd)
-
     file_checks = check_files(repo_root)
     json_check = check_json_structure(repo_root)
-
     regenerate_result: Optional[CommandResult] = None
     pytest_result: Optional[CommandResult] = None
-
     # Decide whether to regenerate JSON
     if not args.no_regenerate:
         if not json_check.exists or not json_check.valid_json:
@@ -210,7 +174,6 @@ def main(argv: Optional[List[str]] = None) -> int:
                     stdout="",
                     stderr="run_complete_analytics.py not found",
                 )
-
     # Optionally run pytest parity tests
     if not args.no_tests:
         test_file = repo_root / "tests" / "test_kpi_parity.py"
@@ -227,7 +190,6 @@ def main(argv: Optional[List[str]] = None) -> int:
                 stdout="",
                 stderr="tests/test_kpi_parity.py not found",
             )
-
     report = KpiSyncReport(
         repo_root=str(repo_root),
         file_checks=file_checks,
@@ -235,7 +197,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         regenerate_json=regenerate_result,
         pytest_result=pytest_result,
     )
-
     if args.print_json:
         print(json.dumps(asdict(report), indent=2, default=str))
     else:
@@ -245,7 +206,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         for fc in report.file_checks:
             status = "OK" if fc.exists else "MISSING"
             print(f"  - {fc.path}: {status}")
-
         if report.json_check:
             jc = report.json_check
             print(f"\n[INFO] JSON export: {jc.path}")
@@ -254,7 +214,6 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"  - has_extended_kpis: {jc.has_extended_kpis}")
             if jc.kpi_groups:
                 print(f"  - kpi_groups: {', '.join(jc.kpi_groups)}")
-
         if report.regenerate_json:
             r = report.regenerate_json
             print("\n[INFO] Regenerate JSON command:")
@@ -265,7 +224,6 @@ def main(argv: Optional[List[str]] = None) -> int:
                 print(f"  - stdout:\n{r.stdout}")
             if r.stderr:
                 print(f"  - stderr:\n{r.stderr}")
-
         if report.pytest_result:
             p = report.pytest_result
             print("\n[INFO] Pytest parity result:")
@@ -276,14 +234,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                 print(f"  - stdout:\n{p.stdout}")
             if p.stderr:
                 print(f"  - stderr:\n{p.stderr}")
-
     # Exit code: fail if pytest failed or regenerate failed
     if report.pytest_result and not report.pytest_result.success:
         return 1
     if report.regenerate_json and not report.regenerate_json.success:
         return 1
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

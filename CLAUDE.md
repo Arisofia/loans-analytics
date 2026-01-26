@@ -209,6 +209,7 @@ make test-cov
 
 **Recent Commits**:
 
+1. chore: final production hardening and merge readiness sync
 1. chore: final audit cleanup - remove unused params, implement tool summaries, and harden logging
 1. fix: optimize observability workflow with caching and refined alerting
 1. fix: resolve corrupted docstring in customer segmentation script
