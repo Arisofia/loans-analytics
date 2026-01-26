@@ -2,29 +2,14 @@
 
 import json
 import logging
-<<<<<<< HEAD
 import os
 import sys
-=======
->>>>>>> origin/main
 from datetime import datetime
-
-
-import os
-import sys
 import pandas as pd
 import streamlit as st
 from typing import Optional
+from pathlib import Path
 
-<<<<<<< HEAD
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
-
-from streamlit_app import bootstrap  # noqa: F401
-from streamlit_app.components.analytics_tabs import render_advanced_intelligence
-from streamlit_app.components.charts import (
-=======
 # 1. Robust Bootstrap Import
 try:
     from streamlit_app.bootstrap import bootstrap_repo_root
@@ -32,7 +17,11 @@ try:
 except ImportError:
     pass
 
-<<<<<<< HEAD
+# Add repository root to sys.path to ensure correct module resolution
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 # 2. Local Imports (now safe after bootstrap)
 from src.tracing_setup import initialize_tracing  # Example, adjust as needed
 from src.analytics.kpi_catalog_processor import KPICatalogProcessor
@@ -42,61 +31,24 @@ from src.utils.dashboard_utils import format_kpi_value, kpi_label
 from src.utils.data_normalization import normalize_dataframe_complete
 from streamlit_app.components.analytics_tabs import render_advanced_intelligence
 from streamlit_app.components.charts import (
-=======
-
-# Add repository root to sys.path to ensure correct module resolution
-
-ROOT_DIR = Path(__file__).resolve().parent.parent
-
-if str(ROOT_DIR) not in sys.path:
-
-    sys.path.insert(0, str(ROOT_DIR))
-
-
-
-from src.pipeline.ingestion import load_raw_data_exports  # noqa: E402
-from src.utils.data_normalization import normalize_dataframe_complete  # noqa: E402
-
-from src.theme import ABACO_THEME  # noqa: E402
-
-from src.config.paths import Paths  # noqa: E402
-
-from streamlit_app.components.kpi_metrics import (  # noqa: E402
-
-    render_kpi_snapshot,
-
-    render_executive_summary,
-
-)
-
-from streamlit_app.components.charts import (  # noqa: E402
-
->>>>>>> origin/codex/audit-and-fix-python-and-typescript-files
->>>>>>> origin/main
     render_cashflow_trends,
     render_category_breakdown,
     render_growth_analysis,
 )
 from streamlit_app.components.kpi_metrics import (
-    render_executive_summary,
     render_kpi_snapshot,
+    render_executive_summary,
 )
 from streamlit_app.components.sales_risk import (
     render_risk_analysis,
     render_sales_performance,
 )
-<<<<<<< HEAD
-from src.analytics.kpi_catalog_processor import KPICatalogProcessor
-from src.config.paths import Paths
-from src.theme import ABACO_THEME
-from src.utils.dashboard_utils import format_kpi_value, kpi_label
-from src.utils.data_normalization import normalize_dataframe_complete
-
-EXPORTS_DIR = Paths.exports_dir()
-SUPPORT_DIR = Paths.data_dir() / "support"
-=======
+from src.pipeline.ingestion import load_raw_data_exports
 
 LOCAL_EXPORTS_DIR = "local_exports"
+EXPORTS_DIR = Paths.exports_dir()
+SUPPORT_DIR = Paths.data_dir() / "support"
+
 
 def get_table_type_from_filename(filename: str) -> Optional[str]:
     base_name = filename.lower()
@@ -109,226 +61,72 @@ def get_table_type_from_filename(filename: str) -> Optional[str]:
 def load_local_exports() -> dict:
     export_data = {}
     if os.path.exists(LOCAL_EXPORTS_DIR):
-        import os
-        import sys
-        import pandas as pd
-        import streamlit as st
-        from typing import Optional
+        for f in os.listdir(LOCAL_EXPORTS_DIR):
+            if f.endswith(".csv"):
+                key = get_table_type_from_filename(f)
+                if key:
+                    try:
+                        file_path = os.path.join(LOCAL_EXPORTS_DIR, f)
+                        df = pd.read_csv(file_path)
+                        export_data[key] = df
+                    except Exception as e:
+                        st.error(f"Error loading local file {f}: {e}")
+    return export_data
 
-        # 1. Robust Bootstrap Import
-        try:
-            # Attempt to import the bootstrap module to fix sys.path
-            from streamlit_app.bootstrap import bootstrap_repo_root
-            bootstrap_repo_root()
-        except ImportError:
-            # Fallback for running directly or if package structure varies
-            pass
+def handle_file_uploads() -> dict[str, pd.DataFrame]:
+    uploaded_files = st.sidebar.file_uploader(
+        "Upload CSV Exports", 
+        type="csv", 
+        accept_multiple_files=True
+    )
 
-        # 2. Local Imports (now safe after bootstrap)
-        from src.tracing_setup import initialize_tracing
-        from src.analytics.kpi_catalog_processor import KPICatalogProcessor
-        from src.pipeline.ingestion import load_raw_data_exports
-        from src.config.paths import Paths
-        from src.theme import ABACO_THEME
-        from src.utils.dashboard_utils import format_kpi_value, kpi_label
-        from src.utils.data_normalization import normalize_dataframe_complete
-        from streamlit_app.components.analytics_tabs import render_advanced_intelligence
-        from streamlit_app.components.kpi_metrics import (
-            render_kpi_snapshot,
-            render_executive_summary,
-        )
-        from streamlit_app.components.charts import (
-            render_cashflow_trends,
-            render_category_breakdown,
-            render_growth_analysis,
-        )
-
-        # Constants
-        LOCAL_EXPORTS_DIR = "local_exports"
-
-        def get_table_type_from_filename(filename: str) -> Optional[str]:
-            """
-            Helper to map filenames to internal data keys.
-            Centralizes logic for both local loading and sidebar uploads.
-            """
-            base_name = filename.lower()
-            if "loan" in base_name:
-                return "loan_data"
-            elif "customer" in base_name:
-                return "customer_data"
-            return None
-
-        def load_local_exports() -> dict[str, pd.DataFrame]:
-            """Scans LOCAL_EXPORTS_DIR for CSVs and maps them to data keys."""
-            export_data = {}
-            if os.path.exists(LOCAL_EXPORTS_DIR):
-                for f in os.listdir(LOCAL_EXPORTS_DIR):
-                    if f.endswith(".csv"):
-                        key = get_table_type_from_filename(f)
-                        if key:
-                            try:
-                                file_path = os.path.join(LOCAL_EXPORTS_DIR, f)
-                                # Cache optimization could be added here
-                                df = pd.read_csv(file_path)
-                                export_data[key] = df
-                            except Exception as e:
-                                st.error(f"Error loading local file {f}: {e}")
-            return export_data
-
-        def handle_file_uploads() -> dict[str, pd.DataFrame]:
-            """Handles file uploads via the Streamlit sidebar."""
-            uploaded_files = st.sidebar.file_uploader(
-                "Upload CSV Exports", 
-                type="csv", 
-                accept_multiple_files=True
-            )
-    
-            upload_data = {}
-            if uploaded_files:
-                for uploaded_file in uploaded_files:
-                    key = get_table_type_from_filename(uploaded_file.name)
-                    if key:
-                        try:
-                            upload_data[key] = pd.read_csv(uploaded_file)
-                            st.sidebar.success(f"Mapped '{uploaded_file.name}' to {key}")
-                        except Exception as e:
-                            st.sidebar.error(f"Error reading {uploaded_file.name}: {e}")
-                    else:
-                        st.sidebar.warning(f"Could not map file '{uploaded_file.name}' to known data types.")
-                
-            return upload_data
-
-        # ... Main execution logic follows ...
-        if __name__ == "__main__":
-            st.set_page_config(page_title="Abaco Analytics", layout="wide")
-    
-            # Initialize
-            initialize_tracing()
-    
-            # Load Data
-            data = load_local_exports()
-            uploaded_data = handle_file_uploads()
-            data.update(uploaded_data)
-    
-            # Render Dashboard
-            if data:
-                render_executive_summary(data)
-                render_kpi_snapshot(data)
-                render_advanced_intelligence(data)
+    upload_data = {}
+    if uploaded_files:
+        for uploaded_file in uploaded_files:
+            key = get_table_type_from_filename(uploaded_file.name)
+            if key:
+                try:
+                    upload_data[key] = pd.read_csv(uploaded_file)
+                    st.sidebar.success(f"Mapped '{uploaded_file.name}' to {key}")
+                except Exception as e:
+                    st.sidebar.error(f"Error reading {uploaded_file.name}: {e}")
             else:
-                st.info("Please upload data or ensure local exports are available.")
-@st.cache_data(show_spinner=False, ttl=300)
-def load_kpi_dashboard():
-    dashboard_path = EXPORTS_DIR / "complete_kpi_dashboard.json"
-    if not dashboard_path.exists():
-        return {}
-    return json.loads(dashboard_path.read_text())
+                st.sidebar.warning(f"Could not map file '{uploaded_file.name}' to known data types.")
+        
+    return upload_data
 
+def get_normalized_table_type(filename: str) -> Optional[str]:
+    base_name = filename.lower()
+    if "loan" in base_name:
+        return "loan_data"
+    elif "customer" in base_name:
+        return "customer_data"
+    elif "payment" in base_name:
+        return "historic_payment_data"
+    elif "schedule" in base_name:
+        return "schedule_data"
+    return None
 
-def generate_kpi_exports(raw_data):
-    required = ["loan_data", "customer_data", "historic_payment_data"]
-    missing = [key for key in required if key not in raw_data]
-    if missing:
-        raise ValueError(f"Missing required exports: {', '.join(missing)}")
-
-    exports_dir = EXPORTS_DIR
-    exports_dir.mkdir(parents=True, exist_ok=True)
-
-    catalog_proc = KPICatalogProcessor(
-        raw_data["loan_data"],
-        raw_data["historic_payment_data"],
-        raw_data["customer_data"],
-        raw_data.get("schedule_data"),
-    )
-
-    dashboard = {
-        "timestamp": datetime.now().isoformat(),
-        "extended_kpis": catalog_proc.get_all_kpis(),
-    }
-
-    try:
-        scorecard_df = catalog_proc.get_quarterly_scorecard()
-        scorecard_df.to_csv(exports_dir / "quarterly_scorecard.csv", index=False)
-    except (ValueError, OSError) as exc:
-        logger.warning("Extended KPI generation failed: %s", exc)
-
-    output_path = exports_dir / "complete_kpi_dashboard.json"
-    output_path.write_text(
-        json.dumps(dashboard, indent=2, default=str),
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-         # 2. Local Imports (now safe after bootstrap)
-        from src.tracing_setup import initialize_tracing
-        from src.analytics.kpi_catalog_processor import KPICatalogProcessor
-        from src.pipeline.ingestion import load_raw_data_exports
-        from src.config.paths import Paths
-        from src.theme import ABACO_THEME
-        from src.utils.dashboard_utils import format_kpi_value, kpi_label
-        from src.utils.data_normalization import normalize_dataframe_complete
-        from streamlit_app.components.analytics_tabs import render_advanced_intelligence
-        from streamlit_app.components.kpi_metrics import (
-            render_kpi_snapshot,
-            render_executive_summary,
-        )
-        from streamlit_app.components.charts import (
-=======
->>>>>>> origin/main
-        encoding="utf-8",
-    )
-
-    return dashboard_path
-
-
-def build_kpi_snapshot(dashboard, facts_df):
-    metrics = {}
-    latest_month = None
-
-    if not facts_df.empty:
-        if "month" in facts_df.columns:
-            facts_sorted = facts_df.sort_values("month")
-        else:
-            facts_sorted = facts_df
-        latest = facts_sorted.iloc[-1]
-        latest_month = latest.get("month")
-        for col in facts_sorted.columns:
-            if col == "month":
-                continue
-            metrics[col] = latest[col]
-
-    if dashboard:
-        for key, value in dashboard.items():
-            if key == "timestamp":
-                continue
-            if isinstance(value, (int, float)):
-                metrics.setdefault(key, value)
-
-        exec_strip = dashboard.get("extended_kpis", {}).get("executive_strip", {})
-        for key, value in exec_strip.items():
-            metrics.setdefault(key, value)
-
-    return metrics, latest_month
-
-
-@st.cache_data(show_spinner=False)
-def load_agent_headcount():
-    headcount_path = SUPPORT_DIR / "headcount.csv"
-    if not headcount_path.exists():
-        return pd.DataFrame()
-    df = pd.read_csv(headcount_path)
-    if "month" in df.columns:
-        df["month"] = pd.to_datetime(df["month"], errors="coerce")
-    return df
->>>>>>> 59b4d62c08238719043d5bad09fc5d802d0c5041
+def fuzzy_map_core_tables(dfs: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
+    mapped_dfs = {}
+    for name, df in dfs.items():
+        name_lower = name.lower()
+        table_key = get_normalized_table_type(name_lower)
+        if table_key and table_key not in mapped_dfs: # Prioritize first match
+            mapped_dfs[table_key] = df
+    return mapped_dfs
 
 
 # Initialize tracing
 logger = logging.getLogger(__name__)
-<<<<<<< HEAD
 try:
-=======
->>>>>>> origin/main
     from src.tracing_setup import enable_auto_instrumentation, init_tracing
+    init_tracing()
+    enable_auto_instrumentation()
+except ImportError:
+    logger.warning("Tracing setup not found, proceeding without it.")
+except Exception as e:
+    logger.error(f"Error initializing tracing: {e}")
 
 FONT_IMPORT_URL = (
     "https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900"
@@ -373,11 +171,11 @@ with st.sidebar:
         if _data:
             st.session_state["data"] = _data
             st.session_state["loaded"] = True
-            st.caption(f"Loaded artifacts: {', '.join(raw_data.keys())}")
+            st.caption(f"Loaded artifacts: {', '.join(_data.keys())}")
             if st.button("Generate KPI exports"):
                 with st.spinner("Generating KPI exports from artifacts..."):
                     try:
-                        output_path = generate_kpi_exports(raw_data)
+                        output_path = generate_kpi_exports(_data)
                         st.cache_data.clear()
                         st.success(f"KPI exports generated: {output_path}")
                     except (ValueError, OSError) as exc:
@@ -394,15 +192,14 @@ with st.sidebar:
         )
 
         if st.button("Ingest Data") or uploaded_files:
-            uploaded_data = {}
+            dfs = {}
             for file in uploaded_files:
                 if file.name.endswith(".csv"):
-                    uploaded_data[file.name] = pd.read_csv(file)
+                    dfs[file.name] = pd.read_csv(file)
                 elif file.name.endswith(".xlsx"):
-                    uploaded_data[file.name] = pd.read_excel(file, sheet_name=None)
+                    dfs[file.name] = pd.read_excel(file, sheet_name=None)
 
             if dfs:
-
                 # Normalize all dataframes
                 for name, df in dfs.items():
                     if isinstance(df, dict):
@@ -411,18 +208,8 @@ with st.sidebar:
                     else:
                         dfs[name] = normalize_dataframe_complete(df)
 
-<<<<<<< HEAD
-                        # Apply fuzzy mapping to identify core tables
-                        table_key = get_normalized_table_type(name_lower)
-                        if table_key:
-                            mapped_dfs[table_key] = normalized_df
-
-                # Merge mapped data into session state while keeping original filenames
-                # for UI.
-=======
                 # Use shared fuzzy mapping helper
                 mapped_dfs = fuzzy_map_core_tables(dfs)
->>>>>>> origin/main
                 final_data = {**dfs, **mapped_dfs}
                 st.session_state["data"] = final_data
                 st.session_state["loaded"] = True
@@ -452,6 +239,11 @@ with st.sidebar:
 # --- Main Dashboard ---
 st.title("💰 ABACO Financial Intelligence")
 
+@st.cache_data(show_spinner=False)
+def load_analytics_facts():
+    # Placeholder for actual analytics facts loading
+    return pd.DataFrame()
+
 dashboard_metrics = load_kpi_dashboard()
 analytics_facts = load_analytics_facts()
 kpi_snapshot, snapshot_month = build_kpi_snapshot(dashboard_metrics, analytics_facts)
@@ -474,22 +266,11 @@ loan_data = session_data.get("loan_data")
 customer_data = session_data.get("customer_data", pd.DataFrame())
 
 if loan_data is None:
-<<<<<<< HEAD
-    # Fallback to original filename search if mapping failed
-    for name, table_df in data.items():
-        table_key = get_normalized_table_type(name)
-        if table_key == "loan_data":
-            loan_data = table_df
-        elif table_key == "customer_data":
-            if customer_data.empty:
-                customer_data = table_df
-=======
     # Fallback: use fuzzy mapping helper on all data
-    mapped = fuzzy_map_core_tables(data)
+    mapped = fuzzy_map_core_tables(session_data) # Use session_data here
     loan_data = mapped.get("loan_data")
     if customer_data.empty:
         customer_data = mapped.get("customer_data", pd.DataFrame())
->>>>>>> origin/main
 
 if loan_data is None:
     st.error("Core loan data missing in uploads.")

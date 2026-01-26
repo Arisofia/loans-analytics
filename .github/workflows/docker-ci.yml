@@ -11,7 +11,7 @@ on:
 env:
     REGISTRY: docker.io
     IMAGE_NAME: ${{ github.repository }}
-    DOCKER_ORG: <your-org>
+    DOCKER_ORG: YOUR_DOCKER_ORGANIZATION
 
 jobs:
     build:

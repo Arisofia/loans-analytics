@@ -13,7 +13,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run actionlint
         id: actionlint
-      uses: rhysd/actionlint@v1.7.1      
+        uses: rhysd/actionlint@v1.6.26
+        with:
           args: .github/workflows
         continue-on-error: true
 
@@ -57,20 +58,6 @@ jobs:
           # Placeholder: run any project-specific trigger checks
           echo "ok"
 
-  secrets-presence:
-    uses: ./.github/workflows/reusable-secret-check.yml
-    with:
-      secrets: >
-        DOCKER_USERNAME,DOCKER_PASSWORD,AZURE_ACR_LOGIN_SERVER,AZURE_ACR_PASSWORD,
-        AZURE_WEBAPP_PUBLISH_PROFILE,MIDDLEWARE_SHARED_SECRET
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
-      AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
-      AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-      MIDDLEWARE_SHARED_SECRET: ${{ secrets.MIDDLEWARE_SHARED_SECRET }}
-
   secrets-validation:
     name: Secrets Validation
     runs-on: ubuntu-latest
@@ -96,15 +83,13 @@ jobs:
       - dependency-validation
       - trigger-validation
       - secrets-validation
-      - secrets-presence
     if: |
       always() && (
         needs.syntax-validation.result == 'failure' ||
         needs.structure-validation.result == 'failure' ||
         needs.dependency-validation.result == 'failure' ||
         needs.trigger-validation.result == 'failure' ||
-        needs.secrets-validation.result == 'failure' ||
-        needs.secrets-presence.result == 'failure'
+        needs.secrets-validation.result == 'failure'
       )
     steps:
       - name: Fail on validation error
