@@ -11,41 +11,31 @@ import pandas as pd
 import streamlit as st
 
 
+
 # Add repository root to sys.path to ensure correct module resolution
-
 ROOT_DIR = Path(__file__).resolve().parent.parent
-
 if str(ROOT_DIR) not in sys.path:
-
     sys.path.insert(0, str(ROOT_DIR))
 
-
-from src.pipeline.ingestion import load_raw_data_exports  # noqa: E402
-from src.utils.data_normalization import normalize_dataframe_complete  # noqa: E402
-
-from src.theme import ABACO_THEME  # noqa: E402
-
-from src.config.paths import Paths  # noqa: E402
-
-from streamlit_app.components.kpi_metrics import (  # noqa: E402
+from src.pipeline.ingestion import load_raw_data_exports
+from src.utils.data_normalization import normalize_dataframe_complete
+from src.theme import ABACO_THEME
+from src.config.paths import Paths
+from streamlit_app.components.kpi_metrics import (
     render_kpi_snapshot,
     render_executive_summary,
 )
-
-from streamlit_app.components.charts import (  # noqa: E402
+from streamlit_app.components.charts import (
     render_cashflow_trends,
     render_growth_analysis,
     render_category_breakdown,
 )
-
-from streamlit_app.components.sales_risk import (  # noqa: E402
+from streamlit_app.components.sales_risk import (
     render_sales_performance,
     render_risk_analysis,
 )
-
-from streamlit_app.components.analytics_tabs import render_advanced_intelligence  # noqa: E402
-
-from src.utils.dashboard_utils import format_kpi_value, kpi_label  # noqa: E402
+from streamlit_app.components.analytics_tabs import render_advanced_intelligence
+from src.utils.dashboard_utils import format_kpi_value, kpi_label
 
 EXPORTS_DIR = Paths.exports_dir()
 SUPPORT_DIR = Paths.data_dir() / "support"

@@ -13,7 +13,7 @@ git archive -o backup.zip HEAD
 
 tree -L 3 > structure_before.txt
 
-rg -n "slack|notion|figma|cascade|hubspot|looker" \
+rg -n "looker" \
   --glob "*.py" --glob "*.yml" --glob "*.yaml" --glob "*.md" \
   --glob "!.git/**" --glob "!.venv/**" --glob "!node_modules/**" \
   . > integrations_remaining.txt
@@ -53,7 +53,7 @@ chmod +x complete-cleanup.sh
 ## 5) Final Verification
 
 ```bash
-rg -n "slack|notion|figma|cascade|hubspot|looker" . > post_cleanup.txt
+rg -n "looker" . > post_cleanup.txt
 ```
 
 ## 6) Commit and Push
