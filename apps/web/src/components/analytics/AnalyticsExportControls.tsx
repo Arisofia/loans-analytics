@@ -5,11 +5,6 @@ import type {
   AnalyticsSummary,
   LoanRecord,
 } from '@/types/analytics'
-import type {
-  AnalyticsExportPayload,
-  AnalyticsSummary,
-  LoanRecord,
-} from '@/types/analytics'
 type AnalyticsExportControlsProps = {
   summary: AnalyticsSummary
   loans: LoanRecord[]
