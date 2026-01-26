@@ -2,69 +2,55 @@
 
 import json
 import logging
-import sys
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-
 import streamlit as st
 
-
-
-# Add repository root to sys.path to ensure correct module resolution
-ROOT_DIR = Path(__file__).resolve().parent.parent
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
-
-from src.pipeline.ingestion import load_raw_data_exports
-from src.utils.data_normalization import normalize_dataframe_complete
-from src.theme import ABACO_THEME
-from src.config.paths import Paths
-from streamlit_app.components.kpi_metrics import (
-    render_kpi_snapshot,
-    render_executive_summary,
-)
-from streamlit_app.components.charts import (
+from components.analytics_tabs import render_advanced_intelligence
+from components.charts import (
     render_cashflow_trends,
-    render_growth_analysis,
     render_category_breakdown,
+    render_growth_analysis,
 )
-from streamlit_app.components.sales_risk import (
-    render_sales_performance,
-    render_risk_analysis,
-)
-from streamlit_app.components.analytics_tabs import render_advanced_intelligence
-from src.utils.dashboard_utils import format_kpi_value, kpi_label
+from components.kpi_metrics import render_executive_summary, render_kpi_snapshot
+from components.sales_risk import render_risk_analysis, render_sales_performance
+from data_normalization import normalize_dataframe_complete
+from dashboard_utils import format_kpi_value, kpi_label
+from kpi_catalog_processor import KPICatalogProcessor
+from theme import ABACO_THEME
+from tracing_setup import enable_auto_instrumentation, init_tracing
 
-EXPORTS_DIR = Paths.exports_dir()
-SUPPORT_DIR = Paths.data_dir() / "support"
-LOOKER_DIR = Paths.raw_data_dir() / "_exports"
+ROOT_DIR = Path(__file__).resolve().parent.parent
+EXPORTS_DIR = ROOT_DIR / "exports"
+SUPPORT_DIR = ROOT_DIR / "data" / "support"
+LOOKER_DIR = ROOT_DIR / "data" / "raw" / "_exports"
 
 
 @st.cache_data(show_spinner=False)
-def load__exports():
+def load_raw_data_exports():
     candidates = {
         "loan_data": [
             LOOKER_DIR / "loan_data.csv",
             LOOKER_DIR / "Abaco-Loan-Tape_Loan-Data_Table-6.csv",
-            Paths.data_dir() / "abaco" / "loan_data.csv",
+            ROOT_DIR / "data" / "abaco" / "loan_data.csv",
         ],
         "customer_data": [
             LOOKER_DIR / "customer_data.csv",
             LOOKER_DIR / "Abaco-Loan-Tape_Customer-Data_Table-6.csv",
-            Paths.data_dir() / "abaco" / "customer_data.csv",
+            ROOT_DIR / "data" / "abaco" / "customer_data.csv",
         ],
         "historic_payment_data": [
             LOOKER_DIR / "historic_payment_data.csv",
             LOOKER_DIR / "Abaco-Loan-Tape_Historic-Real-Payment_Table-6.csv",
-            Paths.data_dir() / "abaco" / "real_payment.csv",
+            ROOT_DIR / "data" / "abaco" / "real_payment.csv",
         ],
         "schedule_data": [
             LOOKER_DIR / "schedules.csv",
             LOOKER_DIR / "payment_schedule.csv",
             LOOKER_DIR / "Abaco-Loan-Tape_Payment Schedule_Table-6.csv",
-            Paths.data_dir() / "abaco" / "payment_schedule.csv",
+            ROOT_DIR / "data" / "abaco" / "payment_schedule.csv",
         ],
     }
     data = {}
@@ -72,8 +58,8 @@ def load__exports():
         path = next((p for p in paths if p.exists()), None)
         if path is None:
             continue
-        df = pd.read_csv(path)
-        data[key] = normalize_dataframe_complete(df)
+        data_frame = pd.read_csv(path)
+        data[key] = normalize_dataframe_complete(data_frame)
     return data
 
 
@@ -96,22 +82,20 @@ def load_kpi_dashboard():
     return json.loads(dashboard_path.read_text())
 
 
-def generate_kpi_exports(_data):
+def generate_kpi_exports(raw_data):
     required = ["loan_data", "customer_data", "historic_payment_data"]
-    missing = [key for key in required if key not in _data]
+    missing = [key for key in required if key not in raw_data]
     if missing:
         raise ValueError(f"Missing required  exports: {', '.join(missing)}")
 
     exports_dir = EXPORTS_DIR
     exports_dir.mkdir(parents=True, exist_ok=True)
 
-    from src.analytics.kpi_catalog_processor import KPICatalogProcessor
-
     catalog_proc = KPICatalogProcessor(
-        _data["loan_data"],
-        _data["historic_payment_data"],
-        _data["customer_data"],
-        _data.get("schedule_data"),
+        raw_data["loan_data"],
+        raw_data["historic_payment_data"],
+        raw_data["customer_data"],
+        raw_data.get("schedule_data"),
     )
 
     dashboard = {
@@ -122,13 +106,15 @@ def generate_kpi_exports(_data):
     try:
         scorecard_df = catalog_proc.get_quarterly_scorecard()
         scorecard_df.to_csv(exports_dir / "quarterly_scorecard.csv", index=False)
-    except Exception as exc:
+    except (ValueError, OSError) as exc:
         logger.warning("Extended KPI generation failed: %s", exc)
 
-    output_path = exports_dir / "complete_kpi_dashboard.json"
-    output_path.write_text(json.dumps(dashboard, indent=2, default=str), encoding="utf-8")
+    dashboard_path = exports_dir / "complete_kpi_dashboard.json"
+    dashboard_path.write_text(
+        json.dumps(dashboard, indent=2, default=str), encoding="utf-8"
+    )
 
-    return output_path
+    return dashboard_path
 
 
 def build_kpi_snapshot(dashboard, facts_df):
@@ -136,7 +122,10 @@ def build_kpi_snapshot(dashboard, facts_df):
     latest_month = None
 
     if not facts_df.empty:
-        facts_sorted = facts_df.sort_values("month") if "month" in facts_df.columns else facts_df
+        if "month" in facts_df.columns:
+            facts_sorted = facts_df.sort_values("month")
+        else:
+            facts_sorted = facts_df
         latest = facts_sorted.iloc[-1]
         latest_month = latest.get("month")
         for col in facts_sorted.columns:
@@ -171,19 +160,19 @@ def load_agent_headcount():
 
 # Initialize tracing
 logger = logging.getLogger(__name__)
-try:
-    from tracing_setup import enable_auto_instrumentation, init_tracing
+init_tracing(service_name="abaco-dashboard")
+enable_auto_instrumentation()
 
-    init_tracing(service_name="abaco-dashboard")
-    enable_auto_instrumentation()
-except Exception:
-    logger.warning("Tracing not initialized")
+FONT_IMPORT_URL = (
+    "https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900"
+    "&family=Poppins:wght@100;200;300;400;500;600;700&display=swap"
+)
 
 # Custom CSS
 st.markdown(
     f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&family=Poppins:wght@100;200;300;400;500;600;700&display=swap');
+    @import url('{FONT_IMPORT_URL}');
     .main {{
         background-color: {ABACO_THEME['colors']['background']};
         color: {ABACO_THEME['colors']['white']};
@@ -213,18 +202,18 @@ with st.sidebar:
     )
 
     if data_source == "Local artifacts (auto)":
-        _data = load_raw_data_exports()
-        if _data:
-            st.session_state["data"] = _data
+        raw_data = load_raw_data_exports()
+        if raw_data:
+            st.session_state["data"] = raw_data
             st.session_state["loaded"] = True
-            st.caption(f"Loaded artifacts: {', '.join(_data.keys())}")
+            st.caption(f"Loaded artifacts: {', '.join(raw_data.keys())}")
             if st.button("Generate KPI exports"):
                 with st.spinner("Generating KPI exports from artifacts..."):
                     try:
-                        output_path = generate_kpi_exports(_data)
+                        output_path = generate_kpi_exports(raw_data)
                         st.cache_data.clear()
                         st.success(f"KPI exports generated: {output_path}")
-                    except Exception as exc:
+                    except (ValueError, OSError) as exc:
                         st.error(f"Failed to generate KPI exports: {exc}")
         else:
             st.session_state["loaded"] = False
@@ -238,28 +227,31 @@ with st.sidebar:
         )
 
         if st.button("Ingest Data") or uploaded_files:
-            dfs = {}
+            uploaded_data = {}
             for file in uploaded_files:
                 if file.name.endswith(".csv"):
-                    dfs[file.name] = pd.read_csv(file)
+                    uploaded_data[file.name] = pd.read_csv(file)
                 elif file.name.endswith(".xlsx"):
-                    dfs[file.name] = pd.read_excel(file, sheet_name=None)
+                    uploaded_data[file.name] = pd.read_excel(file, sheet_name=None)
 
-            if dfs:
+            if uploaded_data:
                 # Map uploaded filenames to required internal keys
                 mapped_dfs = {}
-                for name, df in dfs.items():
+                for name, uploaded_frame in uploaded_data.items():
                     name_lower = name.lower()
-                    if isinstance(df, dict):
-                        for sheet, sdf in df.items():
-                            dfs[name][sheet] = normalize_dataframe_complete(sdf)
+                    if isinstance(uploaded_frame, dict):
+                        for sheet, sheet_frame in uploaded_frame.items():
+                            uploaded_data[name][sheet] = normalize_dataframe_complete(
+                                sheet_frame
+                            )
                     else:
-                        normalized_df = normalize_dataframe_complete(df)
-                        dfs[name] = normalized_df
+                        normalized_df = normalize_dataframe_complete(uploaded_frame)
+                        uploaded_data[name] = normalized_df
 
                         # Apply fuzzy mapping to identify core tables
-                        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith(
-                            "loans"
+                        if (
+                            ("loan" in name_lower and "data" in name_lower)
+                            or name_lower.startswith("loans")
                         ):
                             mapped_dfs["loan_data"] = normalized_df
                         elif (
@@ -275,8 +267,8 @@ with st.sidebar:
                         elif "schedule" in name_lower:
                             mapped_dfs["schedule_data"] = normalized_df
 
-                # Merge mapped data into session state while keeping original filenames for UI
-                final_data = {**dfs, **mapped_dfs}
+                # Merge mapped data into session state while keeping filenames for UI
+                final_data = {**uploaded_data, **mapped_dfs}
                 st.session_state["data"] = final_data
                 st.session_state["loaded"] = True
                 st.success("Data ingested successfully.")
@@ -288,7 +280,7 @@ with st.sidebar:
                         st.cache_data.clear()
                         st.success("✅ KPI exports generated and UI updated!")
                         st.rerun()
-                    except Exception as exc:
+                    except (ValueError, OSError) as exc:
                         st.warning(f"⚠️ KPI auto-generation skipped: {exc}")
 
     if st.button("Clear Data"):
@@ -319,31 +311,43 @@ if not st.session_state["loaded"]:
     st.info("Upload data files in the sidebar to unlock loan-level diagnostics.")
     st.stop()
 
-data = st.session_state["data"]
+session_data = st.session_state["data"]
 
 # Core Tables Identification (prioritize internal keys from auto-mapping)
-loan_data = data.get("loan_data")
-customer_data = data.get("customer_data", pd.DataFrame())
+loan_data = session_data.get("loan_data")
+customer_data = session_data.get("customer_data", pd.DataFrame())
 
 if loan_data is None:
     # Fallback to original filename search if mapping failed
-    for name, df in data.items():
+    for name, data_frame in session_data.items():
         name_lower = name.lower()
-        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith("loans"):
-            loan_data = df
-        elif ("customer" in name_lower and "data" in name_lower) or name_lower.startswith(
-            "customer"
+        if ("loan" in name_lower and "data" in name_lower) or name_lower.startswith(
+            "loans"
+        ):
+            loan_data = data_frame
+        elif (
+            ("customer" in name_lower and "data" in name_lower)
+            or name_lower.startswith("customer")
         ):
             if customer_data.empty:
-                customer_data = df
+                customer_data = data_frame
 
 if loan_data is None:
     st.error("Core loan data missing in uploads.")
     st.stop()
 
 merged = loan_data.copy()
-if not customer_data.empty and "loan_id" in merged.columns and "loan_id" in customer_data.columns:
-    merged = merged.merge(customer_data, on="loan_id", how="left", suffixes=("", "_cust"))
+if (
+    not customer_data.empty
+    and "loan_id" in merged.columns
+    and "loan_id" in customer_data.columns
+):
+    merged = merged.merge(
+        customer_data,
+        on="loan_id",
+        how="left",
+        suffixes=("", "_cust"),
+    )
 
 # 3. Executive Summary
 total_outstanding = render_executive_summary(merged)
@@ -385,6 +389,7 @@ with st.expander("View all computed KPIs"):
 
 st.divider()
 st.caption(
-    f"Abaco Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    "Abaco Intelligence Platform | System Date: "
+    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 )
 st.markdown("</div>", unsafe_allow_html=True)

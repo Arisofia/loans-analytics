@@ -1,4 +1,4 @@
-from src.theme import ABACO_THEME
+from theme import ABACO_THEME
 
 
 def apply_theme(fig):
