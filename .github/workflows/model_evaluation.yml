@@ -2,7 +2,6 @@ name: Model Evaluation Pipeline
 
 # Workflow-level permissions removed — granting permissions only to jobs that need them.
 "on":
-
   push:
     branches: [main, develop]
     paths:
@@ -39,12 +38,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-        env:
-        run: |
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Run evaluation tests
         continue-on-error: true
@@ -141,21 +134,3 @@ jobs:
             } catch (error) {
               console.error('Comment creation error:', error.message);
             }
-
-        continue-on-error: true
-        with:
-          webhook-type: INCOMING_WEBHOOK
-          payload: |
-            {
-              "text": "🚨 Model Evaluation Failed",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Model Evaluation Pipeline Failed*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
-                  }
-                }
-              ]
-            }
-        env:

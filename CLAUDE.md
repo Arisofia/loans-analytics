@@ -84,16 +84,16 @@ make test-cov
 
 ### Tools Configured
 
-| Tool | Purpose | Config |
-|------|---------|--------|
-| pylint | Static code analysis | pyproject.toml |
-| flake8 | Style enforcement | pyproject.toml |
-| ruff | Fast Python linter | Built-in |
-| black | Code formatter | pyproject.toml |
-| isort | Import sorting | Built-in |
-| mypy | Type checking | TBD |
-| pytest | Testing | Built-in |
-| coverage | Test coverage | Built-in |
+| Tool     | Purpose              | Config         |
+| -------- | -------------------- | -------------- |
+| pylint   | Static code analysis | pyproject.toml |
+| flake8   | Style enforcement    | pyproject.toml |
+| ruff     | Fast Python linter   | Built-in       |
+| black    | Code formatter       | pyproject.toml |
+| isort    | Import sorting       | Built-in       |
+| mypy     | Type checking        | TBD            |
+| pytest   | Testing              | Built-in       |
+| coverage | Test coverage        | Built-in       |
 
 ---
 
@@ -136,7 +136,7 @@ make test-cov
 
 ## Phase 6: CI Workflow Failure Handling & Test Plan
 
-**Status**: ✅ **IN PROGRESS** (2026-01-03)
+**Status**: ✅ **COMPLETE** (2026-01-05)
 
 **Deliverables**:
 
@@ -158,32 +158,35 @@ make test-cov
    - Test data requirements
    - Expected results for each scenario
 
-4. 🔄 CI Workflow Enhancements:
+4. ✅ CI Workflow Enhancements:
    - mypy type-checking added to repo-health job
    - Enhanced failure detection and reporting
    - Improved secret validation
    - Graceful degradation for missing integrations
 
+## Phase 9: Deprecation & Cleanup
+
+**Status**: 🔄 **IN PROGRESS** (2026-01-05)
+
+**Deliverables**:
+
+1. 🔄 Deprecate KPIEngine v1
+2. 🔄 Remove `config/LEGACY/`
+3. 🔄 Cleanup deprecated modules
+
 ## Next Steps
 
-1. **Post-Phase 6 Tasks**:
-   - Execute test suite: `make quality`
-   - Run diagnostic script: `bash scripts/ci_full_fix.sh`
-   - Review test results in CI_FIX_REPORT_*.md
-   - Address any identified failures
+1. **Phase 6, 7, 8 Completed**:
+   - CI Workflow Failure Handling (Done)
+   - GitHub Actions Test Framework (Done)
+   - Backend Tiers & Frontend Integration (Done)
 
-2. **Phase 6 Completion**:
-   - Validate all 60 test cases pass
-   - Confirm CI workflows stable (>99% success)
-   - Update CLAUDE.md with final metrics
-   - Commit: "PHASE 6: Complete CI workflow testing and failure handling"
-
-3. **Phase 7 (Planned)**:
+2. **Phase 9: Deprecation & Cleanup (In Progress)**:
    - Deprecate KPIEngine v1 - full migration to v2
    - Implement additional type stubs for edge cases
    - Target: Pylint 9.99+/10 (perfection)
 
-4. **v2.0 Release (Q1 2026)**:
+3. **v2.0 Release (Q1 2026)**:
    - Delete `config/LEGACY/` directory
    - Remove deprecated modules from codebase
    - Full feature parity with v1 + enhanced reliability
@@ -192,18 +195,17 @@ make test-cov
 
 ## Git Status
 
-**Current Branch**: refactor/pipeline-complexity
+**Current Branch**: main
 
 **Recent Commits**:
 
-1. PHASE 3.4E-F COMPLETE: Configuration consolidation
-2. PHASE 3A COMPLETE: Comprehensive module consolidation
-3. PHASE 1 COMPLETE: Repository audit and architecture documentation
+1. PHASE 6 COMPLETE: CI Workflow Failure Handling & Test Plan
+2. PHASE 8 COMPLETE: Backend Tiers & Frontend Integration
+3. PHASE 3.4E-F COMPLETE: Configuration consolidation
 
 **Uncommitted Changes**:
 
-- dev-requirements.txt (new)
-- Makefile (updated)
+- None
 
 ---
 
@@ -212,11 +214,13 @@ make test-cov
 ### Sprint 0: Smoke & Baseline Tests (100% Complete)
 
 **Run all Sprint 0 tests**:
+
 ```bash
 pytest tests/fi-analytics/ -v
 ```
 
 **Test Framework Documentation**:
+
 - **Test Plan**: `fi-analytics/analytics_pipeline_test_plan.md`
 - **Test Checklist**: `fi-analytics/analytics_pipeline_checklist.md`
 - **Test Cases**: `fi-analytics/analytics_pipeline_testcases.md`
@@ -241,31 +245,34 @@ pytest tests/fi-analytics/ -v
 ### Sprint 0 Deliverables
 
 **Test Code** (18 test methods, 100% automated):
+
 - `tests/fi-analytics/test_analytics_smoke.py` (A-01, A-02 - 4 tests)
 - `tests/fi-analytics/test_analytics_kpi_correctness.py` (B-01, B-02 - 7 tests)
 - `tests/fi-analytics/test_analytics_unit_coverage.py` (H-01, H-02 - 7 tests)
 
 **Test Data & Fixtures**:
+
 - `tests/data/archives/sample_small.csv` (24-row dataset)
 - `tests/fixtures/baseline_kpis.json` (23 KPI values, ±5% tolerance)
 - `tests/fixtures/schemas/kpi_results_schema.json` (JSON validation)
 - `tests/fixtures/schemas/metrics_schema.json` (CSV validation)
 
 **Enhanced Fixtures** (tests/conftest.py):
+
 - `analytics_test_env` - Test environment with mocked integrations
 - `analytics_baseline_kpis` - Load baseline KPI values
 - `kpi_schema` - Load JSON schema for validation
 
 ### Sprint 0 Test Cases
 
-| ID | Test Case | Status | Time |
-|---|---|---|---|
-| **A-01** | Pipeline smoke test | ✅ Auto | ~10s |
-| **A-02** | Artifact validation | ✅ Auto | ~2s |
-| **B-01** | KPI baseline match ±5% | ✅ Auto | ~1s |
-| **B-02** | Edge case handling | ✅ Auto | ~2s |
-| **H-01** | Unit coverage ≥80% | ✅ Auto | ~5s |
-| **H-02** | mypy type validation | ✅ Auto | ~3s |
+| ID        | Test Case                 | Status  | Time |
+| --------- | ------------------------- | ------- | ---- |
+| **A-01**  | Pipeline smoke test       | ✅ Auto | ~10s |
+| **A-02**  | Artifact validation       | ✅ Auto | ~2s  |
+| **B-01**  | KPI baseline match ±5%    | ✅ Auto | ~1s  |
+| **B-02**  | Edge case handling        | ✅ Auto | ~2s  |
+| **H-01**  | Unit coverage ≥80%        | ✅ Auto | ~5s  |
+| **H-02**  | mypy type validation      | ✅ Auto | ~3s  |
 | **TOTAL** | 6 test cases / 18 methods | ✅ 100% | ~17s |
 
 ### CI/CD Integration
@@ -286,11 +293,13 @@ Add to `.github/workflows/ci.yml`:
 ### Upcoming Sprints
 
 **Sprint 1** (Integration & Tracing - 12 hours):
+
 - C-01 to C-04: Mocked integrations
 - D-01, D-02: Tracing/observability (OTLP)
 - F-01, F-02: Security (secret handling)
 
 **Sprint 2** (Robustness & E2E - 16 hours):
+
 - B-03: Performance SLA validation
 - E-01, E-02: Retry logic & transient failures
 - G-01, G-02: Idempotency & concurrency
@@ -396,6 +405,7 @@ extended_kpis = {
 ### Integration
 
 All data flows automatically:
+
 ```
 Pipeline Run
   ↓
@@ -448,6 +458,7 @@ Completed integration of backend Tier 3 data with frontend intelligent fallback:
    - Add concentration and risk analytics
 
 **Data Flow Architecture**:
+
 ```
 Backend Pipeline Run
   ↓ (ExtendedKPIGenerator)

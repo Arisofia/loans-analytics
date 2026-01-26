@@ -25,4 +25,3 @@ jobs:
         if: hashFiles('scripts/operations_dashboard.py') != ''
         run: |
           python scripts/operations_dashboard.py
-        run: |

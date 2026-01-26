@@ -3,7 +3,7 @@ name: Opik Observability & Monitoring
 "on":
   schedule:
     # Run daily at 9:00 AM CET (8:00 AM UTC) for system health monitoring
-    - cron: '0 8 * * *'
+    - cron: "0 8 * * *"
   workflow_dispatch:
 
 env:
@@ -13,7 +13,6 @@ env:
 jobs:
   # Job 1: Fetch system metrics from Opik
   fetch-opik-metrics:
-
     runs-on: ubuntu-latest
     outputs:
       metrics-available: ${{ steps.fetch.outputs.available }}
@@ -23,7 +22,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -70,7 +69,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -110,7 +109,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -150,7 +149,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -172,7 +171,12 @@ jobs:
 
   # Job 5: Generate observability dashboard
   generate-observability-dashboard:
-    needs: [analyze-pipeline-health, analyze-agent-performance, check-data-quality-trends]
+    needs:
+      [
+        analyze-pipeline-health,
+        analyze-agent-performance,
+        check-data-quality-trends,
+      ]
     if: needs.analyze-pipeline-health.result == 'success' && needs.analyze-agent-performance.result == 'success' && needs.check-data-quality-trends.result == 'success'
     runs-on: ubuntu-latest
     steps:
@@ -181,7 +185,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -209,26 +213,42 @@ jobs:
 
   # Job 6: Alert on critical issues
   alert-on-critical-issues:
-    needs: [analyze-pipeline-health, analyze-agent-performance, check-data-quality-trends]
+    needs:
+      [
+        analyze-pipeline-health,
+        analyze-agent-performance,
+        check-data-quality-trends,
+      ]
 
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - name: Send Alert
         run: |
           echo "🚨 Critical issue detected, sending alert..."
           ALERT_MESSAGE="🚨 CRITICAL ALERT: System health issues detected\n"
           ALERT_MESSAGE+="Pipeline: ${{ needs.analyze-pipeline-health.outputs.pipeline-status }}\n"
           ALERT_MESSAGE+="Agents: ${{ needs.analyze-agent-performance.outputs.agent-status }}\n"
           ALERT_MESSAGE+="Data Quality: ${{ needs.check-data-quality-trends.outputs.quality-trend }}"
-
-            -H 'Content-Type: application/json' \
+          # Placeholder for webhook call
+          echo "Alert payload: $ALERT_MESSAGE"
+          # curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" -H 'Content-Type: application/json' \
             -d "{\"text\":\"$ALERT_MESSAGE\"}"
 
   # Job 7: Daily system health summary
   send-daily-summary:
-    needs: [analyze-pipeline-health, analyze-agent-performance, check-data-quality-trends, generate-observability-dashboard]
+    needs:
+      [
+        analyze-pipeline-health,
+        analyze-agent-performance,
+        check-data-quality-trends,
+        generate-observability-dashboard,
+      ]
 
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - name: Send Summary
         run: |
           echo "📊 Sending daily system health summary..."
           SUMMARY="🔍 Daily System Health Report ($(date +%Y-%m-%d))\n\n"
@@ -236,6 +256,7 @@ jobs:
           SUMMARY+="🤖 Agent Performance: ${{ needs.analyze-agent-performance.outputs.agent-status }}\n"
           SUMMARY+="📊 Data Quality: ${{ needs.check-data-quality-trends.outputs.quality-trend }}\n\n"
           SUMMARY+="View detailed dashboard in GitHub Actions artifacts."
-
-            -H 'Content-Type: application/json' \
+          # Placeholder for webhook call
+          echo "Summary payload: $SUMMARY"
+          # curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" -H 'Content-Type: application/json' \
             -d "{\"text\":\"$SUMMARY\"}"

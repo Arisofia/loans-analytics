@@ -52,38 +52,6 @@ jobs:
           echo "Running unified data pipeline (orchestrator)..."
           python scripts/run_data_pipeline.py --action github-action
 
-        with:
-          payload: |
-            {
-              "text": "✅ Unified Data Pipeline completed successfully",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Status:* SUCCESS\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>"
-                  }
-                }
-              ]
-            }
-        env:
-
-        with:
-          payload: |
-            {
-              "text": "🚨 Unified Data Pipeline FAILED",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Status:* FAILED\n*Workflow:* `${{ github.workflow }}`\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>"
-                  }
-                }
-              ]
-            }
-        env:
-
       - name: Upload Pipeline Artifacts
         uses: actions/upload-artifact@v6
         if: always()

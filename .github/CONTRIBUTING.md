@@ -115,6 +115,32 @@ refactor(api): extract request validation logic
 - Don't commit without testing
 - Don't force-push to shared branches
 
+## Configuration & Secrets
+
+### 🚫 No Hard-Coded Paths
+
+Do not hard-code file paths. Use the centralized `Paths` module:
+
+```python
+from src.config.paths import Paths
+
+# ✅ GOOD
+data_dir = Paths.data_dir()
+config_file = Paths.config_file()
+
+# ❌ BAD
+data_dir = Path("data")
+config_file = Path("config/config.yml")
+```
+
+### 🔒 Secrets Management
+
+Never commit secrets to git. We use a unified pattern:
+
+1. **Local Development**: Set secrets in `.env` (gitignored)
+2. **CI/CD & Production**: Set secrets in GitHub Actions Secrets or Environment Variables
+3. **Code Access**: Use `SecretsManager` or `os.getenv`
+
 ## Dependency Management
 
 **Dependabot**

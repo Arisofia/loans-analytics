@@ -96,9 +96,9 @@ def load_loans(paths: Paths, rng: np.random.Generator) -> pd.DataFrame:
             "disburse_principal": rng.uniform(1000, 50000, 100),
             "outstanding_balance": rng.uniform(500, 45000, 100),
             "dpd": rng.choice([0, 15, 45, 90], 100, p=[0.7, 0.15, 0.1, 0.05]),
-                "loan_status": rng.choice(
-                    ["Active", "Complete", "Defaulted"], 100, p=[0.6, 0.3, 0.1]
-                ),
+            "loan_status": rng.choice(
+                ["Active", "Complete", "Defaulted"], 100, p=[0.6, 0.3, 0.1]
+            ),
             "product_type": rng.choice(["Factoring", "LOC", "Term Loan"], 100),
         }
     )
