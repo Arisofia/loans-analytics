@@ -80,26 +80,7 @@ def load_loans(paths: Paths, rng: np.random.Generator) -> pd.DataFrame:
             except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Unexpected error loading %s: %s", fpath.name, e)
 
-    logger.warning("⚠️ No loan file found. Creating synthetic data.")
-    return pd.DataFrame(
-        {
-            "loan_id": [f"L{i:05d}" for i in range(100)],
-            "customer_id": [f"C{rng.randint(1, 51):04d}" for _ in range(100)],
-            "disbursement_date": pd.to_datetime(
-                pd.date_range("2023-01-01", periods=100, freq="3D")
-            ),
-            "loan_end_date": pd.to_datetime(
-                pd.date_range("2023-02-01", periods=100, freq="3D")
-            ),
-            "disburse_principal": rng.uniform(1000, 50000, 100),
-            "outstanding_balance": rng.uniform(500, 45000, 100),
-            "dpd": rng.choice([0, 15, 45, 90], 100, p=[0.7, 0.15, 0.1, 0.05]),
-            "loan_status": rng.choice(
-                ["Active", "Complete", "Defaulted"], 100, p=[0.6, 0.3, 0.1]
-            ),
-            "product_type": rng.choice(["Factoring", "LOC", "Term Loan"], 100),
-        }
-    )
+    raise FileNotFoundError("Critical Error: No valid loan data files found in configured paths.")
 
 
 def load_payments(
@@ -118,17 +99,7 @@ def load_payments(
             except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Unexpected error loading %s: %s", fpath.name, e)
 
-    logger.warning("⚠️ No payment file found. Using synthetic payments.")
-    return pd.DataFrame(
-        {
-            "payment_id": [f"P{i:06d}" for i in range(len(loans_df) * 2)],
-            "loan_id": rng.choice(loans_df["loan_id"], len(loans_df) * 2),
-            "payment_date": pd.to_datetime(
-                pd.date_range("2023-01-01", periods=len(loans_df) * 2, freq="D")
-            ),
-            "payment_amount": rng.uniform(100, 5000, len(loans_df) * 2),
-        }
-    )
+    raise FileNotFoundError("Critical Error: No valid payment data files found.")
 
 
 def load_customers(
@@ -148,16 +119,7 @@ def load_customers(
             except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Unexpected error loading %s: %s", fpath.name, e)
 
-    logger.warning("⚠️ No customer file found. Creating synthetic customer data.")
-    unique_customers = loans_df["customer_id"].unique()[:50]
-    return pd.DataFrame(
-        {
-            "customer_id": unique_customers,
-            "customer_type": rng.choice(
-                ["SME", "Corporate", "Individual"], len(unique_customers)
-            ),
-        }
-    )
+    raise FileNotFoundError("Critical Error: No valid customer data files found.")
 
 
 def load_schedule(paths: Paths) -> Optional[pd.DataFrame]:
@@ -231,7 +193,7 @@ def main():
     dashboard_metrics.setdefault("mom_growth_pct", 0.0)
     dashboard_metrics.setdefault("yoy_growth_pct", 0.0)
     dashboard_metrics.setdefault("ltv_cac_ratio", 0.0)
-    dashboard_metrics.setdefault("cac_usd", 350.0)
+    dashboard_metrics.setdefault("cac_usd", 0.0)
     dashboard_metrics.setdefault(
         "delinquency_rate_30_pct",
         dashboard_metrics.get("delinquency_rate_pct", 0.0),

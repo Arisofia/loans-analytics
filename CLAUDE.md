@@ -176,13 +176,13 @@ make test-cov
 
 ## Phase 10: Frontend Architectural Remediation
 
-**Status**: 🔄 **IN PROGRESS** (2026-01-26)
+**Status**: ✅ **COMPLETE** (2026-01-26)
 
 **Deliverables**:
 
 1. ✅ Remediation Report: `docs/ARCHITECTURAL_REMEDIATION.md`
-2. 🔄 Fix `account-form.tsx` (Supabase Singleton)
-3. 🔄 Fix `ExportControls` usage (Prop Injection)
+2. ✅ Fix `account-form.tsx` (Lazy Supabase Singleton & Input Trimming)
+3. ✅ Fix `ExportControls` usage (Differentiated Error Messaging)
 
 ## Next Steps
 

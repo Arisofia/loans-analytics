@@ -29,5 +29,3 @@ export const getSupabaseClient = (): SupabaseClient => {
   )
   return cachedClient
 }
-
-export const supabaseClient = getSupabaseClient()
