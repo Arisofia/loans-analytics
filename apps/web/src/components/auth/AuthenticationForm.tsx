@@ -28,9 +28,12 @@ export const AuthenticationForm = () => {
     setStatus('submitting')
     setMessage('')
 
+    const email = formState.email.trim()
+    const password = formState.password
+
     const { error } = await supabaseClient.auth.signInWithPassword({
-      email: formState.email,
-      password: formState.password,
+      email,
+      password,
     })
 
     if (error) {
