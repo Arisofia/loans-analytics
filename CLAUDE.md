@@ -209,6 +209,14 @@ make test-cov
 
 **Recent Commits**:
 
+1. fix: optimize observability workflow with caching and refined alerting
+1. fix: remove hardcoded instance URL from dashboard health check
+1. fix: standardize GitHub Action versions and remove unused rng from analytics
+1. fix: remove continue-on-error from threshold checks to ensure pipeline failure
+1. docs: update run_complete_analytics docstrings to reflect removal of synthetic data
+1. fix: standardize string comparisons in deployment and review workflows
+1. docs: update run_complete_analytics docstring to reflect real data requirement
+1. chore: remove redundant requests_fix.py from nested directory
 1. fix: resolve corrupted docstring in customer segmentation script
 1. docs: add architectural remediation report and sync main
 1. chore: final audit cleanup - enforce production config and remove mock providers

@@ -43,7 +43,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Upload artifact for deployment jobs
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: python-app
           path: |
@@ -110,7 +110,7 @@ jobs:
       - name: Health Check
         run: |
           for i in {1..10}; do
-            response=$(curl -s -o /dev/null -w "%{http_code}" https://abaco-analytics-dashboard-gbbjege0gxcbhyg9.canadacentral-01.azurewebsites.net)
+            response=$(curl -s -o /dev/null -w "%{http_code}" "https://${{ env.WEBAPP_NAME }}.azurewebsites.net")
             if [ "$response" -eq 200 ]; then
               echo "✅ App is healthy!"
               exit 0

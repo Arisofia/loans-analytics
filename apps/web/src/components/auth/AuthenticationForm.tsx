@@ -29,7 +29,7 @@ export const AuthenticationForm = () => {
     setMessage('')
 
     const supabase = getSupabaseClient()
-    const { error } = await supabaseClient.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email: formState.email.trim(),
       password: formState.password,
     })
