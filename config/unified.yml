@@ -1,0 +1,191 @@
+agents:
+  c_level_executive:
+    description: Autonomous agent for C-level dashboards and executive summaries
+    knowledge_sources:
+    - docs/CEO_OPERATING_SYSTEM_v2_EXECUTIVE.md: CEO operating system and strategy
+    - data.abaco_portfolio_calculations: Portfolio metrics CSV
+    - config.kpis.kpi_definitions: KPI definitions and formulas
+    - docs/okr_dashboard_summary.md: OKR and dashboard summaries
+    name: CLevelExecutiveAgent
+    namespace: fintech.factory.agents
+    output_formats:
+    - executive_dashboard: Interactive HTML/Markdown
+    - board_presentation: PDF/Slides
+    - executive_summary: Markdown/PDF
+    - compliance_report: Markdown/CSV
+    primary_responsibilities:
+    - Aggregate and visualize North Star metrics and KPIs
+    - Generate executive summaries and board-ready presentations
+    - Track OKRs, AUM, customer growth, and risk metrics
+    refresh_schedule:
+      board_presentation: 0 9 1 * *
+      continuous_monitoring: '*/60 * * * *'
+      executive_dashboard: 0 8 * * 1
+    requires_human_approval: true
+    role: c_level_executive
+    version: '1.0'
+  data_ingestion_transformation:
+    description: Autonomous agent for data ingestion and transformation
+    name: DataIngestionTransformationAgent
+    namespace: fintech.factory.agents
+    requires_human_approval: false
+    role: data_engineer
+    version: '1.0'
+  kpi_analytics:
+    description: Autonomous agent responsible for ingesting, transforming, and calculating
+      KPIs
+    knowledge_sources:
+    - data.abaco_portfolio_calculations: Portfolio metrics CSV
+    - config.kpis.kpi_definitions: KPI definitions and formulas
+    - historical.snapshots: Historical KPI snapshots
+    - docs/analytics: Analytics documentation and standards
+    name: KPIAnalyticsAgent
+    namespace: fintech.factory.agents
+    output_formats:
+    - dashboard: Interactive HTML/Markdown
+    - kpi_report: PDF/CSV for stakeholders
+    - audit_log: JSON for compliance
+    primary_responsibilities:
+    - Ingest raw portfolio and loan data from trusted sources
+    - Transform and clean data for analysis
+    - Calculate KPIs with robust error handling and validation
+    - Generate dashboards and visualizations with full traceability
+    refresh_schedule:
+      continuous_monitoring: '*/30 * * * *'
+      dashboard: 0 7 * * *
+      kpi_report: 0 8 * * 1
+    requires_human_approval: false
+    role: kpi_analyst
+    version: '1.0'
+  risk_analysis:
+    description: Autonomous agent for continuous portfolio risk monitoring
+    knowledge_sources:
+    - {}
+    - {}
+    - {}
+    - historical.risk_snapshots: Historical snapshots for trend analysis
+    name: RiskAnalysisAgent
+    namespace: fintech.factory.agents
+    output_formats:
+    - daily_risk_report: Markdown for email
+    - weekly_summary: PDF slides for stakeholders
+    - alerts: JSON for alerting systems
+    primary_responsibilities:
+    - Monitor PAR_90 and RDR_90 metrics continuously
+    - Predict collection rate trends using historical data
+    - Generate portfolio health scores
+    - Alert on risk threshold breaches
+    refresh_schedule:
+      continuous_monitoring: '*/15 * * * *'
+      daily_report: 0 8 * * *
+      weekly_report: 0 9 * * 1
+    requires_human_approval: false
+    role: risk_analyst
+    thresholds:
+      collection_rate_warning: 1.5
+      par_90_critical: 5.0
+      par_90_warning: 3.0
+      rdr_90_below_threshold: 25.0
+    version: '1.0'
+analytics_weights:
+  dq_duplicate_weight: 0.5
+  dq_invalid_numeric_weight: 0.6
+  dq_null_weight: 1.0
+environment: ${PIPELINE_ENV:-development}
+financial_guardrails:
+  max_cost_of_debt: 0.13
+  max_default_rate: 0.04
+  max_replines_deviation: 0.02
+  max_single_obligor_concentration: 0.04
+  max_top_10_concentration: 0.3
+  min_ce_6m: 0.96
+  min_dscr: 1.2
+  min_rotation: 4.5
+  target_apr_max: 0.4
+  target_apr_min: 0.34
+  utilization_max: 0.9
+  utilization_min: 0.75
+integrations:
+  meta:
+    app_id: ${META_APP_ID}
+    auth:
+      system_user_token_secret: META_SYSTEM_USER_TOKEN
+    business_id: ${META_BUSINESS_ID}
+    default_ad_accounts:
+    - act_${META_AD_ACCOUNT_ID_1}
+    - act_${META_AD_ACCOUNT_ID_2}
+    enabled: false
+    fields:
+    - campaign.name
+    - campaign.id
+    - adset.id
+    - adset.name
+    - insights.impressions
+    - insights.clicks
+    - insights.spend
+    - insights.actions
+    polling_interval_minutes: 60
+    type: marketing_analytics
+  perplexity_comet:
+    enabled: false
+    frequency: daily
+    mode: paid_or_dedicated
+    outputs:
+    - format: jsonl
+      path: data/archives/public_crawl/
+    purpose: Periodic public crawl of transparency.gob.sv, hacienda, BCR, official
+      news sites
+    recommended_plan: Perplexity / Comet paid plan for structured page crawling
+    type: web_crawling
+kpis:
+- name: total_customers
+  owner: growth_sales
+  precision: 0
+  source_path: traction.total_customers
+  validation:
+    min: 0
+- name: total_volume_usd
+  owner: growth_sales
+  precision: 2
+  source_path: traction.total_volume_usd
+  validation:
+    min: 0
+- name: par_90
+  owner: risk
+  precision: 4
+  source_path: delinquency.par90_latest
+  validation:
+    max: 1
+    min: 0
+- name: collection_rate
+  owner: finance
+  precision: 4
+  source_path: collections.collection_rate_latest
+  validation:
+    max: 1
+    min: 0
+- name: data_freshness_hours
+  owner: compliance
+  precision: 2
+  source_path: data_quality.data_freshness_hours
+  validation:
+    min: 0
+name: abaco_unified_pipeline
+observability:
+  lineage:
+    capture_input_hash: true
+    capture_output_hash: true
+    enabled: true
+  logging:
+    format: json
+    level: INFO
+risk_parameters:
+  dilution_threshold: 0.05
+  loss_given_default: 0.1
+  recourse_cap: 100000
+sla_settings:
+  decision_sla_hours: 24
+  funding_sla_hours: 48
+  min_slo: 0.995
+  sla_compliance_target: 0.9
+version: '2025-12-31'

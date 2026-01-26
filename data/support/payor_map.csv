@@ -1,0 +1,4 @@
+customer_id,payor_id,payor_name,effective_date
+CUST001,PAY001,Empresa XYZ SA,2024-01-01
+CUST002,PAY002,Gobierno Municipal,2024-01-15
+CUST003,PAY003,Industria ACME SA,2024-02-01

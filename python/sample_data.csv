@@ -1,0 +1,4 @@
+loan_id,total_receivable_usd,total_eligible_usd,discounted_balance_usd,measurement_date
+L1,1000,1000,1000,2026-01-01
+L2,2000,2000,2000,2026-01-01
+L3,invalid,3000,3000,2026-01-02

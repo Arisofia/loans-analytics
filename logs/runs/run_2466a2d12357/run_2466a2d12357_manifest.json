@@ -1,0 +1,309 @@
+{
+  "run_id": "run_2466a2d12357",
+  "sub_runs": {
+    "pipeline": "run_2466a2d12357",
+    "ingestion": "ingest_9345ea57d75e",
+    "transformation": "run_2466a2d12357",
+    "calculation": "run_2466a2d12357"
+  },
+  "generated_at": "2026-01-22T10:34:15.391290+00:00",
+  "metrics": {
+    "PAR30": {
+      "value": 6.151138616080396,
+      "status": "warning",
+      "display_name": "PAR 30+",
+      "formula": "SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100",
+      "source_table": "fact_loans",
+      "precision": 2,
+      "validation_range": null,
+      "rows_processed": 36,
+      "null_count": 0,
+      "timestamp": "2026-01-22T10:34:15.176443+00:00",
+      "dpd_30_60_sum": 2256358.25,
+      "dpd_60_90_sum": 1337379.1300000001,
+      "dpd_90_plus_sum": 2731284.4599999995,
+      "total_receivable_sum": 102826846.13
+    },
+    "PAR90": {
+      "value": 2.656197834315508,
+      "status": "unknown",
+      "display_name": "PAR90",
+      "formula": "SUM(dpd_90_plus_usd) / SUM(total_receivable_usd) * 100",
+      "source_table": "fact_loans",
+      "precision": 2,
+      "validation_range": null,
+      "rows_processed": 36,
+      "null_count": 0,
+      "timestamp": "2026-01-22T10:34:15.176765+00:00",
+      "dpd_sum": 2731284.4599999995,
+      "total_receivable_sum": 102826846.13
+    },
+    "CollectionRate": {
+      "value": 0.0,
+      "status": "critical",
+      "display_name": "Collection Rate",
+      "formula": "SUM(cash_available) / SUM(total_eligible) * 100",
+      "source_table": "fact_loans",
+      "precision": 2,
+      "validation_range": null,
+      "rows_processed": 36,
+      "null_count": 0,
+      "timestamp": "2026-01-22T10:34:15.177103+00:00",
+      "cash_sum": 0.0,
+      "eligible_sum": 102826846.13
+    },
+    "PortfolioHealth": {
+      "value": 0.0,
+      "formula": "(10 - PAR30/10) * (CollectionRate/10)",
+      "source_table": "metrics",
+      "precision": 2,
+      "validation_range": [0, 10],
+      "rows_processed": 2,
+      "null_count": 0,
+      "timestamp": "2026-01-22T10:34:15.177243+00:00",
+      "par_30_input": 6.151138616080396,
+      "collection_rate_input": 0.0,
+      "par_component": 9.38488613839196,
+      "coll_component": 0.0
+    }
+  },
+  "metadata": {
+    "ingestion": {
+      "source__loans": "data/raw/_exports/loan_par_balances.csv",
+      "financials_path": "data/raw/financial_statements",
+      "source_mode": "_par_balances",
+      "checksum": "2466a2d12357a052fc47869062ec01a0afb33ea928b65f35a20b0064c9c6786f",
+      "row_count": 36,
+      "error_count": 0,
+      "deduped_count": 0,
+      "audit_log": [
+        {
+          "run_id": "ingest_9345ea57d75e",
+          "event": "_start",
+          "status": "initiated",
+          "timestamp": "2026-01-22T10:34:15.112686+00:00",
+          "loans_path": "data/raw/_exports/loan_par_balances.csv",
+          "financials_path": "data/raw/financial_statements"
+        },
+        {
+          "run_id": "ingest_9345ea57d75e",
+          "event": "_financials",
+          "status": "skipped",
+          "timestamp": "2026-01-22T10:34:15.139915+00:00",
+          "reason": "no_files_found"
+        },
+        {
+          "run_id": "ingest_9345ea57d75e",
+          "event": "archive",
+          "status": "success",
+          "timestamp": "2026-01-22T10:34:15.166105+00:00",
+          "file": "data/raw/_exports/loan_par_balances.csv",
+          "archived": "data/raw/warehouse/loan_par_balances.csv"
+        },
+        {
+          "run_id": "ingest_9345ea57d75e",
+          "event": "_complete",
+          "status": "success",
+          "timestamp": "2026-01-22T10:34:15.166457+00:00",
+          "row_count": 36
+        }
+      ],
+      "archived_path": "data/raw/warehouse/loan_par_balances.csv",
+      "validation_errors": [],
+      "cash_dates": 0
+    },
+    "lineage": [
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "start",
+        "status": "initiated",
+        "timestamp": "2026-01-22T10:34:15.168710+00:00",
+        "input_rows": 36
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "normalization",
+        "status": "success",
+        "timestamp": "2026-01-22T10:34:15.169468+00:00",
+        "columns": [
+          "loan_id",
+          "total_receivable_usd",
+          "total_eligible_usd",
+          "discounted_balance_usd",
+          "cash_available_usd",
+          "dpd_0_7_usd",
+          "dpd_7_30_usd",
+          "dpd_30_60_usd",
+          "dpd_60_90_usd",
+          "dpd_90_plus_usd",
+          "measurement_date"
+        ]
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "null_handling",
+        "status": "success",
+        "timestamp": "2026-01-22T10:34:15.170317+00:00"
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "outlier_detection",
+        "status": "clean",
+        "timestamp": "2026-01-22T10:34:15.172184+00:00"
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "pii_masking",
+        "status": "completed",
+        "timestamp": "2026-01-22T10:34:15.172498+00:00",
+        "masked_columns": []
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "lineage",
+        "status": "captured",
+        "timestamp": "2026-01-22T10:34:15.173951+00:00",
+        "input_hash": "6a2a9528ba240a89880ec935200bf22a18b71765868971e6ebc89096fbc2c315",
+        "output_hash": "6a2a9528ba240a89880ec935200bf22a18b71765868971e6ebc89096fbc2c315"
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "quality_checks",
+        "status": "completed",
+        "timestamp": "2026-01-22T10:34:15.175053+00:00",
+        "checks": 19
+      },
+      {
+        "run_id": "run_2466a2d12357",
+        "step": "complete",
+        "status": "success",
+        "timestamp": "2026-01-22T10:34:15.175191+00:00",
+        "output_rows": 36
+      }
+    ],
+    "calculation_audit": [
+      {
+        "run_id": "kpi_20260122_113415",
+        "event": "calculate_all",
+        "status": "started",
+        "timestamp": "2026-01-22T10:34:15.177368+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": 3.0,
+        "kpi": NaN,
+        "value": NaN
+      },
+      {
+        "run_id": "kpi_20260122_113415",
+        "event": "kpi_calculated",
+        "status": "success",
+        "timestamp": "2026-01-22T10:34:15.178029+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": NaN,
+        "kpi": "PAR30",
+        "value": 6.151138616080396
+      },
+      {
+        "run_id": "kpi_20260122_113415",
+        "event": "kpi_calculated",
+        "status": "success",
+        "timestamp": "2026-01-22T10:34:15.178381+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": NaN,
+        "kpi": "PAR90",
+        "value": 2.656197834315508
+      },
+      {
+        "run_id": "kpi_20260122_113415",
+        "event": "kpi_calculated",
+        "status": "success",
+        "timestamp": "2026-01-22T10:34:15.178716+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": NaN,
+        "kpi": "CollectionRate",
+        "value": 0.0
+      },
+      {
+        "run_id": "kpi_20260122_113415",
+        "event": "composite_kpi_calculated",
+        "status": "success",
+        "timestamp": "2026-01-22T10:34:15.178854+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": NaN,
+        "kpi": "PortfolioHealth",
+        "value": NaN
+      },
+      {
+        "run_id": "kpi_20260122_113415",
+        "event": "calculate_all",
+        "status": "completed",
+        "timestamp": "2026-01-22T10:34:15.178975+00:00",
+        "actor": "unified_pipeline",
+        "action": "batch_calc",
+        "kpi_count": 4.0,
+        "kpi": NaN,
+        "value": NaN
+      }
+    ],
+    "anomalies": {
+      "PAR30": {
+        "previous": 3.0,
+        "current": 6.151138616080396,
+        "change_pct": 1.0504
+      },
+      "PAR90": {
+        "previous": 1.0,
+        "current": 2.656197834315508,
+        "change_pct": 1.6562
+      }
+    },
+    "context": {
+      "user": "system",
+      "action": "manual"
+    }
+  },
+  "quality_checks": {
+    "dpd_0_7_usd_non_negative": true,
+    "dpd_7_30_usd_non_negative": true,
+    "dpd_30_60_usd_non_negative": true,
+    "dpd_60_90_usd_non_negative": true,
+    "dpd_90_plus_usd_non_negative": true,
+    "total_receivable_usd_non_negative": true,
+    "total_eligible_usd_non_negative": true,
+    "discounted_balance_usd_non_negative": true,
+    "cash_available_usd_non_negative": true,
+    "measurement_date_iso8601": true,
+    "dpd_7_30_usd_no_nulls": true,
+    "dpd_90_plus_usd_no_nulls": true,
+    "discounted_balance_usd_no_nulls": true,
+    "total_eligible_usd_no_nulls": true,
+    "dpd_30_60_usd_no_nulls": true,
+    "dpd_60_90_usd_no_nulls": true,
+    "dpd_0_7_usd_no_nulls": true,
+    "cash_available_usd_no_nulls": true,
+    "total_receivable_usd_no_nulls": true
+  },
+  "files": {
+    "parquet": "data/metrics/run_2466a2d12357.parquet",
+    "csv": "data/metrics/run_2466a2d12357.csv",
+    "metrics_json": "data/metrics/run_2466a2d12357_metrics.json"
+  },
+  "timeseries": {
+    "daily": "data/metrics/timeseries/run_2466a2d12357_daily.parquet",
+    "weekly": "data/metrics/timeseries/run_2466a2d12357_weekly.parquet",
+    "monthly": "data/metrics/timeseries/run_2466a2d12357_monthly.parquet"
+  },
+  "compliance_report": "logs/runs/run_2466a2d12357/run_2466a2d12357_compliance.json",
+  "file_hashes": {
+    "parquet": "0746a1cac2b560a6d0836b1032ffe009194ff671c044161d0b1097dc5a996efb",
+    "csv": "ad1dca3081b712666bf634321266c4e632cbb6cc792ce03a5dfd6cd48ceb88e5",
+    "metrics_json": "fd66ec60587ededd851f1d3ac2e3bc127afc242b8f2d0d4b3f0981a5fc6c8e37",
+    "timeseries_daily": "29882dc36bf6eeb7d643b8880d9e7a8444596a16b98d25eb3370295a7170fa8a",
+    "timeseries_weekly": "7b65fe0e68c24b3688fad63d73cfcd6f535e68b7b47cf8bf51ded79318bef7fa",
+    "timeseries_monthly": "9b2e9d1c281f16740a64bd7e96489889c4c6def80964a7b384ea94b65f74ed39"
+  }
+}

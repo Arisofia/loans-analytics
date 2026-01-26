@@ -1,0 +1,54 @@
+name: CI
+
+name: CI
+
+          run: echo "CI failed! Please check the logs."
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+
+  changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: List root directory contents
+        run: ls -l
+
+      - name: Build with Gradle (clean, Java 21)
+        run: ./gradlew clean build --no-daemon
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+
+      - name: Coverage report
+        run: coverage report --fail-under=85
+
+  sonar:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
+    steps:
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v5.0.0
+        with:
+          filters: |
+            analytics:
+              - 'python/**'
+              - 'src/**'
+              - 'tests/**'
+            web:
+              - 'apps/web/**'
+
+  analytics:
+          - name: Upload coverage artifact
+            uses: actions/upload-artifact@v4
+            with:
+              name: analytics-coverage
+              path: coverage-src.xml
+      - name: Set up Python

@@ -1,0 +1,60 @@
+# Version Control
+.git/
+.gitignore
+.github/
+
+# Virtual Environments & Packages
+.venv/
+.venv*/
+node_modules/
+__pycache__/
+*.pyc
+
+# Build & Cache
+.gradle/
+.mvn/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.sonarqube/
+.zencoder/
+.zenflow/
+.vercel/
+.rollback/
+build/
+dist/
+org.eclipse.*/
+
+# Project Specific Data & Docs
+data/
+data_samples/
+exports/
+archives/
+docs/
+tests/
+htmlcov/
+logs/
+demo_bak*/
+
+# App Folders (agents/ is explicitly excluded from this list and WILL be deployed)
+apps/
+node/
+services/
+dashboard/
+orchestration/
+sql/
+scripts/
+python/
+
+# Config & Secrets
+local.settings.json
+.env*
+*.md
+package-lock.json
+pnpm-lock.yaml
+tsconfig.tsbuildinfo
+Makefile
+alembic.ini
+Dockerfile*
+compose*.yaml
+sonar-project.properties

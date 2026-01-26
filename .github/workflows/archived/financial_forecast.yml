@@ -1,0 +1,32 @@
+name: Financial Forecast
+on:
+  schedule:
+    - cron: '0 7 * * *' # 8:00 AM CET daily
+  workflow_dispatch:
+
+jobs:
+  financial-forecast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Setup Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: Run Financial Forecast
+        if: hashFiles('scripts/financial_forecast.py') != ''
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+        run: |
+          python scripts/financial_forecast.py
+      - name: Post to Power BI
+        if: hashFiles('scripts/post_to_powerbi.py') != ''
+        env:
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+        run: |
+          python scripts/post_to_powerbi.py

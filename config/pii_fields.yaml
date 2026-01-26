@@ -1,0 +1,24 @@
+# PII Fields Configuration
+# Fields to be masked or redacted during transformation phase
+
+keywords:
+  - "name"
+  - "email"
+  - "phone"
+  - "address"
+  - "ssn"
+  - "tin"
+  - "identifier"
+  - "id_number"
+  - "birth"
+  - "dob"
+  - "tax_id"
+
+explicit_columns:
+  - "customer_name"
+  - "borrower_name"
+  - "contact_email"
+  - "national_id"
+
+# Actions can be 'mask' (sha256) or 'redact' (remove/null)
+default_action: "mask"

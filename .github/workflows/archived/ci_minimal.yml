@@ -1,0 +1,18 @@
+name: Minimal CI Test
+
+on:
+  push:
+    branches: [main, develop, fix/ci-workflow-codecov]
+  pull_request:
+    branches: [main, develop, fix/ci-workflow-codecov]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo Hello
+        run: echo "Hello, world!"

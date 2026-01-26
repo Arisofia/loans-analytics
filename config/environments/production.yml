@@ -1,0 +1,35 @@
+agents:
+  c_level_executive:
+    requires_human_approval: true
+  kpi_analytics:
+    refresh_schedule:
+      continuous_monitoring: '*/30 * * * *'
+  risk_analysis:
+    refresh_schedule:
+      continuous_monitoring: '*/15 * * * *'
+integrations:
+  meta:
+    app_id: ${META_APP_ID}
+    auth:
+      system_user_token_secret: META_SYSTEM_USER_TOKEN
+    business_id: ${META_BUSINESS_ID}
+    enabled: true
+observability:
+  logging:
+    level: INFO
+pipeline:
+  phases:
+    ingestion:
+      file:
+        default_path: data/archives/raw/loan_tape.csv
+      validation:
+        strict: true
+    outputs:
+      storage:
+        local_dir: data/metrics/production
+      supabase:
+        enabled: true
+        schema: analytics
+        tables:
+        - fact_loans
+        - kpi_timeseries_daily

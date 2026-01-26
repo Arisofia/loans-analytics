@@ -1,0 +1,105 @@
+# Canonical configuration for the unified Cascade → Analytics pipeline.
+# All stages must reference this file as the single source of truth.
+
+pipeline:
+  name: abaco_unified_pipeline
+  run_metadata:
+    freshness_sla_minutes: 10
+    allow_manual_trigger: false
+    log_root: logs/runs
+
+cascade:
+  base_url: https://app.cascadedebt.com
+  portfolio_id: abaco
+  endpoints:
+    risk_analytics: /portfolio/${portfolio_id}/risk-analytics
+    cash_flows: /portfolio/${portfolio_id}/cash-flows
+  auth:
+    token_secret_env: META_SYSTEM_USER_TOKEN
+    refresh_threshold_hours: 24
+  client:
+    max_retries: 3
+    backoff_seconds: 2
+    rate_limit_per_second: 5
+
+raw_storage:
+  root: data/raw/cascade
+  checksum_algorithm: sha256
+  archive_format: parquet
+  duplicate_strategy: skip
+
+transformations:
+  validation:
+    dataframe_schema: config/data_schemas/cascade.yaml
+    expectations_suite: config/data_schemas/expectations/cascade.json
+  null_handling:
+    default_fill: null
+    drop_empty_rows: true
+  outliers:
+    zscore_threshold: 4.0
+    clip_bounds:
+      principal: [0, null]
+  referential_integrity:
+    foreign_keys:
+      - table: cash_flows
+        column: loan_id
+        references:
+          table: loans
+          column: loan_id
+  audit_log:
+    enable: true
+    path: logs/runs/${run_id}/transformations.json
+
+calculations:
+  kpis:
+    - name: PAR90
+      description: Portfolio at risk over 90 days
+      formula: "SUM(principal WHERE days_past_due >= 90) / SUM(principal)"
+      source_table: fact_loans
+      precision: 4
+      validation_range: [0, 1]
+    - name: collection_rate
+      description: Cash collected vs expected
+      formula: "SUM(cash_received) / SUM(cash_scheduled)"
+      source_table: fact_cash_flows
+      precision: 4
+      validation_range: [0, 1]
+  rollups:
+    - grain: day
+      tables:
+        - fact_loans
+        - fact_cash_flows
+    - grain: week
+      tables:
+        - fact_loans
+        - fact_cash_flows
+  anomaly_detection:
+    enable: true
+    method: zscore
+    threshold: 3.0
+  manifest:
+    path: logs/runs/${run_id}/calculation_manifest.json
+
+outputs:
+  formats:
+    - parquet
+    - csv
+    - json
+  database:
+    provider: supabase
+    schema: analytics
+    tables:
+      - fact_loans
+      - fact_cash_flows
+      - kpi_timeseries_daily
+    transactional_write: true
+    max_retries: 3
+  downstream:
+    refresh_hooks:
+      - type: streamlit
+        endpoint: http://localhost:8501/-/refresh
+      - type: webhook
+        endpoint: https://example.com/pipeline/refresh
+  audit_trail:
+    enable: true
+    path: logs/runs/${run_id}/audit.json

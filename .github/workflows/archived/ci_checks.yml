@@ -1,0 +1,63 @@
+name: CI Checks
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'scripts/**'
+      - 'python/**'
+      - 'tests/evaluation/**'
+      - '.github/workflows/ci-checks.yml'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'scripts/**'
+      - 'python/**'
+      - 'tests/evaluation/**'
+      - '.github/workflows/ci-checks.yml'
+  workflow_dispatch:
+    inputs:
+      DATA_FILE:
+        description: 'Path to CSV data file (relative to repo root)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  run-demos:
+    name: Run Demo Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run Financial Analysis Demo
+        run: |
+          DATA_FILE="${{ inputs.DATA_FILE }}"
+          if [ -n "$DATA_FILE" ]; then
+            python scripts/demo_financial_analysis.py --data "$DATA_FILE" > demo_output.txt
+          else
+            python scripts/demo_financial_analysis.py > demo_output.txt
+          fi
+      - name: Generate Report
+        if: always()
+        run: |
+          python scripts/generate_markdown_report.py \
+            --text demo_output.txt \
+            --images dpd_distribution.png exposure_distribution.png
+      - name: Upload Demo Output
+        uses: actions/upload-artifact@v4
+        with:
+          name: financial-analysis-demo
+          path: |
+            demo_output.txt
+            *.png
