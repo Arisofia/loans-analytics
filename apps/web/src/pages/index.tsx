@@ -1,8 +1,6 @@
 import Head from 'next/head'
-
 import { AccountConfigurationForm } from '@/components/account/AccountConfigurationForm'
 import { AuthenticationForm } from '@/components/auth/AuthenticationForm'
-
 const HomePage = () => (
   <>
     <Head>
@@ -18,15 +16,16 @@ const HomePage = () => (
             Operational controls for secured lending portfolios
           </h1>
           <p className="max-w-2xl text-sm text-slate-300">
-            Connect authentication and account configuration to activate data ingestion,
-            KPI exports, and compliance-ready analytics workflows.
+            Connect authentication and account configuration to activate data
+            ingestion, KPI exports, and compliance-ready analytics workflows.
           </p>
         </header>
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
             <h2 className="text-lg font-semibold">Secure access</h2>
             <p className="mt-1 text-xs text-slate-400">
-              Authenticate with your Supabase-backed identity to unlock live data.
+              Authenticate with your Supabase-backed identity to unlock live
+              data.
             </p>
             <div className="mt-4">
               <AuthenticationForm />
@@ -35,7 +34,8 @@ const HomePage = () => (
           <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
             <h2 className="text-lg font-semibold">Account configuration</h2>
             <p className="mt-1 text-xs text-slate-400">
-              Maintain notification routing and territory assignments for reporting.
+              Maintain notification routing and territory assignments for
+              reporting.
             </p>
             <div className="mt-4">
               <AccountConfigurationForm />
@@ -46,5 +46,4 @@ const HomePage = () => (
     </main>
   </>
 )
-
 export default HomePage

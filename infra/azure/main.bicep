@@ -1,6 +1,5 @@
 // main.bicep
 // Azure Bicep template for fintech analytics platform
-
 param location string = resourceGroup().location
 param webAppName string
 param storageAccountName string
@@ -13,7 +12,6 @@ param sqlAdminPassword string
 param sqlFirewallRules array = []
 @description('Allow Azure services (including the App Service) to reach SQL via the 0.0.0.0 rule.')
 param allowAzureServices bool = true
-
 var firewallRules = concat(
   allowAzureServices
     ? [
@@ -26,7 +24,6 @@ var firewallRules = concat(
     : [],
   sqlFirewallRules
 )
-
 resource storage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: storageAccountName
   location: location
@@ -38,7 +35,6 @@ resource storage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
     minimumTlsVersion: 'TLS1_2'
   }
 }
-
 resource webapp 'Microsoft.Web/sites@2022-09-01' = {
   name: webAppName
   location: location
@@ -47,7 +43,6 @@ resource webapp 'Microsoft.Web/sites@2022-09-01' = {
     serverFarmId: appserviceplan.id
   }
 }
-
 resource appserviceplan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: '${webAppName}-plan'
   location: location
@@ -56,7 +51,6 @@ resource appserviceplan 'Microsoft.Web/serverfarms@2022-09-01' = {
     tier: 'Basic'
   }
 }
-
 resource sqlserver 'Microsoft.Sql/servers@2022-02-01-preview' = {
   name: sqlServerName
   location: location
@@ -65,7 +59,6 @@ resource sqlserver 'Microsoft.Sql/servers@2022-02-01-preview' = {
     administratorLoginPassword: sqlAdminPassword
   }
 }
-
 resource sqlFirewall 'Microsoft.Sql/servers/firewallRules@2022-02-01-preview' = [
   for rule in firewallRules: {
     name: rule.name
@@ -75,7 +68,6 @@ resource sqlFirewall 'Microsoft.Sql/servers/firewallRules@2022-02-01-preview' = 
     }
   }
 ]
-
 resource sqldb 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
   name: sqlDbName
   location: location
@@ -89,7 +81,6 @@ resource sqldb 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
     tier: 'Basic'
   }
 }
-
 resource keyvault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   name: '${webAppName}-kv'
   location: location
@@ -104,7 +95,6 @@ resource keyvault 'Microsoft.KeyVault/vaults@2023-02-01' = {
     enabledForTemplateDeployment: true
   }
 }
-
 resource appinsights 'Microsoft.Insights/components@2020-02-02' = {
   name: '${webAppName}-insights'
   location: location
@@ -114,7 +104,6 @@ resource appinsights 'Microsoft.Insights/components@2020-02-02' = {
     RetentionInDays: 90
   }
 }
-
 resource webappconfig 'Microsoft.Web/sites/config@2022-09-01' = {
   parent: webapp
   name: 'appsettings'
@@ -124,7 +113,6 @@ resource webappconfig 'Microsoft.Web/sites/config@2022-09-01' = {
     AZURE_KEY_VAULT_URL: keyvault.properties.vaultUri
   }
 }
-
 output webAppUrl string = webapp.properties.defaultHostName
 output storageAccount string = storage.name
 output sqlDb string = sqldb.name
