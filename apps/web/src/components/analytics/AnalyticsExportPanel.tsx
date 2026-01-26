@@ -1,28 +1,17 @@
 'use client'
 
-<<<<<<< HEAD
-import type { AnalyticsSummary, LoanRecord } from '@/types/analytics'
-=======
 import type {
   AnalyticsExportPayload,
   AnalyticsSummary,
   LoanRecord,
 } from '@/types/analytics'
->>>>>>> codex/fix-frontend-build-failures
 
 import { AnalyticsExportControls } from './AnalyticsExportControls'
 
 type AnalyticsExportPanelProps = {
   summary: AnalyticsSummary
   loans: LoanRecord[]
-<<<<<<< HEAD
-  onExport?: (payload: {
-    summary: AnalyticsSummary
-    loans: LoanRecord[]
-  }) => Promise<void>
-=======
   onExport?: (payload: AnalyticsExportPayload) => Promise<void>
->>>>>>> codex/fix-frontend-build-failures
 }
 
 export const AnalyticsExportPanel = ({
@@ -52,6 +41,10 @@ export const AnalyticsExportPanel = ({
         </div>
       </div>
     </div>
-    <AnalyticsExportControls summary={summary} loans={loans} onExport={onExport} />
+    <AnalyticsExportControls
+      summary={summary}
+      loans={loans}
+      onExport={onExport}
+    />
   </div>
 )
