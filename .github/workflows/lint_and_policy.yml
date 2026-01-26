@@ -21,7 +21,7 @@ jobs:
       - name: Install linters and tools
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt -r dev-requirements.txt
+          pip install -r requirements.txt
           pip install jsonlint yamllint==1.33.0
           npm install -g markdownlint-cli
 
