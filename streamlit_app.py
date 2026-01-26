@@ -10,42 +10,9 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# Theme definition (as per design system)
-ABACO_THEME = {
-    "colors": {
-        "primary_purple": "#C1A6FF",
-        "purple_dark": "#5F4896",
-        "dark_blue": "#0C2742",
-        "light_gray": "#CED4D9",
-        "medium_gray": "#9EA9B3",
-        "dark_gray": "#6D7D8E",
-        "white": "#FFFFFF",
-        "background": "#030E19",
-        "success": "#10B981",
-        "success_dark": "#059669",
-        "warning": "#FB923C",
-        "warning_dark": "#EA580C",
-        "error": "#DC2626",
-        "error_dark": "#991B1B",
-        "info": "#3B82F6",
-        "info_dark": "#1D4ED8",
-    },
-    "gradients": {
-        "title": "linear-gradient(81.74deg, #C1A6FF 5.91%, #5F4896 79.73%)",
-        "card_primary": "linear-gradient(135deg, rgba(193, 166, 255, 0.2) 0%, rgba(0, 0, 0, 0.5) 100%)",
-        "card_secondary": "linear-gradient(135deg, rgba(34, 18, 72, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%)",
-        "card_highlight": "linear-gradient(135deg, rgba(193, 166, 255, 0.25) 0%, rgba(0, 0, 0, 0.8) 100%)",
-    },
-    "typography": {
-        "primary_font": "Lato",
-        "secondary_font": "Poppins",
-        "title_size": "48px",
-        "metric_size": "48px",
-        "label_size": "16px",
-        "body_size": "14px",
-        "description_size": "12px",
-    },
-}
+from kpi_catalog_processor import KPICatalogProcessor
+from theme import ABACO_THEME
+from tracing_setup import enable_auto_instrumentation, init_tracing
 
 st.set_page_config(
     page_title="ABACO Financial Intelligence Platform",
@@ -90,7 +57,8 @@ def clean_numeric(col):
         numeric_ratio = pd.to_numeric(cleaned, errors="coerce").notna().mean()
         if numeric_ratio >= 0.6:
             col = pd.to_numeric(
-                col.astype(str).str.replace(r"[$,€%₡,]", "", regex=True), errors="coerce"
+                col.astype(str).str.replace(r"[$,€%₡,]", "", regex=True),
+                errors="coerce",
             )
     return col
 
@@ -127,7 +95,15 @@ def format_kpi_value(name, value):
     if name_lower in {"ltv_cac_ratio", "rotation"}:
         return f"{value:.2f}x"
 
-    percent_hints = ("pct", "rate", "ratio", "yield", "apr", "penetration", "recurrence")
+    percent_hints = (
+        "pct",
+        "rate",
+        "ratio",
+        "yield",
+        "apr",
+        "penetration",
+        "recurrence",
+    )
     currency_hints = (
         "usd",
         "revenue",
@@ -141,7 +117,16 @@ def format_kpi_value(name, value):
         "received",
         "sched",
     )
-    count_hints = ("clients", "customers", "loans", "count", "early", "late", "on_time", "fte")
+    count_hints = (
+        "clients",
+        "customers",
+        "loans",
+        "count",
+        "early",
+        "late",
+        "on_time",
+        "fte",
+    )
 
     if any(hint in name_lower for hint in percent_hints):
         return format_percent(float(value))
@@ -229,48 +214,32 @@ def generate_kpi_exports(_data):
     exports_dir = EXPORTS_DIR
     exports_dir.mkdir(parents=True, exist_ok=True)
 
-    from src.pipeline.orchestrator import UnifiedPipeline
+    catalog_proc = KPICatalogProcessor(
+        _data["loan_data"],
+        _data["historic_payment_data"],
+        _data["customer_data"],
+        _data.get("schedule_data"),
+    )
 
-    # Run the unified pipeline on the loan data
-    temp_loan_path = Path("data/raw/temp_dashboard_input.csv")
-    temp_loan_path.parent.mkdir(parents=True, exist_ok=True)
-    _data["loan_data"].to_csv(temp_loan_path, index=False)
-
-    pipeline = UnifiedPipeline()
-    pipeline_res = pipeline.execute(temp_loan_path, user="streamlit", action="dashboard-refresh")
-
-    # Build the dashboard object expected by the UI
-    # We'll pull metrics from the latest manifest if available, or from pipeline_res
-    manifest_path = Path(pipeline_res["phases"]["output"]["manifest"])
-    manifest = json.loads(manifest_path.read_text())
-    dashboard = manifest.get("metrics", {})
-    dashboard["timestamp"] = datetime.now().isoformat()
+    dashboard = {
+        "timestamp": datetime.now().isoformat(),
+        "extended_kpis": catalog_proc.get_all_kpis(),
+    }
 
     try:
-        from src.analytics.kpi_catalog_processor import KPICatalogProcessor
-
-        catalog_proc = KPICatalogProcessor(
-            _data["loan_data"],
-            _data["historic_payment_data"],
-            _data["customer_data"],
-            _data.get("schedule_data"),
-        )
-        dashboard["extended_kpis"] = catalog_proc.get_all_kpis()
-
         figma_df = catalog_proc.get_figma_dashboard_df()
-        figma_df.to_csv(exports_dir / "analytics_facts.csv", index=False)
+        if not figma_df.empty:
+            figma_df.to_csv(exports_dir / "analytics_facts.csv", index=False)
 
         scorecard_df = catalog_proc.get_quarterly_scorecard()
         scorecard_df.to_csv(exports_dir / "quarterly_scorecard.csv", index=False)
-    except Exception as exc:
+    except (ValueError, OSError) as exc:
         logger.warning("Extended KPI generation failed: %s", exc)
 
     output_path = exports_dir / "complete_kpi_dashboard.json"
-    output_path.write_text(json.dumps(dashboard, indent=2, default=str), encoding="utf-8")
-
-    # Clean up temp file
-    if temp_loan_path.exists():
-        temp_loan_path.unlink()
+    output_path.write_text(
+        json.dumps(dashboard, indent=2, default=str), encoding="utf-8"
+    )
 
     return output_path
 
@@ -280,7 +249,10 @@ def build_kpi_snapshot(dashboard, facts_df):
     latest_month = None
 
     if not facts_df.empty:
-        facts_sorted = facts_df.sort_values("month") if "month" in facts_df.columns else facts_df
+        if "month" in facts_df.columns:
+            facts_sorted = facts_df.sort_values("month")
+        else:
+            facts_sorted = facts_df
         latest = facts_sorted.iloc[-1]
         latest_month = latest.get("month")
         for col in facts_sorted.columns:
@@ -315,19 +287,19 @@ def load_agent_headcount():
 
 # Initialize tracing
 logger = logging.getLogger(__name__)
-try:
-    from tracing_setup import enable_auto_instrumentation, init_tracing
+init_tracing(service_name="abaco-dashboard")
+enable_auto_instrumentation()
 
-    init_tracing(service_name="abaco-dashboard")
-    enable_auto_instrumentation()
-except Exception:
-    logger.warning("Tracing not initialized")
+FONT_IMPORT_URL = (
+    "https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900"
+    "&family=Poppins:wght@100;200;300;400;500;600;700&display=swap"
+)
 
 # Custom CSS
 st.markdown(
     f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&family=Poppins:wght@100;200;300;400;500;600;700&display=swap');
+    @import url('{FONT_IMPORT_URL}');
     .main {{
         background-color: {ABACO_THEME['colors']['background']};
         color: {ABACO_THEME['colors']['white']};
@@ -368,7 +340,7 @@ with st.sidebar:
                         output_path = generate_kpi_exports(_data)
                         st.cache_data.clear()
                         st.success(f"KPI exports generated: {output_path}")
-                    except Exception as exc:
+                    except (ValueError, OSError) as exc:
                         st.error(f"Failed to generate KPI exports: {exc}")
         else:
             st.session_state["loaded"] = False
@@ -382,33 +354,35 @@ with st.sidebar:
         )
 
         if st.button("Ingest Data") or uploaded_files:
-            dfs = {}
+            uploaded_data = {}
             for file in uploaded_files:
                 if file.name.endswith(".csv"):
-                    dfs[file.name] = pd.read_csv(file)
+                    uploaded_data[file.name] = pd.read_csv(file)
                 elif file.name.endswith(".xlsx"):
-                    dfs[file.name] = pd.read_excel(file, sheet_name=None)
+                    uploaded_data[file.name] = pd.read_excel(file, sheet_name=None)
 
-            if dfs:
-                for name, df in dfs.items():
-                    if isinstance(df, dict):
-                        for sheet, sdf in df.items():
-                            dfs[name][sheet] = normalize_dataframe(sdf)
+            if uploaded_data:
+                for name, uploaded_frame in uploaded_data.items():
+                    if isinstance(uploaded_frame, dict):
+                        for sheet, sheet_frame in uploaded_frame.items():
+                            uploaded_data[name][sheet] = normalize_dataframe(
+                                sheet_frame
+                            )
                     else:
-                        dfs[name] = normalize_dataframe(df)
+                        uploaded_data[name] = normalize_dataframe(uploaded_frame)
 
-                st.session_state["data"] = dfs
+                st.session_state["data"] = uploaded_data
                 st.session_state["loaded"] = True
                 st.success("Data ingested successfully.")
 
                 # Auto-generate KPI exports from uploaded data
                 with st.spinner("Generating KPI exports from uploaded data..."):
                     try:
-                        output_path = generate_kpi_exports(dfs)
+                        output_path = generate_kpi_exports(uploaded_data)
                         st.cache_data.clear()
                         st.success(f"✅ KPI exports generated: {output_path}")
                         st.rerun()
-                    except Exception as exc:
+                    except (ValueError, OSError) as exc:
                         st.warning(f"⚠️ KPI auto-generation skipped: {exc}")
 
     if st.button("Clear Data"):
@@ -468,17 +442,26 @@ if not analytics_facts.empty:
         if "recv_revenue_for_month" in latest_cash:
             c1.metric(
                 "Revenue (Received)",
-                format_kpi_value("recv_revenue_for_month", latest_cash["recv_revenue_for_month"]),
+                format_kpi_value(
+                    "recv_revenue_for_month",
+                    latest_cash["recv_revenue_for_month"],
+                ),
             )
         if "recv_interest_for_month" in latest_cash:
             c2.metric(
                 "Interest (Received)",
-                format_kpi_value("recv_interest_for_month", latest_cash["recv_interest_for_month"]),
+                format_kpi_value(
+                    "recv_interest_for_month",
+                    latest_cash["recv_interest_for_month"],
+                ),
             )
         if "recv_fee_for_month" in latest_cash:
             c3.metric(
                 "Fees (Received)",
-                format_kpi_value("recv_fee_for_month", latest_cash["recv_fee_for_month"]),
+                format_kpi_value(
+                    "recv_fee_for_month",
+                    latest_cash["recv_fee_for_month"],
+                ),
             )
         if "sched_revenue" in latest_cash:
             c4.metric(
@@ -507,8 +490,17 @@ if loan_data is None:
     st.stop()
 
 merged = loan_data.copy()
-if not customer_data.empty and "loan_id" in merged.columns and "loan_id" in customer_data.columns:
-    merged = merged.merge(customer_data, on="loan_id", how="left", suffixes=("", "_cust"))
+if (
+    not customer_data.empty
+    and "loan_id" in merged.columns
+    and "loan_id" in customer_data.columns
+):
+    merged = merged.merge(
+        customer_data,
+        on="loan_id",
+        how="left",
+        suffixes=("", "_cust"),
+    )
 
 # --- 1. Portfolio Overview ---
 st.header("📊 Executive Summary")
@@ -529,7 +521,10 @@ if "interest_rate_apr" in merged.columns and "outstanding_loan_value" in merged.
         avg_apr = 0
 else:
     avg_apr = 0
-default_rate = (merged["loan_status"] == "Default").mean() * 100 if "loan_status" in merged else 0
+if "loan_status" in merged:
+    default_rate = (merged["loan_status"] == "Default").mean() * 100
+else:
+    default_rate = 0
 
 col1.metric("Total Loans", f"{total_loans:,}")
 col2.metric("Total Outstanding", f"${total_outstanding:,.2f}")
@@ -556,7 +551,9 @@ with g_col1:
 
 with g_col2:
     if "categoria" in merged.columns:
-        cat_agg = merged.groupby("categoria")["outstanding_loan_value"].sum().reset_index()
+        cat_agg = (
+            merged.groupby("categoria")["outstanding_loan_value"].sum().reset_index()
+        )
         fig_cat = px.pie(
             cat_agg,
             values="outstanding_loan_value",
@@ -584,7 +581,11 @@ if "sales_agent" in merged.columns:
     st.plotly_chart(apply_theme(fig_sales), use_container_width=True)
 else:
     headcount_df = load_agent_headcount()
-    if not headcount_df.empty and {"month", "function", "fte_count"}.issubset(headcount_df.columns):
+if not headcount_df.empty and {
+    "month",
+    "function",
+    "fte_count",
+}.issubset(headcount_df.columns):
         st.subheader("Team Capacity")
         latest_month = headcount_df["month"].max()
         latest_headcount = headcount_df[headcount_df["month"] == latest_month]
@@ -598,7 +599,8 @@ else:
         st.plotly_chart(apply_theme(fig_headcount), use_container_width=True)
     else:
         st.info(
-            "Sales agent data not found. Provide agent performance data to populate this section."
+            "Sales agent data not found. Provide agent performance data to populate "
+            "this section."
         )
 
 # --- 4. Risk Analysis ---
@@ -619,7 +621,12 @@ with r_col1:
             .reset_index()
         )
         dpd_dist.columns = ["Bucket", "Count"]
-        fig_dpd = px.bar(dpd_dist, x="Bucket", y="Count", title="DPD Bucket Distribution")
+    fig_dpd = px.bar(
+        dpd_dist,
+        x="Bucket",
+        y="Count",
+        title="DPD Bucket Distribution",
+    )
         st.plotly_chart(apply_theme(fig_dpd), use_container_width=True)
 
 with r_col2:
@@ -637,10 +644,13 @@ if st.button("Prepare Export"):
     export_df = merged.head(100)
     st.dataframe(styled_df(export_df))
     st.download_button(
-        "Download CSV", export_df.to_csv(index=False).encode("utf-8"), "abaco_export.csv"
+        "Download CSV",
+        export_df.to_csv(index=False).encode("utf-8"),
+        "abaco_export.csv",
     )
 
 st.divider()
 st.caption(
-    f"Abaco Intelligence Platform | System Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    "Abaco Intelligence Platform | System Date: "
+    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 )
