@@ -3,6 +3,7 @@
 This repository hosts the Abaco Financial Intelligence Platform, including:
 
 ## Stack map
+
 - **apps/web**: Next.js dashboard for portfolio, risk, and growth views.
 - **infra/azure**: Azure infra-as-code and deployment scripts.
 - **data_samples**: Anonymized datasets for repeatable development and testing.
@@ -12,6 +13,7 @@ For the combined Next.js + FastAPI fintech dashboard (Figma-first, Plotly, AI in
 ## Java and Gradle setup
 
 ## Getting started
+
 - Validate repository structure before running tooling:
   ```
   deno run --allow-all main.ts
@@ -25,10 +27,7 @@ For the combined Next.js + FastAPI fintech dashboard (Figma-first, Plotly, AI in
   ```
 
 ## Essential knowledge base
-- `docs/Analytics-Vision.md`: Vision, Streamlit blueprint, and narrative alignment for KPIs and prompts.
-- `docs/KPI-Operating-Model.md`: Ownership, formulas, dashboard standards, lineage, GitHub guardrails, and audit controls.
-- `docs/FINTECH_DASHBOARD_WEB_APP_GUIDE.md`: Blueprint for the fintech dashboard UI (Next.js), analytics API (FastAPI), data contracts, and deployment/CI requirements.
-- `docs/Copilot-Team-Workflow.md`: Inviting teams to GitHub Copilot, validation/security workflows, and Azure/GitHub/KPI checklists during the Enterprise trial.
-- `docs/ContosoTeamStats-setup.md`: Setup, secrets, migrations, Docker validation, and Azure deployment for the bundled ContosoTeamStats .NET 6 Web API.
-- `docs/Fitten-Code-AI-Manual.md`: Fitten Code AI installation, GitHub integration, FAQs, and local inference testing.
-- `docs/GitHub-Workflow-Runbook.md`: Branching strategy, quality gates, agent coordination, and merge standards for traceable releases.
+
+All project documentation has been consolidated into a single source of truth:
+
+- `UNIFIED_DOCS.md`: Comprehensive guide covering Analytics Vision, KPI Operating Models, Fintech Dashboard blueprints, and Workflow Runbooks.

@@ -28,7 +28,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",
-    "zod": "^4.1.13"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "2.0.7",
@@ -38,8 +38,8 @@
     "@tailwindcss/postcss": "^4.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.7",
-    "@types/react": "19.2.7",
-    "@types/react-dom": "19.2.3",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
     "@typescript-eslint/eslint-plugin": "^8.49.0",
     "@typescript-eslint/parser": "^8.49.0",
     "autoprefixer": "^10.4.22",
