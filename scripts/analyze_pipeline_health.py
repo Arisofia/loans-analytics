@@ -16,20 +16,20 @@ logger = logging.getLogger(__name__)
 def analyze_pipeline_health():
     """Analyze pipeline health from metrics."""
     metrics_file = Path("outputs/opik_metrics.json")
-    
+
     if not metrics_file.exists():
         logger.error("Metrics file not found")
         raise FileNotFoundError("opik_metrics.json not found")
-    
+
     with open(metrics_file, "r") as f:
         metrics = json.load(f)
-    
+
     pipeline_metrics = metrics.get("pipeline", {})
-    
+
     # Analyze health
     total_runs = pipeline_metrics.get("total_runs", 0)
     failed_runs = pipeline_metrics.get("failed_runs", 0)
-    
+
     failure_rate = failed_runs / total_runs if total_runs > 0 else 0
 
     if total_runs == 0:
@@ -45,25 +45,25 @@ def analyze_pipeline_health():
         else:
             health_status = "unhealthy"
             issues = 2
-    
+
     logger.info(f"Pipeline health status: {health_status}")
     logger.info(f"Issues found: {issues}")
-    
+
     # Write analysis results
     output_dir = Path("outputs")
     output_dir.mkdir(exist_ok=True)
-    
+
     analysis = {
         "health_status": health_status,
         "issues_count": issues,
         "total_runs": total_runs,
         "failed_runs": failed_runs,
-        "failure_rate": failure_rate
+        "failure_rate": failure_rate,
     }
-    
+
     with open(output_dir / "pipeline_health.json", "w") as f:
         json.dump(analysis, f, indent=2)
-    
+
     return health_status, issues
 
 

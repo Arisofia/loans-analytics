@@ -15,6 +15,7 @@ except (ImportError, Exception) as tracing_err:
     logger = logging.getLogger(__name__)
     logger.warning("Azure tracing not initialized: %s", tracing_err)
 
+
 def load_business_rules():
     """Load business rules from config."""
     rules_path = Path(__file__).parent / "config" / "business_rules.yaml"
@@ -94,11 +95,9 @@ def calculate_metrics(df):
 def generate_html_report(metrics, df):
     """Generate HTML executive report."""
     rules = load_business_rules()
-    risk_colors = rules.get("risk_colors", {
-        "high": "#e74c3c",
-        "medium": "#f39c12",
-        "low": "#27ae60"
-    })
+    risk_colors = rules.get(
+        "risk_colors", {"high": "#e74c3c", "medium": "#f39c12", "low": "#27ae60"}
+    )
     chart_colors = rules.get("ui_theme", {}).get("chart_colors", ["#667eea", "#764ba2"])
     primary_color = chart_colors[0]
     secondary_color = chart_colors[1] if len(chart_colors) > 1 else primary_color

@@ -21,9 +21,9 @@ def fetch_opik_metrics():
     # Ensure output directory exists
     output_dir = Path("outputs")
     output_dir.mkdir(exist_ok=True)
-    
+
     opik_token = os.getenv("OPIKTOKEN")
-    
+
     if not opik_token:
         logger.warning("OPIKTOKEN not configured, generating placeholder metrics")
         metrics = generate_placeholder_metrics()
@@ -31,12 +31,12 @@ def fetch_opik_metrics():
         # TODO: Implement actual Opik API integration when credentials are available
         logger.info("Fetching metrics from Opik (placeholder implementation)")
         metrics = generate_placeholder_metrics()
-    
+
     # Write metrics to output file
     output_file = output_dir / "opik_metrics.json"
     with open(output_file, "w") as f:
         json.dump(metrics, f, indent=2)
-    
+
     logger.info(f"Metrics written to {output_file}")
     return metrics
 
@@ -45,27 +45,19 @@ def generate_placeholder_metrics():
     """Generate placeholder metrics for testing."""
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "system": {
-            "status": "healthy",
-            "uptime_hours": 168,
-            "version": "1.0.0"
-        },
+        "system": {"status": "healthy", "uptime_hours": 168, "version": "1.0.0"},
         "pipeline": {
             "total_runs": 42,
             "successful_runs": 40,
             "failed_runs": 2,
-            "average_duration_seconds": 125.5
+            "average_duration_seconds": 125.5,
         },
-        "agents": {
-            "total_executions": 156,
-            "average_response_time_ms": 850,
-            "error_rate": 0.02
-        },
+        "agents": {"total_executions": 156, "average_response_time_ms": 850, "error_rate": 0.02},
         "data_quality": {
             "completeness_score": 0.98,
             "validity_score": 0.96,
-            "anomalies_detected": 3
-        }
+            "anomalies_detected": 3,
+        },
     }
 
 

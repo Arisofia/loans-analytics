@@ -10,6 +10,7 @@ from typing import TypedDict
 
 # --- Robust TypedDict Schema ---
 
+
 class AccountRouting(TypedDict):
     address: str
     routing_number: str
@@ -38,7 +39,7 @@ def validate_iban(iban: str) -> bool:
     rearranged = iban[4:] + iban[:4]
 
     try:
-        numeric = ''.join(ALPHA.get(c, c) for c in rearranged)
+        numeric = "".join(ALPHA.get(c, c) for c in rearranged)
         return int(numeric) % 97 == 1
     except ValueError:
         return False
@@ -46,8 +47,9 @@ def validate_iban(iban: str) -> bool:
 
 # --- Main Processor ---
 
+
 def run_pipeline(data: Transaction) -> None:
-    iban = data['this_account']['account_routing']['address']
+    iban = data["this_account"]["account_routing"]["address"]
     is_valid = validate_iban(iban)
     print(f"Processed transaction of amount ${data['amount']}")
 
@@ -55,12 +57,12 @@ def run_pipeline(data: Transaction) -> None:
 if __name__ == "__main__":
     # Example Mock Data
     mock_tx: Transaction = {
-        'this_account': {
-            'account_routing': {'address': 'DE89370400440532013000', 'routing_number': 'GEN'},
-            'account_id': '123',
-            'owner_name': 'Test Corp'
+        "this_account": {
+            "account_routing": {"address": "DE89370400440532013000", "routing_number": "GEN"},
+            "account_id": "123",
+            "owner_name": "Test Corp",
         },
-        'amount': 1000.50,
-        'currency': 'EUR'
+        "amount": 1000.50,
+        "currency": "EUR",
     }
     run_pipeline(mock_tx)

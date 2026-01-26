@@ -30,7 +30,9 @@ def test_figma_sync_with_requests_mock(requests_mock, tmp_path, monkeypatch, cap
     api_url = "https://api.figma.com/v1/files/dummy_key"
 
     # Mock GET to Figma file
-    requests_mock.get(api_url, json=file_json, status_code=200, headers={"content-type": "application/json"})
+    requests_mock.get(
+        api_url, json=file_json, status_code=200, headers={"content-type": "application/json"}
+    )
 
     # Intercept the PUT/update request and assert headers/payload
     # Use regex to match URL with query parameters robustly
@@ -38,7 +40,7 @@ def test_figma_sync_with_requests_mock(requests_mock, tmp_path, monkeypatch, cap
 
     def put_callback(request, context):
         assert request.headers.get("X-Figma-Token") == "dummy_token"
-        
+
         # Verify URL structure
         parsed = urlparse(request.url)
         assert parsed.path.endswith("/nodes")

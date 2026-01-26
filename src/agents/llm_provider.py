@@ -1,9 +1,11 @@
 from typing import Any
 
+
 class MockLanguageModel:
     """
     A mock language model provider for testing and default initialization.
     """
+
     def __init__(self, model_name: str = "mock-model", **kwargs: Any):
         self.model_name = model_name
 
