@@ -10,7 +10,6 @@ services:
     volumes:
       - ./apps/web:/app
     command: ["sh", "-lc", "corepack enable && pnpm install && pnpm dev --hostname 0.0.0.0 --port 3000"]
-
   backend:
     image: python:3.11-slim
     working_dir: /app

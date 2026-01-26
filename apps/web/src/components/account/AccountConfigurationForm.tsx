@@ -30,15 +30,15 @@ export const AccountConfigurationForm = () => {
     setStatus('saving')
     setMessage('')
 
+    const supabase = getSupabaseClient()
     const displayName = formState.displayName.trim()
     const region = formState.region.trim()
     const notificationEmail = formState.notificationEmail.trim()
 
-    const supabaseClient = getSupabaseClient()
     const {
       data: { user },
       error: userError,
-    } = await supabaseClient.auth.getUser()
+    } = await supabase.auth.getUser()
 
     if (userError || !user) {
       setStatus('error')
@@ -46,18 +46,16 @@ export const AccountConfigurationForm = () => {
       return
     }
 
-    const { error } = await supabaseClient
-      .from('account_settings')
-      .upsert({
-        user_id: user.id,
-        display_name: displayName,
-        region,
-        notification_email: notificationEmail,
-      })
+    const { error } = await supabase.from('account_settings').upsert({
+      user_id: user.id,
+      display_name: displayName,
+      region,
+      notification_email: notificationEmail,
+    })
 
     if (error) {
       setStatus('error')
-      setMessage(error.message)
+      setMessage('We were unable to save your account settings. Please try again.')
       return
     }
 
@@ -68,7 +66,14 @@ export const AccountConfigurationForm = () => {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-1">
+<<<<<<< HEAD
         <label className="text-xs font-semibold text-slate-200" htmlFor="displayName">
+=======
+        <label
+          className="text-xs font-semibold text-slate-200"
+          htmlFor="displayName"
+        >
+>>>>>>> origin/main
           Account display name
         </label>
         <input
@@ -80,7 +85,14 @@ export const AccountConfigurationForm = () => {
         />
       </div>
       <div className="space-y-1">
+<<<<<<< HEAD
         <label className="text-xs font-semibold text-slate-200" htmlFor="region">
+=======
+        <label
+          className="text-xs font-semibold text-slate-200"
+          htmlFor="region"
+        >
+>>>>>>> origin/main
           Primary region
         </label>
         <select
@@ -105,7 +117,13 @@ export const AccountConfigurationForm = () => {
         <input
           className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
           id="notificationEmail"
+<<<<<<< HEAD
           onChange={(event) => handleChange('notificationEmail', event.target.value)}
+=======
+          onChange={(event) =>
+            handleChange('notificationEmail', event.target.value)
+          }
+>>>>>>> origin/main
           type="email"
           value={formState.notificationEmail}
         />
@@ -120,7 +138,13 @@ export const AccountConfigurationForm = () => {
       {message && (
         <p
           className={
+<<<<<<< HEAD
             status === 'error' ? 'text-xs text-rose-300' : 'text-xs text-emerald-300'
+=======
+            status === 'error'
+              ? 'text-xs text-rose-300'
+              : 'text-xs text-emerald-300'
+>>>>>>> origin/main
           }
         >
           {message}

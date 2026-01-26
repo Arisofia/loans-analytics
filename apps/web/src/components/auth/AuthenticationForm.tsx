@@ -28,13 +28,10 @@ export const AuthenticationForm = () => {
     setStatus('submitting')
     setMessage('')
 
-    const email = formState.email.trim()
-    const password = formState.password
-
-    const supabaseClient = getSupabaseClient()
-    const { error } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password,
+    const supabase = getSupabaseClient()
+    const { error } = await supabase.auth.signInWithPassword({
+      email: formState.email.trim(),
+      password: formState.password,
     })
 
     if (error) {
@@ -86,7 +83,13 @@ export const AuthenticationForm = () => {
       {message && (
         <p
           className={
+<<<<<<< HEAD
             status === 'error' ? 'text-xs text-rose-300' : 'text-xs text-emerald-300'
+=======
+            status === 'error'
+              ? 'text-xs text-rose-300'
+              : 'text-xs text-emerald-300'
+>>>>>>> origin/main
           }
         >
           {message}

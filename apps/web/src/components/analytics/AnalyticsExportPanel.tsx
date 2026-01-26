@@ -41,6 +41,10 @@ export const AnalyticsExportPanel = ({
         </div>
       </div>
     </div>
-    <AnalyticsExportControls summary={summary} loans={loans} onExport={onExport} />
+    <AnalyticsExportControls
+      summary={summary}
+      loans={loans}
+      onExport={onExport}
+    />
   </div>
 )

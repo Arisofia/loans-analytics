@@ -1,10 +1,6 @@
 """Normalization helpers for dashboard data ingestion."""
-
 from __future__ import annotations
-
 import pandas as pd
-
-
 def clean_numeric(series: pd.Series) -> pd.Series:
     """Coerce likely numeric strings into numbers."""
     if series.dtype == "object":
@@ -18,8 +14,6 @@ def clean_numeric(series: pd.Series) -> pd.Series:
                 errors="coerce",
             )
     return series
-
-
 def normalize_dataframe_complete(frame: pd.DataFrame) -> pd.DataFrame:
     """Normalize column names and coerce numeric columns when possible."""
     normalized = frame.copy()

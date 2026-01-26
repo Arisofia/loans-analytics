@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /** Repository layout helper for ABACO with optional strict and JSON modes. */
 // Node.js compatible version
 import fs from 'fs'
@@ -6,16 +7,12 @@ interface CheckTarget {
   label: string
   path: string
 }
-
 interface PathInsight extends CheckTarget {
   exists: boolean
   type: 'directory' | 'file' | 'other'
   modified?: string
 }
-
-const repoName = 'abaco-loans-analytics'
 const repoRoot = path.resolve(process.cwd())
-
 function normalizeUserPath(userPath: string): string {
   if (!userPath) {
     throw new Error('Path argument is empty')
@@ -40,7 +37,6 @@ function normalizeUserPath(userPath: string): string {
   }
   return resolved
 }
-
 const defaultAreas: CheckTarget[] = [
   { label: 'Web dashboard', path: 'apps/web' },
   { label: 'Analytics pipelines', path: 'apps/analytics' },
@@ -52,18 +48,15 @@ const normalizedDefaultAreas = defaultAreas.map((target) => ({
   ...target,
   path: normalizeUserPath(target.path),
 }))
-
 const args = process.argv.slice(2)
 const { strict, json, extras } = parseArgs(args)
 const keyAreas = [...normalizedDefaultAreas, ...extras]
-
 function parseArgs(args: string[]) {
   const options = {
     strict: false,
     json: false,
     extras: [] as CheckTarget[],
   }
-
   for (const arg of args) {
     if (arg === '--strict') options.strict = true
     else if (arg === '--json') options.json = true
@@ -85,10 +78,8 @@ function parseArgs(args: string[]) {
       }
     }
   }
-
   return options
 }
-
 function describePathSync(target: CheckTarget): PathInsight {
   try {
     const stats = fs.lstatSync(target.path)
@@ -107,49 +98,18 @@ function describePathSync(target: CheckTarget): PathInsight {
     return { ...target, exists: false, type: 'other' }
   }
 }
-
-function printHumanReadable(statuses: PathInsight[]) {
-  console.log(`${repoName} — Deno helper`)
-  console.log(
-    'Check key folders before running Fitten, tests or deployments.\n'
-  )
-
-  for (const status of statuses) {
-    const icon = status.exists ? '✅' : '⚠️'
-    const detail = status.exists
-      ? `${status.type}, last modified: ${status.modified ?? 'unknown'}`
-      : 'missing – consider creating or syncing this path.'
-    console.log(`• ${icon} ${status.label}: ${status.path} (${detail})`)
-  }
-
-  const missing = statuses.filter((entry) => !entry.exists)
-  console.log(
-    `\nSummary: ${statuses.length - missing.length}/${statuses.length} paths available.`
-  )
-  if (missing.length) {
-    console.log('Missing paths:')
-    for (const entry of missing)
-      console.log(`  - ${entry.label} → ${entry.path}`)
+const results = keyAreas.map(describePathSync)
+if (json) {
+  console.log(JSON.stringify(results, null, 2))
+} else {
+  for (const entry of results) {
+    const status = entry.exists ? 'OK' : 'MISSING'
     console.log(
-      'Use --strict to exit with a non-zero code when required folders are absent.'
+      `[${status}] ${entry.label} -> ${entry.path} (${entry.type}${
+        entry.modified ? `, modified=${entry.modified}` : ''
+      })`
     )
   }
-
-  console.log(
-    '\nOptions:\n  --strict  Exit with code 1 if any path is missing\n  --json    Emit machine-readable JSON\n  --path=label:path  Check an additional path with a custom label'
-  )
-  console.log(
-    '\nExample:\n  deno run --allow-read main.ts --strict --path=Temp:data_samples/tmp'
-  )
 }
-
-const results = keyAreas.map(describePathSync)
-
-if (json) console.log(JSON.stringify(results, null, 2))
-else printHumanReadable(results)
-
 if (strict && results.some((entry) => !entry.exists)) process.exit(1)
-
-export {} // Make this file a module to allow top-level await
-
 export {} // Make this file a module to allow top-level await

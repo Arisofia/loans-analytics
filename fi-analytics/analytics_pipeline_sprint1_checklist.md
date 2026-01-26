@@ -1,5 +1,4 @@
 # FI-ANALYTICS: Analytics Pipeline Checklist (Sprint 1)
-
 |ID|Title|Priority|Type|Automation Candidate|Pass|
 |---|---|---|---|---|---|
 |C-01|Figma KPI Table Sync Success|Critical|Functional|Yes| [ ] |

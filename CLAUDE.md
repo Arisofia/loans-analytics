@@ -1,6 +1,6 @@
 # Engineering Mandate: Key Commands & Progress
 
-**Last Updated**: 2026-01-05  
+**Last Updated**: 2026-01-26  
 **Overall Project Status**: 100% Complete - Production Ready
 
 ## Phase Status
@@ -174,6 +174,16 @@ make test-cov
 2. 🔄 Remove `config/LEGACY/`
 3. 🔄 Cleanup deprecated modules
 
+## Phase 10: Frontend Architectural Remediation
+
+**Status**: ✅ **COMPLETE** (2026-01-26)
+
+**Deliverables**:
+
+1. ✅ Remediation Report: `docs/ARCHITECTURAL_REMEDIATION.md`
+2. ✅ Fix `account-form.tsx` (Lazy Supabase Singleton & Input Trimming)
+3. ✅ Fix `ExportControls` usage (Differentiated Error Messaging)
+
 ## Next Steps
 
 1. **Phase 6, 7, 8 Completed**:
@@ -199,6 +209,25 @@ make test-cov
 
 **Recent Commits**:
 
+1. chore: final production hardening and merge readiness sync
+1. chore: final audit cleanup - remove unused params, implement tool summaries, and harden logging
+1. fix: optimize observability workflow with caching and refined alerting
+1. fix: resolve corrupted docstring in customer segmentation script
+1. docs: add architectural remediation report and sync main
+1. chore: final audit cleanup - enforce production config and remove mock providers
+1. fix: resolve remaining python linting errors and pytest collection issues
+1. chore: merge and sync all linting fixes to main
+1. chore: resolve TypeScript typing issues and magic numbers in edge functions
+1. chore: fix linting issues and remove all hardcoded mock data from edge functions
+1. fix: resolve variable scope bug in customer segmentation script
+1. chore: strict audit cleanup - remove all mock data, dead code, and placeholders
+1. chore: audit cleanup - remove mock data and dead workflow code
+1. feat(compliance): enforce ECB collateral eligibility in customer segmentation
+1. docs: consolidate audit findings into architectural remediation report
+1. fix(ci): update customer segmentation workflow to use Azure Multi-Agent secrets
+1. docs: add architectural remediation report for frontend
+1. docs: update .env.example with Azure Multi-Agent endpoint
+1. style: cleanup customer segmentation script formatting
 1. feat(scripts): implement customer segmentation script with Azure AI integration
 1. feat(segmentation): integrate Azure AI Multi-Agent services
 1. docs: update SECURITY.md to reflect resolved dependencies
