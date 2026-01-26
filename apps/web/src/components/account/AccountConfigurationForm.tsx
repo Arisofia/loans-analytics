@@ -31,6 +31,10 @@ export const AccountConfigurationForm = () => {
     setMessage('')
 
     const supabase = getSupabaseClient()
+    const displayName = formState.displayName.trim()
+    const region = formState.region.trim()
+    const notificationEmail = formState.notificationEmail.trim()
+
     const {
       data: { user },
       error: userError,
@@ -44,14 +48,16 @@ export const AccountConfigurationForm = () => {
 
     const { error } = await supabase.from('account_settings').upsert({
       user_id: user.id,
-      display_name: formState.displayName.trim(),
-      region: formState.region,
-      notification_email: formState.notificationEmail.trim(),
+      display_name: displayName,
+      region,
+      notification_email: notificationEmail,
     })
 
     if (error) {
       setStatus('error')
-      setMessage(error.message)
+      setMessage(
+        'We were unable to save your account settings. Please try again.'
+      )
       return
     }
 

@@ -50,7 +50,7 @@ def load_real_data(
     """
     Load real ABACO loan data files from configured paths.
 
-    Falls back to generating synthetic data if real files are not found.
+    Raises FileNotFoundError if real files are not found.
 
     Args:
         paths: The Paths object containing file locations.
@@ -58,16 +58,15 @@ def load_real_data(
     Returns:
         A tuple containing loans, payments, customers, and schedule dataframes.
     """
-    rng = np.random.default_rng(42)
-    loans_df = load_loans(paths, rng)
-    payments_df = load_payments(paths, rng, loans_df)
-    customers_df = load_customers(paths, rng, loans_df)
+    loans_df = load_loans(paths)
+    payments_df = load_payments(paths, loans_df)
+    customers_df = load_customers(paths, loans_df)
     schedule_df = load_schedule(paths)
     return loans_df, payments_df, customers_df, schedule_df
 
 
-def load_loans(paths: Paths, rng: np.random.Generator) -> pd.DataFrame:
-    """Load loan data, falling back to synthetic data if not found."""
+def load_loans(paths: Paths) -> pd.DataFrame:
+    """Load loan data from configured paths."""
     loan_files = [paths.LOAN_DATA_PATH, paths.LOAN_EXPORT_PATH, paths.LOAN_SAMPLE_PATH]
     for fpath in loan_files:
         if fpath.exists():
@@ -84,9 +83,9 @@ def load_loans(paths: Paths, rng: np.random.Generator) -> pd.DataFrame:
 
 
 def load_payments(
-    paths: Paths, rng: np.random.Generator, loans_df: pd.DataFrame
+    paths: Paths, loans_df: pd.DataFrame
 ) -> pd.DataFrame:
-    """Load payment data, falling back to synthetic data if not found."""
+    """Load payment data from configured paths."""
     payment_files = [paths.PAYMENT_DATA_PATH, paths.PAYMENT_EXPORT_PATH]
     for fpath in payment_files:
         if fpath.exists():
@@ -103,9 +102,9 @@ def load_payments(
 
 
 def load_customers(
-    paths: Paths, rng: np.random.Generator, loans_df: pd.DataFrame
+    paths: Paths, loans_df: pd.DataFrame
 ) -> pd.DataFrame:
-    """Load customer data, falling back to synthetic data if not found."""
+    """Load customer data from configured paths."""
     customer_files = [paths.CUSTOMER_DATA_PATH, paths.CUSTOMER_EXPORT_PATH]
     for fpath in customer_files:
         if fpath.exists():
