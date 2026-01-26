@@ -75,8 +75,11 @@ def load_loans(paths: Paths, rng: np.random.Generator) -> pd.DataFrame:
             try:
                 df = pd.read_csv(fpath)
                 return normalize_dataframe_complete(df)
+            except (pd.errors.ParserError, ValueError, UnicodeDecodeError) as e:
+                logger.error("Failed to parse CSV file %s: %s", fpath.name, e)
             except Exception as e:
-                logger.error("Failed to load %s: %s", fpath.name, e)
+                logger.error("Unexpected error loading %s: %s", fpath.name, e)
+
 
     logger.warning("⚠️ No loan file found. Creating synthetic data.")
     return pd.DataFrame(
@@ -109,8 +112,10 @@ def load_payments(paths: Paths, rng: np.random.Generator, loans_df: pd.DataFrame
             try:
                 df = pd.read_csv(fpath)
                 return normalize_dataframe_complete(df)
+            except (pd.errors.ParserError, ValueError, UnicodeDecodeError) as e:
+                logger.error("Failed to parse CSV file %s: %s", fpath.name, e)
             except Exception as e:
-                logger.error("Failed to load %s: %s", fpath.name, e)
+                logger.error("Unexpected error loading %s: %s", fpath.name, e)
 
     logger.warning("⚠️ No payment file found. Using synthetic payments.")
     return pd.DataFrame(
@@ -136,8 +141,10 @@ def load_customers(paths: Paths, rng: np.random.Generator, loans_df: pd.DataFram
                 return normalize_dataframe_complete(df).drop_duplicates(
                     subset=["customer_id"]
                 )
+            except (pd.errors.ParserError, ValueError, UnicodeDecodeError) as e:
+                logger.error("Failed to parse CSV file %s: %s", fpath.name, e)
             except Exception as e:
-                logger.error("Failed to load %s: %s", fpath.name, e)
+                logger.error("Unexpected error loading %s: %s", fpath.name, e)
 
     logger.warning("⚠️ No customer file found. Creating synthetic customer data.")
     unique_customers = loans_df["customer_id"].unique()[:50]
@@ -160,8 +167,10 @@ def load_schedule(paths: Paths) -> Optional[pd.DataFrame]:
             try:
                 df = pd.read_csv(fpath)
                 return normalize_dataframe_complete(df)
+            except (pd.errors.ParserError, ValueError, UnicodeDecodeError) as e:
+                logger.error("Failed to parse CSV file %s: %s", fpath.name, e)
             except Exception as e:
-                logger.error("Failed to load %s: %s", fpath.name, e)
+                logger.error("Unexpected error loading %s: %s", fpath.name, e)
     return None
 
 
@@ -176,11 +185,11 @@ def main():
     paths = Paths()
     loans_df, payments_df, customers_df, schedule_df = load_real_data(paths)
 
-    logger.info("Loaded %s loans", f"{len(loans_df):,}")
-    logger.info("Loaded %s payments", f"{len(payments_df):,}")
-    logger.info("Loaded %s customers", f"{len(customers_df):,}")
+    logger.info("Loaded %d loans", len(loans_df))
+    logger.info("Loaded %d payments", len(payments_df))
+    logger.info("Loaded %d customers", len(customers_df))
     if schedule_df is not None:
-        logger.info("Loaded %s schedule rows\n", f"{len(schedule_df):,}")
+        logger.info("Loaded %d schedule rows\n", len(schedule_df))
     else:
         logger.warning("⚠️ No schedule data loaded\n")
 
@@ -295,11 +304,11 @@ def main():
         scorecard_path.parent.mkdir(exist_ok=True, parents=True)
         scorecard_df.to_csv(scorecard_path, index=False)
         logger.info("✅ Quarterly Scorecard saved to: %s", scorecard_path)
-    except (ValueError, KeyError) as e:
-        logger.error("⚠️ Error calculating extended KPIs: %s", e)
+    except (ValueError, KeyError, AttributeError, TypeError) as e:
+        logger.error("⚠️ Data or logic error during extended KPI calculation: %s", e)
         traceback.print_exc()
     except Exception as e:
-        logger.exception("Unexpected exception occurred during KPI processing: %s", e)
+        logger.exception("An unexpected top-level exception occurred during KPI processing: %s", e)
         raise
 
     # Display results
@@ -308,8 +317,8 @@ def main():
     logger.info("=" * 80 + "\n")
 
     logger.info("👥 PORTFOLIO FUNDAMENTALS")
-    logger.info("  Active Clients: %s", f"{dashboard_metrics['active_clients']:,}")
-    logger.info("  Total AUM (USD): $%s\n", f"{dashboard_metrics['total_aum_usd']:,.2f}")
+    logger.info("  Active Clients: %d", dashboard_metrics["active_clients"])
+    logger.info("  Total AUM (USD): $%.2f\n", dashboard_metrics["total_aum_usd"])
 
     logger.info("📈 PRODUCT MOMENTUM")
     logger.info("  Replines %%: %.2f%%\n", dashboard_metrics["replines_percentage"])
@@ -324,14 +333,14 @@ def main():
     logger.info("  EIR (Realizado): %.2f%%\n", eir_real * 100)
 
     logger.info("💵 REVENUE")
-    logger.info("  Monthly Revenue: $%s", f"{dashboard_metrics['monthly_revenue_usd']:,.2f}")
+    logger.info("  Monthly Revenue: $%.2f", dashboard_metrics["monthly_revenue_usd"])
     logger.info(
-        "  Revenue/Client (Monthly): $%s",
-        f"{dashboard_metrics['revenue_per_active_client_monthly']:,.2f}",
+        "  Revenue/Client (Monthly): $%.2f",
+        dashboard_metrics["revenue_per_active_client_monthly"],
     )
     logger.info(
-        "  Revenue/Client (Annual): $%s\n",
-        f"{dashboard_metrics['revenue_per_active_client_annual']:,.2f}",
+        "  Revenue/Client (Annual): $%.2f\n",
+        dashboard_metrics["revenue_per_active_client_annual"],
     )
 
     logger.info("📊 GROWTH METRICS")
