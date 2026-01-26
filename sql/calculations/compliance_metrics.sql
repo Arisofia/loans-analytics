@@ -1,6 +1,5 @@
 -- Compliance Metrics Calculation
 -- Regulatory compliance checks and metrics
-
 SELECT
   CURRENT_TIMESTAMP() as calculation_timestamp,
   CASE

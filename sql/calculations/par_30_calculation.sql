@@ -1,7 +1,6 @@
 -- PAR 30 Calculation
 -- Portfolio at Risk (loans past due 30+ days)
 -- Returns percentage of portfolio in arrears
-
 SELECT
   CURRENT_TIMESTAMP() as calculation_timestamp,
   ROUND(SUM(CASE WHEN days_past_due >= 30 THEN balance ELSE 0 END) / SUM(balance) * 100, 2) as par_30_percentage,

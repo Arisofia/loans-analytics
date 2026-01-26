@@ -1,7 +1,6 @@
 -- BigQuery Portfolio Risk Model
 -- Implements PAR_90 and Portfolio Health calculations
 -- Version: 1.0 (Fintech Factory Agentic Ecosystem)
-
 CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.v_portfolio_risk` AS
 WITH base_loans AS (
   SELECT
@@ -24,7 +23,6 @@ WITH base_loans AS (
     '1.0' AS _data_version
   WHERE date_load = CURRENT_DATE()
 ),
-
 par_90_calculation AS (
   -- Calculate PAR_90: Sum of balances for loans >90 days delinquent
   SELECT
@@ -35,7 +33,6 @@ par_90_calculation AS (
   FROM base_loans
   WHERE delinquency_bucket = '90+'
 ),
-
 delinquency_summary AS (
   -- Delinquency bucket summary
   SELECT
@@ -45,7 +42,6 @@ delinquency_summary AS (
   FROM base_loans
   GROUP BY delinquency_bucket
 ),
-
 collection_rate AS (
   -- Calculate collection rate (last 30 days)
   SELECT
@@ -54,7 +50,6 @@ collection_rate AS (
     ROUND(SUM(total_collections_30_days) / NULLIF(SUM(current_balance), 0) * 100, 2) AS collection_rate_pct
   FROM base_loans
 ),
-
 portfolio_metrics AS (
   -- Aggregate portfolio health metrics
   SELECT
@@ -68,7 +63,6 @@ portfolio_metrics AS (
     (SELECT collection_rate_pct FROM collection_rate) AS collection_rate_pct,
     (SELECT COUNT(DISTINCT loan_id) FROM base_loans) AS active_loans
 )
-
 SELECT
   pm.*,
   CASE

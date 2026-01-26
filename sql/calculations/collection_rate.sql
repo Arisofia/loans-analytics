@@ -1,6 +1,5 @@
 -- Collection Rate Calculation
 -- Monthly collection rate as percentage of receivables
-
 SELECT
   CURRENT_TIMESTAMP() as calculation_timestamp,
   ROUND(total_collections / total_receivables * 100, 2) as collection_rate_pct,

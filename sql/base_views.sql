@@ -1,6 +1,5 @@
 -- Base Views for Abaco Financial Intelligence Platform
 -- Version: 1.0
-
 -- View: v_loan_month_snapshot
 -- Builds a monthly snapshot for every loan with outstanding balance and DPD.
 CREATE OR REPLACE VIEW v_loan_month_snapshot AS
@@ -34,7 +33,6 @@ loan_month AS (
   JOIN loan_data l ON m.month_end >= l.disbursement_date::date
 )
 SELECT * FROM loan_month;
-
 -- View: v_customer_segments
 -- Enriches customers with their segments and ticket bands.
 CREATE OR REPLACE VIEW v_customer_segments AS

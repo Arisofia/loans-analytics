@@ -1,7 +1,6 @@
 -- PAR 90 Calculation
 -- Portfolio at Risk (loans past due 90+ days)
 -- Returns percentage of portfolio in arrears
-
 SELECT
   CURRENT_TIMESTAMP() as calculation_timestamp,
   ROUND(SUM(CASE WHEN days_past_due >= 90 THEN balance ELSE 0 END) / SUM(balance) * 100, 2) as par_90_percentage,

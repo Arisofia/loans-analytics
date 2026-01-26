@@ -13,7 +13,6 @@ CREATE TABLE dbo.ingest_runs (
     status VARCHAR(20),
     error_message NVARCHAR(MAX)
 );
-
 -- Drop and create data_quality_issues table
 IF OBJECT_ID('dbo.data_quality_issues', 'U') IS NOT NULL
     DROP TABLE dbo.data_quality_issues;
@@ -26,7 +25,6 @@ CREATE TABLE dbo.data_quality_issues (
     description NVARCHAR(MAX),
     severity VARCHAR(20)
 );
-
 -- Drop and create agent_runs table
 IF OBJECT_ID('dbo.agent_runs', 'U') IS NOT NULL
     DROP TABLE dbo.agent_runs;
