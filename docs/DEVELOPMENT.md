@@ -101,6 +101,7 @@
 ### Supabase, backend & pipeline connectivity
 
 - Confirm the deployed app uses `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY` to talk to the primary database. Run `npm run dev` and watch for `Supabase` calls in the browser network tab to verify connectivity.
+- Client-side modules should import the pre-configured singleton from `apps/web/src/lib/supabase/client.ts` (`supabaseClient`) instead of invoking the factory directly so auth context is stable across renders.
 - `NEXT_PUBLIC_SUPABASE_FN_BASE` backs the integration settings UI. Point it to the Supabase Edge Functions base so tokens, sync requests, and drill-down statuses execute securely.
 - The Supabase-backed `IntegrationSettings` component, the HubSpot sync service, and analytics exports rely on `KPI_SERVICE_URL`, `API_KEY`, and `HUBSPOT_API_KEY`. Store these in GitHub Secrets or the root `.env` file shared by non-Next services.
 - Trigger the pipeline locally with `python scripts/run_data_pipeline.py`; verify that outputs land in `data/metrics` and the manifest/logs directories. The same script runs nightly via `.github/workflows/daily-ingest.yml`, so use `PIPELINE_INPUT_FILE` to test alternate datasets.
