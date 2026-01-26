@@ -47,8 +47,7 @@ jobs:
             --html=reports/evaluation-report.html \
             --self-contained-html \
             --json-report \
-            --json-report-file=reports/evaluation-metrics.json \
-            -v || echo "Evaluation tests completed"
+            --json-report-file=reports/evaluation-metrics.json
 
       - name: Generate metrics visualization
         if: always()
@@ -57,8 +56,7 @@ jobs:
           mkdir -p reports/visualizations
           python scripts/evaluation/generate_visualizations.py \
             --metrics-file reports/evaluation-metrics.json \
-            --output-dir reports/visualizations/ \
-            || echo "Visualization generation skipped"
+            --output-dir reports/visualizations/
 
       - name: Check evaluation thresholds
         if: always()
@@ -70,8 +68,7 @@ jobs:
           python scripts/evaluation/check_thresholds.py \
             --metrics-file reports/evaluation-metrics.json \
             --config config/evaluation-thresholds.yml \
-            --output threshold-results.json \
-            || echo "Threshold check skipped"
+            --output threshold-results.json
 
       - name: Upload evaluation reports
         if: always()
