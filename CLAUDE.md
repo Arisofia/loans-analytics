@@ -227,8 +227,7 @@ pytest tests/fi-analytics/ -v
 - **Test Checklist**: `fi-analytics/analytics_pipeline_sprint1_checklist.md`
 - **Test Cases**: `fi-analytics/analytics_pipeline_sprint1_testcases.md`
 
-**Upcoming Sprint 1 Tasks**:
-- C-01 to C-04: Mocked integrations (Figma, Notion, Meta)
+- C-01 to C-04: Mocked integrations
 - D-01, D-02: Tracing/observability (OTLP)
 - F-01, F-02: Security (secret handling)
 
@@ -287,7 +286,7 @@ Add to `.github/workflows/ci.yml`:
 ### Upcoming Sprints
 
 **Sprint 1** (Integration & Tracing - 12 hours):
-- C-01 to C-04: Mocked integrations (Figma, Notion, Meta)
+- C-01 to C-04: Mocked integrations
 - D-01, D-02: Tracing/observability (OTLP)
 - F-01, F-02: Security (secret handling)
 
@@ -336,13 +335,13 @@ Add to `.github/workflows/ci.yml`:
 
 ---
 
-## Phase 8: Figma Integration - Backend Tiers Implementation (Complete)
+## Phase 8: Backend Tiers Implementation (100%)
 
 **Status**: ✅ **COMPLETE** (2026-01-05)
 
 ### Overview
 
-Implemented complete Tier 1, 2, and 3 data generation in Python backend for Figma AI integration.
+Implemented complete Tier 1, 2, and 3 data generation in Python backend.
 
 ### New Modules
 
@@ -406,7 +405,7 @@ Manifest (includes extended_kpis in metadata)
   ↓
 API Response (extended_kpis at top level)
   ↓
-Figma Frontend (automatic real data usage, zero fallback)
+Frontend (automatic real data usage, zero fallback)
 ```
 
 ### Verification
@@ -415,35 +414,35 @@ Figma Frontend (automatic real data usage, zero fallback)
 # Check backend is generating extended_kpis
 curl http://127.0.0.1:8000/api/kpis/latest | jq '.extended_kpis | keys'
 
-# Verify Figma uses real data (not demo)
+# Verify frontend uses real data (not demo)
 curl http://127.0.0.1:3000/api/figma/marketing | jq '.metadata.demo_mode'
 # Should return: false
 ```
 
 ---
 
-### Frontend Integration Completion
+### Frontend Completion
 
 **Frontend Changes (Phase 8 Part 2 Completion - 2026-01-05 20:35 UTC)**
 
 Completed integration of backend Tier 3 data with frontend intelligent fallback:
 
-1. **figmaDemoData.ts** (+94 lines):
+1. DemoData.ts (+94 lines):
    - Added Tier 3 data structures: `dpd_buckets`, `collection_rate`, `concentration`, `monthly_risk`
    - All demo data aligned with backend generation patterns
    - 200+ total demo data points for complete fallback coverage
 
-2. **figma/kpis/route.ts** (+10 lines):
+2. kpis/route.ts (+10 lines):
    - Detect demo mode by checking `extended_kpis.dpd_buckets` presence
    - Return `X-Demo-Mode` header for agent tracking
    - Include demo_mode flag in response metadata
 
-3. **figma/marketing/route.ts** (+19 lines):
+3. marketing/route.ts (+19 lines):
    - Complete `getDemoOrRealValue` integration for all fields
    - Support Tier 3: concentration_risk, risk_trends, monthly_risk
    - Auto-generate marketing comments based on data quality
 
-4. **figmaKpiExport.ts** (+42/-19 lines):
+4. KpiExport.ts (+42/-19 lines):
    - Refactor to support 350+ real data points
    - Align metric thresholds with Tier 3 data
    - Add concentration and risk analytics
@@ -456,15 +455,15 @@ KPI Calculation Phase → extended_kpis (Tier 3: 350+ data points)
   ↓ (Manifest)
 API: /api/kpis/latest returns { extended_kpis, ... }
   ↓
-Web App: /api/figma/* endpoints
+Web App: /api/* endpoints
   ├─ Check: extended_kpis.dpd_buckets exists?
   ├─ YES: Use real data, set X-Demo-Mode: false
   └─ NO: Use DEMO_DATA fallback, set X-Demo-Mode: true
   ↓
-Figma Agent receives complete dashboard with metadata.demo_mode flag
+Agent receives complete dashboard with metadata.demo_mode flag
 ```
 
-**Commit**: `edb566904` - feat(figma): complete Phase 8 - integrate backend Tier 3 extended_kpis
+**Commit**: `edb566904` - feat: complete Phase 8 - integrate backend Tier 3 extended_kpis
 
 **Report Generated**: 2026-01-05 20:35 UTC  
-**Prepared for**: Production Operations - Figma Integration Complete
+Prepared for: Production Operations - Integration Complete
