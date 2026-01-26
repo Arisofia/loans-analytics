@@ -235,47 +235,80 @@ def main():
     print("=" * 80 + "\n")
 
     print("👥 PORTFOLIO FUNDAMENTALS")
-    print(f"  Active Clients: {dashboard_metrics['active_clients']:,}")
-    print(f"  Total AUM (USD): ${dashboard_metrics['total_aum_usd']:,.2f}\n")
+    print(
+        f"  Active Clients: {dashboard_metrics['active_clients']:,}"
+    )
+    print(
+        f"  Total AUM (USD): ${dashboard_metrics['total_aum_usd']:,.2f}\n"
+    )
 
     print("📈 PRODUCT MOMENTUM")
-    print(f"  Replines %: {dashboard_metrics['replines_percentage']:.2f}%\n")
+    print(
+        f"  Replines %: {dashboard_metrics['replines_percentage']:.2f}%\n"
+    )
 
     print("🏷️ PRICING & YIELDS")
     ext = dashboard_metrics.get("extended_kpis", {})
     weighted_apr = ext.get("weighted_apr_contractual", 0)
     eir_sched = ext.get("eir_scheduled", 0)
     eir_real = ext.get("eir_real", 0)
-    print(f"  Weighted APR (Lista): {weighted_apr*100:.2f}%")
-    print(f"  EIR (Programado): {eir_sched*100:.2f}%")
-    print(f"  EIR (Realizado): {eir_real*100:.2f}%\n")
+    print(
+        f"  Weighted APR (Lista): {weighted_apr*100:.2f}%"
+    )
+    print(
+        f"  EIR (Programado): {eir_sched*100:.2f}%"
+    )
+    print(
+        f"  EIR (Realizado): {eir_real*100:.2f}%\n"
+    )
 
     print("💵 REVENUE")
-    print(f"  Monthly Revenue: ${dashboard_metrics['monthly_revenue_usd']:,.2f}")
-    print(f"  Revenue/Client (Monthly): ${dashboard_metrics['revenue_per_active_client_monthly']:,.2f}")
-    print(f"  Revenue/Client (Annual): ${dashboard_metrics['revenue_per_active_client_annual']:,.2f}\n")
+    print(
+        f"  Monthly Revenue: ${dashboard_metrics['monthly_revenue_usd']:,.2f}"
+    )
+    print(
+        f"  Revenue/Client (Monthly): ${dashboard_metrics['revenue_per_active_client_monthly']:,.2f}"
+    )
+    print(
+        f"  Revenue/Client (Annual): ${dashboard_metrics['revenue_per_active_client_annual']:,.2f}\n"
+    )
 
     print("📊 GROWTH METRICS")
-    print(f"  MoM Growth: {dashboard_metrics['mom_growth_pct']:.2f}%")
-    print(f"  YoY Growth: {dashboard_metrics['yoy_growth_pct']:.2f}%\n")
+    print(
+        f"  MoM Growth: {dashboard_metrics['mom_growth_pct']:.2f}%"
+    )
+    print(
+        f"  YoY Growth: {dashboard_metrics['yoy_growth_pct']:.2f}%\n"
+    )
 
     print("⚡ EFFICIENCY & ACQUISITION")
-    print(f"  LTV/CAC Ratio: {dashboard_metrics['ltv_cac_ratio']:.2f}x")
-    print(f"  CAC (USD): ${dashboard_metrics['cac_usd']:,.2f}\n")
+    print(
+        f"  LTV/CAC Ratio: {dashboard_metrics['ltv_cac_ratio']:.2f}x"
+    )
+    print(
+        f"  CAC (USD): ${dashboard_metrics['cac_usd']:,.2f}\n"
+    )
 
     print("⚠️ RISK METRICS")
-    print(f"  30+ DPD Rate: {dashboard_metrics['delinquency_rate_30_pct']:.2f}%")
-    print(f"  90+ DPD Rate: {dashboard_metrics['delinquency_rate_90_pct']:.2f}%")
-    print(f"  PAR 90 Ratio: {dashboard_metrics['par_90_ratio_pct']:.2f}%\n")
+    print(
+        f"  30+ DPD Rate: {dashboard_metrics['delinquency_rate_30_pct']:.2f}%"
+    )
+    print(
+        f"  90+ DPD Rate: {dashboard_metrics['delinquency_rate_90_pct']:.2f}%"
+    )
+    print(
+        f"  PAR 90 Ratio: {dashboard_metrics['par_90_ratio_pct']:.2f}%\n"
+    )
 
     if dashboard_metrics["portfolio_by_product"]:
         print("📦 PORTFOLIO BY PRODUCT")
         for prod in dashboard_metrics["portfolio_by_product"]:
             print(
-                f"  {prod.get('product_type', 'Unknown')}: {prod.get('loan_count', 0)} loans, ${prod.get('aum', 0):,.0f}"
+                f"  {prod.get('product_type', 'Unknown')}: "
+                f"{prod.get('loan_count', 0)} loans, "
+                f"${prod.get('aum', 0):,.0f}"
             )
         print()
-
     # Save results
     output_path = Path(__file__).parent / "exports" / "complete_kpi_dashboard.json"
     output_path.parent.mkdir(exist_ok=True)
