@@ -5,6 +5,10 @@ name: Gemini AI PR Review
       GEMINI_API_KEY_SIMPLE:
         required: false
     inputs:
+      is_fork:
+        description: Whether the pull request originates from a fork.
+        required: true
+        type: boolean
       gemini_model:
         description: Optional override for Gemini model name.
         required: false
@@ -12,7 +16,7 @@ name: Gemini AI PR Review
 jobs:
   gemini-review:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == false
+    if: ${{ inputs.is_fork == false }}
     permissions:
       contents: read
       pull-requests: write

@@ -9,12 +9,11 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-try:
-    from streamlit_app import bootstrap  # noqa: F401
-except ImportError:
-    ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    if ROOT_DIR not in sys.path:
-        sys.path.insert(0, ROOT_DIR)
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+from streamlit_app import bootstrap  # noqa: F401
 from streamlit_app.components.analytics_tabs import render_advanced_intelligence
 from streamlit_app.components.charts import (
     render_cashflow_trends,
@@ -77,6 +76,25 @@ def load_local_exports():
         df = pd.read_csv(path)
         export_data[key] = normalize_dataframe_complete(df)
     return export_data
+
+
+def get_normalized_table_type(filename: str) -> str | None:
+    base_name = os.path.splitext(filename)[0].lower()
+    if "loan" in base_name and "data" in base_name:
+        return "loan_data"
+    if base_name.startswith("loans"):
+        return "loan_data"
+    if "customer" in base_name and "data" in base_name:
+        return "customer_data"
+    if base_name.startswith("customer"):
+        return "customer_data"
+    if "payment" in base_name and ("historic" in base_name or "real" in base_name):
+        return "historic_payment_data"
+    if base_name.startswith("transaction"):
+        return "historic_payment_data"
+    if "schedule" in base_name:
+        return "schedule_data"
+    return None
 
 
 @st.cache_data(show_spinner=False, ttl=300)
@@ -264,24 +282,9 @@ with st.sidebar:
                         dfs[name] = normalized_df
 
                         # Apply fuzzy mapping to identify core tables
-                        if (
-                            ("loan" in name_lower and "data" in name_lower)
-                            or name_lower.startswith("loans")
-                        ):
-                            mapped_dfs["loan_data"] = normalized_df
-                        elif (
-                            ("customer" in name_lower and "data" in name_lower)
-                            or name_lower.startswith("customer")
-                        ):
-                            mapped_dfs["customer_data"] = normalized_df
-                        elif (
-                            ("payment" in name_lower and "historic" in name_lower)
-                            or ("real" in name_lower and "payment" in name_lower)
-                            or name_lower.startswith("transaction")
-                        ):
-                            mapped_dfs["historic_payment_data"] = normalized_df
-                        elif "schedule" in name_lower:
-                            mapped_dfs["schedule_data"] = normalized_df
+                        table_key = get_normalized_table_type(name_lower)
+                        if table_key:
+                            mapped_dfs[table_key] = normalized_df
 
                 # Merge mapped data into session state while keeping original filenames
                 # for UI.
@@ -337,16 +340,10 @@ customer_data = data.get("customer_data", pd.DataFrame())
 if loan_data is None:
     # Fallback to original filename search if mapping failed
     for name, table_df in data.items():
-        name_lower = name.lower()
-        if (
-            ("loan" in name_lower and "data" in name_lower)
-            or name_lower.startswith("loans")
-        ):
+        table_key = get_normalized_table_type(name)
+        if table_key == "loan_data":
             loan_data = table_df
-        elif (
-            ("customer" in name_lower and "data" in name_lower)
-            or name_lower.startswith("customer")
-        ):
+        elif table_key == "customer_data":
             if customer_data.empty:
                 customer_data = table_df
 
