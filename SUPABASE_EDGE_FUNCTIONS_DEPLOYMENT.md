@@ -4,6 +4,7 @@
 
 **Project Ref**: `pljjgdtczxmrxydfuaep`  
 **Cloud URLs** (after deployment):
+
 ```
 https://pljjgdtczxmrxydfuaep.functions.supabase.co/figma-kpis
 https://pljjgdtczxmrxydfuaep.functions.supabase.co/figma-marketing
@@ -14,15 +15,18 @@ https://pljjgdtczxmrxydfuaep.functions.supabase.co/figma-marketing
 ## Functions Included
 
 ### 1. **figma-kpis** - KPI Dashboard for Figma
+
 **File**: `supabase/functions/figma-kpis/index.ts`
 
 Generates a complete KPI dashboard by:
+
 - Fetching from backend: `http://127.0.0.1:8000/api/kpis/latest`
 - Building portfolio, risk, pricing, growth, customer, and quality metrics
 - Auto-detecting demo mode via `extended_kpis.dpd_buckets`
 - Returning `X-Demo-Mode` header for agent tracking
 
 **Response Format**:
+
 ```json
 {
   "version": "2.0",
@@ -43,9 +47,11 @@ Generates a complete KPI dashboard by:
 ```
 
 ### 2. **figma-marketing** - Marketing Dashboard for Figma
+
 **File**: `supabase/functions/figma-marketing/index.ts`
 
 Generates marketing analytics by:
+
 - Fetching from backend: `http://127.0.0.1:8000/api/kpis/latest`
 - Building unit economics (36-month history)
 - Customer acquisition & retention metrics
@@ -55,6 +61,7 @@ Generates marketing analytics by:
 - Auto-generating AI comments based on data quality
 
 **Response Format**:
+
 ```json
 {
   "version": "2.0",
@@ -87,6 +94,7 @@ Generates marketing analytics by:
 ## Local Testing
 
 ### Prerequisites
+
 ```bash
 # Install Supabase CLI (if not already installed)
 brew install supabase/tap/supabase
@@ -96,6 +104,7 @@ supabase --version
 ```
 
 ### Start Local Supabase
+
 ```bash
 cd /Users/jenineferderas/Documents/abaco-loans-analytics
 
@@ -104,6 +113,7 @@ supabase start
 ```
 
 This will:
+
 - Start PostgreSQL database
 - Start Kong (API gateway)
 - Start Edge Functions runtime (Deno)
@@ -111,6 +121,7 @@ This will:
 ### Test Functions Locally
 
 **Test figma-kpis**:
+
 ```bash
 # With backend running (http://127.0.0.1:8000)
 curl -X GET http://localhost:54321/functions/v1/figma-kpis
@@ -121,6 +132,7 @@ curl -X GET http://localhost:54321/functions/v1/figma-kpis
 ```
 
 **Test figma-marketing**:
+
 ```bash
 curl -X GET http://localhost:54321/functions/v1/figma-marketing
 
@@ -128,6 +140,7 @@ curl -X GET http://localhost:54321/functions/v1/figma-marketing
 ```
 
 ### Debug Logs
+
 ```bash
 # Watch function logs in real-time
 supabase functions list
@@ -141,6 +154,7 @@ supabase functions logs figma-kpis --tail
 ## Production Deployment
 
 ### Step 1: Authenticate with Supabase
+
 ```bash
 supabase login
 # This will open a browser for authentication
@@ -148,6 +162,7 @@ supabase login
 ```
 
 ### Step 2: Link to Cloud Project
+
 ```bash
 # Link to the existing Supabase project
 supabase link --project-ref pljjgdtczxmrxydfuaep
@@ -168,11 +183,14 @@ supabase functions secrets set BACKEND_KPI_URL "https://your-prod-backend.com/ap
 ```
 
 Functions read from env:
+
 ```typescript
-const BACKEND_KPI_URL = Deno.env.get("BACKEND_KPI_URL") || "http://127.0.0.1:8000/api/kpis/latest"
+const BACKEND_KPI_URL =
+  Deno.env.get('BACKEND_KPI_URL') || 'http://127.0.0.1:8000/api/kpis/latest'
 ```
 
 ### Step 4: Deploy Functions
+
 ```bash
 # Deploy both functions
 supabase functions deploy figma-kpis
@@ -184,6 +202,7 @@ supabase functions deploy figma-marketing --no-verify-jwt
 ```
 
 **Output**:
+
 ```
 Deploying function 'figma-kpis'...
 Deployed to https://pljjgdtczxmrxydfuaep.functions.supabase.co/figma-kpis
@@ -193,6 +212,7 @@ Deployed to https://pljjgdtczxmrxydfuaep.functions.supabase.co/figma-marketing
 ```
 
 ### Step 5: Verify Deployment
+
 ```bash
 # Test cloud function
 curl -X GET https://pljjgdtczxmrxydfuaep.functions.supabase.co/figma-kpis
@@ -206,17 +226,21 @@ supabase functions describe figma-kpis
 ## Usage in Figma
 
 ### Option A: Figma Plugin
+
 If using a Figma plugin (future implementation):
+
 ```javascript
 const response = await fetch(
   'https://pljjgdtczxmrxydfuaep.functions.supabase.co/figma-kpis'
-);
-const data = await response.json();
+)
+const data = await response.json()
 // Use data to populate Figma components
 ```
 
 ### Option B: Manual Import (Now Available)
+
 1. Copy JSON from the endpoint:
+
    ```bash
    curl https://pljjgdtczxmrxydfuaep.functions.supabase.co/figma-marketing | pbcopy
    ```
@@ -228,7 +252,9 @@ const data = await response.json();
    - Data auto-populates from response
 
 ### Option C: Figma Sync Integration
+
 Share the URLs with your team:
+
 ```
 📊 KPI Dashboard:  https://pljjgdtczxmrxydfuaep.functions.supabase.co/figma-kpis
 📈 Marketing Data: https://pljjgdtczxmrxydfuaep.functions.supabase.co/figma-marketing
@@ -239,6 +265,7 @@ Share the URLs with your team:
 ## CORS Configuration
 
 Both functions support CORS for frontend/plugin consumption:
+
 ```
 Access-Control-Allow-Origin: *
 Access-Control-Allow-Methods: GET, OPTIONS
@@ -246,6 +273,7 @@ Access-Control-Allow-Headers: Content-Type, Authorization
 ```
 
 If you need to restrict CORS:
+
 1. Edit function `.env.local` (local testing)
 2. Set via Supabase Dashboard (cloud)
 
@@ -254,11 +282,13 @@ If you need to restrict CORS:
 ## Backend Connectivity
 
 Functions automatically connect to:
+
 ```
 http://127.0.0.1:8000/api/kpis/latest
 ```
 
 ### For Production:
+
 If backend moves to different environment:
 
 ```bash
@@ -276,8 +306,9 @@ supabase functions secrets set BACKEND_KPI_URL "https://prod-backend.abaco.loans
 Functions automatically detect when backend data is unavailable:
 
 ```typescript
-const hasDemoData = !kpiRawData.extended_kpis?.dpd_buckets ||
-                    kpiRawData.extended_kpis.dpd_buckets.length === 0
+const hasDemoData =
+  !kpiRawData.extended_kpis?.dpd_buckets ||
+  kpiRawData.extended_kpis.dpd_buckets.length === 0
 
 // Response includes:
 // X-Demo-Mode: true/false  (header)
@@ -285,6 +316,7 @@ const hasDemoData = !kpiRawData.extended_kpis?.dpd_buckets ||
 ```
 
 If `demo_mode: true`:
+
 - Using fallback/demo data
 - Backend may be down or Tier 3 data not generated yet
 - Figma agent aware of data quality
@@ -294,6 +326,7 @@ If `demo_mode: true`:
 ## Monitoring & Logs
 
 ### Real-Time Logs
+
 ```bash
 # Watch function execution logs
 supabase functions logs figma-kpis --tail
@@ -303,6 +336,7 @@ supabase functions logs figma-kpis --filter error
 ```
 
 ### Cloud Dashboard
+
 - Go to: https://supabase.com/dashboard/project/pljjgdtczxmrxydfuaep
 - Click: "Edge Functions"
 - View: Logs, invocations, performance metrics
@@ -312,32 +346,38 @@ supabase functions logs figma-kpis --filter error
 ## Troubleshooting
 
 ### Backend Connection Fails
+
 ```
 Error: Failed to fetch KPI data from backend
 Status: 500
 ```
 
 **Solution**:
+
 1. Verify backend is running: `curl http://127.0.0.1:8000/api/kpis/latest`
 2. Check BACKEND_KPI_URL env variable
 3. Review function logs: `supabase functions logs figma-kpis --tail`
 
 ### Function Timeout
+
 ```
 Error: Function execution timed out after 30s
 ```
 
 **Solution**:
+
 1. Backend API slow? Check: `curl -v http://127.0.0.1:8000/api/kpis/latest`
 2. Network latency? Set BACKEND_KPI_URL to cloud endpoint
 3. Increase timeout (Supabase default: 60s, max: 600s)
 
 ### CORS Issues
+
 ```
 Access to XMLHttpRequest blocked by CORS policy
 ```
 
 **Solution**:
+
 - CORS is enabled by default in functions
 - If still failing, check frontend making request
 - Verify header: `Origin: <your-figma-domain>`
@@ -374,12 +414,14 @@ supabase functions deploy figma-kpis
 ## Next Steps
 
 1. **Local Testing**:
+
    ```bash
    supabase start
    curl http://localhost:54321/functions/v1/figma-kpis
    ```
 
 2. **Deploy to Cloud**:
+
    ```bash
    supabase login
    supabase link --project-ref pljjgdtczxmrxydfuaep
@@ -387,6 +429,7 @@ supabase functions deploy figma-kpis
    ```
 
 3. **Share URLs with Team**:
+
    ```
    https://pljjgdtczxmrxydfuaep.functions.supabase.co/figma-kpis
    https://pljjgdtczxmrxydfuaep.functions.supabase.co/figma-marketing
@@ -396,7 +439,7 @@ supabase functions deploy figma-kpis
 
 ---
 
-**Status**: ✅ Ready for deployment  
+**Status**: ✅ Deployed to Production  
 **Created**: 2026-01-05  
 **Functions**: 2 (figma-kpis, figma-marketing)  
 **Language**: Deno/TypeScript  

@@ -13,29 +13,27 @@ jobs:
         env:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
         run: |
-        sanitize_secret() {
-          local var_name="$1"
-          local raw="$2"
-          local norm
-          norm="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]' | xargs)"
-          case "$norm" in
-            ""|"token"|"tokens"|"secret"|"secrets"|"changeme"|"change-me"|"change_me"|"replace-me"|"replace_me"|"placeholder"|"example"|"redacted")
-              printf -v "$var_name" '%s' ""
-              ;;
-            *)
-              printf -v "$var_name" '%s' "$raw"
-              ;;
-          esac
-        }
-        sanitize_secret AWS_S3_BUCKET "$AWS_S3_BUCKET"
-        sanitize_secret AWS_ACCESS_KEY_ID "$AWS_ACCESS_KEY_ID"
-        sanitize_secret AWS_SECRET_ACCESS_KEY "$AWS_SECRET_ACCESS_KEY"
+          sanitize_secret() {
+            local var_name="$1"
+            local raw="$2"
+            local norm
+            norm="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]' | xargs)"
+            case "$norm" in
+              ""|"token"|"tokens"|"secret"|"secrets"|"changeme"|"change-me"|"change_me"|"replace-me"|"replace_me"|"placeholder"|"example"|"redacted")
+                printf -v "$var_name" '%s' ""
+                ;;
+              *)
+                printf -v "$var_name" '%s' "$raw"
+                ;;
+            esac
+          }
+          sanitize_secret AWS_S3_BUCKET "$AWS_S3_BUCKET"
 
-        if [ -n "$AWS_S3_BUCKET" ]; then
-          echo "aws_available=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "aws_available=false" >> "$GITHUB_OUTPUT"
-        fi
+          if [ -n "$AWS_S3_BUCKET" ]; then
+            echo "aws_available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "aws_available=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Checkout repo
         uses: actions/checkout@v4
