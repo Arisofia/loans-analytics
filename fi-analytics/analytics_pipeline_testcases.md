@@ -1,5 +1,4 @@
 # FI-ANALYTICS: Analytics Pipeline Test Cases
-
 ## Test Case ID: FI-ANALYTICS-001
 **Test Case Title**: Pipeline smoke execution and exit status
 **Priority**: Critical
@@ -12,9 +11,7 @@
 1. Run pipeline via CLI with `--dataset` and `--output` flags - `sample_small.csv` - Exit code 0
 2. Check stdout/stderr for "Pipeline start" message - N/A - Log message present
 3. Verify directory contains `kpi_results.json` and `metrics.csv` - N/A - Files created
-
 ---
-
 ## Test Case ID: FI-ANALYTICS-002
 **Test Case Title**: Artifact Schema and Required Fields Validation
 **Priority**: Critical
@@ -28,9 +25,7 @@
 2. Verify `run_id` is a valid UUID4 - `run_id` - UUID format correct
 3. Verify `timestamp` is in ISO 8601 format - `timestamp` - Date format correct
 4. Confirm `total_receivable_usd` is present and numeric - `total_receivable_usd` - Value > 0
-
 ---
-
 ## Test Case ID: FI-ANALYTICS-003
 **Test Case Title**: KPI Numerical Accuracy vs Baseline
 **Priority**: High
@@ -44,9 +39,7 @@
 2. Compare calculated `collection_rate_pct` vs baseline - computed: ~96.9% - Within ±5%
 3. Compare `par_90_pct` vs baseline - computed: ~0.39% - Within ±5%
 4. Verify no values are `NaN` or `null` - N/A - No nulls in numeric fields
-
 ---
-
 ## Test Case ID: FI-ANALYTICS-004
 **Test Case Title**: Memory-Constrained Performance (Large Dataset)
 **Priority**: Medium
@@ -59,9 +52,7 @@
 1. Execute pipeline on 100k row CSV - synthetic_large.csv - Completes within 60s
 2. Monitor RSS memory usage during run - N/A - Peak memory < 2GB
 3. Verify output files are correctly aggregated - N/A - Artifacts produced
-
 ---
-
 ## Test Case ID: FI-ANALYTICS-005
 **Test Case Title**: Missing Column Resilience (Optional Fields)
 **Priority**: Medium

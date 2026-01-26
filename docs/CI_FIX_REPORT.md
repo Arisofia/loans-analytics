@@ -1,13 +1,11 @@
 # CI Workflow Fix & Test Report
 **Generated**: Mon Jan  5 03:50:43 CET 2026
 **Repository**: /Users/jenineferderas/Documents/abaco-loans-analytics-prs/python/abaco-loans-analytics
-
 ## Summary
 - Full test execution with coverage
 - Code quality checks (lint, type, style)
 - Issue identification and remediation
 - Validation of fixes
-
 📋 STEP 1: Installing Dependencies...
   Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
   NOTE: The current PATH contains path(s) starting with `~`, which may not be expanded by all applications.
@@ -16,7 +14,6 @@
   NOTE: The current PATH contains path(s) starting with `~`, which may not be expanded by all applications.
 ✅ Dependencies installed
 🧪 STEP 2: Running Full Test Suite with Coverage...
-
 /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
   warnings.warn(
 ============================= test session starts ==============================
@@ -27,7 +24,6 @@ rootdir: /Users/jenineferderas/Documents/abaco-loans-analytics-prs/python/abaco-
 configfile: pytest.ini
 plugins: mock-3.15.1, anyio-4.12.0, hypothesis-6.141.1, timeout-2.4.0, typeguard-4.4.4, Faker-37.12.0, requests-mock-1.12.1, cov-7.0.0
 collecting ... collected 346 items / 3 skipped
-
 tests/data_tests/test_kpi_contracts.py::test_par_90_from_sample_data PASSED [  0%]
 tests/data_tests/test_kpi_contracts.py::test_collection_rate_calculation PASSED [  0%]
 tests/data_tests/test_kpi_contracts.py::test_segment_level_contracts PASSED [  0%]
@@ -375,77 +371,57 @@ tests/unit/test_abaco_pipeline_quality.py::test_compute_freshness_hours_positive
 tests/unit/test_abaco_pipeline_supabase_writer.py::test_upsert_pipeline_run_posts_expected_url_headers_and_body PASSED [ 99%]
 tests/unit/test_abaco_pipeline_supabase_writer.py::test_insert_kpi_values_noop_on_empty PASSED [100%]
 ERROR: Coverage failure: total of 40 is less than fail-under=85
-
-
 =============================== warnings summary ===============================
 ../../../../Library/Python/3.9/lib/python/site-packages/pandera/_pandas_deprecated.py:160
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pandera/_pandas_deprecated.py:160: FutureWarning: Importing pandas-specific classes and functions from the
   top-level pandera module will be **removed in a future version of pandera**.
   If you're using pandera to validate pandas objects, we highly recommend updating
   your import:
-  
   ```
   # old import
   import pandera as pa
-  
   # new import
   import pandera.pandas as pa
   ```
-  
   If you're using pandera to validate objects from other compatible libraries
   like pyspark or polars, see the supported libraries section of the documentation
   for more information on how to import pandera:
-  
   https://pandera.readthedocs.io/en/stable/supported_libraries.html
-  
   To disable this warning, set the environment variable:
-  
   ```
   export DISABLE_PANDERA_IMPORT_WARNING=True
   ```
-  
     warnings.warn(_future_warning, FutureWarning)
-
 ../../../../Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:19
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:19: DeprecationWarning: 'setName' deprecated - use 'set_name'
     token = pp.Word(tchar).setName("token")
-
 ../../../../Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:20
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:20: DeprecationWarning: 'leaveWhitespace' deprecated - use 'leave_whitespace'
     token68 = pp.Combine(pp.Word("-._~+/" + pp.nums + pp.alphas) + pp.Optional(pp.Word("=").leaveWhitespace())).setName(
-
 ../../../../Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:20
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:20: DeprecationWarning: 'setName' deprecated - use 'set_name'
     token68 = pp.Combine(pp.Word("-._~+/" + pp.nums + pp.alphas) + pp.Optional(pp.Word("=").leaveWhitespace())).setName(
-
 ../../../../Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:24
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:24: DeprecationWarning: 'setName' deprecated - use 'set_name'
     quoted_string = pp.dblQuotedString.copy().setName("quoted-string").setParseAction(unquote)
-
 ../../../../Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:24
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:24: DeprecationWarning: 'setParseAction' deprecated - use 'set_parse_action'
     quoted_string = pp.dblQuotedString.copy().setName("quoted-string").setParseAction(unquote)
-
 ../../../../Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:25
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:25: DeprecationWarning: 'setName' deprecated - use 'set_name'
     auth_param_name = token.copy().setName("auth-param-name").addParseAction(downcaseTokens)
-
 ../../../../Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:25
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:25: DeprecationWarning: 'addParseAction' deprecated - use 'add_parse_action'
     auth_param_name = token.copy().setName("auth-param-name").addParseAction(downcaseTokens)
-
 ../../../../Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:27
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:27: DeprecationWarning: 'delimitedList' deprecated - use 'DelimitedList'
     params = pp.Dict(pp.delimitedList(pp.Group(auth_param)))
-
 ../../../../Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:33
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/httplib2/auth.py:33: DeprecationWarning: 'delimitedList' deprecated - use 'DelimitedList'
     www_authenticate = pp.delimitedList(pp.Group(challenge))
-
 ../../../../Library/Python/3.9/lib/python/site-packages/matplotlib/_fontconfig_pattern.py:64
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/matplotlib/_fontconfig_pattern.py:64: DeprecationWarning: 'oneOf' deprecated - use 'one_of'
     prop = Group((name + Suppress("=") + comma_separated(value)) | oneOf(_CONSTANTS))
-
 ../../../../Library/Python/3.9/lib/python/site-packages/matplotlib/_fontconfig_pattern.py:85
 ../../../../Library/Python/3.9/lib/python/site-packages/matplotlib/_fontconfig_pattern.py:85
 ../../../../Library/Python/3.9/lib/python/site-packages/matplotlib/_fontconfig_pattern.py:85
@@ -454,7 +430,6 @@ ERROR: Coverage failure: total of 40 is less than fail-under=85
 ../../../../Library/Python/3.9/lib/python/site-packages/matplotlib/_fontconfig_pattern.py:85
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/matplotlib/_fontconfig_pattern.py:85: DeprecationWarning: 'parseString' deprecated - use 'parse_string'
     parse = parser.parseString(pattern)
-
 ../../../../Library/Python/3.9/lib/python/site-packages/matplotlib/_fontconfig_pattern.py:89
 ../../../../Library/Python/3.9/lib/python/site-packages/matplotlib/_fontconfig_pattern.py:89
 ../../../../Library/Python/3.9/lib/python/site-packages/matplotlib/_fontconfig_pattern.py:89
@@ -463,68 +438,52 @@ ERROR: Coverage failure: total of 40 is less than fail-under=85
 ../../../../Library/Python/3.9/lib/python/site-packages/matplotlib/_fontconfig_pattern.py:89
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/matplotlib/_fontconfig_pattern.py:89: DeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
     parser.resetCache()
-
 ../../../../Library/Python/3.9/lib/python/site-packages/matplotlib/_mathtext.py:45
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/matplotlib/_mathtext.py:45: DeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
     ParserElement.enablePackrat()
-
 python/pipeline/ingestion.py:28
   /Users/jenineferderas/Documents/abaco-loans-analytics-prs/python/abaco-loans-analytics/python/pipeline/ingestion.py:28: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
     class LoanRecord(BaseModel):
-
 tests/test_metrics_validation.py::test_batch_export_load_latest_metrics_invalid_json
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pyiceberg/expressions/parser.py:72: DeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
     ParserElement.enablePackrat()
-
 tests/test_metrics_validation.py::test_batch_export_load_latest_metrics_invalid_json
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pyiceberg/expressions/parser.py:85: DeprecationWarning: 'escChar' argument is deprecated, use 'esc_char'
     quoted_identifier = QuotedString('"', escChar="\\", unquoteResults=True)
-
 tests/test_metrics_validation.py::test_batch_export_load_latest_metrics_invalid_json
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pyiceberg/expressions/parser.py:85: DeprecationWarning: 'unquoteResults' argument is deprecated, use 'unquote_results'
     quoted_identifier = QuotedString('"', escChar="\\", unquoteResults=True)
-
 tests/test_metrics_validation.py::test_batch_export_load_latest_metrics_invalid_json
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pyiceberg/table/metadata.py:366: PydanticDeprecatedSince212: Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. See the documentation at https://docs.pydantic.dev/2.12/concepts/validators/#model-after-validator. Deprecated in Pydantic V2.12 to be removed in V3.0.
     def construct_refs(cls, data: TableMetadataV1) -> TableMetadataV1:
-
 tests/test_metrics_validation.py::test_batch_export_load_latest_metrics_invalid_json
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pyiceberg/table/metadata.py:495: PydanticDeprecatedSince212: Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. See the documentation at https://docs.pydantic.dev/2.12/concepts/validators/#model-after-validator. Deprecated in Pydantic V2.12 to be removed in V3.0.
     def check_schemas(cls, table_metadata: TableMetadata) -> TableMetadata:
-
 tests/test_metrics_validation.py::test_batch_export_load_latest_metrics_invalid_json
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pyiceberg/table/metadata.py:499: PydanticDeprecatedSince212: Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. See the documentation at https://docs.pydantic.dev/2.12/concepts/validators/#model-after-validator. Deprecated in Pydantic V2.12 to be removed in V3.0.
     def check_partition_specs(cls, table_metadata: TableMetadata) -> TableMetadata:
-
 tests/test_metrics_validation.py::test_batch_export_load_latest_metrics_invalid_json
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pyiceberg/table/metadata.py:503: PydanticDeprecatedSince212: Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. See the documentation at https://docs.pydantic.dev/2.12/concepts/validators/#model-after-validator. Deprecated in Pydantic V2.12 to be removed in V3.0.
     def check_sort_orders(cls, table_metadata: TableMetadata) -> TableMetadata:
-
 tests/test_metrics_validation.py::test_batch_export_load_latest_metrics_invalid_json
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pyiceberg/table/metadata.py:507: PydanticDeprecatedSince212: Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. See the documentation at https://docs.pydantic.dev/2.12/concepts/validators/#model-after-validator. Deprecated in Pydantic V2.12 to be removed in V3.0.
     def construct_refs(cls, table_metadata: TableMetadata) -> TableMetadata:
-
 tests/test_metrics_validation.py::test_batch_export_load_latest_metrics_invalid_json
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pyiceberg/table/metadata.py:539: PydanticDeprecatedSince212: Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. See the documentation at https://docs.pydantic.dev/2.12/concepts/validators/#model-after-validator. Deprecated in Pydantic V2.12 to be removed in V3.0.
     def check_schemas(cls, table_metadata: TableMetadata) -> TableMetadata:
-
 tests/test_metrics_validation.py::test_batch_export_load_latest_metrics_invalid_json
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pyiceberg/table/metadata.py:543: PydanticDeprecatedSince212: Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. See the documentation at https://docs.pydantic.dev/2.12/concepts/validators/#model-after-validator. Deprecated in Pydantic V2.12 to be removed in V3.0.
     def check_partition_specs(cls, table_metadata: TableMetadata) -> TableMetadata:
-
 tests/test_metrics_validation.py::test_batch_export_load_latest_metrics_invalid_json
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pyiceberg/table/metadata.py:547: PydanticDeprecatedSince212: Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. See the documentation at https://docs.pydantic.dev/2.12/concepts/validators/#model-after-validator. Deprecated in Pydantic V2.12 to be removed in V3.0.
     def check_sort_orders(cls, table_metadata: TableMetadata) -> TableMetadata:
-
 tests/test_metrics_validation.py::test_batch_export_load_latest_metrics_invalid_json
   /Users/jenineferderas/Library/Python/3.9/lib/python/site-packages/pyiceberg/table/metadata.py:551: PydanticDeprecatedSince212: Using `@model_validator` with mode='after' on a classmethod is deprecated. Instead, use an instance method. See the documentation at https://docs.pydantic.dev/2.12/concepts/validators/#model-after-validator. Deprecated in Pydantic V2.12 to be removed in V3.0.
     def construct_refs(cls, table_metadata: TableMetadata) -> TableMetadata:
-
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 ================================ tests coverage ================================
 03:52:15.746 | ERROR   | opencensus.ext.azure.common.transport - Non-retryable server side error 400: {"itemsReceived":100,"itemsAccepted":0,"appId":null,"errors":[{"index":0,"statusCode":400,"message":"Invalid instrumentation key"},{"index":1,"statusCode":400,"message":"Invalid instrumentation key"},{"index":2,"statusCode":400,"message":"Invalid instrumentation key"},{"index":3,"statusCode":400,"message":"Invalid instrumentation key"},{"index":4,"statusCode":400,"message":"Invalid instrumentation key"},{"index":5,"statusCode":400,"message":"Invalid instrumentation key"},{"index":6,"statusCode":400,"message":"Invalid instrumentation key"},{"index":7,"statusCode":400,"message":"Invalid instrumentation key"},{"index":8,"statusCode":400,"message":"Invalid instrumentation key"},{"index":9,"statusCode":400,"message":"Invalid instrumentation key"},{"index":10,"statusCode":400,"message":"Invalid instrumentation key"},{"index":11,"statusCode":400,"message":"Invalid instrumentation key"},{"index":12,"statusCode":400,"message":"Invalid instrumentation key"},{"index":13,"statusCode":400,"message":"Invalid instrumentation key"},{"index":14,"statusCode":400,"message":"Invalid instrumentation key"},{"index":15,"statusCode":400,"message":"Invalid instrumentation key"},{"index":16,"statusCode":400,"message":"Invalid instrumentation key"},{"index":17,"statusCode":400,"message":"Invalid instrumentation key"},{"index":18,"statusCode":400,"message":"Invalid instrumentation key"},{"index":19,"statusCode":400,"message":"Invalid instrumentation key"},{"index":20,"statusCode":400,"message":"Invalid instrumentation key"},{"index":21,"statusCode":400,"message":"Invalid instrumentation key"},{"index":22,"statusCode":400,"message":"Invalid instrumentation key"},{"index":23,"statusCode":400,"message":"Invalid instrumentation key"},{"index":24,"statusCode":400,"message":"Invalid instrumentation key"},{"index":25,"statusCode":400,"message":"Invalid instrumentation key"},{"index":26,"statusCode":400,"message":"Invalid instrumentation key"},{"index":27,"statusCode":400,"message":"Invalid instrumentation key"},{"index":28,"statusCode":400,"message":"Invalid instrumentation key"},{"index":29,"statusCode":400,"message":"Invalid instrumentation key"},{"index":30,"statusCode":400,"message":"Invalid instrumentation key"},{"index":31,"statusCode":400,"message":"Invalid instrumentation key"},{"index":32,"statusCode":400,"message":"Invalid instrumentation key"},{"index":33,"statusCode":400,"message":"Invalid instrumentation key"},{"index":34,"statusCode":400,"message":"Invalid instrumentation key"},{"index":35,"statusCode":400,"message":"Invalid instrumentation key"},{"index":36,"statusCode":400,"message":"Invalid instrumentation key"},{"index":37,"statusCode":400,"message":"Invalid instrumentation key"},{"index":38,"statusCode":400,"message":"Invalid instrumentation key"},{"index":39,"statusCode":400,"message":"Invalid instrumentation key"},{"index":40,"statusCode":400,"message":"Invalid instrumentation key"},{"index":41,"statusCode":400,"message":"Invalid instrumentation key"},{"index":42,"statusCode":400,"message":"Invalid instrumentation key"},{"index":43,"statusCode":400,"message":"Invalid instrumentation key"},{"index":44,"statusCode":400,"message":"Invalid instrumentation key"},{"index":45,"statusCode":400,"message":"Invalid instrumentation key"},{"index":46,"statusCode":400,"message":"Invalid instrumentation key"},{"index":47,"statusCode":400,"message":"Invalid instrumentation key"},{"index":48,"statusCode":400,"message":"Invalid instrumentation key"},{"index":49,"statusCode":400,"message":"Invalid instrumentation key"},{"index":50,"statusCode":400,"message":"Invalid instrumentation key"},{"index":51,"statusCode":400,"message":"Invalid instrumentation key"},{"index":52,"statusCode":400,"message":"Invalid instrumentation key"},{"index":53,"statusCode":400,"message":"Invalid instrumentation key"},{"index":54,"statusCode":400,"message":"Invalid instrumentation key"},{"index":55,"statusCode":400,"message":"Invalid instrumentation key"},{"index":56,"statusCode":400,"message":"Invalid instrumentation key"},{"index":57,"statusCode":400,"message":"Invalid instrumentation key"},{"index":58,"statusCode":400,"message":"Invalid instrumentation key"},{"index":59,"statusCode":400,"message":"Invalid instrumentation key"},{"index":60,"statusCode":400,"message":"Invalid instrumentation key"},{"index":61,"statusCode":400,"message":"Invalid instrumentation key"},{"index":62,"statusCode":400,"message":"Invalid instrumentation key"},{"index":63,"statusCode":400,"message":"Invalid instrumentation key"},{"index":64,"statusCode":400,"message":"Invalid instrumentation key"},{"index":65,"statusCode":400,"message":"Invalid instrumentation key"},{"index":66,"statusCode":400,"message":"Invalid instrumentation key"},{"index":67,"statusCode":400,"message":"Invalid instrumentation key"},{"index":68,"statusCode":400,"message":"Invalid instrumentation key"},{"index":69,"statusCode":400,"message":"Invalid instrumentation key"},{"index":70,"statusCode":400,"message":"Invalid instrumentation key"},{"index":71,"statusCode":400,"message":"Invalid instrumentation key"},{"index":72,"statusCode":400,"message":"Invalid instrumentation key"},{"index":73,"statusCode":400,"message":"Invalid instrumentation key"},{"index":74,"statusCode":400,"message":"Invalid instrumentation key"},{"index":75,"statusCode":400,"message":"Invalid instrumentation key"},{"index":76,"statusCode":400,"message":"Invalid instrumentation key"},{"index":77,"statusCode":400,"message":"Invalid instrumentation key"},{"index":78,"statusCode":400,"message":"Invalid instrumentation key"},{"index":79,"statusCode":400,"message":"Invalid instrumentation key"},{"index":80,"statusCode":400,"message":"Invalid instrumentation key"},{"index":81,"statusCode":400,"message":"Invalid instrumentation key"},{"index":82,"statusCode":400,"message":"Invalid instrumentation key"},{"index":83,"statusCode":400,"message":"Invalid instrumentation key"},{"index":84,"statusCode":400,"message":"Invalid instrumentation key"},{"index":85,"statusCode":400,"message":"Invalid instrumentation key"},{"index":86,"statusCode":400,"message":"Invalid instrumentation key"},{"index":87,"statusCode":400,"message":"Invalid instrumentation key"},{"index":88,"statusCode":400,"message":"Invalid instrumentation key"},{"index":89,"statusCode":400,"message":"Invalid instrumentation key"},{"index":90,"statusCode":400,"message":"Invalid instrumentation key"},{"index":91,"statusCode":400,"message":"Invalid instrumentation key"},{"index":92,"statusCode":400,"message":"Invalid instrumentation key"},{"index":93,"statusCode":400,"message":"Invalid instrumentation key"},{"index":94,"statusCode":400,"message":"Invalid instrumentation key"},{"index":95,"statusCode":400,"message":"Invalid instrumentation key"},{"index":96,"statusCode":400,"message":"Invalid instrumentation key"},{"index":97,"statusCode":400,"message":"Invalid instrumentation key"},{"index":98,"statusCode":400,"message":"Invalid instrumentation key"},{"index":99,"statusCode":400,"message":"Invalid instrumentation key"}]}.
 _______________ coverage: platform darwin, python 3.9.6-final-0 ________________
-
 Name                                             Stmts   Miss Branch BrPart  Cover
 ----------------------------------------------------------------------------------
 src/_is_valid_iso8601.py                            14     14      4      0     0%
@@ -625,7 +584,6 @@ src/tracing_setup.py                                49     16      4      1    6
 src/validate_kpi_formulas.py                        34     34     14      0     0%
 ----------------------------------------------------------------------------------
 TOTAL                                             6021   3440   1482    157    40%
-
 14 empty files skipped.
 Coverage HTML written to dir htmlcov
 FAIL Required test coverage of 85.0% not reached. Total coverage: 40.14%
@@ -670,10 +628,8 @@ Call stack:
     self.handleError(record)
 Message: 'Non-retryable server side error %s: %s.'
 Arguments: (400, '{"itemsReceived":83,"itemsAccepted":0,"appId":null,"errors":[{"index":0,"statusCode":400,"message":"Invalid instrumentation key"},{"index":1,"statusCode":400,"message":"Invalid instrumentation key"},{"index":2,"statusCode":400,"message":"Invalid instrumentation key"},{"index":3,"statusCode":400,"message":"Invalid instrumentation key"},{"index":4,"statusCode":400,"message":"Invalid instrumentation key"},{"index":5,"statusCode":400,"message":"Invalid instrumentation key"},{"index":6,"statusCode":400,"message":"Invalid instrumentation key"},{"index":7,"statusCode":400,"message":"Invalid instrumentation key"},{"index":8,"statusCode":400,"message":"Invalid instrumentation key"},{"index":9,"statusCode":400,"message":"Invalid instrumentation key"},{"index":10,"statusCode":400,"message":"Invalid instrumentation key"},{"index":11,"statusCode":400,"message":"Invalid instrumentation key"},{"index":12,"statusCode":400,"message":"Invalid instrumentation key"},{"index":13,"statusCode":400,"message":"Invalid instrumentation key"},{"index":14,"statusCode":400,"message":"Invalid instrumentation key"},{"index":15,"statusCode":400,"message":"Invalid instrumentation key"},{"index":16,"statusCode":400,"message":"Invalid instrumentation key"},{"index":17,"statusCode":400,"message":"Invalid instrumentation key"},{"index":18,"statusCode":400,"message":"Invalid instrumentation key"},{"index":19,"statusCode":400,"message":"Invalid instrumentation key"},{"index":20,"statusCode":400,"message":"Invalid instrumentation key"},{"index":21,"statusCode":400,"message":"Invalid instrumentation key"},{"index":22,"statusCode":400,"message":"Invalid instrumentation key"},{"index":23,"statusCode":400,"message":"Invalid instrumentation key"},{"index":24,"statusCode":400,"message":"Invalid instrumentation key"},{"index":25,"statusCode":400,"message":"Invalid instrumentation key"},{"index":26,"statusCode":400,"message":"Invalid instrumentation key"},{"index":27,"statusCode":400,"message":"Invalid instrumentation key"},{"index":28,"statusCode":400,"message":"Invalid instrumentation key"},{"index":29,"statusCode":400,"message":"Invalid instrumentation key"},{"index":30,"statusCode":400,"message":"Invalid instrumentation key"},{"index":31,"statusCode":400,"message":"Invalid instrumentation key"},{"index":32,"statusCode":400,"message":"Invalid instrumentation key"},{"index":33,"statusCode":400,"message":"Invalid instrumentation key"},{"index":34,"statusCode":400,"message":"Invalid instrumentation key"},{"index":35,"statusCode":400,"message":"Invalid instrumentation key"},{"index":36,"statusCode":400,"message":"Invalid instrumentation key"},{"index":37,"statusCode":400,"message":"Invalid instrumentation key"},{"index":38,"statusCode":400,"message":"Invalid instrumentation key"},{"index":39,"statusCode":400,"message":"Invalid instrumentation key"},{"index":40,"statusCode":400,"message":"Invalid instrumentation key"},{"index":41,"statusCode":400,"message":"Invalid instrumentation key"},{"index":42,"statusCode":400,"message":"Invalid instrumentation key"},{"index":43,"statusCode":400,"message":"Invalid instrumentation key"},{"index":44,"statusCode":400,"message":"Invalid instrumentation key"},{"index":45,"statusCode":400,"message":"Invalid instrumentation key"},{"index":46,"statusCode":400,"message":"Invalid instrumentation key"},{"index":47,"statusCode":400,"message":"Invalid instrumentation key"},{"index":48,"statusCode":400,"message":"Invalid instrumentation key"},{"index":49,"statusCode":400,"message":"Invalid instrumentation key"},{"index":50,"statusCode":400,"message":"Invalid instrumentation key"},{"index":51,"statusCode":400,"message":"Invalid instrumentation key"},{"index":52,"statusCode":400,"message":"Invalid instrumentation key"},{"index":53,"statusCode":400,"message":"Invalid instrumentation key"},{"index":54,"statusCode":400,"message":"Invalid instrumentation key"},{"index":55,"statusCode":400,"message":"Invalid instrumentation key"},{"index":56,"statusCode":400,"message":"Invalid instrumentation key"},{"index":57,"statusCode":400,"message":"Invalid instrumentation key"},{"index":58,"statusCode":400,"message":"Invalid instrumentation key"},{"index":59,"statusCode":400,"message":"Invalid instrumentation key"},{"index":60,"statusCode":400,"message":"Invalid instrumentation key"},{"index":61,"statusCode":400,"message":"Invalid instrumentation key"},{"index":62,"statusCode":400,"message":"Invalid instrumentation key"},{"index":63,"statusCode":400,"message":"Invalid instrumentation key"},{"index":64,"statusCode":400,"message":"Invalid instrumentation key"},{"index":65,"statusCode":400,"message":"Invalid instrumentation key"},{"index":66,"statusCode":400,"message":"Invalid instrumentation key"},{"index":67,"statusCode":400,"message":"Invalid instrumentation key"},{"index":68,"statusCode":400,"message":"Invalid instrumentation key"},{"index":69,"statusCode":400,"message":"Invalid instrumentation key"},{"index":70,"statusCode":400,"message":"Invalid instrumentation key"},{"index":71,"statusCode":400,"message":"Invalid instrumentation key"},{"index":72,"statusCode":400,"message":"Invalid instrumentation key"},{"index":73,"statusCode":400,"message":"Invalid instrumentation key"},{"index":74,"statusCode":400,"message":"Invalid instrumentation key"},{"index":75,"statusCode":400,"message":"Invalid instrumentation key"},{"index":76,"statusCode":400,"message":"Invalid instrumentation key"},{"index":77,"statusCode":400,"message":"Invalid instrumentation key"},{"index":78,"statusCode":400,"message":"Invalid instrumentation key"},{"index":79,"statusCode":400,"message":"Invalid instrumentation key"},{"index":80,"statusCode":400,"message":"Invalid instrumentation key"},{"index":81,"statusCode":400,"message":"Invalid instrumentation key"},{"index":82,"statusCode":400,"message":"Invalid instrumentation key"}]}')
-
 **Coverage Result**: 1482
 🔍 STEP 3: Code Quality Checks...
-
 📌 Pylint...
 ************* Module src.analytics.meta_agent_analysis
 src/analytics/meta_agent_analysis.py:25:4: R1722: Consider using 'sys.exit' instead (consider-using-sys-exit)
@@ -681,10 +637,8 @@ src/analytics/meta_agent_analysis.py:25:4: R1722: Consider using 'sys.exit' inst
 src/analytics/kpi_catalog_processor.py:1:0: C0302: Too many lines in module (1536/1000) (too-many-lines)
 src/analytics/kpi_catalog_processor.py:127:19: R1728: Consider using a generator instead 'sum(cf / (1 + rate)**((d - d0).days / 365.0) for (cf, d) in zip(cashflows, dates))' (consider-using-generator)
 src/analytics/kpi_catalog_processor.py:13:0: R0904: Too many public methods (26/20) (too-many-public-methods)
-
 ------------------------------------------------------------------
 Your code has been rated at 9.98/10 (previous run: 9.98/10, +0.00)
-
 📌 Flake8...
 📌 Ruff...
 All checks passed!
@@ -694,24 +648,19 @@ Success: no issues found in 113 source files
 ✅ STEP 4: Workflow Validation...
 ✓ ci.yml: Valid YAML syntax
 📊 SUMMARY
-
 ✅ Test Suite: EXECUTED
 ✅ Coverage Report: htmlcov/index.html
 ✅ Quality Checks: COMPLETE
-
 ## Key Metrics
 - Test Coverage: 1482
 - Code Quality: Lint checks executed
 - Type Safety: mypy validation complete
-
 ## Workflow Status
 ✅ All jobs configured in ci.yml
 ✅ Environment validation implemented
 ✅ Failure notification system active
-
 ## Next Steps
 1. Review htmlcov/index.html for coverage details
 2. Check CI_FIX_REPORT_20260105_035043.md for detailed findings
 3. Address any type errors or linting warnings
 4. Commit changes when ready: git add . && git commit -m "CI: Quality checks complete"
-

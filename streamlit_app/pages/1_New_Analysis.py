@@ -2,23 +2,18 @@ import streamlit as st
 import os
 import sys
 from pathlib import Path
-
 # Add repository root to sys.path to ensure correct module resolution
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent # Adjusted path for pages
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
-
 # Robust Bootstrap Import (if needed for individual page execution)
 try:
     from streamlit_app.bootstrap import bootstrap_repo_root
     bootstrap_repo_root()
 except ImportError:
     pass
-
 from src.theme import ABACO_THEME
-
 st.set_page_config(page_title="New Analysis", layout="wide")
-
 # Apply custom CSS using ABACO_THEME
 FONT_IMPORT_URL = (
     "https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900"
@@ -37,9 +32,7 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-
 st.title("Deep Dive Analysis") # Removed emoji
 st.markdown("This is a new page added to the dashboard.")
-
 # Example content
 st.info("Add your custom charts and logic here.")

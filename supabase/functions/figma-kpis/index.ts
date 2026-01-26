@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-
 const backendEnv = Deno.env.get('BACKEND_KPI_URL')
 if (!backendEnv) {
   console.error('BACKEND_KPI_URL is not configured in environment')
@@ -8,7 +7,6 @@ if (!backendEnv) {
 }
 const BACKEND_KPI_URL = backendEnv
 const FETCH_TIMEOUT_MS = 5000
-
 serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -22,7 +20,6 @@ serve(async (req: Request) => {
       },
     })
   }
-
   // Only allow GET
   if (req.method !== 'GET') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -33,21 +30,17 @@ serve(async (req: Request) => {
       },
     })
   }
-
   let kpiRawData: Record<string, any> = {}
   let hasDemoData = false
-
   try {
     // Fetch from backend with timeout
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
-
     const kpiResponse = await fetch(BACKEND_KPI_URL, {
       headers: { Accept: 'application/json' },
       signal: controller.signal,
     })
     clearTimeout(timeoutId)
-
     if (kpiResponse.ok) {
       kpiRawData = await kpiResponse.json()
       hasDemoData =
@@ -62,7 +55,6 @@ serve(async (req: Request) => {
     )
     hasDemoData = true
   }
-
   const timestamp = new Date().toISOString()
   const figmaDashboard = {
     version: '2.0',
@@ -81,7 +73,6 @@ serve(async (req: Request) => {
       backend_url: BACKEND_KPI_URL,
     },
   }
-
   return new Response(JSON.stringify(figmaDashboard), {
     status: 200,
     headers: {
@@ -95,7 +86,6 @@ serve(async (req: Request) => {
     },
   })
 })
-
 function buildPortfolioMetrics(data: Record<string, unknown>) {
   return [
     {
@@ -124,7 +114,6 @@ function buildPortfolioMetrics(data: Record<string, unknown>) {
     },
   ]
 }
-
 function buildRiskMetrics(data: Record<string, unknown>) {
   const dpd = (
     (data.extended_kpis as Record<string, unknown>)?.dpd_buckets as Record<
@@ -151,7 +140,6 @@ function buildRiskMetrics(data: Record<string, unknown>) {
     },
   ]
 }
-
 function buildPricingMetrics(data: Record<string, unknown>) {
   return [
     {
@@ -172,7 +160,6 @@ function buildPricingMetrics(data: Record<string, unknown>) {
     },
   ]
 }
-
 function buildGrowthMetrics(data: Record<string, unknown>) {
   return [
     {
@@ -193,7 +180,6 @@ function buildGrowthMetrics(data: Record<string, unknown>) {
     },
   ]
 }
-
 function buildCustomerMetrics(data: Record<string, unknown>) {
   return [
     {
@@ -214,7 +200,6 @@ function buildCustomerMetrics(data: Record<string, unknown>) {
     },
   ]
 }
-
 function buildQualityMetrics(data: Record<string, unknown>) {
   return [
     {

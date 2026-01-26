@@ -1,13 +1,9 @@
 # Analytics Vision & Streamlit Blueprint
-
 ## Vision statements
-
 - **“Set the standard for financial analytics by transforming raw lending data into superior, predictive intelligence — integrating deep learning, behavioral modeling, and KPI automation into one cohesive system that powers strategic decisions at every level, all in English.”**
 - **“To engineer a next-generation financial intelligence platform where standard is not compliance but excellence — producing outcomes that are not merely correct but superior, robust, and strategically insightful. Every line of code and every analytic view is built to enterprise-grade quality, thinking beyond immediate tasks to deliver market-leading clarity, predictive power, and decision-making precision.”**
 Use these statements to ground every metric, workflow, and AI-assisted insight in ABACO Lending Analytics. They reinforce the fintech-grade mission, proactive hardening, and expectation that automation yields measurable strategic clarity.
-
 ## Documentation & Streamlit roadmap
-
 1. **Documentation hierarchy** – Keep `README.md` as the entry point and link it here, so teammates can immediately access the detailed analytics/Streamlit expectations below.
 2. **Design system orientation** – Apply the `ABACO_THEME` palette, typography, and CSS constants throughout the Streamlit canvas; ensure every Plotly figure calls a unified `apply_theme()` to override default blues/greens.
 3. **Streamlit pipeline**

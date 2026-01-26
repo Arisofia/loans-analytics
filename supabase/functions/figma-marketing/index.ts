@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-
 const backendEnv = Deno.env.get('BACKEND_KPI_URL')
 if (!backendEnv) {
   console.error('BACKEND_KPI_URL is not configured in environment')
@@ -8,7 +7,6 @@ if (!backendEnv) {
 }
 const BACKEND_KPI_URL = backendEnv
 const FETCH_TIMEOUT_MS = 5000
-
 serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -22,7 +20,6 @@ serve(async (req: Request) => {
       },
     })
   }
-
   // Only allow GET
   if (req.method !== 'GET') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -33,21 +30,17 @@ serve(async (req: Request) => {
       },
     })
   }
-
   let kpiRawData: Record<string, any> = {}
   let usesDemoMode = false
-
   try {
     // Fetch from backend with timeout
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
-
     const kpiResponse = await fetch(BACKEND_KPI_URL, {
       headers: { Accept: 'application/json' },
       signal: controller.signal,
     })
     clearTimeout(timeoutId)
-
     if (kpiResponse.ok) {
       kpiRawData = await kpiResponse.json()
       usesDemoMode =
@@ -62,7 +55,6 @@ serve(async (req: Request) => {
     )
     usesDemoMode = true
   }
-
   const timestamp = new Date().toISOString()
   const unitEconomicsHistorical =
     (kpiRawData.extended_kpis?.unit_economics as Array<
@@ -73,12 +65,10 @@ serve(async (req: Request) => {
       Record<string, unknown>
     >) || []
   const latestChurn = churnMetricsArray?.[0] || {}
-
   const marketingDashboard = {
     version: '2.0',
     timestamp,
     last_updated: kpiRawData.timestamp || timestamp,
-
     unit_economics: {
       cac_usd: kpiRawData.cac_usd || 0,
       ltv_realized: kpiRawData.ltv_realized || 0,
@@ -89,7 +79,6 @@ serve(async (req: Request) => {
         kpiRawData.revenue_per_active_client_annual || 0,
       historical: unitEconomicsHistorical || [],
     },
-
     customer_acquisition: {
       new_clients_month:
         (
@@ -116,7 +105,6 @@ serve(async (req: Request) => {
           Record<string, unknown>
         >) || [],
     },
-
     customer_retention: {
       churn_90d_rate: (latestChurn?.churn90d_pct as number) || 0,
       active_90d: (latestChurn?.active_90d as number) || 0,
@@ -124,7 +112,6 @@ serve(async (req: Request) => {
       churn_dollar: (latestChurn?.churn_dollar as number) || 0,
       historical: churnMetricsArray || [],
     },
-
     segmentation: {
       by_intensity:
         (kpiRawData.extended_kpis?.intensity_segmentation as Array<
@@ -139,7 +126,6 @@ serve(async (req: Request) => {
           Record<string, unknown>
         >) || [],
     },
-
     growth_metrics: {
       monthly_disbursements:
         (
@@ -159,7 +145,6 @@ serve(async (req: Request) => {
           Record<string, unknown>
         >) || [],
     },
-
     revenue_analytics: {
       monthly_revenue_usd: kpiRawData.monthly_revenue_usd || 0,
       weighted_apr: kpiRawData.weighted_apr || 0,
@@ -176,7 +161,6 @@ serve(async (req: Request) => {
           Record<string, unknown>
         >) || [],
     },
-
     payment_behavior: {
       payment_timing:
         (kpiRawData.extended_kpis?.payment_timing as Array<
@@ -188,28 +172,24 @@ serve(async (req: Request) => {
         >) || [],
       average_ticket_size: kpiRawData.average_ticket || 0,
     },
-
     concentration_risk: {
       historical:
         (kpiRawData.extended_kpis?.concentration as Array<
           Record<string, unknown>
         >) || [],
     },
-
     risk_trends: {
       monthly_historical:
         (kpiRawData.extended_kpis?.monthly_risk as Array<
           Record<string, unknown>
         >) || [],
     },
-
     agent_comments: {
       marketing: generateMarketingComments(kpiRawData),
       retention: generateRetentionComments(kpiRawData),
       growth: generateGrowthComments(kpiRawData),
       unit_economics: generateUnitEconomicsComments(kpiRawData),
     },
-
     metadata: {
       data_freshness_hours: usesDemoMode ? null : 0,
       total_metrics_available: 56,
@@ -221,7 +201,6 @@ serve(async (req: Request) => {
         : 'Using REAL data from backend - all fields populated',
     },
   }
-
   return new Response(JSON.stringify(marketingDashboard), {
     status: 200,
     headers: {
@@ -234,7 +213,6 @@ serve(async (req: Request) => {
     },
   })
 })
-
 function generateMarketingComments(
   data: Record<string, unknown>
 ): Record<string, string> {
@@ -245,9 +223,7 @@ function generateMarketingComments(
       (data.extended_kpis as Record<string, unknown>)
         ?.executive_strip as Record<string, unknown>
     )?.new_clients as number) || 0
-
   const comments: Record<string, string> = {}
-
   if (ltv > 0 && cac > 0) {
     const ratio = ltv / cac
     if (ratio > 2) {
@@ -264,7 +240,6 @@ function generateMarketingComments(
         '✗ CRITICAL: Unit economics broken. LTV/CAC <1.0x. Acquisition loss-making.'
     }
   }
-
   if (newClients > 15) {
     comments.acquisition =
       '✓ Strong new client acquisition. Marketing efficiency high.'
@@ -278,10 +253,8 @@ function generateMarketingComments(
     comments.acquisition =
       '✗ CRITICAL: Acquisition stalled. Activate emergency acquisition programs.'
   }
-
   return comments
 }
-
 function generateRetentionComments(
   data: Record<string, unknown>
 ): Record<string, string> {
@@ -292,9 +265,7 @@ function generateRetentionComments(
   )?.[0]
   const churn90d = (churnData?.churn90d_pct as number) || 0
   const revenuePer = (data.revenue_per_active_client_monthly as number) || 0
-
   const comments: Record<string, string> = {}
-
   if (churn90d < 10) {
     comments.churn = '✓ Churn rate excellent. Customer retention strong.'
   } else if (churn90d < 15) {
@@ -305,7 +276,6 @@ function generateRetentionComments(
     comments.churn =
       '✗ CRITICAL: Churn unsustainable. Emergency retention program required.'
   }
-
   if (revenuePer > 60) {
     comments.ltv =
       '✓ Revenue per client strong. Cross-sell and pricing optimized.'
@@ -315,19 +285,15 @@ function generateRetentionComments(
   } else {
     comments.ltv = '⚠ Revenue per client low. Review pricing and product mix.'
   }
-
   return comments
 }
-
 function generateGrowthComments(
   data: Record<string, unknown>
 ): Record<string, string> {
   const mom = (data.mom_growth_pct as number) || 0
   const yoy = (data.yoy_growth_pct as number) || 0
   const rotation = (data.rotation as number) || 0
-
   const comments: Record<string, string> = {}
-
   if (mom > 5) {
     comments.mom = '✓ Strong monthly growth. Portfolio expansion accelerating.'
   } else if (mom > 0) {
@@ -339,7 +305,6 @@ function generateGrowthComments(
     comments.mom =
       '✗ CRITICAL: Significant contraction. Investigate structural issues.'
   }
-
   if (yoy > 20) {
     comments.yoy =
       '✓ Excellent year-over-year growth. Strategic initiatives succeeding.'
@@ -350,7 +315,6 @@ function generateGrowthComments(
   } else {
     comments.yoy = '✗ CRITICAL: YoY contraction. Activate growth initiatives.'
   }
-
   if (rotation > 3.5) {
     comments.rotation = '✓ Portfolio turnover excellent. High loan velocity.'
   } else if (rotation > 2.5) {
@@ -359,19 +323,15 @@ function generateGrowthComments(
   } else {
     comments.rotation = '⚠ Rotation declining. Portfolio becoming stale.'
   }
-
   return comments
 }
-
 function generateUnitEconomicsComments(
   data: Record<string, unknown>
 ): Record<string, string> {
   const cac = (data.cac_usd as number) || 0
   const ltv = (data.ltv_realized as number) || 0
   const revenuePer = (data.revenue_per_active_client_monthly as number) || 0
-
   const comments: Record<string, string> = {}
-
   if (cac < 300) {
     comments.cac = '✓ CAC efficient. Marketing spend optimized.'
   } else if (cac < 400) {
@@ -381,7 +341,6 @@ function generateUnitEconomicsComments(
   } else {
     comments.cac = '✗ CRITICAL: CAC unsustainable. Cost reduction needed.'
   }
-
   if (ltv > 800) {
     comments.ltv = '✓ LTV excellent. Customer value extraction optimized.'
   } else if (ltv > 600) {
@@ -391,7 +350,6 @@ function generateUnitEconomicsComments(
   } else {
     comments.ltv = '✗ LTV deteriorated. Unit economics at risk.'
   }
-
   if (revenuePer > 70) {
     comments.revenue_per_client = '✓ Excellent revenue extraction per client.'
   } else if (revenuePer > 60) {
@@ -404,6 +362,5 @@ function generateUnitEconomicsComments(
     comments.revenue_per_client =
       '⚠ Revenue per client declining. Pricing intervention needed.'
   }
-
   return comments
 }

@@ -1,22 +1,15 @@
 """Lightweight KPI catalog processor for Streamlit dashboards."""
-
 from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Optional
-
 import pandas as pd
-
-
 @dataclass
 class KPICatalogProcessor:
     """Compute summary KPIs from core loan, payment, and customer datasets."""
-
     loans_df: pd.DataFrame
     payments_df: pd.DataFrame
     customers_df: pd.DataFrame
     schedule_df: Optional[pd.DataFrame] = None
-
     def __post_init__(self) -> None:
         self.loans_df = self.loans_df if self.loans_df is not None else pd.DataFrame()
         self.payments_df = (
@@ -28,7 +21,6 @@ class KPICatalogProcessor:
         self.schedule_df = (
             self.schedule_df if self.schedule_df is not None else pd.DataFrame()
         )
-
     def get_all_kpis(self) -> dict:
         """Return a dictionary of computed KPIs for dashboard consumption."""
         total_loans = (
@@ -62,21 +54,17 @@ class KPICatalogProcessor:
                     ).sum()
                     / total_balance
                 )
-
         executive_strip = {
             "total_loans": total_loans,
             "total_customers": total_customers,
             "total_outstanding_loan_value": total_outstanding,
             "avg_apr": avg_apr,
         }
-
         return {"executive_strip": executive_strip}
-
     def get_quarterly_scorecard(self) -> pd.DataFrame:
         """Create a quarterly scorecard from available payment data."""
         if self.payments_df.empty:
             return pd.DataFrame()
-
         date_col = next(
             (
                 col
@@ -87,7 +75,6 @@ class KPICatalogProcessor:
         )
         if date_col is None:
             return pd.DataFrame()
-
         amount_col = next(
             (
                 col
@@ -104,13 +91,11 @@ class KPICatalogProcessor:
         )
         if amount_col is None:
             return pd.DataFrame()
-
         scored = self.payments_df.copy()
         scored[date_col] = pd.to_datetime(scored[date_col], errors="coerce")
         scored = scored.dropna(subset=[date_col])
         if scored.empty:
             return pd.DataFrame()
-
         quarterly = (
             scored.groupby(pd.Grouper(key=date_col, freq="Q"))[amount_col]
             .sum()
@@ -119,12 +104,10 @@ class KPICatalogProcessor:
         )
         quarterly["quarter"] = quarterly["quarter_end"].dt.to_period("Q").astype(str)
         return quarterly[["quarter", "total_payments"]]
-
     def get_figma_dashboard_df(self) -> pd.DataFrame:
         """Build a monthly metrics frame aligned with dashboard charts."""
         if self.payments_df.empty:
             return pd.DataFrame()
-
         date_col = next(
             (
                 col
@@ -135,7 +118,6 @@ class KPICatalogProcessor:
         )
         if date_col is None:
             return pd.DataFrame()
-
         amount_col = next(
             (
                 col
@@ -152,13 +134,11 @@ class KPICatalogProcessor:
         )
         if amount_col is None:
             return pd.DataFrame()
-
         monthly = self.payments_df.copy()
         monthly[date_col] = pd.to_datetime(monthly[date_col], errors="coerce")
         monthly = monthly.dropna(subset=[date_col])
         if monthly.empty:
             return pd.DataFrame()
-
         monthly["month"] = monthly[date_col].dt.to_period("M").dt.to_timestamp()
         summary = (
             monthly.groupby("month")[amount_col]

@@ -1,17 +1,12 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-
-
 from .visualizations import apply_theme, styled_df
-
-
 def render_advanced_intelligence(dashboard_metrics):
     """Render the advanced analytics tabs."""
     st.markdown('<div data-testid="dashboard-analytics">', unsafe_allow_html=True)
     st.header("🔬 Advanced Intelligence")
     adv_tabs = st.tabs(["Segmentation", "Churn & Retention", "Unit Economics"])
-
     with adv_tabs[0]:
         st.subheader("Client Segment Distribution (2025)")
         seg_data = dashboard_metrics.get("extended_kpis", {}).get("segmentation_summary", [])
@@ -26,7 +21,6 @@ def render_advanced_intelligence(dashboard_metrics):
                     "Delinquency_Rate": "Delinquency (%)",
                 }
             )
-
             c1, c2 = st.columns([1, 1])
             with c1:
                 fig_seg_aum = px.bar(
@@ -47,13 +41,11 @@ def render_advanced_intelligence(dashboard_metrics):
                     color_continuous_scale="Reds",
                 )
                 st.plotly_chart(apply_theme(fig_seg_risk), use_container_width=True)
-
             st.dataframe(styled_df(df_seg_display), use_container_width=True)
         else:
             st.info(
                 "Segmentation data not found. Ensure 'Client Segment' column is present in loans data."
             )
-
     with adv_tabs[1]:
         st.subheader("90-Day Churn Analysis")
         churn_data = dashboard_metrics.get("extended_kpis", {}).get("churn_90d_metrics", [])
@@ -69,7 +61,6 @@ def render_advanced_intelligence(dashboard_metrics):
                     markers=True,
                 )
                 st.plotly_chart(apply_theme(fig_churn), use_container_width=True)
-
                 st.write("**Churn Metrics Summary:**")
                 latest_churn = df_churn.sort_values("month").iloc[-1]
                 ch_c1, ch_c2, ch_c3 = st.columns(3)
@@ -78,7 +69,6 @@ def render_advanced_intelligence(dashboard_metrics):
                 ch_c3.metric("Churn Rate", f"{latest_churn['churn90d_pct']:.2%}")
         else:
             st.info("Churn analytics requires historical disbursement data.")
-
     with adv_tabs[2]:
         st.subheader("LTV / CAC Efficiency")
         ue_data = dashboard_metrics.get("extended_kpis", {}).get("unit_economics", [])

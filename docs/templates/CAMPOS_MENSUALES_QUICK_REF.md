@@ -1,5 +1,4 @@
 # ⚡ REFERENCIA RÁPIDA - CAMPOS MENSUALES
-
 🎯 UBICACIONES EN /utils/deckData.ts
 Slide Ubicación Campo Dato Requerido Fuente
 1 deck1.title.subtitle subtitle "Reporte Ejecutivo [MES] 2025" Manual
@@ -36,5 +35,4 @@ Slide Ubicación Campo Dato Requerido Fuente
 29 deck3.aumLivePortfolio.currentSnapshot.\* 4 campos date + totalAUM + activeClients + avgClientAUM Base
 30 deck3.avgOperationAmount.monthlyAvgData[NEW] object month + avgAmount + count + volume Desembolsos
 31 deck3.monthlyOperationsMetrics.metricsData[NEW] object month + ops + volume + ticket + conv + time Desembolsos
-
 Tiempo estimado: 30–40 minutos · Última actualización: Oct 2025

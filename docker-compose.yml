@@ -22,7 +22,6 @@ services:
       retries: 3
     depends_on:
       - backend
-
   backend:
     build:
       context: ./dashboard
@@ -38,7 +37,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
   n8n:
     image: n8nio/n8n:latest
     ports:
@@ -53,7 +51,6 @@ services:
       WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678}
     volumes:
       - n8n-data:/home/node/.n8n
-
   db:
     profiles: ["db"]
     image: postgres:15
@@ -63,7 +60,6 @@ services:
       - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
-
 volumes:
   db-data:
   n8n-data:

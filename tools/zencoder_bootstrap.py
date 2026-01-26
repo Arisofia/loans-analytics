@@ -164,7 +164,6 @@ def print_high_level_summary(report: KpiSyncReport) -> None:
     logger.info("Repo Root: %s", report.repo_root)
     logger.info("Git Branch: %s", report.git.branch or "N/A")
     logger.info("Git Commit: %s", report.git.commit or "N/A")
-    
     missing_files = [f.path for f in report.file_checks if not f.exists]
     if missing_files:
         logger.error("Status: ❌ MISSING FILES (%s)", ", ".join(missing_files))

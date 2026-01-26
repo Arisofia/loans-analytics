@@ -52,7 +52,6 @@ export const AccountConfigurationForm = () => {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-1">
-        <label className="text-xs font-semibold text-slate-200" htmlFor="displayName">
         <label
           className="text-xs font-semibold text-slate-200"
           htmlFor="displayName"
