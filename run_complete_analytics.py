@@ -176,9 +176,9 @@ def load_schedule(paths: Paths) -> Optional[pd.DataFrame]:
 
 def main():
     """Run complete analytics."""
-    logger.info("\n" + "=" * 80)
+    logger.info("\n%s", "=" * 80)
     logger.info("🚀 ABACO LOANS ANALYTICS - COMPLETE KPI CALCULATOR")
-    logger.info("=" * 80 + "\n")
+    logger.info("%s\n", "=" * 80)
 
     # Load data
     logger.info("📁 Loading data files...\n")
@@ -312,9 +312,9 @@ def main():
         raise
 
     # Display results
-    logger.info("\n" + "=" * 80)
+    logger.info("\n%s", "=" * 80)
     logger.info("📊 COMPLETE KPI DASHBOARD RESULTS")
-    logger.info("=" * 80 + "\n")
+    logger.info("%s\n", "=" * 80)
 
     logger.info("👥 PORTFOLIO FUNDAMENTALS")
     logger.info("  Active Clients: %d", dashboard_metrics["active_clients"])
@@ -360,9 +360,10 @@ def main():
         logger.info("📦 PORTFOLIO BY PRODUCT")
         for prod in dashboard_metrics["portfolio_by_product"]:
             logger.info(
-                f"  {prod.get('product_type', 'Unknown')}: "
-                f"{prod.get('loan_count', 0)} loans, "
-                f"${prod.get('aum', 0):,.0f}"
+                "  %s: %d loans, $%s",
+                prod.get('product_type', 'Unknown'),
+                prod.get('loan_count', 0),
+                f"{prod.get('aum', 0):,.0f}"
             )
         logger.info("")
 
@@ -379,9 +380,9 @@ def main():
     if temp_loan_path.exists():
         temp_loan_path.unlink()
 
-    logger.info("\n" + "=" * 80)
+    logger.info("\n%s", "=" * 80)
     logger.info("Report Generated: %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    logger.info("=" * 80 + "\n")
+    logger.info("%s\n", "=" * 80)
 
     return dashboard_metrics
 
