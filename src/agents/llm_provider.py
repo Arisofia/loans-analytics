@@ -44,8 +44,3 @@ class OpenAILLMProvider:
     def complete(self, messages: List[Dict[str, str]], **kwargs: Any) -> str:
         response = self._model.invoke(messages, **kwargs)
         return getattr(response, "content", str(response))
-
-
-class MockLanguageModel:
-    def __init__(self, **kwargs: Any):
-        pass
