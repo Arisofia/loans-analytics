@@ -11,17 +11,16 @@ on:
       OPENAI_API_KEY:
         description: 'OpenAI API Key for Codex review'
         required: false
-        type: string
 
 jobs:
   assign_metadata:
     runs-on: ubuntu-latest
-    if: ${{ inputs.is_fork == false }}
+    if: inputs.is_fork == false
     permissions:
       pull-requests: write
     steps:
       - name: Assign PR reviewers and assignees
-        if: ${{ secrets.OPENAI_API_KEY != '' }}
+        if: secrets.OPENAI_API_KEY != ''
         uses: actions/github-script@v7
         with:
           github-token: ${{ github.token }}
@@ -40,7 +39,7 @@ jobs:
     name: Run Codex Review
     needs: assign_metadata
     runs-on: ubuntu-latest
-    if: ${{ secrets.OPENAI_API_KEY != '' }}
+    if: secrets.OPENAI_API_KEY != ''
     permissions:
       contents: read
       pull-requests: write
@@ -65,7 +64,7 @@ jobs:
     name: Post Codex Feedback
     needs: codex_review
     runs-on: ubuntu-latest
-    if: ${{ inputs.is_fork == false && secrets.OPENAI_API_KEY != '' && needs.codex_review.outputs.final_message != '' }}
+    if: inputs.is_fork == false && secrets.OPENAI_API_KEY != '' && needs.codex_review.outputs.final_message != ''
     permissions:
       pull-requests: write
     steps:
