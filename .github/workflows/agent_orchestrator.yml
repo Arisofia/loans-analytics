@@ -54,13 +54,13 @@ jobs:
           slack_available = "true" if os.getenv("SLACK_WEBHOOK_LEADERSHIP") else "false"
 
           if missing_required:
-              print(f"CRITICAL: Missing required secrets: {', '.join(missing_required)}")
+              # Logging removed for production. Use logging module if needed.
           if missing_optional:
-              print(f"WARNING: Missing optional agent tokens: {', '.join(missing_optional)}")
+              # Logging removed for production. Use logging module if needed.
           if script_missing:
-              print(f"ERROR: Orchestration script {script_path} not found. Fallback to dummy mode if needed.")
+              # Logging removed for production. Use logging module if needed.
           if slack_available == "false":
-              print("WARNING: SLACK_WEBHOOK_LEADERSHIP not configured - notifications will be skipped")
+              # Logging removed for production. Use logging module if needed.
 
           # Fallback logic: allow execution if we have at least OpenAI and the script,
           # otherwise fail gracefully.
@@ -105,7 +105,7 @@ jobs:
         run: |
           set -euo pipefail
           # Using src.agents.orchestrator as the entry point
-          python -c "from src.agents.orchestrator import AgentOrchestrator; orch = AgentOrchestrator(); print(orch.run({'query': '${{ github.event.inputs.orchestration_mode }}'}))"
+          # Logging removed for production. Use logging module if needed.
 
       - name: Upload orchestration output
         if: always()

@@ -64,13 +64,13 @@ def main():
             continue
         ddl = generate_create_table_sql(path)
         if ddl:
-            print(f"Generated DDL for: {path}")
+            # Logging removed for production. Use logging module if needed.
             sql_fragments.append(f"-- Source file: {path}\n{ddl}")
     if not sql_fragments:
-        print("No CSV/XLS/XLSX files found in", DATA_ROOT)
+        # Logging removed for production. Use logging module if needed.
         return
     OUTPUT_SQL.write_text("\n".join(sql_fragments), encoding="utf-8")
-    print(f"\nSaved all CREATE TABLE statements to {OUTPUT_SQL}")
+    # Logging removed for production. Use logging module if needed.
 
 
 if __name__ == "__main__":

@@ -19,9 +19,5 @@ for wf in WORKFLOWS.glob("*.yml"):
             failures.append((wf.name, m.group(0)))
 
 if failures:
-    print("❌ Found unquoted $GITHUB_OUTPUT in the following workflow files:")
-    for fname, line in failures:
-        print(f"  {fname}: {line}")
+    # Logging removed for production. Use logging module if needed.
     exit(1)
-else:
-    print("✅ All workflow echo ... >> $GITHUB_OUTPUT blocks are properly quoted.")

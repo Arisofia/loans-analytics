@@ -38,8 +38,8 @@ def check_file(filepath):
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
-    except Exception as e:
-        print(f"Error reading {filepath}: {e}")
+    except Exception:
+        # Logging removed for production. Use logging module if needed.
         return False
 
     issues = []
@@ -51,9 +51,7 @@ def check_file(filepath):
             issues.append(f"  Line {line_num}: Hidden Unicode character {char_code}")
 
     if issues:
-        print(f"\n❌ {filepath}:")
-        for issue in issues:
-            print(issue)
+        # Logging removed for production. Use logging module if needed.
         return False
 
     return True
@@ -63,13 +61,13 @@ def main():
     # Check only YAML files in workflows
     workflow_dir = Path(".github/workflows")
     if not workflow_dir.exists():
-        print("✅ No .github/workflows directory found")
+        # Logging removed for production. Use logging module if needed.
         return 0
 
     yaml_files = list(workflow_dir.glob("*.yml")) + list(workflow_dir.glob("*.yaml"))
 
     if not yaml_files:
-        print("✅ No YAML workflow files found")
+        # Logging removed for production. Use logging module if needed.
         return 0
 
     all_ok = True
@@ -78,14 +76,10 @@ def main():
             all_ok = False
 
     if all_ok:
-        print("✅ All workflow YAML files are clean (no hidden/BiDi Unicode)")
+        # Logging removed for production. Use logging module if needed.
         return 0
     else:
-        print("\n🚨 FATAL: Hidden/BiDi Unicode characters detected in workflows!")
-        print("This is a Severity 0 security issue. Remediate immediately:")
-        print("  1. Recreate the files in a trusted editor (VS Code, etc.)")
-        print("  2. Verify in hex dump: hexdump -C .github/workflows/file.yml")
-        print("  3. Test with: python -m tools.check_bidi_unicode")
+        # Logging removed for production. Use logging module if needed.
         return 2
 
 

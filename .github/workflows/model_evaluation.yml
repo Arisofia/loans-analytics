@@ -1,7 +1,7 @@
 name: Model Evaluation Pipeline
 
 # Workflow-level permissions removed — granting permissions only to jobs that need them.
-"on":
+on:
   push:
     branches: [main, develop]
     paths:
@@ -64,7 +64,6 @@ jobs:
         id: threshold-check
         run: |
           mkdir -p config
-          touch config/evaluation-thresholds.yml
           python scripts/evaluation/check_thresholds.py \
             --metrics-file reports/evaluation-metrics.json \
             --config config/evaluation-thresholds.yml \

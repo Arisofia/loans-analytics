@@ -1,8 +1,7 @@
 name: Opik Observability & Monitoring
 
-"on":
+on:
   schedule:
-    # Run daily at 9:00 AM CET (8:00 AM UTC) for system health monitoring
     - cron: "0 8 * * *"
   workflow_dispatch:
 
@@ -31,7 +30,7 @@ jobs:
       - name: Fetch Opik system metrics
         id: fetch
         run: |
-          echo "📊 Fetching Opik observability metrics..."
+          echo "Fetching Opik observability metrics..."
           if [ ! -f scripts/fetch_opik_metrics.py ]; then
             echo "Missing scripts/fetch_opik_metrics.py; skipping."
             echo "available=false" >> "$GITHUB_OUTPUT"
@@ -78,7 +77,7 @@ jobs:
       - name: Analyze pipeline health metrics
         id: analyze
         run: |
-          echo "⚕️ Analyzing data pipeline health..."
+          echo "Analyzing data pipeline health..."
           if [ ! -f scripts/analyze_pipeline_health.py ]; then
             echo "Missing scripts/analyze_pipeline_health.py; skipping."
             echo "status=unknown" >> "$GITHUB_OUTPUT"
@@ -116,7 +115,7 @@ jobs:
       - name: Analyze agent performance
         id: analyze
         run: |
-          echo "🚀 Analyzing agent execution performance..."
+          echo "Analyzing agent execution performance..."
           if [ ! -f scripts/analyze_agent_performance.py ]; then
             echo "Missing scripts/analyze_agent_performance.py; skipping."
             echo "status=unknown" >> "$GITHUB_OUTPUT"
@@ -154,7 +153,7 @@ jobs:
       - name: Check data quality trends
         id: check
         run: |
-          echo "🔍 Checking data quality trends..."
+          echo "Checking data quality trends..."
           if [ ! -f scripts/check_data_quality_trends.py ]; then
             echo "Missing scripts/check_data_quality_trends.py; skipping."
             echo "trend=unknown" >> "$GITHUB_OUTPUT"
@@ -187,7 +186,7 @@ jobs:
 
       - name: Generate dashboard
         run: |
-          echo "📊 Generating observability dashboard..."
+          echo "Generating observability dashboard..."
           if [ ! -f scripts/generate_observability_dashboard.py ]; then
             echo "Missing scripts/generate_observability_dashboard.py; skipping."
             exit 0
@@ -225,15 +224,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Send Alert
         run: |
-          echo "🚨 Critical issue detected, sending alert..."
-          ALERT_MESSAGE="🚨 CRITICAL ALERT: System health issues detected\n"
+          echo "CRITICAL issue detected, sending alert..."
+          ALERT_MESSAGE="CRITICAL ALERT: System health issues detected\n"
           ALERT_MESSAGE+="Pipeline: ${{ needs.analyze-pipeline-health.outputs.pipeline-status }}\n"
           ALERT_MESSAGE+="Agents: ${{ needs.analyze-agent-performance.outputs.agent-status }}\n"
           ALERT_MESSAGE+="Data Quality: ${{ needs.check-data-quality-trends.outputs.quality-trend }}"
           # Placeholder for webhook call
           echo "Alert payload: $ALERT_MESSAGE"
-          # curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" -H 'Content-Type: application/json' \
-          #   -d "{\"text\":\"$ALERT_MESSAGE\"}"
 
   # Job 7: Daily system health summary
   send-daily-summary:
@@ -250,13 +247,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Send Summary
         run: |
-          echo "📊 Sending daily system health summary..."
-          SUMMARY="🔍 Daily System Health Report ($(date +%Y-%m-%d))\n\n"
+          echo "Sending daily system health summary..."
+          SUMMARY="Daily System Health Report ($(date +%Y-%m-%d))\n\n"
           SUMMARY+="✅ Data Pipeline: ${{ needs.analyze-pipeline-health.outputs.pipeline-status }}\n"
           SUMMARY+="🤖 Agent Performance: ${{ needs.analyze-agent-performance.outputs.agent-status }}\n"
           SUMMARY+="📊 Data Quality: ${{ needs.check-data-quality-trends.outputs.quality-trend }}\n\n"
           SUMMARY+="View detailed dashboard in GitHub Actions artifacts."
           # Placeholder for webhook call
           echo "Summary payload: $SUMMARY"
-          # curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" -H 'Content-Type: application/json' \
-          #   -d "{\"text\":\"$SUMMARY\"}"

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /** Repository layout helper for ABACO with optional strict and JSON modes. */
 // Node.js compatible version
 import fs from 'fs'
@@ -108,48 +109,21 @@ function describePathSync(target: CheckTarget): PathInsight {
   }
 }
 
-function printHumanReadable(statuses: PathInsight[]) {
-  console.log(`${repoName} — Deno helper`)
-  console.log(
-    'Check key folders before running Fitten, tests or deployments.\n'
-  )
-
-  for (const status of statuses) {
-    const icon = status.exists ? '✅' : '⚠️'
-    const detail = status.exists
-      ? `${status.type}, last modified: ${status.modified ?? 'unknown'}`
-      : 'missing – consider creating or syncing this path.'
-    console.log(`• ${icon} ${status.label}: ${status.path} (${detail})`)
-  }
-
-  const missing = statuses.filter((entry) => !entry.exists)
-  console.log(
-    `\nSummary: ${statuses.length - missing.length}/${statuses.length} paths available.`
-  )
-  if (missing.length) {
-    console.log('Missing paths:')
-    for (const entry of missing)
-      console.log(`  - ${entry.label} → ${entry.path}`)
-    console.log(
-      'Use --strict to exit with a non-zero code when required folders are absent.'
-    )
-  }
-
-  console.log(
-    '\nOptions:\n  --strict  Exit with code 1 if any path is missing\n  --json    Emit machine-readable JSON\n  --path=label:path  Check an additional path with a custom label'
-  )
-  console.log(
-    '\nExample:\n  deno run --allow-read main.ts --strict --path=Temp:data_samples/tmp'
-  )
-}
-
 const results = keyAreas.map(describePathSync)
 
-if (json) console.log(JSON.stringify(results, null, 2))
-else printHumanReadable(results)
+if (json) {
+  console.log(JSON.stringify(results, null, 2))
+} else {
+  for (const entry of results) {
+    const status = entry.exists ? 'OK' : 'MISSING'
+    console.log(
+      `[${status}] ${entry.label} -> ${entry.path} (${entry.type}${
+        entry.modified ? `, modified=${entry.modified}` : ''
+      })`
+    )
+  }
+}
 
 if (strict && results.some((entry) => !entry.exists)) process.exit(1)
-
-export {} // Make this file a module to allow top-level await
 
 export {} // Make this file a module to allow top-level await

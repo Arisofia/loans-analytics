@@ -48,16 +48,6 @@ jobs:
           pip install -r requirements.txt
           pip check
 
-  trigger-validation:
-    name: Trigger Validation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Check for missing workflow_dispatch
-        run: |
-          # Placeholder: run any project-specific trigger checks
-          echo "ok"
-
   secrets-validation:
     name: Secrets Validation
     runs-on: ubuntu-latest
@@ -81,14 +71,12 @@ jobs:
       - syntax-validation
       - structure-validation
       - dependency-validation
-      - trigger-validation
       - secrets-validation
     if: |
       always() && (
         needs.syntax-validation.result == 'failure' ||
         needs.structure-validation.result == 'failure' ||
         needs.dependency-validation.result == 'failure' ||
-        needs.trigger-validation.result == 'failure' ||
         needs.secrets-validation.result == 'failure'
       )
     steps:

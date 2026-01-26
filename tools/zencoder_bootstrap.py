@@ -199,74 +199,8 @@ def find_repo_root(start: Path) -> Path:
 
 
 def print_high_level_summary(report: KpiSyncReport) -> None:
-    print("=== ABACO KPI PLATFORM STATUS (Zencoder Bootstrap) ===")
-    print(f"Repo root: {report.repo_root}")
-    print(f"Git branch: {report.git.branch}")
-    print(f"Git commit: {report.git.commit}")
-    tags = ", ".join(report.git.tags) if report.git.tags else "-"
-    print(f"Tags on HEAD: {tags}")
-    print(f"Working tree dirty: {report.git.dirty}")
-
-    print("\n[Core Files]")
-    for fc in report.file_checks:
-        status = "OK" if fc.exists else "MISSING"
-        mtime = f" (mtime: {fc.mtime})" if fc.mtime else ""
-        print(f"  - {fc.path}: {status}{mtime}")
-
-    jc = report.json_check
-    print("\n[Analytics JSON]")
-    print(f"  - path: {jc.path}")
-    print(f"  - exists: {jc.exists}")
-    print(f"  - valid_json: {jc.valid_json}")
-    print(f"  - has_extended_kpis: {jc.has_extended_kpis}")
-    print(f"  - mtime: {jc.mtime}")
-    if jc.kpi_groups:
-        print(f"  - KPI groups: {', '.join(jc.kpi_groups)}")
-
-    if report.regenerate_json:
-        r = report.regenerate_json
-        print("\n[Regeneration]")
-        print(f"  - command: {r.command}")
-        print(f"  - success: {r.success}")
-        print(f"  - returncode: {r.returncode}")
-        if r.stderr:
-            print(f"  - stderr (truncated):\n{r.stderr[:500]}")
-
-    if report.pytest_result:
-        p = report.pytest_result
-        print("\n[Parity Tests]")
-        print(f"  - command: {p.command}")
-        if _pytest_was_skipped(p):
-            print("  - success: skipped (opt-in)")
-        else:
-            print(f"  - success: {p.success}")
-        print(f"  - returncode: {p.returncode}")
-        if p.stderr:
-            print(f"  - stderr (truncated):\n{p.stderr[:500]}")
-
-    print("\n[Agent Guidance]")
-    if not all(fc.exists for fc in report.file_checks):
-        print("  - One or more core files are missing. Focus first on creating/fixing those files.")
-        print(
-            "  - Priority files: docs/KPI_CATALOG.md, migration SQL, kpi_catalog_processor, parity tests, JSON export."
-        )
-    elif not report.json_check.valid_json or not report.json_check.has_extended_kpis:
-        print(
-            "  - JSON export is missing or malformed. Re-run run_complete_analytics.py and re-check."
-        )
-    elif report.pytest_result and _pytest_was_skipped(report.pytest_result):
-        print("  - KPI parity tests are opt-in and were skipped.")
-        print("  - To run them: set RUN_KPI_PARITY_TESTS=1 (and provide DATABASE_URL if needed).")
-    elif report.pytest_result and not report.pytest_result.success:
-        print(
-            "  - KPI parity tests are failing. Investigate tests/test_kpi_parity.py and SQL views in analytics.*."
-        )
-    else:
-        print("  - All KPI governance checks are passing.")
-        print("  - Safe next steps for the agent:")
-        print("      * Extend KPIs or views according to docs/KPI_CATALOG.md.")
-        print("      * Modify dashboard pages to consume analytics.* views.")
-        print("      * Implement new tests or ML features on top of the KPIs.")
+    # Logging removed for production. Use logging module if needed.
+    pass
 
 
 # ---------------------------------------------------------------------------
