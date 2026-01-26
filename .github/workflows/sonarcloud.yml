@@ -84,3 +84,4 @@ jobs:
             -Dsonar.verbose=true
             -Dsonar.python.coverage.reportPaths=coverage-src.xml
             -Dsonar.javascript.lcov.reportPaths=apps/web/coverage/lcov.info
+        working-directory: ${{ github.workspace }}
