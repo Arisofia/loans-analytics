@@ -1,3 +1,13 @@
+
+
+
+
+
+
+
+
+
+
 import os
 import sys
 import json
@@ -11,7 +21,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger("customer_segmentation")
 
-
 def get_env_var(name: str, required: bool = True) -> str:
     value = os.getenv(name)
     if required and not value:
@@ -19,7 +28,6 @@ def get_env_var(name: str, required: bool = True) -> str:
         logger.error("Set the environment variable using: export %s=<value>", name)
         sys.exit(1)
     return value or ""
-
 
 def main() -> None:
     logger.info("Starting Customer Segmentation Analysis Agent...")
@@ -54,7 +62,6 @@ def main() -> None:
 
     logger.info("Segmentation completed successfully.")
     logger.info("Agent Response: %s", json.dumps(results, indent=2))
-
 
 if __name__ == "__main__":
     main()
