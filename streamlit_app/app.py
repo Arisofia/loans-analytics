@@ -3,12 +3,28 @@
 import json
 import logging
 from datetime import datetime
+
+
+import os
+import sys
 import pandas as pd
 import streamlit as st
-from pathlib import Path
-import sys
+from typing import Optional
 
-from streamlit_app import bootstrap  # noqa: F401
+# 1. Robust Bootstrap Import
+try:
+    from streamlit_app.bootstrap import bootstrap_repo_root
+    bootstrap_repo_root()
+except ImportError:
+    pass
+
+# 2. Local Imports (now safe after bootstrap)
+from src.tracing_setup import initialize_tracing  # Example, adjust as needed
+from src.analytics.kpi_catalog_processor import KPICatalogProcessor
+from src.config.paths import Paths
+from src.theme import ABACO_THEME
+from src.utils.dashboard_utils import format_kpi_value, kpi_label
+from src.utils.data_normalization import normalize_dataframe_complete
 from streamlit_app.components.analytics_tabs import render_advanced_intelligence
 from streamlit_app.components.charts import (
     render_cashflow_trends,
@@ -23,15 +39,51 @@ from streamlit_app.components.sales_risk import (
     render_risk_analysis,
     render_sales_performance,
 )
-from src.analytics.kpi_catalog_processor import KPICatalogProcessor
-from src.config.paths import Paths
-from src.theme import ABACO_THEME
-from src.utils.dashboard_utils import format_kpi_value, kpi_label
-from src.utils.data_normalization import normalize_dataframe_complete
-from streamlit_app.fuzzy_table_mapping import fuzzy_map_core_tables
 
-EXPORTS_DIR = Paths.exports_dir()
-SUPPORT_DIR = Paths.data_dir() / "support"
+LOCAL_EXPORTS_DIR = "local_exports"
+
+def get_table_type_from_filename(filename: str) -> Optional[str]:
+    base_name = filename.lower()
+    if "loan" in base_name:
+        return "loan_data"
+    elif "customer" in base_name:
+        return "customer_data"
+    return None
+
+def load_local_exports() -> dict:
+    export_data = {}
+    if os.path.exists(LOCAL_EXPORTS_DIR):
+        for f in os.listdir(LOCAL_EXPORTS_DIR):
+            if f.endswith(".csv"):
+                key = get_table_type_from_filename(f)
+                if key:
+                    try:
+                        file_path = os.path.join(LOCAL_EXPORTS_DIR, f)
+                        df = pd.read_csv(file_path)
+                        export_data[key] = df
+                    except Exception as e:
+                        st.error(f"Error loading local file {f}: {e}")
+    return export_data
+
+def handle_file_uploads() -> dict:
+    uploaded_files = st.sidebar.file_uploader(
+        "Upload CSV Exports",
+        type="csv",
+        accept_multiple_files=True
+    )
+    upload_data = {}
+    if uploaded_files:
+        for uploaded_file in uploaded_files:
+            key = get_table_type_from_filename(uploaded_file.name)
+            if key:
+                try:
+                    upload_data[key] = pd.read_csv(uploaded_file)
+                    st.sidebar.success(f"Mapped '{uploaded_file.name}' to {key}")
+                except Exception as e:
+                    st.sidebar.error(f"Error reading {uploaded_file.name}: {e}")
+            else:
+                st.sidebar.warning(f"Could not map file '{uploaded_file.name}' to known data types.")
+    return upload_data
 LOCAL_EXPORTS_DIR = Paths.raw_data_dir() / "_exports"
 FONT_IMPORT_URL = (
     "https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900"
@@ -40,38 +92,7 @@ FONT_IMPORT_URL = (
 
 
 @st.cache_data(show_spinner=False)
-def load_local_exports():
-    candidates = {
-        "loan_data": [
-            LOCAL_EXPORTS_DIR / "loan_data.csv",
-            LOCAL_EXPORTS_DIR / "Abaco-Loan-Tape_Loan-Data_Table-6.csv",
-            Paths.data_dir() / "abaco" / "loan_data.csv",
-        ],
-        "customer_data": [
-            LOCAL_EXPORTS_DIR / "customer_data.csv",
-            LOCAL_EXPORTS_DIR / "Abaco-Loan-Tape_Customer-Data_Table-6.csv",
-            Paths.data_dir() / "abaco" / "customer_data.csv",
-        ],
-        "historic_payment_data": [
-            LOCAL_EXPORTS_DIR / "historic_payment_data.csv",
-            LOCAL_EXPORTS_DIR / "Abaco-Loan-Tape_Historic-Real-Payment_Table-6.csv",
-            Paths.data_dir() / "abaco" / "real_payment.csv",
-        ],
-        "schedule_data": [
-            LOCAL_EXPORTS_DIR / "schedules.csv",
-            LOCAL_EXPORTS_DIR / "payment_schedule.csv",
-            LOCAL_EXPORTS_DIR / "Abaco-Loan-Tape_Payment Schedule_Table-6.csv",
-            Paths.data_dir() / "abaco" / "payment_schedule.csv",
-        ],
-    }
-    export_data = {}
-    for key, paths in candidates.items():
-        path = next((p for p in paths if p.exists()), None)
-        if path is None:
-            continue
-        df = pd.read_csv(path)
-        export_data[key] = normalize_dataframe_complete(df)
-    return export_data
+    # The original load_local_exports function is replaced by the new implementation above.
 
 
 @st.cache_data(show_spinner=False, ttl=300)
