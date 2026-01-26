@@ -8,3 +8,4 @@ coverage
 .turbo
 .venv
 out
+.DS_Store

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "clean": "rm -rf .next node_modules dist build package-lock.json .cache coverage *.log .venv __pycache__ .turbo out *.bak *.old package-lock.old.json",
+    "clean": "rm -rf .next node_modules dist build .cache coverage *.log .venv __pycache__ .turbo out *.bak *.old package-lock.old.json .DS_Store",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

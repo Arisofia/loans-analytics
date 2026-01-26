@@ -69,16 +69,7 @@ export const AuthenticationForm = () => {
       >
         {status === 'submitting' ? 'Signing in...' : 'Sign in'}
       </button>
-      {message && (
-        <p
-          className={
-            status === 'error'
-              : 'text-xs text-emerald-300'
-          }
-        >
-          {message}
-        </p>
-      )}
+      {message && <p className={status === 'error'}>{message}</p>}
     </form>
   )
 }
