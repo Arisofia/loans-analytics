@@ -1,0 +1,22 @@
+name: AI Pull Request Review
+
+"on":
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  gemini_review:
+    name: Gemini PR Review
+    if: github.event.pull_request.head.repo.fork == false
+    uses: ./.github/workflows/gemini_pr_review.yml
+    secrets:
+      GEMINI_API_KEY_SIMPLE: ${{ secrets.GEMINI_API_KEY_SIMPLE }}
+    with:
+      gemini_model: ${{ vars.GEMINI_MODEL }}
+
+  codex_review:
+    name: Codex PR Review
+    if: github.event.pull_request.head.repo.fork == false
+    uses: ./.github/workflows/codex_pull_request_review.yml
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
