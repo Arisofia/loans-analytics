@@ -30,7 +30,7 @@ from src.utils.data_normalization import normalize_dataframe_complete
 
 EXPORTS_DIR = Paths.exports_dir()
 SUPPORT_DIR = Paths.data_dir() / "support"
-LOOKER_DIR = Paths.raw_data_dir() / "_exports"
+LOCAL_EXPORTS_DIR = Paths.raw_data_dir() / "_exports"
 FONT_IMPORT_URL = (
     "https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900"
     "&family=Poppins:wght@100;200;300;400;500;600;700&display=swap"
@@ -38,27 +38,27 @@ FONT_IMPORT_URL = (
 
 
 @st.cache_data(show_spinner=False)
-def load__exports():
+def load_local_exports():
     candidates = {
         "loan_data": [
-            LOOKER_DIR / "loan_data.csv",
-            LOOKER_DIR / "Abaco-Loan-Tape_Loan-Data_Table-6.csv",
+            LOCAL_EXPORTS_DIR / "loan_data.csv",
+            LOCAL_EXPORTS_DIR / "Abaco-Loan-Tape_Loan-Data_Table-6.csv",
             Paths.data_dir() / "abaco" / "loan_data.csv",
         ],
         "customer_data": [
-            LOOKER_DIR / "customer_data.csv",
-            LOOKER_DIR / "Abaco-Loan-Tape_Customer-Data_Table-6.csv",
+            LOCAL_EXPORTS_DIR / "customer_data.csv",
+            LOCAL_EXPORTS_DIR / "Abaco-Loan-Tape_Customer-Data_Table-6.csv",
             Paths.data_dir() / "abaco" / "customer_data.csv",
         ],
         "historic_payment_data": [
-            LOOKER_DIR / "historic_payment_data.csv",
-            LOOKER_DIR / "Abaco-Loan-Tape_Historic-Real-Payment_Table-6.csv",
+            LOCAL_EXPORTS_DIR / "historic_payment_data.csv",
+            LOCAL_EXPORTS_DIR / "Abaco-Loan-Tape_Historic-Real-Payment_Table-6.csv",
             Paths.data_dir() / "abaco" / "real_payment.csv",
         ],
         "schedule_data": [
-            LOOKER_DIR / "schedules.csv",
-            LOOKER_DIR / "payment_schedule.csv",
-            LOOKER_DIR / "Abaco-Loan-Tape_Payment Schedule_Table-6.csv",
+            LOCAL_EXPORTS_DIR / "schedules.csv",
+            LOCAL_EXPORTS_DIR / "payment_schedule.csv",
+            LOCAL_EXPORTS_DIR / "Abaco-Loan-Tape_Payment Schedule_Table-6.csv",
             Paths.data_dir() / "abaco" / "payment_schedule.csv",
         ],
     }
@@ -212,7 +212,7 @@ with st.sidebar:
     )
 
     if data_source == "Local artifacts (auto)":
-        _data = load__exports()
+        _data = load_local_exports()
         if _data:
             st.session_state["data"] = _data
             st.session_state["loaded"] = True
