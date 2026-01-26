@@ -73,7 +73,6 @@ export const AuthenticationForm = () => {
         <p
           className={
             status === 'error'
-              ? 'text-xs text-rose-300'
               : 'text-xs text-emerald-300'
           }
         >
