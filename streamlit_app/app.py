@@ -22,6 +22,7 @@ if str(ROOT_DIR) not in sys.path:
 
 
 
+from src.pipeline.ingestion import load_raw_data_exports  # noqa: E402
 from src.utils.data_normalization import normalize_dataframe_complete  # noqa: E402
 
 from src.theme import ABACO_THEME  # noqa: E402
