@@ -1,8 +1,12 @@
 /* eslint-disable no-console */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
-const BACKEND_KPI_URL =
-  Deno.env.get('BACKEND_KPI_URL') || 'http://127.0.0.1:8000/api/kpis/latest'
+const backendEnv = Deno.env.get('BACKEND_KPI_URL')
+if (!backendEnv) {
+  console.error('BACKEND_KPI_URL is not configured in environment')
+  throw new Error('Missing BACKEND_KPI_URL configuration')
+}
+const BACKEND_KPI_URL = backendEnv
 const FETCH_TIMEOUT_MS = 5000
 
 serve(async (req: Request) => {
@@ -31,7 +35,7 @@ serve(async (req: Request) => {
   }
 
   let kpiRawData: Record<string, any> = {}
-  let hasDemoData = true
+  let hasDemoData = false
 
   try {
     // Fetch from backend with timeout
@@ -56,7 +60,7 @@ serve(async (req: Request) => {
       'Backend unavailable, returning empty dataset:',
       error instanceof Error ? error.message : 'Unknown error'
     )
-    hasDemoData = false
+    hasDemoData = true
   }
 
   const timestamp = new Date().toISOString()
@@ -71,7 +75,7 @@ serve(async (req: Request) => {
     customer_metrics: buildCustomerMetrics(kpiRawData),
     quality_metrics: buildQualityMetrics(kpiRawData),
     metadata: {
-      demo_mode: false,
+      demo_mode: hasDemoData,
       total_kpis: 56,
       data_freshness_hours: hasDemoData ? null : 0,
       backend_url: BACKEND_KPI_URL,
@@ -85,7 +89,7 @@ serve(async (req: Request) => {
       'Cache-Control': 'public, max-age=3600',
       'X-KPI-Version': '2.0',
       'X-Total-Metrics': '56',
-      'X-Demo-Mode': 'false',
+      'X-Demo-Mode': hasDemoData ? 'true' : 'false',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
     },

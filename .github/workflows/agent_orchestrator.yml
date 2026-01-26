@@ -1,6 +1,6 @@
 name: Multi-Agent Orchestrator
 
-"on":
+on:
   workflow_dispatch:
     inputs:
       orchestration_mode:
@@ -53,27 +53,18 @@ jobs:
           script_missing = not script_path.exists()
           slack_available = "true" if os.getenv("SLACK_WEBHOOK_LEADERSHIP") else "false"
 
-          if missing_required:
-              # Logging removed for production. Use logging module if needed.
-          if missing_optional:
-              # Logging removed for production. Use logging module if needed.
-          if script_missing:
-              # Logging removed for production. Use logging module if needed.
-          if slack_available == "false":
-              # Logging removed for production. Use logging module if needed.
-
           # Fallback logic: allow execution if we have at least OpenAI and the script,
           # otherwise fail gracefully.
           run = "false" if missing_required or script_missing else "true"
 
-          with open(os.environ["GITHUB_OUTPUT"], "a") as handle:
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               handle.write(f"run={run}\n")
               handle.write(f"slack_available={slack_available}\n")
           VALIDATION
 
   orchestrate:
     needs: validate-secrets
-    if: needs.validate-secrets.outputs.run == true
+    if: needs.validate-secrets.outputs.run == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read

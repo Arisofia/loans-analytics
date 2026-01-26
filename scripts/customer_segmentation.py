@@ -28,15 +28,6 @@ def get_env_var(name: str, required: bool = True) -> str:
         name: The name of the environment variable to read.
         required: Whether the environment variable must be set and non-empty.
 
-    """Retrieve an environment variable with optional required enforcement.
-
-    This function centralizes configuration access and ensures that required
-    environment variables are present before the application continues.
-
-    Args:
-        name: The name of the environment variable to read.
-        required: Whether the environment variable must be set and non-empty.
-
     Returns:
         The value of the environment variable, or an empty string if not
         required and unset.
@@ -50,6 +41,8 @@ def get_env_var(name: str, required: bool = True) -> str:
         logger.error("Set the environment variable using: export %s=<value>", name)
         sys.exit(1)
     return value or ""
+
+
 class AbacoEligibilityEvaluator:
     """Evaluates customer eligibility for ECB collateral pools.
 

@@ -209,6 +209,9 @@ make test-cov
 
 **Recent Commits**:
 
+1. fix: resolve corrupted docstring in customer segmentation script
+1. docs: add architectural remediation report and sync main
+1. chore: final audit cleanup - enforce production config and remove mock providers
 1. fix: resolve remaining python linting errors and pytest collection issues
 1. chore: merge and sync all linting fixes to main
 1. chore: resolve TypeScript typing issues and magic numbers in edge functions
