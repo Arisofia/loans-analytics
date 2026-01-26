@@ -78,7 +78,7 @@ jobs:
           mkdir -p apps/web/coverage
           printf "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record\n" > apps/web/coverage/lcov.info
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v5.0.0
+        uses: SonarSource/sonarcloud-github-action@ffc3010689be73b8e5ae0c57ce35968afd7909e8
         with:
           args: >
             -Dsonar.verbose=true

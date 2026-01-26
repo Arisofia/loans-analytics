@@ -1,4 +1,10 @@
 {
+<<<<<<< HEAD
+    "sonarlint.connectedMode.project": {
+    "connectionId": "abaco-technol",
+    "projectKey": "abaco-loans-analytics"
+  }
+=======
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
   "python.terminal.useEnvFile": true,
   "python.envFile": "${workspaceFolder}/.env",
@@ -82,4 +88,5 @@
   "github-actions.workflows.pinned.workflows": [
     "abaco-loans-analytics/.github/workflows/agent-orchestrator.yml"
   ]
+>>>>>>> 1de4ce68ea25f93f518cb4280bf3fbb7e8c6a0af
 }
