@@ -199,6 +199,7 @@ make test-cov
 
 **Recent Commits**:
 
+1. style: cleanup customer segmentation script formatting
 1. feat(scripts): implement customer segmentation script with Azure AI integration
 1. feat(segmentation): integrate Azure AI Multi-Agent services
 1. docs: update SECURITY.md to reflect resolved dependencies
