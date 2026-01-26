@@ -55,8 +55,11 @@ export const AccountConfigurationForm = () => {
       })
 
     if (error) {
+      console.error('Failed to save account settings', error)
       setStatus('error')
-      setMessage(error.message)
+      setMessage(
+        'We were unable to save your account settings. Please try again, and contact support if the problem persists.'
+      )
       return
     }
 
