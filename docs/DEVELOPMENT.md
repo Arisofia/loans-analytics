@@ -1,4 +1,3 @@
-
 ## Setup
 
 1. **Clone & Install**
@@ -34,40 +33,40 @@
 
 ### Frontend variables (apps/web)
 
-| Variable | Purpose |
-| --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL used by the client and integration helpers. |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public (read-only) API key consumed by the React app. Keep this scoped to the client role in Supabase. |
-| `NEXT_PUBLIC_SUPABASE_FN_BASE` | Root of Supabase Edge Functions (`https://<project>.functions.supabase.co`). Required by `IntegrationSettings` and synchronization helpers. |
-| `NEXT_PUBLIC_DRILLDOWN_BASE_URL` | Base URL for drill-down exports and analytics tables (can point at Supabase Studio, Supabase Edge App, or another analytics surface). |
-| `NEXT_PUBLIC_ALERT_SLACK_WEBHOOK` | Optional Slack webhook so the analytics dashboard can dispatch KPI alerts directly to a channel. |
-| `NEXT_PUBLIC_ALERT_EMAIL` | Contact email shown alongside alerts (defaults to `alerts@abaco.loans`). |
-| `NEXT_PUBLIC_SITE_URL` | Canonical site URL used for metadata, Open Graph, and robots. |
-| `NEXT_PUBLIC_SENTRY_DSN` | DSN for Sentry error tracking on both client and server. |
+| Variable                          | Purpose                                                                                                                                     |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`        | Supabase project URL used by the client and integration helpers.                                                                            |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | Public (read-only) API key consumed by the React app. Keep this scoped to the client role in Supabase.                                      |
+| `NEXT_PUBLIC_SUPABASE_FN_BASE`    | Root of Supabase Edge Functions (`https://<project>.functions.supabase.co`). Required by `IntegrationSettings` and synchronization helpers. |
+| `NEXT_PUBLIC_DRILLDOWN_BASE_URL`  | Base URL for drill-down exports and analytics tables (can point at Supabase Studio, Supabase Edge App, or another analytics surface).       |
+| `NEXT_PUBLIC_ALERT_SLACK_WEBHOOK` | Optional Slack webhook so the analytics dashboard can dispatch KPI alerts directly to a channel.                                            |
+| `NEXT_PUBLIC_ALERT_EMAIL`         | Contact email shown alongside alerts (defaults to `alerts@abaco.loans`).                                                                    |
+| `NEXT_PUBLIC_SITE_URL`            | Canonical site URL used for metadata, Open Graph, and robots.                                                                               |
+| `NEXT_PUBLIC_SENTRY_DSN`          | DSN for Sentry error tracking on both client and server.                                                                                    |
 
 ### Shared integration & automation variables
 
-| Variable | Purpose |
-| --- | --- |
-| `SLACK_WEBHOOK_URL` | Incoming webhook used by `.github/workflows/daily-ingest.yml` to signal successful pipelines. |
-| `SLACK_BOT_TOKEN` | Token powering `services/slack_bot` plus the `slack_notify.yml` workflow that posts deployment/failure updates. |
-| `SLACK_SIGNING_SECRET` | Slack signing secret required by the Bolt app. |
-| `SLACK_CHANNEL` | Target channel for `slack_notify.yml` and for manual Slack bot posts. |
-| `SLACK_BOT_AUTOSTART` | Set to `false` to prevent the Slack bot from auto-starting in non-production environments. |
-| `KPI_WEBHOOK_URL` | Endpoint the Slack bot consults to load the latest KPIs before responding to mentions. |
-| `API_KEY` | Shared bearer token appended to internal KPI and HubSpot calls. |
-| `HUBSPOT_API_KEY` | HubSpot CRM sync key used in `services/hubspot_sync`. |
-| `KPI_SERVICE_URL` | URL of the KPI microservice that enriches HubSpot contacts/deals. |
-| `PIPELINE_INPUT_FILE` | Optional override for `scripts/run_data_pipeline.py` to point at a different CSV. |
-| `GITHUB_TOKEN` / `GH_TOKEN` | Grant access to the GitHub API for scripts such as `scripts/pr_status.py` and `scripts/trigger_workflows.py`. |
-| `NOTION_DATABASE_ID` | Database used by `scripts/import_notion_metrics.py`. |
-| `NOTION_META_TOKEN` | Bearer token supporting the Importer. |
-| `NOTION_VERSION` | API version (defaults to `2022-06-28` if unset). |
-| `OPENAI_API_KEY` | Enables OpenAI-powered summaries inside the Streamlit app and other agents. |
-| `GOOGLE_API_KEY` | Required by the Gemini client in `scripts/clients.py`. |
-| `GROK_API_KEY` | Required by the Grok client used by `StandaloneAIEngine`. |
-| `DATABASE_URL` | Connection string used by `src/agents/orchestrator.py` and other automation helpers. |
-| `LOG_LEVEL` | Sets the logging verbosity for the importer (defaults to `INFO`). |
+| Variable                    | Purpose                                                                                                         |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `SLACK_WEBHOOK_URL`         | Incoming webhook used by `.github/workflows/daily-ingest.yml` to signal successful pipelines.                   |
+| `SLACK_BOT_TOKEN`           | Token powering `services/slack_bot` plus the `slack_notify.yml` workflow that posts deployment/failure updates. |
+| `SLACK_SIGNING_SECRET`      | Slack signing secret required by the Bolt app.                                                                  |
+| `SLACK_CHANNEL`             | Target channel for `slack_notify.yml` and for manual Slack bot posts.                                           |
+| `SLACK_BOT_AUTOSTART`       | Set to `false` to prevent the Slack bot from auto-starting in non-production environments.                      |
+| `KPI_WEBHOOK_URL`           | Endpoint the Slack bot consults to load the latest KPIs before responding to mentions.                          |
+| `API_KEY`                   | Shared bearer token appended to internal KPI and HubSpot calls.                                                 |
+| `HUBSPOT_API_KEY`           | HubSpot CRM sync key used in `services/hubspot_sync`.                                                           |
+| `KPI_SERVICE_URL`           | URL of the KPI microservice that enriches HubSpot contacts/deals.                                               |
+| `PIPELINE_INPUT_FILE`       | Optional override for `scripts/run_data_pipeline.py` to point at a different CSV.                               |
+| `GITHUB_TOKEN` / `GH_TOKEN` | Grant access to the GitHub API for scripts such as `scripts/pr_status.py` and `scripts/trigger_workflows.py`.   |
+| `NOTION_DATABASE_ID`        | Database used by `scripts/import_notion_metrics.py`.                                                            |
+| `NOTION_META_TOKEN`         | Bearer token supporting the Importer.                                                                           |
+| `NOTION_VERSION`            | API version (defaults to `2022-06-28` if unset).                                                                |
+| `OPENAI_API_KEY`            | Enables OpenAI-powered summaries inside the Streamlit app and other agents.                                     |
+| `GOOGLE_API_KEY`            | Required by the Gemini client in `scripts/clients.py`.                                                          |
+| `GROK_API_KEY`              | Required by the Grok client used by `StandaloneAIEngine`.                                                       |
+| `DATABASE_URL`              | Connection string used by `src/agents/orchestrator.py` and other automation helpers.                            |
+| `LOG_LEVEL`                 | Sets the logging verbosity for the importer (defaults to `INFO`).                                               |
 
 ### Vercel & GitHub secrets
 
@@ -101,7 +100,7 @@
 ### Supabase, backend & pipeline connectivity
 
 - Confirm the deployed app uses `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY` to talk to the primary database. Run `npm run dev` and watch for `Supabase` calls in the browser network tab to verify connectivity.
-- Client-side modules should import `getSupabaseClient` from `apps/web/src/lib/supabase/client.ts` to lazily initialize the Supabase client instead of invoking the factory directly so auth context is stable across renders and builds avoid import-time failures.
+- Client-side modules should import `getSupabaseClient` from `apps/web/src/lib/supabase/client.ts` to lazily initialize the Supabase client instead of invoking the factory directly so auth context is stable across renders and builds and avoids import-time failures.
 - `NEXT_PUBLIC_SUPABASE_FN_BASE` backs the integration settings UI. Point it to the Supabase Edge Functions base so tokens, sync requests, and drill-down statuses execute securely.
 - The Supabase-backed `IntegrationSettings` component, the HubSpot sync service, and analytics exports rely on `KPI_SERVICE_URL`, `API_KEY`, and `HUBSPOT_API_KEY`. Store these in GitHub Secrets or the root `.env` file shared by non-Next services.
 - Trigger the pipeline locally with `python scripts/run_data_pipeline.py`; verify that outputs land in `data/metrics` and the manifest/logs directories. The same script runs nightly via `.github/workflows/daily-ingest.yml`, so use `PIPELINE_INPUT_FILE` to test alternate datasets.

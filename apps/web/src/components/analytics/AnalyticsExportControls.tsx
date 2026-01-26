@@ -2,7 +2,15 @@
 
 import { useState } from 'react'
 
+<<<<<<< HEAD
 import type { AnalyticsExportPayload, AnalyticsSummary, LoanRecord } from '@/types/analytics'
+=======
+import type {
+  AnalyticsExportPayload,
+  AnalyticsSummary,
+  LoanRecord,
+} from '@/types/analytics'
+>>>>>>> origin/main
 
 type AnalyticsExportControlsProps = {
   summary: AnalyticsSummary

@@ -1,6 +1,6 @@
 name: Multi-Agent Orchestrator
 
-"on":
+on:
   workflow_dispatch:
     inputs:
       orchestration_mode:
@@ -53,27 +53,18 @@ jobs:
           script_missing = not script_path.exists()
           slack_available = "true" if os.getenv("SLACK_WEBHOOK_LEADERSHIP") else "false"
 
-          if missing_required:
-              print(f"CRITICAL: Missing required secrets: {', '.join(missing_required)}")
-          if missing_optional:
-              print(f"WARNING: Missing optional agent tokens: {', '.join(missing_optional)}")
-          if script_missing:
-              print(f"ERROR: Orchestration script {script_path} not found. Fallback to dummy mode if needed.")
-          if slack_available == "false":
-              print("WARNING: SLACK_WEBHOOK_LEADERSHIP not configured - notifications will be skipped")
-
           # Fallback logic: allow execution if we have at least OpenAI and the script,
           # otherwise fail gracefully.
           run = "false" if missing_required or script_missing else "true"
 
-          with open(os.environ["GITHUB_OUTPUT"], "a") as handle:
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               handle.write(f"run={run}\n")
               handle.write(f"slack_available={slack_available}\n")
           VALIDATION
 
   orchestrate:
     needs: validate-secrets
-    if: needs.validate-secrets.outputs.run == true
+    if: needs.validate-secrets.outputs.run == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -104,8 +95,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           set -euo pipefail
-          # Using src.agents.orchestrator as the entry point
-          python -c "from src.agents.orchestrator import AgentOrchestrator; orch = AgentOrchestrator(); print(orch.run({'query': '${{ github.event.inputs.orchestration_mode }}'}))"
+          python -m src.agents.orchestrator --mode "${{ github.event.inputs.orchestration_mode }}"
 
       - name: Upload orchestration output
         if: always()
@@ -120,7 +110,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.24.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
-        if: success() && needs.validate-secrets.outputs.slack_available == true
+        if: success() && needs.validate-secrets.outputs.slack_available == 'true'
         with:
           payload: |
             {
@@ -140,7 +130,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.24.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
-        if: failure() && needs.validate-secrets.outputs.slack_available == true
+        if: failure() && needs.validate-secrets.outputs.slack_available == 'true'
         with:
           payload: |
             {

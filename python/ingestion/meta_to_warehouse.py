@@ -1,28 +1,20 @@
 import os
-
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import yaml
-
 SCHEMA_PATH = "config/data_schemas/meta_insights.yaml"
 RAW_DIR = "data/raw/meta"
 OUT_FILE = "data/warehouse/meta_insights.parquet"
-
-
 def load_schema():
     with open(SCHEMA_PATH) as f:
         return yaml.safe_load(f)
-
-
 def validate(df, schema):
     required = [c["name"] for c in schema["fields"] if c.get("required", False)]
     for c in required:
         if c not in df.columns:
             raise ValueError(f"Missing required column {c}")
     return True
-
-
 def main():
     if not os.path.isdir(RAW_DIR):
         print(f"No raw meta directory found at {RAW_DIR}.")
@@ -46,7 +38,5 @@ def main():
     table = pa.Table.from_pandas(combined_df)
     pq.write_table(table, OUT_FILE)
     print(f"Wrote {OUT_FILE}")
-
-
 if __name__ == "__main__":
     main()

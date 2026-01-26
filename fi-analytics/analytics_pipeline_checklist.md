@@ -1,5 +1,4 @@
 # FI-ANALYTICS: Analytics Pipeline Checklist
-
 |ID|Title|Priority|Type|Automation Candidate|Pass|
 |---|---|---|---|---|---|
 |A-01|Pipeline Smoke Execution (valid CSV)|Critical|Functional|Yes| [ ] |

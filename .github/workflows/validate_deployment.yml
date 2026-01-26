@@ -51,11 +51,11 @@ jobs:
           sanitize_secret AZURE_CREDENTIALS "$AZURE_CREDENTIALS"
           sanitize_secret AZURE_WEBAPP_PUBLISH_PROFILE "$AZURE_WEBAPP_PUBLISH_PROFILE"
 
-            if [ -n "$AZURE_CREDENTIALS" ] || [ -n "$AZURE_WEBAPP_PUBLISH_PROFILE" ]; then
-              echo "has_azure_secrets=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "has_azure_secrets=false" >> "$GITHUB_OUTPUT"
-            fi
+          if [ -n "$AZURE_CREDENTIALS" ] || [ -n "$AZURE_WEBAPP_PUBLISH_PROFILE" ]; then
+            echo "has_azure_secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_azure_secrets=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Determine app URL
         id: app_url
@@ -70,7 +70,7 @@ jobs:
 
       - name: Wait for app to be ready
         id: wait_ready
-        if: ${{ steps.check_secrets.outputs.has_azure_secrets == true }}
+        if: steps.check_secrets.outputs.has_azure_secrets == 'true'
         run: |
           echo "Waiting for app to be ready..."
           for i in {1..60}; do
@@ -96,7 +96,7 @@ jobs:
 
       - name: Run local smoke test (fallback)
         id: smoke_test
-        if: ${{ steps.check_secrets.outputs.has_azure_secrets != 'true' }}
+        if: steps.check_secrets.outputs.has_azure_secrets != 'true'
         run: |
           echo "⚠️  Azure credentials not configured. Running local smoke test..."
           python -m pip install -q streamlit pandas numpy altair plotly
@@ -105,7 +105,7 @@ jobs:
 
       - name: Test health endpoint (Azure)
         id: health_check
-        if: ${{ steps.wait_ready.outputs.ready == true }}
+        if: steps.wait_ready.outputs.ready == 'true'
         run: |
           echo "Testing health endpoint..."
           HEALTH_URL="${{ steps.app_url.outputs.url }}${{ env.HEALTH_CHECK_PATH }}"
@@ -128,7 +128,7 @@ jobs:
 
       - name: Verify dependencies installed
         id: deps_check
-        if: ${{ steps.check_secrets.outputs.has_azure_secrets == true && steps.wait_ready.outputs.ready == true }}
+        if: steps.check_secrets.outputs.has_azure_secrets == 'true' && steps.wait_ready.outputs.ready == 'true'
         run: |
           echo "Verifying key dependencies (Azure deployment)..."
           APP_URL="${{ steps.app_url.outputs.url }}"
@@ -183,13 +183,13 @@ jobs:
             echo "| Check | Status |"
             echo "|-------|--------|"
             if [ "${{ steps.check_secrets.outputs.has_azure_secrets }}" = "true" ]; then
-              echo "| App Ready | ${{ steps.wait_ready.outputs.ready == true && '✅ PASS' || '❌ FAIL' }} |"
-              echo "| Health Endpoint | ${{ steps.health_check.outputs.passed == true && '✅ PASS' || '⚠️ SKIP' }} |"
-              echo "| Dependencies | ${{ steps.deps_check.outputs.streamlit == true && '✅ PASS' || '⚠️ PARTIAL' }} |"
+              [ "${{ steps.wait_ready.outputs.ready }}" = "true" ] && echo "| App Ready | ✅ PASS |" || echo "| App Ready | ❌ FAIL |"
+              [ "${{ steps.health_check.outputs.passed }}" = "true" ] && echo "| Health Endpoint | ✅ PASS |" || echo "| Health Endpoint | ⚠️ SKIP |"
+              [ "${{ steps.deps_check.outputs.streamlit }}" = "true" ] && echo "| Dependencies | ✅ PASS |" || echo "| Dependencies | ⚠️ PARTIAL |"
             else
-              echo "| Dependencies | ${{ steps.smoke_test.outputs.ready == true && '✅ VERIFIED' || '❌ FAIL' }} |"
+              [ "${{ steps.smoke_test.outputs.ready }}" = "true" ] && echo "| Dependencies | ✅ VERIFIED |" || echo "| Dependencies | ❌ FAIL |"
             fi
-            echo "| Tracing | ${{ steps.tracing_check.outputs.initialized == true && '✅ PASS' || '⚠️ PARTIAL' }} |"
+            [ "${{ steps.tracing_check.outputs.initialized }}" = "true" ] && echo "| Tracing | ✅ PASS |" || echo "| Tracing | ⚠️ PARTIAL |"
             echo ""
             echo "**App URL**: ${{ steps.app_url.outputs.url }}"
             echo ""
@@ -207,9 +207,9 @@ jobs:
           echo "completed=true" >> "$GITHUB_OUTPUT"
 
       - name: Notify failure (deployment issue)
-        if: ${{ failure() && steps.check_secrets.outputs.has_azure_secrets == true }}
+        if: failure() && steps.check_secrets.outputs.has_azure_secrets == 'true'
         continue-on-error: true
-        uses: actions/github-script@v8
+        uses: actions/github-script@v7
         with:
           script: |
             const title = "Azure Deployment Validation Failed";
@@ -240,9 +240,9 @@ jobs:
             });
 
       - name: Notify failure (dependencies issue)
-        if: ${{ failure() && steps.check_secrets.outputs.has_azure_secrets != 'true' }}
+        if: failure() && steps.check_secrets.outputs.has_azure_secrets != 'true'
         continue-on-error: true
-        uses: actions/github-script@v8
+        uses: actions/github-script@v7
         with:
           script: |
             const title = "Dashboard Dependency Test Failed";
