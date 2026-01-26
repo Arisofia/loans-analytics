@@ -2,12 +2,19 @@
 
 import json
 import logging
+import os
+import sys
 from datetime import datetime
 
 import pandas as pd
 import streamlit as st
 
-from streamlit_app import bootstrap  # noqa: F401
+try:
+    from streamlit_app import bootstrap  # noqa: F401
+except ImportError:
+    ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if ROOT_DIR not in sys.path:
+        sys.path.insert(0, ROOT_DIR)
 from streamlit_app.components.analytics_tabs import render_advanced_intelligence
 from streamlit_app.components.charts import (
     render_cashflow_trends,
