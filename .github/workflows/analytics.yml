@@ -1,0 +1,38 @@
+name: Run Analytics Pipeline
+
+on:
+    workflow_dispatch:
+    schedule:
+        - cron: "0 6 * * *" # Run daily at 6 AM UTC
+
+jobs:
+    analytics:
+        name: Execute Analytics
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+                  cache: "pip"
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install -r requirements.txt
+
+            - name: Run Complete Analytics
+              run: python run_complete_analytics.py
+              env:
+                  APP_ENV: production
+                  # Add other necessary secrets here from repository secrets
+                  # AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+
+            - name: Upload Dashboard Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: kpi-dashboard
+                  path: exports/complete_kpi_dashboard.json
+                  retention-days: 7
