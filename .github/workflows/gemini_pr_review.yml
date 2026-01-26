@@ -3,89 +3,42 @@ name: Gemini AI PR Review
   workflow_call:
     secrets:
       GEMINI_API_KEY_SIMPLE:
-        required: false
-    inputs:
-      gemini_model:
-        description: Optional override for Gemini model name.
-        required: false
-        type: string
-jobs:
-  gemini-review:
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == false
-    permissions:
-      contents: read
-      pull-requests: write
+        name: Gemini PR Review
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Check Gemini key
-        id: gemini_key
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_SIMPLE }}
-        run: |
-          if [ -n "$GEMINI_API_KEY" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "GEMINI_API_KEY_SIMPLE not configured; skipping Gemini review." >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Install dependencies
-        if: steps.gemini_key.outputs.available == true
-        run: |
-          python -m pip install --upgrade pip
-          pip install google-generativeai requests
-
-      - name: Run Gemini review
-        if: steps.gemini_key.outputs.available == true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_SIMPLE }}
-          GEMINI_MODEL: ${{ inputs.gemini_model }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO_FULL_NAME: ${{ github.repository }}
-          BASE_REF: ${{ github.base_ref }}
-        run: |
-          python - <<'PY'
-          import os
-          import sys
-          import subprocess
-          import textwrap
-          import requests
-          import google.generativeai as genai
-
-          github_token = os.getenv("GITHUB_TOKEN")
-          gemini_key = os.getenv("GEMINI_API_KEY")
-          pr_number = os.getenv("PR_NUMBER")
-          repo = os.getenv("REPO_FULL_NAME")
-          base_ref = os.getenv("BASE_REF")
-          model_override = os.getenv("GEMINI_MODEL")
-
-          if not github_token or not pr_number or not repo:
-              print("Missing GitHub context; skipping Gemini review.")
-              sys.exit(0)
-
-          if not gemini_key:
-              print("GEMINI_API_KEY not configured; skipping AI review.")
-              sys.exit(0)
-
-          genai.configure(api_key=gemini_key)
-
-          model_name = None
-          if model_override:
               model_name = model_override
+          workflow_call:
+            inputs:
+              is_fork:
+                description: 'Whether the PR is from a fork'
+                required: true
+                type: boolean
+              gemini_model:
+                description: 'Model to use for review'
+                required: false
+                type: string
+                default: "gemini-1.5-pro"
+            secrets:
+              GEMINI_API_KEY:
+                required: true
+
           else:
+          review:
+            runs-on: ubuntu-latest
+            if: inputs.is_fork == false
+            steps:
+              - uses: actions/checkout@v4
+              - name: Set up Python
+                uses: actions/setup-python@v5
+                with:
+                  python-version: '3.11'
+              - name: Install dependencies
+                run: pip install -r requirements-dev.txt
+              - name: Run Gemini PR analysis
+                env:
+                  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+                  GEMINI_MODEL: ${{ inputs.gemini_model }}
+                run: |
+                  python -m tools.pr_review_gemini
               try:
                   for model in genai.list_models():
                       if hasattr(model, "supported_generation_methods") and "generateContent" in model.supported_generation_methods:
