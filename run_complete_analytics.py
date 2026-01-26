@@ -218,13 +218,15 @@ def main():
         print(f"✅ Quarterly Scorecard saved to: {scorecard_path}")
     except (ValueError, KeyError) as e:
         print(f"⚠️  Error calculating extended KPIs: {e}")
-        import traceback
-
         traceback.print_exc()
     except Exception as e:
-        import logging
-
-        logging.exception("Unexpected exception occurred: %s", e)
+        logging.basicConfig(
+            level=logging.ERROR,
+            format="%(asctime)s - %(levelname)s - %(message)s"
+        )
+        logging.exception(
+            "Unexpected exception occurred: %s", e
+        )
         raise
 
     # Display results
