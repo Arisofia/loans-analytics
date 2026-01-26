@@ -10,17 +10,29 @@ logging, and configuration management for reliable execution.
 
 import logging
 import json
+import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
-import numpy as np
-import pandas as pd
 
-from src.pipeline.orchestrator import UnifiedPipeline
-from src.analytics.kpi_catalog_processor import KPICatalogProcessor
-from src.config.paths import Paths
-from src.utils.data_normalization import normalize_dataframe_complete
+try:
+    import numpy as np
+    import pandas as pd
+except ImportError as e:
+    print(f"❌ Critical dependency missing: {e.name}")
+    print("👉 Run 'make setup' to install dependencies.")
+    sys.exit(1)
+
+try:
+    from src.pipeline.orchestrator import UnifiedPipeline
+    from src.analytics.kpi_catalog_processor import KPICatalogProcessor
+    from src.config.paths import Paths
+    from src.utils.data_normalization import normalize_dataframe_complete
+except ImportError as e:
+    print(f"❌ Local module missing: {e.name}")
+    print("👉 Ensure you are running from the project root and the 'src' directory is intact.")
+    sys.exit(1)
 
 try:
     from src.azure_tracing import setup_azure_tracing
