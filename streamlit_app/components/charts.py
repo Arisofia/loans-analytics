@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from src.utils.dashboard_utils import compute_cat_agg, format_kpi_value
+from dashboard_utils import compute_cat_agg, format_kpi_value
 
 from .visualizations import apply_theme
 
@@ -54,7 +54,10 @@ def render_cashflow_trends(analytics_facts):
             if "recv_fee_for_month" in latest_cash:
                 c3.metric(
                     "Fees (Received)",
-                    format_kpi_value("recv_fee_for_month", latest_cash["recv_fee_for_month"]),
+                    format_kpi_value(
+                        "recv_fee_for_month",
+                        latest_cash["recv_fee_for_month"],
+                    ),
                 )
             if "sched_revenue" in latest_cash:
                 c4.metric(
@@ -104,11 +107,15 @@ def render_category_breakdown(merged, col):
                 )
                 st.plotly_chart(apply_theme(fig_cat), use_container_width=True)
             else:
-                if "categoria" in merged.columns and "outstanding_loan_value" not in merged.columns:
+                if (
+                    "categoria" in merged.columns
+                    and "outstanding_loan_value" not in merged.columns
+                ):
                     st.info(
-                        "Outstanding loan value column missing. Category breakdown unavailable."
+                        "Outstanding loan value column missing. Category breakdown "
+                        "unavailable."
                     )
                 else:
                     st.info("No outstanding balance data found for category breakdown.")
-        except Exception as exc:
+        except (ValueError, KeyError) as exc:
             st.warning(f"Could not generate category breakdown: {exc}")

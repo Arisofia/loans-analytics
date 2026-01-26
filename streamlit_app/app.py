@@ -114,9 +114,9 @@ def load_kpi_dashboard():
     return json.loads(dashboard_path.read_text())
 
 
-def generate_kpi_exports(_data):
+def generate_kpi_exports(raw_data):
     required = ["loan_data", "customer_data", "historic_payment_data"]
-    missing = [key for key in required if key not in _data]
+    missing = [key for key in required if key not in raw_data]
     if missing:
         raise ValueError(f"Missing required exports: {', '.join(missing)}")
 
@@ -124,10 +124,10 @@ def generate_kpi_exports(_data):
     exports_dir.mkdir(parents=True, exist_ok=True)
 
     catalog_proc = KPICatalogProcessor(
-        _data["loan_data"],
-        _data["historic_payment_data"],
-        _data["customer_data"],
-        _data.get("schedule_data"),
+        raw_data["loan_data"],
+        raw_data["historic_payment_data"],
+        raw_data["customer_data"],
+        raw_data.get("schedule_data"),
     )
 
     dashboard = {
@@ -138,7 +138,7 @@ def generate_kpi_exports(_data):
     try:
         scorecard_df = catalog_proc.get_quarterly_scorecard()
         scorecard_df.to_csv(exports_dir / "quarterly_scorecard.csv", index=False)
-    except Exception as exc:
+    except (ValueError, OSError) as exc:
         logger.warning("Extended KPI generation failed: %s", exc)
 
     output_path = exports_dir / "complete_kpi_dashboard.json"
@@ -147,7 +147,7 @@ def generate_kpi_exports(_data):
         encoding="utf-8",
     )
 
-    return output_path
+    return dashboard_path
 
 
 def build_kpi_snapshot(dashboard, facts_df):
@@ -196,10 +196,10 @@ logger = logging.getLogger(__name__)
 try:
     from src.tracing_setup import enable_auto_instrumentation, init_tracing
 
-    init_tracing(service_name="abaco-dashboard")
-    enable_auto_instrumentation()
-except Exception:
-    logger.warning("Tracing not initialized")
+FONT_IMPORT_URL = (
+    "https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900"
+    "&family=Poppins:wght@100;200;300;400;500;600;700&display=swap"
+)
 
 # Custom CSS
 st.markdown(
@@ -239,14 +239,14 @@ with st.sidebar:
         if _data:
             st.session_state["data"] = _data
             st.session_state["loaded"] = True
-            st.caption(f"Loaded artifacts: {', '.join(_data.keys())}")
+            st.caption(f"Loaded artifacts: {', '.join(raw_data.keys())}")
             if st.button("Generate KPI exports"):
                 with st.spinner("Generating KPI exports from artifacts..."):
                     try:
-                        output_path = generate_kpi_exports(_data)
+                        output_path = generate_kpi_exports(raw_data)
                         st.cache_data.clear()
                         st.success(f"KPI exports generated: {output_path}")
-                    except Exception as exc:
+                    except (ValueError, OSError) as exc:
                         st.error(f"Failed to generate KPI exports: {exc}")
         else:
             st.session_state["loaded"] = False
@@ -260,12 +260,12 @@ with st.sidebar:
         )
 
         if st.button("Ingest Data") or uploaded_files:
-            dfs = {}
+            uploaded_data = {}
             for file in uploaded_files:
                 if file.name.endswith(".csv"):
-                    dfs[file.name] = pd.read_csv(file)
+                    uploaded_data[file.name] = pd.read_csv(file)
                 elif file.name.endswith(".xlsx"):
-                    dfs[file.name] = pd.read_excel(file, sheet_name=None)
+                    uploaded_data[file.name] = pd.read_excel(file, sheet_name=None)
 
             if dfs:
 
@@ -322,12 +322,12 @@ if not st.session_state["loaded"]:
     st.info("Upload data files in the sidebar to unlock loan-level diagnostics.")
     st.stop()
 
-data = st.session_state["data"]
+session_data = st.session_state["data"]
 
 
 # Core Tables Identification (prioritize internal keys from auto-mapping)
-loan_data = data.get("loan_data")
-customer_data = data.get("customer_data", pd.DataFrame())
+loan_data = session_data.get("loan_data")
+customer_data = session_data.get("customer_data", pd.DataFrame())
 
 if loan_data is None:
     # Fallback: use fuzzy mapping helper on all data
