@@ -1,7 +1,7 @@
-
 import pytest
 import pandas as pd
 from src.pipeline.data_ingestion import UnifiedIngestion
+
 
 @pytest.mark.skip(reason="Internal method _par_balances_to_loan_tape refactored or removed")
 @pytest.mark.skip(reason="Internal method refactored")
@@ -30,6 +30,7 @@ def test__par_balances_to_loan_tape(tmp_path, minimal_config):
     assert result["total_receivable_usd"].iloc[0] == pytest.approx(10000.0)
     assert result["dpd_90_plus_usd"].iloc[0] == pytest.approx(100.0)
     assert result["dpd_60_90_usd"].iloc[0] == pytest.approx(200.0 - 100.0)
+
 
 @pytest.mark.skip(reason="Internal method _dpd_to_loan_tape refactored or removed")
 @pytest.mark.skip(reason="Internal method refactored")

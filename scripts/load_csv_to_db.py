@@ -21,6 +21,7 @@ except (ImportError, Exception) as tracing_err:
     logger = logging.getLogger(__name__)
     logger.warning("Azure tracing not initialized: %s", tracing_err)
 
+
 def load_data():
     data_dir = Paths.data_dir() / "abaco"
 

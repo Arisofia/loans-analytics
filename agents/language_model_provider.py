@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Literal, Optional
 
 try:
     import anthropic
+
     ANTHROPIC_AVAILABLE = True
 except ImportError:
     ANTHROPIC_AVAILABLE = False
@@ -75,9 +76,7 @@ class OpenAIProvider(BaseLanguageModelProvider):
     def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4-turbo-preview"):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.model = model
-        should_create_client = (
-            OPENAI_AVAILABLE and self.api_key and openai is not None
-        )
+        should_create_client = OPENAI_AVAILABLE and self.api_key and openai is not None
         if should_create_client:
             self.client = openai.OpenAI(api_key=self.api_key)
         else:
@@ -86,7 +85,9 @@ class OpenAIProvider(BaseLanguageModelProvider):
     def is_available(self) -> bool:
         return OPENAI_AVAILABLE and self.client is not None
 
-    def complete(self, messages: List[Dict], temperature: float = 0.7, **kwargs) -> LanguageModelResponse:
+    def complete(
+        self, messages: List[Dict], temperature: float = 0.7, **kwargs
+    ) -> LanguageModelResponse:
         """Complete using OpenAI API."""
         if not self.is_available():
             raise RuntimeError("OpenAI provider not available")
@@ -127,9 +128,7 @@ class AnthropicProvider(BaseLanguageModelProvider):
         """
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         self.model = model
-        should_create_client = (
-            ANTHROPIC_AVAILABLE and self.api_key and anthropic is not None
-        )
+        should_create_client = ANTHROPIC_AVAILABLE and self.api_key and anthropic is not None
         if should_create_client:
             self.client = anthropic.Anthropic(api_key=self.api_key)
         else:
@@ -139,11 +138,7 @@ class AnthropicProvider(BaseLanguageModelProvider):
         return ANTHROPIC_AVAILABLE and self.client is not None
 
     def complete(
-        self,
-        messages: List[Dict],
-        temperature: float = 0.7,
-        max_tokens: int = 4096,
-        **kwargs
+        self, messages: List[Dict], temperature: float = 0.7, max_tokens: int = 4096, **kwargs
     ) -> LanguageModelResponse:
         """Complete using Anthropic API."""
         if not self.is_available():
@@ -168,7 +163,11 @@ class AnthropicProvider(BaseLanguageModelProvider):
                 **kwargs,
             )
             try:
-                content_text = response.content[0].text if getattr(response, "content", None) and len(response.content) > 0 else ""
+                content_text = (
+                    response.content[0].text
+                    if getattr(response, "content", None) and len(response.content) > 0
+                    else ""
+                )
                 input_tokens = getattr(getattr(response, "usage", None), "input_tokens", 0)
                 output_tokens = getattr(getattr(response, "usage", None), "output_tokens", 0)
                 stop_reason = getattr(response, "stop_reason", None)
@@ -226,7 +225,9 @@ class LanguageModelManager:
             openai_error = getattr(openai.error, "APIError", Exception)
         if provider_name == "anthropic" and ANTHROPIC_AVAILABLE and anthropic is not None:
             try:
-                anthropic_error = getattr(getattr(anthropic, "error", anthropic), "APIError", Exception)
+                anthropic_error = getattr(
+                    getattr(anthropic, "error", anthropic), "APIError", Exception
+                )
             except Exception:
                 pass
 
@@ -247,18 +248,24 @@ class LanguageModelManager:
     def _is_provider_available(self, provider_name: str) -> bool:
         return provider_name in self.providers and self.providers[provider_name].is_available()
 
-    def _try_provider(self, provider_name: str, messages: List[Dict], **kwargs) -> LanguageModelResponse:
+    def _try_provider(
+        self, provider_name: str, messages: List[Dict], **kwargs
+    ) -> LanguageModelResponse:
         provider_obj = self.providers[provider_name]
         return provider_obj.complete(messages, **kwargs)
 
-    def _fallback_to_available_providers(self, primary_name: str, messages: List[Dict], **kwargs) -> LanguageModelResponse:
+    def _fallback_to_available_providers(
+        self, primary_name: str, messages: List[Dict], **kwargs
+    ) -> LanguageModelResponse:
         openai_error = None
         anthropic_error = None
         if OPENAI_AVAILABLE and openai is not None:
             openai_error = getattr(openai.error, "APIError", Exception)
         if ANTHROPIC_AVAILABLE and anthropic is not None:
             try:
-                anthropic_error = getattr(getattr(anthropic, "error", anthropic), "APIError", Exception)
+                anthropic_error = getattr(
+                    getattr(anthropic, "error", anthropic), "APIError", Exception
+                )
             except Exception:
                 anthropic_error = Exception
         for fallback_name, fallback_provider in self.providers.items():

@@ -9,14 +9,18 @@ from typing import Any, Dict, List, Optional
 import yaml
 from pydantic import BaseModel, Field
 
-from python.models.kpi_models import KpiDefinition, KpiRegistry, KpiValidationConfig
+from python.models.kpi_models import KpiDefinition, KpiRegistry
 
 
 class CascadeAuthConfig(BaseModel):
     """Authentication configuration for Cascade API access."""
 
-    token_secret: str = Field(..., description="Environment variable name that holds the Cascade token.")
-    refresh_threshold_hours: int = Field(..., ge=1, description="Hours before expiry when a refresh should occur.")
+    token_secret: str = Field(
+        ..., description="Environment variable name that holds the Cascade token."
+    )
+    refresh_threshold_hours: int = Field(
+        ..., ge=1, description="Hours before expiry when a refresh should occur."
+    )
 
 
 class CascadeEndpoints(BaseModel):

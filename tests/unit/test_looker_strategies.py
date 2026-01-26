@@ -29,9 +29,7 @@ def test_measurement_strategy_max_disburse_date(base_config):
         balances=[100, 50],
     )
     cfg = base_config.copy()
-    cfg["pipeline"]["phases"]["ingestion"][""] = {
-        "measurement_date_strategy": "max_disburse_date"
-    }
+    cfg["pipeline"]["phases"]["ingestion"][""] = {"measurement_date_strategy": "max_disburse_date"}
     ui = UnifiedIngestion(cfg)
     result = ui.__dpd_to_loan_tape(loans, {})
     assert result["measurement_date"].iloc[0].startswith("2023-02-01")
@@ -45,9 +43,7 @@ def test_measurement_strategy_max_maturity_date(base_config):
         balances=[100, 200],
     )
     cfg = base_config.copy()
-    cfg["pipeline"]["phases"]["ingestion"][""] = {
-        "measurement_date_strategy": "max_maturity_date"
-    }
+    cfg["pipeline"]["phases"]["ingestion"][""] = {"measurement_date_strategy": "max_maturity_date"}
     ui = UnifiedIngestion(cfg)
     result = ui.__dpd_to_loan_tape(loans, {})
     assert result["measurement_date"].iloc[0].startswith("2024-03-01")

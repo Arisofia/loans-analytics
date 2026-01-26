@@ -486,9 +486,7 @@ class UnifiedIngestion(IngestionMixin):
         try:
             response = self.retry_policy.execute(
                 _do_request,
-                on_retry=lambda exc: self._log_event(
-                    "http_retry", "retrying", error=str(exc)
-                ),
+                on_retry=lambda exc: self._log_event("http_retry", "retrying", error=str(exc)),
             )
             self.circuit_breaker.record_success()
         except Exception as exc:

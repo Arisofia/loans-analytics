@@ -50,7 +50,7 @@ def calculate_kpi(definition: KpiDefinition, frames: Dict[str, pd.DataFrame]) ->
     else:
         raise NotImplementedError(f"KPI {definition.name} is not yet implemented")
 
-    lower, upper = (definition.validation.validation_range or (None, None))
+    lower, upper = definition.validation.validation_range or (None, None)
     if lower is not None and value < lower:
         raise ValueError(f"KPI {definition.name} below minimum threshold: {value} < {lower}")
     if upper is not None and value > upper:
@@ -59,7 +59,9 @@ def calculate_kpi(definition: KpiDefinition, frames: Dict[str, pd.DataFrame]) ->
     return _round_value(value, definition.validation.precision)
 
 
-def calculate_all_kpis(definitions: Iterable[KpiDefinition], frames: Dict[str, pd.DataFrame]) -> Dict[str, float]:
+def calculate_all_kpis(
+    definitions: Iterable[KpiDefinition], frames: Dict[str, pd.DataFrame]
+) -> Dict[str, float]:
     """Calculate all KPIs from the provided definitions."""
 
     results: Dict[str, float] = {}

@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 
 def _calculate_success_rate(metrics):
     """Calculate success rate from metrics."""
-    pipeline = metrics.get('pipeline', {})
-    total = pipeline.get('total_runs', 0)
-    failed = pipeline.get('failed_runs', 0)
-    
+    pipeline = metrics.get("pipeline", {})
+    total = pipeline.get("total_runs", 0)
+    failed = pipeline.get("failed_runs", 0)
+
     if total == 0:
         return 0
-    
+
     success_rate = ((total - failed) / total) * 100
     return round(success_rate, 1)
 
@@ -31,7 +31,7 @@ def generate_dashboard(pipeline_status=None, agent_status=None, quality_trend=No
     """Generate observability dashboard HTML."""
     output_dir = Path("outputs")
     output_dir.mkdir(exist_ok=True)
-    
+
     # Load all metric files
     metrics_file = output_dir / "opik_metrics.json"
     if metrics_file.exists():
@@ -39,10 +39,10 @@ def generate_dashboard(pipeline_status=None, agent_status=None, quality_trend=No
             metrics = json.load(f)
     else:
         metrics = {}
-    
+
     # Calculate success rate before using it in HTML
     success_rate = _calculate_success_rate(metrics)
-    
+
     # Generate HTML dashboard
     html = f"""
 <!DOCTYPE html>
@@ -196,25 +196,25 @@ def generate_dashboard(pipeline_status=None, agent_status=None, quality_trend=No
 </body>
 </html>
 """
-    
+
     # Write dashboard
     dashboard_file = output_dir / "dashboard.html"
     with open(dashboard_file, "w") as f:
         f.write(html)
-    
+
     logger.info(f"Dashboard generated: {dashboard_file}")
     return dashboard_file
 
 
 if __name__ == "__main__":
     import sys
-    
+
     try:
         # Parse command line arguments
         pipeline_status = None
         agent_status = None
         quality_trend = None
-        
+
         for arg in sys.argv[1:]:
             if arg.startswith("--pipeline-status") and "=" in arg:
                 value = arg.split("=", 1)[1]
@@ -225,7 +225,7 @@ if __name__ == "__main__":
             elif arg.startswith("--quality-trend") and "=" in arg:
                 value = arg.split("=", 1)[1]
                 quality_trend = value if value else None
-        
+
         dashboard_file = generate_dashboard(pipeline_status, agent_status, quality_trend)
         print(f"✓ Dashboard generated: {dashboard_file}")
     except Exception as e:

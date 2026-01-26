@@ -41,13 +41,26 @@ class TestDemoScripts(unittest.TestCase):
             mock_enriched = MagicMock()
             # Ensure columns check passes for visualization
             mock_enriched.columns = [
-                "loan_id", "dpd_bucket", "exposure_segment",
-                "outstanding_balance", "dpd", "days_past_due",
-                "total_receivable_usd", "total_eligible_usd", "discounted_balance_usd",
-                "measurement_date", "dpd_0_7_usd", "dpd_7_30_usd", "dpd_30_60_usd",
-                "dpd_60_90_usd", "dpd_90_plus_usd", "cash_available_usd",
+                "loan_id",
+                "dpd_bucket",
+                "exposure_segment",
+                "outstanding_balance",
+                "dpd",
+                "days_past_due",
+                "total_receivable_usd",
+                "total_eligible_usd",
+                "discounted_balance_usd",
+                "measurement_date",
+                "dpd_0_7_usd",
+                "dpd_7_30_usd",
+                "dpd_30_60_usd",
+                "dpd_60_90_usd",
+                "dpd_90_plus_usd",
+                "cash_available_usd",
                 # Add any additional columns required by plotting logic
-                "balance", "dias_mora", "amount"
+                "balance",
+                "dias_mora",
+                "amount",
             ]
             mock_analyzer.enrich_master_dataframe.return_value = mock_enriched
             mock_analyzer.calculate_hhi.return_value = 5000.0

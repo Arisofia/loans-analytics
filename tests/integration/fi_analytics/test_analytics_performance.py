@@ -21,7 +21,6 @@ import yaml  # noqa: E402
 import pandas as pd  # noqa: E402
 
 
-
 class TestAnalyticsPerformanceRobustness:
     """Performance and robustness tests."""
 
@@ -49,12 +48,18 @@ class TestAnalyticsPerformanceRobustness:
         env = os.environ.copy()
         env["OTEL_SDK_DISABLED"] = "true"
         env["PYTHONPATH"] = os.path.join(os.getcwd(), "python")
-        result = subprocess.run([
-            sys.executable,
-            "python/scripts/run_v2_pipeline.py",
-            "--input",
-            str(large_dataset_path)
-        ], capture_output=True, text=True, timeout=60, env=env)
+        result = subprocess.run(
+            [
+                sys.executable,
+                "python/scripts/run_v2_pipeline.py",
+                "--input",
+                str(large_dataset_path),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            env=env,
+        )
         duration = time.time() - start_time
 
         assert result.returncode == 0
@@ -72,12 +77,17 @@ class TestAnalyticsPerformanceRobustness:
 
         results = []
         for i in range(2):
-            result = subprocess.run([
-                sys.executable,
-                "python/scripts/run_v2_pipeline.py",
-                "--input",
-                str(dataset)
-            ], capture_output=True, text=True, env={**os.environ, "OTEL_SDK_DISABLED": "true", "PYTHONPATH": os.path.join(os.getcwd(), "python")}, check=True)
+            result = subprocess.run(
+                [sys.executable, "python/scripts/run_v2_pipeline.py", "--input", str(dataset)],
+                capture_output=True,
+                text=True,
+                env={
+                    **os.environ,
+                    "OTEL_SDK_DISABLED": "true",
+                    "PYTHONPATH": os.path.join(os.getcwd(), "python"),
+                },
+                check=True,
+            )
 
             match = re.search(r"RUN_ID: ([\w_]+)", result.stdout)
             assert match, f"RUN_ID not found in output: {result.stdout}"
@@ -90,7 +100,6 @@ class TestAnalyticsPerformanceRobustness:
                     else:
                         d[k] = v
                 return d
-
 
             metrics_file = Path("data/metrics") / f"{run_id}_metrics.json"
             with open(metrics_file) as f:
@@ -139,7 +148,6 @@ class TestAnalyticsPerformanceRobustness:
         with open(config_path, "w") as f:
             yaml.dump(config, f)
 
-
         # FIX: Point to the existing pipeline script
         pipeline_script = "python/scripts/run_v2_pipeline.py"
         if not Path(pipeline_script).exists():
@@ -156,12 +164,17 @@ class TestAnalyticsPerformanceRobustness:
         df.to_csv(analytics_test_env["dataset_path"], index=False)
         results = []
         for i in range(2):
-            result = subprocess.run([
-                sys.executable,
-                "python/scripts/run_v2_pipeline.py",
-                "--input",
-                str(dataset)
-            ], capture_output=True, text=True, env={**os.environ, "OTEL_SDK_DISABLED": "true", "PYTHONPATH": os.path.join(os.getcwd(), "python")}, check=True)
+            result = subprocess.run(
+                [sys.executable, "python/scripts/run_v2_pipeline.py", "--input", str(dataset)],
+                capture_output=True,
+                text=True,
+                env={
+                    **os.environ,
+                    "OTEL_SDK_DISABLED": "true",
+                    "PYTHONPATH": os.path.join(os.getcwd(), "python"),
+                },
+                check=True,
+            )
 
             match = re.search(r"RUN_ID: ([\w_]+)", result.stdout)
             assert match, f"RUN_ID not found in output: {result.stdout}"

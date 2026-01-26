@@ -51,7 +51,6 @@ def load_real_data():
 
     if loans_df is None:
         print("⚠️  No loan file found. Creating synthetic data.")
-        import numpy as np
 
         rng = rng.default_rng(42)
         loans_df = pd.DataFrame(
@@ -105,7 +104,6 @@ def load_real_data():
 
     if payments_df is None:
         print("⚠️  No payment file found. Using synthetic payments.")
-        import numpy as np
 
         payments_df = pd.DataFrame(
             {
@@ -145,7 +143,6 @@ def load_real_data():
 
     if customers_df is None:
         print("⚠️  No customer file found. Creating synthetic customer data.")
-        import numpy as np
 
         unique_customers = loans_df["customer_id"].unique()[:50]
         customers_df = pd.DataFrame(
@@ -238,7 +235,10 @@ def main():
     dashboard["timestamp"] = datetime.now().isoformat()
 
     # Fill in missing expected fields with defaults for display compatibility
-    dashboard.setdefault("active_clients", len(loans_df["customer_id"].unique()) if "customer_id" in loans_df.columns else 0)
+    dashboard.setdefault(
+        "active_clients",
+        len(loans_df["customer_id"].unique()) if "customer_id" in loans_df.columns else 0,
+    )
     dashboard.setdefault("total_aum_usd", dashboard.get("total_receivable_usd", 0.0))
     dashboard.setdefault("replines_percentage", 0.0)
     dashboard.setdefault("monthly_revenue_usd", 0.0)
@@ -264,25 +264,33 @@ def main():
         # Map metrics from extended_kpis to dashboard root for display
         exec_strip = extended_kpis.get("executive_strip", {})
         dashboard["total_aum_usd"] = exec_strip.get("total_outstanding", 0.0)
-        dashboard["active_clients"] = exec_strip.get("active_clients", dashboard.get("active_clients", 0))
+        dashboard["active_clients"] = exec_strip.get(
+            "active_clients", dashboard.get("active_clients", 0)
+        )
         dashboard["collection_rate_pct"] = exec_strip.get("collection_rate", 0.0) * 100
-        
+
         # Map monthly revenue from latest month in pricing
         pricing = extended_kpis.get("monthly_pricing", [])
         if pricing:
             latest_pricing = pricing[-1]
-            dashboard["monthly_revenue_usd"] = latest_pricing.get("true_interest_payment", 0.0) + \
-                                              latest_pricing.get("true_fee_payment", 0.0) + \
-                                              latest_pricing.get("true_other_payment", 0.0) - \
-                                              latest_pricing.get("true_rebates", 0.0)
-            
+            dashboard["monthly_revenue_usd"] = (
+                latest_pricing.get("true_interest_payment", 0.0)
+                + latest_pricing.get("true_fee_payment", 0.0)
+                + latest_pricing.get("true_other_payment", 0.0)
+                - latest_pricing.get("true_rebates", 0.0)
+            )
+
             if dashboard["active_clients"] > 0:
-                dashboard["revenue_per_active_client_monthly"] = dashboard["monthly_revenue_usd"] / dashboard["active_clients"]
-                dashboard["revenue_per_active_client_annual"] = dashboard["revenue_per_active_client_monthly"] * 12
+                dashboard["revenue_per_active_client_monthly"] = (
+                    dashboard["monthly_revenue_usd"] / dashboard["active_clients"]
+                )
+                dashboard["revenue_per_active_client_annual"] = (
+                    dashboard["revenue_per_active_client_monthly"] * 12
+                )
 
         # Map growth metrics if available
         if len(pricing) >= 2:
-            prev_rev = pricing[-2].get("true_interest_payment", 0.0) # Simplified
+            prev_rev = pricing[-2].get("true_interest_payment", 0.0)  # Simplified
             curr_rev = pricing[-1].get("true_interest_payment", 0.0)
             if prev_rev > 0:
                 dashboard["mom_growth_pct"] = ((curr_rev / prev_rev) - 1) * 100

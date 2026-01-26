@@ -59,6 +59,7 @@ if str(repo_root) not in sys.path:
 # Tests and other call sites may rely on the historical name `_sanitize_and_resolve`.
 # Provide a stable module-level function to avoid import-time surprises.
 
+
 def _sanitize_and_resolve(path_str: str, allowed_dir: Path) -> Path:
     """Resolve a candidate path under `allowed_dir` and reject traversal/absolute paths.
 
@@ -86,7 +87,6 @@ def _sanitize_and_resolve(path_str: str, allowed_dir: Path) -> Path:
     except Exception:
         raise ValueError("Invalid input file; must be under data/archives/")
     return resolved
-
 
 
 app = FastAPI(title="ABACO Analytics API")

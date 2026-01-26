@@ -77,7 +77,8 @@ def test_monthly_pricing_parity():
 
     df_py = _df_from_list(py_records).sort_values("year_month").reset_index(drop=True)
 
-    df_sql = _query_df("""
+    df_sql = _query_df(
+        """
         SELECT
             year_month,
             weighted_apr,
@@ -86,7 +87,8 @@ def test_monthly_pricing_parity():
             weighted_effective_rate
         FROM analytics.kpi_monthly_pricing
         ORDER BY year_month
-        """)
+        """
+    )
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = df_sql.reset_index(drop=True)
 
@@ -126,7 +128,8 @@ def test_monthly_risk_parity():
 
     df_py = _df_from_list(py_records).sort_values("year_month").reset_index(drop=True)
 
-    df_sql = _query_df("""
+    df_sql = _query_df(
+        """
         SELECT
             year_month,
             total_outstanding,
@@ -142,7 +145,8 @@ def test_monthly_risk_parity():
             default_pct
         FROM analytics.kpi_monthly_risk
         ORDER BY year_month
-        """)
+        """
+    )
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = df_sql.reset_index(drop=True)
 
@@ -193,7 +197,8 @@ def test_customer_types_parity():
         .reset_index(drop=True)
     )
 
-    df_sql = _query_df("""
+    df_sql = _query_df(
+        """
         SELECT
             year_month,
             customer_type,
@@ -201,7 +206,8 @@ def test_customer_types_parity():
             disbursement_amount
         FROM analytics.kpi_customer_types
         ORDER BY year_month, customer_type
-        """)
+        """
+    )
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = df_sql.sort_values(["year_month", "customer_type"]).reset_index(drop=True)
 
@@ -243,11 +249,13 @@ def test_active_unique_customers_parity():
         .reset_index(drop=True)
     )
 
-    df_sql = _query_df("""
+    df_sql = _query_df(
+        """
         SELECT year_month, active_customers
         FROM analytics.kpi_active_unique_customers
         ORDER BY year_month
-        """)
+        """
+    )
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = (
         df_sql.rename(columns={"year_month": "month_end"})
@@ -288,12 +296,14 @@ def test_average_ticket_parity():
         .reset_index(drop=True)
     )
 
-    df_sql = _query_df("""
+    df_sql = _query_df(
+        """
         SELECT year_month, ticket_band, num_loans, avg_ticket,
                total_disbursement
         FROM analytics.kpi_average_ticket
         ORDER BY year_month, ticket_band
-        """)
+        """
+    )
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = df_sql.sort_values(["year_month", "ticket_band"]).reset_index(drop=True)
 
@@ -329,11 +339,13 @@ def test_intensity_segmentation_parity():
     if "customers" in df_py.columns:
         df_py = df_py.rename(columns={"customers": "unique_customers"})
 
-    df_sql = _query_df("""
+    df_sql = _query_df(
+        """
         SELECT year_month, use_intensity, unique_customers, disbursement_amount
         FROM analytics.kpi_intensity_segmentation
         ORDER BY year_month, use_intensity
-        """)
+        """
+    )
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
 
     key_cols = ["year_month", "use_intensity"]
@@ -367,11 +379,13 @@ def test_line_size_segmentation_parity():
     if "customers" in df_py.columns:
         df_py = df_py.rename(columns={"customers": "unique_customers"})
 
-    df_sql = _query_df("""
+    df_sql = _query_df(
+        """
         SELECT year_month, line_band, unique_customers, disbursement_amount
         FROM analytics.kpi_line_size_segmentation
         ORDER BY year_month, line_band
-        """)
+        """
+    )
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
 
     key_cols = ["year_month", "line_band"]
@@ -402,12 +416,14 @@ def test_concentration_parity():
         df_py = df_py.rename(columns={"month_end": "year_month"})
     df_py = df_py.sort_values("year_month").reset_index(drop=True)
 
-    df_sql = _query_df("""
+    df_sql = _query_df(
+        """
         SELECT year_month, total_outstanding, top10_concentration,
                top3_concentration, top1_concentration
         FROM analytics.kpi_concentration
         ORDER BY year_month
-        """)
+        """
+    )
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
 
     common_months = sorted(set(df_py["year_month"]) & set(df_sql["year_month"]))
@@ -448,11 +464,13 @@ def test_weighted_apr_parity():
         .reset_index(drop=True)
     )
 
-    df_sql = _query_df("""
+    df_sql = _query_df(
+        """
         SELECT year_month, weighted_apr
         FROM analytics.kpi_weighted_apr
         ORDER BY year_month
-        """)
+        """
+    )
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = (
         df_sql.rename(columns={"year_month": "month_end"})
@@ -486,11 +504,13 @@ def test_weighted_fee_rate_parity():
         .reset_index(drop=True)
     )
 
-    df_sql = _query_df("""
+    df_sql = _query_df(
+        """
         SELECT year_month, weighted_fee_rate
         FROM analytics.kpi_weighted_fee_rate
         ORDER BY year_month
-        """)
+        """
+    )
     df_sql["year_month"] = pd.to_datetime(df_sql["year_month"]).dt.normalize()
     df_sql = (
         df_sql.rename(columns={"year_month": "month_end"})

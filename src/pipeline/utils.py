@@ -1,4 +1,3 @@
-
 import os
 import json
 import hashlib
@@ -10,7 +9,6 @@ from dataclasses import dataclass
 import pandas as pd
 
 T = TypeVar("T")
-
 
 
 @dataclass
@@ -33,8 +31,9 @@ class RetryPolicy:
                 if on_retry:
                     on_retry(e)
                 if attempt < self.max_retries:
-                    sleep_time = self.backoff_seconds * (2 ** attempt)
+                    sleep_time = self.backoff_seconds * (2**attempt)
                     import random
+
                     if self.jitter_seconds > 0:
                         sleep_time += random.uniform(0, self.jitter_seconds)
                     time.sleep(sleep_time)
