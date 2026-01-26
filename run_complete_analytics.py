@@ -11,6 +11,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 # Add project to path
@@ -34,6 +35,7 @@ from src.pipeline.orchestrator import UnifiedPipeline  # noqa: E402
 def load_real_data():
     """Load real ABACO loan data files."""
     base_path = Path(__file__).parent
+    rng = np.random.default_rng(42)
 
     # Try to find loan data
     loan_files = [
@@ -51,8 +53,6 @@ def load_real_data():
 
     if loans_df is None:
         print("⚠️  No loan file found. Creating synthetic data.")
-
-        rng = rng.default_rng(42)
         loans_df = pd.DataFrame(
             {
                 "loan_id": [f"L{i:05d}" for i in range(100)],
@@ -104,7 +104,10 @@ def load_real_data():
 
     if payments_df is None:
         print("⚠️  No payment file found. Using synthetic payments.")
+<<<<<<< HEAD
 
+=======
+>>>>>>> 47943cb19198f56f4d0e51ca831ad9f64b0847e2
         payments_df = pd.DataFrame(
             {
                 "payment_id": [f"P{i:06d}" for i in range(len(loans_df) * 2)],
@@ -143,7 +146,10 @@ def load_real_data():
 
     if customers_df is None:
         print("⚠️  No customer file found. Creating synthetic customer data.")
+<<<<<<< HEAD
 
+=======
+>>>>>>> 47943cb19198f56f4d0e51ca831ad9f64b0847e2
         unique_customers = loans_df["customer_id"].unique()[:50]
         customers_df = pd.DataFrame(
             {
