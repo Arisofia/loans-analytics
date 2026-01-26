@@ -18,11 +18,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Data models for typed access (mirrors tools/check_kpi_sync.py report)
@@ -199,8 +203,22 @@ def find_repo_root(start: Path) -> Path:
 
 
 def print_high_level_summary(report: KpiSyncReport) -> None:
-    # Logging removed for production. Use logging module if needed.
-    pass
+    """Print a human-readable summary of the KPI sync status."""
+    logger.info("=== ABACO KPI PLATFORM STATUS ===")
+    logger.info("Repo Root: %s", report.repo_root)
+    logger.info("Git Branch: %s", report.git.branch or "N/A")
+    logger.info("Git Commit: %s", report.git.commit or "N/A")
+    
+    missing_files = [f.path for f in report.file_checks if not f.exists]
+    if missing_files:
+        logger.error("Status: ❌ MISSING FILES (%s)", ", ".join(missing_files))
+    elif not report.json_check.exists:
+        logger.error("Status: ❌ JSON EXPORT MISSING")
+    elif not report.json_check.valid_json:
+        logger.error("Status: ❌ INVALID JSON")
+    else:
+        logger.info("Status: ✅ OK (%d KPI groups)", len(report.json_check.kpi_groups))
+    logger.info("=================================")
 
 
 # ---------------------------------------------------------------------------

@@ -14,7 +14,6 @@ interface PathInsight extends CheckTarget {
   modified?: string
 }
 
-const repoName = 'abaco-loans-analytics'
 const repoRoot = path.resolve(process.cwd())
 
 function normalizeUserPath(userPath: string): string {

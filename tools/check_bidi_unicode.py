@@ -4,8 +4,12 @@ Pre-commit hook to detect and prevent hidden/bidirectional Unicode characters in
 This prevents supply-chain attacks and accidental parser bypass issues.
 """
 
+import logging
 import sys
 from pathlib import Path
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 # Unicode bidirectional markers that are security risks
 BIDI_MARKERS = [
@@ -38,8 +42,8 @@ def check_file(filepath):
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
-    except Exception:
-        # Logging removed for production. Use logging module if needed.
+    except Exception as e:
+        logger.error("Error reading %s: %s", filepath, e)
         return False
 
     issues = []
@@ -51,7 +55,9 @@ def check_file(filepath):
             issues.append(f"  Line {line_num}: Hidden Unicode character {char_code}")
 
     if issues:
-        # Logging removed for production. Use logging module if needed.
+        logger.error("Hidden/BiDi Unicode characters detected in %s:", filepath)
+        for issue in issues:
+            logger.error(issue)
         return False
 
     return True
@@ -61,13 +67,13 @@ def main():
     # Check only YAML files in workflows
     workflow_dir = Path(".github/workflows")
     if not workflow_dir.exists():
-        # Logging removed for production. Use logging module if needed.
+        logger.warning("Workflow directory .github/workflows not found.")
         return 0
 
     yaml_files = list(workflow_dir.glob("*.yml")) + list(workflow_dir.glob("*.yaml"))
 
     if not yaml_files:
-        # Logging removed for production. Use logging module if needed.
+        logger.info("No YAML workflow files found to check.")
         return 0
 
     all_ok = True

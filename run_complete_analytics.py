@@ -18,11 +18,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
 
+# Initialize basic logging immediately for early failure reporting
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 try:
     import numpy as np
     import pandas as pd
-except ImportError:
-    # Logging removed for production. Use logging module if needed.
+except ImportError as e:
+    logger.error("Critical dependency missing: %s", e)
     sys.exit(1)
 
 try:
@@ -30,17 +34,16 @@ try:
     from src.analytics.kpi_catalog_processor import KPICatalogProcessor
     from src.config.paths import Paths
     from src.utils.data_normalization import normalize_dataframe_complete
-except ImportError:
-    # Logging removed for production. Use logging module if needed.
+except ImportError as e:
+    logger.error("Local module missing: %s", e)
     sys.exit(1)
 
 try:
     from src.azure_tracing import setup_azure_tracing
+    # Override logger with Azure-instrumented version if available
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for run_complete_analytics")
 except ImportError as tracing_err:
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
     logger.warning("Azure tracing not initialized: %s", tracing_err)
 
 
@@ -59,8 +62,8 @@ def load_real_data(
         A tuple containing loans, payments, customers, and schedule dataframes.
     """
     loans_df = load_loans(paths)
-    payments_df = load_payments(paths, loans_df)
-    customers_df = load_customers(paths, loans_df)
+    payments_df = load_payments(paths)
+    customers_df = load_customers(paths)
     schedule_df = load_schedule(paths)
     return loans_df, payments_df, customers_df, schedule_df
 
@@ -83,7 +86,7 @@ def load_loans(paths: Paths) -> pd.DataFrame:
 
 
 def load_payments(
-    paths: Paths, loans_df: pd.DataFrame
+    paths: Paths
 ) -> pd.DataFrame:
     """Load payment data from configured paths."""
     payment_files = [paths.PAYMENT_DATA_PATH, paths.PAYMENT_EXPORT_PATH]
@@ -102,7 +105,7 @@ def load_payments(
 
 
 def load_customers(
-    paths: Paths, loans_df: pd.DataFrame
+    paths: Paths
 ) -> pd.DataFrame:
     """Load customer data from configured paths."""
     customer_files = [paths.CUSTOMER_DATA_PATH, paths.CUSTOMER_EXPORT_PATH]
