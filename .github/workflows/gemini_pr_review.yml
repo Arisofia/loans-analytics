@@ -6,6 +6,14 @@ on:
         description: Whether the pull request originates from a fork.
         required: true
         type: boolean
+      pr_number:
+        description: Pull request number for the review.
+        required: true
+        type: number
+      base_ref:
+        description: Base branch name for diff generation.
+        required: true
+        type: string
       gemini_model:
         description: Optional override for Gemini model name.
         required: false
@@ -15,13 +23,12 @@ on:
       GEMINI_API_KEY:
         description: 'Gemini API Key for review'
         required: false
-        type: string
 
 jobs:
   gemini_review:
     name: Gemini PR Review
     runs-on: ubuntu-latest
-    if: ${{ inputs.is_fork == false }}
+    if: inputs.is_fork == false
     permissions:
       contents: read
       pull-requests: write
@@ -30,8 +37,15 @@ jobs:
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
       - name: Run Gemini Review
-        if: ${{ secrets.GEMINI_API_KEY_SIMPLE != '' }}
-        uses: google-gemini/gemini-github-action@v1
-        with:
-          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
-          gemini-model: ${{ inputs.gemini_model }}
+        if: secrets.GEMINI_API_KEY != ''
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ inputs.gemini_model }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          REPO_FULL_NAME: ${{ github.repository }}
+          BASE_REF: ${{ inputs.base_ref }}
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install google-generativeai requests
+          python .github/scripts/gemini_pr_review.py
