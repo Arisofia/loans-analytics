@@ -1,4 +1,0 @@
-# Backend test-specific dependencies
-requests-mock==1.12.1
-pytest-mock==3.15.1
-# Note: core runtime deps are expected in root requirements.txt
