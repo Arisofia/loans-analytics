@@ -169,11 +169,9 @@ jobs:
   # Job 5: Generate observability dashboard
   generate-observability-dashboard:
     needs:
-      [
-        analyze-pipeline-health,
-        analyze-agent-performance,
-        check-data-quality-trends,
-      ]
+      - analyze-pipeline-health
+      - analyze-agent-performance
+      - check-data-quality-trends
     if: needs.analyze-pipeline-health.result == 'success' && needs.analyze-agent-performance.result == 'success' && needs.check-data-quality-trends.result == 'success'
     runs-on: ubuntu-latest
     steps:
@@ -212,51 +210,72 @@ jobs:
   # Job 6: Alert on critical issues
   alert-on-critical-issues:
     needs:
-      [
-        analyze-pipeline-health,
-        analyze-agent-performance,
-        check-data-quality-trends,
-      ]
+      - fetch-opik-metrics
+      - analyze-pipeline-health
+      - analyze-agent-performance
+      - check-data-quality-trends
 
     if: >
       always() && needs.fetch-opik-metrics.outputs.metrics-available == 'true' && (
-        (needs.analyze-pipeline-health.result == 'success' && needs.analyze-pipeline-health.outputs.pipeline-status != 'healthy') ||
-        (needs.analyze-agent-performance.result == 'success' && needs.analyze-agent-performance.outputs.agent-status != 'optimal') ||
-        (needs.check-data-quality-trends.result == 'success' && needs.check-data-quality-trends.outputs.anomalies-detected == 'true')
+        needs.analyze-pipeline-health.result != 'success' ||
+        needs.analyze-agent-performance.result != 'success' ||
+        needs.check-data-quality-trends.result != 'success' ||
+        needs.analyze-pipeline-health.outputs.pipeline-status != 'healthy' ||
+        needs.analyze-agent-performance.outputs.agent-status != 'optimal' ||
+        needs.check-data-quality-trends.outputs.anomalies-detected == 'true'
       )
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Send Alert
-        run: |
-          echo "CRITICAL issue detected, sending alert..."
-          ALERT_MESSAGE="CRITICAL ALERT: System health issues detected\n"
-          ALERT_MESSAGE+="Pipeline: ${{ needs.analyze-pipeline-health.outputs.pipeline-status }}\n"
-          ALERT_MESSAGE+="Agents: ${{ needs.analyze-agent-performance.outputs.agent-status }}\n"
-          ALERT_MESSAGE+="Data Quality: ${{ needs.check-data-quality-trends.outputs.quality-trend }}"
-          # Placeholder for webhook call
-          echo "Alert payload: $ALERT_MESSAGE"
+      - name: Notify Leadership of Critical Issues
+        uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
+        with:
+          payload: |
+            {
+              "text": "🚨 Critical System Health Issues Detected",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Status Report:*\n• Pipeline: `${{ needs.analyze-pipeline-health.outputs.pipeline-status }}`\n• Agents: `${{ needs.analyze-agent-performance.outputs.agent-status }}`\n• Data Quality: `${{ needs.check-data-quality-trends.outputs.quality-trend }}`"
+                  }
+                }
+              ]
+            }
 
   # Job 7: Daily system health summary
   send-daily-summary:
     needs:
-      [
-        analyze-pipeline-health,
-        analyze-agent-performance,
-        check-data-quality-trends,
-        generate-observability-dashboard,
-      ]
+      - fetch-opik-metrics
+      - analyze-pipeline-health
+      - analyze-agent-performance
+      - check-data-quality-trends
+      - generate-observability-dashboard
 
+    if: always() && needs.fetch-opik-metrics.outputs.metrics-available == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Send Summary
-        run: |
-          echo "Sending daily system health summary..."
-          SUMMARY="Daily System Health Report ($(date +%Y-%m-%d))\n\n"
-          SUMMARY+="✅ Data Pipeline: ${{ needs.analyze-pipeline-health.outputs.pipeline-status }}\n"
-          SUMMARY+="🤖 Agent Performance: ${{ needs.analyze-agent-performance.outputs.agent-status }}\n"
-          SUMMARY+="📊 Data Quality: ${{ needs.check-data-quality-trends.outputs.quality-trend }}\n\n"
-          SUMMARY+="View detailed dashboard in GitHub Actions artifacts."
-          # Placeholder for webhook call
-          echo "Summary payload: $SUMMARY"
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Send Daily Summary to Slack
+        uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
+        with:
+          payload: |
+            {
+              "text": "📊 Daily System Health Summary",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Daily Report (${{ steps.date.outputs.date }})*\n• Data Pipeline: `${{ needs.analyze-pipeline-health.outputs.pipeline-status }}`\n• Agent Performance: `${{ needs.analyze-agent-performance.outputs.agent-status }}`\n• Data Quality: `${{ needs.check-data-quality-trends.outputs.quality-trend }}`\n\n_View detailed dashboard in GitHub Actions artifacts._"
+                  }
+                }
+              ]
+            }

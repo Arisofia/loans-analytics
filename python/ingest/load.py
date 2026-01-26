@@ -1,27 +1,20 @@
 """Lightweight loader for persisting ingestion outputs."""
-
 import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
-
 import pandas as pd
-
 LOG = logging.getLogger("ingest_loader")
-
-
 class DataLoader:
     def __init__(self, base_path: Optional[str] = None):
         self.base_path = Path(base_path or "data")
         self.base_path.mkdir(parents=True, exist_ok=True)
-
     def _build_path(self, dataset: str, suffix: Optional[str], extension: str) -> Path:
         filename = f"{dataset}"
         if suffix:
             filename = f"{filename}_{suffix}"
         return self.base_path / f"{filename}.{extension}"
-
     def persist(self, df: pd.DataFrame, dataset: str, suffix: Optional[str] = None):
         csv_path = self._build_path(dataset, suffix, "csv")
         parquet_path = self._build_path(dataset, suffix, "parquet")
@@ -35,7 +28,6 @@ class DataLoader:
             parquet_path,
         )
         return csv_path, parquet_path
-
     def write_manifest(
         self,
         dataset: str,

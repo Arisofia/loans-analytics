@@ -183,13 +183,13 @@ jobs:
             echo "| Check | Status |"
             echo "|-------|--------|"
             if [ "${{ steps.check_secrets.outputs.has_azure_secrets }}" = "true" ]; then
-              echo "| App Ready | ${{ steps.wait_ready.outputs.ready == 'true' && '✅ PASS' || '❌ FAIL' }} |"
-              echo "| Health Endpoint | ${{ steps.health_check.outputs.passed == 'true' && '✅ PASS' || '⚠️ SKIP' }} |"
-              echo "| Dependencies | ${{ steps.deps_check.outputs.streamlit == 'true' && '✅ PASS' || '⚠️ PARTIAL' }} |"
+              [ "${{ steps.wait_ready.outputs.ready }}" = "true" ] && echo "| App Ready | ✅ PASS |" || echo "| App Ready | ❌ FAIL |"
+              [ "${{ steps.health_check.outputs.passed }}" = "true" ] && echo "| Health Endpoint | ✅ PASS |" || echo "| Health Endpoint | ⚠️ SKIP |"
+              [ "${{ steps.deps_check.outputs.streamlit }}" = "true" ] && echo "| Dependencies | ✅ PASS |" || echo "| Dependencies | ⚠️ PARTIAL |"
             else
-              echo "| Dependencies | ${{ steps.smoke_test.outputs.ready == 'true' && '✅ VERIFIED' || '❌ FAIL' }} |"
+              [ "${{ steps.smoke_test.outputs.ready }}" = "true" ] && echo "| Dependencies | ✅ VERIFIED |" || echo "| Dependencies | ❌ FAIL |"
             fi
-            echo "| Tracing | ${{ steps.tracing_check.outputs.initialized == 'true' && '✅ PASS' || '⚠️ PARTIAL' }} |"
+            [ "${{ steps.tracing_check.outputs.initialized }}" = "true" ] && echo "| Tracing | ✅ PASS |" || echo "| Tracing | ⚠️ PARTIAL |"
             echo ""
             echo "**App URL**: ${{ steps.app_url.outputs.url }}"
             echo ""

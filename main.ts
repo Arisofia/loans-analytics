@@ -7,15 +7,12 @@ interface CheckTarget {
   label: string
   path: string
 }
-
 interface PathInsight extends CheckTarget {
   exists: boolean
   type: 'directory' | 'file' | 'other'
   modified?: string
 }
-
 const repoRoot = path.resolve(process.cwd())
-
 function normalizeUserPath(userPath: string): string {
   if (!userPath) {
     throw new Error('Path argument is empty')
@@ -40,7 +37,6 @@ function normalizeUserPath(userPath: string): string {
   }
   return resolved
 }
-
 const defaultAreas: CheckTarget[] = [
   { label: 'Web dashboard', path: 'apps/web' },
   { label: 'Analytics pipelines', path: 'apps/analytics' },
@@ -52,18 +48,15 @@ const normalizedDefaultAreas = defaultAreas.map((target) => ({
   ...target,
   path: normalizeUserPath(target.path),
 }))
-
 const args = process.argv.slice(2)
 const { strict, json, extras } = parseArgs(args)
 const keyAreas = [...normalizedDefaultAreas, ...extras]
-
 function parseArgs(args: string[]) {
   const options = {
     strict: false,
     json: false,
     extras: [] as CheckTarget[],
   }
-
   for (const arg of args) {
     if (arg === '--strict') options.strict = true
     else if (arg === '--json') options.json = true
@@ -85,10 +78,8 @@ function parseArgs(args: string[]) {
       }
     }
   }
-
   return options
 }
-
 function describePathSync(target: CheckTarget): PathInsight {
   try {
     const stats = fs.lstatSync(target.path)
@@ -107,9 +98,7 @@ function describePathSync(target: CheckTarget): PathInsight {
     return { ...target, exists: false, type: 'other' }
   }
 }
-
 const results = keyAreas.map(describePathSync)
-
 if (json) {
   console.log(JSON.stringify(results, null, 2))
 } else {
@@ -122,7 +111,5 @@ if (json) {
     )
   }
 }
-
 if (strict && results.some((entry) => !entry.exists)) process.exit(1)
-
 export {} // Make this file a module to allow top-level await
