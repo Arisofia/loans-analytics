@@ -1,54 +1,42 @@
 name: CI
 
-name: CI
-
-          run: echo "CI failed! Please check the logs."
+on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
-
-  changes:
+jobs:
+  quality:
+    name: Code Quality & Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: List root directory contents
-        run: ls -l
-
-      - name: Build with Gradle (clean, Java 21)
-        run: ./gradlew clean build --no-daemon
-
-      - name: Run tests
-        run: ./gradlew test --no-daemon
-
-      - name: Coverage report
-        run: coverage report --fail-under=85
-
-  sonar:
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' }}
-    steps:
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v5.0.0
-        with:
-          filters: |
-            analytics:
-              - 'python/**'
-              - 'src/**'
-              - 'tests/**'
-            web:
-              - 'apps/web/**'
-
-  analytics:
-          - name: Upload coverage artifact
-            uses: actions/upload-artifact@v4
-            with:
-              name: analytics-coverage
-              path: coverage-src.xml
       - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r dev-requirements.txt
+
+      - name: Run Formatting Check
+        run: |
+          black --check .
+          isort --check-only .
+
+      - name: Run Linting
+        run: |
+          ruff check .
+          flake8 src
+
+      - name: Run Type Checking
+        run: mypy src
+
+      - name: Run Tests
+        run: pytest
