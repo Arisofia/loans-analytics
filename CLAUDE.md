@@ -12,7 +12,6 @@
 - **Unit Tests**: `npm run test:unit` (Jest)
 - **E2E Tests**: `npm run test:e2e` (Playwright)
 - **CI E2E**: `npm run test:e2e:ci`
-- **Seed Data**: `npm run e2e:seed`
 
 ## Code Style & Linting
 
@@ -25,7 +24,6 @@
 ## Documentation
 
 - **Source of Truth**: `UNIFIED_DOCS.md` at the root.
-- **Legacy Docs**: Most files in `docs/` have been consolidated or removed.
 
 ## Environment
 
