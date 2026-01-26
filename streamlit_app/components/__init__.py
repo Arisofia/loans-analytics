@@ -1,1 +1,1 @@
-"""Streamlit dashboard components."""
+"""Streamlit components for Abaco dashboards."""

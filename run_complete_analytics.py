@@ -18,7 +18,15 @@ from src.pipeline.orchestrator import UnifiedPipeline
 # Set project root
 project_root = Path(__file__).parent.parent
 
-# --- Data Loading Helpers ---
+
+try:
+    from src.azure_tracing import setup_azure_tracing
+    logger, _ = setup_azure_tracing()
+    logger.info("Azure tracing initialized for run_complete_analytics")
+except (ImportError, Exception) as tracing_err:
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logger.warning("Azure tracing not initialized: %s", tracing_err)
 
 
 def load_real_data():
@@ -46,6 +54,43 @@ def load_loans(base_path, rng):
     print("⚠️  No loan file found. Creating synthetic data.")
     # Fallback: create synthetic data
 
+<<<<<<< HEAD
+    if loans_df is None:
+        print("⚠️  No loan file found. Creating synthetic data.")
+        loans_df = pd.DataFrame(
+            {
+                "loan_id": [f"L{i:05d}" for i in range(100)],
+                "customer_id": [
+                    f"C{rng.randint(1, 51):04d}" for i in range(100)
+                ],
+                "disbursement_date": pd.date_range("2023-01-01", periods=100, freq="3D"),
+                "loan_end_date": pd.date_range("2023-02-01", periods=100, freq="3D"),
+                "disburse_principal": rng.uniform(1000, 50000, 100),
+                "outstanding_balance": rng.uniform(500, 45000, 100),
+                "dpd": rng.choice([0, 15, 45, 90], 100, p=[0.7, 0.15, 0.1, 0.05]),
+                "loan_status": rng.choice(
+                    ["Active", "Complete", "Defaulted"], 100, p=[0.6, 0.3, 0.1]
+                ),
+                "product_type": rng.choice(["Factoring", "LOC", "Term Loan"], 100),
+            }
+        )
+    else:
+        # Map specific columns
+        rename_map = {
+            "Loan ID": "loan_id",
+            "Customer ID": "customer_id",
+            "Disbursement Date": "disbursement_date",
+            "Disbursement Amount": "disbursement_amount",
+            "Outstanding Loan Value": "outstanding_loan_value",
+            "Loan Status": "loan_status",
+            "Product Type": "product_type",
+            "Days in Default": "days_past_due",
+            "Interest Rate APR": "interest_rate_apr",
+        }
+        for old, new in rename_map.items():
+            if old in loans_df.columns:
+                loans_df = loans_df.rename(columns={old: new})
+=======
     return pd.DataFrame({
         "loan_id": [f"L{i:05d}" for i in range(100)],
         "customer_id": [f"C{rng.randint(1, 51):04d}" for _ in range(100)],
@@ -57,6 +102,7 @@ def load_loans(base_path, rng):
         "loan_status": rng.choice(["Active", "Complete", "Defaulted"], 100, p=[0.6, 0.3, 0.1]),
         "product_type": rng.choice(["Factoring", "LOC", "Term Loan"], 100),
     })
+>>>>>>> 35fd07e53487b7aab81c8b02a6900545ec7d98dd
 
 
 def load_payments(base_path, rng, loans_df):
@@ -79,8 +125,38 @@ def load_payments(base_path, rng, loans_df):
         "payment_amount": rng.uniform(100, 5000, n),
     })
 
+<<<<<<< HEAD
+    if payments_df is None:
+        print("⚠️  No payment file found. Using synthetic payments.")
+        payments_df = pd.DataFrame(
+            {
+                "payment_id": [f"P{i:06d}" for i in range(len(loans_df) * 2)],
+                "loan_id": rng.choice(loans_df["loan_id"], len(loans_df) * 2),
+                "payment_date": pd.date_range(
+                    "2023-01-01", periods=len(loans_df) * 2, freq="D"
+                ),
+                "payment_amount": rng.uniform(100, 5000, len(loans_df) * 2),
+            }
+        )
+    else:
+        # Map specific columns
+        rename_map = {
+            "Loan ID": "loan_id",
+            "True Payment Date": "true_payment_date",
+            "True Total Payment": "true_total_payment",
+            "True Principal Payment": "true_principal_payment",
+            "True Interest Payment": "true_interest_payment",
+            "True Rabates": "true_rebates",
+        }
+        for old, new in rename_map.items():
+            if old in payments_df.columns:
+                payments_df = payments_df.rename(columns={old: new})
+
+    # Try to find customer data
+=======
 
 def load_customers(base_path, rng, loans_df):
+>>>>>>> 35fd07e53487b7aab81c8b02a6900545ec7d98dd
     customer_files = [
         base_path / "data" / "abaco" / "customer_data.csv",
         base_path / "customers.csv",
@@ -98,8 +174,46 @@ def load_customers(base_path, rng, loans_df):
         "customer_type": rng.choice(["SME", "Corporate", "Individual"], len(unique_customers)),
     })
 
+<<<<<<< HEAD
+    if customers_df is None:
+        print("⚠️  No customer file found. Creating synthetic customer data.")
+        unique_customers = loans_df["customer_id"].unique()[:50]
+        customers_df = pd.DataFrame(
+            {
+                "customer_id": unique_customers,
+                "customer_type": rng.choice(
+                    ["SME", "Corporate", "Individual"], len(unique_customers)
+                ),
+            }
+        )
+    else:
+        # Map specific columns if they exist with different names
+        rename_map = {
+            "Customer ID": "customer_id",
+            "Client Type": "customer_type",
+            "Income": "income",
+            "Income Currency": "currency",
+            "Gender": "gender",
+            "Birth Year": "birth_date",
+            "Sales Channel": "channel_type",
+            "Number of Dependents": "dependents",
+            "Location City": "geography_city",
+            "Location State Province": "geography_state",
+            "Location Country": "geography_country",
+            "Industry": "industry",
+        }
+        for old, new in rename_map.items():
+            if old in customers_df.columns:
+                customers_df = customers_df.rename(columns={old: new})
+
+        # Deduplicate customers
+        customers_df = customers_df.drop_duplicates(subset=["customer_id"])
+
+    # Try to find payment schedule data
+=======
 
 def load_schedule(base_path):
+>>>>>>> 35fd07e53487b7aab81c8b02a6900545ec7d98dd
     schedule_files = [
         base_path / "data" / "abaco" / "payment_schedule.csv",
         base_path / "Abaco - Loan Tape_Payment Schedule_Table (6).csv",
