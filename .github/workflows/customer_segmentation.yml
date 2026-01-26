@@ -79,5 +79,7 @@ jobs:
           PHOENIX_TOKEN: ${{ secrets.PHOENIX_TOKEN }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AZURE_AI_MULTIAGENT_ENDPOINT: "https://ai-multiagent-services.cognitiveservices.azure.com/"
+          AZURE_AI_MULTIAGENT_KEY: ${{ secrets.AZURE_AI_MULTIAGENT_KEY }}
         run: |
           python scripts/customer_segmentation.py
