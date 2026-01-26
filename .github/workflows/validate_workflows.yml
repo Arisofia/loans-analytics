@@ -13,8 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run actionlint
         id: actionlint
-        uses: rhysd/actionlint@v1
-        with:
+      uses: rhysd/actionlint@v1.7.1      
           args: .github/workflows
         continue-on-error: true
 
