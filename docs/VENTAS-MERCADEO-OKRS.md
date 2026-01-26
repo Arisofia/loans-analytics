@@ -4,7 +4,7 @@
 
 ## Estructura de Bases de Datos
 
-Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo Notion con los siguientes componentes:
+Este sistema de OKRs sigue el enfoque de bases de datos interconectadas con los siguientes componentes:
 
 ### **[Objectives](objectives/)** - Objetivos
 
@@ -156,7 +156,7 @@ Este sistema de OKRs sigue el enfoque de bases de datos interconectadas estilo N
 
 ## Guía del Template
 
-[Ver la guía del template aquí →](https://www.notion.so/help/guides/using-notion-for-product-and-engineering-okrs)
+[Ver la guía del template aquí →](#)
 
 ---
 
