@@ -7,26 +7,54 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
+<<<<<<< HEAD
 from streamlit_app import bootstrap  # noqa: F401
 from streamlit_app.components.analytics_tabs import render_advanced_intelligence
+=======
+
+
+# Add repository root to sys.path to ensure correct module resolution
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from src.pipeline.ingestion import load_raw_data_exports
+from src.utils.data_normalization import normalize_dataframe_complete
+from src.theme import ABACO_THEME
+from src.config.paths import Paths
+from streamlit_app.components.kpi_metrics import (
+    render_kpi_snapshot,
+    render_executive_summary,
+)
+>>>>>>> 35fd07e53487b7aab81c8b02a6900545ec7d98dd
 from streamlit_app.components.charts import (
     render_cashflow_trends,
     render_category_breakdown,
     render_growth_analysis,
 )
+<<<<<<< HEAD
 from streamlit_app.components.kpi_metrics import (
     render_executive_summary,
     render_kpi_snapshot,
 )
 from streamlit_app.components.sales_risk import (
+=======
+from streamlit_app.components.sales_risk import (
+    render_sales_performance,
+>>>>>>> 35fd07e53487b7aab81c8b02a6900545ec7d98dd
     render_risk_analysis,
     render_sales_performance,
 )
+<<<<<<< HEAD
 from src.analytics.kpi_catalog_processor import KPICatalogProcessor
 from src.config.paths import Paths
 from src.theme import ABACO_THEME
 from src.utils.dashboard_utils import format_kpi_value, kpi_label
 from src.utils.data_normalization import normalize_dataframe_complete
+=======
+from streamlit_app.components.analytics_tabs import render_advanced_intelligence
+from src.utils.dashboard_utils import format_kpi_value, kpi_label
+>>>>>>> 35fd07e53487b7aab81c8b02a6900545ec7d98dd
 
 EXPORTS_DIR = Paths.exports_dir()
 SUPPORT_DIR = Paths.data_dir() / "support"
