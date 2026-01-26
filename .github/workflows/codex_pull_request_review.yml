@@ -9,7 +9,7 @@ name: Codex Pull Request Review
 jobs:
   assign_metadata:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == false && secrets.OPENAI_API_KEY != ''
+    if: secrets.OPENAI_API_KEY != ''
     permissions:
       pull-requests: write
     steps:

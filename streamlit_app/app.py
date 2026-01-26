@@ -3,58 +3,32 @@
 import json
 import logging
 from datetime import datetime
-
 import pandas as pd
 import streamlit as st
+from pathlib import Path
+import sys
 
-<<<<<<< HEAD
 from streamlit_app import bootstrap  # noqa: F401
 from streamlit_app.components.analytics_tabs import render_advanced_intelligence
-=======
-
-
-# Add repository root to sys.path to ensure correct module resolution
-ROOT_DIR = Path(__file__).resolve().parent.parent
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
-
-from src.pipeline.ingestion import load_raw_data_exports
-from src.utils.data_normalization import normalize_dataframe_complete
-from src.theme import ABACO_THEME
-from src.config.paths import Paths
-from streamlit_app.components.kpi_metrics import (
-    render_kpi_snapshot,
-    render_executive_summary,
-)
->>>>>>> 35fd07e53487b7aab81c8b02a6900545ec7d98dd
 from streamlit_app.components.charts import (
     render_cashflow_trends,
     render_category_breakdown,
     render_growth_analysis,
 )
-<<<<<<< HEAD
 from streamlit_app.components.kpi_metrics import (
     render_executive_summary,
     render_kpi_snapshot,
 )
 from streamlit_app.components.sales_risk import (
-=======
-from streamlit_app.components.sales_risk import (
-    render_sales_performance,
->>>>>>> 35fd07e53487b7aab81c8b02a6900545ec7d98dd
     render_risk_analysis,
     render_sales_performance,
 )
-<<<<<<< HEAD
 from src.analytics.kpi_catalog_processor import KPICatalogProcessor
 from src.config.paths import Paths
 from src.theme import ABACO_THEME
 from src.utils.dashboard_utils import format_kpi_value, kpi_label
 from src.utils.data_normalization import normalize_dataframe_complete
-=======
-from streamlit_app.components.analytics_tabs import render_advanced_intelligence
-from src.utils.dashboard_utils import format_kpi_value, kpi_label
->>>>>>> 35fd07e53487b7aab81c8b02a6900545ec7d98dd
+from streamlit_app.fuzzy_table_mapping import fuzzy_map_core_tables
 
 EXPORTS_DIR = Paths.exports_dir()
 SUPPORT_DIR = Paths.data_dir() / "support"
@@ -273,39 +247,17 @@ with st.sidebar:
                     dfs[file.name] = pd.read_excel(file, sheet_name=None)
 
             if dfs:
-                # Map uploaded filenames to required internal keys
-                mapped_dfs = {}
+
+                # Normalize all dataframes
                 for name, df in dfs.items():
-                    name_lower = name.lower()
                     if isinstance(df, dict):
                         for sheet, sdf in df.items():
                             dfs[name][sheet] = normalize_dataframe_complete(sdf)
                     else:
-                        normalized_df = normalize_dataframe_complete(df)
-                        dfs[name] = normalized_df
+                        dfs[name] = normalize_dataframe_complete(df)
 
-                        # Apply fuzzy mapping to identify core tables
-                        if (
-                            ("loan" in name_lower and "data" in name_lower)
-                            or name_lower.startswith("loans")
-                        ):
-                            mapped_dfs["loan_data"] = normalized_df
-                        elif (
-                            ("customer" in name_lower and "data" in name_lower)
-                            or name_lower.startswith("customer")
-                        ):
-                            mapped_dfs["customer_data"] = normalized_df
-                        elif (
-                            ("payment" in name_lower and "historic" in name_lower)
-                            or ("real" in name_lower and "payment" in name_lower)
-                            or name_lower.startswith("transaction")
-                        ):
-                            mapped_dfs["historic_payment_data"] = normalized_df
-                        elif "schedule" in name_lower:
-                            mapped_dfs["schedule_data"] = normalized_df
-
-                # Merge mapped data into session state while keeping original filenames
-                # for UI.
+                # Use shared fuzzy mapping helper
+                mapped_dfs = fuzzy_map_core_tables(dfs)
                 final_data = {**dfs, **mapped_dfs}
                 st.session_state["data"] = final_data
                 st.session_state["loaded"] = True
@@ -316,10 +268,10 @@ with st.sidebar:
                     try:
                         output_path = generate_kpi_exports(final_data)
                         st.cache_data.clear()
-                        st.success("✅ KPI exports generated and UI updated!")
+                        st.success("\u2705 KPI exports generated and UI updated!")
                         st.rerun()
                     except Exception as exc:
-                        st.warning(f"⚠️ KPI auto-generation skipped: {exc}")
+                        st.warning(f"\u26a0\ufe0f KPI auto-generation skipped: {exc}")
 
     if st.button("Clear Data"):
         st.session_state["loaded"] = False
@@ -351,25 +303,17 @@ if not st.session_state["loaded"]:
 
 data = st.session_state["data"]
 
+
 # Core Tables Identification (prioritize internal keys from auto-mapping)
 loan_data = data.get("loan_data")
 customer_data = data.get("customer_data", pd.DataFrame())
 
 if loan_data is None:
-    # Fallback to original filename search if mapping failed
-    for name, table_df in data.items():
-        name_lower = name.lower()
-        if (
-            ("loan" in name_lower and "data" in name_lower)
-            or name_lower.startswith("loans")
-        ):
-            loan_data = table_df
-        elif (
-            ("customer" in name_lower and "data" in name_lower)
-            or name_lower.startswith("customer")
-        ):
-            if customer_data.empty:
-                customer_data = table_df
+    # Fallback: use fuzzy mapping helper on all data
+    mapped = fuzzy_map_core_tables(data)
+    loan_data = mapped.get("loan_data")
+    if customer_data.empty:
+        customer_data = mapped.get("customer_data", pd.DataFrame())
 
 if loan_data is None:
     st.error("Core loan data missing in uploads.")
