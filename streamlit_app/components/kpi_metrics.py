@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from src.utils.dashboard_utils import format_kpi_value, kpi_label
+from dashboard_utils import format_kpi_value, kpi_label
 
 
 def render_kpi_snapshot(kpi_snapshot, snapshot_month=None):
@@ -28,11 +28,16 @@ def render_executive_summary(merged):
 
     total_loans = merged["loan_id"].nunique() if "loan_id" in merged else 0
     total_outstanding = (
-        merged["outstanding_loan_value"].sum() if "outstanding_loan_value" in merged else 0
+        merged["outstanding_loan_value"].sum()
+        if "outstanding_loan_value" in merged
+        else 0
     )
 
     # Calculate weighted average APR
-    if "interest_rate_apr" in merged.columns and "outstanding_loan_value" in merged.columns:
+    if (
+        "interest_rate_apr" in merged.columns
+        and "outstanding_loan_value" in merged.columns
+    ):
         total_balance = merged["outstanding_loan_value"].sum()
         if total_balance > 0:
             avg_apr = (
@@ -43,9 +48,10 @@ def render_executive_summary(merged):
     else:
         avg_apr = 0
 
-    default_rate = (
-        (merged["loan_status"] == "Default").mean() * 100 if "loan_status" in merged else 0
-    )
+    if "loan_status" in merged:
+        default_rate = (merged["loan_status"] == "Default").mean() * 100
+    else:
+        default_rate = 0
 
     col1.metric("Total Loans", f"{total_loans:,}")
     st.markdown('<div data-testid="kpi-total-loans">', unsafe_allow_html=True)
