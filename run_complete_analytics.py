@@ -14,12 +14,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.pipeline.orchestrator import UnifiedPipeline
-
 # Add project to path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / "src" / "analytics"))
+
+from src.pipeline.orchestrator import UnifiedPipeline
 
 try:
     from src.azure_tracing import setup_azure_tracing
