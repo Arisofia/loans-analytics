@@ -2,11 +2,15 @@
 
 import { useState } from 'react'
 
+<<<<<<< HEAD
+import type { AnalyticsExportPayload, AnalyticsSummary, LoanRecord } from '@/types/analytics'
+=======
 import type {
   AnalyticsExportPayload,
   AnalyticsSummary,
   LoanRecord,
 } from '@/types/analytics'
+>>>>>>> origin/main
 
 type AnalyticsExportControlsProps = {
   summary: AnalyticsSummary
@@ -28,7 +32,7 @@ export const AnalyticsExportControls = ({
   const handleExport = async () => {
     if (!hasLoans) {
       setStatus('empty')
-      setMessage('Export blocked. Confirm loan data is loaded.')
+      setMessage('Upload or sync loan data before exporting.')
       return
     }
 
@@ -47,7 +51,7 @@ export const AnalyticsExportControls = ({
     } catch (error) {
       console.error('Analytics export failed', error)
       setStatus('error')
-      setMessage('Export failed. Please check your network connection.')
+      setMessage('Export failed. Please retry or contact support.')
     }
   }
 

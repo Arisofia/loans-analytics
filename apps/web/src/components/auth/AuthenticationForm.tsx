@@ -83,9 +83,13 @@ export const AuthenticationForm = () => {
       {message && (
         <p
           className={
+<<<<<<< HEAD
+            status === 'error' ? 'text-xs text-rose-300' : 'text-xs text-emerald-300'
+=======
             status === 'error'
               ? 'text-xs text-rose-300'
               : 'text-xs text-emerald-300'
+>>>>>>> origin/main
           }
         >
           {message}
