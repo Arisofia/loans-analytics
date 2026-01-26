@@ -10,8 +10,8 @@ Principles: every chart links to a drill-down table, owner, runbook, SLA, and ne
 
 ## Streamlit Executive Dashboard (ABACO Financial Intelligence)
 
-- Data sources:  exports in `data/archives/_exports` with manual upload fallback.
-- KPI tiles: 52 KPIs from `exports/analytics_facts.csv` plus scalar KPIs from `exports/complete_kpi_dashboard.json`.
+- Data sources: exports in `data/archives/_exports` (preferred) or `exports/` with manual upload fallback.
+- KPI tiles: 52 KPIs from `analytics_facts.csv` plus scalar KPIs from `complete_kpi_dashboard.json` in the exports directory.
 - Cashflow: uses `recv_revenue_for_month`, `recv_interest_for_month`, `recv_fee_for_month`, and `sched_revenue`.
 - Agent info: sales agent volume from loan data when `sales_agent` exists, otherwise headcount from `data/support/headcount.csv`.
 - KPI exports: use the sidebar "Generate KPI exports" button to regenerate `exports/complete_kpi_dashboard.json` and `exports/analytics_facts.csv` from  data.
