@@ -1,17 +1,15 @@
 name: Codex Pull Request Review
 
 "on":
-  pull_request:
-    types: [opened, synchronize, reopened]
   workflow_call:
     secrets:
       OPENAI_API_KEY:
-        required: true
+        required: false
 
 jobs:
   assign_metadata:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == false
+    if: github.event.pull_request.head.repo.fork == false && secrets.OPENAI_API_KEY != ''
     permissions:
       pull-requests: write
     steps:
@@ -33,6 +31,7 @@ jobs:
     name: Run Codex Review
     needs: assign_metadata
     runs-on: ubuntu-latest
+    if: secrets.OPENAI_API_KEY != ''
 
     permissions:
       contents: read
@@ -58,7 +57,7 @@ jobs:
     name: Post Codex Feedback
     needs: codex_review
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.fork == false && needs.codex_review.outputs.final_message != ''
+    if: github.event.pull_request.head.repo.fork == false && secrets.OPENAI_API_KEY != '' && needs.codex_review.outputs.final_message != ''
     permissions:
       pull-requests: write
     steps:
