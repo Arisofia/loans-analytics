@@ -223,7 +223,11 @@ def load_agent_headcount() -> pd.DataFrame:
     return pd.DataFrame()
 
 
-def generate_kpi_exports(data: dict[str, pd.DataFrame]) -> Path:
+def generate_kpi_exports(
+    data: dict[str, pd.DataFrame],
+    *,
+    normalize_inputs: bool = True,
+) -> Path:
     exports_dir = resolve_exports_dir(create=True)
     mapped_tables = fuzzy_map_core_tables(data)
 
@@ -237,26 +241,38 @@ def generate_kpi_exports(data: dict[str, pd.DataFrame]) -> Path:
     )
     schedule_df = mapped_tables.get("schedule_data", data.get("schedule_data"))
 
-    normalized_loans = (
-        normalize_dataframe_complete(loans_df)
-        if not loans_df.empty
-        else pd.DataFrame()
-    )
-    normalized_customers = (
-        normalize_dataframe_complete(customers_df)
-        if not customers_df.empty
-        else pd.DataFrame()
-    )
-    normalized_payments = (
-        normalize_dataframe_complete(payments_df)
-        if not payments_df.empty
-        else pd.DataFrame()
-    )
-    normalized_schedule = (
-        normalize_dataframe_complete(schedule_df)
-        if isinstance(schedule_df, pd.DataFrame) and not schedule_df.empty
-        else pd.DataFrame()
-    )
+    if normalize_inputs:
+        normalized_loans = (
+            normalize_dataframe_complete(loans_df)
+            if not loans_df.empty
+            else pd.DataFrame()
+        )
+        normalized_customers = (
+            normalize_dataframe_complete(customers_df)
+            if not customers_df.empty
+            else pd.DataFrame()
+        )
+        normalized_payments = (
+            normalize_dataframe_complete(payments_df)
+            if not payments_df.empty
+            else pd.DataFrame()
+        )
+        normalized_schedule = (
+            normalize_dataframe_complete(schedule_df)
+            if isinstance(schedule_df, pd.DataFrame) and not schedule_df.empty
+            else pd.DataFrame()
+        )
+    else:
+        normalized_loans = loans_df if not loans_df.empty else pd.DataFrame()
+        normalized_customers = (
+            customers_df if not customers_df.empty else pd.DataFrame()
+        )
+        normalized_payments = payments_df if not payments_df.empty else pd.DataFrame()
+        normalized_schedule = (
+            schedule_df
+            if isinstance(schedule_df, pd.DataFrame) and not schedule_df.empty
+            else pd.DataFrame()
+        )
 
     processor = KPICatalogProcessor(
         normalized_loans,
@@ -377,7 +393,10 @@ with st.sidebar:
 
                 with st.spinner("Generating KPI exports from uploaded data..."):
                     try:
-                        output_path = generate_kpi_exports(final_data)
+                        output_path = generate_kpi_exports(
+                            final_data,
+                            normalize_inputs=False,
+                        )
                         st.cache_data.clear()
                         st.success("✅ KPI exports generated and UI updated!")
                         st.rerun()
@@ -400,6 +419,13 @@ st.title("💰 ABACO Financial Intelligence")
 
 dashboard_metrics = load_kpi_dashboard()
 analytics_facts = load_analytics_facts()
+
+if not dashboard_metrics and analytics_facts.empty:
+    st.warning(
+        "No KPI exports detected. Generate KPI exports from the sidebar or add "
+        "complete_kpi_dashboard.json and analytics_facts.csv to the exports "
+        "directory."
+    )
 
 kpi_snapshot, snapshot_month = build_kpi_snapshot(dashboard_metrics, analytics_facts)
 
