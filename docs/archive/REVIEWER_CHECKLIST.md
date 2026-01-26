@@ -1,5 +1,4 @@
 # Reviewer Checklist
-
 - [ ] All Python tests pass (`python -m pytest`)
 - [ ] Cascade ingest workflow runs successfully in GitHub Actions
 - [ ] All required secrets are set in the repository:

@@ -1,10 +1,8 @@
 """
 Shared test data fixtures for analytics engine and metrics utils tests.
-
 These fixtures are used across multiple test files to provide consistent
 test data for analytics engine testing.
 """
-
 SAMPLE_LOAN_DATA = {
     "loan_amount": [250000],
     "appraised_value": [300000],
@@ -14,7 +12,6 @@ SAMPLE_LOAN_DATA = {
     "interest_rate": [0.035],
     "principal_balance": [240000],
 }
-
 SAMPLE_LOAN_DATA_MULTI = {
     "loan_amount": [250000, 450000, 150000],
     "appraised_value": [300000, 500000, 160000],

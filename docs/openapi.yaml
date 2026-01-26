@@ -11,13 +11,11 @@ info:
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-
 servers:
   - url: /api
     description: Production API server
   - url: http://localhost:3000/api
     description: Local development server
-
 tags:
   - name: Drilldowns
     description: Analytics drilldown module operations
@@ -29,7 +27,6 @@ tags:
     description: Portfolio analytics and insights
   - name: Data Quality
     description: Data validation and quality scoring
-
 paths:
   /drilldowns/status:
     get:
@@ -56,7 +53,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /auth/signout:
     post:
       summary: Sign out user
@@ -80,7 +76,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /auth/confirm:
     get:
       summary: Confirm email OTP
@@ -128,7 +123,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /analytics/kpis:
     post:
       summary: Calculate all portfolio KPIs
@@ -163,7 +157,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationErrorResponse"
-
   /analytics/kpis/par30:
     post:
       summary: Calculate PAR30
@@ -192,7 +185,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /analytics/kpis/par90:
     post:
       summary: Calculate PAR90
@@ -221,7 +213,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /analytics/kpis/collection-rate:
     post:
       summary: Calculate Collection Rate
@@ -250,7 +241,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /analytics/kpis/portfolio-health:
     post:
       summary: Calculate Portfolio Health Score
@@ -278,7 +268,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /analytics/kpis/ltv:
     post:
       summary: Calculate Loan-to-Value Ratio
@@ -306,7 +295,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /analytics/kpis/dti:
     post:
       summary: Calculate Debt-to-Income Ratio
@@ -334,7 +322,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /analytics/kpis/portfolio-yield:
     post:
       summary: Calculate Portfolio Yield
@@ -362,7 +349,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /analytics/risk-alerts:
     post:
       summary: Get high-risk loan alerts
@@ -404,7 +390,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /analytics/full-analysis:
     post:
       summary: Run comprehensive portfolio analysis
@@ -433,7 +418,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /data-quality/profile:
     post:
       summary: Generate data quality profile
@@ -462,7 +446,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /data-quality/validate:
     post:
       summary: Validate loan data schema
@@ -491,7 +474,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationErrorResponse"
-
 components:
   securitySchemes:
     bearerAuth:
@@ -499,7 +481,6 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: JWT token obtained from authentication
-
   schemas:
     DrilldownStatusResponse:
       type: object
@@ -513,7 +494,6 @@ components:
         /roll-rate: ok
         /collections: ok
         /ingestion-errors: ok
-
     LoanRecord:
       type: object
       required:
@@ -568,7 +548,6 @@ components:
           format: float
           description: Current outstanding principal balance
           example: 240000
-
     LoanPortfolioRequest:
       type: object
       required:
@@ -580,7 +559,6 @@ components:
           items:
             $ref: "#/components/schemas/LoanRecord"
           description: Array of loan records for analysis
-
     KpiContext:
       type: object
       properties:
@@ -597,7 +575,6 @@ components:
         sample_size:
           type: integer
           description: Number of records used in calculation
-
     KpiSingleResponse:
       type: object
       required:
@@ -615,7 +592,6 @@ components:
           metric: PAR30
           timestamp: "2026-01-02T10:30:00Z"
           sample_size: 1000
-
     KpiResponse:
       type: object
       properties:
@@ -637,7 +613,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AuditEntry"
-
     AuditEntry:
       type: object
       properties:
@@ -661,7 +636,6 @@ components:
         action:
           type: string
           description: Action being performed
-
     RiskLoan:
       type: object
       properties:
@@ -682,7 +656,6 @@ components:
           description: Normalized risk score (0-1)
         loan_status:
           type: string
-
     RiskAlertsResponse:
       type: object
       properties:
@@ -700,7 +673,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RiskLoan"
-
     FullAnalysisResponse:
       type: object
       properties:
@@ -732,7 +704,6 @@ components:
           additionalProperties:
             type: integer
           description: Count of invalid values coerced per column
-
     DataQualityResponse:
       type: object
       properties:
@@ -754,7 +725,6 @@ components:
           minimum: 0
           maximum: 100
           description: Overall data quality score (0-100)
-
     ValidationResponse:
       type: object
       properties:
@@ -769,7 +739,6 @@ components:
           items:
             type: string
           description: List of required columns found
-
     ValidationErrorResponse:
       type: object
       properties:
@@ -792,7 +761,6 @@ components:
           items:
             type: string
           description: List of missing required columns
-
     ErrorResponse:
       type: object
       required:

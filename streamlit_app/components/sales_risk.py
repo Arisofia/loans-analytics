@@ -1,10 +1,7 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-
 from .visualizations import apply_theme
-
-
 def render_sales_performance(merged, load_agent_headcount):
     """Render sales performance charts or team capacity."""
     st.header("🎯 Sales Performance")
@@ -12,9 +9,7 @@ def render_sales_performance(merged, load_agent_headcount):
         agg_map = {"loan_id": "count"}
         if "outstanding_loan_value" in merged.columns:
             agg_map["outstanding_loan_value"] = "sum"
-
         sales_agg = merged.groupby("sales_agent").agg(agg_map).reset_index()
-
         if "outstanding_loan_value" in merged.columns:
             sales_agg = sales_agg.rename(
                 columns={"outstanding_loan_value": "Volume", "loan_id": "Count"}
@@ -52,14 +47,11 @@ def render_sales_performance(merged, load_agent_headcount):
             st.info(
                 "Sales agent data not found. Provide agent performance data to populate this section."
             )
-
-
 def render_risk_analysis(merged):
     """Render risk analysis charts and metrics."""
     st.markdown('<div data-testid="dashboard-risk">', unsafe_allow_html=True)
     st.header("⚠️ Risk Analysis")
     r_col1, r_col2 = st.columns(2)
-
     with r_col1:
         if "days_in_default" in merged.columns:
             merged["dpd_bucket"] = pd.cut(
@@ -76,7 +68,6 @@ def render_risk_analysis(merged):
             dpd_dist.columns = ["Bucket", "Count"]
             fig_dpd = px.bar(dpd_dist, x="Bucket", y="Count", title="DPD Bucket Distribution")
             st.plotly_chart(apply_theme(fig_dpd), use_container_width=True)
-
     with r_col2:
         st.subheader("Data Quality Audit")
         score = 100.0
@@ -88,5 +79,4 @@ def render_risk_analysis(merged):
         if "interest_rate_apr" not in merged.columns:
             score -= 20
         st.metric("Quality Score", f"{score:.1f}%")
-
     st.markdown("</div>", unsafe_allow_html=True)

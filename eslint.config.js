@@ -4,7 +4,6 @@ import typescriptParser from '@typescript-eslint/parser'
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y'
 import reactPlugin from 'eslint-plugin-react'
 import reactHooksPlugin from 'eslint-plugin-react-hooks'
-
 export default [
   {
     ignores: [
@@ -51,7 +50,6 @@ export default [
       ...jsxA11yPlugin.configs.recommended.rules,
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs['core-web-vitals'].rules,
-
       '@typescript-eslint/no-unused-vars': [
         'error',
         {

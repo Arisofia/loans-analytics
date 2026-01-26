@@ -20,12 +20,10 @@ Added to `tests/conftest.py`:
 def analytics_test_env(tmp_path, monkeypatch):
     """Analytics test environment with mocked integrations."""
     # Sets up output dir, dataset paths, disables integrations
-    
 @pytest.fixture
 def analytics_baseline_kpis():
     """Load baseline KPI values for comparison."""
     # Loads baseline_kpis.json
-    
 @pytest.fixture
 def kpi_schema():
     """Load KPI results JSON schema."""
@@ -138,7 +136,6 @@ Add to `.github/workflows/ci.yml`:
       --cov-report=term-missing \
       --cov-fail-under=80 \
       --junit-xml=test-results-fi-analytics.xml
-      
 - name: Upload Coverage
   uses: codecov/codecov-action@v3
   with:
