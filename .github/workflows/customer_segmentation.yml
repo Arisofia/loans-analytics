@@ -49,15 +49,15 @@ jobs:
           sanitize_secret OPENAI_API_KEY "$OPENAI_API_KEY"
           sanitize_secret SUPABASE_SERVICE_ROLE "$SUPABASE_SERVICE_ROLE"
 
-            missing=""
-            [ -z "$OPENAI_API_KEY" ] && missing="$missing OPENAI_API_KEY"
-            [ -z "$SUPABASE_SERVICE_ROLE" ] && missing="$missing SUPABASE_SERVICE_ROLE"
-            if [ -z "$missing" ]; then
-              echo "can_run=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "can_run=false" >> "$GITHUB_OUTPUT"
-              echo "::warning::Missing required secrets:$missing - skipping customer segmentation"
-            fi
+          missing=""
+          [ -z "$OPENAI_API_KEY" ] && missing="$missing OPENAI_API_KEY"
+          [ -z "$SUPABASE_SERVICE_ROLE" ] && missing="$missing SUPABASE_SERVICE_ROLE"
+          if [ -z "$missing" ]; then
+            echo "can_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "can_run=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Missing required secrets:$missing - skipping customer segmentation"
+          fi
       - name: Checkout Repository
         if: steps.check-secrets.outputs.can_run == 'true'
         uses: actions/checkout@v4

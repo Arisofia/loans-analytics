@@ -199,9 +199,12 @@ make test-cov
 
 **Recent Commits**:
 
+1. FIX: Correct indentation in Post-Rollout Validation workflow
+1. FIX: Correct workflow logic and syntax errors
+1. FIX: Correct env var names and boolean logic in Opik workflow
+1. FIX: Resolve all GitHub Actions syntax errors and restore CI pipeline
 1. PHASE 6 COMPLETE: CI Workflow Failure Handling & Test Plan
-2. PHASE 8 COMPLETE: Backend Tiers & Frontend Integration
-3. PHASE 3.4E-F COMPLETE: Configuration consolidation
+1. PHASE 8 COMPLETE: Backend Tiers & Frontend Integration
 
 **Uncommitted Changes**:
 
