@@ -18,6 +18,7 @@ try:
 except ImportError:
     pass
 
+<<<<<<< HEAD
 # 2. Local Imports (now safe after bootstrap)
 from src.tracing_setup import initialize_tracing  # Example, adjust as needed
 from src.analytics.kpi_catalog_processor import KPICatalogProcessor
@@ -27,6 +28,36 @@ from src.utils.dashboard_utils import format_kpi_value, kpi_label
 from src.utils.data_normalization import normalize_dataframe_complete
 from streamlit_app.components.analytics_tabs import render_advanced_intelligence
 from streamlit_app.components.charts import (
+=======
+
+# Add repository root to sys.path to ensure correct module resolution
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+
+if str(ROOT_DIR) not in sys.path:
+
+    sys.path.insert(0, str(ROOT_DIR))
+
+
+
+from src.pipeline.ingestion import load_raw_data_exports  # noqa: E402
+from src.utils.data_normalization import normalize_dataframe_complete  # noqa: E402
+
+from src.theme import ABACO_THEME  # noqa: E402
+
+from src.config.paths import Paths  # noqa: E402
+
+from streamlit_app.components.kpi_metrics import (  # noqa: E402
+
+    render_kpi_snapshot,
+
+    render_executive_summary,
+
+)
+
+from streamlit_app.components.charts import (  # noqa: E402
+
+>>>>>>> origin/codex/audit-and-fix-python-and-typescript-files
     render_cashflow_trends,
     render_category_breakdown,
     render_growth_analysis,
@@ -144,56 +175,24 @@ def generate_kpi_exports(_data):
     output_path = exports_dir / "complete_kpi_dashboard.json"
     output_path.write_text(
         json.dumps(dashboard, indent=2, default=str),
-        encoding="utf-8",
-    )
-
-    return output_path
-
-
-def build_kpi_snapshot(dashboard, facts_df):
-    metrics = {}
-    latest_month = None
-
-    if not facts_df.empty:
-        if "month" in facts_df.columns:
-            facts_sorted = facts_df.sort_values("month")
-        else:
-            facts_sorted = facts_df
-        latest = facts_sorted.iloc[-1]
-        latest_month = latest.get("month")
-        for col in facts_sorted.columns:
-            if col == "month":
-                continue
-            metrics[col] = latest[col]
-
-    if dashboard:
-        for key, value in dashboard.items():
-            if key == "timestamp":
-                continue
-            if isinstance(value, (int, float)):
-                metrics.setdefault(key, value)
-
-        exec_strip = dashboard.get("extended_kpis", {}).get("executive_strip", {})
-        for key, value in exec_strip.items():
-            metrics.setdefault(key, value)
-
-    return metrics, latest_month
-
-
-@st.cache_data(show_spinner=False)
-def load_agent_headcount():
-    headcount_path = SUPPORT_DIR / "headcount.csv"
-    if not headcount_path.exists():
-        return pd.DataFrame()
-    df = pd.read_csv(headcount_path)
-    if "month" in df.columns:
-        df["month"] = pd.to_datetime(df["month"], errors="coerce")
-    return df
+         # 2. Local Imports (now safe after bootstrap)
+        from src.tracing_setup import initialize_tracing
+        from src.analytics.kpi_catalog_processor import KPICatalogProcessor
+        from src.pipeline.ingestion import load_raw_data_exports
+        from src.config.paths import Paths
+        from src.theme import ABACO_THEME
+        from src.utils.dashboard_utils import format_kpi_value, kpi_label
+        from src.utils.data_normalization import normalize_dataframe_complete
+        from streamlit_app.components.analytics_tabs import render_advanced_intelligence
+        from streamlit_app.components.kpi_metrics import (
+            render_kpi_snapshot,
+            render_executive_summary,
+        )
+        from streamlit_app.components.charts import (
 
 
 # Initialize tracing
 logger = logging.getLogger(__name__)
-try:
     from src.tracing_setup import enable_auto_instrumentation, init_tracing
 
     init_tracing(service_name="abaco-dashboard")

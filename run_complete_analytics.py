@@ -10,6 +10,10 @@ import json
 import traceback
 from datetime import datetime
 from pathlib import Path
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/codex/audit-and-fix-python-and-typescript-files
 import numpy as np
 import pandas as pd
 from src.analytics.kpi_catalog_processor import KPICatalogProcessor
@@ -33,11 +37,14 @@ def load_real_data():
     """Load real ABACO loan data files."""
     base_path = Path(__file__).parent
     rng = np.random.default_rng(42)
+<<<<<<< HEAD
     loans_df = load_loans(base_path, rng)
     payments_df = load_payments(base_path, rng, loans_df)
     customers_df = load_customers(base_path, rng, loans_df)
     schedule_df = load_schedule(base_path)
     return loans_df, payments_df, customers_df, schedule_df
+=======
+>>>>>>> origin/codex/audit-and-fix-python-and-typescript-files
 
 
 def load_loans(base_path, rng):
@@ -117,13 +124,31 @@ def load_payments(base_path, rng, loans_df):
             df = pd.read_csv(fpath)
             return df  # Add mapping if needed
     print("⚠️  No payment file found. Using synthetic payments.")
-    n = len(loans_df) * 2
-    return pd.DataFrame({
-        "payment_id": [f"P{i:06d}" for i in range(n)],
-        "loan_id": rng.choice(loans_df["loan_id"], n),
-        "payment_date": pd.date_range("2023-01-01", periods=n, freq="D"),
-        "payment_amount": rng.uniform(100, 5000, n),
-    })
+        if payments_df is None:
+            print("⚠️  No payment file found. Using synthetic payments.")
+            payments_df = pd.DataFrame(
+                {
+                    "payment_id": [f"P{i:06d}" for i in range(len(loans_df) * 2)],
+                    "loan_id": rng.choice(loans_df["loan_id"], len(loans_df) * 2),
+                    "payment_date": pd.date_range(
+                        "2023-01-01", periods=len(loans_df) * 2, freq="D"
+                    ),
+                    "payment_amount": rng.uniform(100, 5000, len(loans_df) * 2),
+                }
+            )
+        else:
+            # Map specific columns
+            rename_map = {
+                "Loan ID": "loan_id",
+                "True Payment Date": "true_payment_date",
+                "True Total Payment": "true_total_payment",
+                "True Principal Payment": "true_principal_payment",
+                "True Interest Payment": "true_interest_payment",
+                "True Rabates": "true_rebates",
+            }
+            for old, new in rename_map.items():
+                if old in payments_df.columns:
+                    payments_df = payments_df.rename(columns={old: new})
 
 <<<<<<< HEAD
     if payments_df is None:
@@ -168,11 +193,36 @@ def load_customers(base_path, rng, loans_df):
             df = pd.read_csv(fpath)
             return df.drop_duplicates(subset=["customer_id"])
     print("⚠️  No customer file found. Creating synthetic customer data.")
-    unique_customers = loans_df["customer_id"].unique()[:50]
-    return pd.DataFrame({
-        "customer_id": unique_customers,
-        "customer_type": rng.choice(["SME", "Corporate", "Individual"], len(unique_customers)),
-    })
+        if customers_df is None:
+            print("⚠️  No customer file found. Creating synthetic customer data.")
+            unique_customers = loans_df["customer_id"].unique()[:50]
+            customers_df = pd.DataFrame(
+                {
+                    "customer_id": unique_customers,
+                    "customer_type": rng.choice(
+                        ["SME", "Corporate", "Individual"], len(unique_customers)
+                    ),
+                }
+            )
+        else:
+            # Map specific columns if they exist with different names
+            rename_map = {
+                "Customer ID": "customer_id",
+                "Client Type": "customer_type",
+                "Income": "income",
+                "Income Currency": "currency",
+                "Gender": "gender",
+                "Birth Year": "birth_date",
+                "Sales Channel": "channel_type",
+                "Number of Dependents": "dependents",
+                "Location City": "geography_city",
+                "Location State Province": "geography_state",
+                "Location Country": "geography_country",
+                "Industry": "industry",
+            }
+            for old, new in rename_map.items():
+                if old in customers_df.columns:
+                    customers_df = customers_df.rename(columns={old: new})
 
 <<<<<<< HEAD
     if customers_df is None:
