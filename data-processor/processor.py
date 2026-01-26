@@ -58,7 +58,10 @@ if __name__ == "__main__":
     # Example Mock Data
     mock_tx: Transaction = {
         "this_account": {
-            "account_routing": {"address": "DE89370400440532013000", "routing_number": "GEN"},
+            "account_routing": {
+                "address": "DE89370400440532013000",
+                "routing_number": "GEN",
+            },
             "account_id": "123",
             "owner_name": "Test Corp",
         },

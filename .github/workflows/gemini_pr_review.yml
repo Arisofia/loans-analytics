@@ -1,9 +1,6 @@
 name: Gemini AI PR Review
 on:
   workflow_call:
-    secrets:
-      GEMINI_API_KEY_SIMPLE:
-        required: false
     inputs:
       is_fork:
         description: Whether the pull request originates from a fork.
@@ -13,3 +10,28 @@ on:
         description: Optional override for Gemini model name.
         required: false
         type: string
+        default: gemini-1.5-pro
+    secrets:
+      GEMINI_API_KEY:
+        description: 'Gemini API Key for review'
+        required: false
+        type: string
+
+jobs:
+  gemini_review:
+    name: Gemini PR Review
+    runs-on: ubuntu-latest
+    if: ${{ inputs.is_fork == false }}
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+      - name: Run Gemini Review
+        if: ${{ secrets.GEMINI_API_KEY_SIMPLE != '' }}
+        uses: google-gemini/gemini-github-action@v1
+        with:
+          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+          gemini-model: ${{ inputs.gemini_model }}

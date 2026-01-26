@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 Arisofia
+# SPDX-License-Identifier: MIT
 """
 ABACO Complete Analytics - Production-Ready KPI Pipeline.
 
@@ -77,9 +79,8 @@ def load_loans(paths: Paths, rng: np.random.Generator) -> pd.DataFrame:
                 return normalize_dataframe_complete(df)
             except (pd.errors.ParserError, ValueError, UnicodeDecodeError) as e:
                 logger.error("Failed to parse CSV file %s: %s", fpath.name, e)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Unexpected error loading %s: %s", fpath.name, e)
-
 
     logger.warning("⚠️ No loan file found. Creating synthetic data.")
     return pd.DataFrame(
@@ -95,15 +96,17 @@ def load_loans(paths: Paths, rng: np.random.Generator) -> pd.DataFrame:
             "disburse_principal": rng.uniform(1000, 50000, 100),
             "outstanding_balance": rng.uniform(500, 45000, 100),
             "dpd": rng.choice([0, 15, 45, 90], 100, p=[0.7, 0.15, 0.1, 0.05]),
-            "loan_status": rng.choice(
-                ["Active", "Complete", "Defaulted"], 100, p=[0.6, 0.3, 0.1]
-            ),
+                "loan_status": rng.choice(
+                    ["Active", "Complete", "Defaulted"], 100, p=[0.6, 0.3, 0.1]
+                ),
             "product_type": rng.choice(["Factoring", "LOC", "Term Loan"], 100),
         }
     )
 
 
-def load_payments(paths: Paths, rng: np.random.Generator, loans_df: pd.DataFrame) -> pd.DataFrame:
+def load_payments(
+    paths: Paths, rng: np.random.Generator, loans_df: pd.DataFrame
+) -> pd.DataFrame:
     """Load payment data, falling back to synthetic data if not found."""
     payment_files = [paths.PAYMENT_DATA_PATH, paths.PAYMENT_EXPORT_PATH]
     for fpath in payment_files:
@@ -114,7 +117,7 @@ def load_payments(paths: Paths, rng: np.random.Generator, loans_df: pd.DataFrame
                 return normalize_dataframe_complete(df)
             except (pd.errors.ParserError, ValueError, UnicodeDecodeError) as e:
                 logger.error("Failed to parse CSV file %s: %s", fpath.name, e)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Unexpected error loading %s: %s", fpath.name, e)
 
     logger.warning("⚠️ No payment file found. Using synthetic payments.")
@@ -130,7 +133,9 @@ def load_payments(paths: Paths, rng: np.random.Generator, loans_df: pd.DataFrame
     )
 
 
-def load_customers(paths: Paths, rng: np.random.Generator, loans_df: pd.DataFrame) -> pd.DataFrame:
+def load_customers(
+    paths: Paths, rng: np.random.Generator, loans_df: pd.DataFrame
+) -> pd.DataFrame:
     """Load customer data, falling back to synthetic data if not found."""
     customer_files = [paths.CUSTOMER_DATA_PATH, paths.CUSTOMER_EXPORT_PATH]
     for fpath in customer_files:
@@ -139,11 +144,10 @@ def load_customers(paths: Paths, rng: np.random.Generator, loans_df: pd.DataFram
             try:
                 df = pd.read_csv(fpath)
                 return normalize_dataframe_complete(df).drop_duplicates(
-                    subset=["customer_id"]
-                )
+                    subset=["customer_id"])
             except (pd.errors.ParserError, ValueError, UnicodeDecodeError) as e:
                 logger.error("Failed to parse CSV file %s: %s", fpath.name, e)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Unexpected error loading %s: %s", fpath.name, e)
 
     logger.warning("⚠️ No customer file found. Creating synthetic customer data.")
@@ -169,7 +173,7 @@ def load_schedule(paths: Paths) -> Optional[pd.DataFrame]:
                 return normalize_dataframe_complete(df)
             except (pd.errors.ParserError, ValueError, UnicodeDecodeError) as e:
                 logger.error("Failed to parse CSV file %s: %s", fpath.name, e)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Unexpected error loading %s: %s", fpath.name, e)
     return None
 
@@ -231,7 +235,8 @@ def main():
     dashboard_metrics.setdefault("ltv_cac_ratio", 0.0)
     dashboard_metrics.setdefault("cac_usd", 350.0)
     dashboard_metrics.setdefault(
-        "delinquency_rate_30_pct", dashboard_metrics.get("delinquency_rate_pct", 0.0)
+        "delinquency_rate_30_pct",
+        dashboard_metrics.get("delinquency_rate_pct", 0.0),
     )
     dashboard_metrics.setdefault(
         "delinquency_rate_90_pct", dashboard_metrics.get("par_90_pct", 0.0)
@@ -251,7 +256,9 @@ def main():
 
         # Map metrics from extended_kpis to dashboard root for display
         exec_strip = extended_kpis.get("executive_strip", {})
-        dashboard_metrics["total_aum_usd"] = exec_strip.get("total_outstanding", 0.0)
+        dashboard_metrics["total_aum_usd"] = exec_strip.get(
+            "total_outstanding", 0.0
+        )
         dashboard_metrics["active_clients"] = exec_strip.get(
             "active_clients", dashboard_metrics.get("active_clients", 0)
         )
@@ -288,11 +295,9 @@ def main():
 
         # Map Risk Metrics from Pipeline
         dashboard_metrics["delinquency_rate_30_pct"] = dashboard_metrics.get(
-            "PAR30", {}
-        ).get("value", 0.0)
+            "PAR30", {}).get("value", 0.0)
         dashboard_metrics["delinquency_rate_90_pct"] = dashboard_metrics.get(
-            "PAR90", {}
-        ).get("value", 0.0)
+            "PAR90", {}).get("value", 0.0)
         dashboard_metrics["par_90_ratio_pct"] = dashboard_metrics.get("PAR90", {}).get(
             "value", 0.0
         )
@@ -352,7 +357,9 @@ def main():
     logger.info("  CAC (USD): $%.2f\n", dashboard_metrics['cac_usd'])
 
     logger.info("⚠️ RISK METRICS")
-    logger.info("  30+ DPD Rate: %.2f%%", dashboard_metrics["delinquency_rate_30_pct"])
+    logger.info(
+        "  30+ DPD Rate: %.2f%%", dashboard_metrics["delinquency_rate_30_pct"]
+    )
     logger.info("  90+ DPD Rate: %.2f%%", dashboard_metrics["delinquency_rate_90_pct"])
     logger.info("  PAR 90 Ratio: %.2f%%\n", dashboard_metrics["par_90_ratio_pct"])
 
@@ -361,9 +368,9 @@ def main():
         for prod in dashboard_metrics["portfolio_by_product"]:
             logger.info(
                 "  %s: %d loans, $%s",
-                prod.get('product_type', 'Unknown'),
-                prod.get('loan_count', 0),
-                f"{prod.get('aum', 0):,.0f}"
+                prod.get("product_type", "Unknown"),
+                prod.get("loan_count", 0),
+                format(prod.get("aum", 0), ",.0f")
             )
         logger.info("")
 
