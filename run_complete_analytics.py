@@ -164,11 +164,11 @@ def main():
     paths = Paths()
     loans_df, payments_df, customers_df, schedule_df = load_real_data(paths)
 
-    logger.info("Loaded {:,} loans".format(len(loans_df)))
-    logger.info("Loaded {:,} payments".format(len(payments_df)))
-    logger.info("Loaded {:,} customers".format(len(customers_df)))
+    logger.info("Loaded %s loans", f"{len(loans_df):,}")
+    logger.info("Loaded %s payments", f"{len(payments_df):,}")
+    logger.info("Loaded %s customers", f"{len(customers_df):,}")
     if schedule_df is not None:
-        logger.info("Loaded {:,} schedule rows\n".format(len(schedule_df)))
+        logger.info("Loaded %s schedule rows\n", f"{len(schedule_df):,}")
     else:
         logger.warning("⚠️ No schedule data loaded\n")
 
@@ -296,8 +296,8 @@ def main():
     logger.info("=" * 80 + "\n")
 
     logger.info("👥 PORTFOLIO FUNDAMENTALS")
-    logger.info("  Active Clients: {:,}".format(dashboard_metrics["active_clients"]))
-    logger.info("  Total AUM (USD): ${:,.2f}\n".format(dashboard_metrics["total_aum_usd"]))
+    logger.info("  Active Clients: %s", f"{dashboard_metrics['active_clients']:,}")
+    logger.info("  Total AUM (USD): $%s\n", f"{dashboard_metrics['total_aum_usd']:,.2f}")
 
     logger.info("📈 PRODUCT MOMENTUM")
     logger.info("  Replines %%: %.2f%%\n", dashboard_metrics["replines_percentage"])
@@ -312,16 +312,14 @@ def main():
     logger.info("  EIR (Realizado): %.2f%%\n", eir_real * 100)
 
     logger.info("💵 REVENUE")
-    logger.info("  Monthly Revenue: ${:,.2f}".format(dashboard_metrics["monthly_revenue_usd"]))
+    logger.info("  Monthly Revenue: $%s", f"{dashboard_metrics['monthly_revenue_usd']:,.2f}")
     logger.info(
-        "  Revenue/Client (Monthly): ${:,.2f}".format(
-            dashboard_metrics["revenue_per_active_client_monthly"]
-        )
+        "  Revenue/Client (Monthly): $%s",
+        f"{dashboard_metrics['revenue_per_active_client_monthly']:,.2f}",
     )
     logger.info(
-        "  Revenue/Client (Annual): ${:,.2f}\n".format(
-            dashboard_metrics["revenue_per_active_client_annual"]
-        )
+        "  Revenue/Client (Annual): $%s\n",
+        f"{dashboard_metrics['revenue_per_active_client_annual']:,.2f}",
     )
 
     logger.info("📊 GROWTH METRICS")
