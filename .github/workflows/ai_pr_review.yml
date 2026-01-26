@@ -6,6 +6,7 @@ name: AI Pull Request Review
     paths-ignore:
       - '*.md'
       - 'docs/**'
+# @copilot: CI trigger tuning handled here to reduce review costs.
 
 jobs:
   gemini_review:
