@@ -40,12 +40,9 @@ jobs:
             echo "::warning::Missing required secrets:${missing}"
           fi
 
-          else
-          fi
-
   batch-export:
     needs: check-secrets
-    if: needs.check-secrets.outputs.can_run == true
+    if: needs.check-secrets.outputs.can_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -92,20 +89,6 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
-      - name: Notify on success
-        with:
-          status: success
-          text: "Batch export workflow completed successfully"
-          fields: repo,message,commit
-        env:
-
-      - name: Notify on failure
-        with:
-          status: failure
-          text: "Batch export workflow failed"
-          fields: repo,message,commit,author
-        env:
-
       - name: Export Summary
         if: always()
         run: |
@@ -116,7 +99,3 @@ jobs:
             echo "- **Status**: ${{ job.status }}"
             echo "- **Run ID**: ${{ github.run_id }}"
           } >> "$GITHUB_STEP_SUMMARY"
-            echo "- **Notifications**: ✅ Configured" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "- **Notifications**: ⚠️ Not configured" >> "$GITHUB_STEP_SUMMARY"
-          fi
