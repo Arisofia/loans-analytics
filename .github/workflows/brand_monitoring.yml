@@ -32,9 +32,6 @@ jobs:
             echo "can_run=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Missing required secrets:$missing_required - skipping monitoring"
           fi
-
-          else
-          fi
       - name: Install Dependencies
         if: steps.check-secrets.outputs.can_run == 'true'
         run: |
@@ -47,8 +44,6 @@ jobs:
           META_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
         run: |
           python scripts/brand_monitoring.py
-        env:
-        run: |
       - name: Monitoring Summary
         if: always()
         run: |
@@ -58,6 +53,4 @@ jobs:
             echo "- **Monitoring**: ✅ Executed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- **Monitoring**: ⚠️ Skipped (missing required secrets)" >> $GITHUB_STEP_SUMMARY
-          fi
-          else
           fi

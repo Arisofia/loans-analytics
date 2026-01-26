@@ -87,14 +87,14 @@ environment = Paths.get_environment()
 
 ### Environment Variables Supported
 
-| Variable                  | Default            | Purpose              |
-| ------------------------- | ------------------ | -------------------- |
-| `DATA_RAW_PATH`           | `./data/raw`       | Raw input data       |
-| `DATA_METRICS_PATH`       | `./data/metrics`   | Calculated KPIs      |
-| `CONFIG_PATH`             | `./config`         | Config files         |
-| `LOGS_PATH`               | `./logs`           | Application logs     |
-| `REPORTS_PATH`            | `./reports`        | Generated reports    |
-| `PYTHON_ENV` or `APP_ENV` | `development`      | Current environment  |
+| Variable                  | Default          | Purpose             |
+| ------------------------- | ---------------- | ------------------- |
+| `DATA_RAW_PATH`           | `./data/raw`     | Raw input data      |
+| `DATA_METRICS_PATH`       | `./data/metrics` | Calculated KPIs     |
+| `CONFIG_PATH`             | `./config`       | Config files        |
+| `LOGS_PATH`               | `./logs`         | Application logs    |
+| `REPORTS_PATH`            | `./reports`      | Generated reports   |
+| `PYTHON_ENV` or `APP_ENV` | `development`    | Current environment |
 
 ### Migration Plan
 
@@ -274,16 +274,16 @@ python -m pytest tests/test_pipeline_orchestrator.py -v
 
 ## Deployment Checklist
 
-- [ ] Remove credentials from git history (`bfg` or `git filter-branch`)
-- [ ] Rotate all exposed API keys
-- [ ] Create GitHub Secrets for all credentials
-- [ ] Merge `src/config/paths.py` and `src/config/secrets.py`
-- [ ] Refactor 10+ scripts to use `Paths` module
-- [ ] Add unit tests for path resolution
-- [ ] Update `.env.example` (credentials only)
-- [ ] Test locally with custom `*_PATH` env vars
-- [ ] Test in staging with GitHub Secrets
-- [ ] Document in CONTRIBUTING.md
+- [x] Remove credentials from git history (`bfg` or `git filter-branch`)
+- [x] Rotate all exposed API keys
+- [x] Create GitHub Secrets for all credentials
+- [x] Merge `src/config/paths.py` and `src/config/secrets.py`
+- [x] Refactor 10+ scripts to use `Paths` module
+- [x] Add unit tests for path resolution
+- [x] Update `.env.example` (credentials only)
+- [x] Test locally with custom `*_PATH` env vars
+- [x] Test in staging with GitHub Secrets
+- [x] Document in CONTRIBUTING.md
 
 ---
 
