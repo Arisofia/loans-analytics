@@ -31,9 +31,9 @@ jobs:
         sanitize_secret AWS_SECRET_ACCESS_KEY "$AWS_SECRET_ACCESS_KEY"
 
         if [ -n "$AWS_S3_BUCKET" ]; then
-          echo "aws_available=true" >> $GITHUB_OUTPUT
+          echo "aws_available=true" >> "$GITHUB_OUTPUT"
         else
-          echo "aws_available=false" >> $GITHUB_OUTPUT
+          echo "aws_available=false" >> "$GITHUB_OUTPUT"
         fi
 
     - name: Checkout repo
@@ -60,6 +60,8 @@ jobs:
         metrics_dir = Path("data/metrics")
         csvs = sorted(metrics_dir.glob("*.csv"))
         if not csvs:
+            print("No CSV files found in data/metrics")
+            exit(0)
 
         latest = max(csvs, key=lambda p: p.stat().st_mtime)
         df = pd.read_csv(latest)
