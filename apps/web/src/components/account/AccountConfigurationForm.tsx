@@ -30,6 +30,10 @@ export const AccountConfigurationForm = () => {
     setStatus('saving')
     setMessage('')
 
+    const displayName = formState.displayName.trim()
+    const region = formState.region.trim()
+    const notificationEmail = formState.notificationEmail.trim()
+
     const {
       data: { user },
       error: userError,
@@ -45,9 +49,9 @@ export const AccountConfigurationForm = () => {
       .from('account_settings')
       .upsert({
         user_id: user.id,
-        display_name: formState.displayName,
-        region: formState.region,
-        notification_email: formState.notificationEmail,
+        display_name: displayName,
+        region,
+        notification_email: notificationEmail,
       })
 
     if (error) {

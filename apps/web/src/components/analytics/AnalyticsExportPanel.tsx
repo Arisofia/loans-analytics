@@ -1,16 +1,17 @@
 'use client'
 
-import type { AnalyticsSummary, LoanRecord } from '@/types/analytics'
+import type {
+  AnalyticsExportPayload,
+  AnalyticsSummary,
+  LoanRecord,
+} from '@/types/analytics'
 
 import { AnalyticsExportControls } from './AnalyticsExportControls'
 
 type AnalyticsExportPanelProps = {
   summary: AnalyticsSummary
   loans: LoanRecord[]
-  onExport?: (payload: {
-    summary: AnalyticsSummary
-    loans: LoanRecord[]
-  }) => Promise<void>
+  onExport?: (payload: AnalyticsExportPayload) => Promise<void>
 }
 
 export const AnalyticsExportPanel = ({

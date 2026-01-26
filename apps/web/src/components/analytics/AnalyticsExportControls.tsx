@@ -15,29 +15,35 @@ export const AnalyticsExportControls = ({
   loans,
   onExport,
 }: AnalyticsExportControlsProps) => {
-  const [status, setStatus] = useState<'idle' | 'exporting' | 'success' | 'error'>(
-    'idle'
-  )
+  const [status, setStatus] = useState<
+    'idle' | 'exporting' | 'success' | 'error' | 'empty'
+  >('idle')
+  const [message, setMessage] = useState<string>('')
   const hasLoans = loans.length > 0
 
   const handleExport = async () => {
     if (!hasLoans) {
-      setStatus('error')
+      setStatus('empty')
+      setMessage('Upload or sync loan data before exporting.')
       return
     }
 
     if (!onExport) {
       setStatus('success')
+      setMessage('Export queued.')
       return
     }
 
     try {
       setStatus('exporting')
+      setMessage('')
       await onExport({ summary, loans })
       setStatus('success')
+      setMessage('Export queued.')
     } catch (error) {
       console.error('Analytics export failed', error)
       setStatus('error')
+      setMessage('Export failed. Please retry or contact support.')
     }
   }
 
@@ -60,12 +66,15 @@ export const AnalyticsExportControls = ({
         >
           {status === 'exporting' ? 'Exporting…' : 'Export analytics'}
         </button>
-        {status === 'success' && (
-          <span className="text-xs text-emerald-300">Export queued.</span>
-        )}
-        {status === 'error' && (
-          <span className="text-xs text-rose-300">
-            Export blocked. Confirm loan data is loaded.
+        {message && (
+          <span
+            className={
+              status === 'error' || status === 'empty'
+                ? 'text-xs text-rose-300'
+                : 'text-xs text-emerald-300'
+            }
+          >
+            {message}
           </span>
         )}
       </div>
