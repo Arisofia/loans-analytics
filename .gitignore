@@ -1,167 +1,52 @@
-# Gradle
-.gradle/
-build/
-**/.gradle/
-**/build/
-
-# OS
+# System & IDE
 .DS_Store
-
+.vscode/
+.idea/
+*.swp
 
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 .venv/
+.venv-*/
 venv/
-*.tmp
-.cache/
+env/
 *.egg-info/
-.eggs/
-
-# Config
-config/*.yaml
-
-# Logs
-*.log
-
-# Test/coverage output
-*.coverage
-.coverage.*
+.coverage
 htmlcov/
-
-# Editor/IDE files
-.idea/
-.settings/
-.vscode/
-*.code-workspace
-.vscode/history/
-.vscode/cache/
-
-# Project documentation/settings policy
-# See README.md for policy on documentation, settings, and config file retention.
-
-# Streamlit
-.streamlit/
-
-# Data outputs (NO versionar)
-data/metrics/
-data/archives/
-data_samples/*.csv
-logs/
-exports/
-outputs/
-
-# Build / tooling
-.next/
-.turbo/
-dist/
-coverage/
-out/
-
-# IDE
-.vscode/tasks.json
-
-# Node modules
-.python_packagesnode_modules/
-node_modules/
-
-# Project-specific artifacts
-apps/.DS_Store
-
-# Local repository clones
-abaco-loans-analytics/
-data_samples/
-gemini-cli/
-
-# Environment variables
-.env
-.env.local
-.env.*.local
-.vercel/
-nvm/
-
-# Other
-failed_workflows.csv
-scripts/test_hubspot_simple.py
-
-.env
-.env.example
-
-# Python virtual environments
-.venv/
-.venv-1/
-.venv-2/
-.lint-venv/
-
-# Azurite local storage state
-AzuriteConfig
-__azurite_db_*.json
-__azurite_db_*_extent__.json
-scripts/setup_azure.sh
-.azure
-tmp/
-data/archives/cascade/tmp*.csv
-
-# Playwright artifacts and test caches
-apps/web/playwright-report/
-playwright/.e2e
-playwright/.auth
 .pytest_cache/
 .mypy_cache/
-pytest-report/
-coverage.xml
 
-# Ignore generated media files
-*.mp4
-*.mov
-*.mp3
-
-# ============================================ 
-# Temporary run data (should not be committed)
-# ============================================ 
-data/archives/raw/tmp*.csv
-data/metrics/run_*.csv
-data/metrics/run_*.parquet
-data/metrics/run_*_metrics.json
-data/metrics/timeseries/run_*.parquet
-logs/runs/run_*/
-
-# Integration backups (cleanup artifacts)
-*.cleanup-backup
-*.backup
-
-# Hidden tool folders
-.rollback/
-.zencoder/
-.zenflow/
-
-# ============================================
-# Temporary run data (should not be committed)
-# ============================================
-data/archives/raw/tmp*.csv
-data/metrics/run_*.csv
-data/metrics/run_*.parquet
-data/metrics/run_*_metrics.json
-data/metrics/timeseries/run_*.parquet
-logs/runs/run_*/
-
-# Integration backups (cleanup artifacts)
-*.cleanup-backup
-*.backup
-
-# Hidden tool folders
-.rollback/
-.zencoder/
-.zenflow/
-.venv-1/
-.venv-1/
-
-# Cleanup Ignores
-.venv-1/
-*.zip
-*.mp3
-*.mp4
-*.mov
+# Node / JS
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+build/
+.next/
 *.tsbuildinfo
-pylint_report.json
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+secrets.json
+*.pem
+*.key
+
+# Build Artifacts & Logs
+logs/
+*.log
+exports/
+reports/
+repo_backup_*.zip
 AzuriteConfig
+pylint_report.json
+
+# Media
+*.mp3
+*.mp4
+*.mov
