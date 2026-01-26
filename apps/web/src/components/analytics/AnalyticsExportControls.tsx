@@ -2,7 +2,11 @@
 
 import { useState } from 'react'
 
-import type { AnalyticsExportPayload, AnalyticsSummary, LoanRecord } from '@/types/analytics'
+import type {
+  AnalyticsExportPayload,
+  AnalyticsSummary,
+  LoanRecord,
+} from '@/types/analytics'
 
 type AnalyticsExportControlsProps = {
   summary: AnalyticsSummary
@@ -15,14 +19,16 @@ export const AnalyticsExportControls = ({
   loans,
   onExport,
 }: AnalyticsExportControlsProps) => {
-  const [status, setStatus] = useState<'idle' | 'exporting' | 'success' | 'error'>(
-    'idle'
-  )
+  const [status, setStatus] = useState<
+    'idle' | 'exporting' | 'success' | 'error'
+  >('idle')
+  const [errorMessage, setErrorMessage] = useState<string>('')
   const hasLoans = loans.length > 0
 
   const handleExport = async () => {
     if (!hasLoans) {
       setStatus('error')
+      setErrorMessage('Export blocked. Confirm loan data is loaded.')
       return
     }
 
@@ -33,11 +39,13 @@ export const AnalyticsExportControls = ({
 
     try {
       setStatus('exporting')
+      setErrorMessage('')
       await onExport({ summary, loans })
       setStatus('success')
     } catch (error) {
       console.error('Analytics export failed', error)
       setStatus('error')
+      setErrorMessage('Export failed. Please check your network connection.')
     }
   }
 
@@ -64,9 +72,7 @@ export const AnalyticsExportControls = ({
           <span className="text-xs text-emerald-300">Export queued.</span>
         )}
         {status === 'error' && (
-          <span className="text-xs text-rose-300">
-            Export blocked. Confirm loan data is loaded.
-          </span>
+          <span className="text-xs text-rose-300">{errorMessage}</span>
         )}
       </div>
     </section>

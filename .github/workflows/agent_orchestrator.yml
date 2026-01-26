@@ -95,8 +95,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           set -euo pipefail
-          # Using src.agents.orchestrator as the entry point
-          # Logging removed for production. Use logging module if needed.
+          python -m src.agents.orchestrator --mode "${{ github.event.inputs.orchestration_mode }}"
 
       - name: Upload orchestration output
         if: always()
@@ -111,7 +110,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.24.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
-        if: success() && needs.validate-secrets.outputs.slack_available == true
+        if: success() && needs.validate-secrets.outputs.slack_available == 'true'
         with:
           payload: |
             {
@@ -131,7 +130,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.24.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
-        if: failure() && needs.validate-secrets.outputs.slack_available == true
+        if: failure() && needs.validate-secrets.outputs.slack_available == 'true'
         with:
           payload: |
             {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { supabaseClient } from '@/lib/supabase/client'
+import { getSupabaseClient } from '@/lib/supabase/client'
 
 type AuthStatus = 'idle' | 'submitting' | 'success' | 'error'
 
@@ -28,8 +28,9 @@ export const AuthenticationForm = () => {
     setStatus('submitting')
     setMessage('')
 
+    const supabase = getSupabaseClient()
     const { error } = await supabaseClient.auth.signInWithPassword({
-      email: formState.email,
+      email: formState.email.trim(),
       password: formState.password,
     })
 
@@ -82,7 +83,9 @@ export const AuthenticationForm = () => {
       {message && (
         <p
           className={
-            status === 'error' ? 'text-xs text-rose-300' : 'text-xs text-emerald-300'
+            status === 'error'
+              ? 'text-xs text-rose-300'
+              : 'text-xs text-emerald-300'
           }
         >
           {message}
