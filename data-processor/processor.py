@@ -51,7 +51,7 @@ def validate_iban(iban: str) -> bool:
 def run_pipeline(data: Transaction) -> None:
     iban = data["this_account"]["account_routing"]["address"]
     validate_iban(iban)
-    print(f"Processed transaction of amount ${data['amount']}")
+    # Logging removed for production. Use logging module if needed.
 
 
 if __name__ == "__main__":

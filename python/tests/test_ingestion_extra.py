@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from pipeline.ingestion import UnifiedIngestion
+from src.pipeline.ingestion import UnifiedIngestion
 
 
 @pytest.fixture

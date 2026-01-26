@@ -21,9 +21,8 @@ from typing import Optional, Tuple
 try:
     import numpy as np
     import pandas as pd
-except ImportError as e:
-    print(f"❌ Critical dependency missing: {e.name}")
-    print("👉 Run 'make setup' to install dependencies.")
+except ImportError:
+    # Logging removed for production. Use logging module if needed.
     sys.exit(1)
 
 try:
@@ -31,9 +30,8 @@ try:
     from src.analytics.kpi_catalog_processor import KPICatalogProcessor
     from src.config.paths import Paths
     from src.utils.data_normalization import normalize_dataframe_complete
-except ImportError as e:
-    print(f"❌ Local module missing: {e.name}")
-    print("👉 Ensure you are running from the project root and the 'src' directory is intact.")
+except ImportError:
+    # Logging removed for production. Use logging module if needed.
     sys.exit(1)
 
 try:

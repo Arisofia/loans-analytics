@@ -1,40 +1,10 @@
-# Marked as resolved since the file is deleted
 name: Post-Rollout Validation
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 7 * * *" # daily at 7am UTC
 jobs:
   validation:
     runs-on: ubuntu-latest
     steps:
-      - name: Check secrets availability
-        id: check-secrets
-        env:
-          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-        run: |
-          sanitize_secret() {
-            local var_name="$1"
-            local raw="$2"
-            local norm
-            norm="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]' | xargs)"
-            case "$norm" in
-              ""|"token"|"tokens"|"secret"|"secrets"|"changeme"|"change-me"|"change_me"|"replace-me"|"replace_me"|"placeholder"|"example"|"redacted")
-                printf -v "$var_name" '%s' ""
-                ;;
-              *)
-                printf -v "$var_name" '%s' "$raw"
-                ;;
-            esac
-          }
-          sanitize_secret AWS_S3_BUCKET "$AWS_S3_BUCKET"
-
-          if [ -n "$AWS_S3_BUCKET" ]; then
-            echo "aws_available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "aws_available=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Checkout repo
         uses: actions/checkout@v4
       - name: Set up Python
@@ -48,38 +18,22 @@ jobs:
       - name: Validate Meta Insights Data
         if: hashFiles('data/warehouse/meta_insights.parquet') != ''
         run: |
-          python -c "import pandas as pd; df = pd.read_parquet('data/warehouse/meta_insights.parquet'); assert not df.empty, 'Meta insights data is empty!'; print('Meta insights records:', len(df))"
+          python -c "import pandas as pd; df = pd.read_parquet('data/warehouse/meta_insights.parquet'); assert not df.empty, 'Meta insights data is empty!'"
       - name: Validate Metrics CSVs
         if: hashFiles('data/metrics/*.csv') != ''
         run: |
           python - <<'PY'
           from pathlib import Path
+          import sys
           import pandas as pd
 
           metrics_dir = Path("data/metrics")
           csvs = sorted(metrics_dir.glob("*.csv"))
           if not csvs:
-              print("No CSV files found in data/metrics")
-              exit(0)
+              sys.exit(0)
 
           latest = max(csvs, key=lambda p: p.stat().st_mtime)
           df = pd.read_csv(latest)
-          PY
-      - name: Validate S3 Access
-        if: steps.check-secrets.outputs.aws_available == 'true'
-        env:
-          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-        run: |
-          python - <<'PY'
-          import os
-          import requests
-
-          bucket = os.environ["AWS_S3_BUCKET"]
-          urls = [
-          ]
-
-          for url in urls:
-              r = requests.get(url, timeout=15)
-              assert r.status_code == 200, f"Image not found: {url}"
-              print(f"Image OK: {url}")
+          if df.empty:
+              raise SystemExit("Latest metrics CSV is empty")
           PY

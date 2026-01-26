@@ -9,7 +9,7 @@ python_dir = str(Path(__file__).parent.parent)
 sys.path.insert(0, root_dir)
 sys.path.insert(0, python_dir)
 
-from pipeline.ingestion import UnifiedIngestion  # noqa: E402
+from src.pipeline.ingestion import UnifiedIngestion  # noqa: E402
 from src.kpis.engine import KPIEngineV2  # noqa: E402
 
 logging.basicConfig(
@@ -49,9 +49,7 @@ def run_v2_pipeline(input_file: str):
 
     # 2. Print Data Quality Report
     if result.quality_report:
-        print("\n" + "=" * 40)
-        print(result.quality_report.to_markdown())
-        print("=" * 40 + "\n")
+        logger.info("Data quality report: %s", result.quality_report)
 
     # 3. KPI Engine V2 Calculation
     logger.info("📊 Calculating KPIs via Engine V2")
@@ -60,8 +58,8 @@ def run_v2_pipeline(input_file: str):
 
     for name, data in metrics.items():
         val = data.get("value")
-        status = "✅" if val is not None else "❌"
-        print(f"{status} {name}: {val}")
+        status = "OK" if val is not None else "MISSING"
+        logger.info("Metric %s: %s (value=%s)", name, status, val)
 
     # 4. Export Audit Trail
     audit_df = engine.get_audit_trail()
