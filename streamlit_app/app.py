@@ -2,6 +2,7 @@
 
 import json
 import logging
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -9,27 +10,31 @@ from typing import Optional
 import pandas as pd
 import streamlit as st
 
-from dashboard_utils import format_kpi_value, kpi_label
-from data_normalization import normalize_dataframe_complete
-from kpi_catalog_processor import KPICatalogProcessor
-from theme import ABACO_THEME
-from tracing_setup import enable_auto_instrumentation, init_tracing
-from streamlit_app.components.analytics_tabs import render_advanced_intelligence
-from streamlit_app.components.charts import (
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from dashboard_utils import format_kpi_value, kpi_label  # noqa: E402
+from data_normalization import normalize_dataframe_complete  # noqa: E402
+from kpi_catalog_processor import KPICatalogProcessor  # noqa: E402
+from theme import ABACO_THEME  # noqa: E402
+from tracing_setup import enable_auto_instrumentation, init_tracing  # noqa: E402
+from streamlit_app.components.analytics_tabs import (  # noqa: E402
+    render_advanced_intelligence,
+)
+from streamlit_app.components.charts import (  # noqa: E402
     render_cashflow_trends,
     render_category_breakdown,
     render_growth_analysis,
 )
-from streamlit_app.components.kpi_metrics import (
+from streamlit_app.components.kpi_metrics import (  # noqa: E402
     render_executive_summary,
     render_kpi_snapshot,
 )
-from streamlit_app.components.sales_risk import (
+from streamlit_app.components.sales_risk import (  # noqa: E402
     render_risk_analysis,
     render_sales_performance,
 )
-
-ROOT_DIR = Path(__file__).resolve().parent.parent
 LOCAL_EXPORTS_DIR = ROOT_DIR / "local_exports"
 EXPORTS_DIR_CANDIDATES = [
     ROOT_DIR / "exports",
@@ -339,7 +344,7 @@ with st.sidebar:
                         st.error(f"Failed to generate KPI exports: {exc}")
         else:
             st.session_state["loaded"] = False
-            st.warning("No data artifacts found in data/raw.")
+            st.warning("No data artifacts found in local_exports.")
             st.caption("Upload data or switch to Manual upload.")
     else:
         uploaded_files = st.file_uploader(
