@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simple, typed data processor for transactions (demo).
+"""Simple, typed data processor for transactions.
 
 Implements TypedDict schemas and IBAN validation (mod-97).
 """
@@ -53,19 +53,3 @@ def run_pipeline(data: Transaction) -> None:
     validate_iban(iban)
     # Logging removed for production. Use logging module if needed.
 
-
-if __name__ == "__main__":
-    # Example Mock Data
-    mock_tx: Transaction = {
-        "this_account": {
-            "account_routing": {
-                "address": "DE89370400440532013000",
-                "routing_number": "GEN",
-            },
-            "account_id": "123",
-            "owner_name": "Test Corp",
-        },
-        "amount": 1000.50,
-        "currency": "EUR",
-    }
-    run_pipeline(mock_tx)
