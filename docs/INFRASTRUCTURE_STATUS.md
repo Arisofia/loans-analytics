@@ -26,7 +26,7 @@
 - **Current Secrets**: 17 stored
   - azure-ai-services-key1
   - openai-api-key
-  - Legacy integrations (Facebook, HubSpot, LinkedIn, Notion, Slack)
+  - Legacy integrations (Facebook, LinkedIn)
 - **Action Required**: 
   - Add Supabase credentials
   - Add Grafana credentials
@@ -138,7 +138,7 @@ Power BI      Grafana/Metabase
 - [ ] Connect to monitoring systems
 
 ### Phase 5: Repository Cleanup
-- [ ] Remove deprecated integration files (Slack, Notion, HubSpot, Figma)
+- [ ] Remove deprecated integration files
 - [ ] Archive unused workflows
 - [ ] Update documentation
 - [ ] Remove obsolete secrets from Key Vault

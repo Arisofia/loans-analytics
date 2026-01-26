@@ -1,0 +1,69 @@
+name: Docker CI
+
+on:
+    push:
+        tags: ["*"]
+        branches:
+            - "main"
+    pull_request:
+        branches: ["**"]
+
+env:
+    REGISTRY: docker.io
+    IMAGE_NAME: ${{ github.repository }}
+    DOCKER_ORG: <your-org>
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            packages: write
+            pull-requests: write
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Log into registry ${{ env.REGISTRY }}
+              uses: docker/login-action@v3
+              with:
+                  registry: ${{ env.REGISTRY }}
+                  username: ${{ secrets.REGISTRY_USER }}
+                  password: ${{ secrets.REGISTRY_TOKEN }}
+
+            - name: Setup Docker buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Extract metadata
+              id: meta
+              uses: docker/metadata-action@v5
+              with:
+                  images: ${{ env.IMAGE_NAME }}
+
+            - name: Build and push Docker image
+              id: build-and-push
+              uses: docker/build-push-action@v6
+              with:
+                  context: .
+                  tags: ${{ steps.meta.outputs.tags }}
+                  labels: ${{ steps.meta.outputs.labels }}
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+                  load: ${{ github.event_name == 'pull_request' }}
+                  push: ${{ github.event_name != 'pull_request' }}
+                  sbom: ${{ github.event_name != 'pull_request' }}
+                  provenance: mode=max
+
+            - name: Docker Scout Compare
+              if: ${{ github.event_name == 'pull_request' }}
+              uses: docker/scout-action@v1
+              with:
+                  command: compare
+                  image: ${{ steps.meta.outputs.tags }}
+                  to-env: production
+                  platform: "linux/amd64"
+                  ignore-unchanged: true
+                  only-severities: critical,high
+                  organization: ${{ env.DOCKER_ORG }}
+                  exit-on: policy

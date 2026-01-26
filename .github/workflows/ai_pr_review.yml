@@ -1,29 +1,28 @@
 name: AI Pull Request Review
 
-"on":
+on:
   pull_request:
-    types: [opened, ready_for_review, reopened]
+    types: [opened, synchronize, ready_for_review, reopened]
     paths-ignore:
       - '*.md'
       - 'docs/**'
-# @copilot: CI trigger tuning handled here to reduce review costs.
 
 jobs:
   gemini_review:
     name: Gemini PR Review
-    if: github.event.pull_request.head.repo.fork == false
+    if: github.event.pull_request.head.repo.fork == false && github.event.pull_request.draft == false
     uses: ./.github/workflows/gemini_pr_review.yml
-    secrets:
-      GEMINI_API_KEY_SIMPLE: ${{ secrets.GEMINI_API_KEY_SIMPLE }}
     with:
       is_fork: ${{ github.event.pull_request.head.repo.fork }}
-      gemini_model: ${{ vars.GEMINI_MODEL }}
+      gemini_model: ${{ vars.GEMINI_MODEL || 'gemini-1.5-pro' }}
+    secrets:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_SIMPLE }}
 
   codex_review:
     name: Codex PR Review
-    if: github.event.pull_request.head.repo.fork == false
+    if: github.event.pull_request.head.repo.fork == false && github.event.pull_request.draft == false
     uses: ./.github/workflows/codex_pull_request_review.yml
-    secrets:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     with:
       is_fork: ${{ github.event.pull_request.head.repo.fork }}
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

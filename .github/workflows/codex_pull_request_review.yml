@@ -5,16 +5,23 @@ name: Codex Pull Request Review
     secrets:
       OPENAI_API_KEY:
         required: false
+<<<<<<< HEAD
     inputs:
       is_fork:
         description: Whether the pull request originates from a fork.
         required: true
         type: boolean
+=======
+>>>>>>> origin/main
 
 jobs:
   assign_metadata:
     runs-on: ubuntu-latest
+<<<<<<< HEAD
     if: ${{ inputs.is_fork == false && secrets.OPENAI_API_KEY != '' }}
+=======
+    if: secrets.OPENAI_API_KEY != ''
+>>>>>>> origin/main
     permissions:
       pull-requests: write
     steps:
@@ -36,7 +43,11 @@ jobs:
     name: Run Codex Review
     needs: assign_metadata
     runs-on: ubuntu-latest
+<<<<<<< HEAD
     if: ${{ secrets.OPENAI_API_KEY != '' }}
+=======
+    if: secrets.OPENAI_API_KEY != ''
+>>>>>>> origin/main
 
     permissions:
       contents: read
@@ -62,7 +73,11 @@ jobs:
     name: Post Codex Feedback
     needs: codex_review
     runs-on: ubuntu-latest
+<<<<<<< HEAD
     if: ${{ inputs.is_fork == false && secrets.OPENAI_API_KEY != '' && needs.codex_review.outputs.final_message != '' }}
+=======
+    if: github.event.pull_request.head.repo.fork == false && secrets.OPENAI_API_KEY != '' && needs.codex_review.outputs.final_message != ''
+>>>>>>> origin/main
     permissions:
       pull-requests: write
     steps:
@@ -79,4 +94,40 @@ jobs:
                 issue_number: context.payload.pull_request.number,
                 body: finalMessage,
               });
-            }
+            name: Codex PR Review
+
+            on:
+              workflow_call:
+                inputs:
+                  is_fork:
+                    description: 'Whether the PR is from a fork'
+                    required: true
+                    type: boolean
+                secrets:
+                  OPENAI_API_KEY:
+                    required: true
+
+            jobs:
+              codex-review:
+                name: Codex PR Review
+                runs-on: ubuntu-latest
+                if: ${{ inputs.is_fork == false }}
+                steps:
+                  - uses: actions/checkout@v4
+                    with:
+                      fetch-depth: 0
+
+                  - name: Set up Python
+                    uses: actions/setup-python@v5
+                    with:
+                      python-version: '3.11'
+
+                  - name: Install dependencies
+                    run: pip install -r requirements-dev.txt
+
+                  - name: Run Codex PR analysis
+                    env:
+                      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+                      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                    run: |
+                      python -m tools.pr_review_codex
