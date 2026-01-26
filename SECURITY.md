@@ -43,15 +43,7 @@ If/when upstream releases a fix, update dependencies and lockfiles accordingly.
 
 ### Known Vulnerabilities
 
-As of 2025-12-08, the following low-severity vulnerabilities are present in
-indirect dependencies:
-
-- `cookie <0.7.0` (used by `@azure/static-web-apps-cli`)
-- `tmp <=0.2.3` (used by `devcert`)
-
-No fix is currently available. We are monitoring for upstream updates and will
-patch as soon as possible. These packages are not used in production-critical
-paths.
+All known vulnerabilities in indirect dependencies (including `cookie` and `tmp`) have been resolved as of 2026-01-05.
 
 ### Mitigation Plan
 
