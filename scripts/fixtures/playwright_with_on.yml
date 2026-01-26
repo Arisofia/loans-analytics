@@ -1,9 +1,0 @@
-name: Playwright Example
-'on': push
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          echo 'this string contains "on": value and should remain quoted'
-      - run: echo hello

@@ -314,7 +314,12 @@ def main():
     output_path.parent.mkdir(exist_ok=True)
 
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(dashboard_metrics, f, indent=2, default=str)
+        json.dump(
+            dashboard_metrics,
+            f,
+            indent=2,
+            default=str
+        )
 
     print(f"✅ Dashboard saved to: {output_path}")
 
