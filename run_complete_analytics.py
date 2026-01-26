@@ -14,6 +14,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from src.pipeline.orchestrator import UnifiedPipeline
+
 # Add project to path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
@@ -28,8 +30,6 @@ except (ImportError, Exception) as tracing_err:
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     logger.warning("Azure tracing not initialized: %s", tracing_err)
-
-from src.pipeline.orchestrator import UnifiedPipeline  # noqa: E402
 
 
 def load_real_data():
@@ -56,7 +56,9 @@ def load_real_data():
         loans_df = pd.DataFrame(
             {
                 "loan_id": [f"L{i:05d}" for i in range(100)],
-                "customer_id": [f"C{rng.randint(1, 51):04d}" for i in range(100)],
+                "customer_id": [
+                    f"C{rng.randint(1, 51):04d}" for i in range(100)
+                ],
                 "disbursement_date": pd.date_range("2023-01-01", periods=100, freq="3D"),
                 "loan_end_date": pd.date_range("2023-02-01", periods=100, freq="3D"),
                 "disburse_principal": rng.uniform(1000, 50000, 100),
@@ -104,15 +106,13 @@ def load_real_data():
 
     if payments_df is None:
         print("⚠️  No payment file found. Using synthetic payments.")
-<<<<<<< HEAD
-
-=======
->>>>>>> 47943cb19198f56f4d0e51ca831ad9f64b0847e2
         payments_df = pd.DataFrame(
             {
                 "payment_id": [f"P{i:06d}" for i in range(len(loans_df) * 2)],
                 "loan_id": rng.choice(loans_df["loan_id"], len(loans_df) * 2),
-                "payment_date": pd.date_range("2023-01-01", periods=len(loans_df) * 2, freq="D"),
+                "payment_date": pd.date_range(
+                    "2023-01-01", periods=len(loans_df) * 2, freq="D"
+                ),
                 "payment_amount": rng.uniform(100, 5000, len(loans_df) * 2),
             }
         )
@@ -146,10 +146,6 @@ def load_real_data():
 
     if customers_df is None:
         print("⚠️  No customer file found. Creating synthetic customer data.")
-<<<<<<< HEAD
-
-=======
->>>>>>> 47943cb19198f56f4d0e51ca831ad9f64b0847e2
         unique_customers = loans_df["customer_id"].unique()[:50]
         customers_df = pd.DataFrame(
             {
