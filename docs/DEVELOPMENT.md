@@ -60,14 +60,14 @@
 | `KPI_SERVICE_URL` | URL of the KPI microservice that enriches HubSpot contacts/deals. |
 | `PIPELINE_INPUT_FILE` | Optional override for `scripts/run_data_pipeline.py` to point at a different CSV. |
 | `GITHUB_TOKEN` / `GH_TOKEN` | Grant access to the GitHub API for scripts such as `scripts/pr_status.py` and `scripts/trigger_workflows.py`. |
-| `NOTION_DATABASE_ID` | Notion database used by `scripts/import_notion_metrics.py`. |
-| `NOTION_META_TOKEN` | Bearer token supporting the Notion Importer. |
-| `NOTION_VERSION` | Notion API version (defaults to `2022-06-28` if unset). |
+| `NOTION_DATABASE_ID` | Database used by `scripts/import_notion_metrics.py`. |
+| `NOTION_META_TOKEN` | Bearer token supporting the Importer. |
+| `NOTION_VERSION` | API version (defaults to `2022-06-28` if unset). |
 | `OPENAI_API_KEY` | Enables OpenAI-powered summaries inside the Streamlit app and other agents. |
 | `GOOGLE_API_KEY` | Required by the Gemini client in `scripts/clients.py`. |
 | `GROK_API_KEY` | Required by the Grok client used by `StandaloneAIEngine`. |
 | `DATABASE_URL` | Connection string used by `src/agents/orchestrator.py` and other automation helpers. |
-| `LOG_LEVEL` | Sets the logging verbosity for the Notion importer (defaults to `INFO`). |
+| `LOG_LEVEL` | Sets the logging verbosity for the importer (defaults to `INFO`). |
 
 ### Vercel & GitHub secrets
 
@@ -109,7 +109,7 @@
 ### Integrations & AI secrets
 
 - `services/slack_bot` relies on `KPI_WEBHOOK_URL`, `API_KEY`, `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, and `SLACK_BOT_AUTOSTART`. Ensure these are synchronized across the deployed bot and GitHub Secrets so KPI mentions and alerts work.
-- The Notion metrics importer requires `NOTION_DATABASE_ID`, `NOTION_META_TOKEN`, and `NOTION_VERSION`. Keep these scoped to the Notion workspace that houses the KPI database.
+- The metrics importer requires `NOTION_DATABASE_ID`, `NOTION_META_TOKEN`, and `NOTION_VERSION`. Keep these scoped to the workspace that houses the KPI database.
 - AI helpers (`StandaloneAIEngine`, `scripts/clients.py`, and `streamlit_app.py`) look for `GROK_API_KEY`, `GOOGLE_API_KEY`, and `OPENAI_API_KEY`. Provide these values only in environments that should reach external AI services.
 - `src/agents/orchestrator.py` expects `DATABASE_URL` so agent runs can persist traceability data.
 
