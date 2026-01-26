@@ -1,23 +1,20 @@
 'use client'
-
 import { useState } from 'react'
-
-<<<<<<< HEAD
-import type { AnalyticsExportPayload, AnalyticsSummary, LoanRecord } from '@/types/analytics'
-=======
 import type {
   AnalyticsExportPayload,
   AnalyticsSummary,
   LoanRecord,
 } from '@/types/analytics'
->>>>>>> origin/main
-
+import type {
+  AnalyticsExportPayload,
+  AnalyticsSummary,
+  LoanRecord,
+} from '@/types/analytics'
 type AnalyticsExportControlsProps = {
   summary: AnalyticsSummary
   loans: LoanRecord[]
   onExport?: (payload: AnalyticsExportPayload) => Promise<void>
 }
-
 export const AnalyticsExportControls = ({
   summary,
   loans,
@@ -28,20 +25,17 @@ export const AnalyticsExportControls = ({
   >('idle')
   const [message, setMessage] = useState<string>('')
   const hasLoans = loans.length > 0
-
   const handleExport = async () => {
     if (!hasLoans) {
       setStatus('empty')
       setMessage('Upload or sync loan data before exporting.')
       return
     }
-
     if (!onExport) {
       setStatus('success')
       setMessage('Export queued.')
       return
     }
-
     try {
       setStatus('exporting')
       setMessage('')
@@ -54,7 +48,6 @@ export const AnalyticsExportControls = ({
       setMessage('Export failed. Please retry or contact support.')
     }
   }
-
   return (
     <section className="rounded-lg border border-slate-700 bg-slate-900 p-4">
       <div className="flex flex-col gap-2">

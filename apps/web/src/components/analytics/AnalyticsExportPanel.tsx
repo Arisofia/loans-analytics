@@ -1,19 +1,15 @@
 'use client'
-
 import type {
   AnalyticsExportPayload,
   AnalyticsSummary,
   LoanRecord,
 } from '@/types/analytics'
-
 import { AnalyticsExportControls } from './AnalyticsExportControls'
-
 type AnalyticsExportPanelProps = {
   summary: AnalyticsSummary
   loans: LoanRecord[]
   onExport?: (payload: AnalyticsExportPayload) => Promise<void>
 }
-
 export const AnalyticsExportPanel = ({
   summary,
   loans,

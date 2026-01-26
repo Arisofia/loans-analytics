@@ -1,16 +1,11 @@
 'use client'
-
 import { useState } from 'react'
-
 import { getSupabaseClient } from '@/lib/supabase/client'
-
 type AuthStatus = 'idle' | 'submitting' | 'success' | 'error'
-
 type AuthFormState = {
   email: string
   password: string
 }
-
 export const AuthenticationForm = () => {
   const [formState, setFormState] = useState<AuthFormState>({
     email: '',
@@ -18,32 +13,26 @@ export const AuthenticationForm = () => {
   })
   const [status, setStatus] = useState<AuthStatus>('idle')
   const [message, setMessage] = useState<string>('')
-
   const handleChange = (key: keyof AuthFormState, value: string) => {
     setFormState((prev) => ({ ...prev, [key]: value }))
   }
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setStatus('submitting')
     setMessage('')
-
     const supabase = getSupabaseClient()
     const { error } = await supabase.auth.signInWithPassword({
       email: formState.email.trim(),
       password: formState.password,
     })
-
     if (error) {
       setStatus('error')
       setMessage(error.message)
       return
     }
-
     setStatus('success')
     setMessage('Authentication complete. Redirecting...')
   }
-
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-1">
@@ -83,13 +72,10 @@ export const AuthenticationForm = () => {
       {message && (
         <p
           className={
-<<<<<<< HEAD
             status === 'error' ? 'text-xs text-rose-300' : 'text-xs text-emerald-300'
-=======
             status === 'error'
               ? 'text-xs text-rose-300'
               : 'text-xs text-emerald-300'
->>>>>>> origin/main
           }
         >
           {message}

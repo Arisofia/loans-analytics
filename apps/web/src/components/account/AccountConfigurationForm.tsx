@@ -1,17 +1,12 @@
 'use client'
-
 import { useState } from 'react'
-
 import { getSupabaseClient } from '@/lib/supabase/client'
-
 type AccountConfiguration = {
   displayName: string
   region: string
   notificationEmail: string
 }
-
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error'
-
 export const AccountConfigurationForm = () => {
   const [formState, setFormState] = useState<AccountConfiguration>({
     displayName: '',
@@ -20,60 +15,48 @@ export const AccountConfigurationForm = () => {
   })
   const [status, setStatus] = useState<SaveStatus>('idle')
   const [message, setMessage] = useState<string>('')
-
   const handleChange = (key: keyof AccountConfiguration, value: string) => {
     setFormState((prev) => ({ ...prev, [key]: value }))
   }
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setStatus('saving')
     setMessage('')
-
     const supabase = getSupabaseClient()
     const displayName = formState.displayName.trim()
     const region = formState.region.trim()
     const notificationEmail = formState.notificationEmail.trim()
-
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser()
-
     if (userError || !user) {
       setStatus('error')
       setMessage(userError?.message ?? 'Unable to load authenticated user.')
       return
     }
-
     const { error } = await supabase.from('account_settings').upsert({
       user_id: user.id,
       display_name: displayName,
       region,
       notification_email: notificationEmail,
     })
-
     if (error) {
       setStatus('error')
       setMessage('We were unable to save your account settings. Please try again.')
       return
     }
-
     setStatus('success')
     setMessage('Account configuration updated.')
   }
-
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-1">
-<<<<<<< HEAD
         <label className="text-xs font-semibold text-slate-200" htmlFor="displayName">
-=======
         <label
           className="text-xs font-semibold text-slate-200"
           htmlFor="displayName"
         >
->>>>>>> origin/main
           Account display name
         </label>
         <input
@@ -85,14 +68,11 @@ export const AccountConfigurationForm = () => {
         />
       </div>
       <div className="space-y-1">
-<<<<<<< HEAD
         <label className="text-xs font-semibold text-slate-200" htmlFor="region">
-=======
         <label
           className="text-xs font-semibold text-slate-200"
           htmlFor="region"
         >
->>>>>>> origin/main
           Primary region
         </label>
         <select
@@ -117,13 +97,10 @@ export const AccountConfigurationForm = () => {
         <input
           className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
           id="notificationEmail"
-<<<<<<< HEAD
           onChange={(event) => handleChange('notificationEmail', event.target.value)}
-=======
           onChange={(event) =>
             handleChange('notificationEmail', event.target.value)
           }
->>>>>>> origin/main
           type="email"
           value={formState.notificationEmail}
         />
@@ -138,13 +115,10 @@ export const AccountConfigurationForm = () => {
       {message && (
         <p
           className={
-<<<<<<< HEAD
             status === 'error' ? 'text-xs text-rose-300' : 'text-xs text-emerald-300'
-=======
             status === 'error'
               ? 'text-xs text-rose-300'
               : 'text-xs text-emerald-300'
->>>>>>> origin/main
           }
         >
           {message}
