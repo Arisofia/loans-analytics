@@ -74,7 +74,7 @@ jobs:
               --output threshold-results.json
           else
             echo "::warning::scripts/evaluation/check_thresholds.py not found, skipping threshold check"
-            echo '{"passed": true, "message": "Script not found"}' > threshold-results.json
+            echo '{"passed": false, "message": "Threshold check script not found; check not executed"}' > threshold-results.json
           fi
 
       - name: Upload evaluation reports
