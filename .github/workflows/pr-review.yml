@@ -1,5 +1,10 @@
 name: PR Review - Python QA & AI Analysis
 
+# This is a CONSOLIDATED workflow that combines Python QA and AI analysis.
+# It intentionally duplicates checks from ci.yml, ai_pr_review.yml, coderabbit_pr_review.yml,
+# and perplexity_review.yml to provide a unified PR review experience.
+# If enabling this workflow, consider disabling the individual workflows to avoid duplication.
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -28,6 +33,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          # Install QA tools
+          pip install black isort ruff flake8 mypy pytest pytest-cov
+          # Install project dependencies
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           fi
@@ -273,38 +281,47 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Perplexity AI Analysis
-        if: steps.check-perplexity.outputs.secrets_available == 'true' && steps.get-diff.outputs.diff_size > 0
+        if: steps.check-perplexity.outputs.secrets_available == 'true'
         run: |
-          DIFF_CONTENT=$(cat pr_diff.txt | head -c 8000 | jq -Rs .)
-          MODEL="${{ vars.PERPLEXITY_MODEL || 'llama-3.1-sonar-small-128k-online' }}"
-          RESPONSE=$(curl -s -X POST \
-            https://api.perplexity.ai/chat/completions \
-            -H "Authorization: Bearer ${{ secrets.PERPLEXITY_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "model": "'"$MODEL"'",
-              "messages": [
-                {
-                  "role": "system",
-                  "content": "You are a fintech code reviewer. Analyze PRs for bugs, security risks, compliance issues, and growth opportunities. Be concise."
-                },
-                {
-                  "role": "user",
-                  "content": '"$DIFF_CONTENT"'
-                }
-              ]
-            }')
+          DIFF_SIZE="${{ steps.get-diff.outputs.diff_size }}"
+          if [ "$DIFF_SIZE" -gt 0 ] && [ "$DIFF_SIZE" -lt 50000 ]; then
+            # Use jq to properly construct JSON payload (same approach as existing perplexity_review.yml)
+            DIFF_TEXT=$(cat pr_diff.txt | head -c 10000)
+            MODEL="${{ vars.PERPLEXITY_MODEL || 'sonar-pro' }}"
 
-          echo "$RESPONSE" | jq -r \
-            '.choices[0].message.content // "No analysis available"' \
-            > analysis.txt
+            jq -n --arg diff "$DIFF_TEXT" --arg model "$MODEL" \
+              '{
+                model: $model,
+                messages: [
+                  {
+                    role: "system",
+                    content: "You are a fintech code reviewer. Analyze PRs for bugs, security risks, compliance issues, and growth opportunities. Be concise."
+                  },
+                  {
+                    role: "user",
+                    content: $diff
+                  }
+                ]
+              }' > request.json
 
-          if [ -s analysis.txt ]; then
-            echo "## 🤖 Perplexity AI Analysis" > comment.md
-            echo "" >> comment.md
-            cat analysis.txt >> comment.md
-            gh pr comment ${{ github.event.pull_request.number }} \
-              --body-file comment.md
+            HTTP_CODE=$(curl -s -S -w "%{http_code}" -o review_response.json -X POST \
+              "https://api.perplexity.ai/chat/completions" \
+              -H "Authorization: Bearer ${{ secrets.PERPLEXITY_API_KEY }}" \
+              -H "Content-Type: application/json" \
+              -d @request.json)
+
+            if [ "$HTTP_CODE" = "200" ] && jq empty review_response.json 2>/dev/null; then
+              review_text=$(jq -r '.choices[0].message.content // "No analysis available"' review_response.json)
+              if [ -n "$review_text" ] && [ "$review_text" != "No analysis available" ]; then
+                echo "## 🤖 Perplexity AI Analysis" > comment.md
+                echo "" >> comment.md
+                echo "$review_text" >> comment.md
+                gh pr comment ${{ github.event.pull_request.number }} \
+                  --body-file comment.md
+              fi
+            else
+              echo "::warning::Perplexity API returned status $HTTP_CODE"
+            fi
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -332,15 +349,15 @@ jobs:
 
             const summary = `## 🎯 PR Review Complete
 
-            **Python QA**: ${qaResult === 'success' ? '✅ Passed' : '⚠️ Review needed'}
-            **SonarQube**: ${sonarResult === 'success' ? '✅ Analyzed' : sonarResult === 'skipped' ? '⏭️ Skipped' : '⚠️ Issues found'}
-            **CodeRabbit**: ${coderabbitResult === 'success' ? '✅ Reviewed' : coderabbitResult === 'skipped' ? '⏭️ Skipped' : '⚠️ Check comments'}
-            **Sourcery**: ${sourceryResult === 'success' ? '✅ Reviewed' : sourceryResult === 'skipped' ? '⏭️ Skipped' : '⚠️ Check comments'}
-            **Gemini**: ${geminiResult === 'success' ? '✅ Reviewed' : geminiResult === 'skipped' ? '⏭️ Skipped' : '⚠️ Check comments'}
-            **Codex**: ${codexResult === 'success' ? '✅ Reviewed' : codexResult === 'skipped' ? '⏭️ Skipped' : '⚠️ Check comments'}
-            **Perplexity**: ${perplexityResult === 'success' ? '✅ Analyzed' : perplexityResult === 'skipped' ? '⏭️ Skipped' : '⚠️ Check comments'}
+            **Python QA**: ${qaResult === 'success' ? '✅ Passed' : qaResult === 'failure' ? '❌ Failed' : '⚠️ Review needed'}
+            **SonarQube**: ${sonarResult === 'success' ? '✅ Analyzed' : sonarResult === 'skipped' ? '⏭️ Skipped' : sonarResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
+            **CodeRabbit**: ${coderabbitResult === 'success' ? '✅ Reviewed' : coderabbitResult === 'skipped' ? '⏭️ Skipped' : coderabbitResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
+            **Sourcery**: ${sourceryResult === 'success' ? '✅ Reviewed' : sourceryResult === 'skipped' ? '⏭️ Skipped' : sourceryResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
+            **Gemini**: ${geminiResult === 'success' ? '✅ Reviewed' : geminiResult === 'skipped' ? '⏭️ Skipped' : geminiResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
+            **Codex**: ${codexResult === 'success' ? '✅ Reviewed' : codexResult === 'skipped' ? '⏭️ Skipped' : codexResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
+            **Perplexity**: ${perplexityResult === 'success' ? '✅ Analyzed' : perplexityResult === 'skipped' ? '⏭️ Skipped' : perplexityResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
 
-            All automated reviews and quality checks have been completed. Please review the feedback from each tool above.
+            The automated reviews and quality checks listed above have either completed or were skipped based on the current configuration. Please review any available feedback from each tool.
 
             *This is an automated production-ready PR workflow for fintech compliance and code quality.*`;
 
