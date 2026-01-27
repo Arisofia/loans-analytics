@@ -254,7 +254,7 @@ jobs:
         if: steps.check-perplexity.outputs.secrets_available == 'true'
         run: |
           DIFF_SIZE="${{ steps.get-diff.outputs.diff_size }}"
-          if [ "$DIFF_SIZE" -gt 0 ] && [ "$DIFF_SIZE" -lt 50000 ]; then
+          if [ -n "$DIFF_SIZE" ] && echo "$DIFF_SIZE" | grep -Eq '^[0-9]+$' && [ "$DIFF_SIZE" -gt 0 ] && [ "$DIFF_SIZE" -lt 50000 ]; then
             # Use jq to properly construct JSON payload (same approach as existing perplexity_review.yml)
             DIFF_TEXT=$(cat pr_diff.txt | head -c 10000)
             MODEL="${{ vars.PERPLEXITY_MODEL || 'sonar-pro' }}"
