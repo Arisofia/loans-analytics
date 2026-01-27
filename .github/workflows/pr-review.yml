@@ -58,7 +58,7 @@ jobs:
       - name: Lint with Flake8
         run: |
           if [ -d src ] || [ -d python ] || [ -d streamlit_app ]; then
-            flake8 $(find . -maxdepth 1 -type d -name 'src' -o -name 'python' -o -name 'streamlit_app' 2>/dev/null) 2>&1 | tee flake8.log || echo "::warning::Flake8 found issues"
+            flake8 $(find . -maxdepth 1 -type d \( -name 'src' -o -name 'python' -o -name 'streamlit_app' \) 2>/dev/null) 2>&1 | tee flake8.log || echo "::warning::Flake8 found issues"
           else
             flake8 . 2>&1 | tee flake8.log || echo "::warning::Flake8 found issues"
           fi
@@ -67,7 +67,7 @@ jobs:
       - name: Type check with mypy
         run: |
           if [ -d src ] || [ -d python ]; then
-            mypy $(find . -maxdepth 1 -type d -name 'src' -o -name 'python' 2>/dev/null) 2>&1 | tee mypy.log || echo "::warning::mypy found type issues"
+            mypy $(find . -maxdepth 1 -type d \( -name 'src' -o -name 'python' \) 2>/dev/null) 2>&1 | tee mypy.log || echo "::warning::mypy found type issues"
           else
             mypy . 2>&1 | tee mypy.log || echo "::warning::mypy found type issues"
           fi
@@ -75,10 +75,12 @@ jobs:
 
       - name: Run tests with pytest
         run: |
-          if command -v pytest &> /dev/null; then
+          if python -m pytest --cov --version &>/dev/null 2>&1; then
             pytest --cov --cov-report=xml --cov-report=term 2>&1 || echo "::warning::pytest found test failures"
-          else
+          elif command -v pytest &> /dev/null; then
             pytest 2>&1 || echo "::warning::pytest found test failures"
+          else
+            echo "::warning::pytest not available"
           fi
         continue-on-error: true
 
@@ -139,8 +141,8 @@ jobs:
             echo "secrets_available=true" >> "$GITHUB_OUTPUT"
           else
             echo "secrets_available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::SONAR_TOKEN not configured - skipping SonarQube scan"
           fi
-        uses: sonarsource/sonarqube-scan-action@v2
 
       - name: Install Python dependencies
         if: steps.check-sonar.outputs.secrets_available == 'true'
@@ -150,6 +152,38 @@ jobs:
           fi
 
       - name: SonarQube Scan
+        if: steps.check-sonar.outputs.secrets_available == 'true'
+        uses: SonarSource/sonarcloud-github-action@v2.0.0
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.python.version=3.11
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+  ai-review-coderabbit:
+    name: CodeRabbit AI Review
+    runs-on: ubuntu-latest
+    needs: python-qa
+    if: always()
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check CodeRabbit token
+        id: check-coderabbit
+        env:
+          CODERABBIT_TOKEN: ${{ secrets.CODERABBIT_TOKEN }}
+        run: |
+          if [ -n "$CODERABBIT_TOKEN" ]; then
+            echo "secrets_available=true" >> "$GITHUB_OUTPUT"
+          else
             echo "secrets_available=false" >> "$GITHUB_OUTPUT"
             echo "::warning::CODERABBIT_TOKEN not configured - skipping CodeRabbit review"
           fi
@@ -168,8 +202,10 @@ jobs:
 
       - name: Check Sourcery token
         id: check-sourcery
+        env:
+          SOURCERY_TOKEN: ${{ secrets.SOURCERY_TOKEN }}
         run: |
-          if [ -n "${{ secrets.SOURCERY_TOKEN }}" ]; then
+          if [ -n "$SOURCERY_TOKEN" ]; then
             echo "secrets_available=true" >> "$GITHUB_OUTPUT"
           else
             echo "secrets_available=false" >> "$GITHUB_OUTPUT"
@@ -226,8 +262,10 @@ jobs:
 
       - name: Check Perplexity API key
         id: check-perplexity
+        env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
         run: |
-          if [ -n "${{ secrets.PERPLEXITY_API_KEY }}" ]; then
+          if [ -n "$PERPLEXITY_API_KEY" ]; then
             echo "secrets_available=true" >> "$GITHUB_OUTPUT"
           else
             echo "secrets_available=false" >> "$GITHUB_OUTPUT"
