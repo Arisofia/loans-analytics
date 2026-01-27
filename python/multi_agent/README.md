@@ -1,39 +1,50 @@
-# Multi-Agent System Documentation
+# Documentation for Multi-Agent System
 
 ## Architecture Overview
-This section outlines the architecture of the multi-agent system, including the key components and their interactions.
+The multi-agent system is designed to handle complex tasks by coordinating multiple agents. Each agent is responsible for a specific aspect of the task, allowing for increased efficiency and modularity.
 
 ## Quick Start Guide
-To get started with the multi-agent system, follow these steps:
-1. Installation Instructions
-2. Initial Setup
+To get started with the multi-agent system:
+1. Clone the repository.
+2. Install required dependencies using `pip install -r requirements.txt`.
+3. Start the agent using `python main.py`.
 
 ## Usage Examples
 ### Single Agent Queries
-- Example query structure
-- Sample queries for different agents
+```python
+response = agent.query('What is the status of the loan?')
+print(response)
+```
 
-### Scenario Execution
-- Detailed information on executing different scenarios
+### Scenarios
+1. **Loan Application Processing:** The application is processed by multiple agents to ensure a quick turnaround.
+2. **Customer Support:** Agents collaborate to provide answers to customer inquiries efficiently.
 
-## Configuration Instructions
-Instructions for configuring the system and agents to suit specific use cases.
+## Configuration Options
+You can configure the agents by modifying the `config.yaml` file. Here you can set options such as:
+- Timeout durations
+- Logging levels
+- Agent-specific parameters
 
 ## Agent Descriptions
-### Risk Agent
-- Description of the Risk Agent functions and responsibilities.
-### Growth Agent
-- Description of the Growth Agent functions and responsibilities.
-### Ops Agent
-- Description of the Ops Agent functions and responsibilities.
-### Compliance Agent
-- Description of the Compliance Agent functions and responsibilities.
+- **Data Processing Agent:** Handles data extraction and transformation.
+- **Decision-Making Agent:** Analyzes data and makes recommendations.
+- **Communication Agent:** Manages interactions with users and other systems.
 
 ## Observability Features
-An overview of the observability features implemented in the system for monitoring and logging.
+The system includes logging and monitoring features:
+- Logs can be viewed in `logs/` directory.
+- Monitoring metrics are available via the integrated dashboard.
 
-## Guardrails Information
-Best practices and guardrails for using agents to ensure compliant and secure operations.
+## Guardrails Explanation
+Guardrails are implemented to ensure safe operation of agents:
+- Input validation
+- Rate limiting to avoid system overload
 
-## Migration Guide
-This guide explains the steps to migrate from legacy code to the new multi-agent architecture.
+## Migration Guide from Legacy Code
+To migrate from the legacy system:
+1. Review deprecated functions in the legacy code.
+2. Replace calls with the corresponding functions in the new system.
+3. Test thoroughly to ensure functionality is preserved.
+
+This documentation provides a comprehensive overview of the multi-agent system, enabling you to quickly understand and effectively utilize its features.
