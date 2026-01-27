@@ -39,8 +39,10 @@ jobs:
         run: npm install -g pnpm
       - name: Install Node dependencies
         run: |
-          if [ -d "apps/web" ]; then
+          if [ -f "apps/web/pnpm-lock.yaml" ]; then
             pnpm -C apps/web install --frozen-lockfile --ignore-scripts
+          elif [ -d "apps/web" ]; then
+            pnpm -C apps/web install --ignore-scripts
           else
             echo "::warning::apps/web directory not found, skipping pnpm install"
           fi
