@@ -147,7 +147,9 @@ def compute_growth_kpis(
         if col not in funnel.columns:
             funnel[col] = 0
 
-    row = funnel.iloc[0] if not funnel.empty else funnel.loc[0] if 0 in funnel.index else None
+    # Use the first row if available; if multiple rows exist, this explicitly
+    # takes the first one rather than relying on index values like 0.
+    row = funnel.iloc[0] if not funnel.empty else None
 
     total_applications = float(row["applications"]) if row is not None else 0.0
     approved_applications = float(row["approved"]) if row is not None else 0.0
