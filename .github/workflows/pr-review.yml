@@ -339,9 +339,9 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const qaResult = '${{ needs.python-qa.result }}';
-            const sonarResult = '${{ needs.sonarqube-scan.result }}';
-            const coderabbitResult = '${{ needs.ai-review-coderabbit.result }}';
+            The automated reviews and quality checks listed above have either completed or were skipped based on the current configuration. Please review any available feedback from each tool.
+
+            *This is an automated PR workflow for fintech compliance and code quality.*`;
             const sourceryResult = '${{ needs.ai-review-sourcery.result }}';
             const geminiResult = '${{ needs.ai-review-gemini.result }}';
             const codexResult = '${{ needs.ai-review-codex.result }}';
