@@ -51,3 +51,10 @@ psycopg[binary]>=3.1.0
 supabase>=2.0
 # Testing utilities
 Faker>=18.0
+# Code formatting and linting
+black>=24.0.0
+isort>=5.13.0
+ruff>=0.1.0
+flake8>=7.0.0
+mypy>=1.8.0
+pylint>=3.0.0
