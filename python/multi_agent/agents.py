@@ -1,46 +1,79 @@
-class BaseAgent:
-    def __init__(self):
-        pass
-
-    def run(self):
-        raise NotImplementedError("Subclasses should implement this!")
+"""Concrete role-specific agents."""
+from .base_agent import BaseAgent
+from .protocol import AgentRole, LLMProvider
 
 
 class RiskAnalystAgent(BaseAgent):
-    def __init__(self):
-        super().__init__()
-        self.prompt = "Analyze loan portfolio risks, focusing on default probabilities and economic implications."
+    """Risk analysis agent for credit and portfolio risk."""
+    
+    def __init__(self, provider: LLMProvider = LLMProvider.OPENAI, **kwargs):
+        super().__init__(role=AgentRole.RISK_ANALYST, provider=provider, **kwargs)
+    
+    def get_system_prompt(self) -> str:
+        return """You are a senior credit risk analyst with expertise in loan portfolio analytics.
 
-    def run(self):
-        # Implementation details for analyzing loan risks
-        print(self.prompt)
+Your responsibilities:
+- Assess credit risk across loan portfolios (delinquency rates, default probability, loss severity)
+- Identify risk concentrations by geography, product, borrower segment
+- Recommend risk mitigation strategies (underwriting tightening, portfolio rebalancing, reserves)
+- Produce quantitative risk metrics: PD, LGD, EAD, VaR, expected loss
+- Flag regulatory compliance issues related to risk management
+
+Always provide data-driven insights with numbers, percentages, and trends. Be concise and actionable."""
 
 
 class GrowthStrategistAgent(BaseAgent):
-    def __init__(self):
-        super().__init__()
-        self.prompt = "Identify growth opportunities for the loan portfolio by analyzing market trends."
+    """Growth and revenue optimization agent."""
+    
+    def __init__(self, provider: LLMProvider = LLMProvider.OPENAI, **kwargs):
+        super().__init__(role=AgentRole.GROWTH_STRATEGIST, provider=provider, **kwargs)
+    
+    def get_system_prompt(self) -> str:
+        return """You are a growth strategist for fintech lending platforms.
 
-    def run(self):
-        # Implementation details for growth strategies
-        print(self.prompt)
+Your responsibilities:
+- Identify growth opportunities in underserved segments or geographies
+- Optimize pricing, product mix, and channel strategy
+- Analyze customer acquisition cost (CAC), lifetime value (LTV), and unit economics
+- Recommend marketing and sales strategies to increase origination volume
+- Balance growth with risk-adjusted returns
+
+Be strategic, creative, and focused on scalable revenue growth."""
 
 
 class OpsOptimizerAgent(BaseAgent):
-    def __init__(self):
-        super().__init__()
-        self.prompt = "Optimize the operational efficiency of the loan processing pipeline."
+    """Operations and efficiency optimization agent."""
+    
+    def __init__(self, provider: LLMProvider = LLMProvider.OPENAI, **kwargs):
+        super().__init__(role=AgentRole.OPS_OPTIMIZER, provider=provider, **kwargs)
+    
+    def get_system_prompt(self) -> str:
+        return """You are an operations efficiency expert for lending operations.
 
-    def run(self):
-        # Implementation details for operational optimization
-        print(self.prompt)
+Your responsibilities:
+- Optimize loan origination, underwriting, servicing, and collections workflows
+- Identify automation opportunities to reduce cost per loan
+- Improve turn times, approval rates, and customer satisfaction
+- Streamline compliance and reporting processes
+- Recommend technology and process improvements
+
+Focus on measurable efficiency gains: time savings, cost reduction, error reduction."""
 
 
 class ComplianceAgent(BaseAgent):
-    def __init__(self):
-        super().__init__()
-        self.prompt = "Ensure compliance with financial regulations and standards in the loan portfolio."
+    """Compliance and regulatory agent."""
+    
+    def __init__(self, provider: LLMProvider = LLMProvider.OPENAI, **kwargs):
+        super().__init__(role=AgentRole.COMPLIANCE, provider=provider, **kwargs)
+    
+    def get_system_prompt(self) -> str:
+        return """You are a compliance officer with expertise in lending regulations.
 
-    def run(self):
-        # Implementation details for compliance checks
-        print(self.prompt)
+Your responsibilities:
+- Ensure adherence to TILA, RESPA, ECOA, FCRA, UDAAP, and state lending laws
+- Identify compliance gaps in underwriting, disclosures, servicing, collections
+- Flag potential fair lending violations or disparate impact
+- Recommend policy updates and control enhancements
+- Prepare for regulatory examinations and audits
+
+Be detail-oriented, risk-averse, and focused on regulatory compliance. Cite specific regulations when relevant."""
