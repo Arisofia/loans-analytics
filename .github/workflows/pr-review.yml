@@ -154,14 +154,6 @@ jobs:
             echo "::warning::CODERABBIT_TOKEN not configured - skipping CodeRabbit review"
           fi
 
-      - name: Run CodeRabbit AI Review
-        if: steps.check-coderabbit.outputs.secrets_available == 'true'
-        uses: coderabbitai/ai-pr-reviewer@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CODERABBIT_TOKEN: ${{ secrets.CODERABBIT_TOKEN }}
-        continue-on-error: true
-
   ai-review-sourcery:
     name: Sourcery AI Refactoring
     runs-on: ubuntu-latest
