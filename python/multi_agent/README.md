@@ -1,50 +1,59 @@
-# Documentation for Multi-Agent System
+# Multi-Agent System Documentation
 
 ## Architecture Overview
-The multi-agent system is designed to handle complex tasks by coordinating multiple agents. Each agent is responsible for a specific aspect of the task, allowing for increased efficiency and modularity.
+This multi-agent system is designed to facilitate complex interactions and decision-making processes through coordinated agents.
 
-## Quick Start Guide
-To get started with the multi-agent system:
-1. Clone the repository.
-2. Install required dependencies using `pip install -r requirements.txt`.
-3. Start the agent using `python main.py`.
+## Quick Start
+To get started, clone the repository and install the required dependencies:
+```bash
+git clone https://github.com/Arisofia/abaco-loans-analytics.git
+cd abaco-loans-analytics
+pip install -r requirements.txt
+```
 
 ## Usage Examples
-### Single Agent Queries
+### Single Agent Query
+To initiate a query using a single agent, execute the following command:
 ```python
-response = agent.query('What is the status of the loan?')
+from agents import SingleAgent
+agent = SingleAgent()
+response = agent.query('Your query here')
 print(response)
 ```
 
-### Scenarios
-1. **Loan Application Processing:** The application is processed by multiple agents to ensure a quick turnaround.
-2. **Customer Support:** Agents collaborate to provide answers to customer inquiries efficiently.
+### Scenario Execution
+Execution of scenarios can be done via the following command:
+```python
+from scenarios import execute_scenario
+execute_scenario('scenario_name')
+```
 
-## Configuration Options
-You can configure the agents by modifying the `config.yaml` file. Here you can set options such as:
-- Timeout durations
-- Logging levels
-- Agent-specific parameters
+### Custom Scenarios
+Custom scenarios can be created by following the predefined structure in the `scenarios` directory. Be sure to define necessary parameters and expected outcomes.
 
-## Agent Descriptions
-- **Data Processing Agent:** Handles data extraction and transformation.
-- **Decision-Making Agent:** Analyzes data and makes recommendations.
-- **Communication Agent:** Manages interactions with users and other systems.
+### Configuration via .env
+Configuration settings can be managed through a `.env` file. Here’s an example of a `.env` file:
+```plaintext
+AGENT_COUNT=4
+TIMEOUT=30
+"""
+
+## List of Agents
+1. **Agent A**: Description of Agent A.
+2. **Agent B**: Description of Agent B.
+3. **Agent C**: Description of Agent C.
+4. **Agent D**: Description of Agent D.
 
 ## Observability Features
-The system includes logging and monitoring features:
-- Logs can be viewed in `logs/` directory.
-- Monitoring metrics are available via the integrated dashboard.
+The system includes observability features such as logging, monitoring, and alerting to facilitate tracking and debugging.
 
-## Guardrails Explanation
-Guardrails are implemented to ensure safe operation of agents:
-- Input validation
-- Rate limiting to avoid system overload
+## Guardrails
+Guardrails are implemented to ensure agents operate within predefined parameters, thereby preventing erroneous actions.
 
 ## Migration Guide from Legacy Code
-To migrate from the legacy system:
-1. Review deprecated functions in the legacy code.
-2. Replace calls with the corresponding functions in the new system.
-3. Test thoroughly to ensure functionality is preserved.
+Transitioning from the legacy codebase involves:
+1. Reviewing existing functionality.
+2. Mapping legacy components to new agent structures.
+3. Testing extensively to ensure feature parity.
 
-This documentation provides a comprehensive overview of the multi-agent system, enabling you to quickly understand and effectively utilize its features.
+For further information, refer to the full documentation and API specifications.
