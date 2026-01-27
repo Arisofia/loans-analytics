@@ -277,10 +277,10 @@ jobs:
         if: steps.check-perplexity.outputs.secrets_available == 'true'
         id: get-diff
         run: |
-          gh pr diff ${{ github.event.pull_request.number }} > pr_diff.txt
+          # Fetch the base branch and compute the diff against HEAD, similar to perplexity_review.yml
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          git diff "origin/${{ github.base_ref }}"...HEAD > pr_diff.txt
           echo "diff_size=$(wc -c < pr_diff.txt)" >> "$GITHUB_OUTPUT"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Perplexity AI Analysis
         if: steps.check-perplexity.outputs.secrets_available == 'true'
