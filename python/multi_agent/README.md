@@ -1,59 +1,52 @@
-# Multi-Agent System Documentation
+# Multi-Agent README Documentation
 
 ## Architecture Overview
-This multi-agent system is designed to facilitate complex interactions and decision-making processes through coordinated agents.
+This project implements a multi-agent system designed for efficient decision-making processes. The architecture consists of several agents that work collectively to perform tasks and optimize outcomes.
 
-## Quick Start
-To get started, clone the repository and install the required dependencies:
+## Quick Start Commands
+To get started with the multi-agent system, follow these commands:
 ```bash
+# Clone the repository
 git clone https://github.com/Arisofia/abaco-loans-analytics.git
+
+# Navigate to the project directory
 cd abaco-loans-analytics
+
+# Install required dependencies
 pip install -r requirements.txt
 ```
 
 ## Usage Examples
-### Single Agent Query
-To initiate a query using a single agent, execute the following command:
-```python
-from agents import SingleAgent
-agent = SingleAgent()
-response = agent.query('Your query here')
-print(response)
+### Single Agent
+To run a single agent, use the following command:
+```bash
+python -m agent_name.run
+```
+### Scenarios
+You can run scenarios with multiple agents using:
+```bash
+python -m scenario_name.execute
 ```
 
-### Scenario Execution
-Execution of scenarios can be done via the following command:
-```python
-from scenarios import execute_scenario
-execute_scenario('scenario_name')
-```
+## Configuration Details
+Configuration can be managed through the `config.yaml` file located in the root directory. Modify the settings as needed to customize the behavior of the agents.
 
-### Custom Scenarios
-Custom scenarios can be created by following the predefined structure in the `scenarios` directory. Be sure to define necessary parameters and expected outcomes.
-
-### Configuration via .env
-Configuration settings can be managed through a `.env` file. Here’s an example of a `.env` file:
-```plaintext
-AGENT_COUNT=4
-TIMEOUT=30
-"""
-
-## List of Agents
-1. **Agent A**: Description of Agent A.
-2. **Agent B**: Description of Agent B.
-3. **Agent C**: Description of Agent C.
-4. **Agent D**: Description of Agent D.
+## Agents List
+1. **Agent A**: Responsible for handling task A. Designed to optimize performance in scenario X.
+2. **Agent B**: Focused on data analysis, Agent B pulls in data from various sources to process and return insights.
+3. **Agent C**: Implements decision-making algorithms that prioritize efficiency and resource management.
+4. **Agent D**: Monitors system health and performance, providing observability features to ensure reliability.
 
 ## Observability Features
-The system includes observability features such as logging, monitoring, and alerting to facilitate tracking and debugging.
+The system includes monitoring tools to track agent performance and system health metrics. This enables users to maintain oversight on agent activities and detect anomalies early.
 
-## Guardrails
-Guardrails are implemented to ensure agents operate within predefined parameters, thereby preventing erroneous actions.
+## Guardrails Explanation
+Guardrails in the system ensure safe operation by imposing checks and constraints on agent behavior. These include runtime validations and error handling mechanisms that prevent agents from deviating from expected behavior.
 
 ## Migration Guide from Legacy Code
-Transitioning from the legacy codebase involves:
-1. Reviewing existing functionality.
-2. Mapping legacy components to new agent structures.
-3. Testing extensively to ensure feature parity.
+If you're migrating from legacy code, follow these steps:
+1. **Audit Existing Implementations**: Review the current codebase for compatibility.
+2. **Refactor to New Structure**: Adjust your code to match the new multi-agent pattern.
+3. **Run Tests**: Ensure that all tests pass after the migration to confirm successful adaptation.
 
-For further information, refer to the full documentation and API specifications.
+```
