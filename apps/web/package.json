@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "clean": "rm -rf .next node_modules dist build .cache coverage *.log .venv __pycache__ .turbo out *.bak *.old package-lock.old.json .DS_Store",
+    "clean": "rm -rf .next node_modules dist build .cache coverage *.log .venv __pycache__ .turbo out *.bak *.old package-lock.old.json .DS_Store .eslintcache",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -64,5 +64,6 @@
     "lodash": "4.17.23",
     "tmp": "0.2.5",
     "undici": "7.19.1"
-  }
+  },
+  "type": "module"
 }
