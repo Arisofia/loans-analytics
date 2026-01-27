@@ -1,52 +1,45 @@
-# Multi-Agent README Documentation
+# Multi-Agent Orchestration System
 
 ## Architecture Overview
-This project implements a multi-agent system designed for efficient decision-making processes. The architecture consists of several agents that work collectively to perform tasks and optimize outcomes.
+This section provides a brief overview of the architecture of the Multi-Agent Orchestration System.
 
-## Quick Start Commands
-To get started with the multi-agent system, follow these commands:
-```bash
-# Clone the repository
-git clone https://github.com/Arisofia/abaco-loans-analytics.git
-
-# Navigate to the project directory
-cd abaco-loans-analytics
-
-# Install required dependencies
-pip install -r requirements.txt
-```
+## Quick Start Instructions
+Follow these steps to quickly set up the system and get started.
 
 ## Usage Examples
-### Single Agent
-To run a single agent, use the following command:
-```bash
-python -m agent_name.run
-```
-### Scenarios
-You can run scenarios with multiple agents using:
-```bash
-python -m scenario_name.execute
-```
+### Single Agent Query
+Here is an example of how to execute a query with a single agent.
 
-## Configuration Details
-Configuration can be managed through the `config.yaml` file located in the root directory. Modify the settings as needed to customize the behavior of the agents.
+### Scenario Execution
+This section illustrates how to execute a predefined scenario with the system.
 
-## Agents List
-1. **Agent A**: Responsible for handling task A. Designed to optimize performance in scenario X.
-2. **Agent B**: Focused on data analysis, Agent B pulls in data from various sources to process and return insights.
-3. **Agent C**: Implements decision-making algorithms that prioritize efficiency and resource management.
-4. **Agent D**: Monitors system health and performance, providing observability features to ensure reliability.
+## Configuration with Environment Variables
+Configure the system using the following environment variables:
+- `RISK_AGENT_CONFIG`
+- `GROWTH_AGENT_CONFIG`
+- `OPS_AGENT_CONFIG`
+- `COMPLIANCE_AGENT_CONFIG`
+
+## List of Agents
+- **Risk**: responsible for assessing risks associated with loan applications.
+- **Growth**: focuses on strategies for business expansion and customer acquisition.
+- **Ops**: handles operational management tasks and efficiency improvements.
+- **Compliance**: ensures adherence to legal and regulatory requirements.
 
 ## Observability Features
-The system includes monitoring tools to track agent performance and system health metrics. This enables users to maintain oversight on agent activities and detect anomalies early.
+The system supports observability with the following features:
+- **Trace ID**: unique identifier for tracing requests through the system.
+- **Tokens**: used for authorization and tracking.
+- **Cost**: monitors operational costs.
+- **Latency**: measures the time taken for operations.
+- **Logs**: provides visibility into system operations and potential issues.
+- **OpenTelemetry**: supports distributed tracing and metrics collection.
 
-## Guardrails Explanation
-Guardrails in the system ensure safe operation by imposing checks and constraints on agent behavior. These include runtime validations and error handling mechanisms that prevent agents from deviating from expected behavior.
+## Guardrails
+- **PII Redaction**: implements mechanisms to redact personally identifiable information.
 
-## Migration Guide from Legacy Code
-If you're migrating from legacy code, follow these steps:
-1. **Audit Existing Implementations**: Review the current codebase for compatibility.
-2. **Refactor to New Structure**: Adjust your code to match the new multi-agent pattern.
-3. **Run Tests**: Ensure that all tests pass after the migration to confirm successful adaptation.
+## Migration from Legacy Code Pattern
+Guidelines and best practices for migrating from legacy code patterns to the new architecture.
 
-```
+## Examples Directory Reference
+A reference to the directory containing examples for using the Multi-Agent Orchestration System.
