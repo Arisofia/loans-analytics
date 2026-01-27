@@ -134,3 +134,4 @@ logs/runs/run_*/
 .rollback/
 .zencoder/
 .zenflow/
+.gradle/
