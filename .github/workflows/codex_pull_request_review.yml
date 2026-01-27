@@ -21,7 +21,7 @@ jobs:
     steps:
       - name: Assign PR reviewers and assignees
         if: secrets.OPENAI_API_KEY != ''
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         with:
           github-token: ${{ github.token }}
           script: |
@@ -46,13 +46,13 @@ jobs:
     outputs:
       final_message: ${{ steps.run_codex.outputs['final-message'] }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
       - name: Run Codex
         id: run_codex
         continue-on-error: true
-        uses: openai/codex-action@v1
+        uses: openai/codex-action@f5c0ca71642badb34c1e66321d8d85685a0fa3dc
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           prompt-file: .github/codex/prompts/review.md
@@ -69,7 +69,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Post feedback to PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         with:
           github-token: ${{ github.token }}
           script: |

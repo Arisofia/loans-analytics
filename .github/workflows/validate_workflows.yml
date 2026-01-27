@@ -10,10 +10,10 @@ jobs:
     name: Syntax Validation (actionlint)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - name: Run actionlint
         id: actionlint
-        uses: rhysd/actionlint@v1.6.26
+        uses: rhysd/actionlint@ea8102762106cdca9c88829f1295b39a544706f3
         with:
           args: .github/workflows
         continue-on-error: true
@@ -30,7 +30,7 @@ jobs:
     name: YAML Structure Validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - name: Install yamllint
         run: |
           python -m pip install yamllint
@@ -41,7 +41,7 @@ jobs:
     name: Dependency Validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - name: Validate dependencies (pip)
         run: |
           python -m pip install --upgrade pip
@@ -52,7 +52,7 @@ jobs:
     name: Secrets Validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - name: Check for hardcoded secrets
         run: |
           set -euo pipefail

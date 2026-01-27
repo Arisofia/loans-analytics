@@ -70,9 +70,9 @@ jobs:
       contents: read
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.11"
           cache: "pip"
@@ -99,7 +99,7 @@ jobs:
 
       - name: Upload orchestration output
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: orchestrator_result
           path: exports/orchestrator_result.json
@@ -107,7 +107,7 @@ jobs:
           retention-days: 30
 
       - name: Notify Leadership on success
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
         if: success() && needs.validate-secrets.outputs.slack_available == 'true'
@@ -127,7 +127,7 @@ jobs:
             }
 
       - name: Notify Leadership on failure
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
         if: failure() && needs.validate-secrets.outputs.slack_available == 'true'
