@@ -137,7 +137,7 @@ jobs:
             echo "secrets_available=true" >> "$GITHUB_OUTPUT"
           else
             echo "secrets_available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::SONAR_TOKEN not configured - skipping SonarQube scan"
+        uses: sonarsource/sonarqube-scan-action@v2
           fi
 
       - name: Install Python dependencies
