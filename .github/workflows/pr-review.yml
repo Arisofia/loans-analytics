@@ -73,12 +73,17 @@ jobs:
 
       - name: Run tests with pytest
         run: |
-          if python -m pytest --cov --version &>/dev/null 2>&1; then
-            pytest --cov --cov-report=xml --cov-report=term 2>&1 || echo "::warning::pytest found test failures"
-          elif command -v pytest &> /dev/null; then
-            pytest 2>&1 || echo "::warning::pytest found test failures"
+          # Only run pytest if pytest-style test files are present
+          if find . -type f \( -name "test_*.py" -o -name "*_test.py" \) | grep -q .; then
+            if python -m pytest --cov --version >/dev/null 2>&1; then
+              pytest --cov --cov-report=xml --cov-report=term 2>&1 || echo "::warning::pytest found test failures"
+            elif command -v pytest >/dev/null 2>&1; then
+              pytest 2>&1 || echo "::warning::pytest found test failures"
+            else
+              echo "::warning::pytest not available"
+            fi
           else
-            echo "::warning::pytest not available"
+            echo "::notice::No pytest-compatible test files were found; skipping pytest run."
           fi
         continue-on-error: true
 
