@@ -206,7 +206,7 @@ jobs:
       base_ref: ${{ github.event.pull_request.base.ref }}
       gemini_model: ${{ vars.GEMINI_MODEL || 'gemini-1.5-pro' }}
     secrets:
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_SIMPLE || secrets.GEMINI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_SIMPLE }}
 
   ai-review-codex:
     name: OpenAI Codex Review
