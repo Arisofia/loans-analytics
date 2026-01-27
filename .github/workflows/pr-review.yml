@@ -194,7 +194,6 @@ jobs:
     uses: ./.github/workflows/gemini_pr_review.yml
     with:
       is_fork: ${{ github.event.pull_request.head.repo.fork }}
-      pr_number: ${{ github.event.pull_request.number }}
       base_ref: ${{ github.event.pull_request.base.ref }}
       gemini_model: ${{ vars.GEMINI_MODEL || 'gemini-1.5-pro' }}
     secrets:
