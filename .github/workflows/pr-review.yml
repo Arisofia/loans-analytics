@@ -11,6 +11,8 @@ jobs:
   python-qa:
     name: Python Quality Assurance
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -101,6 +103,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: python-qa
     if: always()
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -212,6 +216,9 @@ jobs:
     name: Gemini AI Review
     needs: python-qa
     if: always() && github.event.pull_request.head.repo.fork == false && github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      pull-requests: write
     uses: ./.github/workflows/gemini_pr_review.yml
     with:
       is_fork: ${{ github.event.pull_request.head.repo.fork }}
@@ -225,6 +232,9 @@ jobs:
     name: OpenAI Codex Review
     needs: python-qa
     if: always() && github.event.pull_request.head.repo.fork == false && github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      pull-requests: write
     uses: ./.github/workflows/codex_pull_request_review.yml
     with:
       is_fork: ${{ github.event.pull_request.head.repo.fork }}
