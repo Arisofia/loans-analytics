@@ -132,13 +132,15 @@ jobs:
 
       - name: Check SonarQube secrets
         id: check-sonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          if [ -n "${{ secrets.SONAR_TOKEN }}" ]; then
+          if [ -n "$SONAR_TOKEN" ]; then
             echo "secrets_available=true" >> "$GITHUB_OUTPUT"
           else
             echo "secrets_available=false" >> "$GITHUB_OUTPUT"
-        uses: sonarsource/sonarqube-scan-action@v2
           fi
+        uses: sonarsource/sonarqube-scan-action@v2
 
       - name: Install Python dependencies
         if: steps.check-sonar.outputs.secrets_available == 'true'
