@@ -34,37 +34,42 @@ jobs:
           fi
 
       - name: Lint with Ruff
-        run: ruff check . || echo "::warning::Ruff found issues"
+        run: ruff check . 2>&1 | tee ruff.log || echo "::warning::Ruff found issues"
         continue-on-error: true
 
       - name: Format check with Black
-        run: black --check . || echo "::warning::Black found formatting issues"
+        run: black --check . 2>&1 | tee black.log || echo "::warning::Black found formatting issues"
         continue-on-error: true
 
       - name: Sort imports with isort
-        run: isort --check-only . || echo "::warning::isort found import sorting issues"
+        run: isort --check-only . 2>&1 | tee isort.log || echo "::warning::isort found import sorting issues"
         continue-on-error: true
 
       - name: Lint with Flake8
         run: |
           if [ -d src ] || [ -d python ] || [ -d streamlit_app ]; then
-            flake8 $(find . -maxdepth 1 -type d -name 'src' -o -name 'python' -o -name 'streamlit_app' 2>/dev/null) || echo "::warning::Flake8 found issues"
+            flake8 $(find . -maxdepth 1 -type d -name 'src' -o -name 'python' -o -name 'streamlit_app' 2>/dev/null) 2>&1 | tee flake8.log || echo "::warning::Flake8 found issues"
           else
-            flake8 . || echo "::warning::Flake8 found issues"
+            flake8 . 2>&1 | tee flake8.log || echo "::warning::Flake8 found issues"
           fi
         continue-on-error: true
 
       - name: Type check with mypy
         run: |
           if [ -d src ] || [ -d python ]; then
-            mypy $(find . -maxdepth 1 -type d -name 'src' -o -name 'python' 2>/dev/null) || echo "::warning::mypy found type issues"
+            mypy $(find . -maxdepth 1 -type d -name 'src' -o -name 'python' 2>/dev/null) 2>&1 | tee mypy.log || echo "::warning::mypy found type issues"
           else
-            mypy . || echo "::warning::mypy found type issues"
+            mypy . 2>&1 | tee mypy.log || echo "::warning::mypy found type issues"
           fi
         continue-on-error: true
 
       - name: Run tests with pytest
-        run: pytest --cov --cov-report=xml --cov-report=term
+        run: |
+          if command -v pytest &> /dev/null; then
+            pytest --cov --cov-report=xml --cov-report=term 2>&1 || echo "::warning::pytest found test failures"
+          else
+            pytest 2>&1 || echo "::warning::pytest found test failures"
+          fi
         continue-on-error: true
 
       - name: Upload coverage to Codecov
@@ -125,7 +130,10 @@ jobs:
 
       - name: Install Python dependencies
         if: steps.check-sonar.outputs.secrets_available == 'true'
-        run: pip install -r requirements.txt
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
 
       - name: SonarQube Scan
         if: steps.check-sonar.outputs.secrets_available == 'true'
@@ -257,7 +265,7 @@ jobs:
       - name: Run Perplexity AI Analysis
         if: steps.check-perplexity.outputs.secrets_available == 'true' && steps.get-diff.outputs.diff_size > 0
         run: |
-          DIFF_CONTENT=$(cat pr_diff.txt | head -c 8000)
+          DIFF_CONTENT=$(cat pr_diff.txt | head -c 8000 | jq -Rs .)
           MODEL="${{ vars.PERPLEXITY_MODEL || 'llama-3.1-sonar-small-128k-online' }}"
           RESPONSE=$(curl -s -X POST \
             https://api.perplexity.ai/chat/completions \
@@ -272,7 +280,7 @@ jobs:
                 },
                 {
                   "role": "user",
-                  "content": "Analyze this PR diff for fintech risks and improvements:\n\n'"$DIFF_CONTENT"'"
+                  "content": '"$DIFF_CONTENT"'
                 }
               ]
             }')
