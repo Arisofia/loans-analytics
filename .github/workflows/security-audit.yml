@@ -17,14 +17,12 @@ jobs:
     msdo:
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-
+                        - name: Checkout
+                            uses: actions/checkout@v4
                         - name: Microsoft Security DevOps
                             uses: microsoft/security-devops-action@5b26a185ff02cf7c100778adeff0ebbf704ca144
                             id: msdo
-
-            - name: Upload SARIF to GitHub
-              uses: github/codeql-action/upload-sarif@v2
-              with:
-                  sarif_file: ${{ steps.msdo.outputs.sarifFile }}
+                        - name: Upload SARIF to GitHub
+                            uses: github/codeql-action/upload-sarif@v2
+                            with:
+                                sarif_file: ${{ steps.msdo.outputs.sarifFile }}
