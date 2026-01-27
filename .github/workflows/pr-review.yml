@@ -323,11 +323,23 @@ jobs:
             if [ "$HTTP_CODE" = "200" ] && jq empty review_response.json 2>/dev/null; then
               review_text=$(jq -r '.choices[0].message.content // "No analysis available"' review_response.json)
               if [ -n "$review_text" ] && [ "$review_text" != "No analysis available" ]; then
-                echo "## 🤖 Perplexity AI Analysis" > comment.md
-                echo "" >> comment.md
-                echo "$review_text" >> comment.md
-                gh pr comment ${{ github.event.pull_request.number }} \
-                  --body-file comment.md
+                PR_NUMBER="${{ github.event.pull_request.number }}"
+                if echo "$PR_NUMBER" | grep -Eq '^[0-9]+$'; then
+                  # Sanitize review text to reduce risk of markdown injection
+                  # Escape any existing triple backticks and wrap content in a fenced code block
+                  sanitized_review=$(printf '%s' "$review_text" | sed 's/```/` ` `/g')
+                  {
+                    echo "## 🤖 Perplexity AI Analysis"
+                    echo ""
+                    echo '```markdown'
+                    printf '%s\n' "$sanitized_review"
+                    echo '```'
+                  } > comment.md
+                  gh pr comment "$PR_NUMBER" \
+                    --body-file comment.md
+                else
+                  echo "::warning::Invalid pull request number: $PR_NUMBER - skipping Perplexity comment"
+                fi
               fi
             else
               echo "::warning::Perplexity API returned status $HTTP_CODE"
