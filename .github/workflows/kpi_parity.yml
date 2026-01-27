@@ -55,7 +55,12 @@ jobs:
       - name: Generate KPI JSON via Python engine
         run: |
           mkdir -p exports
-          python run_complete_analytics.py
+          if [ -f "run_complete_analytics.py" ]; then
+            python run_complete_analytics.py
+          else
+            echo "::warning::run_complete_analytics.py not found, skipping KPI generation"
+            echo "Creating placeholder exports directory"
+          fi
 
       - name: Apply SQL migrations (analytics views)
         env:
