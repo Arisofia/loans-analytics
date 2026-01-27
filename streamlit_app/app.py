@@ -13,6 +13,11 @@ if str(ROOT_DIR) not in sys.path:
 from dashboard_utils import format_kpi_value, kpi_label  # noqa: E402
 from data_normalization import normalize_dataframe_complete  # noqa: E402
 from kpi_catalog_processor import KPICatalogProcessor  # noqa: E402
+from python.analytics_core.kpi_engine import (  # noqa: E402
+    compute_growth_kpis,
+    compute_portfolio_kpis,
+)
+from python.analytics_core.kpi_store import save_kpi_set_json  # noqa: E402
 from theme import ABACO_THEME  # noqa: E402
 from tracing_setup import enable_auto_instrumentation, init_tracing  # noqa: E402
 from streamlit_app.components.analytics_tabs import (  # noqa: E402
@@ -264,6 +269,20 @@ def generate_kpi_exports(
     if not analytics_facts.empty:
         facts_path = exports_dir / "analytics_facts.csv"
         analytics_facts.to_csv(facts_path, index=False)
+    kpi_exports_dir = exports_dir / "kpi_sets"
+    portfolio_kpis = compute_portfolio_kpis(
+        loans_df=normalized_loans,
+        income_df=pd.DataFrame(),
+        losses_df=pd.DataFrame(),
+        currency="USD",
+    )
+    growth_kpis = compute_growth_kpis(
+        funnel_df=pd.DataFrame(),
+        revenue_df=None,
+        currency="USD",
+    )
+    save_kpi_set_json(portfolio_kpis, kpi_exports_dir)
+    save_kpi_set_json(growth_kpis, kpi_exports_dir)
     return dashboard_path
 FONT_IMPORT_URL = (
     "https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900"
