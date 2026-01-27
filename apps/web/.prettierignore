@@ -9,3 +9,4 @@ coverage
 .venv
 out
 .DS_Store
+.eslintcache
