@@ -60,8 +60,12 @@ jobs:
 
       - name: Type check with mypy
         run: |
-          if [ -d src ] || [ -d python ]; then
-            mypy $(find . -maxdepth 1 -type d \( -name 'src' -o -name 'python' \) 2>/dev/null) 2>&1 | tee mypy.log || echo "::warning::mypy found type issues"
+          if [ -d src ] && [ -d python ]; then
+            mypy src python 2>&1 | tee mypy.log || echo "::warning::mypy found type issues"
+          elif [ -d src ]; then
+            mypy src 2>&1 | tee mypy.log || echo "::warning::mypy found type issues"
+          elif [ -d python ]; then
+            mypy python 2>&1 | tee mypy.log || echo "::warning::mypy found type issues"
           else
             mypy . 2>&1 | tee mypy.log || echo "::warning::mypy found type issues"
           fi
