@@ -49,8 +49,8 @@ class TestBaseAgent:
         agent.log.return_value = {"logged": True}
 
         result = agent.log("Test log message", agent_execution_context)
-        assert result["logged"] is True
         agent.log.assert_called_once()
+        assert result["logged"] is True
 
     def test_agent_metrics_collection(self, performance_metrics):
         """Test agent collects performance metrics."""

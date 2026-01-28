@@ -37,7 +37,6 @@ class TestAgentCommunication:
     async def test_async_agent_communication(self):
         """Test asynchronous agent communication."""
         agent1 = MagicMock()
-        MagicMock()
 
         agent1.send_async.return_value = {"queued": True}
         result = agent1.send_async("agent2", "async_message")
