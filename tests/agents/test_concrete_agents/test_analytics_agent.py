@@ -1,7 +1,8 @@
 """Tests for analytics agent."""
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 
 class TestAnalyticsAgent:
@@ -22,7 +23,7 @@ class TestAnalyticsAgent:
             "avg_interest_rate": 0.05,
             "risk_score": 0.25,
         }
-        
+
         result = agent.analyze_portfolio([sample_portfolio_data])
         assert "total_principal" in result
 
@@ -34,7 +35,7 @@ class TestAnalyticsAgent:
             "par90": 0.01,
             "collection_rate": 0.95,
         }
-        
+
         result = agent.calculate_kpis()
         assert "collection_rate" in result
 
@@ -46,6 +47,6 @@ class TestAnalyticsAgent:
             "status": "success",
             "records_processed": 10000,
         }
-        
+
         result = agent.analyze_large_dataset(10000)
         assert result["records_processed"] == 10000

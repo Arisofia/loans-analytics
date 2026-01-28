@@ -88,9 +88,7 @@ def compare_costs(report_file: str, threshold: float = 0.10) -> bool:
         print(f"  Baseline: ${baseline_cost:.4f}")
         print(f"  Current:  ${current_cost:.4f}")
         print(f"  Change:   {increase_pct:+.1f}%")
-        print(
-            f"  Threshold: {scenario_threshold*100:.1f}%"
-        )
+        print(f"  Threshold: {scenario_threshold*100:.1f}%")
 
         if alert:
             all_ok = False
@@ -100,18 +98,14 @@ def compare_costs(report_file: str, threshold: float = 0.10) -> bool:
         token_budget = baseline_data.get("token_budget", 0)
         current_tokens = scenario_data.get("total_tokens", 0)
         if token_budget > 0 and current_tokens > token_budget:
-            print(
-                f"  ⚠️  Token budget exceeded: {current_tokens} > {token_budget}"
-            )
+            print(f"  ⚠️  Token budget exceeded: {current_tokens} > {token_budget}")
             all_ok = False
 
         # Check API call budget
         api_budget = baseline_data.get("api_calls_budget", 0)
         current_api_calls = scenario_data.get("total_api_calls", 0)
         if api_budget > 0 and current_api_calls > api_budget:
-            print(
-                f"  ⚠️  API call budget exceeded: {current_api_calls} > {api_budget}"
-            )
+            print(f"  ⚠️  API call budget exceeded: {current_api_calls} > {api_budget}")
             all_ok = False
 
         print()

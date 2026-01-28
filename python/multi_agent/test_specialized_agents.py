@@ -9,13 +9,13 @@ to fintech scenarios.
 import unittest
 from unittest.mock import Mock, patch
 
+from python.multi_agent.protocol import AgentRole
 from python.multi_agent.specialized_agents import (
     CollectionsAgent,
+    CustomerRetentionAgent,
     FraudDetectionAgent,
     PricingAgent,
-    CustomerRetentionAgent,
 )
-from python.multi_agent.protocol import AgentRole
 
 
 class TestCollectionsAgent(unittest.TestCase):

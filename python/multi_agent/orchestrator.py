@@ -4,7 +4,6 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from .agents import ComplianceAgent, GrowthStrategistAgent, OpsOptimizerAgent, RiskAnalystAgent
-from .specialized_agents import CollectionsAgent, FraudDetectionAgent, PricingAgent, CustomerRetentionAgent
 from .base_agent import BaseAgent
 from .protocol import (
     AgentRequest,
@@ -15,6 +14,12 @@ from .protocol import (
     MessageRole,
     Scenario,
     ScenarioStep,
+)
+from .specialized_agents import (
+    CollectionsAgent,
+    CustomerRetentionAgent,
+    FraudDetectionAgent,
+    PricingAgent,
 )
 from .tracing import AgentTracer
 
@@ -43,27 +48,17 @@ class MultiAgentOrchestrator:
     def _init_agents(self) -> Dict[AgentRole, BaseAgent]:
         """Initialize all role-specific agents."""
         return {
-            AgentRole.RISK_ANALYST: RiskAnalystAgent(
-                provider=self.provider, tracer=self.tracer
-            ),
+            AgentRole.RISK_ANALYST: RiskAnalystAgent(provider=self.provider, tracer=self.tracer),
             AgentRole.GROWTH_STRATEGIST: GrowthStrategistAgent(
                 provider=self.provider, tracer=self.tracer
             ),
-            AgentRole.OPS_OPTIMIZER: OpsOptimizerAgent(
-                provider=self.provider, tracer=self.tracer
-            ),
-            AgentRole.COMPLIANCE: ComplianceAgent(
-                provider=self.provider, tracer=self.tracer
-            ),
-            AgentRole.COLLECTIONS: CollectionsAgent(
-                provider=self.provider, tracer=self.tracer
-            ),
+            AgentRole.OPS_OPTIMIZER: OpsOptimizerAgent(provider=self.provider, tracer=self.tracer),
+            AgentRole.COMPLIANCE: ComplianceAgent(provider=self.provider, tracer=self.tracer),
+            AgentRole.COLLECTIONS: CollectionsAgent(provider=self.provider, tracer=self.tracer),
             AgentRole.FRAUD_DETECTION: FraudDetectionAgent(
                 provider=self.provider, tracer=self.tracer
             ),
-            AgentRole.PRICING: PricingAgent(
-                provider=self.provider, tracer=self.tracer
-            ),
+            AgentRole.PRICING: PricingAgent(provider=self.provider, tracer=self.tracer),
             AgentRole.CUSTOMER_RETENTION: CustomerRetentionAgent(
                 provider=self.provider, tracer=self.tracer
             ),
@@ -665,13 +660,13 @@ class MultiAgentOrchestrator:
         context = {**scenario.initial_context, **initial_context}
         results = {}
 
-        logger.info(
-            f"Starting scenario: {scenario_name} with trace_id: {trace_id}"
-        )
+        logger.info(f"Starting scenario: {scenario_name} with trace_id: {trace_id}")
 
         for step in scenario.steps:
             # Build prompt from template and context
-            prompt = step.prompt_template.format(**{k: context.get(k, "") for k in step.context_keys})
+            prompt = step.prompt_template.format(
+                **{k: context.get(k, "") for k in step.context_keys}
+            )
 
             # Run agent
             try:
@@ -686,20 +681,14 @@ class MultiAgentOrchestrator:
                 context[step.output_key] = response.message.content
                 results[step.output_key] = response.message.content
 
-                logger.info(
-                    f"Step completed: {step.agent_role.value} -> {step.output_key}"
-                )
+                logger.info(f"Step completed: {step.agent_role.value} -> {step.output_key}")
 
             except Exception as e:
                 if step.optional:
-                    logger.warning(
-                        f"Optional step failed: {step.agent_role.value}: {e}"
-                    )
+                    logger.warning(f"Optional step failed: {step.agent_role.value}: {e}")
                     results[step.output_key] = None
                 else:
-                    logger.error(
-                        f"Required step failed: {step.agent_role.value}: {e}"
-                    )
+                    logger.error(f"Required step failed: {step.agent_role.value}: {e}")
                     raise
 
         # Add aggregated metrics

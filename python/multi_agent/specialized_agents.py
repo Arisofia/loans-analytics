@@ -7,7 +7,7 @@ from .protocol import AgentRole
 class CollectionsAgent(BaseAgent):
     """
     Collections & Delinquency Management Agent.
-    
+
     Specializes in:
     - Delinquency analysis and segmentation
     - Collection strategy optimization
@@ -46,7 +46,7 @@ Always provide data-driven recommendations with clear rationale and expected out
 class FraudDetectionAgent(BaseAgent):
     """
     Fraud Detection & Prevention Agent.
-    
+
     Specializes in:
     - Transaction pattern analysis
     - Anomaly detection in applications
@@ -86,7 +86,7 @@ Provide clear fraud risk scores (low/medium/high/critical) with specific evidenc
 class PricingAgent(BaseAgent):
     """
     Dynamic Pricing & Rate Optimization Agent.
-    
+
     Specializes in:
     - Risk-based pricing analysis
     - Interest rate optimization
@@ -127,7 +127,7 @@ Always provide pricing recommendations with expected profitability metrics, conv
 class CustomerRetentionAgent(BaseAgent):
     """
     Customer Retention & Churn Prevention Agent.
-    
+
     Specializes in:
     - Churn risk prediction
     - Customer lifetime value analysis

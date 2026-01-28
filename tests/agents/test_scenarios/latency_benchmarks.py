@@ -3,9 +3,10 @@
 Tests p50, p95, p99 latency for various agent operations.
 """
 
-import pytest
 import time
 from unittest.mock import MagicMock
+
+import pytest
 
 from src.agents.monitoring import PerformanceTracker
 
@@ -116,4 +117,6 @@ class TestLatencyBenchmarks:
         for i in range(10):
             stats = self.tracker.get_agent_performance(f"agent_{i}")
             avg_latency = stats["latency"]["avg"]
-            assert avg_latency < 200, f"Agent {i} average latency {avg_latency:.2f}ms exceeds threshold"
+            assert (
+                avg_latency < 200
+            ), f"Agent {i} average latency {avg_latency:.2f}ms exceeds threshold"

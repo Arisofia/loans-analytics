@@ -178,7 +178,7 @@ class TestTracing(unittest.TestCase):
         """Test cost accumulation."""
         tracer = AgentTracer()
         msg = Message(role=MessageRole.ASSISTANT, content="Test")
-        
+
         response1 = AgentResponse(
             trace_id="test_123",
             agent_role=AgentRole.RISK_ANALYST,
@@ -206,7 +206,7 @@ class TestTracing(unittest.TestCase):
         """Test trace reset."""
         tracer = AgentTracer()
         msg = Message(role=MessageRole.ASSISTANT, content="Test")
-        
+
         response = AgentResponse(
             trace_id="test_123",
             agent_role=AgentRole.RISK_ANALYST,
@@ -230,9 +230,9 @@ class TestOrchestrator(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Mock environment and OpenAI to avoid actual API calls
-        self.env_patcher = patch.dict('os.environ', {'OPENAI_API_KEY': 'test_key'})
+        self.env_patcher = patch.dict("os.environ", {"OPENAI_API_KEY": "test_key"})
         self.env_patcher.start()
-        
+
         self.openai_patcher = patch("python.multi_agent.base_agent.OpenAI")
         self.mock_openai = self.openai_patcher.start()
         self.mock_openai.return_value = MagicMock()
@@ -277,7 +277,7 @@ class TestOrchestrator(unittest.TestCase):
         from .orchestrator import MultiAgentOrchestrator
 
         orchestrator = MultiAgentOrchestrator()
-        
+
         custom_scenario = Scenario(
             name="custom_test",
             description="Test scenario",
@@ -290,7 +290,7 @@ class TestOrchestrator(unittest.TestCase):
                 )
             ],
         )
-        
+
         orchestrator.add_scenario(custom_scenario)
         self.assertIn("custom_test", orchestrator.list_scenarios())
         retrieved = orchestrator.get_scenario("custom_test")
