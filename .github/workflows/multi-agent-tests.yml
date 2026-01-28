@@ -1,0 +1,117 @@
+name: Multi-Agent Tests
+
+on:
+  pull_request:
+    paths:
+      - 'src/agents/**'
+      - 'tests/agents/**'
+      - 'requirements*.txt'
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install -r tests/agents/requirements-test.txt
+
+      - name: Run multi-agent orchestrator tests
+        run: |
+          pytest tests/agents/test_orchestrator.py -v --cov=src/agents --cov-report=xml --tb=short
+
+      - name: Run base agent tests
+        run: |
+          pytest tests/agents/test_base_agent.py -v --cov=src/agents --cov-append --cov-report=xml --tb=short
+
+      - name: Run protocol tests
+        run: |
+          pytest tests/agents/test_protocol.py -v --cov=src/agents --cov-append --cov-report=xml --tb=short
+
+      - name: Run concrete agent tests
+        run: |
+          pytest tests/agents/test_concrete_agents/ -v --cov=src/agents --cov-append --cov-report=xml --tb=short --timeout=30
+
+      - name: Run integration tests
+        run: |
+          pytest tests/agents/test_integration/ -v --cov=src/agents --cov-append --cov-report=xml --tb=short --timeout=60 --asyncio-mode=auto
+
+      - name: Run scenario tests
+        run: |
+          pytest tests/agents/test_scenarios/ -v --cov=src/agents --cov-append --cov-report=xml --tb=short --timeout=120 --asyncio-mode=auto
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          flags: multi-agent
+          name: multi-agent-coverage
+          fail_ci_if_error: false
+
+      - name: Generate coverage report
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.11'
+        run: |
+          pip install coverage
+          coverage report --include="src/agents/*" > coverage_report.txt || echo "No coverage data"
+          echo "## Multi-Agent Test Coverage" > coverage_comment.txt
+          echo "\`\`\`" >> coverage_comment.txt
+          cat coverage_report.txt >> coverage_comment.txt || echo "Coverage data not available" >> coverage_comment.txt
+          echo "\`\`\`" >> coverage_comment.txt
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.11'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '## Multi-Agent Test Results\n\n';
+            body += '✅ All multi-agent tests passed!\n\n';
+            
+            try {
+              const coverage = fs.readFileSync('coverage_comment.txt', 'utf8');
+              body += coverage;
+            } catch (error) {
+              body += 'Coverage report not available.\n';
+            }
+            
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Multi-Agent Test Results')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
