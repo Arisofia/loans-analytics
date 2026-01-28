@@ -139,8 +139,14 @@ class HistoricalContextProvider:
         """
         Load historical KPI data from data source.
 
-        Phase G4.1: Stub implementation with mock data.
-        Phase G4.2+: Will integrate with actual data sources.
+        **Phase G4.1**: Stub implementation with mock data (current).
+        **Phase G4.2+**: Will integrate with actual data sources.
+
+        Future Implementation (Phase G4.2+):
+        - Query Supabase for historical KPI values
+        - Support multiple data sources (DB, API, file)
+        - Add data validation and error handling
+        - Implement data source configuration
 
         Args:
             kpi_id: KPI identifier
@@ -149,9 +155,39 @@ class HistoricalContextProvider:
 
         Returns:
             List of historical KPI values
+
+        Note:
+            This is a STUB implementation for Phase G4.1 testing.
+            Mock data generation is INTENTIONAL and should NOT be
+            removed until Phase G4.2 when real data sources are
+            integrated.
         """
-        # Stub implementation - generates mock data
-        # TODO G4.2: Replace with actual data source integration
+        # ===================================================================
+        # PHASE G4.1: Mock Data Generation (DO NOT REMOVE YET)
+        # TODO [Phase G4.2]: Replace with actual data source integration
+        #
+        # Real implementation will:
+        # 1. Connect to Supabase or other data source
+        # 2. Query historical KPI table
+        # 3. Handle missing data and gaps
+        # 4. Support pagination for large datasets
+        # 5. Add retry logic and error handling
+        #
+        # Example (Phase G4.2):
+        # ```python
+        # from src.data.supabase_client import get_supabase_client
+        # client = get_supabase_client()
+        # result = client.table('kpi_historical_values')
+        #     .select('*')
+        #     .eq('kpi_id', kpi_id)
+        #     .gte('date', start_date)
+        #     .lte('date', end_date)
+        #     .order('date')
+        #     .execute()
+        # return [KpiHistoricalValue(**row) for row in result.data]
+        # ```
+        # ===================================================================
+
         values = []
         current = start_date
         base_value = 100.0
