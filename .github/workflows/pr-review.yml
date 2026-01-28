@@ -284,8 +284,8 @@ jobs:
         id: get-diff
         run: |
           # Fetch the base branch and compute the diff against HEAD, similar to perplexity_review.yml
-          git fetch origin "${{ github.base_ref }}" --depth=1
-          git diff "origin/${{ github.base_ref }}"...HEAD > pr_diff.txt
+          git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=1
+          git diff "origin/${{ github.event.pull_request.base.ref }}"...HEAD > pr_diff.txt
           echo "diff_size=$(wc -c < pr_diff.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Run Perplexity AI Analysis
