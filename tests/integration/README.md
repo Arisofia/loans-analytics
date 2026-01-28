@@ -19,7 +19,7 @@ Integration tests run automatically via dedicated workflow (`.github/workflows/h
 - Manual trigger (`workflow_dispatch`)
 - Nightly schedule (3 AM UTC)
 
-They use GitHub secrets for credentials and only run when secrets are available. The workflow must also set `RUN_REAL_SUPABASE_TESTS: 1` in its environment variables; otherwise, the real network tests will be skipped.
+They use GitHub secrets for credentials and only run when secrets are available. The workflow sets `RUN_REAL_SUPABASE_TESTS: '1'` in its environment variables to enable the real network tests.
 
 ## Test Types
 
