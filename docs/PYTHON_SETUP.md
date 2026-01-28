@@ -7,11 +7,13 @@ This error occurs when your IDE cannot find the Python packages. Follow these st
 ### Quick Fix
 
 1. **Create virtual environment** (if not exists):
+
    ```bash
    python3 -m venv .venv
    ```
 
 2. **Activate virtual environment**:
+
    ```bash
    source .venv/bin/activate  # On macOS/Linux
    # OR
@@ -19,6 +21,7 @@ This error occurs when your IDE cannot find the Python packages. Follow these st
    ```
 
 3. **Install dependencies**:
+
    ```bash
    pip install -r requirements.txt
    pip install -r requirements-dev.txt
@@ -39,6 +42,7 @@ python -m pytest python/multi_agent/test_historical_context.py -q
 ```
 
 Expected output:
+
 ```
 ✅ Pydantic 2.12.5
 ..............                                                                                                               [100%]
@@ -63,6 +67,7 @@ If you still see the import error after setup:
 1. **Restart VS Code/Windsurf** completely
 2. **Check Python interpreter** in the status bar (bottom-right)
 3. **Verify virtual environment**:
+
    ```bash
    which python  # Should show: /path/to/project/.venv/bin/python
    ```
@@ -83,12 +88,12 @@ If you still see the import error after setup:
 
 ### Common Issues
 
-| Issue | Solution |
-|-------|----------|
-| `ModuleNotFoundError: No module named 'pkg_resources'` | `pip install setuptools` |
-| `No module named 'pytest'` | `pip install -r requirements-dev.txt` |
-| IDE shows import error but tests pass | Reload IDE and select `.venv/bin/python` interpreter |
-| Wrong Python version | Recreate venv with correct Python: `python3.14 -m venv .venv` |
+| Issue                                                  | Solution                                                      |
+| ------------------------------------------------------ | ------------------------------------------------------------- |
+| `ModuleNotFoundError: No module named 'pkg_resources'` | `pip install setuptools`                                      |
+| `No module named 'pytest'`                             | `pip install -r requirements-dev.txt`                         |
+| IDE shows import error but tests pass                  | Reload IDE and select `.venv/bin/python` interpreter          |
+| Wrong Python version                                   | Recreate venv with correct Python: `python3.14 -m venv .venv` |
 
 ---
 
