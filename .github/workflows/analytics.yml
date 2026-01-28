@@ -25,7 +25,7 @@ jobs:
 
             # NOTE: Legacy analytics script removed in Phase B (Data Integrity)
             # Pipeline modernization deferred to separate initiative
-            # TODO: Replace with modern KPI pipeline when available
+            # Modern KPI pipeline implementation tracked in project roadmap
             - name: Skip Legacy Analytics (Deprecated)
               run: |
                   echo "Legacy run_complete_analytics.py removed in Phase B"
