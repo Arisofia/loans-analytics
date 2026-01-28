@@ -48,7 +48,8 @@ class TestBaseAgent:
         agent = MagicMock()
         agent.log.return_value = {"logged": True}
 
-        agent.log("Test log message", agent_execution_context)
+        result = agent.log("Test log message", agent_execution_context)
+        assert result["logged"] is True
         agent.log.assert_called_once()
 
     def test_agent_metrics_collection(self, performance_metrics):
