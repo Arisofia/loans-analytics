@@ -57,10 +57,12 @@ jobs:
           set -euo pipefail
           # Search for suspicious patterns; exclude common valid examples and environment variable placeholders
           # We use a more refined regex to avoid matching variable names or placeholders like ${{ secrets.API_KEY }}
-          if grep -RIn -E \
-            "(AKIA[A-Z0-9]{16}|aws_secret[a-zA-Z0-9/+=]{30,}|SECRET_KEY=['\"][a-zA-Z0-9]{30,}|PASSWORD=['\"][a-zA-Z0-9]{12,}|API_KEY=['\"][a-zA-Z0-9]{20,})" \
-            --exclude-dir=.git . | grep -vE "example|\.env\.example|README|tests/|FI-ANALYTICS-002"; then
-            echo "Potential hardcoded secret(s) found" >&2
+          MATCHES=$(grep -RIn -E \
+            '(AKIA[A-Z0-9]{16}|aws_secret[a-zA-Z0-9/+=]{30,}|SECRET_KEY=['\''"][a-zA-Z0-9]{30,}|PASSWORD=['\''"][a-zA-Z0-9]{12,}|API_KEY=['\''"][a-zA-Z0-9]{20,})' \
+            --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.venv . | grep -vE "example|\.env\.example|README|tests/|FI-ANALYTICS-002" || true)
+          if [ -n "$MATCHES" ]; then
+            echo "Potential hardcoded secret(s) found:" >&2
+            echo "$MATCHES" >&2
             exit 1
           fi
           echo "No obvious hardcoded secrets found."

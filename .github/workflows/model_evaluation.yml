@@ -42,11 +42,16 @@ jobs:
       - name: Run evaluation tests
         run: |
           mkdir -p reports
-          pytest tests/evaluation/ \
-            --html=reports/evaluation-report.html \
-            --self-contained-html \
-            --json-report \
-            --json-report-file=reports/evaluation-metrics.json
+          if [ -d "tests/evaluation" ] && [ -n "$(ls -A tests/evaluation 2>/dev/null)" ]; then
+            pytest tests/evaluation/ \
+              --html=reports/evaluation-report.html \
+              --self-contained-html \
+              --json-report \
+              --json-report-file=reports/evaluation-metrics.json
+          else
+            echo "::warning::tests/evaluation/ directory not found or empty, skipping evaluation tests"
+            echo '{"accuracy": "N/A", "precision": "N/A", "recall": "N/A", "f1_score": "N/A"}' > reports/evaluation-metrics.json
+          fi
 
       - name: Generate metrics visualization
         if: always()

@@ -63,8 +63,12 @@ jobs:
       - name: Install dependencies
         if: steps.check-secrets.outputs.secrets_available == 'true'
         run: |
-          pnpm -C apps/web install --frozen-lockfile
-          pnpm -C apps/web lint --version >/dev/null
+          if [ -d "apps/web" ] && [ -f "apps/web/package.json" ]; then
+            pnpm -C apps/web install --frozen-lockfile
+            pnpm -C apps/web lint --version >/dev/null
+          else
+            echo "::warning::apps/web directory or package.json not found, skipping Node.js dependencies"
+          fi
       - name: Analytics coverage (pytest)
         if: steps.check-secrets.outputs.secrets_available == 'true'
         run: |

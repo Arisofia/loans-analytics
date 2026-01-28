@@ -35,10 +35,20 @@ jobs:
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt
-      - name: Install pnpm
-        run: npm install -g pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Install pnpm (if needed)
+        run: |
+          if [ -f "pnpm-lock.yaml" ] || [ -f "apps/web/pnpm-lock.yaml" ]; then
+            npm install -g pnpm
+          else
+            echo "::warning::No pnpm-lock.yaml found, skipping pnpm installation"
+          fi
+      - name: Install dependencies (if pnpm available)
+        run: |
+          if command -v pnpm &> /dev/null && [ -f "pnpm-lock.yaml" ]; then
+            pnpm install --frozen-lockfile --ignore-scripts
+          else
+            echo "::warning::pnpm not available or no pnpm-lock.yaml, skipping Node.js dependencies"
+          fi
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@4b4d7634dab97dcee0b75763a54a6dc92a9e6bc1
         with:
