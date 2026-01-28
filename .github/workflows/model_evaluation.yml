@@ -54,19 +54,28 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p reports/visualizations
-          python scripts/evaluation/generate_visualizations.py \
-            --metrics-file reports/evaluation-metrics.json \
-            --output-dir reports/visualizations/
+          if [ -f "scripts/evaluation/generate_visualizations.py" ]; then
+            python scripts/evaluation/generate_visualizations.py \
+              --metrics-file reports/evaluation-metrics.json \
+              --output-dir reports/visualizations/
+          else
+            echo "::warning::scripts/evaluation/generate_visualizations.py not found, skipping visualization generation"
+          fi
 
       - name: Check evaluation thresholds
         if: always()
         id: threshold-check
         run: |
           mkdir -p config
-          python scripts/evaluation/check_thresholds.py \
-            --metrics-file reports/evaluation-metrics.json \
-            --config config/evaluation-thresholds.yml \
-            --output threshold-results.json
+          if [ -f "scripts/evaluation/check_thresholds.py" ]; then
+            python scripts/evaluation/check_thresholds.py \
+              --metrics-file reports/evaluation-metrics.json \
+              --config config/evaluation-thresholds.yml \
+              --output threshold-results.json
+          else
+            echo "::warning::scripts/evaluation/check_thresholds.py not found, skipping threshold check"
+            echo '{"passed": false, "message": "Threshold check script not found; check not executed"}' > threshold-results.json
+          fi
 
       - name: Upload evaluation reports
         if: always()
