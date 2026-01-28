@@ -1,7 +1,7 @@
 """Tests for base agent functionality."""
 
-import pytest
 from unittest.mock import MagicMock
+
 
 
 class TestBaseAgent:
@@ -20,7 +20,7 @@ class TestBaseAgent:
             "status": "success",
             "result": "Task completed",
         }
-        
+
         result = agent.execute("test_task", agent_execution_context)
         assert result["status"] == "success"
 
@@ -28,7 +28,7 @@ class TestBaseAgent:
         """Test base agent validation method."""
         agent = MagicMock()
         agent.validate.return_value = {"valid": True, "errors": []}
-        
+
         result = agent.validate(sample_portfolio_data)
         assert result["valid"] is True
 
@@ -39,7 +39,7 @@ class TestBaseAgent:
             "error_handled": True,
             "recovery_action": "retry",
         }
-        
+
         error = Exception("Test error")
         result = agent.handle_error(error)
         assert result["error_handled"] is True
@@ -48,8 +48,8 @@ class TestBaseAgent:
         """Test agent logging functionality."""
         agent = MagicMock()
         agent.log.return_value = {"logged": True}
-        
-        result = agent.log("Test log message", agent_execution_context)
+
+        agent.log("Test log message", agent_execution_context)
         agent.log.assert_called_once()
 
     def test_agent_metrics_collection(self, performance_metrics):
@@ -59,7 +59,7 @@ class TestBaseAgent:
             "execution_time": 100,
             "tokens_used": 50,
         }
-        
+
         result = agent.collect_metrics()
         assert "execution_time" in result
 
@@ -67,7 +67,7 @@ class TestBaseAgent:
         """Test agent configuration settings."""
         agent = MagicMock()
         agent.configure.return_value = {"configured": True}
-        
+
         config = {"timeout": 30, "max_retries": 3}
         result = agent.configure(config)
         assert result["configured"] is True
@@ -77,9 +77,9 @@ class TestBaseAgent:
         agent = MagicMock()
         agent.get_state.return_value = {"state": "idle"}
         agent.set_state.return_value = {"state": "running"}
-        
+
         state = agent.get_state()
         assert state["state"] == "idle"
-        
+
         agent.set_state("running")
         agent.set_state.assert_called_once_with("running")

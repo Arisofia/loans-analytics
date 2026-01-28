@@ -6,7 +6,6 @@ This script posts a formatted cost analysis comment to a GitHub PR.
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 

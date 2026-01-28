@@ -1,7 +1,8 @@
 """Integration tests for Supabase connectivity."""
 
+from unittest.mock import Mock
+
 import pytest
-from unittest.mock import MagicMock, patch
 
 
 class TestSupabaseIntegration:
@@ -19,7 +20,7 @@ class TestSupabaseIntegration:
         mock_supabase_client.table("agent_results").insert.return_value.execute.return_value = Mock(
             data=[{"id": 1, "agent_name": "test_agent"}]
         )
-        
+
         result = mock_supabase_client.table("agent_results").insert(mock_agent_response).execute()
         assert result.data is not None
 
@@ -30,10 +31,7 @@ class TestSupabaseIntegration:
         mock_supabase_client.table("loans").select.return_value.execute.return_value = Mock(
             data=[{"loan_id": "LOAN-001", "status": "active"}]
         )
-        
+
         result = mock_supabase_client.table("loans").select("*").execute()
         assert len(result.data) > 0
 
-
-# Import Mock for the test
-from unittest.mock import Mock

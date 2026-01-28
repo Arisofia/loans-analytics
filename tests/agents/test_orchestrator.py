@@ -1,7 +1,8 @@
 """Tests for agent orchestrator functionality."""
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch
 
 
 class TestAgentOrchestrator:
@@ -27,7 +28,7 @@ class TestAgentOrchestrator:
             "agent": "test_agent",
             "result": "completed",
         }
-        
+
         result = orchestrator.dispatch("test_agent", "analyze_data", agent_execution_context)
         assert result["status"] == "success"
 
@@ -35,7 +36,7 @@ class TestAgentOrchestrator:
         """Test orchestrator handles agent failures gracefully."""
         orchestrator = MagicMock()
         orchestrator.dispatch.side_effect = Exception("Agent failed")
-        
+
         with pytest.raises(Exception):
             orchestrator.dispatch("failing_agent", "task")
 
@@ -46,7 +47,7 @@ class TestAgentOrchestrator:
             "agents_used": ["agent1", "agent2"],
             "status": "success",
         }
-        
+
         result = orchestrator.coordinate_agents(["agent1", "agent2"], "complex_task")
         assert len(result["agents_used"]) == 2
 
@@ -54,7 +55,7 @@ class TestAgentOrchestrator:
         """Test inter-agent communication follows protocol."""
         orchestrator = MagicMock()
         orchestrator.send_message.return_value = {"status": "delivered"}
-        
+
         result = orchestrator.send_message("agent1", "agent2", sample_agent_message)
         assert result["status"] == "delivered"
 
@@ -66,7 +67,7 @@ class TestAgentOrchestrator:
             "status": "timeout",
             "message": "Agent exceeded time limit",
         }
-        
+
         result = orchestrator.dispatch_with_timeout("slow_agent", "task", timeout=1)
         assert result["status"] == "timeout"
 
@@ -74,6 +75,6 @@ class TestAgentOrchestrator:
         """Test orchestrator respects agent task priorities."""
         orchestrator = MagicMock()
         orchestrator.queue_task.return_value = {"queued": True, "priority": "high"}
-        
+
         result = orchestrator.queue_task("urgent_task", priority="high")
         assert result["priority"] == "high"

@@ -1,7 +1,7 @@
 """Tests for risk agent."""
 
-import pytest
 from unittest.mock import MagicMock
+
 
 
 class TestRiskAgent:
@@ -21,7 +21,7 @@ class TestRiskAgent:
             "risk_level": "medium",
             "factors": ["high_ltv", "previous_default"],
         }
-        
+
         result = agent.assess_credit_risk(sample_portfolio_data)
         assert result["risk_level"] == "medium"
 
@@ -34,6 +34,6 @@ class TestRiskAgent:
             ],
             "alert_count": 1,
         }
-        
+
         result = agent.check_early_warnings()
         assert result["alert_count"] > 0

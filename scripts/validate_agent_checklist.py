@@ -6,7 +6,6 @@ This script checks if new or modified agents meet the implementation checklist r
 
 import argparse
 import ast
-import os
 import re
 import sys
 from pathlib import Path
@@ -196,7 +195,7 @@ def validate_agent_files(files: List[str]) -> bool:
             all_passed = False
             print(f"  ❌ Validation failed for {file_path}")
         else:
-            print(f"  ✅ All checks passed")
+            print("  ✅ All checks passed")
 
     return all_passed
 

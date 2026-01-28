@@ -7,13 +7,11 @@ Creates a visual dashboard showing latency trends, success rates, and performanc
 import argparse
 import json
 import sys
-from datetime import datetime, timedelta
 from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.agents.monitoring import PerformanceTracker
 
 
 def generate_ascii_chart(data: list, max_width: int = 50) -> str:
@@ -87,7 +85,7 @@ def generate_dashboard(metrics_file: str) -> str:
 
             latency = scenario_data.get("latency", {})
             if latency:
-                dashboard.append(f"  Latency:")
+                dashboard.append("  Latency:")
                 dashboard.append(f"    p50: {latency.get('p50', 0):.2f}ms")
                 dashboard.append(f"    p95: {latency.get('p95', 0):.2f}ms")
                 dashboard.append(f"    p99: {latency.get('p99', 0):.2f}ms")
@@ -96,9 +94,11 @@ def generate_dashboard(metrics_file: str) -> str:
                 dashboard.append(f"    max: {latency.get('max', 0):.2f}ms")
 
             # Alert if p99 exceeds threshold
-            p99 = latency.get('p99', 0)
+            p99 = latency.get("p99", 0)
             if p99 > 200:
-                dashboard.append(f"  ⚠️  WARNING: p99 latency ({p99:.2f}ms) exceeds 200ms threshold!")
+                dashboard.append(
+                    f"  ⚠️  WARNING: p99 latency ({p99:.2f}ms) exceeds 200ms threshold!"
+                )
 
             dashboard.append("")
 
@@ -134,12 +134,12 @@ def generate_dashboard(metrics_file: str) -> str:
 
     # Calculate overall health
     if scenarios:
-        avg_success_rate = sum(
-            s.get("success_rate", 0) for s in scenarios.values()
-        ) / len(scenarios)
-        avg_p99 = sum(
-            s.get("latency", {}).get("p99", 0) for s in scenarios.values()
-        ) / len(scenarios)
+        avg_success_rate = sum(s.get("success_rate", 0) for s in scenarios.values()) / len(
+            scenarios
+        )
+        avg_p99 = sum(s.get("latency", {}).get("p99", 0) for s in scenarios.values()) / len(
+            scenarios
+        )
 
         dashboard.append(f"✅ Average Success Rate: {avg_success_rate:.1f}%")
         dashboard.append(f"⚡ Average p99 Latency: {avg_p99:.2f}ms")

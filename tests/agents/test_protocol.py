@@ -1,7 +1,7 @@
 """Tests for agent communication protocol."""
 
-import pytest
 from unittest.mock import MagicMock
+
 
 
 class TestAgentProtocol:
@@ -46,14 +46,14 @@ class TestAgentProtocol:
         protocol = MagicMock()
         protocol.version = "1.0.0"
         protocol.is_compatible.return_value = True
-        
+
         assert protocol.is_compatible("1.0.0")
 
     def test_protocol_serialization(self, mock_agent_response):
         """Test protocol message serialization."""
         protocol = MagicMock()
         protocol.serialize.return_value = '{"status": "success"}'
-        
+
         serialized = protocol.serialize(mock_agent_response)
         assert isinstance(serialized, str)
 
@@ -61,7 +61,7 @@ class TestAgentProtocol:
         """Test protocol message deserialization."""
         protocol = MagicMock()
         protocol.deserialize.return_value = {"status": "success"}
-        
+
         deserialized = protocol.deserialize('{"status": "success"}')
         assert isinstance(deserialized, dict)
 
@@ -69,7 +69,7 @@ class TestAgentProtocol:
         """Test protocol message validation."""
         protocol = MagicMock()
         protocol.validate.return_value = {"valid": True, "errors": []}
-        
+
         message = {"action": "test", "payload": {}}
         result = protocol.validate(message)
         assert result["valid"] is True

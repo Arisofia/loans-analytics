@@ -1,7 +1,7 @@
 """Tests for custom agents."""
 
-import pytest
 from unittest.mock import MagicMock
+
 
 
 class TestCustomAgents:
@@ -11,7 +11,7 @@ class TestCustomAgents:
         """Test custom agent can be registered."""
         registry = MagicMock()
         registry.register.return_value = {"registered": True}
-        
+
         result = registry.register("custom_agent", {})
         assert result["registered"] is True
 
@@ -22,6 +22,6 @@ class TestCustomAgents:
             "status": "success",
             "result": "Custom task completed",
         }
-        
+
         result = agent.execute_custom("custom_task", agent_execution_context)
         assert result["status"] == "success"
