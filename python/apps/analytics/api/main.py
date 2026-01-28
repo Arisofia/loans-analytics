@@ -36,17 +36,18 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     # Disallow use of parent traversal segments
     if any(p == ".." for p in candidate_path.parts):
         raise ValueError("parent traversal is not allowed in path")
-    
+
     # Sanitize path to prevent injection (normalize separators and validate characters)
     sanitized_str = str(candidate_path).replace("\\", "/")
-    
+
     # Validate only safe characters are present (alphanumeric, dash, underscore, slash, dot)
     import re
-    if not re.match(r'^[a-zA-Z0-9_./\-]+$', sanitized_str):
+
+    if not re.match(r"^[a-zA-Z0-9_./\-]+$", sanitized_str):
         raise ValueError("path contains invalid characters")
-    
+
     sanitized = Path(sanitized_str)
-    
+
     # Construct path under the allowed directory and resolve it
     # CodeQL: sanitized is validated via character whitelist and parent traversal checks
     resolved = (allowed_dir / sanitized).resolve()  # nosec B108
@@ -64,14 +65,14 @@ def get_data(file_path: str):
     # Validate input is not empty or only whitespace
     if not file_path or not file_path.strip():
         raise HTTPException(status_code=400, detail="file path cannot be empty")
-    
+
     # Sanitize and validate path before use
     try:
         resolved = _sanitize_and_resolve(file_path, ALLOWED_DATA_DIR)
     except ValueError as exc:
         logger.warning("Invalid data path requested: %s (%s)", file_path, exc)
         raise HTTPException(status_code=400, detail=str(exc))
-    
+
     if not resolved.exists() or not resolved.is_file():
         raise HTTPException(status_code=404, detail="file not found")
     # Read safely (do not log the file contents or sensitive paths)
