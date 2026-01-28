@@ -718,7 +718,7 @@ Per SECURITY.md:
 
 **Static Analysis:**
 - **Linting:** ESLint 9 (Flat Config), Pylint configured
-- **Type Safety:** TypeScript 5.9.3, mypy configured
+- **Type Safety:** TypeScript 5.7.3, mypy configured
 - **Formatting:** Prettier, Black (100-char line length)
 - **Pre-commit Hooks:** Configured (`.pre-commit-config.yaml`)
 
