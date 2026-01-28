@@ -1,4 +1,5 @@
-from .agents import ComplianceAgent, GrowthStrategistAgent, OpsOptimizerAgent, RiskAnalystAgent
+from .agents import (ComplianceAgent, GrowthStrategistAgent, OpsOptimizerAgent,
+                     RiskAnalystAgent)
 
 
 class MultiAgentOrchestrator:
