@@ -16,22 +16,17 @@ if str(ROOT_DIR) not in sys.path:
 from dashboard_utils import format_kpi_value, kpi_label  # noqa: E402
 from data_normalization import normalize_dataframe_complete  # noqa: E402
 from kpi_catalog_processor import KPICatalogProcessor  # noqa: E402
-from streamlit_app.components.analytics_tabs import render_advanced_intelligence  # noqa: E402
+from streamlit_app.components.analytics_tabs import \
+    render_advanced_intelligence  # noqa: E402
 from streamlit_app.components.charts import (  # noqa: E402
-    render_cashflow_trends,
-    render_category_breakdown,
-    render_growth_analysis,
-)
+    render_cashflow_trends, render_category_breakdown, render_growth_analysis)
 from streamlit_app.components.kpi_metrics import (  # noqa: E402
-    render_executive_summary,
-    render_kpi_snapshot,
-)
+    render_executive_summary, render_kpi_snapshot)
 from streamlit_app.components.sales_risk import (  # noqa: E402
-    render_risk_analysis,
-    render_sales_performance,
-)
+    render_risk_analysis, render_sales_performance)
 from theme import ABACO_THEME  # noqa: E402
-from tracing_setup import enable_auto_instrumentation, init_tracing  # noqa: E402
+from tracing_setup import (enable_auto_instrumentation,  # noqa: E402
+                           init_tracing)
 
 LOCAL_EXPORTS_DIR = ROOT_DIR / "local_exports"
 EXPORTS_DIR_CANDIDATES = [
