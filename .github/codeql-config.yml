@@ -1,0 +1,56 @@
+name: "CodeQL Configuration for LLM Integrations"
+
+# This configuration file customizes CodeQL analysis for AI/LLM security concerns
+
+queries:
+  # Security queries for Python
+  - uses: security-extended
+  - uses: security-and-quality
+
+# Paths to exclude from analysis
+paths-ignore:
+  - '**/node_modules/**'
+  - '**/test/**'
+  - '**/tests/**'
+  - '**/__pycache__/**'
+  - '**/dist/**'
+  - '**/build/**'
+
+# Paths to specifically include
+paths:
+  - 'src/agents/**'
+  - 'src/**'
+
+# Query filters for LLM/AI specific security concerns
+query-filters:
+  # Include all critical and high severity issues
+  - include:
+      severity: 
+        - critical
+        - high
+  
+  # Include specific AI/LLM security patterns
+  - include:
+      tags:
+        - security
+        - external/cwe/cwe-079  # Cross-site Scripting
+        - external/cwe/cwe-089  # SQL Injection
+        - external/cwe/cwe-094  # Code Injection
+        - external/cwe/cwe-295  # Certificate Validation
+        - external/cwe/cwe-327  # Weak Crypto
+        - external/cwe/cwe-502  # Deserialization
+        - external/cwe/cwe-798  # Hard-coded Credentials
+
+# Custom security patterns for AI agents
+# Note: These would require custom CodeQL queries in practice
+# Listed here for documentation purposes
+#
+# Security concerns for LLM integrations:
+# 1. Prompt Injection - User input directly inserted into prompts
+# 2. Token Handling - Improper API key storage or rotation
+# 3. API Key Exposure - Keys in logs, errors, or responses
+# 4. Model Poisoning - Untrusted model loading
+# 5. Data Leakage - Sensitive data sent to external APIs
+# 6. Rate Limiting - Missing rate limit enforcement
+# 7. Input Validation - Insufficient validation before LLM calls
+# 8. Output Sanitization - LLM output not sanitized before use

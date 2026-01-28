@@ -1,0 +1,133 @@
+name: Agent Code Checklist
+
+on:
+  pull_request:
+    paths:
+      - 'src/agents/**'
+
+jobs:
+  checklist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Get changed agent files
+        id: changed-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files: |
+            src/agents/**/*.py
+
+      - name: Validate agent implementation checklist
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Changed agent files:"
+          echo "${{ steps.changed-files.outputs.all_changed_files }}"
+          python scripts/validate_agent_checklist.py ${{ steps.changed-files.outputs.all_changed_files }}
+        continue-on-error: true
+
+      - name: Check for required tests
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Checking for corresponding test files..."
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            if [[ $file == src/agents/*.py ]] && [[ $file != *"__init__.py"* ]]; then
+              basename=$(basename "$file" .py)
+              test_file="tests/agents/test_${basename}.py"
+              if [ ! -f "$test_file" ]; then
+                echo "⚠️  Warning: No test file found for $file (expected: $test_file)"
+              else
+                echo "✅ Test file exists: $test_file"
+              fi
+            fi
+          done
+
+      - name: Verify tracing instrumentation
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Checking for OpenTelemetry tracing..."
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            if grep -q "opentelemetry\|tracing\|@trace" "$file" 2>/dev/null; then
+              echo "✅ $file: Tracing instrumentation found"
+            else
+              echo "ℹ️  $file: No tracing instrumentation (optional)"
+            fi
+          done
+
+      - name: Check error handling
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Checking for error handling patterns..."
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            if grep -q "try:\|except\|raise\|Error\|Exception" "$file" 2>/dev/null; then
+              echo "✅ $file: Error handling found"
+            else
+              echo "⚠️  $file: No explicit error handling"
+            fi
+          done
+
+      - name: Generate checklist report
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "## 📋 Agent Implementation Checklist Report" > checklist_report.md
+          echo "" >> checklist_report.md
+          echo "### Changed Agent Files" >> checklist_report.md
+          echo "" >> checklist_report.md
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "- \`$file\`" >> checklist_report.md
+          done
+          echo "" >> checklist_report.md
+          echo "### Checklist Items" >> checklist_report.md
+          echo "" >> checklist_report.md
+          echo "- [ ] Extends BaseAgent class" >> checklist_report.md
+          echo "- [ ] Implements required methods (execute, validate, handle_error)" >> checklist_report.md
+          echo "- [ ] Has comprehensive docstrings" >> checklist_report.md
+          echo "- [ ] Unit tests present (min 85% coverage)" >> checklist_report.md
+          echo "- [ ] Integration tests with Supabase" >> checklist_report.md
+          echo "- [ ] Error scenario tests" >> checklist_report.md
+          echo "- [ ] No hardcoded secrets" >> checklist_report.md
+          echo "- [ ] Input validation on all parameters" >> checklist_report.md
+          echo "- [ ] Timeout handling for long operations" >> checklist_report.md
+          echo "- [ ] OpenTelemetry tracing (optional)" >> checklist_report.md
+          echo "- [ ] Structured logging with context" >> checklist_report.md
+          echo "" >> checklist_report.md
+          echo "Please ensure all applicable items are completed." >> checklist_report.md
+
+      - name: Comment checklist on PR
+        if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('checklist_report.md', 'utf8');
+            
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const checklistComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Agent Implementation Checklist Report')
+            );
+            
+            if (checklistComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: checklistComment.id,
+                body: report
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: report
+              });
+            }
