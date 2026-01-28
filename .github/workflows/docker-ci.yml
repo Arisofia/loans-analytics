@@ -27,7 +27,6 @@ jobs:
 
             - name: Log into registry ${{ env.REGISTRY }}
               uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
-      
               with:
                   registry: ${{ env.REGISTRY }}
                   username: ${{ secrets.REGISTRY_USER }}
