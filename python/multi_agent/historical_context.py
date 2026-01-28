@@ -7,12 +7,16 @@ to enhance agent decision-making with historical awareness.
 Phase G4.1 Implementation
 """
 
+
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from enum import Enum
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
+
+# Constant for repeated literal
+KPI_IDENTIFIER_DESC = "KPI identifier"
 
 
 class TrendDirection(str, Enum):
@@ -43,9 +47,23 @@ class KpiHistoricalValue:
 
 
 class TrendAnalysis(BaseModel):
-    """Trend analysis result."""
+    """
+    Summary of a KPI's historical trend over a fixed analysis window.
 
-    kpi_id: str = Field(..., description="KPI identifier")
+    This model captures the result of a time-based trend analysis performed
+    over historical KPI values, typically using a simple linear regression
+    of value versus time. The regression produces a slope and r-squared
+    statistic (`slope`, `r_squared`), which are then interpreted into a
+    qualitative trend `direction` (e.g., increasing, decreasing, stable) and
+    `strength` (e.g., strong, moderate, weak).
+
+    In addition, the analysis records the time span covered (`period_days`),
+    the starting and ending KPI values (`start_value`, `end_value`), and the
+    overall `percent_change` across the period. The `calculated_at` field
+    indicates when this analysis snapshot was generated.
+    """
+
+    kpi_id: str = Field(..., description=KPI_IDENTIFIER_DESC)
     direction: TrendDirection = Field(..., description="Trend direction")
     strength: TrendStrength = Field(..., description="Trend strength")
     slope: float = Field(..., description="Linear regression slope")
@@ -55,14 +73,14 @@ class TrendAnalysis(BaseModel):
     end_value: float = Field(..., description="Ending value")
     percent_change: float = Field(..., description="Percentage change")
     calculated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Analysis timestamp"
+        default_factory=datetime.utcnow, description="Analysis timestamp (UTC)"
     )
 
 
 class SeasonalityPattern(BaseModel):
     """Seasonality pattern detection result."""
 
-    kpi_id: str = Field(..., description="KPI identifier")
+    kpi_id: str = Field(..., description=KPI_IDENTIFIER_DESC)
     has_seasonality: bool = Field(..., description="Whether seasonality detected")
     cycle_length_months: Optional[int] = Field(
         None, description="Seasonal cycle length"
@@ -84,7 +102,7 @@ class SeasonalityPattern(BaseModel):
 class KpiProjection(BaseModel):
     """KPI forecast projection."""
 
-    kpi_id: str = Field(..., description="KPI identifier")
+    kpi_id: str = Field(..., description=KPI_IDENTIFIER_DESC)
     projection_date: date = Field(..., description="Future date")
     predicted_value: float = Field(..., description="Predicted value")
     lower_bound: float = Field(..., description="Lower confidence bound")
@@ -141,15 +159,17 @@ class HistoricalContextProvider:
         while current <= end_date:
             # Generate mock trend data
             days_diff = (current - start_date).days
-            trend_value = base_value + (days_diff * 0.1)  # Slight upward trend
-            noise = (hash(f"{kpi_id}{current}") % 100) / 10.0 - 5.0  # ±5 variation
+            # Slight upward trend
+            trend_value = base_value + (days_diff * 0.1)
+            # ±5 variation
+            noise = (hash(f"{kpi_id}{current}") % 100) / 10.0 - 5.0
 
             values.append(
                 KpiHistoricalValue(
                     kpi_id=kpi_id,
                     date=current,
                     value=trend_value + noise,
-                    timestamp=datetime.combine(current, datetime.min.time()),
+                    timestamp=datetime.now(UTC),
                 )
             )
             current += timedelta(days=1)
@@ -187,7 +207,7 @@ class HistoricalContextProvider:
         return data
 
     def get_trend(
-        self, kpi_id: str, periods: int = 12, method: str = "linear"
+        self, kpi_id: str, periods: int = 12
     ) -> TrendAnalysis:
         """
         Calculate trend for a KPI over the specified periods.
@@ -195,7 +215,6 @@ class HistoricalContextProvider:
         Args:
             kpi_id: KPI identifier
             periods: Number of periods to analyze (default 12 months)
-            method: Trend calculation method ('linear', 'exponential')
 
         Returns:
             Trend analysis result
@@ -242,7 +261,9 @@ class HistoricalContextProvider:
         # Determine direction and strength
         start_val = history[0].value
         end_val = history[-1].value
-        percent_change = ((end_val - start_val) / start_val * 100) if start_val != 0 else 0.0
+        percent_change = (
+            ((end_val - start_val) / start_val * 100) if start_val != 0 else 0.0
+        )
 
         # Direction
         if abs(slope) < 0.01:
