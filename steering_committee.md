@@ -109,7 +109,7 @@ Multi-agent workflows involving LLM calls (via `src/agents/llm_provider.py`) may
 
 **Owner:** Engineering Lead  
 **Timeline:** 1 week for core implementation  
-**Success Criteria:** p99 latency < 350ms (per DEPLOYMENT.md target)
+**Success Criteria:** p99 latency < 350ms (target defined in this report)
 
 ---
 
