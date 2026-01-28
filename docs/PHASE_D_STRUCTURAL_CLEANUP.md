@@ -16,7 +16,7 @@ Phase D represents the final cleanup stage of the CTO-level production audit, fo
 - Cleaned 65+ Python cache directories
 - Eliminated duplicate documentation
 - Validated all 44 active workflows
-- Zero breaking changes to functionality
+- Minimal behavioral changes (ESLint ignore patterns now tree-wide)
 
 ---
 
@@ -27,12 +27,14 @@ Phase D represents the final cleanup stage of the CTO-level production audit, fo
 - **Removed**: `.eslintignore` (9 lines, deprecated with ESLint v9+ flat config)
 - **Migrated**: All ignore patterns to `eslint.config.js` ignores array
 - **Added**: Missing patterns (`.gradle`, `.venv`, `venv`, `build`)
+- **Updated**: Changed `.venv`/`venv` to `**/.venv`/`**/venv` for tree-wide matching
 
 ### Impact
 
 - Single source of truth for ESLint configuration
 - Eliminates confusion between legacy `.eslintignore` and modern flat config
 - All patterns now centralized in `eslint.config.js`
+- **Behavioral Change**: `.venv` and `venv` patterns now match tree-wide (not just root-level), which may affect linting in package-level directories
 
 ### Commit
 
@@ -163,7 +165,7 @@ Phase D represents the final cleanup stage of the CTO-level production audit, fo
 
 ## Compliance & Governance
 
-✅ **No Breaking Changes**: All cleanup activities preserved functionality  
+✅ **Minimal Breaking Changes**: All cleanup activities preserved core functionality; ESLint ignore patterns now match tree-wide instead of root-only  
 ✅ **Governance Adherence**: Proper PR workflow, dedicated branch, documented commits  
 ✅ **Code Quality**: ESLint, formatting, and type checking still passing  
 ✅ **Test Coverage**: No test files removed or modified
