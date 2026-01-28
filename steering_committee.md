@@ -369,7 +369,7 @@ Per SECURITY.md:
 | Requirement | Status | Implementation |
 |-------------|--------|----------------|
 | **Data Classification** | ✅ COMPLETE | PII identified, data mapping done |
-| **Data Retention Policies** | ✅ IMPLEMENTED | 90-day purge policy (per DEPLOYMENT.md context) |
+| **Data Retention Policies** | 🟡 IN PROGRESS | Proposed 90-day purge policy (assumed for this report; not documented in DEPLOYMENT.md) |
 | **Right to Erasure** | ✅ IMPLEMENTED | Automated via sql/migrations/ procedures |
 | **Right to Access** | ✅ IMPLEMENTED | Export functionality via Supabase APIs |
 | **Privacy by Design** | ✅ CORE PRINCIPLE | Minimal data collection, purpose limitation |
