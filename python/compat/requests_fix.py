@@ -1,7 +1,9 @@
 import re
 import warnings
 from typing import Optional
+
 from requests.exceptions import RequestsDependencyWarning
+
 try:
     from packaging.version import InvalidVersion, Version
 except Exception:

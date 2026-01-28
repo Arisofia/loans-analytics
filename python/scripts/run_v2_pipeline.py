@@ -2,18 +2,22 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+
 # Ensure we can import from the root and python directories
 root_dir = str(Path(__file__).parent.parent.parent)
 python_dir = str(Path(__file__).parent.parent)
 sys.path.insert(0, root_dir)
 sys.path.insert(0, python_dir)
-from src.pipeline.ingestion import UnifiedIngestion  # noqa: E402
 from src.kpis.engine import KPIEngineV2  # noqa: E402
+from src.pipeline.ingestion import UnifiedIngestion  # noqa: E402
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger("abaco.v2_pipeline")
+
+
 def run_v2_pipeline(input_file: str):
     logger.info("🚀 Starting Abaco V2 Operational Pipeline")
     # 1. Ingestion with Automated Data Quality Audit
@@ -51,6 +55,8 @@ def run_v2_pipeline(input_file: str):
     audit_path.parent.mkdir(parents=True, exist_ok=True)
     audit_df.to_csv(audit_path, index=False)
     logger.info(f"Audit trail exported to {audit_path}")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Abaco V2 Operational Pipeline")
     parser.add_argument("--input", required=True, help="Path to input data file")

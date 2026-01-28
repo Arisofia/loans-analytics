@@ -1,8 +1,8 @@
 from .agents import (
-    RiskAnalystAgent,
     ComplianceAgent,
     GrowthStrategistAgent,
-    OpsOptimizerAgent
+    OpsOptimizerAgent,
+    RiskAnalystAgent,
 )
 
 
@@ -13,10 +13,10 @@ class MultiAgentOrchestrator:
     def _init_agents(self):
         # Initialize agents here
         agents = {
-            'RiskAnalyst': RiskAnalystAgent(),
-            'Compliance': ComplianceAgent(),
-            'GrowthStrategist': GrowthStrategistAgent(),
-            'OpsOptimizer': OpsOptimizerAgent()
+            "RiskAnalyst": RiskAnalystAgent(),
+            "Compliance": ComplianceAgent(),
+            "GrowthStrategist": GrowthStrategistAgent(),
+            "OpsOptimizer": OpsOptimizerAgent(),
         }
         return agents
 
@@ -37,9 +37,9 @@ class MultiAgentOrchestrator:
 
     def create_portfolio_risk_review_scenario(self):
         scenario = [
-            ('RiskAnalyst', {'portfolio_data': 'data1'}),
-            ('Compliance', {'risk_assessment': 'data2'}),
-            ('GrowthStrategist', {'market_analysis': 'data3'}),
-            ('OpsOptimizer', {'optimization_data': 'data4'})
+            ("RiskAnalyst", {"portfolio_data": "data1"}),
+            ("Compliance", {"risk_assessment": "data2"}),
+            ("GrowthStrategist", {"market_analysis": "data3"}),
+            ("OpsOptimizer", {"optimization_data": "data4"}),
         ]
         return self.run_scenario(scenario)

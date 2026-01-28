@@ -1,6 +1,8 @@
 import logging
 import sys
+
 import polars as pl
+
 logger = logging.getLogger(__name__)
 # Finance-Grade Loan Schema
 LOAN_SCHEMA = pl.Schema(
@@ -18,6 +20,8 @@ LOAN_SCHEMA = pl.Schema(
 )
 # Ingestion Schema (Used for Data Contracts and FastAPI validation)
 INGESTION_SCHEMA = LOAN_SCHEMA
+
+
 def validate_ingestion_contract(df: pl.DataFrame) -> bool:
     """
     Validates the loan data against defined business contracts using Polars.
@@ -56,6 +60,8 @@ def validate_ingestion_contract(df: pl.DataFrame) -> bool:
         if null_val > 0:
             logger.info(f"Column {col} has {null_val} null values.")
     return True
+
+
 def assert_healthy(df: pl.DataFrame):
     """Fail-fast health checks."""
     numeric_cols = ["loan_amount", "principal_balance", "interest_rate"]

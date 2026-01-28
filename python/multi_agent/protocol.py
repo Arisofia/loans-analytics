@@ -1,4 +1,5 @@
 """Typed protocol for multi-agent system."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -8,11 +9,12 @@ from typing import Any, Dict, List, Optional
 try:
     from pydantic import BaseModel, Field, field_validator
 except ImportError:
-    from pydantic import BaseModel, Field, validator as field_validator
+    from pydantic import BaseModel, Field
 
 
 class AgentRole(str, Enum):
     """Standard agent roles."""
+
     RISK_ANALYST = "risk_analyst"
     GROWTH_STRATEGIST = "growth_strategist"
     OPS_OPTIMIZER = "ops_optimizer"
@@ -23,6 +25,7 @@ class AgentRole(str, Enum):
 
 class LLMProvider(str, Enum):
     """Supported LLM providers."""
+
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     GEMINI = "gemini"
@@ -30,6 +33,7 @@ class LLMProvider(str, Enum):
 
 class MessageRole(str, Enum):
     """Message role in conversation."""
+
     SYSTEM = "system"
     USER = "user"
     ASSISTANT = "assistant"
@@ -38,6 +42,7 @@ class MessageRole(str, Enum):
 
 class Message(BaseModel):
     """Single message in conversation."""
+
     role: MessageRole
     content: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
@@ -46,6 +51,7 @@ class Message(BaseModel):
 
 class Tool(BaseModel):
     """Agent tool definition."""
+
     name: str
     description: str
     parameters: Dict[str, Any] = Field(default_factory=dict)
@@ -54,6 +60,7 @@ class Tool(BaseModel):
 
 class AgentRequest(BaseModel):
     """Request to an agent."""
+
     trace_id: str
     session_id: Optional[str] = None
     user_id: Optional[str] = None
@@ -67,6 +74,7 @@ class AgentRequest(BaseModel):
 
 class AgentResponse(BaseModel):
     """Response from an agent."""
+
     trace_id: str
     agent_role: AgentRole
     message: Message
@@ -83,6 +91,7 @@ class AgentResponse(BaseModel):
 
 class AgentError(BaseModel):
     """Error from agent execution."""
+
     trace_id: str
     agent_role: AgentRole
     error_type: str
@@ -93,6 +102,7 @@ class AgentError(BaseModel):
 
 class ScenarioStep(BaseModel):
     """Single step in orchestrated scenario."""
+
     agent_role: AgentRole
     prompt_template: str
     context_keys: List[str] = Field(default_factory=list)
@@ -102,6 +112,7 @@ class ScenarioStep(BaseModel):
 
 class Scenario(BaseModel):
     """Multi-agent orchestration scenario."""
+
     name: str
     description: str
     steps: List[ScenarioStep]
