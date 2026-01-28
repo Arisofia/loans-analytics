@@ -38,52 +38,47 @@ jobs:
           fi
 
       - name: Lint with Ruff
-        run: ruff check . 2>&1 | tee ruff.log || echo "::warning::Ruff found issues"
-        continue-on-error: true
+        run: ruff check . 2>&1 | tee ruff.log
 
       - name: Format check with Black
-        run: black --check . || echo "::warning::Black found formatting issues"
-        continue-on-error: true
+        run: black --check .
 
       - name: Sort imports with isort
-        run: isort --check-only . || echo "::warning::isort found import sorting issues"
-        continue-on-error: true
+        run: isort --check-only .
 
       - name: Lint with Flake8
         run: |
           if [ -d src ] || [ -d python ] || [ -d streamlit_app ]; then
             TARGETS=$(find . -maxdepth 1 -type d \( -name 'src' -o -name 'python' -o -name 'streamlit_app' \) 2>/dev/null)
-            flake8 $TARGETS || echo "::warning::Flake8 found issues"
+            flake8 $TARGETS
           else
-            flake8 . || echo "::warning::Flake8 found issues"
+            flake8 .
           fi
-        continue-on-error: true
 
       - name: Type check with mypy
         run: |
           if [ -d src ] || [ -d python ]; then
             TARGETS=$(find . -maxdepth 1 -type d \( -name 'src' -o -name 'python' \) 2>/dev/null)
-            mypy $TARGETS || echo "::warning::mypy found type issues"
+            mypy $TARGETS
           else
-            mypy . || echo "::warning::mypy found type issues"
+            mypy .
           fi
-        continue-on-error: true
 
       - name: Run tests with pytest
         run: |
           # Only run pytest if pytest-style test files are present
           if find . -type f \( -name "test_*.py" -o -name "*_test.py" \) | grep -q .; then
             if python -m pytest --cov --version >/dev/null 2>&1; then
-              pytest --cov --cov-report=xml --cov-report=term 2>&1 || echo "::warning::pytest found test failures"
+              pytest --cov --cov-report=xml --cov-report=term 2>&1
             elif command -v pytest >/dev/null 2>&1; then
-              pytest 2>&1 || echo "::warning::pytest found test failures"
+              pytest 2>&1
             else
-              echo "::warning::pytest not available"
+              echo "::error::pytest not available"
+              exit 1
             fi
           else
             echo "::notice::No pytest-compatible test files were found; skipping pytest run."
           fi
-        continue-on-error: true
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -92,7 +87,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           fail_ci_if_error: false
-        continue-on-error: true
 
       - name: Generate QA Summary
         if: always()
@@ -163,7 +157,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
 
   ai-review-coderabbit:
     name: CodeRabbit AI Review
@@ -225,7 +218,6 @@ jobs:
         with:
           token: ${{ secrets.SOURCERY_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
 
   ai-review-gemini:
     name: Gemini AI Review
@@ -351,7 +343,6 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
 
   pr-summary:
     name: PR Review Summary

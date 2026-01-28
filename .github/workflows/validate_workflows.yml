@@ -16,7 +16,6 @@ jobs:
         uses: rhysd/actionlint@ea8102762106cdca9c88829f1295b39a544706f3
         with:
           args: .github/workflows
-        continue-on-error: true
 
       - name: Actionlint summary
         if: ${{ steps.actionlint.outcome != 'success' }}
