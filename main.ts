@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 /** Repository layout helper for ABACO with optional strict and JSON modes. */
 // Node.js compatible version
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 interface CheckTarget {
   label: string
   path: string
