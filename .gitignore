@@ -135,3 +135,4 @@ logs/runs/run_*/
 .zencoder/
 .zenflow/
 .gradle/
+coverage.json
