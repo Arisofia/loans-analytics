@@ -300,8 +300,6 @@ def run_all_examples():
     try:
         example_single_agent()
         example_pii_redaction()
-        # example_scenario_execution()  # Uncomment to run (costs more tokens)
-        # example_custom_scenario()  # Uncomment to run (costs more tokens)
         example_provider_switching()
 
         print("\n" + "=" * 80)
@@ -310,7 +308,7 @@ def run_all_examples():
 
     except KeyboardInterrupt:
         print("\n\n⚠️  Examples interrupted by user")
-    except Exception as e:
+    except (ValueError, RuntimeError, ConnectionError, ImportError) as e:
         print(f"\n\n❌ Examples failed: {e}")
 
 
