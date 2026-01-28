@@ -363,6 +363,249 @@ class MultiAgentOrchestrator:
                     ),
                 ],
             ),
+            # ========================================
+            # Product-Specific Scenarios: SME Loans
+            # ========================================
+            "sme_underwriting": Scenario(
+                name="sme_underwriting",
+                description="SME loan underwriting with fraud and pricing analysis",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Assess SME credit risk: {business_data}. Analyze financials, cash flow, industry risk.",
+                        context_keys=["business_data"],
+                        output_key="credit_assessment",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.FRAUD_DETECTION,
+                        prompt_template="Screen for business fraud: {credit_assessment}. Check beneficial ownership, tax compliance, trade references.",
+                        context_keys=["credit_assessment"],
+                        output_key="fraud_check",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.PRICING,
+                        prompt_template="Price SME loan based on: {credit_assessment} and {fraud_check}. Consider collateral and guarantees.",
+                        context_keys=["credit_assessment", "fraud_check"],
+                        output_key="pricing_terms",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.COMPLIANCE,
+                        prompt_template="Verify SME lending compliance: {pricing_terms}. Check regulatory limits and documentation.",
+                        context_keys=["pricing_terms"],
+                        output_key="compliance_clearance",
+                    ),
+                ],
+            ),
+            "sme_portfolio_stress_test": Scenario(
+                name="sme_portfolio_stress_test",
+                description="SME portfolio stress testing and scenario analysis",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Run stress scenarios on SME portfolio: {portfolio_data} with assumptions: {stress_scenarios}.",
+                        context_keys=["portfolio_data", "stress_scenarios"],
+                        output_key="stress_results",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.OPS_OPTIMIZER,
+                        prompt_template="Identify operational responses to stress results: {stress_results}. Optimize reserves and liquidity.",
+                        context_keys=["stress_results"],
+                        output_key="operational_response",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.GROWTH_STRATEGIST,
+                        prompt_template="Adjust growth strategy based on: {stress_results} and {operational_response}. Balance risk and opportunity.",
+                        context_keys=["stress_results", "operational_response"],
+                        output_key="strategic_adjustments",
+                    ),
+                ],
+            ),
+            "sme_default_management": Scenario(
+                name="sme_default_management",
+                description="SME default workout and recovery strategy",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.COLLECTIONS,
+                        prompt_template="Assess defaulted SME loan: {loan_data}. Evaluate collateral, guarantees, business viability.",
+                        context_keys=["loan_data"],
+                        output_key="default_assessment",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Calculate expected recovery and loss: {default_assessment}. Consider liquidation vs. restructuring.",
+                        context_keys=["default_assessment"],
+                        output_key="recovery_analysis",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.COMPLIANCE,
+                        prompt_template="Review legal options and regulatory requirements: {recovery_analysis}. Document next steps.",
+                        context_keys=["recovery_analysis"],
+                        output_key="legal_strategy",
+                    ),
+                ],
+            ),
+            # ========================================
+            # Product-Specific Scenarios: Auto Loans
+            # ========================================
+            "auto_origination": Scenario(
+                name="auto_origination",
+                description="Auto loan origination with fraud screening and pricing",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.FRAUD_DETECTION,
+                        prompt_template="Screen auto loan application: {application_data}. Verify VIN, title, income documentation.",
+                        context_keys=["application_data"],
+                        output_key="fraud_screen",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.PRICING,
+                        prompt_template="Price auto loan: {fraud_screen} with vehicle data: {vehicle_data}. Calculate LTV and rate.",
+                        context_keys=["fraud_screen", "vehicle_data"],
+                        output_key="loan_terms",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Underwrite based on: {loan_terms}. Assess borrower capacity and collateral value.",
+                        context_keys=["loan_terms"],
+                        output_key="underwriting_decision",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.OPS_OPTIMIZER,
+                        prompt_template="Optimize funding and documentation: {underwriting_decision}. Streamline closing process.",
+                        context_keys=["underwriting_decision"],
+                        output_key="operational_plan",
+                    ),
+                ],
+            ),
+            "auto_delinquency_workout": Scenario(
+                name="auto_delinquency_workout",
+                description="Auto loan delinquency management and recovery",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.COLLECTIONS,
+                        prompt_template="Manage delinquent auto loan: {account_data}. Assess vehicle location, value, payment capacity.",
+                        context_keys=["account_data"],
+                        output_key="collection_plan",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.CUSTOMER_RETENTION,
+                        prompt_template="Evaluate retention vs. repossession: {collection_plan}. Consider customer relationship value.",
+                        context_keys=["collection_plan"],
+                        output_key="retention_assessment",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Calculate recovery options: {retention_assessment}. Compare workout vs. repo scenarios.",
+                        context_keys=["retention_assessment"],
+                        output_key="recovery_recommendation",
+                    ),
+                ],
+            ),
+            "auto_residual_value_analysis": Scenario(
+                name="auto_residual_value_analysis",
+                description="Auto loan portfolio residual value assessment",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Analyze auto portfolio residual values: {portfolio_data} with market trends: {market_data}.",
+                        context_keys=["portfolio_data", "market_data"],
+                        output_key="residual_analysis",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.PRICING,
+                        prompt_template="Adjust LTV and pricing strategy: {residual_analysis}. Optimize for changing collateral values.",
+                        context_keys=["residual_analysis"],
+                        output_key="pricing_adjustments",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.OPS_OPTIMIZER,
+                        prompt_template="Implement portfolio actions: {pricing_adjustments}. Plan reserve adjustments and hedging.",
+                        context_keys=["pricing_adjustments"],
+                        output_key="implementation_plan",
+                    ),
+                ],
+            ),
+            # ========================================
+            # Portfolio-Level Scenarios
+            # ========================================
+            "portfolio_health_check": Scenario(
+                name="portfolio_health_check",
+                description="Comprehensive portfolio health assessment with KPIs",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Assess overall portfolio health: {portfolio_metrics}. Identify key risk indicators and trends.",
+                        context_keys=["portfolio_metrics"],
+                        output_key="health_assessment",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.COMPLIANCE,
+                        prompt_template="Review regulatory compliance status: {health_assessment}. Flag any breaches or concerns.",
+                        context_keys=["health_assessment"],
+                        output_key="compliance_status",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.OPS_OPTIMIZER,
+                        prompt_template="Recommend operational improvements: {health_assessment} and {compliance_status}.",
+                        context_keys=["health_assessment", "compliance_status"],
+                        output_key="improvement_plan",
+                    ),
+                ],
+            ),
+            "strategic_planning": Scenario(
+                name="strategic_planning",
+                description="Annual strategic planning for lending business",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.GROWTH_STRATEGIST,
+                        prompt_template="Develop growth strategy: {market_analysis} and {performance_data}. Identify expansion opportunities.",
+                        context_keys=["market_analysis", "performance_data"],
+                        output_key="growth_strategy",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Assess risk appetite and constraints: {growth_strategy}. Define risk tolerance levels.",
+                        context_keys=["growth_strategy"],
+                        output_key="risk_framework",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.PRICING,
+                        prompt_template="Design pricing strategy to support: {growth_strategy} within {risk_framework}.",
+                        context_keys=["growth_strategy", "risk_framework"],
+                        output_key="pricing_strategy",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.OPS_OPTIMIZER,
+                        prompt_template="Build operational roadmap for: {growth_strategy}, {risk_framework}, and {pricing_strategy}.",
+                        context_keys=["growth_strategy", "risk_framework", "pricing_strategy"],
+                        output_key="execution_roadmap",
+                    ),
+                ],
+            ),
+            "regulatory_review": Scenario(
+                name="regulatory_review",
+                description="Comprehensive regulatory compliance review",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.COMPLIANCE,
+                        prompt_template="Conduct regulatory compliance audit: {audit_scope}. Identify gaps and violations.",
+                        context_keys=["audit_scope"],
+                        output_key="compliance_findings",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Assess risk exposure from compliance findings: {compliance_findings}.",
+                        context_keys=["compliance_findings"],
+                        output_key="risk_exposure",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.OPS_OPTIMIZER,
+                        prompt_template="Design remediation plan: {compliance_findings} and {risk_exposure}. Prioritize by severity.",
+                        context_keys=["compliance_findings", "risk_exposure"],
+                        output_key="remediation_plan",
+                    ),
+                ],
+            ),
         }
 
     def run_agent(

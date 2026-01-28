@@ -1,6 +1,6 @@
 # Phase G: Fintech Intelligence & KPI Integration
 
-**Status**: G3 In Progress (Retail Complete) | 42/42 Tests Passing  
+**Status**: ✅ G3 Complete (20 Scenarios) | 54/54 Tests Passing  
 **Last Updated**: 2026-01-28
 
 ## Overview
@@ -9,7 +9,7 @@ Phase G transforms the multi-agent system from generic analytics to **domain-spe
 
 1. Integrating real KPI definitions and validation
 2. Adding specialized agents with deep fintech expertise
-3. Creating product-specific scenario packs
+3. Creating product-specific scenario packs (Retail, SME, Auto, Portfolio)
 4. Connecting to historical context and trends
 
 ## Milestones
@@ -147,13 +147,13 @@ Added 4 domain-expert agents with comprehensive system prompts:
 - Original 4: Risk Analyst, Growth Strategist, Ops Optimizer, Compliance
 - New 4: Collections, Fraud Detection, Pricing, Customer Retention
 
-### ✅ G3: Scenario Packs by Product (Retail Complete)
+### ✅ G3: Product-Specific Scenario Packs (Complete)
 
-**13/13 tests passing**
+**25/25 tests passing**
 
-Product-specific workflows starting with retail lending:
+Comprehensive product-specific workflows across all lending verticals:
 
-#### Retail Loan Scenarios (Complete)
+#### Retail Loan Scenarios (Complete - 3 scenarios)
 
 **1. retail_origination** (4-step workflow)
 
@@ -173,30 +173,88 @@ Product-specific workflows starting with retail lending:
 - **Flow**: Risk → Pricing → Retention → Compliance
 - **Outputs**: risk_segmentation, repricing_strategy, churn_mitigation, compliance_review
 
+#### SME Loan Scenarios (Complete - 3 scenarios)
+
+**1. sme_underwriting** (4-step workflow)
+
+- **Purpose**: SME credit assessment with fraud screening
+- **Flow**: Risk → Fraud → Pricing → Compliance
+- **Context**: Business financials, cash flow, industry risk
+- **Outputs**: credit_assessment, fraud_check, pricing_terms, compliance_clearance
+
+**2. sme_portfolio_stress_test** (3-step workflow)
+
+- **Purpose**: Portfolio stress testing and scenario analysis
+- **Flow**: Risk → Ops → Growth
+- **Context**: Portfolio data, stress scenarios
+- **Outputs**: stress_results, operational_response, strategic_adjustments
+
+**3. sme_default_management** (3-step workflow)
+
+- **Purpose**: Defaulted SME loan workout and recovery
+- **Flow**: Collections → Risk → Compliance
+- **Context**: Loan data, collateral, guarantees
+- **Outputs**: default_assessment, recovery_analysis, legal_strategy
+
+#### Auto Loan Scenarios (Complete - 3 scenarios)
+
+**1. auto_origination** (4-step workflow)
+
+- **Purpose**: Auto loan origination with VIN/title verification
+- **Flow**: Fraud → Pricing → Risk → Ops
+- **Context**: Application data, vehicle data
+- **Outputs**: fraud_screen, loan_terms, underwriting_decision, operational_plan
+
+**2. auto_delinquency_workout** (3-step workflow)
+
+- **Purpose**: Delinquent auto loan recovery strategy
+- **Flow**: Collections → Retention → Risk
+- **Context**: Account data, vehicle location and value
+- **Outputs**: collection_plan, retention_assessment, recovery_recommendation
+
+**3. auto_residual_value_analysis** (3-step workflow)
+
+- **Purpose**: Auto portfolio residual value assessment
+- **Flow**: Risk → Pricing → Ops
+- **Context**: Portfolio data, market trends
+- **Outputs**: residual_analysis, pricing_adjustments, implementation_plan
+
+#### Portfolio-Level Scenarios (Complete - 3 scenarios)
+
+**1. portfolio_health_check** (3-step workflow)
+
+- **Purpose**: Comprehensive portfolio health assessment
+- **Flow**: Risk → Compliance → Ops
+- **Context**: Portfolio metrics with KPI integration
+- **Outputs**: health_assessment, compliance_status, improvement_plan
+
+**2. strategic_planning** (4-step workflow)
+
+- **Purpose**: Annual strategic planning for lending business
+- **Flow**: Growth → Risk → Pricing → Ops
+- **Context**: Market analysis, performance data
+- **Outputs**: growth_strategy, risk_framework, pricing_strategy, execution_roadmap
+
+**3. regulatory_review** (3-step workflow)
+
+- **Purpose**: Regulatory compliance audit and remediation
+- **Flow**: Compliance → Risk → Ops
+- **Context**: Audit scope
+- **Outputs**: compliance_findings, risk_exposure, remediation_plan
+
 **Key Files**:
 
-- Updated `orchestrator.py` with 3 retail scenarios (**11 total scenarios now**)
-- `test_scenario_packs.py` (13 tests for retail workflows)
+- Updated `orchestrator.py` with **20 total scenarios**
+- `test_scenario_packs.py` (25 tests across all product scenarios)
 
-#### Planned Product Scenarios
+**Scenario Coverage**:
 
-**SME Loans** (Next):
-
-- `sme_underwriting`: Risk → Fraud → Pricing → Compliance
-- `sme_portfolio_stress_test`: Risk → Ops → Growth
-- `sme_default_management`: Collections → Risk → Legal
-
-**Auto Loans** (Future):
-
-- `auto_origination`: Fraud → Pricing → Risk → Ops
-- `auto_delinquency_workout`: Collections → Retention → Risk
-- `auto_residual_value_analysis`: Risk → Pricing → Ops
-
-**Portfolio-Level** (Future):
-
-- `portfolio_health_check`: Risk → KPI → Compliance → Ops
-- `strategic_planning`: Growth → Risk → Pricing → Ops
-- `regulatory_review`: Compliance → Risk → Ops → KPI
+- 4 specialized scenarios (collections, fraud, pricing, retention)
+- 3 retail scenarios
+- 3 SME scenarios
+- 3 auto scenarios
+- 3 portfolio-level scenarios
+- 4 original scenarios (risk review, KPI anomaly, growth, optimization)
 
 ### ⏳ G4: Historical Context Integration (Planned)
 
@@ -217,11 +275,11 @@ Goal: Connect to analytics pipeline for trend-aware insights
 
 ## Testing
 
-**Total Tests**: 42 (all passing)
+**Total Tests**: 54 (all passing)
 
 - G1: 18 KPI integration tests
 - G2: 11 specialized agent tests
-- G3: 13 retail scenario tests
+- G3: 25 product scenario tests (8 retail + 4 SME + 4 auto + 4 portfolio + 5 integration)
 
 Run full test suite:
 
