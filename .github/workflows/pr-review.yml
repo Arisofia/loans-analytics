@@ -335,8 +335,11 @@ jobs:
                     printf '%s\n' "$sanitized_review"
                     echo '```'
                   } > comment.md
-                  gh pr comment "$PR_NUMBER" \
-                    --body-file comment.md
+                  if command -v gh >/dev/null 2>&1; then
+                    gh pr comment "$PR_NUMBER" --body-file comment.md
+                  else
+                    echo "::warning::gh CLI not found on runner - skipping Perplexity comment"
+                  fi
                 else
                   echo "::warning::Invalid pull request number: $PR_NUMBER - skipping Perplexity comment"
                 fi
