@@ -17,7 +17,7 @@
 **GREEN Indicators (Strengths):**
 - ✅ **Production architecture aligned**: Azure Web Form → n8n → Supabase → Python Multi-Agent Analytics
 - ✅ **Repository cleaned**: 85%+ size reduction achieved, 67% fewer files
-- ✅ **CI/CD workflows operational**: 44 workflow files configured, 64 active workflows in GitHub Actions
+- ✅ **CI/CD workflows operational**: 44 workflow files configured in `.github/workflows/`
 - ✅ **Code structure stabilized**: Python 64.4%, TypeScript 15.9%, PLpgSQL 9.5%, Shell 4.9%, Bicep 1.9%, JavaScript 1.6%
 - ✅ **Database migrations ready**: 2 migration files in sql/migrations/ for lineage and audit tables
 - ✅ **Next.js 16.1.6 dashboard**: Apps/web architecture confirmed with React 19, Tailwind CSS 4.0
