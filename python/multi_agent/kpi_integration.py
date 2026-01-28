@@ -5,7 +5,7 @@ Connects KPI definitions and registry with agent context and validation.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
@@ -19,7 +19,7 @@ class KpiValue(BaseModel):
     kpi_name: str = Field(..., description="Name of the KPI")
     value: float = Field(..., description="Computed KPI value")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When this value was recorded"
+        default_factory=lambda: datetime.now(timezone.utc), description="When this value was recorded"
     )
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="Additional context about this value"
@@ -44,7 +44,7 @@ class KpiAnomaly(BaseModel):
     expected_range: tuple[Optional[float], Optional[float]]
     severity: str  # "critical", "warning", "info"
     description: str
-    detected_at: datetime = Field(default_factory=datetime.utcnow)
+    detected_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class KpiContextProvider:
@@ -242,7 +242,7 @@ class KpiContextProvider:
 
         context = {
             "kpis": {},
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "total_kpis": len(kpi_names),
         }
 
