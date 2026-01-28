@@ -4,6 +4,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from .agents import ComplianceAgent, GrowthStrategistAgent, OpsOptimizerAgent, RiskAnalystAgent
+from .specialized_agents import CollectionsAgent, FraudDetectionAgent, PricingAgent, CustomerRetentionAgent
 from .base_agent import BaseAgent
 from .protocol import (
     AgentRequest,
@@ -52,6 +53,18 @@ class MultiAgentOrchestrator:
                 provider=self.provider, tracer=self.tracer
             ),
             AgentRole.COMPLIANCE: ComplianceAgent(
+                provider=self.provider, tracer=self.tracer
+            ),
+            AgentRole.COLLECTIONS: CollectionsAgent(
+                provider=self.provider, tracer=self.tracer
+            ),
+            AgentRole.FRAUD_DETECTION: FraudDetectionAgent(
+                provider=self.provider, tracer=self.tracer
+            ),
+            AgentRole.PRICING: PricingAgent(
+                provider=self.provider, tracer=self.tracer
+            ),
+            AgentRole.CUSTOMER_RETENTION: CustomerRetentionAgent(
                 provider=self.provider, tracer=self.tracer
             ),
         }
@@ -158,6 +171,102 @@ class MultiAgentOrchestrator:
                         prompt_template="Final compliance review of plan: {optimization_plan} and {growth_plan}.",
                         context_keys=["optimization_plan", "growth_plan"],
                         output_key="compliance_approval",
+                    ),
+                ],
+            ),
+            "delinquency_workout": Scenario(
+                name="delinquency_workout",
+                description="Delinquent account analysis and workout strategy",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.COLLECTIONS,
+                        prompt_template="Analyze delinquent account: {account_data}. Segment by risk and recommend collection strategy.",
+                        context_keys=["account_data"],
+                        output_key="collections_strategy",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Assess recovery likelihood and expected loss for: {collections_strategy}.",
+                        context_keys=["collections_strategy"],
+                        output_key="recovery_assessment",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.CUSTOMER_RETENTION,
+                        prompt_template="Evaluate retention opportunity and recommend workout plan based on: {collections_strategy} and {recovery_assessment}.",
+                        context_keys=["collections_strategy", "recovery_assessment"],
+                        output_key="workout_plan",
+                    ),
+                ],
+            ),
+            "fraud_investigation": Scenario(
+                name="fraud_investigation",
+                description="Suspicious application fraud detection workflow",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.FRAUD_DETECTION,
+                        prompt_template="Analyze application for fraud indicators: {application_data}. Provide fraud risk score and evidence.",
+                        context_keys=["application_data"],
+                        output_key="fraud_analysis",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Assess portfolio risk impact if this application is fraudulent: {fraud_analysis}.",
+                        context_keys=["fraud_analysis"],
+                        output_key="risk_impact",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.COMPLIANCE,
+                        prompt_template="Review fraud case for regulatory reporting requirements: {fraud_analysis} with risk context: {risk_impact}.",
+                        context_keys=["fraud_analysis", "risk_impact"],
+                        output_key="regulatory_actions",
+                    ),
+                ],
+            ),
+            "pricing_optimization": Scenario(
+                name="pricing_optimization",
+                description="Risk-based pricing and rate optimization",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Analyze borrower risk profile: {borrower_data}. Calculate risk-adjusted metrics.",
+                        context_keys=["borrower_data"],
+                        output_key="risk_profile",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.PRICING,
+                        prompt_template="Recommend optimal pricing based on risk: {risk_profile} and market conditions: {market_data}.",
+                        context_keys=["risk_profile", "market_data"],
+                        output_key="pricing_recommendation",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.COMPLIANCE,
+                        prompt_template="Verify pricing complies with regulations: {pricing_recommendation}.",
+                        context_keys=["pricing_recommendation"],
+                        output_key="pricing_approval",
+                    ),
+                ],
+            ),
+            "churn_prevention": Scenario(
+                name="churn_prevention",
+                description="Customer churn risk analysis and retention strategy",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.CUSTOMER_RETENTION,
+                        prompt_template="Analyze customer for churn risk: {customer_data}. Identify churn signals and lifetime value.",
+                        context_keys=["customer_data"],
+                        output_key="churn_analysis",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.PRICING,
+                        prompt_template="Recommend retention offer based on: {churn_analysis}. Balance profitability and retention.",
+                        context_keys=["churn_analysis"],
+                        output_key="retention_offer",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.OPS_OPTIMIZER,
+                        prompt_template="Design retention campaign execution plan: {retention_offer}. Optimize timing and channel.",
+                        context_keys=["retention_offer"],
+                        output_key="campaign_plan",
                     ),
                 ],
             ),
