@@ -350,15 +350,7 @@ jobs:
     name: PR Review Summary
     runs-on: ubuntu-latest
     needs:
-      [
-        python-qa,
-        sonarqube-scan,
-        ai-review-coderabbit,
-        ai-review-sourcery,
-        ai-review-gemini,
-        ai-review-codex,
-        ai-review-perplexity,
-      ]
+      [python-qa, sonarqube-scan, ai-review-coderabbit, ai-review-perplexity]
     if: always()
     permissions:
       pull-requests: write

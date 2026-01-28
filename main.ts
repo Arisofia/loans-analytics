@@ -167,7 +167,7 @@ function checkStrictMode(results: PathInsight[], strict: boolean): void {
   }
 }
 
-const results = keyAreas.map(describePathSync)
+const results = keyAreas.map((area) => describePathSync(area))
 outputResults(results, json)
 checkStrictMode(results, strict)
 export {} // Make this file a module to allow top-level await

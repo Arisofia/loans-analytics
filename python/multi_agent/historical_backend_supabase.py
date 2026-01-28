@@ -105,13 +105,13 @@ class SupabaseHistoricalBackend(HistoricalDataBackend):
         # - eq: equals
         # - gte: greater than or equal
         # - lte: less than or equal
+        # - Comma-separated for multiple conditions on same field
         start_iso = start_date.isoformat()
         end_iso = end_date.isoformat()
 
         params = {
             "kpi_id": f"eq.{kpi_id}",
-            "date": f"gte.{start_iso}",
-            "date": f"lte.{end_iso}",
+            "date": f"gte.{start_iso},lte.{end_iso}",
             "order": "date.asc",
             "select": "kpi_id,date,value,timestamp",
         }
