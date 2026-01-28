@@ -37,6 +37,12 @@ jobs:
     name: Real Supabase Integration Tests
     runs-on: ubuntu-latest
     
+    # Minimal permissions: read contents, write issues (for PR comments)
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    
     # Run on manual trigger or scheduled runs (secrets must be configured)
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     
@@ -150,6 +156,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: integration-tests
     if: failure() && github.event_name == 'schedule'
+    
+    # Minimal permissions: write issues
+    permissions:
+      issues: write
     
     steps:
       - name: Create issue for failed integration tests
