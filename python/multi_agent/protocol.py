@@ -7,10 +7,9 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 try:
-    from pydantic import BaseModel, Field, field_validator
+    from pydantic import BaseModel, Field
 except ImportError:
     from pydantic import BaseModel, Field
-    from pydantic import validator as field_validator
 
 
 class AgentRole(str, Enum):

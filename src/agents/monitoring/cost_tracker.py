@@ -6,7 +6,6 @@ Tracks LLM token usage, API calls, database operations, and compute costs.
 from __future__ import annotations
 
 import json
-import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -167,9 +166,7 @@ class CostTracker:
             "total_tokens": total_tokens,
             "total_api_calls": total_api_calls,
             "agent_count": len(agent_costs),
-            "agents": [
-                {"name": name, **costs} for name, costs in agent_costs.items()
-            ],
+            "agents": [{"name": name, **costs} for name, costs in agent_costs.items()],
         }
 
     def compare_to_baseline(
@@ -221,18 +218,14 @@ class CostTracker:
         """
         report = {
             "timestamp": datetime.utcnow().isoformat(),
-            "scenarios": {
-                name: self.get_scenario_cost(name) for name in self.metrics.keys()
-            },
+            "scenarios": {name: self.get_scenario_cost(name) for name in self.metrics.keys()},
         }
 
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w") as f:
             json.dump(report, f, indent=2)
 
-    def _calculate_token_cost(
-        self, tokens_input: int, tokens_output: int
-    ) -> float:
+    def _calculate_token_cost(self, tokens_input: int, tokens_output: int) -> float:
         """Calculate cost based on token usage."""
         input_cost = (tokens_input / 1000) * self.COST_PER_1K_INPUT_TOKENS
         output_cost = (tokens_output / 1000) * self.COST_PER_1K_OUTPUT_TOKENS

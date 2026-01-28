@@ -51,6 +51,9 @@ psycopg[binary]>=3.1.0
 supabase>=2.0
 # Testing utilities
 Faker>=18.0
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
 # Code formatting and linting
 black>=24.0.0
 isort>=5.13.0

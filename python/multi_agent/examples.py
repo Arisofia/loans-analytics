@@ -1,7 +1,6 @@
 """Example usage of multi-agent orchestrator."""
 
 import os
-from typing import List
 
 from .orchestrator import MultiAgentOrchestrator
 from .protocol import AgentRole, LLMProvider, Message, MessageRole
@@ -34,7 +33,7 @@ def example_single_agent():
 
         print(f"\n✅ Response from {response.agent_role.value}:")
         print(f"📝 {response.message.content}")
-        print(f"\n📊 Metrics:")
+        print("\n📊 Metrics:")
         print(f"   - Tokens: {response.tokens_used}")
         print(f"   - Cost: ${response.cost_usd:.4f}")
         print(f"   - Latency: {response.latency_ms:.0f}ms")
@@ -248,7 +247,7 @@ def example_provider_switching():
                 messages=messages,
             )
 
-            print(f"   ✅ Success!")
+            print("   ✅ Success!")
             print(f"   📝 Response: {response.message.content[:100]}...")
             print(f"   💰 Cost: ${response.cost_usd:.6f}")
 
