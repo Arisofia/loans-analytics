@@ -197,10 +197,10 @@ CREATE POLICY "Service role can manage KPIs"
 ```sql
 INSERT INTO historical_kpis (portfolio_id, kpi_name, kpi_value, calculation_date, grain)
 VALUES (
-    'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    'a1b2c3d4-e5f6-7890-abcd-ef1234567890',  -- Replace with actual portfolio_id
     'default_rate',
     0.0245,
-    '2026-01-28',
+    CURRENT_DATE,  -- Today's date
     'daily'
 );
 ```
@@ -212,7 +212,7 @@ SELECT
     kpi_value
 FROM historical_kpis
 WHERE 
-    portfolio_id = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+    portfolio_id = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'  -- Replace with actual portfolio_id
     AND kpi_name = 'default_rate'
     AND calculation_date >= CURRENT_DATE - INTERVAL '30 days'
     AND grain = 'daily'
@@ -230,7 +230,7 @@ SELECT
     ) AS moving_avg_30d
 FROM historical_kpis
 WHERE 
-    portfolio_id = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+    portfolio_id = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'  -- Replace with actual portfolio_id
     AND kpi_name = 'default_rate'
     AND grain = 'daily'
 ORDER BY calculation_date DESC;
@@ -248,8 +248,8 @@ SELECT
 FROM historical_kpis
 WHERE 
     grain = 'daily'
-    AND calculation_date >= '2026-01-01'
-    AND calculation_date < '2026-02-01'
+    AND calculation_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+    AND calculation_date < DATE_TRUNC('month', CURRENT_DATE)
 GROUP BY portfolio_id, kpi_name, DATE_TRUNC('month', calculation_date);
 ```
 
@@ -270,8 +270,8 @@ provider = HistoricalContextProvider(mode="REAL", backend=backend)
 # Fetch historical KPIs
 history = provider.get_kpi_history(
     kpi_id="default_rate",
-    start_date=date(2026, 1, 1),
-    end_date=date(2026, 1, 31)
+    start_date=date.today() - timedelta(days=30),
+    end_date=date.today()
 )
 
 # Calculate trend
