@@ -8,7 +8,6 @@ Phase G4.1: Initial implementation tests
 - Caching behavior
 """
 
-
 import unittest
 from datetime import date
 
@@ -52,9 +51,7 @@ class TestHistoricalContextProvider(unittest.TestCase):
         """Test historical data for single day."""
         target_date = date(2026, 1, 15)
 
-        history = self.provider.get_kpi_history(
-            "default_rate", target_date, target_date
-        )
+        history = self.provider.get_kpi_history("default_rate", target_date, target_date)
 
         self.assertEqual(len(history), 1)
         self.assertEqual(history[0].date, target_date)
@@ -184,9 +181,7 @@ class TestTrendAnalysis(unittest.TestCase):
         """Test percent change is calculated correctly."""
         trend = self.provider.get_trend("default_rate", periods=3)
 
-        expected_pct = (
-            (trend.end_value - trend.start_value) / trend.start_value * 100
-        )
+        expected_pct = (trend.end_value - trend.start_value) / trend.start_value * 100
         self.assertAlmostEqual(trend.percent_change, expected_pct, places=2)
 
 
@@ -240,9 +235,7 @@ class TestHistoricalContextProviderModes(unittest.TestCase):
         self.assertEqual(provider.mode, "MOCK")
 
         # Should work exactly as G4.1
-        history = provider.get_kpi_history(
-            "test_kpi", date(2026, 1, 1), date(2026, 1, 10)
-        )
+        history = provider.get_kpi_history("test_kpi", date(2026, 1, 1), date(2026, 1, 10))
         self.assertEqual(len(history), 10)
 
 

@@ -4,15 +4,16 @@ import os
 
 try:
     # Preferred: run as package module (python -m python.multi_agent.examples)
-    from .orchestrator import MultiAgentOrchestrator
-    from .protocol import AgentRole, LLMProvider, Message, MessageRole
-    from .protocol import Scenario, ScenarioStep
     from .guardrails import Guardrails
+    from .orchestrator import MultiAgentOrchestrator
+    from .protocol import AgentRole, LLMProvider, Message, MessageRole, Scenario, ScenarioStep
 except ImportError:
     # Fallback: direct script execution (python python/multi_agent/examples.py)
     import sys
     from pathlib import Path
+
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    from python.multi_agent.guardrails import Guardrails
     from python.multi_agent.orchestrator import MultiAgentOrchestrator
     from python.multi_agent.protocol import (
         AgentRole,
@@ -22,7 +23,6 @@ except ImportError:
         Scenario,
         ScenarioStep,
     )
-    from python.multi_agent.guardrails import Guardrails
 
 
 def example_single_agent():
@@ -269,7 +269,7 @@ def example_provider_switching():
                         role=MessageRole.USER,
                         content="In one sentence, what is credit risk?",
                     )
-                ]
+                ],
             )
             print(
                 f"  Success! Response: {response.message.content[:100]}... "

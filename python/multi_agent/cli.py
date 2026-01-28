@@ -120,12 +120,8 @@ Examples:
     subparsers.add_parser("list-scenarios", help="List all available scenarios")
 
     # run-scenario command
-    scenario_parser = subparsers.add_parser(
-        "run-scenario", help="Execute a scenario"
-    )
-    scenario_parser.add_argument(
-        "scenario_name", help="Name of the scenario to run"
-    )
+    scenario_parser = subparsers.add_parser("run-scenario", help="Execute a scenario")
+    scenario_parser.add_argument("scenario_name", help="Name of the scenario to run")
     scenario_parser.add_argument(
         "--context",
         type=str,
@@ -134,17 +130,13 @@ Examples:
     )
 
     # run-agent command
-    agent_parser = subparsers.add_parser(
-        "run-agent", help="Run a single agent"
-    )
+    agent_parser = subparsers.add_parser("run-agent", help="Run a single agent")
     agent_parser.add_argument(
         "agent_role",
         choices=[r.value for r in AgentRole],
         help="Agent role to invoke",
     )
-    agent_parser.add_argument(
-        "--input", required=True, help="Input text for the agent"
-    )
+    agent_parser.add_argument("--input", required=True, help="Input text for the agent")
     agent_parser.add_argument(
         "--context",
         type=str,

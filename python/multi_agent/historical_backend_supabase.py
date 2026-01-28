@@ -65,9 +65,7 @@ class SupabaseHistoricalBackend(HistoricalDataBackend):
         """Initialize Supabase backend with environment configuration."""
         self.base_url = os.getenv("SUPABASE_URL")
         self.api_key = os.getenv("SUPABASE_ANON_KEY")
-        self.table = os.getenv(
-            "SUPABASE_HISTORICAL_KPI_TABLE", "historical_kpis"
-        )
+        self.table = os.getenv("SUPABASE_HISTORICAL_KPI_TABLE", "historical_kpis")
 
         if not self.base_url or not self.api_key:
             raise RuntimeError(
@@ -125,9 +123,7 @@ class SupabaseHistoricalBackend(HistoricalDataBackend):
         }
 
         # Execute request with timeout
-        response = requests.get(
-            url, headers=self._headers, params=params, timeout=10
-        )
+        response = requests.get(url, headers=self._headers, params=params, timeout=10)
         response.raise_for_status()
 
         # Parse JSON response
