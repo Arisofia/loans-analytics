@@ -34,4 +34,3 @@ class TestSupabaseIntegration:
 
         result = mock_supabase_client.table("loans").select("*").execute()
         assert len(result.data) > 0
-

@@ -13,7 +13,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
-
 def generate_ascii_chart(data: list, max_width: int = 50) -> str:
     """Generate a simple ASCII bar chart.
 
