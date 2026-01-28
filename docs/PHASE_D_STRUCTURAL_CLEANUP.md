@@ -136,7 +136,9 @@ Phase D represents the final cleanup stage of the CTO-level production audit, fo
 ## Lessons Learned
 
 1. **Flat Config Migration**: ESLint v9+ prefers `eslint.config.js` over `.eslintignore` - ensure ignore patterns are fully migrated
-2. **Cache Cleanup**: Python projects accumulate significant cache directories (`__pycache__`, `.pytest_cache`) - regular cleanup beneficial
+2. **Cache Cleanup**: Python projects accumulate significant cache directories (`__pycache__`, `.pytest_cache`) - regular cleanup is beneficial
+3. **Workflow Governance**: Self-governing workflows (file existence checks) are better than manual deactivation
+4. **Documentation Hygiene**: File naming (no spaces) and duplicate detection are important for maintainability
 3. **Workflow Governance**: Self-governing workflows (file existence checks) better than manual deactivation
 4. **Documentation Hygiene**: File naming (no spaces) and duplicate detection important for maintainability
 
