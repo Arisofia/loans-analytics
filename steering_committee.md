@@ -1174,7 +1174,7 @@ The Arisofia/abaco-loans-analytics repository is in a **healthy transitional sta
 - Core workflows: CI, CodeQL, Snyk, SonarCloud, Deploy, Playwright
 
 ### Appendix B: Technology Stack
-- **Frontend:** Next.js 15, React 19, Tailwind CSS 4.0
+- **Frontend:** Next.js 16.1.6, React 19, Tailwind CSS 4.0
 - **Backend:** Python 3.9+, FastAPI (implied)
 - **Database:** Supabase (PostgreSQL + Auth + Edge Functions)
 - **Orchestration:** n8n workflow automation
