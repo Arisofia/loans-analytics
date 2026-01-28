@@ -20,6 +20,10 @@ class AgentRole(str, Enum):
     GROWTH_STRATEGIST = "growth_strategist"
     OPS_OPTIMIZER = "ops_optimizer"
     COMPLIANCE = "compliance"
+    COLLECTIONS = "collections"
+    FRAUD_DETECTION = "fraud_detection"
+    PRICING = "pricing"
+    CUSTOMER_RETENTION = "customer_retention"
     ORCHESTRATOR = "orchestrator"
     LEGACY = "legacy"
 
