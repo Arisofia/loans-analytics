@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """
 Multi-Agent System CLI
+
 Command-line interface for orchestrator operations.
 
 Usage:
     python -m python.multi_agent.cli list-scenarios
-    python -m python.multi_agent.cli run-scenario loan_risk_review --context '{"loan_id": "123"}'
-    python -m python.multi_agent.cli run-agent risk_analyst --input "Analyze portfolio risk"
+    python -m python.multi_agent.cli run-scenario loan_risk_review --context \
+        '{"loan_id": "123"}'
+    python -m python.multi_agent.cli run-agent risk_analyst --input \
+        "Analyze portfolio risk"
 """
 
 import argparse
@@ -73,7 +76,10 @@ def run_agent(agent_role_str: str, user_input: str, context: Dict[str, Any] | No
 
     try:
         response = orchestrator.run_agent(
-            agent_role=agent_role, user_input=user_input, trace_id=trace_id, context=context or {}
+            agent_role=agent_role,
+            user_input=user_input,
+            trace_id=trace_id,
+            context=context or {},
         )
 
         print("✅ Agent response received\n")
@@ -97,11 +103,11 @@ def main() -> None:
 Examples:
   List all scenarios:
     python -m python.multi_agent.cli list-scenarios
-    
+
   Run a scenario:
     python -m python.multi_agent.cli run-scenario loan_risk_review \\
         --context '{"loan_id": "123", "amount": 50000}'
-    
+
   Run a single agent:
     python -m python.multi_agent.cli run-agent risk_analyst \\
         --input "Analyze loan portfolio for high-risk indicators"
@@ -114,20 +120,36 @@ Examples:
     subparsers.add_parser("list-scenarios", help="List all available scenarios")
 
     # run-scenario command
-    scenario_parser = subparsers.add_parser("run-scenario", help="Execute a scenario")
-    scenario_parser.add_argument("scenario_name", help="Name of the scenario to run")
+    scenario_parser = subparsers.add_parser(
+        "run-scenario", help="Execute a scenario"
+    )
     scenario_parser.add_argument(
-        "--context", type=str, default="{}", help="JSON context for the scenario (default: {})"
+        "scenario_name", help="Name of the scenario to run"
+    )
+    scenario_parser.add_argument(
+        "--context",
+        type=str,
+        default="{}",
+        help="JSON context for the scenario (default: {})",
     )
 
     # run-agent command
-    agent_parser = subparsers.add_parser("run-agent", help="Run a single agent")
-    agent_parser.add_argument(
-        "agent_role", choices=[r.value for r in AgentRole], help="Agent role to invoke"
+    agent_parser = subparsers.add_parser(
+        "run-agent", help="Run a single agent"
     )
-    agent_parser.add_argument("--input", required=True, help="Input text for the agent")
     agent_parser.add_argument(
-        "--context", type=str, default="{}", help="JSON context for the agent (default: {})"
+        "agent_role",
+        choices=[r.value for r in AgentRole],
+        help="Agent role to invoke",
+    )
+    agent_parser.add_argument(
+        "--input", required=True, help="Input text for the agent"
+    )
+    agent_parser.add_argument(
+        "--context",
+        type=str,
+        default="{}",
+        help="JSON context for the agent (default: {})",
     )
 
     args = parser.parse_args()
