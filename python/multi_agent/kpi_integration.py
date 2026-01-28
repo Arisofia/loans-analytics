@@ -19,7 +19,8 @@ class KpiValue(BaseModel):
     kpi_name: str = Field(..., description="Name of the KPI")
     value: float = Field(..., description="Computed KPI value")
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), description="When this value was recorded"
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When this value was recorded",
     )
     metadata: Dict[str, Any] = Field(
         default_factory=dict, description="Additional context about this value"
