@@ -51,11 +51,17 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
 @app.get("/data/{file_path:path}")
 def get_data(file_path: str):
     """Return file contents for a path under ALLOWED_DATA_DIR after sanitization."""
+    # Validate input is not empty or only whitespace
+    if not file_path or not file_path.strip():
+        raise HTTPException(status_code=400, detail="file path cannot be empty")
+    
+    # Sanitize and validate path before use
     try:
         resolved = _sanitize_and_resolve(file_path, ALLOWED_DATA_DIR)
     except ValueError as exc:
         logger.warning("Invalid data path requested: %s (%s)", file_path, exc)
         raise HTTPException(status_code=400, detail=str(exc))
+    
     if not resolved.exists() or not resolved.is_file():
         raise HTTPException(status_code=404, detail="file not found")
     # Read safely (do not log the file contents or sensitive paths)
