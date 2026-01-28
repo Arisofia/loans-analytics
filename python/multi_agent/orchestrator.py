@@ -270,6 +270,99 @@ class MultiAgentOrchestrator:
                     ),
                 ],
             ),
+            # ========================================
+            # Product-Specific Scenarios: Retail Loans
+            # ========================================
+            "retail_origination": Scenario(
+                name="retail_origination",
+                description="End-to-end retail loan origination workflow",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.FRAUD_DETECTION,
+                        prompt_template="Screen application for fraud: {application_data}. Flag suspicious indicators.",
+                        context_keys=["application_data"],
+                        output_key="fraud_screen",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Underwrite application considering fraud screen: {fraud_screen} and credit data: {credit_data}.",
+                        context_keys=["fraud_screen", "credit_data"],
+                        output_key="underwriting_decision",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.PRICING,
+                        prompt_template="Set optimal rate for approved application: {underwriting_decision} with market rates: {market_rates}.",
+                        context_keys=["underwriting_decision", "market_rates"],
+                        output_key="rate_quote",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.COMPLIANCE,
+                        prompt_template="Final compliance check for origination: {underwriting_decision} and {rate_quote}. Approve or flag issues.",
+                        context_keys=["underwriting_decision", "rate_quote"],
+                        output_key="compliance_approval",
+                    ),
+                ],
+            ),
+            "retail_portfolio_review": Scenario(
+                name="retail_portfolio_review",
+                description="Quarterly retail loan portfolio health assessment",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Assess retail portfolio health: {portfolio_metrics}. Identify delinquency trends and risk concentrations.",
+                        context_keys=["portfolio_metrics"],
+                        output_key="risk_assessment",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.COLLECTIONS,
+                        prompt_template="Analyze delinquency patterns from risk assessment: {risk_assessment}. Recommend collection strategies.",
+                        context_keys=["risk_assessment"],
+                        output_key="collection_strategy",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.CUSTOMER_RETENTION,
+                        prompt_template="Identify at-risk customers from portfolio: {risk_assessment}. Design retention campaigns.",
+                        context_keys=["risk_assessment"],
+                        output_key="retention_plan",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.OPS_OPTIMIZER,
+                        prompt_template="Consolidate action plan from: {collection_strategy} and {retention_plan}. Prioritize by ROI.",
+                        context_keys=["collection_strategy", "retention_plan"],
+                        output_key="action_plan",
+                    ),
+                ],
+            ),
+            "retail_rate_adjustment": Scenario(
+                name="retail_rate_adjustment",
+                description="Portfolio-wide rate adjustment and repricing",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Segment retail portfolio by risk profile: {portfolio_data}. Identify repricing candidates.",
+                        context_keys=["portfolio_data"],
+                        output_key="risk_segmentation",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.PRICING,
+                        prompt_template="Design rate adjustment strategy for segments: {risk_segmentation} considering market: {market_conditions}.",
+                        context_keys=["risk_segmentation", "market_conditions"],
+                        output_key="repricing_strategy",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.CUSTOMER_RETENTION,
+                        prompt_template="Assess churn risk from repricing: {repricing_strategy}. Suggest mitigation tactics.",
+                        context_keys=["repricing_strategy"],
+                        output_key="churn_mitigation",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.COMPLIANCE,
+                        prompt_template="Review repricing plan for regulatory compliance: {repricing_strategy} and {churn_mitigation}.",
+                        context_keys=["repricing_strategy", "churn_mitigation"],
+                        output_key="compliance_review",
+                    ),
+                ],
+            ),
         }
 
     def run_agent(
