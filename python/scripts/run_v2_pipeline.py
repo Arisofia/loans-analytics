@@ -54,6 +54,7 @@ def run_v2_pipeline(input_file: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Abaco V2 Operational Pipeline")
     parser.add_argument("--input", required=True, help="Path to input data file")
+    args = parser.parse_args()
     try:
         run_v2_pipeline(args.input)
     except Exception as e:

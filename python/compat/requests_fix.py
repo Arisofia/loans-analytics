@@ -6,6 +6,8 @@ try:
     from packaging.version import InvalidVersion, Version
 except Exception:
     Version = None
+
+
 def check_cryptography_robust(cryptography_version: Optional[str]) -> None:
     """Robust cryptography version check.
     Uses packaging.Version if available to properly compare prerelease versions.
