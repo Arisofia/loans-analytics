@@ -1,0 +1,76 @@
+name: Historical KPIs Supabase Integration (G4.2.1)
+
+# Run on manual trigger or nightly schedule
+on:
+    workflow_dispatch:
+    schedule:
+        # Run nightly at 3 AM UTC
+        - cron: "0 3 * * *"
+
+jobs:
+    supabase-integration-tests:
+        name: Supabase Integration Tests
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        # Only run if Supabase secrets are available
+        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *'
+
+        env:
+            SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+            SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+            HISTORICAL_CONTEXT_MODE: REAL
+            PYTHONUNBUFFERED: 1
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 1
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+                  cache: "pip"
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  if [ -f requirements.txt ]; then
+                    pip install -r requirements.txt
+                  fi
+                  if [ -f requirements-dev.txt ]; then
+                    pip install -r requirements-dev.txt
+                  fi
+
+            - name: Validate Supabase credentials
+              id: validate-supabase
+              run: |
+                  if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+                    echo "::warning::SUPABASE_URL or SUPABASE_ANON_KEY not configured - skipping tests"
+                    echo "skip=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "::notice::Supabase credentials available - proceeding with integration tests"
+                    echo "skip=false" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - name: Run Supabase integration tests
+              if: steps.validate-supabase.outputs.skip == 'false'
+              run: |
+                  echo "Running integration tests with REAL mode..."
+                  python -m pytest \
+                    python/multi_agent/test_historical_supabase_integration.py \
+                    -m integration_supabase \
+                    -v \
+                    --tb=short \
+                    --strict-markers
+
+            - name: Report results
+              if: always()
+              run: |
+                  if [ "${{ steps.validate-supabase.outputs.skip }}" == "true" ]; then
+                    echo "::notice::Supabase integration tests skipped (no credentials)"
+                  else
+                    echo "::notice::Supabase integration tests completed"
+                  fi

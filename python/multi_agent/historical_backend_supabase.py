@@ -28,17 +28,25 @@ class SupabaseHistoricalBackend(HistoricalDataBackend):
         - SUPABASE_ANON_KEY: Supabase anonymous/service key
         - SUPABASE_HISTORICAL_KPI_TABLE: Table name (default: "historical_kpis")
 
-    Table Schema (expected):
+    Table Schema (expected, Phase G4.2.1):
         CREATE TABLE historical_kpis (
             id BIGSERIAL PRIMARY KEY,
             kpi_id TEXT NOT NULL,
+            portfolio_id TEXT,
+            product_code TEXT,
+            segment_code TEXT,
             date DATE NOT NULL,
-            value NUMERIC NOT NULL,
-            timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            metadata JSONB,
-            UNIQUE(kpi_id, date)
+            ts_utc TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            value_numeric NUMERIC(18,6),
+            value_int BIGINT,
+            value_json JSONB,
+            source_system TEXT,
+            run_id TEXT,
+            is_final BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
-        CREATE INDEX idx_historical_kpis_lookup
+        CREATE INDEX idx_hkpi_kpi_date
             ON historical_kpis(kpi_id, date);
 
     Usage:
@@ -113,7 +121,7 @@ class SupabaseHistoricalBackend(HistoricalDataBackend):
             "kpi_id": f"eq.{kpi_id}",
             "date": f"gte.{start_iso},lte.{end_iso}",
             "order": "date.asc",
-            "select": "kpi_id,date,value,timestamp",
+            "select": "kpi_id,date,value_numeric,ts_utc",
         }
 
         # Execute request with timeout
@@ -130,8 +138,8 @@ class SupabaseHistoricalBackend(HistoricalDataBackend):
             KpiHistoricalValue(
                 kpi_id=row["kpi_id"],
                 date=row["date"],
-                value=float(row["value"]),
-                timestamp=row["timestamp"],
+                value=float(row["value_numeric"]) if row.get("value_numeric") else 0.0,
+                timestamp=row["ts_utc"],
             )
             for row in data
         ]
