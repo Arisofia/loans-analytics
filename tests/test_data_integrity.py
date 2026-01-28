@@ -110,8 +110,23 @@ class TestDataIntegrity:
             project_root / "python" / "tests",
         ]
 
-        # Find all files with "fixture" in the name
-        fixture_files = list(project_root.rglob("*fixture*.py"))
+        # Find all files with "fixture" in the name, skipping heavy dirs efficiently
+        fixture_files = []
+        # Focus on python and src directories only for production path check
+        for target_dir in ["python", "src"]:
+            dir_path = project_root / target_dir
+            if not dir_path.exists():
+                continue
+            for root, dirs, files in os.walk(dir_path):
+                # Prune unwanted directories
+                dirs[:] = [
+                    d
+                    for d in dirs
+                    if d not in ("node_modules", ".venv", ".git", "__pycache__", ".next", "tests", "testing")
+                ]
+                for file in files:
+                    if "fixture" in file.lower() and file.endswith(".py"):
+                        fixture_files.append(Path(root) / file)
 
         violations = []
         for fixture_file in fixture_files:
