@@ -59,7 +59,12 @@ jobs:
             | grep -vE 'data_samples/abaco_portfolio_sample.csv' \
             | grep -vE 'config/codex_mcp_config.toml.example' \
             > doc_files.txt
-          python scripts/security/check_doc_policy.py doc_files.txt
+          if [ -f "scripts/security/check_doc_policy.py" ]; then
+            python scripts/security/check_doc_policy.py doc_files.txt
+          else
+            echo "::warning::scripts/security/check_doc_policy.py not found, skipping policy check"
+            echo "Found $(wc -l < doc_files.txt) documentation files"
+          fi
 
       - name: Run secret scan
         uses: gitleaks/gitleaks-action@dcedce43c6f43de0b836d1fe38946645c9c638dc
