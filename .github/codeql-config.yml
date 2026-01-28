@@ -25,10 +25,10 @@ paths:
 query-filters:
   # Include all critical and high severity issues
   - include:
-      severity: 
+      severity:
         - critical
         - high
-  
+
   # Include specific AI/LLM security patterns
   - include:
       tags:

@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -38,18 +38,18 @@ jobs:
           python -c "
           from src.agents.monitoring import PerformanceTracker
           import json
-          
+
           # Simulate some metrics for demo
           tracker = PerformanceTracker()
-          
+
           # Add sample metrics
           tracker.track_scenario_latency('loan_analysis', 120, True)
           tracker.track_scenario_latency('risk_assessment', 65, True)
           tracker.track_scenario_latency('portfolio_validation', 35, True)
-          
+
           tracker.track_agent_latency('analytics_agent', 80, True, 'loan_analysis')
           tracker.track_agent_latency('risk_agent', 50, True, 'risk_assessment')
-          
+
           # Save metrics
           tracker.save_report('performance_metrics.json')
           print('✅ Performance metrics generated')
@@ -80,18 +80,18 @@ jobs:
           script: |
             const fs = require('fs');
             const comment = fs.readFileSync('performance_comment.md', 'utf8');
-            
+
             const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            
-            const perfComment = comments.data.find(comment => 
-              comment.user.type === 'Bot' && 
+
+            const perfComment = comments.data.find(comment =>
+              comment.user.type === 'Bot' &&
               comment.body.includes('Performance Analysis Report')
             );
-            
+
             if (perfComment) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,

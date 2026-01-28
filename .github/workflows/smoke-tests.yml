@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -48,27 +48,27 @@ jobs:
           echo "" >> smoke_report.md
           echo "### Test Results" >> smoke_report.md
           echo "" >> smoke_report.md
-          
+
           if [ "${{ steps.happy_path.outcome }}" == "success" ]; then
             echo "- ✅ Happy Path Tests: PASSED" >> smoke_report.md
           else
             echo "- ❌ Happy Path Tests: FAILED" >> smoke_report.md
           fi
-          
+
           if [ "${{ steps.supabase.outcome }}" == "success" ]; then
             echo "- ✅ Supabase Connectivity: OK" >> smoke_report.md
           else
             echo "- ⚠️ Supabase Connectivity: FAILED" >> smoke_report.md
           fi
-          
+
           if [ "${{ steps.agents.outcome }}" == "success" ]; then
             echo "- ✅ Agent System: OK" >> smoke_report.md
           else
             echo "- ❌ Agent System: FAILED" >> smoke_report.md
           fi
-          
+
           echo "" >> smoke_report.md
-          
+
           # Overall status
           if [ "${{ steps.happy_path.outcome }}" == "success" ] && \
              [ "${{ steps.agents.outcome }}" == "success" ]; then
@@ -88,7 +88,7 @@ jobs:
             let body = '## 🚨 Smoke Test Failure\n\n';
             body += '**Time:** ' + new Date().toISOString() + '\n\n';
             body += '### Failed Checks\n\n';
-            
+
             if ('${{ steps.happy_path.outcome }}' !== 'success') {
               body += '- ❌ Happy Path Tests\n';
             }
@@ -98,10 +98,10 @@ jobs:
             if ('${{ steps.agents.outcome }}' !== 'success') {
               body += '- ❌ Agent System\n';
             }
-            
+
             body += '\n**Action Required:** Investigate immediately\n';
             body += '\n[View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n';
-            
+
             // Create issue
             await github.rest.issues.create({
               owner: context.repo.owner,
