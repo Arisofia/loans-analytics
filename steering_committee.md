@@ -20,7 +20,7 @@
 - ✅ **CI/CD workflows operational**: 44 workflow files configured, 64 active workflows in GitHub Actions
 - ✅ **Code structure stabilized**: Python 64.4%, TypeScript 15.9%, PLpgSQL 9.5%, Shell 4.9%, Bicep 1.9%, JavaScript 1.6%
 - ✅ **Database migrations ready**: 2 migration files in sql/migrations/ for lineage and audit tables
-- ✅ **Next.js 15 dashboard**: Apps/web architecture confirmed with React 19, Tailwind CSS 4.0
+- ✅ **Next.js 16.1.6 dashboard**: Apps/web architecture confirmed with React 19, Tailwind CSS 4.0
 - ✅ **Supabase integration**: SSR authentication, edge functions ready
 
 **AMBER Indicators (Cautions):**
