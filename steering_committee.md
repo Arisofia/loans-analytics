@@ -249,8 +249,8 @@ Supabase uses PgBouncer for connection pooling, but under high load:
 #### CodeQL Analysis
 - **Status:** ✅ CONFIGURED
 - **Workflow:** `.github/workflows/codeql.yml`
-- **Critical Issues:** 0 (PASS ✅)
-- **High Issues:** 0 (PASS ✅)
+- **Critical Issues:** Unknown for latest run (previous successful run reported 0; pending investigation of current `action_required` status)
+- **High Issues:** Unknown for latest run (previous successful run reported 0; pending investigation of current `action_required` status)
 - **Medium Issues:** Unknown (requires access to scan results)
 - **Last Run:** January 28, 2026 (action_required status - needs investigation)
 - **Languages Scanned:** Python, TypeScript, JavaScript
