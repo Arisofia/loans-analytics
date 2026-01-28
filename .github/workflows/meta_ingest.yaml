@@ -11,7 +11,7 @@ jobs:
     env:
       META_SYSTEM_USER_TOKEN: ${{ secrets.META_SYSTEM_USER_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - name: Check Meta system user token
         id: meta_token
         run: |
@@ -22,7 +22,7 @@ jobs:
             echo "run=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238
         with:
           node-version: "20"
       - name: Install dependencies
@@ -42,12 +42,12 @@ jobs:
           node dist/ingest.js
       - name: Upload raw data
         if: steps.meta_token.outputs.run == true
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: meta-raw
           path: data/raw/meta/
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: "3.11"
       - name: Load to warehouse
@@ -57,7 +57,7 @@ jobs:
           python src/ingestion/meta_to_warehouse.py
       - name: Upload warehouse parquet
         if: steps.meta_token.outputs.run == true
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: meta-warehouse
           path: data/warehouse/fact_marketing_spend.parquet
