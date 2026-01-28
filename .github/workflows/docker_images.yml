@@ -9,7 +9,7 @@ name: Build & Push Docker Images
       - "src/**"
       - "requirements.txt"
       - "docker-compose.yml"
-      - ".github/workflows/docker-images.yml"
+      - ".github/workflows/docker_images.yml"
   workflow_dispatch:
 
 env:
