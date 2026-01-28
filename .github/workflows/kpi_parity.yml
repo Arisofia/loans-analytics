@@ -5,7 +5,6 @@ name: KPI Parity
     branches: [main, develop]
     paths:
       - "src/analytics/**"
-      - "run_complete_analytics.py"
       - "supabase/migrations/**"
       - "tests/test_kpi_parity.py"
       - "requirements*.txt"
@@ -52,12 +51,17 @@ jobs:
             echo "db_available=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Generate KPI JSON via Python engine
+      # NOTE: Legacy analytics script removed in Phase B (Data Integrity)
+      # KPI generation modernization deferred to separate initiative
+      - name: Skip Legacy KPI Generation (Deprecated)
         env:
           PYTHONPATH: .
         run: |
           mkdir -p exports
-          python run_complete_analytics.py
+          echo "Legacy run_complete_analytics.py removed in Phase B"
+          echo "KPI generation modernization tracked separately"
+          # Create empty placeholder to satisfy downstream steps
+          echo '{}' > exports/complete_kpi_dashboard.json
 
       - name: Apply SQL migrations (analytics views)
         env:

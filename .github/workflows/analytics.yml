@@ -23,12 +23,16 @@ jobs:
                   python -m pip install --upgrade pip
                   pip install -r requirements.txt
 
-            - name: Run Complete Analytics
-              run: python run_complete_analytics.py
+            # NOTE: Legacy analytics script removed in Phase B (Data Integrity)
+            # Pipeline modernization deferred to separate initiative
+            # TODO: Replace with modern KPI pipeline when available
+            - name: Skip Legacy Analytics (Deprecated)
+              run: |
+                  echo "Legacy run_complete_analytics.py removed in Phase B"
+                  echo "Pipeline modernization tracked separately"
+                  echo "Skipping analytics execution"
               env:
                   APP_ENV: production
-                  # Add other necessary secrets here from repository secrets
-                  # AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
 
             - name: Upload Dashboard Artifact
               uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
