@@ -1,137 +1,187 @@
-# Gradle
-.gradle/
-build/
-**/.gradle/
-**/build/
-
-# OS
-.DS_Store
-
-
+# ============================================
 # Python
+# ============================================
 __pycache__/
-*.pyc
-.venv/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
 venv/
-*.tmp
-.cache/
-*.egg-info/
+ENV/
+.venv/
+.venv-*/
+.lint-venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
 .eggs/
-
-# Config
-config/*.yaml
-
-# Logs
-*.log
-
-# Test/coverage output
-*.coverage
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
 .coverage.*
 htmlcov/
-
-# Editor/IDE files
-.idea/
-.settings/
-.vscode/
-*.code-workspace
-.vscode/history/
-.vscode/cache/
-
-# Project documentation/settings policy
-# See README.md for policy on documentation, settings, and config file retention.
-
-# Streamlit
-.streamlit/
-
-# Data outputs (NO versionar)
-data/metrics/
-data/archives/
-data_samples/*.csv
-logs/
-exports/
-outputs/
-
-# Build / tooling
-.next/
-.turbo/
-dist/
-coverage/
-out/
-
-# IDE
-.vscode/tasks.json
-
-# Node modules
-.python_packagesnode_modules/
-node_modules/
-
-# Project-specific artifacts
-apps/.DS_Store
-
-# Local repository clones
-abaco-loans-analytics/
-data_samples/
-gemini-cli/
-
-# Environment variables
-.env
-.env.local
-.env.*.local
-.vercel/
-nvm/
-
-# Other
-failed_workflows.csv
-
-
-.env
-.env.example
-
-# Python virtual environments
-.venv/
-.venv-1/
-.venv-2/
-.lint-venv/
-
-# Azurite local storage state
-AzuriteConfig
-__azurite_db_*.json
-__azurite_db_*_extent__.json
-scripts/setup_azure.sh
-.azure
-tmp/
-data/archives/cascade/tmp*.csv
-
-# Playwright artifacts and test caches
-apps/web/playwright-report/
-playwright/.e2e
-playwright/.auth
-.pytest_cache/
 .mypy_cache/
+.dmypy.json
+dmypy.json
+*.pyi
+*.tmp
+.cache/
 pytest-report/
 coverage.xml
 
-# Ignore generated media files
-*.mp4
-*.mov
-*.mp3
+# ============================================
+# Node.js / JavaScript (for apps/web)
+# ============================================
+node_modules/
+npm-debug.log
+yarn-error.log
+.next/
+.turbo/
+out/
 
-# ============================================ 
-# Temporary run data (should not be committed)
-# ============================================ 
+# ============================================
+# IDEs and Editors
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-workspace
+.project
+.pydevproject
+*.code-workspace
+.settings/
+
+# ============================================
+# Environment Variables & Secrets (CRITICAL)
+# ============================================
+.env
+.env.local
+.env.*.local
+secrets.json
+**/credentials.json
+**/config/secrets.yml
+local.settings.json
+
+# ============================================
+# Logs
+# ============================================
+logs/
+*.log
+*.log.*
+
+# ============================================
+# Docker
+# ============================================
+docker-compose.override.yml
+
+# ============================================
+# Database
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================
+# Build Artifacts
+# ============================================
+build/
+dist/
+coverage/
+.gradle/
+**/.gradle/
+**/build/
+
+# ============================================
+# Temporary Files
+# ============================================
+.tmp/
+tmp/
+temp/
+*.tmp
+
+# ============================================
+# OS Files
+# ============================================
+.DS_Store
+Thumbs.db
+
+# ============================================
+# Cloud Deployments
+# ============================================
+.vercel/
+.azure/
+nvm/
+
+# ============================================
+# Data Files (temporary/generated)
+# ============================================
+data/metrics/
+data/archives/
+data_samples/*.csv
 data/archives/raw/tmp*.csv
 data/metrics/run_*.csv
 data/metrics/run_*.parquet
 data/metrics/run_*_metrics.json
 data/metrics/timeseries/run_*.parquet
-logs/runs/run_*/
+exports/
+outputs/
 
-# Integration backups (cleanup artifacts)
+# ============================================
+# Test Artifacts
+# ============================================
+apps/web/playwright-report/
+playwright/.e2e
+playwright/.auth
+
+# ============================================
+# Generated Media
+# ============================================
+*.mp4
+*.mov
+*.mp3
+
+# ============================================
+# Backups
+# ============================================
 *.cleanup-backup
 *.backup
 
-# Hidden tool folders
+# ============================================
+# Azurite Local Storage
+# ============================================
+AzuriteConfig
+__azurite_db_*.json
+__azurite_db_*_extent__.json
+
+# ============================================
+# Hidden Tool Folders
+# ============================================
 .rollback/
 .zencoder/
 .zenflow/
-.gradle/
+.streamlit/
+
+# ============================================
+# Legacy/Deprecated (cleanup artifacts)
+# ============================================
+experiments/
+demos/
+mocks/
+__legacy__/
+failed_workflows.csv
+abaco-loans-analytics/
+gemini-cli/
