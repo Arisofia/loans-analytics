@@ -63,7 +63,7 @@
 
 ### Critical Path Items (Next 2 Weeks)
 1. **Execute load testing** (1 week) - HIGHEST PRIORITY
-2. **Increase test coverage to 85%+** (2 weeks)
+2. **Increase test coverage to 85%+** (13 days, in parallel with load testing)
 3. **Resolve workflow action_required issues** (3 days)
 4. **Complete concrete agent implementations** (1 week)
 5. **Schedule penetration testing** (Feb 2026)
