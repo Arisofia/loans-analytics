@@ -1,36 +1,33 @@
 """Streamlit dashboard for Abaco Loans Analytics - Engineering Excellence Edition."""
+
 import json
 import logging
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
 import pandas as pd
 import streamlit as st
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 from dashboard_utils import format_kpi_value, kpi_label  # noqa: E402
 from data_normalization import normalize_dataframe_complete  # noqa: E402
 from kpi_catalog_processor import KPICatalogProcessor  # noqa: E402
-from theme import ABACO_THEME  # noqa: E402
-from tracing_setup import enable_auto_instrumentation, init_tracing  # noqa: E402
-from streamlit_app.components.analytics_tabs import (  # noqa: E402
-    render_advanced_intelligence,
-)
+from streamlit_app.components.analytics_tabs import \
+    render_advanced_intelligence  # noqa: E402
 from streamlit_app.components.charts import (  # noqa: E402
-    render_cashflow_trends,
-    render_category_breakdown,
-    render_growth_analysis,
-)
+    render_cashflow_trends, render_category_breakdown, render_growth_analysis)
 from streamlit_app.components.kpi_metrics import (  # noqa: E402
-    render_executive_summary,
-    render_kpi_snapshot,
-)
+    render_executive_summary, render_kpi_snapshot)
 from streamlit_app.components.sales_risk import (  # noqa: E402
-    render_risk_analysis,
-    render_sales_performance,
-)
+    render_risk_analysis, render_sales_performance)
+from theme import ABACO_THEME  # noqa: E402
+from tracing_setup import (enable_auto_instrumentation,  # noqa: E402
+                           init_tracing)
+
 LOCAL_EXPORTS_DIR = ROOT_DIR / "local_exports"
 EXPORTS_DIR_CANDIDATES = [
     ROOT_DIR / "exports",
@@ -45,6 +42,8 @@ except ImportError:
     logger.warning("Tracing setup not found, proceeding without it.")
 except Exception as exc:
     logger.error("Error initializing tracing: %s", exc)
+
+
 def resolve_exports_dir(create: bool = False) -> Path:
     for candidate in EXPORTS_DIR_CANDIDATES:
         if candidate.exists():
@@ -53,6 +52,8 @@ def resolve_exports_dir(create: bool = False) -> Path:
     if create:
         default_dir.mkdir(parents=True, exist_ok=True)
     return default_dir
+
+
 def get_table_type_from_filename(filename: str) -> Optional[str]:
     base_name = filename.lower()
     if "loan" in base_name:
@@ -60,6 +61,8 @@ def get_table_type_from_filename(filename: str) -> Optional[str]:
     if "customer" in base_name:
         return "customer_data"
     return None
+
+
 def load_local_exports() -> dict[str, pd.DataFrame]:
     export_data: dict[str, pd.DataFrame] = {}
     if LOCAL_EXPORTS_DIR.exists():
@@ -72,6 +75,8 @@ def load_local_exports() -> dict[str, pd.DataFrame]:
                     except Exception as exc:
                         st.error(f"Error loading local file {file_path.name}: {exc}")
     return export_data
+
+
 def handle_file_uploads() -> dict[str, pd.DataFrame]:
     uploaded_files = st.sidebar.file_uploader(
         "Upload CSV Exports",
@@ -87,14 +92,14 @@ def handle_file_uploads() -> dict[str, pd.DataFrame]:
                     upload_data[key] = pd.read_csv(uploaded_file)
                     st.sidebar.success(f"Mapped '{uploaded_file.name}' to {key}")
                 except Exception as exc:
-                    st.sidebar.error(
-                        f"Error reading {uploaded_file.name}: {exc}"
-                    )
+                    st.sidebar.error(f"Error reading {uploaded_file.name}: {exc}")
             else:
                 st.sidebar.warning(
                     f"Could not map file '{uploaded_file.name}' to known data types."
                 )
     return upload_data
+
+
 def get_normalized_table_type(filename: str) -> Optional[str]:
     base_name = filename.lower()
     if "loan" in base_name:
@@ -106,6 +111,8 @@ def get_normalized_table_type(filename: str) -> Optional[str]:
     if "schedule" in base_name:
         return "schedule_data"
     return None
+
+
 def fuzzy_map_core_tables(
     dfs: dict[str, pd.DataFrame | dict[str, pd.DataFrame]],
 ) -> dict[str, pd.DataFrame]:
@@ -122,6 +129,8 @@ def fuzzy_map_core_tables(
             if table_key and table_key not in mapped_dfs:  # Prioritize first match
                 mapped_dfs[table_key] = df
     return mapped_dfs
+
+
 def load_kpi_dashboard() -> dict:
     export_dirs = EXPORTS_DIR_CANDIDATES
     for export_dir in export_dirs:
@@ -136,6 +145,8 @@ def load_kpi_dashboard() -> dict:
                     exc,
                 )
     return {}
+
+
 @st.cache_data(show_spinner=False)
 def load_analytics_facts() -> pd.DataFrame:
     for export_dir in EXPORTS_DIR_CANDIDATES:
@@ -146,6 +157,8 @@ def load_analytics_facts() -> pd.DataFrame:
             except Exception as exc:
                 logger.warning("Failed to load analytics facts: %s", exc)
     return pd.DataFrame()
+
+
 def build_kpi_snapshot(
     dashboard_metrics: dict, analytics_facts: pd.DataFrame
 ) -> tuple[dict[str, float], Optional[pd.Timestamp]]:
@@ -154,9 +167,7 @@ def build_kpi_snapshot(
     if not analytics_facts.empty:
         for column in ("month", "month_end", "date"):
             if column in analytics_facts.columns:
-                parsed = pd.to_datetime(
-                    analytics_facts[column], errors="coerce"
-                ).dropna()
+                parsed = pd.to_datetime(analytics_facts[column], errors="coerce").dropna()
                 if not parsed.empty:
                     snapshot_month = parsed.max()
                     break
@@ -180,6 +191,8 @@ def build_kpi_snapshot(
         if isinstance(value, (int, float)):
             snapshot.setdefault(key, float(value))
     return snapshot, snapshot_month
+
+
 def load_agent_headcount() -> pd.DataFrame:
     headcount_path = SUPPORT_DIR / "headcount.csv"
     if not headcount_path.exists():
@@ -189,6 +202,8 @@ def load_agent_headcount() -> pd.DataFrame:
     except Exception as exc:
         logger.warning("Unable to load headcount data: %s", exc)
     return pd.DataFrame()
+
+
 def generate_kpi_exports(
     data: dict[str, pd.DataFrame],
     *,
@@ -197,9 +212,7 @@ def generate_kpi_exports(
     exports_dir = resolve_exports_dir(create=True)
     mapped_tables = fuzzy_map_core_tables(data)
     loans_df = mapped_tables.get("loan_data", data.get("loan_data", pd.DataFrame()))
-    customers_df = mapped_tables.get(
-        "customer_data", data.get("customer_data", pd.DataFrame())
-    )
+    customers_df = mapped_tables.get("customer_data", data.get("customer_data", pd.DataFrame()))
     payments_df = mapped_tables.get(
         "historic_payment_data",
         data.get("historic_payment_data", pd.DataFrame()),
@@ -207,19 +220,13 @@ def generate_kpi_exports(
     schedule_df = mapped_tables.get("schedule_data", data.get("schedule_data"))
     if normalize_inputs:
         normalized_loans = (
-            normalize_dataframe_complete(loans_df)
-            if not loans_df.empty
-            else pd.DataFrame()
+            normalize_dataframe_complete(loans_df) if not loans_df.empty else pd.DataFrame()
         )
         normalized_customers = (
-            normalize_dataframe_complete(customers_df)
-            if not customers_df.empty
-            else pd.DataFrame()
+            normalize_dataframe_complete(customers_df) if not customers_df.empty else pd.DataFrame()
         )
         normalized_payments = (
-            normalize_dataframe_complete(payments_df)
-            if not payments_df.empty
-            else pd.DataFrame()
+            normalize_dataframe_complete(payments_df) if not payments_df.empty else pd.DataFrame()
         )
         normalized_schedule = (
             normalize_dataframe_complete(schedule_df)
@@ -228,9 +235,7 @@ def generate_kpi_exports(
         )
     else:
         normalized_loans = loans_df if not loans_df.empty else pd.DataFrame()
-        normalized_customers = (
-            customers_df if not customers_df.empty else pd.DataFrame()
-        )
+        normalized_customers = customers_df if not customers_df.empty else pd.DataFrame()
         normalized_payments = payments_df if not payments_df.empty else pd.DataFrame()
         normalized_schedule = (
             schedule_df
@@ -248,9 +253,7 @@ def generate_kpi_exports(
     dashboard_metrics = {
         "timestamp": datetime.now().isoformat(),
         "extended_kpis": extended_kpis,
-        "total_aum_usd": executive_strip.get(
-            "total_outstanding_loan_value", 0.0
-        ),
+        "total_aum_usd": executive_strip.get("total_outstanding_loan_value", 0.0),
         "active_clients": executive_strip.get("total_customers", 0),
         "total_loans": executive_strip.get("total_loans", 0),
         "avg_apr": executive_strip.get("avg_apr", 0.0),
@@ -265,6 +268,8 @@ def generate_kpi_exports(
         facts_path = exports_dir / "analytics_facts.csv"
         analytics_facts.to_csv(facts_path, index=False)
     return dashboard_path
+
+
 FONT_IMPORT_URL = (
     "https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900"
     "&family=Poppins:wght@100;200;300;400;500;600;700&display=swap"
@@ -387,11 +392,7 @@ if loan_data is None:
     st.error("Core loan data missing in uploads.")
     st.stop()
 merged = loan_data.copy()
-if (
-    not customer_data.empty
-    and "loan_id" in merged.columns
-    and "loan_id" in customer_data.columns
-):
+if not customer_data.empty and "loan_id" in merged.columns and "loan_id" in customer_data.columns:
     merged = merged.merge(
         customer_data,
         on="loan_id",
@@ -411,15 +412,11 @@ with st.expander("View all computed KPIs"):
         flat_kpis = []
         for key, value in all_kpis.items():
             if isinstance(value, (int, float, str)):
-                flat_kpis.append(
-                    {"KPI": kpi_label(key), "Value": format_kpi_value(key, value)}
-                )
+                flat_kpis.append({"KPI": kpi_label(key), "Value": format_kpi_value(key, value)})
         if flat_kpis:
             st.table(pd.DataFrame(flat_kpis))
         st.write("**Detailed Data Tables:**")
-        table_keys = [
-            key for key, value in all_kpis.items() if isinstance(value, list) and value
-        ]
+        table_keys = [key for key, value in all_kpis.items() if isinstance(value, list) and value]
         selected_table = st.selectbox("Select table to view", table_keys)
         if selected_table:
             st.dataframe(pd.DataFrame(all_kpis[selected_table]))
@@ -427,6 +424,5 @@ with st.expander("View all computed KPIs"):
         st.info("No extended KPIs found.")
 st.divider()
 st.caption(
-    "Abaco Intelligence Platform | System Date: "
-    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    "Abaco Intelligence Platform | System Date: " f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
 )

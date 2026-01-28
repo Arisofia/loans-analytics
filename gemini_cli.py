@@ -1,8 +1,10 @@
+import argparse
 import os
 import sys
-import argparse
+
 import google.generativeai as genai
 from google.api_core import exceptions
+
 
 def setup_gemini(api_key):
     """Configures the Gemini API."""
@@ -10,6 +12,7 @@ def setup_gemini(api_key):
         print("Error: GOOGLE_API_KEY environment variable not set.", file=sys.stderr)
         sys.exit(1)
     genai.configure(api_key=api_key)
+
 
 def get_model(model_name="gemini-1.5-flash"):
     """Instantiates the generative model."""
@@ -24,17 +27,19 @@ def get_model(model_name="gemini-1.5-flash"):
         generation_config=generation_config,
     )
 
+
 def read_input(args):
     """Reads input from arguments or stdin pipe."""
     # If arguments are provided, join them as the prompt
     if args.prompt:
         return " ".join(args.prompt)
-    
+
     # If no arguments, check if data is being piped into stdin
     if not sys.stdin.isatty():
         return sys.stdin.read().strip()
-    
+
     return None
+
 
 def main():
     parser = argparse.ArgumentParser(description="CLI for Google Gemini")
@@ -58,12 +63,12 @@ def main():
         response = model.generate_content(user_input, stream=True)
         for chunk in response:
             print(chunk.text, end="", flush=True)
-        print() # Newline at the end
+        print()  # Newline at the end
     except exceptions.GoogleAPICallError as e:
         print(f"\nAPI Error: {e}", file=sys.stderr)
     except Exception as e:
         print(f"\nUnexpected Error: {e}", file=sys.stderr)
 
+
 if __name__ == "__main__":
     main()
-

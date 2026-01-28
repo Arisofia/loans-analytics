@@ -1,6 +1,9 @@
 import pandas as pd
 import streamlit as st
+
 from dashboard_utils import format_kpi_value, kpi_label
+
+
 def render_kpi_snapshot(kpi_snapshot, snapshot_month=None):
     """Render the top KPI snapshot tiles."""
     if kpi_snapshot:
@@ -14,6 +17,8 @@ def render_kpi_snapshot(kpi_snapshot, snapshot_month=None):
             kpi_cols[idx % 4].metric(kpi_label(name), format_kpi_value(name, value))
     else:
         st.info("KPI snapshot not available. Export analytics to populate KPI tiles.")
+
+
 def render_executive_summary(merged):
     """Render the executive summary metrics."""
     st.markdown('<div data-testid="dashboard-board">', unsafe_allow_html=True)
@@ -21,15 +26,10 @@ def render_executive_summary(merged):
     col1, col2, col3, col4 = st.columns(4)
     total_loans = merged["loan_id"].nunique() if "loan_id" in merged else 0
     total_outstanding = (
-        merged["outstanding_loan_value"].sum()
-        if "outstanding_loan_value" in merged
-        else 0
+        merged["outstanding_loan_value"].sum() if "outstanding_loan_value" in merged else 0
     )
     # Calculate weighted average APR
-    if (
-        "interest_rate_apr" in merged.columns
-        and "outstanding_loan_value" in merged.columns
-    ):
+    if "interest_rate_apr" in merged.columns and "outstanding_loan_value" in merged.columns:
         total_balance = merged["outstanding_loan_value"].sum()
         if total_balance > 0:
             avg_apr = (

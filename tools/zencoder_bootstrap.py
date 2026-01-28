@@ -9,7 +9,9 @@ Run from repo root:
   python tools/zencoder_bootstrap.py
   python tools/zencoder_bootstrap.py --print-json-only
 """
+
 from __future__ import annotations
+
 import argparse
 import json
 import logging
@@ -18,8 +20,11 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
+
+
 # ---------------------------------------------------------------------------
 # Data models for typed access (mirrors tools/check_kpi_sync.py report)
 # ---------------------------------------------------------------------------
@@ -29,11 +34,15 @@ class GitStatus:
     commit: Optional[str]
     tags: List[str]
     dirty: bool
+
+
 @dataclass
 class FileCheck:
     path: str
     exists: bool
     mtime: Optional[str]
+
+
 @dataclass
 class JsonCheck:
     path: str
@@ -42,6 +51,8 @@ class JsonCheck:
     has_extended_kpis: bool
     kpi_groups: List[str]
     mtime: Optional[str]
+
+
 @dataclass
 class CommandResult:
     command: str
@@ -49,6 +60,8 @@ class CommandResult:
     returncode: int
     stdout: str
     stderr: str
+
+
 @dataclass
 class KpiSyncReport:
     repo_root: str
@@ -57,6 +70,8 @@ class KpiSyncReport:
     json_check: JsonCheck
     regenerate_json: Optional[CommandResult]
     pytest_result: Optional[CommandResult]
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -88,6 +103,8 @@ def run_check_kpi_sync(repo_root: Path) -> Dict[str, Any]:
             f"Failed to parse JSON from check_kpi_sync: {e}\nRaw output:\n{stdout}"
         ) from e
     return report
+
+
 def _pytest_was_skipped(result: Optional[CommandResult]) -> bool:
     """Return True when check_kpi_sync ran pytest but no tests were collected.
     In this repo, KPI parity tests are opt-in and may be entirely skipped,
@@ -99,6 +116,8 @@ def _pytest_was_skipped(result: Optional[CommandResult]) -> bool:
         return False
     text = (result.stdout or "") + "\n" + (result.stderr or "")
     return "skipped" in text.lower()
+
+
 def _as_git_status(data: Dict[str, Any]) -> GitStatus:
     return GitStatus(
         branch=data.get("branch"),
@@ -106,6 +125,8 @@ def _as_git_status(data: Dict[str, Any]) -> GitStatus:
         tags=list(data.get("tags") or []),
         dirty=bool(data.get("dirty", False)),
     )
+
+
 def _as_file_checks(data: List[Dict[str, Any]]) -> List[FileCheck]:
     return [
         FileCheck(
@@ -115,6 +136,8 @@ def _as_file_checks(data: List[Dict[str, Any]]) -> List[FileCheck]:
         )
         for item in data
     ]
+
+
 def _as_json_check(data: Dict[str, Any]) -> JsonCheck:
     return JsonCheck(
         path=data.get("path", ""),
@@ -124,6 +147,8 @@ def _as_json_check(data: Dict[str, Any]) -> JsonCheck:
         kpi_groups=list(data.get("kpi_groups") or []),
         mtime=data.get("mtime"),
     )
+
+
 def _as_command_result(data: Optional[Dict[str, Any]]) -> Optional[CommandResult]:
     if not data:
         return None
@@ -134,6 +159,8 @@ def _as_command_result(data: Optional[Dict[str, Any]]) -> Optional[CommandResult
         stdout=data.get("stdout", ""),
         stderr=data.get("stderr", ""),
     )
+
+
 def _as_report(raw: Dict[str, Any]) -> KpiSyncReport:
     return KpiSyncReport(
         repo_root=raw.get("repo_root", ""),
@@ -143,6 +170,8 @@ def _as_report(raw: Dict[str, Any]) -> KpiSyncReport:
         regenerate_json=_as_command_result(raw.get("regenerate_json")),
         pytest_result=_as_command_result(raw.get("pytest_result")),
     )
+
+
 def find_repo_root(start: Path) -> Path:
     """
     Walk up to find the repo root (directory with .git or README.md).
@@ -155,6 +184,8 @@ def find_repo_root(start: Path) -> Path:
             break
         cur = cur.parent
     return start.resolve()
+
+
 # ---------------------------------------------------------------------------
 # High-level guidance for Zencoder / agent
 # ---------------------------------------------------------------------------
@@ -174,6 +205,8 @@ def print_high_level_summary(report: KpiSyncReport) -> None:
     else:
         logger.info("Status: ✅ OK (%d KPI groups)", len(report.json_check.kpi_groups))
     logger.info("=================================")
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -200,5 +233,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     if report.pytest_result and not report.pytest_result.success:
         return 1
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,7 +1,10 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+
 from .visualizations import apply_theme, styled_df
+
+
 def render_advanced_intelligence(dashboard_metrics):
     """Render the advanced analytics tabs."""
     st.markdown('<div data-testid="dashboard-analytics">', unsafe_allow_html=True)

@@ -1,15 +1,22 @@
 from abc import ABC, abstractmethod
+
 import polars as pl
+
+
 class RiskStrategy(ABC):
     @abstractmethod
     def process_expression(self) -> pl.Expr:
         """Return a Polars expression for the risk action."""
+
+
 class RecourseStrategy(RiskStrategy):
     def process_expression(self) -> pl.Expr:
         # If overdue >90, chargeback
         return (
             pl.when(pl.col("days_overdue") > 90).then(pl.lit("chargeback")).otherwise(pl.lit("ok"))
         )
+
+
 class NonRecourseStrategy(RiskStrategy):
     def process_expression(self) -> pl.Expr:
         # If overdue >90 and insolvency, insurance claim
@@ -18,6 +25,8 @@ class NonRecourseStrategy(RiskStrategy):
             .then(pl.lit("insurance_claim"))
             .otherwise(pl.lit("ok"))
         )
+
+
 class HybridStrategy(RiskStrategy):
     def process_expression(self) -> pl.Expr:
         # Hybrid logic: could be a mix, here we combine both for demonstration
@@ -28,10 +37,13 @@ class HybridStrategy(RiskStrategy):
             .then(pl.lit("chargeback"))
             .otherwise(pl.lit("ok"))
         )
+
+
 class RiskCalculator:
     """
     Polars-native Risk Calculator using Strategy Pattern.
     """
+
     @staticmethod
     def get_strategy(recourse_type: str) -> RiskStrategy:
         strategies = {
@@ -43,6 +55,7 @@ class RiskCalculator:
         if not strategy:
             raise ValueError(f"Unknown recourse type: {recourse_type}")
         return strategy
+
     def calculate_risk_actions(self, df: pl.DataFrame) -> pl.DataFrame:
         """
         Applies risk strategies to the dataframe.

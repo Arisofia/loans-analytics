@@ -8,13 +8,15 @@ analytics pipeline, calculation of extended KPIs, and generation of a
 consolidated JSON dashboard output. It is designed with robust error handling,
 logging, and configuration management for reliable execution.
 """
-import logging
+
 import json
+import logging
 import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
+
 # Initialize basic logging immediately for early failure reporting
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -25,20 +27,23 @@ except ImportError as e:
     logger.error("Critical dependency missing: %s", e)
     sys.exit(1)
 try:
-    from src.pipeline.orchestrator import UnifiedPipeline
     from src.analytics.kpi_catalog_processor import KPICatalogProcessor
     from src.config.paths import Paths
+    from src.pipeline.orchestrator import UnifiedPipeline
     from src.utils.data_normalization import normalize_dataframe_complete
 except ImportError as e:
     logger.error("Local module missing: %s", e)
     sys.exit(1)
 try:
     from src.azure_tracing import setup_azure_tracing
+
     # Override logger with Azure-instrumented version if available
     logger, _ = setup_azure_tracing()
     logger.info("Azure tracing initialized for run_complete_analytics")
 except ImportError as tracing_err:
     logger.warning("Azure tracing not initialized: %s", tracing_err)
+
+
 def load_real_data(
     paths: Paths,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]]:
@@ -55,6 +60,8 @@ def load_real_data(
     customers_df = load_customers(paths)
     schedule_df = load_schedule(paths)
     return loans_df, payments_df, customers_df, schedule_df
+
+
 def load_loans(paths: Paths) -> pd.DataFrame:
     """Load loan data from configured paths."""
     loan_files = [paths.LOAN_DATA_PATH, paths.LOAN_EXPORT_PATH, paths.LOAN_SAMPLE_PATH]
@@ -69,9 +76,9 @@ def load_loans(paths: Paths) -> pd.DataFrame:
             except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Unexpected error loading %s: %s", fpath.name, e)
     raise FileNotFoundError("Critical Error: No valid loan data files found in configured paths.")
-def load_payments(
-    paths: Paths
-) -> pd.DataFrame:
+
+
+def load_payments(paths: Paths) -> pd.DataFrame:
     """Load payment data from configured paths."""
     payment_files = [paths.PAYMENT_DATA_PATH, paths.PAYMENT_EXPORT_PATH]
     for fpath in payment_files:
@@ -85,9 +92,9 @@ def load_payments(
             except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Unexpected error loading %s: %s", fpath.name, e)
     raise FileNotFoundError("Critical Error: No valid payment data files found.")
-def load_customers(
-    paths: Paths
-) -> pd.DataFrame:
+
+
+def load_customers(paths: Paths) -> pd.DataFrame:
     """Load customer data from configured paths."""
     customer_files = [paths.CUSTOMER_DATA_PATH, paths.CUSTOMER_EXPORT_PATH]
     for fpath in customer_files:
@@ -95,13 +102,14 @@ def load_customers(
             logger.info("✅ Loading customers from: %s", fpath.name)
             try:
                 df = pd.read_csv(fpath)
-                return normalize_dataframe_complete(df).drop_duplicates(
-                    subset=["customer_id"])
+                return normalize_dataframe_complete(df).drop_duplicates(subset=["customer_id"])
             except (pd.errors.ParserError, ValueError, UnicodeDecodeError) as e:
                 logger.error("Failed to parse CSV file %s: %s", fpath.name, e)
             except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Unexpected error loading %s: %s", fpath.name, e)
     raise FileNotFoundError("Critical Error: No valid customer data files found.")
+
+
 def load_schedule(paths: Paths) -> Optional[pd.DataFrame]:
     """Load payment schedule data if available."""
     schedule_files = [paths.SCHEDULE_DATA_PATH, paths.SCHEDULE_EXPORT_PATH]
@@ -116,6 +124,8 @@ def load_schedule(paths: Paths) -> Optional[pd.DataFrame]:
             except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Unexpected error loading %s: %s", fpath.name, e)
     return None
+
+
 def main():
     """Run complete analytics."""
     logger.info("\n%s", "=" * 80)
@@ -138,9 +148,7 @@ def main():
     temp_loan_path.parent.mkdir(parents=True, exist_ok=True)
     loans_df.to_csv(temp_loan_path, index=False)
     pipeline = UnifiedPipeline()
-    pipeline_res = pipeline.execute(
-        temp_loan_path, user="cli-analytics", action="run-complete"
-    )
+    pipeline_res = pipeline.execute(temp_loan_path, user="cli-analytics", action="run-complete")
     # Load metrics from manifest
     manifest_path = Path(pipeline_res["phases"]["output"]["manifest"])
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -149,11 +157,7 @@ def main():
     # Fill in missing expected fields with defaults for display compatibility
     dashboard_metrics.setdefault(
         "active_clients",
-        (
-            len(loans_df["customer_id"].unique())
-            if "customer_id" in loans_df.columns
-            else 0
-        ),
+        (len(loans_df["customer_id"].unique()) if "customer_id" in loans_df.columns else 0),
     )
     dashboard_metrics.setdefault(
         "total_aum_usd", dashboard_metrics.get("total_receivable_usd", 0.0)
@@ -178,23 +182,17 @@ def main():
     # Calculate Extended KPIs from Catalog
     logger.info("📊 Calculating Extended KPIs from Catalog...\n")
     try:
-        catalog_proc = KPICatalogProcessor(
-            loans_df, payments_df, customers_df, schedule_df
-        )
+        catalog_proc = KPICatalogProcessor(loans_df, payments_df, customers_df, schedule_df)
         extended_kpis = catalog_proc.get_all_kpis()
         dashboard_metrics["extended_kpis"] = extended_kpis
         logger.info("✅ Extended KPIs calculated successfully")
         # Map metrics from extended_kpis to dashboard root for display
         exec_strip = extended_kpis.get("executive_strip", {})
-        dashboard_metrics["total_aum_usd"] = exec_strip.get(
-            "total_outstanding", 0.0
-        )
+        dashboard_metrics["total_aum_usd"] = exec_strip.get("total_outstanding", 0.0)
         dashboard_metrics["active_clients"] = exec_strip.get(
             "active_clients", dashboard_metrics.get("active_clients", 0)
         )
-        dashboard_metrics["collection_rate_pct"] = (
-            exec_strip.get("collection_rate", 0.0) * 100
-        )
+        dashboard_metrics["collection_rate_pct"] = exec_strip.get("collection_rate", 0.0) * 100
         # Map monthly revenue from latest month in pricing
         pricing = extended_kpis.get("monthly_pricing", [])
         if pricing:
@@ -207,8 +205,7 @@ def main():
             )
             if dashboard_metrics["active_clients"] > 0:
                 dashboard_metrics["revenue_per_active_client_monthly"] = (
-                    dashboard_metrics["monthly_revenue_usd"]
-                    / dashboard_metrics["active_clients"]
+                    dashboard_metrics["monthly_revenue_usd"] / dashboard_metrics["active_clients"]
                 )
                 dashboard_metrics["revenue_per_active_client_annual"] = (
                     dashboard_metrics["revenue_per_active_client_monthly"] * 12
@@ -220,13 +217,13 @@ def main():
             if prev_rev > 0:
                 dashboard_metrics["mom_growth_pct"] = ((curr_rev / prev_rev) - 1) * 100
         # Map Risk Metrics from Pipeline
-        dashboard_metrics["delinquency_rate_30_pct"] = dashboard_metrics.get(
-            "PAR30", {}).get("value", 0.0)
-        dashboard_metrics["delinquency_rate_90_pct"] = dashboard_metrics.get(
-            "PAR90", {}).get("value", 0.0)
-        dashboard_metrics["par_90_ratio_pct"] = dashboard_metrics.get("PAR90", {}).get(
+        dashboard_metrics["delinquency_rate_30_pct"] = dashboard_metrics.get("PAR30", {}).get(
             "value", 0.0
         )
+        dashboard_metrics["delinquency_rate_90_pct"] = dashboard_metrics.get("PAR90", {}).get(
+            "value", 0.0
+        )
+        dashboard_metrics["par_90_ratio_pct"] = dashboard_metrics.get("PAR90", {}).get("value", 0.0)
         # Export Quarterly Scorecard CSV
         logger.info("📝 Exporting Quarterly Scorecard CSV...")
         scorecard_df = catalog_proc.get_quarterly_scorecard()
@@ -272,11 +269,9 @@ def main():
     logger.info("  YoY Growth: %.2f%%\n", dashboard_metrics["yoy_growth_pct"])
     logger.info("⚡ EFFICIENCY & ACQUISITION")
     logger.info("  LTV/CAC Ratio: %.2fx", dashboard_metrics["ltv_cac_ratio"])
-    logger.info("  CAC (USD): $%.2f\n", dashboard_metrics['cac_usd'])
+    logger.info("  CAC (USD): $%.2f\n", dashboard_metrics["cac_usd"])
     logger.info("⚠️ RISK METRICS")
-    logger.info(
-        "  30+ DPD Rate: %.2f%%", dashboard_metrics["delinquency_rate_30_pct"]
-    )
+    logger.info("  30+ DPD Rate: %.2f%%", dashboard_metrics["delinquency_rate_30_pct"])
     logger.info("  90+ DPD Rate: %.2f%%", dashboard_metrics["delinquency_rate_90_pct"])
     logger.info("  PAR 90 Ratio: %.2f%%\n", dashboard_metrics["par_90_ratio_pct"])
     if dashboard_metrics["portfolio_by_product"]:
@@ -286,7 +281,7 @@ def main():
                 "  %s: %d loans, $%s",
                 prod.get("product_type", "Unknown"),
                 prod.get("loan_count", 0),
-                format(prod.get("aum", 0), ",.0f")
+                format(prod.get("aum", 0), ",.0f"),
             )
         logger.info("")
     # Save results
@@ -302,5 +297,7 @@ def main():
     logger.info("Report Generated: %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     logger.info("%s\n", "=" * 80)
     return dashboard_metrics
+
+
 if __name__ == "__main__":
     dashboard = main()

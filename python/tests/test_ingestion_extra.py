@@ -1,9 +1,13 @@
 import pandas as pd
 import pytest
 from src.pipeline.ingestion import UnifiedIngestion
+
+
 @pytest.fixture
 def base_config():
     return {"pipeline": {"phases": {"ingestion": {"validation": {"strict": False}}}}}
+
+
 def test_archive_raw_and_log(tmp_path, base_config):
     ui = UnifiedIngestion(base_config)
     # create temp file
@@ -15,6 +19,8 @@ def test_archive_raw_and_log(tmp_path, base_config):
     assert archived.exists()
     # ensure audit log has an archive success event
     assert any(e.get("event") == "archive" and e.get("status") == "success" for e in ui.audit_log)
+
+
 def test_apply_deduplication_config(tmp_path, base_config):
     # Test the _apply_deduplication helper using a synthetic df and dedup config
     cfg = base_config.copy()
@@ -27,6 +33,8 @@ def test_apply_deduplication_config(tmp_path, base_config):
     deduped, removed = ui._apply_deduplication(df)
     assert removed == 1
     assert len(deduped) == 2
+
+
 def test_validation_strict_raises(tmp_path):
     cfg = {
         "pipeline": {
