@@ -119,7 +119,7 @@ if error_obj:
 
 ## Related Documentation
 
-- [docs/PHASE_E_SECURITY_MODERNIZATION.md](../PHASE_E_SECURITY_MODERNIZATION.md) - Full modernization plan
+- [docs/PHASE_E_SECURITY_MODERNIZATION.md](./PHASE_E_SECURITY_MODERNIZATION.md) - Full modernization plan
 - [PRODUCTION_AUDIT_PROGRESS.md](../PRODUCTION_AUDIT_PROGRESS.md) - Audit history (Phases A-D)
 
 ## Next Steps (Stage 2)
@@ -135,4 +135,4 @@ After merge, proceed to Phase E Stage 2: Repository Restructuring
 **Branch**: `security/phase-e-stage1-critical-fixes`  
 **Base**: `main`  
 **Commit**: `f8782b0cf`  
-**Part of**: Phase E (Security Modernization) - [PHASE_E_SECURITY_MODERNIZATION.md](../PHASE_E_SECURITY_MODERNIZATION.md)
+**Part of**: Phase E (Security Modernization) - [PHASE_E_SECURITY_MODERNIZATION.md](./PHASE_E_SECURITY_MODERNIZATION.md)
