@@ -260,23 +260,41 @@ GROUP BY portfolio_id, kpi_name, DATE_TRUNC('month', calculation_date);
 The `HistoricalContextProvider` class uses this table in REAL mode:
 
 ```python
-from python.multi_agent.historical_context import HistoricalContextProvider
-from python.multi_agent.historical_backend_supabase import SupabaseHistoricalBackend
+from datetime import date, timedelta
 
-# Initialize with Supabase backend
-backend = SupabaseHistoricalBackend()
-provider = HistoricalContextProvider(mode="REAL", backend=backend)
+import psycopg2
 
-# Fetch historical KPIs
-history = provider.get_kpi_history(
-    kpi_id="default_rate",
-    start_date=date.today() - timedelta(days=30),
-    end_date=date.today()
+# Example: fetch 30 days of historical KPI values for a portfolio
+conn = psycopg2.connect(
+    dbname="analytics",
+    user="app_user",
+    password="***",
+    host="localhost",
+    port=5432,
 )
 
-# Calculate trend
-trend = provider.get_trend(kpi_id="default_rate", periods=3)
-print(f"Trend: {trend.direction}, Strength: {trend.strength}")
+portfolio_id = "00000000-0000-0000-0000-000000000000"
+kpi_name = "default_rate"
+start_date = date.today() - timedelta(days=30)
+end_date = date.today()
+
+with conn, conn.cursor() as cur:
+    cur.execute(
+        """
+        SELECT calculation_date, kpi_value
+        FROM historical_kpis
+        WHERE portfolio_id = %s
+          AND kpi_name = %s
+          AND calculation_date BETWEEN %s AND %s
+        ORDER BY calculation_date
+        """,
+        (portfolio_id, kpi_name, start_date, end_date),
+    )
+    history = cur.fetchall()
+
+# history is a list of (calculation_date, kpi_value) tuples
+for calculation_date, kpi_value in history:
+    print(calculation_date, kpi_value)
 ```
 
 ---
