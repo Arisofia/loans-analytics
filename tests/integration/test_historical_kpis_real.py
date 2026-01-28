@@ -13,8 +13,7 @@ Phase G4.2 Implementation
 """
 
 import os
-from datetime import date, timedelta
-from uuid import uuid4
+from uuid4 import uuid4
 
 import pytest
 
