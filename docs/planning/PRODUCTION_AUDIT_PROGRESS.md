@@ -65,19 +65,19 @@ Phase D: Structural Cleanup             [░░░░░░░░░░░░░
 
 ---
 
-## ⏳ Phase B: Data Integrity (P1) - PENDING
+## ⏳ Phase B: Data Integrity (P1) - IN PROGRESS
 
 ### Objectives
 
-- [ ] Separate test/sample data from production code
-- [ ] Move fixtures to appropriate test directories
+- [x] Separate test/sample data from production code (Deleted legacy `sample_data.csv`)
+- [x] Move fixtures to appropriate test directories (Cleaned up `python/testing/fixtures.py`)
 - [ ] Verify no production imports of test data
 - [ ] Document data sources and lineage
 
 ### Identified Issues
 
-- ⚠️ `python/testing/fixtures.py` contains SAMPLE_LOAN_DATA (flagged for migration)
-- ⚠️ `python/sample_data.csv` detected (pending review)
+- ✅ `python/testing/fixtures.py` removed.
+- ✅ `python/sample_data.csv` removed.
 
 ---
 
