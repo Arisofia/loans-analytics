@@ -34,6 +34,25 @@ CREATE TABLE IF NOT EXISTS historical_kpis (
 );
 
 -- ============================================================================
+-- Row-Level Security (RLS)
+-- ============================================================================
+
+-- Enable RLS to prevent cross-tenant data leakage via Supabase clients
+ALTER TABLE historical_kpis ENABLE ROW LEVEL SECURITY;
+ALTER TABLE historical_kpis FORCE ROW LEVEL SECURITY;
+
+-- Restrictive policy: only allow access when using the `service_role` key.
+-- This ensures `anon` / `authenticated` clients cannot read or modify
+-- historical KPI data directly via the public API.
+CREATE POLICY historical_kpis_service_role_access
+    ON historical_kpis
+    AS PERMISSIVE
+    FOR ALL
+    TO public
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+
+-- ============================================================================
 -- Indices for Performance Optimization
 -- ============================================================================
 
