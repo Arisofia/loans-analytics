@@ -13,7 +13,8 @@ Phase G4.2 Implementation
 """
 
 import os
-from uuid4 import uuid4
+from datetime import date, timedelta
+from uuid import uuid4
 
 import pytest
 
@@ -77,23 +78,30 @@ def seed_test_data(supabase_backend, test_portfolio_id):
     
     Inserts a month of daily KPI observations for testing.
     Cleans up test data after tests complete.
+    
+    Note: Uses a unique kpi_id based on test session to enable proper cleanup.
     """
     import requests
+    from datetime import datetime, UTC
 
-    # Build insert payload
-    base_date = date(2026, 1, 1)
+    # Build insert payload using the simplified schema
+    # Schema: kpi_id, date, value, timestamp
+    base_date = date.today() - timedelta(days=30)  # Use relative dates
     test_data = []
+    
+    # Create a unique kpi_id for this test session to avoid conflicts
+    # Tests will query using this specific kpi_id
+    test_kpi_id = f"default_rate_{test_portfolio_id[:8]}"
 
     for day_offset in range(30):
         current_date = base_date + timedelta(days=day_offset)
         test_data.append(
             {
-                "portfolio_id": test_portfolio_id,
-                "kpi_name": "default_rate",
-                "kpi_value": 0.025 + (day_offset * 0.001),  # Increasing trend
-                "calculation_date": current_date.isoformat(),
-                "grain": "daily",
-                "metadata": {"test": True, "session": "g4.2-integration"},
+                "kpi_id": test_kpi_id,
+                "date": current_date.isoformat(),
+                "value": 0.025 + (day_offset * 0.001),  # Increasing trend
+                "timestamp": datetime.now(UTC).isoformat(),
+                "metadata": {"test": True, "session": "g4.2-integration", "test_id": test_portfolio_id},
             }
         )
 
@@ -107,12 +115,13 @@ def seed_test_data(supabase_backend, test_portfolio_id):
     if response.status_code not in (201, 409):
         response.raise_for_status()
 
-    yield test_data
+    # Return both test_data and the kpi_id used
+    yield {"data": test_data, "kpi_id": test_kpi_id}
 
     # Cleanup: Delete test data after tests
-    # Using query parameter to delete by portfolio_id
+    # Using query parameter to delete by kpi_id
     try:
-        delete_url = f"{url}?portfolio_id=eq.{test_portfolio_id}"
+        delete_url = f"{url}?kpi_id=eq.{test_kpi_id}"
         delete_response = requests.delete(delete_url, headers=headers, timeout=10)
         delete_response.raise_for_status()
     except Exception as e:
@@ -159,14 +168,14 @@ def test_fetch_historical_kpis_empty_range(
     Test 3: Query for KPIs with no matching data returns empty list.
     
     Validates:
-    - Queries for non-existent portfolio return gracefully
+    - Queries for non-existent KPI return gracefully
     - No errors on empty result sets
     """
-    # Query for a portfolio that doesn't exist
+    # Query for a KPI that doesn't exist
     result = historical_provider.get_kpi_history(
         kpi_id="nonexistent_kpi",
-        start_date=date(2020, 1, 1),
-        end_date=date(2020, 1, 31),
+        start_date=date.today() - timedelta(days=60),
+        end_date=date.today() - timedelta(days=31),  # Date range with no test data
     )
 
     assert isinstance(result, list)
@@ -187,11 +196,14 @@ def test_fetch_historical_kpis_with_data(
     - Date filtering works correctly
     - Values are returned in ascending date order
     """
-    # Query for the seeded test data
+    # Use the kpi_id from seeded test data
+    test_kpi_id = seed_test_data["kpi_id"]
+    
+    # Query for the seeded test data using relative dates
     result = historical_provider.get_kpi_history(
-        kpi_id="default_rate",
-        start_date=date(2026, 1, 1),
-        end_date=date(2026, 1, 30),
+        kpi_id=test_kpi_id,
+        start_date=date.today() - timedelta(days=30),
+        end_date=date.today(),
     )
 
     # Validate result structure
@@ -206,7 +218,7 @@ def test_fetch_historical_kpis_with_data(
     assert hasattr(first_record, "timestamp")
 
     # Validate data correctness
-    assert first_record.kpi_id == "default_rate"
+    assert first_record.kpi_id == test_kpi_id
     assert first_record.value > 0  # Should have positive value
 
     # Validate ordering (ascending by date)
@@ -227,14 +239,16 @@ def test_historical_kpis_query_performance(
     - Indices are being utilized effectively
     """
     import time
+    
+    test_kpi_id = seed_test_data["kpi_id"]
 
     start_time = time.time()
 
     # Execute query
     result = historical_provider.get_kpi_history(
-        kpi_id="default_rate",
-        start_date=date(2026, 1, 1),
-        end_date=date(2026, 1, 30),
+        kpi_id=test_kpi_id,
+        start_date=date.today() - timedelta(days=30),
+        end_date=date.today(),
     )
 
     elapsed_time = time.time() - start_time
@@ -258,6 +272,8 @@ def test_historical_context_provider_cache_behavior(
     - Cache reduces query time significantly
     """
     import time
+    
+    test_kpi_id = seed_test_data["kpi_id"]
 
     # Clear cache
     historical_provider.clear_cache()
@@ -265,18 +281,18 @@ def test_historical_context_provider_cache_behavior(
     # First query (cold cache)
     start_time = time.time()
     result1 = historical_provider.get_kpi_history(
-        kpi_id="default_rate",
-        start_date=date(2026, 1, 1),
-        end_date=date(2026, 1, 30),
+        kpi_id=test_kpi_id,
+        start_date=date.today() - timedelta(days=30),
+        end_date=date.today(),
     )
-    cold_cache_time = time.time() - start_time
+    # Note: cold_cache_time not used, network latency varies
 
     # Second query (warm cache)
     start_time = time.time()
     result2 = historical_provider.get_kpi_history(
-        kpi_id="default_rate",
-        start_date=date(2026, 1, 1),
-        end_date=date(2026, 1, 30),
+        kpi_id=test_kpi_id,
+        start_date=date.today() - timedelta(days=30),
+        end_date=date.today(),
     )
     warm_cache_time = time.time() - start_time
 
@@ -302,11 +318,13 @@ def test_historical_trend_analysis_with_real_data(
     - Trend direction is detected correctly (increasing trend)
     - R-squared and slope values are reasonable
     """
+    test_kpi_id = seed_test_data["kpi_id"]
+    
     # Calculate trend for the seeded data (increasing trend)
-    trend = historical_provider.get_trend(kpi_id="default_rate", periods=1)
+    trend = historical_provider.get_trend(kpi_id=test_kpi_id, periods=1)
 
     # Validate trend structure
-    assert trend.kpi_id == "default_rate"
+    assert trend.kpi_id == test_kpi_id
     assert trend.direction is not None
     assert trend.strength is not None
     assert trend.slope is not None
@@ -330,9 +348,11 @@ def test_historical_moving_average_with_real_data(
     - Moving average is calculated correctly
     - Result is within expected range
     """
+    test_kpi_id = seed_test_data["kpi_id"]
+    
     # Calculate 30-day moving average
     ma = historical_provider.get_moving_average(
-        kpi_id="default_rate", window_days=30
+        kpi_id=test_kpi_id, window_days=30
     )
 
     # Validate moving average
@@ -351,18 +371,19 @@ def test_historical_kpis_data_integrity(
     Test 9: Verify data integrity constraints are enforced.
     
     Validates:
-    - Unique constraint on (portfolio_id, kpi_name, calculation_date, grain)
+    - Unique constraint on (kpi_id, date)
     - Indices exist and are utilized
     """
     import requests
+    
+    test_kpi_id = seed_test_data["kpi_id"]
 
     # Attempt to insert duplicate record (should fail or be ignored)
     duplicate_data = {
-        "portfolio_id": test_portfolio_id,
-        "kpi_name": "default_rate",
-        "kpi_value": 0.999,  # Different value
-        "calculation_date": "2026-01-01",  # Same date as seed data
-        "grain": "daily",
+        "kpi_id": test_kpi_id,
+        "value": 0.999,  # Different value
+        "date": (date.today() - timedelta(days=30)).isoformat(),  # Same date as first seed
+        "timestamp": "2026-01-28T00:00:00Z",
         "metadata": {"test": True, "duplicate": True},
     }
 
