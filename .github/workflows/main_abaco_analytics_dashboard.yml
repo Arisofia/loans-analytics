@@ -27,10 +27,10 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Set up Python version
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.12"
 
@@ -46,7 +46,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Upload artifact for deployment jobs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: python-app
           path: |
@@ -66,7 +66,7 @@ jobs:
 
     steps:
       - name: Download artifact from build job
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: python-app
           path: python-app
@@ -90,20 +90,20 @@ jobs:
 
       - name: Login to Azure
         if: steps.check_secrets.outputs.has_creds == 'true'
-        uses: azure/login@v2
+        uses: azure/login@1384c340ab2dda50fed2bee3041d1d87018aa5e8
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy to Azure Web App (Azure login)
         if: steps.check_secrets.outputs.has_creds == 'true'
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@0efab0a4c73b728613acd71966c04beadfc20aaf
         with:
           app-name: ${{ env.WEBAPP_NAME }}
           package: ./python-app
 
       - name: Deploy to Azure Web App (publish profile)
         if: steps.check_secrets.outputs.has_creds != 'true' && steps.check_secrets.outputs.has_publish_profile == 'true'
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@0efab0a4c73b728613acd71966c04beadfc20aaf
         with:
           app-name: ${{ env.WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
