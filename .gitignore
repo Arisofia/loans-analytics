@@ -77,15 +77,13 @@ gemini-cli/
 .env
 .env.local
 .env.*.local
-.vercel/
-nvm/
+secrets/
+secrets.json
+*.key
+*.pem
 
 # Other
 failed_workflows.csv
-
-
-.env
-.env.example
 
 # Python virtual environments
 .venv/
