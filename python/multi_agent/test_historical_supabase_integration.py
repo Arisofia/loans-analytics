@@ -21,8 +21,39 @@ from python.multi_agent.historical_backend_supabase import (
 
 
 def _supabase_configured() -> bool:
-    """Check if Supabase credentials are available."""
-    return bool(os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_ANON_KEY"))
+    """Check if Supabase credentials are available and valid.
+    
+    Validates that:
+    1. Environment variables are set
+    2. They are not placeholder/example values
+    3. URL appears to be a real Supabase instance
+    """
+    url = os.getenv("SUPABASE_URL", "").strip()
+    key = os.getenv("SUPABASE_ANON_KEY", "").strip()
+    
+    # Check if credentials exist and are not examples
+    if not url or not key:
+        return False
+    
+    # Reject placeholder/example values
+    placeholder_urls = [
+        "your-project",
+        "https://your-project.supabase.co",
+        "your-project.supabase.co",
+    ]
+    placeholder_keys = ["your-key", "your-anon-key"]
+    
+    if any(placeholder in url.lower() for placeholder in placeholder_urls):
+        return False
+    if any(placeholder in key.lower() for placeholder in placeholder_keys):
+        return False
+    
+    # URL should have minimum structure of a real Supabase instance
+    # Format: https://{project-ref}.supabase.co
+    if not (url.startswith("https://") and ".supabase.co" in url):
+        return False
+    
+    return True
 
 
 @pytest.mark.integration_supabase
