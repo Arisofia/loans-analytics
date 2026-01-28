@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test clean run-analytics
+.PHONY: help setup format lint type-check test clean
 PYTHON := python3
 VENV := .venv
 BIN := $(VENV)/bin
@@ -13,7 +13,6 @@ help:
 	@echo "make type-check     - Run mypy static type checking"
 	@echo "make test           - Run unit tests with pytest"
 	@echo "make clean          - Remove build artifacts and cache"
-	@echo "make run-analytics  - Execute the complete analytics pipeline"
 setup:
 	$(PYTHON) -m venv $(VENV)
 	$(BIN)/pip install --upgrade pip
@@ -36,5 +35,6 @@ clean:
 	rm -rf build dist *.egg-info
 	find . -name "*.pyc" -delete
 	find . -name "*.pyo" -delete
-run-analytics:
-	$(BIN)/python run_complete_analytics.py
+
+# NOTE: run-analytics target removed (legacy script deleted in Phase B)
+# Pipeline modernization tracked separately
