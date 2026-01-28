@@ -389,6 +389,7 @@ python3 -m pytest python/multi_agent/tests.py::TestOrchestrator -v
 All multi-agent operations automatically apply:
 
 ✅ **PII Redaction**
+
 - Email addresses: `john@example.com` → `[REDACTED]`
 - Social Security Numbers: `123-45-6789` → `[REDACTED]`
 - Phone numbers: `555-123-4567` → `[REDACTED]`
@@ -396,11 +397,13 @@ All multi-agent operations automatically apply:
 - Employer Identification Numbers: `12-3456789` → `[REDACTED]`
 
 ✅ **Audit Logging**
+
 - Every request tracked with unique trace ID
 - Full conversation history preserved
 - Token usage and cost tracked per trace
 
 ✅ **Cost Controls**
+
 - Per-request token limits configurable
 - Cost tracking per scenario
 - Provider-level cost monitoring
@@ -408,6 +411,7 @@ All multi-agent operations automatically apply:
 ### Security Checklist for Changes
 
 Before modifying multi-agent code, review:
+
 - **[Multi-Agent Change Checklist](docs/MULTI_AGENT_CHANGE_CHECKLIST.md)** (REQUIRED)
 
 ---
@@ -416,12 +420,10 @@ Before modifying multi-agent code, review:
 
 Track these KPIs for the multi-agent system:
 
-| Metric | Target | How to Monitor |
-|--------|--------|----------------|
-| **Test Pass Rate** | 100% | `pytest python/multi_agent/tests.py` |
-| **Scenario Success Rate** | ≥95% | Application logs with trace IDs |
-| **Average Latency** | <15s per scenario | Trace logs (`latency_ms` field) |
-| **Cost per Scenario** | <$0.10 | `tracer.get_trace_cost(trace_id)` |
-| **PII Redaction Rate** | 100% | Guardrails test suite |
-
-
+| Metric                    | Target            | How to Monitor                       |
+| ------------------------- | ----------------- | ------------------------------------ |
+| **Test Pass Rate**        | 100%              | `pytest python/multi_agent/tests.py` |
+| **Scenario Success Rate** | ≥95%              | Application logs with trace IDs      |
+| **Average Latency**       | <15s per scenario | Trace logs (`latency_ms` field)      |
+| **Cost per Scenario**     | <$0.10            | `tracer.get_trace_cost(trace_id)`    |
+| **PII Redaction Rate**    | 100%              | Guardrails test suite                |
