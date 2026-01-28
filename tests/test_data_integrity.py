@@ -122,7 +122,16 @@ class TestDataIntegrity:
                 dirs[:] = [
                     d
                     for d in dirs
-                    if d not in ("node_modules", ".venv", ".git", "__pycache__", ".next", "tests", "testing")
+                    if d
+                    not in (
+                        "node_modules",
+                        ".venv",
+                        ".git",
+                        "__pycache__",
+                        ".next",
+                        "tests",
+                        "testing",
+                    )
                 ]
                 for file in files:
                     if "fixture" in file.lower() and file.endswith(".py"):
