@@ -21,13 +21,15 @@ from .protocol import AgentRole
 def list_scenarios() -> None:
     """List all available scenarios."""
     orchestrator = MultiAgentOrchestrator()
-    scenarios = orchestrator.list_scenarios()
+    scenario_names = orchestrator.list_scenarios()
 
     print("\n📋 Available Scenarios:\n")
-    for name, scenario in scenarios.items():
-        print(f"  • {name}")
-        print(f"    Steps: {len(scenario.steps)}")
-        print(f"    Description: {scenario.description}\n")
+    for name in scenario_names:
+        scenario = orchestrator.get_scenario(name)
+        if scenario:
+            print(f"  • {name}")
+            print(f"    Steps: {len(scenario.steps)}")
+            print(f"    Description: {scenario.description}\n")
 
 
 def run_scenario(scenario_name: str, context: Dict[str, Any]) -> None:
@@ -43,13 +45,13 @@ def run_scenario(scenario_name: str, context: Dict[str, Any]) -> None:
     print(f"📊 Steps: {len(scenario.steps)}\n")
 
     try:
-        results = orchestrator.run_scenario(scenario, context)
+        results = orchestrator.run_scenario(scenario_name, context)
 
         print("✅ Scenario completed successfully\n")
         print("📤 Results:")
         print(json.dumps(results, indent=2))
 
-    except Exception as e:
+    except (ValueError, RuntimeError, KeyError) as e:
         print(f"❌ Scenario failed: {e}")
         sys.exit(1)
 
@@ -81,7 +83,7 @@ def run_agent(agent_role_str: str, user_input: str, context: Dict[str, Any] | No
         print(f"  Cost: ${response.cost_usd:.6f}")
         print(f"  Latency: {response.latency_ms:.2f}ms")
 
-    except Exception as e:
+    except (ValueError, RuntimeError, ConnectionError) as e:
         print(f"❌ Agent failed: {e}")
         sys.exit(1)
 
