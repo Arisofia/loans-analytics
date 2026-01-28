@@ -228,7 +228,7 @@ Supabase uses PgBouncer for connection pooling, but under high load:
 
 #### Test Coverage
 - **Status:** 🟡 BELOW THRESHOLD
-- **Current:** ~40% (2 test files: `tests/test_data_integrity.py`, `python/tests/test_ingestion_extra.py`)
+- **Current:** Coverage not yet measured; currently limited to 2 test files (`tests/test_data_integrity.py`, `python/tests/test_ingestion_extra.py`), likely well below target
 - **Target:** 85%+
 - **Impact:** Blocks production deployment approval
 - **Timeline:** 2 weeks (2 engineers)
