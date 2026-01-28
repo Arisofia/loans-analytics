@@ -91,8 +91,8 @@ def check_agents() -> Tuple[bool, str]:
         from src.agents.monitoring import CostTracker, PerformanceTracker
 
         # Try to create instances
-        CostTracker()
-        PerformanceTracker()
+        _cost_tracker = CostTracker()
+        _perf_tracker = PerformanceTracker()
 
         return True, "Agent monitoring system operational"
 
