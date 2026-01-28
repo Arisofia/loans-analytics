@@ -23,7 +23,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install jsonlint yamllint==1.33.0
-          npm install -g markdownlint-cli
+          npm install -g markdownlint-cli --ignore-scripts
 
       - name: Lint YAML
         run: |
