@@ -22,7 +22,7 @@ This comprehensive audit has validated the repository against production standar
 - ✅ CI/CD workflows configured and validated
 
 ### Coverage Improvement Plan
-- **Current:** 60% coverage threshold (intermediate target)
+- **Current:** 30% coverage threshold (intermediate target)
 - **Phase F Goal:** Implement integration tests to reach 85% coverage
 - **Timeline:** Integration test suite development in F1 milestone
 - **Strategy:** Complement existing unit tests with real code path execution
