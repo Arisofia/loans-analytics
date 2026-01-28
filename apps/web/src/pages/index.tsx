@@ -1,3 +1,4 @@
+import React from 'react'
 import Head from 'next/head'
 import { AccountConfigurationForm } from '@/components/account/AccountConfigurationForm'
 import { AuthenticationForm } from '@/components/auth/AuthenticationForm'
