@@ -546,17 +546,17 @@ Per SECURITY.md:
 
 ### Current Test Coverage
 
-**Status:** 🔴 BELOW THRESHOLD (Estimated 40% - not measured)  
+**Status:** 🔴 BELOW THRESHOLD (Coverage currently unknown; not yet measured, but likely well below target)  
 **Target:** 85%+ (production deployment requirement)  
-**Gap:** ~45 percentage points (estimated)
+**Gap:** Cannot be precisely quantified until coverage is measured; based on current structure it is likely >50 percentage points.
 
-*Note: Coverage percentage is estimated based on 2 test files vs 58 Python files (3.4% file coverage) and inferred from repository structure. Actual coverage measurement required via pytest with coverage.py.*
+*Note: Only 2 test files have been identified vs 58 Python files (~3.4% file coverage). This is a structural indicator, not an actual coverage percentage. Overall test coverage must be measured with pytest and coverage.py before any numeric coverage figure is relied upon.*
 
 #### Test Infrastructure
 
 | Category | Files | Coverage | Status |
 |----------|-------|----------|--------|
-| **Unit Tests** | 2 identified | ~40% | 🔴 INSUFFICIENT |
+| **Unit Tests** | 2 identified | Unknown (likely low) | 🔴 INSUFFICIENT |
 | **Integration Tests** | 0 identified | 0% | 🔴 MISSING |
 | **E2E Tests** | Playwright configured | Unknown | 🟡 NEEDS RUN |
 | **Load/Performance Tests** | 0 | 0% | 🔴 PENDING |
