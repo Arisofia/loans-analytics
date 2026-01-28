@@ -326,15 +326,15 @@ jobs:
               if [ -n "$review_text" ] && [ "$review_text" != "No analysis available" ]; then
                 PR_NUMBER="${{ github.event.pull_request.number }}"
                 if echo "$PR_NUMBER" | grep -Eq '^[0-9]+$'; then
-                  # Sanitize review text to reduce risk of markdown injection
-                  # Escape any existing triple backticks and wrap content in a fenced code block
-                  sanitized_review=$(printf '%s' "$review_text" | sed 's/```/` ` `/g')
+                  # Sanitize review text to reduce risk of markdown/HTML injection
+                  # HTML-escape special characters and render inside a <pre><code> block
+                  sanitized_review=$(printf '%s' "$review_text" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
                   {
                     echo "## 🤖 Perplexity AI Analysis"
                     echo ""
-                    echo '```markdown'
+                    echo '<pre><code>'
                     printf '%s\n' "$sanitized_review"
-                    echo '```'
+                    echo '</code></pre>'
                   } > comment.md
                   if command -v gh >/dev/null 2>&1; then
                     gh pr comment "$PR_NUMBER" --body-file comment.md
