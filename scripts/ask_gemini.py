@@ -1,5 +1,12 @@
 import sys
-from multi_agent import MultiAgentOrchestrator, AgentRole, AgentConfig, create_portfolio_risk_review_scenario
+
+from multi_agent import (
+    AgentConfig,
+    AgentRole,
+    MultiAgentOrchestrator,
+    create_portfolio_risk_review_scenario,
+)
+
 
 class AskGemini:
     def __init__(self, orchestrator):
@@ -13,14 +20,16 @@ class AskGemini:
         # ... implementation of running the portfolio review
         pass
 
+
 def main():
-    if '--scenario' in sys.argv:
-        scenario = sys.argv[sys.argv.index('--scenario') + 1]
+    if "--scenario" in sys.argv:
+        scenario = sys.argv[sys.argv.index("--scenario") + 1]
         orchestrator = MultiAgentOrchestrator()
         review = AskGemini(orchestrator)
         review.run_portfolio_review(scenario)
     else:
         print("Usage: script.py --scenario <scenario_name>")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

@@ -2,8 +2,12 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+
 from dashboard_utils import compute_cat_agg, format_kpi_value
+
 from .visualizations import apply_theme
+
+
 def render_cashflow_trends(analytics_facts):
     """Render cashflow trend charts and metrics."""
     if not analytics_facts.empty:
@@ -60,6 +64,8 @@ def render_cashflow_trends(analytics_facts):
                     format_kpi_value("sched_revenue", latest_cash["sched_revenue"]),
                 )
             st.markdown("</div>", unsafe_allow_html=True)
+
+
 def render_growth_analysis(total_outstanding):
     """Render growth projections and category breakdown."""
     st.markdown('<div data-testid="dashboard-growth">', unsafe_allow_html=True)
@@ -81,6 +87,8 @@ def render_growth_analysis(total_outstanding):
         )
         st.plotly_chart(apply_theme(fig_growth), use_container_width=True)
     return g_col2
+
+
 def render_category_breakdown(merged, col):
     """Render the category breakdown pie chart."""
     with col:
@@ -95,13 +103,9 @@ def render_category_breakdown(merged, col):
                 )
                 st.plotly_chart(apply_theme(fig_cat), use_container_width=True)
             else:
-                if (
-                    "categoria" in merged.columns
-                    and "outstanding_loan_value" not in merged.columns
-                ):
+                if "categoria" in merged.columns and "outstanding_loan_value" not in merged.columns:
                     st.info(
-                        "Outstanding loan value column missing. Category breakdown "
-                        "unavailable."
+                        "Outstanding loan value column missing. Category breakdown " "unavailable."
                     )
                 else:
                     st.info("No outstanding balance data found for category breakdown.")

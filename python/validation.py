@@ -1,19 +1,27 @@
 """
 Module for data validation utilities and functions.
 """
+
 import re
 from datetime import datetime
 from typing import Dict, List, Optional, Union
+
 import pandas as pd
 import polars as pl
+
 from python.config import settings
+
 # Unified required columns for both ingestion and analytics
 REQUIRED_ANALYTICS_COLUMNS: List[str] = settings.analytics.required_columns
 ISO8601_PATTERN = re.compile(
     r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$"
 )
+
+
 def _missing_columns(df: pd.DataFrame, columns: List[str]) -> List[str]:
     return [col for col in columns if col not in df.columns]
+
+
 def _validate_numeric_column(df: pd.DataFrame, column: str, context_label: str) -> pd.Series:
     if column not in df.columns:
         raise ValueError(f"{context_label} missing required numeric column: {column}")
@@ -25,6 +33,8 @@ def _validate_numeric_column(df: pd.DataFrame, column: str, context_label: str) 
     if not pd.api.types.is_numeric_dtype(coerced):
         raise ValueError(f"{context_label} must be numeric: {column}")
     return coerced
+
+
 def _default_percentage_columns(df: pd.DataFrame) -> List[str]:
     exempt_columns = ["collateralization_pct", "collection_rate_pct"]
     return [
@@ -33,6 +43,8 @@ def _default_percentage_columns(df: pd.DataFrame) -> List[str]:
         if (("percent" in c) or ("rate" in c) or c.endswith("_pct") or c.endswith("_rate"))
         and c not in exempt_columns
     ]
+
+
 def _is_iso8601_value(value) -> bool:
     if pd.isnull(value):
         return True
@@ -41,8 +53,12 @@ def _is_iso8601_value(value) -> bool:
     if isinstance(value, str) and ISO8601_PATTERN.match(value):
         return True
     return False
+
+
 ANALYTICS_NUMERIC_COLUMNS: List[str] = settings.analytics.numeric_columns
 NUMERIC_COLUMNS: List[str] = settings.analytics.ingestion_numeric_columns
+
+
 def validate_dataframe(
     df: Union[pd.DataFrame, pl.DataFrame],
     required_columns: Optional[List[str]] = None,
@@ -75,6 +91,8 @@ def validate_dataframe(
         for col in numeric_columns:
             coerced = _validate_numeric_column(df, col, "Column")
             df[col] = coerced
+
+
 def assert_dataframe_schema(
     df: pd.DataFrame,
     *,
@@ -91,6 +109,8 @@ def assert_dataframe_schema(
         for col in numeric_columns:
             coerced = _validate_numeric_column(df, col, stage)
             df[col] = coerced
+
+
 def validate_numeric_bounds(
     df: pd.DataFrame, columns: Optional[List[str]] = None
 ) -> Dict[str, bool]:
@@ -114,6 +134,8 @@ def validate_numeric_bounds(
             has_negative = (df[col] < 0).any()
             validation[f"{col}_non_negative"] = not (has_nan or has_negative)
     return validation
+
+
 def validate_percentage_bounds(
     df: pd.DataFrame, columns: Optional[List[str]] = None
 ) -> Dict[str, bool]:
@@ -130,6 +152,8 @@ def validate_percentage_bounds(
             in_bounds = ((df[col] >= 0) & (df[col] <= 100)).all()
             validation[f"{col}_in_0_100"] = in_bounds and not has_nan
     return validation
+
+
 def safe_numeric_polars(df: pl.DataFrame, columns: List[str]) -> pl.DataFrame:
     """
     Polars-native cleaning of numeric columns (currency, commas, etc.).
@@ -141,6 +165,8 @@ def safe_numeric_polars(df: pl.DataFrame, columns: List[str]) -> pl.DataFrame:
                 pl.col(col).str.replace_all(r"[$€£¥₽₡,]", "").cast(pl.Float64, strict=False)
             )
     return df
+
+
 def safe_numeric(series: pd.Series) -> pd.Series:
     """Coerce a series to numeric, handling currency symbols and commas.
     Note: If percentages are present (e.g., '50%'), removing '%' yields 50,
@@ -157,6 +183,8 @@ def safe_numeric(series: pd.Series) -> pd.Series:
         # )
         return pd.to_numeric(clean, errors="coerce")
     return pd.to_numeric(series, errors="coerce")
+
+
 def find_column(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
     """
     Helper to find a column in the DataFrame matching one of the candidates.
@@ -179,6 +207,8 @@ def find_column(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
                 ):
                     return col
     return None
+
+
 def validate_iso8601_dates(
     df: pd.DataFrame, columns: Optional[List[str]] = None
 ) -> Dict[str, bool]:
@@ -197,6 +227,8 @@ def validate_iso8601_dates(
             valid = all(_is_iso8601_value(val) for val in df[col])
             validation[f"{col}_iso8601"] = valid
     return validation
+
+
 def validate_monotonic_increasing(
     df: pd.DataFrame, columns: Optional[List[str]] = None
 ) -> Dict[str, bool]:

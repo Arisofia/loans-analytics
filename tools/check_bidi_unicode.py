@@ -3,9 +3,11 @@
 Pre-commit hook to detect and prevent hidden/bidirectional Unicode characters in YAML files.
 This prevents supply-chain attacks and accidental parser bypass issues.
 """
+
 import logging
 import sys
 from pathlib import Path
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 # Unicode bidirectional markers that are security risks
@@ -31,6 +33,8 @@ ZERO_WIDTH_CHARS = [
     "\u200d",  # ZERO WIDTH JOINER
     "\ufeff",  # ZERO WIDTH NO-BREAK SPACE
 ]
+
+
 def check_file(filepath):
     """Check a file for hidden/BiDi Unicode characters."""
     try:
@@ -51,6 +55,8 @@ def check_file(filepath):
             logger.error(issue)
         return False
     return True
+
+
 def main():
     # Check only YAML files in workflows
     workflow_dir = Path(".github/workflows")
@@ -71,5 +77,7 @@ def main():
     else:
         logger.error("Hidden/BiDi Unicode issues detected in workflow YAML files.")
         return 2
+
+
 if __name__ == "__main__":
     sys.exit(main())

@@ -1,10 +1,14 @@
 from __future__ import annotations
+
 import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Mapping
+
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9_.-]+")
+
+
 def _safe_filename(agent_name: str, version: str) -> str:
     """Return a sanitized filename to avoid path traversal or shell injection.
     Bandit flagged our previous implementation for using user-provided strings
@@ -14,6 +18,8 @@ def _safe_filename(agent_name: str, version: str) -> str:
     safe_agent = _SAFE_NAME.sub("_", agent_name or "agent")
     safe_version = _SAFE_NAME.sub("_", version or "latest")
     return f"{safe_agent}_v{safe_version}.json"
+
+
 def save_agent_output(
     agent_name: str,
     output: Mapping[str, object],
@@ -38,6 +44,8 @@ def save_agent_output(
     tmp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp_path.replace(path)
     return path
+
+
 def list_agent_outputs(
     agent_name: str, storage_dir: str | Path = "data/agent_outputs"
 ) -> Iterable[str]:

@@ -1,12 +1,17 @@
 from __future__ import annotations
+
 import os
 from pathlib import Path
 from typing import Dict, List, Set
+
 import yaml
 from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
 class FinancialGuardrails(BaseModel):
     """Financial guardrails and targets for the loan portfolio."""
+
     min_rotation: float = Field(default=4.5)
     max_default_rate: float = Field(default=0.04)
     max_top_10_concentration: float = Field(default=0.30)
@@ -19,19 +24,28 @@ class FinancialGuardrails(BaseModel):
     utilization_max: float = Field(default=0.90)
     min_ce_6m: float = Field(default=0.96)
     max_replines_deviation: float = Field(default=0.02)
+
+
 class RiskParameters(BaseModel):
     """Risk-specific business parameters."""
+
     dilution_threshold: float = Field(default=0.05, ge=0, le=1)
     recourse_cap: int = Field(default=100000)
     loss_given_default: float = Field(default=0.10, ge=0, le=1)
+
+
 class SLASettings(BaseModel):
     """Service Level Agreements for operations."""
+
     decision_sla_hours: int = Field(default=24)
     funding_sla_hours: int = Field(default=48)
     sla_compliance_target: float = Field(default=0.90)
     min_slo: float = Field(default=0.995)
+
+
 class AnalyticsSettings(BaseModel):
     """Settings for analytics engine and KPI calculations."""
+
     required_columns: List[str] = Field(
         default=[
             "loan_amount",
@@ -79,14 +93,20 @@ class AnalyticsSettings(BaseModel):
     dq_null_weight: float = Field(default=1.0)
     dq_duplicate_weight: float = Field(default=0.5)
     dq_invalid_numeric_weight: float = Field(default=0.6)
+
+
 class KPISettings(BaseModel):
     """Thresholds for individual KPIs."""
+
     portfolio_risk: Dict[str, float] = Field(default={"warning": 0.03, "critical": 0.05})
     loan_book_growth: Dict[str, float] = Field(default={"warning": 0.05, "critical": 0.02})
     liquidity_ratio: Dict[str, float] = Field(default={"warning": 1.2, "critical": 1.0})
     compliance_breaches: Dict[str, int] = Field(default={"warning": 1, "critical": 3})
+
+
 class ApiSettings(BaseModel):
     """Settings for the Analytics API."""
+
     api_key: str = Field(default="abaco_secret_token")
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8000)
@@ -94,11 +114,13 @@ class ApiSettings(BaseModel):
 
 class EnvironmentSettings(BaseModel):
     """Environment configuration and data path resolution."""
-    
-    environment: str = Field(default="dev", description="Current environment: dev, staging, or prod")
+
+    environment: str = Field(
+        default="dev", description="Current environment: dev, staging, or prod"
+    )
     prod_data_path: str | None = Field(default=None, description="Production data mount path")
     staging_data_path: str | None = Field(default=None, description="Staging data mount path")
-    
+
     @field_validator("environment")
     @classmethod
     def validate_environment(cls, v: str) -> str:
@@ -107,48 +129,41 @@ class EnvironmentSettings(BaseModel):
         if v.lower() not in allowed:
             raise ValueError(f"Environment must be one of {allowed}, got: {v}")
         return v.lower()
-    
+
     def get_data_root(self) -> Path:
         """Get environment-specific data root path."""
         if self.environment == "prod":
             if not self.prod_data_path:
-                raise RuntimeError(
-                    "PROD_DATA_PATH environment variable required in production"
-                )
+                raise RuntimeError("PROD_DATA_PATH environment variable required in production")
             return Path(self.prod_data_path)
         elif self.environment == "staging":
             if not self.staging_data_path:
-                raise RuntimeError(
-                    "STAGING_DATA_PATH environment variable required in staging"
-                )
+                raise RuntimeError("STAGING_DATA_PATH environment variable required in staging")
             return Path(self.staging_data_path)
         else:
             # Dev environment uses local data directory
             return Path("data")
-    
+
     def get_test_data_root(self) -> Path:
         """Get test data path - ONLY available in dev/test environments."""
         if self.environment == "prod":
-            raise RuntimeError(
-                "Test data paths are not available in production environment!"
-            )
+            raise RuntimeError("Test data paths are not available in production environment!")
         return Path("tests/fixtures")
-    
+
     def validate_required_env_vars(self) -> None:
         """Validate production environment has required configuration."""
         if self.environment == "prod":
             required = ["PROD_DATA_PATH", "SUPABASE_URL", "SUPABASE_KEY"]
             missing = [var for var in required if not os.getenv(var)]
             if missing:
-                raise RuntimeError(
-                    f"Missing required production environment variables: {missing}"
-                )
+                raise RuntimeError(f"Missing required production environment variables: {missing}")
 
 
 class Settings(BaseSettings):
     """Main settings class consolidating all configurations."""
+
     model_config = SettingsConfigDict(env_prefix="ABACO_", env_file=".env", extra="ignore")
-    
+
     environment: EnvironmentSettings = EnvironmentSettings()
     financial: FinancialGuardrails = FinancialGuardrails()
     risk: RiskParameters = RiskParameters()
@@ -156,6 +171,7 @@ class Settings(BaseSettings):
     analytics: AnalyticsSettings = AnalyticsSettings()
     kpis: KPISettings = KPISettings()
     api: ApiSettings = ApiSettings()
+
     @classmethod
     def load_settings(cls) -> "Settings":
         """Load settings from environment and optional YAML config."""
@@ -192,5 +208,7 @@ class Settings(BaseSettings):
                             settings.analytics.dq_invalid_numeric_weight,
                         )
         return settings
+
+
 # Singleton instance
 settings = Settings.load_settings()

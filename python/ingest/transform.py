@@ -1,5 +1,8 @@
 from datetime import datetime, timezone
+
 import pandas as pd
+
+
 def canonicalize_loan_tape(df: pd.DataFrame) -> pd.DataFrame:
     """
     Recompute critical columns, normalize types, and validate.
