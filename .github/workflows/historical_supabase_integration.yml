@@ -19,6 +19,7 @@ jobs:
         env:
             SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
             SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+            RUN_REAL_SUPABASE_TESTS: '1'
             HISTORICAL_CONTEXT_MODE: REAL
             PYTHONUNBUFFERED: 1
 
