@@ -54,36 +54,49 @@ class BaseAgent(ABC):
 
     def _init_client(self) -> Any:
         """Initialize LLM client."""
-        if self.provider == LLMProvider.OPENAI:
-            if not OpenAI:
-                raise ImportError("openai package required")
-            api_key = os.getenv("OPENAI_API_KEY")
-            if not api_key:
-                raise ValueError("OPENAI_API_KEY not set")
-            return OpenAI(api_key=api_key)
-        elif self.provider == LLMProvider.ANTHROPIC:
-            try:
-                from anthropic import Anthropic
-
-                api_key = os.getenv("ANTHROPIC_API_KEY")
-                if not api_key:
-                    raise ValueError("ANTHROPIC_API_KEY not set")
-                return Anthropic(api_key=api_key)
-            except ImportError:
-                raise ImportError("anthropic package required")
-        elif self.provider == LLMProvider.GEMINI:
-            try:
-                import google.generativeai as genai
-
-                api_key = os.getenv("GEMINI_API_KEY")
-                if not api_key:
-                    raise ValueError("GEMINI_API_KEY not set")
-                genai.configure(api_key=api_key)
-                return genai
-            except ImportError:
-                raise ImportError("google-generativeai package required")
-        else:
+        initializers = {
+            LLMProvider.OPENAI: self._init_openai_client,
+            LLMProvider.ANTHROPIC: self._init_anthropic_client,
+            LLMProvider.GEMINI: self._init_gemini_client,
+        }
+        initializer = initializers.get(self.provider)
+        if not initializer:
             raise ValueError(f"Unsupported provider: {self.provider}")
+        return initializer()
+
+    def _init_openai_client(self) -> Any:
+        """Initialize OpenAI client."""
+        if not OpenAI:
+            raise ImportError("openai package required")
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not set")
+        return OpenAI(api_key=api_key)
+
+    def _init_anthropic_client(self) -> Any:
+        """Initialize Anthropic client."""
+        try:
+            from anthropic import Anthropic
+        except ImportError:
+            raise ImportError("anthropic package required")
+
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise ValueError("ANTHROPIC_API_KEY not set")
+        return Anthropic(api_key=api_key)
+
+    def _init_gemini_client(self) -> Any:
+        """Initialize Gemini client."""
+        try:
+            import google.generativeai as genai
+        except ImportError:
+            raise ImportError("google-generativeai package required")
+
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY not set")
+        genai.configure(api_key=api_key)
+        return genai
 
     @abstractmethod
     def get_system_prompt(self) -> str:
