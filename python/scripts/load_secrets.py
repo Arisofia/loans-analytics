@@ -57,7 +57,8 @@ def main() -> int:
     error_obj: Exception | None = results.get("error")
     
     # SAFE: Status is type-guaranteed to be non-sensitive enum value
-    logger.info("load_secrets completed: status=%s", status)
+    # CodeQL: SecretStatus type constrains value to "ok", "error", or "unknown"
+    logger.info("load_secrets completed: status=%s", status)  # nosec B608
     
     # SAFE: Log only error type, never the error message
     if error_obj:
