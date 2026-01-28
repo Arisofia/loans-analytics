@@ -83,6 +83,30 @@ class MultiAgentOrchestrator:
                     ),
                 ],
             ),
+            "kpi_anomaly_detection": Scenario(
+                name="kpi_anomaly_detection",
+                description="Multi-agent KPI anomaly detection and root cause analysis",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template="Analyze the following KPI anomalies: {kpi_anomalies}. Assess risk implications and potential causes. Consider historical trends: {historical_context}.",
+                        context_keys=["kpi_anomalies", "historical_context"],
+                        output_key="risk_assessment",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.COMPLIANCE,
+                        prompt_template="Review KPI breach implications: {risk_assessment}. Check if any anomalies indicate regulatory compliance issues or reporting violations.",
+                        context_keys=["risk_assessment"],
+                        output_key="compliance_check",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.OPS_OPTIMIZER,
+                        prompt_template="Based on risk assessment: {risk_assessment} and compliance findings: {compliance_check}, recommend corrective actions and process improvements to prevent future KPI breaches.",
+                        context_keys=["risk_assessment", "compliance_check"],
+                        output_key="action_plan",
+                    ),
+                ],
+            ),
             "growth_strategy": Scenario(
                 name="growth_strategy",
                 description="Growth opportunity analysis and strategy",
