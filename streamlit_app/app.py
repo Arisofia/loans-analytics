@@ -31,8 +31,7 @@ from streamlit_app.components.sales_risk import (  # noqa: E402
     render_sales_performance,
 )
 from theme import ABACO_THEME  # noqa: E402
-from tracing_setup import enable_auto_instrumentation  # noqa: E402
-from tracing_setup import init_tracing  # noqa: E402
+from tracing_setup import enable_auto_instrumentation, init_tracing  # noqa: E402
 
 LOCAL_EXPORTS_DIR = ROOT_DIR / "local_exports"
 EXPORTS_DIR_CANDIDATES = [
