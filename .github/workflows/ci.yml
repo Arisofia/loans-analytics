@@ -38,4 +38,4 @@ jobs:
         run: mypy src
 
       - name: Run Tests
-        run: pytest
+        run: pytest -m "not integration_supabase" -v

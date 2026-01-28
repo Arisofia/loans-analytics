@@ -7,6 +7,9 @@ integration_supabase marker.
 Usage:
   pytest -m integration_supabase
   pytest -m integration_supabase -v
+  
+  To enable real network tests:
+  RUN_REAL_SUPABASE_TESTS=1 pytest -m integration_supabase
 """
 
 import os
@@ -18,6 +21,9 @@ from python.multi_agent.historical_context import HistoricalContextProvider
 from python.multi_agent.historical_backend_supabase import (
     SupabaseHistoricalBackend,
 )
+
+# Check if real Supabase tests are explicitly enabled
+REAL_SUPABASE_ENABLED = os.getenv('RUN_REAL_SUPABASE_TESTS', '0') == '1'
 
 
 def _supabase_configured() -> bool:
@@ -84,8 +90,14 @@ class TestHistoricalKpisSupabaseIntegration:
         assert provider._backend is not None
         assert isinstance(provider._backend, SupabaseHistoricalBackend)
 
+    @pytest.mark.skipif(
+        not REAL_SUPABASE_ENABLED,
+        reason="Real Supabase tests disabled (set RUN_REAL_SUPABASE_TESTS=1)"
+    )
     def test_historical_context_provider_real_mode_roundtrip(self):
         """Test loading historical data in REAL mode from Supabase.
+        
+        REQUIRES: RUN_REAL_SUPABASE_TESTS=1 and valid Supabase credentials
 
         This test:
         - Instantiates REAL mode with Supabase backend
@@ -133,8 +145,14 @@ class TestHistoricalKpisSupabaseIntegration:
             assert isinstance(first_record["date"], (date, datetime))
             assert isinstance(first_record["value"], (int, float, type(None)))
 
+    @pytest.mark.skipif(
+        not REAL_SUPABASE_ENABLED,
+        reason="Real Supabase tests disabled (set RUN_REAL_SUPABASE_TESTS=1)"
+    )
     def test_mode_switching_mock_vs_real(self):
         """Verify MOCK and REAL modes return data of same structure.
+        
+        REQUIRES: RUN_REAL_SUPABASE_TESTS=1 and valid Supabase credentials
 
         This ensures backward compatibility: MOCK and REAL modes should
         return identically structured lists of dicts.
