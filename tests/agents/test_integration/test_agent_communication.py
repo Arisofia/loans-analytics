@@ -1,7 +1,8 @@
 """Integration tests for agent communication."""
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 
 class TestAgentCommunication:
@@ -12,10 +13,10 @@ class TestAgentCommunication:
         """Test agents can send messages to each other."""
         sender = MagicMock()
         receiver = MagicMock()
-        
+
         sender.send_to.return_value = {"sent": True}
         receiver.receive_from.return_value = sample_agent_message
-        
+
         result = sender.send_to("receiver", sample_agent_message)
         assert result["sent"] is True
 
@@ -27,7 +28,7 @@ class TestAgentCommunication:
             "recipients": ["agent1", "agent2", "agent3"],
             "delivered": 3,
         }
-        
+
         result = broadcaster.broadcast(["agent1", "agent2", "agent3"], "message")
         assert result["delivered"] == 3
 
@@ -37,7 +38,7 @@ class TestAgentCommunication:
         """Test asynchronous agent communication."""
         agent1 = MagicMock()
         agent2 = MagicMock()
-        
+
         agent1.send_async.return_value = {"queued": True}
         result = agent1.send_async("agent2", "async_message")
         assert result["queued"] is True

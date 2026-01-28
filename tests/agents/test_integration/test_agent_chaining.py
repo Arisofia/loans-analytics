@@ -1,7 +1,8 @@
 """Integration tests for agent chaining."""
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 
 class TestAgentChaining:
@@ -16,7 +17,7 @@ class TestAgentChaining:
             "agents_executed": ["agent1", "agent2", "agent3"],
             "final_result": "Chain completed",
         }
-        
+
         result = chain.execute_chain(["agent1", "agent2", "agent3"])
         assert len(result["agents_executed"]) == 3
 
@@ -28,7 +29,7 @@ class TestAgentChaining:
             "agents_executed": ["agent1", "agent3"],
             "skipped": ["agent2"],
         }
-        
+
         result = chain.execute_conditional()
         assert "agent2" in result["skipped"]
 
@@ -40,6 +41,6 @@ class TestAgentChaining:
             "agents": ["agent1", "agent2"],
             "all_completed": True,
         }
-        
+
         result = orchestrator.execute_parallel(["agent1", "agent2"])
         assert result["all_completed"] is True

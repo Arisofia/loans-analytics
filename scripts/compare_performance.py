@@ -96,7 +96,9 @@ def compare_performance(metrics_file: str, threshold: float = 0.20) -> bool:
         current_success_rate = scenario_data.get("success_rate", 100)
 
         if current_success_rate < baseline_success_rate - 5:  # 5% tolerance
-            print(f"  ⚠️  Success rate dropped: {current_success_rate:.1f}% < {baseline_success_rate:.1f}%")
+            print(
+                f"  ⚠️  Success rate dropped: {current_success_rate:.1f}% < {baseline_success_rate:.1f}%"
+            )
             all_ok = False
 
         print()

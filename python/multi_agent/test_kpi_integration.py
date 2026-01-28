@@ -25,9 +25,8 @@ class TestKpiIntegration(unittest.TestCase):
                 source_table="loan_portfolio",
                 description="Percentage of loans in default",
                 validation=KpiValidationConfig(
-                    validation_range=(0.0, 0.05),  # 0-5% acceptable
-                    precision=4
-                )
+                    validation_range=(0.0, 0.05), precision=4  # 0-5% acceptable
+                ),
             ),
             KpiDefinition(
                 name="net_interest_margin",
@@ -35,9 +34,8 @@ class TestKpiIntegration(unittest.TestCase):
                 source_table="financial_statements",
                 description="Net interest margin percentage",
                 validation=KpiValidationConfig(
-                    validation_range=(0.02, 0.08),  # 2-8% acceptable
-                    precision=4
-                )
+                    validation_range=(0.02, 0.08), precision=4  # 2-8% acceptable
+                ),
             ),
             KpiDefinition(
                 name="loan_to_value_ratio",
@@ -45,10 +43,9 @@ class TestKpiIntegration(unittest.TestCase):
                 source_table="loan_details",
                 description="Average loan-to-value ratio",
                 validation=KpiValidationConfig(
-                    validation_range=(0.0, 0.80),  # 0-80% acceptable
-                    precision=2
-                )
-            )
+                    validation_range=(0.0, 0.80), precision=2  # 0-80% acceptable
+                ),
+            ),
         ]
 
         self.registry = KpiRegistry(kpis=self.kpi_defs)
@@ -57,9 +54,7 @@ class TestKpiIntegration(unittest.TestCase):
     def test_kpi_value_creation(self):
         """Test creating KPI values."""
         kpi_value = KpiValue(
-            kpi_name="default_rate",
-            value=0.03,
-            metadata={"source": "daily_report"}
+            kpi_name="default_rate", value=0.03, metadata={"source": "daily_report"}
         )
 
         self.assertEqual(kpi_value.kpi_name, "default_rate")
@@ -124,7 +119,7 @@ class TestKpiIntegration(unittest.TestCase):
         kpi_values = {
             "default_rate": 0.03,
             "net_interest_margin": 0.05,
-            "loan_to_value_ratio": 0.70
+            "loan_to_value_ratio": 0.70,
         }
 
         anomalies = self.kpi_provider.detect_anomalies(kpi_values)
@@ -136,7 +131,7 @@ class TestKpiIntegration(unittest.TestCase):
         kpi_values = {
             "default_rate": 0.08,  # Above 5% max
             "net_interest_margin": 0.05,
-            "loan_to_value_ratio": 0.70
+            "loan_to_value_ratio": 0.70,
         }
 
         anomalies = self.kpi_provider.detect_anomalies(kpi_values)
@@ -151,7 +146,7 @@ class TestKpiIntegration(unittest.TestCase):
         kpi_values = {
             "default_rate": 0.10,  # Above max
             "net_interest_margin": 0.01,  # Below min
-            "loan_to_value_ratio": 0.70  # Valid
+            "loan_to_value_ratio": 0.70,  # Valid
         }
 
         anomalies = self.kpi_provider.detect_anomalies(kpi_values)
@@ -166,7 +161,7 @@ class TestKpiIntegration(unittest.TestCase):
         severity = self.kpi_provider._determine_severity(
             value=0.10,  # 100% over max of 0.05
             expected_range=(0.0, 0.05),
-            breach_type="upper_bound"
+            breach_type="upper_bound",
         )
 
         self.assertEqual(severity, "critical")
@@ -176,7 +171,7 @@ class TestKpiIntegration(unittest.TestCase):
         severity = self.kpi_provider._determine_severity(
             value=0.06,  # 20% over max of 0.05
             expected_range=(0.0, 0.05),
-            breach_type="upper_bound"
+            breach_type="upper_bound",
         )
 
         self.assertEqual(severity, "warning")
@@ -186,7 +181,7 @@ class TestKpiIntegration(unittest.TestCase):
         severity = self.kpi_provider._determine_severity(
             value=0.054,  # 8% over max of 0.05
             expected_range=(0.0, 0.05),
-            breach_type="upper_bound"
+            breach_type="upper_bound",
         )
 
         self.assertEqual(severity, "info")
@@ -197,7 +192,9 @@ class TestKpiIntegration(unittest.TestCase):
         self.kpi_provider.update_kpi_value("default_rate", 0.03)
         self.kpi_provider.update_kpi_value("net_interest_margin", 0.05)
 
-        context = self.kpi_provider.get_kpi_context_for_agent(["default_rate", "net_interest_margin"])
+        context = self.kpi_provider.get_kpi_context_for_agent(
+            ["default_rate", "net_interest_margin"]
+        )
 
         self.assertIn("kpis", context)
         self.assertIn("timestamp", context)

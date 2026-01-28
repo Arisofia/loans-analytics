@@ -1,8 +1,9 @@
 """Timeout scenario tests."""
 
-import pytest
-from unittest.mock import MagicMock
 import asyncio
+from unittest.mock import MagicMock
+
+import pytest
 
 
 class TestTimeoutScenarios:
@@ -13,13 +14,13 @@ class TestTimeoutScenarios:
     async def test_agent_timeout_detection(self):
         """Test system detects when agent exceeds timeout."""
         agent = MagicMock()
-        
+
         async def slow_task():
             await asyncio.sleep(5)
             return {"status": "completed"}
-        
+
         agent.execute_with_timeout.side_effect = asyncio.TimeoutError()
-        
+
         with pytest.raises(asyncio.TimeoutError):
             agent.execute_with_timeout("slow_task", timeout=1)
 
@@ -33,7 +34,7 @@ class TestTimeoutScenarios:
             "fallback_used": True,
             "result": "default_result",
         }
-        
+
         result = agent.execute_with_fallback("task", timeout=1)
         assert result["fallback_used"] is True
 
@@ -46,7 +47,7 @@ class TestTimeoutScenarios:
             "status": "success",
             "duration_seconds": 90,
         }
-        
+
         result = agent.long_analysis()
         assert result["status"] == "success"
         assert result["duration_seconds"] < 120

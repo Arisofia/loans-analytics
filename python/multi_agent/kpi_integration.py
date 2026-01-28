@@ -18,8 +18,12 @@ class KpiValue(BaseModel):
 
     kpi_name: str = Field(..., description="Name of the KPI")
     value: float = Field(..., description="Computed KPI value")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="When this value was recorded")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional context about this value")
+    timestamp: datetime = Field(
+        default_factory=datetime.utcnow, description="When this value was recorded"
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional context about this value"
+    )
 
 
 class KpiValidationResult(BaseModel):
@@ -59,7 +63,9 @@ class KpiContextProvider:
         self.registry = kpi_registry
         self.current_values: Dict[str, KpiValue] = {}
 
-    def update_kpi_value(self, kpi_name: str, value: float, metadata: Optional[Dict[str, Any]] = None) -> None:
+    def update_kpi_value(
+        self, kpi_name: str, value: float, metadata: Optional[Dict[str, Any]] = None
+    ) -> None:
         """
         Update the current value for a KPI.
 
@@ -68,11 +74,7 @@ class KpiContextProvider:
             value: New value
             metadata: Optional metadata about this value
         """
-        kpi_value = KpiValue(
-            kpi_name=kpi_name,
-            value=value,
-            metadata=metadata or {}
-        )
+        kpi_value = KpiValue(kpi_name=kpi_name, value=value, metadata=metadata or {})
         self.current_values[kpi_name] = kpi_value
 
     def get_kpi_definition(self, kpi_name: str) -> KpiDefinition:
@@ -108,7 +110,7 @@ class KpiContextProvider:
                 kpi_name=kpi_name,
                 value=value,
                 is_valid=False,
-                validation_message=f"KPI '{kpi_name}' not found in registry"
+                validation_message=f"KPI '{kpi_name}' not found in registry",
             )
 
         # Check validation range if configured
@@ -122,7 +124,7 @@ class KpiContextProvider:
                     value=value,
                     is_valid=False,
                     validation_message=f"Value {value} below minimum {min_val}",
-                    breach_type="lower_bound"
+                    breach_type="lower_bound",
                 )
 
             # Check upper bound
@@ -132,7 +134,7 @@ class KpiContextProvider:
                     value=value,
                     is_valid=False,
                     validation_message=f"Value {value} above maximum {max_val}",
-                    breach_type="upper_bound"
+                    breach_type="upper_bound",
                 )
 
         # Value is valid
@@ -140,7 +142,7 @@ class KpiContextProvider:
             kpi_name=kpi_name,
             value=value,
             is_valid=True,
-            validation_message="Value within acceptable range"
+            validation_message="Value within acceptable range",
         )
 
     def detect_anomalies(self, kpi_values: Dict[str, float]) -> List[KpiAnomaly]:
@@ -164,14 +166,17 @@ class KpiContextProvider:
                     expected_range = kpi_def.validation.validation_range or (None, None)
 
                     # Determine severity based on breach magnitude
-                    severity = self._determine_severity(value, expected_range, validation_result.breach_type)
+                    severity = self._determine_severity(
+                        value, expected_range, validation_result.breach_type
+                    )
 
                     anomaly = KpiAnomaly(
                         kpi_name=kpi_name,
                         current_value=value,
                         expected_range=expected_range,
                         severity=severity,
-                        description=validation_result.validation_message or "Value outside acceptable range"
+                        description=validation_result.validation_message
+                        or "Value outside acceptable range",
                     )
                     anomalies.append(anomaly)
 
@@ -185,7 +190,7 @@ class KpiContextProvider:
         self,
         value: float,
         expected_range: tuple[Optional[float], Optional[float]],
-        breach_type: Optional[str]
+        breach_type: Optional[str],
     ) -> str:
         """
         Determine severity of a KPI breach.
@@ -238,7 +243,7 @@ class KpiContextProvider:
         context = {
             "kpis": {},
             "timestamp": datetime.utcnow().isoformat(),
-            "total_kpis": len(kpi_names)
+            "total_kpis": len(kpi_names),
         }
 
         for kpi_name in kpi_names:
@@ -251,7 +256,7 @@ class KpiContextProvider:
                         "name": kpi_def.name,
                         "formula": kpi_def.formula,
                         "source_table": kpi_def.source_table,
-                        "description": kpi_def.description
+                        "description": kpi_def.description,
                     }
                 }
 

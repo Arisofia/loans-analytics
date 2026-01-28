@@ -27,16 +27,16 @@ class TestRetailLoanScenarios(unittest.TestCase):
     def test_retail_origination_workflow_structure(self):
         """Test retail origination has correct workflow steps."""
         scenario = self.orchestrator.scenarios["retail_origination"]
-        
+
         self.assertEqual(scenario.name, "retail_origination")
         self.assertEqual(len(scenario.steps), 4)
-        
+
         # Verify agent sequence: Fraud → Risk → Pricing → Compliance
         self.assertEqual(scenario.steps[0].agent_role, AgentRole.FRAUD_DETECTION)
         self.assertEqual(scenario.steps[1].agent_role, AgentRole.RISK_ANALYST)
         self.assertEqual(scenario.steps[2].agent_role, AgentRole.PRICING)
         self.assertEqual(scenario.steps[3].agent_role, AgentRole.COMPLIANCE)
-        
+
         # Verify output keys
         self.assertEqual(scenario.steps[0].output_key, "fraud_screen")
         self.assertEqual(scenario.steps[1].output_key, "underwriting_decision")
@@ -50,10 +50,10 @@ class TestRetailLoanScenarios(unittest.TestCase):
     def test_retail_portfolio_review_workflow_structure(self):
         """Test retail portfolio review has correct workflow steps."""
         scenario = self.orchestrator.scenarios["retail_portfolio_review"]
-        
+
         self.assertEqual(scenario.name, "retail_portfolio_review")
         self.assertEqual(len(scenario.steps), 4)
-        
+
         # Verify agent sequence: Risk → Collections → Retention → Ops
         self.assertEqual(scenario.steps[0].agent_role, AgentRole.RISK_ANALYST)
         self.assertEqual(scenario.steps[1].agent_role, AgentRole.COLLECTIONS)
@@ -67,10 +67,10 @@ class TestRetailLoanScenarios(unittest.TestCase):
     def test_retail_rate_adjustment_workflow_structure(self):
         """Test retail rate adjustment has correct workflow steps."""
         scenario = self.orchestrator.scenarios["retail_rate_adjustment"]
-        
+
         self.assertEqual(scenario.name, "retail_rate_adjustment")
         self.assertEqual(len(scenario.steps), 4)
-        
+
         # Verify agent sequence: Risk → Pricing → Retention → Compliance
         self.assertEqual(scenario.steps[0].agent_role, AgentRole.RISK_ANALYST)
         self.assertEqual(scenario.steps[1].agent_role, AgentRole.PRICING)
@@ -80,14 +80,14 @@ class TestRetailLoanScenarios(unittest.TestCase):
     def test_retail_scenarios_use_correct_context_keys(self):
         """Test retail scenarios reference correct context variables."""
         origination = self.orchestrator.scenarios["retail_origination"]
-        
+
         # Fraud step needs application_data
         self.assertIn("application_data", origination.steps[0].context_keys)
-        
+
         # Risk step needs fraud_screen and credit_data
         self.assertIn("fraud_screen", origination.steps[1].context_keys)
         self.assertIn("credit_data", origination.steps[1].context_keys)
-        
+
         # Pricing step needs underwriting_decision and market_rates
         self.assertIn("underwriting_decision", origination.steps[2].context_keys)
         self.assertIn("market_rates", origination.steps[2].context_keys)
@@ -99,7 +99,7 @@ class TestRetailLoanScenarios(unittest.TestCase):
             "retail_portfolio_review",
             "retail_rate_adjustment",
         ]
-        
+
         for scenario_name in retail_scenarios:
             scenario = self.orchestrator.scenarios[scenario_name]
             self.assertIsNotNone(scenario.description)
@@ -128,19 +128,19 @@ class TestScenarioIntegration(unittest.TestCase):
     def test_all_scenarios_use_valid_agent_roles(self):
         """Test all scenarios reference valid agent roles."""
         valid_roles = set(AgentRole)
-        
+
         for scenario_name, scenario in self.orchestrator.scenarios.items():
             for step in scenario.steps:
                 self.assertIn(
                     step.agent_role,
                     valid_roles,
-                    f"Scenario {scenario_name} uses invalid role: {step.agent_role}"
+                    f"Scenario {scenario_name} uses invalid role: {step.agent_role}",
                 )
 
     def test_scenario_list_method(self):
         """Test list_scenarios returns all registered scenarios."""
         scenario_list = self.orchestrator.list_scenarios()
-        
+
         self.assertEqual(len(scenario_list), 20)
         # Check retail scenarios
         self.assertIn("retail_origination", scenario_list)
@@ -159,8 +159,12 @@ class TestScenarioIntegration(unittest.TestCase):
 
     def test_retail_scenarios_are_product_specific(self):
         """Test retail scenarios are designed for retail lending."""
-        retail_scenarios = ["retail_origination", "retail_portfolio_review", "retail_rate_adjustment"]
-        
+        retail_scenarios = [
+            "retail_origination",
+            "retail_portfolio_review",
+            "retail_rate_adjustment",
+        ]
+
         for scenario_name in retail_scenarios:
             scenario = self.orchestrator.scenarios[scenario_name]
             # Check that scenario name or description mentions retail
@@ -211,7 +215,7 @@ class TestSMELoanScenarios(unittest.TestCase):
             "sme_portfolio_stress_test",
             "sme_default_management",
         ]
-        
+
         for scenario_name in sme_scenarios:
             scenario = self.orchestrator.scenarios[scenario_name]
             self.assertIsNotNone(scenario.description)
@@ -260,7 +264,7 @@ class TestAutoLoanScenarios(unittest.TestCase):
             "auto_delinquency_workout",
             "auto_residual_value_analysis",
         ]
-        
+
         for scenario_name in auto_scenarios:
             scenario = self.orchestrator.scenarios[scenario_name]
             self.assertIsNotNone(scenario.description)
@@ -309,7 +313,7 @@ class TestPortfolioScenarios(unittest.TestCase):
             "strategic_planning",
             "regulatory_review",
         ]
-        
+
         for scenario_name in portfolio_scenarios:
             scenario = self.orchestrator.scenarios[scenario_name]
             self.assertIsNotNone(scenario.description)
