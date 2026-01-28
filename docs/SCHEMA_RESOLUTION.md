@@ -10,13 +10,13 @@
 
 During the G4.2.1 merge, two schema options were proposed:
 
-| Aspect | Simplified (Removed) | Enhanced (Adopted) |
-|--------|---------------------|-------------------|
-| **Columns** | `kpi_id`, `value`, `date`, `timestamp` | +`portfolio_id`, `product_code`, `segment_code`, `grain` |
-| **Multi-Tenant Support** | ❌ No | ✅ Yes (portfolio-level isolation) |
-| **Dimensionality** | Single-tenant | Multi-dimensional (18 variants per KPI) |
-| **Use Cases** | Single-source KPIs only | Enterprise-grade multi-portfolio analytics |
-| **Time Aggregation** | ❌ Not directly supported | ✅ `grain` field enables hourly/daily/monthly |
+| Aspect                   | Simplified (Removed)                   | Enhanced (Adopted)                                       |
+| ------------------------ | -------------------------------------- | -------------------------------------------------------- |
+| **Columns**              | `kpi_id`, `value`, `date`, `timestamp` | +`portfolio_id`, `product_code`, `segment_code`, `grain` |
+| **Multi-Tenant Support** | ❌ No                                  | ✅ Yes (portfolio-level isolation)                       |
+| **Dimensionality**       | Single-tenant                          | Multi-dimensional (18 variants per KPI)                  |
+| **Use Cases**            | Single-source KPIs only                | Enterprise-grade multi-portfolio analytics               |
+| **Time Aggregation**     | ❌ Not directly supported              | ✅ `grain` field enables hourly/daily/monthly            |
 
 ---
 
@@ -25,22 +25,26 @@ During the G4.2.1 merge, two schema options were proposed:
 ### Rationale
 
 **1. Production Requirements**
+
 - **Abaco Loans** operates multiple portfolios (retail, SME, mortgage, etc.)
 - Each portfolio has distinct products (PLN, CC, MTG) and customer segments (mass, affluent, micro)
 - KPI values vary by dimension; aggregation across dimensions is a primary use case
 - The simplified schema would require joins outside Supabase, losing database efficiency
 
 **2. Data Integrity**
+
 - With portfolio_id/product_code/segment_code, row uniqueness is at the **grain** level
 - Simplified schema has no way to distinguish which portfolio/product a KPI value belongs to
 - Risk: Accidental aggregation of incompatible dimensions (e.g., retail + SME cost_of_risk)
 
 **3. Historical Continuity**
+
 - G4.1 orchestrator uses `portfolio_id`, `product_code`, `segment_code` in its data models
 - Enhanced schema maintains backward compatibility
 - Simplified schema would require breaking changes to HistoricalContextProvider consumers
 
 **4. Scalability**
+
 - 6,480 rows/day (4 KPIs × 18 dimensions × 90 days) is manageable with enhanced schema
 - Index strategy (`idx_hkpi_kpi_date`, `idx_hkpi_portfolio_date`, `idx_hkpi_product_date`) optimizes all query patterns
 - Future grain levels (hourly, weekly, monthly) leverage existing columns
@@ -50,6 +54,7 @@ During the G4.2.1 merge, two schema options were proposed:
 ## Implementation Status
 
 ### ✅ Schema Definition
+
 **File:** `db/migrations/20260201_create_historical_kpis.sql`
 
 ```sql
@@ -82,23 +87,25 @@ CREATE INDEX idx_hkpi_product_date
 **Status:** ✅ Ready for `supabase db push`
 
 ### ✅ Backend Implementation
+
 **File:** `python/multi_agent/historical_backend_supabase.py`
 
 ```python
 class SupabaseHistoricalBackend(HistoricalDataBackend):
     """Supabase REST backend with PostgREST query mapping."""
-    
+
     def get_kpi_history(self, kpi_id: str, start_date, end_date):
         # Query: SELECT kpi_id, date, value_numeric as value, ts_utc
         # WHERE kpi_id = ? AND date BETWEEN ? AND ?
         # ORDER BY date ASC
-        
+
         # Returns: List[KpiHistoricalValue] with portable contract
 ```
 
 **Status:** ✅ Maps schema columns to Python data contract
 
 ### ✅ Data Loader (Dimension Expansion)
+
 **File:** `scripts/load_sample_kpis_supabase.py`
 
 ```python
@@ -112,6 +119,7 @@ def expand_with_dimensions(base_series, portfolios, products, segments):
 **Status:** ✅ Correctly populates multi-dimensional data
 
 ### ✅ Integration Tests
+
 **File:** `python/multi_agent/test_historical_supabase_integration.py`
 
 ```python
@@ -119,7 +127,7 @@ class TestHistoricalKpisSupabaseIntegration:
     def test_historical_context_provider_real_mode_roundtrip(self):
         # Validates: kpi_id, date, value_numeric → KpiHistoricalValue
         # Test data: All 18 portfolio/product/segment variants
-    
+
     def test_mode_switching_mock_vs_real(self):
         # Validates: MOCK and REAL modes return same contract
         # Contract: kpi_id, date, value, timestamp (portable)
@@ -132,6 +140,7 @@ class TestHistoricalKpisSupabaseIntegration:
 ## Contract Guarantees
 
 ### Python Data Contract (Portable)
+
 ```python
 @dataclass
 class KpiHistoricalValue:
@@ -143,15 +152,17 @@ class KpiHistoricalValue:
 
 **Design Note:** Python contract is intentionally simple (no portfolio_id, product_code).
 
-**Why?** 
+**Why?**
+
 - Allows MOCK and REAL modes to return same structure
 - Filtering by portfolio/product/segment happens at **query time** in SupabaseHistoricalBackend
 - Consumers ask for `"npl_ratio" from portfolio "retail"` → Backend filters → Returns list of KpiHistoricalValue
 - No need to expose database schema to Python layer
 
 ### Supabase Schema Contract
+
 ```sql
-SELECT 
+SELECT
     kpi_id,           -- Required
     date,             -- Required
     value_numeric,    -- Mapped to Python `value`
@@ -167,6 +178,7 @@ FROM historical_kpis;
 ## Integration Points
 
 ### 1. HistoricalContextProvider
+
 **Location:** `python/multi_agent/historical_context.py`
 
 ```python
@@ -178,6 +190,7 @@ class HistoricalContextProvider:
 ```
 
 **Implication:** To filter by portfolio, the API would be:
+
 ```python
 provider.get_kpi_history(
     kpi_id="npl_ratio",
@@ -188,6 +201,7 @@ provider.get_kpi_history(
 ```
 
 ### 2. Config Factory
+
 **Location:** `python/multi_agent/config_historical.py`
 
 ```python
@@ -202,9 +216,11 @@ def build_historical_context_provider(cache_ttl_seconds=60, mode=None):
 **Status:** ✅ Factory supports both modes transparently
 
 ### 3. MOCK vs REAL Mode Equivalence
+
 Both modes return identical `List[KpiHistoricalValue]` structure:
 
 **MOCK Mode:**
+
 ```python
 # Hardcoded synthetic data with dimensions baked in
 return [
@@ -214,6 +230,7 @@ return [
 ```
 
 **REAL Mode:**
+
 ```python
 # Query Supabase with portfolio_id filter
 # SELECT ... WHERE portfolio_id = 'retail'
@@ -228,6 +245,7 @@ return [
 ## Future Extensibility
 
 ### Time Grain Enhancement (G4.2.4)
+
 To support hourly/weekly/monthly aggregations:
 
 ```sql
@@ -240,6 +258,7 @@ CREATE INDEX idx_hkpi_grain ON historical_kpis(kpi_id, grain, date);
 The enhanced schema's column set already accommodates this.
 
 ### Hierarchical Partitioning (G4.2.5)
+
 Azure Cosmos DB recommendation for scale:
 
 ```sql
@@ -260,12 +279,14 @@ Enhanced schema partitioning key: `(portfolio_id, date)` for even distribution.
 Should the simplified schema be required:
 
 1. **Drop enhanced indexes:**
+
    ```sql
    DROP INDEX idx_hkpi_portfolio_date;
    DROP INDEX idx_hkpi_product_date;
    ```
 
 2. **Remove unused columns:**
+
    ```sql
    ALTER TABLE historical_kpis
        DROP COLUMN portfolio_id,
@@ -288,11 +309,11 @@ Should the simplified schema be required:
 
 ## Sign-Off
 
-| Role | Name | Date | Status |
-|------|------|------|--------|
-| G4.2 Technical Lead | (Agent) | 2026-01-29 | ✅ Approved |
-| Data Architecture | (Review) | 2026-01-29 | ✅ Endorsed |
-| Schema Governance | (Track) | 2026-01-29 | ✅ Recorded |
+| Role                | Name     | Date       | Status      |
+| ------------------- | -------- | ---------- | ----------- |
+| G4.2 Technical Lead | (Agent)  | 2026-01-29 | ✅ Approved |
+| Data Architecture   | (Review) | 2026-01-29 | ✅ Endorsed |
+| Schema Governance   | (Track)  | 2026-01-29 | ✅ Recorded |
 
 ---
 
@@ -310,8 +331,8 @@ Should the simplified schema be required:
 
 ## Version History
 
-| Version | Date | Change |
-|---------|------|--------|
-| 1.0 | 2026-01-29 | Initial schema resolution document; Enhanced schema selected |
+| Version | Date       | Change                                                       |
+| ------- | ---------- | ------------------------------------------------------------ |
+| 1.0     | 2026-01-29 | Initial schema resolution document; Enhanced schema selected |
 
 ---
