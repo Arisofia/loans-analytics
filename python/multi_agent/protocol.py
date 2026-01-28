@@ -6,11 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-try:
-    from pydantic import BaseModel, Field, field_validator
-except ImportError:
-    from pydantic import BaseModel, Field
-    from pydantic import validator as field_validator
+from pydantic import BaseModel, Field
 
 
 class AgentRole(str, Enum):

@@ -5,9 +5,7 @@ from datetime import datetime
 
 from python.models.kpi_models import KpiDefinition, KpiRegistry, KpiValidationConfig
 from python.multi_agent.kpi_integration import (
-    KpiAnomaly,
     KpiContextProvider,
-    KpiValidationResult,
     KpiValue,
 )
 
