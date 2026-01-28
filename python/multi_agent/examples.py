@@ -1,10 +1,28 @@
 """Example usage of multi-agent orchestrator."""
 
 import os
-from typing import List
 
-from .orchestrator import MultiAgentOrchestrator
-from .protocol import AgentRole, LLMProvider, Message, MessageRole
+try:
+    # Preferred: run as package module (python -m python.multi_agent.examples)
+    from .orchestrator import MultiAgentOrchestrator
+    from .protocol import AgentRole, LLMProvider, Message, MessageRole
+    from .protocol import Scenario, ScenarioStep
+    from .guardrails import Guardrails
+except ImportError:
+    # Fallback: direct script execution (python python/multi_agent/examples.py)
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    from python.multi_agent.orchestrator import MultiAgentOrchestrator
+    from python.multi_agent.protocol import (
+        AgentRole,
+        LLMProvider,
+        Message,
+        MessageRole,
+        Scenario,
+        ScenarioStep,
+    )
+    from python.multi_agent.guardrails import Guardrails
 
 
 def example_single_agent():
@@ -116,8 +134,6 @@ def example_custom_scenario():
     print("EXAMPLE 3: Custom Scenario")
     print("=" * 80)
 
-    from .protocol import Scenario, ScenarioStep
-
     orchestrator = MultiAgentOrchestrator(provider=LLMProvider.OPENAI)
 
     # Define custom scenario
@@ -186,8 +202,6 @@ def example_pii_redaction():
     print("\n" + "=" * 80)
     print("EXAMPLE 4: PII Redaction")
     print("=" * 80)
-
-    from .guardrails import Guardrails
 
     sensitive_text = """
     Borrower John Doe (SSN: 123-45-6789) applied for a loan.
