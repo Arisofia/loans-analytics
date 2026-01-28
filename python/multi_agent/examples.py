@@ -38,7 +38,11 @@ def example_single_agent():
     messages = [
         Message(
             role=MessageRole.USER,
-            content="Analyze a loan portfolio with $10M outstanding, 5% delinquency rate, and 2% charge-off rate. What are the key risks?",
+            content=(
+                "Analyze a loan portfolio with $10M outstanding, "
+                "5% delinquency rate, and 2% charge-off rate. "
+                "What are the key risks?"
+            ),
         )
     ]
 
@@ -52,7 +56,7 @@ def example_single_agent():
 
         print(f"\n✅ Response from {response.agent_role.value}:")
         print(f"📝 {response.message.content}")
-        print(f"\n📊 Metrics:")
+        print("\n📊 Metrics:")
         print(f"   - Tokens: {response.tokens_used}")
         print(f"   - Cost: ${response.cost_usd:.4f}")
         print(f"   - Latency: {response.latency_ms:.0f}ms")
@@ -61,7 +65,7 @@ def example_single_agent():
 
         return response
 
-    except Exception as e:
+    except (ValueError, RuntimeError, ConnectionError) as e:
         print(f"❌ Error: {e}")
         return None
 
@@ -123,7 +127,7 @@ def example_scenario_execution():
 
         return results
 
-    except Exception as e:
+    except (ValueError, RuntimeError, KeyError) as e:
         print(f"❌ Scenario failed: {e}")
         return None
 
@@ -143,19 +147,28 @@ def example_custom_scenario():
         steps=[
             ScenarioStep(
                 agent_role=AgentRole.GROWTH_STRATEGIST,
-                prompt_template="Propose a customer acquisition strategy for: {target_market}. Focus on CAC and LTV.",
+                prompt_template=(
+                    "Propose a customer acquisition strategy for: "
+                    "{target_market}. Focus on CAC and LTV."
+                ),
                 context_keys=["target_market"],
                 output_key="acquisition_strategy",
             ),
             ScenarioStep(
                 agent_role=AgentRole.COMPLIANCE,
-                prompt_template="Review this acquisition strategy for fair lending compliance: {acquisition_strategy}.",
+                prompt_template=(
+                    "Review this acquisition strategy for fair "
+                    "lending compliance: {acquisition_strategy}."
+                ),
                 context_keys=["acquisition_strategy"],
                 output_key="compliance_review",
             ),
             ScenarioStep(
                 agent_role=AgentRole.RISK_ANALYST,
-                prompt_template="Assess credit risk of target market: {target_market} with strategy: {acquisition_strategy}.",
+                prompt_template=(
+                    "Assess credit risk of target market: {target_market} "
+                    "with strategy: {acquisition_strategy}."
+                ),
                 context_keys=["target_market", "acquisition_strategy"],
                 output_key="risk_assessment",
             ),
@@ -171,7 +184,11 @@ def example_custom_scenario():
 
     # Run custom scenario
     initial_context = {
-        "target_market": "Millennials (25-40) with income $50K-$100K, credit score 650-720, seeking personal loans $5K-$25K for debt consolidation.",
+        "target_market": (
+            "Millennials (25-40) with income $50K-$100K, credit score "
+            "650-720, seeking personal loans $5K-$25K for debt "
+            "consolidation."
+        ),
     }
 
     try:
@@ -192,7 +209,7 @@ def example_custom_scenario():
 
         return results
 
-    except Exception as e:
+    except (ValueError, RuntimeError, KeyError) as e:
         print(f"❌ Error: {e}")
         return None
 
@@ -232,42 +249,34 @@ def example_provider_switching():
     print("EXAMPLE 5: Provider Switching")
     print("=" * 80)
 
-    providers = [LLMProvider.OPENAI]
-
-    # Add Anthropic if API key available
+    providers_to_test = []
+    if os.getenv("OPENAI_API_KEY"):
+        providers_to_test.append(LLMProvider.OPENAI)
     if os.getenv("ANTHROPIC_API_KEY"):
-        providers.append(LLMProvider.ANTHROPIC)
-
-    # Add Gemini if API key available
+        providers_to_test.append(LLMProvider.ANTHROPIC)
     if os.getenv("GEMINI_API_KEY"):
-        providers.append(LLMProvider.GEMINI)
+        providers_to_test.append(LLMProvider.GEMINI)
 
-    print(f"\n📋 Testing {len(providers)} provider(s)...")
+    print(f"\nTesting {len(providers_to_test)} provider(s)...")
 
-    for provider in providers:
-        print(f"\n🔄 Testing {provider.value}...")
-
+    for provider in providers_to_test:
         try:
             orchestrator = MultiAgentOrchestrator(provider=provider)
-
-            messages = [
-                Message(
-                    role=MessageRole.USER,
-                    content="In one sentence, what is credit risk?",
-                )
-            ]
-
             response = orchestrator.run_agent(
                 role=AgentRole.RISK_ANALYST,
-                messages=messages,
+                messages=[
+                    Message(
+                        role=MessageRole.USER,
+                        content="In one sentence, what is credit risk?",
+                    )
+                ]
             )
-
-            print(f"   ✅ Success!")
-            print(f"   📝 Response: {response.message.content[:100]}...")
-            print(f"   💰 Cost: ${response.cost_usd:.6f}")
-
-        except Exception as e:
-            print(f"   ❌ Failed: {e}")
+            print(
+                f"  Success! Response: {response.message.content[:100]}... "
+                f"Cost: ${response.cost_usd:.6f}"
+            )
+        except (ValueError, RuntimeError, ConnectionError) as e:
+            print(f"  Failed: {e}")
 
 
 def run_all_examples():
