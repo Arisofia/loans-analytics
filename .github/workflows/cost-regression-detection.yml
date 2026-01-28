@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -44,19 +44,19 @@ jobs:
           script: |
             const fs = require('fs');
             const comment = fs.readFileSync('cost_comment.md', 'utf8');
-            
+
             // Find existing cost comment
             const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            
-            const costComment = comments.data.find(comment => 
-              comment.user.type === 'Bot' && 
+
+            const costComment = comments.data.find(comment =>
+              comment.user.type === 'Bot' &&
               comment.body.includes('Cost Analysis Report')
             );
-            
+
             if (costComment) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
