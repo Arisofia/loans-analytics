@@ -7,7 +7,6 @@ to enhance agent decision-making with historical awareness.
 Phase G4.1 Implementation
 """
 
-
 import os
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
@@ -83,18 +82,14 @@ class SeasonalityPattern(BaseModel):
 
     kpi_id: str = Field(..., description=KPI_IDENTIFIER_DESC)
     has_seasonality: bool = Field(..., description="Whether seasonality detected")
-    cycle_length_months: Optional[int] = Field(
-        None, description="Seasonal cycle length"
-    )
+    cycle_length_months: Optional[int] = Field(None, description="Seasonal cycle length")
     peak_months: List[int] = Field(
         default_factory=list, description="Months with peak values (1-12)"
     )
     trough_months: List[int] = Field(
         default_factory=list, description="Months with trough values (1-12)"
     )
-    seasonal_strength: float = Field(
-        ..., description="Strength of seasonality (0-1)"
-    )
+    seasonal_strength: float = Field(..., description="Strength of seasonality (0-1)")
     adjustment_factors: Dict[int, float] = Field(
         default_factory=dict, description="Monthly adjustment factors (month: factor)"
     )
@@ -200,9 +195,7 @@ class HistoricalContextProvider:
         self.mode = (mode or env_mode).upper()
 
         if self.mode not in ("MOCK", "REAL"):
-            raise ValueError(
-                f"Invalid mode '{self.mode}'. Must be 'MOCK' or 'REAL'."
-            )
+            raise ValueError(f"Invalid mode '{self.mode}'. Must be 'MOCK' or 'REAL'.")
 
         self._backend = backend
 
@@ -315,9 +308,7 @@ class HistoricalContextProvider:
 
         return data
 
-    def get_trend(
-        self, kpi_id: str, periods: int = 12
-    ) -> TrendAnalysis:
+    def get_trend(self, kpi_id: str, periods: int = 12) -> TrendAnalysis:
         """
         Calculate trend for a KPI over the specified periods.
 
@@ -370,9 +361,7 @@ class HistoricalContextProvider:
         # Determine direction and strength
         start_val = history[0].value
         end_val = history[-1].value
-        percent_change = (
-            ((end_val - start_val) / start_val * 100) if start_val != 0 else 0.0
-        )
+        percent_change = ((end_val - start_val) / start_val * 100) if start_val != 0 else 0.0
 
         # Direction
         if abs(slope) < 0.01:
@@ -402,9 +391,7 @@ class HistoricalContextProvider:
             percent_change=percent_change,
         )
 
-    def get_moving_average(
-        self, kpi_id: str, window_days: int = 30
-    ) -> Optional[float]:
+    def get_moving_average(self, kpi_id: str, window_days: int = 30) -> Optional[float]:
         """
         Calculate moving average for a KPI.
 
