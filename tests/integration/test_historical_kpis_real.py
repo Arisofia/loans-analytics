@@ -29,7 +29,7 @@ pytestmark = pytest.mark.skipif(
 def supabase_backend():
     """
     Fixture to initialize SupabaseHistoricalBackend.
-    
+
     Validates environment configuration before running tests.
     """
     from python.multi_agent.historical_backend_supabase import (
@@ -62,7 +62,7 @@ def historical_provider(supabase_backend):
 def test_portfolio_id():
     """
     Generate a unique test portfolio ID for the test session.
-    
+
     Using a unique UUID per session to avoid conflicts from:
     - Concurrent test runs
     - Failed cleanup from previous runs
@@ -75,10 +75,10 @@ def test_portfolio_id():
 def seed_test_data(supabase_backend, test_portfolio_id):
     """
     Seed the historical_kpis table with test data.
-    
+
     Inserts a month of daily KPI observations for testing.
     Cleans up test data after tests complete.
-    
+
     Note: Uses a unique kpi_id based on test session to enable proper cleanup.
     """
     import requests
@@ -88,7 +88,7 @@ def seed_test_data(supabase_backend, test_portfolio_id):
     # Schema: kpi_id, date, value, timestamp
     base_date = date.today() - timedelta(days=30)  # Use relative dates
     test_data = []
-    
+
     # Create a unique kpi_id for this test session to avoid conflicts
     # Tests will query using this specific kpi_id
     test_kpi_id = f"default_rate_{test_portfolio_id[:8]}"
@@ -110,7 +110,7 @@ def seed_test_data(supabase_backend, test_portfolio_id):
     headers = supabase_backend._headers
 
     response = requests.post(url, headers=headers, json=test_data, timeout=10)
-    
+
     # If 409 (conflict), test data already exists - that's OK
     if response.status_code not in (201, 409):
         response.raise_for_status()
@@ -134,7 +134,7 @@ def seed_test_data(supabase_backend, test_portfolio_id):
 def test_supabase_backend_connection(supabase_backend):
     """
     Test 1: Verify Supabase backend is properly configured and reachable.
-    
+
     Validates:
     - Backend initialization with environment variables
     - API endpoint accessibility
@@ -150,7 +150,7 @@ def test_supabase_backend_connection(supabase_backend):
 def test_historical_provider_real_mode(historical_provider):
     """
     Test 2: Verify HistoricalContextProvider initializes in REAL mode.
-    
+
     Validates:
     - Mode is correctly set to REAL
     - Backend is properly attached
@@ -166,7 +166,7 @@ def test_fetch_historical_kpis_empty_range(
 ):
     """
     Test 3: Query for KPIs with no matching data returns empty list.
-    
+
     Validates:
     - Queries for non-existent KPI return gracefully
     - No errors on empty result sets
@@ -189,7 +189,7 @@ def test_fetch_historical_kpis_with_data(
 ):
     """
     Test 4: Query for seeded test data returns expected results.
-    
+
     Validates:
     - Data retrieval from Supabase
     - Result structure matches KpiHistoricalValue schema
@@ -198,7 +198,7 @@ def test_fetch_historical_kpis_with_data(
     """
     # Use the kpi_id from seeded test data
     test_kpi_id = seed_test_data["kpi_id"]
-    
+
     # Query for the seeded test data using relative dates
     result = historical_provider.get_kpi_history(
         kpi_id=test_kpi_id,
@@ -233,13 +233,13 @@ def test_historical_kpis_query_performance(
 ):
     """
     Test 5: Verify query performance meets SLO (p99 < 500ms).
-    
+
     Validates:
     - Query execution time is within acceptable limits
     - Indices are being utilized effectively
     """
     import time
-    
+
     test_kpi_id = seed_test_data["kpi_id"]
 
     start_time = time.time()
@@ -265,14 +265,14 @@ def test_historical_context_provider_cache_behavior(
 ):
     """
     Test 6: Verify caching improves subsequent query performance.
-    
+
     Validates:
     - First query populates cache
     - Second query uses cached data
     - Cache reduces query time significantly
     """
     import time
-    
+
     test_kpi_id = seed_test_data["kpi_id"]
 
     # Clear cache
@@ -312,14 +312,14 @@ def test_historical_trend_analysis_with_real_data(
 ):
     """
     Test 7: Verify trend analysis works with real Supabase data.
-    
+
     Validates:
     - Trend calculation on real data
     - Trend direction is detected correctly (increasing trend)
     - R-squared and slope values are reasonable
     """
     test_kpi_id = seed_test_data["kpi_id"]
-    
+
     # Calculate trend for the seeded data (increasing trend)
     trend = historical_provider.get_trend(kpi_id=test_kpi_id, periods=1)
 
@@ -343,13 +343,13 @@ def test_historical_moving_average_with_real_data(
 ):
     """
     Test 8: Verify moving average calculation with real Supabase data.
-    
+
     Validates:
     - Moving average is calculated correctly
     - Result is within expected range
     """
     test_kpi_id = seed_test_data["kpi_id"]
-    
+
     # Calculate 30-day moving average
     ma = historical_provider.get_moving_average(
         kpi_id=test_kpi_id, window_days=30
@@ -369,13 +369,13 @@ def test_historical_kpis_data_integrity(
 ):
     """
     Test 9: Verify data integrity constraints are enforced.
-    
+
     Validates:
     - Unique constraint on (kpi_id, date)
     - Indices exist and are utilized
     """
     import requests
-    
+
     test_kpi_id = seed_test_data["kpi_id"]
 
     # Attempt to insert duplicate record (should fail or be ignored)
