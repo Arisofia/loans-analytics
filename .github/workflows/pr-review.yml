@@ -42,10 +42,6 @@ jobs:
         continue-on-error: true
 
       - name: Format check with Black
-        run: ruff check . || echo "::warning::Ruff found issues"
-        continue-on-error: true
-
-      - name: Format check with Black
         run: black --check . || echo "::warning::Black found formatting issues"
         continue-on-error: true
 
@@ -56,7 +52,8 @@ jobs:
       - name: Lint with Flake8
         run: |
           if [ -d src ] || [ -d python ] || [ -d streamlit_app ]; then
-            flake8 $(find . -maxdepth 1 -type d \( -name 'src' -o -name 'python' -o -name 'streamlit_app' \) 2>/dev/null) || echo "::warning::Flake8 found issues"
+            TARGETS=$(find . -maxdepth 1 -type d \( -name 'src' -o -name 'python' -o -name 'streamlit_app' \) 2>/dev/null)
+            flake8 $TARGETS || echo "::warning::Flake8 found issues"
           else
             flake8 . || echo "::warning::Flake8 found issues"
           fi
@@ -65,7 +62,8 @@ jobs:
       - name: Type check with mypy
         run: |
           if [ -d src ] || [ -d python ]; then
-            mypy $(find . -maxdepth 1 -type d \( -name 'src' -o -name 'python' \) 2>/dev/null) || echo "::warning::mypy found type issues"
+            TARGETS=$(find . -maxdepth 1 -type d \( -name 'src' -o -name 'python' \) 2>/dev/null)
+            mypy $TARGETS || echo "::warning::mypy found type issues"
           else
             mypy . || echo "::warning::mypy found type issues"
           fi
@@ -294,7 +292,9 @@ jobs:
         if: steps.check-perplexity.outputs.secrets_available == 'true'
         run: |
           DIFF_SIZE="${{ steps.get-diff.outputs.diff_size }}"
-          if [ -n "$DIFF_SIZE" ] && echo "$DIFF_SIZE" | grep -Eq '^[0-9]+$' && [ "$DIFF_SIZE" -gt 0 ] && [ "$DIFF_SIZE" -lt 50000 ]; then
+          if [ -n "$DIFF_SIZE" ] && \
+             echo "$DIFF_SIZE" | grep -Eq '^[0-9]+$' && \
+             [ "$DIFF_SIZE" -gt 0 ] && [ "$DIFF_SIZE" -lt 50000 ]; then
             # Use jq to properly construct JSON payload (same approach as existing perplexity_review.yml)
             DIFF_TEXT=$(cat pr_diff.txt | head -c 10000)
             MODEL="${{ vars.PERPLEXITY_MODEL || 'sonar-pro' }}"

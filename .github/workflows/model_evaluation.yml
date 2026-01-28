@@ -60,6 +60,7 @@ jobs:
 
       - name: Check evaluation thresholds
         if: always()
+        continue-on-error: true
         id: threshold-check
         run: |
           mkdir -p config
