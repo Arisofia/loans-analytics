@@ -37,8 +37,8 @@ jobs:
     name: Real Supabase Integration Tests
     runs-on: ubuntu-latest
     
-    # Skip if triggered by schedule and no secrets configured
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && secrets.SUPABASE_URL != '')
+    # Run on manual trigger or scheduled runs (secrets must be configured)
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     
     strategy:
       matrix:
@@ -86,6 +86,8 @@ jobs:
             --timeout=60 \
             --tb=short \
             -m integration \
+            --junitxml=test-results/junit.xml \
+            --log-file=pytest.log \
             || (echo "❌ Integration tests failed" && exit 1)
           echo "✅ Integration tests passed"
       

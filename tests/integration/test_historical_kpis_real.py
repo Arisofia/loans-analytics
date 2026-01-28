@@ -13,8 +13,7 @@ Phase G4.2 Implementation
 """
 
 import os
-from datetime import date, datetime, timedelta
-from typing import List
+from datetime import date, timedelta
 from uuid import uuid4
 
 import pytest
@@ -62,12 +61,14 @@ def historical_provider(supabase_backend):
 @pytest.fixture(scope="module")
 def test_portfolio_id():
     """
-    Generate a test portfolio ID for the test session.
+    Generate a unique test portfolio ID for the test session.
     
-    Using a fixed UUID for predictable test data cleanup.
+    Using a unique UUID per session to avoid conflicts from:
+    - Concurrent test runs
+    - Failed cleanup from previous runs
     """
-    # Use a deterministic UUID for test data
-    return "00000000-0000-0000-0000-000000000001"
+    # Use unique UUID per test session (timestamp-based)
+    return str(uuid4())
 
 
 @pytest.fixture(scope="module")
@@ -110,9 +111,14 @@ def seed_test_data(supabase_backend, test_portfolio_id):
     yield test_data
 
     # Cleanup: Delete test data after tests
-    # Using query parameter to delete by portfolio_id and metadata
-    delete_url = f"{url}?portfolio_id=eq.{test_portfolio_id}&metadata->>test=eq.true"
-    requests.delete(delete_url, headers=headers, timeout=10)
+    # Using query parameter to delete by portfolio_id
+    try:
+        delete_url = f"{url}?portfolio_id=eq.{test_portfolio_id}"
+        delete_response = requests.delete(delete_url, headers=headers, timeout=10)
+        delete_response.raise_for_status()
+    except Exception as e:
+        # Log cleanup failure but don't fail the test
+        print(f"Warning: Failed to cleanup test data: {e}")
 
 
 @pytest.mark.integration
