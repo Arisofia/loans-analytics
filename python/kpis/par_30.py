@@ -1,6 +1,10 @@
 from __future__ import annotations
+
 import pandas as pd
+
 from python.validation import safe_numeric, validate_numeric_bounds
+
+
 def calculate_par_30(df: pd.DataFrame | None) -> float:
     """
     Calculate Portfolio at Risk (30+ days) as a percentage of receivables.

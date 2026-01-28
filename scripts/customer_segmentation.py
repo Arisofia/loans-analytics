@@ -3,17 +3,21 @@ Customer Segmentation Analysis Agent
 This script simulates a multi-agent customer segmentation analysis using Azure AI.
 It fetches customer data, sends it to an AI endpoint, and processes the results.
 """
-import os
-import sys
+
 import json
 import logging
+import os
+import sys
 import time
-from typing import Dict, Any
+from typing import Any, Dict
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger("customer_segmentation")
+
+
 def get_env_var(name: str, required: bool = True) -> str:
     """Retrieve an environment variable with optional required enforcement.
     This helper validates configuration values and stops execution when a
@@ -33,18 +37,24 @@ def get_env_var(name: str, required: bool = True) -> str:
         logger.error("Set the environment variable using: export %s=<value>", name)
         sys.exit(1)
     return value or ""
+
+
 class AbacoEligibilityEvaluator:
     """Evaluates customer eligibility for ECB collateral pools.
     Implements the 1.0% PD (Probability of Default) threshold rule.
     """
+
     def __init__(self, pd_threshold: float = 0.01):
         self.pd_threshold = pd_threshold
+
     def evaluate(self, customer: Dict[str, Any]) -> bool:
         """Check if customer is eligible for collateral pool."""
         metrics = customer.get("metrics", {})
         # Using churn_prob as proxy for PD in this simulation
         pd = metrics.get("churn_prob", 1.0)
         return pd <= self.pd_threshold
+
+
 def main() -> None:
     """Run the customer segmentation analysis agent workflow.
     This function orchestrates loading configuration, preparing customer data,
@@ -104,5 +114,7 @@ def main() -> None:
     }
     logger.info("Segmentation completed successfully.")
     logger.info("Agent Response: %s", json.dumps(results, indent=2))
+
+
 if __name__ == "__main__":
     main()

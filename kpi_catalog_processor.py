@@ -1,39 +1,41 @@
 """Lightweight KPI catalog processor for Streamlit dashboards."""
+
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Optional
+
 import pandas as pd
+
+
 @dataclass
 class KPICatalogProcessor:
     """Compute summary KPIs from core loan, payment, and customer datasets."""
+
     loans_df: pd.DataFrame
     payments_df: pd.DataFrame
     customers_df: pd.DataFrame
     schedule_df: Optional[pd.DataFrame] = None
+
     def __post_init__(self) -> None:
         self.loans_df = self.loans_df if self.loans_df is not None else pd.DataFrame()
-        self.payments_df = (
-            self.payments_df if self.payments_df is not None else pd.DataFrame()
-        )
-        self.customers_df = (
-            self.customers_df if self.customers_df is not None else pd.DataFrame()
-        )
-        self.schedule_df = (
-            self.schedule_df if self.schedule_df is not None else pd.DataFrame()
-        )
+        self.payments_df = self.payments_df if self.payments_df is not None else pd.DataFrame()
+        self.customers_df = self.customers_df if self.customers_df is not None else pd.DataFrame()
+        self.schedule_df = self.schedule_df if self.schedule_df is not None else pd.DataFrame()
+
     def get_all_kpis(self) -> dict:
         """Return a dictionary of computed KPIs for dashboard consumption."""
         total_loans = (
-            int(self.loans_df["loan_id"].nunique())
-            if "loan_id" in self.loans_df.columns
-            else 0
+            int(self.loans_df["loan_id"].nunique()) if "loan_id" in self.loans_df.columns else 0
         )
         total_customers = (
             int(self.customers_df["customer_id"].nunique())
             if "customer_id" in self.customers_df.columns
-            else int(self.customers_df["client_id"].nunique())
-            if "client_id" in self.customers_df.columns
-            else 0
+            else (
+                int(self.customers_df["client_id"].nunique())
+                if "client_id" in self.customers_df.columns
+                else 0
+            )
         )
         total_outstanding = (
             float(self.loans_df["outstanding_loan_value"].sum())
@@ -49,8 +51,7 @@ class KPICatalogProcessor:
             if total_balance:
                 avg_apr = float(
                     (
-                        self.loans_df["interest_rate_apr"]
-                        * self.loans_df["outstanding_loan_value"]
+                        self.loans_df["interest_rate_apr"] * self.loans_df["outstanding_loan_value"]
                     ).sum()
                     / total_balance
                 )
@@ -61,6 +62,7 @@ class KPICatalogProcessor:
             "avg_apr": avg_apr,
         }
         return {"executive_strip": executive_strip}
+
     def get_quarterly_scorecard(self) -> pd.DataFrame:
         """Create a quarterly scorecard from available payment data."""
         if self.payments_df.empty:
@@ -104,6 +106,7 @@ class KPICatalogProcessor:
         )
         quarterly["quarter"] = quarterly["quarter_end"].dt.to_period("Q").astype(str)
         return quarterly[["quarter", "total_payments"]]
+
     def get_figma_dashboard_df(self) -> pd.DataFrame:
         """Build a monthly metrics frame aligned with dashboard charts."""
         if self.payments_df.empty:

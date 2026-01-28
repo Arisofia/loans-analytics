@@ -2,8 +2,10 @@
 """
 Workflow Linter: Checks for unquoted $GITHUB_OUTPUT and malformed echo output blocks in .github/workflows/*.yml
 """
+
 import re
 from pathlib import Path
+
 WORKFLOWS = Path(__file__).parent.parent / ".github" / "workflows"
 BAD_PATTERN = re.compile(r'echo\s+"[^"]*>>\s*\$GITHUB_OUTPUT')
 GOOD_PATTERN = re.compile(r'echo\s+"[^"]*>>\s*\"\$GITHUB_OUTPUT\"')

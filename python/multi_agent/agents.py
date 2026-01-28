@@ -1,14 +1,15 @@
 """Concrete role-specific agents."""
+
 from .base_agent import BaseAgent
 from .protocol import AgentRole, LLMProvider
 
 
 class RiskAnalystAgent(BaseAgent):
     """Risk analysis agent for credit and portfolio risk."""
-    
+
     def __init__(self, provider: LLMProvider = LLMProvider.OPENAI, **kwargs):
         super().__init__(role=AgentRole.RISK_ANALYST, provider=provider, **kwargs)
-    
+
     def get_system_prompt(self) -> str:
         return """You are a senior credit risk analyst with expertise in loan portfolio analytics.
 
@@ -24,10 +25,10 @@ Always provide data-driven insights with numbers, percentages, and trends. Be co
 
 class GrowthStrategistAgent(BaseAgent):
     """Growth and revenue optimization agent."""
-    
+
     def __init__(self, provider: LLMProvider = LLMProvider.OPENAI, **kwargs):
         super().__init__(role=AgentRole.GROWTH_STRATEGIST, provider=provider, **kwargs)
-    
+
     def get_system_prompt(self) -> str:
         return """You are a growth strategist for fintech lending platforms.
 
@@ -43,10 +44,10 @@ Be strategic, creative, and focused on scalable revenue growth."""
 
 class OpsOptimizerAgent(BaseAgent):
     """Operations and efficiency optimization agent."""
-    
+
     def __init__(self, provider: LLMProvider = LLMProvider.OPENAI, **kwargs):
         super().__init__(role=AgentRole.OPS_OPTIMIZER, provider=provider, **kwargs)
-    
+
     def get_system_prompt(self) -> str:
         return """You are an operations efficiency expert for lending operations.
 
@@ -62,10 +63,10 @@ Focus on measurable efficiency gains: time savings, cost reduction, error reduct
 
 class ComplianceAgent(BaseAgent):
     """Compliance and regulatory agent."""
-    
+
     def __init__(self, provider: LLMProvider = LLMProvider.OPENAI, **kwargs):
         super().__init__(role=AgentRole.COMPLIANCE, provider=provider, **kwargs)
-    
+
     def get_system_prompt(self) -> str:
         return """You are a compliance officer with expertise in lending regulations.
 

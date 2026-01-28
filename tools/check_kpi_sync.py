@@ -11,7 +11,9 @@ Usage examples:
   python tools/check_kpi_sync.py
   python tools/check_kpi_sync.py --no-regenerate --no-tests
 """
+
 from __future__ import annotations
+
 import argparse
 import json
 import subprocess
@@ -19,6 +21,8 @@ import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import List, Optional
+
+
 # ---------------------------------------------------------------------------
 # Data structures
 # ---------------------------------------------------------------------------
@@ -26,6 +30,8 @@ from typing import List, Optional
 class FileCheckResult:
     path: str
     exists: bool
+
+
 @dataclass
 class JsonCheckResult:
     path: str
@@ -33,6 +39,8 @@ class JsonCheckResult:
     valid_json: bool
     has_extended_kpis: bool
     kpi_groups: List[str]
+
+
 @dataclass
 class CommandResult:
     command: str
@@ -40,6 +48,8 @@ class CommandResult:
     returncode: int
     stdout: str
     stderr: str
+
+
 @dataclass
 class KpiSyncReport:
     repo_root: str
@@ -47,6 +57,8 @@ class KpiSyncReport:
     json_check: Optional[JsonCheckResult]
     regenerate_json: Optional[CommandResult]
     pytest_result: Optional[CommandResult]
+
+
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
@@ -63,6 +75,8 @@ def find_repo_root(start: Path) -> Path:
             break
         current = current.parent
     return start.resolve()
+
+
 def run_command(cmd: List[str], cwd: Path) -> CommandResult:
     # Use argument list, never shell=True, and do not interpolate untrusted input
     proc = subprocess.Popen(
@@ -76,6 +90,8 @@ def run_command(cmd: List[str], cwd: Path) -> CommandResult:
         stdout=stdout.strip(),
         stderr=stderr.strip(),
     )
+
+
 def check_files(repo_root: Path) -> List[FileCheckResult]:
     """
     Check presence of the core files required for the dual-engine analytics setup.
@@ -94,6 +110,8 @@ def check_files(repo_root: Path) -> List[FileCheckResult]:
         p = repo_root / rel
         results.append(FileCheckResult(path=str(p.relative_to(repo_root)), exists=p.is_file()))
     return results
+
+
 def check_json_structure(repo_root: Path) -> JsonCheckResult:
     json_path = repo_root / "exports" / "complete_kpi_dashboard.json"
     if not json_path.is_file():
@@ -126,6 +144,8 @@ def check_json_structure(repo_root: Path) -> JsonCheckResult:
         has_extended_kpis=has_extended,
         kpi_groups=groups,
     )
+
+
 # ---------------------------------------------------------------------------
 # Main routine
 # ---------------------------------------------------------------------------
@@ -240,5 +260,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if report.regenerate_json and not report.regenerate_json.success:
         return 1
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

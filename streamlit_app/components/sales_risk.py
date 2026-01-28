@@ -1,7 +1,10 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+
 from .visualizations import apply_theme
+
+
 def render_sales_performance(merged, load_agent_headcount):
     """Render sales performance charts or team capacity."""
     st.header("🎯 Sales Performance")
@@ -47,6 +50,8 @@ def render_sales_performance(merged, load_agent_headcount):
             st.info(
                 "Sales agent data not found. Provide agent performance data to populate this section."
             )
+
+
 def render_risk_analysis(merged):
     """Render risk analysis charts and metrics."""
     st.markdown('<div data-testid="dashboard-risk">', unsafe_allow_html=True)
