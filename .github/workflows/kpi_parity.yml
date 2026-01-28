@@ -53,6 +53,8 @@ jobs:
           fi
 
       - name: Generate KPI JSON via Python engine
+        env:
+          PYTHONPATH: .
         run: |
           mkdir -p exports
           python run_complete_analytics.py
