@@ -73,7 +73,7 @@ class TrendAnalysis(BaseModel):
     end_value: float = Field(..., description="Ending value")
     percent_change: float = Field(..., description="Percentage change")
     calculated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Analysis timestamp (UTC)"
+        default_factory=lambda: datetime.now(UTC), description="Analysis timestamp (UTC)"
     )
 
 
