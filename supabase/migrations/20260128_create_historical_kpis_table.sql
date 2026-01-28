@@ -12,50 +12,44 @@
 CREATE TABLE IF NOT EXISTS historical_kpis (
     -- Primary key
     id BIGSERIAL PRIMARY KEY,
-    
-    -- Portfolio context
-    portfolio_id UUID NOT NULL,
-    -- Note: REFERENCES portfolios(id) - uncomment if portfolios table exists
-    
-    -- KPI identification
-    kpi_name VARCHAR(255) NOT NULL,
-    
-    -- KPI value (DECIMAL for precision)
-    kpi_value DECIMAL(18,6) NOT NULL,
-    
-    -- Temporal dimensions
-    calculation_date DATE NOT NULL,
-    grain VARCHAR(50) NOT NULL CHECK (grain IN ('daily', 'weekly', 'monthly', 'quarterly', 'yearly')),
-    
+
+    -- KPI identification (matches SupabaseHistoricalBackend expectation: kpi_id)
+    kpi_id VARCHAR(255) NOT NULL,
+
+    -- KPI value (DECIMAL for precision; matches expected column name: value)
+    value DECIMAL(18,6) NOT NULL,
+
+    -- Temporal dimensions (matches expected column name: date)
+    date DATE NOT NULL,
+
+    -- Timestamp for the observation (matches expected column name: timestamp)
+    "timestamp" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
     -- Audit fields
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Optional metadata (versioning, lineage, etc.)
-    metadata JSONB,
-    
-    -- Constraints
-    CONSTRAINT uq_historical_kpis_portfolio_kpi_date 
-        UNIQUE(portfolio_id, kpi_name, calculation_date, grain)
+    metadata JSONB
 );
 
 -- ============================================================================
 -- Indices for Performance Optimization
 -- ============================================================================
 
--- Primary lookup index: query by portfolio and date range
-CREATE INDEX IF NOT EXISTS idx_historical_kpis_portfolio_date 
-    ON historical_kpis(portfolio_id, calculation_date DESC);
-
--- KPI-specific queries: trend analysis across portfolios
+-- Primary lookup index: query by KPI and date range
 CREATE INDEX IF NOT EXISTS idx_historical_kpis_kpi_date 
-    ON historical_kpis(kpi_name, calculation_date DESC);
+    ON historical_kpis(kpi_id, date DESC);
 
--- Composite index for common query pattern: portfolio + KPI + date range
+-- Composite index for common query pattern: KPI + date + timestamp
 CREATE INDEX IF NOT EXISTS idx_historical_kpis_lookup 
-    ON historical_kpis(portfolio_id, kpi_name, calculation_date DESC);
+    ON historical_kpis(kpi_id, date DESC, "timestamp" DESC);
+
+-- Additional indexes can be added here if query patterns evolve
+-- (e.g., indexes on date alone or timestamp alone for time-based scans).
 
 -- Grain-specific queries (e.g., monthly aggregations)
+[...]
 CREATE INDEX IF NOT EXISTS idx_historical_kpis_grain 
     ON historical_kpis(grain, calculation_date DESC);
 
