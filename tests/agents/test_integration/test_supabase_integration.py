@@ -1,6 +1,6 @@
 """Integration tests for Supabase connectivity."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -34,7 +34,3 @@ class TestSupabaseIntegration:
 
         result = mock_supabase_client.table("loans").select("*").execute()
         assert len(result.data) > 0
-
-
-# Import Mock for the test
-from unittest.mock import Mock
