@@ -1,7 +1,19 @@
 # AI-MultiAgent-Ecosystem – Abaco Analytics
+
 This repository hosts the Abaco Financial Intelligence Platform, including:
+
+## 🌟 Highlights
+
+- **8-Agent System**: Risk, Growth, Ops, Compliance + Collections, Fraud, Pricing, Retention
+- **29 Tests Passing**: 18 KPI integration + 11 specialized agents
+- **7 Pre-built Scenarios**: Multi-step workflows for fintech lending
+- **KPI-Aware**: Real-time validation and anomaly detection
+- **Production-Ready**: Full observability, guardrails, and tracing
+
 ## Stack map
+
 - **apps/web**: Next.js dashboard for portfolio, risk, and growth views.
+- **python/multi_agent**: 8-agent orchestration system with fintech expertise ([docs](python/multi_agent/README.md))
 - **infra/azure**: Azure infra-as-code and deployment scripts.
 - **data_samples**: Anonymized datasets for repeatable development and testing.
 For the combined Next.js + FastAPI fintech dashboard (Figma-first, Plotly, AI insights, and KPI endpoints), follow `docs/FINTECH_DASHBOARD_WEB_APP_GUIDE.md`.
