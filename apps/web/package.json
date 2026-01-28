@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "2.0.7",
-    "@next/eslint-plugin-next": "^15.4.11",
+    "@next/eslint-plugin-next": "^16.1.5",
     "@playwright/test": "^1.41.0",
     "@sentry/cli": "^3.0.0",
     "@tailwindcss/postcss": "^4.0.0",
@@ -49,7 +49,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "dotenv": "^16.1.0",
     "eslint": "^9.19.0",
-    "eslint-config-next": "^15.4.11",
+    "eslint-config-next": "^16.1.5",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-prettier": "^5.5.4",
