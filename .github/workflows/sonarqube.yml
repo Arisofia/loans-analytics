@@ -41,10 +41,12 @@ jobs:
         run: |
           if [ -f "apps/web/pnpm-lock.yaml" ]; then
             pnpm -C apps/web install --frozen-lockfile --ignore-scripts
+          elif [ -f "apps/web/package-lock.json" ]; then
+            npm -C apps/web ci --ignore-scripts
           elif [ -d "apps/web" ]; then
             pnpm -C apps/web install --ignore-scripts
           else
-            echo "::warning::apps/web directory not found, skipping pnpm install"
+            echo "::warning::apps/web directory not found, skipping Node install"
           fi
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2.0.0
