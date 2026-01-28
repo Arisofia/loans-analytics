@@ -1,7 +1,7 @@
 # Phase G: Fintech Intelligence & KPI Integration
 
-**Status**: G2 Complete | 29/29 Tests Passing  
-**Last Updated**: 2025-01-30
+**Status**: G3 In Progress (Retail Complete) | 42/42 Tests Passing  
+**Last Updated**: 2026-01-28
 
 ## Overview
 
@@ -147,31 +147,56 @@ Added 4 domain-expert agents with comprehensive system prompts:
 - Original 4: Risk Analyst, Growth Strategist, Ops Optimizer, Compliance
 - New 4: Collections, Fraud Detection, Pricing, Customer Retention
 
-### ⏳ G3: Scenario Packs by Product (Planned)
+### ✅ G3: Scenario Packs by Product (Retail Complete)
 
-Goal: Create pre-built workflows for different loan products
+**13/13 tests passing**
 
-**Planned Scenarios**:
+Product-specific workflows starting with retail lending:
 
-- **Retail Loans**:
-  - `retail_origination`: Application → Fraud → Pricing → Underwriting
-  - `retail_portfolio_review`: Risk → Collections → Retention
-  - `retail_rate_adjustment`: Pricing → Compliance → Ops
+#### Retail Loan Scenarios (Complete)
 
-- **SME Loans**:
-  - `sme_underwriting`: Risk → Fraud → Pricing → Compliance
-  - `sme_portfolio_stress_test`: Risk → Ops → Growth
-  - `sme_default_management`: Collections → Risk → Legal
+**1. retail_origination** (4-step workflow)
 
-- **Auto Loans**:
-  - `auto_origination`: Fraud → Pricing → Risk → Ops
-  - `auto_delinquency_workout`: Collections → Retention → Risk
-  - `auto_residual_value_analysis`: Risk → Pricing → Ops
+- **Purpose**: End-to-end loan origination from application to approval
+- **Flow**: Fraud → Risk → Pricing → Compliance
+- **Outputs**: fraud_screen, underwriting_decision, rate_quote, compliance_approval
 
-- **Portfolio-Level**:
-  - `portfolio_health_check`: Risk → KPI → Compliance → Ops
-  - `strategic_planning`: Growth → Risk → Pricing → Ops
-  - `regulatory_review`: Compliance → Risk → Ops → KPI
+**2. retail_portfolio_review** (4-step workflow)
+
+- **Purpose**: Quarterly portfolio health assessment
+- **Flow**: Risk → Collections → Retention → Ops
+- **Outputs**: risk_assessment, collection_strategy, retention_plan, action_plan
+
+**3. retail_rate_adjustment** (4-step workflow)
+
+- **Purpose**: Portfolio-wide repricing strategy
+- **Flow**: Risk → Pricing → Retention → Compliance
+- **Outputs**: risk_segmentation, repricing_strategy, churn_mitigation, compliance_review
+
+**Key Files**:
+
+- Updated `orchestrator.py` with 3 retail scenarios (**11 total scenarios now**)
+- `test_scenario_packs.py` (13 tests for retail workflows)
+
+#### Planned Product Scenarios
+
+**SME Loans** (Next):
+
+- `sme_underwriting`: Risk → Fraud → Pricing → Compliance
+- `sme_portfolio_stress_test`: Risk → Ops → Growth
+- `sme_default_management`: Collections → Risk → Legal
+
+**Auto Loans** (Future):
+
+- `auto_origination`: Fraud → Pricing → Risk → Ops
+- `auto_delinquency_workout`: Collections → Retention → Risk
+- `auto_residual_value_analysis`: Risk → Pricing → Ops
+
+**Portfolio-Level** (Future):
+
+- `portfolio_health_check`: Risk → KPI → Compliance → Ops
+- `strategic_planning`: Growth → Risk → Pricing → Ops
+- `regulatory_review`: Compliance → Risk → Ops → KPI
 
 ### ⏳ G4: Historical Context Integration (Planned)
 
@@ -192,10 +217,11 @@ Goal: Connect to analytics pipeline for trend-aware insights
 
 ## Testing
 
-**Total Tests**: 29 (all passing)
+**Total Tests**: 42 (all passing)
 
 - G1: 18 KPI integration tests
 - G2: 11 specialized agent tests
+- G3: 13 retail scenario tests
 
 Run full test suite:
 
@@ -204,10 +230,17 @@ cd /Users/jenineferderas/abaco-loans-analytics
 /opt/homebrew/bin/python3 -m pytest python/multi_agent/ -v
 ```
 
-Run G2 tests only:
+Run specific test suites:
 
 ```bash
+# KPI integration tests
+/opt/homebrew/bin/python3 -m pytest python/multi_agent/test_kpi_integration.py -v
+
+# Specialized agents tests
 /opt/homebrew/bin/python3 -m pytest python/multi_agent/test_specialized_agents.py -v
+
+# Scenario packs tests
+/opt/homebrew/bin/python3 -m pytest python/multi_agent/test_scenario_packs.py -v
 ```
 
 ## Usage Examples
