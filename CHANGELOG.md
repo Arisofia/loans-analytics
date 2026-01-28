@@ -54,7 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Documentation
 
-- Updated `docs/phase-g-fintech-intelligence.md`: 
+- Updated `docs/phase-g-fintech-intelligence.md`:
   - Added complete SME, Auto, Portfolio scenario documentation
   - Updated test counts (42 → 54)
   - Updated scenario coverage chart (11 → 20)

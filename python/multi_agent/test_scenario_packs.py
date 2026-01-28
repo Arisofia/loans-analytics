@@ -6,7 +6,7 @@ to ensure proper agent coordination and workflow execution.
 """
 
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from python.multi_agent.orchestrator import MultiAgentOrchestrator
 from python.multi_agent.protocol import AgentRole
