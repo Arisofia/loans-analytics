@@ -62,7 +62,7 @@ class TestConfigHistorical:
     def test_cache_ttl_passed_through(self):
         """Verify cache_ttl_seconds parameter is passed to provider."""
         provider = build_historical_context_provider(cache_ttl_seconds=120)
-        assert provider._cache_ttl_seconds == 120
+        assert provider.cache_ttl_seconds == 120
 
     def test_invalid_mode_raises_error(self):
         """Verify invalid mode raises ValueError."""
@@ -94,14 +94,15 @@ class TestConfigHistorical:
 
         history = provider._load_historical_data("npl_ratio", start_dt, end_dt)
 
-        # Contract: list of dicts with at least these keys
+        # Contract: list of KpiHistoricalValue objects with expected attributes
         assert isinstance(history, list)
         if history:
             sample = history[0]
-            assert "kpi_id" in sample
-            assert "date" in sample
-            assert "value" in sample
-            # Optional fields
-            assert "portfolio_id" in sample or True  # May be None
-            assert "product_code" in sample or True  # May be None
-            assert "segment_code" in sample or True  # May be None
+            # Verify dataclass attributes
+            assert hasattr(sample, "kpi_id")
+            assert hasattr(sample, "date")
+            assert hasattr(sample, "value")
+            assert hasattr(sample, "timestamp")
+            # Verify values are correct types
+            assert isinstance(sample.kpi_id, str)
+            assert isinstance(sample.value, (int, float))
