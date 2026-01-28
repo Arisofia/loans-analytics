@@ -15,6 +15,8 @@ except Exception:  # pragma: no cover - fallback in tests/environments without F
 logger = logging.getLogger("apps.analytics.api")
 # Directory that contains allowed data files (must be absolute)
 ALLOWED_DATA_DIR = Path("/data/archives").resolve()
+
+
 def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     """Safely join and resolve a user-provided path candidate under allowed_dir.
     - Reject absolute candidate paths

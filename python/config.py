@@ -1,8 +1,9 @@
 from __future__ import annotations
 import os
+from pathlib import Path
 from typing import Dict, List, Set
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 class FinancialGuardrails(BaseModel):
     """Financial guardrails and targets for the loan portfolio."""
@@ -89,9 +90,66 @@ class ApiSettings(BaseModel):
     api_key: str = Field(default="abaco_secret_token")
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8000)
+
+
+class EnvironmentSettings(BaseModel):
+    """Environment configuration and data path resolution."""
+    
+    environment: str = Field(default="dev", description="Current environment: dev, staging, or prod")
+    prod_data_path: str | None = Field(default=None, description="Production data mount path")
+    staging_data_path: str | None = Field(default=None, description="Staging data mount path")
+    
+    @field_validator("environment")
+    @classmethod
+    def validate_environment(cls, v: str) -> str:
+        """Validate environment is one of allowed values."""
+        allowed = {"dev", "staging", "prod"}
+        if v.lower() not in allowed:
+            raise ValueError(f"Environment must be one of {allowed}, got: {v}")
+        return v.lower()
+    
+    def get_data_root(self) -> Path:
+        """Get environment-specific data root path."""
+        if self.environment == "prod":
+            if not self.prod_data_path:
+                raise RuntimeError(
+                    "PROD_DATA_PATH environment variable required in production"
+                )
+            return Path(self.prod_data_path)
+        elif self.environment == "staging":
+            if not self.staging_data_path:
+                raise RuntimeError(
+                    "STAGING_DATA_PATH environment variable required in staging"
+                )
+            return Path(self.staging_data_path)
+        else:
+            # Dev environment uses local data directory
+            return Path("data")
+    
+    def get_test_data_root(self) -> Path:
+        """Get test data path - ONLY available in dev/test environments."""
+        if self.environment == "prod":
+            raise RuntimeError(
+                "Test data paths are not available in production environment!"
+            )
+        return Path("tests/fixtures")
+    
+    def validate_required_env_vars(self) -> None:
+        """Validate production environment has required configuration."""
+        if self.environment == "prod":
+            required = ["PROD_DATA_PATH", "SUPABASE_URL", "SUPABASE_KEY"]
+            missing = [var for var in required if not os.getenv(var)]
+            if missing:
+                raise RuntimeError(
+                    f"Missing required production environment variables: {missing}"
+                )
+
+
 class Settings(BaseSettings):
     """Main settings class consolidating all configurations."""
     model_config = SettingsConfigDict(env_prefix="ABACO_", env_file=".env", extra="ignore")
+    
+    environment: EnvironmentSettings = EnvironmentSettings()
     financial: FinancialGuardrails = FinancialGuardrails()
     risk: RiskParameters = RiskParameters()
     sla: SLASettings = SLASettings()

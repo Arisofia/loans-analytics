@@ -1,3 +1,11 @@
+from .agents import (
+    RiskAnalystAgent,
+    ComplianceAgent,
+    GrowthStrategistAgent,
+    OpsOptimizerAgent
+)
+
+
 class MultiAgentOrchestrator:
     def __init__(self):
         self.agents = self._init_agents()
@@ -5,10 +13,10 @@ class MultiAgentOrchestrator:
     def _init_agents(self):
         # Initialize agents here
         agents = {
-            'RiskAnalyst': RiskAnalyst(),
-            'Compliance': Compliance(),
-            'GrowthStrategist': GrowthStrategist(),
-            'OpsOptimizer': OpsOptimizer()
+            'RiskAnalyst': RiskAnalystAgent(),
+            'Compliance': ComplianceAgent(),
+            'GrowthStrategist': GrowthStrategistAgent(),
+            'OpsOptimizer': OpsOptimizerAgent()
         }
         return agents
 
