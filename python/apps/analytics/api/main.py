@@ -36,8 +36,10 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     # Disallow use of parent traversal segments
     if any(p == ".." for p in candidate_path.parts):
         raise ValueError("parent traversal is not allowed in path")
+    # Sanitize path to prevent injection (normalize separators)
+    sanitized = Path(str(candidate_path).replace("\\", "/"))
     # Construct path under the allowed directory and resolve it
-    resolved = (allowed_dir / candidate_path).resolve()
+    resolved = (allowed_dir / sanitized).resolve()
     # Ensure the resolved path is still within the allowed_dir
     try:
         resolved.relative_to(allowed_dir)

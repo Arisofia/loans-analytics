@@ -39,16 +39,23 @@ def load_secrets(use_vault_fallback: bool = False) -> Dict[str, Any]:
 
 def main() -> int:
     results = load_secrets(use_vault_fallback=True)
-    # Always avoid printing secret values.
-    # Log high-level status and a redacted payload if needed.
-    status = results.get("status", "unknown")
-    logger.info("load_secrets result: status=%s", status)
-    if results.get("error"):
-        # Log the error safely without echoing any secret values
-        logger.error("load_secrets reported an error: %s", str(results.get("error")))
-    # If you need to inspect structure for debugging, use a redacted version
+    
+    # Extract safe, non-sensitive fields with type hints
+    # Status can only be: "ok", "error", "unknown" (no sensitive data)
+    status: str = results.get("status", "unknown")
+    error_obj = results.get("error")
+    
+    # Log status (guaranteed safe - only contains status enum)
+    logger.info("load_secrets completed: status=%s", status)
+    
+    # Log error type only, never the error message (may contain sensitive context)
+    if error_obj:
+        logger.error("load_secrets failed: error_type=%s", type(error_obj).__name__)
+    
+    # Full structure with redaction for debugging only
     safe = redact_dict(results)
     logger.debug("load_secrets payload (redacted)=%s", safe)
+    
     return 0 if status == "ok" else 1
 
 
