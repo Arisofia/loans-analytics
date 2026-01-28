@@ -190,5 +190,61 @@ class TestTrendAnalysis(unittest.TestCase):
         self.assertAlmostEqual(trend.percent_change, expected_pct, places=2)
 
 
+class TestHistoricalContextProviderModes(unittest.TestCase):
+    """
+    Test mode selection and backend configuration.
+
+    Phase G4.2: Ensure MOCK/REAL mode switching works correctly
+    and maintains backward compatibility.
+    """
+
+    def test_default_mode_is_mock(self):
+        """Test that default mode is MOCK for backward compatibility."""
+        provider = HistoricalContextProvider()
+        self.assertEqual(provider.mode, "MOCK")
+
+    def test_explicit_mock_mode(self):
+        """Test explicit MOCK mode selection."""
+        provider = HistoricalContextProvider(mode="MOCK")
+        self.assertEqual(provider.mode, "MOCK")
+
+    def test_mode_case_insensitive(self):
+        """Test mode selection is case-insensitive."""
+        provider_lower = HistoricalContextProvider(mode="mock")
+        provider_upper = HistoricalContextProvider(mode="MOCK")
+        provider_mixed = HistoricalContextProvider(mode="Mock")
+
+        self.assertEqual(provider_lower.mode, "MOCK")
+        self.assertEqual(provider_upper.mode, "MOCK")
+        self.assertEqual(provider_mixed.mode, "MOCK")
+
+    def test_invalid_mode_raises_error(self):
+        """Test that invalid mode raises ValueError."""
+        with self.assertRaises(ValueError) as context:
+            HistoricalContextProvider(mode="INVALID")
+
+        self.assertIn("Invalid mode", str(context.exception))
+        self.assertIn("MOCK", str(context.exception))
+        self.assertIn("REAL", str(context.exception))
+
+    def test_real_mode_without_backend_raises_error(self):
+        """Test that REAL mode without backend raises RuntimeError."""
+        with self.assertRaises(RuntimeError) as context:
+            HistoricalContextProvider(mode="REAL")
+
+        self.assertIn("REAL mode requires a backend", str(context.exception))
+
+    def test_mock_mode_works_without_backend(self):
+        """Test that MOCK mode works without backend (G4.1 compatibility)."""
+        provider = HistoricalContextProvider(mode="MOCK", backend=None)
+        self.assertEqual(provider.mode, "MOCK")
+
+        # Should work exactly as G4.1
+        history = provider.get_kpi_history(
+            "test_kpi", date(2026, 1, 1), date(2026, 1, 10)
+        )
+        self.assertEqual(len(history), 10)
+
+
 if __name__ == "__main__":
     unittest.main()

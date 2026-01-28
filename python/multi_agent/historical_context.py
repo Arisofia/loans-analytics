@@ -8,10 +8,11 @@ Phase G4.1 Implementation
 """
 
 
+import os
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
@@ -111,6 +112,44 @@ class KpiProjection(BaseModel):
     method: str = Field(..., description="Forecasting method used")
 
 
+@runtime_checkable
+class HistoricalDataBackend(Protocol):
+    """
+    Protocol for historical KPI data backends.
+
+    This defines the interface that any data source must implement
+    to provide historical KPI data to the HistoricalContextProvider.
+
+    Implementations:
+        - MockHistoricalBackend: In-memory mock data (Phase G4.1, default)
+        - SupabaseHistoricalBackend: Supabase-backed storage (Phase G4.2+)
+        - FileHistoricalBackend: File-based storage (future)
+    """
+
+    def get_kpi_history(
+        self,
+        kpi_id: str,
+        start_date: date,
+        end_date: date,
+    ) -> List[KpiHistoricalValue]:
+        """
+        Retrieve historical KPI values for the specified date range.
+
+        Args:
+            kpi_id: KPI identifier
+            start_date: Start date (inclusive)
+            end_date: End date (inclusive)
+
+        Returns:
+            List of KpiHistoricalValue objects sorted by date
+
+        Raises:
+            ValueError: If date range is invalid
+            RuntimeError: If data source is unavailable
+        """
+        ...
+
+
 class HistoricalContextProvider:
     """
     Provides historical context and trend analysis for KPIs.
@@ -122,70 +161,104 @@ class HistoricalContextProvider:
     - Basic caching for performance
     """
 
-    def __init__(self, cache_ttl_seconds: int = 3600):
+    def __init__(
+        self,
+        cache_ttl_seconds: int = 3600,
+        mode: Optional[str] = None,
+        backend: Optional[HistoricalDataBackend] = None,
+    ):
         """
         Initialize historical context provider.
 
         Args:
             cache_ttl_seconds: Time-to-live for cached data (default 1 hour)
+            mode: Data source mode - "MOCK" (default) or "REAL".
+                  Can also be set via HISTORICAL_CONTEXT_MODE env var.
+            backend: Optional backend implementation for REAL mode.
+                     Required if mode="REAL".
+
+        Phase G4.1 Compatibility:
+            Calling HistoricalContextProvider() without arguments works
+            exactly as before - uses MOCK mode with synthetic data.
+
+        Phase G4.2 Usage:
+            provider = HistoricalContextProvider(
+                mode="REAL",
+                backend=SupabaseHistoricalBackend()
+            )
+
+        Raises:
+            ValueError: If mode is not "MOCK" or "REAL"
+            RuntimeError: If mode="REAL" but backend is None
         """
         self.cache_ttl_seconds = cache_ttl_seconds
         self._cache: Dict[str, tuple[datetime, any]] = {}
         self._historical_data: Dict[str, List[KpiHistoricalValue]] = {}
 
+        # Mode selection: default to MOCK for G4.1 backward compatibility
+        env_mode = os.getenv("HISTORICAL_CONTEXT_MODE", "MOCK").upper()
+        self.mode = (mode or env_mode).upper()
+
+        if self.mode not in ("MOCK", "REAL"):
+            raise ValueError(
+                f"Invalid mode '{self.mode}'. Must be 'MOCK' or 'REAL'."
+            )
+
+        self._backend = backend
+
+        # Validate REAL mode configuration
+        if self.mode == "REAL" and self._backend is None:
+            raise RuntimeError(
+                "HistoricalContextProvider in REAL mode requires a backend "
+                "implementing HistoricalDataBackend protocol. "
+                "Pass backend=YourBackend() to __init__."
+            )
+
     def _load_historical_data(
         self, kpi_id: str, start_date: date, end_date: date
     ) -> List[KpiHistoricalValue]:
         """
-        Load historical KPI data from data source.
+        Load historical KPI data from configured data source.
 
-        **Phase G4.1**: Stub implementation with mock data (current).
-        **Phase G4.2+**: Will integrate with actual data sources.
+        Phase G4.1:
+            - Returns mock data used for tests and development
+        Phase G4.2:
+            - Adds REAL mode backed by external data source (e.g., Supabase)
+            - MOCK remains the default and is NOT removed
 
-        Future Implementation (Phase G4.2+):
-        - Query Supabase for historical KPI values
-        - Support multiple data sources (DB, API, file)
-        - Add data validation and error handling
-        - Implement data source configuration
+        Current modes:
+            - MOCK: Deterministic synthetic time series (fully test-covered)
+            - REAL: Delegates to self._backend.get_kpi_history()
 
         Args:
             kpi_id: KPI identifier
-            start_date: Start date
-            end_date: End date
+            start_date: Start date (inclusive)
+            end_date: End date (inclusive)
 
         Returns:
-            List of historical KPI values
+            List of historical KPI values sorted by date
+
+        Raises:
+            RuntimeError: If REAL mode is used without a configured backend
+            ValueError: If backend returns invalid data
 
         Note:
-            This is a STUB implementation for Phase G4.1 testing.
-            Mock data generation is INTENTIONAL and should NOT be
-            removed until Phase G4.2 when real data sources are
-            integrated.
+            MOCK mode data generation is INTENTIONAL and should NOT be
+            removed. It provides a stable, deterministic baseline for
+            all unit tests and development environments.
         """
+        # REAL mode: delegate to configured backend
+        if self.mode == "REAL":
+            if self._backend is None:
+                raise RuntimeError(
+                    "HistoricalContextProvider in REAL mode requires a backend "
+                    "implementing HistoricalDataBackend protocol."
+                )
+            return self._backend.get_kpi_history(kpi_id, start_date, end_date)
+
         # ===================================================================
-        # PHASE G4.1: Mock Data Generation (DO NOT REMOVE YET)
-        # TODO [Phase G4.2]: Replace with actual data source integration
-        #
-        # Real implementation will:
-        # 1. Connect to Supabase or other data source
-        # 2. Query historical KPI table
-        # 3. Handle missing data and gaps
-        # 4. Support pagination for large datasets
-        # 5. Add retry logic and error handling
-        #
-        # Example (Phase G4.2):
-        # ```python
-        # from src.data.supabase_client import get_supabase_client
-        # client = get_supabase_client()
-        # result = client.table('kpi_historical_values')
-        #     .select('*')
-        #     .eq('kpi_id', kpi_id)
-        #     .gte('date', start_date)
-        #     .lte('date', end_date)
-        #     .order('date')
-        #     .execute()
-        # return [KpiHistoricalValue(**row) for row in result.data]
-        # ```
+        # MOCK mode: Phase G4.1 synthetic data generation
+        # This is the DEFAULT behavior to maintain backward compatibility
         # ===================================================================
 
         values = []
