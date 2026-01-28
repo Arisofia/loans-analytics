@@ -12,8 +12,15 @@ except ImportError:
     OpenAI = None
 
 from .guardrails import Guardrails
-from .protocol import (AgentError, AgentRequest, AgentResponse, AgentRole,
-                       LLMProvider, Message, MessageRole)
+from .protocol import (
+    AgentError,
+    AgentRequest,
+    AgentResponse,
+    AgentRole,
+    LLMProvider,
+    Message,
+    MessageRole,
+)
 from .tracing import AgentTracer
 
 logger = logging.getLogger(__name__)
