@@ -48,10 +48,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload export artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@250e9d8087e4d33cdf6c33e180d803782f68fdb1  # v4.4.3
         with:
           name: batch-export-results-${{ github.run_id }}
           path: data/exports/
