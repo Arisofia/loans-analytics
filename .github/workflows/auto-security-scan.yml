@@ -67,10 +67,18 @@ jobs:
             - name: Checkout
               uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+            - name: Check Snyk token availability
+              id: snyk-check
+              run: |
+                  if [ -n "${{ secrets.SNYK_TOKEN }}" ]; then
+                    echo "available=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "available=false" >> "$GITHUB_OUTPUT"
+                    echo "::notice::SNYK_TOKEN not configured - skipping Snyk scan"
+                  fi
+
             - name: Run Snyk (if token available)
-              if: secrets.SNYK_TOKEN != ''
-              # This step runs only if SNYK_TOKEN is configured
-              # If token is not set, this step is skipped gracefully
+              if: steps.snyk-check.outputs.available == 'true'
               run: |
                   npm install -g snyk
                   snyk auth ${{ secrets.SNYK_TOKEN }}
@@ -78,7 +86,7 @@ jobs:
               continue-on-error: true
 
             - name: Upload Snyk report
-              if: always() && secrets.SNYK_TOKEN != ''
+              if: always() && steps.snyk-check.outputs.available == 'true'
               uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
               with:
                   name: snyk-report
