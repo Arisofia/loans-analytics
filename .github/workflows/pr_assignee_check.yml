@@ -8,6 +8,10 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   ensure-assignee:
     name: Ensure PR has assignee

@@ -11,6 +11,9 @@ env:
   HEALTH_CHECK_PATH: "/?page=health"
   HEALTH_TIMEOUT: 300
 
+permissions:
+  contents: read
+
 jobs:
   validate-deployment:
     runs-on: ubuntu-latest

@@ -9,6 +9,9 @@ name: Playwright E2E Tests
     paths:
       - "apps/web/**"
 
+permissions:
+  contents: read
+
 jobs:
   e2e:
     runs-on: ubuntu-latest

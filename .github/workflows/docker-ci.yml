@@ -8,6 +8,11 @@ on:
     pull_request:
         branches: ["**"]
 
+permissions:
+    contents: read
+    packages: write
+    pull-requests: write
+
 env:
     REGISTRY: docker.io
     IMAGE_NAME: ${{ github.repository }}

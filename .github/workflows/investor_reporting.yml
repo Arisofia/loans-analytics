@@ -5,13 +5,16 @@ on:
     - cron: "0 9 1 * *" # 10:00 AM CET, 1st of month
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     outputs:
       run: ${{ steps.check.outputs.run }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - id: check
         run: |
           if [ -f "scripts/investor_reporting.py" ]; then
@@ -60,10 +63,10 @@ jobs:
             fi
       - name: Checkout Repository
         if: steps.check-secrets.outputs.can_run == 'true'
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Setup Python Environment
         if: steps.check-secrets.outputs.can_run == 'true'
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: "3.11"
       - name: Install Dependencies

@@ -13,6 +13,9 @@ on:
       - ".github/workflows/main_abaco_analytics_dashboard.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-dashboard-${{ github.ref }}
   cancel-in-progress: true

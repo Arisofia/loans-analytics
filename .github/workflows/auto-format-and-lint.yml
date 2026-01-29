@@ -17,6 +17,9 @@ on:
             - "**.ts"
             - "**.tsx"
 
+permissions:
+  contents: read
+
 jobs:
     format:
         if: github.event_name == 'pull_request'

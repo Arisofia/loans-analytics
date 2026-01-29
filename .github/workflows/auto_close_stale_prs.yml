@@ -5,6 +5,9 @@ name: Auto-close Stale PRs
     - cron: '0 0 * * *' # Runs daily at midnight UTC
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   close-stale-prs:
     runs-on: ubuntu-latest
