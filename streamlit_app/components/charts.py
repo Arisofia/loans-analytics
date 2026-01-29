@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from dashboard_utils import compute_cat_agg, format_kpi_value
+from python.utils.dashboard import compute_cat_agg, format_kpi_value
 
 from .visualizations import apply_theme
 
