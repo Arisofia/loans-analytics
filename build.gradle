@@ -19,11 +19,29 @@ ext {
     // Override vulnerable transitive dependency versions
     set('tomcat.version', '10.1.34')
     set('spring-security.version', '6.4.4')
+    set('snakeyaml.version', '2.2')
+    set('logback.version', '1.5.16')
+    set('nimbus-jose-jwt.version', '9.47')
+    set('jackson-bom.version', '2.18.2')
+    set('assertj.version', '3.27.3')
+    set('xmlunit.version', '2.10.0')
+    set('spring-framework.version', '6.2.2')
 }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    
+    // Force secure versions of transitive dependencies
+    constraints {
+        implementation('com.nimbusds:nimbus-jose-jwt:9.47') {
+            because 'CVE fixes for JWT handling'
+        }
+        implementation('com.nimbusds:oauth2-oidc-sdk:11.23.1') {
+            because 'CVE fixes for OAuth2'
+        }
+    }
+    
     // This starter includes JUnit 5, AssertJ, Mockito, and other essential testing libraries.
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
