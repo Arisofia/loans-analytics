@@ -11,6 +11,8 @@ name: Integration Tests (Optional)
 
 on:
   workflow_dispatch:  # Manual trigger from GitHub Actions UI
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2am UTC
     inputs:
       test_target:
         description: 'Which integration tests to run (e.g., all, historical_kpis)'
