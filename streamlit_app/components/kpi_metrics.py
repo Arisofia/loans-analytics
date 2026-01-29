@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from dashboard_utils import format_kpi_value, kpi_label
+from python.utils.dashboard import format_kpi_value, kpi_label
 
 
 def render_kpi_snapshot(kpi_snapshot, snapshot_month=None):

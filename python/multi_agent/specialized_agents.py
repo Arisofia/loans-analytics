@@ -1,9 +1,11 @@
 """Specialized fintech agents for domain-specific operations."""
 
+from .agent_factory import agent_with_role
 from .base_agent import BaseAgent
 from .protocol import AgentRole
 
 
+@agent_with_role(AgentRole.COLLECTIONS)
 class CollectionsAgent(BaseAgent):
     """
     Collections & Delinquency Management Agent.
@@ -15,9 +17,6 @@ class CollectionsAgent(BaseAgent):
     - Payment plan recommendations
     - Hardship assessment
     """
-
-    def __init__(self, **kwargs):
-        super().__init__(role=AgentRole.COLLECTIONS, **kwargs)
 
     def get_system_prompt(self) -> str:
         return (
@@ -52,6 +51,7 @@ class CollectionsAgent(BaseAgent):
         )
 
 
+@agent_with_role(AgentRole.FRAUD_DETECTION)
 class FraudDetectionAgent(BaseAgent):
     """
     Fraud Detection & Prevention Agent.
@@ -63,9 +63,6 @@ class FraudDetectionAgent(BaseAgent):
     - Fraud ring identification
     - Risk scoring for suspicious activity
     """
-
-    def __init__(self, **kwargs):
-        super().__init__(role=AgentRole.FRAUD_DETECTION, **kwargs)
 
     def get_system_prompt(self) -> str:
         return (
@@ -103,6 +100,7 @@ class FraudDetectionAgent(BaseAgent):
         )
 
 
+@agent_with_role(AgentRole.PRICING)
 class PricingAgent(BaseAgent):
     """
     Dynamic Pricing & Rate Optimization Agent.
@@ -114,9 +112,6 @@ class PricingAgent(BaseAgent):
     - Competitive positioning
     - Profit margin analysis
     """
-
-    def __init__(self, **kwargs):
-        super().__init__(role=AgentRole.PRICING, **kwargs)
 
     def get_system_prompt(self) -> str:
         return (
@@ -152,6 +147,7 @@ class PricingAgent(BaseAgent):
         )
 
 
+@agent_with_role(AgentRole.CUSTOMER_RETENTION)
 class CustomerRetentionAgent(BaseAgent):
     """
     Customer Retention & Churn Prevention Agent.
@@ -163,9 +159,6 @@ class CustomerRetentionAgent(BaseAgent):
     - Win-back campaign design
     - Customer satisfaction analysis
     """
-
-    def __init__(self, **kwargs):
-        super().__init__(role=AgentRole.CUSTOMER_RETENTION, **kwargs)
 
     def get_system_prompt(self) -> str:
         return (

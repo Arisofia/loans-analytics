@@ -1,14 +1,15 @@
 """Data ingestion module for Cascade Debt platform."""
 
 import json
-import logging
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
 
 import pandas as pd
 
-logger = logging.getLogger(__name__)
+from python.logging_config import get_logger
+from python.time_utils import get_iso_timestamp
+
+logger = get_logger(__name__)
 
 
 class CascadeIngestion:
@@ -17,7 +18,7 @@ class CascadeIngestion:
     def __init__(self, data_dir: str = "data/cascade"):
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        self.run_id = datetime.utcnow().isoformat()
+        self.run_id = get_iso_timestamp()
         self.errors: List[Dict[str, Any]] = []
 
     def ingest_csv(self, filename: str) -> pd.DataFrame:
@@ -26,7 +27,7 @@ class CascadeIngestion:
         try:
             df = pd.read_csv(filepath)
             df["_ingest_run_id"] = self.run_id
-            df["_ingest_timestamp"] = datetime.utcnow().isoformat()
+            df["_ingest_timestamp"] = get_iso_timestamp()
             logger.info(f"Ingested {len(df)} records from {filename}")
             return df
         except Exception as e:
@@ -44,7 +45,7 @@ class CascadeIngestion:
                 if isinstance(data, list):
                     for record in data:
                         record["_ingest_run_id"] = self.run_id
-                        record["_ingest_timestamp"] = datetime.utcnow().isoformat()
+                        record["_ingest_timestamp"] = get_iso_timestamp()
                     logger.info(f"Ingested {len(data)} records from {filename}")
                     return data
                 else:
@@ -80,7 +81,7 @@ class CascadeIngestion:
         """Get ingestion summary with audit trail."""
         return {
             "run_id": self.run_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": get_iso_timestamp(),
             "total_errors": len(self.errors),
             "errors": self.errors,
         }
