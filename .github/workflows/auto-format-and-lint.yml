@@ -16,7 +16,8 @@ on:
             - "**.js"
             - "**.ts"
             - "**.tsx"
-
+permissions:
+    contents: read
 permissions:
   contents: read
 
