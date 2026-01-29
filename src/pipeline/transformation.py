@@ -75,9 +75,7 @@ class TransformationPhase:
         # Extract configuration settings with defaults
         null_config = config.get("null_handling", {})
         self.null_strategy = null_config.get("strategy", "smart")
-        self.fill_values = null_config.get(
-            "fill_values", {"numeric": 0, "categorical": "unknown"}
-        )
+        self.fill_values = null_config.get("fill_values", {"numeric": 0, "categorical": "unknown"})
 
         outlier_config = config.get("outlier_detection", {})
         self.outlier_enabled = outlier_config.get("enabled", True)
@@ -472,7 +470,9 @@ class TransformationPhase:
                 # Note: allowed_chars includes both upper and lowercase letters.
                 # The dangerous_patterns check uses expression.lower() to catch uppercase
                 # variants of dangerous keywords (e.g., "IMPORT", "EXEC").
-                allowed_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). ")
+                allowed_chars = set(
+                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). "
+                )
                 if not all(c in allowed_chars for c in expression):
                     logger.warning(f"Unsafe characters in expression '{expression}', skipping rule")
                     return df, False
@@ -492,7 +492,9 @@ class TransformationPhase:
                     "file",
                 ]
                 if any(pattern in expression.lower() for pattern in dangerous_patterns):
-                    logger.warning(f"Dangerous pattern detected in expression '{expression}', skipping rule")
+                    logger.warning(
+                        f"Dangerous pattern detected in expression '{expression}', skipping rule"
+                    )
                     return df, False
                 try:
                     df[target_col] = df.eval(expression)
@@ -594,9 +596,7 @@ class TransformationPhase:
         outliers.loc[non_null.index] = outliers_non_null.fillna(False)
         return outliers
 
-    def _check_referential_integrity(
-        self, df: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    def _check_referential_integrity(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Check referential integrity across entities.
 
@@ -643,10 +643,15 @@ class TransformationPhase:
         # Check date consistency
         date_cols = [col for col in df.columns if col.endswith("_date")]
         if "origination_date" in date_cols and "due_date" in date_cols:
-            if df["origination_date"].dtype == "datetime64[ns]" and df["due_date"].dtype == "datetime64[ns]":
+            if (
+                df["origination_date"].dtype == "datetime64[ns]"
+                and df["due_date"].dtype == "datetime64[ns]"
+            ):
                 # Filter out NaT values before comparing dates
                 valid_mask = df["due_date"].notna() & df["origination_date"].notna()
-                invalid_dates = (df.loc[valid_mask, "due_date"] < df.loc[valid_mask, "origination_date"]).sum()
+                invalid_dates = (
+                    df.loc[valid_mask, "due_date"] < df.loc[valid_mask, "origination_date"]
+                ).sum()
                 if invalid_dates > 0:
                     integrity_issues.append(
                         {
