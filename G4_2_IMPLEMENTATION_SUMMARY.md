@@ -29,7 +29,7 @@ Successfully implemented all G4.2 deployment requirements for historical KPIs in
 - Production-grade `historical_kpis` table
 - 8 columns with proper types (DECIMAL(18,6) for precision)
 - 3 performance-optimized indices
-- Data integrity constraints aligned with the implemented schema
+- Data integrity constraints implemented for core fields; NOTE: UNIQUE(kpi_id, date) expected by integration tests is a known follow-up for the migration schema
 - Auto-updating `updated_at` trigger
 - RLS policy templates (commented, ready for customization)
 - Partitioning strategy documentation
