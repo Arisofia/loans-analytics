@@ -13,6 +13,16 @@
 ## 2. Analytics Pipeline Health
 - Trigger `Analytics Pipeline` workflow.
 - Verify `exports/kpi_audit_trail.csv` is generated and contains valid data.
+  ```bash
+  # Check file exists
+  ls -lh exports/kpi_audit_trail.csv
+  
+  # Verify audit trail structure
+  head -5 exports/kpi_audit_trail.csv
+  
+  # Check for any failed calculations (match status column specifically)
+  grep -c ',failed,' exports/kpi_audit_trail.csv || echo "0"
+  ```
 - Check for any `CRITICAL` logs in Azure Monitor.
 ## 3. Web App Accessibility
 - Verify Supabase login works.
