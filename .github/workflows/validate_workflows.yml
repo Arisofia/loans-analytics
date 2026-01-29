@@ -14,8 +14,6 @@ jobs:
       - name: Run actionlint
         id: actionlint
         uses: rhysd/actionlint@v1.7.7
-        with:
-          args: .github/workflows
 
       - name: Actionlint summary
         if: steps.actionlint.outcome != 'success'
