@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Set up pnpm
         uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2  # v4.0.0
@@ -26,7 +26,7 @@ jobs:
           version: 9
 
       - name: Setup Node
-        uses: actions/setup-node@b7dde419cc031a3d665baa4a62731727917cd13e  # v4.1.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.1.0
         with:
           node-version: 20
           cache: "pnpm"
@@ -81,7 +81,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Upload build artifact (local)
-        uses: actions/upload-artifact@250e9d8087e4d33cdf6c33e180d803782f68fdb1  # v4.4.3
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4.4.3
         with:
           name: web-build
           path: apps/web/.next
@@ -115,7 +115,7 @@ jobs:
     if: failure()
     steps:
       - name: Checkout
-        uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Azure Login
         uses: azure/login@v1
