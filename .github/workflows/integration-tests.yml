@@ -79,7 +79,7 @@ jobs:
           echo "✅ Supabase credentials configured"
       
       - name: Run Historical KPIs integration tests
-        if: inputs.test_target == 'all' || inputs.test_target == 'historical_kpis' || github.event_name != 'workflow_dispatch'
+        if: github.event_name == 'schedule' || inputs.test_target == 'all' || inputs.test_target == 'historical_kpis'
         env:
           RUN_REAL_SUPABASE_TESTS: '1'
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
