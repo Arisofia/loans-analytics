@@ -1,7 +1,6 @@
 """Agent tracing and observability."""
 
 import hashlib
-import logging
 import time
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -14,9 +13,11 @@ try:
 except ImportError:
     OTEL_AVAILABLE = False
 
+from python.logging_config import get_logger
+
 from .protocol import AgentError, AgentRequest, AgentResponse, AgentRole
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AgentTracer:
