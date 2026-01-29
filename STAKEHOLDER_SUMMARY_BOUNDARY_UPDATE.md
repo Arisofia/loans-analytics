@@ -20,6 +20,7 @@
 ## 📊 **PRODUCTION BOUNDARY CLARIFICATION**
 
 ### ✅ **Inside Automated Pipeline** (Production)
+
 - **CSV file uploads** (manual upload → automated processing)
 - **Local data files** in `data/raw/`
 - **4-phase pipeline execution** (Ingestion → Transformation → Calculation → Output)
@@ -27,6 +28,7 @@
 - **Streamlit/Frontend dashboards** (automated refresh)
 
 ### 📦 **Outside Automated Pipeline** (Manual Entry Only)
+
 - **Cascade** - Manual export → CSV upload
 - **HubSpot** - Manual export → CSV upload
 - **Notion** - Manual export → CSV upload
@@ -41,55 +43,63 @@
 
 All 8 reference documents updated for consistency:
 
-| Document | Updated Section | Change |
-|----------|----------------|--------|
-| **UNIFIED_WORKFLOW.md** | Process Overview, Phase 1 Ingestion | Clarified CSV/manual upload as input |
-| **.repo-structure.json** | ACTIVE_PRODUCTION_WORKFLOW | Removed API references to manual platforms |
-| **WORKFLOW_DIAGRAMS.md** | Complete Data Flow | Updated input sources diagram |
-| **UNIFICATION_SUMMARY.md** | Process Phases | Clarified manual upload step |
-| **QUICK_START.md** | Pipeline Overview | Updated input sources |
-| **archive_legacy/README.md** | Context for archived API code | Explained why API code is archived |
-| **FINAL_STATUS.md** | Production Workflow | Updated boundary definition |
-| **DOCUMENTATION_INDEX.md** | Reference cross-links | Consistent terminology |
+| Document                     | Updated Section                     | Change                                     |
+| ---------------------------- | ----------------------------------- | ------------------------------------------ |
+| **UNIFIED_WORKFLOW.md**      | Process Overview, Phase 1 Ingestion | Clarified CSV/manual upload as input       |
+| **.repo-structure.json**     | ACTIVE_PRODUCTION_WORKFLOW          | Removed API references to manual platforms |
+| **WORKFLOW_DIAGRAMS.md**     | Complete Data Flow                  | Updated input sources diagram              |
+| **UNIFICATION_SUMMARY.md**   | Process Phases                      | Clarified manual upload step               |
+| **QUICK_START.md**           | Pipeline Overview                   | Updated input sources                      |
+| **archive_legacy/README.md** | Context for archived API code       | Explained why API code is archived         |
+| **FINAL_STATUS.md**          | Production Workflow                 | Updated boundary definition                |
+| **DOCUMENTATION_INDEX.md**   | Reference cross-links               | Consistent terminology                     |
 
 ---
 
 ## 🔄 **UPDATED DATA FLOW**
 
 ### **Before** (Ambiguous)
+
 ```
 [External APIs] → Ingestion → Transform → Calculate → Output
 ```
-*Implied automated API calls to Cascade, HubSpot, etc.*
+
+_Implied automated API calls to Cascade, HubSpot, etc._
 
 ### **After** (Clarified)
+
 ```
 [Human Export] → [CSV Upload] → Ingestion → Transform → Calculate → Output
                    ↓
               data/raw/
 ```
-*Explicit manual step before automation begins*
+
+_Explicit manual step before automation begins_
 
 ---
 
 ## 💡 **KEY MESSAGES FOR STAKEHOLDERS**
 
 ### **For Developers**
+
 - ✅ **No code changes required** - automation still works as before
 - ✅ **Pipeline starts at CSV ingestion** - clear entry point
 - ✅ **Legacy API code is archived** - not part of current production
 
 ### **For Operations**
+
 - ✅ **Data collection is manual** - export from Cascade/HubSpot → upload CSV
 - ✅ **Pipeline automation starts after upload** - no API calls to external platforms
 - ✅ **Dashboards still auto-refresh** - after pipeline completes
 
 ### **For Business Users**
+
 - ✅ **Dashboard data requires manual export** from source systems first
 - ✅ **After upload, everything is automated** - transformation, calculation, visualization
 - ✅ **No change to workflow** - just clearer documentation
 
 ### **For Decision Makers**
+
 - ✅ **Production boundary is now explicit** - manual vs automated steps clear
 - ✅ **No technical debt introduced** - this is documentation accuracy only
 - ✅ **Reduces confusion** - everyone knows where automation starts/stops
@@ -130,12 +140,15 @@ All 8 reference documents updated for consistency:
 ## 📝 **COMMUNICATION TEMPLATES**
 
 ### **For Engineering Team**
+
 > "Updated documentation to clarify production boundaries: Cascade, HubSpot, Notion, Figma, and Looker require manual export to CSV before automated pipeline processing. No code changes. All docs now consistent."
 
 ### **For Operations Team**
+
 > "Documentation now clearly states: export data from source systems → upload CSV to data/raw/ → pipeline automates the rest. This reflects current production workflow."
 
 ### **For Management**
+
 > "Clarified documentation to accurately reflect that external platform data requires manual export steps before automated processing. No change to actual operations, just documentation accuracy."
 
 ---
@@ -143,16 +156,19 @@ All 8 reference documents updated for consistency:
 ## 🚀 **NEXT STEPS**
 
 ### **Immediate** (Complete ✅)
+
 - ✅ Update all 8 reference documents
 - ✅ Verify consistency across documentation
 - ✅ Commit changes to git
 
 ### **Short Term** (Optional)
+
 - 📧 Send stakeholder email with summary
 - 📊 Update onboarding materials if needed
 - 📚 Review training docs for consistency
 
 ### **Long Term** (Future Consideration)
+
 - 🔮 Consider API automation if needed (not currently planned)
 - 🔮 Evaluate data connectors (if business value exists)
 - 🔮 Monitor for workflow improvement opportunities
@@ -161,26 +177,28 @@ All 8 reference documents updated for consistency:
 
 ## 📊 **IMPACT ASSESSMENT**
 
-| Area | Impact Level | Details |
-|------|-------------|---------|
-| **Code** | ✅ None | No code changes |
-| **Automation** | ✅ None | Pipeline unchanged |
-| **Workflow** | ✅ None | Same manual → automated flow |
-| **Documentation** | ✅ High | Now accurate and consistent |
-| **Understanding** | ✅ High | Clearer boundaries |
-| **Training** | ⚠️ Low | May need doc refresh |
+| Area              | Impact Level | Details                      |
+| ----------------- | ------------ | ---------------------------- |
+| **Code**          | ✅ None      | No code changes              |
+| **Automation**    | ✅ None      | Pipeline unchanged           |
+| **Workflow**      | ✅ None      | Same manual → automated flow |
+| **Documentation** | ✅ High      | Now accurate and consistent  |
+| **Understanding** | ✅ High      | Clearer boundaries           |
+| **Training**      | ⚠️ Low       | May need doc refresh         |
 
 ---
 
 ## 🎯 **SUCCESS METRICS**
 
 ### **How We Know This Succeeded**
+
 1. ✅ All documentation uses consistent terminology
 2. ✅ New team members understand production boundaries
 3. ✅ No questions about "why isn't API automation working"
 4. ✅ Stakeholders know where manual steps occur
 
 ### **Red Flags** (None Expected)
+
 - ❌ Confusion about what's automated
 - ❌ Expectations of non-existent API automation
 - ❌ Questions about "missing" features
@@ -200,13 +218,15 @@ Team,
 We've updated our documentation to more accurately reflect our production data workflow:
 
 **Key Clarification**:
+
 - External platforms (Cascade, HubSpot, Notion, Figma, Looker) require **manual data export** to CSV
 - Automated pipeline begins **after CSV upload** to `data/raw/`
 - All 4 phases (Ingestion → Transformation → Calculation → Output) remain fully automated
 
 **What Changed**: Documentation only - no code or workflow changes
 
-**Where to Look**: 
+**Where to Look**:
+
 - Quick reference: `QUICK_START.md`
 - Complete guide: `UNIFIED_WORKFLOW.md`
 - Visual flows: `WORKFLOW_DIAGRAMS.md`
@@ -235,4 +255,4 @@ Best,
 
 ---
 
-*Generated: January 29, 2026*
+_Generated: January 29, 2026_
