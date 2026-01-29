@@ -20,7 +20,7 @@ jobs:
       issues: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Check Azure credentials
         id: check_secrets
@@ -54,11 +54,7 @@ jobs:
       - name: Determine app URL
         id: app_url
         run: |
-          if [ -z "${{ github.event.inputs.app_url }}" ]; then
-            APP_URL="https://${{ env.WEBAPP_NAME }}.azurewebsites.net"
-          else
-            APP_URL="${{ github.event.inputs.app_url }}"
-          fi
+          APP_URL="https://${{ env.WEBAPP_NAME }}.azurewebsites.net"
           echo "url=$APP_URL" >> "$GITHUB_OUTPUT"
           echo "App URL: $APP_URL"
 
@@ -84,7 +80,7 @@ jobs:
 
       - name: Set up Python for smoke test
         if: steps.check_secrets.outputs.has_azure_secrets != 'true'
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: "3.11"
 
@@ -203,7 +199,7 @@ jobs:
       - name: Notify failure (deployment issue)
         if: failure() && steps.check_secrets.outputs.has_azure_secrets == 'true'
         continue-on-error: true
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd  # v8.0.0
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             const title = "Azure Deployment Validation Failed";
@@ -236,7 +232,7 @@ jobs:
       - name: Notify failure (dependencies issue)
         if: failure() && steps.check_secrets.outputs.has_azure_secrets != 'true'
         continue-on-error: true
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd  # v8.0.0
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             const title = "Dashboard Dependency Test Failed";
