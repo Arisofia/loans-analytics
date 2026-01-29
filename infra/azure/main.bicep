@@ -61,6 +61,7 @@ resource sqlserver 'Microsoft.Sql/servers@2022-02-01-preview' = {
 }
 resource sqlFirewall 'Microsoft.Sql/servers/firewallRules@2022-02-01-preview' = [
   for rule in firewallRules: {
+    parent: sqlserver
     name: rule.name
     properties: {
       startIpAddress: rule.startIpAddress
@@ -69,12 +70,12 @@ resource sqlFirewall 'Microsoft.Sql/servers/firewallRules@2022-02-01-preview' = 
   }
 ]
 resource sqldb 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
+  parent: sqlserver
   name: sqlDbName
   location: location
   properties: {
     collation: 'SQL_Latin1_General_CP1_CI_AS'
     maxSizeBytes: 2147483648
-    sampleName: 'AdventureWorksLT'
   }
   sku: {
     name: 'Basic'
