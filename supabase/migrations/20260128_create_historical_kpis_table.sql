@@ -80,19 +80,19 @@ CREATE INDEX IF NOT EXISTS idx_historical_kpis_lookup
 -- Example (requires PostgreSQL 10+):
 -- 
 -- ALTER TABLE historical_kpis 
---     PARTITION BY RANGE (EXTRACT(YEAR FROM date));
+--     PARTITION BY RANGE (date);
 -- 
 -- CREATE TABLE historical_kpis_2024 
 --     PARTITION OF historical_kpis 
---     FOR VALUES FROM (2024) TO (2025);
+--     FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');
 -- 
 -- CREATE TABLE historical_kpis_2025 
 --     PARTITION OF historical_kpis 
---     FOR VALUES FROM (2025) TO (2026);
+--     FOR VALUES FROM ('2025-01-01') TO ('2026-01-01');
 -- 
 -- CREATE TABLE historical_kpis_2026 
 --     PARTITION OF historical_kpis 
---     FOR VALUES FROM (2026) TO (2027);
+--     FOR VALUES FROM ('2026-01-01') TO ('2027-01-01');
 
 -- ============================================================================
 -- Updated_at Trigger
