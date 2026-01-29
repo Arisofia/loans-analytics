@@ -39,14 +39,16 @@ jobs:
       - name: Delete merged branches
         run: |
           echo "🔍 Identifying merged branches..."
-          MERGED=$(git branch -r --merged origin/main | grep -v 'origin/main' | grep -v 'origin/HEAD' | sed 's/origin\///' || true)
+          MERGED=$(git branch -r --merged origin/main | \
+            grep -v 'origin/main' | grep -v 'origin/HEAD' | \
+            sed 's/origin\///' || true)
 
           if [ -z "$MERGED" ]; then
             echo "✓ No merged branches to delete"
           else
             echo "Found merged branches:"
             echo "$MERGED"
-            
+
             for branch in $MERGED; do
               echo "  Deleting $branch..."
               git push origin --delete "$branch" 2>/dev/null || echo "  (Already deleted or protected)"
@@ -63,7 +65,8 @@ jobs:
       - name: Run garbage collection
         run: |
           echo "♻️  Running garbage collection..."
-          if [ "${{ github.event.inputs.cleanup_mode }}" == "full" ] || [ "${{ github.event.inputs.cleanup_mode }}" == "aggressive" ]; then
+          if [ "${{ github.event.inputs.cleanup_mode }}" == "full" ] || \
+             [ "${{ github.event.inputs.cleanup_mode }}" == "aggressive" ]; then
             git gc --aggressive --prune=now
             echo "✓ Aggressive garbage collection complete"
           else
@@ -93,7 +96,8 @@ jobs:
           echo "- ✓ Fetched all references with prune" >> cleanup-report.md
           echo "- ✓ Deleted merged branches" >> cleanup-report.md
 
-          if [ "${{ github.event.inputs.cleanup_mode }}" == "full" ] || [ "${{ github.event.inputs.cleanup_mode }}" == "aggressive" ]; then
+          if [ "${{ github.event.inputs.cleanup_mode }}" == "full" ] || \
+             [ "${{ github.event.inputs.cleanup_mode }}" == "aggressive" ]; then
             echo "- ✓ Pruned remote references" >> cleanup-report.md
             echo "- ✓ Ran aggressive garbage collection" >> cleanup-report.md
           else
