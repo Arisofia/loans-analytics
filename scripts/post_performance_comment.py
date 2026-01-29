@@ -6,6 +6,8 @@ import json
 import sys
 from pathlib import Path
 
+from scripts.path_utils import validate_path
+
 
 def format_performance_comment(metrics_file: str) -> str:
     """Format performance metrics as GitHub comment.
@@ -16,10 +18,12 @@ def format_performance_comment(metrics_file: str) -> str:
     Returns:
         Formatted markdown comment
     """
-    if not Path(metrics_file).exists():
-        return "❌ Performance metrics file not found."
+    # Validate metrics file path (CWE-22: Path Traversal)
+    validated_metrics = validate_path(
+        metrics_file, base_dir=".", must_exist=True
+    )
 
-    with open(metrics_file) as f:
+    with open(validated_metrics) as f:  # snyk:skip=f40d7b06-c546-44db-ad45-074644040df8
         metrics = json.load(f)
 
     comment = "## ⚡ Performance Analysis Report\n\n"

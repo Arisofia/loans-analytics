@@ -9,6 +9,8 @@ import json
 import sys
 from pathlib import Path
 
+from scripts.path_utils import validate_path
+
 
 def load_baseline(baseline_file: str) -> dict:
     """Load baseline metrics from YAML or JSON file."""
@@ -41,11 +43,12 @@ def compare_performance(metrics_file: str, threshold: float = 0.20) -> bool:
     Returns:
         True if all scenarios meet performance targets, False otherwise
     """
-    if not Path(metrics_file).exists():
-        print(f"❌ Error: Metrics file not found: {metrics_file}")
-        return False
+    # Validate metrics file path (CWE-22: Path Traversal)
+    validated_metrics = validate_path(
+        metrics_file, base_dir=".", must_exist=True
+    )
 
-    with open(metrics_file) as f:
+    with open(validated_metrics) as f:  # snyk:skip=3abe2bc2-524a-464f-900d-2277378e55cb
         metrics = json.load(f)
 
     # Load baselines
