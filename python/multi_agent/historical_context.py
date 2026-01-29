@@ -82,12 +82,8 @@ class SeasonalityPattern(BaseModel):
     """Seasonality pattern detection result."""
 
     kpi_id: str = Field(..., description=KPI_IDENTIFIER_DESC)
-    has_seasonality: bool = Field(
-        ..., description="Whether seasonality detected"
-    )
-    cycle_length_months: Optional[int] = Field(
-        None, description="Seasonal cycle length"
-    )
+    has_seasonality: bool = Field(..., description="Whether seasonality detected")
+    cycle_length_months: Optional[int] = Field(None, description="Seasonal cycle length")
     peak_months: List[int] = Field(
         default_factory=list,
         description="Months with peak values (1-12)",
@@ -465,9 +461,7 @@ class HistoricalContextProvider:
         # Calculate exponential smoothing
         smoothed = [history[0].value]
         for i in range(1, len(history)):
-            smoothed_val = (
-                alpha * history[i].value + (1 - alpha) * smoothed[i - 1]
-            )
+            smoothed_val = alpha * history[i].value + (1 - alpha) * smoothed[i - 1]
             smoothed.append(smoothed_val)
 
         # Calculate trend from smoothed values
@@ -559,9 +553,7 @@ class HistoricalContextProvider:
             percent_change=percent_change,
         )
 
-    def get_weighted_moving_average(
-        self, kpi_id: str, window_days: int = 30
-    ) -> Optional[float]:
+    def get_weighted_moving_average(self, kpi_id: str, window_days: int = 30) -> Optional[float]:
         """
         Calculate weighted moving average (more recent values have higher weight).
 
@@ -594,9 +586,7 @@ class HistoricalContextProvider:
 
         return result
 
-    def get_multi_period_trends(
-        self, kpi_id: str
-    ) -> Dict[str, TrendAnalysis]:
+    def get_multi_period_trends(self, kpi_id: str) -> Dict[str, TrendAnalysis]:
         """
         Calculate trends over multiple time periods.
 
@@ -670,9 +660,7 @@ class HistoricalContextProvider:
         # Calculate mean of first and second half
         mid = len(history) // 2
         first_half_mean = sum(h.value for h in history[:mid]) / mid
-        second_half_mean = (
-            sum(h.value for h in history[mid:]) / (len(history) - mid)
-        )
+        second_half_mean = sum(h.value for h in history[mid:]) / (len(history) - mid)
 
         # Calculate relative change
         change_pct = 0.0
@@ -698,9 +686,7 @@ class HistoricalContextProvider:
     # Helper Methods for Phase G4.2
     # =====================================================================
 
-    def _empty_trend(
-        self, kpi_id: str, start_date: date, end_date: date
-    ) -> TrendAnalysis:
+    def _empty_trend(self, kpi_id: str, start_date: date, end_date: date) -> TrendAnalysis:
         """Helper to create empty trend when insufficient data."""
         return TrendAnalysis(
             kpi_id=kpi_id,
@@ -726,9 +712,7 @@ class HistoricalContextProvider:
         x_values = list(range(n))
         y_mean = sum(values) / n
 
-        numerator = sum(
-            (x - n / 2) * (y - y_mean) for x, y in zip(x_values, values)
-        )
+        numerator = sum((x - n / 2) * (y - y_mean) for x, y in zip(x_values, values))
         denominator = sum((x - n / 2) ** 2 for x in x_values)
         slope = numerator / denominator if denominator != 0 else 0.0
 
@@ -772,18 +756,13 @@ class HistoricalContextProvider:
         )
 
     @staticmethod
-    def _fit_linear(
-        x_values: List[float], y_values: List[float]
-    ) -> tuple[float, float]:
+    def _fit_linear(x_values: List[float], y_values: List[float]) -> tuple[float, float]:
         """Fit linear regression (slope, intercept)."""
         n = len(x_values)
         x_mean = sum(x_values) / n
         y_mean = sum(y_values) / n
 
-        numerator = sum(
-            (x - x_mean) * (y - y_mean)
-            for x, y in zip(x_values, y_values)
-        )
+        numerator = sum((x - x_mean) * (y - y_mean) for x, y in zip(x_values, y_values))
         denominator = sum((x - x_mean) ** 2 for x in x_values)
 
         slope = numerator / denominator if denominator != 0 else 0.0
@@ -792,20 +771,18 @@ class HistoricalContextProvider:
         return slope, intercept
 
     @staticmethod
-    def _fit_quadratic(
-        x_values: List[float], y_values: List[float]
-    ) -> tuple[float, float, float]:
+    def _fit_quadratic(x_values: List[float], y_values: List[float]) -> tuple[float, float, float]:
         """Fit quadratic regression (a, b, c for ax^2 + bx + c)."""
         n = len(x_values)
 
         # Using Cramer's rule for 3x3 system (simplified)
         sum_x = sum(x_values)
-        sum_x2 = sum(x ** 2 for x in x_values)
-        sum_x3 = sum(x ** 3 for x in x_values)
-        sum_x4 = sum(x ** 4 for x in x_values)
+        sum_x2 = sum(x**2 for x in x_values)
+        sum_x3 = sum(x**3 for x in x_values)
+        sum_x4 = sum(x**4 for x in x_values)
         sum_y = sum(y_values)
         sum_xy = sum(x * y for x, y in zip(x_values, y_values))
-        sum_x2y = sum((x ** 2) * y for x, y in zip(x_values, y_values))
+        sum_x2y = sum((x**2) * y for x, y in zip(x_values, y_values))
 
         # Simplified quadratic fit (2nd order)
         # For production, use numpy.polyfit
@@ -820,9 +797,7 @@ class HistoricalContextProvider:
 
         if abs(denom) < 1e-10:
             # Fallback to linear fit
-            slope, intercept = HistoricalContextProvider._fit_linear(
-                x_values, y_values
-            )
+            slope, intercept = HistoricalContextProvider._fit_linear(x_values, y_values)
             return 0.0, slope, intercept
 
         a = (

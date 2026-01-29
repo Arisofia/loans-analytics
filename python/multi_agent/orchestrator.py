@@ -53,27 +53,17 @@ class MultiAgentOrchestrator:
     def _init_agents(self) -> Dict[AgentRole, BaseAgent]:
         """Initialize all role-specific agents."""
         return {
-            AgentRole.RISK_ANALYST: RiskAnalystAgent(
-                provider=self.provider, tracer=self.tracer
-            ),
+            AgentRole.RISK_ANALYST: RiskAnalystAgent(provider=self.provider, tracer=self.tracer),
             AgentRole.GROWTH_STRATEGIST: GrowthStrategistAgent(
                 provider=self.provider, tracer=self.tracer
             ),
-            AgentRole.OPS_OPTIMIZER: OpsOptimizerAgent(
-                provider=self.provider, tracer=self.tracer
-            ),
-            AgentRole.COMPLIANCE: ComplianceAgent(
-                provider=self.provider, tracer=self.tracer
-            ),
-            AgentRole.COLLECTIONS: CollectionsAgent(
-                provider=self.provider, tracer=self.tracer
-            ),
+            AgentRole.OPS_OPTIMIZER: OpsOptimizerAgent(provider=self.provider, tracer=self.tracer),
+            AgentRole.COMPLIANCE: ComplianceAgent(provider=self.provider, tracer=self.tracer),
+            AgentRole.COLLECTIONS: CollectionsAgent(provider=self.provider, tracer=self.tracer),
             AgentRole.FRAUD_DETECTION: FraudDetectionAgent(
                 provider=self.provider, tracer=self.tracer
             ),
-            AgentRole.PRICING: PricingAgent(
-                provider=self.provider, tracer=self.tracer
-            ),
+            AgentRole.PRICING: PricingAgent(provider=self.provider, tracer=self.tracer),
             AgentRole.CUSTOMER_RETENTION: CustomerRetentionAgent(
                 provider=self.provider, tracer=self.tracer
             ),
@@ -160,8 +150,7 @@ class MultiAgentOrchestrator:
                     ScenarioStep(
                         agent_role=AgentRole.GROWTH_STRATEGIST,
                         prompt_template=(
-                            "Analyze market data: {market_data}. "
-                            "Identify growth opportunities."
+                            "Analyze market data: {market_data}. " "Identify growth opportunities."
                         ),
                         context_keys=["market_data"],
                         output_key="growth_analysis",
@@ -169,8 +158,7 @@ class MultiAgentOrchestrator:
                     ScenarioStep(
                         agent_role=AgentRole.RISK_ANALYST,
                         prompt_template=(
-                            "Assess risk implications of growth strategy: "
-                            "{growth_analysis}."
+                            "Assess risk implications of growth strategy: " "{growth_analysis}."
                         ),
                         context_keys=["growth_analysis"],
                         output_key="risk_assessment",
@@ -321,8 +309,7 @@ class MultiAgentOrchestrator:
                     ScenarioStep(
                         agent_role=AgentRole.COMPLIANCE,
                         prompt_template=(
-                            "Verify pricing complies with regulations: "
-                            "{pricing_recommendation}."
+                            "Verify pricing complies with regulations: " "{pricing_recommendation}."
                         ),
                         context_keys=["pricing_recommendation"],
                         output_key="pricing_approval",
