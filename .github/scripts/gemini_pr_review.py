@@ -90,8 +90,8 @@ def main() -> int:
                 )
         except (ImportError, AttributeError) as e:
             logger.exception("Could not list Gemini models: %s", e)
-        except Exception:
-            logger.exception("Could not list Gemini models")
+        except RuntimeError as e:
+            logger.exception("Unexpected error listing Gemini models: %s", e)
 
     gen_model = getattr(genai, "GenerativeModel", None)
     if gen_model is None:
@@ -143,8 +143,8 @@ def main() -> int:
     except (ImportError, ValueError, RuntimeError) as e:
         logger.exception("Error calling Gemini API: %s", e)
         return 1
-    except Exception:
-        logger.exception("Error calling Gemini API")
+    except TypeError as e:
+        logger.exception("Invalid argument to Gemini API: %s", e)
         return 1
 
     # Post comment to PR
@@ -162,8 +162,8 @@ def main() -> int:
     except request_exception:
         logger.exception("Failed to post review")
         return 1
-    except Exception:
-        logger.exception("Failed to post review")
+    except ConnectionError as e:
+        logger.exception("Network error posting review: %s", e)
         return 1
 
     return 0
