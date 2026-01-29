@@ -76,9 +76,11 @@ class BaseAgent(ABC):
     def _init_anthropic_client(self) -> Any:
         """Initialize Anthropic client."""
         try:
-            from anthropic import Anthropic
-        except ImportError:
-            raise ImportError("anthropic package required")
+            from anthropic import Anthropic  # pylint: disable=import-outside-toplevel
+        except ImportError as exc:
+            raise ImportError(
+                "anthropic package required"
+            ) from exc
 
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
@@ -88,9 +90,11 @@ class BaseAgent(ABC):
     def _init_gemini_client(self) -> Any:
         """Initialize Gemini client."""
         try:
-            import google.generativeai as genai
-        except ImportError:
-            raise ImportError("google-generativeai package required")
+            import google.generativeai as genai  # pylint: disable=import-outside-toplevel
+        except ImportError as exc:
+            raise ImportError(
+                "google-generativeai package required"
+            ) from exc
 
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
@@ -101,7 +105,6 @@ class BaseAgent(ABC):
     @abstractmethod
     def get_system_prompt(self) -> str:
         """Return agent-specific system prompt."""
-        pass
 
     def process(self, request: AgentRequest) -> AgentResponse:
         """Process agent request with full guardrails and tracing."""
@@ -111,14 +114,29 @@ class BaseAgent(ABC):
         start_time = time.time()
 
         try:
-            sanitized_messages = self._sanitize_messages(request.messages)
+            sanitized_messages = self._sanitize_messages(
+                request.messages
+            )
 
             system_prompt = self.get_system_prompt()
-            context_prompt = self._build_context_prompt(request.context)
+            context_prompt = self._build_context_prompt(
+                request.context
+            )
 
-            full_messages = [{"role": "system", "content": f"{system_prompt}\n\n{context_prompt}"}]
+            system_content = (
+                f"{system_prompt}\n\n{context_prompt}"
+            )
+            full_messages = [
+                {"role": "system", "content": system_content}
+            ]
             full_messages.extend(
-                [{"role": msg.role.value, "content": msg.content} for msg in sanitized_messages]
+                [
+                    {
+                        "role": msg.role.value,
+                        "content": msg.content
+                    }
+                    for msg in sanitized_messages
+                ]
             )
 
             llm_response = self._call_llm(full_messages, request)
@@ -138,7 +156,9 @@ class BaseAgent(ABC):
                 latency_ms=latency_ms,
                 provider=self.provider,
                 model=self.model,
-                finish_reason=llm_response.get("finish_reason"),
+                finish_reason=llm_response.get(
+                    "finish_reason"
+                ),
                 metadata=request.metadata,
             )
 
@@ -148,7 +168,9 @@ class BaseAgent(ABC):
             return response
 
         except Exception as e:
-            logger.exception(f"Agent {self.role.value} error: {e}")
+            logger.exception(
+                "Agent %s error: %s", self.role.value, e
+            )
 
             error = AgentError(
                 trace_id=request.trace_id,
@@ -186,18 +208,21 @@ class BaseAgent(ABC):
             lines.append(f"- {key}: {value}")
         return "\n".join(lines)
 
-    def _call_llm(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
+    def _call_llm(
+        self, messages: List[Dict[str, str]], request: AgentRequest
+    ) -> Dict[str, Any]:
         """Call LLM provider."""
         if self.provider == LLMProvider.OPENAI:
             return self._call_openai(messages, request)
-        elif self.provider == LLMProvider.ANTHROPIC:
+        if self.provider == LLMProvider.ANTHROPIC:
             return self._call_anthropic(messages, request)
-        elif self.provider == LLMProvider.GEMINI:
+        if self.provider == LLMProvider.GEMINI:
             return self._call_gemini(messages, request)
-        else:
-            raise ValueError(f"Unsupported provider: {self.provider}")
+        raise ValueError(f"Unsupported provider: {self.provider}")
 
-    def _call_openai(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
+    def _call_openai(
+        self, messages: List[Dict[str, str]], request: AgentRequest
+    ) -> Dict[str, Any]:
         """Call OpenAI API."""
         response = self._client.chat.completions.create(
             model=self.model,
