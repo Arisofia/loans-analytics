@@ -13,9 +13,9 @@ import streamlit as st
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
-from dashboard_utils import format_kpi_value, kpi_label  # noqa: E402
-from data_normalization import normalize_dataframe_complete  # noqa: E402
-from kpi_catalog_processor import KPICatalogProcessor  # noqa: E402
+from python.utils.dashboard import format_kpi_value, kpi_label  # noqa: E402
+from python.utils.normalization import normalize_dataframe_complete  # noqa: E402
+from python.kpis.catalog_processor import KPICatalogProcessor  # noqa: E402
 from streamlit_app.components.analytics_tabs import render_advanced_intelligence  # noqa: E402
 from streamlit_app.components.charts import (  # noqa: E402
     render_cashflow_trends,
@@ -30,8 +30,8 @@ from streamlit_app.components.sales_risk import (  # noqa: E402
     render_risk_analysis,
     render_sales_performance,
 )
-from theme import ABACO_THEME  # noqa: E402
-from tracing_setup import enable_auto_instrumentation, init_tracing  # noqa: E402
+from python.config.theme import ABACO_THEME  # noqa: E402
+from python.config.tracing_setup import enable_auto_instrumentation, init_tracing  # noqa: E402
 
 LOCAL_EXPORTS_DIR = ROOT_DIR / "local_exports"
 EXPORTS_DIR_CANDIDATES = [
