@@ -22,4 +22,4 @@ repos:
     rev: v1.38.0
     hooks:
       - id: yamllint
-        entry: yamllint -c .yamllint
+        args: [-c, .yamllint]
