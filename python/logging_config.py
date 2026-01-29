@@ -34,14 +34,25 @@ def configure_logging(level: str = "INFO", format_string: Optional[str] = None) 
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         format_string: Custom format string. If None, uses default format.
 
+    Raises:
+        ValueError: If level is not a valid logging level
+
     Example:
         configure_logging(level="DEBUG")
     """
     if format_string is None:
         format_string = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
+    # Validate logging level
+    level_upper = level.upper()
+    valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+    if level_upper not in valid_levels:
+        raise ValueError(
+            f"Invalid logging level: {level}. Must be one of {valid_levels}"
+        )
+
     logging.basicConfig(
-        level=getattr(logging, level.upper()),
+        level=getattr(logging, level_upper),
         format=format_string,
         datefmt="%Y-%m-%d %H:%M:%S"
     )

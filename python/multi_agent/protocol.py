@@ -89,7 +89,7 @@ class AgentResponse(BaseModel):
     model: str = "gpt-4o-mini"
     finish_reason: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=get_utc_now)
 
 
 class AgentError(BaseModel):
@@ -99,7 +99,7 @@ class AgentError(BaseModel):
     agent_role: AgentRole
     error_type: str
     error_message: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=get_utc_now)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
