@@ -113,8 +113,6 @@ jobs:
     if: always()
     permissions:
       contents: read
-    env:
-      SONAR_HOST_URL: ""
     steps:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -160,7 +158,6 @@ jobs:
             -Dsonar.python.version=3.11
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   ai-review-coderabbit:
