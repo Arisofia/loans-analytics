@@ -71,4 +71,10 @@ jobs:
       - secrets-validation
     if: |
       always() && (
-
+        needs.structure-validation.result == 'failure' ||
+        needs.dependency-validation.result == 'failure' ||
+        needs.secrets-validation.result == 'failure'
+      )
+    steps:
+      - name: Fail on validation error
+        run: exit 1
