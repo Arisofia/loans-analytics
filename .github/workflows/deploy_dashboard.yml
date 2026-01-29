@@ -71,7 +71,7 @@ jobs:
 
       - name: Azure login (for health check path)
         if: steps.check_creds.outputs.has_creds == true
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 

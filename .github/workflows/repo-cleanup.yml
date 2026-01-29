@@ -12,7 +12,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
@@ -44,7 +44,6 @@ jobs:
           fi
 
       - name: Clean up stale remote branches
-        if: github.event.inputs.cleanup_mode == 'full' || github.event.inputs.cleanup_mode == 'aggressive'
         run: |
           echo "🔄 Pruning remote references..."
           git remote prune origin
@@ -53,14 +52,8 @@ jobs:
       - name: Run garbage collection
         run: |
           echo "♻️  Running garbage collection..."
-          if [ "${{ github.event.inputs.cleanup_mode }}" == "full" ] || \
-             [ "${{ github.event.inputs.cleanup_mode }}" == "aggressive" ]; then
-            git gc --aggressive --prune=now
-            echo "✓ Aggressive garbage collection complete"
-          else
-            git gc
-            echo "✓ Standard garbage collection complete"
-          fi
+          git gc
+          echo "✓ Standard garbage collection complete"
 
       - name: Generate cleanup report
         id: report
@@ -68,7 +61,7 @@ jobs:
           echo "## 📊 Repository Cleanup Report" > cleanup-report.md
           echo "" >> cleanup-report.md
           echo "**Date:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> cleanup-report.md
-          echo "**Mode:** ${{ github.event.inputs.cleanup_mode || 'scheduled (standard)' }}" >> cleanup-report.md
+          echo "**Mode:** scheduled (standard)" >> cleanup-report.md
           echo "" >> cleanup-report.md
 
           echo "### Repository Statistics" >> cleanup-report.md
@@ -84,13 +77,7 @@ jobs:
           echo "- ✓ Fetched all references with prune" >> cleanup-report.md
           echo "- ✓ Deleted merged branches" >> cleanup-report.md
 
-          if [ "${{ github.event.inputs.cleanup_mode }}" == "full" ] || \
-             [ "${{ github.event.inputs.cleanup_mode }}" == "aggressive" ]; then
-            echo "- ✓ Pruned remote references" >> cleanup-report.md
-            echo "- ✓ Ran aggressive garbage collection" >> cleanup-report.md
-          else
-            echo "- ✓ Ran standard garbage collection" >> cleanup-report.md
-          fi
+          echo "- ✓ Ran standard garbage collection" >> cleanup-report.md
 
           echo "" >> cleanup-report.md
           echo "### Next Steps" >> cleanup-report.md
@@ -102,7 +89,7 @@ jobs:
           cat cleanup-report.md
 
       - name: Upload cleanup report
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4.4.3
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: cleanup-report
           path: cleanup-report.md

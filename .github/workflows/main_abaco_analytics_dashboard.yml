@@ -90,7 +90,7 @@ jobs:
 
       - name: Login to Azure
         if: steps.check_secrets.outputs.has_creds == 'true'
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 

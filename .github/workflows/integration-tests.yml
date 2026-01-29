@@ -10,14 +10,10 @@ name: Integration Tests (Optional)
 # They validate real database connectivity and schema integrity.
 
 on:
-  workflow_dispatch:  # Manual trigger from GitHub Actions UI
+  workflow_dispatch: # Manual trigger from GitHub Actions UI
   schedule:
-    - cron: '0 2 * * *'  # Daily at 2am UTC
-    inputs:
-      test_target:
-        description: 'Which integration tests to run (e.g., all, historical_kpis)'
-        required: false
-        default: historical_kpis
+    - cron: "0 2 * * *" # Daily at 2am UTC
+
 jobs:
   integration-tests:
     name: Real Supabase Integration Tests
@@ -34,18 +30,18 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.11']
+        python-version: ["3.11"]
       fail-fast: false
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -65,12 +61,11 @@ jobs:
           echo "✅ Supabase credentials configured"
 
       - name: Run Historical KPIs integration tests
-        if: inputs.test_target == 'all' || inputs.test_target == 'historical_kpis' || github.event_name != 'workflow_dispatch'
         env:
-          RUN_REAL_SUPABASE_TESTS: '1'
+          RUN_REAL_SUPABASE_TESTS: "1"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          SUPABASE_HISTORICAL_KPI_TABLE: 'historical_kpis'
+          SUPABASE_HISTORICAL_KPI_TABLE: "historical_kpis"
         run: |
           echo "🧪 Running Historical KPIs integration tests..."
           mkdir -p test-results
@@ -102,7 +97,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4.4.3
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: integration-test-results-py${{ matrix.python-version }}
           path: |
@@ -112,7 +107,7 @@ jobs:
 
       - name: Comment on PR (if triggered from PR)
         if: github.event_name == 'pull_request' && always()
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd  # v8.0.0
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             const status = '${{ job.status }}' === 'success' ? '✅' : '❌';
@@ -150,7 +145,7 @@ jobs:
 
     steps:
       - name: Create issue for failed integration tests
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd  # v8.0.0
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             const title = '🚨 Scheduled Integration Tests Failed';
