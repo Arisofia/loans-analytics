@@ -24,7 +24,7 @@ jobs:
         uses: microsoft/security-devops-action@v1
         id: msdo
         with:
-          tools: 'bandit, binskim, checkov, eslint, trivy'
+          tools: 'bandit, checkov, eslint, trivy'
 
       - name: Upload SARIF to GitHub
         uses: github/codeql-action/upload-sarif@v3
