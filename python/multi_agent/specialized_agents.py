@@ -19,6 +19,7 @@ class CollectionsAgent(BaseAgent):
     """
 
     def get_system_prompt(self) -> str:
+        """Return the system prompt for the Collections role."""
         return (
             "You are an expert Collections & Delinquency Management Agent "
             "for fintech lending.\n\n"
@@ -65,6 +66,7 @@ class FraudDetectionAgent(BaseAgent):
     """
 
     def get_system_prompt(self) -> str:
+        """Return the system prompt for the Fraud Detection role."""
         return (
             "You are an expert Fraud Detection & Prevention Agent for "
             "fintech lending.\n\n"
@@ -114,6 +116,7 @@ class PricingAgent(BaseAgent):
     """
 
     def get_system_prompt(self) -> str:
+        """Return the system prompt for the Pricing role."""
         return (
             "You are an expert Pricing & Rate Optimization Agent for "
             "fintech lending.\n\n"
@@ -161,6 +164,7 @@ class CustomerRetentionAgent(BaseAgent):
     """
 
     def get_system_prompt(self) -> str:
+        """Return the system prompt for the Customer Retention role."""
         return (
             "You are an expert Customer Retention & Churn Prevention "
             "Agent for fintech lending.\n\n"
