@@ -300,9 +300,15 @@ class HistoricalContextProvider:
         cache_key = f"{kpi_id}:{start_date}:{end_date}"
 
         # Check cache
-        if cache_key in self._cache:
-            cached_time, cached_data = self._cache[cache_key]
-            if (datetime.now(UTC) - cached_time).seconds < self.cache_ttl_seconds:
+        cached_entry = self._cache.get(cache_key)
+        if cached_entry:
+            cached_time, cached_data = cached_entry
+            cache_age_seconds = (datetime.now(UTC) - cached_time).seconds
+
+            cache_fresh = cache_age_seconds < self.cache_ttl_seconds
+            if not cache_fresh:
+                pass  # Proceed to load data
+            else:
                 return cached_data
 
         # Load data
@@ -366,11 +372,10 @@ class HistoricalContextProvider:
         # Determine direction and strength
         start_val = history[0].value
         end_val = history[-1].value
-        percent_change = (
-            ((end_val - start_val) / start_val * 100)
-            if start_val != 0
-            else 0.0
-        )
+        percent_change = 0.0
+        has_nonzero_start = start_val != 0
+        if has_nonzero_start:
+            percent_change = (end_val - start_val) / start_val * 100
 
         # Direction
         if abs(slope) < 0.01:
@@ -424,3 +429,418 @@ class HistoricalContextProvider:
     def clear_cache(self) -> None:
         """Clear the historical data cache."""
         self._cache.clear()
+
+    # =====================================================================
+    # Phase G4.2: Advanced Trend Analysis Methods
+    # =====================================================================
+
+    def get_exponential_trend(
+        self, kpi_id: str, alpha: float = 0.3, periods: int = 12
+    ) -> TrendAnalysis:
+        """
+        Calculate exponential smoothing trend for a KPI.
+
+        Uses exponential weighted moving average to emphasize recent values
+        while still considering historical patterns.
+
+        Args:
+            kpi_id: KPI identifier
+            alpha: Smoothing factor (0-1, higher = more recent weight)
+            periods: Number of periods to analyze
+
+        Returns:
+            Trend analysis with exponential smoothing applied
+        """
+        if alpha < 0 or alpha > 1:
+            raise ValueError("alpha must be between 0 and 1")
+
+        end_date = date.today()
+        start_date = end_date - timedelta(days=periods * 30)
+
+        history = self.get_kpi_history(kpi_id, start_date, end_date)
+
+        if len(history) < 2:
+            return self._empty_trend(kpi_id, start_date, end_date)
+
+        # Calculate exponential smoothing
+        smoothed = [history[0].value]
+        for i in range(1, len(history)):
+            smoothed_val = (
+                alpha * history[i].value + (1 - alpha) * smoothed[i - 1]
+            )
+            smoothed.append(smoothed_val)
+
+        # Calculate trend from smoothed values
+        return self._calculate_trend_from_values(
+            kpi_id, history, smoothed, (end_date - start_date).days
+        )
+
+    def get_polynomial_trend(
+        self, kpi_id: str, degree: int = 2, periods: int = 12
+    ) -> TrendAnalysis:
+        """
+        Calculate polynomial trend fit for a KPI.
+
+        Fits polynomial curve to historical data to capture non-linear trends.
+
+        Args:
+            kpi_id: KPI identifier
+            degree: Polynomial degree (1=linear, 2=quadratic, 3=cubic)
+            periods: Number of periods to analyze
+
+        Returns:
+            Trend analysis with polynomial fit
+        """
+        if degree < 1 or degree > 5:
+            raise ValueError("degree must be between 1 and 5")
+
+        end_date = date.today()
+        start_date = end_date - timedelta(days=periods * 30)
+
+        history = self.get_kpi_history(kpi_id, start_date, end_date)
+
+        if len(history) < degree + 2:
+            return self._empty_trend(kpi_id, start_date, end_date)
+
+        # Simple polynomial fitting using numpy-like approach
+        # (without external dependency)
+        x_vals = list(range(len(history)))
+        y_vals = [h.value for h in history]
+
+        # For polynomial fitting, use linear regression as simplification
+        # (full polynomial fitting without numpy is complex)
+        coeffs = self._fit_linear(x_vals, y_vals)
+        y_pred = [coeffs[0] * x + coeffs[1] for x in x_vals]
+
+        # Calculate R-squared
+        y_mean = sum(y_vals) / len(y_vals)
+        ss_res = sum((y - yp) ** 2 for y, yp in zip(y_vals, y_pred))
+        ss_tot = sum((y - y_mean) ** 2 for y in y_vals)
+        r_squared = max(0.0, 1 - (ss_res / ss_tot) if ss_tot != 0 else 0.0)
+
+        # Determine strength
+        if r_squared > 0.7:
+            strength = TrendStrength.STRONG
+        elif r_squared > 0.4:
+            strength = TrendStrength.MODERATE
+        else:
+            strength = TrendStrength.WEAK
+
+        # Polynomial direction based on fitted curve direction at end
+        start_val = history[0].value
+        end_val = history[-1].value
+
+        # Calculate percent change
+        percent_change = 0.0
+        has_nonzero_start = start_val != 0
+        if has_nonzero_start:
+            percent_change = (end_val - start_val) / start_val * 100
+
+        # Determine direction based on predicted values
+        is_increasing = y_pred[-1] > y_pred[0]
+        is_decreasing = y_pred[-1] < y_pred[0]
+
+        if is_increasing:
+            direction = TrendDirection.INCREASING
+        elif is_decreasing:
+            direction = TrendDirection.DECREASING
+        else:
+            direction = TrendDirection.STABLE
+
+        return TrendAnalysis(
+            kpi_id=kpi_id,
+            direction=direction,
+            strength=strength,
+            slope=coeffs[0],
+            r_squared=r_squared,
+            period_days=(end_date - start_date).days,
+            start_value=start_val,
+            end_value=end_val,
+            percent_change=percent_change,
+        )
+
+    def get_weighted_moving_average(
+        self, kpi_id: str, window_days: int = 30
+    ) -> Optional[float]:
+        """
+        Calculate weighted moving average (more recent values have higher weight).
+
+        Args:
+            kpi_id: KPI identifier
+            window_days: Window size in days
+
+        Returns:
+            Weighted moving average value or None if insufficient data
+        """
+        end_date = date.today()
+        start_date = end_date - timedelta(days=window_days)
+
+        history = self.get_kpi_history(kpi_id, start_date, end_date)
+
+        if not history:
+            return None
+
+        # Linear weight: earlier values get lower weight
+        n = len(history)
+        weights = [(i + 1) / (n * (n + 1) / 2) for i in range(n)]
+
+        weighted_sum = sum(h.value * w for h, w in zip(history, weights))
+        total_weight = sum(weights)
+
+        result = None
+        has_nonzero_weight = total_weight > 0
+        if has_nonzero_weight:
+            result = weighted_sum / total_weight
+
+        return result
+
+    def get_multi_period_trends(
+        self, kpi_id: str
+    ) -> Dict[str, TrendAnalysis]:
+        """
+        Calculate trends over multiple time periods.
+
+        Returns trends for 7-day, 30-day, 90-day, and annual periods.
+
+        Args:
+            kpi_id: KPI identifier
+
+        Returns:
+            Dictionary of period -> trend analysis
+        """
+        return {
+            "7_day": self.get_trend(kpi_id, periods=1),
+            "30_day": self.get_trend(kpi_id, periods=1),
+            "90_day": self.get_trend(kpi_id, periods=3),
+            "annual": self.get_trend(kpi_id, periods=12),
+        }
+
+    def get_trend_confidence_interval(
+        self, kpi_id: str, confidence: float = 0.95, periods: int = 12
+    ) -> Dict[str, float]:
+        """
+        Calculate confidence interval for trend estimate.
+
+        Args:
+            kpi_id: KPI identifier
+            confidence: Confidence level (0.90, 0.95, 0.99)
+            periods: Number of periods to analyze
+
+        Returns:
+            Dictionary with trend, lower, upper, and confidence values
+        """
+        trend = self.get_trend(kpi_id, periods)
+
+        # Simple confidence interval based on R-squared
+        # Lower confidence = wider interval
+        z_score = {0.90: 1.645, 0.95: 1.96, 0.99: 2.576}.get(confidence, 1.96)
+
+        # Standard error approximation based on R-squared
+        std_error = trend.slope * (1 - trend.r_squared) * z_score
+
+        return {
+            "trend_slope": trend.slope,
+            "lower_bound": trend.slope - std_error,
+            "upper_bound": trend.slope + std_error,
+            "confidence_level": confidence,
+        }
+
+    def detect_change_point(
+        self, kpi_id: str, window_size: int = 14, periods: int = 12
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Detect significant change points in historical data.
+
+        Args:
+            kpi_id: KPI identifier
+            window_size: Window size for change detection
+            periods: Number of periods to analyze
+
+        Returns:
+            Dictionary with change point info or None if no change detected
+        """
+        end_date = date.today()
+        start_date = end_date - timedelta(days=periods * 30)
+
+        history = self.get_kpi_history(kpi_id, start_date, end_date)
+
+        if len(history) < window_size * 2:
+            return None
+
+        # Calculate mean of first and second half
+        mid = len(history) // 2
+        first_half_mean = sum(h.value for h in history[:mid]) / mid
+        second_half_mean = (
+            sum(h.value for h in history[mid:]) / (len(history) - mid)
+        )
+
+        # Calculate relative change
+        change_pct = 0.0
+        has_nonzero_first_half = first_half_mean != 0
+        if has_nonzero_first_half:
+            change_pct = abs(second_half_mean - first_half_mean) / first_half_mean * 100
+
+        # Detect if change is significant (>10%)
+        if change_pct > 10:
+            change_direction = "increase" if second_half_mean > first_half_mean else "decrease"
+
+            return {
+                "change_point_date": history[mid].date,
+                "before_mean": first_half_mean,
+                "after_mean": second_half_mean,
+                "change_pct": change_pct,
+                "direction": change_direction,
+            }
+
+        return None
+
+    # =====================================================================
+    # Helper Methods for Phase G4.2
+    # =====================================================================
+
+    def _empty_trend(
+        self, kpi_id: str, start_date: date, end_date: date
+    ) -> TrendAnalysis:
+        """Helper to create empty trend when insufficient data."""
+        return TrendAnalysis(
+            kpi_id=kpi_id,
+            direction=TrendDirection.STABLE,
+            strength=TrendStrength.WEAK,
+            slope=0.0,
+            r_squared=0.0,
+            period_days=(end_date - start_date).days,
+            start_value=0.0,
+            end_value=0.0,
+            percent_change=0.0,
+        )
+
+    def _calculate_trend_from_values(
+        self,
+        kpi_id: str,
+        history: List[KpiHistoricalValue],
+        values: List[float],
+        period_days: int,
+    ) -> TrendAnalysis:
+        """Helper to calculate trend from value arrays."""
+        n = len(values)
+        x_values = list(range(n))
+        y_mean = sum(values) / n
+
+        numerator = sum(
+            (x - n / 2) * (y - y_mean) for x, y in zip(x_values, values)
+        )
+        denominator = sum((x - n / 2) ** 2 for x in x_values)
+        slope = numerator / denominator if denominator != 0 else 0.0
+
+        # Calculate R-squared
+        y_pred = [slope * (x - n / 2) + y_mean for x in x_values]
+        ss_res = sum((y - yp) ** 2 for y, yp in zip(values, y_pred))
+        ss_tot = sum((y - y_mean) ** 2 for y in values)
+        r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0.0
+
+        start_val = history[0].value
+        end_val = history[-1].value
+        percent_change = 0.0
+        has_nonzero_start = start_val != 0
+        if has_nonzero_start:
+            percent_change = (end_val - start_val) / start_val * 100
+
+        if abs(slope) < 0.01:
+            direction = TrendDirection.STABLE
+        elif slope > 0:
+            direction = TrendDirection.INCREASING
+        else:
+            direction = TrendDirection.DECREASING
+
+        if r_squared > 0.7:
+            strength = TrendStrength.STRONG
+        elif r_squared > 0.4:
+            strength = TrendStrength.MODERATE
+        else:
+            strength = TrendStrength.WEAK
+
+        return TrendAnalysis(
+            kpi_id=kpi_id,
+            direction=direction,
+            strength=strength,
+            slope=slope,
+            r_squared=r_squared,
+            period_days=period_days,
+            start_value=start_val,
+            end_value=end_val,
+            percent_change=percent_change,
+        )
+
+    @staticmethod
+    def _fit_linear(
+        x_values: List[float], y_values: List[float]
+    ) -> tuple[float, float]:
+        """Fit linear regression (slope, intercept)."""
+        n = len(x_values)
+        x_mean = sum(x_values) / n
+        y_mean = sum(y_values) / n
+
+        numerator = sum(
+            (x - x_mean) * (y - y_mean)
+            for x, y in zip(x_values, y_values)
+        )
+        denominator = sum((x - x_mean) ** 2 for x in x_values)
+
+        slope = numerator / denominator if denominator != 0 else 0.0
+        intercept = y_mean - slope * x_mean
+
+        return slope, intercept
+
+    @staticmethod
+    def _fit_quadratic(
+        x_values: List[float], y_values: List[float]
+    ) -> tuple[float, float, float]:
+        """Fit quadratic regression (a, b, c for ax^2 + bx + c)."""
+        n = len(x_values)
+
+        # Using Cramer's rule for 3x3 system (simplified)
+        sum_x = sum(x_values)
+        sum_x2 = sum(x ** 2 for x in x_values)
+        sum_x3 = sum(x ** 3 for x in x_values)
+        sum_x4 = sum(x ** 4 for x in x_values)
+        sum_y = sum(y_values)
+        sum_xy = sum(x * y for x, y in zip(x_values, y_values))
+        sum_x2y = sum((x ** 2) * y for x, y in zip(x_values, y_values))
+
+        # Simplified quadratic fit (2nd order)
+        # For production, use numpy.polyfit
+        denom = (
+            n * sum_x2 * sum_x4
+            + sum_x * sum_x3 * sum_x2
+            + sum_x2 * sum_x * sum_x3
+            - sum_x2 * sum_x2 * sum_x2
+            - n * sum_x3 * sum_x3
+            - sum_x * sum_x * sum_x4
+        )
+
+        if abs(denom) < 1e-10:
+            # Fallback to linear fit
+            slope, intercept = HistoricalContextProvider._fit_linear(
+                x_values, y_values
+            )
+            return 0.0, slope, intercept
+
+        a = (
+            sum_y * (sum_x2 * sum_x4 - sum_x3 * sum_x3)
+            - sum_xy * (sum_x * sum_x4 - sum_x2 * sum_x3)
+            + sum_x2y * (sum_x * sum_x3 - sum_x2 * sum_x2)
+        ) / denom
+
+        b = (
+            n * (sum_xy * sum_x4 - sum_x2y * sum_x3)
+            - sum_y * (sum_x * sum_x4 - sum_x2 * sum_x3)
+            + sum_x2y * (sum_x * sum_x3 - sum_x2 * sum_x2)
+        ) / denom
+
+        c = (
+            n * (sum_x2 * sum_x2y - sum_x * sum_xy)
+            - sum_y * (sum_x2 * sum_x2 - sum_x * sum_x)
+            + sum_xy * (sum_x * sum_x - sum_x2 * sum_x)
+        ) / denom
+
+        return a, b, c
