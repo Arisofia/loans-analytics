@@ -56,7 +56,7 @@ jobs:
                   provenance: mode=max
 
             - name: Docker Scout Compare
-              if: ${{ github.event_name == 'pull_request' }}
+              if: github.event_name == 'pull_request'
               uses: docker/scout-action@cc6400ac43b9bcf0c54dcb5afe65c1f0b1f2b24e  # v1.16.1
               with:
                   command: compare

@@ -14,7 +14,7 @@ try:
     bootstrap_repo_root()
 except ImportError:
     pass
-from src.theme import ABACO_THEME
+from src.theme import ABACO_THEME  # noqa: E402
 
 st.set_page_config(page_title="New Analysis", layout="wide")
 # Apply custom CSS using ABACO_THEME
