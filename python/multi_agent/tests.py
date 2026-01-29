@@ -9,6 +9,7 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 from .guardrails import Guardrails
+from .orchestrator import MultiAgentOrchestrator
 from .protocol import (
     AgentRequest,
     AgentResponse,
@@ -244,8 +245,6 @@ class TestOrchestrator(unittest.TestCase):
 
     def test_orchestrator_initialization(self):
         """Test orchestrator initializes with all agents."""
-        from .orchestrator import MultiAgentOrchestrator
-
         orchestrator = MultiAgentOrchestrator()
         self.assertIn(AgentRole.RISK_ANALYST, orchestrator.agents)
         self.assertIn(AgentRole.GROWTH_STRATEGIST, orchestrator.agents)
@@ -254,8 +253,6 @@ class TestOrchestrator(unittest.TestCase):
 
     def test_list_scenarios(self):
         """Test listing available scenarios."""
-        from .orchestrator import MultiAgentOrchestrator
-
         orchestrator = MultiAgentOrchestrator()
         scenarios = orchestrator.list_scenarios()
         self.assertIn("loan_risk_review", scenarios)
@@ -264,8 +261,6 @@ class TestOrchestrator(unittest.TestCase):
 
     def test_get_scenario(self):
         """Test getting scenario by name."""
-        from .orchestrator import MultiAgentOrchestrator
-
         orchestrator = MultiAgentOrchestrator()
         scenario = orchestrator.get_scenario("loan_risk_review")
         self.assertIsNotNone(scenario)
@@ -274,8 +269,6 @@ class TestOrchestrator(unittest.TestCase):
 
     def test_add_custom_scenario(self):
         """Test adding custom scenario."""
-        from .orchestrator import MultiAgentOrchestrator
-
         orchestrator = MultiAgentOrchestrator()
 
         custom_scenario = Scenario(
