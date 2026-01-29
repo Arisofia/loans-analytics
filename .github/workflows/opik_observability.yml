@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       run_reason:
-        description: 'Reason for manual run'
+        description: "Reason for manual run"
         required: false
-        default: 'Manual trigger'
+        default: "Manual trigger"
 
 env:
   OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
