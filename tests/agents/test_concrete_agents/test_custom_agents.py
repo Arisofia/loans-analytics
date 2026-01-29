@@ -2,6 +2,8 @@
 
 from unittest.mock import MagicMock
 
+import pytest
+
 
 class TestCustomAgents:
     """Test suite for custom agent implementations."""

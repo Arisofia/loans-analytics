@@ -2,7 +2,7 @@
 
 **Production-grade, typed, observable multi-agent orchestration for fintech lending analytics.**
 
-[![Tests](https://img.shields.io/badge/tests-21%20passed-success)]() [![Python](https://img.shields.io/badge/python-3.9%2B-blue)]() [![License](https://img.shields.io/badge/license-MIT-green)]()
+[![Tests](https://img.shields.io/badge/tests-29%20passed-success)]() [![Python](https://img.shields.io/badge/python-3.9%2B-blue)]() [![License](https://img.shields.io/badge/license-MIT-green)]() [![Phase](https://img.shields.io/badge/phase-G2%20complete-brightgreen)]()
 
 ## 🌟 Features
 
@@ -10,10 +10,11 @@
 - ✅ **PII Guardrails**: Automatic redaction of sensitive data (SSN, email, phone, credit cards)
 - ✅ **Multi-Provider**: OpenAI, Anthropic, Gemini support with easy switching
 - ✅ **Tracing & Cost Tracking**: OpenTelemetry compatible, tracks tokens and costs per trace
-- ✅ **4 Role-Specific Agents**: Risk Analyst, Growth Strategist, Ops Optimizer, Compliance
-- ✅ **Scenario Orchestration**: Pre-built workflows for common fintech use cases
+- ✅ **8 Specialized Agents**: Risk, Growth, Ops, Compliance + Collections, Fraud, Pricing, Retention
+- ✅ **KPI Integration**: Real-time validation and anomaly detection
+- ✅ **Scenario Orchestration**: 7 pre-built workflows for fintech use cases
 - ✅ **Observable**: Centralized logging, trace IDs, latency metrics
-- ✅ **Tested**: 21 unit tests covering protocol, guardrails, tracing, orchestration
+- ✅ **Tested**: 29 unit tests (18 KPI + 11 specialized agents)
 
 ## 📋 Architecture
 
@@ -33,15 +34,17 @@
 └─────────────────────────────────────────────────────────────┘
                             │
 ┌─────────────────────────────────────────────────────────────┐
-│                     Agent Layer                              │
+│                     Agent Layer (8 Agents)                   │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐        │
 │  │ RiskAnalyst  │ │ GrowthStrat  │ │ OpsOptimizer │        │
 │  └──────────────┘ └──────────────┘ └──────────────┘        │
-│  ┌──────────────┐                                           │
-│  │ Compliance   │                                           │
-│  └──────────────┘                                           │
-│  All extend BaseAgent with:                                 │
-│  - get_system_prompt() - process()                          │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐        │
+│  │ Compliance   │ │ Collections  │ │FraudDetection│        │
+│  └──────────────┘ └──────────────┘ └──────────────┘        │
+│  ┌──────────────┐ ┌──────────────┐                         │
+│  │   Pricing    │ │  Retention   │                         │
+│  └──────────────┘ └──────────────┘                         │
+│  All extend BaseAgent with domain-specific expertise        │
 └─────────────────────────────────────────────────────────────┘
                             │
 ┌─────────────────────────────────────────────────────────────┐
@@ -144,11 +147,24 @@ See full documentation for:
 ## 🧪 Testing
 
 ```bash
-# Run all 21 tests
-python3 -m pytest python/multi_agent/tests.py -v
+# Run all 29 tests (18 KPI + 11 specialized agents)
+python3 -m pytest python/multi_agent/ -v
 
-# Expected output: ✅ 21 passed in 0.10s
+# Expected output: ✅ 29 passed in 0.12s
+
+# Run only specialized agent tests
+python3 -m pytest python/multi_agent/test_specialized_agents.py -v
+
+# Run only KPI integration tests
+python3 -m pytest python/multi_agent/test_kpi_integration.py -v
 ```
+
+## 📚 Documentation
+
+- **[Phase G: Fintech Intelligence](../../docs/phase-g-fintech-intelligence.md)**: Complete guide to KPI integration and specialized agents
+- **Agent Roles**: 8 specialized agents with domain expertise
+- **Scenarios**: 7 pre-built workflows for common fintech use cases
+- **KPI Integration**: Real-time validation and anomaly detection
 
 ## 📖 Examples
 
@@ -156,6 +172,14 @@ python3 -m pytest python/multi_agent/tests.py -v
 # Run interactive examples
 python3 -m python.multi_agent.examples
 ```
+
+## 🚦 Current Status
+
+- **Phase F**: CI/Quality Gate Automation ✅ Complete
+- **Phase G1**: KPI Integration ✅ Complete (18 tests)
+- **Phase G2**: Specialized Agents ✅ Complete (11 tests)
+- **Phase G3**: Scenario Packs by Product 🔄 Next
+- **Phase G4**: Historical Context Integration ⏳ Planned
 
 ---
 

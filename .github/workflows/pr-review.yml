@@ -350,15 +350,7 @@ jobs:
     name: PR Review Summary
     runs-on: ubuntu-latest
     needs:
-      [
-        python-qa,
-        sonarqube-scan,
-        ai-review-coderabbit,
-        ai-review-sourcery,
-        ai-review-gemini,
-        ai-review-codex,
-        ai-review-perplexity,
-      ]
+      [python-qa, sonarqube-scan, ai-review-coderabbit, ai-review-perplexity]
     if: always()
     permissions:
       pull-requests: write
@@ -370,9 +362,6 @@ jobs:
             const qaResult = '${{ needs.python-qa.result }}';
             const sonarResult = '${{ needs.sonarqube-scan.result }}';
             const coderabbitResult = '${{ needs.ai-review-coderabbit.result }}';
-            const sourceryResult = '${{ needs.ai-review-sourcery.result }}';
-            const geminiResult = '${{ needs.ai-review-gemini.result }}';
-            const codexResult = '${{ needs.ai-review-codex.result }}';
             const perplexityResult = '${{ needs.ai-review-perplexity.result }}';
 
             const summary = `## 🎯 PR Review Complete
@@ -380,9 +369,6 @@ jobs:
             **Python QA**: ${qaResult === 'success' ? '✅ Passed' : qaResult === 'failure' ? '❌ Failed' : '⚠️ Review needed'}
             **SonarQube**: ${sonarResult === 'success' ? '✅ Analyzed' : sonarResult === 'skipped' ? '⏭️ Skipped' : sonarResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
             **CodeRabbit**: ${coderabbitResult === 'success' ? '✅ Reviewed' : coderabbitResult === 'skipped' ? '⏭️ Skipped' : coderabbitResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
-            **Sourcery**: ${sourceryResult === 'success' ? '✅ Reviewed' : sourceryResult === 'skipped' ? '⏭️ Skipped' : sourceryResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
-            **Gemini**: ${geminiResult === 'success' ? '✅ Reviewed' : geminiResult === 'skipped' ? '⏭️ Skipped' : geminiResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
-            **Codex**: ${codexResult === 'success' ? '✅ Reviewed' : codexResult === 'skipped' ? '⏭️ Skipped' : codexResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
             **Perplexity**: ${perplexityResult === 'success' ? '✅ Analyzed' : perplexityResult === 'skipped' ? '⏭️ Skipped' : perplexityResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
 
             The automated reviews and quality checks listed above have either completed or were skipped based on the current configuration. Please review any available feedback from each tool.

@@ -2,6 +2,8 @@
 
 from unittest.mock import MagicMock
 
+import pytest
+
 
 class TestAgentProtocol:
     """Test suite for agent communication protocol."""

@@ -2,6 +2,8 @@
 
 from unittest.mock import MagicMock
 
+import pytest
+
 
 class TestBaseAgent:
     """Test suite for base agent class."""

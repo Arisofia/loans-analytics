@@ -17,7 +17,7 @@ jobs:
         python-version: ['3.11', '3.12']
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -80,26 +80,26 @@ jobs:
             const fs = require('fs');
             let body = '## Multi-Agent Test Results\n\n';
             body += '✅ All multi-agent tests passed!\n\n';
-            
+
             try {
               const coverage = fs.readFileSync('coverage_comment.txt', 'utf8');
               body += coverage;
             } catch (error) {
               body += 'Coverage report not available.\n';
             }
-            
+
             // Find existing comment
             const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            
-            const botComment = comments.data.find(comment => 
-              comment.user.type === 'Bot' && 
+
+            const botComment = comments.data.find(comment =>
+              comment.user.type === 'Bot' &&
               comment.body.includes('Multi-Agent Test Results')
             );
-            
+
             if (botComment) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,

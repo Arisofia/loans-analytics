@@ -2,6 +2,8 @@
 
 from unittest.mock import MagicMock
 
+import pytest
+
 
 class TestRiskAgent:
     """Test suite for risk assessment agent."""
