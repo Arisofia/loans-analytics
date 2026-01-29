@@ -21,6 +21,8 @@ Replaced all invalid SHA hashes with correct ones for the following actions:
 | actions/github-script | v7.0.1 | `60a0d83cf42496352c7b1c5b6cf25dc6aa6f8c93` | `60a0d83039c74a4aee543508d2ffcb1c3799cdea` |
 | actions/setup-node | v4.4.0 | `b7dde419cc031a3d665baa4a62731727917cd13e` | `49933ea5288caeca8642d1e84afbd3f7d6820020` |
 
+**Note:** All SHAs listed above were completely invalid (non-existent in the respective action repositories) and have been replaced with the correct, verified SHAs for each version tag.
+
 **Affected workflows (51 total):**
 - 47 workflows with existing SHA pins (corrected)
 - 4 auto-* workflows using version tags (converted to SHA pins)
@@ -30,6 +32,17 @@ Replaced all invalid SHA hashes with correct ones for the following actions:
 **Deleted:** `.github/workflows/sonarqube.yml`
 - **Reason:** Duplicate of `sonarcloud.yml` with less complete functionality
 - **Impact:** Both workflows performed SonarCloud scanning, but `sonarcloud.yml` (86 lines) is more comprehensive than `sonarqube.yml` (48 lines)
+
+### 3. Code Formatting (3 Python files)
+
+During the workflow fix process, automated code formatting was applied to maintain code quality standards:
+
+**Files formatted:**
+- `.github/scripts/gemini_pr_review.py` - Import organization and line length adjustments
+- `python/config.py` - Import consolidation and formatting
+- `python/multi_agent/test_historical_supabase_integration.py` - Import reordering
+
+These changes were made by the repository's auto-format workflow (Black, isort, Ruff, and ESLint) and are standard linting/formatting improvements that ensure code consistency.
 
 ## Verification
 
