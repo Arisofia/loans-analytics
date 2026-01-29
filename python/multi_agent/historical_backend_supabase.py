@@ -28,26 +28,20 @@ class SupabaseHistoricalBackend(HistoricalDataBackend):
         - SUPABASE_ANON_KEY: Supabase anonymous/service key
         - SUPABASE_HISTORICAL_KPI_TABLE: Table name (default: "historical_kpis")
 
-    Table Schema (expected, Phase G4.2.1):
+    Table Schema (expected, Phase G4.2):
         CREATE TABLE historical_kpis (
             id BIGSERIAL PRIMARY KEY,
-            kpi_id TEXT NOT NULL,
-            portfolio_id TEXT,
-            product_code TEXT,
-            segment_code TEXT,
+            kpi_id VARCHAR(255) NOT NULL,
+            value DECIMAL(18,6) NOT NULL,
             date DATE NOT NULL,
-            ts_utc TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            value_numeric NUMERIC(18,6),
-            value_int BIGINT,
-            value_json JSONB,
-            source_system TEXT,
-            run_id TEXT,
-            is_final BOOLEAN NOT NULL DEFAULT TRUE,
+            "timestamp" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            metadata JSONB,
+            CONSTRAINT unique_kpi_date UNIQUE (kpi_id, date)
         );
-        CREATE INDEX idx_hkpi_kpi_date
-            ON historical_kpis(kpi_id, date);
+        CREATE INDEX idx_historical_kpis_kpi_date
+            ON historical_kpis(kpi_id, date DESC);
 
     Usage:
         backend = SupabaseHistoricalBackend()
@@ -119,7 +113,7 @@ class SupabaseHistoricalBackend(HistoricalDataBackend):
             "kpi_id": f"eq.{kpi_id}",
             "date": f"gte.{start_iso},lte.{end_iso}",
             "order": "date.asc",
-            "select": "kpi_id,date,value_numeric,ts_utc",
+            "select": "kpi_id,date,value,timestamp",
         }
 
         # Execute request with timeout
@@ -134,8 +128,8 @@ class SupabaseHistoricalBackend(HistoricalDataBackend):
             KpiHistoricalValue(
                 kpi_id=row["kpi_id"],
                 date=row["date"],
-                value=float(row["value_numeric"]) if row.get("value_numeric") else 0.0,
-                timestamp=row["ts_utc"],
+                value=float(row["value"]) if row.get("value") is not None else 0.0,
+                timestamp=row["timestamp"],
             )
             for row in data
         ]
