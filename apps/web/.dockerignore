@@ -9,6 +9,13 @@ out
 
 # Testing
 coverage
+__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+jest.config.*
+jest.setup.*
 
 # Misc
 .DS_Store
