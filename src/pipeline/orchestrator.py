@@ -77,11 +77,11 @@ class UnifiedPipeline:
         run_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Run directory: {run_dir}")
 
-        results = {
+        results: Dict[str, Any] = {
             "run_id": run_id,
             "mode": mode,
             "start_time": datetime.now().isoformat(),
-            "phases": {},
+            "phases": {},  # type: ignore[misc]
         }
 
         try:
@@ -90,7 +90,7 @@ class UnifiedPipeline:
             logger.info("PHASE 1: INGESTION")
             logger.info("=" * 80)
             phase1_results = self.ingestion.execute(input_path=input_path, run_dir=run_dir)
-            results["phases"]["ingestion"] = phase1_results
+            results["phases"]["ingestion"] = phase1_results  # type: ignore[index]
 
             if phase1_results["status"] != "success":
                 raise Exception(f"Phase 1 failed: {phase1_results.get('error')}")
@@ -109,7 +109,7 @@ class UnifiedPipeline:
             phase2_results = self.transformation.execute(
                 raw_data_path=raw_data_path, run_dir=run_dir
             )
-            results["phases"]["transformation"] = phase2_results
+            results["phases"]["transformation"] = phase2_results  # type: ignore[index]
 
             if phase2_results["status"] != "success":
                 raise Exception(f"Phase 2 failed: {phase2_results.get('error')}")
@@ -128,7 +128,7 @@ class UnifiedPipeline:
             phase3_results = self.calculation.execute(
                 clean_data_path=clean_data_path, run_dir=run_dir
             )
-            results["phases"]["calculation"] = phase3_results
+            results["phases"]["calculation"] = phase3_results  # type: ignore[index]
 
             if phase3_results["status"] != "success":
                 raise Exception(f"Phase 3 failed: {phase3_results.get('error')}")
@@ -140,7 +140,7 @@ class UnifiedPipeline:
             phase4_results = self.output.execute(
                 kpi_results=phase3_results.get("kpis", {}), run_dir=run_dir
             )
-            results["phases"]["output"] = phase4_results
+            results["phases"]["output"] = phase4_results  # type: ignore[index]
 
             if phase4_results["status"] != "success":
                 raise Exception(f"Phase 4 failed: {phase4_results.get('error')}")

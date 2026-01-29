@@ -330,7 +330,7 @@ class CalculationPhase:
         if not numeric_cols:
             numeric_cols = ["amount"] if "amount" in df_ts.columns else []
 
-        result = {"daily": [], "weekly": [], "monthly": []}
+        result: Dict[str, List[Dict[str, Any]]] = {"daily": [], "weekly": [], "monthly": []}
 
         if numeric_cols:
             try:
