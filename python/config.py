@@ -155,9 +155,7 @@ class EnvironmentSettings(BaseModel):
             required = ["PROD_DATA_PATH", "SUPABASE_URL", "SUPABASE_KEY"]
             missing = [var for var in required if not os.getenv(var)]
             if missing:
-                raise RuntimeError(
-                    f"Missing required production environment variables: {missing}"
-                )
+                raise RuntimeError(f"Missing required production environment variables: {missing}")
 
 
 class Settings(BaseSettings):
