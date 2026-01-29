@@ -36,8 +36,10 @@ jobs:
 
       - name: Lowercase image names
         run: |
-          echo "IMAGE_WEB_LOWER=${IMAGE_WEB,,}" >> "$GITHUB_ENV"
-          echo "IMAGE_DASHBOARD_LOWER=${IMAGE_DASHBOARD,,}" >> "$GITHUB_ENV"
+          IMAGE_WEB_LOWER="${IMAGE_WEB,,}"
+          IMAGE_DASHBOARD_LOWER="${IMAGE_DASHBOARD,,}"
+          echo "IMAGE_WEB_LOWER=$IMAGE_WEB_LOWER" >> "$GITHUB_ENV"
+          echo "IMAGE_DASHBOARD_LOWER=$IMAGE_DASHBOARD_LOWER" >> "$GITHUB_ENV"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
