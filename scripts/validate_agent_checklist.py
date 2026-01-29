@@ -12,6 +12,8 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+from scripts.path_utils import validate_path
+
 
 class AgentChecklistValidator:
     """Validate agent implementation against checklist."""
@@ -22,7 +24,11 @@ class AgentChecklistValidator:
         Args:
             file_path: Path to the agent file
         """
-        self.file_path = Path(file_path)
+        # Validate file path for security (CWE-22: Path Traversal)
+        validated_path = validate_path(
+            file_path, base_dir=".", must_exist=True
+        )
+        self.file_path = validated_path
         self.content = self.file_path.read_text()
         self.tree = ast.parse(self.content)
         self.results: Dict[str, bool] = {}
