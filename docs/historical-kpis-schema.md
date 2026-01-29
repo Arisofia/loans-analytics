@@ -17,16 +17,13 @@ The `historical_kpis` table stores historical Key Performance Indicator (KPI) ob
 ```sql
 CREATE TABLE historical_kpis (
     id BIGSERIAL PRIMARY KEY,
-    portfolio_id UUID NOT NULL,
-    kpi_name VARCHAR(255) NOT NULL,
-    kpi_value DECIMAL(18,6) NOT NULL,
-    calculation_date DATE NOT NULL,
-    grain VARCHAR(50) NOT NULL CHECK (grain IN ('daily', 'weekly', 'monthly', 'quarterly', 'yearly')),
+    kpi_id VARCHAR(255) NOT NULL,
+    value DECIMAL(18,6) NOT NULL,
+    date DATE NOT NULL,
+    "timestamp" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    metadata JSONB,
-    CONSTRAINT uq_historical_kpis_portfolio_kpi_date 
-        UNIQUE(portfolio_id, kpi_name, calculation_date, grain)
+    metadata JSONB
 );
 ```
 
@@ -35,11 +32,10 @@ CREATE TABLE historical_kpis (
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | `id` | BIGSERIAL | NO | Auto-incrementing primary key |
-| `portfolio_id` | UUID | NO | Reference to portfolio (foreign key if portfolios table exists) |
-| `kpi_name` | VARCHAR(255) | NO | KPI identifier (e.g., "default_rate", "disbursements") |
-| `kpi_value` | DECIMAL(18,6) | NO | Calculated KPI value with 6 decimal precision |
-| `calculation_date` | DATE | NO | Date of KPI calculation or observation |
-| `grain` | VARCHAR(50) | NO | Temporal grain: daily, weekly, monthly, quarterly, yearly |
+| `kpi_id` | VARCHAR(255) | NO | KPI identifier (e.g., "default_rate", "disbursements") |
+| `value` | DECIMAL(18,6) | NO | Calculated KPI value with 6 decimal precision |
+| `date` | DATE | NO | Date of KPI calculation or observation |
+| `timestamp` | TIMESTAMPTZ | NO | Timestamp for the observation (UTC) |
 | `created_at` | TIMESTAMPTZ | NO | Record creation timestamp (UTC) |
 | `updated_at` | TIMESTAMPTZ | NO | Last update timestamp (UTC, auto-updated) |
 | `metadata` | JSONB | YES | Optional metadata (versioning, lineage, sources, etc.) |
@@ -47,9 +43,7 @@ CREATE TABLE historical_kpis (
 ### Constraints
 
 1. **Primary Key:** `id` (BIGSERIAL)
-2. **Unique Constraint:** `(portfolio_id, kpi_name, calculation_date, grain)`
-   - Ensures no duplicate KPI observations for same portfolio/date/grain
-3. **Check Constraint:** `grain` must be one of: daily, weekly, monthly, quarterly, yearly
+2. **No Unique Constraints:** Schema allows multiple observations per KPI/date for flexibility
 
 ---
 
@@ -57,37 +51,22 @@ CREATE TABLE historical_kpis (
 
 Performance-optimized indices for common query patterns:
 
-### 1. Portfolio + Date Range Queries
-```sql
-CREATE INDEX idx_historical_kpis_portfolio_date 
-    ON historical_kpis(portfolio_id, calculation_date DESC);
-```
-**Use Case:** Fetch all KPIs for a portfolio within a date range  
-**Query Pattern:** `WHERE portfolio_id = ? AND calculation_date BETWEEN ? AND ?`
-
-### 2. KPI + Date Range Queries
+### 1. KPI + Date Range Queries
 ```sql
 CREATE INDEX idx_historical_kpis_kpi_date 
-    ON historical_kpis(kpi_name, calculation_date DESC);
+    ON historical_kpis(kpi_id, date DESC);
 ```
-**Use Case:** Cross-portfolio KPI analysis and trend detection  
-**Query Pattern:** `WHERE kpi_name = ? AND calculation_date BETWEEN ? AND ?`
+**Use Case:** Primary lookup by KPI and date range  
+**Query Pattern:** `WHERE kpi_id = ? AND date BETWEEN ? AND ?`
 
-### 3. Composite Lookup Index
+### 2. Composite Lookup Index
 ```sql
 CREATE INDEX idx_historical_kpis_lookup 
-    ON historical_kpis(portfolio_id, kpi_name, calculation_date DESC);
+    ON historical_kpis(kpi_id, date DESC, "timestamp" DESC);
 ```
-**Use Case:** Specific KPI for a portfolio over time (most common pattern)  
-**Query Pattern:** `WHERE portfolio_id = ? AND kpi_name = ? AND calculation_date BETWEEN ? AND ?`
+**Use Case:** KPI queries with timestamp ordering  
+**Query Pattern:** `WHERE kpi_id = ? AND date BETWEEN ? AND ? ORDER BY timestamp`
 
-### 4. Grain-Specific Queries
-```sql
-CREATE INDEX idx_historical_kpis_grain 
-    ON historical_kpis(grain, calculation_date DESC);
-```
-**Use Case:** Aggregate queries by temporal grain (e.g., all monthly KPIs)  
-**Query Pattern:** `WHERE grain = 'monthly' AND calculation_date BETWEEN ? AND ?`
 
 ---
 
