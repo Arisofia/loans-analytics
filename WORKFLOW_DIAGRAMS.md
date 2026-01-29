@@ -125,7 +125,7 @@
                     ↓                              ↓
             streamlit_app.py              apps/analytics/api/
             (Interactive                  (FastAPI endpoints)
-             Dashboard)                   
+             Dashboard)
                     ↓                              ↓
             User visualizes             Programmatic access
             KPIs, exports               to KPI results
@@ -226,6 +226,7 @@ Repository Root
 ## 🚀 EXECUTION PATHS
 
 ### **Path 1: Manual CLI**
+
 ```
 User executes: python scripts/run_data_pipeline.py
                     ↓
@@ -241,6 +242,7 @@ User executes: python scripts/run_data_pipeline.py
 ```
 
 ### **Path 2: GitHub Actions**
+
 ```
 Scheduled trigger (.github/workflows/)
                     ↓
@@ -254,6 +256,7 @@ Scheduled trigger (.github/workflows/)
 ```
 
 ### **Path 3: API Endpoint**
+
 ```
 External system calls: POST /api/pipeline/trigger
                     ↓
