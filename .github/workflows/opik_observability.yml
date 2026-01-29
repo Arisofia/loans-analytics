@@ -4,12 +4,6 @@ name: Opik Observability & Monitoring
 # Enabled only for manual dispatch
 on:
   workflow_dispatch:
-    inputs:
-      run_reason:
-        description: "Reason for manual run"
-        required: false
-        default: "Manual trigger"
-
 env:
   OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
   SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
