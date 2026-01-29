@@ -468,8 +468,19 @@ class TransformationPhase:
                 if not all(c in allowed_chars for c in expression):
                     logger.warning(f"Unsafe characters in expression '{expression}', skipping rule")
                     return df
-                # Check for any dangerous patterns (case-insensitive via lower())
-                dangerous_patterns = ["import", "exec", "eval", "compile", "__", "open", "file"]
+                # Check for any dangerous patterns (case-insensitive via lower()).
+                # We explicitly block dangerous dunder names instead of any double underscore.
+                dangerous_patterns = [
+                    "import",
+                    "exec",
+                    "eval",
+                    "compile",
+                    "__import__",
+                    "__builtins__",
+                    "__class__",
+                    "open",
+                    "file",
+                ]
                 if any(pattern in expression.lower() for pattern in dangerous_patterns):
                     logger.warning(f"Dangerous pattern detected in expression '{expression}', skipping rule")
                     return df
