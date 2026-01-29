@@ -43,7 +43,7 @@ CREATE TABLE historical_kpis (
 ### Constraints
 
 1. **Primary Key:** `id` (BIGSERIAL)
-2. **Unique Constraint:** (`kpi_id`, `date`) pair must be unique to prevent duplicate KPI observations for the same date
+2. **No Unique Constraints:** Schema allows multiple observations per KPI/date for flexibility
 
 ---
 
@@ -113,12 +113,12 @@ CREATE INDEX idx_historical_kpis_lookup
 
 ## Partitioning Strategy
 
-For large-scale deployments (millions of rows), consider partitioning by `date` (year-based):
+For large-scale deployments (millions of rows), consider partitioning by `calculation_date` (year-based):
 
 ```sql
 -- Convert to partitioned table (requires migration)
 ALTER TABLE historical_kpis 
-    PARTITION BY RANGE (EXTRACT(YEAR FROM date));
+    PARTITION BY RANGE (EXTRACT(YEAR FROM calculation_date));
 
 -- Create partitions for each year
 CREATE TABLE historical_kpis_2024 
@@ -151,18 +151,22 @@ To enable multi-tenant security:
 -- Enable RLS
 ALTER TABLE historical_kpis ENABLE ROW LEVEL SECURITY;
 
+-- Policy: Users can only view their portfolio KPIs
+CREATE POLICY "Users can view their portfolio KPIs"
+    ON historical_kpis FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM portfolios WHERE id = historical_kpis.portfolio_id
+        )
+    );
+
 -- Policy: Service role can manage all KPIs
 CREATE POLICY "Service role can manage KPIs"
     ON historical_kpis FOR ALL
     USING (auth.role() = 'service_role');
-
--- Policy: Authenticated users can view all KPIs (customize based on your requirements)
-CREATE POLICY "Authenticated users can view KPIs"
-    ON historical_kpis FOR SELECT
-    USING (auth.role() = 'authenticated');
 ```
 
-**Note:** Customize policies based on your authentication and authorization model. The current schema does not include portfolio_id, so tenant isolation would require adding that column or using a different approach.
+**Note:** Customize policies based on your authentication and authorization model.
 
 ---
 
@@ -170,62 +174,62 @@ CREATE POLICY "Authenticated users can view KPIs"
 
 ### Insert Daily KPI
 ```sql
-INSERT INTO historical_kpis (kpi_id, value, date, timestamp, metadata)
+INSERT INTO historical_kpis (portfolio_id, kpi_name, kpi_value, calculation_date, grain)
 VALUES (
+    'a1b2c3d4-e5f6-7890-abcd-ef1234567890',  -- Replace with actual portfolio_id
     'default_rate',
     0.0245,
     CURRENT_DATE,  -- Today's date
-    NOW(),
-    '{}'::jsonb
+    'daily'
 );
 ```
 
 ### Query KPI History (Last 30 Days)
 ```sql
 SELECT 
-    date,
-    value
+    calculation_date,
+    kpi_value
 FROM historical_kpis
 WHERE 
-    kpi_id = 'default_rate'
-    AND date >= CURRENT_DATE - INTERVAL '30 days'
-ORDER BY date DESC;
+    portfolio_id = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'  -- Replace with actual portfolio_id
+    AND kpi_name = 'default_rate'
+    AND calculation_date >= CURRENT_DATE - INTERVAL '30 days'
+    AND grain = 'daily'
+ORDER BY calculation_date DESC;
 ```
 
 ### Calculate 30-Day Moving Average
 ```sql
 SELECT 
-    date,
-    value,
-    AVG(value) OVER (
-        ORDER BY date 
+    calculation_date,
+    kpi_value,
+    AVG(kpi_value) OVER (
+        ORDER BY calculation_date 
         ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
     ) AS moving_avg_30d
 FROM historical_kpis
 WHERE 
-    kpi_id = 'default_rate'
-ORDER BY date DESC;
+    portfolio_id = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'  -- Replace with actual portfolio_id
+    AND kpi_name = 'default_rate'
+    AND grain = 'daily'
+ORDER BY calculation_date DESC;
 ```
 
 ### Aggregate Daily to Monthly
 ```sql
--- Note: The current schema does not have a 'grain' column.
--- This example shows how you might aggregate data by month.
-INSERT INTO historical_kpis (kpi_id, value, date, timestamp, metadata)
+INSERT INTO historical_kpis (portfolio_id, kpi_name, kpi_value, calculation_date, grain)
 SELECT 
-    kpi_id,
-    AVG(value) AS value,
-    DATE_TRUNC('month', date)::DATE AS date,
-    NOW() AS timestamp,
-    jsonb_build_object('aggregation', 'monthly', 'source', 'daily_data') AS metadata
+    portfolio_id,
+    kpi_name,
+    AVG(kpi_value) AS kpi_value,
+    DATE_TRUNC('month', calculation_date)::DATE AS calculation_date,
+    'monthly' AS grain
 FROM historical_kpis
 WHERE 
-    date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-    AND date < DATE_TRUNC('month', CURRENT_DATE)
-GROUP BY kpi_id, DATE_TRUNC('month', date)
-ON CONFLICT (kpi_id, date) DO UPDATE
-    SET value = EXCLUDED.value,
-        updated_at = NOW();
+    grain = 'daily'
+    AND calculation_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+    AND calculation_date < DATE_TRUNC('month', CURRENT_DATE)
+GROUP BY portfolio_id, kpi_name, DATE_TRUNC('month', calculation_date);
 ```
 
 ---
@@ -239,7 +243,7 @@ from datetime import date, timedelta
 
 import psycopg2
 
-# Example: fetch 30 days of historical KPI values
+# Example: fetch 30 days of historical KPI values for a portfolio
 conn = psycopg2.connect(
     dbname="analytics",
     user="app_user",
@@ -248,26 +252,28 @@ conn = psycopg2.connect(
     port=5432,
 )
 
-kpi_id = "default_rate"
+portfolio_id = "00000000-0000-0000-0000-000000000000"
+kpi_name = "default_rate"
 start_date = date.today() - timedelta(days=30)
 end_date = date.today()
 
 with conn, conn.cursor() as cur:
     cur.execute(
         """
-        SELECT date, value
+        SELECT calculation_date, kpi_value
         FROM historical_kpis
-        WHERE kpi_id = %s
-          AND date BETWEEN %s AND %s
-        ORDER BY date
+        WHERE portfolio_id = %s
+          AND kpi_name = %s
+          AND calculation_date BETWEEN %s AND %s
+        ORDER BY calculation_date
         """,
-        (kpi_id, start_date, end_date),
+        (portfolio_id, kpi_name, start_date, end_date),
     )
     history = cur.fetchall()
 
-# history is a list of (date, value) tuples
-for kpi_date, kpi_value in history:
-    print(kpi_date, kpi_value)
+# history is a list of (calculation_date, kpi_value) tuples
+for calculation_date, kpi_value in history:
+    print(calculation_date, kpi_value)
 ```
 
 ---
