@@ -10,14 +10,14 @@ name: Integration Tests (Optional)
 # They validate real database connectivity and schema integrity.
 
 on:
-  workflow_dispatch:  # Manual trigger from GitHub Actions UI
+  workflow_dispatch: # Manual trigger from GitHub Actions UI
     inputs:
       test_target:
-        description: 'Which integration tests to run (e.g., all, historical_kpis)'
+        description: "Which integration tests to run (e.g., all, historical_kpis)"
         required: false
         default: historical_kpis
   schedule:
-    - cron: '0 2 * * *'  # Daily at 2am UTC
+    - cron: "0 2 * * *" # Daily at 2am UTC
 
 jobs:
   integration-tests:
