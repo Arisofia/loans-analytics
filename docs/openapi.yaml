@@ -16,6 +16,11 @@ servers:
     description: Production API server
   - url: http://localhost:3000/api
     description: Local development server
+
+# Global security - all endpoints require authentication by default
+security:
+  - bearerAuth: []
+
 tags:
   - name: Drilldowns
     description: Analytics drilldown module operations
@@ -35,6 +40,8 @@ paths:
       operationId: getDrilldownStatuses
       tags:
         - Drilldowns
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: Status of all drilldown modules
@@ -556,6 +563,7 @@ components:
         loans:
           type: array
           minItems: 1
+          maxItems: 10000
           items:
             $ref: "#/components/schemas/LoanRecord"
           description: Array of loan records for analysis
@@ -611,6 +619,7 @@ components:
           $ref: "#/components/schemas/KpiSingleResponse"
         audit_trail:
           type: array
+          maxItems: 1000
           items:
             $ref: "#/components/schemas/AuditEntry"
     AuditEntry:
@@ -671,6 +680,7 @@ components:
           description: Percentage of portfolio flagged as high-risk
         high_risk_loans:
           type: array
+          maxItems: 10000
           items:
             $ref: "#/components/schemas/RiskLoan"
     FullAnalysisResponse:
@@ -736,6 +746,7 @@ components:
           description: Validation message
         columns_present:
           type: array
+          maxItems: 100
           items:
             type: string
           description: List of required columns found
@@ -747,6 +758,7 @@ components:
           default: false
         errors:
           type: array
+          maxItems: 500
           items:
             type: object
             properties:
@@ -758,6 +770,7 @@ components:
                 type: string
         missing_columns:
           type: array
+          maxItems: 100
           items:
             type: string
           description: List of missing required columns
