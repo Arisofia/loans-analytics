@@ -279,7 +279,6 @@ def test_historical_context_provider_cache_behavior(
     historical_provider.clear_cache()
 
     # First query (cold cache)
-    start_time = time.time()
     result1 = historical_provider.get_kpi_history(
         kpi_id=test_kpi_id,
         start_date=date.today() - timedelta(days=30),
