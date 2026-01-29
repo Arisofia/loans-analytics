@@ -10,7 +10,6 @@ Test Cases:
 """
 
 
-
 class TestAnalyticsIntegration:
     """Integration and observability tests."""
 

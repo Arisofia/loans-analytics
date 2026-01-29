@@ -33,7 +33,7 @@ class KPIFormulaEngine:
         """Parse and execute a KPI formula."""
         try:
             formula = formula.strip()
-            
+
             if self._is_comparison_formula(formula):
                 return self._execute_comparison_formula(formula)
             elif self._is_arithmetic_formula(formula):
@@ -58,60 +58,60 @@ class KPIFormulaEngine:
 
     def _execute_arithmetic_formula(self, formula: str) -> float:
         """Execute formulas with arithmetic operations."""
-        pattern = r'(SUM|AVG|COUNT)\([^)]+\)'
-        parts = re.split(r'(\s*[\+\-\*/]\s*|\s*\*\s*100)', formula)
-        
+        pattern = r"(SUM|AVG|COUNT)\([^)]+\)"
+        parts = re.split(r"(\s*[\+\-\*/]\s*|\s*\*\s*100)", formula)
+
         result = None
         operator = None
-        
+
         for part in parts:
             part = part.strip()
             if not part:
                 continue
-                
-            if part in ['+', '-', '*', '/', '* 100']:
+
+            if part in ["+", "-", "*", "/", "* 100"]:
                 operator = part
             elif re.match(pattern, part):
                 value = self._execute_simple_formula(part)
-                
+
                 if result is None:
                     result = value
                 elif operator:
-                    if operator == '+':
+                    if operator == "+":
                         result = result + value
-                    elif operator == '-':
+                    elif operator == "-":
                         result = result - value
-                    elif operator == '*' or operator == '* 100':
+                    elif operator == "*" or operator == "* 100":
                         result = result * value
-                    elif operator == '/' and value != 0:
+                    elif operator == "/" and value != 0:
                         result = result / value
                     operator = None
-            elif part.replace('.', '').isdigit():
+            elif part.replace(".", "").isdigit():
                 value = float(part)
                 if result is not None and operator:
-                    if operator == '*' or operator == '* 100':
+                    if operator == "*" or operator == "* 100":
                         result = result * value
-                    elif operator == '/' and value != 0:
+                    elif operator == "/" and value != 0:
                         result = result / value
                     operator = None
-        
+
         return result if result is not None else 0.0
 
     def _execute_simple_formula(self, formula: str) -> float:
         """Execute simple aggregation formulas."""
-        agg_match = re.match(r'(SUM|AVG|COUNT)\((.+?)\)', formula, re.IGNORECASE)
+        agg_match = re.match(r"(SUM|AVG|COUNT)\((.+?)\)", formula, re.IGNORECASE)
         if not agg_match:
             return 0.0
-        
+
         agg_func = agg_match.group(1).upper()
         content = agg_match.group(2).strip()
-        
+
         distinct = False
-        if content.startswith('DISTINCT '):
+        if content.startswith("DISTINCT "):
             distinct = True
             content = content[9:].strip()
-        
-        where_match = re.match(r'(.+?)\s+WHERE\s+(.+)', content, re.IGNORECASE)
+
+        where_match = re.match(r"(.+?)\s+WHERE\s+(.+)", content, re.IGNORECASE)
         if where_match:
             column = where_match.group(1).strip()
             condition = where_match.group(2).strip()
@@ -119,66 +119,68 @@ class KPIFormulaEngine:
         else:
             column = content
             filtered_df = self.df
-        
+
         if filtered_df.empty:
             return 0.0
-        
+
         if column not in filtered_df.columns:
             logger.debug(f"Column '{column}' not found in data")
             return 0.0
-        
-        if agg_func == 'SUM':
+
+        if agg_func == "SUM":
             return float(filtered_df[column].sum())
-        elif agg_func == 'AVG':
+        elif agg_func == "AVG":
             return float(filtered_df[column].mean())
-        elif agg_func == 'COUNT':
+        elif agg_func == "COUNT":
             if distinct:
                 return float(filtered_df[column].nunique())
             else:
                 return float(filtered_df[column].count())
-        
+
         return 0.0
 
     def _apply_where_clause(self, condition: str) -> pd.DataFrame:
         """Apply WHERE clause to filter DataFrame."""
         try:
-            if '>=' in condition:
-                parts = condition.split('>=')
+            if ">=" in condition:
+                parts = condition.split(">=")
                 col = parts[0].strip()
                 value = parts[1].strip()
-                
-                if value == 'MONTH_START':
+
+                if value == "MONTH_START":
                     if col in self.df.columns:
-                        return self.df[pd.to_datetime(self.df[col], errors='coerce') >= self.month_start]
+                        return self.df[
+                            pd.to_datetime(self.df[col], errors="coerce") >= self.month_start
+                        ]
                 elif value.isdigit():
                     if col in self.df.columns:
                         return self.df[self.df[col] >= int(value)]
-            
-            elif ' IN ' in condition:
+
+            elif " IN " in condition:
                 match = re.match(r"(.+?)\s+IN\s+\[(.+?)\]", condition, re.IGNORECASE)
                 if match:
                     col = match.group(1).strip()
-                    values = [v.strip().strip("'\"") for v in match.group(2).split(',')]
+                    values = [v.strip().strip("'\"") for v in match.group(2).split(",")]
                     if col in self.df.columns:
                         return self.df[self.df[col].isin(values)]
-            
-            elif '!=' in condition:
-                parts = condition.split('!=')
+
+            elif "!=" in condition:
+                parts = condition.split("!=")
                 col = parts[0].strip()
                 value = parts[1].strip().strip("'\"")
                 if col in self.df.columns:
                     return self.df[self.df[col] != value]
-            
-            elif '=' in condition:
-                parts = condition.split('=')
+
+            elif "=" in condition:
+                parts = condition.split("=")
                 col = parts[0].strip()
                 value = parts[1].strip().strip("'\"")
                 if col in self.df.columns:
                     return self.df[self.df[col] == value]
-        
+
         except Exception as e:
             logger.debug(f"WHERE clause failed: {condition} - {str(e)}")
-        
+
         return self.df
 
 
@@ -275,21 +277,21 @@ class CalculationPhase:
         engine = KPIFormulaEngine(df)
 
         kpi_categories = [
-            'portfolio_kpis',
-            'asset_quality_kpis',
-            'cash_flow_kpis',
-            'growth_kpis',
-            'customer_kpis',
-            'operational_kpis'
+            "portfolio_kpis",
+            "asset_quality_kpis",
+            "cash_flow_kpis",
+            "growth_kpis",
+            "customer_kpis",
+            "operational_kpis",
         ]
 
         for category in kpi_categories:
             if category in self.kpi_definitions:
                 category_kpis = self.kpi_definitions[category]
                 for kpi_name, kpi_config in category_kpis.items():
-                    if 'formula' in kpi_config:
+                    if "formula" in kpi_config:
                         try:
-                            value = engine.calculate(kpi_config['formula'])
+                            value = engine.calculate(kpi_config["formula"])
                             kpis[kpi_name] = value
                             logger.debug(f"Calculated {kpi_name}: {value}")
                         except Exception as e:
@@ -302,54 +304,56 @@ class CalculationPhase:
     def _calculate_time_series(self, df: pd.DataFrame) -> Dict[str, List]:
         """Calculate time-series rollups."""
         logger.info("Calculating time-series rollups")
-        
+
         date_columns = []
         for col in df.columns:
-            if df[col].dtype in ['datetime64[ns]', 'object']:
+            if df[col].dtype in ["datetime64[ns]", "object"]:
                 try:
-                    pd.to_datetime(df[col], errors='raise')
+                    pd.to_datetime(df[col], errors="raise")
                     date_columns.append(col)
                 except Exception:
                     continue
-        
+
         if not date_columns:
             logger.debug("No date columns found for time-series analysis")
             return {"daily": [], "weekly": [], "monthly": []}
-        
+
         date_col = date_columns[0]
         df_ts = df.copy()
-        df_ts[date_col] = pd.to_datetime(df_ts[date_col], errors='coerce')
+        df_ts[date_col] = pd.to_datetime(df_ts[date_col], errors="coerce")
         df_ts = df_ts.dropna(subset=[date_col])
-        
+
         if df_ts.empty:
             return {"daily": [], "weekly": [], "monthly": []}
-        
+
         numeric_cols = df_ts.select_dtypes(include=[np.number]).columns.tolist()
         if not numeric_cols:
-            numeric_cols = ['amount'] if 'amount' in df_ts.columns else []
-        
+            numeric_cols = ["amount"] if "amount" in df_ts.columns else []
+
         result = {"daily": [], "weekly": [], "monthly": []}
-        
+
         if numeric_cols:
             try:
                 daily = df_ts.groupby(df_ts[date_col].dt.date)[numeric_cols].sum()
-                result["daily"] = daily.to_dict('records')[:30]
+                result["daily"] = daily.to_dict("records")[:30]
             except Exception:
                 pass
-            
+
             try:
-                weekly = df_ts.groupby(df_ts[date_col].dt.to_period('W'))[numeric_cols].sum()
-                result["weekly"] = weekly.to_dict('records')[:12]
+                weekly = df_ts.groupby(df_ts[date_col].dt.to_period("W"))[numeric_cols].sum()
+                result["weekly"] = weekly.to_dict("records")[:12]
             except Exception:
                 pass
-            
+
             try:
-                monthly = df_ts.groupby(df_ts[date_col].dt.to_period('M'))[numeric_cols].sum()
-                result["monthly"] = monthly.to_dict('records')[:12]
+                monthly = df_ts.groupby(df_ts[date_col].dt.to_period("M"))[numeric_cols].sum()
+                result["monthly"] = monthly.to_dict("records")[:12]
             except Exception:
                 pass
-        
-        logger.info(f"Time-series calculated: {len(result['daily'])} daily, {len(result['weekly'])} weekly, {len(result['monthly'])} monthly")
+
+        logger.info(
+            f"Time-series calculated: {len(result['daily'])} daily, {len(result['weekly'])} weekly, {len(result['monthly'])} monthly"
+        )
         return result
 
     def _detect_anomalies(self, kpi_results: Dict[str, Any]) -> List[Dict[str, Any]]:

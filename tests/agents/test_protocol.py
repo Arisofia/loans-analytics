@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock
 
 
-
 class TestAgentProtocol:
     """Test suite for agent communication protocol."""
 

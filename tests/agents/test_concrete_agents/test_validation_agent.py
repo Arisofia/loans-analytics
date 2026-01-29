@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock
 
 
-
 class TestValidationAgent:
     """Test suite for validation agent."""
 

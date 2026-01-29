@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock
 
 
-
 class TestBaseAgent:
     """Test suite for base agent class."""
 
