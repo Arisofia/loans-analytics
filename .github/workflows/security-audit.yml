@@ -25,6 +25,5 @@ jobs:
               id: msdo
 
             - name: Upload SARIF to GitHub
-              uses: github/codeql-action/upload-sarif@b20883bbd772085d89b7f2f66d5dc41fd8fb004c  # v4.32.0
-              with:
+                uses: github/codeql-action/upload-sarif@v3
                   sarif_file: ${{ steps.msdo.outputs.sarifFile }}
