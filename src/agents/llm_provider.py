@@ -15,6 +15,8 @@ class LLMProvider(Protocol):
     """
 
     def complete(self, messages: List[Dict[str, str]], **kwargs: Any) -> str: ...
+
+
 class OpenAILLMProvider:
     """OpenAI-backed LLM provider using ChatOpenAI.
     Reads configuration from environment variables and exposes a simple
