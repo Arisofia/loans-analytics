@@ -2,7 +2,6 @@
 
 import hashlib
 import time
-from datetime import datetime
 from typing import Any, Dict, Optional
 
 try:
@@ -14,6 +13,7 @@ except ImportError:
     OTEL_AVAILABLE = False
 
 from python.logging_config import get_logger
+from python.time_utils import get_iso_timestamp
 
 from .protocol import AgentError, AgentRequest, AgentResponse, AgentRole
 
@@ -83,7 +83,7 @@ class AgentTracer:
                 "agent_role": agent_role.value,
                 "message_count": len(request.messages),
                 "context_keys": list(request.context.keys()),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": get_iso_timestamp(),
             },
         )
 
