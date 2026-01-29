@@ -16,9 +16,9 @@ jobs:
       matrix:
         python-version: ['3.11', '3.12']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
@@ -74,7 +74,7 @@ jobs:
 
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request' && matrix.python-version == '3.11'
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83cf42496352c7b1c5b6cf25dc6aa6f8c93  # v7.0.1
         with:
           script: |
             const fs = require('fs');
