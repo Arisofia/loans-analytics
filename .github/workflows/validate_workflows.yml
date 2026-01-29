@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Run actionlint
         id: actionlint
-        uses: rhysd/actionlint@v1
+        uses: rhysd/actionlint@7aea3b0a916d95ff7d9c6aaac0b7258096f15172 # v1.7.4
         with:
           args: .github/workflows
 
