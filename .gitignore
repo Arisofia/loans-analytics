@@ -11,6 +11,7 @@ build/
 # Python
 __pycache__/
 *.pyc
+*.pyo
 .venv/
 venv/
 *.tmp
@@ -62,8 +63,11 @@ out/
 .vscode/tasks.json
 
 # Node modules
-.python_packagesnode_modules/
 node_modules/
+.npm/
+.yarn/
+.pnpm-debug.log*
+*.tsbuildinfo
 
 # Project-specific artifacts
 apps/.DS_Store
@@ -106,10 +110,12 @@ data/archives/cascade/tmp*.csv
 apps/web/playwright-report/
 playwright/.e2e
 playwright/.auth
+test-results/
 .pytest_cache/
 .mypy_cache/
 pytest-report/
 coverage.xml
+junit.xml
 
 # Ignore generated media files
 *.mp4

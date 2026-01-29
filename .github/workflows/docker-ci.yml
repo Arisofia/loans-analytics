@@ -23,27 +23,27 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
 
             - name: Log into registry ${{ env.REGISTRY }}
-              uses: docker/login-action@v3
+              uses: docker/login-action@46df7e3028f5d5693b552b215737bc89121b29e4  # v3.1.0
               with:
                   registry: ${{ env.REGISTRY }}
                   username: ${{ secrets.REGISTRY_USER }}
                   password: ${{ secrets.REGISTRY_TOKEN }}
 
             - name: Setup Docker buildx
-              uses: docker/setup-buildx-action@v3
+              uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5  # v3.8.0
 
             - name: Extract metadata
               id: meta
-              uses: docker/metadata-action@v5
+              uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96  # v5.6.1
               with:
                   images: ${{ env.IMAGE_NAME }}
 
             - name: Build and push Docker image
               id: build-and-push
-              uses: docker/build-push-action@v5
+              uses: docker/build-push-action@94b440b8e4a7ae1f6e627619693455b84444c56b  # v5.3.0
               with:
                   context: .
                   tags: ${{ steps.meta.outputs.tags }}
@@ -57,7 +57,7 @@ jobs:
 
             - name: Docker Scout Compare
               if: ${{ github.event_name == 'pull_request' }}
-              uses: docker/scout-action@v1
+              uses: docker/scout-action@cc6400ac43b9bcf0c54dcb5afe65c1f0b1f2b24e  # v1.16.1
               with:
                   command: compare
                   image: ${{ steps.meta.outputs.tags }}
