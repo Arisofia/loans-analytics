@@ -545,13 +545,27 @@ class TransformationPhase:
 
     def _detect_outliers_zscore(self, series: pd.Series) -> pd.Series:
         """Detect outliers using Z-score method."""
-        mean = series.mean()
-        std = series.std()
-        if std == 0:
-            return pd.Series([False] * len(series), index=series.index)
-        z_scores = np.abs((series - mean) / std)
-        return z_scores > self.outlier_threshold
+        # Work on non-null values to avoid NaN propagation in statistics and flags
+        non_null = series.dropna()
 
+        # If there are no non-null values, there can be no outliers
+        if non_null.empty:
+            return pd.Series(False, index=series.index)
+
+        mean = non_null.mean()
+        std = non_null.std()
+
+        # If there is no variation, there are no outliers
+        if std == 0:
+            return pd.Series(False, index=series.index)
+
+        z_scores = np.abs((non_null - mean) / std)
+        outliers_non_null = z_scores > self.outlier_threshold
+
+        # Initialize all values as non-outliers and set only non-null outliers to True
+        outliers = pd.Series(False, index=series.index)
+        outliers.loc[non_null.index] = outliers_non_null.fillna(False)
+        return outliers
     def _check_referential_integrity(
         self, df: pd.DataFrame
     ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
