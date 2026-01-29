@@ -87,6 +87,7 @@ jobs:
           SUPABASE_HISTORICAL_KPI_TABLE: 'historical_kpis'
         run: |
           echo "🧪 Running Historical KPIs integration tests..."
+          mkdir -p test-results
           pytest tests/integration/test_historical_kpis_real.py \
             -v \
             --timeout=60 \
