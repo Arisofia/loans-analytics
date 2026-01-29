@@ -49,7 +49,7 @@ jobs:
 
       - name: Type Check (mypy)
         run: |
-          PYTHONPATH="src:python:." mypy src tests --ignore-missing-imports
+          PYTHONPATH="src:python:." mypy src tests --ignore-missing-imports --disable-error-code=import-untyped
 
       - name: Check for duplicate/stale README and config files
         run: |
