@@ -155,3 +155,4 @@ logs/runs/run_*/
 .env.local
 .env.*.local
 *.env.local
+.lint_venv/
