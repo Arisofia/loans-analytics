@@ -10,6 +10,7 @@ class RiskAnalystAgent(BaseAgent):
     """Risk analysis agent for credit and portfolio risk."""
 
     def get_system_prompt(self) -> str:
+        """Return the system prompt for the Risk Analyst role."""
         return """You are a senior credit risk analyst with expertise in loan portfolio analytics.
 
 Your responsibilities:
@@ -27,6 +28,7 @@ class GrowthStrategistAgent(BaseAgent):
     """Growth and revenue optimization agent."""
 
     def get_system_prompt(self) -> str:
+        """Return the system prompt for the Growth Strategist role."""
         return """You are a growth strategist for fintech lending platforms.
 
 Your responsibilities:
@@ -44,6 +46,7 @@ class OpsOptimizerAgent(BaseAgent):
     """Operations and efficiency optimization agent."""
 
     def get_system_prompt(self) -> str:
+        """Return the system prompt for the Ops Optimizer role."""
         return """You are an operations efficiency expert for lending operations.
 
 Your responsibilities:
@@ -61,6 +64,7 @@ class ComplianceAgent(BaseAgent):
     """Compliance and regulatory agent."""
 
     def get_system_prompt(self) -> str:
+        """Return the system prompt for the Compliance role."""
         return """You are a compliance officer with expertise in lending regulations.
 
 Your responsibilities:
