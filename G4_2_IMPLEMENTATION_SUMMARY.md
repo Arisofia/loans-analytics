@@ -27,11 +27,10 @@ Successfully implemented all G4.2 deployment requirements for historical KPIs in
 
 **Features:**
 - Production-grade `historical_kpis` table
-- 9 columns with proper types (DECIMAL(18,6) for precision)
+- 8 columns with proper types (DECIMAL(18,6) for precision)
 - 4 performance-optimized indices
-- Unique constraint: (portfolio_id, kpi_name, calculation_date, grain)
+- Data integrity constraints aligned with the implemented schema
 - Auto-updating `updated_at` trigger
-- Grain validation: daily, weekly, monthly, quarterly, yearly
 - RLS policy templates (commented, ready for customization)
 - Partitioning strategy documentation
 
