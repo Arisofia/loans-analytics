@@ -309,7 +309,7 @@ class CalculationPhase:
                 try:
                     pd.to_datetime(df[col], errors='raise')
                     date_columns.append(col)
-                except:
+                except Exception:
                     continue
         
         if not date_columns:
@@ -334,19 +334,19 @@ class CalculationPhase:
             try:
                 daily = df_ts.groupby(df_ts[date_col].dt.date)[numeric_cols].sum()
                 result["daily"] = daily.to_dict('records')[:30]
-            except:
+            except Exception:
                 pass
             
             try:
                 weekly = df_ts.groupby(df_ts[date_col].dt.to_period('W'))[numeric_cols].sum()
                 result["weekly"] = weekly.to_dict('records')[:12]
-            except:
+            except Exception:
                 pass
             
             try:
                 monthly = df_ts.groupby(df_ts[date_col].dt.to_period('M'))[numeric_cols].sum()
                 result["monthly"] = monthly.to_dict('records')[:12]
-            except:
+            except Exception:
                 pass
         
         logger.info(f"Time-series calculated: {len(result['daily'])} daily, {len(result['weekly'])} weekly, {len(result['monthly'])} monthly")
