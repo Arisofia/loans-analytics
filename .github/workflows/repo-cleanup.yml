@@ -1,0 +1,126 @@
+name: Repository Cleanup & Maintenance
+
+on:
+    schedule:
+        # Run every Sunday at 02:00 UTC
+        - cron: "0 2 * * 0"
+    workflow_dispatch:
+        inputs:
+            cleanup_mode:
+                description: "Cleanup mode"
+                required: true
+                default: "standard"
+                type: choice
+                options:
+                    - "standard"
+                    - "aggressive"
+                    - "full"
+
+jobs:
+    cleanup:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            branches: write
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Configure Git
+              run: |
+                  git config --global user.name "github-actions[bot]"
+                  git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+            - name: Fetch all references
+              run: git fetch --all --prune
+
+            - name: Delete merged branches
+              run: |
+                  echo "🔍 Identifying merged branches..."
+                  MERGED=$(git branch -r --merged origin/main | grep -v 'origin/main' | grep -v 'origin/HEAD' | sed 's/origin\///' || true)
+
+                  if [ -z "$MERGED" ]; then
+                    echo "✓ No merged branches to delete"
+                  else
+                    echo "Found merged branches:"
+                    echo "$MERGED"
+                    
+                    for branch in $MERGED; do
+                      echo "  Deleting $branch..."
+                      git push origin --delete "$branch" 2>/dev/null || echo "  (Already deleted or protected)"
+                    done
+                  fi
+
+            - name: Clean up stale remote branches
+              if: github.event.inputs.cleanup_mode == 'full' || github.event.inputs.cleanup_mode == 'aggressive'
+              run: |
+                  echo "🔄 Pruning remote references..."
+                  git remote prune origin
+                  echo "✓ Prune complete"
+
+            - name: Run garbage collection
+              run: |
+                  echo "♻️  Running garbage collection..."
+                  if [ "${{ github.event.inputs.cleanup_mode }}" == "full" ] || [ "${{ github.event.inputs.cleanup_mode }}" == "aggressive" ]; then
+                    git gc --aggressive --prune=now
+                    echo "✓ Aggressive garbage collection complete"
+                  else
+                    git gc
+                    echo "✓ Standard garbage collection complete"
+                  fi
+
+            - name: Generate cleanup report
+              id: report
+              run: |
+                  echo "## 📊 Repository Cleanup Report" > cleanup-report.md
+                  echo "" >> cleanup-report.md
+                  echo "**Date:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> cleanup-report.md
+                  echo "**Mode:** ${{ github.event.inputs.cleanup_mode || 'scheduled (standard)' }}" >> cleanup-report.md
+                  echo "" >> cleanup-report.md
+
+                  echo "### Repository Statistics" >> cleanup-report.md
+                  echo "" >> cleanup-report.md
+                  echo "- **Git Directory Size:** $(du -sh .git | cut -f1)" >> cleanup-report.md
+                  echo "- **Total Objects:** $(git rev-list --count --all)" >> cleanup-report.md
+                  echo "- **Commits:** $(git rev-list --count HEAD)" >> cleanup-report.md
+                  echo "- **Branches:** $(git branch | wc -l) local, $(git branch -r | wc -l) remote refs" >> cleanup-report.md
+                  echo "" >> cleanup-report.md
+
+                  echo "### Actions Performed" >> cleanup-report.md
+                  echo "" >> cleanup-report.md
+                  echo "- ✓ Fetched all references with prune" >> cleanup-report.md
+                  echo "- ✓ Deleted merged branches" >> cleanup-report.md
+
+                  if [ "${{ github.event.inputs.cleanup_mode }}" == "full" ] || [ "${{ github.event.inputs.cleanup_mode }}" == "aggressive" ]; then
+                    echo "- ✓ Pruned remote references" >> cleanup-report.md
+                    echo "- ✓ Ran aggressive garbage collection" >> cleanup-report.md
+                  else
+                    echo "- ✓ Ran standard garbage collection" >> cleanup-report.md
+                  fi
+
+                  echo "" >> cleanup-report.md
+                  echo "### Next Steps" >> cleanup-report.md
+                  echo "" >> cleanup-report.md
+                  echo "1. Review the cleanup report" >> cleanup-report.md
+                  echo "2. Run test suite to ensure integrity" >> cleanup-report.md
+                  echo "3. Monitor repository performance" >> cleanup-report.md
+
+                  cat cleanup-report.md
+
+            - name: Upload cleanup report
+              uses: actions/upload-artifact@v4
+              with:
+                  name: cleanup-report
+                  path: cleanup-report.md
+
+            - name: Create cleanup summary
+              run: |
+                  echo "✅ Repository cleanup completed successfully"
+                  echo ""
+                  echo "📈 Repository health check:"
+                  echo "  - Git directory: $(du -sh .git | cut -f1)"
+                  echo "  - Total branches: $(git branch | wc -l) local"
+                  echo "  - Status: $(git status --short | wc -l) files changed"
