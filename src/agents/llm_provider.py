@@ -6,6 +6,7 @@ import os
 from typing import Any, Dict, List, Protocol
 
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 
 class LLMProvider(Protocol):
@@ -31,10 +32,11 @@ class OpenAILLMProvider:
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise RuntimeError("OPENAI_API_KEY must be set for OpenAILLMProvider")
+        model_name: str = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini") or "gpt-4o-mini"
         self._model = ChatOpenAI(
-            model=model or os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            model=model_name,
             temperature=temperature,
-            api_key=api_key,
+            api_key=SecretStr(api_key),
         )
 
     def complete(self, messages: List[Dict[str, str]], **kwargs: Any) -> str:
