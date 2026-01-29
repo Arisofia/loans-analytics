@@ -91,7 +91,7 @@ jobs:
 
       - name: Upload build to S3 (cloud)
         if: steps.aws_secrets.outputs.present == true
-        uses: jakejarvis/s3-sync-action@v4
+        uses: jakejarvis/s3-sync-action@v0.5.1
         with:
           args: --acl private --follow-symlinks
         env:
@@ -103,7 +103,7 @@ jobs:
 
       - name: Deploy to Vercel
         if: steps.vercel_secrets.outputs.present == true
-        uses: amondnet/vercel-action@v4
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
@@ -126,7 +126,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy Bicep
-        uses: azure/arm-deploy@v4
+        uses: azure/arm-deploy@v2
         with:
           resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
           template: infra/azure/main.bicep
@@ -139,7 +139,7 @@ jobs:
             sqlAdminPassword=${{ secrets.AZURE_SQL_ADMIN_PASSWORD }}
 
       - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v4
+        uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
           package: ./apps/web
