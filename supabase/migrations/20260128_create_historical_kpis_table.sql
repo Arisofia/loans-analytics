@@ -30,7 +30,10 @@ CREATE TABLE IF NOT EXISTS historical_kpis (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     -- Optional metadata (versioning, lineage, etc.)
-    metadata JSONB
+    metadata JSONB,
+
+    -- Enforce uniqueness per KPI per date (matches SupabaseHistoricalBackend expectation)
+    UNIQUE(kpi_id, date)
 );
 
 -- ============================================================================
