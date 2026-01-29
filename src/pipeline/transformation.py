@@ -408,11 +408,11 @@ class TransformationPhase:
 
         if status == "defaulted":
             return "critical"
-        elif status == "delinquent" or (dpd is not None and not pd.isna(dpd) and dpd >= 90):
+        elif status == "delinquent" or (pd.notna(dpd) and dpd >= 90):
             return "high"
-        elif dpd is not None and not pd.isna(dpd) and dpd >= 30:
+        elif pd.notna(dpd) and dpd >= 30:
             return "medium"
-        elif status == "active" and (dpd is None or pd.isna(dpd) or dpd < 30):
+        elif status == "active" and (pd.isna(dpd) or dpd < 30):
             return "low"
         else:
             return "unknown"
