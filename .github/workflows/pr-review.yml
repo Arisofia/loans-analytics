@@ -49,7 +49,10 @@ jobs:
       - name: Lint with Flake8
         run: |
           if [ -d src ] || [ -d python ] || [ -d streamlit_app ]; then
-            TARGETS=$(find . -maxdepth 1 -type d \( -name 'src' -o -name 'python' -o -name 'streamlit_app' \) 2>/dev/null)
+            TARGETS=$(
+              find . -maxdepth 1 -type d \( -name 'src' -o -name 'python' \
+              -o -name 'streamlit_app' \) 2>/dev/null
+            )
             flake8 $TARGETS
           else
             flake8 .
@@ -300,7 +303,10 @@ jobs:
                 messages: [
                   {
                     role: "system",
-                    content: "You are a fintech code reviewer. Analyze PRs for bugs, security risks, compliance issues, and growth opportunities. Be concise."
+                    content: >
+                      You are a fintech code reviewer. Analyze PRs for bugs,
+                      security risks, compliance issues, and growth opportunities.
+                      Be concise.
                   },
                   {
                     role: "user",
@@ -322,7 +328,10 @@ jobs:
                 if echo "$PR_NUMBER" | grep -Eq '^[0-9]+$'; then
                   # Sanitize review text to reduce risk of markdown/HTML injection
                   # HTML-escape special characters and render inside a <pre><code> block
-                  sanitized_review=$(printf '%s' "$review_text" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
+                  sanitized_review=$(
+                    printf '%s' "$review_text" | sed \
+                      -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
+                  )
                   {
                     echo "## 🤖 Perplexity AI Analysis"
                     echo ""
@@ -364,16 +373,30 @@ jobs:
             const coderabbitResult = '${{ needs.ai-review-coderabbit.result }}';
             const perplexityResult = '${{ needs.ai-review-perplexity.result }}';
 
+            // Helper to format result status
+            const formatResult = (status, successEmoji, failureEmoji, skipEmoji) => {
+              if (status === 'success') return successEmoji + ' Passed/Analyzed/Reviewed';
+              if (status === 'failure') return failureEmoji + ' Failed';
+              if (status === 'skipped') return skipEmoji + ' Skipped';
+              return '⚠️ Check logs';
+            };
+
+            const pyQAStatus = formatResult(qaResult, '✅', '❌', '⏭️');
+            const sonarStatus = formatResult(sonarResult, '✅', '❌', '⏭️');
+            const crStatus = formatResult(coderabbitResult, '✅', '❌', '⏭️');
+            const perpStatus = formatResult(perplexityResult, '✅', '❌', '⏭️');
+
             const summary = `## 🎯 PR Review Complete
 
-            **Python QA**: ${qaResult === 'success' ? '✅ Passed' : qaResult === 'failure' ? '❌ Failed' : '⚠️ Review needed'}
-            **SonarQube**: ${sonarResult === 'success' ? '✅ Analyzed' : sonarResult === 'skipped' ? '⏭️ Skipped' : sonarResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
-            **CodeRabbit**: ${coderabbitResult === 'success' ? '✅ Reviewed' : coderabbitResult === 'skipped' ? '⏭️ Skipped' : coderabbitResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
-            **Perplexity**: ${perplexityResult === 'success' ? '✅ Analyzed' : perplexityResult === 'skipped' ? '⏭️ Skipped' : perplexityResult === 'failure' ? '❌ Failed' : '⚠️ Check logs'}
+            **Python QA**: ${pyQAStatus}
+            **SonarQube**: ${sonarStatus}
+            **CodeRabbit**: ${crStatus}
+            **Perplexity**: ${perpStatus}
 
-            The automated reviews and quality checks listed above have either completed or were skipped based on the current configuration. Please review any available feedback from each tool.
+            The automated reviews and quality checks above have either completed or were
+            skipped based on current configuration. Please review feedback from each tool.
 
-            *This is an automated production-ready PR workflow for fintech compliance and code quality.*`;
+            *This is an automated production-ready PR workflow for fintech compliance.*`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
