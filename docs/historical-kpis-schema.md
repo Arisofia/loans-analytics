@@ -43,7 +43,7 @@ CREATE TABLE historical_kpis (
 ### Constraints
 
 1. **Primary Key:** `id` (BIGSERIAL)
-2. **No Unique Constraints:** Schema allows multiple observations per KPI/date for flexibility
+2. **Unique Constraint:** `UNIQUE(kpi_id, date)` - Prevents duplicate KPI values for the same date
 
 ---
 

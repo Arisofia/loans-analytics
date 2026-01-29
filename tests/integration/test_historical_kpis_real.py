@@ -13,7 +13,7 @@ Phase G4.2 Implementation
 """
 
 import os
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -82,7 +82,6 @@ def seed_test_data(supabase_backend, test_portfolio_id):
     Note: Uses a unique kpi_id based on test session to enable proper cleanup.
     """
     import requests
-    from datetime import datetime, UTC
 
     # Build insert payload using the simplified schema
     # Schema: kpi_id, date, value, timestamp
@@ -378,7 +377,6 @@ def test_historical_kpis_data_integrity(
     test_kpi_id = seed_test_data["kpi_id"]
 
     # Attempt to insert duplicate record (should fail or be ignored)
-    from datetime import UTC, datetime
     duplicate_data = {
         "kpi_id": test_kpi_id,
         "value": 0.999,  # Different value
