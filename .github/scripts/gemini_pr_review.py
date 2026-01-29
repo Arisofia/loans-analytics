@@ -65,7 +65,9 @@ def main() -> int:
         if callable(configure_fn):
             configure_fn(api_key=gemini_key)
         else:
-            logger.error("google.generativeai.configure not available; " "skipping Gemini review.")
+            logger.error(
+                "google.generativeai.configure not available; skipping Gemini review."
+            )
             return 0
     except ImportError as e:
         logger.exception("Failed to configure Gemini API: %s", e)
@@ -84,7 +86,7 @@ def main() -> int:
                         break
             else:
                 logger.warning(
-                    "google.generativeai.list_models not available; " "cannot auto-detect model"
+                    "google.generativeai.list_models not available; cannot auto-detect model"
                 )
         except (ImportError, AttributeError) as e:
             logger.exception("Could not list Gemini models: %s", e)
@@ -93,7 +95,9 @@ def main() -> int:
 
     gen_model = getattr(genai, "GenerativeModel", None)
     if gen_model is None:
-        logger.error("google.generativeai.GenerativeModel not available; " "skipping review.")
+        logger.error(
+            "google.generativeai.GenerativeModel not available; skipping review."
+        )
         return 0
 
     try:

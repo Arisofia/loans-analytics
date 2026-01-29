@@ -134,11 +134,11 @@ class EnvironmentSettings(BaseModel):
         """Get environment-specific data root path."""
         if self.environment == "prod":
             if not self.prod_data_path:
-                raise RuntimeError("PROD_DATA_PATH environment variable required " "in production")
+                raise RuntimeError("PROD_DATA_PATH environment variable required in production")
             return Path(self.prod_data_path)
         if self.environment == "staging":
             if not self.staging_data_path:
-                raise RuntimeError("STAGING_DATA_PATH environment variable required " "in staging")
+                raise RuntimeError("STAGING_DATA_PATH environment variable required in staging")
             return Path(self.staging_data_path)
         # Dev environment uses local data directory
         return Path("data")
@@ -146,7 +146,7 @@ class EnvironmentSettings(BaseModel):
     def get_test_data_root(self) -> Path:
         """Get test data path - ONLY available in dev/test environments."""
         if self.environment == "prod":
-            raise RuntimeError("Test data paths are not available in production " "environment!")
+            raise RuntimeError("Test data paths are not available in production environment!")
         return Path("tests/fixtures")
 
     def validate_required_env_vars(self) -> None:
@@ -156,7 +156,7 @@ class EnvironmentSettings(BaseModel):
             missing = [var for var in required if not os.getenv(var)]
             if missing:
                 raise RuntimeError(
-                    f"Missing required production environment variables: " f"{missing}"
+                    f"Missing required production environment variables: {missing}"
                 )
 
 
