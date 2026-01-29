@@ -6,7 +6,14 @@ try:
     # Preferred: run as package module (python -m python.multi_agent.examples)
     from .guardrails import Guardrails
     from .orchestrator import MultiAgentOrchestrator
-    from .protocol import AgentRole, LLMProvider, Message, MessageRole, Scenario, ScenarioStep
+    from .protocol import (
+        AgentRole,
+        LLMProvider,
+        Message,
+        MessageRole,
+        Scenario,
+        ScenarioStep,
+    )
 except ImportError:
     # Fallback: direct script execution (python python/multi_agent/examples.py)
     import sys
