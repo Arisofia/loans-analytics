@@ -1,5 +1,9 @@
 name: Auto Security Scan
 
+# Runs security scanning on pull requests, pushes, and weekly schedule
+# Required secrets: SNYK_TOKEN (optional - for Snyk integration)
+# To set up SNYK_TOKEN: See docs/SNYK_SETUP.md
+
 on:
     pull_request:
         types: [opened, synchronize, ready_for_review]
@@ -55,6 +59,9 @@ jobs:
         runs-on: ubuntu-latest
         permissions:
             contents: read
+        # This job checks for dependency vulnerabilities using Snyk
+        # Requires SNYK_TOKEN secret to be configured in GitHub Actions
+        # See: docs/SNYK_SETUP.md for setup instructions
 
         steps:
             - name: Checkout
@@ -62,6 +69,8 @@ jobs:
 
             - name: Run Snyk (if token available)
               if: ${{ secrets.SNYK_TOKEN != '' }}
+              # This step runs only if SNYK_TOKEN is configured
+              # If token is not set, this step is skipped gracefully
               run: |
                   npm install -g snyk
                   snyk auth ${{ secrets.SNYK_TOKEN }}
