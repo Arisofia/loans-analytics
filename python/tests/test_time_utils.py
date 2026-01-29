@@ -66,10 +66,7 @@ class TestTimeUtils(unittest.TestCase):
         iso_str = format_timestamp(original)
         parsed = parse_iso_timestamp(iso_str)
         # Compare with microsecond precision loss
-        self.assertEqual(
-            original.replace(microsecond=0),
-            parsed.replace(microsecond=0)
-        )
+        self.assertEqual(original.replace(microsecond=0), parsed.replace(microsecond=0))
 
 
 if __name__ == "__main__":
