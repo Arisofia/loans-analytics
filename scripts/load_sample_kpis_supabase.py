@@ -147,9 +147,7 @@ class KpiDataLoader:
 
         return expanded
 
-    def load_batch(
-        self, rows: list[dict[str, Any]], run_id: str
-    ) -> tuple[int, int]:
+    def load_batch(self, rows: list[dict[str, Any]], run_id: str) -> tuple[int, int]:
         """Load a batch of rows to Supabase.
 
         Args:
@@ -189,7 +187,10 @@ class KpiDataLoader:
         if not self.validate_credentials():
             return
 
-        run_id = run_id or f"loader_{uuid4().hex[:8]}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+        run_id = (
+            run_id
+            or f"loader_{uuid4().hex[:8]}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+        )
         logger.info("Run ID: %s", run_id)
 
         end_date = date.today()
@@ -234,7 +235,11 @@ class KpiDataLoader:
 
             logger.info(
                 "  Generated %d rows (%d dates × %d portfolios × %d products × %d segments)",
-                len(expanded), len(series), len(portfolios), len(products), len(segments)
+                len(expanded),
+                len(series),
+                len(portfolios),
+                len(products),
+                len(segments),
             )
 
             # Load

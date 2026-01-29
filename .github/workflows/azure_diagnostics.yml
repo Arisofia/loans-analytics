@@ -50,18 +50,18 @@ jobs:
           inlineScript: az --version
 
       - name: Azure login (service principal)
-        if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}
+        if: needs.validate-azure.outputs.all_secrets_present == 'true'
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Capture Azure account
-        if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}
+        if: needs.validate-azure.outputs.all_secrets_present == 'true'
         run: |
           az account show --output json > diagnostics/az_account.json || echo '{}' > diagnostics/az_account.json
 
       - name: ACR repositories (if available)
-        if: ${{ needs.validate-acr.outputs.all_secrets_present == 'true' && needs.validate-azure.outputs.all_secrets_present == 'true' }}
+        if: needs.validate-acr.outputs.all_secrets_present == 'true' && needs.validate-azure.outputs.all_secrets_present == 'true'
         env:
           AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
         run: |
@@ -69,13 +69,13 @@ jobs:
           az acr repository list --name "$registry" --output json > diagnostics/acr_repos.json || echo '[]' > diagnostics/acr_repos.json
 
       - name: Storage containers (if available)
-        if: ${{ needs.validate-storage.outputs.all_secrets_present == 'true' }}
+        if: needs.validate-storage.outputs.all_secrets_present == 'true'
         run: |
           echo "Listing containers using AZURE_STORAGE_CONNECTION_STRING"
           az storage container list --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --output json > diagnostics/storage_containers.json || echo '[]' > diagnostics/storage_containers.json
 
       - name: SWA token check
-        if: ${{ needs.validate-swa.outputs.all_secrets_present == 'true' }}
+        if: needs.validate-swa.outputs.all_secrets_present == 'true'
         run: echo "SWA token present" > diagnostics/swa_status.txt
 
       - name: Summarize diagnostics

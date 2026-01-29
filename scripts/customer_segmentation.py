@@ -16,7 +16,7 @@ logging.basicConfig(
         '{"timestamp": "%(asctime)s", "logger": "%(name)s", '
         '"level": "%(levelname)s", "message": "%(message)s"}'
     ),
-    datefmt="%Y-%m-%dT%H:%M:%SZ"
+    datefmt="%Y-%m-%dT%H:%M:%SZ",
 )
 logger = logging.getLogger("customer_segmentation")
 
@@ -41,9 +41,9 @@ class AbacoEligibilityEvaluator:
 
         Returns: (is_eligible, reason, tier)
         """
-        pd = float(loan_record.get('probability_of_default', 1.0))
-        amount = float(loan_record.get('amount_outstanding', 0.0))
-        maturity = float(loan_record.get('residual_maturity_years', 0.0))
+        pd = float(loan_record.get("probability_of_default", 1.0))
+        amount = float(loan_record.get("amount_outstanding", 0.0))
+        maturity = float(loan_record.get("residual_maturity_years", 0.0))
 
         # ECB Collateral Eligibility
         if pd <= 0.004:  # 0.4% threshold
@@ -51,13 +51,11 @@ class AbacoEligibilityEvaluator:
         elif pd <= 0.010:  # 1.0% threshold
             tier = "STANDARD"
         else:
-            return False, f"PD {pd:.2%} exceeds 1.0% threshold", \
-                   "INELIGIBLE"
+            return False, f"PD {pd:.2%} exceeds 1.0% threshold", "INELIGIBLE"
 
         # Additional Checks
         if amount <= 0:
-            return False, "Zero or negative outstanding amount", \
-                   "INELIGIBLE"
+            return False, "Zero or negative outstanding amount", "INELIGIBLE"
         if maturity < 0:
             return False, "Negative residual maturity", "INELIGIBLE"
 
@@ -69,23 +67,17 @@ def fetch_production_data() -> List[Dict]:
 
     In production, connects to secure Parquet store or SQL DB.
     """
-    data_path = os.getenv(
-        "DATA_WAREHOUSE_PATH",
-        "data/warehouse/meta_insights.parquet"
-    )
+    data_path = os.getenv("DATA_WAREHOUSE_PATH", "data/warehouse/meta_insights.parquet")
 
     # Check if parquet file exists
     try:
         import pandas as pd  # pylint: disable=import-outside-toplevel
+
         if os.path.exists(data_path):
             df = pd.read_parquet(data_path)
             # Filter: Only ACTIVE loans with valid currency
-            active_loans = df[df['status'] == 'ACTIVE'].to_dict(
-                orient='records'
-            )
-            logger.info(
-                "Loaded %d active loans from warehouse", len(active_loans)
-            )
+            active_loans = df[df["status"] == "ACTIVE"].to_dict(orient="records")
+            logger.info("Loaded %d active loans from warehouse", len(active_loans))
             return active_loans
         logger.warning("Data warehouse not found at %s", data_path)
         return []
@@ -120,43 +112,26 @@ def main() -> None:
 
     for loan in loans:
         try:
-            is_eligible, reason, tier = (
-                AbacoEligibilityEvaluator.evaluate(loan)
-            )
+            is_eligible, reason, tier = AbacoEligibilityEvaluator.evaluate(loan)
 
             if is_eligible:
                 eligible_pool.append({**loan, "abaco_tier": tier})
             else:
-                rejected_pool.append({
-                    **loan, "rejection_reason": reason
-                })
+                rejected_pool.append({**loan, "rejection_reason": reason})
 
         except ValueError as err:  # pylint: disable=broad-exception-caught
-            logger.warning(
-                "Skipping malformed record %s: %s",
-                loan.get('loan_id'), err
-            )
+            logger.warning("Skipping malformed record %s: %s", loan.get("loan_id"), err)
             continue
 
     logger.info(
-        "Processing Complete. Eligible: %d, Rejected: %d",
-        len(eligible_pool), len(rejected_pool)
+        "Processing Complete. Eligible: %d, Rejected: %d", len(eligible_pool), len(rejected_pool)
     )
 
     # Send eligible pool to Azure AI Agent for Risk Scoring
     logger.info("Eligible pool ready for Azure AI Risk Agent dispatch.")
-    premium_count = sum(
-        1 for loan in eligible_pool
-        if loan.get('abaco_tier') == 'PREMIUM'
-    )
-    standard_count = sum(
-        1 for loan in eligible_pool
-        if loan.get('abaco_tier') == 'STANDARD'
-    )
-    logger.info(
-        "Eligible tier breakdown: PREMIUM=%d, STANDARD=%d",
-        premium_count, standard_count
-    )
+    premium_count = sum(1 for loan in eligible_pool if loan.get("abaco_tier") == "PREMIUM")
+    standard_count = sum(1 for loan in eligible_pool if loan.get("abaco_tier") == "STANDARD")
+    logger.info("Eligible tier breakdown: PREMIUM=%d, STANDARD=%d", premium_count, standard_count)
 
 
 if __name__ == "__main__":

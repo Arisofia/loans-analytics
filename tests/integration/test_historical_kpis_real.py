@@ -81,8 +81,9 @@ def seed_test_data(supabase_backend, test_portfolio_id):
 
     Note: Uses a unique kpi_id based on test session to enable proper cleanup.
     """
+    from datetime import UTC, datetime
+
     import requests
-    from datetime import datetime, UTC
 
     # Build insert payload using the simplified schema
     # Schema: kpi_id, date, value, timestamp
@@ -101,7 +102,11 @@ def seed_test_data(supabase_backend, test_portfolio_id):
                 "date": current_date.isoformat(),
                 "value": 0.025 + (day_offset * 0.001),  # Increasing trend
                 "timestamp": datetime.now(UTC).isoformat(),
-                "metadata": {"test": True, "session": "g4.2-integration", "test_id": test_portfolio_id},
+                "metadata": {
+                    "test": True,
+                    "session": "g4.2-integration",
+                    "test_id": test_portfolio_id,
+                },
             }
         )
 
@@ -161,9 +166,7 @@ def test_historical_provider_real_mode(historical_provider):
 
 @pytest.mark.integration
 @pytest.mark.timeout(30)
-def test_fetch_historical_kpis_empty_range(
-    historical_provider, test_portfolio_id, seed_test_data
-):
+def test_fetch_historical_kpis_empty_range(historical_provider, test_portfolio_id, seed_test_data):
     """
     Test 3: Query for KPIs with no matching data returns empty list.
 
@@ -184,9 +187,7 @@ def test_fetch_historical_kpis_empty_range(
 
 @pytest.mark.integration
 @pytest.mark.timeout(30)
-def test_fetch_historical_kpis_with_data(
-    historical_provider, test_portfolio_id, seed_test_data
-):
+def test_fetch_historical_kpis_with_data(historical_provider, test_portfolio_id, seed_test_data):
     """
     Test 4: Query for seeded test data returns expected results.
 
@@ -228,9 +229,7 @@ def test_fetch_historical_kpis_with_data(
 
 @pytest.mark.integration
 @pytest.mark.timeout(30)
-def test_historical_kpis_query_performance(
-    historical_provider, test_portfolio_id, seed_test_data
-):
+def test_historical_kpis_query_performance(historical_provider, test_portfolio_id, seed_test_data):
     """
     Test 5: Verify query performance meets SLO (p99 < 500ms).
 
@@ -351,9 +350,7 @@ def test_historical_moving_average_with_real_data(
     test_kpi_id = seed_test_data["kpi_id"]
 
     # Calculate 30-day moving average
-    ma = historical_provider.get_moving_average(
-        kpi_id=test_kpi_id, window_days=30
-    )
+    ma = historical_provider.get_moving_average(kpi_id=test_kpi_id, window_days=30)
 
     # Validate moving average
     assert ma is not None
@@ -364,9 +361,7 @@ def test_historical_moving_average_with_real_data(
 
 @pytest.mark.integration
 @pytest.mark.timeout(30)
-def test_historical_kpis_data_integrity(
-    supabase_backend, test_portfolio_id, seed_test_data
-):
+def test_historical_kpis_data_integrity(supabase_backend, test_portfolio_id, seed_test_data):
     """
     Test 9: Verify data integrity constraints are enforced.
 
@@ -393,6 +388,6 @@ def test_historical_kpis_data_integrity(
     response = requests.post(url, headers=headers, json=duplicate_data, timeout=10)
 
     # Should fail with 409 Conflict due to unique constraint
-    assert response.status_code == 409, (
-        f"Expected 409 Conflict for duplicate insert, got {response.status_code}"
-    )
+    assert (
+        response.status_code == 409
+    ), f"Expected 409 Conflict for duplicate insert, got {response.status_code}"

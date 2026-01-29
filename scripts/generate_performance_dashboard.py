@@ -7,14 +7,12 @@ Creates a visual dashboard showing latency trends, success rates, and performanc
 import argparse
 import json
 import sys
-from datetime import datetime, timedelta
 from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from scripts.path_utils import validate_path
-from src.agents.monitoring import PerformanceTracker
 
 
 def generate_ascii_chart(data: list, max_width: int = 50) -> str:
@@ -53,9 +51,7 @@ def generate_dashboard(metrics_file: str) -> str:
         Dashboard content as string
     """
     # Validate metrics file path (CWE-22: Path Traversal)
-    validated_metrics = validate_path(
-        metrics_file, base_dir=".", must_exist=True
-    )
+    validated_metrics = validate_path(metrics_file, base_dir=".", must_exist=True)
 
     with open(validated_metrics) as f:  # snyk:skip=8b4beff2-bd1e-4d50-8618-c2b5cf9f5f3c
         metrics = json.load(f)
@@ -90,7 +86,7 @@ def generate_dashboard(metrics_file: str) -> str:
 
             latency = scenario_data.get("latency", {})
             if latency:
-                dashboard.append(f"  Latency:")
+                dashboard.append("  Latency:")
                 dashboard.append(f"    p50: {latency.get('p50', 0):.2f}ms")
                 dashboard.append(f"    p95: {latency.get('p95', 0):.2f}ms")
                 dashboard.append(f"    p99: {latency.get('p99', 0):.2f}ms")
@@ -183,11 +179,13 @@ def main():
 
     if args.output:
         # Validate output path for security (CWE-22: Path Traversal)
-        validated_output = validate_path(
-            args.output, base_dir=".", allow_write=True
-        )
-        Path(str(validated_output)).parent.mkdir(parents=True, exist_ok=True)  # snyk:skip=c419c097-e875-44f2-be0c-a3261cf30e67
-        with open(str(validated_output), "w") as f:  # snyk:skip=5ba0cf06-1091-4e03-ac31-083151018469
+        validated_output = validate_path(args.output, base_dir=".", allow_write=True)
+        Path(str(validated_output)).parent.mkdir(
+            parents=True, exist_ok=True
+        )  # snyk:skip=c419c097-e875-44f2-be0c-a3261cf30e67
+        with open(
+            str(validated_output), "w"
+        ) as f:  # snyk:skip=5ba0cf06-1091-4e03-ac31-083151018469
             f.write(dashboard)
         print(f"✅ Dashboard saved to {validated_output}")
     else:

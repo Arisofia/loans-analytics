@@ -1,7 +1,5 @@
 """Pytest fixtures and configuration for multi-agent tests."""
 
-import os
-from typing import Any, Dict, List
 from unittest.mock import MagicMock, Mock
 
 import pytest
