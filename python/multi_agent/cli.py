@@ -18,7 +18,7 @@ import sys
 from typing import Any, Dict
 
 from .orchestrator import MultiAgentOrchestrator
-from .protocol import AgentRole
+from .protocol import AgentRole, Message, MessageRole
 
 
 def list_scenarios() -> None:
@@ -59,7 +59,11 @@ def run_scenario(scenario_name: str, context: Dict[str, Any]) -> None:
         sys.exit(1)
 
 
-def run_agent(agent_role_str: str, user_input: str, context: Dict[str, Any] | None = None) -> None:
+def run_agent(
+    agent_role_str: str,
+    user_input: str,
+    context: Dict[str, Any] | None = None,
+) -> None:
     """Run a single agent with given input."""
     try:
         agent_role = AgentRole(agent_role_str)
@@ -75,9 +79,10 @@ def run_agent(agent_role_str: str, user_input: str, context: Dict[str, Any] | No
     print(f"🔍 Trace ID: {trace_id}\n")
 
     try:
+        messages = [Message(role=MessageRole.USER, content=user_input)]
         response = orchestrator.run_agent(
-            agent_role=agent_role,
-            user_input=user_input,
+            role=agent_role,
+            messages=messages,
             trace_id=trace_id,
             context=context or {},
         )
