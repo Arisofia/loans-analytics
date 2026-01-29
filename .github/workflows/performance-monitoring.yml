@@ -111,7 +111,7 @@ jobs:
       - name: Store metrics for trends
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          python scripts/store_metrics.py performance_metrics.json
+          PYTHONPATH="$PWD:$PWD/src" python scripts/store_metrics.py performance_metrics.json
 
       - name: Upload performance metrics
         if: always()
