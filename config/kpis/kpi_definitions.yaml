@@ -1,0 +1,136 @@
+# KPI Definitions - All Formulas and Thresholds
+# Version 2.0
+
+version: "2.0.0"
+last_updated: "2026-01-29"
+
+# Portfolio Performance KPIs
+portfolio_kpis:
+  total_outstanding_balance:
+    formula: "SUM(current_balance WHERE status IN ['active', 'delinquent'])"
+    unit: "USD"
+    description: "Total outstanding principal across all active loans"
+    thresholds:
+      warning: 10000000
+      critical: 50000000
+
+  total_loans_count:
+    formula: "COUNT(DISTINCT loan_id WHERE status != 'closed')"
+    unit: "count"
+    description: "Number of active loans in portfolio"
+
+  average_loan_size:
+    formula: "AVG(original_amount)"
+    unit: "USD"
+    description: "Average original loan amount"
+
+  portfolio_yield:
+    formula: "(SUM(interest_earned_ytd) / SUM(avg_outstanding_balance)) * 100"
+    unit: "percentage"
+    description: "Annualized yield on portfolio"
+    thresholds:
+      warning: 10
+      target: 15
+      critical: 8
+
+# Asset Quality KPIs
+asset_quality_kpis:
+  par_30:
+    formula: "SUM(current_balance WHERE dpd >= 30) / SUM(current_balance) * 100"
+    unit: "percentage"
+    description: "Portfolio at Risk - 30 days past due"
+    thresholds:
+      warning: 3
+      critical: 5
+
+  par_90:
+    formula: "SUM(current_balance WHERE dpd >= 90) / SUM(current_balance) * 100"
+    unit: "percentage"
+    description: "Portfolio at Risk - 90 days past due"
+    thresholds:
+      warning: 1
+      critical: 2
+
+  default_rate:
+    formula: "COUNT(loan_id WHERE status = 'defaulted') / COUNT(loan_id) * 100"
+    unit: "percentage"
+    description: "Percentage of loans in default"
+    thresholds:
+      warning: 2
+      critical: 5
+
+  loss_rate:
+    formula: "SUM(charged_off_amount) / SUM(original_amount) * 100"
+    unit: "percentage"
+    description: "Net charge-off rate"
+
+# Cash Flow KPIs
+cash_flow_kpis:
+  collections_rate:
+    formula: "SUM(payments_received_mtd) / SUM(payments_due_mtd) * 100"
+    unit: "percentage"
+    description: "Monthly collection efficiency"
+    thresholds:
+      warning: 85
+      target: 95
+      critical: 80
+
+  recovery_rate:
+    formula: "SUM(recovered_amount) / SUM(defaulted_amount) * 100"
+    unit: "percentage"
+    description: "Recovery rate on defaulted loans"
+
+  cash_on_hand:
+    formula: "SUM(available_cash)"
+    unit: "USD"
+    description: "Total available cash for operations"
+
+# Growth KPIs
+growth_kpis:
+  disbursement_volume_mtd:
+    formula: "SUM(disbursed_amount WHERE disbursement_date >= MONTH_START)"
+    unit: "USD"
+    description: "Total disbursements month-to-date"
+
+  new_loans_count_mtd:
+    formula: "COUNT(loan_id WHERE origination_date >= MONTH_START)"
+    unit: "count"
+    description: "Number of new loans originated this month"
+
+  portfolio_growth_rate:
+    formula: "(current_month_balance - previous_month_balance) / previous_month_balance * 100"
+    unit: "percentage"
+    description: "Month-over-month portfolio growth"
+
+# Customer KPIs
+customer_kpis:
+  active_borrowers:
+    formula: "COUNT(DISTINCT borrower_id WHERE loan_status IN ['active', 'delinquent'])"
+    unit: "count"
+    description: "Number of active borrowers"
+
+  repeat_borrower_rate:
+    formula: "COUNT(borrower_id WHERE loan_count > 1) / COUNT(DISTINCT borrower_id) * 100"
+    unit: "percentage"
+    description: "Percentage of repeat borrowers"
+
+  customer_lifetime_value:
+    formula: "SUM(total_interest_paid) / COUNT(DISTINCT borrower_id)"
+    unit: "USD"
+    description: "Average lifetime value per customer"
+
+# Operational KPIs
+operational_kpis:
+  processing_time_avg:
+    formula: "AVG(approval_date - application_date)"
+    unit: "days"
+    description: "Average loan processing time"
+    thresholds:
+      warning: 5
+      target: 2
+      critical: 7
+
+  automation_rate:
+    formula: "COUNT(auto_approved) / COUNT(total_applications) * 100"
+    unit: "percentage"
+    description: "Percentage of automatically approved applications"
