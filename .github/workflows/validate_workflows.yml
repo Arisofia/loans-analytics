@@ -18,7 +18,7 @@ jobs:
           args: .github/workflows
 
       - name: Actionlint summary
-        if: ${{ steps.actionlint.outcome != 'success' }}
+        if: steps.actionlint.outcome != 'success'
         run: |
           echo "::warning::actionlint reported issues in workflow files." >> $GITHUB_STEP_SUMMARY
           echo "See the workflow run logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
