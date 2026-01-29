@@ -59,20 +59,23 @@ def historical_provider(supabase_backend):
 
 
 @pytest.fixture(scope="module")
-def test_portfolio_id():
+def test_session_id():
     """
-    Generate a unique test portfolio ID for the test session.
+    Generate a unique test session ID for this test run.
 
     Using a unique UUID per session to avoid conflicts from:
     - Concurrent test runs
     - Failed cleanup from previous runs
+    
+    Note: This ID is used to create unique kpi_id values for test isolation,
+    not as a portfolio_id (which doesn't exist in the simplified schema).
     """
     # Use unique UUID per test session (timestamp-based)
     return str(uuid4())
 
 
 @pytest.fixture(scope="module")
-def seed_test_data(supabase_backend, test_portfolio_id):
+def seed_test_data(supabase_backend, test_session_id):
     """
     Seed the historical_kpis table with test data.
 
@@ -90,7 +93,7 @@ def seed_test_data(supabase_backend, test_portfolio_id):
 
     # Create a unique kpi_id for this test session to avoid conflicts
     # Tests will query using this specific kpi_id
-    test_kpi_id = f"default_rate_{test_portfolio_id[:8]}"
+    test_kpi_id = f"default_rate_{test_session_id[:8]}"
 
     for day_offset in range(30):
         current_date = base_date + timedelta(days=day_offset)
@@ -100,7 +103,7 @@ def seed_test_data(supabase_backend, test_portfolio_id):
                 "date": current_date.isoformat(),
                 "value": 0.025 + (day_offset * 0.001),  # Increasing trend
                 "timestamp": datetime.now(UTC).isoformat(),
-                "metadata": {"test": True, "session": "g4.2-integration", "test_id": test_portfolio_id},
+                "metadata": {"test": True, "session": "g4.2-integration", "test_id": test_session_id},
             }
         )
 
@@ -171,7 +174,7 @@ def test_historical_provider_real_mode(historical_provider):
 @pytest.mark.integration
 @pytest.mark.timeout(30)
 def test_fetch_historical_kpis_empty_range(
-    historical_provider, test_portfolio_id, seed_test_data
+    historical_provider, seed_test_data
 ):
     """
     Test 3: Query for KPIs with no matching data returns empty list.
@@ -194,7 +197,7 @@ def test_fetch_historical_kpis_empty_range(
 @pytest.mark.integration
 @pytest.mark.timeout(30)
 def test_fetch_historical_kpis_with_data(
-    historical_provider, test_portfolio_id, seed_test_data
+    historical_provider, seed_test_data
 ):
     """
     Test 4: Query for seeded test data returns expected results.
@@ -238,7 +241,7 @@ def test_fetch_historical_kpis_with_data(
 @pytest.mark.integration
 @pytest.mark.timeout(30)
 def test_historical_kpis_query_performance(
-    historical_provider, test_portfolio_id, seed_test_data
+    historical_provider, seed_test_data
 ):
     """
     Test 5: Verify query performance meets SLO (p99 < 500ms).
@@ -270,7 +273,7 @@ def test_historical_kpis_query_performance(
 @pytest.mark.integration
 @pytest.mark.timeout(30)
 def test_historical_context_provider_cache_behavior(
-    historical_provider, test_portfolio_id, seed_test_data
+    historical_provider, seed_test_data
 ):
     """
     Test 6: Verify caching improves subsequent query performance.
@@ -316,7 +319,7 @@ def test_historical_context_provider_cache_behavior(
 @pytest.mark.integration
 @pytest.mark.timeout(30)
 def test_historical_trend_analysis_with_real_data(
-    historical_provider, test_portfolio_id, seed_test_data
+    historical_provider, seed_test_data
 ):
     """
     Test 7: Verify trend analysis works with real Supabase data.
@@ -347,7 +350,7 @@ def test_historical_trend_analysis_with_real_data(
 @pytest.mark.integration
 @pytest.mark.timeout(30)
 def test_historical_moving_average_with_real_data(
-    historical_provider, test_portfolio_id, seed_test_data
+    historical_provider, seed_test_data
 ):
     """
     Test 8: Verify moving average calculation with real Supabase data.
@@ -373,7 +376,7 @@ def test_historical_moving_average_with_real_data(
 @pytest.mark.integration
 @pytest.mark.timeout(30)
 def test_historical_kpis_data_integrity(
-    supabase_backend, test_portfolio_id, seed_test_data
+    supabase_backend, seed_test_data
 ):
     """
     Test 9: Verify data integrity constraints are enforced.
