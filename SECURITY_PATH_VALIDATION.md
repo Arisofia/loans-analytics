@@ -11,7 +11,7 @@ All path traversal vulnerabilities identified by Snyk Code have been **mitigated
 Located in `scripts/path_utils.py`, this function provides:
 
 1. **Input sanitization** - Validates path strings before use
-2. **Base directory constraints** - Ensures paths stay within allowed directories  
+2. **Base directory constraints** - Ensures paths stay within allowed directories
 3. **Symlink resolution** - Resolves and validates against traversal attempts
 4. **Relative path validation** - Checks resolved paths using `Path.relative_to()`
 5. **Security logging** - Logs all path validation attempts
@@ -20,15 +20,15 @@ Located in `scripts/path_utils.py`, this function provides:
 
 All 7 scripts with user-provided path inputs now use `validate_path()`:
 
-| Script | Lines Protected | Validation |
-|--------|----------------|------------|
-| `store_metrics.py` | 30, 53, 67 | Metrics file, storage dir, output paths |
-| `compare_costs.py` | 53 | Report file path |
-| `compare_performance.py` | 51 | Metrics file path |
-| `generate_performance_dashboard.py` | 60, 189, 190 | Metrics file, output paths |
-| `post_cost_comment.py` | 29 | Report file path |
-| `post_performance_comment.py` | 26 | Metrics file path |
-| `validate_agent_checklist.py` | N/A | Checklist file path |
+| Script                              | Lines Protected | Validation                              |
+| ----------------------------------- | --------------- | --------------------------------------- |
+| `store_metrics.py`                  | 30, 53, 67      | Metrics file, storage dir, output paths |
+| `compare_costs.py`                  | 53              | Report file path                        |
+| `compare_performance.py`            | 51              | Metrics file path                       |
+| `generate_performance_dashboard.py` | 60, 189, 190    | Metrics file, output paths              |
+| `post_cost_comment.py`              | 29              | Report file path                        |
+| `post_performance_comment.py`       | 26              | Metrics file path                       |
+| `validate_agent_checklist.py`       | N/A             | Checklist file path                     |
 
 ## Why Snyk Code Still Reports Issues
 
@@ -40,7 +40,7 @@ user input → Path() / open() / json.dump()
 
 But it **cannot see** that we validate with:
 
-```  
+```
 user input → validate_path() → validated_path → Path() / open() / json.dump()
 ```
 
@@ -55,7 +55,7 @@ This is a **known limitation** of static analysis tools when custom security wra
 validate_path("../../../etc/passwd", base_dir="metrics")
 # ValueError: Path traversal attempt detected
 
-# Test 2: Absolute path escape - BLOCKED ✅  
+# Test 2: Absolute path escape - BLOCKED ✅
 validate_path("/etc/passwd", base_dir="metrics")
 # ValueError: Path traversal attempt detected
 
@@ -71,13 +71,13 @@ def validate_path(user_path, base_dir=".", ...):
     # 1. Resolve both paths to absolute
     base = Path(base_dir).resolve()
     requested = Path(user_path).resolve()
-    
+
     # 2. Security check: ensure within base
     try:
         requested.relative_to(base)  # ← Prevents traversal
     except ValueError:
         raise ValueError("Path traversal attempt detected")
-    
+
     return requested
 ```
 
@@ -87,18 +87,18 @@ This ensures **any** path traversal attempt (using `../`, symlinks, or absolute 
 
 ### All 10 Findings: FALSE POSITIVES
 
-| Finding ID | File | Line | Status |
-|------------|------|------|--------|
-| f6be9097... | store_metrics.py | 30 | ✅ Validated |
-| f1572f76... | store_metrics.py | 53 | ✅ Validated |
-| 1c5826a5... | store_metrics.py | 67 | ✅ Validated |
-| 614452fc... | compare_costs.py | 53 | ✅ Validated |
-| 3abe2bc2... | compare_performance.py | 51 | ✅ Validated |
-| 8b4beff2... | generate_performance_dashboard.py | 60 | ✅ Validated |
-| c419c097... | generate_performance_dashboard.py | 189 | ✅ Validated |
-| 5ba0cf06... | generate_performance_dashboard.py | 190 | ✅ Validated |
-| 4e90b57d... | post_cost_comment.py | 29 | ✅ Validated |
-| f40d7b06... | post_performance_comment.py | 26 | ✅ Validated |
+| Finding ID  | File                              | Line | Status       |
+| ----------- | --------------------------------- | ---- | ------------ |
+| f6be9097... | store_metrics.py                  | 30   | ✅ Validated |
+| f1572f76... | store_metrics.py                  | 53   | ✅ Validated |
+| 1c5826a5... | store_metrics.py                  | 67   | ✅ Validated |
+| 614452fc... | compare_costs.py                  | 53   | ✅ Validated |
+| 3abe2bc2... | compare_performance.py            | 51   | ✅ Validated |
+| 8b4beff2... | generate_performance_dashboard.py | 60   | ✅ Validated |
+| c419c097... | generate_performance_dashboard.py | 189  | ✅ Validated |
+| 5ba0cf06... | generate_performance_dashboard.py | 190  | ✅ Validated |
+| 4e90b57d... | post_cost_comment.py              | 29   | ✅ Validated |
+| f40d7b06... | post_performance_comment.py       | 26   | ✅ Validated |
 
 **Mitigation**: All user-provided paths pass through `validate_path()` before use.
 
