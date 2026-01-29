@@ -26,7 +26,7 @@ jobs:
       issues: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Check Azure credentials
         id: check_secrets
@@ -90,7 +90,7 @@ jobs:
 
       - name: Set up Python for smoke test
         if: ${{ steps.check_secrets.outputs.has_azure_secrets != 'true' }}
-        uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
         with:
           python-version: "3.11"
 
@@ -209,7 +209,7 @@ jobs:
       - name: Notify failure (deployment issue)
         if: failure() && steps.check_secrets.outputs.has_azure_secrets == 'true'
         continue-on-error: true
-        uses: actions/github-script@60a0d83cf42496352c7b1c5b6cf25dc6aa6f8c93  # v7.0.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea  # v7.0.1
         with:
           script: |
             const title = "Azure Deployment Validation Failed";
@@ -242,7 +242,7 @@ jobs:
       - name: Notify failure (dependencies issue)
         if: failure() && steps.check_secrets.outputs.has_azure_secrets != 'true'
         continue-on-error: true
-        uses: actions/github-script@60a0d83cf42496352c7b1c5b6cf25dc6aa6f8c93  # v7.0.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea  # v7.0.1
         with:
           script: |
             const title = "Dashboard Dependency Test Failed";

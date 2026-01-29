@@ -53,10 +53,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
@@ -116,7 +116,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@250e9d8087e4d33cdf6c33e180d803782f68fdb1  # v4.4.3
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4.4.3
         with:
           name: integration-test-results-py${{ matrix.python-version }}
           path: |
@@ -126,7 +126,7 @@ jobs:
 
       - name: Comment on PR (if triggered from PR)
         if: github.event_name == 'pull_request' && always()
-        uses: actions/github-script@60a0d83cf42496352c7b1c5b6cf25dc6aa6f8c93  # v7.0.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea  # v7.0.1
         with:
           script: |
             const status = '${{ job.status }}' === 'success' ? '✅' : '❌';
@@ -164,7 +164,7 @@ jobs:
 
     steps:
       - name: Create issue for failed integration tests
-        uses: actions/github-script@60a0d83cf42496352c7b1c5b6cf25dc6aa6f8c93  # v7.0.1
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea  # v7.0.1
         with:
           script: |
             const title = '🚨 Scheduled Integration Tests Failed';
