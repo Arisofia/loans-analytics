@@ -47,7 +47,7 @@ jobs:
                   else
                     echo "Found merged branches:"
                     echo "$MERGED"
-                    
+
                     for branch in $MERGED; do
                       echo "  Deleting $branch..."
                       git push origin --delete "$branch" 2>/dev/null || echo "  (Already deleted or protected)"

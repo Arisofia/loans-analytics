@@ -18,3 +18,8 @@ repos:
     rev: v0.1.14
     hooks:
       - id: ruff
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        entry: yamllint -c .yamllint
