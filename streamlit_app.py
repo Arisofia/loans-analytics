@@ -47,6 +47,16 @@ st.markdown("---")
 
 # Sidebar
 with st.sidebar:
+    st.header("🎯 Navigation")
+    
+    page = st.radio(
+        "Select Page",
+        options=["📊 Dashboard", "📤 Upload Data", "📈 KPI Analysis", "⚙️ Settings"],
+        label_visibility="collapsed"
+    )
+    
+    st.markdown("---")
+    
     st.header("📁 Data Source")
     
     # Pipeline run selection
@@ -84,7 +94,12 @@ with st.sidebar:
     """)
 
 # Main content
-if selected_run:
+if page == "📤 Upload Data":
+    # Import CSV upload component
+    from streamlit_app.components.csv_upload import render_csv_upload
+    render_csv_upload()
+
+elif page == "📊 Dashboard" and selected_run:
     run_dir = Path("logs/runs") / selected_run
     
     # Load pipeline results
