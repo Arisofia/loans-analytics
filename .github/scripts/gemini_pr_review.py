@@ -17,8 +17,7 @@ def require_env_vars(*env_vars):
     """Check that all required environment variables are set."""
     missing = [v for v in env_vars if not os.getenv(v)]
     if missing:
-        logger.error("Missing required environment variables: %s",
-                     ", ".join(missing))
+        logger.error("Missing required environment variables: %s", ", ".join(missing))
         return False
     return True
 
@@ -28,10 +27,7 @@ def require_module(modname):
     try:
         return __import__(modname)
     except ImportError:
-        logger.warning(
-            "Required module '%s' not installed; skipping review.",
-            modname
-        )
+        logger.warning("Required module '%s' not installed; skipping review.", modname)
         return None
 
 
@@ -59,9 +55,9 @@ def main() -> int:
     if requests_mod is None:
         return 0
 
-    request_exception = getattr(
-        requests_mod, "exceptions", requests_mod
-    ).__dict__.get("RequestException", Exception)
+    request_exception = getattr(requests_mod, "exceptions", requests_mod).__dict__.get(
+        "RequestException", Exception
+    )
 
     # Configure Gemini API
     try:
@@ -69,10 +65,7 @@ def main() -> int:
         if callable(configure_fn):
             configure_fn(api_key=gemini_key)
         else:
-            logger.error(
-                "google.generativeai.configure not available; "
-                "skipping Gemini review."
-            )
+            logger.error("google.generativeai.configure not available; " "skipping Gemini review.")
             return 0
     except ImportError as e:
         logger.exception("Failed to configure Gemini API: %s", e)
@@ -85,16 +78,13 @@ def main() -> int:
             list_models_fn = getattr(genai, "list_models", None)
             if callable(list_models_fn):
                 for model in list_models_fn():
-                    supported = getattr(
-                        model, "supported_generation_methods", None
-                    )
+                    supported = getattr(model, "supported_generation_methods", None)
                     if supported and "generateContent" in supported:
                         model_name = getattr(model, "name", None)
                         break
             else:
                 logger.warning(
-                    "google.generativeai.list_models not available; "
-                    "cannot auto-detect model"
+                    "google.generativeai.list_models not available; " "cannot auto-detect model"
                 )
         except (ImportError, AttributeError) as e:
             logger.exception("Could not list Gemini models: %s", e)
@@ -103,10 +93,7 @@ def main() -> int:
 
     gen_model = getattr(genai, "GenerativeModel", None)
     if gen_model is None:
-        logger.error(
-            "google.generativeai.GenerativeModel not available; "
-            "skipping review."
-        )
+        logger.error("google.generativeai.GenerativeModel not available; " "skipping review.")
         return 0
 
     try:
