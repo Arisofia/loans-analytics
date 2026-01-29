@@ -25,7 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}    steps:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
       - name: Check secrets availability
         id: check-secrets
         run: |
