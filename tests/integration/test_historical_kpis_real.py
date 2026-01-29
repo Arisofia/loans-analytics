@@ -13,7 +13,7 @@ Phase G4.2 Implementation
 """
 
 import os
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -382,7 +382,7 @@ def test_historical_kpis_data_integrity(
         "kpi_id": test_kpi_id,
         "value": 0.999,  # Different value
         "date": (date.today() - timedelta(days=30)).isoformat(),  # Same date as first seed
-        "timestamp": "2026-01-28T00:00:00Z",
+        "timestamp": datetime.now(UTC).isoformat(),  # Use dynamic timestamp
         "metadata": {"test": True, "duplicate": True},
     }
 
