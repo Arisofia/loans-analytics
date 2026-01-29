@@ -29,10 +29,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -71,7 +71,7 @@ jobs:
 
       - name: Azure login (for health check path)
         if: steps.check_creds.outputs.has_creds == true
-        uses: azure/login@1384c340ab2dda50fed2bee3041d1d87018aa5e8
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -97,7 +97,7 @@ jobs:
 
       - name: Deploy to Azure Web App
         if: steps.check_creds.outputs.has_creds == true
-        uses: azure/webapps-deploy@0efab0a4c73b728613acd71966c04beadfc20aaf
+        uses: azure/webapps-deploy@v4
         with:
           app-name: ${{ env.WEBAPP_NAME }}
           package: .
@@ -105,7 +105,7 @@ jobs:
 
       - name: Deploy to Azure Web App (publish profile)
         if: steps.check_creds.outputs.has_creds != 'true' && steps.check_publish_profile.outputs.has_publish_profile == true
-        uses: azure/webapps-deploy@0efab0a4c73b728613acd71966c04beadfc20aaf
+        uses: azure/webapps-deploy@v4
         with:
           app-name: ${{ env.WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
@@ -138,7 +138,7 @@ jobs:
 
       - name: Notify on failure
         if: failure() && github.event_name == 'pull_request'
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        uses: actions/github-script@v7
         with:
           script: |
             github.rest.issues.createComment({
