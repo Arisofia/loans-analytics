@@ -282,7 +282,9 @@ class BaseAgent(ABC):
             "finish_reason": response.stop_reason,
         }
 
-    def _call_gemini(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
+    def _call_gemini(
+        self, messages: List[Dict[str, str]], request: AgentRequest
+    ) -> Dict[str, Any]:
         """Call Gemini API."""
         model = self._client.GenerativeModel(self.model)
 
