@@ -1,6 +1,5 @@
 """Base agent with guardrails, tracing, and LLM integration."""
 
-import logging
 import os
 import time
 from abc import ABC, abstractmethod
@@ -10,6 +9,8 @@ try:
     from openai import OpenAI
 except ImportError:
     OpenAI = None
+
+from python.logging_config import get_logger
 
 from .guardrails import Guardrails
 from .protocol import (
@@ -23,7 +24,7 @@ from .protocol import (
 )
 from .tracing import AgentTracer
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BaseAgent(ABC):

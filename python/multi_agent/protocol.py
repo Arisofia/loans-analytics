@@ -8,6 +8,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
+from python.time_utils import get_utc_now
+
 
 class AgentRole(str, Enum):
     """Standard agent roles."""
@@ -46,7 +48,7 @@ class Message(BaseModel):
 
     role: MessageRole
     content: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=get_utc_now)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
