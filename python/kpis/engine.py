@@ -24,8 +24,10 @@ Usage:
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from functools import wraps
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import pandas as pd
 
@@ -34,6 +36,37 @@ from python.kpis.par_30 import calculate_par_30
 from python.kpis.collection_rate import calculate_collection_rate
 
 logger = get_logger(__name__)
+
+
+def _handle_kpi_calculation_error(kpi_name: str) -> Callable:
+    """
+    Decorator to handle errors in KPI calculations consistently.
+    
+    Returns 0.0 as fallback value on error and records the error in audit trail.
+    Note: 0.0 is used as a neutral fallback to prevent pipeline crashes while
+    maintaining audit trail visibility of failures. Consumers should check the
+    context for "error" key before using the value.
+    
+    Args:
+        kpi_name: Name of the KPI being calculated
+        
+    Returns:
+        Decorated function with error handling
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(self, *args, **kwargs) -> Tuple[float, Dict[str, Any]]:
+            try:
+                return func(self, *args, **kwargs)
+            except Exception as e:
+                error_msg = str(e)
+                logger.error(f"Failed to calculate {kpi_name}: {error_msg}")
+                fallback_value = 0.0
+                error_context = {"error": error_msg}
+                self._record_calculation(kpi_name, fallback_value, error_context, error_msg)
+                return fallback_value, error_context
+        return wrapper
+    return decorator
 
 
 class KPIEngineV2:
@@ -98,91 +131,92 @@ class KPIEngineV2:
         }
         self._audit_records.append(record)
     
+    @_handle_kpi_calculation_error("PAR30")
     def calculate_par_30(self) -> Tuple[float, Dict[str, Any]]:
         """
         Calculate Portfolio at Risk (30+ days).
         
         Returns:
             Tuple of (value, context) where:
-            - value: PAR30 percentage
-            - context: Dict with calculation details
+            - value: PAR30 percentage (0.0 if calculation fails)
+            - context: Dict with calculation details or error message
         """
         kpi_name = "PAR30"
-        try:
-            value = calculate_par_30(self.df)
-            context = {
-                "formula": "SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100",
-                "rows_processed": len(self.df),
-                "calculation_method": "v1_legacy"
-            }
-            self._record_calculation(kpi_name, value, context)
-            logger.debug(f"Calculated {kpi_name}: {value}")
-            return value, context
-        except Exception as e:
-            error_msg = str(e)
-            logger.error(f"Failed to calculate {kpi_name}: {error_msg}")
-            fallback_value = 0.0
-            self._record_calculation(kpi_name, fallback_value, None, error_msg)
-            return fallback_value, {"error": error_msg}
+        value = calculate_par_30(self.df)
+        context = {
+            "formula": "SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100",
+            "rows_processed": len(self.df),
+            "calculation_method": "v1_legacy"
+        }
+        self._record_calculation(kpi_name, value, context)
+        logger.debug(f"Calculated {kpi_name}: {value}")
+        return value, context
     
+    @_handle_kpi_calculation_error("COLLECTION_RATE")
     def calculate_collection_rate(self) -> Tuple[float, Dict[str, Any]]:
         """
         Calculate collection rate.
         
         Returns:
             Tuple of (value, context) where:
-            - value: Collection rate percentage
-            - context: Dict with calculation details
+            - value: Collection rate percentage (0.0 if calculation fails)
+            - context: Dict with calculation details or error message
         """
         kpi_name = "COLLECTION_RATE"
-        try:
-            value, _ = calculate_collection_rate(self.df)
-            context = {
-                "formula": "payments_collected / payments_due * 100",
-                "rows_processed": len(self.df),
-                "calculation_method": "v1_legacy"
-            }
-            self._record_calculation(kpi_name, value, context)
-            logger.debug(f"Calculated {kpi_name}: {value}")
-            return value, context
-        except Exception as e:
-            error_msg = str(e)
-            logger.error(f"Failed to calculate {kpi_name}: {error_msg}")
-            fallback_value = 0.0
-            self._record_calculation(kpi_name, fallback_value, None, error_msg)
-            return fallback_value, {"error": error_msg}
+        value, _ = calculate_collection_rate(self.df)
+        context = {
+            "formula": "payments_collected / payments_due * 100",
+            "rows_processed": len(self.df),
+            "calculation_method": "v1_legacy"
+        }
+        self._record_calculation(kpi_name, value, context)
+        logger.debug(f"Calculated {kpi_name}: {value}")
+        return value, context
     
+    @_handle_kpi_calculation_error("LTV")
     def calculate_ltv(self) -> Tuple[float, Dict[str, Any]]:
         """
         Calculate Loan-to-Value ratio (on-demand KPI).
         
         Returns:
-            Tuple of (value, context)
+            Tuple of (value, context) where:
+            - value: LTV percentage (0.0 if calculation fails or columns missing)
+            - context: Dict with calculation details, error message, or missing columns info
         """
         kpi_name = "LTV"
-        try:
-            # Placeholder implementation - would need actual LTV logic
-            if "loan_amount" in self.df.columns and "collateral_value" in self.df.columns:
-                total_loans = self.df["loan_amount"].sum()
-                total_collateral = self.df["collateral_value"].sum()
-                value = (total_loans / total_collateral * 100) if total_collateral > 0 else 0.0
-            else:
-                value = 0.0
-            
+        
+        # Check for required columns
+        required_columns = ["loan_amount", "collateral_value"]
+        missing_columns = [col for col in required_columns if col not in self.df.columns]
+        
+        if missing_columns:
+            # Record as successful but with missing data context
+            value = 0.0
             context = {
                 "formula": "total_loan_amount / total_collateral_value * 100",
                 "rows_processed": len(self.df),
-                "calculation_method": "v2_engine"
+                "calculation_method": "v2_engine",
+                "missing_columns": missing_columns,
+                "calculation_status": "missing_required_columns"
             }
-            self._record_calculation(kpi_name, value, context)
-            logger.debug(f"Calculated {kpi_name}: {value}")
+            error_msg = f"Missing required columns for {kpi_name}: {', '.join(missing_columns)}"
+            logger.warning(error_msg)
+            self._record_calculation(kpi_name, value, context, error_msg)
             return value, context
-        except Exception as e:
-            error_msg = str(e)
-            logger.error(f"Failed to calculate {kpi_name}: {error_msg}")
-            fallback_value = 0.0
-            self._record_calculation(kpi_name, fallback_value, None, error_msg)
-            return fallback_value, {"error": error_msg}
+        
+        # Calculate LTV with available data
+        total_loans = self.df["loan_amount"].sum()
+        total_collateral = self.df["collateral_value"].sum()
+        value = (total_loans / total_collateral * 100) if total_collateral > 0 else 0.0
+        
+        context = {
+            "formula": "total_loan_amount / total_collateral_value * 100",
+            "rows_processed": len(self.df),
+            "calculation_method": "v2_engine"
+        }
+        self._record_calculation(kpi_name, value, context)
+        logger.debug(f"Calculated {kpi_name}: {value}")
+        return value, context
     
     def calculate_all(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -236,7 +270,12 @@ class KPIEngineV2:
         records_for_df = []
         for record in self._audit_records:
             record_copy = record.copy()
-            record_copy["context"] = str(record_copy.get("context", {}))
+            # Use json.dumps for proper JSON serialization instead of str()
+            context_value = record_copy.get("context", {})
+            if context_value is not None:
+                record_copy["context"] = json.dumps(context_value)
+            else:
+                record_copy["context"] = json.dumps({})
             records_for_df.append(record_copy)
         
         df = pd.DataFrame(records_for_df)

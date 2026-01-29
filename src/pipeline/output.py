@@ -12,11 +12,14 @@ Responsibilities:
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import pandas as pd
 
 from python.logging_config import get_logger
+
+if TYPE_CHECKING:
+    from python.kpis.engine import KPIEngineV2
 
 logger = get_logger(__name__)
 
@@ -35,7 +38,7 @@ class OutputPhase:
         logger.info("Initialized output phase")
 
     def execute(
-        self, kpi_results: Dict[str, Any], run_dir: Optional[Path] = None, kpi_engine: Optional[Any] = None
+        self, kpi_results: Dict[str, Any], run_dir: Optional[Path] = None, kpi_engine: Optional["KPIEngineV2"] = None
     ) -> Dict[str, Any]:
         """
         Execute output phase.
@@ -185,8 +188,42 @@ class OutputPhase:
         logger.info("Dashboard refresh not yet implemented")
         return {"status": "skipped"}
 
+    def _get_failed_kpis_from_audit(self, audit_df: pd.DataFrame) -> list:
+        """
+        Extract failed KPI names from audit trail DataFrame.
+        
+        Helper method to reduce code duplication and ensure consistent
+        filtering behavior across quality score and SLA checking methods.
+        
+        Args:
+            audit_df: Audit trail DataFrame from KPIEngineV2
+            
+        Returns:
+            List of KPI names with failed status
+            
+        Raises:
+            ValueError: If audit DataFrame has unexpected structure
+        """
+        try:
+            if audit_df.empty:
+                return []
+            
+            # Validate expected columns exist
+            if "status" not in audit_df.columns or "kpi_name" not in audit_df.columns:
+                logger.warning("Audit DataFrame missing required columns")
+                return []
+            
+            # Filter for failed status and extract KPI names
+            failed_mask = audit_df["status"] == "failed"
+            failed_kpis = audit_df[failed_mask]["kpi_name"].tolist()
+            return failed_kpis
+            
+        except Exception as e:
+            logger.error(f"Error extracting failed KPIs from audit trail: {e}")
+            return []
+
     def _generate_audit_metadata(
-        self, kpi_results: Dict[str, Any], exports: Dict[str, str], kpi_engine: Optional[Any] = None
+        self, kpi_results: Dict[str, Any], exports: Dict[str, str], kpi_engine: Optional["KPIEngineV2"] = None
     ) -> Dict[str, Any]:
         """
         Generate audit metadata/summary for this pipeline run.
@@ -218,19 +255,22 @@ class OutputPhase:
         
         # Add detailed audit info if KPIEngineV2 was used
         if kpi_engine is not None:
-            audit_df = kpi_engine.get_audit_trail()
-            if not audit_df.empty:
-                failed_kpis = audit_df[audit_df["status"] == "failed"]["kpi_name"].tolist()
-                audit_info["kpi_engine_used"] = True
-                audit_info["total_calculations"] = len(audit_df)
-                audit_info["failed_calculations"] = len(failed_kpis)
-                if failed_kpis:
-                    audit_info["failed_kpis"] = failed_kpis
+            try:
+                audit_df = kpi_engine.get_audit_trail()
+                if not audit_df.empty:
+                    failed_kpis = self._get_failed_kpis_from_audit(audit_df)
+                    audit_info["kpi_engine_used"] = True
+                    audit_info["total_calculations"] = len(audit_df)
+                    audit_info["failed_calculations"] = len(failed_kpis)
+                    if failed_kpis:
+                        audit_info["failed_kpis"] = failed_kpis
+            except Exception as e:
+                logger.warning(f"Could not add detailed audit info: {e}")
         
         return audit_info
     
     def _calculate_quality_score(
-        self, kpi_results: Dict[str, Any], kpi_engine: Optional[Any] = None
+        self, kpi_results: Dict[str, Any], kpi_engine: Optional["KPIEngineV2"] = None
     ) -> float:
         """
         Calculate quality score based on validation results.
@@ -240,10 +280,16 @@ class OutputPhase:
         - Data completeness
         - Error rate
         
+        Fallback behavior:
+        - Returns 0.0 if no kpi_results (no KPIs to calculate is considered failure)
+        - Returns 1.0 if kpi_engine is None but kpi_results exist (optimistic assumption:
+          results are present and valid when audit trail is unavailable for verification)
+        
         Returns:
             Quality score between 0.0 and 1.0
         """
         if not kpi_results:
+            # No KPIs calculated - complete failure scenario
             return 0.0
         
         # If KPIEngineV2 was used, check audit trail
@@ -252,16 +298,18 @@ class OutputPhase:
                 audit_df = kpi_engine.get_audit_trail()
                 if not audit_df.empty:
                     total = len(audit_df)
-                    successful = len(audit_df[audit_df["status"] == "success"])
+                    failed_kpis = self._get_failed_kpis_from_audit(audit_df)
+                    successful = total - len(failed_kpis)
                     return round(successful / total, 2) if total > 0 else 0.0
             except Exception as e:
                 logger.debug(f"Could not calculate quality score from audit trail: {e}")
         
-        # Fallback: assume all KPIs in results are successful
+        # Fallback: kpi_results exist but audit data unavailable - assume all successful
+        # This optimistic fallback treats "results exist but unverified" as valid
         return 1.0
     
     def _check_sla(
-        self, kpi_results: Dict[str, Any], kpi_engine: Optional[Any] = None
+        self, kpi_results: Dict[str, Any], kpi_engine: Optional["KPIEngineV2"] = None
     ) -> bool:
         """
         Check if SLA was met for this pipeline run.
@@ -270,10 +318,17 @@ class OutputPhase:
         - All critical KPIs were calculated successfully
         - No errors in the calculation process
         
+        Fallback behavior:
+        - Returns False if no kpi_results (no KPIs calculated is an SLA violation)
+        - Returns True if kpi_engine is None but kpi_results exist (optimistic assumption:
+          at this point we know results exist, so treat "unverified results" as SLA-compliant
+          since we cannot prove otherwise)
+        
         Returns:
             True if SLA was met, False otherwise
         """
         if not kpi_results:
+            # No KPIs calculated - SLA violation
             return False
         
         # If KPIEngineV2 was used, check for any failures
@@ -282,10 +337,11 @@ class OutputPhase:
                 audit_df = kpi_engine.get_audit_trail()
                 if not audit_df.empty:
                     # SLA is met if there are no failed calculations
-                    failed = len(audit_df[audit_df["status"] == "failed"])
-                    return failed == 0
+                    failed_kpis = self._get_failed_kpis_from_audit(audit_df)
+                    return len(failed_kpis) == 0
             except Exception as e:
                 logger.debug(f"Could not check SLA from audit trail: {e}")
         
-        # Fallback: assume SLA is met if we have results
+        # Fallback: results exist but audit data is missing/unusable
+        # Since kpi_results is non-empty (early return above), treat this as SLA-compliant
         return True
