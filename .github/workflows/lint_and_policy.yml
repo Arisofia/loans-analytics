@@ -41,15 +41,15 @@ jobs:
       - name: Lint Python (pylint, flake8, ruff)
         run: |
           echo "Running pylint..."
-          PYTHONPATH=src pylint src tests --fail-under=8.0
+          PYTHONPATH="src:python:." pylint src tests --fail-under=8.0
           echo "Running flake8..."
-          PYTHONPATH=src flake8 src tests
+          PYTHONPATH="src:python:." flake8 src tests
           echo "Running ruff..."
-          PYTHONPATH=src ruff check src tests
+          PYTHONPATH="src:python:." ruff check src tests
 
       - name: Type Check (mypy)
         run: |
-          PYTHONPATH=src mypy src tests --ignore-missing-imports
+          PYTHONPATH="src:python:." mypy src tests --ignore-missing-imports
 
       - name: Check for duplicate/stale README and config files
         run: |
