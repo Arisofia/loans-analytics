@@ -79,8 +79,8 @@ class OutputPhase:
             # Trigger dashboard refresh
             dashboard_result = self._trigger_dashboard_refresh()
 
-            # Generate audit trail
-            audit_trail = self._generate_audit_trail(kpi_results, exports, kpi_engine)
+            # Generate audit metadata
+            audit_trail = self._generate_audit_metadata(kpi_results, exports, kpi_engine)
 
             results = {
                 "status": "success",
@@ -141,7 +141,8 @@ class OutputPhase:
             Path to exported audit trail CSV, or None if export failed
         """
         try:
-            # Get repository root
+            # Get repository root (3 levels up from src/pipeline/output.py)
+            # Assumes standard project structure: repo_root/src/pipeline/output.py
             repo_root = Path(__file__).parent.parent.parent
             exports_dir = repo_root / "exports"
             exports_dir.mkdir(exist_ok=True)
@@ -184,11 +185,14 @@ class OutputPhase:
         logger.info("Dashboard refresh not yet implemented")
         return {"status": "skipped"}
 
-    def _generate_audit_trail(
+    def _generate_audit_metadata(
         self, kpi_results: Dict[str, Any], exports: Dict[str, str], kpi_engine: Optional[Any] = None
     ) -> Dict[str, Any]:
         """
-        Generate audit trail for this pipeline run.
+        Generate audit metadata/summary for this pipeline run.
+        
+        Note: This generates metadata about the pipeline run itself.
+        For detailed KPI calculation audit trail, see kpi_engine.get_audit_trail().
         
         Args:
             kpi_results: KPI calculation results
@@ -196,7 +200,7 @@ class OutputPhase:
             kpi_engine: Optional KPIEngineV2 instance for detailed audit info
         
         Returns:
-            Audit trail metadata
+            Audit metadata/summary
         """
         # Calculate quality score based on validation results
         quality_score = self._calculate_quality_score(kpi_results, kpi_engine)

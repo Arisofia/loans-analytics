@@ -35,7 +35,7 @@ def demo_kpi_audit_trail():
     except ImportError as e:
         print(f"ERROR: Could not import KPIEngineV2: {e}")
         print("Please install required dependencies:")
-        print("  pip install pandas polars pydantic pydantic-settings pyyaml")
+        print("  pip install pandas pydantic pydantic-settings pyyaml")
         return 1
     
     # Create sample data
@@ -54,7 +54,7 @@ def demo_kpi_audit_trail():
     engine = KPIEngineV2(
         sample_data,
         actor="demo_script",
-        run_id="demo_2026_01_29"
+        run_id="demo_20260129_001"  # Format matches engine's YYYYMMDD_HHMMSS pattern
     )
     print(f"   Actor: {engine.actor}")
     print(f"   Run ID: {engine.run_id}")
