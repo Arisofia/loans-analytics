@@ -44,9 +44,7 @@ def compare_performance(metrics_file: str, threshold: float = 0.20) -> bool:
         True if all scenarios meet performance targets, False otherwise
     """
     # Validate metrics file path (CWE-22: Path Traversal)
-    validated_metrics = validate_path(
-        metrics_file, base_dir=".", must_exist=True
-    )
+    validated_metrics = validate_path(metrics_file, base_dir=".", must_exist=True)
 
     with open(validated_metrics) as f:  # snyk:skip=3abe2bc2-524a-464f-900d-2277378e55cb
         metrics = json.load(f)
@@ -92,7 +90,7 @@ def compare_performance(metrics_file: str, threshold: float = 0.20) -> bool:
 
             if alert:
                 all_ok = False
-                print(f"  ⚠️  Latency increased beyond acceptable threshold!")
+                print("  ⚠️  Latency increased beyond acceptable threshold!")
 
         # Check success rate
         baseline_success_rate = baseline_data.get("baseline_success_rate", 100)

@@ -1,4 +1,3 @@
-import pandas as pd
 
 
 def fuzzy_map_core_tables(dfs):

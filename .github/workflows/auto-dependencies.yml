@@ -44,7 +44,7 @@ jobs:
     npm-deps:
         name: Update NPM Dependencies
         runs-on: ubuntu-latest
-        if: ${{ hashFiles('apps/web/package.json') != '' }}
+        if: hashFiles('apps/web/package.json') != ''
 
         steps:
             - name: Checkout

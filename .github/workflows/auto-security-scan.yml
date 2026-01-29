@@ -68,7 +68,7 @@ jobs:
               uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
             - name: Run Snyk (if token available)
-              if: ${{ secrets.SNYK_TOKEN != '' }}
+              if: secrets.SNYK_TOKEN != ''
               # This step runs only if SNYK_TOKEN is configured
               # If token is not set, this step is skipped gracefully
               run: |
@@ -78,7 +78,7 @@ jobs:
               continue-on-error: true
 
             - name: Upload Snyk report
-              if: ${{ always() && secrets.SNYK_TOKEN != '' }}
+              if: always() && secrets.SNYK_TOKEN != ''
               uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4.4.3
               with:
                   name: snyk-report

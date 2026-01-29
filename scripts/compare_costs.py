@@ -47,9 +47,7 @@ def compare_costs(report_file: str, threshold: float = 0.10) -> bool:
         True if all scenarios are within threshold, False otherwise
     """
     # Load current report with path validation (CWE-22: Path Traversal)
-    validated_report = validate_path(
-        report_file, base_dir=".", must_exist=True
-    )
+    validated_report = validate_path(report_file, base_dir=".", must_exist=True)
     with open(validated_report) as f:  # snyk:skip=614452fc-363f-41b9-8235-d3c3e51c3825
         report = json.load(f)
 
@@ -97,7 +95,7 @@ def compare_costs(report_file: str, threshold: float = 0.10) -> bool:
 
         if alert:
             all_ok = False
-            print(f"  ⚠️  Cost increased beyond acceptable threshold!")
+            print("  ⚠️  Cost increased beyond acceptable threshold!")
 
         # Check token budget
         token_budget = baseline_data.get("token_budget", 0)

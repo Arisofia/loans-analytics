@@ -4,7 +4,6 @@ Tests p50, p95, p99 latency for various agent operations.
 """
 
 import time
-from unittest.mock import MagicMock
 
 import pytest
 
