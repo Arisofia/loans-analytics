@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 
 # Avoid importing FastAPI at module import time so tests don't require
@@ -8,7 +9,7 @@ try:
     from fastapi import FastAPI, HTTPException  # type: ignore
 
     app = FastAPI()
-except Exception:  # pragma: no cover - fallback in tests/environments without FastAPI
+except ImportError:  # pragma: no cover - fallback in tests/environments without FastAPI
 
     class HTTPException(Exception):
         def __init__(self, status_code: int, detail: str):
@@ -37,12 +38,11 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     if any(p == ".." for p in candidate_path.parts):
         raise ValueError("parent traversal is not allowed in path")
 
-    # Sanitize path to prevent injection (normalize separators and validate characters)
+    # Sanitize path to prevent injection (normalize separators and validate)
     sanitized_str = str(candidate_path).replace("\\", "/")
 
-    # Validate only safe characters are present (alphanumeric, dash, underscore, slash, dot)
-    import re
-
+    # Validate only safe characters are present
+    # (alphanumeric, dash, underscore, slash, dot)
     if not re.match(r"^[a-zA-Z0-9_./\-]+$", sanitized_str):
         raise ValueError("path contains invalid characters")
 
@@ -54,8 +54,10 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     # Ensure the resolved path is still within the allowed_dir
     try:
         resolved.relative_to(allowed_dir)
-    except Exception:
-        raise ValueError("path resolves outside the allowed data directory")
+    except ValueError as exc:
+        raise ValueError(
+            "path resolves outside the allowed data directory"
+        ) from exc
     return resolved
 
 
@@ -70,14 +72,20 @@ def get_data(file_path: str):
     try:
         resolved = _sanitize_and_resolve(file_path, ALLOWED_DATA_DIR)
     except ValueError as exc:
-        logger.warning("Invalid data path requested: %s (%s)", file_path, exc)
-        raise HTTPException(status_code=400, detail=str(exc))
+        logger.warning(
+            "Invalid data path requested: %s (%s)", file_path, exc
+        )
+        raise HTTPException(
+            status_code=400, detail=str(exc)
+        ) from exc
 
     if not resolved.exists() or not resolved.is_file():
         raise HTTPException(status_code=404, detail="file not found")
     # Read safely (do not log the file contents or sensitive paths)
     try:
         return {"status": "ok", "path": str(resolved)}
-    except Exception as exc:  # pragma: no cover - extremely defensive
+    except OSError as exc:  # pragma: no cover - extremely defensive
         logger.exception("Error reading data file: %s", exc)
-        raise HTTPException(status_code=500, detail="internal error")
+        raise HTTPException(
+            status_code=500, detail="internal error"
+        ) from exc

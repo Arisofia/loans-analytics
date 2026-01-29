@@ -73,7 +73,8 @@ class TrendAnalysis(BaseModel):
     end_value: float = Field(..., description="Ending value")
     percent_change: float = Field(..., description="Percentage change")
     calculated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC), description="Analysis timestamp (UTC)"
+        default_factory=lambda: datetime.now(UTC),
+        description="Analysis timestamp (UTC)",
     )
 
 
@@ -84,7 +85,8 @@ class SeasonalityPattern(BaseModel):
     has_seasonality: bool = Field(..., description="Whether seasonality detected")
     cycle_length_months: Optional[int] = Field(None, description="Seasonal cycle length")
     peak_months: List[int] = Field(
-        default_factory=list, description="Months with peak values (1-12)"
+        default_factory=list,
+        description="Months with peak values (1-12)",
     )
     trough_months: List[int] = Field(
         default_factory=list, description="Months with trough values (1-12)"
@@ -142,7 +144,6 @@ class HistoricalDataBackend(Protocol):
             ValueError: If date range is invalid
             RuntimeError: If data source is unavailable
         """
-        ...
 
 
 class HistoricalContextProvider:
@@ -361,7 +362,11 @@ class HistoricalContextProvider:
         # Determine direction and strength
         start_val = history[0].value
         end_val = history[-1].value
-        percent_change = ((end_val - start_val) / start_val * 100) if start_val != 0 else 0.0
+        percent_change = (
+            ((end_val - start_val) / start_val * 100)
+            if start_val != 0
+            else 0.0
+        )
 
         # Direction
         if abs(slope) < 0.01:
