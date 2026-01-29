@@ -50,7 +50,7 @@ jobs:
           AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
         run: |
           echo "Running unified data pipeline (orchestrator)..."
-          python scripts/run_data_pipeline.py --action github-action
+          python scripts/run_data_pipeline.py --mode full --verbose
 
       - name: Upload Pipeline Artifacts
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4.4.3
