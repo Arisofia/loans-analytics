@@ -3,6 +3,23 @@
 All notable changes to the Abaco Loans Analytics platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+#### Code Quality & Refactoring
+
+- **Agent Initialization Pattern**: Eliminated duplicate `__init__` boilerplate from 8 agent classes using new `@agent_with_role` decorator
+  - Created `python/multi_agent/agent_factory.py` with decorator pattern
+  - Reduced code by ~30 lines while maintaining full functionality
+  - All agent initialization now follows consistent pattern
+- **Centralized Utilities**: Created reusable utility modules to reduce code duplication
+  - `python/logging_config.py`: Provides `get_logger()` for consistent logger creation across 17+ files
+  - `python/time_utils.py`: Provides timezone-aware timestamp functions (`get_utc_now()`, `get_iso_timestamp()`)
+  - Replaced deprecated `datetime.utcnow()` with timezone-aware alternatives throughout codebase
+- **Test Coverage**: Added comprehensive tests for new utilities (14 new tests, all passing)
+- **Security**: No new vulnerabilities introduced (CodeQL scan clean)
+
 ## [1.2.0] – 2026-01-28 (v1.2.0-g3-complete)
 
 ### Summary
