@@ -19,7 +19,7 @@ Replaced all invalid SHA hashes with correct ones for the following actions:
 | actions/cache | v4.1.2 | `b6c6e19650157c2e813776fd7f8b2bf258a5a410` | `6849a6489940f00c2f30c0fb92c6274307ccb58a` |
 | actions/upload-artifact | v4.4.3 | `250e9d8087e4d33cdf6c33e180d803782f68fdb1` | `b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882` |
 | actions/github-script | v7.0.1 | `60a0d83cf42496352c7b1c5b6cf25dc6aa6f8c93` | `60a0d83039c74a4aee543508d2ffcb1c3799cdea` |
-| actions/setup-node | v4 | `b7dde419cc031a3d665baa4a62731727917cd13e` | `49933ea5288caeca8642d1e84afbd3f7d6820020` |
+| actions/setup-node | v4.4.0 | `b7dde419cc031a3d665baa4a62731727917cd13e` | `49933ea5288caeca8642d1e84afbd3f7d6820020` |
 
 **Affected workflows (51 total):**
 - 47 workflows with existing SHA pins (corrected)
