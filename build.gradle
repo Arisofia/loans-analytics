@@ -17,15 +17,15 @@ repositories {
 
 ext {
     // Override vulnerable transitive dependency versions
-    set('tomcat.version', '10.1.40')
-    set('spring-security.version', '6.5.0')
+    set('tomcat.version', '10.1.47')
+    set('spring-security.version', '6.5.5')
     set('snakeyaml.version', '2.4')
-    set('logback.version', '1.5.16')
+    set('logback.version', '1.5.25')
     set('nimbus-jose-jwt.version', '10.0.2')
     set('jackson-bom.version', '2.18.2')
-    set('assertj.version', '3.27.3')
+    set('assertj.version', '3.27.7')
     set('xmlunit.version', '2.10.0')
-    set('spring-framework.version', '6.2.4')
+    set('spring-framework.version', '6.2.11')
 }
 
 dependencies {
