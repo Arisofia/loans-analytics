@@ -5,7 +5,6 @@ This script runs test scenarios and collects cost data for baseline comparison.
 """
 
 import argparse
-import json
 import sys
 from pathlib import Path
 

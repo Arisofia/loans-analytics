@@ -21,9 +21,7 @@ from __future__ import annotations
 import logging
 import math
 import os
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from typing import Any
 
 from python.multi_agent.config_historical import build_historical_context_provider
 
@@ -53,7 +51,7 @@ def compute_stats(values: list[float]) -> dict[str, float]:
 
 def infer_trend(values: list[float]) -> str:
     """Classify trend direction by comparing first and last thirds of series.
-    
+
     Returns:
         "up" if last third mean is >2% higher than first third
         "down" if last third mean is >2% lower than first third

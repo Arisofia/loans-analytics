@@ -15,7 +15,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # Set up logging for security events
 logger = logging.getLogger(__name__)
@@ -70,15 +70,11 @@ def validate_path(
     """
     # Input validation
     if not isinstance(user_path, str):
-        raise TypeError(
-            f"user_path must be string, got {type(user_path).__name__}"
-        )
+        raise TypeError(f"user_path must be string, got {type(user_path).__name__}")
     if not user_path.strip():
         raise ValueError("user_path cannot be empty")
     if not isinstance(base_dir, str):
-        raise TypeError(
-            f"base_dir must be string, got {type(base_dir).__name__}"
-        )
+        raise TypeError(f"base_dir must be string, got {type(base_dir).__name__}")
 
     # Resolve base directory (create if needed)
     try:
@@ -93,7 +89,9 @@ def validate_path(
     # Resolve requested path (eliminates .. and symlinks)
     # Path traversal is validated below in the relative_to() check (CWE-22 mitigation)
     try:
-        requested = Path(user_path).resolve()  # nosemgrep: snyk.python.path_traversal,snyk.python.os_injection
+        requested = Path(
+            user_path
+        ).resolve()  # nosemgrep: snyk.python.path_traversal,snyk.python.os_injection
     except (OSError, RuntimeError) as e:
         logger.warning(f"Cannot resolve path {user_path}: {e}")
         raise ValueError(f"Invalid path: {user_path}") from e
@@ -106,10 +104,7 @@ def validate_path(
             f"Path traversal attempt detected: {user_path} "
             f"(resolved: {requested}) escapes {base_dir} (resolved: {base})"
         )
-        raise ValueError(
-            f"Path traversal attempt detected: {user_path} "
-            f"escapes {base_dir}"
-        )
+        raise ValueError(f"Path traversal attempt detected: {user_path} " f"escapes {base_dir}")
 
     # File existence validation
     if must_exist and not requested.exists():
@@ -118,12 +113,8 @@ def validate_path(
 
     # Write validation
     if not allow_write and requested.exists() and not requested.is_file():
-        logger.warning(
-            f"Attempted to write to non-file: {requested}"
-        )
-        raise ValueError(
-            f"Path is not a regular file: {user_path}"
-        )
+        logger.warning(f"Attempted to write to non-file: {requested}")
+        raise ValueError(f"Path is not a regular file: {user_path}")
 
     logger.debug(f"Path validation succeeded: {user_path} -> {requested}")
     return requested
