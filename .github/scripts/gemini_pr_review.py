@@ -1,5 +1,7 @@
 """Script to run Gemini review for PRs.
-This is moved out of the workflow to avoid YAML parsing issues with large inline scripts.
+
+This is moved out of the workflow to avoid YAML parsing issues with
+large inline scripts.
 """
 
 import logging
@@ -14,7 +16,8 @@ logger = logging.getLogger(__name__)
 def require_env_vars(*env_vars):
     missing = [v for v in env_vars if not os.getenv(v)]
     if missing:
-        logger.error(f"Missing required environment variables: {', '.join(missing)}")
+        logger.error("Missing required environment variables: %s",
+                     ", ".join(missing))
         return False
     return True
 
@@ -22,7 +25,8 @@ def require_env_vars(*env_vars):
 def require_module(modname):
     try:
         return __import__(modname)
-    except ImportError:
+    except ImportErro"Required module '%s' not installed; skipping review.",
+                     modname
         logger.error(f"Required module '{modname}' not installed; skipping Gemini review.")
         return None
 
@@ -48,9 +52,9 @@ def main() -> int:
         return 0
     requests_mod = require_module("requests")
     if requests_mod is None:
-        return 0
-    RequestException = getattr(requests_mod, "exceptions", requests_mod).__dict__.get(
-        "RequestException", Exception
+    request_exception = getattr(
+        requests_mod, "exceptions", requests_mod
+    ).__dict__.get("RequestException", Exception    "RequestException", Exception
     )
 
     # Configure Gemini API
@@ -59,9 +63,12 @@ def main() -> int:
         if callable(configure_fn):
             configure_fn(api_key=gemini_key)
         else:
-            logger.warning("google.generativeai.configure not available; skipping Gemini review.")
+                "google.generativeai.configure not available; "
+                "skipping Gemini review."
+            )
             return 0
-    except Exception:
+    except ImportError as e:
+        logger.exception("Failed to configure Gemini API: %s", e
         logger.exception("Failed to configure Gemini API")
         return 1
 
@@ -69,28 +76,34 @@ def main() -> int:
     model_name: Optional[str] = model_override
     if not model_name:
         try:
-            list_models_fn = getattr(genai, "list_models", None)
-            if callable(list_models_fn):
-                for model in list_models_fn():
-                    supported = getattr(model, "supported_generation_methods", None)
+            list_models_fn = getattr(gen
+                        model, "supported_generation_methods", None
+                    )
                     if supported and "generateContent" in supported:
                         model_name = getattr(model, "name", None)
                         break
             else:
                 logger.warning(
-                    "google.generativeai.list_models not available; cannot auto-detect model"
+                    "google.generativeai.list_models not available; "
+                    "cannot auto-detect model"
+                )
+        except (ImportError, AttributeError) as e:
+            logger.exception("Could not list Gemini models: %s", eailable; cannot auto-detect model"
                 )
         except Exception:
             logger.exception("Could not list Gemini models")
-            model_name = None
-
-    if not model_name:
-        logger.info("No compatible Gemini model found; skipping review.")
+    gen_model = getattr(genai, "GenerativeModel", None)
+    if gen_model is None:
+        logger.error(
+            "google.generativeai.GenerativeModel not available; "
+            "skipping review."
+        )
         return 0
 
-    GenModel = getattr(genai, "GenerativeModel", None)
-    if GenModel is None:
-        logger.error("google.generativeai.GenerativeModel not available; skipping review.")
+    try:
+        model = gen_model(model_name)
+    except (ImportError, ValueError) as e:
+        logger.exception("Failed to create GenerativeModel: %s", eot available; skipping review.")
         return 0
 
     try:
@@ -124,8 +137,8 @@ def main() -> int:
         "Review this pull request diff and provide feedback on:\n"
         "1. Code quality and best practices\n"
         "2. Potential bugs or issues\n"
-        "3. Security concerns\n"
-        "4. Performance improvements\n"
+        "3.(ImportError, ValueError, RuntimeError) as e:
+        logger.exception("Error calling Gemini API: %s", e
         "5. General suggestions\n\n"
         f"Diff:\n{safe_diff}\n"
     )
@@ -137,7 +150,9 @@ def main() -> int:
         logger.exception("Error calling Gemini API")
         return 1
 
-    # Post comment to PR (use a short timeout to avoid hanging)
+    # Post comment to PR (use a s
+            api_url, headers=headers, json=data, timeout=10
+        
     api_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
     headers = {
         "Authorization": f"token {github_token}",

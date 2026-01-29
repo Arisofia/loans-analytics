@@ -16,7 +16,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
 
@@ -113,9 +113,11 @@ jobs:
     if: always()
     permissions:
       contents: read
+    env:
+      SONAR_HOST_URL: ""
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
 
@@ -158,7 +160,7 @@ jobs:
             -Dsonar.python.version=3.11
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || '' }}
+          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   ai-review-coderabbit:
@@ -171,7 +173,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Check CodeRabbit token
         id: check-coderabbit
@@ -261,9 +263,11 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    env:
+      PERPLEXITY_MODEL: sonar-pro
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Check Perplexity API key
         id: check-perplexity
@@ -295,7 +299,7 @@ jobs:
              [ "$DIFF_SIZE" -gt 0 ] && [ "$DIFF_SIZE" -lt 50000 ]; then
             # Use jq to properly construct JSON payload (same approach as existing perplexity_review.yml)
             DIFF_TEXT=$(cat pr_diff.txt | head -c 50000)
-            MODEL="${{ vars.PERPLEXITY_MODEL || 'sonar-pro' }}"
+            MODEL="${PERPLEXITY_MODEL}"
 
             jq -n --arg diff "$DIFF_TEXT" --arg model "$MODEL" \
               '{
