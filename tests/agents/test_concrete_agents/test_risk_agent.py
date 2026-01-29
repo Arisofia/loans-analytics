@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock
 
 
-
 class TestRiskAgent:
     """Test suite for risk assessment agent."""
 
