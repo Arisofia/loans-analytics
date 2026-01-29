@@ -18,7 +18,7 @@
     "connectionId": "abaco-technol",
     "projectKey": "abaco-loans-analytics"
   },
-  "java.configuration.updateBuildConfiguration": "interactive",
+  "java.configuration.updateBuildConfiguration": "automatic",
   "zencoder.mcpServers": {
     "github": {
       "command": "docker",
