@@ -1,104 +1,104 @@
 name: Auto Dependency Updates
 
 on:
-    schedule:
-        - cron: "0 2 * * 1" # Every Monday at 2 AM
-    workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * 1" # Every Monday at 2 AM
+  workflow_dispatch:
 
 permissions:
-    contents: write
-    pull-requests: write
+  contents: write
+  pull-requests: write
 
 jobs:
-    python-deps:
-        name: Update Python Dependencies
-        runs-on: ubuntu-latest
+  python-deps:
+    name: Update Python Dependencies
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-            - name: Set up Python
-              uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
-              with:
-                  python-version: "3.12"
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: "3.12"
 
-            - name: Update requirements
-              run: |
-                  pip install pip-tools
-                  pip-compile requirements.txt -o requirements.txt --upgrade 2>/dev/null || true
-                  pip-compile requirements-dev.txt -o requirements-dev.txt --upgrade 2>/dev/null || true
+      - name: Update requirements
+        run: |
+          pip install pip-tools
+          pip-compile requirements.txt -o requirements.txt --upgrade 2>/dev/null || true
+          pip-compile requirements-dev.txt -o requirements-dev.txt --upgrade 2>/dev/null || true
 
-            - name: Commit changes
-              run: |
-                  if git diff --quiet; then
-                    echo "No dependency changes"
-                  else
-                    git config --local user.email "github-actions[bot]@users.noreply.github.com"
-                    git config --local user.name "github-actions[bot]"
-                    git add requirements*.txt
-                    git commit -m "chore: Update Python dependencies" || true
-                    git push
-                  fi
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "No dependency changes"
+          else
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add requirements*.txt
+            git commit -m "chore: Update Python dependencies" || true
+            git push
+          fi
 
-    npm-deps:
-        name: Update NPM Dependencies
-        runs-on: ubuntu-latest
-        if: hashFiles('apps/web/package.json') != ''
+  npm-deps:
+    name: Update NPM Dependencies
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('apps/web/package.json') != '' }}
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-            - name: Set up Node.js
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
-              with:
-                  node-version: "20"
-                  cache: "npm"
-                  cache-dependency-path: "apps/web/package-lock.json"
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "apps/web/package-lock.json"
 
-            - name: Update npm packages
-              working-directory: apps/web
-              run: |
-                  npm update 2>/dev/null || true
-                  npm audit fix --audit-level=moderate 2>/dev/null || true
+      - name: Update npm packages
+        working-directory: apps/web
+        run: |
+          npm update 2>/dev/null || true
+          npm audit fix --audit-level=moderate 2>/dev/null || true
 
-            - name: Commit changes
-              run: |
-                  if git diff --quiet; then
-                    echo "No npm dependency changes"
-                  else
-                    git config --local user.email "github-actions[bot]@users.noreply.github.com"
-                    git config --local user.name "github-actions[bot]"
-                    git add "apps/web/package*.json"
-                    git commit -m "chore: Update npm dependencies" || true
-                    git push
-                  fi
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "No npm dependency changes"
+          else
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add "apps/web/package*.json"
+            git commit -m "chore: Update npm dependencies" || true
+            git push
+          fi
 
-    changelog:
-        name: Generate Changelog
-        runs-on: ubuntu-latest
-        permissions:
-            contents: write
+  changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-              with:
-                  fetch-depth: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
 
-            - name: Generate changelog
-              run: |
-                  git log --oneline --since="1 week ago" > RECENT_CHANGES.md || echo "No recent changes" > RECENT_CHANGES.md
+      - name: Generate changelog
+        run: |
+          git log --oneline --since="1 week ago" > RECENT_CHANGES.md || echo "No recent changes" > RECENT_CHANGES.md
 
-            - name: Commit changelog
-              run: |
-                  if git diff --quiet RECENT_CHANGES.md 2>/dev/null; then
-                    echo "Changelog unchanged"
-                  else
-                    git config --local user.email "github-actions[bot]@users.noreply.github.com"
-                    git config --local user.name "github-actions[bot]"
-                    git add RECENT_CHANGES.md || true
-                    git commit -m "docs: Update recent changes log" || true
-                    git push || true
-                  fi
+      - name: Commit changelog
+        run: |
+          if git diff --quiet RECENT_CHANGES.md 2>/dev/null; then
+            echo "Changelog unchanged"
+          else
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add RECENT_CHANGES.md || true
+            git commit -m "docs: Update recent changes log" || true
+            git push || true
+          fi
