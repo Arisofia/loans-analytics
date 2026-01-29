@@ -42,6 +42,18 @@ class TestTimeUtils(unittest.TestCase):
         self.assertEqual(result.month, 1)
         self.assertEqual(result.day, 28)
 
+    def test_parse_iso_timestamp_with_z_suffix(self):
+        """Test parsing ISO timestamp with Z suffix for UTC."""
+        timestamp_str = "2024-01-28T10:30:00Z"
+        result = parse_iso_timestamp(timestamp_str)
+        self.assertIsInstance(result, datetime)
+        self.assertEqual(result.year, 2024)
+        self.assertEqual(result.month, 1)
+        self.assertEqual(result.day, 28)
+        # Verify it's timezone-aware and UTC
+        self.assertIsNotNone(result.tzinfo)
+        self.assertEqual(result.tzinfo, timezone.utc)
+
     def test_parse_iso_timestamp_invalid(self):
         """Test parsing an invalid timestamp raises error."""
         with self.assertRaises(ValueError):

@@ -39,6 +39,9 @@ def parse_iso_timestamp(timestamp_str: str) -> datetime:
     """
     Parse an ISO 8601 formatted timestamp string to datetime.
 
+    Supports common ISO 8601 formats including timestamps with 'Z' suffix
+    for UTC timezone (e.g., '2024-01-28T10:30:00Z').
+
     Args:
         timestamp_str: ISO 8601 formatted timestamp string
 
@@ -51,7 +54,12 @@ def parse_iso_timestamp(timestamp_str: str) -> datetime:
     Example:
         from python.time_utils import parse_iso_timestamp
         dt = parse_iso_timestamp('2024-01-28T10:30:00+00:00')
+        dt_utc = parse_iso_timestamp('2024-01-28T10:30:00Z')
     """
+    # Handle 'Z' suffix for UTC timezone (common ISO 8601 format)
+    # datetime.fromisoformat() doesn't support 'Z', so normalize to '+00:00'
+    if timestamp_str.endswith("Z"):
+        timestamp_str = timestamp_str[:-1] + "+00:00"
     return datetime.fromisoformat(timestamp_str)
 
 
