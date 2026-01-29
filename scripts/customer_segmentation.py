@@ -12,7 +12,10 @@ from typing import Any, Dict, List
 # Configure logging (JSON format for Grafana Alloy ingestion)
 logging.basicConfig(
     level=logging.INFO,
-    format='{"timestamp": "%(asctime)s", "logger": "%(name)s", "level": "%(levelname)s", "message": "%(message)s"}',
+    format=(
+        '{"timestamp": "%(asctime)s", "logger": "%(name)s", '
+        '"level": "%(levelname)s", "message": "%(message)s"}'
+    ),
     datefmt="%Y-%m-%dT%H:%M:%SZ"
 )
 logger = logging.getLogger("customer_segmentation")
@@ -31,7 +34,7 @@ class AbacoEligibilityEvaluator:
     """Evaluates loan eligibility for ECB collateral pools.
     Implements ECB regulatory standards: 0.4% / 1.0% PD thresholds.
     """
-    
+
     @staticmethod
     def evaluate(loan_record: Dict[str, Any]) -> tuple:
         """Evaluate loan eligibility per ECB/ABACO standards.
