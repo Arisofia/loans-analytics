@@ -539,6 +539,10 @@ class TransformationPhase:
         Q1 = series.quantile(0.25)
         Q3 = series.quantile(0.75)
         IQR = Q3 - Q1
+        # Handle edge case where there is no spread in the data; avoid flagging
+        # any tiny deviation as an outlier when Q1 == Q3.
+        if IQR == 0 or np.isclose(IQR, 0):
+            return pd.Series([False] * len(series), index=series.index)
         lower_bound = Q1 - self.outlier_threshold * IQR
         upper_bound = Q3 + self.outlier_threshold * IQR
         return ((series < lower_bound) | (series > upper_bound)).fillna(False)
