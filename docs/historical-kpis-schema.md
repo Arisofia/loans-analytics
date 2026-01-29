@@ -113,12 +113,12 @@ CREATE INDEX idx_historical_kpis_lookup
 
 ## Partitioning Strategy
 
-For large-scale deployments (millions of rows), consider partitioning by `calculation_date` (year-based):
+For large-scale deployments (millions of rows), consider partitioning by `date` (year-based):
 
 ```sql
 -- Convert to partitioned table (requires migration)
 ALTER TABLE historical_kpis 
-    PARTITION BY RANGE (EXTRACT(YEAR FROM calculation_date));
+    PARTITION BY RANGE (EXTRACT(YEAR FROM date));
 
 -- Create partitions for each year
 CREATE TABLE historical_kpis_2024 
