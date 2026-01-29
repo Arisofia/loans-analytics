@@ -98,10 +98,18 @@ class AnalyticsSettings(BaseModel):
 class KPISettings(BaseModel):
     """Thresholds for individual KPIs."""
 
-    portfolio_risk: Dict[str, float] = Field(default={"warning": 0.03, "critical": 0.05})
-    loan_book_growth: Dict[str, float] = Field(default={"warning": 0.05, "critical": 0.02})
-    liquidity_ratio: Dict[str, float] = Field(default={"warning": 1.2, "critical": 1.0})
-    compliance_breaches: Dict[str, int] = Field(default={"warning": 1, "critical": 3})
+    portfolio_risk: Dict[str, float] = Field(
+        default={"warning": 0.03, "critical": 0.05}
+    )
+    loan_book_growth: Dict[str, float] = Field(
+        default={"warning": 0.05, "critical": 0.02}
+    )
+    liquidity_ratio: Dict[str, float] = Field(
+        default={"warning": 1.2, "critical": 1.0}
+    )
+    compliance_breaches: Dict[str, int] = Field(
+        default={"warning": 1, "critical": 3}
+    )
 
 
 class ApiSettings(BaseModel):
@@ -118,8 +126,12 @@ class EnvironmentSettings(BaseModel):
     environment: str = Field(
         default="dev", description="Current environment: dev, staging, or prod"
     )
-    prod_data_path: str | None = Field(default=None, description="Production data mount path")
-    staging_data_path: str | None = Field(default=None, description="Staging data mount path")
+    prod_data_path: str | None = Field(
+        default=None, description="Production data mount path"
+    )
+    staging_data_path: str | None = Field(
+        default=None, description="Staging data mount path"
+    )
 
     @field_validator("environment")
     @classmethod
@@ -127,42 +139,59 @@ class EnvironmentSettings(BaseModel):
         """Validate environment is one of allowed values."""
         allowed = {"dev", "staging", "prod"}
         if v.lower() not in allowed:
-            raise ValueError(f"Environment must be one of {allowed}, got: {v}")
+            raise ValueError(
+                f"Environment must be one of {allowed}, got: {v}"
+            )
         return v.lower()
 
     def get_data_root(self) -> Path:
         """Get environment-specific data root path."""
         if self.environment == "prod":
             if not self.prod_data_path:
-                raise RuntimeError("PROD_DATA_PATH environment variable required in production")
+                raise RuntimeError(
+                    "PROD_DATA_PATH environment variable required "
+                    "in production"
+                )
             return Path(self.prod_data_path)
-        elif self.environment == "staging":
+        if self.environment == "staging":
             if not self.staging_data_path:
-                raise RuntimeError("STAGING_DATA_PATH environment variable required in staging")
+                raise RuntimeError(
+                    "STAGING_DATA_PATH environment variable required "
+                    "in staging"
+                )
             return Path(self.staging_data_path)
-        else:
-            # Dev environment uses local data directory
-            return Path("data")
+        # Dev environment uses local data directory
+        return Path("data")
 
     def get_test_data_root(self) -> Path:
         """Get test data path - ONLY available in dev/test environments."""
         if self.environment == "prod":
-            raise RuntimeError("Test data paths are not available in production environment!")
+            raise RuntimeError(
+                "Test data paths are not available in production "
+                "environment!"
+            )
         return Path("tests/fixtures")
 
     def validate_required_env_vars(self) -> None:
         """Validate production environment has required configuration."""
         if self.environment == "prod":
-            required = ["PROD_DATA_PATH", "SUPABASE_URL", "SUPABASE_KEY"]
+            required = [
+                "PROD_DATA_PATH", "SUPABASE_URL", "SUPABASE_KEY"
+            ]
             missing = [var for var in required if not os.getenv(var)]
             if missing:
-                raise RuntimeError(f"Missing required production environment variables: {missing}")
+                raise RuntimeError(
+                    f"Missing required production environment variables: "
+                    f"{missing}"
+                )
 
 
 class Settings(BaseSettings):
     """Main settings class consolidating all configurations."""
 
-    model_config = SettingsConfigDict(env_prefix="ABACO_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="ABACO_", env_file=".env", extra="ignore"
+    )
 
     environment: EnvironmentSettings = EnvironmentSettings()
     financial: FinancialGuardrails = FinancialGuardrails()
@@ -176,38 +205,45 @@ class Settings(BaseSettings):
     def load_settings(cls) -> "Settings":
         """Load settings from environment and optional YAML config."""
         # 1. Start with defaults/env
-        settings = cls()
+        app_settings = cls()
         # 2. Optionally override with business_parameters.yml if exists
         config_path = os.path.join(
             os.path.dirname(__file__), "..", "config", "business_parameters.yml"
         )
         if os.path.exists(config_path):
-            with open(config_path, "r") as f:
+            with open(config_path, "r", encoding="utf-8") as f:
                 yaml_data = yaml.safe_load(f)
                 if yaml_data:
                     if "financial_guardrails" in yaml_data:
-                        settings.financial = FinancialGuardrails(
+                        app_settings.financial = FinancialGuardrails(
                             **yaml_data["financial_guardrails"]
                         )
                     if "risk_parameters" in yaml_data:
-                        settings.risk = RiskParameters(**yaml_data["risk_parameters"])
+                        app_settings.risk = RiskParameters(
+                            **yaml_data["risk_parameters"]
+                        )
                     if "sla_settings" in yaml_data:
-                        settings.sla = SLASettings(**yaml_data["sla_settings"])
+                        app_settings.sla = SLASettings(
+                            **yaml_data["sla_settings"]
+                        )
                     if "analytics_weights" in yaml_data:
                         # Map YAML weights to AnalyticsSettings fields
                         weights = yaml_data["analytics_weights"]
-                        settings.analytics.dq_null_weight = weights.get(
-                            "dq_null_weight", settings.analytics.dq_null_weight
+                        app_settings.analytics.dq_null_weight = weights.get(
+                            "dq_null_weight",
+                            app_settings.analytics.dq_null_weight
                         )
-                        settings.analytics.dq_duplicate_weight = weights.get(
+                        app_settings.analytics.dq_duplicate_weight = weights.get(
                             "dq_duplicate_weight",
-                            settings.analytics.dq_duplicate_weight,
+                            app_settings.analytics.dq_duplicate_weight,
                         )
-                        settings.analytics.dq_invalid_numeric_weight = weights.get(
-                            "dq_invalid_numeric_weight",
-                            settings.analytics.dq_invalid_numeric_weight,
+                        app_settings.analytics.dq_invalid_numeric_weight = (
+                            weights.get(
+                                "dq_invalid_numeric_weight",
+                                app_settings.analytics.dq_invalid_numeric_weight,
+                            )
                         )
-        return settings
+        return app_settings
 
 
 # Singleton instance
