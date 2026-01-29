@@ -373,8 +373,8 @@ Before deploying to production:
 ```sql
 EXPLAIN ANALYZE
 SELECT * FROM historical_kpis
-WHERE portfolio_id = 'xxx' AND kpi_name = 'xxx'
-AND calculation_date BETWEEN '2026-01-01' AND '2026-01-31';
+WHERE kpi_id = 'xxx'
+AND date BETWEEN '2026-01-01' AND '2026-01-31';
 ```
 **Solutions:**
 - Verify indices exist: `SELECT * FROM pg_indexes WHERE tablename = 'historical_kpis';`
