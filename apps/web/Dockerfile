@@ -3,12 +3,15 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies
-COPY package.json package-lock.json ./
+# Copy root tsconfig if it exists
+COPY tsconfig.json* ./
+
+# Copy package files from the correct location
+COPY apps/web/package*.json ./
 RUN npm ci
 
-# Copy source files
-COPY . .
+# Copy all web app source files
+COPY apps/web/ .
 
 # Build the Next.js application
 ENV NEXT_TELEMETRY_DISABLED=1
