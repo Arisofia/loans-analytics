@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Set TARGET_URL via repository variable or hardcode your production URL here
-            TARGET_URL: ${{ vars.TARGET_URL || 'https://jolly-moss-01599020f2.azurestaticapps.net/' }}steps:
+      TARGET_URL: ${{ vars.TARGET_URL || 'https://jolly-moss-01599020f2.azurestaticapps.net/' }}
+    steps:
       - name: Run quick header spoofing and secret checks
         run: |
           set -euo pipefail
