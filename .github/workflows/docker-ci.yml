@@ -25,12 +25,12 @@ jobs:
             - name: Check Docker registry credentials
               id: check-secrets
               run: |
-                if [[ -z "${{ secrets.REGISTRY_USER }}" || -z "${{ secrets.REGISTRY_TOKEN }}" ]]; then
-                  echo "⚠️ Docker registry credentials not configured. Skipping Docker build."
-                  echo "has_credentials=false" >> $GITHUB_OUTPUT
-                else
-                  echo "has_credentials=true" >> $GITHUB_OUTPUT
-                fi
+                  if [[ -z "${{ secrets.REGISTRY_USER }}" || -z "${{ secrets.REGISTRY_TOKEN }}" ]]; then
+                    echo "⚠️ Docker registry credentials not configured. Skipping Docker build."
+                    echo "has_credentials=false" >> $GITHUB_OUTPUT
+                  else
+                    echo "has_credentials=true" >> $GITHUB_OUTPUT
+                  fi
 
             - name: Checkout repository
               if: steps.check-secrets.outputs.has_credentials == 'true'
@@ -85,6 +85,6 @@ jobs:
             - name: Skip notification
               if: steps.check-secrets.outputs.has_credentials != 'true'
               run: |
-                echo "::notice::Docker build skipped - registry credentials not configured"
-                echo "To enable Docker builds, add REGISTRY_USER and REGISTRY_TOKEN secrets"
-                  exit-on: policy
+                  echo "::notice::Docker build skipped - registry credentials not configured"
+                  echo "To enable Docker builds, add REGISTRY_USER and REGISTRY_TOKEN secrets"
+                    exit-on: policy
