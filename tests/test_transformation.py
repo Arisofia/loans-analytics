@@ -312,7 +312,7 @@ class TestExecute:
 
         assert results["status"] == "success"
         assert results["initial_rows"] == 5
-        assert results["final_rows"] >= 5  # May have added columns
+        assert results["final_rows"] == 5  # No rows should be removed with smart null handling
         assert "transformation_metrics" in results
 
     def test_execute_no_data_raises_error(self, default_config):

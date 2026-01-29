@@ -56,6 +56,11 @@ class TransformationPhase:
         "default": "defaulted",
     }
 
+    # Null handling thresholds and constants
+    LOW_NULL_THRESHOLD_PCT: float = 5.0  # Below this: fill with median/mode
+    HIGH_NULL_THRESHOLD_PCT: float = 30.0  # Above this: use default fill
+    MISSING_NUMERIC_INDICATOR: int = -999  # Indicator for missing numeric values
+
     def __init__(self, config: Dict[str, Any], business_rules: Optional[Dict[str, Any]] = None):
         """
         Initialize transformation phase.
@@ -227,9 +232,10 @@ class TransformationPhase:
         """
         Intelligent null handling based on null percentage and column importance.
 
-        - < 5% nulls: Fill with median (numeric) or mode (categorical)
-        - 5-30% nulls: Fill with a 'missing' indicator
-        - > 30% nulls: Log warning, consider column for exclusion
+        Uses configurable thresholds:
+        - < LOW_NULL_THRESHOLD_PCT: Fill with median (numeric) or mode (categorical)
+        - LOW to HIGH_NULL_THRESHOLD_PCT: Fill with missing indicator
+        - > HIGH_NULL_THRESHOLD_PCT: Log warning, fill with default
         """
         actions: Dict[str, str] = {}
         total_rows = len(df)
@@ -238,19 +244,19 @@ class TransformationPhase:
             null_pct = null_count / total_rows * 100
 
             if pd.api.types.is_numeric_dtype(df[col]):
-                if null_pct < 5:
+                if null_pct < self.LOW_NULL_THRESHOLD_PCT:
                     median_val = df[col].median()
                     df[col] = df[col].fillna(median_val)
                     actions[col] = f"filled_median ({median_val:.2f})"
-                elif null_pct < 30:
-                    df[col] = df[col].fillna(-999)  # Missing indicator
-                    actions[col] = "filled_missing_indicator (-999)"
+                elif null_pct < self.HIGH_NULL_THRESHOLD_PCT:
+                    df[col] = df[col].fillna(self.MISSING_NUMERIC_INDICATOR)
+                    actions[col] = f"filled_missing_indicator ({self.MISSING_NUMERIC_INDICATOR})"
                 else:
                     df[col] = df[col].fillna(0)
                     actions[col] = f"filled_zero (high_null: {null_pct:.1f}%)"
                     logger.warning(f"Column '{col}' has {null_pct:.1f}% nulls")
             else:
-                if null_pct < 5:
+                if null_pct < self.LOW_NULL_THRESHOLD_PCT:
                     mode_val = df[col].mode()
                     fill_val = mode_val.iloc[0] if len(mode_val) > 0 else "unknown"
                     df[col] = df[col].fillna(fill_val)
@@ -402,11 +408,11 @@ class TransformationPhase:
 
         if status == "defaulted":
             return "critical"
-        elif status == "delinquent" or (dpd and dpd >= 90):
+        elif status == "delinquent" or (dpd is not None and not pd.isna(dpd) and dpd >= 90):
             return "high"
-        elif dpd and dpd >= 30:
+        elif dpd is not None and not pd.isna(dpd) and dpd >= 30:
             return "medium"
-        elif status == "active" and (not dpd or dpd < 30):
+        elif status == "active" and (dpd is None or pd.isna(dpd) or dpd < 30):
             return "low"
         else:
             return "unknown"
@@ -427,7 +433,12 @@ class TransformationPhase:
             return "jumbo"
 
     def _apply_custom_rule(self, df: pd.DataFrame, rule: Dict[str, Any]) -> pd.DataFrame:
-        """Apply a custom business rule from configuration."""
+        """
+        Apply a custom business rule from configuration.
+
+        Note: Only safe operations (column_mapping) are fully supported.
+        Derived field expressions are restricted to simple arithmetic operations.
+        """
         rule_type = rule.get("type")
 
         if rule_type == "column_mapping":
@@ -439,10 +450,23 @@ class TransformationPhase:
 
         elif rule_type == "derived_field":
             target_col = rule.get("target_column")
-            expression = rule.get("expression")
+            expression = rule.get("expression", "")
             if expression and target_col:
-                # Safe evaluation of simple expressions
-                df[target_col] = df.eval(expression, local_dict={})
+                # Only allow safe expressions using pandas eval with restricted operations
+                # Allowed: column names, basic arithmetic (+, -, *, /)
+                allowed_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). ")
+                if not all(c in allowed_chars for c in expression):
+                    logger.warning(f"Unsafe characters in expression '{expression}', skipping rule")
+                    return df
+                # Check for any dangerous patterns
+                dangerous_patterns = ["import", "exec", "eval", "compile", "__", "open", "file"]
+                if any(pattern in expression.lower() for pattern in dangerous_patterns):
+                    logger.warning(f"Dangerous pattern detected in expression '{expression}', skipping rule")
+                    return df
+                try:
+                    df[target_col] = df.eval(expression)
+                except Exception as e:
+                    logger.warning(f"Failed to evaluate expression '{expression}': {e}")
 
         return df
 
@@ -578,7 +602,9 @@ class TransformationPhase:
         positive_cols = ["amount", "current_balance", "original_amount"]
         for col in positive_cols:
             if col in df.columns:
-                negative_count = (df[col] < 0).sum()
+                # Filter out NaN values before checking for negatives
+                valid_values = df[col].dropna()
+                negative_count = (valid_values < 0).sum()
                 if negative_count > 0:
                     integrity_issues.append(
                         {
