@@ -376,7 +376,7 @@ def test_historical_kpis_data_integrity(
 
     test_kpi_id = seed_test_data["kpi_id"]
 
-    # Attempt to insert duplicate record (should fail or be ignored)
+    # Attempt to insert duplicate record (should fail due to unique constraint)
     duplicate_data = {
         "kpi_id": test_kpi_id,
         "value": 0.999,  # Different value
