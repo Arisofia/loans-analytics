@@ -66,21 +66,24 @@ class AgentChecklistValidator:
 
     def check_required_methods(self) -> None:
         """Check for required agent methods."""
-        required_methods = ["execute", "__init__"]
+        # Standard agent methods (at least one of these should be present or inherited)
+        # For simplicity, we check if the class defines these or extends a base that does.
+        # Since we only parse the current file, we look for 'get_system_prompt' 
+        # which concrete agents must implement, or 'execute'/'process'.
+        required_entry_points = ["execute", "process", "get_system_prompt"]
         found_methods = set()
 
         for node in ast.walk(self.tree):
             if isinstance(node, ast.FunctionDef):
                 found_methods.add(node.name)
 
-        has_all = all(method in found_methods for method in required_methods)
-        self.results["required_methods"] = has_all
+        has_entry_point = any(method in found_methods for method in required_entry_points)
+        self.results["required_methods"] = has_entry_point
 
-        if has_all:
-            self.messages.append("✅ Required methods present (execute, __init__)")
+        if has_entry_point:
+            self.messages.append(f"✅ Required methods present (found: {found_methods.intersection(required_entry_points)})")
         else:
-            missing = set(required_methods) - found_methods
-            self.messages.append(f"⚠️  Missing required methods: {missing}")
+            self.messages.append(f"⚠️  Missing required methods. Should implement at least one of: {required_entry_points}")
 
     def check_docstrings(self) -> None:
         """Check for proper docstrings."""
