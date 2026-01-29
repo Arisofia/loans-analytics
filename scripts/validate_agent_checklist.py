@@ -6,7 +6,6 @@ This script checks if new or modified agents meet the implementation checklist r
 
 import argparse
 import ast
-import os
 import re
 import sys
 from pathlib import Path
@@ -25,9 +24,7 @@ class AgentChecklistValidator:
             file_path: Path to the agent file
         """
         # Validate file path for security (CWE-22: Path Traversal)
-        validated_path = validate_path(
-            file_path, base_dir=".", must_exist=True
-        )
+        validated_path = validate_path(file_path, base_dir=".", must_exist=True)
         self.file_path = validated_path
         self.content = self.file_path.read_text()
         self.tree = ast.parse(self.content)
@@ -202,7 +199,7 @@ def validate_agent_files(files: List[str]) -> bool:
             all_passed = False
             print(f"  ❌ Validation failed for {file_path}")
         else:
-            print(f"  ✅ All checks passed")
+            print("  ✅ All checks passed")
 
     return all_passed
 

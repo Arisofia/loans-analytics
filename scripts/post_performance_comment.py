@@ -3,8 +3,6 @@
 
 import argparse
 import json
-import sys
-from pathlib import Path
 
 from scripts.path_utils import validate_path
 
@@ -19,9 +17,7 @@ def format_performance_comment(metrics_file: str) -> str:
         Formatted markdown comment
     """
     # Validate metrics file path (CWE-22: Path Traversal)
-    validated_metrics = validate_path(
-        metrics_file, base_dir=".", must_exist=True
-    )
+    validated_metrics = validate_path(metrics_file, base_dir=".", must_exist=True)
 
     with open(validated_metrics) as f:  # snyk:skip=f40d7b06-c546-44db-ad45-074644040df8
         metrics = json.load(f)
