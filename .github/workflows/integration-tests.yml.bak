@@ -11,6 +11,27 @@ name: Integration Tests (Optional)
 
 on:
   workflow_dispatch:  # Manual trigger from GitHub Actions UI
+    inputs:
+      test_target:
+        description: 'Test target (all or specific test file)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - historical_kpis
+
+  # Optional: Run daily at 2am UTC
+  schedule:
+    - cron: '0 2 * * *'
+
+  # Optional: Run on main branch pushes
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'tests/integration/**'
+  #     - 'python/multi_agent/historical_*.py'
+
 jobs:
   integration-tests:
     name: Real Supabase Integration Tests

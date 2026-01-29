@@ -6,6 +6,12 @@ name: Validate Deployment Health
       - "Deploy Abaco Analytics Dashboard to Azure Web App"
     types: [completed]
   workflow_dispatch:
+    inputs:
+      app_url:
+        description: "App Service URL (e.g., https://abaco-analytics-dashboard.azurewebsites.net)"
+        required: true
+        type: string
+
 env:
   WEBAPP_NAME: abaco-analytics-dashboard
   HEALTH_CHECK_PATH: "/?page=health"

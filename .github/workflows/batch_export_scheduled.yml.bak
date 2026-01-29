@@ -4,6 +4,17 @@ name: Scheduled Batch Export
   schedule:
     - cron: "0 */6 * * *" # Every 6 hours
   workflow_dispatch:
+    inputs:
+      export_type:
+        description: "Type of export"
+        required: false
+        default: "full"
+        type: choice
+        options:
+          - kpi-only
+          - dashboard
+          - full
+
 jobs:
   check-secrets:
     runs-on: ubuntu-latest
