@@ -246,6 +246,8 @@ class TransformationPhase:
             if pd.api.types.is_numeric_dtype(df[col]):
                 if null_pct < self.LOW_NULL_THRESHOLD_PCT:
                     median_val = df[col].median()
+                    if pd.isna(median_val):
+                        median_val = 0
                     df[col] = df[col].fillna(median_val)
                     actions[col] = f"filled_median ({median_val:.2f})"
                 elif null_pct < self.HIGH_NULL_THRESHOLD_PCT:
