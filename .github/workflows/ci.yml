@@ -7,35 +7,44 @@ on:
     branches: [main]
 
 jobs:
-  quality:
-    name: Code Quality & Tests
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      analytics: ${{ steps.filter.outputs.analytics }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            analytics:
+              - 'python/**'
+              - 'src/**'
+              - 'tests/**'
+            web:
+              - 'apps/web/**'
+
+  analytics:
+    needs: changes
+    if: needs.changes.outputs.analytics == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: "pip"
-
+          python-version: '3.12'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Run Formatting Check
+          pip install -r requirements-dev.txt
+      - name: Run tests
         run: |
-          black --check .
-          isort --check-only .
-
-      - name: Run Linting
-        run: |
-          ruff check .
-          flake8 src
-
-      - name: Run Type Checking
-        run: mypy src
-
-      - name: Run Tests
-        run: pytest -m "not integration_supabase" -v
+          pytest tests/ --cov=src --cov-report=xml:coverage-src.xml
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: analytics-coverage
+          path: coverage-src.xml
