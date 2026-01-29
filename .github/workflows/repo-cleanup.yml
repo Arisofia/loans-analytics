@@ -23,7 +23,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
         with:
           fetch-depth: 0
 
@@ -113,7 +113,7 @@ jobs:
           cat cleanup-report.md
 
       - name: Upload cleanup report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@250e9d8087e4d33cdf6c33e180d803782f68fdb1  # v4.4.3
         with:
           name: cleanup-report
           path: cleanup-report.md

@@ -16,15 +16,15 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
 
       - name: Use Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@b7dde419cc031a3d665baa4a62731727917cd13e  # v4.1.0
         with:
           node-version: '20'
 
       - name: Cache node modules
-        uses: actions/cache@v4
+        uses: actions/cache@b6c6e19650157c2e813776fd7f8b2bf258a5a410  # v4.1.2
         with:
           path: apps/web/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/apps/web/package-lock.json') }}
@@ -78,7 +78,7 @@ jobs:
 
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@250e9d8087e4d33cdf6c33e180d803782f68fdb1  # v4.4.3
         with:
           name: playwright-report
           path: apps/web/playwright-report/

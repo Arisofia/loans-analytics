@@ -16,10 +16,10 @@ jobs:
     outputs:
       metrics-available: ${{ steps.fetch.outputs.available }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -42,7 +42,7 @@ jobs:
 
       - name: Upload metrics artifact
         if: steps.fetch.outputs.available == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@250e9d8087e4d33cdf6c33e180d803782f68fdb1  # v4.4.3
         with:
           name: opik-metrics
           path: outputs/opik_metrics.json
@@ -58,16 +58,16 @@ jobs:
       pipeline-status: ${{ steps.analyze.outputs.status }}
       issues-found: ${{ steps.analyze.outputs.issues }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
 
       - name: Download Opik metrics
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16  # v4.1.8
         with:
           name: opik-metrics
           path: outputs/
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -97,16 +97,16 @@ jobs:
       agent-status: ${{ steps.analyze.outputs.status }}
       slow-agents: ${{ steps.analyze.outputs.slow_agents }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
 
       - name: Download Opik metrics
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16  # v4.1.8
         with:
           name: opik-metrics
           path: outputs/
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -136,16 +136,16 @@ jobs:
       quality-trend: ${{ steps.check.outputs.trend }}
       anomalies-detected: ${{ steps.check.outputs.anomalies }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
 
       - name: Download Opik metrics
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16  # v4.1.8
         with:
           name: opik-metrics
           path: outputs/
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -175,10 +175,10 @@ jobs:
     if: needs.analyze-pipeline-health.result == 'success' && needs.analyze-agent-performance.result == 'success' && needs.check-data-quality-trends.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
         with:
           python-version: "3.11"
           cache: "pip"
@@ -200,7 +200,7 @@ jobs:
             --quality-trend "${{ needs.check-data-quality-trends.outputs.quality-trend }}"
 
       - name: Upload dashboard artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@250e9d8087e4d33cdf6c33e180d803782f68fdb1  # v4.4.3
         with:
           name: observability-dashboard
           path: outputs/dashboard.html

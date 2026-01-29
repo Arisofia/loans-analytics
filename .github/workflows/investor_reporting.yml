@@ -11,7 +11,7 @@ jobs:
     outputs:
       run: ${{ steps.check.outputs.run }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
       - id: check
         run: |
           if [ -f "scripts/investor_reporting.py" ]; then
@@ -60,10 +60,10 @@ jobs:
             fi
       - name: Checkout Repository
         if: steps.check-secrets.outputs.can_run == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
       - name: Setup Python Environment
         if: steps.check-secrets.outputs.can_run == 'true'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
         with:
           python-version: "3.11"
       - name: Install Dependencies
