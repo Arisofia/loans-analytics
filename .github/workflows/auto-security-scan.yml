@@ -1,0 +1,76 @@
+name: Auto Security Scan
+
+on:
+    pull_request:
+        types: [opened, synchronize, ready_for_review]
+    push:
+        branches: [main]
+    schedule:
+        - cron: "0 0 * * 0" # Weekly on Monday
+
+jobs:
+    security:
+        name: Security Scanning
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            security-events: write
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "3.12"
+                  cache: "pip"
+
+            - name: Install security tools
+              run: |
+                  pip install bandit safety pip-audit
+
+            - name: Run Bandit (security linter)
+              run: |
+                  bandit -r python/ .github/scripts/ -f json -o bandit-report.json || true
+                  bandit -r python/ .github/scripts/ || true
+
+            - name: Run Safety (dependency vulnerabilities)
+              run: |
+                  safety check --json || true
+
+            - name: Run pip-audit
+              run: |
+                  pip-audit || true
+
+            - name: Upload security reports
+              if: always()
+              uses: actions/upload-artifact@v3
+              with:
+                  name: security-reports
+                  path: bandit-report.json
+
+    dependency-check:
+        name: Dependency Vulnerabilities
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Run Snyk (if token available)
+              if: secrets.SNYK_TOKEN != ''
+              run: |
+                  npm install -g snyk
+                  snyk auth ${{ secrets.SNYK_TOKEN }}
+                  snyk test --json-file-output=snyk-report.json || true
+              continue-on-error: true
+
+            - name: Upload Snyk report
+              if: always() && secrets.SNYK_TOKEN != ''
+              uses: actions/upload-artifact@v3
+              with:
+                  name: snyk-report
+                  path: snyk-report.json

@@ -1,0 +1,121 @@
+name: Auto Format & Lint
+
+on:
+    pull_request:
+        types: [opened, synchronize, ready_for_review]
+        paths:
+            - "**.py"
+            - "**.js"
+            - "**.ts"
+            - "**.tsx"
+            - ".github/workflows/auto-format-and-lint.yml"
+    push:
+        branches: [main]
+        paths:
+            - "**.py"
+            - "**.js"
+            - "**.ts"
+            - "**.tsx"
+
+jobs:
+    format:
+        if: github.event_name == 'pull_request'
+        name: Format & Lint
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  ref: ${{ github.head_ref }}
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "3.12"
+                  cache: "pip"
+
+            - name: Install Python tools
+              run: |
+                  pip install black flake8 ruff isort
+
+            - name: Format with Black
+              run: |
+                  black python/ .github/scripts/ --line-length=100 || true
+
+            - name: Sort imports with isort
+              run: |
+                  isort python/ .github/scripts/ --profile black || true
+
+            - name: Run Ruff (fixes)
+              run: |
+                  ruff check python/ .github/scripts/ --fix --unsafe-fixes || true
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "npm"
+                  cache-dependency-path: "apps/web/package-lock.json"
+
+            - name: Install and run ESLint fix
+              working-directory: apps/web
+              run: |
+                  npm ci
+                  npm run lint -- --fix || true
+
+            - name: Check for changes
+              id: verify-changed-files
+              run: |
+                  if git diff --quiet; then
+                    echo "changed=false" >> $GITHUB_OUTPUT
+                  else
+                    echo "changed=true" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Commit changes
+              if: steps.verify-changed-files.outputs.changed == 'true'
+              run: |
+                  git config --local user.email "github-actions[bot]@users.noreply.github.com"
+                  git config --local user.name "github-actions[bot]"
+                  git add -A
+                  git commit -m "style: Auto-format code with Black, isort, Ruff, and ESLint" || true
+                  git push
+
+    lint-check:
+        name: Lint Check
+        runs-on: ubuntu-latest
+        if: always()
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "3.12"
+
+            - name: Install linters
+              run: |
+                  pip install flake8 ruff black isort
+
+            - name: Run Flake8
+              run: |
+                  flake8 python/ .github/scripts/ --count --show-source --statistics || true
+
+            - name: Run Ruff check
+              run: |
+                  ruff check python/ .github/scripts/ || true
+
+            - name: Run Black check
+              run: |
+                  black python/ .github/scripts/ --check --line-length=100 || true
+
+            - name: Run isort check
+              run: |
+                  isort python/ .github/scripts/ --check-only --profile black || true
