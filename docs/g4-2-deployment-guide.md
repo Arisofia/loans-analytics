@@ -101,9 +101,9 @@ G4.2 introduces production-ready historical KPI storage and integration for the 
 4. **Expected Output:**
    ```
    ✅ Table: historical_kpis created
-   ✅ Columns: 9 columns (id, portfolio_id, kpi_name, kpi_value, calculation_date, grain, created_at, updated_at, metadata)
-   ✅ Indices: 4 indices (portfolio_date, kpi_date, lookup, grain)
-   ✅ Constraints: Primary key + Unique constraint + Check constraint
+   ✅ Columns: 8 columns (id, kpi_id, value, date, timestamp, created_at, updated_at, metadata)
+   ✅ Indices: 2 indices (kpi_date, lookup)
+   ✅ Constraints: Primary key on id
    ```
 
 ### Stage 2: Integration Test Validation (Staging)
