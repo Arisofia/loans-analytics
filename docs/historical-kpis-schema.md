@@ -151,14 +151,9 @@ To enable multi-tenant security:
 -- Enable RLS
 ALTER TABLE historical_kpis ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can only view their portfolio KPIs
-CREATE POLICY "Users can view their portfolio KPIs"
-    ON historical_kpis FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM portfolios WHERE id = historical_kpis.portfolio_id
-        )
-    );
+-- Add additional tenant-scoped policies here based on your schema
+-- (for example, using kpi_id or metadata), ensuring they reference
+-- only columns that exist in the historical_kpis table.
 
 -- Policy: Service role can manage all KPIs
 CREATE POLICY "Service role can manage KPIs"
