@@ -153,7 +153,7 @@ jobs:
 
       - name: SonarQube Scan
         if: steps.check-sonar.outputs.secrets_available == 'true'
-        uses: SonarSource/sonarcloud-github-action@v4
+        uses: SonarSource/sonarcloud-github-action@v5
         with:
           projectBaseDir: .
           args: >
