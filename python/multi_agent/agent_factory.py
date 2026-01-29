@@ -20,8 +20,10 @@ def agent_with_role(role: AgentRole):
     Returns:
         Decorated class with automatic __init__
     """
+
     def decorator(cls):
         """Add __init__ to the class."""
+
         def new_init(self, provider: LLMProvider = LLMProvider.OPENAI, **kwargs):
             """Initialize agent with specified role."""
             # Call BaseAgent.__init__ directly
