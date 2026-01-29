@@ -26,9 +26,7 @@ class TestExponentialTrendAnalysis(unittest.TestCase):
 
     def test_exponential_trend_calculation(self):
         """Test exponential smoothing trend is calculated correctly."""
-        trend = self.provider.get_exponential_trend(
-            "test_kpi", alpha=0.3, periods=3
-        )
+        trend = self.provider.get_exponential_trend("test_kpi", alpha=0.3, periods=3)
 
         self.assertIsNotNone(trend)
         self.assertEqual(trend.kpi_id, "test_kpi")
@@ -56,12 +54,8 @@ class TestExponentialTrendAnalysis(unittest.TestCase):
     def test_exponential_emphasizes_recent_values(self):
         """Test that exponential smoothing emphasizes recent values."""
         # Higher alpha should follow recent values more closely
-        trend_high_alpha = self.provider.get_exponential_trend(
-            "test_kpi", alpha=0.8, periods=3
-        )
-        trend_low_alpha = self.provider.get_exponential_trend(
-            "test_kpi", alpha=0.1, periods=3
-        )
+        trend_high_alpha = self.provider.get_exponential_trend("test_kpi", alpha=0.8, periods=3)
+        trend_low_alpha = self.provider.get_exponential_trend("test_kpi", alpha=0.1, periods=3)
 
         # Both should be valid
         self.assertIsNotNone(trend_high_alpha)
@@ -77,9 +71,7 @@ class TestPolynomialTrendAnalysis(unittest.TestCase):
 
     def test_polynomial_trend_fitting(self):
         """Test polynomial trend fit is calculated."""
-        trend = self.provider.get_polynomial_trend(
-            "test_kpi", degree=2, periods=3
-        )
+        trend = self.provider.get_polynomial_trend("test_kpi", degree=2, periods=3)
 
         self.assertIsNotNone(trend)
         self.assertEqual(trend.kpi_id, "test_kpi")
@@ -97,9 +89,7 @@ class TestPolynomialTrendAnalysis(unittest.TestCase):
     def test_polynomial_different_degrees(self):
         """Test polynomial fitting with different degrees."""
         for degree in [1, 2, 3]:
-            trend = self.provider.get_polynomial_trend(
-                "test_kpi", degree=degree, periods=3
-            )
+            trend = self.provider.get_polynomial_trend("test_kpi", degree=degree, periods=3)
             self.assertIsNotNone(trend)
             self.assertEqual(trend.kpi_id, "test_kpi")
 
@@ -121,9 +111,7 @@ class TestWeightedMovingAverage(unittest.TestCase):
 
     def test_weighted_average_differs_from_simple(self):
         """Test that weighted average differs from simple moving average."""
-        wma = self.provider.get_weighted_moving_average(
-            "test_kpi", window_days=30
-        )
+        wma = self.provider.get_weighted_moving_average("test_kpi", window_days=30)
         sma = self.provider.get_moving_average("test_kpi", window_days=30)
 
         # With trending data, weighted should differ from simple
@@ -183,9 +171,7 @@ class TestTrendConfidenceInterval(unittest.TestCase):
 
     def test_confidence_interval_calculation(self):
         """Test confidence interval calculation."""
-        ci = self.provider.get_trend_confidence_interval(
-            "test_kpi", confidence=0.95, periods=3
-        )
+        ci = self.provider.get_trend_confidence_interval("test_kpi", confidence=0.95, periods=3)
 
         self.assertIsNotNone(ci)
         self.assertIn("trend_slope", ci)
@@ -200,23 +186,15 @@ class TestTrendConfidenceInterval(unittest.TestCase):
     def test_confidence_levels(self):
         """Test different confidence levels."""
         for conf in [0.90, 0.95, 0.99]:
-            ci = self.provider.get_trend_confidence_interval(
-                "test_kpi", confidence=conf, periods=3
-            )
+            ci = self.provider.get_trend_confidence_interval("test_kpi", confidence=conf, periods=3)
             self.assertEqual(ci["confidence_level"], conf)
             # Higher confidence = wider interval
-            self.assertGreater(
-                ci["upper_bound"] - ci["lower_bound"], 0
-            )
+            self.assertGreater(ci["upper_bound"] - ci["lower_bound"], 0)
 
     def test_interval_width_increases_with_confidence(self):
         """Test that interval width increases with higher confidence."""
-        ci_90 = self.provider.get_trend_confidence_interval(
-            "test_kpi", confidence=0.90, periods=3
-        )
-        ci_99 = self.provider.get_trend_confidence_interval(
-            "test_kpi", confidence=0.99, periods=3
-        )
+        ci_90 = self.provider.get_trend_confidence_interval("test_kpi", confidence=0.90, periods=3)
+        ci_99 = self.provider.get_trend_confidence_interval("test_kpi", confidence=0.99, periods=3)
 
         width_90 = ci_90["upper_bound"] - ci_90["lower_bound"]
         width_99 = ci_99["upper_bound"] - ci_99["lower_bound"]
@@ -257,18 +235,14 @@ class TestChangePointDetection(unittest.TestCase):
 
             # Direction should match before/after means
             if direction == "increase":
-                self.assertGreater(
-                    result["after_mean"], result["before_mean"]
-                )
+                self.assertGreater(result["after_mean"], result["before_mean"])
             else:
                 self.assertLess(result["after_mean"], result["before_mean"])
 
     def test_change_point_with_insufficient_data(self):
         """Test change point with insufficient data window."""
         # Very small period should return None due to insufficient data
-        result = self.provider.detect_change_point(
-            "test_kpi", window_size=100, periods=1
-        )
+        result = self.provider.detect_change_point("test_kpi", window_size=100, periods=1)
 
         # Should handle gracefully (may return None)
         if result is not None:
@@ -315,9 +289,7 @@ class TestTrendAnalysisIntegration(unittest.TestCase):
         kpi_id = "averaging_test_kpi"
 
         sma = self.provider.get_moving_average(kpi_id, window_days=30)
-        wma = self.provider.get_weighted_moving_average(
-            kpi_id, window_days=30
-        )
+        wma = self.provider.get_weighted_moving_average(kpi_id, window_days=30)
 
         # Both should return positive values
         self.assertGreater(sma, 0)
@@ -338,41 +310,25 @@ class TestPhaseG42Completeness(unittest.TestCase):
     def test_all_g42_methods_exist(self):
         """Test that all Phase G4.2 methods are implemented."""
         # Exponential trend
-        self.assertTrue(
-            hasattr(self.provider, "get_exponential_trend")
-        )
+        self.assertTrue(hasattr(self.provider, "get_exponential_trend"))
         # Polynomial trend
-        self.assertTrue(
-            hasattr(self.provider, "get_polynomial_trend")
-        )
+        self.assertTrue(hasattr(self.provider, "get_polynomial_trend"))
         # Weighted moving average
-        self.assertTrue(
-            hasattr(self.provider, "get_weighted_moving_average")
-        )
+        self.assertTrue(hasattr(self.provider, "get_weighted_moving_average"))
         # Multi-period trends
-        self.assertTrue(
-            hasattr(self.provider, "get_multi_period_trends")
-        )
+        self.assertTrue(hasattr(self.provider, "get_multi_period_trends"))
         # Confidence interval
-        self.assertTrue(
-            hasattr(self.provider, "get_trend_confidence_interval")
-        )
+        self.assertTrue(hasattr(self.provider, "get_trend_confidence_interval"))
         # Change point detection
         self.assertTrue(hasattr(self.provider, "detect_change_point"))
 
     def test_all_g42_methods_callable(self):
         """Test that all Phase G4.2 methods are callable."""
-        self.assertTrue(
-            callable(self.provider.get_exponential_trend)
-        )
+        self.assertTrue(callable(self.provider.get_exponential_trend))
         self.assertTrue(callable(self.provider.get_polynomial_trend))
-        self.assertTrue(
-            callable(self.provider.get_weighted_moving_average)
-        )
+        self.assertTrue(callable(self.provider.get_weighted_moving_average))
         self.assertTrue(callable(self.provider.get_multi_period_trends))
-        self.assertTrue(
-            callable(self.provider.get_trend_confidence_interval)
-        )
+        self.assertTrue(callable(self.provider.get_trend_confidence_interval))
         self.assertTrue(callable(self.provider.detect_change_point))
 
 

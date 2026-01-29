@@ -55,9 +55,7 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     try:
         resolved.relative_to(allowed_dir)
     except ValueError as exc:
-        raise ValueError(
-            "path resolves outside the allowed data directory"
-        ) from exc
+        raise ValueError("path resolves outside the allowed data directory") from exc
     return resolved
 
 
@@ -72,12 +70,8 @@ def get_data(file_path: str):
     try:
         resolved = _sanitize_and_resolve(file_path, ALLOWED_DATA_DIR)
     except ValueError as exc:
-        logger.warning(
-            "Invalid data path requested: %s (%s)", file_path, exc
-        )
-        raise HTTPException(
-            status_code=400, detail=str(exc)
-        ) from exc
+        logger.warning("Invalid data path requested: %s (%s)", file_path, exc)
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     if not resolved.exists() or not resolved.is_file():
         raise HTTPException(status_code=404, detail="file not found")
@@ -86,6 +80,4 @@ def get_data(file_path: str):
         return {"status": "ok", "path": str(resolved)}
     except OSError as exc:  # pragma: no cover - extremely defensive
         logger.exception("Error reading data file: %s", exc)
-        raise HTTPException(
-            status_code=500, detail="internal error"
-        ) from exc
+        raise HTTPException(status_code=500, detail="internal error") from exc

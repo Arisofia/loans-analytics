@@ -78,9 +78,7 @@ class BaseAgent(ABC):
         try:
             from anthropic import Anthropic  # pylint: disable=import-outside-toplevel
         except ImportError as exc:
-            raise ImportError(
-                "anthropic package required"
-            ) from exc
+            raise ImportError("anthropic package required") from exc
 
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
@@ -92,9 +90,7 @@ class BaseAgent(ABC):
         try:
             import google.generativeai as genai  # pylint: disable=import-outside-toplevel
         except ImportError as exc:
-            raise ImportError(
-                "google-generativeai package required"
-            ) from exc
+            raise ImportError("google-generativeai package required") from exc
 
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
@@ -114,29 +110,15 @@ class BaseAgent(ABC):
         start_time = time.time()
 
         try:
-            sanitized_messages = self._sanitize_messages(
-                request.messages
-            )
+            sanitized_messages = self._sanitize_messages(request.messages)
 
             system_prompt = self.get_system_prompt()
-            context_prompt = self._build_context_prompt(
-                request.context
-            )
+            context_prompt = self._build_context_prompt(request.context)
 
-            system_content = (
-                f"{system_prompt}\n\n{context_prompt}"
-            )
-            full_messages = [
-                {"role": "system", "content": system_content}
-            ]
+            system_content = f"{system_prompt}\n\n{context_prompt}"
+            full_messages = [{"role": "system", "content": system_content}]
             full_messages.extend(
-                [
-                    {
-                        "role": msg.role.value,
-                        "content": msg.content
-                    }
-                    for msg in sanitized_messages
-                ]
+                [{"role": msg.role.value, "content": msg.content} for msg in sanitized_messages]
             )
 
             llm_response = self._call_llm(full_messages, request)
@@ -156,9 +138,7 @@ class BaseAgent(ABC):
                 latency_ms=latency_ms,
                 provider=self.provider,
                 model=self.model,
-                finish_reason=llm_response.get(
-                    "finish_reason"
-                ),
+                finish_reason=llm_response.get("finish_reason"),
                 metadata=request.metadata,
             )
 
@@ -168,9 +148,7 @@ class BaseAgent(ABC):
             return response
 
         except Exception as e:
-            logger.exception(
-                "Agent %s error: %s", self.role.value, e
-            )
+            logger.exception("Agent %s error: %s", self.role.value, e)
 
             error = AgentError(
                 trace_id=request.trace_id,
@@ -208,9 +186,7 @@ class BaseAgent(ABC):
             lines.append(f"- {key}: {value}")
         return "\n".join(lines)
 
-    def _call_llm(
-        self, messages: List[Dict[str, str]], request: AgentRequest
-    ) -> Dict[str, Any]:
+    def _call_llm(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
         """Call LLM provider."""
         if self.provider == LLMProvider.OPENAI:
             return self._call_openai(messages, request)
@@ -220,9 +196,7 @@ class BaseAgent(ABC):
             return self._call_gemini(messages, request)
         raise ValueError(f"Unsupported provider: {self.provider}")
 
-    def _call_openai(
-        self, messages: List[Dict[str, str]], request: AgentRequest
-    ) -> Dict[str, Any]:
+    def _call_openai(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
         """Call OpenAI API."""
         response = self._client.chat.completions.create(
             model=self.model,
@@ -282,9 +256,7 @@ class BaseAgent(ABC):
             "finish_reason": response.stop_reason,
         }
 
-    def _call_gemini(
-        self, messages: List[Dict[str, str]], request: AgentRequest
-    ) -> Dict[str, Any]:
+    def _call_gemini(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
         """Call Gemini API."""
         model = self._client.GenerativeModel(self.model)
 
