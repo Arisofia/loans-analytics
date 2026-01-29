@@ -99,7 +99,7 @@ output_results = output_phase.execute(
 
 ## 5. Deprecation Schedule
 - **v1 Functions**: Marked as deprecated in v1.8.
-- **v1 Removal**: Planned for v2.0 (Q1 2026).
+- **v1 Removal**: Planned for v2.0 (Q2 2026).
 Please update all dashboard widgets and scheduled reports to use `KPIEngineV2` by the end of Q1 2026.
 ---
 **AI-driven improvements based on Vibe Solutioning standards**

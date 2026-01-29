@@ -20,8 +20,8 @@
   # Verify audit trail structure
   head -5 exports/kpi_audit_trail.csv
   
-  # Check for any failed calculations
-  grep -c "failed" exports/kpi_audit_trail.csv
+  # Check for any failed calculations (match status column specifically)
+  grep -c ',failed,' exports/kpi_audit_trail.csv || echo "0"
   ```
 - Check for any `CRITICAL` logs in Azure Monitor.
 ## 3. Web App Accessibility

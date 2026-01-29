@@ -121,8 +121,9 @@ class KPIEngineV2:
         except Exception as e:
             error_msg = str(e)
             logger.error(f"Failed to calculate {kpi_name}: {error_msg}")
-            self._record_calculation(kpi_name, None, None, error_msg)
-            return 0.0, {"error": error_msg}
+            fallback_value = 0.0
+            self._record_calculation(kpi_name, fallback_value, None, error_msg)
+            return fallback_value, {"error": error_msg}
     
     def calculate_collection_rate(self) -> Tuple[float, Dict[str, Any]]:
         """
@@ -147,8 +148,9 @@ class KPIEngineV2:
         except Exception as e:
             error_msg = str(e)
             logger.error(f"Failed to calculate {kpi_name}: {error_msg}")
-            self._record_calculation(kpi_name, None, None, error_msg)
-            return 0.0, {"error": error_msg}
+            fallback_value = 0.0
+            self._record_calculation(kpi_name, fallback_value, None, error_msg)
+            return fallback_value, {"error": error_msg}
     
     def calculate_ltv(self) -> Tuple[float, Dict[str, Any]]:
         """
@@ -178,8 +180,9 @@ class KPIEngineV2:
         except Exception as e:
             error_msg = str(e)
             logger.error(f"Failed to calculate {kpi_name}: {error_msg}")
-            self._record_calculation(kpi_name, None, None, error_msg)
-            return 0.0, {"error": error_msg}
+            fallback_value = 0.0
+            self._record_calculation(kpi_name, fallback_value, None, error_msg)
+            return fallback_value, {"error": error_msg}
     
     def calculate_all(self) -> Dict[str, Dict[str, Any]]:
         """

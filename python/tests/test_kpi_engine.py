@@ -175,11 +175,13 @@ class TestKPIEngineV2(unittest.TestCase):
         self.assertEqual(value, 0.0)
         self.assertIn("error", context)
         
-        # Check audit trail recorded the failure
+        # Check audit trail recorded the failure with consistent value
         audit_df = engine.get_audit_trail()
         self.assertEqual(len(audit_df), 1)
         self.assertEqual(audit_df.iloc[0]["status"], "failed")
         self.assertIsNotNone(audit_df.iloc[0]["error"])
+        # Verify audit trail value matches returned value
+        self.assertEqual(float(audit_df.iloc[0]["value"]), value)
 
     def test_individual_kpi_failure_isolation(self):
         """Test that individual KPI failures don't crash calculate_all."""
