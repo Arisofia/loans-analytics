@@ -11,6 +11,11 @@ name: Integration Tests (Optional)
 
 on:
   workflow_dispatch:  # Manual trigger from GitHub Actions UI
+    inputs:
+      test_target:
+        description: 'Which integration tests to run (e.g., all, historical_kpis)'
+        required: false
+        default: historical_kpis
 jobs:
   integration-tests:
     name: Real Supabase Integration Tests
