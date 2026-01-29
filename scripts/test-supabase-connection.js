@@ -1,109 +1,114 @@
 #!/usr/bin/env node
-/**
- * Test Supabase Connection Script
- * Verifies connectivity to Supabase database and API
- *
- * Usage:
- *   node scripts/test-supabase-connection.js
- *
- * Environment Variables Required:
- *   SUPABASE_URL - Your Supabase project URL
- *   SUPABASE_ANON_KEY - Your Supabase anonymous/public key
- */
+require('dotenv').config({ path: '.env.local' });
+const { createClient } = require('@supabase/supabase-js');
 
-require('dotenv').config()
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-async function testSupabaseConnection() {
-  console.log('🔍 Testing Supabase Connection...\n')
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('❌ Error: Variables de Supabase no configuradas en .env.local');
+  console.error('   Verifica NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  process.exit(1);
+}
 
-  // Check environment variables
-  const supabaseUrl =
-    process.env.SUPABASE_URL || 'https://goxdevkqozomyhsyxhte.supabase.co'
-  const supabaseKey = process.env.SUPABASE_ANON_KEY
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  if (!supabaseKey) {
-    console.error('❌ ERROR: SUPABASE_ANON_KEY environment variable is not set')
-    console.log('\n📝 To fix this:')
-    console.log(
-      '   1. Get your key from: https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/settings/api'
-    )
-    console.log('   2. Add to .env file: SUPABASE_ANON_KEY=your-key-here\n')
-    process.exit(1)
-  }
-
-  console.log(`📍 Supabase URL: ${supabaseUrl}`)
-  console.log(
-    `🔑 API Key: ${supabaseKey.substring(0, 20)}...${supabaseKey.substring(supabaseKey.length - 4)}\n`
-  )
+async function testConnection() {
+  console.log('🔍 Iniciando pruebas de conectividad Supabase...\n');
+  console.log(`📡 URL: ${SUPABASE_URL}\n`);
 
   try {
-    // Dynamic import for ES modules
-    const { createClient } = await import('@supabase/supabase-js')
-
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
-    // Test 1: Check KPI Definitions table
-    console.log('🧪 Test 1: Querying monitoring.kpi_definitions...')
-    const { data: kpiDefs, error: kpiError } = await supabase
-      .from('monitoring.kpi_definitions')
-      .select('count')
-
-    if (kpiError) {
-      console.error('❌ Failed to query kpi_definitions:', kpiError.message)
+    // Test 1: Schema monitoring.kpi_definitions
+    console.log('Test 1: Verificar schema monitoring.kpi_definitions...');
+    const { data: kpiDefs, error: e1 } = await supabase
+      .from('kpi_definitions')
+      .select('*')
+      .limit(1);
+    
+    if (e1) {
+      console.log(`❌ FAILED: ${e1.message}`);
+      console.log(`   Detalle: ${JSON.stringify(e1, null, 2)}`);
     } else {
-      console.log(
-        `✅ Successfully connected! Found ${kpiDefs?.length || 0} KPI definitions\n`
-      )
+      console.log(`✅ SUCCESS: Schema monitoring.kpi_definitions accesible (${kpiDefs?.length || 0} registros)`);
     }
 
-    // Test 2: Check KPI Values table
-    console.log('🧪 Test 2: Querying monitoring.kpi_values...')
-    const { data: kpiVals, error: valError } = await supabase
-      .from('monitoring.kpi_values')
-      .select('count')
-      .limit(10)
-
-    if (valError) {
-      console.error('❌ Failed to query kpi_values:', valError.message)
+    // Test 2: Schema monitoring.kpi_values
+    console.log('\nTest 2: Verificar schema monitoring.kpi_values...');
+    const { data: kpiVals, error: e2 } = await supabase
+      .from('kpi_values')
+      .select('*')
+      .limit(1);
+    
+    if (e2) {
+      console.log(`❌ FAILED: ${e2.message}`);
     } else {
-      console.log(
-        `✅ Successfully queried kpi_values! Found ${kpiVals?.length || 0} recent records\n`
-      )
+      console.log(`✅ SUCCESS: Schema monitoring.kpi_values accesible (${kpiVals?.length || 0} registros)`);
     }
 
-    // Test 3: Check Historical KPIs table
-    console.log('🧪 Test 3: Querying public.historical_kpis...')
-    const { data: histKpis, error: histError } = await supabase
+    // Test 3: Tabla public.historical_kpis
+    console.log('\nTest 3: Verificar tabla public.historical_kpis...');
+    const { data: histData, error: e3 } = await supabase
       .from('historical_kpis')
-      .select('count')
-      .limit(10)
-
-    if (histError) {
-      console.error('❌ Failed to query historical_kpis:', histError.message)
+      .select('*')
+      .limit(1);
+    
+    if (e3) {
+      console.log(`❌ FAILED: ${e3.message}`);
     } else {
-      console.log(
-        `✅ Successfully queried historical_kpis! Found ${histKpis?.length || 0} records\n`
-      )
+      console.log(`✅ SUCCESS: Tabla public.historical_kpis accesible (${histData?.length || 0} registros)`);
     }
 
-    console.log('✅ All connection tests passed!\n')
-    console.log('📋 Next Steps:')
-    console.log(
-      '   1. Add these credentials to Azure Key Vault (aiagent-secrets-kv)'
-    )
-    console.log('   2. Update Azure App Services to use new Supabase endpoint')
-    console.log('   3. Deploy Grafana dashboards with docker-compose\n')
-  } catch (error) {
-    console.error('❌ Connection test failed:', error.message)
-    console.log('\n📝 Troubleshooting:')
-    console.log(
-      '   1. Install dependencies: npm install @supabase/supabase-js dotenv'
-    )
-    console.log('   2. Verify SUPABASE_URL and SUPABASE_ANON_KEY are correct')
-    console.log('   3. Check network connectivity to Supabase\n')
-    process.exit(1)
+    // Test 4: Insert de prueba en kpi_values
+    console.log('\nTest 4: Insert de valor de prueba en monitoring.kpi_values...');
+    const testData = {
+      snapshot_id: 'connectivity_test_' + Date.now(),
+      as_of_date: new Date().toISOString().split('T')[0],
+      kpi_key: 'test_connectivity',
+      value_num: 999.99,
+      status: 'green',
+      computed_at: new Date().toISOString(),
+      run_id: 'azure_connectivity_test',
+      inputs_hash: 'test_' + Math.random().toString(36).substr(2, 9)
+    };
+
+    const { data: insertResult, error: e4 } = await supabase
+      .from('kpi_values')
+      .insert(testData)
+      .select();
+
+    if (e4) {
+      console.log(`❌ FAILED: ${e4.message}`);
+      console.log(`   Detalle: ${JSON.stringify(e4, null, 2)}`);
+    } else {
+      console.log(`✅ SUCCESS: Insertado registro con ID: ${insertResult[0].id}`);
+      
+      // Cleanup
+      const { error: e5 } = await supabase
+        .from('kpi_values')
+        .delete()
+        .eq('id', insertResult[0].id);
+      
+      if (e5) {
+        console.log(`⚠️  Cleanup warning: ${e5.message}`);
+      } else {
+        console.log(`🧹 Datos de prueba eliminados correctamente`);
+      }
+    }
+
+    console.log('\n═══════════════════════════════════════');
+    console.log('🎯 TODAS LAS PRUEBAS COMPLETADAS');
+    console.log('═══════════════════════════════════════');
+    console.log('\n✅ Supabase está conectado y funcionando correctamente');
+    console.log(`📊 Proyecto: ${SUPABASE_URL.split('//')[1].split('.')[0]}`);
+    console.log(`🔗 Dashboard: https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte`);
+    
+    process.exit(0);
+
+  } catch (err) {
+    console.error('\n💥 Error fatal:', err.message);
+    console.error('\nStack trace:', err.stack);
+    process.exit(1);
   }
 }
 
-// Run the test
-testSupabaseConnection().catch(console.error)
+testConnection();

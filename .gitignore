@@ -150,3 +150,8 @@ logs/runs/run_*/
 .zencoder/
 .zenflow/
 .gradle/
+
+# Local environment variables (NEVER commit)
+.env.local
+.env.*.local
+*.env.local
