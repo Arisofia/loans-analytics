@@ -22,7 +22,7 @@ azure-identity==1.25.1
 azure-keyvault-secrets==4.10.0
 azure-mgmt-core==1.6.0
 azure-mgmt-portal==1.0.0
-azure-monitor-opentelemetry-exporter==1.0.0b45
+azure-monitor-opentelemetry-exporter==1.0.0b46
 azure-storage-blob==12.28.0
 beartype==0.22.9
 black==26.1.0
