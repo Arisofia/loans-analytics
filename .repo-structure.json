@@ -1,0 +1,241 @@
+{
+    "repository": "abaco-loans-analytics",
+    "unified_process_version": "v2.0",
+    "last_updated": "2026-01-29",
+    "status": "PRODUCTION",
+    "ACTIVE_PRODUCTION_WORKFLOW": {
+        "description": "Production pipeline used in daily operations",
+        "folders": [
+            {
+                "path": "src/pipeline/",
+                "purpose": "Core pipeline orchestration (ingestion, transformation, calculation, output)",
+                "files": [
+                    "orchestrator.py",
+                    "config.py",
+                    "ingestion.py",
+                    "transformation.py",
+                    "calculation.py",
+                    "output.py"
+                ],
+                "stage": "PHASE 1-4 EXECUTION"
+            },
+            {
+                "path": "python/",
+                "purpose": "Pipeline utilities, models, logging, multi-agent orchestration",
+                "subdirs": [
+                    "config.py - Unified configuration management",
+                    "logging_config.py - Structured JSON logging",
+                    "models/ - Pydantic schemas (Cascade, KPI, workflows)",
+                    "multi_agent/ - AI agent orchestrator",
+                    "pipeline/ - Pipeline phase implementations"
+                ],
+                "stage": "PHASE 1-4 SUPPORT"
+            },
+            {
+                "path": "config/",
+                "purpose": "Master configuration (SINGLE SOURCE OF TRUTH)",
+                "critical_files": [
+                    "pipeline.yml - Endpoints, auth, validation, KPI formulas, outputs",
+                    "business_rules.yaml - Statuses, buckets, constants",
+                    "kpis/kpi_definitions.yaml - All KPI formulas and thresholds"
+                ],
+                "stage": "CONFIGURATION"
+            },
+            {
+                "path": "scripts/run_data_pipeline.py",
+                "purpose": "Main entry point for pipeline execution",
+                "trigger": "Manual execution, GitHub Actions, scheduled jobs",
+                "stage": "EXECUTION ENTRY POINT"
+            },
+            {
+                "path": "apps/",
+                "purpose": "Frontend and API services",
+                "components": {
+                    "apps/web/": "Next.js dashboard (frontend)",
+                    "apps/analytics/": "FastAPI service (backend API)"
+                },
+                "stage": "OUTPUT LAYER"
+            },
+            {
+                "path": "streamlit_app.py",
+                "purpose": "Interactive analytics dashboard for data exploration",
+                "serves": "KPI visualization, growth projections, report exports",
+                "stage": "OUTPUT LAYER"
+            },
+            {
+                "path": "data/",
+                "purpose": "Raw input data and processed artifacts",
+                "structure": {
+                    "data/raw/": "Input CSV files and Cascade exports",
+                    "data/metrics/": "KPI calculation outputs (Parquet/CSV)",
+                    "logs/runs/": "Timestamped run artifacts and audit logs"
+                },
+                "stage": "DATA LAYER"
+            },
+            {
+                "path": "tests/",
+                "purpose": "Unit and integration tests for pipeline",
+                "coverage": "Ingestion, transformation, KPI calculation, validation",
+                "stage": "QUALITY ASSURANCE"
+            },
+            {
+                "path": "docs/",
+                "active_docs": [
+                    "architecture.md - System design overview",
+                    "PIPELINE_UNIFICATION_PLAN.md - Detailed pipeline spec",
+                    "OPERATIONS.md - Deployment and runbooks",
+                    "MIGRATION.md - Cutover procedures",
+                    "TRACING_OBSERVABILITY.md - Monitoring setup"
+                ],
+                "stage": "DOCUMENTATION"
+            }
+        ],
+        "workflow_flow": "Ingestion → Validation → Transformation → KPI Calculation → Output → Dashboard"
+    },
+    "LEGACY_ARCHIVED_CONTENT": {
+        "description": "Projects, scripts, and documentation no longer part of active workflow",
+        "location": "archive_legacy/",
+        "folders": [
+            {
+                "path": "archive_legacy/docs/",
+                "contains": [
+                    "Old migration guides (v1 → v2)",
+                    "Legacy architecture diagrams",
+                    "Emergency response plans (archive versions)",
+                    "Deprecated technical specs",
+                    "Historical audit reports"
+                ],
+                "reason": "Reference only - not used in current operations"
+            },
+            {
+                "path": "archive_legacy/scripts/",
+                "contains": [
+                    "Legacy pipeline runners (old versions of run_data_pipeline.py)",
+                    "Deprecated ingestion scripts",
+                    "Manual ETL helpers",
+                    "One-off analysis scripts"
+                ],
+                "reason": "Replaced by unified pipeline orchestrator"
+            },
+            {
+                "path": "archive_legacy/python/",
+                "contains": [
+                    "Old agents/ implementations",
+                    "Deprecated workflow modules",
+                    "Legacy KPI engines (v1)",
+                    "Older utility functions"
+                ],
+                "reason": "Superseded by current agents/ and pipeline modules"
+            },
+            {
+                "path": "archive_legacy/projects/",
+                "contains": [
+                    "Experimental features",
+                    "Proof-of-concept implementations",
+                    "Student/contractor work",
+                    "Incomplete initiatives"
+                ],
+                "reason": "Not integrated into main workflow"
+            },
+            {
+                "path": "archive_legacy/notebooks/",
+                "contains": [
+                    "Jupyter notebooks (analysis, exploration)",
+                    "Data science experiments",
+                    "Manual KPI verification notebooks"
+                ],
+                "reason": "Ad-hoc analysis - not automated"
+            }
+        ],
+        "note": "All content is preserved in git history and safely isolated from active development"
+    },
+    "EXTERNAL_INTEGRATIONS": {
+        "description": "Third-party tools and services (configuration only)",
+        "tools": [
+            {
+                "name": "Supabase",
+                "purpose": "Database for persistent KPI storage and dashboard queries",
+                "config": "supabase.json, .env variables",
+                "integration_point": "Phase 4 (Output)"
+            },
+            {
+                "name": "Azure Services",
+                "purpose": "Blob storage, Key Vault, Static Web Apps",
+                "config": "azure.yaml, infra/azure/",
+                "integration_point": "Data layer, infrastructure"
+            },
+            {
+                "name": "GitHub Actions",
+                "purpose": "CI/CD pipelines for automated execution",
+                "config": ".github/workflows/",
+                "integration_point": "Orchestration trigger"
+            },
+            {
+                "name": "OpenTelemetry / Application Insights",
+                "purpose": "Distributed tracing and observability",
+                "config": "python/logging_config.py",
+                "integration_point": "All phases"
+            }
+        ]
+    },
+    "PROCESS_PHASES": {
+        "PHASE_1_INGESTION": {
+            "location": "src/pipeline/ingestion.py",
+            "support_files": [
+                "python/models/cascade_schemas.py",
+                "config/pipeline.yml"
+            ],
+            "function": "HTTP client pulls Cascade exports with retries, rate limiting, token refresh",
+            "validation": "Pydantic schema validation, checksum verification, duplicate detection",
+            "output": "Raw data stored with timestamp and immutable hash"
+        },
+        "PHASE_2_TRANSFORMATION": {
+            "location": "src/pipeline/transformation.py",
+            "support_files": [
+                "config/business_rules.yaml",
+                "python/models/"
+            ],
+            "function": "Normalize data, handle nulls/outliers, type conversion, referential integrity",
+            "validation": "Pandera schema validation, business rule enforcement",
+            "output": "Clean data ready for calculation"
+        },
+        "PHASE_3_CALCULATION": {
+            "location": "src/pipeline/calculation.py + src/kpi_engine_v2.py",
+            "support_files": [
+                "config/kpis/kpi_definitions.yaml",
+                "python/multi_agent/"
+            ],
+            "function": "Compute all KPIs with formula traceability, time-series rollups, anomaly detection",
+            "validation": "Precision validation, threshold enforcement, AI agent enrichment",
+            "output": "KPI manifest with lineage and audit trail"
+        },
+        "PHASE_4_OUTPUT": {
+            "location": "src/pipeline/output.py",
+            "support_files": [
+                "apps/analytics/api/",
+                "streamlit_app.py"
+            ],
+            "function": "Multi-format exports (Parquet/CSV/JSON), Supabase writes, dashboard refresh",
+            "validation": "Transaction safety, idempotent upserts, SLA monitoring",
+            "output": "Artifacts in logs/runs/, database updates, frontend refresh"
+        },
+        "ORCHESTRATION": {
+            "location": "src/pipeline/orchestrator.py",
+            "trigger": "scripts/run_data_pipeline.py (entry point)",
+            "function": "Coordinates all 4 phases, manages config, logs, error handling",
+            "trigger_methods": [
+                "Manual CLI execution",
+                "GitHub Actions scheduled jobs",
+                "API endpoint",
+                "Webhook events"
+            ]
+        }
+    },
+    "QUICK_REFERENCE": {
+        "start_pipeline": "python scripts/run_data_pipeline.py --config config/pipeline.yml",
+        "view_dashboard": "streamlit run streamlit_app.py",
+        "check_logs": "logs/runs/<timestamp>/",
+        "update_kpis": "Edit config/kpis/kpi_definitions.yaml (automatically loaded)",
+        "run_tests": "pytest tests/ -v"
+    }
+}
