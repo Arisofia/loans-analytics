@@ -1,32 +1,32 @@
 name: Security Audit (MSDO)
 
 on:
-    workflow_dispatch:
-    push:
-        branches: ["main"]
-    pull_request:
-        branches: ["main"]
-    schedule:
-        - cron: "0 3 * * *" # daily 03:00 UTC
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: "0 3 * * *" # daily 03:00 UTC
 
 permissions:
-    contents: read
-    security-events: write
+  contents: read
+  security-events: write
 
 jobs:
-    msdo:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout
-              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  msdo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-            - name: Microsoft Security DevOps
-              uses: microsoft/security-devops-action@v1
-              id: msdo
-                      with:
-            tools: 'bandit, binskim, checkov, eslint, trivy'
+      - name: Microsoft Security DevOps
+        uses: microsoft/security-devops-action@v1
+        id: msdo
+        with:
+          tools: 'bandit, binskim, checkov, eslint, trivy'
 
-            - name: Upload SARIF to GitHub
-              uses: github/codeql-action/upload-sarif@v3
-              with:
-                  sarif_file: ${{ steps.msdo.outputs.sarifFile }}
+      - name: Upload SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.msdo.outputs.sarifFile }}
