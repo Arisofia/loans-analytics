@@ -379,11 +379,12 @@ def test_historical_kpis_data_integrity(
     test_kpi_id = seed_test_data["kpi_id"]
 
     # Attempt to insert duplicate record (should fail or be ignored)
+    from datetime import UTC, datetime
     duplicate_data = {
         "kpi_id": test_kpi_id,
         "value": 0.999,  # Different value
         "date": (date.today() - timedelta(days=30)).isoformat(),  # Same date as first seed
-        "timestamp": "2026-01-28T00:00:00Z",
+        "timestamp": datetime.now(UTC).isoformat(),
         "metadata": {"test": True, "duplicate": True},
     }
 
