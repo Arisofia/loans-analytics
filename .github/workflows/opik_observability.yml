@@ -1,9 +1,11 @@
 name: Opik Observability & Monitoring
 
-on:
-  schedule:
-    - cron: "0 8 * * *"
-  workflow_dispatch:
+# DISABLED: Workflow uses Slack integration which is not part of core pipeline
+# To re-enable, uncomment the "on:" section below
+# on:
+#   schedule:
+#     - cron: "0 8 * * *"
+#   workflow_dispatch:
 
 env:
   OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
