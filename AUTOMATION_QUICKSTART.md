@@ -28,6 +28,7 @@ pre-commit run --files path/to/file.py
 ## What Happens Automatically
 
 ### On Every Commit
+
 - ✅ Remove trailing whitespace
 - ✅ Format Python code (Black)
 - ✅ Sort imports (isort)
@@ -37,12 +38,14 @@ pre-commit run --files path/to/file.py
 - ✅ Remove unused imports
 
 ### On Every PR
+
 - ✅ Auto-format and auto-commit formatting changes
 - ✅ Run pytest on Python 3.10, 3.11, 3.12
 - ✅ Generate coverage reports
 - ✅ Security scanning (Bandit, Safety)
 
 ### Weekly (Monday 2 AM)
+
 - ✅ Update Python dependencies
 - ✅ Update npm packages
 - ✅ Fix security issues
@@ -50,27 +53,30 @@ pre-commit run --files path/to/file.py
 
 ## File Locations
 
-| Purpose | File |
-|---------|------|
-| CI/CD Workflows | `.github/workflows/auto-*.yml` |
-| Pre-commit config | `.pre-commit-config.yaml` |
-| Setup script | `scripts/setup-automation.sh` |
-| Full docs | `docs/AUTOMATION_SETUP.md` |
+| Purpose           | File                           |
+| ----------------- | ------------------------------ |
+| CI/CD Workflows   | `.github/workflows/auto-*.yml` |
+| Pre-commit config | `.pre-commit-config.yaml`      |
+| Setup script      | `scripts/setup-automation.sh`  |
+| Full docs         | `docs/AUTOMATION_SETUP.md`     |
 
 ## Troubleshooting
 
 **Hooks not running?**
+
 ```bash
 pre-commit install  # Reinstall
 git config core.hooksPath  # Verify
 ```
 
 **Want to skip checks?**
+
 ```bash
 git commit --no-verify  # (not recommended)
 ```
 
 **See available hooks?**
+
 ```bash
 pre-commit run --list  # Show all hooks
 ```
