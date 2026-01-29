@@ -187,7 +187,7 @@ pylint==4.0.4
 pyparsing==3.3.2
 pyroaring==1.0.3
 pytest==8.4.2
-pytest-cov==4.1.0
+pytest-cov==7.0.0
 pytest-html==3.0.0
 pytest-json-report==1.5.0
 pytest-metadata==3.1.1
