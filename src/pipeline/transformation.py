@@ -541,7 +541,7 @@ class TransformationPhase:
         IQR = Q3 - Q1
         lower_bound = Q1 - self.outlier_threshold * IQR
         upper_bound = Q3 + self.outlier_threshold * IQR
-        return (series < lower_bound) | (series > upper_bound)
+        return ((series < lower_bound) | (series > upper_bound)).fillna(False)
 
     def _detect_outliers_zscore(self, series: pd.Series) -> pd.Series:
         """Detect outliers using Z-score method."""
