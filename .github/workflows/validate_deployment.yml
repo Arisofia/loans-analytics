@@ -209,7 +209,7 @@ jobs:
       - name: Notify failure (deployment issue)
         if: failure() && steps.check_secrets.outputs.has_azure_secrets == 'true'
         continue-on-error: true
-        uses: actions/github-script@60a0d83cf42496352c7b1c5b6cf25dc6aa6f8c93  # v7.0.1
+        uses: actions/github-script@v7
         with:
           script: |
             const title = "Azure Deployment Validation Failed";
@@ -242,7 +242,7 @@ jobs:
       - name: Notify failure (dependencies issue)
         if: failure() && steps.check_secrets.outputs.has_azure_secrets != 'true'
         continue-on-error: true
-        uses: actions/github-script@60a0d83cf42496352c7b1c5b6cf25dc6aa6f8c93  # v7.0.1
+        uses: actions/github-script@v7
         with:
           script: |
             const title = "Dashboard Dependency Test Failed";

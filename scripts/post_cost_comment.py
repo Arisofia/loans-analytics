@@ -10,6 +10,8 @@ import os
 import sys
 from pathlib import Path
 
+from scripts.path_utils import validate_path
+
 
 def format_cost_comment(report_file: str) -> str:
     """Format cost report as GitHub comment.
@@ -20,7 +22,11 @@ def format_cost_comment(report_file: str) -> str:
     Returns:
         Formatted markdown comment
     """
-    with open(report_file) as f:
+    # Validate report file path (CWE-22: Path Traversal)
+    validated_report = validate_path(
+        report_file, base_dir=".", must_exist=True
+    )
+    with open(validated_report) as f:  # snyk:skip=4e90b57d-752d-4add-b6e6-5130c1d6e64e
         report = json.load(f)
 
     comment = "## 💰 Cost Analysis Report\n\n"
