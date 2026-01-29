@@ -156,12 +156,12 @@ G4.2 introduces production-ready historical KPI storage and integration for the 
 
 1. **Insert Sample KPI Data:**
    ```sql
-   -- Insert test portfolio KPIs
-   INSERT INTO historical_kpis (portfolio_id, kpi_name, kpi_value, calculation_date, grain, metadata)
+   -- Insert test KPI records
+   INSERT INTO historical_kpis (kpi_id, value, date, timestamp, metadata)
    VALUES 
-       (gen_random_uuid(), 'default_rate', 0.0245, '2026-01-01', 'monthly', '{"test": true}'),
-       (gen_random_uuid(), 'disbursements', 1500000.50, '2026-01-15', 'daily', '{"test": true}'),
-       (gen_random_uuid(), 'portfolio_balance', 125000000.00, '2026-01-01', 'monthly', '{"test": true}');
+       ('default_rate', 0.0245, '2026-01-01', '2026-01-01 00:00:00+00', '{"test": true}'),
+       ('disbursements', 1500000.50, '2026-01-15', '2026-01-15 00:00:00+00', '{"test": true}'),
+       ('portfolio_balance', 125000000.00, '2026-01-01', '2026-01-01 00:00:00+00', '{"test": true}');
    
    -- Verify insertion
    SELECT * FROM historical_kpis WHERE metadata->>'test' = 'true';
