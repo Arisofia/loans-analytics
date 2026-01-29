@@ -96,7 +96,7 @@ langchain-anthropic==0.3.21
 langchain-classic==1.0.1
 langchain-community==0.4.1
 langchain-core==1.2.7
-langchain-openai==0.3.34
+langchain-openai==1.1.7
 langchain-text-splitters==1.1.0
 langgraph==1.0.7
 langgraph-checkpoint==4.0.0
