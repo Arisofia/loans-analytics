@@ -148,7 +148,7 @@ opentelemetry-util-http==0.60b1
 orjson==3.11.5
 ormsgpack==1.12.2
 packaging==25.0
-pandas==2.3.3
+pandas==3.0.0
 pandera==0.28.1
 pathspec==1.0.4
 pillow==12.1.0
