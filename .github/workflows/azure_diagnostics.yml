@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@v4
 
       - name: Prepare diagnostics folder
         run: |
@@ -44,14 +44,14 @@ jobs:
           echo "diagnostics start: $(date -u)" > diagnostics/README.txt
 
       - name: Set up Azure CLI
-        uses: azure/CLI@d4515bc8e518874d3c814bf5c307a1cb08ec9b35
+        uses: azure/CLI@v1
         with:
           azcliversion: "2.49.0"
           inlineScript: az --version
 
       - name: Azure login (service principal)
         if: ${{ needs.validate-azure.outputs.all_secrets_present == 'true' }}
-        uses: azure/login@1384c340ab2dda50fed2bee3041d1d87018aa5e8
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -89,7 +89,7 @@ jobs:
           ls -lah diagnostics >> diagnostics/summary.txt || true
 
       - name: Upload diagnostics artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@v4
         with:
           name: azure-diagnostics
           path: diagnostics

@@ -16,17 +16,17 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+        uses: pnpm/action-setup@v4
         with:
           version: 10
 
       - name: Setup Node.js
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: pnpm
@@ -53,7 +53,7 @@ jobs:
       - name: Deploy
         id: swa-deploy
         if: steps.swa_token.outputs.present == true
-        uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9
+        uses: Azure/static-web-apps-deploy@v4
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_CLIFF_03015B20F }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}

@@ -18,15 +18,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@v4
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+        uses: pnpm/action-setup@v4
         with:
           version: 9
 
       - name: Setup Node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "pnpm"
@@ -81,14 +81,14 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Upload build artifact (local)
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@v4
         with:
           name: web-build
           path: apps/web/.next
 
       - name: Upload build to S3 (cloud)
         if: steps.aws_secrets.outputs.present == true
-        uses: jakejarvis/s3-sync-action@7ed8b112447abb09f1da74f3466e4194fc7a6311
+        uses: jakejarvis/s3-sync-action@v4
         with:
           args: --acl private --follow-symlinks
         env:
@@ -100,7 +100,7 @@ jobs:
 
       - name: Deploy to Vercel
         if: steps.vercel_secrets.outputs.present == true
-        uses: amondnet/vercel-action@16e87c0a08142b0d0d33b76aeaf20823c381b9b9
+        uses: amondnet/vercel-action@v4
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
@@ -115,15 +115,15 @@ jobs:
     if: failure()
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@v4
 
       - name: Azure Login
-        uses: azure/login@1384c340ab2dda50fed2bee3041d1d87018aa5e8
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy Bicep
-        uses: azure/arm-deploy@06e568666fe06fe7d2d689bbd543a036258a79c1
+        uses: azure/arm-deploy@v4
         with:
           resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
           template: infra/azure/main.bicep
@@ -136,7 +136,7 @@ jobs:
             sqlAdminPassword=${{ secrets.AZURE_SQL_ADMIN_PASSWORD }}
 
       - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@0efab0a4c73b728613acd71966c04beadfc20aaf
+        uses: azure/webapps-deploy@v4
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
           package: ./apps/web
