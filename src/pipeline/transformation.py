@@ -11,7 +11,7 @@ Responsibilities:
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -162,7 +162,7 @@ class TransformationPhase:
             logger.error(f"Transformation failed: {str(e)}", exc_info=True)
             return {"status": "failed", "error": str(e), "timestamp": datetime.now().isoformat()}
 
-    def _handle_nulls(self, df: pd.DataFrame) -> tuple[pd.DataFrame, Dict[str, Any]]:
+    def _handle_nulls(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Handle missing values based on configured strategy.
 
@@ -228,7 +228,7 @@ class TransformationPhase:
 
     def _smart_null_handling(
         self, df: pd.DataFrame, null_columns: Dict[str, int]
-    ) -> tuple[pd.DataFrame, Dict[str, Any]]:
+    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Intelligent null handling based on null percentage and column importance.
 
@@ -269,7 +269,7 @@ class TransformationPhase:
 
         return df, {"smart_actions": actions}
 
-    def _normalize_types(self, df: pd.DataFrame) -> tuple[pd.DataFrame, Dict[str, Any]]:
+    def _normalize_types(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Normalize data types for consistency.
 
@@ -329,7 +329,7 @@ class TransformationPhase:
         logger.info(f"Applied {len(conversions)} type conversions")
         return df, metrics
 
-    def _apply_business_rules(self, df: pd.DataFrame) -> tuple[pd.DataFrame, Dict[str, Any]]:
+    def _apply_business_rules(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Apply business rules from configuration.
 
@@ -461,11 +461,14 @@ class TransformationPhase:
             if expression and target_col:
                 # Only allow safe expressions using pandas eval with restricted operations
                 # Allowed: column names, basic arithmetic (+, -, *, /)
+                # Note: allowed_chars includes both upper and lowercase letters.
+                # The dangerous_patterns check uses expression.lower() to catch uppercase
+                # variants of dangerous keywords (e.g., "IMPORT", "EXEC").
                 allowed_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). ")
                 if not all(c in allowed_chars for c in expression):
                     logger.warning(f"Unsafe characters in expression '{expression}', skipping rule")
                     return df
-                # Check for any dangerous patterns
+                # Check for any dangerous patterns (case-insensitive via lower())
                 dangerous_patterns = ["import", "exec", "eval", "compile", "__", "open", "file"]
                 if any(pattern in expression.lower() for pattern in dangerous_patterns):
                     logger.warning(f"Dangerous pattern detected in expression '{expression}', skipping rule")
@@ -477,7 +480,7 @@ class TransformationPhase:
 
         return df
 
-    def _detect_outliers(self, df: pd.DataFrame) -> tuple[pd.DataFrame, Dict[str, Any]]:
+    def _detect_outliers(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Detect and flag outliers in numeric columns.
 
@@ -499,8 +502,12 @@ class TransformationPhase:
         outlier_counts: Dict[str, int] = {}
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 
-        # Skip columns that shouldn't be checked for outliers
-        skip_cols = {"loan_id", "id", "dpd"}  # DPD can legitimately be high
+        # Skip columns that shouldn't be checked for outliers:
+        # - loan_id, id: Identifiers, not meaningful for outlier detection
+        # - dpd: Days Past Due can legitimately range from 0 to 180+ in business context;
+        #        extremely high values (> 365) could indicate data quality issues but are
+        #        handled separately by business rules (dpd_bucket assignment)
+        skip_cols = {"loan_id", "id", "dpd"}
         check_cols = [col for col in numeric_cols if col not in skip_cols]
 
         for col in check_cols:
@@ -547,7 +554,7 @@ class TransformationPhase:
 
     def _check_referential_integrity(
         self, df: pd.DataFrame
-    ) -> tuple[pd.DataFrame, Dict[str, Any]]:
+    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Check referential integrity across entities.
 
@@ -595,7 +602,9 @@ class TransformationPhase:
         date_cols = [col for col in df.columns if col.endswith("_date")]
         if "origination_date" in date_cols and "due_date" in date_cols:
             if df["origination_date"].dtype == "datetime64[ns]" and df["due_date"].dtype == "datetime64[ns]":
-                invalid_dates = (df["due_date"] < df["origination_date"]).sum()
+                # Filter out NaT values before comparing dates
+                valid_mask = df["due_date"].notna() & df["origination_date"].notna()
+                invalid_dates = (df.loc[valid_mask, "due_date"] < df.loc[valid_mask, "origination_date"]).sum()
                 if invalid_dates > 0:
                     integrity_issues.append(
                         {

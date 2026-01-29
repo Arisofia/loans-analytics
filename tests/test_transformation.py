@@ -101,9 +101,11 @@ class TestNullHandling:
         transformer = TransformationPhase(config)
         df, metrics = transformer._handle_nulls(data_with_nulls)
 
-        # All rows have at least one null, so all should be dropped
+        # 3 of 4 rows have at least one null (L002, L003, L004), L001 has no nulls
         assert metrics["strategy_applied"] == "drop"
         assert "rows_dropped" in metrics
+        assert metrics["rows_dropped"] == 3
+        assert len(df) == 1
 
     def test_fill_strategy(self, data_with_nulls):
         """Test fill strategy fills nulls with defaults."""
@@ -205,6 +207,111 @@ class TestBusinessRules:
         assert df[df["loan_id"] == "L001"]["amount_tier"].values[0] == "small"
         # 100000 should be "large" (>= 100000 and < 500000)
         assert df[df["loan_id"] == "L005"]["amount_tier"].values[0] == "large"
+
+
+class TestCustomRules:
+    """Test custom business rule application."""
+
+    def test_valid_column_mapping_rule(self, default_config):
+        """Test valid column_mapping rule applies correctly."""
+        df = pd.DataFrame(
+            {
+                "loan_id": ["L001", "L002", "L003"],
+                "status_code": ["A", "D", "C"],
+            }
+        )
+        business_rules = {
+            "transformations": [
+                {
+                    "name": "status_mapping",
+                    "type": "column_mapping",
+                    "source_column": "status_code",
+                    "target_column": "status_full",
+                    "mapping": {"A": "Active", "D": "Delinquent", "C": "Closed"},
+                }
+            ]
+        }
+        transformer = TransformationPhase(default_config, business_rules=business_rules)
+        df_result, metrics = transformer._apply_business_rules(df)
+
+        assert "status_full" in df_result.columns
+        assert df_result[df_result["loan_id"] == "L001"]["status_full"].values[0] == "Active"
+        assert "status_mapping" in metrics["rule_names"]
+
+    def test_valid_derived_field_rule(self, default_config):
+        """Test valid derived_field rule with simple arithmetic."""
+        df = pd.DataFrame(
+            {
+                "loan_id": ["L001", "L002"],
+                "principal": [10000, 20000],
+                "interest": [1000, 2000],
+            }
+        )
+        business_rules = {
+            "transformations": [
+                {
+                    "name": "total_amount",
+                    "type": "derived_field",
+                    "target_column": "total",
+                    "expression": "principal + interest",
+                }
+            ]
+        }
+        transformer = TransformationPhase(default_config, business_rules=business_rules)
+        df_result, metrics = transformer._apply_business_rules(df)
+
+        assert "total" in df_result.columns
+        assert df_result[df_result["loan_id"] == "L001"]["total"].values[0] == 11000
+        assert "total_amount" in metrics["rule_names"]
+
+    def test_dangerous_pattern_rejected(self, default_config):
+        """Test derived_field rule with dangerous patterns is rejected."""
+        df = pd.DataFrame(
+            {
+                "loan_id": ["L001"],
+                "amount": [10000],
+            }
+        )
+        business_rules = {
+            "transformations": [
+                {
+                    "name": "malicious_rule",
+                    "type": "derived_field",
+                    "target_column": "result",
+                    "expression": "__import__('os').system('ls')",
+                }
+            ]
+        }
+        transformer = TransformationPhase(default_config, business_rules=business_rules)
+        df_result, metrics = transformer._apply_business_rules(df)
+
+        # The dangerous rule should be skipped, so 'result' column should not exist
+        assert "result" not in df_result.columns
+
+    def test_invalid_column_mapping_configuration(self, default_config):
+        """Test handling of missing/invalid configuration parameters."""
+        df = pd.DataFrame(
+            {
+                "loan_id": ["L001"],
+                "status": ["active"],
+            }
+        )
+        business_rules = {
+            "transformations": [
+                {
+                    "name": "invalid_mapping",
+                    "type": "column_mapping",
+                    # Missing source_column and target_column
+                    "mapping": {"A": "Active"},
+                }
+            ]
+        }
+        transformer = TransformationPhase(default_config, business_rules=business_rules)
+        # Should not raise an error, just log warning and skip the rule
+        df_result, metrics = transformer._apply_business_rules(df)
+
+        # Original data should be unchanged (apart from standard business rules)
+        assert "loan_id" in df_result.columns
 
 
 class TestOutlierDetection:
