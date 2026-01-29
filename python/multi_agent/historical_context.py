@@ -11,7 +11,7 @@ import os
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
@@ -73,7 +73,7 @@ class TrendAnalysis(BaseModel):
     end_value: float = Field(..., description="Ending value")
     percent_change: float = Field(..., description="Percentage change")
     calculated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Analysis timestamp (UTC)"
+        default_factory=lambda: datetime.now(UTC), description="Analysis timestamp (UTC)"
     )
 
 
@@ -187,7 +187,7 @@ class HistoricalContextProvider:
             RuntimeError: If mode="REAL" but backend is None
         """
         self.cache_ttl_seconds = cache_ttl_seconds
-        self._cache: Dict[str, tuple[datetime, any]] = {}
+        self._cache: Dict[str, tuple[datetime, Any]] = {}
         self._historical_data: Dict[str, List[KpiHistoricalValue]] = {}
 
         # Mode selection: default to MOCK for G4.1 backward compatibility
