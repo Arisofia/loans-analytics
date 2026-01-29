@@ -23,12 +23,12 @@ This playbook enforces disciplined hygiene across local and remote branches, com
 
 ### 1.1 Local Repository Hygiene
 
-| Goal | Commands & Notes |
-|------|------------------|
-| Remove stale feature branches | `git branch` / `git branch -d feature-x` / `git branch -D tmp/*` |
-| Prune remote-tracking refs | `git fetch --all --prune` (or nightly via automation) |
-| Remove untracked clutter | `git clean -n` (dry run), `git clean -fd` (files+dirs), `git clean -fdx` (also ignored files) |
-| Garbage collection | `git gc` (monthly), `git gc --aggressive` (quarterly or pre-archive) |
+| Goal                          | Commands & Notes                                                                              |
+| ----------------------------- | --------------------------------------------------------------------------------------------- |
+| Remove stale feature branches | `git branch` / `git branch -d feature-x` / `git branch -D tmp/*`                              |
+| Prune remote-tracking refs    | `git fetch --all --prune` (or nightly via automation)                                         |
+| Remove untracked clutter      | `git clean -n` (dry run), `git clean -fd` (files+dirs), `git clean -fdx` (also ignored files) |
+| Garbage collection            | `git gc` (monthly), `git gc --aggressive` (quarterly or pre-archive)                          |
 
 **When:**
 
@@ -38,11 +38,11 @@ This playbook enforces disciplined hygiene across local and remote branches, com
 
 ### 1.2 Remote Repository Hygiene
 
-| Goal | Commands & Notes |
-|------|------------------|
-| Delete remote branches (CLI) | `git push origin --delete branch-name` |
-| Delete remote branches (GitHub UI) | Repo → "Branches" → trash icon |
-| Prune remote refs | `git remote prune origin` (mirrors `git fetch --prune`) |
+| Goal                               | Commands & Notes                                        |
+| ---------------------------------- | ------------------------------------------------------- |
+| Delete remote branches (CLI)       | `git push origin --delete branch-name`                  |
+| Delete remote branches (GitHub UI) | Repo → "Branches" → trash icon                          |
+| Prune remote refs                  | `git remote prune origin` (mirrors `git fetch --prune`) |
 
 **Policy:**
 
@@ -51,11 +51,11 @@ This playbook enforces disciplined hygiene across local and remote branches, com
 
 ### 1.3 Commit History Cleanup
 
-| Action | Use |
-|--------|-----|
-| Interactive rebase | `git rebase -i HEAD~N` (squash/fixup/well-scoped commits) |
-| Amend last commit | `git commit --amend -m "better message"` or `git commit --amend --no-edit` |
-| Rewrite patch stack | Use interactive rebase on top of main for G4.x/G5.x sequences |
+| Action              | Use                                                                        |
+| ------------------- | -------------------------------------------------------------------------- |
+| Interactive rebase  | `git rebase -i HEAD~N` (squash/fixup/well-scoped commits)                  |
+| Amend last commit   | `git commit --amend -m "better message"` or `git commit --amend --no-edit` |
+| Rewrite patch stack | Use interactive rebase on top of main for G4.x/G5.x sequences              |
 
 **Guideline:**
 
@@ -64,21 +64,21 @@ This playbook enforces disciplined hygiene across local and remote branches, com
 
 ### 1.4 Large File Governance
 
-| Task | Commands |
-|------|----------|
-| Identify large objects | `git rev-list --all --objects \| sort -k2 \| tail -20` |
-| Track via Git LFS | `git lfs install`, `git lfs track "*.psd"`, commit `.gitattributes` |
+| Task                   | Commands                                                            |
+| ---------------------- | ------------------------------------------------------------------- |
+| Identify large objects | `git rev-list --all --objects \| sort -k2 \| tail -20`              |
+| Track via Git LFS      | `git lfs install`, `git lfs track "*.psd"`, commit `.gitattributes` |
 
 **Note:** Our repo should remain lightweight (<1GB). Use LFS for infrequent binary assets; never version encrypted secrets.
 
 ### 1.5 Maintenance Cadence
 
-| Frequency | Actions |
-|-----------|---------|
-| Weekly | Prune merged branches, clean untracked files |
-| Monthly | `git gc`, review large files, rebase active feature branches |
-| Quarterly | Audit branch list, archive legacy phases, sanity-check CI caches |
-| Pre-release | Full cleanup sweep + test matrix run |
+| Frequency   | Actions                                                          |
+| ----------- | ---------------------------------------------------------------- |
+| Weekly      | Prune merged branches, clean untracked files                     |
+| Monthly     | `git gc`, review large files, rebase active feature branches     |
+| Quarterly   | Audit branch list, archive legacy phases, sanity-check CI caches |
+| Pre-release | Full cleanup sweep + test matrix run                             |
 
 ---
 
@@ -92,12 +92,12 @@ Conflicts typically arise from parallel edits to the same files (e.g., `pytest.i
 
 ### 2.2 Resolution Strategies
 
-| Strategy | Command / Action | When to Use |
-|----------|------------------|-------------|
-| Accept current | `git checkout --ours file` | Local branch is authoritative |
-| Accept incoming | `git checkout --theirs file` | Remote branch should win |
-| Manual merge | Edit conflict markers `<<<<<<<` / `=======` / `>>>>>>>` | Combine logic, especially for config/test files |
-| Merge tool | `git mergetool` | Complex merges (e.g., orchestrator, large docs) |
+| Strategy        | Command / Action                                        | When to Use                                     |
+| --------------- | ------------------------------------------------------- | ----------------------------------------------- |
+| Accept current  | `git checkout --ours file`                              | Local branch is authoritative                   |
+| Accept incoming | `git checkout --theirs file`                            | Remote branch should win                        |
+| Manual merge    | Edit conflict markers `<<<<<<<` / `=======` / `>>>>>>>` | Combine logic, especially for config/test files |
+| Merge tool      | `git mergetool`                                         | Complex merges (e.g., orchestrator, large docs) |
 
 **Manual merge checklist:**
 
@@ -163,24 +163,24 @@ Open PR → "Resolve conflicts" → edit file(s), remove markers → "Mark as re
 
 ## 4. Troubleshooting Matrix
 
-| Issue | Symptom | Resolution |
-|-------|---------|------------|
-| "Already up to date" but expecting changes | `git pull` shows nothing | `git fetch --all`, ensure you're on correct branch, `git merge origin/<branch>` explicitly |
-| Accidental merge | Merge committed unintentionally | `git merge --abort` if in progress; `git reset --hard HEAD~1` if committed (not pushed) |
-| Too many conflicts | Merge shows dozens of files | `git merge --abort`, rebase to latest main, or cherry-pick selective commits |
-| Lost commits | Work disappeared | `git reflog` → identify commit → `git checkout <hash>` → new branch |
-| "Upstream deleted branch" warnings | Stale remote-tracking branches | `git fetch --all --prune`, `git branch -r` to verify |
+| Issue                                      | Symptom                         | Resolution                                                                                 |
+| ------------------------------------------ | ------------------------------- | ------------------------------------------------------------------------------------------ |
+| "Already up to date" but expecting changes | `git pull` shows nothing        | `git fetch --all`, ensure you're on correct branch, `git merge origin/<branch>` explicitly |
+| Accidental merge                           | Merge committed unintentionally | `git merge --abort` if in progress; `git reset --hard HEAD~1` if committed (not pushed)    |
+| Too many conflicts                         | Merge shows dozens of files     | `git merge --abort`, rebase to latest main, or cherry-pick selective commits               |
+| Lost commits                               | Work disappeared                | `git reflog` → identify commit → `git checkout <hash>` → new branch                        |
+| "Upstream deleted branch" warnings         | Stale remote-tracking branches  | `git fetch --all --prune`, `git branch -r` to verify                                       |
 
 ---
 
 ## 5. Git Configuration Checklist
 
-| Config | Command | Purpose |
-|--------|---------|---------|
-| Fast-forward policy | `git config merge.ff only\|true\|false` | Enforce merge style per team policy |
-| Merge tool | `git config --global merge.tool vimdiff` | Default tool for `git mergetool` |
-| Conflict style | `git config --global merge.conflictstyle diff3` | Show base/common ancestor for clarity |
-| Diff tool | `git config --global diff.tool vimdiff` | Optional for detailed comparisons |
+| Config              | Command                                         | Purpose                               |
+| ------------------- | ----------------------------------------------- | ------------------------------------- |
+| Fast-forward policy | `git config merge.ff only\|true\|false`         | Enforce merge style per team policy   |
+| Merge tool          | `git config --global merge.tool vimdiff`        | Default tool for `git mergetool`      |
+| Conflict style      | `git config --global merge.conflictstyle diff3` | Show base/common ancestor for clarity |
+| Diff tool           | `git config --global diff.tool vimdiff`         | Optional for detailed comparisons     |
 
 ---
 
@@ -195,10 +195,10 @@ Open PR → "Resolve conflicts" → edit file(s), remove markers → "Mark as re
 
 ### Change Log
 
-| Date | Version | Summary |
-|------|---------|---------|
-| 2026-01-29 | 2.0 | Upgraded for G4.2/G5.0 workflows, Supabase integration, conflict-playbook alignment |
-| 2026-01-11 | 1.0 | Initial release |
+| Date       | Version | Summary                                                                             |
+| ---------- | ------- | ----------------------------------------------------------------------------------- |
+| 2026-01-29 | 2.0     | Upgraded for G4.2/G5.0 workflows, Supabase integration, conflict-playbook alignment |
+| 2026-01-11 | 1.0     | Initial release                                                                     |
 
 ---
 
