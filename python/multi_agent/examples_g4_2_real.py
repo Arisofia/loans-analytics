@@ -61,9 +61,7 @@ def run_example(kpi_id: str = "npl_ratio") -> None:
             mode = "MOCK"
             actual_mode = "REAL→MOCK (fallback)"
             try:
-                provider = build_historical_context_provider(
-                    cache_ttl_seconds=60, mode="MOCK"
-                )
+                provider = build_historical_context_provider(cache_ttl_seconds=60, mode="MOCK")
                 end_dt = datetime.now(timezone.utc)
                 start_dt = end_dt - timedelta(days=30)
                 history = provider._load_historical_data(kpi_id, start_dt, end_dt)

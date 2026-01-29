@@ -7,7 +7,7 @@ integration_supabase marker.
 Usage:
   pytest -m integration_supabase
   pytest -m integration_supabase -v
-  
+
   To enable real network tests:
   RUN_REAL_SUPABASE_TESTS=1 pytest -m integration_supabase
 """
@@ -17,18 +17,18 @@ from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
-from python.multi_agent.historical_context import HistoricalContextProvider
 from python.multi_agent.historical_backend_supabase import (
     SupabaseHistoricalBackend,
 )
+from python.multi_agent.historical_context import HistoricalContextProvider
 
 # Check if real Supabase tests are explicitly enabled
-REAL_SUPABASE_ENABLED = os.getenv('RUN_REAL_SUPABASE_TESTS', '0') == '1'
+REAL_SUPABASE_ENABLED = os.getenv("RUN_REAL_SUPABASE_TESTS", "0") == "1"
 
 
 def _supabase_configured() -> bool:
     """Check if Supabase credentials are available and valid.
-    
+
     Validates that:
     1. Environment variables are set
     2. They are not placeholder/example values
@@ -36,11 +36,11 @@ def _supabase_configured() -> bool:
     """
     url = os.getenv("SUPABASE_URL", "").strip()
     key = os.getenv("SUPABASE_ANON_KEY", "").strip()
-    
+
     # Check if credentials exist and are not examples
     if not url or not key:
         return False
-    
+
     # Reject placeholder/example values
     placeholder_urls = [
         "your-project",
@@ -48,17 +48,17 @@ def _supabase_configured() -> bool:
         "your-project.supabase.co",
     ]
     placeholder_keys = ["your-key", "your-anon-key"]
-    
+
     if any(placeholder in url.lower() for placeholder in placeholder_urls):
         return False
     if any(placeholder in key.lower() for placeholder in placeholder_keys):
         return False
-    
+
     # URL should have minimum structure of a real Supabase instance
     # Format: https://{project-ref}.supabase.co
     if not (url.startswith("https://") and ".supabase.co" in url):
         return False
-    
+
     return True
 
 
@@ -92,11 +92,11 @@ class TestHistoricalKpisSupabaseIntegration:
 
     @pytest.mark.skipif(
         not REAL_SUPABASE_ENABLED,
-        reason="Real Supabase tests disabled (set RUN_REAL_SUPABASE_TESTS=1)"
+        reason="Real Supabase tests disabled (set RUN_REAL_SUPABASE_TESTS=1)",
     )
     def test_historical_context_provider_real_mode_roundtrip(self):
         """Test loading historical data in REAL mode from Supabase.
-        
+
         REQUIRES: RUN_REAL_SUPABASE_TESTS=1 and valid Supabase credentials
 
         This test:
@@ -117,12 +117,8 @@ class TestHistoricalKpisSupabaseIntegration:
         end_date = datetime.now(timezone.utc).date()
         start_date = end_date - timedelta(days=30)
 
-        start_dt = datetime.combine(
-            start_date, datetime.min.time(), tzinfo=timezone.utc
-        )
-        end_dt = datetime.combine(
-            end_date, datetime.min.time(), tzinfo=timezone.utc
-        )
+        start_dt = datetime.combine(start_date, datetime.min.time(), tzinfo=timezone.utc)
+        end_dt = datetime.combine(end_date, datetime.min.time(), tzinfo=timezone.utc)
 
         history = provider._load_historical_data(
             kpi_id=kpi_id,
@@ -147,11 +143,11 @@ class TestHistoricalKpisSupabaseIntegration:
 
     @pytest.mark.skipif(
         not REAL_SUPABASE_ENABLED,
-        reason="Real Supabase tests disabled (set RUN_REAL_SUPABASE_TESTS=1)"
+        reason="Real Supabase tests disabled (set RUN_REAL_SUPABASE_TESTS=1)",
     )
     def test_mode_switching_mock_vs_real(self):
         """Verify MOCK and REAL modes return data of same structure.
-        
+
         REQUIRES: RUN_REAL_SUPABASE_TESTS=1 and valid Supabase credentials
 
         This ensures backward compatibility: MOCK and REAL modes should
@@ -177,12 +173,8 @@ class TestHistoricalKpisSupabaseIntegration:
         end_date = datetime.now(timezone.utc).date()
         start_date = end_date - timedelta(days=30)
 
-        start_dt = datetime.combine(
-            start_date, datetime.min.time(), tzinfo=timezone.utc
-        )
-        end_dt = datetime.combine(
-            end_date, datetime.min.time(), tzinfo=timezone.utc
-        )
+        start_dt = datetime.combine(start_date, datetime.min.time(), tzinfo=timezone.utc)
+        end_dt = datetime.combine(end_date, datetime.min.time(), tzinfo=timezone.utc)
 
         history_mock = provider_mock._load_historical_data(
             kpi_id=kpi_id,

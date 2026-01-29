@@ -64,9 +64,7 @@ def build_historical_context_provider(
     effective_mode = (mode or os.getenv("HISTORICAL_CONTEXT_MODE", "MOCK")).upper()
 
     if effective_mode not in ("MOCK", "REAL"):
-        raise ValueError(
-            f"Invalid mode: {effective_mode}. Must be 'MOCK' or 'REAL'."
-        )
+        raise ValueError(f"Invalid mode: {effective_mode}. Must be 'MOCK' or 'REAL'.")
 
     if effective_mode == "REAL":
         # Validate Supabase credentials
@@ -74,9 +72,7 @@ def build_historical_context_provider(
         supabase_key = os.getenv("SUPABASE_ANON_KEY")
 
         if not supabase_url or not supabase_key:
-            raise ValueError(
-                "REAL mode requires SUPABASE_URL and SUPABASE_ANON_KEY env vars."
-            )
+            raise ValueError("REAL mode requires SUPABASE_URL and SUPABASE_ANON_KEY env vars.")
 
         # Import here to avoid hard dependency on supabase client
         from python.multi_agent.historical_backend_supabase import (
