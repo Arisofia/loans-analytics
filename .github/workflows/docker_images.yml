@@ -69,7 +69,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build & push (web)
-        uses: docker/build-push-action@94b440b8e4a7ae1f6e627619693455b84444c56b  # v5.3.0
+        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0  # v5.3.0
         with:
           context: ./apps/web
           file: ./apps/web/Dockerfile
@@ -88,7 +88,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build & push (dashboard)
-        uses: docker/build-push-action@94b440b8e4a7ae1f6e627619693455b84444c56b  # v5.3.0
+        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0  # v5.3.0
         with:
           context: .
           file: ./Dockerfile
