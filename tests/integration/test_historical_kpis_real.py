@@ -110,8 +110,18 @@ def seed_test_data(supabase_backend, test_portfolio_id):
 
     response = requests.post(url, headers=headers, json=test_data, timeout=10)
 
-    # If 409 (conflict), test data already exists - that's OK
-    if response.status_code not in (201, 409):
+    # Handle response status:
+    # - 201: expected successful insert
+    # - 409: conflict; with per-session UUIDs this likely indicates leftover
+    #        data or a test setup issue, so log a warning for investigation
+    if response.status_code == 201:
+        pass
+    elif response.status_code == 409:
+        print(
+            "Warning: Received HTTP 409 when seeding test data. "
+            "This may indicate leftover data or a test setup issue."
+        )
+    else:
         response.raise_for_status()
 
     # Return both test_data and the kpi_id used
