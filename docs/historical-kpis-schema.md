@@ -120,20 +120,20 @@ For large-scale deployments (millions of rows), consider partitioning by `date` 
 ```sql
 -- Convert to partitioned table (requires migration)
 ALTER TABLE historical_kpis 
-    PARTITION BY RANGE (EXTRACT(YEAR FROM date));
+    PARTITION BY RANGE (date);
 
 -- Create partitions for each year
 CREATE TABLE historical_kpis_2024 
     PARTITION OF historical_kpis 
-    FOR VALUES FROM (2024) TO (2025);
+    FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');
 
 CREATE TABLE historical_kpis_2025 
     PARTITION OF historical_kpis 
-    FOR VALUES FROM (2025) TO (2026);
+    FOR VALUES FROM ('2025-01-01') TO ('2026-01-01');
 
 CREATE TABLE historical_kpis_2026 
     PARTITION OF historical_kpis 
-    FOR VALUES FROM (2026) TO (2027);
+    FOR VALUES FROM ('2026-01-01') TO ('2027-01-01');
 
 -- Create future partitions as needed
 ```
