@@ -1,6 +1,0 @@
-loan_id,amount,status,borrower_id,origination_date
-LOAN001,10000,active,B001,2026-01-01
-LOAN002,15000,active,B002,2026-01-05
-LOAN003,20000,delinquent,B003,2026-01-10
-LOAN004,12000,active,B004,2026-01-15
-LOAN005,18000,active,B005,2026-01-20
