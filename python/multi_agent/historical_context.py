@@ -82,8 +82,12 @@ class SeasonalityPattern(BaseModel):
     """Seasonality pattern detection result."""
 
     kpi_id: str = Field(..., description=KPI_IDENTIFIER_DESC)
-    has_seasonality: bool = Field(..., description="Whether seasonality detected")
-    cycle_length_months: Optional[int] = Field(None, description="Seasonal cycle length")
+    has_seasonality: bool = Field(
+        ..., description="Whether seasonality detected"
+    )
+    cycle_length_months: Optional[int] = Field(
+        None, description="Seasonal cycle length"
+    )
     peak_months: List[int] = Field(
         default_factory=list,
         description="Months with peak values (1-12)",
