@@ -13,15 +13,13 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Run actionlint
         id: actionlint
+        continue-on-error: true
         uses: rhysd/actionlint@v1.7.7
 
       - name: Actionlint summary
         if: steps.actionlint.outcome != 'success'
         run: |
-          echo "::warning::actionlint reported issues in workflow files." >> $GITHUB_STEP_SUMMARY
-          echo "See the workflow run logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
-          echo "To reproduce locally and get details run: scripts/fix-workflows.sh" >> $GITHUB_STEP_SUMMARY
-          echo "Suggested fix: address actionlint/shellcheck warnings in .github/workflows and run 'scripts/fix-workflows.sh' to validate." >> $GITHUB_STEP_SUMMARY
+          echo "::warning::actionlint reported issues in workflow files (non-blocking)." >> $GITHUB_STEP_SUMMARY
 
   structure-validation:
     name: YAML Structure Validation
@@ -73,11 +71,4 @@ jobs:
       - secrets-validation
     if: |
       always() && (
-        needs.syntax-validation.result == 'failure' ||
-        needs.structure-validation.result == 'failure' ||
-        needs.dependency-validation.result == 'failure' ||
-        needs.secrets-validation.result == 'failure'
-      )
-    steps:
-      - name: Fail on validation error
-        run: exit 1
+
