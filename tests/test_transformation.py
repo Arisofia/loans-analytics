@@ -287,6 +287,8 @@ class TestCustomRules:
 
         # The dangerous rule should be skipped, so 'result' column should not exist
         assert "result" not in df_result.columns
+        # The malicious rule should NOT be in the applied rules list
+        assert "malicious_rule" not in metrics["rule_names"]
 
     def test_invalid_column_mapping_configuration(self, default_config):
         """Test handling of missing/invalid configuration parameters."""
@@ -312,6 +314,8 @@ class TestCustomRules:
 
         # Original data should be unchanged (apart from standard business rules)
         assert "loan_id" in df_result.columns
+        # The invalid rule should NOT be in the applied rules list
+        assert "invalid_mapping" not in metrics["rule_names"]
 
 
 class TestOutlierDetection:
@@ -354,6 +358,41 @@ class TestOutlierDetection:
         df, metrics = transformer._detect_outliers(sample_loan_data)
 
         assert metrics["enabled"] is False
+
+    def test_outlier_detection_with_nan_values(self, default_config):
+        """Test that outlier detection handles NaN values gracefully."""
+        df = pd.DataFrame(
+            {
+                "loan_id": ["L001", "L002", "L003", "L004", "L005"],
+                "amount": [100, None, 105, None, 10000],  # Contains NaN values
+            }
+        )
+        transformer = TransformationPhase(default_config)
+        result_df, metrics = transformer._detect_outliers(df)
+
+        # Should not fail with NaN values
+        assert metrics["enabled"] is True
+        # NaN values should not be flagged as outliers
+        if "amount_outlier" in result_df.columns:
+            # Check that NaN positions in original data are False (not outliers)
+            nan_positions = df["amount"].isna()
+            assert not result_df.loc[nan_positions, "amount_outlier"].any()
+
+    def test_outlier_detection_iqr_identical_values(self, default_config):
+        """Test IQR detection when all values are identical (IQR = 0)."""
+        df = pd.DataFrame(
+            {
+                "loan_id": ["L001", "L002", "L003", "L004", "L005"],
+                "amount": [100, 100, 100, 100, 100],  # All identical
+            }
+        )
+        transformer = TransformationPhase(default_config)
+        result_df, metrics = transformer._detect_outliers(df)
+
+        # When IQR = 0, no values should be flagged as outliers
+        assert metrics["enabled"] is True
+        # No outliers should be detected when all values are identical
+        assert metrics["total_outlier_rows"] == 0
 
 
 class TestReferentialIntegrity:

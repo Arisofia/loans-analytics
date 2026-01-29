@@ -372,8 +372,9 @@ class TransformationPhase:
         custom_rules = self.business_rules.get("transformations", [])
         for rule in custom_rules:
             try:
-                df = self._apply_custom_rule(df, rule)
-                rules_applied.append(rule.get("name", "unnamed_rule"))
+                df, success = self._apply_custom_rule(df, rule)
+                if success:
+                    rules_applied.append(rule.get("name", "unnamed_rule"))
             except Exception as e:
                 logger.warning(f"Failed to apply custom rule: {e}")
 
@@ -434,12 +435,17 @@ class TransformationPhase:
         else:
             return "jumbo"
 
-    def _apply_custom_rule(self, df: pd.DataFrame, rule: Dict[str, Any]) -> pd.DataFrame:
+    def _apply_custom_rule(
+        self, df: pd.DataFrame, rule: Dict[str, Any]
+    ) -> Tuple[pd.DataFrame, bool]:
         """
         Apply a custom business rule from configuration.
 
         Note: Only safe operations (column_mapping) are fully supported.
         Derived field expressions are restricted to simple arithmetic operations.
+
+        Returns:
+            Tuple of (DataFrame, success_flag) where success_flag indicates if rule was applied.
         """
         rule_type = rule.get("type")
 
@@ -449,11 +455,13 @@ class TransformationPhase:
             mapping = rule.get("mapping", {})
             if source_col and target_col and source_col in df.columns:
                 df[target_col] = df[source_col].map(mapping).fillna(df[source_col])
+                return df, True
             else:
                 logger.warning(
                     "Invalid column_mapping rule configuration or missing source column: "
                     f"source_column={source_col!r}, target_column={target_col!r}"
                 )
+                return df, False
 
         elif rule_type == "derived_field":
             target_col = rule.get("target_column")
@@ -467,7 +475,7 @@ class TransformationPhase:
                 allowed_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). ")
                 if not all(c in allowed_chars for c in expression):
                     logger.warning(f"Unsafe characters in expression '{expression}', skipping rule")
-                    return df
+                    return df, False
                 # Check for any dangerous patterns (case-insensitive via lower()).
                 # We explicitly block dangerous dunder names instead of any double underscore.
                 dangerous_patterns = [
@@ -478,18 +486,22 @@ class TransformationPhase:
                     "__import__",
                     "__builtins__",
                     "__class__",
+                    "__getattr__",
+                    "__setattr__",
                     "open",
                     "file",
                 ]
                 if any(pattern in expression.lower() for pattern in dangerous_patterns):
                     logger.warning(f"Dangerous pattern detected in expression '{expression}', skipping rule")
-                    return df
+                    return df, False
                 try:
                     df[target_col] = df.eval(expression)
+                    return df, True
                 except Exception as e:
                     logger.warning(f"Failed to evaluate expression '{expression}': {e}")
+                    return df, False
 
-        return df
+        return df, False
 
     def _detect_outliers(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
@@ -581,6 +593,7 @@ class TransformationPhase:
         outliers = pd.Series(False, index=series.index)
         outliers.loc[non_null.index] = outliers_non_null.fillna(False)
         return outliers
+
     def _check_referential_integrity(
         self, df: pd.DataFrame
     ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
