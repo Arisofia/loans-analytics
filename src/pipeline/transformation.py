@@ -445,8 +445,13 @@ class TransformationPhase:
             source_col = rule.get("source_column")
             target_col = rule.get("target_column")
             mapping = rule.get("mapping", {})
-            if source_col in df.columns:
+            if source_col and target_col and source_col in df.columns:
                 df[target_col] = df[source_col].map(mapping).fillna(df[source_col])
+            else:
+                logger.warning(
+                    "Invalid column_mapping rule configuration or missing source column: "
+                    f"source_column={source_col!r}, target_column={target_col!r}"
+                )
 
         elif rule_type == "derived_field":
             target_col = rule.get("target_column")
