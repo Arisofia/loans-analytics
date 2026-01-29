@@ -35,34 +35,34 @@ jobs:
         language: ["javascript", "python"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
         if: matrix.language == 'javascript'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@b7dde419cc031a3d665baa4a62731727917cd13e  # v4.1.0
         with:
           node-version: 20
           cache: "npm"
 
       - name: Setup Python
         if: matrix.language == 'python'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
         with:
           python-version: "3.11"
           cache: "pip"
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@b20883bbd772085d89b7f2f66d5dc41fd8fb004c  # v4.32.0
         with:
           languages: ${{ matrix.language }}
           config-file: .github/codeql-config.yml
           queries: security-extended,security-and-quality
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v4
+        uses: github/codeql-action/autobuild@b20883bbd772085d89b7f2f66d5dc41fd8fb004c  # v4.32.0
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@b20883bbd772085d89b7f2f66d5dc41fd8fb004c  # v4.32.0
         with:
           category: "/language:${{ matrix.language }}"

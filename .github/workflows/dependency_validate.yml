@@ -10,15 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
         with:
           python-version: 3.11
 
       - name: Cache pip cache
-        uses: actions/cache@v4
+        uses: actions/cache@b6c6e19650157c2e813776fd7f8b2bf258a5a410  # v4.1.2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}

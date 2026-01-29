@@ -39,25 +39,25 @@ jobs:
 
       - name: Checkout repository
         if: steps.check-secrets.outputs.secrets_available == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
         with:
           # Necessary for SonarCloud to analyze history
           fetch-depth: 0
       - name: Set up pnpm
         if: steps.check-secrets.outputs.secrets_available == 'true'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2  # v4.0.0
         with:
           version: 10
       - name: Setup Node
         if: steps.check-secrets.outputs.secrets_available == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@b7dde419cc031a3d665baa4a62731727917cd13e  # v4.1.0
         with:
           node-version: 20
           cache: pnpm
           cache-dependency-path: apps/web/pnpm-lock.yaml
       - name: Set up Python
         if: steps.check-secrets.outputs.secrets_available == 'true'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3  # v5.3.0
         with:
           python-version: "3.11"
       - name: Install dependencies

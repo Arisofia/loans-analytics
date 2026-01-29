@@ -21,7 +21,7 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@2a3af1b1dde7a068b44c712feead7d94d4fe19fa  # v4.2.2
       - name: Check Snyk token
         id: snyk_token
         env:
@@ -34,7 +34,7 @@ jobs:
           fi
       - name: Set up Node.js
         if: steps.snyk_token.outputs.available == true
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@b7dde419cc031a3d665baa4a62731727917cd13e  # v4.1.0
         with:
           node-version: "20"
       - name: Install Snyk CLI
