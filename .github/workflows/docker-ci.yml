@@ -87,4 +87,3 @@ jobs:
               run: |
                   echo "::notice::Docker build skipped - registry credentials not configured"
                   echo "To enable Docker builds, add REGISTRY_USER and REGISTRY_TOKEN secrets"
-                    exit-on: policy
