@@ -308,7 +308,9 @@ class MultiAgentOrchestrator:
                     ),
                     ScenarioStep(
                         agent_role=AgentRole.COMPLIANCE,
-                        prompt_template=(\n                            "Verify pricing complies with regulations: {pricing_recommendation}."\n                        ),
+                        prompt_template=(
+                            "Verify pricing complies with regulations: {pricing_recommendation}."
+                        ),
                         context_keys=["pricing_recommendation"],
                         output_key="pricing_approval",
                     ),
