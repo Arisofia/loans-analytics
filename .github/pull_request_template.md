@@ -13,6 +13,20 @@ Fixes: #(issue_number)
 
 ---
 
+## 📖 IMPORTANT: Repository Operations Reference
+
+🚨 **ALL repository operations must follow:** [docs/REPO_OPERATIONS_MASTER.md](../docs/REPO_OPERATIONS_MASTER.md)
+
+This is your single source of truth for:
+
+- ✅ Repository hygiene & cleanup procedures (§ 1)
+- ✅ Merge & conflict resolution (§ 2) — **including this PR approval process**
+- ✅ Phase-level execution & readiness criteria (§ 3)
+- ✅ CI/QA/security obligations (§ 4)
+- ✅ Governance & exception requests (§ 5)
+
+---
+
 ## Type of Change
 
 Select all that apply:
@@ -24,7 +38,7 @@ Select all that apply:
 - [ ] Refactor/tech debt
 - [ ] Performance optimization
 - [ ] Security improvement
-- [ ] Other (explain): _______________
+- [ ] Other (explain): ******\_\_\_******
 
 ---
 
@@ -32,11 +46,18 @@ Select all that apply:
 
 **All boxes must be checked. If any item cannot be completed, it must be clearly flagged, justified, and may warrant rejection until resolved.**
 
+### Repository Operations Compliance
+
+- [ ] I have read [docs/REPO_OPERATIONS_MASTER.md](../docs/REPO_OPERATIONS_MASTER.md) (§ 2 minimum)
+- [ ] Merge conflict handling follows [§ 2.2 (Resolution Strategies)](../docs/REPO_OPERATIONS_MASTER.md#22-resolution-strategies) if applicable
+- [ ] Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) standard
+- [ ] Branch is up to date with `main` (no conflicts) or conflicts resolved per master runbook
+
 ### Code Quality & Standards
 
 - [ ] Code strictly follows project style/conventions (see [CONTRIBUTING.md](../CONTRIBUTING.md) or run `npm run lint`)
 - [ ] Performed thorough self-review; removed redundant/legacy code and dead imports
-- [ ] Documented all non-trivial logic with clear docstrings (include: purpose, parameters, return values; complex algorithms require inline comments explaining *why*)
+- [ ] Documented all non-trivial logic with clear docstrings (include: purpose, parameters, return values; complex algorithms require inline comments explaining _why_)
 - [ ] No hardcoded secrets, credentials, PII, or sensitive data exposed in code or logs
 
 ### Testing & Validation
@@ -64,8 +85,8 @@ Select all that apply:
 ### Performance & Operations
 
 - [ ] Performance impact statement (if applicable):
-  - [ ] Latency: ___ms →___ms (or N/A)
-  - [ ] Memory footprint: ___MB →___MB (or N/A)
+  - [ ] Latency: ***ms →***ms (or N/A)
+  - [ ] Memory footprint: ***MB →***MB (or N/A)
   - [ ] Benchmark results or load test attached (if applicable)
 - [ ] (New features) Monitoring, alerts, and observability configured
 - [ ] (Deployments) Rollback plan documented and tested

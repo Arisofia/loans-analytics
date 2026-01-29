@@ -1,7 +1,16 @@
-# Phase F Repository Automation - Action Plan & Timeline
+# Phase F Repository Automation - Action Plan & Timeline [ARCHIVED]
+
+⚠️ **DEPRECATION NOTICE:** This document is archived as of 2026-01-29. All repository operations must now follow the **single source of truth**:
+
+👉 **[docs/REPO_OPERATIONS_MASTER.md](REPO_OPERATIONS_MASTER.md)** ← Use this for all operations
+
+This legacy document is retained for historical reference. Its action plan and timeline have been consolidated into § 3 (Phase-Level Execution) of the master runbook.
+
+---
+
 **Created:** 2026-01-29  
 **Project:** abaco-loans-analytics  
-**Status:** Ready for Execution  
+**Status:** ARCHIVED (content migrated to master runbook)
 
 ---
 
@@ -14,31 +23,37 @@ This document outlines the complete action plan for Phase F development, buildin
 ## COMPLETED DELIVERABLES ✅
 
 ### 1. Repository Cleanup & Conflict Playbook ✅
+
 - **Document:** `docs/REPO_CLEANUP_AND_CONFLICT_PLAYBOOK.md` (v2.0)
 - **Status:** Published & distributed
 - **Contents:** 6 major sections, troubleshooting matrix, Git configuration checklist
 
 ### 2. Automation Scripts ✅
+
 - **Scripts:** `scripts/repo-cleanup.sh`, `scripts/git-config-setup.sh`
 - **Status:** Deployed, tested, executable
 - **Coverage:** Local hygiene, remote pruning, GC, configuration
 
 ### 3. GitHub Actions Workflow ✅
+
 - **Workflow:** `.github/workflows/repo-cleanup.yml`
 - **Status:** Active & scheduled
 - **Schedule:** Sundays 02:00 UTC (automatic) + manual trigger
 
 ### 4. Git Configuration ✅
+
 - **Local:** merge.ff, push.default, pull.rebase, format
 - **Global:** merge.tool, merge.conflictstyle, diff.tool
 - **Status:** Applied & verified
 
 ### 5. Testing & Validation ✅
+
 - **Unit Tests:** 82/82 PASSED ✅
 - **Integration Tests:** 4 skipped (Supabase opt-in) ✅
 - **Coverage:** 100% for unit tests ✅
 
 ### 6. Documentation ✅
+
 - **Playbook:** Complete (6 sections)
 - **Health Report:** Complete (v1.0)
 - **Action Plan:** This document
@@ -49,6 +64,7 @@ This document outlines the complete action plan for Phase F development, buildin
 ## IMMEDIATE ACTIONS (This Week)
 
 ### Action 1: Verify First Automated Cleanup Run ⏳
+
 **Timeline:** 2026-02-02 (Sunday) at 02:00 UTC
 
 ```
@@ -64,6 +80,7 @@ This document outlines the complete action plan for Phase F development, buildin
 **Result:** Confirm automation works in production
 
 ### Action 2: Team Notification & Training 📋
+
 **Timeline:** 2026-01-31
 
 ```
@@ -79,6 +96,7 @@ This document outlines the complete action plan for Phase F development, buildin
 **Result:** Team understands new procedures
 
 ### Action 3: Operational Handover 🔄
+
 **Timeline:** 2026-02-01
 
 ```
@@ -98,9 +116,11 @@ This document outlines the complete action plan for Phase F development, buildin
 ## SHORT-TERM ACTIONS (This Month)
 
 ### Action 4: Branch Protection Rules ⚙️
+
 **Timeline:** 2026-02-05
 
 **GitHub Settings:**
+
 ```
 Repository → Settings → Branches
 
@@ -114,6 +134,7 @@ For main branch:
 ```
 
 **Commands:**
+
 ```bash
 # CLI setup (if using GitHub API)
 gh repo edit \
@@ -122,12 +143,14 @@ gh repo edit \
   --enable-squash-merge
 ```
 
-**Expected Result:** 
+**Expected Result:**
+
 - Merge conflicts resolved before merge
 - History preserved with merge commits
 - All CI checks passing
 
 ### Action 5: Dependabot Configuration 🤖
+
 **Timeline:** 2026-02-08
 
 **File:** `.github/dependabot.yml`
@@ -136,27 +159,29 @@ gh repo edit \
 version: 2
 updates:
   # Python dependencies
-  - package-ecosystem: "pip"
-    directory: "/"
+  - package-ecosystem: 'pip'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
     pull-request-branch-name:
-      separator: "/"
-  
+      separator: '/'
+
   # GitHub Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
 ```
 
 **Expected Result:**
+
 - Automatic dependency updates
 - Security patches applied quickly
 - Pull requests created for review
 
 ### Action 6: Code Owners Configuration 👥
+
 **Timeline:** 2026-02-10
 
 **File:** `CODEOWNERS` (repository root)
@@ -176,6 +201,7 @@ pytest.ini @qa-lead
 ```
 
 **Expected Result:**
+
 - Automatic reviewer assignment
 - Code quality gates enforced
 - Ownership clarity
@@ -185,9 +211,11 @@ pytest.ini @qa-lead
 ## MEDIUM-TERM ACTIONS (Q1 2026)
 
 ### Action 7: Monitoring & Observability 📊
+
 **Timeline:** 2026-02-28
 
 **Implement:**
+
 ```
 □ GitHub Actions metrics dashboard
 □ Repository size tracking (weekly)
@@ -197,14 +225,17 @@ pytest.ini @qa-lead
 ```
 
 **Tools:**
+
 - GitHub Actions artifacts
 - GitHub API for metrics
 - Datadog/CloudWatch (optional)
 
 ### Action 8: Documentation Videos 🎥
+
 **Timeline:** 2026-02-20
 
 **Create:**
+
 ```
 □ How to use repo-cleanup.sh (3 min)
 □ Resolving merge conflicts (5 min)
@@ -213,14 +244,17 @@ pytest.ini @qa-lead
 ```
 
 **Distribution:**
+
 - Internal wiki/confluence
 - Team Slack channel
 - GitHub discussions
 
 ### Action 9: Extended Automation 🚀
+
 **Timeline:** 2026-02-28
 
 **Enhancements:**
+
 ```
 □ Auto-merge Dependabot PRs (patch updates)
 □ Auto-close stale branches (>30 days)
@@ -230,9 +264,11 @@ pytest.ini @qa-lead
 ```
 
 ### Action 10: Quarterly Review ✅
+
 **Timeline:** 2026-03-31
 
 **Review Items:**
+
 ```
 □ Cleanup automation effectiveness
 □ Team adoption metrics
@@ -246,6 +282,7 @@ pytest.ini @qa-lead
 ## ONGOING MAINTENANCE (Monthly)
 
 ### Monthly Review Checklist
+
 ```
 Week 1:
   □ Review GitHub Actions logs
@@ -273,6 +310,7 @@ Week 4:
 ## QUARTERLY REVIEW (Every 3 Months)
 
 ### Q1 Review (Mar 31, 2026)
+
 ```
 □ 3-month effectiveness assessment
 □ Team adoption metrics
@@ -282,6 +320,7 @@ Week 4:
 ```
 
 ### Quarterly Metrics to Track
+
 ```
 - Automated cleanup runs: ___
 - Average repo size: ___ MB
@@ -297,18 +336,22 @@ Week 4:
 ### Known Risks & Mitigations
 
 **Risk 1: Automated script deletes important branches**
+
 - **Mitigation:** Only deletes fully merged branches, requires 48h verification period
 - **Safeguard:** Dry-run mode available, test on non-prod first
 
 **Risk 2: GitHub Actions workflow failure**
+
 - **Mitigation:** Manual trigger available, email alerts configured
 - **Safeguard:** Cleanup is optional, repository functions without it
 
 **Risk 3: Team unfamiliar with new procedures**
+
 - **Mitigation:** Training sessions, documentation, quick reference cards
 - **Safeguard:** Fallback to manual procedures always available
 
 **Risk 4: Merge conflicts not properly resolved**
+
 - **Mitigation:** diff3 style shows common ancestor, vimdiff configured
 - **Safeguard:** Peer review required before merge
 
@@ -317,6 +360,7 @@ Week 4:
 ## SUCCESS CRITERIA
 
 ### Phase F Readiness Checklist
+
 ```
 ✅ Repository automated & operational
 ✅ All tests passing (82/82)
@@ -330,6 +374,7 @@ Week 4:
 ```
 
 ### Completion Metrics
+
 ```
 Target: Repository automation complete with 100% team adoption
 
@@ -346,12 +391,14 @@ Measure:
 ## RESOURCES & CONTACTS
 
 ### Key Documents
+
 - 📖 [Playbook](../docs/REPO_CLEANUP_AND_CONFLICT_PLAYBOOK.md)
 - 📊 [Health Report](../docs/REPO_HEALTH_AND_PROGRESS.md)
 - 🔧 [Automation Scripts](../scripts/)
 - 🤖 [GitHub Actions](../.github/workflows/)
 
 ### Key Contacts
+
 ```
 DevOps Lead:       [Your Name]
 Tech Lead:         [Tech Lead]
@@ -360,6 +407,7 @@ Security Officer:  [Security Contact]
 ```
 
 ### Support Channels
+
 ```
 Slack: #devops-automation
 Wiki: docs/automation
@@ -373,18 +421,19 @@ Email: devops@arisofia.com
 
 **Status:** Ready for Phase F Execution
 
-| Role | Name | Date | Signature |
-|------|------|------|-----------|
-| Repository Admin | Approved | 2026-01-29 | ✅ |
-| Tech Lead | Pending | — | — |
-| DevOps Lead | Pending | — | — |
-| Engineering Manager | Pending | — | — |
+| Role                | Name     | Date       | Signature |
+| ------------------- | -------- | ---------- | --------- |
+| Repository Admin    | Approved | 2026-01-29 | ✅        |
+| Tech Lead           | Pending  | —          | —         |
+| DevOps Lead         | Pending  | —          | —         |
+| Engineering Manager | Pending  | —          | —         |
 
 ---
 
 ## APPENDIX: Quick Reference
 
 ### Essential Commands
+
 ```bash
 # Clean repository locally
 ./scripts/repo-cleanup.sh
@@ -405,6 +454,7 @@ gh workflow view repo-cleanup.yml
 ```
 
 ### Important Dates
+
 ```
 2026-01-29  Documentation complete & pushed
 2026-02-02  First automated cleanup (Sunday 02:00 UTC)
@@ -415,6 +465,7 @@ gh workflow view repo-cleanup.yml
 ```
 
 ### Metrics Baseline (2026-01-29)
+
 ```
 Repository size:     314 MB
 Total objects:       4,800

@@ -1,8 +1,17 @@
-# Repository Cleanup & Merge Conflict Playbook
+# Repository Cleanup & Merge Conflict Playbook [ARCHIVED]
+
+⚠️ **DEPRECATION NOTICE:** This document is archived as of 2026-01-29. All repository operations must now follow the **single source of truth**:
+
+👉 **[docs/REPO_OPERATIONS_MASTER.md](REPO_OPERATIONS_MASTER.md)** ← Use this for all operations
+
+This legacy document is retained for historical reference. Its content has been consolidated into § 1 (Repository Hygiene) and § 2 (Merge & Conflict Handling) of the master runbook.
+
+---
 
 **Project:** abaco-loans-analytics  
 **Version:** 2.0 (2026-01-29)  
-**Maintained by:** Repository Administrators
+**Maintained by:** Repository Administrators  
+**Status:** ARCHIVED (reference only)
 
 ## Overview
 
