@@ -4,6 +4,9 @@ name: Financial Forecast
         - cron: "0 7 * * *" # 8:00 AM CET daily
     workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
     financial-forecast:
         runs-on: ubuntu-latest

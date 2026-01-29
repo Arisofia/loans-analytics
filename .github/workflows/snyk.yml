@@ -14,6 +14,9 @@ name: Snyk Security Scan
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
+permissions:
+  contents: read
+
 jobs:
   snyk:
     runs-on: ubuntu-latest

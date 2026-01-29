@@ -8,6 +8,9 @@ env:
   OPIK_TOKEN: ${{ secrets.OPIK_TOKEN }}
   SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
 
+permissions:
+  contents: read
+
 jobs:
   # Job 1: Fetch system metrics from Opik
   fetch-opik-metrics:

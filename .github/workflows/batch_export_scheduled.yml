@@ -4,6 +4,9 @@ name: Scheduled Batch Export
   schedule:
     - cron: "0 */6 * * *" # Every 6 hours
   workflow_dispatch:
+permissions:
+  contents: read
+
 jobs:
   check-secrets:
     runs-on: ubuntu-latest

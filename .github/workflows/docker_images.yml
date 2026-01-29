@@ -17,6 +17,9 @@ env:
   IMAGE_WEB: ${{ github.repository }}-web
   IMAGE_DASHBOARD: ${{ github.repository }}-dashboard
 
+permissions:
+  contents: read
+
 jobs:
   build-and-push:
     permissions:

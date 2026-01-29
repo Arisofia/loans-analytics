@@ -3,19 +3,23 @@ name: PR Monitor
 "on":
   schedule:
     # Run every hour from 9am to 5pm UTC on weekdays
-    - cron: '0 9-17 * * 1-5'
+    - cron: "0 9-17 * * 1-5"
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   monitor-prs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up Python
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
       - name: Install dependencies
         run: pip install requests
       - name: Run PR Status Report

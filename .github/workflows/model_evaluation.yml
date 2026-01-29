@@ -16,6 +16,9 @@ on:
   schedule:
     - cron: "0 2 * * *"
 
+permissions:
+  contents: read
+
 jobs:
   evaluate-models:
     name: Evaluate ML Models

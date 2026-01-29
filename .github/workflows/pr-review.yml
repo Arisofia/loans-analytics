@@ -8,6 +8,9 @@ name: PR Review - Python QA & AI Analysis
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+
 jobs:
   python-qa:
     name: Python Quality Assurance

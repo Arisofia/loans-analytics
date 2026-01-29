@@ -5,6 +5,9 @@ name: Dependency validate
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   dependency-validate:
     runs-on: ubuntu-latest

@@ -5,6 +5,9 @@ name: KPI Daily Calculation
         - cron: "0 5 * * *" # 6:00 AM CET (5:00 UTC)
     workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
     gate:
         permissions:

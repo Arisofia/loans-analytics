@@ -5,6 +5,9 @@ name: Nightly Dispatch
     - cron: '0 2 * * *' # 2 AM UTC
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   dispatch-workflows:
     runs-on: ubuntu-latest

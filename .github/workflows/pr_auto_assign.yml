@@ -2,7 +2,11 @@ name: PR Auto Assign
 "on":
   pull_request:
     types: [opened, ready_for_review, reopened]
-# This permissions block is the key fix for "Resource not accessible"
+
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   assign:
     permissions:

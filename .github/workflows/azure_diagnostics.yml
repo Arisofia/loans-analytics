@@ -3,6 +3,10 @@ name: Azure Diagnostics (dispatchable)
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   validate-azure:
     uses: ./.github/workflows/reusable-secret-check.yml
