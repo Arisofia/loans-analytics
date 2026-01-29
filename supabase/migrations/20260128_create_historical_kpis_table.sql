@@ -117,11 +117,11 @@ CREATE TRIGGER trg_historical_kpis_updated_at
 -- ============================================================================
 -- Uncomment to insert sample historical KPIs for testing
 
--- INSERT INTO historical_kpis (portfolio_id, kpi_name, kpi_value, calculation_date, grain)
+-- INSERT INTO historical_kpis (kpi_id, value, date, timestamp, metadata)
 -- VALUES 
---     (gen_random_uuid(), 'default_rate', 0.0245, '2026-01-01', 'monthly'),
---     (gen_random_uuid(), 'disbursements', 1500000.50, '2026-01-15', 'daily'),
---     (gen_random_uuid(), 'portfolio_balance', 125000000.00, '2026-01-01', 'monthly');
+--     ('default_rate', 0.0245, '2026-01-01', NOW(), '{"grain": "monthly"}'::jsonb),
+--     ('disbursements', 1500000.50, '2026-01-15', NOW(), '{"grain": "daily"}'::jsonb),
+--     ('portfolio_balance', 125000000.00, '2026-01-01', NOW(), '{"grain": "monthly"}'::jsonb);
 
 -- ============================================================================
 -- Verification Queries
