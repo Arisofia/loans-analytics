@@ -2,11 +2,6 @@ name: Deploy verification (manual)
 
 on:
   workflow_dispatch:
-    inputs:
-      target_url:
-        description: "Full URL to verify (e.g., https://app.example.com)"
-        required: true
-        default: "https://your-prod.example.com"
 
 permissions:
   contents: read
@@ -16,8 +11,8 @@ jobs:
     name: Verify deployed middleware mitigation
     runs-on: ubuntu-latest
     env:
-      TARGET_URL: ${{ github.event.inputs.target_url }}
-    steps:
+      # Set TARGET_URL via repository variable or hardcode your production URL here
+            TARGET_URL: ${{ vars.TARGET_URL || 'https://jolly-moss-01599020f2.azurestaticapps.net/' }}steps:
       - name: Run quick header spoofing and secret checks
         run: |
           set -euo pipefail
