@@ -5,14 +5,9 @@ name: CodeQL Analysis
     branches: [main, develop]
     paths:
       - "src/**"
-      - "apps/**"
-      - "packages/**"
+      - "python/**"
       - "streamlit_app.py"
       - "requirements*.txt"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "tsconfig.json"
-      - "next.config.js"
       - ".github/workflows/codeql.yml"
   pull_request:
     branches: [main, develop]
@@ -36,19 +31,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["javascript", "python"]
+        # NOTE: javascript removed - Next.js frontend (apps/web) was deprecated
+        language: ["python"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        if: matrix.language == 'javascript'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
+      # NOTE: Node.js setup removed - Next.js frontend (apps/web) was deprecated
 
       - name: Setup Python
         if: matrix.language == 'python'

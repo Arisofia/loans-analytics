@@ -6,11 +6,9 @@ name: SonarCloud
       - codex/**
     paths:
       - "src/**"
-      - "apps/**"
-      - "dashboard/**"
+      - "python/**"
+      - "streamlit_app/**"
       - "requirements*.txt"
-      - "package.json"
-      - "pnpm-lock.yaml"
       - "sonar-project.properties"
       - ".github/workflows/sonarcloud.yml"
   pull_request:
@@ -46,18 +44,14 @@ jobs:
         with:
           # Necessary for SonarCloud to analyze history
           fetch-depth: 0
-      - name: Setup Node
-        if: steps.check-secrets.outputs.secrets_available == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+
+      # NOTE: Node.js setup removed - Next.js frontend (apps/web) was deprecated
 
       - name: Set up Python
         if: steps.check-secrets.outputs.secrets_available == 'true'
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: "3.11"
-      # NOTE: npm install step removed - Next.js frontend (apps/web) was deprecated
       - name: Analytics coverage (pytest)
         if: steps.check-secrets.outputs.secrets_available == 'true'
         continue-on-error: true

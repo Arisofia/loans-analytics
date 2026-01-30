@@ -4,12 +4,10 @@ name: Snyk Security Scan
     branches:
       - main
     paths:
-      - "apps/**"
       - "src/**"
+      - "python/**"
       - "streamlit_app.py"
       - "requirements*.txt"
-      - "package.json"
-      - "pnpm-lock.yaml"
       - ".github/workflows/snyk.yml"
   pull_request:
     types: [opened, synchronize, reopened]
