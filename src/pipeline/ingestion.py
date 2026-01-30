@@ -93,8 +93,16 @@ class IngestionPhase:
             return results
 
         except Exception as e:
+            import traceback
+
+            traceback_str = traceback.format_exc()
             logger.error(f"Ingestion failed: {str(e)}", exc_info=True)
-            return {"status": "failed", "error": str(e), "timestamp": datetime.now().isoformat()}
+            return {
+                "status": "failed",
+                "error": str(e),
+                "traceback": traceback_str,
+                "timestamp": datetime.now().isoformat(),
+            }
 
     def _load_from_file(self, file_path: Path) -> pd.DataFrame:
         """Load data from CSV file."""

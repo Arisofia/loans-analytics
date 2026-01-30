@@ -157,8 +157,16 @@ class TransformationPhase:
             return results
 
         except Exception as e:
+            import traceback
+
+            traceback_str = traceback.format_exc()
             logger.error(f"Transformation failed: {str(e)}", exc_info=True)
-            return {"status": "failed", "error": str(e), "timestamp": datetime.now().isoformat()}
+            return {
+                "status": "failed",
+                "error": str(e),
+                "traceback": traceback_str,
+                "timestamp": datetime.now().isoformat(),
+            }
 
     def _handle_nulls(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """

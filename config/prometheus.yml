@@ -1,0 +1,124 @@
+# Prometheus Configuration for Abaco Loans Analytics
+# Self-hosted Prometheus + Grafana setup for complete observability
+
+global:
+  scrape_interval: 60s
+  evaluation_interval: 60s
+  external_labels:
+    cluster: "abaco-production"
+    team: "platform"
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "localhost:9093" # Update with your Alertmanager endpoint
+
+# Rule files (alerts) - Temporarily disabled to fix YAML syntax errors
+rule_files: []
+  # - "/etc/prometheus/rules/supabase_alerts.yml"
+  # - "/etc/prometheus/rules/pipeline_alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # ============================================
+  # SUPABASE DATABASE METRICS
+  # ============================================
+  - job_name: "supabase-db"
+    scrape_interval: 60s
+    scrape_timeout: 10s
+    metrics_path: /customer/v1/privileged/metrics
+    scheme: https
+    basic_auth:
+      username: service_role
+      password: "sb_secret_MWHrnNnT3j0VBFgOPh8FVQ_iAD-lX61" # SUPABASE_SECRET_API_KEY
+    static_configs:
+      - targets:
+          - "goxdevkqozomyhsyxhte.supabase.co:443"
+        labels:
+          project: "goxdevkqozomyhsyxhte"
+          env: "production"
+          database: "postgres"
+    metric_relabel_configs:
+      # Add custom labels for better organization
+      - source_labels: [__name__]
+        regex: "pg_(.*)"
+        target_label: "metric_type"
+        replacement: "postgres"
+      - source_labels: [__name__]
+        regex: "supabase_(.*)"
+        target_label: "metric_type"
+        replacement: "supabase"
+
+  # ============================================
+  # PIPELINE APPLICATION METRICS (FUTURE)
+  # ============================================
+  - job_name: "abaco-pipeline"
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    static_configs:
+      - targets:
+          - "localhost:8000" # Python app will expose /metrics endpoint
+        labels:
+          app: "pipeline"
+          env: "production"
+    # Custom metrics to expose:
+    # - pipeline_runs_total{phase="ingestion|transformation|calculation|output", status="success|error"}
+    # - pipeline_duration_seconds{phase="..."}
+    # - kpi_calculation_failures_total{kpi_name="PAR30|PAR90|..."}
+    # - connection_pool_size{state="active|idle|total"}
+    # - idempotency_cache_hits_total
+    # - idempotency_cache_misses_total
+
+  # ============================================
+  # MULTI-AGENT METRICS (FUTURE)
+  # ============================================
+  - job_name: "multi-agent"
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - "localhost:8001" # Multi-agent orchestrator metrics
+        labels:
+          app: "multi-agent"
+          env: "production"
+    # Custom metrics:
+    # - agent_requests_total{agent="risk|growth|ops|...", status="success|error"}
+    # - agent_duration_seconds{agent="..."}
+    # - agent_llm_cost_usd{agent="...", provider="openai|anthropic|gemini"}
+    # - agent_tokens_total{agent="...", provider="...", type="prompt|completion"}
+
+  # ============================================
+  # LOAD TEST RESULTS (OPTIONAL)
+  # ============================================
+  - job_name: "load-test-results"
+    scrape_interval: 300s # Every 5 minutes during load tests
+    static_configs:
+      - targets:
+          - "localhost:8002" # Load test metrics exporter
+        labels:
+          app: "load-test"
+          env: "staging"
+
+  # ============================================
+  # PROMETHEUS SELF-MONITORING
+  # ============================================
+  - job_name: "prometheus"
+    scrape_interval: 60s
+    static_configs:
+      - targets:
+          - "localhost:9090"
+        labels:
+          job: "prometheus"
+
+  # ============================================
+  # NODE EXPORTER (SYSTEM METRICS)
+  # ============================================
+  - job_name: "node-exporter"
+    scrape_interval: 60s
+    static_configs:
+      - targets:
+          - "localhost:9100"
+        labels:
+          instance: "pipeline-server"
+          env: "production"

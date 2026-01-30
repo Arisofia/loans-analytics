@@ -37,16 +37,16 @@ def parse_args():
 Examples:
   # Run full pipeline with default config
   python scripts/run_data_pipeline.py
-  
+
   # Run with specific input file
   python scripts/run_data_pipeline.py --input data/raw/loans.csv
-  
+
   # Validate configuration and data only
   python scripts/run_data_pipeline.py --mode validate
-  
+
   # Dry run (ingestion only)
   python scripts/run_data_pipeline.py --mode dry-run
-  
+
   # Use custom config file
   python scripts/run_data_pipeline.py --config config/custom_pipeline.yml
         """,
