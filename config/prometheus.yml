@@ -15,10 +15,10 @@ alerting:
         - targets:
             - "localhost:9093" # Update with your Alertmanager endpoint
 
-# Rule files (alerts) - Temporarily disabled to fix YAML syntax errors
-rule_files: []
-  # - "/etc/prometheus/rules/supabase_alerts.yml"
-  # - "/etc/prometheus/rules/pipeline_alerts.yml"
+# Rule files (alerts)
+rule_files:
+  - "/etc/prometheus/rules/supabase_alerts.yml"
+  - "/etc/prometheus/rules/pipeline_alerts.yml"
 
 # Scrape configurations
 scrape_configs:

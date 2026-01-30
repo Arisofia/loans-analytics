@@ -85,7 +85,8 @@ class SupabaseConnectionPool:
         Supabase provides different URL formats:
         - Direct database: postgres://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres
         - Connection pooler:
-          postgres://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
+          postgres://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION]
+          .pooler.supabase.com:6543/postgres
 
         Args:
             url: Original database URL
