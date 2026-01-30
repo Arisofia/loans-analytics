@@ -291,7 +291,7 @@ class CalculationPhase:
         """Calculate all KPIs from definitions."""
         logger.info("Calculating KPIs")
 
-        kpis = {}
+        kpis: Dict[str, Optional[float]] = {}
         engine = KPIFormulaEngine(df)
 
         kpi_categories = [

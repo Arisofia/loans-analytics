@@ -27,7 +27,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -93,7 +93,7 @@ class KPIEngineV2:
         self.df = df
         self.actor = actor
         self.run_id = run_id or self._generate_run_id()
-        self._audit_records = []
+        self._audit_records: List[Dict[str, Any]] = []
 
         logger.info(f"Initialized KPIEngineV2 with actor={actor}, run_id={self.run_id}")
 

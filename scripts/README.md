@@ -38,12 +38,16 @@ make monitoring-logs
 
 ## 📊 Monitoring Scripts
 
-| Script                       | Description                                | Usage                                   |
-| ---------------------------- | ------------------------------------------ | --------------------------------------- |
-| **auto_start_monitoring.sh** | Complete automation for monitoring stack   | `bash scripts/auto_start_monitoring.sh` |
-| **start_monitoring.sh**      | Basic monitoring startup (legacy)          | `bash scripts/start_monitoring.sh`      |
-| **load_env.sh**              | Load environment variables from .env.local | `source scripts/load_env.sh`            |
-| **test_metrics_api.sh**      | Test Supabase Metrics API connection       | `bash scripts/test_metrics_api.sh`      |
+| Script                         | Description                                                  | Usage                                             |
+| ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
+| **auto_start_monitoring.sh**   | Complete automation for monitoring stack                     | `bash scripts/auto_start_monitoring.sh`           |
+| **health_check_monitoring.sh** | Smart health verification with critical/optional distinction | `bash scripts/health_check_monitoring.sh`         |
+| **import_dashboards.sh**       | Automated Grafana dashboard import                           | `bash scripts/import_dashboards.sh`               |
+| **backup_dashboards.sh**       | Export all Grafana dashboards to JSON                        | `bash scripts/backup_dashboards.sh [output-dir]`  |
+| **restore_dashboards.sh**      | Import dashboards from backup                                | `bash scripts/restore_dashboards.sh [backup-dir]` |
+| **start_monitoring.sh**        | Basic monitoring startup (legacy)                            | `bash scripts/start_monitoring.sh`                |
+| **load_env.sh**                | Load environment variables from .env.local                   | `source scripts/load_env.sh`                      |
+| **test_metrics_api.sh**        | Test Supabase Metrics API connection                         | `bash scripts/test_metrics_api.sh`                |
 
 ## 🧪 Testing Scripts
 
@@ -116,14 +120,50 @@ docker ps | grep -E "(prometheus|grafana|alertmanager)"
 # View real-time logs
 make monitoring-logs
 
+# Check health status
+make monitoring-health
+
+# Backup dashboards
+make dashboard-backup
+
+# Restore dashboards from latest backup
+make dashboard-restore
+
 # Restart stack if needed
 make monitoring-stop
 make monitoring-start
 ```
 
+### Dashboard Management
+
+```bash
+# Export all dashboards to timestamped backup
+bash scripts/backup_dashboards.sh
+# Output: grafana/dashboards/backups/YYYY-MM-DD_HH-MM-SS/
+
+# Export to specific directory
+bash scripts/backup_dashboards.sh /path/to/backup
+
+# Restore from latest backup
+bash scripts/restore_dashboards.sh
+# Default: grafana/dashboards/backups/latest/
+
+# Restore from specific backup
+bash scripts/restore_dashboards.sh grafana/dashboards/backups/2026-01-30_15-30-00/
+
+# Quick dashboard workflow
+make dashboard-backup  # Export current state
+# Make changes in Grafana UI
+make dashboard-backup  # New versioned backup
+# Rollback if needed: bash scripts/restore_dashboards.sh [previous-backup-dir]
+```
+
 ### Troubleshooting
 
 ```bash
+# Check monitoring stack health (critical targets must be UP)
+make monitoring-health
+
 # Check Docker is running
 docker ps
 
@@ -138,6 +178,31 @@ docker-compose -f docker-compose.monitoring.yml restart grafana
 # Full cleanup and restart
 docker-compose -f docker-compose.monitoring.yml down -v
 make monitoring-start
+```
+
+## 📖 Query Reference
+
+See [docs/PROMQL_QUERY_REFERENCE.md](../docs/PROMQL_QUERY_REFERENCE.md) for:
+
+- PromQL syntax examples
+- Database performance queries (TPS, connections, cache hit ratio)
+- Resource monitoring (CPU, memory, disk)
+- PgBouncer connection pool queries
+- Alert rule examples
+- Dashboard panel query breakdown
+- Troubleshooting queries
+
+Quick examples:
+
+```promql
+# Transactions per second
+rate(pg_stat_database_xact_commit{datname="postgres"}[5m])
+
+# Cache hit ratio (target >95%)
+100 * (rate(pg_stat_database_blks_hit[5m]) / (rate(pg_stat_database_blks_hit[5m]) + rate(pg_stat_database_blks_read[5m])))
+
+# Active connections
+pg_stat_database_numbackends{datname="postgres"}
 ```
 
 ## 🔐 Security Notes

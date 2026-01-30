@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test clean monitoring-start monitoring-stop monitoring-logs monitoring-health
+.PHONY: help setup format lint type-check test clean monitoring-start monitoring-stop monitoring-logs monitoring-health dashboard-backup dashboard-restore
 PYTHON := python3
 VENV := .venv
 BIN := $(VENV)/bin
@@ -15,10 +15,12 @@ help:
 	@echo "make clean          - Remove build artifacts and cache"
 	@echo ""
 	@echo "Monitoring Stack:"
-	@echo "make monitoring-start  - Auto-start Prometheus + Grafana + Alertmanager"
-	@echo "make monitoring-stop   - Stop monitoring stack"
-	@echo "make monitoring-logs   - View monitoring logs"
-	@echo "make monitoring-health - Check monitoring stack health"
+	@echo "make monitoring-start    - Auto-start Prometheus + Grafana + Alertmanager"
+	@echo "make monitoring-stop     - Stop monitoring stack"
+	@echo "make monitoring-logs     - View monitoring logs"
+	@echo "make monitoring-health   - Check monitoring stack health"
+	@echo "make dashboard-backup    - Export all Grafana dashboards to JSON"
+	@echo "make dashboard-restore   - Import dashboards from backup"
 setup:
 	$(PYTHON) -m venv $(VENV)
 	$(BIN)/pip install --upgrade pip
@@ -54,6 +56,12 @@ monitoring-logs:
 
 monitoring-health:
 	@bash scripts/health_check_monitoring.sh
+
+dashboard-backup:
+	@bash scripts/backup_dashboards.sh
+
+dashboard-restore:
+	@bash scripts/restore_dashboards.sh
 
 # NOTE: run-analytics target removed (legacy script deleted in Phase B)
 # Pipeline modernization tracked separately
