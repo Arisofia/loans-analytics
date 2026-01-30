@@ -498,7 +498,7 @@ class HistoricalContextProvider:
 
         # Simple polynomial fitting using numpy-like approach
         # (without external dependency)
-        x_vals = list(range(len(history)))
+        x_vals = [float(i) for i in range(len(history))]
         y_vals = [h.value for h in history]
 
         # For polynomial fitting, use linear regression as simplification

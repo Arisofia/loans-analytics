@@ -241,7 +241,7 @@ class KpiContextProvider:
         if kpi_names is None:
             kpi_names = [kpi.name for kpi in self.registry.kpis]
 
-        context = {
+        context: Dict[str, Any] = {
             "kpis": {},
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "total_kpis": len(kpi_names),
@@ -252,7 +252,7 @@ class KpiContextProvider:
                 kpi_def = self.get_kpi_definition(kpi_name)
                 current_value = self.current_values.get(kpi_name)
 
-                kpi_context = {
+                kpi_context: Dict[str, Any] = {
                     "definition": {
                         "name": kpi_def.name,
                         "formula": kpi_def.formula,

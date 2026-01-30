@@ -54,19 +54,29 @@ class MultiAgentOrchestrator:
         """Initialize all role-specific agents."""
         # pylint: disable=no-value-for-parameter
         return {
-            AgentRole.RISK_ANALYST: RiskAnalystAgent(provider=self.provider, tracer=self.tracer),
+            AgentRole.RISK_ANALYST: RiskAnalystAgent(
+                role=AgentRole.RISK_ANALYST, provider=self.provider, tracer=self.tracer
+            ),
             AgentRole.GROWTH_STRATEGIST: GrowthStrategistAgent(
-                provider=self.provider, tracer=self.tracer
+                role=AgentRole.GROWTH_STRATEGIST, provider=self.provider, tracer=self.tracer
             ),
-            AgentRole.OPS_OPTIMIZER: OpsOptimizerAgent(provider=self.provider, tracer=self.tracer),
-            AgentRole.COMPLIANCE: ComplianceAgent(provider=self.provider, tracer=self.tracer),
-            AgentRole.COLLECTIONS: CollectionsAgent(provider=self.provider, tracer=self.tracer),
+            AgentRole.OPS_OPTIMIZER: OpsOptimizerAgent(
+                role=AgentRole.OPS_OPTIMIZER, provider=self.provider, tracer=self.tracer
+            ),
+            AgentRole.COMPLIANCE: ComplianceAgent(
+                role=AgentRole.COMPLIANCE, provider=self.provider, tracer=self.tracer
+            ),
+            AgentRole.COLLECTIONS: CollectionsAgent(
+                role=AgentRole.COLLECTIONS, provider=self.provider, tracer=self.tracer
+            ),
             AgentRole.FRAUD_DETECTION: FraudDetectionAgent(
-                provider=self.provider, tracer=self.tracer
+                role=AgentRole.FRAUD_DETECTION, provider=self.provider, tracer=self.tracer
             ),
-            AgentRole.PRICING: PricingAgent(provider=self.provider, tracer=self.tracer),
+            AgentRole.PRICING: PricingAgent(
+                role=AgentRole.PRICING, provider=self.provider, tracer=self.tracer
+            ),
             AgentRole.CUSTOMER_RETENTION: CustomerRetentionAgent(
-                provider=self.provider, tracer=self.tracer
+                role=AgentRole.CUSTOMER_RETENTION, provider=self.provider, tracer=self.tracer
             ),
         }
 
@@ -876,7 +886,7 @@ class MultiAgentOrchestrator:
 
         trace_id = trace_id or self.tracer.generate_trace_id()
         context = {**scenario.initial_context, **initial_context}
-        results = {}
+        results: Dict[str, Any] = {}
 
         logger.info("Starting scenario: %s with trace_id: %s", scenario_name, trace_id)
 

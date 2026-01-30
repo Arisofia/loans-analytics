@@ -45,7 +45,7 @@ class Guardrails:
     @classmethod
     def sanitize_context(cls, context: Dict[str, Any]) -> Dict[str, Any]:
         """Sanitize context dictionary by redacting PII."""
-        sanitized = {}
+        sanitized: Dict[str, Any] = {}
         for key, value in context.items():
             if isinstance(value, str):
                 sanitized[key] = cls.redact_pii(value)
