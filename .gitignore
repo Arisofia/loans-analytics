@@ -21,6 +21,8 @@ venv/
 
 # Config
 config/*.yaml
+# Exception: business_rules.yaml is part of the documented repo structure
+!config/business_rules.yaml
 
 # Logs
 *.log
