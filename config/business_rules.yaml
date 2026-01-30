@@ -1,0 +1,181 @@
+# Business Rules Configuration
+# Single source of truth for business logic applied during transformation
+#
+# Version: 1.0.0
+# Last Updated: 2026-01-30
+
+version: "1.0.0"
+last_updated: "2026-01-30"
+
+# =============================================================================
+# LOAN STATUS MAPPINGS
+# =============================================================================
+# Standardizes various status representations to canonical lowercase values
+status_mappings:
+  # Active loans
+  "Active": "active"
+  "ACTIVE": "active"
+  "A": "active"
+  "Current": "active"
+  "CURRENT": "active"
+
+  # Delinquent loans
+  "Delinquent": "delinquent"
+  "DELINQUENT": "delinquent"
+  "D": "delinquent"
+  "Past Due": "delinquent"
+  "PAST_DUE": "delinquent"
+
+  # Closed loans
+  "Closed": "closed"
+  "CLOSED": "closed"
+  "C": "closed"
+  "Paid Off": "closed"
+  "PAID_OFF": "closed"
+
+  # Defaulted loans
+  "Defaulted": "defaulted"
+  "DEFAULTED": "defaulted"
+  "default": "defaulted"
+  "X": "defaulted"
+  "Charged Off": "defaulted"
+  "CHARGED_OFF": "defaulted"
+
+# =============================================================================
+# DPD (Days Past Due) BUCKET DEFINITIONS
+# =============================================================================
+# Used for portfolio segmentation and risk categorization
+dpd_buckets:
+  current:
+    min: 0
+    max: 0
+    label: "current"
+    risk_weight: 0.0
+
+  early_delinquency:
+    min: 1
+    max: 29
+    label: "1-29"
+    risk_weight: 0.1
+
+  dpd_30_59:
+    min: 30
+    max: 59
+    label: "30-59"
+    risk_weight: 0.3
+
+  dpd_60_89:
+    min: 60
+    max: 89
+    label: "60-89"
+    risk_weight: 0.5
+
+  dpd_90_179:
+    min: 90
+    max: 179
+    label: "90-179"
+    risk_weight: 0.8
+
+  npl:
+    min: 180
+    max: null  # No upper bound
+    label: "180+"
+    risk_weight: 1.0
+
+# =============================================================================
+# RISK CATEGORIZATION RULES
+# =============================================================================
+risk_categories:
+  low:
+    conditions:
+      status: "active"
+      max_dpd: 30
+    description: "Performing loan with no delinquency"
+
+  medium:
+    conditions:
+      min_dpd: 30
+      max_dpd: 89
+    description: "Loan with moderate delinquency risk"
+
+  high:
+    conditions:
+      status: "delinquent"
+      min_dpd: 90
+    description: "Seriously delinquent loan"
+
+  critical:
+    conditions:
+      status: "defaulted"
+    description: "Loan in default or charged off"
+
+# =============================================================================
+# AMOUNT TIER CLASSIFICATION
+# =============================================================================
+# Loan size classification for portfolio analysis
+amount_tiers:
+  micro:
+    min: 0
+    max: 5000
+    label: "micro"
+    description: "Micro loans (<$5K)"
+
+  small:
+    min: 5000
+    max: 25000
+    label: "small"
+    description: "Small loans ($5K-$25K)"
+
+  medium:
+    min: 25000
+    max: 100000
+    label: "medium"
+    description: "Medium loans ($25K-$100K)"
+
+  large:
+    min: 100000
+    max: 500000
+    label: "large"
+    description: "Large loans ($100K-$500K)"
+
+  jumbo:
+    min: 500000
+    max: null
+    label: "jumbo"
+    description: "Jumbo loans (>$500K)"
+
+# =============================================================================
+# FINANCIAL GUARDRAILS
+# =============================================================================
+# Risk limits and operational thresholds (mirrors python/config.py)
+guardrails:
+  # Portfolio concentration limits
+  max_single_obligor: 0.04       # 4% max single borrower concentration
+  max_top_10_concentration: 0.30  # 30% max top-10 concentration
+
+  # Risk thresholds
+  max_default_rate: 0.04         # 4% max acceptable default rate
+  min_collection_efficiency_6m: 0.96  # 96% CE target over 6 months
+
+  # Target metrics
+  target_rotation: 4.5           # Minimum portfolio turnover
+  target_apr_min: 0.34           # 34% minimum APR
+  target_apr_max: 0.40           # 40% maximum APR
+
+  # Debt metrics
+  min_dscr: 1.2                  # Minimum Debt Service Coverage Ratio
+
+# =============================================================================
+# CUSTOM TRANSFORMATION RULES
+# =============================================================================
+# Additional derived fields and mappings applied during transformation
+transformations: []
+  # Example custom transformation:
+  # - name: "industry_segment"
+  #   type: "column_mapping"
+  #   source_column: "industry_code"
+  #   target_column: "industry_segment"
+  #   mapping:
+  #     "MFG": "Manufacturing"
+  #     "SVC": "Services"
+  #     "RET": "Retail"
