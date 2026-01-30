@@ -13,6 +13,10 @@
     "**/.venv-1": true,
     "**/.git": true
   },
+  "files.associations": {
+    ".coveragerc": "ini",
+    "*.coveragerc": "ini"
+  },
   "java.compile.nullAnalysis.mode": "automatic",
   "sonarlint.connectedMode.project": {
     "connectionId": "abaco-technol",
