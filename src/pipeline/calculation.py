@@ -382,7 +382,10 @@ class CalculationPhase:
                 pass
 
         logger.info(
-            f"Time-series calculated: {len(result['daily'])} daily, {len(result['weekly'])} weekly, {len(result['monthly'])} monthly"
+            "Time-series calculated: %d daily, %d weekly, %d monthly",
+            len(result["daily"]),
+            len(result["weekly"]),
+            len(result["monthly"]),
         )
         return result
 
