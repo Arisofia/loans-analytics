@@ -25,8 +25,7 @@ groups:
             1. Check logs: grep "{{ $labels.run_id }}" logs/pipeline.log
             2. Review error context in src/pipeline/{{ $labels.phase }}.py
             3. Check data/compliance/{{ $labels.run_id }}_compliance.json
-          
-runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/Pipeline-Failures
+          runbook: "https://github.com/Arisofia/abaco-loans-analytics/wiki/Pipeline-Failures"
 
       # KPI calculation failures exceeding threshold
       - alert: KPICalculationFailureRateHigh
@@ -222,7 +221,7 @@ runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/Pipeline-Failure
   # DATA QUALITY ALERTS
   # ============================================
   - name: data-quality
-    interval: 300s  # Every 5 minutes
+    interval: 300s # Every 5 minutes
     rules:
       # Data volume anomaly
       - alert: DataVolumeAnomalyDetected

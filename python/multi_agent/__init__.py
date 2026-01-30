@@ -1,7 +1,5 @@
-from .agent_factory import AgentConfig
 from .agents import (
     ComplianceAgent,
-    CustomerRetentionAgent,
     GrowthStrategistAgent,
     RiskAnalystAgent,
 )
@@ -16,9 +14,16 @@ from .protocol import (
     LLMProvider,
     Message,
     MessageRole,
+    Scenario,
+    ScenarioStep,
     Tool,
 )
-from .scenarios import Scenario, ScenarioStep, create_portfolio_risk_review_scenario
+from .specialized_agents import (
+    CollectionsAgent,
+    CustomerRetentionAgent,
+    FraudDetectionAgent,
+    PricingAgent,
+)
 from .tracing import AgentTracer
 
 __all__ = [
@@ -26,6 +31,9 @@ __all__ = [
     "CustomerRetentionAgent",
     "GrowthStrategistAgent",
     "RiskAnalystAgent",
+    "CollectionsAgent",
+    "FraudDetectionAgent",
+    "PricingAgent",
     "AgentRole",
     "AgentRequest",
     "AgentResponse",
@@ -40,6 +48,4 @@ __all__ = [
     "Guardrails",
     "BaseAgent",
     "MultiAgentOrchestrator",
-    "create_portfolio_risk_review_scenario",
-    "AgentConfig",
 ]
