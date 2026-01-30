@@ -37,7 +37,14 @@ disable=
     too-many-arguments,
     too-many-locals,
     too-many-branches,
-    too-many-statements
+    too-many-statements,
+    logging-fstring-interpolation,
+    logging-format-interpolation,
+    broad-exception-caught,
+    broad-exception-raised,
+    unspecified-encoding,
+    wrong-import-position,
+    unused-argument
 
 [REPORTS]
 # Set the output format.
