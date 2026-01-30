@@ -27,7 +27,7 @@ def agent_with_role(role: AgentRole):
         def new_init(self, provider: LLMProvider = LLMProvider.OPENAI, **kwargs):
             """Initialize agent with specified role."""
             # Remove role from kwargs if present to avoid duplicate argument error
-            kwargs.pop('role', None)
+            kwargs.pop("role", None)
             # Call BaseAgent.__init__ directly
             BaseAgent.__init__(self, role=role, provider=provider, **kwargs)
 
