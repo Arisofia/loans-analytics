@@ -52,6 +52,7 @@ class MultiAgentOrchestrator:
 
     def _init_agents(self) -> Dict[AgentRole, BaseAgent]:
         """Initialize all role-specific agents."""
+        # pylint: disable=no-value-for-parameter
         return {
             AgentRole.RISK_ANALYST: RiskAnalystAgent(provider=self.provider, tracer=self.tracer),
             AgentRole.GROWTH_STRATEGIST: GrowthStrategistAgent(

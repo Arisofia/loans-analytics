@@ -88,7 +88,9 @@ class IngestionPhase:
             }
 
             logger.info(
-                f"Ingestion completed: {results['row_count']} rows, {results['column_count']} columns"
+                "Ingestion completed: %d rows, %d columns",
+                results["row_count"],
+                results["column_count"],
             )
             return results
 
