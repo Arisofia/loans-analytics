@@ -15,6 +15,7 @@ make monitoring-start
 ```
 
 This single command:
+
 - ✅ Starts Docker if needed
 - ✅ Validates Supabase credentials
 - ✅ Launches Prometheus + Grafana + Alertmanager
@@ -30,21 +31,24 @@ This single command:
 ### ✅ Task 1: Grafana Dashboards
 
 **Created:**
+
 - `grafana/dashboards/supabase-postgresql.json` - 9-panel custom dashboard:
-  * Database Connections
-  * Transactions Per Second (TPS)
-  * Query Operations (fetch/insert/update/delete)
-  * PgBouncer Connection Pool
-  * Cache Hit Ratio (gauge with thresholds)
-  * Disk Usage (gauge)
-  * Memory Usage
-  * CPU Usage
-  * Disk I/O
+  - Database Connections
+  - Transactions Per Second (TPS)
+  - Query Operations (fetch/insert/update/delete)
+  - PgBouncer Connection Pool
+  - Cache Hit Ratio (gauge with thresholds)
+  - Disk Usage (gauge)
+  - Memory Usage
+  - CPU Usage
+  - Disk I/O
 
 **Automation:**
+
 - `scripts/import_dashboards.sh` - Automated dashboard import with datasource UID updates
 
 **Usage:**
+
 ```bash
 bash scripts/import_dashboards.sh
 ```
@@ -54,10 +58,12 @@ bash scripts/import_dashboards.sh
 ### ✅ Task 2: Alert Rules Configuration
 
 **Fixed:**
+
 - YAML syntax errors in `config/rules/pipeline_alerts.yml`
 - Re-enabled 8 alert rule groups in `config/prometheus.yml`
 
 **Active Rules:**
+
 - **connection-pool**: 3 rules (high connections, pool exhaustion)
 - **data-quality**: 2 rules (validation failures, completeness)
 - **idempotency**: 1 rule (duplicate transaction detection)
@@ -66,6 +72,7 @@ bash scripts/import_dashboards.sh
 - **supabase-alerts**: Connection limits, cache hit ratio, disk usage
 
 **Verification:**
+
 ```bash
 curl http://localhost:9090/api/v1/rules | jq '.data.groups[].name'
 ```
@@ -75,24 +82,26 @@ curl http://localhost:9090/api/v1/rules | jq '.data.groups[].name'
 ### ✅ Task 3: Alertmanager Notifications
 
 **Created:**
+
 - `docs/ALERTMANAGER_NOTIFICATIONS_SETUP.md` (377 lines) - Comprehensive guide covering:
-  * Slack webhook setup (step-by-step from api.slack.com)
-  * Email/SMTP configuration (Gmail App Passwords)
-  * Multi-channel routing by severity/component
-  * Custom alert templates (Go template syntax)
-  * Inhibition rules (suppress cascading alerts)
-  * Testing procedures (curl test alerts)
-  * Troubleshooting guide
-  * Security best practices
+  - Slack webhook setup (step-by-step from api.slack.com)
+  - Email/SMTP configuration (Gmail App Passwords)
+  - Multi-channel routing by severity/component
+  - Custom alert templates (Go template syntax)
+  - Inhibition rules (suppress cascading alerts)
+  - Testing procedures (curl test alerts)
+  - Troubleshooting guide
+  - Security best practices
 
 **Example Configuration:**
+
 ```yaml
 receivers:
   - name: 'slack-critical'
     slack_configs:
       - api_url: '${SLACK_WEBHOOK_URL}'
         channel: '#alerts-critical'
-        
+
   - name: 'email-ops'
     email_configs:
       - to: 'ops@abaco.com'
@@ -105,9 +114,11 @@ receivers:
 ### ✅ Task 4: PromQL Query Reference Guide
 
 **Created:**
+
 - `docs/PROMQL_QUERY_REFERENCE.md` (300+ lines) - Practical query examples:
 
 **Sections:**
+
 1. **Basic PromQL Syntax**: Instant vectors, range vectors, aggregation
 2. **Database Performance**: TPS, connections, cache hit ratio, query operations
 3. **Resource Monitoring**: CPU, memory, disk usage, I/O throughput
@@ -117,6 +128,7 @@ receivers:
 7. **Troubleshooting Queries**: Slow queries, connection leaks, replication lag, deadlocks
 
 **Quick Examples:**
+
 ```promql
 # Transactions per second
 rate(pg_stat_database_xact_commit{datname="postgres"}[5m])
@@ -136,10 +148,12 @@ rate(pg_stat_database_xact_commit{datname="postgres"}[5m])
 ### ✅ Task 5: Dashboard Backup/Restore Automation
 
 **Created:**
+
 - `scripts/backup_dashboards.sh` - Export all Grafana dashboards to timestamped JSON files
 - `scripts/restore_dashboards.sh` - Import dashboards from backup with datasource UID updates
 
 **Features:**
+
 - ✅ Timestamped backups: `grafana/dashboards/backups/YYYY-MM-DD_HH-MM-SS/`
 - ✅ Automatic manifest generation (dashboard list, metadata)
 - ✅ Symlink to latest: `grafana/dashboards/backups/latest`
@@ -148,6 +162,7 @@ rate(pg_stat_database_xact_commit{datname="postgres"}[5m])
 - ✅ Makefile targets: `make dashboard-backup`, `make dashboard-restore`
 
 **Usage:**
+
 ```bash
 # Export all dashboards
 make dashboard-backup
@@ -161,6 +176,7 @@ bash scripts/restore_dashboards.sh grafana/dashboards/backups/2026-01-30_14-00-0
 ```
 
 **Workflow:**
+
 ```bash
 # 1. Backup current state
 make dashboard-backup
@@ -180,9 +196,11 @@ bash scripts/restore_dashboards.sh [previous-timestamp]
 ### ✅ Task 6: CI/CD Monitoring Integration
 
 **Created:**
+
 - `.github/workflows/monitoring-validation.yml` - GitHub Actions workflow for continuous validation
 
 **Jobs:**
+
 1. **validate-prometheus-config** - promtool syntax checks, rule validation
 2. **validate-alertmanager-config** - amtool syntax checks
 3. **lint-yaml-files** - yamllint for all config files
@@ -193,12 +211,14 @@ bash scripts/restore_dashboards.sh [previous-timestamp]
 8. **monitoring-summary** - Aggregate results, fail on critical errors
 
 **Triggers:**
+
 - ✅ Push to main/develop (config changes)
 - ✅ Pull requests (validation before merge)
 - ✅ Weekly schedule (Mondays 9 AM UTC)
 - ✅ Manual dispatch
 
 **Tools Used:**
+
 - promtool (Prometheus v2.50.1)
 - amtool (Alertmanager v0.27.0)
 - yamllint
@@ -213,10 +233,12 @@ bash scripts/restore_dashboards.sh [previous-timestamp]
 ### Files Created (2869 total lines)
 
 **Documentation (677 lines):**
+
 - `docs/ALERTMANAGER_NOTIFICATIONS_SETUP.md` - 377 lines
 - `docs/PROMQL_QUERY_REFERENCE.md` - 300 lines
 
 **Scripts (809 lines):**
+
 - `scripts/auto_start_monitoring.sh` - 164 lines
 - `scripts/health_check_monitoring.sh` - 138 lines
 - `scripts/import_dashboards.sh` - 122 lines
@@ -225,12 +247,15 @@ bash scripts/restore_dashboards.sh [previous-timestamp]
 - `scripts/README.md` - 47 lines added
 
 **Dashboards (187 lines):**
+
 - `grafana/dashboards/supabase-postgresql.json` - 187 lines (9 panels)
 
 **CI/CD (273 lines):**
+
 - `.github/workflows/monitoring-validation.yml` - 273 lines
 
 **Configuration:**
+
 - `Makefile` - 6 new targets added
 - `config/prometheus.yml` - Alert rules re-enabled
 - `config/rules/pipeline_alerts.yml` - YAML syntax fixed
@@ -256,20 +281,24 @@ make dashboard-restore   # Import dashboards from latest backup
 ## 📊 Current Stack Status
 
 ### Services
+
 - ✅ **Prometheus**: http://localhost:9090 - 8 rule groups active
 - ✅ **Grafana**: http://localhost:3001 - 2 dashboards available
 - ✅ **Alertmanager**: http://localhost:9093 - Ready for Slack/Email
 
 ### Metrics
+
 - ✅ **Supabase**: 520 metrics (47 PostgreSQL, 40 PgBouncer, 200+ node)
 - ✅ **Scrape Interval**: 60s
 - ✅ **Retention**: 30 days
 
 ### Targets
+
 - ✅ **Critical**: supabase-db, prometheus (UP)
 - ⚠️ **Optional**: abaco-pipeline, multi-agent, load-test, node-exporter (down - not required)
 
 ### Alerts
+
 - ✅ **8 rule groups** with 15+ rules
 - ✅ **Categories**: connection-pool, data-quality, idempotency, multi-agent, pipeline-critical, supabase
 - ✅ **Thresholds**: Configurable via `config/rules/*.yml`
@@ -379,12 +408,14 @@ amtool check-config config/alertmanager.yml
 ## 📞 Support
 
 **Issues?** Check:
+
 1. `make monitoring-health` - Diagnose stack health
 2. [scripts/README.md](scripts/README.md) - Troubleshooting section
 3. [PROMQL_QUERY_REFERENCE.md](docs/PROMQL_QUERY_REFERENCE.md) - Query examples
 4. GitHub workflow logs - CI/CD validation results
 
 **Resources:**
+
 - Prometheus Docs: https://prometheus.io/docs/
 - Grafana Docs: https://grafana.com/docs/
 - Supabase Metrics: https://supabase.com/docs/guides/platform/metrics
@@ -394,6 +425,7 @@ amtool check-config config/alertmanager.yml
 **🎯 Mission Accomplished**: Complete monitoring automation with one-command setup, comprehensive dashboards, intelligent alerting, versioned backups, and continuous validation.
 
 **Commits:**
+
 - cc40f29d6: Complete automation suite (final deliverables)
 - 237c9ce07: Dashboards, alerts, notifications
 - 599d795c6: Initial automation suite

@@ -82,6 +82,15 @@ done
 echo -e "${GREEN}✓ All required variables present${NC}"
 echo ""
 
+# Step 3.5: Generate Alertmanager configuration (with credentials from .env.local)
+echo -e "${YELLOW}[3.5/6]${NC} Generating Alertmanager configuration with email credentials..."
+if bash scripts/generate_alertmanager_config.sh >/dev/null 2>&1; then
+    echo -e "${GREEN}✓ Alertmanager config generated${NC}"
+else
+    echo -e "${YELLOW}⚠️  Alertmanager config generation failed (continuing anyway)${NC}"
+fi
+echo ""
+
 # Step 4: Stop conflicting containers
 echo -e "${YELLOW}[4/6]${NC} Checking for port conflicts..."
 if docker ps --format '{{.Names}}' | grep -q "grafana-observability"; then
