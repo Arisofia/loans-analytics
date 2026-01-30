@@ -14,11 +14,11 @@ This is a **production-grade fintech lending analytics platform** with dual arch
    - **Phase 1**: Ingestion with schema validation and checksums
    - **Phase 2**: Transformation with PII masking (regulatory compliance)
    - **Phase 3**: KPI calculation (19 metrics across 6 categories)
-   - **Phase 4**: Multi-format output (Parquet/CSV/JSON) + dashboard refresh
+   - **Phase 4**: Multi-format output (Parquet/CSV/JSON)
 
 2. **Multi-Agent AI System** (`python/multi_agent/`) - 8 specialized LLM agents for lending analytics
    - Risk, Growth, Ops, Compliance, Collections, Fraud, Pricing, Retention
-   - 7 pre-built scenarios for portfolio analysis
+   - 20 specialized scenarios for portfolio analysis
    - KPI-aware with real-time anomaly detection
 
 **Primary tech stack**: Python 3.9+, Pydantic, pandas/polars, Azure Functions, Supabase  
@@ -47,7 +47,7 @@ config/pipeline.yml     # Pipeline configuration (phases, thresholds, outputs)
 config/kpis/            # KPI definitions (formulas, thresholds, targets)
 config/business_rules.yaml  # Loan status mappings, DPD buckets, risk categories
 
-.github/workflows/      # 48 CI/CD workflows (compliance, security, deployment)
+.github/workflows/      # CI/CD workflows (compliance, security, deployment)
 ```
 
 ## Critical Developer Commands
@@ -198,11 +198,6 @@ Agents use typed Pydantic models from `python/multi_agent/protocol.py`:
 - Script sprawl in `scripts/`: Several one-off maintenance scripts from legacy migrations
 - **Fix**: Move to `archives/maintenance/` and consolidate common patterns
 
-⚠️ **Priority 3 (Monitor)**:
-
-- Web app (`apps/web/`): Uses Next.js 15, but `package.json` shows experimental v16 pinning
-- **Action**: Monitor compatibility, especially around SSR and Supabase client patterns
-
 ### Architectural Decisions (ADRs)
 
 1. **Separation of `src/agents/` vs `python/multi_agent/`**: INTENTIONAL
@@ -210,10 +205,9 @@ Agents use typed Pydantic models from `python/multi_agent/protocol.py`:
    - `python/multi_agent/`: Full domain-specific multi-agent system
    - **Do NOT consolidate** - different purposes, clear separation of concerns
 
-2. **Dual Dashboard Strategy**: INTENTIONAL
-   - `streamlit_app/`: Internal data exploration (Python, rapid iteration)
-   - `apps/web/`: Production customer-facing app (Next.js, authentication, scalability)
-   - **Keep both** - serve different audiences and use cases
+2. **Dashboard Strategy**:
+   - `streamlit_app/`: Internal and external data exploration (Python, rapid iteration)
+   - Serves as the primary interface for both internal analysis and customer-facing insights
 
 3. **Configuration-Over-Code Philosophy**: Core design principle
    - New KPIs added via YAML, not code changes
