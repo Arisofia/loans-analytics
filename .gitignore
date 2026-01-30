@@ -156,3 +156,14 @@ logs/runs/run_*/
 .env.*.local
 *.env.local
 .lint_venv/
+
+# OS/Editor duplicate files (macOS Finder, VS Code "Save As", browser downloads)
+*\ (1).*
+*\ (2).*
+*\ (3).*
+*\ (4).*
+*\ (5).*
+*\ [0-9].*
+*\ copy.*
+*\ Copy.*
+
