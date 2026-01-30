@@ -26,7 +26,7 @@
                 "subdirs": [
                     "config.py - Unified configuration management",
                     "logging_config.py - Structured JSON logging",
-                    "models/ - Pydantic schemas (Cascade, KPI, workflows)",
+                    "models/ - Pydantic schemas (KPI, workflows, data contracts)",
                     "multi_agent/ - AI agent orchestrator",
                     "pipeline/ - Pipeline phase implementations"
                 ],
@@ -67,7 +67,7 @@
                 "path": "data/",
                 "purpose": "Raw input data and processed artifacts",
                 "structure": {
-                    "data/raw/": "Input CSV files and Cascade exports",
+                    "data/raw/": "Input CSV files and Supabase exports",
                     "data/metrics/": "KPI calculation outputs (Parquet/CSV)",
                     "logs/runs/": "Timestamped run artifacts and audit logs"
                 },
@@ -183,10 +183,9 @@
         "PHASE_1_INGESTION": {
             "location": "src/pipeline/ingestion.py",
             "support_files": [
-                "python/models/cascade_schemas.py",
                 "config/pipeline.yml"
             ],
-            "function": "HTTP client pulls Cascade exports with retries, rate limiting, token refresh",
+            "function": "Load data from CSV files or Supabase with validation",
             "validation": "Pydantic schema validation, checksum verification, duplicate detection",
             "output": "Raw data stored with timestamp and immutable hash"
         },

@@ -1,5 +1,8 @@
 # Grafana Dashboards
 
+> **⚠️ Note (2026-01):** Slack notification channels referenced below are deprecated.
+> Use Grafana native alerting with email or Azure integration.
+
 Pre-configured dashboards for ABACO Loans Analytics observability.
 
 ## Available Dashboards

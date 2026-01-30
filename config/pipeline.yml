@@ -7,21 +7,15 @@ last_updated: "2026-01-29"
 # PHASE 1: INGESTION
 ingestion:
   # Data sources
+  # NOTE: Cascade API integration retired 2026-01. CSV and Supabase are primary sources.
   sources:
     - type: "csv"
       enabled: true
       location: "data/raw/"
 
-    - type: "cascade_api"
-      enabled: false
-      endpoint: "${CASCADE_API_URL}"
-      auth:
-        token: "${CASCADE_API_TOKEN}"
-        refresh_threshold_hours: 1
-      rate_limiting:
-        requests_per_minute: 60
-        retry_attempts: 3
-        backoff_multiplier: 2
+    - type: "supabase"
+      enabled: true
+      table: "loan_tape"
 
   # Schema validation
   validation:
