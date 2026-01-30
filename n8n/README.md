@@ -108,7 +108,6 @@ To manually import:
 2. Select workflow JSON from `/n8n/workflows/`
 3. Configure credentials:
    - Supabase API key
-   - Slack webhook (optional)
    - Email SMTP (optional)
 
 ### Example Workflow: KPI Alert Monitor
@@ -128,9 +127,9 @@ const response = await fetch(
 
 const redKPIs = await response.json()
 
-// Step 2: Send Slack notification if any red KPIs found
+// Step 2: Send email notification if any red KPIs found
 if (redKPIs.length > 0) {
-  // Trigger Slack webhook
+  // Trigger email or Grafana alert
 }
 ```
 
@@ -368,5 +367,5 @@ docker-compose exec n8n n8n --version
 ---
 
 **Maintained by:** DevOps Team  
-**Support:** #observability Slack channel  
-**Last Updated:** 2026-01-29
+**Support:** Create GitHub Issue or contact team via email  
+**Last Updated:** 2026-01-30

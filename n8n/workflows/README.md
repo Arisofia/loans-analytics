@@ -1,5 +1,9 @@
 # n8n Workflows Directory
 
+> **⚠️ Slack Integration Retired (2026-01)**
+>
+> Slack notifications referenced below have been deprecated. Use Grafana alerting or email notifications instead.
+
 This directory contains automation workflows for the ABACO Loans Analytics platform.
 
 ## Available Workflows
@@ -14,7 +18,7 @@ This directory contains automation workflows for the ABACO Loans Analytics platf
 1. Check for new CSV files in data/raw/
 2. Execute Python pipeline: `scripts/run_data_pipeline.py`
 3. Verify Supabase writes
-4. Send Slack notification on completion/failure
+4. Log completion status (Grafana alerts for failures)
 
 ### 2. KPI Alert Monitor (`kpi-alerts.json`)
 
@@ -26,7 +30,7 @@ This directory contains automation workflows for the ABACO Loans Analytics platf
 1. Query `monitoring.kpi_values` for status='red'
 2. Fetch threshold config from `monitoring.kpi_definitions`
 3. Send alerts to:
-   - Slack (#alerts channel)
+   - Grafana Alerting
    - Email (owner_agent address)
    - PagerDuty (critical only)
 
@@ -65,7 +69,6 @@ Required in `n8n/.env`:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `SLACK_WEBHOOK_URL` (optional)
 - `PAGERDUTY_API_KEY` (optional)
 
 ## Testing Workflows
