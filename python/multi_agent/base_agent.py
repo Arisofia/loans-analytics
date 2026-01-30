@@ -3,12 +3,15 @@
 import os
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-try:
+if TYPE_CHECKING:
     from openai import OpenAI
-except ImportError:
-    OpenAI = None
+else:
+    try:
+        from openai import OpenAI
+    except ImportError:
+        OpenAI = None
 
 from python.logging_config import get_logger
 
@@ -67,7 +70,7 @@ class BaseAgent(ABC):
 
     def _init_openai_client(self) -> Any:
         """Initialize OpenAI client."""
-        if not OpenAI:
+        if not OpenAI:  # type: ignore
             raise ImportError("openai package required")
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:

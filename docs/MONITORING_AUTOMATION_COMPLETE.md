@@ -1,8 +1,9 @@
 # 🚀 Monitoring Stack - Automation Complete
 
-> **Status**: ✅ All 6 automation tasks completed successfully  
+> **Status**: ✅ All automation tasks completed + Email notifications configured  
 > **Date**: January 30, 2026  
-> **Commit**: cc40f29d6
+> **Latest Commit**: 740128548  
+> **Stack**: Prometheus + Grafana + Alertmanager (with Gmail SMTP)
 
 ---
 
@@ -396,12 +397,92 @@ amtool check-config config/alertmanager.yml
 
 ## 🔄 Next Steps (Optional Enhancements)
 
-1. **Configure Slack notifications**: Follow [ALERTMANAGER_NOTIFICATIONS_SETUP.md](docs/ALERTMANAGER_NOTIFICATIONS_SETUP.md)
+1. ~~**Configure Slack notifications**~~: ✅ **Email notifications configured** (Gmail SMTP - Jan 30, 2026)
 2. **Enable optional targets**: Start abaco-pipeline, multi-agent services
 3. **Customize dashboards**: Add fintech-specific KPI panels (PAR-30, DPD, rotation)
 4. **Alert tuning**: Adjust thresholds in `config/rules/*.yml` based on actual workload
 5. **Dashboard creation**: Build custom dashboards for pipeline metrics
 6. **Long-term retention**: Configure remote storage (Thanos, Cortex)
+
+### 📧 Email Notifications (NEW - January 30, 2026)
+
+**✅ Implemented Features:**
+
+- Gmail SMTP integration with Alertmanager
+- Dynamic config generation from `.env.local` environment variables
+- 3 receiver types with custom routing:
+  - **critical-alerts**: 🚨 High priority (immediate attention)
+  - **warning-alerts**: ⚠️ Medium priority (monitor)
+  - **default-receiver**: ℹ️ General notifications
+- HTML-formatted email templates with severity emojis
+- Secure credential handling (no secrets committed to git)
+- Auto-configuration in startup workflow
+
+**Key Implementation Files:**
+
+```bash
+scripts/generate_alertmanager_config.sh  # Dynamic config generator (169 lines)
+config/alertmanager.yml.template         # Git-safe template with placeholders
+config/alertmanager.yml                  # Auto-generated (in .gitignore)
+.env.local                               # SMTP credentials (in .gitignore)
+```
+
+**Configuration in `.env.local`:**
+
+```bash
+SMTP_HOST=smtp.gmail.com:587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-gmail-app-password  # NOT regular password!
+ALERT_EMAIL_FROM=your-email@gmail.com
+CRITICAL_EMAIL_TO=recipient@gmail.com
+```
+
+**Test Email Notifications:**
+
+```bash
+# 1. Send test alert via Alertmanager API v2
+curl -X POST http://localhost:9093/api/v2/alerts \
+  -H "Content-Type: application/json" \
+  -d '[{
+    "labels": {
+      "alertname": "TestEmailNotification",
+      "severity": "critical",
+      "component": "test"
+    },
+    "annotations": {
+      "summary": "Test email from monitoring stack",
+      "description": "If you receive this, email notifications are working correctly"
+    },
+    "startsAt": "'$(date -u -v+1M +"%Y-%m-%dT%H:%M:%S.000Z")'",
+    "endsAt": "'$(date -u -v+10M +"%Y-%m-%dT%H:%M:%S.000Z")'"
+  }]'
+
+# 2. Check your inbox for: "🚨 CRITICAL: TestEmailNotification"
+# 3. Verify in Alertmanager UI: http://localhost:9093
+```
+
+**Security Architecture:**
+
+- ✅ Credentials stored in `.env.local` (gitignored)
+- ✅ Gmail App Passwords required (2FA enabled accounts)
+- ✅ Config auto-regenerated from environment on every startup
+- ✅ Template file committed to git (no secrets)
+- ✅ Actual config excluded via `.gitignore`
+- ✅ Pre-commit hooks scan for leaked secrets
+- ✅ No hardcoded credentials in repository
+
+**How It Works:**
+
+```bash
+# On startup (make monitoring-start):
+1. Load .env.local variables
+2. Run generate_alertmanager_config.sh
+3. Generate config/alertmanager.yml with real credentials
+4. Start Alertmanager container
+5. Alertmanager loads generated config
+```
+
+**Commit:** 740128548 - `feat(alertmanager): Secure email notifications with environment variables`
 
 ---
 
@@ -422,14 +503,15 @@ amtool check-config config/alertmanager.yml
 
 ---
 
-**🎯 Mission Accomplished**: Complete monitoring automation with one-command setup, comprehensive dashboards, intelligent alerting, versioned backups, and continuous validation.
+**🎯 Mission Accomplished**: Complete monitoring automation with one-command setup, comprehensive dashboards, intelligent alerting, email notifications, versioned backups, and continuous validation.
 
-**Commits:**
+**Commits (Latest First):**
 
+- **740128548**: Email notifications with secure credential handling (Jan 30, 2026)
 - cc40f29d6: Complete automation suite (final deliverables)
 - 237c9ce07: Dashboards, alerts, notifications
 - 599d795c6: Initial automation suite
 - a4d5b443e: Linting fixes
 - 066c94f48: Initial stack setup
 
-**Total Impact**: 2869 lines of automation, 6 tasks completed, production-ready monitoring stack.
+**Total Impact**: 3,184 lines of automation (2,869 original + 315 email notifications), 7 major features completed, production-ready monitoring stack with email alerting.
