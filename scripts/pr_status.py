@@ -33,11 +33,16 @@ def run_gh_command(args: list[str]) -> dict | list | None:
 
 def get_open_prs() -> list[dict]:
     """Get all open pull requests."""
-    prs = run_gh_command([
-        "pr", "list",
-        "--state", "open",
-        "--json", "number,title,author,createdAt,updatedAt,isDraft,labels,reviewDecision,url"
-    ])
+    prs = run_gh_command(
+        [
+            "pr",
+            "list",
+            "--state",
+            "open",
+            "--json",
+            "number,title,author,createdAt,updatedAt,isDraft,labels,reviewDecision,url",
+        ]
+    )
     return prs or []
 
 
@@ -55,7 +60,9 @@ def format_pr_report(prs: list[dict]) -> str:
     # Categorize PRs
     drafts = [pr for pr in prs if pr.get("isDraft")]
     ready = [pr for pr in prs if not pr.get("isDraft")]
-    needs_review = [pr for pr in ready if pr.get("reviewDecision") not in ("APPROVED", "CHANGES_REQUESTED")]
+    needs_review = [
+        pr for pr in ready if pr.get("reviewDecision") not in ("APPROVED", "CHANGES_REQUESTED")
+    ]
     approved = [pr for pr in ready if pr.get("reviewDecision") == "APPROVED"]
     changes_requested = [pr for pr in ready if pr.get("reviewDecision") == "CHANGES_REQUESTED"]
 
@@ -93,7 +100,9 @@ def main():
     args = parser.parse_args()
 
     # Check if gh CLI is available
-    if not os.environ.get("GITHUB_TOKEN") and not os.path.exists(os.path.expanduser("~/.config/gh/hosts.yml")):
+    if not os.environ.get("GITHUB_TOKEN") and not os.path.exists(
+        os.path.expanduser("~/.config/gh/hosts.yml")
+    ):
         print("::notice::GitHub CLI not authenticated - skipping PR monitor")
         sys.exit(0)
 

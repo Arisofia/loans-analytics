@@ -14,8 +14,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from python.logging_config import get_logger
 
@@ -41,7 +41,17 @@ class KPIFormulaEngine:
             else:
                 return self._execute_simple_formula(formula)
         except Exception as e:
-            logger.warning(f"Formula execution failed: {formula} - {str(e)}")
+            # Structured logging with full context
+            logger.warning(
+                "Formula execution failed",
+                extra={
+                    "formula": formula,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                    "dataframe_shape": self.df.shape,
+                    "available_columns": list(self.df.columns),
+                },
+            )
             return 0.0
 
     def _is_comparison_formula(self, formula: str) -> bool:
@@ -266,8 +276,16 @@ class CalculationPhase:
             return results
 
         except Exception as e:
+            import traceback
+
+            traceback_str = traceback.format_exc()
             logger.error(f"Calculation failed: {str(e)}", exc_info=True)
-            return {"status": "failed", "error": str(e), "timestamp": datetime.now().isoformat()}
+            return {
+                "status": "failed",
+                "error": str(e),
+                "traceback": traceback_str,
+                "timestamp": datetime.now().isoformat(),
+            }
 
     def _calculate_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Calculate all KPIs from definitions."""
@@ -295,8 +313,20 @@ class CalculationPhase:
                             kpis[kpi_name] = value
                             logger.debug(f"Calculated {kpi_name}: {value}")
                         except Exception as e:
-                            logger.warning(f"Failed to calculate {kpi_name}: {str(e)}")
-                            kpis[kpi_name] = 0.0
+                            # Structured logging for KPI failures (traceability requirement)
+                            logger.warning(
+                                "KPI calculation failed",
+                                extra={
+                                    "kpi_name": kpi_name,
+                                    "category": category,
+                                    "formula": kpi_config.get("formula", "N/A"),
+                                    "error": str(e),
+                                    "error_type": type(e).__name__,
+                                },
+                            )
+                            kpis[kpi_name] = (
+                                None  # Explicit None instead of 0.0 to indicate failure
+                            )
 
         logger.info(f"Calculated {len(kpis)} KPIs")
         return kpis

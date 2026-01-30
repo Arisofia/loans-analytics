@@ -69,11 +69,29 @@ class UnifiedPipeline:
         Returns:
             Pipeline execution results
         """
-        run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Calculate deterministic run_id for idempotency
+        if input_path and input_path.exists():
+
+            data_hash = self._calculate_input_hash(input_path)
+            run_id = f"{datetime.now().strftime('%Y%m%d')}_{data_hash[:8]}"
+        else:
+            run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+
         logger.info(f"Starting pipeline execution (run_id: {run_id}, mode: {mode})")
 
         # Create run directory
         run_dir = Path("logs") / "runs" / run_id
+
+        # Check for existing run (idempotency)
+        if run_dir.exists():
+            manifest_path = run_dir / "pipeline_results.json"
+            if manifest_path.exists():
+                logger.info(f"Run {run_id} already exists, loading existing results (idempotent)")
+                import json
+
+                with open(manifest_path, "r") as f:
+                    return json.load(f)
+
         run_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Run directory: {run_dir}")
 
@@ -189,3 +207,26 @@ class UnifiedPipeline:
         logger.info("=" * 80)
 
         return results
+
+    def _calculate_input_hash(self, file_path: Path) -> str:
+        """
+        Calculate deterministic hash of input file for idempotency.
+
+        Args:
+            file_path: Path to input file
+
+        Returns:
+            SHA256 hash (first 16 chars)
+        """
+        import hashlib
+
+        try:
+            hasher = hashlib.sha256()
+            with open(file_path, "rb") as f:
+                # Read in chunks for large files
+                for chunk in iter(lambda: f.read(8192), b""):
+                    hasher.update(chunk)
+            return hasher.hexdigest()[:16]
+        except Exception as e:
+            logger.warning(f"Failed to hash input file: {e}, using timestamp")
+            return datetime.now().strftime("%H%M%S")

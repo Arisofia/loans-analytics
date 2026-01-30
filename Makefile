@@ -24,8 +24,8 @@ format:
 	$(BIN)/isort .
 lint:
 	$(BIN)/ruff check .
-	$(BIN)/flake8 src apps/web/src
-	$(BIN)/pylint src apps/web/src
+	$(BIN)/flake8 src python scripts
+	$(BIN)/pylint src python scripts
 type-check:
 	$(BIN)/mypy src
 test:

@@ -102,18 +102,26 @@
 
 ## 📚 DOCUMENT MATRIX
 
-| Document                          | Purpose             | Read Time | Audience          | Format           |
-| --------------------------------- | ------------------- | --------- | ----------------- | ---------------- |
-| **QUICK_START.md**                | Fast reference      | 5 min     | Everyone          | Markdown         |
-| **UNIFIED_WORKFLOW.md**           | Complete guide      | 30 min    | Engineers         | Markdown         |
-| **WORKFLOW_DIAGRAMS.md**          | Visual flows        | 10 min    | Visual learners   | Markdown + ASCII |
-| **UNIFICATION_SUMMARY.md**        | Project summary     | 10 min    | Decision makers   | Markdown         |
-| **.repo-structure.json**          | Machine readable    | -         | Tools/IDEs        | JSON             |
-| **archive_legacy/README.md**      | Archive explanation | 10 min    | Reference hunters | Markdown         |
-| **docs/architecture.md**          | System design       | 20 min    | Architects        | Markdown         |
-| **docs/OPERATIONS.md**            | Runbooks            | 30 min    | Operators         | Markdown         |
-| **docs/DATA_DICTIONARY.md**       | Field definitions   | Reference | Data teams        | Markdown         |
-| **docs/TRACING_OBSERVABILITY.md** | Monitoring setup    | 15 min    | DevOps/SRE        | Markdown         |
+| Document                                 | Purpose                | Read Time | Audience          | Format           |
+| ---------------------------------------- | ---------------------- | --------- | ----------------- | ---------------- |
+| **QUICK_START.md**                       | Fast reference         | 5 min     | Everyone          | Markdown         |
+| **UNIFIED_WORKFLOW.md**                  | Complete guide         | 30 min    | Engineers         | Markdown         |
+| **WORKFLOW_DIAGRAMS.md**                 | Visual flows           | 10 min    | Visual learners   | Markdown + ASCII |
+| **UNIFICATION_SUMMARY.md**               | Project summary        | 10 min    | Decision makers   | Markdown         |
+| **.repo-structure.json**                 | Machine readable       | -         | Tools/IDEs        | JSON             |
+| **archive_legacy/README.md**             | Archive explanation    | 10 min    | Reference hunters | Markdown         |
+| **docs/architecture.md**                 | System design          | 20 min    | Architects        | Markdown         |
+| **docs/OPERATIONS.md**                   | Runbooks               | 30 min    | Operators         | Markdown         |
+| **docs/DATA_DICTIONARY.md**              | Field definitions      | Reference | Data teams        | Markdown         |
+| **docs/TRACING_OBSERVABILITY.md**        | Monitoring setup       | 15 min    | DevOps/SRE        | Markdown         |
+| **docs/SUPABASE_METRICS_INTEGRATION.md** | Prometheus metrics     | 20 min    | DevOps/SRE        | Markdown         |
+| **docs/MONITORING_QUICK_START.md**       | 5-min monitoring setup | 5 min     | Everyone          | Markdown         |
+| **docs/METRICSAPI_ANALYSIS_ES.md**       | Análisis Metrics API   | 15 min    | Platform/Eng      | Markdown         |
+| **docs/CRITICAL_DEBT_FIXES_2026.md**     | Tech debt fixes        | 15 min    | Engineers         | Markdown         |
+| **config/prometheus.yml**                | Prometheus config      | Reference | DevOps            | YAML             |
+| **config/rules/supabase_alerts.yml**     | DB alert rules         | Reference | Platform          | YAML             |
+| **config/rules/pipeline_alerts.yml**     | Pipeline alerts        | Reference | Engineering       | YAML             |
+| **scripts/metrics_exporter.py**          | Metrics exporter       | Run it    | Platform          | Python           |
 
 ---
 
@@ -148,6 +156,15 @@
 #### ...understand archive
 
 → [archive_legacy/README.md](archive_legacy/README.md)
+
+#### ...set up monitoring and observability
+
+→ [MONITORING_QUICK_START.md](MONITORING_QUICK_START.md) (5-min setup)  
+→ [SUPABASE_METRICS_INTEGRATION.md](SUPABASE_METRICS_INTEGRATION.md) (full guide)
+
+#### ...review technical debt fixes
+
+→ [CRITICAL_DEBT_FIXES_2026.md](CRITICAL_DEBT_FIXES_2026.md)
 
 #### ...review operational procedures
 

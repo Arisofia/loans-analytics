@@ -3,7 +3,6 @@ CSV File Upload Interface for ABACO Loans Analytics
 Streamlit component for uploading and processing loan data files
 """
 
-import io
 from datetime import datetime
 from pathlib import Path
 

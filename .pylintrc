@@ -95,8 +95,8 @@ module-naming-style=snake_case
 variable-naming-style=snake_case
 
 [FORMAT]
-# Maximum number of characters on a single line (Black uses 88)
-max-line-length=88
+# Maximum number of characters on a single line (Black uses 88, but we use 100)
+max-line-length=100
 
 # Maximum number of lines in a module
 max-module-lines=1000
