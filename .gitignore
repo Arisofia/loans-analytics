@@ -167,3 +167,6 @@ logs/runs/run_*/
 *\ copy.*
 *\ Copy.*
 
+
+# Auto-generated alertmanager config (contains credentials)
+config/alertmanager.yml
