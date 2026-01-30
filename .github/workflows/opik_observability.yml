@@ -229,7 +229,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Notify Leadership of Critical Issues
-        uses: slackapi/slack-github-action@v4
+        uses: slackapi/slack-github-action@v2.0.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
         with:
@@ -264,7 +264,7 @@ jobs:
         run: echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
 
       - name: Send Daily Summary to Slack
-        uses: slackapi/slack-github-action@v4
+        uses: slackapi/slack-github-action@v2.0.0
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_LEADERSHIP }}
         with:

@@ -17,7 +17,7 @@ jobs:
       - name: Run actionlint
         id: actionlint
         continue-on-error: true
-        uses: rhysd/actionlint@v1.7.10
+        uses: rhysd/actionlint@v1.7.7
 
       - name: Actionlint summary
         if: steps.actionlint.outcome != 'success'
