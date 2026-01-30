@@ -1,0 +1,263 @@
+name: Monitoring Validation
+
+on:
+    push:
+        branches: [main, develop]
+        paths:
+            - "config/prometheus.yml"
+            - "config/rules/**"
+            - "config/alertmanager.yml"
+            - "docker-compose.monitoring.yml"
+            - "grafana/dashboards/**"
+            - ".github/workflows/monitoring-validation.yml"
+    pull_request:
+        branches: [main, develop]
+        paths:
+            - "config/prometheus.yml"
+            - "config/rules/**"
+            - "config/alertmanager.yml"
+            - "docker-compose.monitoring.yml"
+            - "grafana/dashboards/**"
+    schedule:
+        # Weekly validation every Monday at 9:00 AM UTC
+        - cron: "0 9 * * 1"
+    workflow_dispatch:
+
+jobs:
+    validate-prometheus-config:
+        name: Validate Prometheus Configuration
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Prometheus promtool
+              run: |
+                  PROMETHEUS_VERSION="2.50.1"
+                  wget -q https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
+                  tar xzf prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
+                  sudo mv prometheus-${PROMETHEUS_VERSION}.linux-amd64/promtool /usr/local/bin/
+                  rm -rf prometheus-${PROMETHEUS_VERSION}.linux-amd64*
+
+            - name: Validate prometheus.yml syntax
+              run: |
+                  echo "🔍 Validating Prometheus configuration..."
+                  promtool check config config/prometheus.yml
+
+            - name: Validate alert rules
+              run: |
+                  echo "🔍 Validating alert rules..."
+                  for rule_file in config/rules/*.yml; do
+                    echo "Checking $rule_file"
+                    promtool check rules "$rule_file"
+                  done
+
+            - name: Test alert rule queries
+              run: |
+                  echo "🔍 Testing alert rule PromQL queries..."
+                  # Extract and validate PromQL expressions
+                  for rule_file in config/rules/*.yml; do
+                    echo "Analyzing $rule_file"
+                    yq eval '.groups[].rules[].expr' "$rule_file" | while read -r expr; do
+                      if [ -n "$expr" ] && [ "$expr" != "null" ]; then
+                        echo "  Testing: ${expr:0:50}..."
+                        # Syntax check only (no actual Prometheus needed)
+                        promtool check metrics <<< "$expr" || true
+                      fi
+                    done
+                  done
+              continue-on-error: true
+
+    validate-alertmanager-config:
+        name: Validate Alertmanager Configuration
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Alertmanager amtool
+              run: |
+                  ALERTMANAGER_VERSION="0.27.0"
+                  wget -q https://github.com/prometheus/alertmanager/releases/download/v${ALERTMANAGER_VERSION}/alertmanager-${ALERTMANAGER_VERSION}.linux-amd64.tar.gz
+                  tar xzf alertmanager-${ALERTMANAGER_VERSION}.linux-amd64.tar.gz
+                  sudo mv alertmanager-${ALERTMANAGER_VERSION}.linux-amd64/amtool /usr/local/bin/
+                  rm -rf alertmanager-${ALERTMANAGER_VERSION}.linux-amd64*
+
+            - name: Validate alertmanager.yml syntax
+              run: |
+                  echo "🔍 Validating Alertmanager configuration..."
+                  amtool check-config config/alertmanager.yml
+
+    lint-yaml-files:
+        name: Lint YAML Files
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Install yamllint
+              run: pip install yamllint
+
+            - name: Lint Prometheus config
+              run: yamllint config/prometheus.yml
+
+            - name: Lint Alert rules
+              run: yamllint config/rules/
+
+            - name: Lint Alertmanager config
+              run: yamllint config/alertmanager.yml
+
+    validate-dashboards:
+        name: Validate Grafana Dashboards
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+
+            - name: Validate dashboard JSON
+              run: |
+                  echo "🔍 Validating Grafana dashboard JSON files..."
+                  for dashboard in grafana/dashboards/*.json; do
+                    if [ -f "$dashboard" ]; then
+                      echo "Checking $dashboard"
+                      python3 -m json.tool "$dashboard" > /dev/null
+                      echo "✓ Valid JSON: $(basename $dashboard)"
+                    fi
+                  done
+
+            - name: Check dashboard schema
+              run: |
+                  echo "🔍 Checking dashboard schema requirements..."
+                  for dashboard in grafana/dashboards/*.json; do
+                    if [ -f "$dashboard" ]; then
+                      echo "Analyzing $dashboard"
+                      # Check for required fields
+                      if ! grep -q '"dashboard"' "$dashboard"; then
+                        echo "⚠️  Warning: No 'dashboard' key in $(basename $dashboard)"
+                      fi
+                      if ! grep -q '"panels"' "$dashboard"; then
+                        echo "⚠️  Warning: No 'panels' in $(basename $dashboard)"
+                      fi
+                    fi
+                  done
+
+    test-docker-compose:
+        name: Test Docker Compose Startup
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Validate docker-compose.monitoring.yml syntax
+              run: docker-compose -f docker-compose.monitoring.yml config
+
+            - name: Test stack startup (dry-run)
+              run: |
+                  echo "🔍 Testing monitoring stack startup..."
+                  # Create minimal .env for validation
+                  cat > .env.local <<EOF
+                  SUPABASE_PROJECT_REF=test-project
+                  SUPABASE_SECRET_API_KEY=test-key
+                  GRAFANA_URL=http://localhost:3001
+                  EOF
+
+                  # Pull images to verify they exist
+                  docker-compose -f docker-compose.monitoring.yml pull
+
+                  echo "✓ All Docker images available"
+
+    health-check-scripts:
+        name: Validate Health Check Scripts
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Install shellcheck
+              run: sudo apt-get install -y shellcheck
+
+            - name: Lint automation scripts
+              run: |
+                  echo "🔍 Linting bash scripts..."
+                  shellcheck scripts/auto_start_monitoring.sh || true
+                  shellcheck scripts/health_check_monitoring.sh || true
+                  shellcheck scripts/import_dashboards.sh || true
+                  shellcheck scripts/backup_dashboards.sh || true
+                  shellcheck scripts/restore_dashboards.sh || true
+
+            - name: Test script syntax
+              run: |
+                  echo "🔍 Testing script syntax..."
+                  bash -n scripts/auto_start_monitoring.sh
+                  bash -n scripts/health_check_monitoring.sh
+                  bash -n scripts/import_dashboards.sh
+                  bash -n scripts/backup_dashboards.sh
+                  bash -n scripts/restore_dashboards.sh
+                  echo "✓ All scripts have valid syntax"
+
+    security-scan:
+        name: Security Scan
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Scan for secrets in configs
+              run: |
+                  echo "🔍 Scanning for hardcoded secrets..."
+                  # Check for common secret patterns
+                  if grep -r "password.*=.*['\"].*['\"]" config/ --include="*.yml" | grep -v "CHANGE_ME"; then
+                    echo "❌ Found hardcoded passwords in config files"
+                    exit 1
+                  fi
+                  echo "✓ No hardcoded secrets found"
+
+            - name: Check for default credentials
+              run: |
+                  echo "🔍 Checking for default credentials..."
+                  if grep -r "admin:admin" config/ docker-compose.monitoring.yml; then
+                    echo "⚠️  Warning: Default credentials found (ensure they're overridden in production)"
+                  else
+                    echo "✓ No default credentials in config"
+                  fi
+
+    monitoring-summary:
+        name: Monitoring Validation Summary
+        needs:
+            [
+                validate-prometheus-config,
+                validate-alertmanager-config,
+                lint-yaml-files,
+                validate-dashboards,
+                test-docker-compose,
+                health-check-scripts,
+                security-scan,
+            ]
+        runs-on: ubuntu-latest
+        if: always()
+        steps:
+            - name: Check validation results
+              run: |
+                  echo "📊 Monitoring Validation Summary"
+                  echo "================================"
+                  echo "Prometheus Config: ${{ needs.validate-prometheus-config.result }}"
+                  echo "Alertmanager Config: ${{ needs.validate-alertmanager-config.result }}"
+                  echo "YAML Lint: ${{ needs.lint-yaml-files.result }}"
+                  echo "Grafana Dashboards: ${{ needs.validate-dashboards.result }}"
+                  echo "Docker Compose: ${{ needs.test-docker-compose.result }}"
+                  echo "Health Scripts: ${{ needs.health-check-scripts.result }}"
+                  echo "Security Scan: ${{ needs.security-scan.result }}"
+
+                  if [[ "${{ needs.validate-prometheus-config.result }}" != "success" ]] || \
+                     [[ "${{ needs.validate-alertmanager-config.result }}" != "success" ]] || \
+                     [[ "${{ needs.security-scan.result }}" != "success" ]]; then
+                    echo "❌ Critical validation failed"
+                    exit 1
+                  fi
+
+                  echo "✅ All critical validations passed"

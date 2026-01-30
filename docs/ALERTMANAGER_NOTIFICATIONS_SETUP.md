@@ -5,6 +5,7 @@
 ### 1. Slack Notifications (Recommended)
 
 **Step 1: Create Slack Webhook**
+
 1. Go to https://api.slack.com/apps
 2. Create new app → "From scratch"
 3. Name: "Abaco Monitoring"
@@ -15,6 +16,7 @@
 8. Copy webhook URL
 
 **Step 2: Configure Environment**
+
 ```bash
 # Add to .env.local
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
@@ -22,9 +24,10 @@ SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 
 **Step 3: Update Alertmanager Config**
 Edit `config/alertmanager.yml`:
+
 ```yaml
 global:
-  slack_api_url: "${SLACK_WEBHOOK_URL}"
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
 
 receivers:
   - name: 'default-notifications'
@@ -40,11 +43,13 @@ receivers:
 ```
 
 **Step 4: Restart Alertmanager**
+
 ```bash
 docker-compose -f docker-compose.monitoring.yml restart alertmanager
 ```
 
 **Step 5: Test**
+
 ```bash
 # Send test alert
 curl -X POST http://localhost:9093/api/v1/alerts -d '[{
@@ -57,11 +62,13 @@ curl -X POST http://localhost:9093/api/v1/alerts -d '[{
 
 **Step 1: Configure SMTP**
 For Gmail:
+
 1. Enable "2-Step Verification" in Google Account
 2. Generate "App Password": https://myaccount.google.com/apppasswords
 3. Copy the 16-character password
 
 **Step 2: Add to Environment**
+
 ```bash
 # Add to .env.local
 SMTP_HOST=smtp.gmail.com:587
@@ -72,18 +79,19 @@ CRITICAL_EMAIL_TO=devops@abaco.com
 ```
 
 **Step 3: Update Alertmanager Config**
+
 ```yaml
 global:
-  smtp_smarthost: "${SMTP_HOST}"
-  smtp_from: "${ALERT_EMAIL_FROM}"
-  smtp_auth_username: "${SMTP_USER}"
-  smtp_auth_password: "${SMTP_PASSWORD}"
+  smtp_smarthost: '${SMTP_HOST}'
+  smtp_from: '${ALERT_EMAIL_FROM}'
+  smtp_auth_username: '${SMTP_USER}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
   smtp_require_tls: true
 
 receivers:
   - name: 'critical-alerts'
     email_configs:
-      - to: "${CRITICAL_EMAIL_TO}"
+      - to: '${CRITICAL_EMAIL_TO}'
         subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
 ```
 
@@ -101,12 +109,12 @@ route:
     - receiver: 'critical-alerts'
       matchers:
         - severity = "critical"
-    
+
     # Pipeline → #pipeline-alerts
     - receiver: 'pipeline-team'
       matchers:
         - component =~ "pipeline|kpi-engine"
-    
+
     # Database → #database-alerts
     - receiver: 'database-team'
       matchers:
@@ -142,7 +150,9 @@ Create `alertmanager/templates/custom.tmpl`:
 {{ if .Annotations.action }}
 *Action Required:*
 ```
+
 {{ .Annotations.action }}
+
 ```
 {{ end }}
 *Runbook:* {{ .Annotations.runbook }}
@@ -151,6 +161,7 @@ Create `alertmanager/templates/custom.tmpl`:
 ```
 
 Reference in `alertmanager.yml`:
+
 ```yaml
 templates:
   - '/etc/alertmanager/templates/*.tmpl'
@@ -168,7 +179,7 @@ inhibit_rules:
     target_matchers:
       - severity = "warning"
     equal: ['alertname', 'component']
-  
+
   # Suppress connection alerts if database is down
   - source_matchers:
       - alertname = "DatabaseDown"
@@ -218,6 +229,7 @@ open http://localhost:9093
 ```
 
 View:
+
 - Active alerts
 - Silences
 - Alert groups
@@ -228,17 +240,20 @@ View:
 ### No Notifications Received
 
 1. **Check Alertmanager logs:**
+
 ```bash
 docker logs alertmanager --tail 50
 ```
 
 2. **Verify webhook URL:**
+
 ```bash
 echo $SLACK_WEBHOOK_URL
 # Should output: https://hooks.slack.com/services/...
 ```
 
 3. **Test webhook manually:**
+
 ```bash
 curl -X POST $SLACK_WEBHOOK_URL \
   -H "Content-Type: application/json" \
@@ -246,11 +261,13 @@ curl -X POST $SLACK_WEBHOOK_URL \
 ```
 
 4. **Check Alertmanager config:**
+
 ```bash
 docker exec alertmanager amtool config show
 ```
 
 5. **Validate routing:**
+
 ```bash
 docker exec alertmanager amtool config routes show
 ```
@@ -258,16 +275,19 @@ docker exec alertmanager amtool config routes show
 ### Alerts Not Firing
 
 1. **Check Prometheus rules:**
+
 ```bash
 curl http://localhost:9090/api/v1/rules | jq '.data.groups[].rules[] | {alert:.name, state:.state}'
 ```
 
 2. **View active alerts:**
+
 ```bash
 curl http://localhost:9090/api/v1/alerts | jq '.data.alerts[]'
 ```
 
 3. **Check alert evaluation:**
+
 ```bash
 # In Prometheus UI
 open http://localhost:9090/alerts
@@ -276,6 +296,7 @@ open http://localhost:9090/alerts
 ### Email Not Working
 
 1. **Test SMTP credentials:**
+
 ```bash
 # Using swaks (install: brew install swaks)
 swaks --to $CRITICAL_EMAIL_TO \
@@ -288,11 +309,13 @@ swaks --to $CRITICAL_EMAIL_TO \
 ```
 
 2. **Check Gmail App Password:**
+
 - Must be 16 characters (no spaces)
 - Must have "2-Step Verification" enabled
 - Generate new one if unsure
 
 3. **Firewall/Port Issues:**
+
 ```bash
 # Test SMTP port
 telnet smtp.gmail.com 587
@@ -301,23 +324,27 @@ telnet smtp.gmail.com 587
 ## Best Practices
 
 ### 1. Alert Fatigue Prevention
+
 - Use appropriate severities (critical/warning/info)
 - Set reasonable thresholds (`for: 5m` instead of instant)
 - Group related alerts together
 - Use inhibition rules to suppress cascading alerts
 
 ### 2. Notification Channels
+
 - **Critical alerts**: Slack #alerts-critical + Email + PagerDuty
 - **Warnings**: Slack #monitoring (batched)
 - **Info**: Log only, no notifications
 
 ### 3. Alert Quality
+
 - Every alert must be actionable
 - Include clear summary and description
 - Provide troubleshooting steps in `action` annotation
 - Link to runbook for complex issues
 
 ### 4. Testing
+
 - Test notification channels monthly
 - Validate alert thresholds match reality
 - Review and tune alert rules quarterly
