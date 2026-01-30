@@ -2,10 +2,12 @@
 PHASE 1: DATA INGESTION
 
 Responsibilities:
-- Fetch data from Cascade API or CSV files
+- Fetch data from CSV files or Supabase
 - Schema validation using Pydantic
 - Duplicate detection via checksums
 - Raw data storage with immutable hashes
+
+NOTE: Cascade API integration has been deprecated (Jan 2026).
 """
 
 import hashlib
@@ -109,14 +111,11 @@ class IngestionPhase:
         return df
 
     def _load_from_api(self) -> pd.DataFrame:
-        """Load data from Cascade API (placeholder)."""
-        logger.warning("API ingestion not yet implemented - using sample data")
+        """Load data from external API (deprecated - Cascade no longer used)."""
+        logger.warning("API ingestion deprecated - Cascade integration removed. Using sample data.")
 
-        # TODO: Implement actual API client with:
-        # - Token refresh
-        # - Rate limiting
-        # - Retry logic
-        # - Request/response validation
+        # NOTE: Cascade API integration has been deprecated.
+        # Data is now loaded from CSV files or Supabase directly.
 
         return pd.DataFrame(
             {
