@@ -9,12 +9,15 @@
 - **Purpose**: Storage for loan documents and data files
 - **Action Required**: Configure file upload interface
 #### 2. Static Web App: `abaco-loans-analytics-dashboard`
-- **Status**: Active
+- **Status**: Active (Streamlit dashboard on Azure App Service)
 - **Location**: East US 2
 - **Resource Group**: AI-MultiAgent-Ecosystem-RG
-- **URL**: https://abaco-loans-analytics.vercel.app
-- **Purpose**: Main dashboard interface
+- **URL**: https://abaco-analytics-dashboard.azurewebsites.net *(or your configured Azure App Service URL)*
+- **Purpose**: Main dashboard interface (Streamlit)
 - **Action Required**: Validate deployment and integrate with backend
+
+> **Note (June 2025)**: Vercel integration has been deprecated. The Next.js frontend was removed.
+> Primary deployment now uses Azure App Service with Streamlit dashboard.
 #### 3. Key Vault: `aiagent-secrets-kv`
 - **Status**: Active
 - **Location**: East US

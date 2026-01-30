@@ -137,12 +137,17 @@ Used by ingestion / unified pipeline workflows.
 - `FIGMA_TOKEN`
 - `FIGMA_FILE_KEY`
 - `FIGMA_NODE_ID` (some workflows)
-### J) Vercel (if using `.github/workflows/deploy.yml`)
-- `VERCEL_TOKEN`
-- `VERCEL_ORG_ID`
-- `VERCEL_PROJECT_ID`
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+### ~~J) Vercel~~ [DEPRECATED - Removed June 2025]
+> **Note**: Vercel integration was removed. The Next.js frontend (`apps/web`) has been deprecated.
+> Primary deployment now uses Azure App Service (Streamlit dashboard).
+> You can safely remove these secrets from your GitHub repository settings:
+> - `VERCEL_TOKEN`
+> - `VERCEL_ORG_ID`
+> - `VERCEL_PROJECT_ID`
+> - `NEXT_PUBLIC_SUPABASE_URL`
+> - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
 ## Recommended naming cleanup (later)
 This repo currently mixes secret naming styles (`SUPABASE_SERVICE_ROLE` vs `SUPABASESERVICEROLE`, `OPIK_TOKEN` vs `OPIKTOKEN`).
 For stability, don’t rename secrets during incident recovery. After stabilization, align names and update workflows in one PR.

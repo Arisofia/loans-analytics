@@ -41,51 +41,8 @@ jobs:
             git push
           fi
 
-  npm-deps:
-    name: Update NPM Dependencies
-    runs-on: ubuntu-latest
-    # Only run if package.json exists (checked in step)
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Check if package.json exists
-        id: check-file
-        run: |
-          if [ -f "apps/web/package.json" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Set up Node.js
-        if: steps.check-file.outputs.exists == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: "apps/web/package-lock.json"
-
-      - name: Update npm packages
-        if: steps.check-file.outputs.exists == 'true'
-        working-directory: apps/web
-        run: |
-          npm update 2>/dev/null || true
-          npm audit fix --audit-level=moderate 2>/dev/null || true
-
-      - name: Commit changes
-        if: steps.check-file.outputs.exists == 'true'
-        run: |
-          if git diff --quiet; then
-            echo "No npm dependency changes"
-          else
-            git config --local user.email "github-actions[bot]@users.noreply.github.com"
-            git config --local user.name "github-actions[bot]"
-            git add "apps/web/package*.json"
-            git commit -m "chore: Update npm dependencies" || true
-            git push
-          fi
+  # NOTE: npm-deps job removed - Next.js frontend (apps/web) was deprecated
+  # Python dependencies are now the only managed dependencies
 
   changelog:
     name: Generate Changelog
