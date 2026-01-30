@@ -38,7 +38,6 @@ function normalizeUserPath(userPath: string): string {
   return resolved;
 }
 const defaultAreas: CheckTarget[] = [
-  { label: "Web dashboard", path: "apps/web" },
   { label: "Analytics pipelines", path: "python/apps/analytics" },
   { label: "Infrastructure automation", path: "infra/azure" },
   { label: "Documentation", path: "docs" },
