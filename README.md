@@ -185,7 +185,7 @@ ANTHROPIC_API_KEY=your_anthropic_key
 
 ### **Pipeline Settings** (`config/pipeline.yml`)
 
-- **Ingestion**: Data sources (CSV, Cascade API), validation rules
+- **Ingestion**: Data sources (CSV files, Supabase), validation rules
 - **Transformation**: Null handling, type normalization, outlier detection
 - **Calculation**: KPI engine settings, time-series aggregations, anomaly detection
 - **Output**: Export formats (Parquet/CSV/JSON), database config, dashboard refresh

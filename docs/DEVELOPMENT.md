@@ -1,4 +1,17 @@
+# Development Guide
+
+> **⚠️ Deprecated Integrations (Retired 2026-01)**
+>
+> The following integrations have been fully retired: **Slack, HubSpot, Notion, Cascade, Looker**.
+> Environment variables referencing these services are kept for historical reference but are no longer required.
+> **Current analytics stack:**
+>
+> - Python + Polars + Streamlit dashboards
+> - Supabase / Postgres + Grafana (operational monitoring)
+> - Azure diagnostics for cloud observability
+
 ## Setup
+
 1. **Clone & Install**
    ```bash
    git clone <repo>
@@ -9,18 +22,24 @@
    ```bash
    cp .env.example .env.local
    ```
+
    - Get credentials from [Supabase Dashboard](https://supabase.com/dashboard)
    - Add to `.env.local`
 3. **Start Development**
    ```bash
    npm run dev
    ```
+
 ## Environment Variables & Observability
+
 ### Local `.env.local`
+
 - Always copy `apps/web/.env.example` to `.env.local` and keep this file out of source control (`.env.local` is ignored).
 - Populate the values before running `npm run dev` so that Supabase, Slack alerts, Sentry, and drill-down links load.
 - After editing, restart the dev server and verify that Supabase rows are readable and that the analytics dashboard renders without the "not set" warnings for alerts or drill-downs.
+
 ### Frontend variables (apps/web)
+
 | Variable                          | Purpose                                                                                                                                     |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`        | Supabase project URL used by the client and integration helpers.                                                                            |
@@ -31,7 +50,9 @@
 | `NEXT_PUBLIC_ALERT_EMAIL`         | Contact email shown alongside alerts (defaults to `alerts@abaco.loans`).                                                                    |
 | `NEXT_PUBLIC_SITE_URL`            | Canonical site URL used for metadata, Open Graph, and robots.                                                                               |
 | `NEXT_PUBLIC_SENTRY_DSN`          | DSN for Sentry error tracking on both client and server.                                                                                    |
+
 ### Shared integration & automation variables
+
 | Variable                    | Purpose                                                                                                         |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `SLACK_WEBHOOK_URL`         | Incoming webhook used by `.github/workflows/daily-ingest.yml` to signal successful pipelines.                   |
@@ -53,7 +74,9 @@
 | `GROK_API_KEY`              | Required by the Grok client used by `StandaloneAIEngine`.                                                       |
 | `DATABASE_URL`              | Connection string used by `src/agents/orchestrator.py` and other automation helpers.                            |
 | `LOG_LEVEL`                 | Sets the logging verbosity for the importer (defaults to `INFO`).                                               |
+
 ### Vercel & GitHub secrets
+
 - Store all production and preview variables in the Vercel dashboard or via `vercel env`.
 - Example CLI workflow:
   ```bash
@@ -70,34 +93,47 @@
   ```
 - `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` are required by the automated GitHub Action that deploys to Vercel and by any `vercel` CLI commands.
 - Keep the same set of `NEXT_PUBLIC_*` variables in preview/staging environments so the data flows can be tested before hitting production.
+
 ### Monitoring & notifications
+
 - Enable Vercel Analytics from the project dashboard (Performance → Analytics) and run the built-in Speed Insights reports (`https://vercel.com/docs/concepts/analytics` and the `vercel speed` command) to monitor Core Web Vitals over time.
 - Sentry is wired up via `NEXT_PUBLIC_SENTRY_DSN` to capture client- and server-side errors. Confirm the DSN is defined in both local and Vercel environments so error pages surface gracefully.
 - The analytics dashboard surfaces Slack/email routing status. Configure `NEXT_PUBLIC_ALERT_SLACK_WEBHOOK` (or point to your alert automation) and `NEXT_PUBLIC_ALERT_EMAIL` so teams know where alerts land.
 - Deploy/failure notifications use `.github/workflows/slack_notify.yml`, which requires `SLACK_BOT_TOKEN` and `SLACK_CHANNEL` (plus `SLACK_SIGNING_SECRET` for the Bolt app). Keep those secrets in GitHub and rotate the token when Slack permissions change.
 - The scheduled pipeline workflow at `.github/workflows/daily-ingest.yml` sends success alerts using `SLACK_WEBHOOK_URL`. Update that webhook to the channel you want KPI completion messages to land in.
+
 ### Supabase, backend & pipeline connectivity
+
 - Confirm the deployed app uses `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY` to talk to the primary database. Run `npm run dev` and watch for `Supabase` calls in the browser network tab to verify connectivity.
 - Client-side modules should import `getSupabaseClient` from `apps/web/src/lib/supabase/client.ts` to lazily initialize the Supabase client instead of invoking the factory directly so auth context is stable across renders and builds and avoids import-time failures.
 - `NEXT_PUBLIC_SUPABASE_FN_BASE` backs the integration settings UI. Point it to the Supabase Edge Functions base so tokens, sync requests, and drill-down statuses execute securely.
 - The Supabase-backed `IntegrationSettings` component, the HubSpot sync service, and analytics exports rely on `KPI_SERVICE_URL`, `API_KEY`, and `HUBSPOT_API_KEY`. Store these in GitHub Secrets or the root `.env` file shared by non-Next services.
 - Trigger the pipeline locally with `python scripts/run_data_pipeline.py`; verify that outputs land in `data/metrics` and the manifest/logs directories. The same script runs nightly via `.github/workflows/daily-ingest.yml`, so use `PIPELINE_INPUT_FILE` to test alternate datasets.
 - Once the pipeline completes, the Slack webhook configured in `daily-ingest.yml` posts `:tada:` updates so teams can see the ingestion status.
+
 ### Integrations & AI secrets
+
 - `services/slack_bot` relies on `KPI_WEBHOOK_URL`, `API_KEY`, `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, and `SLACK_BOT_AUTOSTART`. Ensure these are synchronized across the deployed bot and GitHub Secrets so KPI mentions and alerts work.
 - The metrics importer requires `NOTION_DATABASE_ID`, `NOTION_META_TOKEN`, and `NOTION_VERSION`. Keep these scoped to the workspace that houses the KPI database.
 - AI helpers (`StandaloneAIEngine`, `scripts/clients.py`, and `streamlit_app.py`) look for `GROK_API_KEY`, `GOOGLE_API_KEY`, and `OPENAI_API_KEY`. Provide these values only in environments that should reach external AI services.
 - `src/agents/orchestrator.py` expects `DATABASE_URL` so agent runs can persist traceability data.
+
 ## Code Style
+
 ### TypeScript
+
 - Use strict mode (enabled in tsconfig.json)
 - Avoid `any` - use `unknown` or proper types
 - Define return types for public functions
+
 ### React Components
+
 - Prefer Server Components
 - Use `"use client"` only when needed
 - Keep components focused and reusable
+
 ### File Organization
+
 ```text
 components/
   ├── ui/              # Reusable UI components
@@ -108,7 +144,9 @@ lib/
   ├── database.types.ts # Database types
   └── constants.ts     # Constants
 ```
+
 ## Testing
+
 ```bash
 # Run tests
 npm run test
@@ -117,26 +155,37 @@ npm run test -- --watch
 # Coverage
 npm run test:coverage
 ```
+
 ## Deployment Checklist
+
 - [ ] Run `npm run lint`
 - [ ] Run `npm run type-check`
 - [ ] Run `npm run test`
 - [ ] Build: `npm run build`
 - [ ] Test build: `npm run start`
+
 ## Troubleshooting
+
 ### Port 3000 in use
+
 ```bash
 PORT=3001 npm run dev
 ```
+
 ### Supabase connection fails
+
 - Check `NEXT_PUBLIC_SUPABASE_URL`
 - Check `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - Verify Supabase project is active
+
 ### Type errors
+
 ```bash
 npm run type-check
 ```
+
 ## Resources
+
 - [Next.js Docs](https://nextjs.org/docs)
 - [Supabase Docs](https://supabase.com/docs)
 - [Tailwind CSS](https://tailwindcss.com)
