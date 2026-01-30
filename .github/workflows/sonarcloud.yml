@@ -57,10 +57,7 @@ jobs:
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: "3.11"
-      - name: Install dependencies
-        if: steps.check-secrets.outputs.secrets_available == 'true'
-        run: |
-          cd apps/web && npm ci
+      # NOTE: npm install step removed - Next.js frontend (apps/web) was deprecated
       - name: Analytics coverage (pytest)
         if: steps.check-secrets.outputs.secrets_available == 'true'
         continue-on-error: true
@@ -71,11 +68,7 @@ jobs:
           python -m pip install opentelemetry-sdk==1.39.1
           python -m pip install -r requirements.txt pytest pytest-cov pytest-asyncio
           pytest --cov=src --cov-report=xml:coverage-src.xml tests/ || true
-      - name: Web coverage placeholder
-        if: steps.check-secrets.outputs.secrets_available == 'true'
-        run: |
-          mkdir -p apps/web/coverage
-          printf "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record\n" > apps/web/coverage/lcov.info
+      # NOTE: Web coverage placeholder removed - Next.js frontend (apps/web) was deprecated
       - name: SonarCloud Scan
         if: steps.check-secrets.outputs.secrets_available == 'true'
         continue-on-error: true
@@ -84,4 +77,3 @@ jobs:
           args: >
             -Dsonar.verbose=true
             -Dsonar.python.coverage.reportPaths=coverage-src.xml
-            -Dsonar.javascript.lcov.reportPaths=apps/web/coverage/lcov.info

@@ -27,8 +27,8 @@ This repository hosts the **Abaco Financial Intelligence Platform**, featuring a
 
 ### **Analytics & Visualization**
 
-- **Interactive Dashboard**: Streamlit app for pipeline run visualization
-- **Next.js Frontend**: Modern web dashboard for portfolio and risk views
+- **Interactive Dashboard**: Streamlit app for pipeline run visualization and KPI monitoring
+- **Grafana Monitoring**: Docker-based observability dashboards
 - **19 KPI Definitions**: Comprehensive formulas with thresholds and targets
 
 ---
@@ -44,8 +44,8 @@ This repository hosts the **Abaco Financial Intelligence Platform**, featuring a
 ### **Optional Tools**
 
 - Deno 2.0+ (for repository validation)
-- Node.js 18+ (for web frontend)
 - Azure CLI (for cloud deployment)
+- Docker (for Grafana monitoring)
 
 ---
 
@@ -143,11 +143,11 @@ scripts/
 - Real-time KPI integration
 - See [python/multi_agent/README.md](python/multi_agent/README.md)
 
-### **Frontend** (`apps/web/`)
+### **Dashboard** (`streamlit_app/` + `streamlit_app.py`)
 
-- Next.js dashboard for portfolio, risk, and growth views
-- FastAPI backend integration
-- Plotly visualizations
+- Streamlit dashboard for portfolio, risk, and growth views
+- Python-native visualizations with Polars
+- Deployed to Azure App Service
 
 ### **Documentation** (`docs/`)
 
