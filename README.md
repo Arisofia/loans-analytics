@@ -151,10 +151,19 @@ scripts/
 
 ### **Documentation** (`docs/`)
 
-- Architecture guides
-- Operations runbooks
-- Planning documents
-- See [docs/README.md](docs/README.md)
+- 📚 **[docs/README.md](docs/README.md)** - Complete documentation index (updated Jan 31, 2026)
+- 🎯 **Master Documents**: Setup Guide, CTO Audit Report, Operations Master
+- 🏗️ Architecture guides and system design
+- 🔧 Operations runbooks and deployment guides
+- 📋 Planning documents and roadmaps
+- 🗄️ **Archive**: 15 historical documents preserved (Phase 1 + Phase 2 consolidation)
+
+**Recent Updates:**
+- ✅ Phase 2 Consolidation Complete (Jan 31, 2026)
+- ✅ 15 files archived, -2,685 lines from active docs
+- ✅ 6 organized archive categories created
+- ✅ Single source of truth per category established
+- ✅ Zero naming conflicts
 
 For complete structure details: [.repo-structure.json](.repo-structure.json)
 
@@ -477,9 +486,13 @@ streamlit run streamlit_app.py --logger.level=debug
 
 ### **Getting Help**
 
-- 📖 Check [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
-- 🔍 Review [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) (if available)
-- 📝 See [docs/operations/](docs/operations/) for operational guides
+- 📖 Check [docs/README.md](docs/README.md) - Complete documentation index
+- 📚 Master Guides:
+  - [docs/SETUP_GUIDE_CONSOLIDATED.md](docs/SETUP_GUIDE_CONSOLIDATED.md) - Complete setup
+  - [docs/REPO_OPERATIONS_MASTER.md](docs/REPO_OPERATIONS_MASTER.md) - Operations manual
+  - [docs/CTO_AUDIT_REPORT.md](docs/CTO_AUDIT_REPORT.md) - Production audit
+- 🔍 Review [docs/CODE_QUALITY_GUIDE.md](docs/CODE_QUALITY_GUIDE.md) for standards
+- 🗄️ Check [docs/archive/](docs/archive/) for historical context
 
 ---
 
@@ -487,8 +500,8 @@ streamlit run streamlit_app.py --logger.level=debug
 
 - **Pipeline**: ✅ Operational (v2.0)
 - **Structure**: ✅ 100% Complete (14/14 components)
-- **Tests**: ✅ 29 passing
-- **Documentation**: ✅ Complete
-- **Production**: ✅ Ready
+- **Tests**: ✅ 232 passing (was 207, fixed 25 scenario tests)
+- **Documentation**: ✅ Consolidated & Organized (Phase 2 complete)
+- **Production**: ✅ Ready (CTO Audit: B+ rating)
 
-**Last Updated**: January 29, 2026
+**Last Updated**: January 31, 2026
