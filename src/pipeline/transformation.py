@@ -396,18 +396,17 @@ class TransformationPhase:
         """Assign DPD (Days Past Due) bucket."""
         if pd.isna(dpd) or dpd < 0:
             return "unknown"
-        elif dpd == 0:
+        if dpd == 0:
             return "current"
-        elif dpd < 30:
+        if dpd < 30:
             return "1-29"
-        elif dpd < 60:
+        if dpd < 60:
             return "30-59"
-        elif dpd < 90:
+        if dpd < 90:
             return "60-89"
-        elif dpd < 180:
+        if dpd < 180:
             return "90-179"
-        else:
-            return "180+"
+        return "180+"
 
     def _calculate_risk_category(self, row: pd.Series) -> str:
         """Calculate risk category based on status and DPD."""
@@ -416,29 +415,27 @@ class TransformationPhase:
 
         if status == "defaulted":
             return "critical"
-        elif status == "delinquent" or (pd.notna(dpd) and dpd >= 90):
+        if status == "delinquent" or (pd.notna(dpd) and dpd >= 90):
             return "high"
-        elif pd.notna(dpd) and dpd >= 30:
+        if pd.notna(dpd) and dpd >= 30:
             return "medium"
-        elif status == "active" and (pd.isna(dpd) or dpd < 30):
+        if status == "active" and (pd.isna(dpd) or dpd < 30):
             return "low"
-        else:
-            return "unknown"
+        return "unknown"
 
     def _assign_amount_tier(self, amount: float) -> str:
         """Assign loan amount tier."""
         if pd.isna(amount) or amount <= 0:
             return "invalid"
-        elif amount < 5000:
+        if amount < 5000:
             return "micro"
-        elif amount < 25000:
+        if amount < 25000:
             return "small"
-        elif amount < 100000:
+        if amount < 100000:
             return "medium"
-        elif amount < 500000:
+        if amount < 500000:
             return "large"
-        else:
-            return "jumbo"
+        return "jumbo"
 
     def _apply_custom_rule(
         self, df: pd.DataFrame, rule: Dict[str, Any]
@@ -461,12 +458,12 @@ class TransformationPhase:
             if source_col and target_col and source_col in df.columns:
                 df[target_col] = df[source_col].map(mapping).fillna(df[source_col])
                 return df, True
-            else:
-                logger.warning(
-                    "Invalid column_mapping rule configuration or missing source column: "
-                    f"source_column={source_col!r}, target_column={target_col!r}"
-                )
-                return df, False
+
+            logger.warning(
+                "Invalid column_mapping rule configuration or missing source column: "
+                f"source_column={source_col!r}, target_column={target_col!r}"
+            )
+            return df, False
 
         elif rule_type == "derived_field":
             target_col = rule.get("target_column")
@@ -481,7 +478,9 @@ class TransformationPhase:
                     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). "
                 )
                 if not all(c in allowed_chars for c in expression):
-                    logger.warning("Unsafe characters in expression '%s', skipping rule", expression)
+                    logger.warning(
+                        "Unsafe characters in expression '%s', skipping rule", expression
+                    )
                     return df, False
                 # Check for any dangerous patterns (case-insensitive via lower()).
                 # We explicitly block dangerous dunder names instead of any double underscore.
