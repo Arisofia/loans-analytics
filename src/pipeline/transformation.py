@@ -361,7 +361,7 @@ class TransformationPhase:
                 df["dpd"],
                 bins=[-np.inf, -0.001, 0.001, 30, 60, 90, 180, np.inf],
                 labels=["unknown", "current", "1-29", "30-59", "60-89", "90-179", "180+"],
-                include_lowest=True
+                include_lowest=True,
             ).astype(str)
             # Handle NaN values
             df.loc[df["dpd"].isna(), "dpd_bucket"] = "unknown"
@@ -382,7 +382,7 @@ class TransformationPhase:
                 df["amount"],
                 bins=[-np.inf, 0, 5000, 25000, 100000, 500000, np.inf],
                 labels=["invalid", "micro", "small", "medium", "large", "jumbo"],
-                right=False  # Makes bins [left, right) to match < comparison
+                right=False,  # Makes bins [left, right) to match < comparison
             ).astype(str)
             # Handle NaN values
             df.loc[df["amount"].isna(), "amount_tier"] = "invalid"
