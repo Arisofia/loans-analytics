@@ -19,6 +19,7 @@ config:
   MD040: false # fenced-code-language
   MD033: false # no-inline-html
   MD060: false # table-column-style
+  MD042: false # no-empty-links
 ignores:
   - '**/node_modules/**'
   - '**/.venv/**'
