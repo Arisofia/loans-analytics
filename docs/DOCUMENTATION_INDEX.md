@@ -118,6 +118,8 @@
 | **docs/MONITORING_QUICK_START.md**       | 5-min monitoring setup | 5 min     | Everyone          | Markdown         |
 | **docs/METRICSAPI_ANALYSIS_ES.md**       | Análisis Metrics API   | 15 min    | Platform/Eng      | Markdown         |
 | **docs/CRITICAL_DEBT_FIXES_2026.md**     | Tech debt fixes        | 15 min    | Engineers         | Markdown         |
+| **TECHNICAL_DEBT_ANALYSIS.md**           | Tech debt report (NEW) | 30 min    | Tech Lead/CTO     | Markdown         |
+| **docs/technical-debt/QUICK_REFERENCE.md** | Debt quick ref       | 5 min     | Engineers         | Markdown         |
 | **config/prometheus.yml**                | Prometheus config      | Reference | DevOps            | YAML             |
 | **config/rules/supabase_alerts.yml**     | DB alert rules         | Reference | Platform          | YAML             |
 | **config/rules/pipeline_alerts.yml**     | Pipeline alerts        | Reference | Engineering       | YAML             |
@@ -164,7 +166,12 @@
 
 #### ...review technical debt fixes
 
-→ [CRITICAL_DEBT_FIXES_2026.md](CRITICAL_DEBT_FIXES_2026.md)
+→ [CRITICAL_DEBT_FIXES_2026.md](CRITICAL_DEBT_FIXES_2026.md) (2026-01-30 fixes)
+
+#### ...understand current technical debt
+
+→ [TECHNICAL_DEBT_ANALYSIS.md](../TECHNICAL_DEBT_ANALYSIS.md) (comprehensive analysis)  
+→ [technical-debt/QUICK_REFERENCE.md](technical-debt/QUICK_REFERENCE.md) (quick reference)
 
 #### ...review operational procedures
 
