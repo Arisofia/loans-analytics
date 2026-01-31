@@ -177,64 +177,70 @@ class OutputPhase:
         if not self.config.get("database", {}).get("enabled", False):
             logger.debug("Database output is disabled in configuration")
             return {"status": "skipped", "reason": "database_disabled"}
-            
+
         try:
             # Import Supabase client
             from supabase import create_client, Client
             import os
-            
+
             if not kpi_results or not isinstance(kpi_results, dict):
                 logger.warning("No KPI results to write to database")
                 return {"status": "skipped", "reason": "empty_kpi_results"}
-            
+
             # Get Supabase credentials from environment
             supabase_url = os.getenv("SUPABASE_URL")
             supabase_key = os.getenv("SUPABASE_ANON_KEY")
-            
+
             if not supabase_url or not supabase_key:
                 logger.warning("Supabase credentials not configured in environment")
                 return {"status": "skipped", "reason": "missing_credentials"}
-            
+
             # Create Supabase client
             supabase: Client = create_client(supabase_url, supabase_key)
-            
+
             # Prepare rows for batch insert
             rows_to_insert = []
             timestamp = datetime.now().isoformat()
             run_date = datetime.now().date().isoformat()
-            
+
             for kpi_name, kpi_value in kpi_results.items():
                 if kpi_value is None:
                     logger.debug("Skipping NULL KPI: %s", kpi_name)
                     continue
-                
-                rows_to_insert.append({
-                    "kpi_name": kpi_name,
-                    "kpi_value": float(kpi_value) if isinstance(kpi_value, (int, float)) else None,
-                    "timestamp": timestamp,
-                    "run_date": run_date,
-                    "source": "pipeline_v2",
-                })
-            
+
+                rows_to_insert.append(
+                    {
+                        "kpi_name": kpi_name,
+                        "kpi_value": (
+                            float(kpi_value) if isinstance(kpi_value, (int, float)) else None
+                        ),
+                        "timestamp": timestamp,
+                        "run_date": run_date,
+                        "source": "pipeline_v2",
+                    }
+                )
+
             if not rows_to_insert:
                 logger.warning("No rows to insert after filtering")
                 return {"status": "skipped", "reason": "no_valid_kpis"}
-            
+
             # Write to kpi_timeseries_daily table
             table_name = self.config.get("database", {}).get("table", "kpi_timeseries_daily")
-            logger.info("Writing %d KPI records to Supabase table: %s", len(rows_to_insert), table_name)
-            
+            logger.info(
+                "Writing %d KPI records to Supabase table: %s", len(rows_to_insert), table_name
+            )
+
             # Insert data in batches (Supabase recommends max 1000 per batch)
             batch_size = 100
             total_inserted = 0
-            
+
             for i in range(0, len(rows_to_insert), batch_size):
-                batch = rows_to_insert[i:i + batch_size]
+                batch = rows_to_insert[i: i + batch_size]
                 supabase.table(table_name).insert(batch).execute()
                 total_inserted += len(batch)
                 logger.info(
                     "Inserted batch",
-                    extra={"batch_start": i, "batch_end": i + len(batch), "batch_size": len(batch)}
+                    extra={"batch_start": i, "batch_end": i + len(batch), "batch_size": len(batch)},
                 )
 
             logger.info("Successfully wrote %d KPI records to database", total_inserted)
