@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install requests
+          pip install requests pytest pytest-timeout
 
       - name: Run basic agent orchestration
         timeout-minutes: 2
