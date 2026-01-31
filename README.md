@@ -438,11 +438,11 @@ mypy src/ python/ scripts/
 - **Auditability**: All KPI outputs must include lineage artifacts (`calculation_manifest.json`) and timestamped run metadata.
 - **Security & Compliance**: Maintain secrets in `.env` only; never commit credentials or PII.
 - **Data Quality**: Enforce schema validation and anomaly detection before KPI publication.
-- **Observability**: Track pipeline run health, latency, and failure rates via Grafana/OTel.
+- **Observability**: Track pipeline run health, latency, and failure rates via Grafana (Prometheus + Alertmanager) for pipeline metrics, and use OpenTelemetry tracing for the multi-agent analytics system.
 
 ### **Core KPIs for Executive Oversight**
 
-- **Portfolio Health**: PAR-30, PAR-90, default rate, loss rate
+- **Portfolio Health**: PAR30 (PAR-30), PAR90 (PAR-90), default rate, loss rate
 - **Growth & Efficiency**: Disbursement volume, portfolio growth, automation rate
 - **Cash & Collections**: Collections rate, recovery rate, cash on hand
 - **Customer Value**: Active borrowers, repeat rate, LTV
