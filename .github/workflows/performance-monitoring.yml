@@ -61,15 +61,23 @@ jobs:
       - name: Compare to baseline
         if: always()
         run: |
-          python scripts/compare_performance.py performance_metrics.json --threshold 0.20
+          if [ -f performance_metrics.json ]; then
+            PYTHONPATH="${PYTHONPATH}:$PWD" python scripts/compare_performance.py performance_metrics.json --threshold 0.20
+          else
+            echo "⚠️  performance_metrics.json not found, skipping comparison"
+          fi
         continue-on-error: true
         id: compare
 
       - name: Generate performance dashboard
         if: always()
         run: |
-          python scripts/generate_performance_dashboard.py --metrics performance_metrics.json --output dashboard.txt
-          cat dashboard.txt
+          if [ -f performance_metrics.json ]; then
+            PYTHONPATH="${PYTHONPATH}:$PWD" python scripts/generate_performance_dashboard.py --metrics performance_metrics.json --output dashboard.txt
+            cat dashboard.txt
+          else
+            echo "⚠️  performance_metrics.json not found, skipping dashboard generation"
+          fi
 
       - name: Generate performance comment
         if: github.event_name == 'pull_request'

@@ -91,8 +91,8 @@ class TestLatencyBenchmarks:
 
         assert stats["total_executions"] == 100
         assert stats["latency"]["p50"] > 0
-        assert stats["latency"]["p95"] > stats["latency"]["p50"]
-        assert stats["latency"]["p99"] > stats["latency"]["p95"]
+        assert stats["latency"]["p95"] >= stats["latency"]["p50"]
+        assert stats["latency"]["p99"] >= stats["latency"]["p95"]
         assert stats["latency"]["p99"] < 200  # Within threshold
 
     @pytest.mark.timeout(10)

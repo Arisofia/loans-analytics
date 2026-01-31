@@ -9,6 +9,8 @@ import json
 import sys
 from pathlib import Path
 
+# Fix module import by adding parent directory to sys.path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 from scripts.path_utils import validate_path
 
 
