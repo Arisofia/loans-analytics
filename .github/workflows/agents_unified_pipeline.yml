@@ -1,4 +1,4 @@
-name: Unified Agents Pipeline
+name: Pipeline Orchestrator Agent
 
 on:
   schedule:
