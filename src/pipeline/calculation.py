@@ -389,9 +389,42 @@ class CalculationPhase:
 
     def _detect_anomalies(self, kpi_results: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Detect anomalies in KPI values."""
-        # TODO: Implement anomaly detection
-        # Compare against historical baselines
-        return []
+        anomalies = []
+        
+        try:
+            # Define normal ranges for key KPIs (tuples: min, max)
+            normal_ranges = {
+                "assetquality_par30": (0, 0.30),     # PAR-30 should be <30%
+                "assetquality_par90": (0, 0.15),     # PAR-90 should be <15%
+                "assetquality_default_rate": (0, 0.04),  # Default rate <4%
+                "portfolio_yield": (0.25, 0.50),     # Yield 25-50%
+            }
+            
+            for kpi_name, kpi_value in kpi_results.items():
+                if kpi_value is None or not isinstance(kpi_value, (int, float)):
+                    continue
+                    
+                if kpi_name in normal_ranges:
+                    min_val, max_val = normal_ranges[kpi_name]
+                    if kpi_value < min_val or kpi_value > max_val:
+                        anomalies.append({
+                            "kpi_name": kpi_name,
+                            "value": kpi_value,
+                            "expected_range": (min_val, max_val),
+                            "severity": "critical" if abs(kpi_value - max_val) > max_val * 0.5 else "warning",
+                        })
+                        logger.warning(
+                            "Anomaly detected in %s: %s (expected: %s-%s)",
+                            kpi_name, kpi_value, min_val, max_val
+                        )
+            
+            if anomalies:
+                logger.info("Detected %d KPI anomalies", len(anomalies))
+                
+        except Exception as e:
+            logger.error("Anomaly detection failed: %s", e, exc_info=True)
+            
+        return anomalies
 
     def _generate_manifest(
         self, kpi_results: Dict[str, Any], source_df: pd.DataFrame

@@ -135,9 +135,61 @@ class IngestionPhase:
         )
 
     def _validate_schema(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Validate DataFrame schema."""
-        # TODO: Implement Pydantic schema validation
-        return {"schema_valid": True, "required_columns_present": True, "data_types_valid": True}
+        """Validate DataFrame schema using Pydantic."""
+        try:
+            # Define required columns from config or defaults
+            required_columns = self.config.get("required_columns", [
+                "loan_id", "amount", "status", "borrower_id"
+            ])
+            
+            # Check for required columns
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                logger.warning("Missing required columns: %s", missing_columns)
+                return {
+                    "schema_valid": False,
+                    "required_columns_present": False,
+                    "missing_columns": missing_columns,
+                    "data_types_valid": False,
+                }
+            
+            # Validate data types
+            type_validation = {
+                "loan_id": str,
+                "amount": (int, float),
+                "status": str,
+            }
+            
+            type_errors = []
+            for col, expected_type in type_validation.items():
+                if col in df.columns:
+                    if not df[col].apply(lambda x: isinstance(x, expected_type)).all():
+                        type_errors.append(col)
+            
+            if type_errors:
+                logger.warning("Type validation failed for columns: %s", type_errors)
+                return {
+                    "schema_valid": False,
+                    "required_columns_present": True,
+                    "data_types_valid": False,
+                    "type_errors": type_errors,
+                }
+            
+            logger.info("Schema validation passed: %d columns, %d rows", 
+                       len(df.columns), len(df))
+            return {
+                "schema_valid": True,
+                "required_columns_present": True,
+                "data_types_valid": True,
+                "column_count": len(df.columns),
+                "row_count": len(df),
+            }
+        except Exception as e:
+            logger.error("Schema validation error: %s", e, exc_info=True)
+            return {
+                "schema_valid": False,
+                "error": str(e),
+            }
 
     def _check_duplicates(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Check for duplicate rows."""
