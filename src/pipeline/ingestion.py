@@ -138,10 +138,10 @@ class IngestionPhase:
         """Validate DataFrame schema using Pydantic."""
         try:
             # Define required columns from config or defaults
-            required_columns = self.config.get("required_columns", [
-                "loan_id", "amount", "status", "borrower_id"
-            ])
-            
+            required_columns = self.config.get(
+                "required_columns", ["loan_id", "amount", "status", "borrower_id"]
+            )
+
             # Check for required columns
             missing_columns = [col for col in required_columns if col not in df.columns]
             if missing_columns:
@@ -152,21 +152,21 @@ class IngestionPhase:
                     "missing_columns": missing_columns,
                     "data_types_valid": False,
                 }
-            
+
             # Validate data types (vectorized for performance)
             type_validation = {
                 "loan_id": str,
                 "amount": (int, float),
                 "status": str,
             }
-            
+
             type_errors = []
             for col, expected_type in type_validation.items():
                 if col in df.columns:
                     # Use list comprehension instead of .apply() to avoid cell variable issue
                     if not all(isinstance(val, expected_type) for val in df[col].dropna()):
                         type_errors.append(col)
-            
+
             if type_errors:
                 logger.warning("Type validation failed for columns: %s", type_errors)
                 return {
@@ -175,7 +175,7 @@ class IngestionPhase:
                     "data_types_valid": False,
                     "type_errors": type_errors,
                 }
-            
+
             logger.info(
                 "Schema validation passed",
                 extra={
