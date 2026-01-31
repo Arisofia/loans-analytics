@@ -15,7 +15,7 @@ import json
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from python.logging_config import get_logger
 
@@ -36,7 +36,7 @@ class UnifiedPipeline:
     Input → Ingestion → Transformation → Calculation → Output → Dashboard
     """
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Path | None = None):
         """
         Initialize the unified pipeline.
 
@@ -60,7 +60,7 @@ class UnifiedPipeline:
 
         logger.info("All pipeline phases initialized successfully")
 
-    def execute(self, input_path: Optional[Path] = None, mode: str = "full") -> Dict[str, Any]:
+    def execute(self, input_path: Path | None = None, mode: str = "full") -> dict[str, Any]:
         """
         Execute the complete pipeline.
 
@@ -99,7 +99,7 @@ class UnifiedPipeline:
         run_dir.mkdir(parents=True, exist_ok=True)
         logger.info("Run directory: %s", run_dir)
 
-        results: Dict[str, Any] = {
+        results: dict[str, Any] = {
             "run_id": run_id,
             "mode": mode,
             "start_time": datetime.now().isoformat(),
@@ -180,7 +180,7 @@ class UnifiedPipeline:
 
             return self._finalize_results(results, run_dir)
 
-    def _finalize_results(self, results: Dict[str, Any], run_dir: Path) -> Dict[str, Any]:
+    def _finalize_results(self, results: dict[str, Any], run_dir: Path) -> dict[str, Any]:
         """Finalize pipeline results."""
         results["end_time"] = datetime.now().isoformat()
 

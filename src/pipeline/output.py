@@ -12,7 +12,7 @@ Responsibilities:
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -27,7 +27,7 @@ logger = get_logger(__name__)
 class OutputPhase:
     """Phase 4: Output & Distribution"""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize output phase.
 
@@ -39,10 +39,10 @@ class OutputPhase:
 
     def execute(
         self,
-        kpi_results: Dict[str, Any],
-        run_dir: Optional[Path] = None,
-        kpi_engine: Optional["KPIEngineV2"] = None,
-    ) -> Dict[str, Any]:
+        kpi_results: dict[str, Any],
+        run_dir: Path | None = None,
+        kpi_engine: "KPIEngineV2" | None = None,
+    ) -> dict[str, Any]:
         """
         Execute output phase.
 
@@ -106,7 +106,7 @@ class OutputPhase:
             logger.error("Output failed: %s", str(e), exc_info=True)
             return {"status": "failed", "error": str(e), "timestamp": datetime.now().isoformat()}
 
-    def _export_parquet(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
+    def _export_parquet(self, kpi_results: dict[str, Any], run_dir: Path) -> Path:
         """Export KPI results to Parquet format."""
         output_path = run_dir / "kpis_output.parquet"
 
@@ -116,7 +116,7 @@ class OutputPhase:
         logger.info("Exported Parquet: %s", output_path)
         return output_path
 
-    def _export_csv(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
+    def _export_csv(self, kpi_results: dict[str, Any], run_dir: Path) -> Path:
         """Export KPI results to CSV format."""
         output_path = run_dir / "kpis_output.csv"
 
@@ -126,7 +126,7 @@ class OutputPhase:
         logger.info("Exported CSV: %s", output_path)
         return output_path
 
-    def _export_json(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
+    def _export_json(self, kpi_results: dict[str, Any], run_dir: Path) -> Path:
         """Export KPI results to JSON format."""
         output_path = run_dir / "kpis_output.json"
 
@@ -136,7 +136,7 @@ class OutputPhase:
         logger.info("Exported JSON: %s", output_path)
         return output_path
 
-    def _export_kpi_audit_trail(self, kpi_engine: Any) -> Optional[Path]:
+    def _export_kpi_audit_trail(self, kpi_engine: Any) -> Path | None:
         """
         Export KPI audit trail from KPIEngineV2 to exports/kpi_audit_trail.csv.
 
@@ -171,7 +171,7 @@ class OutputPhase:
             logger.error("Failed to export KPI audit trail: %s", str(e), exc_info=True)
             return None
 
-    def _write_to_database(self, kpi_results: Dict[str, Any]) -> Dict[str, Any]:
+    def _write_to_database(self, kpi_results: dict[str, Any]) -> dict[str, Any]:
         """Write results to Supabase database."""
         # TODO: Implement Supabase client
         # - Transaction safety
@@ -181,7 +181,7 @@ class OutputPhase:
         logger.info("Database write not yet implemented")
         return {"status": "skipped", "reason": "Supabase client not configured"}
 
-    def _trigger_dashboard_refresh(self) -> Dict[str, str]:
+    def _trigger_dashboard_refresh(self) -> dict[str, str]:
         """Trigger dashboard to refresh data."""
         # TODO: Implement dashboard refresh mechanism
         # - Webhook
@@ -227,10 +227,10 @@ class OutputPhase:
 
     def _generate_audit_metadata(
         self,
-        kpi_results: Dict[str, Any],
-        exports: Dict[str, str],
-        kpi_engine: Optional["KPIEngineV2"] = None,
-    ) -> Dict[str, Any]:
+        kpi_results: dict[str, Any],
+        exports: dict[str, str],
+        kpi_engine: "KPIEngineV2" | None = None,
+    ) -> dict[str, Any]:
         """
         Generate audit metadata/summary for this pipeline run.
 
@@ -276,7 +276,7 @@ class OutputPhase:
         return audit_info
 
     def _calculate_quality_score(
-        self, kpi_results: Dict[str, Any], kpi_engine: Optional["KPIEngineV2"] = None
+        self, kpi_results: dict[str, Any], kpi_engine: "KPIEngineV2" | None = None
     ) -> float:
         """
         Calculate quality score based on validation results.
@@ -315,7 +315,7 @@ class OutputPhase:
         return 1.0
 
     def _check_sla(
-        self, kpi_results: Dict[str, Any], kpi_engine: Optional["KPIEngineV2"] = None
+        self, kpi_results: dict[str, Any], kpi_engine: "KPIEngineV2" | None = None
     ) -> bool:
         """
         Check if SLA was met for this pipeline run.

@@ -14,7 +14,7 @@ import hashlib
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import pandas as pd
 
@@ -26,7 +26,7 @@ logger = get_logger(__name__)
 class IngestionPhase:
     """Phase 1: Data Ingestion"""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize ingestion phase.
 
@@ -38,8 +38,8 @@ class IngestionPhase:
         logger.info("Initialized ingestion phase (run_id: %s)", self.run_id)
 
     def execute(
-        self, input_path: Optional[Path] = None, run_dir: Optional[Path] = None
-    ) -> Dict[str, Any]:
+        self, input_path: Path | None = None, run_dir: Path | None = None
+    ) -> dict[str, Any]:
         """
         Execute ingestion phase.
 
@@ -134,12 +134,12 @@ class IngestionPhase:
             }
         )
 
-    def _validate_schema(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def _validate_schema(self, df: pd.DataFrame) -> dict[str, Any]:
         """Validate DataFrame schema."""
         # TODO: Implement Pydantic schema validation
         return {"schema_valid": True, "required_columns_present": True, "data_types_valid": True}
 
-    def _check_duplicates(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def _check_duplicates(self, df: pd.DataFrame) -> dict[str, Any]:
         """Check for duplicate rows."""
         duplicates = df.duplicated().sum()
 

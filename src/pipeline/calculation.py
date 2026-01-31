@@ -14,7 +14,7 @@ import re
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -197,7 +197,7 @@ class KPIFormulaEngine:
 class CalculationPhase:
     """Phase 3: KPI Calculation"""
 
-    def __init__(self, config: Dict[str, Any], kpi_definitions: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any], kpi_definitions: dict[str, Any]):
         """
         Initialize calculation phase.
 
@@ -211,10 +211,10 @@ class CalculationPhase:
 
     def execute(
         self,
-        clean_data_path: Optional[Path] = None,
-        df: Optional[pd.DataFrame] = None,
-        run_dir: Optional[Path] = None,
-    ) -> Dict[str, Any]:
+        clean_data_path: Path | None = None,
+        df: pd.DataFrame | None = None,
+        run_dir: Path | None = None,
+    ) -> dict[str, Any]:
         """
         Execute calculation phase.
 
@@ -284,11 +284,11 @@ class CalculationPhase:
                 "timestamp": datetime.now().isoformat(),
             }
 
-    def _calculate_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def _calculate_kpis(self, df: pd.DataFrame) -> dict[str, Any]:
         """Calculate all KPIs from definitions."""
         logger.info("Calculating KPIs")
 
-        kpis: Dict[str, Optional[float]] = {}
+        kpis: dict[str, float | None] = {}
         engine = KPIFormulaEngine(df)
 
         kpi_categories = [
@@ -328,7 +328,7 @@ class CalculationPhase:
         logger.info("Calculated %d KPIs", len(kpis))
         return kpis
 
-    def _calculate_time_series(self, df: pd.DataFrame) -> Dict[str, List]:
+    def _calculate_time_series(self, df: pd.DataFrame) -> dict[str, list]:
         """Calculate time-series rollups."""
         logger.info("Calculating time-series rollups")
 
@@ -357,7 +357,7 @@ class CalculationPhase:
         if not numeric_cols:
             numeric_cols = ["amount"] if "amount" in df_ts.columns else []
 
-        result: Dict[str, List[Dict[str, Any]]] = {"daily": [], "weekly": [], "monthly": []}
+        result: dict[str, list[dict[str, Any]]] = {"daily": [], "weekly": [], "monthly": []}
 
         if numeric_cols:
             try:
@@ -386,15 +386,15 @@ class CalculationPhase:
         )
         return result
 
-    def _detect_anomalies(self, kpi_results: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _detect_anomalies(self, kpi_results: dict[str, Any]) -> list[dict[str, Any]]:
         """Detect anomalies in KPI values."""
         # TODO: Implement anomaly detection
         # Compare against historical baselines
         return []
 
     def _generate_manifest(
-        self, kpi_results: Dict[str, Any], source_df: pd.DataFrame
-    ) -> Dict[str, Any]:
+        self, kpi_results: dict[str, Any], source_df: pd.DataFrame
+    ) -> dict[str, Any]:
         """Generate calculation manifest with lineage."""
         return {
             "run_timestamp": datetime.now().isoformat(),

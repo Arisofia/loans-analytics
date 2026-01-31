@@ -7,7 +7,7 @@ Reads from config/pipeline.yml and provides structured access to settings.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import yaml
 
@@ -16,15 +16,15 @@ import yaml
 class PipelineConfig:
     """Pipeline configuration container."""
 
-    ingestion: Dict[str, Any]
-    transformation: Dict[str, Any]
-    calculation: Dict[str, Any]
-    output: Dict[str, Any]
-    external_integrations: Dict[str, Any]
-    observability: Dict[str, Any]
+    ingestion: dict[str, Any]
+    transformation: dict[str, Any]
+    calculation: dict[str, Any]
+    output: dict[str, Any]
+    external_integrations: dict[str, Any]
+    observability: dict[str, Any]
 
     @classmethod
-    def load(cls, config_path: Optional[Path] = None) -> "PipelineConfig":
+    def load(cls, config_path: Path | None = None) -> "PipelineConfig":
         """
         Load configuration from YAML file.
 
@@ -56,7 +56,7 @@ class PipelineConfig:
         )
 
 
-def load_business_rules(rules_path: Optional[Path] = None) -> Dict[str, Any]:
+def load_business_rules(rules_path: Path | None = None) -> dict[str, Any]:
     """
     Load business rules from YAML file.
 
@@ -76,7 +76,7 @@ def load_business_rules(rules_path: Optional[Path] = None) -> Dict[str, Any]:
         return yaml.safe_load(f)
 
 
-def load_kpi_definitions(kpi_path: Optional[Path] = None) -> Dict[str, Any]:
+def load_kpi_definitions(kpi_path: Path | None = None) -> dict[str, Any]:
     """
     Load KPI definitions from YAML file.
 

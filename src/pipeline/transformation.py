@@ -12,7 +12,7 @@ Responsibilities:
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -26,7 +26,7 @@ class TransformationPhase:
     """Phase 2: Data Transformation"""
 
     # Default numeric columns for financial data
-    NUMERIC_COLUMNS: Set[str] = {
+    NUMERIC_COLUMNS: set[str] = {
         "amount",
         "current_balance",
         "original_amount",
@@ -36,7 +36,7 @@ class TransformationPhase:
     }
 
     # Default date columns
-    DATE_COLUMNS: Set[str] = {
+    DATE_COLUMNS: set[str] = {
         "disbursement_date",
         "origination_date",
         "due_date",
@@ -45,7 +45,7 @@ class TransformationPhase:
     }
 
     # Status mappings for normalization
-    STATUS_MAPPINGS: Dict[str, str] = {
+    STATUS_MAPPINGS: dict[str, str] = {
         "Active": "active",
         "ACTIVE": "active",
         "Delinquent": "delinquent",
@@ -62,7 +62,7 @@ class TransformationPhase:
     HIGH_NULL_THRESHOLD_PCT: float = 30.0  # Above this: use default fill
     MISSING_NUMERIC_INDICATOR: int = -999  # Indicator for missing numeric values
 
-    def __init__(self, config: Dict[str, Any], business_rules: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any], business_rules: dict[str, Any] | None = None):
         """
         Initialize transformation phase.
 
@@ -91,9 +91,9 @@ class TransformationPhase:
 
     def execute(
         self,
-        raw_data_path: Optional[Path] = None,
-        df: Optional[pd.DataFrame] = None,
-        run_dir: Optional[Path] = None,
+        raw_data_path: Path | None = None,
+        df: pd.DataFrame | None = None,
+        run_dir: Path | None = None,
     ) -> Dict[str, Any]:
         """
         Execute transformation phase.
@@ -117,7 +117,7 @@ class TransformationPhase:
                     raise ValueError("No data provided for transformation")
 
             initial_rows = len(df)
-            transformation_metrics: Dict[str, Any] = {}
+            transformation_metrics: dict[str, Any] = {}
 
             # Apply transformations with metrics tracking
             df, null_metrics = self._handle_nulls(df)
@@ -232,7 +232,7 @@ class TransformationPhase:
         return df
 
     def _smart_null_handling(
-        self, df: pd.DataFrame, null_columns: Dict[str, int]
+        self, df: pd.DataFrame, null_columns: dict[str, int]
     ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Intelligent null handling based on null percentage and column importance.
@@ -242,7 +242,7 @@ class TransformationPhase:
         - LOW to HIGH_NULL_THRESHOLD_PCT: Fill with missing indicator
         - > HIGH_NULL_THRESHOLD_PCT: Log warning, fill with default
         """
-        actions: Dict[str, str] = {}
+        actions: dict[str, str] = {}
         total_rows = len(df)
 
         for col, null_count in null_columns.items():
@@ -293,7 +293,7 @@ class TransformationPhase:
         if not self.type_normalization_enabled:
             return df, {"enabled": False}
 
-        conversions: Dict[str, Dict[str, str]] = {}
+        conversions: dict[str, dict[str, str]] = {}
 
         # Normalize date columns
         for col in df.columns:
@@ -352,8 +352,8 @@ class TransformationPhase:
         """
         logger.info("Applying business rules")
 
-        rules_applied: List[str] = []
-        fields_created: List[str] = []
+        rules_applied: list[str] = []
+        fields_created: list[str] = []
 
         # Apply DPD bucket assignment if dpd column exists
         if "dpd" in df.columns:
@@ -438,7 +438,7 @@ class TransformationPhase:
         return "jumbo"
 
     def _apply_custom_rule(
-        self, df: pd.DataFrame, rule: Dict[str, Any]
+        self, df: pd.DataFrame, rule: dict[str, Any]
     ) -> Tuple[pd.DataFrame, bool]:
         """
         Apply a custom business rule from configuration.
@@ -530,7 +530,7 @@ class TransformationPhase:
         if not self.outlier_enabled:
             return df, {"enabled": False}
 
-        outlier_counts: Dict[str, int] = {}
+        outlier_counts: dict[str, int] = {}
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 
         # Skip columns that shouldn't be checked for outliers:
@@ -619,7 +619,7 @@ class TransformationPhase:
         """
         logger.info("Checking referential integrity")
 
-        integrity_issues: List[Dict[str, Any]] = []
+        integrity_issues: list[dict[str, Any]] = []
 
         # Check for unique loan_id if present
         if "loan_id" in df.columns:
