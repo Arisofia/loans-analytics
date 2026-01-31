@@ -1,7 +1,15 @@
+import sys
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
-from python.utils.dashboard import format_kpi_value, kpi_label
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+from python.utils.dashboard import format_kpi_value, kpi_label  # noqa: E402
 
 
 def render_kpi_snapshot(kpi_snapshot, snapshot_month=None):
