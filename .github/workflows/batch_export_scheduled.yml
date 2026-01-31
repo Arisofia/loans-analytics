@@ -16,9 +16,9 @@ jobs:
       - name: Validate required secrets
         id: validate
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || '' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || '' }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE || '' }}
         run: |
           missing=""
           [ -z "$DATABASE_URL" ] && missing="$missing DATABASE_URL"
@@ -55,16 +55,16 @@ jobs:
 
       - name: Run batch export
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          META_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
-          META_PIXEL_ID: ${{ secrets.META_PIXEL_ID }}
-          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID || secrets.FACEBOOK_AD_ACCOUNT_ID }}
-          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
-          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || '' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || '' }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE || '' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || '' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}
+          META_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN || '' }}
+          META_PIXEL_ID: ${{ secrets.META_PIXEL_ID || '' }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID || secrets.FACEBOOK_AD_ACCOUNT_ID || '' }}
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING || '' }}
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS || '' }}
           EXPORT_TYPE: "full"
         run: |
           python src/integrations/batch_export_runner.py \
