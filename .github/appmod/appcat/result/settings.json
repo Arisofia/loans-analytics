@@ -1,0 +1,100 @@
+[
+	{
+		"name": "builtin",
+		"initConfig": [
+			{
+				"location": "/Users/jenineferderas/Documents/Documentos - MacBook Pro (6)/abaco-loans-analytics",
+				"analysisMode": "source-only",
+				"providerSpecificConfig": {
+					"excludePatterns": [
+						"**/org.eclipse.equinox.launcher/**",
+						"**/gradlew",
+						"**/.gradle/**",
+						"**/gradle/**",
+						"**/*.svg",
+						"**/.devops/**",
+						"**/org.eclipse.osgi/**",
+						"**/.migrate-copilot/**",
+						"**/gradlew.bat",
+						"**/mvnw",
+						"**/.devcontainer/**",
+						"**/.git/**",
+						"**/LICENSE",
+						"**/org.eclipse.core.runtime/**",
+						"**/.mvn/**",
+						"**/*.jpg",
+						"**/.idea/**",
+						"**/.editorconfig",
+						"**/.appcat-ignore",
+						"**/.metadata/**",
+						"**/migrate-copilot/**",
+						"**/target/**",
+						"**/mvnw.cmd",
+						"**/*.png",
+						"**/.git*",
+						"**/README.*",
+						"**/.github/**",
+						"**/org.eclipse.equinox.app/**"
+					],
+					"excludedPaths": [
+						"/Users/jenineferderas/Documents/Documentos - MacBook Pro (6)/abaco-loans-analytics/.github/appmod"
+					]
+				}
+			}
+		],
+		"ContextLines": 100
+	},
+	{
+		"name": "java",
+		"binaryPath": "/Users/jenineferderas/.appcat/jdtls/bin/jdtls",
+		"initConfig": [
+			{
+				"location": "/Users/jenineferderas/Documents/Documentos - MacBook Pro (6)/abaco-loans-analytics",
+				"analysisMode": "source-only",
+				"providerSpecificConfig": {
+					"bundles": "/Users/jenineferderas/.appcat/jdtls/java-analyzer-bundle/java-analyzer-bundle.core/target/java-analyzer-bundle.core-1.0.0-SNAPSHOT.jar",
+					"cleanExplodedBin": true,
+					"depOpenSourceLabelsFile": "/Users/jenineferderas/.appcat/maven.default.index",
+					"excludePatterns": [
+						"**/org.eclipse.equinox.app/**",
+						"**/migrate-copilot/**",
+						"**/target/**",
+						"**/mvnw",
+						"**/mvnw.cmd",
+						"**/.devcontainer/**",
+						"**/.devops/**",
+						"**/.editorconfig",
+						"**/.metadata/**",
+						"**/org.eclipse.osgi/**",
+						"**/.migrate-copilot/**",
+						"**/.gradle/**",
+						"**/gradle/**",
+						"**/.git*",
+						"**/README.*",
+						"**/LICENSE",
+						"**/org.eclipse.equinox.launcher/**",
+						"**/*.jpg",
+						"**/*.png",
+						"**/.idea/**",
+						"**/.appcat-ignore",
+						"**/.github/**",
+						"**/org.eclipse.core.runtime/**",
+						"**/gradlew",
+						"**/gradlew.bat",
+						"**/.mvn/**",
+						"**/*.svg",
+						"**/.git/**"
+					],
+					"excludedPaths": [
+						"/Users/jenineferderas/Documents/Documentos - MacBook Pro (6)/abaco-loans-analytics/.github/appmod"
+					],
+					"fernFlowerPath": "/Users/jenineferderas/.appcat/fernflower.jar",
+					"lspServerName": "java",
+					"lspServerPath": "/Users/jenineferderas/.appcat/jdtls/bin/jdtls",
+					"workspace": "/Users/jenineferderas/.appcat/.jdtls-workspace/a654c93cfa25f09c"
+				}
+			}
+		],
+		"ContextLines": 100
+	}
+]
