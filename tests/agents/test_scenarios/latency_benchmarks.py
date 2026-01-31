@@ -75,6 +75,7 @@ class TestLatencyBenchmarks:
     @pytest.mark.timeout(10)
     def test_concurrent_agent_latency(self):
         """Test latency under concurrent agent execution."""
+
         def agent_task(agent_id):
             """Simulate agent task."""
             start = time.time()
