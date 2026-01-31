@@ -1,0 +1,44 @@
+# Evaluation Thresholds Configuration
+# Defines quality gates for ML model evaluation metrics
+
+# Test Coverage Requirements (fintech compliance standard: >95%)
+test_coverage:
+  min: 95.0  # Hard requirement - CI fails below this
+  target: 98.0  # Soft target - shows warning if not met
+
+# Model Performance Metrics (if applicable)
+# These apply when model evaluation tests are present
+
+accuracy:
+  min: 0.95  # 95% minimum accuracy for production models
+  target: 0.98  # 98% target accuracy
+
+precision:
+  min: 0.90  # 90% minimum precision (false positive control)
+  target: 0.95  # 95% target precision
+
+recall:
+  min: 0.85  # 85% minimum recall (false negative control)
+  target: 0.92  # 92% target recall
+
+f1_score:
+  min: 0.88  # 88% minimum F1 score (balanced performance)
+  target: 0.93  # 93% target F1 score
+
+# Financial Model Specific Thresholds
+# (Uncomment when financial models are implemented)
+
+# default_rate_prediction:
+#   min: 0.92  # Critical for risk management
+#   target: 0.96
+
+# fraud_detection:
+#   min: 0.95  # High precision required for fraud
+#   target: 0.98
+#   max_false_positive_rate: 0.01  # 1% max false positive rate
+
+# Notes:
+# - All metrics are on 0-1 scale except test_coverage (percentage)
+# - 'min' = hard requirement, CI fails if not met
+# - 'target' = soft requirement, shows warning if not met
+# - Adjust thresholds based on business impact and model maturity

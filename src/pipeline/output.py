@@ -180,8 +180,9 @@ class OutputPhase:
 
         try:
             # Import Supabase client
-            from supabase import create_client, Client
             import os
+
+            from supabase import Client, create_client
 
             if not kpi_results or not isinstance(kpi_results, dict):
                 logger.warning("No KPI results to write to database")

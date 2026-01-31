@@ -126,7 +126,7 @@ Set these in your environment, `.env`, or GitHub Actions secrets:
 ```bash
 # Supabase connection
 export SUPABASE_URL="https://your-project.supabase.co"
-export SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIs..."
+export SUPABASE_ANON_KEY="your-anon-key-here"
 
 # Optional: Table name (defaults to "historical_kpis")
 export SUPABASE_HISTORICAL_KPI_TABLE="historical_kpis"
