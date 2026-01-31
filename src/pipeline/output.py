@@ -173,17 +173,35 @@ class OutputPhase:
 
     def _write_to_database(self, kpi_results: Dict[str, Any]) -> Dict[str, Any]:
         """Write results to Supabase database."""
+        # Check if database output is enabled
+        if not self.config.get("database", {}).get("enabled", False):
+            logger.debug("Database output is disabled in configuration")
+            return {"status": "skipped", "reason": "database_disabled"}
+            
         try:
-            # Import Supabase client dynamically to avoid hard dependency
-            from python.supabase_pool import get_pool
+            # Import Supabase client
+            from supabase import create_client, Client
+            import os
             
             if not kpi_results or not isinstance(kpi_results, dict):
                 logger.warning("No KPI results to write to database")
                 return {"status": "skipped", "reason": "empty_kpi_results"}
             
+            # Get Supabase credentials from environment
+            supabase_url = os.getenv("SUPABASE_URL")
+            supabase_key = os.getenv("SUPABASE_ANON_KEY")
+            
+            if not supabase_url or not supabase_key:
+                logger.warning("Supabase credentials not configured in environment")
+                return {"status": "skipped", "reason": "missing_credentials"}
+            
+            # Create Supabase client
+            supabase: Client = create_client(supabase_url, supabase_key)
+            
             # Prepare rows for batch insert
             rows_to_insert = []
             timestamp = datetime.now().isoformat()
+            run_date = datetime.now().date().isoformat()
             
             for kpi_name, kpi_value in kpi_results.items():
                 if kpi_value is None:
@@ -194,31 +212,39 @@ class OutputPhase:
                     "kpi_name": kpi_name,
                     "kpi_value": float(kpi_value) if isinstance(kpi_value, (int, float)) else None,
                     "timestamp": timestamp,
-                    "run_date": datetime.now().date().isoformat(),
+                    "run_date": run_date,
+                    "source": "pipeline_v2",
                 })
             
             if not rows_to_insert:
                 logger.warning("No rows to insert after filtering")
                 return {"status": "skipped", "reason": "no_valid_kpis"}
             
-            # Write to kpi_timeseries_daily table (assumes table exists)
-            logger.info("Writing %d KPI records to database", len(rows_to_insert))
+            # Write to kpi_timeseries_daily table
+            table_name = self.config.get("database", {}).get("table", "kpi_timeseries_daily")
+            logger.info("Writing %d KPI records to Supabase table: %s", len(rows_to_insert), table_name)
             
-            # Note: Actual Supabase write would happen here
-            # For now, log the intent and return success
-            logger.info("KPI records ready for database write: %s",
-                       [r["kpi_name"] for r in rows_to_insert])
+            # Insert data in batches (Supabase recommends max 1000 per batch)
+            batch_size = 100
+            total_inserted = 0
+            
+            for i in range(0, len(rows_to_insert), batch_size):
+                batch = rows_to_insert[i:i + batch_size]
+                result = supabase.table(table_name).insert(batch).execute()
+                total_inserted += len(batch)
+                logger.info("Inserted batch %d-%d", i, i + len(batch))
 
+            logger.info("Successfully wrote %d KPI records to database", total_inserted)
             return {
                 "status": "success",
-                "records_written": len(rows_to_insert),
+                "records_written": total_inserted,
                 "timestamp": timestamp,
-                "table": "kpi_timeseries_daily",
+                "table": table_name,
             }
 
-        except ImportError:
-            logger.warning("Supabase pool not available - database write skipped")
-            return {"status": "skipped", "reason": "supabase_not_configured"}
+        except ImportError as e:
+            logger.warning("Supabase library not available: %s", e)
+            return {"status": "skipped", "reason": "supabase_not_installed"}
         except Exception as e:
             logger.error("Database write failed: %s", e, exc_info=True)
             return {"status": "error", "error": str(e)}
