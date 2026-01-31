@@ -54,7 +54,6 @@ jobs:
           python-version: "3.11"
       - name: Analytics coverage (pytest)
         if: steps.check-secrets.outputs.secrets_available == 'true'
-        continue-on-error: true
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
@@ -65,7 +64,6 @@ jobs:
       # NOTE: Web coverage placeholder removed - Next.js frontend (apps/web) was deprecated
       - name: SonarCloud Scan
         if: steps.check-secrets.outputs.secrets_available == 'true'
-        continue-on-error: true
         uses: SonarSource/sonarcloud-github-action@v5
         with:
           args: >

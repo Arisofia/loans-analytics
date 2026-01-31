@@ -34,7 +34,6 @@ jobs:
         id: compare
         run: |
           python scripts/compare_costs.py cost_report.json --threshold 0.10
-        continue-on-error: true
 
       - name: Generate cost comment
         run: |

@@ -27,19 +27,16 @@ jobs:
         timeout-minutes: 2
         run: |
           python -m pytest tests/agents/test_scenarios/test_happy_path.py -v --timeout=60
-        continue-on-error: true
         id: happy_path
 
       - name: Check Supabase connectivity
         run: |
           python scripts/health_check.py supabase
-        continue-on-error: true
         id: supabase
 
       - name: Check agent system
         run: |
           python scripts/health_check.py agents
-        continue-on-error: true
         id: agents
 
       - name: Generate smoke test report

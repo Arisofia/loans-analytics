@@ -32,7 +32,6 @@ jobs:
         run: |
           # Run benchmarks and collect metrics
           python -m pytest tests/agents/test_scenarios/latency_benchmarks.py -v --tb=short
-        continue-on-error: true
         id: benchmarks
 
       - name: Generate performance metrics
@@ -62,7 +61,6 @@ jobs:
         if: always()
         run: |
           python scripts/compare_performance.py performance_metrics.json --threshold 0.20
-        continue-on-error: true
         id: compare
 
       - name: Generate performance dashboard
