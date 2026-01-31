@@ -204,7 +204,7 @@ async def main():
         database_url = os.getenv("DATABASE_URL")
 
     if not database_url:
-        print("❌ ERROR: SUPABASE_DATABASE_URL or DATABASE_URL " "environment variable required")
+        print("❌ ERROR: SUPABASE_DATABASE_URL or DATABASE_URL environment variable required")
         print("\nExample:")
         print("  export SUPABASE_DATABASE_URL=" '"postgresql://user:pass@host:5432/dbname"')
         return

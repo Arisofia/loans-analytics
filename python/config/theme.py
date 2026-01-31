@@ -21,15 +21,9 @@ ABACO_THEME = {
     },
     "gradients": {
         "title": "linear-gradient(81.74deg, #C1A6FF 5.91%, #5F4896 79.73%)",
-        "card_primary": (
-            "linear-gradient(135deg, " "rgba(193, 166, 255, 0.2) 0%, " "rgba(0, 0, 0, 0.5) 100%)"
-        ),
-        "card_secondary": (
-            "linear-gradient(135deg, " "rgba(34, 18, 72, 0.4) 0%, " "rgba(0, 0, 0, 0.6) 100%)"
-        ),
-        "card_highlight": (
-            "linear-gradient(135deg, " "rgba(193, 166, 255, 0.25) 0%, " "rgba(0, 0, 0, 0.8) 100%)"
-        ),
+        "card_primary": "linear-gradient(135deg, rgba(193, 166, 255, 0.2) 0%, rgba(0, 0, 0, 0.5) 100%)",
+        "card_secondary": "linear-gradient(135deg, rgba(34, 18, 72, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%)",
+        "card_highlight": "linear-gradient(135deg, rgba(193, 166, 255, 0.25) 0%, rgba(0, 0, 0, 0.8) 100%)",
     },
     "typography": {
         "primary_font": "Lato",

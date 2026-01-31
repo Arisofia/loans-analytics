@@ -118,9 +118,7 @@ class SupabaseConnectionPool:
 
         try:
             logger.info(
-                f"Initializing Supabase connection pool "
-                f"(min={self.min_size}, max={self.max_size}, "
-                f"timeout={self.command_timeout}s)"
+                f"Initializing Supabase connection pool (min={self.min_size}, max={self.max_size}, timeout={self.command_timeout}s)"
             )
 
             # Normalize database URL for asyncpg compatibility
@@ -188,8 +186,7 @@ class SupabaseConnectionPool:
                 if attempt < max_retries - 1:
                     wait_time = retry_delay * (2**attempt)  # Exponential backoff
                     logger.warning(
-                        f"Connection attempt {attempt + 1}/{max_retries} failed: {e}. "
-                        f"Retrying in {wait_time}s..."
+                        f"Connection attempt {attempt + 1}/{max_retries} failed: {e}. Retrying in {wait_time}s..."
                     )
                     await asyncio.sleep(wait_time)
                 else:
@@ -307,9 +304,8 @@ class SupabaseConnectionPool:
             "free_connections": self._pool.get_idle_size() if self._pool else 0,
         }
 
-
-# Global pool instance (singleton pattern)
-_global_pool: Optional[SupabaseConnectionPool] = None
+    # Global pool instance (singleton pattern)
+    _global_pool: Optional[SupabaseConnectionPool] = None
 
 
 async def get_pool(database_url: Optional[str] = None) -> SupabaseConnectionPool:
@@ -322,23 +318,19 @@ async def get_pool(database_url: Optional[str] = None) -> SupabaseConnectionPool
     Returns:
         Connection pool instance
     """
-    global _global_pool  # pylint: disable=global-statement
-
-    if _global_pool is None:
+    if SupabaseConnectionPool._global_pool is None:
         if not database_url:
             raise ValueError("database_url required for pool initialization")
 
-        _global_pool = SupabaseConnectionPool(database_url)
-        await _global_pool.initialize()
+        SupabaseConnectionPool._global_pool = SupabaseConnectionPool(database_url)
+        await SupabaseConnectionPool._global_pool.initialize()
 
-    return _global_pool
+    return SupabaseConnectionPool._global_pool
 
 
 async def close_pool() -> None:
     """Close global connection pool."""
-    global _global_pool  # pylint: disable=global-statement
-
-    if _global_pool is not None:
-        await _global_pool.close()
+    if SupabaseConnectionPool._global_pool is not None:
+        await SupabaseConnectionPool._global_pool.close()
         # Reset the global connection pool instance
-        _global_pool = None
+        SupabaseConnectionPool._global_pool = None

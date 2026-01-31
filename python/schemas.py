@@ -1,7 +1,7 @@
 import logging
 import sys
 
-import polars as pl  # pylint: disable=import-error
+import polars as pl
 
 logger = logging.getLogger(__name__)
 # Finance-Grade Loan Schema
@@ -46,7 +46,7 @@ def validate_ingestion_contract(df: pl.DataFrame) -> bool:
         dates = df.select("measurement_date").sort("measurement_date")
         if not df.select("measurement_date").equals(dates):
             logger.warning(
-                "Data Continuity Issue: measurement_date is not " "monotonically increasing"
+                "Data Continuity Issue: measurement_date is not monotonically increasing"
             )
     # 4. Outlier / Threshold Detection
     if "loan_amount" in df.columns:
@@ -70,6 +70,6 @@ def assert_healthy(df: pl.DataFrame):
             # Explicitly fail if negative values found in financial columns
             neg_count = df.filter(pl.col(col) < 0).height
             if neg_count > 0:
-                print(f"❌ CRITICAL: Column '{col}' contains {neg_count} " "negative values.")
+                print(f"❌ CRITICAL: Column '{col}' contains {neg_count} negative values.")
                 sys.exit(1)
     print("✅ Polars health checks passed.")
