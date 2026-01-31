@@ -14,8 +14,7 @@ from typing import Any, Dict
 
 # Setup basic logging
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -112,9 +111,7 @@ def generate_coverage_report(metrics: Dict[str, Any], output_dir: Path):
 
 def main():
     """Main entry point for visualization generation."""
-    parser = argparse.ArgumentParser(
-        description="Generate visualizations from evaluation metrics"
-    )
+    parser = argparse.ArgumentParser(description="Generate visualizations from evaluation metrics")
     parser.add_argument(
         "--metrics-file",
         type=Path,

@@ -15,8 +15,7 @@ from typing import Any, Dict
 
 # Setup basic logging
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -61,9 +60,7 @@ def get_default_thresholds() -> Dict[str, Any]:
     }
 
 
-def check_thresholds(
-    metrics: Dict[str, Any], thresholds: Dict[str, Any]
-) -> Dict[str, Any]:
+def check_thresholds(metrics: Dict[str, Any], thresholds: Dict[str, Any]) -> Dict[str, Any]:
     """
     Validate metrics against thresholds.
 
@@ -85,13 +82,9 @@ def check_thresholds(
         target_coverage = thresholds.get("test_coverage", {}).get("target", 98.0)
 
         if pass_rate < min_coverage:
-            failures.append(
-                f"Test pass rate {pass_rate:.1f}% below minimum {min_coverage}%"
-            )
+            failures.append(f"Test pass rate {pass_rate:.1f}% below minimum {min_coverage}%")
         elif pass_rate < target_coverage:
-            warnings.append(
-                f"Test pass rate {pass_rate:.1f}% below target {target_coverage}%"
-            )
+            warnings.append(f"Test pass rate {pass_rate:.1f}% below target {target_coverage}%")
 
     # Check for model-specific metrics if present
     model_metrics = metrics.get("model_metrics", {})
@@ -105,13 +98,9 @@ def check_thresholds(
             target_val = threshold_config.get("target")
 
             if min_val and value < min_val:
-                failures.append(
-                    f"{metric_name}={value:.3f} below minimum {min_val:.3f}"
-                )
+                failures.append(f"{metric_name}={value:.3f} below minimum {min_val:.3f}")
             elif target_val and value < target_val:
-                warnings.append(
-                    f"{metric_name}={value:.3f} below target {target_val:.3f}"
-                )
+                warnings.append(f"{metric_name}={value:.3f} below target {target_val:.3f}")
 
     passed = len(failures) == 0
     message = "All thresholds passed" if passed else f"{len(failures)} threshold(s) failed"
@@ -142,9 +131,7 @@ def check_thresholds(
 
 def main():
     """Main entry point for threshold checking."""
-    parser = argparse.ArgumentParser(
-        description="Check evaluation metrics against thresholds"
-    )
+    parser = argparse.ArgumentParser(description="Check evaluation metrics against thresholds")
     parser.add_argument(
         "--metrics-file",
         type=Path,
@@ -157,9 +144,7 @@ def main():
         required=True,
         help="Path to threshold configuration YAML",
     )
-    parser.add_argument(
-        "--output", type=Path, required=True, help="Path to output results JSON"
-    )
+    parser.add_argument("--output", type=Path, required=True, help="Path to output results JSON")
 
     args = parser.parse_args()
 

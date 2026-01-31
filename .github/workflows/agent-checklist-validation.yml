@@ -20,7 +20,7 @@ jobs:
 
       - name: Get changed agent files
         id: changed-files
-        uses: tj-actions/changed-files@v47.0.1
+        uses: tj-actions/changed-files@4edd678ac3f0f23f0e7ecb098b3ec7c5a0e9f8e6 # v47.0.1
         with:
           files: |
             src/agents/**/*.py

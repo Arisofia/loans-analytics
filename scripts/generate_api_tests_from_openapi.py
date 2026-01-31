@@ -9,80 +9,87 @@ Usage:
 """
 
 import argparse
-import yaml
 import json
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
-from decimal import Decimal
+
+import yaml
+
 
 def load_openapi_spec(spec_path: str) -> dict[str, Any]:
     """Load and parse OpenAPI specification"""
-    with open(spec_path, 'r') as f:
-        if spec_path.endswith('.yaml') or spec_path.endswith('.yml'):
+    with open(spec_path, "r") as f:
+        if spec_path.endswith(".yaml") or spec_path.endswith(".yml"):
             return yaml.safe_load(f)
         else:
             return json.load(f)
 
+
 def get_python_type(schema_type: str, schema_format: str | None = None) -> str:
     """Convert OpenAPI type to Python type"""
     type_mapping = {
-        'string': 'str',
-        'number': 'Decimal',  # Financial accuracy
-        'integer': 'int',
-        'boolean': 'bool',
-        'array': 'list',
-        'object': 'dict'
+        "string": "str",
+        "number": "Decimal",  # Financial accuracy
+        "integer": "int",
+        "boolean": "bool",
+        "array": "list",
+        "object": "dict",
     }
-    return type_mapping.get(schema_type, 'Any')
+    return type_mapping.get(schema_type, "Any")
 
-def generate_test_data(schema: dict[str, Any], field_name: str = '') -> Any:
+
+def generate_test_data(schema: dict[str, Any], field_name: str = "") -> Any:
     """Generate realistic test data based on schema"""
-    schema_type = schema.get('type', 'string')
-    
-    if schema_type == 'string':
-        if 'enum' in schema:
-            return schema['enum'][0]
+    schema_type = schema.get("type", "string")
+
+    if schema_type == "string":
+        if "enum" in schema:
+            return schema["enum"][0]
         return f"test_{field_name}" if field_name else "test_value"
-    elif schema_type == 'number':
-        minimum = schema.get('minimum', 0)
-        maximum = schema.get('maximum', 100000)
+    elif schema_type == "number":
+        minimum = schema.get("minimum", 0)
+        maximum = schema.get("maximum", 100000)
         return Decimal(str((minimum + maximum) / 2))
-    elif schema_type == 'integer':
-        minimum = schema.get('minimum', 1)
-        maximum = schema.get('maximum', 100)
+    elif schema_type == "integer":
+        minimum = schema.get("minimum", 1)
+        maximum = schema.get("maximum", 100)
         return (minimum + maximum) // 2
-    elif schema_type == 'boolean':
+    elif schema_type == "boolean":
         return True
-    elif schema_type == 'array':
-        items = schema.get('items', {})
+    elif schema_type == "array":
+        items = schema.get("items", {})
         return [generate_test_data(items)]
-    elif schema_type == 'object':
-        properties = schema.get('properties', {})
+    elif schema_type == "object":
+        properties = schema.get("properties", {})
         return {k: generate_test_data(v, k) for k, v in properties.items()}
     else:
         return None
 
-def generate_test_function(endpoint: str, method: str, operation: dict[str, Any], base_path: str = '') -> str:
+
+def generate_test_function(
+    endpoint: str, method: str, operation: dict[str, Any], base_path: str = ""
+) -> str:
     """Generate a pytest test function for an API endpoint"""
-    operation_id = operation.get('operationId', f"{method}_{endpoint.replace('/', '_')}")
-    summary = operation.get('summary', f'{method.upper()} {endpoint}')
-    
+    operation_id = operation.get("operationId", f"{method}_{endpoint.replace('/', '_')}")
+    summary = operation.get("summary", f"{method.upper()} {endpoint}")
+
     # Extract request schema
-    request_body = operation.get('requestBody', {})
-    content = request_body.get('content', {})
-    json_content = content.get('application/json', {})
-    request_schema = json_content.get('schema', {})
-    
+    request_body = operation.get("requestBody", {})
+    content = request_body.get("content", {})
+    json_content = content.get("application/json", {})
+    request_schema = json_content.get("schema", {})
+
     # Extract response schemas
-    responses = operation.get('responses', {})
-    success_response = responses.get('200', responses.get('201', {}))
-    
+    responses = operation.get("responses", {})
+    success_response = responses.get("200", responses.get("201", {}))
+
     # Generate test data
     test_payload = generate_test_data(request_schema) if request_schema else {}
-    
+
     # Check if auth required
-    requires_auth = 'security' in operation or endpoint not in ['/auth/login', '/health']
-    
+    requires_auth = "security" in operation or endpoint not in ["/auth/login", "/health"]
+
     # Generate test function
     func_name = f"test_{operation_id}"
     test_code = f'''
@@ -91,29 +98,30 @@ def generate_test_function(endpoint: str, method: str, operation: dict[str, Any]
         """TC-API: {summary} - Happy path"""
         {f"# Payload" if test_payload else "# No payload required"}
         {f"payload = {test_payload}" if test_payload else ""}
-        
+
         response = api_client.{method.lower()}(
             "{base_path}{endpoint}",
             {f"json=payload," if test_payload else ""}
             {"headers={'Authorization': f'Bearer {auth_token}'}" if requires_auth else ""}
         )
-        
+
         assert response.status_code in [200, 201]
         {f"# Validate response schema" if success_response else ""}
 '''
-    
+
     return test_code
+
 
 def generate_test_class(spec: dict[str, Any], endpoint_filter: str | None = None) -> str:
     """Generate complete pytest test class from OpenAPI spec"""
-    
-    base_path = spec.get('servers', [{}])[0].get('url', '/api')
-    paths = spec.get('paths', {})
-    
+
+    base_path = spec.get("servers", [{}])[0].get("url", "/api")
+    paths = spec.get("paths", {})
+
     # Filter endpoints if specified
     if endpoint_filter:
         paths = {k: v for k, v in paths.items() if k.startswith(endpoint_filter)}
-    
+
     # Generate imports
     imports = '''"""
 Auto-generated API tests from OpenAPI specification
@@ -130,58 +138,51 @@ from typing import Any
 class TestAPIEndpoints:
     """Generated API test cases"""
 '''
-    
+
     # Generate test functions for each endpoint
     test_functions = []
     for endpoint, methods in paths.items():
         for method, operation in methods.items():
-            if method.lower() in ['get', 'post', 'put', 'patch', 'delete']:
+            if method.lower() in ["get", "post", "put", "patch", "delete"]:
                 func = generate_test_function(endpoint, method, operation, base_path)
                 test_functions.append(func)
-    
-    return imports + '\n'.join(test_functions)
+
+    return imports + "\n".join(test_functions)
+
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='Generate pytest tests from OpenAPI specification'
+    parser = argparse.ArgumentParser(description="Generate pytest tests from OpenAPI specification")
+    parser.add_argument(
+        "--spec", required=True, help="Path to OpenAPI specification (YAML or JSON)"
     )
     parser.add_argument(
-        '--spec',
-        required=True,
-        help='Path to OpenAPI specification (YAML or JSON)'
+        "--output", default="tests/api/", help="Output directory for generated tests"
     )
-    parser.add_argument(
-        '--output',
-        default='tests/api/',
-        help='Output directory for generated tests'
-    )
-    parser.add_argument(
-        '--endpoint',
-        help='Filter to specific endpoint (e.g., /api/loans)'
-    )
-    
+    parser.add_argument("--endpoint", help="Filter to specific endpoint (e.g., /api/loans)")
+
     args = parser.parse_args()
-    
+
     # Load OpenAPI spec
     print(f"Loading OpenAPI spec from {args.spec}...")
     spec = load_openapi_spec(args.spec)
-    
+
     # Generate tests
     print("Generating test cases...")
     test_code = generate_test_class(spec, args.endpoint)
-    
+
     # Write to file
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
-    
-    endpoint_name = args.endpoint.replace('/', '_').strip('_') if args.endpoint else 'all'
+
+    endpoint_name = args.endpoint.replace("/", "_").strip("_") if args.endpoint else "all"
     output_file = output_dir / f"test_api_{endpoint_name}.py"
-    
-    with open(output_file, 'w') as f:
+
+    with open(output_file, "w") as f:
         f.write(test_code)
-    
+
     print(f"✅ Generated tests: {output_file}")
     print(f"   Run with: pytest {output_file}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
