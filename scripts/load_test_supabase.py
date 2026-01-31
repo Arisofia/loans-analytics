@@ -6,10 +6,12 @@ before production scaling from $7.4M to $16.3M AUM.
 """
 
 import asyncio
+import json
 import os
 import statistics
 import sys
 import time
+import traceback
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -277,8 +279,6 @@ async def main():
 
         except Exception as e:
             print(f"\n❌ Test failed: {e}")
-            import traceback
-
             traceback.print_exc()
 
     # Summary report
@@ -296,7 +296,8 @@ async def main():
             else 0
         )
         print(
-            f"{result.test_name:<40} {result.queries_per_second:>10.1f} {result.p95_latency_ms:>12.2f} {success_pct:>11.1f}%"
+            f"{result.test_name:<40} {result.queries_per_second:>10.1f} "
+            f"{result.p95_latency_ms:>12.2f} {success_pct:>11.1f}%"
         )
 
     # Recommendations
@@ -332,9 +333,6 @@ async def main():
     # Save results
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = f"data/metrics/load_test_{timestamp}.json"
-
-    import json
-    # Path already imported at module level (line 15)
 
     Path("data/metrics").mkdir(parents=True, exist_ok=True)
 

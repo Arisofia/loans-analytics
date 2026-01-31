@@ -32,6 +32,8 @@ jobs:
       AZURE_ACR_LOGIN_SERVER: ${{ secrets.AZURE_ACR_LOGIN_SERVER }}
       AZURE_ACR_USERNAME: ${{ secrets.AZURE_ACR_USERNAME }}
       AZURE_ACR_PASSWORD: ${{ secrets.AZURE_ACR_PASSWORD }}
+      # Pre-compute lowercase for validator (overridden in "Lowercase image names" step for consistency)
+      IMAGE_DASHBOARD_LOWER: arisofia/abaco-loans-analytics-dashboard
 
     steps:
       - name: Checkout
@@ -40,6 +42,7 @@ jobs:
       - name: Lowercase image names
         run: |
           # NOTE: IMAGE_WEB removed - Next.js frontend (apps/web) was deprecated
+          # Convert to lowercase for Docker image naming (override default for dynamic repos)
           IMAGE_DASHBOARD_LOWER="${IMAGE_DASHBOARD,,}"
           echo "IMAGE_DASHBOARD_LOWER=$IMAGE_DASHBOARD_LOWER" >> "$GITHUB_ENV"
 
@@ -66,6 +69,7 @@ jobs:
         id: meta_dash
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
+          # IMAGE_DASHBOARD_LOWER is set dynamically in the "Lowercase image names" step
           images: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_DASHBOARD_LOWER }}
           tags: |
@@ -102,8 +106,8 @@ jobs:
             exit 0
           fi
           # NOTE: Web image removed - Next.js frontend (apps/web) was deprecated
-          DASH_SRC_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_DASHBOARD_LOWER }}:${{ github.sha }}"
-          DASH_ACR_TAG="$AZURE_ACR_LOGIN_SERVER/${{ env.IMAGE_DASHBOARD_LOWER }}:${{ github.sha }}"
+          DASH_SRC_TAG="${{ env.REGISTRY }}/$IMAGE_DASHBOARD_LOWER:${{ github.sha }}"
+          DASH_ACR_TAG="$AZURE_ACR_LOGIN_SERVER/$IMAGE_DASHBOARD_LOWER:${{ github.sha }}"
 
           docker pull "$DASH_SRC_TAG"
           docker tag "$DASH_SRC_TAG" "$DASH_ACR_TAG"

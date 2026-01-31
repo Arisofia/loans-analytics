@@ -15,6 +15,11 @@ jobs:
   run-pipeline:
     name: Execute Data Pipeline
     runs-on: ubuntu-latest
+    outputs:
+      run_id: ${{ steps.pipeline.outputs.run_id }}
+      status: ${{ steps.pipeline.outputs.status }}
+      duration: ${{ steps.pipeline.outputs.duration }}
+      performance_warning: ${{ steps.pipeline.outputs.performance_warning }}
     
     steps:
       - name: Checkout repository
@@ -184,7 +189,7 @@ jobs:
               **Trigger**: ${{ github.event_name }}
               **Actor**: ${{ github.actor }}
               **Commit**: [${context.sha.slice(0, 7)}](${commitUrl})
-              **Timestamp**: ${{ github.event.head_commit.timestamp || github.event.repository.updated_at }}
+              **Timestamp**: ${{ github.event.repository.updated_at }}
               
               ### Context
               - **Branch**: ${{ github.ref_name }}
