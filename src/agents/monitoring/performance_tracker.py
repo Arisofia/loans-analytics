@@ -9,7 +9,7 @@ import json
 import statistics
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -23,7 +23,9 @@ class PerformanceMetric:
     success: bool
     agent_name: Optional[str] = None
     scenario_name: Optional[str] = None
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
