@@ -39,6 +39,46 @@ In GitHub Copilot Chat (VS Code):
 4. **Structured Logging** - No print() statements, use structured loggers
 5. **Test Coverage** - >95% coverage maintained
 
+### Microservice Designer (`microservice_designer.md`)
+
+**Purpose:** Specialized agent for designing distributed microservice architectures using Domain-Driven Design principles.
+
+**Key Features:**
+- Domain-Driven Design (DDD) for service boundary definition
+- Communication pattern design (sync/async, event-driven)
+- Data management strategies (database per service, sagas, CQRS)
+- Resilience patterns (circuit breakers, retries, timeouts)
+- Deployment and operational strategies
+- Technology recommendations based on scale
+- Context-aware designs for fintech, e-commerce, SaaS
+
+**When to Use:**
+- Designing new microservice architectures from scratch
+- Breaking down a monolith into microservices
+- Defining service boundaries and responsibilities
+- Choosing communication patterns between services
+- Planning data consistency strategies
+- Designing for resilience and fault tolerance
+- Planning deployment and operational approach
+- Evaluating microservices vs monolith trade-offs
+
+**Invocation:**
+In GitHub Copilot Chat (VS Code):
+```
+@microservice_designer Design a microservice architecture for an e-commerce platform
+@microservice_designer How should I decompose this monolith into services?
+@microservice_designer What communication pattern should I use between order and payment services?
+@microservice_designer Design a saga pattern for distributed transaction handling
+@microservice_designer What resilience patterns should I implement?
+```
+
+**Core Principles:**
+1. **Domain-Driven Design** - Service boundaries aligned with business capabilities
+2. **Pragmatism Over Idealism** - Balance theory with practical constraints
+3. **Resilience by Design** - Assume failures and design for them
+4. **Observability First** - Metrics, logs, and traces from day one
+5. **Team Topology** - Architecture follows organizational structure (Conway's Law)
+
 ## Agent Configuration Format
 
 Agents are defined using YAML frontmatter at the top of Markdown files:
