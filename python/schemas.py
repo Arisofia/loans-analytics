@@ -45,9 +45,7 @@ def validate_ingestion_contract(df: pl.DataFrame) -> bool:
         # Sort and check if dates are non-decreasing
         dates = df.select("measurement_date").sort("measurement_date")
         if not df.select("measurement_date").equals(dates):
-            logger.warning(
-                "Data Continuity Issue: measurement_date is not monotonically increasing"
-            )
+            logger.warning("Data Continuity Issue: measurement_date is not monotonically increasing")
     # 4. Outlier / Threshold Detection
     if "loan_amount" in df.columns:
         max_loan = 1_000_000  # Example business threshold
