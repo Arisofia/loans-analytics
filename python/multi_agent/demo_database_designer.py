@@ -5,12 +5,10 @@ This script demonstrates how to use the Database Designer agent
 to get database design recommendations.
 """
 
-import os
-import uuid
 from unittest.mock import Mock, patch
 
 from python.multi_agent.orchestrator import MultiAgentOrchestrator
-from python.multi_agent.protocol import AgentRequest, AgentRole, Message, MessageRole
+from python.multi_agent.protocol import AgentRole
 
 
 def demonstrate_database_designer():
