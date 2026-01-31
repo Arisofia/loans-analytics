@@ -103,7 +103,7 @@ def main() -> None:
     print("  4. Execute the SQL")
     print("\nOption B: Supabase CLI")
     print("  1. Install Supabase CLI if needed")
-    print(f"  2. Run: supabase db execute -f \"{migration_file}\"")
+    print(f'  2. Run: supabase db execute -f "{migration_file}"')
     print("  3. Confirm the command exits successfully")
 
     print("\nAfter applying the migration, this script will verify the table:")
