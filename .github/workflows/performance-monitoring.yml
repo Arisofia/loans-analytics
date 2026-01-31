@@ -59,7 +59,7 @@ jobs:
           # Save metrics to working directory
           metrics_file = 'performance_metrics.json'
           tracker.save_report(metrics_file)
-            # Verify file was created          
+            # Verify file was created
           if os.path.exists(metrics_file):
               print(f'✅ Performance metrics generated: {metrics_file}')
               print(f'   File size: {os.path.getsize(metrics_file)} bytes')
