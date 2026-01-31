@@ -2,8 +2,9 @@ name: Dependency validate
 
 "on":
   pull_request:
-  push:
-    branches: [main]
+  # Disabled push trigger to reduce Actions usage - validation on PR is sufficient
+  # push:
+  #   branches: [main]
 
 permissions:
   contents: read

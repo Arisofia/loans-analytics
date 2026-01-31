@@ -1,16 +1,17 @@
 name: SonarCloud
 "on":
-  push:
-    branches:
-      - main
-      - codex/**
-    paths:
-      - "src/**"
-      - "python/**"
-      - "streamlit_app/**"
-      - "requirements*.txt"
-      - "sonar-project.properties"
-      - ".github/workflows/sonarcloud.yml"
+  # Disabled push trigger to reduce Actions usage - quality checks on PR are sufficient
+  # push:
+  #   branches:
+  #     - main
+  #     - codex/**
+  #   paths:
+  #     - "src/**"
+  #     - "python/**"
+  #     - "streamlit_app/**"
+  #     - "requirements*.txt"
+  #     - "sonar-project.properties"
+  #     - ".github/workflows/sonarcloud.yml"
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
