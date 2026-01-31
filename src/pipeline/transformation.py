@@ -94,7 +94,7 @@ class TransformationPhase:
         raw_data_path: Path | None = None,
         df: pd.DataFrame | None = None,
         run_dir: Path | None = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Execute transformation phase.
 
@@ -167,7 +167,7 @@ class TransformationPhase:
                 "timestamp": datetime.now().isoformat(),
             }
 
-    def _handle_nulls(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    def _handle_nulls(self, df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
         """
         Handle missing values based on configured strategy.
 
@@ -233,7 +233,7 @@ class TransformationPhase:
 
     def _smart_null_handling(
         self, df: pd.DataFrame, null_columns: dict[str, int]
-    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    ) -> tuple[pd.DataFrame, dict[str, Any]]:
         """
         Intelligent null handling based on null percentage and column importance.
 
@@ -274,7 +274,7 @@ class TransformationPhase:
 
         return df, {"smart_actions": actions}
 
-    def _normalize_types(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    def _normalize_types(self, df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
         """
         Normalize data types for consistency.
 
@@ -334,7 +334,7 @@ class TransformationPhase:
         logger.info("Applied %d type conversions", len(conversions))
         return df, metrics
 
-    def _apply_business_rules(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    def _apply_business_rules(self, df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
         """
         Apply business rules from configuration.
 
@@ -439,7 +439,7 @@ class TransformationPhase:
 
     def _apply_custom_rule(
         self, df: pd.DataFrame, rule: dict[str, Any]
-    ) -> Tuple[pd.DataFrame, bool]:
+    ) -> tuple[pd.DataFrame, bool]:
         """
         Apply a custom business rule from configuration.
 
@@ -511,7 +511,7 @@ class TransformationPhase:
 
         return df, False
 
-    def _detect_outliers(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    def _detect_outliers(self, df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
         """
         Detect and flag outliers in numeric columns.
 
@@ -602,7 +602,7 @@ class TransformationPhase:
         outliers.loc[non_null.index] = outliers_non_null.fillna(False)
         return outliers
 
-    def _check_referential_integrity(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    def _check_referential_integrity(self, df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
         """
         Check referential integrity across entities.
 
