@@ -252,12 +252,14 @@ from pathlib import Path
 
 run_id = "${{ needs.pipeline-orchestrator.outputs.run_id }}"
 results_file = Path("logs/runs") / run_id / "pipeline_results.json"
+duration_str = "${{ needs.pipeline-orchestrator.outputs.duration }}"
+records_str = "${{ needs.pipeline-orchestrator.outputs.records }}"
 
 metrics = {
     "run_id": run_id,
     "generated_at": datetime.utcnow().isoformat(),
-    "duration_seconds": float("${{ needs.pipeline-orchestrator.outputs.duration }}" or 0),
-    "records_processed": int("${{ needs.pipeline-orchestrator.outputs.records }}" or 0),
+    "duration_seconds": float(duration_str) if duration_str else 0.0,
+    "records_processed": int(records_str) if records_str else 0,
     "status": "${{ needs.pipeline-orchestrator.outputs.status }}",
     "baseline_seconds": 10,
     "threshold_seconds": 15,
