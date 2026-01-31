@@ -342,6 +342,7 @@ async def get_pool(database_url: Optional[str] = None) -> SupabaseConnectionPool
     Returns:
         Connection pool instance
     """
+    # pylint: disable=protected-access  # Intentional singleton pattern
     if SupabaseConnectionPool._global_pool is None:
         if not database_url:
             raise ValueError("database_url required for pool initialization")
@@ -354,6 +355,7 @@ async def get_pool(database_url: Optional[str] = None) -> SupabaseConnectionPool
 
 async def close_pool() -> None:
     """Close global connection pool."""
+    # pylint: disable=protected-access  # Intentional singleton pattern
     if SupabaseConnectionPool._global_pool is not None:
         await SupabaseConnectionPool._global_pool.close()
         # Reset the global connection pool instance

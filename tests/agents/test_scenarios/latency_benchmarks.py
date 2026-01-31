@@ -3,6 +3,7 @@
 Tests p50, p95, p99 latency for various agent operations.
 """
 
+import concurrent.futures
 import time
 
 import pytest
@@ -15,7 +16,7 @@ class TestLatencyBenchmarks:
 
     def setup_method(self):
         """Set up performance tracker for each test."""
-        self.tracker = PerformanceTracker()
+        self.tracker = PerformanceTracker()  # pylint: disable=attribute-defined-outside-init
 
     @pytest.mark.benchmark
     def test_loan_analysis_latency(self):
@@ -74,8 +75,6 @@ class TestLatencyBenchmarks:
     @pytest.mark.timeout(10)
     def test_concurrent_agent_latency(self):
         """Test latency under concurrent agent execution."""
-        import concurrent.futures
-
         def agent_task(agent_id):
             """Simulate agent task."""
             start = time.time()

@@ -172,3 +172,7 @@ logs/runs/run_*/
 
 # Auto-generated alertmanager config (contains credentials)
 config/alertmanager.yml
+.venv311/
+.venv/
+__pycache__/
+.pytest_cache/
