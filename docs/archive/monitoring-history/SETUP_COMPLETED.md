@@ -122,7 +122,7 @@ $ source scripts/load_env.sh
 Available Supabase variables:
   NEXT_PUBLIC_SUPABASE_URL: https://goxdevkqozomyhsyxhte.s...
   SUPABASE_PROJECT_REF: goxdevkqozomyhsyxhte
-  SUPABASE_SECRET_API_KEY: sb_secret_MWHrn...
+  SUPABASE_SECRET_API_KEY: <redacted>
 ```
 
 ---

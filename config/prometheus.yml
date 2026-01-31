@@ -32,7 +32,7 @@ scrape_configs:
     scheme: https
     basic_auth:
       username: service_role
-      password: "sb_secret_MWHrnNnT3j0VBFgOPh8FVQ_iAD-lX61" # SUPABASE_SECRET_API_KEY
+      password: "${SUPABASE_SECRET_API_KEY}" # Use envsubst or deployment-time injection
     static_configs:
       - targets:
           - "goxdevkqozomyhsyxhte.supabase.co:443"

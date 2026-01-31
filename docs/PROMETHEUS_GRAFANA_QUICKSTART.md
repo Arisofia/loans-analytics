@@ -217,7 +217,7 @@ Ejemplos de alertas:
 ```bash
 # Ya configuradas en .env.local:
 SUPABASE_PROJECT_REF=goxdevkqozomyhsyxhte
-SUPABASE_SECRET_API_KEY=sb_secret_MWHrnNnT3j0VBFgOPh8FVQ_iAD-lX61
+SUPABASE_SECRET_API_KEY=<your-supabase-secret-api-key>
 
 # Adicionales para Grafana:
 GRAFANA_ADMIN_PASSWORD=tu_password_seguro_aqui
