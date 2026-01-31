@@ -218,7 +218,7 @@ class CostTracker:
         """
         report = {
             "timestamp": datetime.utcnow().isoformat(),
-            "scenarios": {name: self.get_scenario_cost(name) for name in self.metrics.keys()},
+            "scenarios": {name: self.get_scenario_cost(name) for name in self.metrics},
         }
 
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)

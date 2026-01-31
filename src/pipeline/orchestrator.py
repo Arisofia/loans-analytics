@@ -43,9 +43,9 @@ class UnifiedPipeline:
         Args:
             config_path: Path to pipeline.yml (optional, defaults to config/pipeline.yml)
         """
-        logger.info("=" * 80)
+        logger.info("%s", "=" * 80)
         logger.info("UNIFIED PIPELINE ORCHESTRATOR v2.0")
-        logger.info("=" * 80)
+        logger.info("%s", "=" * 80)
 
         # Load configurations
         self.config = PipelineConfig.load(config_path)
@@ -108,9 +108,9 @@ class UnifiedPipeline:
 
         try:
             # PHASE 1: INGESTION
-            logger.info("\n" + "=" * 80)
+            logger.info("\n%s", "=" * 80)
             logger.info("PHASE 1: INGESTION")
-            logger.info("=" * 80)
+            logger.info("%s", "=" * 80)
             phase1_results = self.ingestion.execute(input_path=input_path, run_dir=run_dir)
             results["phases"]["ingestion"] = phase1_results
 
@@ -122,9 +122,9 @@ class UnifiedPipeline:
                 return self._finalize_results(results, run_dir)
 
             # PHASE 2: TRANSFORMATION
-            logger.info("\n" + "=" * 80)
+            logger.info("\n%s", "=" * 80)
             logger.info("PHASE 2: TRANSFORMATION")
-            logger.info("=" * 80)
+            logger.info("%s", "=" * 80)
             raw_data_path = (
                 Path(phase1_results["output_path"]) if phase1_results.get("output_path") else None
             )
@@ -141,9 +141,9 @@ class UnifiedPipeline:
                 return self._finalize_results(results, run_dir)
 
             # PHASE 3: CALCULATION
-            logger.info("\n" + "=" * 80)
+            logger.info("\n%s", "=" * 80)
             logger.info("PHASE 3: CALCULATION")
-            logger.info("=" * 80)
+            logger.info("%s", "=" * 80)
             clean_data_path = (
                 Path(phase2_results["output_path"]) if phase2_results.get("output_path") else None
             )
@@ -156,9 +156,9 @@ class UnifiedPipeline:
                 raise Exception("Phase 3 failed: {}".format(phase3_results.get("error")))
 
             # PHASE 4: OUTPUT
-            logger.info("\n" + "=" * 80)
+            logger.info("\n%s", "=" * 80)
             logger.info("PHASE 4: OUTPUT")
-            logger.info("=" * 80)
+            logger.info("%s", "=" * 80)
             phase4_results = self.output.execute(
                 kpi_results=phase3_results.get("kpis", {}), run_dir=run_dir
             )
@@ -170,8 +170,8 @@ class UnifiedPipeline:
             return self._finalize_results(results, run_dir)
 
         except Exception as e:
-            logger.error("Pipeline execution failed: %s", str(e))
-            logger.error(traceback.format_exc())
+            logger.error("Pipeline execution failed: %s", e)
+            logger.error("%s", traceback.format_exc())
 
             results["status"] = "failed"
             results["error"] = str(e)
@@ -201,12 +201,12 @@ class UnifiedPipeline:
         with open(manifest_path, "w") as f:
             json.dump(results, f, indent=2, default=str)
 
-        logger.info("\n" + "=" * 80)
+        logger.info("\n%s", "=" * 80)
         logger.info("PIPELINE EXECUTION COMPLETE")
         logger.info("Status: %s", results["status"].upper())
         logger.info("Duration: %.2f seconds", duration)
         logger.info("Results: %s", manifest_path)
-        logger.info("=" * 80)
+        logger.info("%s", "=" * 80)
 
         return results
 
