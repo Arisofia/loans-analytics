@@ -20,8 +20,8 @@ This repository hosts the **Abaco Financial Intelligence Platform**, featuring a
 
 ### **Multi-Agent AI System**
 
-- **8 Specialized Agents**: Risk, Growth, Ops, Compliance, Collections, Fraud, Pricing, Retention
-- **29 Tests Passing**: 18 KPI integration + 11 specialized agent tests
+- **9 Specialized Agents**: Risk, Growth, Ops, Compliance, Collections, Fraud, Pricing, Retention, Database Design
+- **33 Tests Passing**: 18 KPI integration + 15 specialized agent tests
 - **7 Pre-built Scenarios**: Multi-step workflows for fintech lending
 - **Real-time Validation**: KPI-aware with anomaly detection
 
@@ -138,7 +138,7 @@ scripts/
 
 ### **Multi-Agent System** (`python/multi_agent/`)
 
-- 8-agent orchestration with fintech expertise
+- 9-agent orchestration with fintech expertise
 - Historical context management
 - Real-time KPI integration
 - See [python/multi_agent/README.md](python/multi_agent/README.md)

@@ -10,11 +10,11 @@
 - ✅ **PII Guardrails**: Automatic redaction of sensitive data (SSN, email, phone, credit cards)
 - ✅ **Multi-Provider**: OpenAI, Anthropic, Gemini support with easy switching
 - ✅ **Tracing & Cost Tracking**: OpenTelemetry compatible, tracks tokens and costs per trace
-- ✅ **8 Specialized Agents**: Risk, Growth, Ops, Compliance + Collections, Fraud, Pricing, Retention
+- ✅ **9 Specialized Agents**: Risk, Growth, Ops, Compliance, Collections, Fraud, Pricing, Retention, Database Design
 - ✅ **KPI Integration**: Real-time validation and anomaly detection
 - ✅ **Scenario Orchestration**: 7 pre-built workflows for fintech use cases
 - ✅ **Observable**: Centralized logging, trace IDs, latency metrics
-- ✅ **Tested**: 29 unit tests (18 KPI + 11 specialized agents)
+- ✅ **Tested**: 33 unit tests (18 KPI + 15 specialized agents)
 
 ## 📋 Architecture
 
@@ -34,16 +34,16 @@
 └─────────────────────────────────────────────────────────────┘
                             │
 ┌─────────────────────────────────────────────────────────────┐
-│                     Agent Layer (8 Agents)                   │
+│                     Agent Layer (9 Agents)                   │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐        │
 │  │ RiskAnalyst  │ │ GrowthStrat  │ │ OpsOptimizer │        │
 │  └──────────────┘ └──────────────┘ └──────────────┘        │
 │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐        │
 │  │ Compliance   │ │ Collections  │ │FraudDetection│        │
 │  └──────────────┘ └──────────────┘ └──────────────┘        │
-│  ┌──────────────┐ ┌──────────────┐                         │
-│  │   Pricing    │ │  Retention   │                         │
-│  └──────────────┘ └──────────────┘                         │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐        │
+│  │   Pricing    │ │  Retention   │ │  Database    │        │
+│  └──────────────┘ └──────────────┘ └──────────────┘        │
 │  All extend BaseAgent with domain-specific expertise        │
 └─────────────────────────────────────────────────────────────┘
                             │
@@ -162,7 +162,7 @@ python3 -m pytest python/multi_agent/test_kpi_integration.py -v
 ## 📚 Documentation
 
 - **[Phase G: Fintech Intelligence](../../docs/phase-g-fintech-intelligence.md)**: Complete guide to KPI integration and specialized agents
-- **Agent Roles**: 8 specialized agents with domain expertise
+- **Agent Roles**: 9 specialized agents with domain expertise
 - **Scenarios**: 7 pre-built workflows for common fintech use cases
 - **KPI Integration**: Real-time validation and anomaly detection
 
@@ -177,7 +177,7 @@ python3 -m python.multi_agent.examples
 
 - **Phase F**: CI/Quality Gate Automation ✅ Complete
 - **Phase G1**: KPI Integration ✅ Complete (18 tests)
-- **Phase G2**: Specialized Agents ✅ Complete (11 tests)
+- **Phase G2**: Specialized Agents ✅ Complete (15 tests)
 - **Phase G3**: Scenario Packs by Product 🔄 Next
 - **Phase G4**: Historical Context Integration ⏳ Planned
 

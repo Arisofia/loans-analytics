@@ -13,6 +13,7 @@ from python.multi_agent.protocol import AgentRole
 from python.multi_agent.specialized_agents import (
     CollectionsAgent,
     CustomerRetentionAgent,
+    DatabaseDesignerAgent,
     FraudDetectionAgent,
     PricingAgent,
 )
@@ -141,6 +142,7 @@ class TestSpecializedAgentIntegration(unittest.TestCase):
         self.fraud = FraudDetectionAgent()
         self.pricing = PricingAgent()
         self.retention = CustomerRetentionAgent()
+        self.database_designer = DatabaseDesignerAgent()
 
     def test_all_agents_have_unique_roles(self):
         """Test each specialized agent has a unique role."""
@@ -149,12 +151,19 @@ class TestSpecializedAgentIntegration(unittest.TestCase):
             self.fraud.role,
             self.pricing.role,
             self.retention.role,
+            self.database_designer.role,
         ]
         self.assertEqual(len(roles), len(set(roles)), "Agents should have unique roles")
 
     def test_all_agents_have_system_prompts(self):
         """Test all agents have comprehensive system prompts."""
-        agents = [self.collections, self.fraud, self.pricing, self.retention]
+        agents = [
+            self.collections,
+            self.fraud,
+            self.pricing,
+            self.retention,
+            self.database_designer,
+        ]
         for agent in agents:
             prompt = agent.get_system_prompt()
             self.assertIsNotNone(prompt)
@@ -167,6 +176,7 @@ class TestSpecializedAgentIntegration(unittest.TestCase):
         self.assertEqual(self.fraud.role, AgentRole.FRAUD_DETECTION)
         self.assertEqual(self.pricing.role, AgentRole.PRICING)
         self.assertEqual(self.retention.role, AgentRole.CUSTOMER_RETENTION)
+        self.assertEqual(self.database_designer.role, AgentRole.DATABASE_DESIGNER)
 
 
 if __name__ == "__main__":

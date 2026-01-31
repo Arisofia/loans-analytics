@@ -22,6 +22,7 @@ class AgentRole(str, Enum):
     FRAUD_DETECTION = "fraud_detection"
     PRICING = "pricing"
     CUSTOMER_RETENTION = "customer_retention"
+    DATABASE_DESIGNER = "database_designer"
     ORCHESTRATOR = "orchestrator"
     LEGACY = "legacy"
 

@@ -23,6 +23,7 @@ from .protocol import (
 from .specialized_agents import (
     CollectionsAgent,
     CustomerRetentionAgent,
+    DatabaseDesignerAgent,
     FraudDetectionAgent,
     PricingAgent,
 )
@@ -77,6 +78,9 @@ class MultiAgentOrchestrator:
             ),
             AgentRole.CUSTOMER_RETENTION: CustomerRetentionAgent(
                 role=AgentRole.CUSTOMER_RETENTION, provider=self.provider, tracer=self.tracer
+            ),
+            AgentRole.DATABASE_DESIGNER: DatabaseDesignerAgent(
+                role=AgentRole.DATABASE_DESIGNER, provider=self.provider, tracer=self.tracer
             ),
         }
 
