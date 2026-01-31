@@ -2,15 +2,16 @@ name: Model Evaluation Pipeline
 
 # Workflow-level permissions removed — granting permissions only to jobs that need them.
 on:
-  push:
-    branches: [main, develop]
-    paths:
-      - "src/analytics/**"
-      - "src/**"
-      - "scripts/evaluation/**"
-      - "tests/evaluation/**"
-      - "requirements*.txt"
-      - ".github/workflows/model-evaluation.yml"
+  # Disabled push trigger to reduce Actions usage - runs on PR and nightly schedule
+  # push:
+  #   branches: [main, develop]
+  #   paths:
+  #     - "src/analytics/**"
+  #     - "src/**"
+  #     - "scripts/evaluation/**"
+  #     - "tests/evaluation/**"
+  #     - "requirements*.txt"
+  #     - ".github/workflows/model-evaluation.yml"
   pull_request:
     types: [opened, synchronize, reopened]
   schedule:

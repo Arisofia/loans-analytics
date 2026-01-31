@@ -1,14 +1,15 @@
 name: CodeQL Analysis
 
 "on":
-  push:
-    branches: [main, develop]
-    paths:
-      - "src/**"
-      - "python/**"
-      - "streamlit_app.py"
-      - "requirements*.txt"
-      - ".github/workflows/codeql.yml"
+  # Disabled push trigger to reduce Actions usage - runs on PR and weekly schedule
+  # push:
+  #   branches: [main, develop]
+  #   paths:
+  #     - "src/**"
+  #     - "python/**"
+  #     - "streamlit_app.py"
+  #     - "requirements*.txt"
+  #     - ".github/workflows/codeql.yml"
   pull_request:
     branches: [main, develop]
   schedule:

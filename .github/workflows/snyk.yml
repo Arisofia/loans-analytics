@@ -1,14 +1,15 @@
 name: Snyk Security Scan
 "on":
-  push:
-    branches:
-      - main
-    paths:
-      - "src/**"
-      - "python/**"
-      - "streamlit_app.py"
-      - "requirements*.txt"
-      - ".github/workflows/snyk.yml"
+  # Disabled push trigger to reduce Actions usage - security scans on PR are sufficient
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - "src/**"
+  #     - "python/**"
+  #     - "streamlit_app.py"
+  #     - "requirements*.txt"
+  #     - ".github/workflows/snyk.yml"
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
