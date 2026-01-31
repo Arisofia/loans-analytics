@@ -442,7 +442,7 @@ mypy src/ python/ scripts/
 
 ### **Core KPIs for Executive Oversight**
 
-- **Portfolio Health**: PAR-30, PAR-90, default rate, loss rate
+- **Portfolio Health**: PAR30 (PAR-30), PAR90 (PAR-90), default rate, loss rate
 - **Growth & Efficiency**: Disbursement volume, portfolio growth, automation rate
 - **Cash & Collections**: Collections rate, recovery rate, cash on hand
 - **Customer Value**: Active borrowers, repeat rate, LTV
