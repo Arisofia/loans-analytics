@@ -31,7 +31,7 @@ jobs:
           else
             echo "Using default TARGET_URL: ${{ env.TARGET_URL }}"
           fi
-      
+
       - name: Run quick header spoofing and secret checks
         run: |
           set -euo pipefail
