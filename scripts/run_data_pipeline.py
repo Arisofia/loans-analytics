@@ -79,13 +79,13 @@ def main():
     """Main execution function."""
     args = parse_args()
 
-    logger.info("=" * 80)
+    logger.info("%s", "=" * 80)
     logger.info("UNIFIED PIPELINE EXECUTION STARTED")
-    logger.info("=" * 80)
-    logger.info(f"Config: {args.config}")
-    logger.info(f"Input: {args.input or 'API ingestion'}")
-    logger.info(f"Mode: {args.mode}")
-    logger.info("=" * 80)
+    logger.info("%s", "=" * 80)
+    logger.info("Config: %s", args.config)
+    logger.info("Input: %s", args.input or "API ingestion")
+    logger.info("Mode: %s", args.mode)
+    logger.info("%s", "=" * 80)
 
     try:
         # Initialize pipeline
@@ -120,14 +120,14 @@ def main():
             sys.exit(1)
 
     except FileNotFoundError as e:
-        logger.error(f"Configuration file not found: {e}")
+        logger.error("Configuration file not found: %s", e)
         print("\n❌ Error: Configuration file not found")
         print(f"Please create {args.config} with pipeline settings")
         print("\nSee UNIFIED_WORKFLOW.md for configuration details")
         sys.exit(1)
 
     except Exception as e:
-        logger.error(f"Pipeline execution failed: {e}", exc_info=True)
+        logger.error("Pipeline execution failed: %s", e, exc_info=True)
         print(f"\n❌ Pipeline execution failed: {e}")
         sys.exit(1)
 

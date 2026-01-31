@@ -24,7 +24,7 @@ class Guardrails:
     def redact_pii(cls, text: str, placeholder: str = "[REDACTED]") -> str:
         """Redact PII from text."""
         redacted = text
-        for pattern_name, pattern in cls.PII_PATTERNS.items():
+        for _, pattern in cls.PII_PATTERNS.items():
             redacted = pattern.sub(placeholder, redacted)
         return redacted
 

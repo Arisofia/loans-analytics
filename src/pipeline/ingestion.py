@@ -11,6 +11,7 @@ NOTE: Cascade API integration has been deprecated (Jan 2026).
 """
 
 import hashlib
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -34,7 +35,7 @@ class IngestionPhase:
         """
         self.config = config
         self.run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        logger.info(f"Initialized ingestion phase (run_id: {self.run_id})")
+        logger.info("Initialized ingestion phase (run_id: %s)", self.run_id)
 
     def execute(
         self, input_path: Optional[Path] = None, run_dir: Optional[Path] = None
@@ -69,7 +70,7 @@ class IngestionPhase:
             if run_dir:
                 output_path = run_dir / "raw_data.parquet"
                 df.to_parquet(output_path, index=False)
-                logger.info(f"Saved raw data to {output_path}")
+                logger.info("Saved raw data to %s", output_path)
             else:
                 output_path = None
 
@@ -95,8 +96,6 @@ class IngestionPhase:
             return results
 
         except Exception as e:
-            import traceback
-
             traceback_str = traceback.format_exc()
             logger.error(f"Ingestion failed: {str(e)}", exc_info=True)
             return {

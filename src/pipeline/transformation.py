@@ -9,6 +9,7 @@ Responsibilities:
 - Referential integrity checks
 """
 
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -157,8 +158,6 @@ class TransformationPhase:
             return results
 
         except Exception as e:
-            import traceback
-
             traceback_str = traceback.format_exc()
             logger.error(f"Transformation failed: {str(e)}", exc_info=True)
             return {

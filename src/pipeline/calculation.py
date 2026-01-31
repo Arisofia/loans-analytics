@@ -9,7 +9,9 @@ Responsibilities:
 - Generate calculation manifest with lineage
 """
 
+import json
 import re
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -255,7 +257,6 @@ class CalculationPhase:
                 kpi_df.to_parquet(kpi_path, index=False)
 
                 manifest_path = run_dir / "calculation_manifest.json"
-                import json
 
                 with open(manifest_path, "w") as f:
                     json.dump(manifest, f, indent=2, default=str)
@@ -276,8 +277,6 @@ class CalculationPhase:
             return results
 
         except Exception as e:
-            import traceback
-
             traceback_str = traceback.format_exc()
             logger.error(f"Calculation failed: {str(e)}", exc_info=True)
             return {

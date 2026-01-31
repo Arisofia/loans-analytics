@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Optional
 
@@ -94,8 +95,6 @@ class SupabaseConnectionPool:
         Returns:
             Normalized URL compatible with asyncpg
         """
-        import re
-
         # Replace 'postgres://' with 'postgresql://' for asyncpg compatibility
         if url.startswith("postgres://") and not url.startswith("postgresql://"):
             url = url.replace("postgres://", "postgresql://", 1)
