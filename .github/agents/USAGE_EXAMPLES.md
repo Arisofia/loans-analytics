@@ -113,10 +113,10 @@ Optimized version:
 
 ```python
 from decimal import Decimal
-from typing import List, Dict
+from typing import Any, Dict, List
 import polars as pl
 
-def calculate_par30(loans: List[Dict]) -> Decimal:
+def calculate_par30(loans: List[Dict[str, Any]]) -> Decimal:
     """Calculate Portfolio at Risk 30 days.
     
     Args:
