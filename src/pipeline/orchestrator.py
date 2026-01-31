@@ -10,6 +10,8 @@ Coordinates all 4 phases of the data pipeline:
 Entry point: scripts/run_data_pipeline.py
 """
 
+import hashlib
+import json
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -77,7 +79,7 @@ class UnifiedPipeline:
         else:
             run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        logger.info(f"Starting pipeline execution (run_id: {run_id}, mode: {mode})")
+        logger.info("Starting pipeline execution (run_id: %s, mode: %s)", run_id, mode)
 
         # Create run directory
         run_dir = Path("logs") / "runs" / run_id
@@ -86,14 +88,16 @@ class UnifiedPipeline:
         if run_dir.exists():
             manifest_path = run_dir / "pipeline_results.json"
             if manifest_path.exists():
-                logger.info(f"Run {run_id} already exists, loading existing results (idempotent)")
-                import json
+                logger.info(
+                    "Run %s already exists, loading existing results (idempotent)",
+                    run_id,
+                )
 
                 with open(manifest_path, "r") as f:
                     return json.load(f)
 
         run_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(f"Run directory: {run_dir}")
+        logger.info("Run directory: %s", run_dir)
 
         results: Dict[str, Any] = {
             "run_id": run_id,
@@ -111,7 +115,7 @@ class UnifiedPipeline:
             results["phases"]["ingestion"] = phase1_results
 
             if phase1_results["status"] != "success":
-                raise Exception(f"Phase 1 failed: {phase1_results.get('error')}")
+                raise Exception("Phase 1 failed: {}".format(phase1_results.get("error")))
 
             if mode == "dry-run":
                 logger.info("Dry-run mode: stopping after ingestion")
@@ -130,7 +134,7 @@ class UnifiedPipeline:
             results["phases"]["transformation"] = phase2_results
 
             if phase2_results["status"] != "success":
-                raise Exception(f"Phase 2 failed: {phase2_results.get('error')}")
+                raise Exception("Phase 2 failed: {}".format(phase2_results.get("error")))
 
             if mode == "validate":
                 logger.info("Validate mode: stopping after transformation")
@@ -149,7 +153,7 @@ class UnifiedPipeline:
             results["phases"]["calculation"] = phase3_results
 
             if phase3_results["status"] != "success":
-                raise Exception(f"Phase 3 failed: {phase3_results.get('error')}")
+                raise Exception("Phase 3 failed: {}".format(phase3_results.get("error")))
 
             # PHASE 4: OUTPUT
             logger.info("\n" + "=" * 80)
@@ -161,12 +165,12 @@ class UnifiedPipeline:
             results["phases"]["output"] = phase4_results
 
             if phase4_results["status"] != "success":
-                raise Exception(f"Phase 4 failed: {phase4_results.get('error')}")
+                raise Exception("Phase 4 failed: {}".format(phase4_results.get("error")))
 
             return self._finalize_results(results, run_dir)
 
         except Exception as e:
-            logger.error(f"Pipeline execution failed: {str(e)}")
+            logger.error("Pipeline execution failed: %s", str(e))
             logger.error(traceback.format_exc())
 
             results["status"] = "failed"
@@ -193,17 +197,15 @@ class UnifiedPipeline:
             results["status"] = "success" if all_success else "partial"
 
         # Save results manifest
-        import json
-
         manifest_path = run_dir / "pipeline_results.json"
         with open(manifest_path, "w") as f:
             json.dump(results, f, indent=2, default=str)
 
         logger.info("\n" + "=" * 80)
         logger.info("PIPELINE EXECUTION COMPLETE")
-        logger.info(f"Status: {results['status'].upper()}")
-        logger.info(f"Duration: {duration:.2f} seconds")
-        logger.info(f"Results: {manifest_path}")
+        logger.info("Status: %s", results["status"].upper())
+        logger.info("Duration: %.2f seconds", duration)
+        logger.info("Results: %s", manifest_path)
         logger.info("=" * 80)
 
         return results
@@ -218,8 +220,6 @@ class UnifiedPipeline:
         Returns:
             SHA256 hash (first 16 chars)
         """
-        import hashlib
-
         try:
             hasher = hashlib.sha256()
             with open(file_path, "rb") as f:
@@ -228,5 +228,5 @@ class UnifiedPipeline:
                     hasher.update(chunk)
             return hasher.hexdigest()[:16]
         except Exception as e:
-            logger.warning(f"Failed to hash input file: {e}, using timestamp")
+            logger.warning("Failed to hash input file: %s, using timestamp", e)
             return datetime.now().strftime("%H%M%S")
