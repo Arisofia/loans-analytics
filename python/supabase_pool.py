@@ -61,7 +61,8 @@ class SupabaseConnectionPool:
                 "asyncpg is required for connection pooling. Install with: pip install asyncpg"
             )
 
-        self.database_url = database_url
+        # Security: Store only normalized URL, never raw URL with password
+        self._normalized_url = self._normalize_database_url(database_url)
         self.pool_config = settings.supabase_pool
 
         # Override with explicit parameters
@@ -111,6 +112,24 @@ class SupabaseConnectionPool:
 
         return url
 
+    def __repr__(self) -> str:
+        """
+        Secure representation without exposing credentials.
+
+        Returns:
+            Safe string representation
+        """
+        return f"<SupabaseConnectionPool(id={id(self):#x}, size={self.max_size})>"
+
+    def __str__(self) -> str:
+        """
+        Secure string without exposing credentials.
+
+        Returns:
+            Safe string representation
+        """
+        return f"SupabaseConnectionPool(max_connections={self.max_size})"
+
     async def initialize(self) -> None:
         """Initialize connection pool."""
         if not self.pool_config.enabled:
@@ -125,11 +144,8 @@ class SupabaseConnectionPool:
                 self.command_timeout,
             )
 
-            # Normalize database URL for asyncpg compatibility
-            normalized_url = self._normalize_database_url(self.database_url)
-
             self._pool = await asyncpg.create_pool(
-                normalized_url,
+                self._normalized_url,
                 min_size=self.min_size,
                 max_size=self.max_size,
                 command_timeout=self.command_timeout,
