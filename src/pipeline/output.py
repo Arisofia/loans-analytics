@@ -206,16 +206,16 @@ class OutputPhase:
             
             # Note: Actual Supabase write would happen here
             # For now, log the intent and return success
-            logger.info("KPI records ready for database write: %s", 
+            logger.info("KPI records ready for database write: %s",
                        [r["kpi_name"] for r in rows_to_insert])
-            
+
             return {
                 "status": "success",
                 "records_written": len(rows_to_insert),
                 "timestamp": timestamp,
                 "table": "kpi_timeseries_daily",
             }
-            
+
         except ImportError:
             logger.warning("Supabase pool not available - database write skipped")
             return {"status": "skipped", "reason": "supabase_not_configured"}
@@ -231,27 +231,27 @@ class OutputPhase:
             if not webhook_url:
                 logger.debug("Dashboard webhook URL not configured - refresh skipped")
                 return {"status": "skipped", "reason": "no_webhook_configured"}
-            
+
             # Prepare refresh payload
             payload = {
                 "event": "kpi_pipeline_complete",
                 "timestamp": datetime.now().isoformat(),
                 "source": "pipeline_phase_4",
             }
-            
+
             # Log the refresh event with payload details
             logger.info(
                 "Dashboard refresh triggered: webhook=%s, payload=%s",
                 webhook_url,
                 payload,
             )
-            
+
             return {
                 "status": "triggered",
                 "webhook": webhook_url,
                 "timestamp": payload["timestamp"],
             }
-            
+
         except Exception as e:
             logger.error("Dashboard refresh failed: %s", e, exc_info=True)
             return {"status": "error", "error": str(e)}

@@ -252,35 +252,34 @@ elif page == "📊 Dashboard" and selected_run:
 else:
     # Welcome screen
     st.info("👋 Welcome to Abaco Loans Analytics!")
-
     st.markdown("""
     ### Getting Started
-    
+
     1. **Run the pipeline** to generate data:
        ```bash
        python scripts/run_data_pipeline.py --input data/raw/loans.csv
        ```
-    
+
     2. **Select a pipeline run** from the sidebar to view results
-    
+
     3. **Explore KPIs** and visualizations
-    
+
     ### Quick Links
-    
+
     - 📖 [Quick Start Guide](QUICK_START.md)
     - 🔄 [Unified Workflow](UNIFIED_WORKFLOW.md)
     - 📊 [Workflow Diagrams](WORKFLOW_DIAGRAMS.md)
     - 📋 [Documentation Index](DOCUMENTATION_INDEX.md)
-    
+
     ### Pipeline Architecture
-    
+
     The unified pipeline consists of 4 phases:
-    
+
     1. **Ingestion** - Data collection and validation
     2. **Transformation** - Data cleaning and normalization
     3. **Calculation** - KPI computation
     4. **Output** - Results distribution
-    
+
     Results are stored in `logs/runs/<timestamp>/` for easy access.
     """)
 

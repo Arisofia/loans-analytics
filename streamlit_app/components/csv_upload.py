@@ -27,9 +27,9 @@ def render_csv_upload():
     st.header("📤 CSV Data Upload")
     st.markdown("""
     Upload loan data CSV files to process through the analytics pipeline.
-    
-    **Supported file types:** CSV, Excel (.xlsx, .xls)  
-    **Max file size:** 200 MB  
+
+    **Supported file types:** CSV, Excel (.xlsx, .xls)
+    **Max file size:** 200 MB
     **Expected columns:** loan_id, customer_id, loan_amount, status, disbursement_date, etc.
     """)
 
