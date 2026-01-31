@@ -1,7 +1,7 @@
 import logging
 import sys
 
-import polars as pl
+import polars as pl  # pylint: disable=import-error
 
 logger = logging.getLogger(__name__)
 # Finance-Grade Loan Schema
