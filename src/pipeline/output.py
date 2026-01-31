@@ -235,7 +235,7 @@ class OutputPhase:
             total_inserted = 0
 
             for i in range(0, len(rows_to_insert), batch_size):
-                batch = rows_to_insert[i: i + batch_size]
+                batch = rows_to_insert[i : i + batch_size]
                 supabase.table(table_name).insert(batch).execute()
                 total_inserted += len(batch)
                 logger.info(
