@@ -23,6 +23,9 @@ on:
         - cron: "0 9 * * 1"
     workflow_dispatch:
 
+  permissions:
+    contents: read
+
 jobs:
     validate-prometheus-config:
         name: Validate Prometheus Configuration

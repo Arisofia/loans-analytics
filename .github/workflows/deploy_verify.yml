@@ -31,7 +31,10 @@ jobs:
             echo "MIDDLEWARE_SHARED_SECRET not set in repo secrets; please add and re-run"
             exit 3
           fi
-          resp2=$(curl -s -o /dev/null -w "%{http_code}" -H 'x-middleware-subrequest: 1' -H "x-internal-shared-secret: ${MIDDLEWARE_SHARED_SECRET}" "$TARGET_URL") || true
+          header_file=$(mktemp)
+          printf 'header = "x-internal-shared-secret: %s"\n' "$MIDDLEWARE_SHARED_SECRET" > "$header_file"
+          resp2=$(curl -s -o /dev/null -w "%{http_code}" -H 'x-middleware-subrequest: 1' -K "$header_file" "$TARGET_URL") || true
+          rm -f "$header_file"
           echo "status: $resp2"
           if [ "$resp2" = "403" ]; then
             echo "ERROR: Secret did not allow request (received 403)"
