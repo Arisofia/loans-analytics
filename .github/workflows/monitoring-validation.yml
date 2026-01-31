@@ -22,10 +22,10 @@ on:
         # Weekly validation every Monday at 9:00 AM UTC
         - cron: "0 9 * * 1"
     workflow_dispatch:
+    
 
-  permissions:
-    contents: read
-
+permissions:
+  contents: read
 jobs:
     validate-prometheus-config:
         name: Validate Prometheus Configuration
