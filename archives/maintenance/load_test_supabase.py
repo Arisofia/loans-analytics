@@ -17,10 +17,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 
-# Add project root to path
+# Add project root to path for standalone script execution
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from python.supabase_pool import SupabaseConnectionPool
+from python.supabase_pool import SupabaseConnectionPool  # noqa: E402
 
 
 @dataclass
