@@ -376,11 +376,13 @@ class TransformationPhase:
 
         # Apply amount tier classification if amount column exists (vectorized)
         if "amount" in df.columns:
+            # Note: right=False means bins are (left, right] except first bin which includes left
+            # This matches original logic: < 5000, < 25000, < 100000, < 500000
             df["amount_tier"] = pd.cut(
                 df["amount"],
                 bins=[-np.inf, 0, 5000, 25000, 100000, 500000, np.inf],
                 labels=["invalid", "micro", "small", "medium", "large", "jumbo"],
-                include_lowest=True
+                right=False  # Makes bins [left, right) to match < comparison
             ).astype(str)
             # Handle NaN values
             df.loc[df["amount"].isna(), "amount_tier"] = "invalid"
