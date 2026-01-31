@@ -174,24 +174,27 @@ For complete structure details: [.repo-structure.json](.repo-structure.json)
 
 ### **Environment Variables**
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root (do NOT commit this file - it contains secrets):
 
 ```bash
 # Pipeline Configuration
 PIPELINE_ENV=development  # or production
 
-# Database (Optional)
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_key
+# Database
+SUPABASE_URL=<your-url>
+SUPABASE_ANON_KEY=<your-key>
 
 # Azure (Optional)
-AZURE_STORAGE_ACCOUNT=your_storage_account
-APPLICATIONINSIGHTS_CONNECTION_STRING=your_connection_string
+AZURE_STORAGE_ACCOUNT=<your-account>
+APPLICATIONINSIGHTS_CONNECTION_STRING=<your-string>
 
-# AI Agents (Optional)
-OPENAI_API_KEY=your_openai_key
-ANTHROPIC_API_KEY=your_anthropic_key
+# AI/LLM Providers (Optional - for multi-agent system)
+# Set API keys for providers you plan to use in config/config.py
 ```
+
+⚠️ **Security**: Never commit `.env` files. Store credentials in environment variables or GitHub Secrets.
+
+
 
 ### **Pipeline Settings** (`config/pipeline.yml`)
 
@@ -211,12 +214,36 @@ ANTHROPIC_API_KEY=your_anthropic_key
 
 19 pre-configured KPIs across 6 categories:
 
+#### **KPI Naming Convention**
+
+KPIs follow a **hierarchical naming pattern**: `{category}_{metric_type}_{granularity}`
+
+Examples:
+
+- `portfolio_outstanding_balance_daily` - Portfolio Category, Outstanding Balance metric, Daily granularity
+- `assetquality_par30_monthly` - Asset Quality Category, PAR-30 metric, Monthly granularity
+- `growth_disbursement_volume_weekly` - Growth Category, Disbursement Volume metric, Weekly granularity
+
+#### **KPI Categories & Definitions**
+
 - **Portfolio Performance** (4): Outstanding balance, loan count, average size, yield
+  - Measured daily/weekly for portfolio health tracking
+  - Used for trend analysis and forecasting
 - **Asset Quality** (4): PAR-30, PAR-90, default rate, loss rate
+  - Measured daily for early warning system
+  - Critical for risk management and Collections prioritization
 - **Cash Flow** (3): Collections rate, recovery rate, cash on hand
+  - Measured daily for liquidity management
+  - Key for operational planning
 - **Growth** (3): Disbursement volume, new loans, portfolio growth
+  - Measured weekly/monthly for strategic planning
+  - Tracks expansion metrics
 - **Customer** (3): Active borrowers, repeat rate, lifetime value
+  - Measured monthly for customer analytics
+  - Supports retention and acquisition strategies
 - **Operational** (2): Processing time, automation rate
+  - Measured daily for efficiency monitoring
+  - Drives process improvements
 
 ---
 
@@ -343,6 +370,7 @@ Specialized agent for optimizing Python code with fintech-specific expertise:
 - **Code Quality**: Type hints, structured logging, error handling patterns
 
 **Usage in VS Code Copilot Chat:**
+
 ```
 @code_optimizer Review this function for performance bottlenecks
 @code_optimizer Check if this calculation uses Decimal properly
@@ -351,11 +379,13 @@ Specialized agent for optimizing Python code with fintech-specific expertise:
 ```
 
 **Documentation:**
+
 - Configuration: [.github/agents/code_optimizer.md](.github/agents/code_optimizer.md)
 - Usage Examples: [.github/agents/USAGE_EXAMPLES.md](.github/agents/USAGE_EXAMPLES.md)
 - Agent Guide: [.github/agents/README.md](.github/agents/README.md)
 
 **Agent Capabilities:**
+
 - Identifies slow operations in ETL pipeline
 - Suggests vectorization with pandas/polars
 - Detects float arithmetic in financial calculations
@@ -471,19 +501,69 @@ mypy src/ python/ scripts/
 
 ## 🛡️ Operational Excellence & Governance
 
+### **Observability Architecture**
+
+The platform uses a **two-layer observability strategy**:
+
+#### **Layer 1: Pipeline Observability** (Grafana + Prometheus)
+
+Monitors data pipeline health, performance, and operational metrics:
+
+- **Metrics Collected**:
+  - Pipeline execution time (ingestion, transformation, calculation, output phases)
+  - Data quality scores (null percentage, outlier counts, validation failures)
+  - KPI calculation results and lineage tracking
+  - Phase-by-phase error rates and failure reasons
+- **Tools**:
+  - **Prometheus**: Scrapes metrics from pipeline runs
+  - **Grafana**: Dashboards for portfolio health, daily KPI monitoring, phase performance
+  - **Storage**: Time-series database for historical analysis
+- **Key Dashboards**:
+  - Pipeline Run Dashboard: Success/failure rates, execution times
+  - Data Quality Dashboard: Null percentages, anomaly detection
+  - KPI Results Dashboard: Daily/weekly KPI values with trend lines
+  - Portfolio Health Dashboard: PAR-30, PAR-90, default rate trends
+
+#### **Layer 2: Application Observability** (OpenTelemetry + Azure Monitor)
+
+Traces AI agent decision-making, API calls, and multi-agent interactions:
+
+- **Traces Generated**:
+  - Agent request → decision → response flow
+  - LLM API call latency and token usage
+  - Multi-agent orchestration time (risk → compliance → pricing workflows)
+  - Database query performance and connection pool health
+- **Tools**:
+  - **OpenTelemetry API**: Distributed tracing instrumentation
+  - **Azure Monitor Exporter**: Sends traces to Application Insights
+  - **Context Propagation**: Maintains trace ID across multi-agent workflows
+- **Observability Patterns**:
+  - `python/multi_agent/tracing.py`: Cost tracking and latency measurements
+  - `python/supabase_pool.py`: Connection pool metrics and query observability
+  - `src/pipeline/orchestrator.py`: Phase-level span creation for execution tracking
+
+#### **Monitoring Metrics Reference**
+
+| Metric              | Source                      | Update Frequency | Use Case             |
+| ------------------- | --------------------------- | ---------------- | -------------------- |
+| KPI Values          | Pipeline Phase 3            | Daily            | Executive dashboards |
+| Calculation Lineage | `calculation_manifest.json` | Per run          | Audit trails         |
+| Agent Decision Time | OpenTelemetry spans         | Per request      | Performance tuning   |
+| Data Quality Score  | Pipeline Phase 2            | Per ingestion    | Quality gates        |
+| Pool Health         | `supabase_pool.py` metrics  | Per query        | Capacity planning    |
+
+#### **Compliance & Governance**
+
+- **Auditability**: All KPI outputs include lineage artifacts (`calculation_manifest.json`) and timestamped run metadata.
+- **PII Protection**: Sensitive data redacted in logs and traces (see `python/supabase_pool.py` for credential masking).
+- **Data Retention**: Pipeline runs archived in `logs/runs/` with configurable retention.
+- **Observability SLA**: Metrics available within 5 minutes of pipeline completion.
+
 ### **Delivery Standards**
 
-- **Auditability**: All KPI outputs must include lineage artifacts (`calculation_manifest.json`) and timestamped run metadata.
-- **Security & Compliance**: Maintain secrets in `.env` only; never commit credentials or PII.
+- **Security & Compliance**: Maintain secrets in `.env` only; never commit credentials or PII. Use credential masking in all logging contexts.
 - **Data Quality**: Enforce schema validation and anomaly detection before KPI publication.
-- **Observability**: Track pipeline run health, latency, and failure rates via Grafana (Prometheus + Alertmanager) for pipeline metrics, and use OpenTelemetry tracing for the multi-agent analytics system.
-
-### **Core KPIs for Executive Oversight**
-
-- **Portfolio Health**: PAR30 (PAR-30), PAR90 (PAR-90), default rate, loss rate
-- **Growth & Efficiency**: Disbursement volume, portfolio growth, automation rate
-- **Cash & Collections**: Collections rate, recovery rate, cash on hand
-- **Customer Value**: Active borrowers, repeat rate, LTV
+- **Performance**: Track pipeline run health, latency, and failure rates via Grafana for operational visibility and OpenTelemetry for application tracing.
 
 ---
 
