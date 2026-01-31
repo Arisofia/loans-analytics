@@ -99,12 +99,14 @@ def validate_path(
     # Security check: ensure resolved path is within base directory
     try:
         requested.relative_to(base)
-    except ValueError:
+    except ValueError as exc:
         logger.warning(
             f"Path traversal attempt detected: {user_path} "
             f"(resolved: {requested}) escapes {base_dir} (resolved: {base})"
         )
-        raise ValueError(f"Path traversal attempt detected: {user_path} " f"escapes {base_dir}")
+        raise ValueError(
+            f"Path traversal attempt detected: {user_path} escapes {base_dir}"
+        ) from exc
 
     # File existence validation
     if must_exist and not requested.exists():
