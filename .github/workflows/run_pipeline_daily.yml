@@ -6,12 +6,7 @@ on:
     - cron: '0 6 * * *'
   
   workflow_dispatch:  # Allow manual triggers from GitHub UI
-    inputs:
-      input_file:
-        description: 'Input CSV file path (relative to repo root)'
-        required: false
-        default: 'data/raw/sample_loans.csv'
-        type: string
+    # CKV_GHA_7 compliance: No inputs allowed to prevent build manipulation
 
 permissions:
   contents: write  # Allow committing pipeline outputs
@@ -62,7 +57,8 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
-          INPUT_FILE="${{ github.event.inputs.input_file || 'data/raw/sample_loans.csv' }}"
+          # Fixed input file path (no user parameters per CKV_GHA_7)
+          INPUT_FILE="data/raw/sample_loans.csv"
           echo "🚀 Running optimized pipeline (43x faster transformation)"
           echo "Input: $INPUT_FILE"
           echo "Commit: ${{ github.sha }}"
