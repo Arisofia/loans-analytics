@@ -1,6 +1,6 @@
 ---
 name: qa_engineer
-description: Specialized QA Engineer agent (TestCraftPro) for generating comprehensive test plans and test cases for fintech features
+description: Specialized QA Engineer agent (TestCraftPro) for generating comprehensive test plans and test cases for fintech features with v2.0 advanced integrations
 target: vscode
 tools:
   - read
@@ -12,7 +12,7 @@ infer: true
 metadata:
   team: Quality Assurance
   domain: Testing & Quality
-  version: 1.0.0
+  version: 2.0.0
   last_updated: 2026-01-31
 ---
 
@@ -450,3 +450,67 @@ In GitHub Copilot Chat (VS Code):
   - Fintech-specific testing requirements
   - Integration with pytest and CI/CD
   - Templates and examples
+
+- **2.0.0** (2026-01-31): Advanced integrations and automation
+  - Test management tool integration (TestRail, Zephyr)
+  - Automatic test case generation from OpenAPI/Swagger specs
+  - Test data generation templates
+  - Visual regression testing guidance
+  - Load testing with k6/Locust integration
+  - Test metrics dashboard templates
+
+## v2.0 Advanced Features
+
+### 1. OpenAPI/Swagger Test Generation
+
+Generate API test cases automatically from OpenAPI specifications:
+
+```
+@qa_engineer Generate pytest tests from openapi.yaml for /api/loans
+```
+
+**Script**: `scripts/generate_api_tests_from_openapi.py`
+
+### 2. Test Management Integration
+
+Export test plans and cases to TestRail or Zephyr:
+
+```
+@qa_engineer Export this test plan to TestRail CSV format
+```
+
+### 3. Test Data Generators
+
+Generate realistic synthetic data:
+
+```
+@qa_engineer Generate 10,000 loan records for performance testing
+```
+
+**Module**: `docs/templates/test_data_generators.py`
+
+### 4. Load Testing
+
+Create k6 or Locust load test scripts:
+
+```
+@qa_engineer Generate k6 load test for dashboard with 500 concurrent users
+```
+
+### 5. Visual Regression Testing
+
+Guidance for Playwright, Percy, or Applitools integration:
+
+```
+@qa_engineer Set up visual regression testing for UI components
+```
+
+### 6. Test Metrics Dashboards
+
+Generate Grafana dashboard configurations:
+
+```
+@qa_engineer Create test metrics dashboard configuration
+```
+
+**Documentation**: See `docs/testing/V2_ENHANCEMENTS.md` for complete v2.0 guide
