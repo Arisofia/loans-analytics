@@ -106,7 +106,7 @@ class SupabaseConnectionPool:
         if match:
             project_ref, password, rest = match.groups()
             url = f"postgresql://postgres:{password}@{rest}"
-            logger.info(f"Normalized Supabase pooler URL (project: {project_ref})")
+            logger.info("Normalized Supabase pooler URL (project: %s)", project_ref)
 
         return url
 
@@ -137,11 +137,11 @@ class SupabaseConnectionPool:
                 await conn.fetchval("SELECT 1")
 
             self._metrics["total_connections"] = self._pool.get_size()
-            logger.info(f"✅ Connection pool initialized with {self._pool.get_size()} connections")
+            logger.info("✅ Connection pool initialized with %d connections", self._pool.get_size())
 
         except Exception as e:
             self._metrics["failed_connections"] += 1
-            logger.error(f"❌ Failed to initialize connection pool: {e}", exc_info=True)
+            logger.error("❌ Failed to initialize connection pool: %s", e, exc_info=True)
             raise
 
     async def close(self) -> None:
@@ -190,7 +190,7 @@ class SupabaseConnectionPool:
                     )
                     await asyncio.sleep(wait_time)
                 else:
-                    logger.error(f"All {max_retries} connection attempts failed", exc_info=True)
+                    logger.error("All %d connection attempts failed", max_retries, exc_info=True)
                     raise
 
     async def execute(self, query: str, *args: Any, timeout: Optional[float] = None) -> str:
@@ -212,7 +212,7 @@ class SupabaseConnectionPool:
                 return "success"
         except Exception as e:
             self._metrics["queries_failed"] += 1
-            logger.error(f"Query execution failed: {e}", exc_info=True)
+            logger.error("Query execution failed: %s", e, exc_info=True)
             raise
 
     async def fetch(
@@ -236,7 +236,7 @@ class SupabaseConnectionPool:
                 return result
         except Exception as e:
             self._metrics["queries_failed"] += 1
-            logger.error(f"Query fetch failed: {e}", exc_info=True)
+            logger.error("Query fetch failed: %s", e, exc_info=True)
             raise
 
     async def fetchrow(
@@ -260,7 +260,7 @@ class SupabaseConnectionPool:
                 return result
         except Exception as e:
             self._metrics["queries_failed"] += 1
-            logger.error(f"Query fetchrow failed: {e}", exc_info=True)
+            logger.error("Query fetchrow failed: %s", e, exc_info=True)
             raise
 
     async def health_check(self) -> dict[str, Any]:

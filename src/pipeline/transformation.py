@@ -139,7 +139,7 @@ class TransformationPhase:
             if run_dir:
                 output_path = run_dir / "clean_data.parquet"
                 df.to_parquet(output_path, index=False)
-                logger.info(f"Saved clean data to {output_path}")
+                logger.info("Saved clean data to %s", output_path)
             else:
                 output_path = None
 
@@ -154,12 +154,12 @@ class TransformationPhase:
                 "timestamp": datetime.now().isoformat(),
             }
 
-            logger.info(f"Transformation completed: {initial_rows} → {len(df)} rows")
+            logger.info("Transformation completed: %d → %d rows", initial_rows, len(df))
             return results
 
         except Exception as e:
             traceback_str = traceback.format_exc()
-            logger.error(f"Transformation failed: {str(e)}", exc_info=True)
+            logger.error("Transformation failed: %s", str(e), exc_info=True)
             return {
                 "status": "failed",
                 "error": str(e),
@@ -182,7 +182,7 @@ class TransformationPhase:
         Returns:
             Tuple of (processed DataFrame, metrics dict)
         """
-        logger.info(f"Handling null values (strategy: {self.null_strategy})")
+        logger.info("Handling null values (strategy: %s)", self.null_strategy)
 
         initial_nulls = df.isnull().sum()
         total_nulls = initial_nulls.sum()
@@ -204,7 +204,7 @@ class TransformationPhase:
             df = df.dropna()
             rows_dropped = rows_before - len(df)
             metrics["rows_dropped"] = rows_dropped
-            logger.info(f"Dropped {rows_dropped} rows with null values")
+            logger.info("Dropped %d rows with null values", rows_dropped)
 
         elif self.null_strategy == "fill":
             df = self._fill_nulls_by_type(df)
@@ -261,7 +261,7 @@ class TransformationPhase:
                 else:
                     df[col] = df[col].fillna(0)
                     actions[col] = f"filled_zero (high_null: {null_pct:.1f}%)"
-                    logger.warning(f"Column '{col}' has {null_pct:.1f}% nulls")
+                    logger.warning("Column '%s' has %.1f%% nulls", col, null_pct)
             else:
                 if null_pct < self.LOW_NULL_THRESHOLD_PCT:
                     mode_val = df[col].mode()
@@ -303,7 +303,7 @@ class TransformationPhase:
                         df[col] = pd.to_datetime(df[col], format=self.date_format, errors="coerce")
                         conversions[col] = {"from": "string", "to": "datetime64"}
                     except Exception as e:
-                        logger.warning(f"Could not convert {col} to datetime: {e}")
+                        logger.warning("Could not convert %s to datetime: %s", col, e)
 
         # Normalize numeric columns
         for col in df.columns:
@@ -315,7 +315,7 @@ class TransformationPhase:
                         df[col] = pd.to_numeric(df[col], errors="coerce")
                         conversions[col] = {"from": "string", "to": "numeric"}
                     except Exception as e:
-                        logger.warning(f"Could not convert {col} to numeric: {e}")
+                        logger.warning("Could not convert %s to numeric: %s", col, e)
 
         # Normalize status column if present
         if "status" in df.columns:
@@ -331,7 +331,7 @@ class TransformationPhase:
             "conversion_details": conversions,
         }
 
-        logger.info(f"Applied {len(conversions)} type conversions")
+        logger.info("Applied %d type conversions", len(conversions))
         return df, metrics
 
     def _apply_business_rules(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
@@ -381,7 +381,7 @@ class TransformationPhase:
                 if success:
                     rules_applied.append(rule.get("name", "unnamed_rule"))
             except Exception as e:
-                logger.warning(f"Failed to apply custom rule: {e}")
+                logger.warning("Failed to apply custom rule: %s", e)
 
         metrics = {
             "rules_applied": len(rules_applied),
@@ -389,7 +389,7 @@ class TransformationPhase:
             "fields_created": fields_created,
         }
 
-        logger.info(f"Applied {len(rules_applied)} business rules")
+        logger.info("Applied %d business rules", len(rules_applied))
         return df, metrics
 
     def _assign_dpd_bucket(self, dpd: float) -> str:
@@ -481,7 +481,7 @@ class TransformationPhase:
                     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). "
                 )
                 if not all(c in allowed_chars for c in expression):
-                    logger.warning(f"Unsafe characters in expression '{expression}', skipping rule")
+                    logger.warning("Unsafe characters in expression '%s', skipping rule", expression)
                     return df, False
                 # Check for any dangerous patterns (case-insensitive via lower()).
                 # We explicitly block dangerous dunder names instead of any double underscore.
@@ -507,7 +507,7 @@ class TransformationPhase:
                     df[target_col] = df.eval(expression)
                     return df, True
                 except Exception as e:
-                    logger.warning(f"Failed to evaluate expression '{expression}': {e}")
+                    logger.warning("Failed to evaluate expression '%s': %s", expression, e)
                     return df, False
 
         return df, False
@@ -526,7 +526,7 @@ class TransformationPhase:
         Returns:
             Tuple of (processed DataFrame with outlier flags, metrics dict)
         """
-        logger.info(f"Detecting outliers (method: {self.outlier_method})")
+        logger.info("Detecting outliers (method: %s)", self.outlier_method)
 
         if not self.outlier_enabled:
             return df, {"enabled": False}
@@ -553,7 +553,7 @@ class TransformationPhase:
                 outlier_flag_col = f"{col}_outlier"
                 df[outlier_flag_col] = outliers
                 outlier_counts[col] = int(outlier_count)
-                logger.info(f"Found {outlier_count} outliers in column '{col}'")
+                logger.info("Found %d outliers in column '%s'", outlier_count, col)
 
         metrics = {
             "enabled": True,
@@ -633,7 +633,7 @@ class TransformationPhase:
                         "count": int(duplicates),
                     }
                 )
-                logger.warning(f"Found {duplicates} duplicate loan_id values")
+                logger.warning("Found %d duplicate loan_id values", duplicates)
 
         # Check for orphan records (borrower_id without valid reference)
         if "borrower_id" in df.columns:
@@ -692,7 +692,7 @@ class TransformationPhase:
         }
 
         if integrity_issues:
-            logger.warning(f"Found {len(integrity_issues)} referential integrity issues")
+            logger.warning("Found %d referential integrity issues", len(integrity_issues))
         else:
             logger.info("Referential integrity checks passed")
 

@@ -136,7 +136,7 @@ class KPIFormulaEngine:
             return 0.0
 
         if column not in filtered_df.columns:
-            logger.debug(f"Column '{column}' not found in data")
+            logger.debug("Column '%s' not found in data", column)
             return 0.0
 
         if agg_func == "SUM":
@@ -191,7 +191,7 @@ class KPIFormulaEngine:
                     return self.df[self.df[col] == value]
 
         except Exception as e:
-            logger.debug(f"WHERE clause failed: {condition} - {str(e)}")
+            logger.debug("WHERE clause failed: %s - %s", condition, str(e))
 
         return self.df
 
@@ -261,7 +261,7 @@ class CalculationPhase:
                 with open(manifest_path, "w") as f:
                     json.dump(manifest, f, indent=2, default=str)
 
-                logger.info(f"Saved KPI results to {kpi_path}")
+                logger.info("Saved KPI results to %s", kpi_path)
 
             results = {
                 "status": "success",
@@ -273,12 +273,12 @@ class CalculationPhase:
                 "timestamp": datetime.now().isoformat(),
             }
 
-            logger.info(f"Calculation completed: {len(kpi_results)} KPIs computed")
+            logger.info("Calculation completed: %d KPIs computed", len(kpi_results))
             return results
 
         except Exception as e:
             traceback_str = traceback.format_exc()
-            logger.error(f"Calculation failed: {str(e)}", exc_info=True)
+            logger.error("Calculation failed: %s", str(e), exc_info=True)
             return {
                 "status": "failed",
                 "error": str(e),
@@ -310,7 +310,7 @@ class CalculationPhase:
                         try:
                             value = engine.calculate(kpi_config["formula"])
                             kpis[kpi_name] = value
-                            logger.debug(f"Calculated {kpi_name}: {value}")
+                            logger.debug("Calculated %s: %s", kpi_name, value)
                         except Exception as e:
                             # Structured logging for KPI failures (traceability requirement)
                             logger.warning(
@@ -327,7 +327,7 @@ class CalculationPhase:
                                 None  # Explicit None instead of 0.0 to indicate failure
                             )
 
-        logger.info(f"Calculated {len(kpis)} KPIs")
+        logger.info("Calculated %d KPIs", len(kpis))
         return kpis
 
     def _calculate_time_series(self, df: pd.DataFrame) -> Dict[str, List]:

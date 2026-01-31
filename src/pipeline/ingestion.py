@@ -97,7 +97,7 @@ class IngestionPhase:
 
         except Exception as e:
             traceback_str = traceback.format_exc()
-            logger.error(f"Ingestion failed: {str(e)}", exc_info=True)
+            logger.error("Ingestion failed: %s", str(e), exc_info=True)
             return {
                 "status": "failed",
                 "error": str(e),
@@ -107,7 +107,7 @@ class IngestionPhase:
 
     def _load_from_file(self, file_path: Path) -> pd.DataFrame:
         """Load data from CSV file."""
-        logger.info(f"Loading data from file: {file_path}")
+        logger.info("Loading data from file: %s", file_path)
 
         if file_path.suffix.lower() == ".csv":
             df = pd.read_csv(file_path)
@@ -116,7 +116,7 @@ class IngestionPhase:
         else:
             raise ValueError(f"Unsupported file format: {file_path.suffix}")
 
-        logger.info(f"Loaded {len(df)} rows from {file_path.name}")
+        logger.info("Loaded %d rows from %s", len(df), file_path.name)
         return df
 
     def _load_from_api(self) -> pd.DataFrame:

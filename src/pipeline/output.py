@@ -103,7 +103,7 @@ class OutputPhase:
             return results
 
         except Exception as e:
-            logger.error(f"Output failed: {str(e)}", exc_info=True)
+            logger.error("Output failed: %s", str(e), exc_info=True)
             return {"status": "failed", "error": str(e), "timestamp": datetime.now().isoformat()}
 
     def _export_parquet(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
@@ -113,7 +113,7 @@ class OutputPhase:
         df = pd.DataFrame([kpi_results])
         df.to_parquet(output_path, index=False)
 
-        logger.info(f"Exported Parquet: {output_path}")
+        logger.info("Exported Parquet: %s", output_path)
         return output_path
 
     def _export_csv(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
@@ -123,7 +123,7 @@ class OutputPhase:
         df = pd.DataFrame([kpi_results])
         df.to_csv(output_path, index=False)
 
-        logger.info(f"Exported CSV: {output_path}")
+        logger.info("Exported CSV: %s", output_path)
         return output_path
 
     def _export_json(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
@@ -133,7 +133,7 @@ class OutputPhase:
         with open(output_path, "w") as f:
             json.dump(kpi_results, f, indent=2, default=str)
 
-        logger.info(f"Exported JSON: {output_path}")
+        logger.info("Exported JSON: %s", output_path)
         return output_path
 
     def _export_kpi_audit_trail(self, kpi_engine: Any) -> Optional[Path]:
@@ -164,11 +164,11 @@ class OutputPhase:
 
             # Export to CSV
             audit_df.to_csv(output_path, index=False)
-            logger.info(f"Exported KPI audit trail: {output_path} ({len(audit_df)} records)")
+            logger.info("Exported KPI audit trail: %s (%d records)", output_path, len(audit_df))
             return output_path
 
         except Exception as e:
-            logger.error(f"Failed to export KPI audit trail: {str(e)}", exc_info=True)
+            logger.error("Failed to export KPI audit trail: %s", str(e), exc_info=True)
             return None
 
     def _write_to_database(self, kpi_results: Dict[str, Any]) -> Dict[str, Any]:
@@ -222,7 +222,7 @@ class OutputPhase:
             return failed_kpis
 
         except Exception as e:
-            logger.error(f"Error extracting failed KPIs from audit trail: {e}")
+            logger.error("Error extracting failed KPIs from audit trail: %s", e)
             return []
 
     def _generate_audit_metadata(
@@ -271,7 +271,7 @@ class OutputPhase:
                     if failed_kpis:
                         audit_info["failed_kpis"] = failed_kpis
             except Exception as e:
-                logger.warning(f"Could not add detailed audit info: {e}")
+                logger.warning("Could not add detailed audit info: %s", e)
 
         return audit_info
 
@@ -308,7 +308,7 @@ class OutputPhase:
                     successful = total - len(failed_kpis)
                     return round(successful / total, 2) if total > 0 else 0.0
             except Exception as e:
-                logger.debug(f"Could not calculate quality score from audit trail: {e}")
+                logger.debug("Could not calculate quality score from audit trail: %s", e)
 
         # Fallback: kpi_results exist but audit data unavailable - assume all successful
         # This optimistic fallback treats "results exist but unverified" as valid
@@ -346,7 +346,7 @@ class OutputPhase:
                     failed_kpis = self._get_failed_kpis_from_audit(audit_df)
                     return len(failed_kpis) == 0
             except Exception as e:
-                logger.debug(f"Could not check SLA from audit trail: {e}")
+                logger.debug("Could not check SLA from audit trail: %s", e)
 
         # Fallback: results exist but audit data is missing/unusable
         # Since kpi_results is non-empty (early return above), treat this as SLA-compliant

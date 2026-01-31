@@ -108,23 +108,24 @@ class UnifiedPipeline:
 
         try:
             # PHASE 1: INGESTION
-            logger.info("\n%s", "=" * 80)
+            separator = "=" * 80
+            logger.info("\n%s", separator)
             logger.info("PHASE 1: INGESTION")
-            logger.info("%s", "=" * 80)
+            logger.info("%s", separator)
             phase1_results = self.ingestion.execute(input_path=input_path, run_dir=run_dir)
             results["phases"]["ingestion"] = phase1_results
 
             if phase1_results["status"] != "success":
-                raise Exception("Phase 1 failed: {}".format(phase1_results.get("error")))
+                raise Exception(f"Phase 1 failed: {phase1_results.get('error')}")
 
             if mode == "dry-run":
                 logger.info("Dry-run mode: stopping after ingestion")
                 return self._finalize_results(results, run_dir)
 
             # PHASE 2: TRANSFORMATION
-            logger.info("\n%s", "=" * 80)
+            logger.info("\n%s", separator)
             logger.info("PHASE 2: TRANSFORMATION")
-            logger.info("%s", "=" * 80)
+            logger.info("%s", separator)
             raw_data_path = (
                 Path(phase1_results["output_path"]) if phase1_results.get("output_path") else None
             )
@@ -134,16 +135,16 @@ class UnifiedPipeline:
             results["phases"]["transformation"] = phase2_results
 
             if phase2_results["status"] != "success":
-                raise Exception("Phase 2 failed: {}".format(phase2_results.get("error")))
+                raise Exception(f"Phase 2 failed: {phase2_results.get('error')}")
 
             if mode == "validate":
                 logger.info("Validate mode: stopping after transformation")
                 return self._finalize_results(results, run_dir)
 
             # PHASE 3: CALCULATION
-            logger.info("\n%s", "=" * 80)
+            logger.info("\n%s", separator)
             logger.info("PHASE 3: CALCULATION")
-            logger.info("%s", "=" * 80)
+            logger.info("%s", separator)
             clean_data_path = (
                 Path(phase2_results["output_path"]) if phase2_results.get("output_path") else None
             )
@@ -153,19 +154,19 @@ class UnifiedPipeline:
             results["phases"]["calculation"] = phase3_results
 
             if phase3_results["status"] != "success":
-                raise Exception("Phase 3 failed: {}".format(phase3_results.get("error")))
+                raise Exception(f"Phase 3 failed: {phase3_results.get('error')}")
 
             # PHASE 4: OUTPUT
-            logger.info("\n%s", "=" * 80)
+            logger.info("\n%s", separator)
             logger.info("PHASE 4: OUTPUT")
-            logger.info("%s", "=" * 80)
+            logger.info("%s", separator)
             phase4_results = self.output.execute(
                 kpi_results=phase3_results.get("kpis", {}), run_dir=run_dir
             )
             results["phases"]["output"] = phase4_results
 
             if phase4_results["status"] != "success":
-                raise Exception("Phase 4 failed: {}".format(phase4_results.get("error")))
+                raise Exception(f"Phase 4 failed: {phase4_results.get('error')}")
 
             return self._finalize_results(results, run_dir)
 
@@ -201,12 +202,13 @@ class UnifiedPipeline:
         with open(manifest_path, "w") as f:
             json.dump(results, f, indent=2, default=str)
 
-        logger.info("\n%s", "=" * 80)
+        separator = "=" * 80
+        logger.info("\n%s", separator)
         logger.info("PIPELINE EXECUTION COMPLETE")
         logger.info("Status: %s", results["status"].upper())
         logger.info("Duration: %.2f seconds", duration)
         logger.info("Results: %s", manifest_path)
-        logger.info("%s", "=" * 80)
+        logger.info("%s", separator)
 
         return results
 
