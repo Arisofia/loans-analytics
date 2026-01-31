@@ -1,7 +1,6 @@
 """Centralized logging configuration for consistent logging across the application."""
 
 import logging
-from typing import Optional
 
 
 def get_logger(name: str | None = None) -> logging.Logger:
