@@ -128,13 +128,13 @@ def calculate_par30(loans: List[Dict]) -> Decimal:
     df = pl.DataFrame(loans)
     
     total_balance = df.select(
-        pl.col('balance').cast(pl.Decimal).sum()
+        pl.col('balance').cast(pl.Decimal(38, 4)).sum()
     ).item()
     
     at_risk_balance = df.filter(
         pl.col('dpd') >= 30
     ).select(
-        pl.col('balance').cast(pl.Decimal).sum()
+        pl.col('balance').cast(pl.Decimal(38, 4)).sum()
     ).item()
     
     if total_balance == Decimal('0'):
