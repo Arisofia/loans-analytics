@@ -18,67 +18,43 @@ class TestLatencyBenchmarks:
         self.tracker = PerformanceTracker()
 
     @pytest.mark.benchmark
-    def test_loan_analysis_latency(self, benchmark):
+    def test_loan_analysis_latency(self):
         """Benchmark loan analysis scenario latency."""
-
-        def loan_analysis():
-            """Simulated loan analysis."""
-            start = time.time()
-            # Simulate agent work
-            time.sleep(0.05)  # 50ms simulated work
-            duration_ms = (time.time() - start) * 1000
-            self.tracker.track_scenario_latency("loan_analysis", duration_ms)
-            return duration_ms
-
-        result = benchmark(loan_analysis)
-        assert result < 200, f"Latency {result:.2f}ms exceeds 200ms threshold"
+        start = time.time()
+        # Simulate agent work
+        time.sleep(0.05)  # 50ms simulated work
+        duration_ms = (time.time() - start) * 1000
+        self.tracker.track_scenario_latency("loan_analysis", duration_ms)
+        assert duration_ms < 200, f"Latency {duration_ms:.2f}ms exceeds 200ms threshold"
 
     @pytest.mark.benchmark
-    def test_risk_assessment_latency(self, benchmark):
+    def test_risk_assessment_latency(self):
         """Benchmark risk assessment scenario latency."""
-
-        def risk_assessment():
-            """Simulated risk assessment."""
-            start = time.time()
-            time.sleep(0.03)  # 30ms simulated work
-            duration_ms = (time.time() - start) * 1000
-            self.tracker.track_scenario_latency("risk_assessment", duration_ms)
-            return duration_ms
-
-        result = benchmark(risk_assessment)
-        assert result < 100, f"Latency {result:.2f}ms exceeds 100ms threshold"
+        start = time.time()
+        time.sleep(0.03)  # 30ms simulated work
+        duration_ms = (time.time() - start) * 1000
+        self.tracker.track_scenario_latency("risk_assessment", duration_ms)
+        assert duration_ms < 100, f"Latency {duration_ms:.2f}ms exceeds 100ms threshold"
 
     @pytest.mark.benchmark
-    def test_portfolio_validation_latency(self, benchmark):
+    def test_portfolio_validation_latency(self):
         """Benchmark portfolio validation scenario latency."""
-
-        def portfolio_validation():
-            """Simulated portfolio validation."""
-            start = time.time()
-            time.sleep(0.02)  # 20ms simulated work
-            duration_ms = (time.time() - start) * 1000
-            self.tracker.track_scenario_latency("portfolio_validation", duration_ms)
-            return duration_ms
-
-        result = benchmark(portfolio_validation)
-        assert result < 50, f"Latency {result:.2f}ms exceeds 50ms threshold"
+        start = time.time()
+        time.sleep(0.02)  # 20ms simulated work
+        duration_ms = (time.time() - start) * 1000
+        self.tracker.track_scenario_latency("portfolio_validation", duration_ms)
+        assert duration_ms < 50, f"Latency {duration_ms:.2f}ms exceeds 50ms threshold"
 
     @pytest.mark.benchmark
     @pytest.mark.timeout(5)
-    def test_multi_agent_coordination_latency(self, benchmark):
+    def test_multi_agent_coordination_latency(self):
         """Benchmark multi-agent coordination latency."""
-
-        def multi_agent_coordination():
-            """Simulated multi-agent coordination."""
-            start = time.time()
-            # Simulate multiple agents
-            time.sleep(0.08)  # 80ms simulated work
-            duration_ms = (time.time() - start) * 1000
-            self.tracker.track_scenario_latency("multi_agent_coordination", duration_ms)
-            return duration_ms
-
-        result = benchmark(multi_agent_coordination)
-        assert result < 200, f"Latency {result:.2f}ms exceeds 200ms threshold"
+        start = time.time()
+        # Simulate multiple agents
+        time.sleep(0.08)  # 80ms simulated work
+        duration_ms = (time.time() - start) * 1000
+        self.tracker.track_scenario_latency("multi_agent_coordination", duration_ms)
+        assert duration_ms < 200, f"Latency {duration_ms:.2f}ms exceeds 200ms threshold"
 
     def test_performance_percentiles(self):
         """Test performance percentile calculations."""

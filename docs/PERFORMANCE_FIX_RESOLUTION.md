@@ -11,6 +11,7 @@
 ### Issue 1: Test Assertion Failure in `test_performance_percentiles`
 
 **Problem:**
+
 ```python
 # BEFORE (Failing Logic)
 assert stats["latency"]["p95"] > stats["latency"]["p50"]   # Fails when p95 = 50.0
@@ -20,16 +21,19 @@ assert stats["latency"]["p99"] > stats["latency"]["p95"]   # Fails when p99 = 95
 The assertion used `>` (strictly greater than), which failed when percentile values were equal. This is mathematically incorrect for percentile comparisons where equal values are valid (e.g., p95 >= p50).
 
 **Error Message:**
+
 ```
 AssertionError: assert 95.0 > 95.0
 ```
 
 **Root Cause:**
+
 - Percentiles can be equal when data distribution is small
 - Example: If all values are in range [50, 100], p95 and p99 might be equal
 - Strict `>` comparison disallows this valid edge case
 
 **Solution:**
+
 ```python
 # AFTER (Correct Logic)
 assert stats["latency"]["p95"] >= stats["latency"]["p50"]  # Allows equal values
@@ -45,6 +49,7 @@ assert stats["latency"]["p99"] >= stats["latency"]["p95"]  # Allows equal values
 ### Issue 2: File Not Found Error for `performance_metrics.json`
 
 **Problem:**
+
 ```
 ValueError: File not found: performance_metrics.json
 ```
@@ -52,6 +57,7 @@ ValueError: File not found: performance_metrics.json
 The workflow step "Generate performance dashboard" failed because `performance_metrics.json` wasn't guaranteed to exist before the step tried to use it.
 
 **Workflow Chain:**
+
 ```
 1. Run performance benchmarks          → No file output
 2. Generate performance metrics        → Creates performance_metrics.json
@@ -61,6 +67,7 @@ The workflow step "Generate performance dashboard" failed because `performance_m
 ```
 
 **Root Causes:**
+
 1. No verification that the metrics file was actually created
 2. No explicit step to ensure file exists before dependent steps
 3. Silent failure if `tracker.save_report()` failed
@@ -70,6 +77,7 @@ The workflow step "Generate performance dashboard" failed because `performance_m
 Added three improvements to the workflow:
 
 #### 1. Enhanced File Creation with Verification
+
 ```python
 # Save metrics to working directory
 metrics_file = 'performance_metrics.json'
@@ -85,6 +93,7 @@ else:
 ```
 
 #### 2. Added Dedicated Verification Step
+
 ```yaml
 - name: Verify metrics file exists
   run: |
@@ -111,6 +120,7 @@ else:
 ## Test Results
 
 ### Before Fix
+
 ```
 ❌ test_performance_percentiles: FAILED
    Error: assert 95.0 > 95.0
@@ -120,6 +130,7 @@ else:
 ```
 
 ### After Fix
+
 ```
 ✅ test_performance_percentiles: PASSED
    - All assertions now allow equal values (using >=)
@@ -136,6 +147,7 @@ else:
 ## Verification
 
 ### Test Validation
+
 ```bash
 $ pytest tests/agents/test_scenarios/latency_benchmarks.py::TestLatencyBenchmarks::test_performance_percentiles -v
 
@@ -143,6 +155,7 @@ PASSED [100%]
 ```
 
 ### Changes Summary
+
 - **Files Modified:** 2
   - `tests/agents/test_scenarios/latency_benchmarks.py` (2 assertion changes)
   - `.github/workflows/performance-monitoring.yml` (workflow step improvements)
@@ -157,11 +170,13 @@ PASSED [100%]
 To prevent similar issues in the future:
 
 ### For Tests
+
 ✅ Always use `>=` or `<=` for percentile/threshold comparisons  
 ✅ Allow equal values in statistical comparisons  
 ✅ Add comments explaining why >= is appropriate
 
 ### For Workflows
+
 ✅ Always verify file creation immediately after creating it  
 ✅ Add explicit verification steps between dependent jobs  
 ✅ Print file info (size, contents) for debugging  
@@ -181,4 +196,3 @@ To prevent similar issues in the future:
 
 **Deployment Status:** Ready for production  
 **Next Steps:** Monitor performance-monitoring.yml workflow in CI/CD for successful execution
-
