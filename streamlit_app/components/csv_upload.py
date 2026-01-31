@@ -3,11 +3,17 @@ CSV File Upload Interface for ABACO Loans Analytics
 Streamlit component for uploading and processing loan data files
 """
 
+import sys
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 # Import pipeline components
 try:
@@ -16,8 +22,10 @@ try:
     from src.pipeline.ingestion import IngestionPhase
     from src.pipeline.output import OutputPhase
     from src.pipeline.transformation import TransformationPhase
-except ImportError:
-    st.error("❌ Pipeline modules not found. Run from project root directory.")
+except ImportError as exc:
+    st.error(f"❌ Pipeline modules not found: {exc}")
+    st.info(f"Project root: {project_root}")
+    st.info(f"sys.path: {sys.path[:3]}")
     st.stop()
 
 
