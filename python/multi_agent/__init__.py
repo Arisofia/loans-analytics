@@ -21,6 +21,7 @@ from .protocol import (
 from .specialized_agents import (
     CollectionsAgent,
     CustomerRetentionAgent,
+    DatabaseDesignerAgent,
     FraudDetectionAgent,
     PricingAgent,
 )
@@ -29,6 +30,7 @@ from .tracing import AgentTracer
 __all__ = [
     "ComplianceAgent",
     "CustomerRetentionAgent",
+    "DatabaseDesignerAgent",
     "GrowthStrategistAgent",
     "RiskAnalystAgent",
     "CollectionsAgent",
