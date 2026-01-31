@@ -38,6 +38,7 @@ class SupabaseConnectionPool:
     def __init__(
         self,
         database_url: str,
+        *,
         min_size: Optional[int] = None,
         max_size: Optional[int] = None,
         command_timeout: Optional[int] = None,
@@ -118,7 +119,10 @@ class SupabaseConnectionPool:
 
         try:
             logger.info(
-                f"Initializing Supabase connection pool (min={self.min_size}, max={self.max_size}, timeout={self.command_timeout}s)"
+                "Initializing Supabase connection pool (min=%d, max=%d, timeout=%ds)",
+                self.min_size,
+                self.max_size,
+                self.command_timeout,
             )
 
             # Normalize database URL for asyncpg compatibility
@@ -186,7 +190,11 @@ class SupabaseConnectionPool:
                 if attempt < max_retries - 1:
                     wait_time = retry_delay * (2**attempt)  # Exponential backoff
                     logger.warning(
-                        f"Connection attempt {attempt + 1}/{max_retries} failed: {e}. Retrying in {wait_time}s..."
+                        "Connection attempt %d/%d failed: %s. Retrying in %ds...",
+                        attempt + 1,
+                        max_retries,
+                        e,
+                        wait_time,
                     )
                     await asyncio.sleep(wait_time)
                 else:

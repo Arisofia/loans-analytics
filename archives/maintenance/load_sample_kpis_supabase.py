@@ -247,13 +247,13 @@ class KpiDataLoader:
             total_loaded += loaded
             total_failed += failed
 
-        logger.info("\n" + "=" * 70)
+        logger.info("\n%s", "=" * 70)
         logger.info("Loading complete!")
         logger.info("  Rows loaded: %d", total_loaded)
         if total_failed:
             logger.warning("  Rows failed: %d", total_failed)
         logger.info("  Run ID: %s", run_id)
-        logger.info("=" * 70)
+        logger.info("%s", "=" * 70)
 
 
 def main():

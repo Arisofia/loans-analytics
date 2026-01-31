@@ -38,10 +38,9 @@ class KPIFormulaEngine:
 
             if self._is_comparison_formula(formula):
                 return self._execute_comparison_formula(formula)
-            elif self._is_arithmetic_formula(formula):
+            if self._is_arithmetic_formula(formula):
                 return self._execute_arithmetic_formula(formula)
-            else:
-                return self._execute_simple_formula(formula)
+            return self._execute_simple_formula(formula)
         except Exception as e:
             # Structured logging with full context
             logger.warning(
@@ -93,7 +92,7 @@ class KPIFormulaEngine:
                         result = result + value
                     elif operator == "-":
                         result = result - value
-                    elif operator == "*" or operator == "* 100":
+                    elif operator in ("*", "* 100"):
                         result = result * value
                     elif operator == "/" and value != 0:
                         result = result / value
@@ -101,7 +100,7 @@ class KPIFormulaEngine:
             elif part.replace(".", "").isdigit():
                 value = float(part)
                 if result is not None and operator:
-                    if operator == "*" or operator == "* 100":
+                    if operator in ("*", "* 100"):
                         result = result * value
                     elif operator == "/" and value != 0:
                         result = result / value
@@ -141,13 +140,12 @@ class KPIFormulaEngine:
 
         if agg_func == "SUM":
             return float(filtered_df[column].sum())
-        elif agg_func == "AVG":
+        if agg_func == "AVG":
             return float(filtered_df[column].mean())
-        elif agg_func == "COUNT":
+        if agg_func == "COUNT":
             if distinct:
                 return float(filtered_df[column].nunique())
-            else:
-                return float(filtered_df[column].count())
+            return float(filtered_df[column].count())
 
         return 0.0
 
