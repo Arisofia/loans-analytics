@@ -230,9 +230,12 @@ class OutputPhase:
             
             for i in range(0, len(rows_to_insert), batch_size):
                 batch = rows_to_insert[i:i + batch_size]
-                result = supabase.table(table_name).insert(batch).execute()
+                supabase.table(table_name).insert(batch).execute()
                 total_inserted += len(batch)
-                logger.info("Inserted batch %d-%d", i, i + len(batch))
+                logger.info(
+                    "Inserted batch",
+                    extra={"batch_start": i, "batch_end": i + len(batch), "batch_size": len(batch)}
+                )
 
             logger.info("Successfully wrote %d KPI records to database", total_inserted)
             return {

@@ -15,8 +15,6 @@ Usage:
 import os
 import sys
 from pathlib import Path
-from typing import Optional
-
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
@@ -75,12 +73,12 @@ def apply_migration(supabase: Client, migration_file: Path) -> bool:
         try:
             # Execute via Supabase REST API (RPC to execute SQL)
             # Note: This requires the sql_exec function to be enabled in Supabase
-            result = supabase.rpc("sql_exec", {"sql": statement}).execute()
+            supabase.rpc("sql_exec", {"sql": statement}).execute()
             print(f"  ✓ Statement {i}/{len(statements)} executed")
         except Exception as e:
             # If RPC not available, try using PostgREST directly
             print(f"  ⚠️ Could not execute statement {i}: {e}")
-            print(f"  → Please apply migration manually via Supabase SQL Editor")
+            print("  → Please apply migration manually via Supabase SQL Editor")
             print(f"  → File: {migration_file}")
             return False
     
@@ -94,7 +92,7 @@ def verify_table_structure(supabase: Client) -> bool:
     
     try:
         # Try to query the table (limit 0 to avoid loading data)
-        result = supabase.table("kpi_timeseries_daily").select("*").limit(0).execute()
+        supabase.table("kpi_timeseries_daily").select("*").limit(0).execute()
         print("✓ Table kpi_timeseries_daily exists and is accessible")
         return True
     except Exception as e:
@@ -107,8 +105,11 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="Setup Supabase tables for pipeline")
-    parser.add_argument("--verify-only", action="store_true", 
-                       help="Only verify table structure, don't apply migrations")
+    parser.add_argument(
+        "--verify-only",
+        action="store_true",
+        help="Only verify table structure, don't apply migrations"
+    )
     args = parser.parse_args()
     
     print("=" * 60)
@@ -136,10 +137,10 @@ def main():
     print("=" * 60)
     print("\nSupabase REST API does not support direct SQL execution.")
     print("Please apply the migration manually:")
-    print(f"\n1. Open Supabase Dashboard → SQL Editor")
+    print("\n1. Open Supabase Dashboard → SQL Editor")
     print(f"2. Copy the contents of: {migration_file}")
-    print(f"3. Execute the SQL in the editor")
-    print(f"\nAlternatively, use the Supabase CLI:")
+    print("3. Execute the SQL in the editor")
+    print("\nAlternatively, use the Supabase CLI:")
     print(f"   supabase db execute -f {migration_file}")
     
     # Verify table exists

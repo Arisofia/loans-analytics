@@ -334,7 +334,7 @@ async def main():
     output_file = f"data/metrics/load_test_{timestamp}.json"
 
     import json
-    from pathlib import Path
+    # Path already imported at module level (line 15)
 
     Path("data/metrics").mkdir(parents=True, exist_ok=True)
 

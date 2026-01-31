@@ -37,11 +37,11 @@ Local/Scheduled Pipeline → Supabase PostgreSQL → Streamlit Dashboard (Azure)
 
 You need **three keys** from the API settings page:
 
-| Key Name | Environment Variable | Purpose | Security Level |
-|----------|---------------------|---------|----------------|
-| **Project URL** | `NEXT_PUBLIC_SUPABASE_URL` | Database connection endpoint | Public (safe) |
-| **anon public** (publishable key) | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Client-side queries | Public (safe) |
-| **service_role** (secret) | `SUPABASE_SERVICE_ROLE_KEY` | Server-side operations | **CRITICAL - NEVER EXPOSE** |
+| Key Name                          | Environment Variable                           | Purpose                      | Security Level              |
+| --------------------------------- | ---------------------------------------------- | ---------------------------- | --------------------------- |
+| **Project URL**                   | `NEXT_PUBLIC_SUPABASE_URL`                     | Database connection endpoint | Public (safe)               |
+| **anon public** (publishable key) | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Client-side queries          | Public (safe)               |
+| **service_role** (secret)         | `SUPABASE_SERVICE_ROLE_KEY`                    | Server-side operations       | **CRITICAL - NEVER EXPOSE** |
 
 ---
 
@@ -75,6 +75,7 @@ python scripts/setup_supabase_tables.py --verify-only
 ```
 
 **Expected output:**
+
 ```
 ✓ Loaded environment from .env.local
 ✓ Supabase URL: ***REMOVED***
@@ -136,8 +137,8 @@ database:
   enabled: true
   type: supabase
   table: kpi_timeseries_daily
-  url: "${SUPABASE_URL}"
-  key: "${SUPABASE_ANON_KEY}"
+  url: '${SUPABASE_URL}'
+  key: '${SUPABASE_ANON_KEY}'
 ```
 
 ### 4.2 Run Test Pipeline
@@ -147,6 +148,7 @@ python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
 ```
 
 **Expected output:**
+
 ```
 [Phase 4/4] Output Phase
   ✓ Exported Parquet: data/outputs/20260131_XXXXXX/kpi_results.parquet
@@ -222,30 +224,30 @@ on:
   schedule:
     # Run at 6 AM UTC daily (1 AM EST)
     - cron: '0 6 * * *'
-  workflow_dispatch:  # Allow manual triggers
+  workflow_dispatch: # Allow manual triggers
 
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-      
+
       - name: Run data pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
-      
+
       - name: Upload pipeline logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -255,10 +257,12 @@ jobs:
 ```
 
 **Required GitHub Secrets:**
+
 - `SUPABASE_URL`: ***REMOVED***
 - `SUPABASE_ANON_KEY`: Your anon public key
 
 **Setup:**
+
 ```bash
 # Add secrets to GitHub
 gh secret set SUPABASE_URL --body "***REMOVED***"
@@ -268,11 +272,13 @@ gh secret set SUPABASE_ANON_KEY --body "<your-anon-key>"
 ### Option B: Local Cron Job
 
 Edit crontab:
+
 ```bash
 crontab -e
 ```
 
 Add:
+
 ```cron
 # Run pipeline daily at 6 AM
 0 6 * * * cd /Users/jenineferderas/Documents/Documentos\ -\ MacBook\ Pro\ \(6\)/abaco-loans-analytics && .venv/bin/python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv >> logs/pipeline_cron.log 2>&1
@@ -287,6 +293,7 @@ Add:
 **Cause**: Pipeline can't find `SUPABASE_URL` or `SUPABASE_ANON_KEY`
 
 **Solution**:
+
 1. Verify `.env.local` has the correct keys (see Step 2.1)
 2. Check that `.env` references `.env.local` variables correctly
 3. Run: `source .venv/bin/activate && python -c "import os; print(os.getenv('SUPABASE_URL'))"`
@@ -296,6 +303,7 @@ Add:
 **Cause**: Wrong key type or expired key
 
 **Solution**:
+
 1. Verify you're using the **anon public** key (not service_role) in pipeline
 2. Regenerate keys: Supabase Dashboard → Settings → API → Regenerate
 3. Update `.env.local` with new key
@@ -305,6 +313,7 @@ Add:
 **Cause**: Migration not applied
 
 **Solution**:
+
 1. Follow Step 3.1 to create the table
 2. Verify with: `python scripts/setup_supabase_tables.py --verify-only`
 
@@ -313,6 +322,7 @@ Add:
 **Cause**: Pipeline not running or not writing to Supabase
 
 **Solution**:
+
 1. Check pipeline logs: `tail -f logs/pipeline.log`
 2. Verify database writes: Check `run_date` column in Supabase table
 3. Force dashboard refresh: Add `?nocache=1` to URL
@@ -352,11 +362,13 @@ After completing setup:
 ## Support
 
 **Questions?** Contact:
+
 - **Data Engineering**: Review `docs/DATA_PIPELINE.md`
 - **Supabase Issues**: https://supabase.com/docs
 - **Dashboard Issues**: Review `streamlit_app/README.md`
 
 **Related Documentation**:
+
 - [DEPLOYMENT_OPERATIONS_GUIDE.md](./DEPLOYMENT_OPERATIONS_GUIDE.md) - Azure container management
 - [DATA_GOVERNANCE.md](./DATA_GOVERNANCE.md) - Data quality standards
 - [MONITORING_QUICK_START.md](./MONITORING_QUICK_START.md) - Observability setup

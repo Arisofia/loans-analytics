@@ -153,7 +153,7 @@ class IngestionPhase:
                     "data_types_valid": False,
                 }
             
-            # Validate data types
+            # Validate data types (vectorized for performance)
             type_validation = {
                 "loan_id": str,
                 "amount": (int, float),
@@ -163,7 +163,8 @@ class IngestionPhase:
             type_errors = []
             for col, expected_type in type_validation.items():
                 if col in df.columns:
-                    if not df[col].apply(lambda x: isinstance(x, expected_type)).all():
+                    # Use list comprehension instead of .apply() to avoid cell variable issue
+                    if not all(isinstance(val, expected_type) for val in df[col].dropna()):
                         type_errors.append(col)
             
             if type_errors:
@@ -175,8 +176,13 @@ class IngestionPhase:
                     "type_errors": type_errors,
                 }
             
-            logger.info("Schema validation passed: %d columns, %d rows", 
-                       len(df.columns), len(df))
+            logger.info(
+                "Schema validation passed",
+                extra={
+                    "column_count": len(df.columns),
+                    "row_count": len(df),
+                },
+            )
             return {
                 "schema_valid": True,
                 "required_columns_present": True,

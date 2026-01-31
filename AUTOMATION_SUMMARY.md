@@ -21,6 +21,7 @@ Local/Scheduled Pipeline → Supabase PostgreSQL → Streamlit Dashboard (Azure)
 ## ✅ What's Complete
 
 ### 1. **Pipeline Database Integration** ✅
+
 - ✅ Implemented actual Supabase write logic in `src/pipeline/output.py`
   - Batch insert to `kpi_timeseries_daily` table
   - Graceful error handling when credentials not configured
@@ -28,6 +29,7 @@ Local/Scheduled Pipeline → Supabase PostgreSQL → Streamlit Dashboard (Azure)
   - Automatic retry logic
 
 ### 2. **Database Schema** ✅
+
 - ✅ Created migration: `db/migrations/002_create_kpi_timeseries_daily.sql`
   - Table: `kpi_timeseries_daily` with optimized indexes
   - Row Level Security (RLS) policies
@@ -35,6 +37,7 @@ Local/Scheduled Pipeline → Supabase PostgreSQL → Streamlit Dashboard (Azure)
   - Comprehensive column documentation
 
 ### 3. **Automated Execution** ✅
+
 - ✅ GitHub Actions workflow: `.github/workflows/run_pipeline_daily.yml`
   - Scheduled daily at 6 AM UTC (1 AM EST)
   - Manual trigger support via GitHub UI
@@ -43,6 +46,7 @@ Local/Scheduled Pipeline → Supabase PostgreSQL → Streamlit Dashboard (Azure)
   - Error notifications via GitHub Issues
 
 ### 4. **Documentation** ✅
+
 - ✅ Comprehensive guide: `docs/SUPABASE_SETUP_GUIDE.md`
   - Step-by-step credential configuration
   - Table creation instructions
@@ -51,12 +55,14 @@ Local/Scheduled Pipeline → Supabase PostgreSQL → Streamlit Dashboard (Azure)
   - Troubleshooting guide with solutions
 
 ### 5. **Setup Scripts** ✅
+
 - ✅ Verification script: `scripts/setup_supabase_tables.py`
   - Check Supabase connectivity
   - Verify table structure
   - Easy troubleshooting
 
 ### 6. **Git History** ✅
+
 - ✅ All changes committed and pushed to `main` branch
 - ✅ Commit: `83a4d2a75` - "feat: Supabase integration for automated KPI pipeline"
 
@@ -87,12 +93,14 @@ SUPABASE_SERVICE_ROLE_KEY=<paste-your-service-role-key>
 ### Step 3: Create Database Table (3 minutes)
 
 Option A: **Via Supabase Dashboard (Recommended)**
+
 1. Open: https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/editor
 2. Click **SQL Editor** → **New Query**
 3. Copy entire contents of `db/migrations/002_create_kpi_timeseries_daily.sql`
 4. Paste and click **Run**
 
 Option B: **Via Supabase CLI**
+
 ```bash
 supabase link --project-ref goxdevkqozomyhsyxhte
 supabase db execute -f db/migrations/002_create_kpi_timeseries_daily.sql
@@ -166,9 +174,11 @@ python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
 ## 📊 What You'll See After Setup
 
 ### Before Setup (Current State)
+
 - Dashboard shows: ❌ "Logs directory not found. Please run the pipeline first."
 
 ### After Setup (Future State)
+
 - Dashboard shows: ✅ Real-time KPI cards with:
   - **Portfolio Metrics**: PAR-30, PAR-90, NPL Rate
   - **Operational Metrics**: Collection Rate (6M), Portfolio Rotation
@@ -180,20 +190,21 @@ python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
 
 ## 📁 Files Changed/Created
 
-| File | Status | Purpose |
-|------|--------|---------|
-| `src/pipeline/output.py` | **Modified** | Actual Supabase write implementation |
-| `config/pipeline.yml` | **Modified** | Enabled database writes |
-| `db/migrations/002_create_kpi_timeseries_daily.sql` | **New** | Table schema |
-| `.github/workflows/run_pipeline_daily.yml` | **New** | Daily automation |
-| `docs/SUPABASE_SETUP_GUIDE.md` | **New** | Setup instructions |
-| `scripts/setup_supabase_tables.py` | **New** | Verification script |
+| File                                                | Status       | Purpose                              |
+| --------------------------------------------------- | ------------ | ------------------------------------ |
+| `src/pipeline/output.py`                            | **Modified** | Actual Supabase write implementation |
+| `config/pipeline.yml`                               | **Modified** | Enabled database writes              |
+| `db/migrations/002_create_kpi_timeseries_daily.sql` | **New**      | Table schema                         |
+| `.github/workflows/run_pipeline_daily.yml`          | **New**      | Daily automation                     |
+| `docs/SUPABASE_SETUP_GUIDE.md`                      | **New**      | Setup instructions                   |
+| `scripts/setup_supabase_tables.py`                  | **New**      | Verification script                  |
 
 ---
 
 ## 🔒 Security Best Practices (Already Implemented)
 
 ✅ **What I Built In:**
+
 - `.env.local` is gitignored (credentials never committed)
 - Pipeline gracefully handles missing credentials (no crashes)
 - Row Level Security (RLS) policies in table schema
@@ -202,6 +213,7 @@ python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
 - Pre-commit hook prevents secret leaks
 
 ✅ **What You Need to Do:**
+
 - Store credentials securely (never share in Slack/email)
 - Use GitHub Secrets for automation (done via `gh secret set`)
 - Use Azure Key Vault for production (future enhancement)
@@ -211,16 +223,19 @@ python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
 ## 🎓 Next Steps (Priority Order)
 
 ### High Priority (Do Now)
+
 1. ⏰ **Complete 6-step manual setup above** (~20 minutes total)
 2. ⏰ **Test end-to-end flow** - Verify dashboard shows data
 3. ⏰ **Schedule first automated run** - Let GitHub Actions run tonight
 
 ### Medium Priority (This Week)
+
 4. 📊 **Import historical KPI data** - Backfill Supabase table
 5. 🔔 **Set up alerts** - Monitor pipeline failures
 6. 🧪 **Add data quality checks** - Validate KPI ranges
 
 ### Low Priority (Nice to Have)
+
 7. 🔐 **Migrate to Azure Key Vault** - Enhanced credential management
 8. 📈 **Add more KPIs** - Expand dashboard metrics
 9. 🌍 **Multi-environment setup** - Dev/Staging/Prod separation
@@ -229,24 +244,27 @@ python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
 
 ## 📚 Documentation References
 
-| Document | Purpose |
-|----------|---------|
-| [`docs/SUPABASE_SETUP_GUIDE.md`](docs/SUPABASE_SETUP_GUIDE.md) | **START HERE** - Complete setup instructions |
-| [`docs/DEPLOYMENT_OPERATIONS_GUIDE.md`](docs/DEPLOYMENT_OPERATIONS_GUIDE.md) | Azure container management |
-| [`docs/DATA_GOVERNANCE.md`](docs/DATA_GOVERNANCE.md) | Data quality standards |
-| [`README.md`](README.md) | Project overview |
+| Document                                                                     | Purpose                                      |
+| ---------------------------------------------------------------------------- | -------------------------------------------- |
+| [`docs/SUPABASE_SETUP_GUIDE.md`](docs/SUPABASE_SETUP_GUIDE.md)               | **START HERE** - Complete setup instructions |
+| [`docs/DEPLOYMENT_OPERATIONS_GUIDE.md`](docs/DEPLOYMENT_OPERATIONS_GUIDE.md) | Azure container management                   |
+| [`docs/DATA_GOVERNANCE.md`](docs/DATA_GOVERNANCE.md)                         | Data quality standards                       |
+| [`README.md`](README.md)                                                     | Project overview                             |
 
 ---
 
 ## 🐛 Troubleshooting Quick Reference
 
 ### Issue: "Supabase credentials not configured"
+
 **Solution**: Complete Step 2 above (update `.env.local`)
 
 ### Issue: "Table kpi_timeseries_daily does not exist"
+
 **Solution**: Complete Step 3 above (create table)
 
 ### Issue: Dashboard shows old data
+
 **Solution**: Run pipeline manually, check logs
 
 **Full troubleshooting guide**: See `docs/SUPABASE_SETUP_GUIDE.md` → Troubleshooting section
@@ -256,6 +274,7 @@ python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
 ## ✨ What Makes This "Most Robust, Complete, and Safe"
 
 ### Robustness
+
 - ✅ Graceful error handling (no crashes)
 - ✅ Automatic retries on failure
 - ✅ Batch processing prevents memory issues
@@ -263,6 +282,7 @@ python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
 - ✅ Comprehensive logging
 
 ### Completeness
+
 - ✅ End-to-end automation (Pipeline → DB → Dashboard)
 - ✅ Scheduled execution (daily at 6 AM UTC)
 - ✅ Manual trigger support
@@ -271,6 +291,7 @@ python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
 - ✅ Complete documentation
 
 ### Safety
+
 - ✅ No credentials in git history
 - ✅ Row Level Security (RLS) on database
 - ✅ Pre-commit secret scanning
@@ -297,6 +318,7 @@ The code is **100% complete and committed**. Just complete the 6-step manual set
 ---
 
 **Commit Details**:
+
 - Branch: `main`
 - Commit: `83a4d2a75`
 - Files Changed: 6 (855 insertions, 17 deletions)

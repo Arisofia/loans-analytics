@@ -317,10 +317,10 @@ class TransformationPhase:
                     except Exception as e:
                         logger.warning("Could not convert %s to numeric: %s", col, e)
 
-        # Normalize status column if present
+        # Normalize status column if present (vectorized for performance)
         if "status" in df.columns:
             original_values = df["status"].unique().tolist()
-            df["status"] = df["status"].apply(
+            df["status"] = df["status"].map(
                 lambda x: self.STATUS_MAPPINGS.get(x, str(x).lower() if pd.notna(x) else x)
             )
             conversions["status"] = {"normalized_values": original_values}
@@ -355,9 +355,16 @@ class TransformationPhase:
         rules_applied: List[str] = []
         fields_created: List[str] = []
 
-        # Apply DPD bucket assignment if dpd column exists
+        # Apply DPD bucket assignment if dpd column exists (vectorized)
         if "dpd" in df.columns:
-            df["dpd_bucket"] = df["dpd"].apply(self._assign_dpd_bucket)
+            df["dpd_bucket"] = pd.cut(
+                df["dpd"],
+                bins=[-np.inf, -0.001, 0.001, 30, 60, 90, 180, np.inf],
+                labels=["unknown", "current", "1-29", "30-59", "60-89", "90-179", "180+"],
+                include_lowest=True
+            ).astype(str)
+            # Handle NaN values
+            df.loc[df["dpd"].isna(), "dpd_bucket"] = "unknown"
             fields_created.append("dpd_bucket")
             rules_applied.append("dpd_bucket_assignment")
 
@@ -367,9 +374,16 @@ class TransformationPhase:
             fields_created.append("risk_category")
             rules_applied.append("risk_categorization")
 
-        # Apply amount tier classification if amount column exists
+        # Apply amount tier classification if amount column exists (vectorized)
         if "amount" in df.columns:
-            df["amount_tier"] = df["amount"].apply(self._assign_amount_tier)
+            df["amount_tier"] = pd.cut(
+                df["amount"],
+                bins=[-np.inf, 0, 5000, 25000, 100000, 500000, np.inf],
+                labels=["invalid", "micro", "small", "medium", "large", "jumbo"],
+                include_lowest=True
+            ).astype(str)
+            # Handle NaN values
+            df.loc[df["amount"].isna(), "amount_tier"] = "invalid"
             fields_created.append("amount_tier")
             rules_applied.append("amount_tier_classification")
 
