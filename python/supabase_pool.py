@@ -322,7 +322,7 @@ async def get_pool(database_url: Optional[str] = None) -> SupabaseConnectionPool
     Returns:
         Connection pool instance
     """
-    global _global_pool
+    global _global_pool  # pylint: disable=global-statement
 
     if _global_pool is None:
         if not database_url:
@@ -336,7 +336,7 @@ async def get_pool(database_url: Optional[str] = None) -> SupabaseConnectionPool
 
 async def close_pool() -> None:
     """Close global connection pool."""
-    global _global_pool
+    global _global_pool  # pylint: disable=global-statement
 
     if _global_pool is not None:
         await _global_pool.close()
