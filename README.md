@@ -194,8 +194,6 @@ APPLICATIONINSIGHTS_CONNECTION_STRING=<your-string>
 
 ⚠️ **Security**: Never commit `.env` files. Store credentials in environment variables or GitHub Secrets.
 
-
-
 ### **Pipeline Settings** (`config/pipeline.yml`)
 
 - **Ingestion**: Data sources (CSV files, Supabase), validation rules
