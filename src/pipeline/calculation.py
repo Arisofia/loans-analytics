@@ -338,7 +338,8 @@ class CalculationPhase:
                 try:
                     pd.to_datetime(df[col], errors="raise")
                     date_columns.append(col)
-                except Exception:
+                except Exception as e:
+                    logger.debug("Skipping non-date column %s: %s", col, e)
                     continue
 
         if not date_columns:
@@ -363,20 +364,20 @@ class CalculationPhase:
             try:
                 daily = df_ts.groupby(df_ts[date_col].dt.date)[numeric_cols].sum()
                 result["daily"] = daily.to_dict("records")[:30]
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Daily rollup failed for %s: %s", date_col, e, exc_info=True)
 
             try:
                 weekly = df_ts.groupby(df_ts[date_col].dt.to_period("W"))[numeric_cols].sum()
                 result["weekly"] = weekly.to_dict("records")[:12]
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Weekly rollup failed for %s: %s", date_col, e, exc_info=True)
 
             try:
                 monthly = df_ts.groupby(df_ts[date_col].dt.to_period("M"))[numeric_cols].sum()
                 result["monthly"] = monthly.to_dict("records")[:12]
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Monthly rollup failed for %s: %s", date_col, e, exc_info=True)
 
         logger.info(
             "Time-series calculated: %d daily, %d weekly, %d monthly",
