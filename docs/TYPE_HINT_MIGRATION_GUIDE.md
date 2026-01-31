@@ -363,7 +363,7 @@ pylint src/ python/
 ```python
 from typing import Any
 
-class KPICalculationPhase:
+class CalculationPhase:
     def __init__(self, config: dict[str, Any], kpi_definitions: dict[str, Any]):
         self.config = config
         self.kpi_definitions = kpi_definitions
