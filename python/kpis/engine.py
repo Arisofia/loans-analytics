@@ -61,7 +61,7 @@ def _handle_kpi_calculation_error(kpi_name: str) -> Callable:
                 return func(self, *args, **kwargs)
             except Exception as e:
                 error_msg = str(e)
-                logger.error(f"Failed to calculate {kpi_name}: {error_msg}")
+                logger.error("Failed to calculate %s: %s", kpi_name, error_msg)
                 fallback_value = 0.0
                 error_context = {"error": error_msg}
                 self._record_calculation(kpi_name, fallback_value, error_context, error_msg)
@@ -95,7 +95,7 @@ class KPIEngineV2:
         self.run_id = run_id or self._generate_run_id()
         self._audit_records: List[Dict[str, Any]] = []
 
-        logger.info(f"Initialized KPIEngineV2 with actor={actor}, run_id={self.run_id}")
+        logger.info("Initialized KPIEngineV2 with actor=%s, run_id=%s", actor, self.run_id)
 
     def _generate_run_id(self) -> str:
         """Generate a unique run ID based on timestamp."""
@@ -147,7 +147,7 @@ class KPIEngineV2:
             "calculation_method": "v1_legacy",
         }
         self._record_calculation(kpi_name, value, context)
-        logger.debug(f"Calculated {kpi_name}: {value}")
+        logger.debug("Calculated %s: %s", kpi_name, value)
         return value, context
 
     @_handle_kpi_calculation_error("COLLECTION_RATE")
@@ -168,7 +168,7 @@ class KPIEngineV2:
             "calculation_method": "v1_legacy",
         }
         self._record_calculation(kpi_name, value, context)
-        logger.debug(f"Calculated {kpi_name}: {value}")
+        logger.debug("Calculated %s: %s", kpi_name, value)
         return value, context
 
     @_handle_kpi_calculation_error("LTV")
@@ -213,7 +213,7 @@ class KPIEngineV2:
             "calculation_method": "v2_engine",
         }
         self._record_calculation(kpi_name, value, context)
-        logger.debug(f"Calculated {kpi_name}: {value}")
+        logger.debug("Calculated %s: %s", kpi_name, value)
         return value, context
 
     def calculate_all(self) -> Dict[str, Dict[str, Any]]:
@@ -242,7 +242,7 @@ class KPIEngineV2:
         coll_rate_val, coll_rate_ctx = self.calculate_collection_rate()
         results["COLLECTION_RATE"] = {"value": coll_rate_val, "context": coll_rate_ctx}
 
-        logger.info(f"Calculated {len(results)} KPIs")
+        logger.info("Calculated %d KPIs", len(results))
         return results
 
     def get_audit_trail(self) -> pd.DataFrame:
@@ -285,5 +285,5 @@ class KPIEngineV2:
             records_for_df.append(record_copy)
 
         df = pd.DataFrame(records_for_df)
-        logger.info(f"Generated audit trail with {len(df)} records")
+        logger.info("Generated audit trail with %d records", len(df))
         return df

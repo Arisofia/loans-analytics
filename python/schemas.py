@@ -50,13 +50,13 @@ def validate_ingestion_contract(df: pl.DataFrame) -> bool:
     if "loan_amount" in df.columns:
         max_loan = 1_000_000  # Example business threshold
         if df.filter(pl.col("loan_amount") > max_loan).height > 0:
-            logger.warning(f"Threshold Violation: Loans found exceeding {max_loan}")
+            logger.warning("Threshold Violation: Loans found exceeding %d", max_loan)
     # 5. Completeness
     null_counts = df.null_count()
     for col in df.columns:
         null_val = null_counts.get_column(col)[0]
         if null_val > 0:
-            logger.info(f"Column {col} has {null_val} null values.")
+            logger.info("Column %s has %d null values.", col, null_val)
     return True
 
 

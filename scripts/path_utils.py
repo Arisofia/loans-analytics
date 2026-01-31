@@ -80,10 +80,10 @@ def validate_path(
     try:
         base = Path(base_dir).resolve()
         if not base.exists():
-            logger.info(f"Creating base directory: {base}")
+            logger.info("Creating base directory: %s", base)
             base.mkdir(parents=True, exist_ok=True)
     except OSError as e:
-        logger.error(f"Cannot access base directory {base_dir}: {e}")
+        logger.error("Cannot access base directory %s: %s", base_dir, e)
         raise
 
     # Resolve requested path (eliminates .. and symlinks)
@@ -93,7 +93,7 @@ def validate_path(
             user_path
         ).resolve()  # nosemgrep: snyk.python.path_traversal,snyk.python.os_injection
     except (OSError, RuntimeError) as e:
-        logger.warning(f"Cannot resolve path {user_path}: {e}")
+        logger.warning("Cannot resolve path %s: %s", user_path, e)
         raise ValueError(f"Invalid path: {user_path}") from e
 
     # Security check: ensure resolved path is within base directory
@@ -108,15 +108,15 @@ def validate_path(
 
     # File existence validation
     if must_exist and not requested.exists():
-        logger.error(f"File not found: {requested}")
+        logger.error("File not found: %s", requested)
         raise ValueError(f"File not found: {user_path}")
 
     # Write validation
     if not allow_write and requested.exists() and not requested.is_file():
-        logger.warning(f"Attempted to write to non-file: {requested}")
+        logger.warning("Attempted to write to non-file: %s", requested)
         raise ValueError(f"Path is not a regular file: {user_path}")
 
-    logger.debug(f"Path validation succeeded: {user_path} -> {requested}")
+    logger.debug("Path validation succeeded: %s -> %s", user_path, requested)
     return requested
 
 
@@ -145,7 +145,7 @@ def secure_file_read(
         base_dir=base_dir,
         must_exist=True,
     )
-    logger.info(f"Reading file: {validated_path}")
+    logger.info("Reading file: %s", validated_path)
     return validated_path.read_text(encoding=encoding)
 
 
@@ -174,7 +174,7 @@ def secure_file_write(
     )
     # Ensure parent directory exists
     validated_path.parent.mkdir(parents=True, exist_ok=True)
-    logger.info(f"Writing file: {validated_path}")
+    logger.info("Writing file: %s", validated_path)
     validated_path.write_text(content, encoding=encoding)
 
 
@@ -197,7 +197,7 @@ def secure_json_read(
         json.JSONDecodeError: If file is not valid JSON.
     """
     content = secure_file_read(file_path, base_dir=base_dir)
-    logger.debug(f"Parsing JSON from: {file_path}")
+    logger.debug("Parsing JSON from: %s", file_path)
     return json.loads(content)
 
 
@@ -222,7 +222,7 @@ def secure_json_write(
     """
     content = json.dumps(data, indent=indent)
     secure_file_write(file_path, content, base_dir=base_dir)
-    logger.debug(f"Wrote JSON to: {file_path}")
+    logger.debug("Wrote JSON to: %s", file_path)
 
 
 def secure_path_exists(
@@ -242,7 +242,7 @@ def secure_path_exists(
         validated_path = validate_path(file_path, base_dir=base_dir)
         return validated_path.exists()
     except ValueError:
-        logger.warning(f"Path check failed for: {file_path}")
+        logger.warning("Path check failed for: %s", file_path)
         return False
 
 
@@ -263,7 +263,7 @@ def secure_path_is_file(
         validated_path = validate_path(file_path, base_dir=base_dir)
         return validated_path.is_file()
     except ValueError:
-        logger.warning(f"File check failed for: {file_path}")
+        logger.warning("File check failed for: %s", file_path)
         return False
 
 
@@ -284,7 +284,7 @@ def secure_path_is_dir(
         validated_path = validate_path(path, base_dir=base_dir)
         return validated_path.is_dir()
     except ValueError:
-        logger.warning(f"Directory check failed for: {path}")
+        logger.warning("Directory check failed for: %s", path)
         return False
 
 
