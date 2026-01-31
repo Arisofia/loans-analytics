@@ -88,10 +88,10 @@ output:
   # Database configuration
   database:
     type: "supabase"
-    enabled: false
+    enabled: true
     url: "${SUPABASE_URL}"
-    key: "${SUPABASE_KEY}"
-    table: "kpi_results"
+    key: "${SUPABASE_ANON_KEY}"
+    table: "kpi_timeseries_daily"
 
   # Dashboard refresh
   dashboard:
