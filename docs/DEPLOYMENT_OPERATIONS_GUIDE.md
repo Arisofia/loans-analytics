@@ -8,12 +8,12 @@
 
 ## Quick Reference
 
-| Operation | Command | Time |
-|-----------|---------|------|
-| **Deploy** | `./scripts/deploy_to_azure.sh` | 5-15 min |
-| **Monitor** | `./scripts/monitor_deployment.sh <url> <hours>` | Variable |
-| **Rollback** | `./scripts/rollback_deployment.sh [commits_back]` | 5-10 min |
-| **Health Check** | `curl https://abaco-analytics-dashboard.azurewebsites.net/?page=health` | <1 sec |
+| Operation        | Command                                                                 | Time     |
+| ---------------- | ----------------------------------------------------------------------- | -------- |
+| **Deploy**       | `./scripts/deploy_to_azure.sh`                                          | 5-15 min |
+| **Monitor**      | `./scripts/monitor_deployment.sh <url> <hours>`                         | Variable |
+| **Rollback**     | `./scripts/rollback_deployment.sh [commits_back]`                       | 5-10 min |
+| **Health Check** | `curl https://abaco-analytics-dashboard.azurewebsites.net/?page=health` | <1 sec   |
 
 ---
 
@@ -26,6 +26,7 @@
 ```
 
 **What it does**:
+
 1. ✅ Validates local git state (no uncommitted changes, on main)
 2. ✅ Syncs with remote (main branch aligned with origin/main)
 3. ✅ Runs local tests (pytest)
@@ -37,6 +38,7 @@
 9. 📈 Reports success/failure with app URL
 
 **Expected Output**:
+
 ```
 [Step 1] Validating local repository state...
 ✅ Local state is clean
@@ -75,6 +77,7 @@ Access your dashboard: https://abaco-analytics-dashboard.azurewebsites.net
 If you prefer manual control over each step:
 
 ### 1. Local Validation
+
 ```bash
 # Ensure main branch
 git checkout main
@@ -91,6 +94,7 @@ pytest tests/ -q
 ```
 
 ### 2. Verify GitHub Secrets
+
 ```bash
 # Using GitHub CLI
 gh secret list -R Arisofia/abaco-loans-analytics
@@ -99,7 +103,9 @@ gh secret list -R Arisofia/abaco-loans-analytics
 ```
 
 ### 3. Trigger Deployment
+
 **Option A: Via GitHub CLI**
+
 ```bash
 gh workflow run deploy_dashboard.yml \
   -R Arisofia/abaco-loans-analytics \
@@ -107,6 +113,7 @@ gh workflow run deploy_dashboard.yml \
 ```
 
 **Option B: Via GitHub Web UI**
+
 1. Go to: https://github.com/Arisofia/abaco-loans-analytics/actions
 2. Click: "Deploy Abaco Analytics Dashboard to Azure Web App"
 3. Click: "Run workflow"
@@ -114,6 +121,7 @@ gh workflow run deploy_dashboard.yml \
 5. Click: "Run workflow"
 
 ### 4. Monitor Deployment
+
 ```bash
 # Watch workflow logs in real-time
 gh run watch <RUN_ID>
@@ -123,6 +131,7 @@ gh run view <RUN_ID> -R Arisofia/abaco-loans-analytics
 ```
 
 ### 5. Health Check (after deployment)
+
 ```bash
 curl -f https://abaco-analytics-dashboard.azurewebsites.net/?page=health
 
@@ -134,21 +143,25 @@ curl -f https://abaco-analytics-dashboard.azurewebsites.net/?page=health
 ## Post-Deployment Monitoring
 
 ### Immediate Check (30 seconds after deploy)
+
 ```bash
 curl https://abaco-analytics-dashboard.azurewebsites.net/?page=health
 ```
 
 ### Automated 1-Hour Monitor
+
 ```bash
 ./scripts/monitor_deployment.sh https://abaco-analytics-dashboard.azurewebsites.net 1
 ```
 
 ### Automated 24-Hour Monitor
+
 ```bash
 ./scripts/monitor_deployment.sh https://abaco-analytics-dashboard.azurewebsites.net 24
 ```
 
 **Monitor Script Output**:
+
 - Checks every 60 seconds
 - Tracks latency and response codes
 - Reports success rate
@@ -166,13 +179,13 @@ curl https://abaco-analytics-dashboard.azurewebsites.net/?page=health
 
 ### Key Metrics to Monitor
 
-| Metric | Healthy Range | Warning | Critical |
-|--------|---------------|---------|----------|
-| **HTTP 5xx errors** | 0 | >1% | >5% |
-| **Response latency (p95)** | <1s | 1-2s | >2s |
-| **CPU** | <40% | 40-70% | >70% |
-| **Memory** | <50% | 50-75% | >75% |
-| **Success rate** | 95%+ | 80-95% | <80% |
+| Metric                     | Healthy Range | Warning | Critical |
+| -------------------------- | ------------- | ------- | -------- |
+| **HTTP 5xx errors**        | 0             | >1%     | >5%      |
+| **Response latency (p95)** | <1s           | 1-2s    | >2s      |
+| **CPU**                    | <40%          | 40-70%  | >70%     |
+| **Memory**                 | <50%          | 50-75%  | >75%     |
+| **Success rate**           | 95%+          | 80-95%  | <80%     |
 
 ---
 
@@ -183,6 +196,7 @@ curl https://abaco-analytics-dashboard.azurewebsites.net/?page=health
 **Cause**: AZURE_CREDENTIALS secret missing or invalid
 
 **Fix**:
+
 1. Go to GitHub Settings → Secrets and variables → Actions
 2. Add/update AZURE_CREDENTIALS with service principal JSON:
    ```json
@@ -200,6 +214,7 @@ curl https://abaco-analytics-dashboard.azurewebsites.net/?page=health
 **Cause**: AZURE_WEBAPP_PUBLISH_PROFILE missing or App Service misconfigured
 
 **Fix**:
+
 1. In Azure Portal, go to App Service → Get publish profile
 2. Copy the entire XML content
 3. Add as GitHub secret: AZURE_WEBAPP_PUBLISH_PROFILE
@@ -210,6 +225,7 @@ curl https://abaco-analytics-dashboard.azurewebsites.net/?page=health
 **Cause**: App Service not ready, or startup command failed
 
 **Fixes**:
+
 1. Wait 2-3 minutes for full initialization
 2. Check App Service logs: Insights → Logs → search "Error"
 3. Verify startup.sh exists in repo root
@@ -220,6 +236,7 @@ curl https://abaco-analytics-dashboard.azurewebsites.net/?page=health
 **Cause**: Application error in Streamlit or dependencies
 
 **Fixes**:
+
 1. Check Application Insights → Failures for specific error
 2. Review streaming app.py for syntax errors
 3. Verify all environment variables set in App Service Configuration
@@ -231,6 +248,7 @@ curl https://abaco-analytics-dashboard.azurewebsites.net/?page=health
 **Cause**: Missing dependencies in requirements.txt or virtual environment issue
 
 **Fixes**:
+
 1. Verify requirements.txt is in repo root
 2. Check all dependencies are in requirements.txt
 3. In App Service → Configuration, set: PYTHONUNBUFFERED=1
@@ -241,16 +259,19 @@ curl https://abaco-analytics-dashboard.azurewebsites.net/?page=health
 ## Rollback Procedures
 
 ### Rollback Last Deployment
+
 ```bash
 ./scripts/rollback_deployment.sh
 ```
 
 ### Rollback 3 Commits Back
+
 ```bash
 ./scripts/rollback_deployment.sh 3
 ```
 
 **Rollback Script**:
+
 1. ✅ Verifies on main branch
 2. ✅ Resets git to target commit
 3. ✅ Force-pushes to origin
@@ -279,10 +300,12 @@ git push --force-with-lease origin main
 ### GitHub Actions Workflows (Auto-run)
 
 **Every 24 hours**:
+
 - `performance-monitoring.yml` - Runs latency benchmarks
 - Data pipeline job (if configured) - Refreshes KPIs
 
 **Every 6 hours** (if configured):
+
 - Health check workflow - Validates deployment
 
 ### Manual Scheduling (Cron on your machine)
@@ -345,12 +368,14 @@ az webapp restart --name abaco-analytics-dashboard \
 ### Scenario 1: Deploying New Feature
 
 1. **Develop & Test Locally**
+
    ```bash
    pytest tests/  # All tests pass
    git status     # Clean
    ```
 
 2. **Deploy**
+
    ```bash
    ./scripts/deploy_to_azure.sh
    ```
@@ -368,6 +393,7 @@ az webapp restart --name abaco-analytics-dashboard \
 ### Scenario 2: Critical Bug Fix
 
 1. **Create Fix Branch** (if needed)
+
    ```bash
    git checkout -b fix/critical-issue
    # ... make fix ...
@@ -375,6 +401,7 @@ az webapp restart --name abaco-analytics-dashboard \
    ```
 
 2. **Merge to Main**
+
    ```bash
    git checkout main
    git merge fix/critical-issue
@@ -382,6 +409,7 @@ az webapp restart --name abaco-analytics-dashboard \
    ```
 
 3. **Deploy Immediately**
+
    ```bash
    ./scripts/deploy_to_azure.sh
    ```
@@ -394,12 +422,14 @@ az webapp restart --name abaco-analytics-dashboard \
 ### Scenario 3: Deployment Failed (Rollback)
 
 1. **Stop Current Deployment** (if still running)
+
    ```bash
    # Find run ID from GitHub Actions, then:
    gh run cancel <RUN_ID>
    ```
 
 2. **Rollback to Last Known Good**
+
    ```bash
    ./scripts/rollback_deployment.sh 1
    ```
@@ -424,6 +454,7 @@ az webapp restart --name abaco-analytics-dashboard \
    - Look for errors, slow queries
 
 3. **Run Monitoring Script**
+
    ```bash
    ./scripts/monitor_deployment.sh https://abaco-analytics-dashboard.azurewebsites.net 2
    ```
@@ -465,4 +496,3 @@ az webapp restart --name abaco-analytics-dashboard \
 5. **Azure Portal**: https://portal.azure.com
 
 ---
-
