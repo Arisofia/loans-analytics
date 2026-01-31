@@ -85,5 +85,6 @@
   "github-actions.workflows.pinned.workflows": [
     "abaco-loans-analytics/.github/workflows/agent-orchestrator.yml"
   ],
-  "chat.useAgentSkills": true
+  "chat.useAgentSkills": true,
+  "mssql.enableSqlParser": false
 }
