@@ -13,6 +13,7 @@ Usage:
     python scripts/setup_supabase_tables.py --verify-only
 """
 
+import argparse
 import os
 import sys
 from pathlib import Path
@@ -63,8 +64,6 @@ def verify_table_structure(supabase: Client) -> bool:
 
 def main() -> None:
     """Main entry point."""
-    import argparse
-
     parser = argparse.ArgumentParser(
         description="Setup Supabase tables for the Abaco Loans Analytics pipeline."
     )
