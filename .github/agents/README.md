@@ -79,6 +79,51 @@ In GitHub Copilot Chat (VS Code):
 4. **Observability First** - Metrics, logs, and traces from day one
 5. **Team Topology** - Architecture follows organizational structure (Conway's Law)
 
+### QA Engineer / TestCraftPro (`qa_engineer.md`)
+
+**Purpose:** Specialized QA Engineer agent for generating comprehensive test plans and test cases for fintech features.
+
+**Key Features:**
+- Structured test planning with clarifying questions
+- Comprehensive test case generation (functional, security, performance, integration)
+- Fintech-specific testing requirements (PII protection, financial accuracy, compliance)
+- Integration with pytest and CI/CD infrastructure
+- Risk-based testing approach (prioritize high-impact areas)
+- Test templates and documentation
+
+**When to Use:**
+- Generating test plans for new features
+- Creating detailed test cases for user stories
+- Planning security and compliance testing
+- Designing performance test scenarios
+- Validating financial calculation accuracy
+- Setting up integration test strategies
+- Reviewing test coverage and quality
+
+**Invocation:**
+In GitHub Copilot Chat (VS Code):
+```
+@qa_engineer Generate a test plan for the new KPI calculation feature
+@qa_engineer Create test cases for the loan approval API endpoint
+@qa_engineer What security tests should I include for this payment processing feature?
+@qa_engineer Help me test this data pipeline for performance with large datasets
+@qa_engineer Review this test plan and suggest improvements
+@qa_engineer What edge cases should I test for this validation logic?
+```
+
+**Core Principles:**
+1. **Ask Before Assuming** - Start with clarifying questions about requirements
+2. **Risk-Based Testing** - Prioritize high-impact, high-likelihood risks (top 3-5)
+3. **Security & Compliance First** - PII protection and regulatory requirements
+4. **Financial Accuracy** - Use Decimal for monetary values, verify against baselines
+5. **Automation-Friendly** - Design tests that can be automated with pytest
+6. **Balanced Coverage** - Test happy path, edge cases, and error scenarios
+
+**Test Artifacts Generated:**
+- Test Plans: `docs/testing/test_plans/[feature]_test_plan.md`
+- Test Cases: `docs/testing/test_cases/[feature]_test_cases.md`
+- Test Scripts: `tests/` or `python/tests/` (pytest format)
+
 ## Agent Configuration Format
 
 Agents are defined using YAML frontmatter at the top of Markdown files:
