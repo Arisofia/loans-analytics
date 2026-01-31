@@ -40,6 +40,10 @@ jobs:
           python -c "
           from src.agents.monitoring import PerformanceTracker
           import json
+          import os
+
+          # Ensure output directory exists
+          os.makedirs('.', exist_ok=True)
 
           # Simulate some metrics for demo
           tracker = PerformanceTracker()
@@ -52,10 +56,34 @@ jobs:
           tracker.track_agent_latency('analytics_agent', 80, True, 'loan_analysis')
           tracker.track_agent_latency('risk_agent', 50, True, 'risk_assessment')
 
-          # Save metrics
-          tracker.save_report('performance_metrics.json')
-          print('✅ Performance metrics generated')
+          # Save metrics to working directory
+          metrics_file = 'performance_metrics.json'
+          tracker.save_report(metrics_file)
+          
+          # Verify file was created
+          if os.path.exists(metrics_file):
+              print(f'✅ Performance metrics generated: {metrics_file}')
+              print(f'   File size: {os.path.getsize(metrics_file)} bytes')
+          else:
+              print(f'❌ ERROR: Failed to create {metrics_file}')
+              exit(1)
           "
+        id: generate-metrics
+
+      - name: Verify metrics file exists
+        run: |
+          if [ -f "performance_metrics.json" ]; then
+            echo "✅ Metrics file confirmed: performance_metrics.json"
+            echo "  Size: $(wc -c < performance_metrics.json) bytes"
+            echo "  First 500 chars:"
+            head -c 500 performance_metrics.json
+          else
+            echo "❌ ERROR: performance_metrics.json not found"
+            echo "  Current directory: $(pwd)"
+            echo "  Contents:"
+            ls -la
+            exit 1
+          fi
 
       - name: Compare to baseline
         if: always()
