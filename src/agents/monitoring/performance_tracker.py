@@ -23,9 +23,7 @@ class PerformanceMetric:
     success: bool
     agent_name: Optional[str] = None
     scenario_name: Optional[str] = None
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
