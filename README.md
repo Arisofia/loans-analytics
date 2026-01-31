@@ -327,6 +327,44 @@ python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv --mode val
 
 ---
 
+## 🛠️ Developer Tools
+
+### **GitHub Copilot Agents**
+
+Custom AI agents for code optimization and development assistance:
+
+#### **Code Optimizer Agent** (`@code_optimizer`)
+
+Specialized agent for optimizing Python code with fintech-specific expertise:
+
+- **Performance Optimization**: Data processing, database queries, computational efficiency
+- **Financial Accuracy**: Enforces Decimal precision for monetary calculations
+- **Security & Compliance**: PII protection, audit trails, vulnerability detection
+- **Code Quality**: Type hints, structured logging, error handling patterns
+
+**Usage in VS Code Copilot Chat:**
+```
+@code_optimizer Review this function for performance bottlenecks
+@code_optimizer Check if this calculation uses Decimal properly
+@code_optimizer Find N+1 query problems in this Supabase code
+@code_optimizer Review this code for PII leakage
+```
+
+**Documentation:**
+- Configuration: [.github/agents/code_optimizer.md](.github/agents/code_optimizer.md)
+- Usage Examples: [.github/agents/USAGE_EXAMPLES.md](.github/agents/USAGE_EXAMPLES.md)
+- Agent Guide: [.github/agents/README.md](.github/agents/README.md)
+
+**Agent Capabilities:**
+- Identifies slow operations in ETL pipeline
+- Suggests vectorization with pandas/polars
+- Detects float arithmetic in financial calculations
+- Reviews for security vulnerabilities
+- Validates structured logging patterns
+- Checks compliance with fintech requirements
+
+---
+
 ## 📊 Pipeline Usage
 
 ### **Command-Line Interface**
