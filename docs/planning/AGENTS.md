@@ -90,7 +90,7 @@
 
 - Observability & Performance Agent
   - Workflows:
-    - `.github/workflows/performance-monitoring.yml`
+    - `.github/workflows/run_pipeline_daily.yml`
     - `.github/workflows/agents_unified_pipeline.yml`
   - Metrics Store:
     - Supabase `pipeline_performance_metrics` (existing)
