@@ -87,7 +87,7 @@ jobs:
           fi
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@7afa10ed9b269c561c2336fd862446844e0cbf71 # v5.2.1
         if: always()
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -189,7 +189,7 @@ jobs:
 
       - name: Run CodeRabbit AI PR Review
         if: steps.check-coderabbit.outputs.secrets_available == 'true'
-        uses: coderabbitai/ai-pr-reviewer@v1
+        uses: coderabbitai/ai-pr-reviewer@latest # Note: Consider pinning to specific SHA when available
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CODERABBIT_TOKEN: ${{ secrets.CODERABBIT_TOKEN }}
