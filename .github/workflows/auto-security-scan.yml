@@ -87,7 +87,6 @@ jobs:
           npm install -g snyk
           snyk auth ${{ secrets.SNYK_TOKEN }}
           snyk test --json-file-output=snyk-report.json || true
-        continue-on-error: true
 
       - name: Upload Snyk report
         if: always() && steps.snyk-check.outputs.available == 'true'

@@ -31,7 +31,6 @@ jobs:
           echo "Changed agent files:"
           echo "${{ steps.changed-files.outputs.all_changed_files }}"
           python scripts/validate_agent_checklist.py ${{ steps.changed-files.outputs.all_changed_files }}
-        continue-on-error: true
 
       - name: Check for required tests
         if: steps.changed-files.outputs.any_changed == 'true'

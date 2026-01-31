@@ -69,7 +69,6 @@ jobs:
                       fi
                     done
                   done
-              continue-on-error: true
 
     validate-alertmanager-config:
         name: Validate Alertmanager Configuration
