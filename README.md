@@ -450,6 +450,8 @@ logs/runs/<YYYYMMDD_HHMMSS>/
 ### **Implementation Details**
 
 - [PIPELINE_IMPLEMENTATION_SUCCESS.md](PIPELINE_IMPLEMENTATION_SUCCESS.md) - Implementation report
+- [OPTIMIZATION_REPORT.md](OPTIMIZATION_REPORT.md) - Performance optimization results (43x speedup)
+- [docs/PIPELINE_AUTOMATION_SUMMARY.md](docs/PIPELINE_AUTOMATION_SUMMARY.md) - **NEW**: Automation & performance tracking
 - [.repo-structure.json](.repo-structure.json) - Repository blueprint
 - [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) - Documentation navigation
 
