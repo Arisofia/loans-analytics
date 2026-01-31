@@ -6,10 +6,12 @@ before production scaling from $7.4M to $16.3M AUM.
 """
 
 import asyncio
+import json
 import os
 import statistics
 import sys
 import time
+import traceback
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -72,6 +74,7 @@ async def execute_query_batch(
 
 async def run_load_test(
     database_url: str,
+    *,
     test_name: str,
     query: str,
     total_queries: int,
@@ -170,7 +173,9 @@ async def run_load_test(
 
     print("\n📊 Results:")
     print(f"  Duration: {duration:.2f}s")
-    print(f"  Successful: {successful:,}/{total_queries:,} ({successful/total_queries*100:.1f}%)")
+    print(
+        f"  Successful: {successful:,}/{total_queries:,} " f"({successful/total_queries*100:.1f}%)"
+    )
     print(f"  Failed: {failed:,}")
     print(f"  QPS: {qps:.1f}")
     print(f"  Latency (avg): {avg_latency:.2f}ms")
@@ -199,9 +204,15 @@ async def main():
         database_url = os.getenv("DATABASE_URL")
 
     if not database_url:
-        print("❌ ERROR: SUPABASE_DATABASE_URL or DATABASE_URL environment variable required")
+        print(
+            "❌ ERROR: SUPABASE_DATABASE_URL or DATABASE_URL "
+            "environment variable required"
+        )
         print("\nExample:")
-        print('  export SUPABASE_DATABASE_URL="postgresql://user:pass@host:5432/dbname"')
+        print(
+            "  export SUPABASE_DATABASE_URL="
+            '"postgresql://user:pass@host:5432/dbname"'
+        )
         return
 
     # Test scenarios
@@ -277,7 +288,6 @@ async def main():
 
         except Exception as e:
             print(f"\n❌ Test failed: {e}")
-            import traceback
 
             traceback.print_exc()
 
@@ -296,7 +306,8 @@ async def main():
             else 0
         )
         print(
-            f"{result.test_name:<40} {result.queries_per_second:>10.1f} {result.p95_latency_ms:>12.2f} {success_pct:>11.1f}%"
+            f"{result.test_name:<40} {result.queries_per_second:>10.1f} "
+            f"{result.p95_latency_ms:>12.2f} {success_pct:>11.1f}%"
         )
 
     # Recommendations
@@ -332,9 +343,6 @@ async def main():
     # Save results
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = f"data/metrics/load_test_{timestamp}.json"
-
-    import json
-    from pathlib import Path
 
     Path("data/metrics").mkdir(parents=True, exist_ok=True)
 
