@@ -17,9 +17,7 @@ class TestDatabaseDesignerAgent(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
-        self._init_client_patcher = patch(
-            "python.multi_agent.base_agent.BaseAgent._init_client"
-        )
+        self._init_client_patcher = patch("python.multi_agent.base_agent.BaseAgent._init_client")
         mock_init_client = self._init_client_patcher.start()
         mock_init_client.return_value = Mock()
         self.agent = DatabaseDesignerAgent()
@@ -27,6 +25,7 @@ class TestDatabaseDesignerAgent(unittest.TestCase):
     def tearDown(self) -> None:
         """Tear down test fixtures."""
         self._init_client_patcher.stop()
+
     def test_agent_initialization(self):
         """Test agent initializes with correct role."""
         self.assertEqual(self.agent.role, AgentRole.DATABASE_DESIGNER)
