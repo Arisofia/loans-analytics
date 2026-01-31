@@ -279,7 +279,7 @@ PY
           python scripts/store_metrics.py metrics/pipeline_performance.json
 
       - name: Raise performance alert when degraded
-        if: ${{ needs.pipeline-orchestrator.outputs.duration != '' && needs.pipeline-orchestrator.outputs.duration > 15 }}
+        if: ${{ needs.pipeline-orchestrator.outputs.duration != '' && fromJSON(needs.pipeline-orchestrator.outputs.duration) > 15 }}
         uses: actions/github-script@v7
         with:
           script: |
