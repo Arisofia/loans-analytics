@@ -6,7 +6,7 @@ Connects KPI definitions and registry with agent context and validation.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +22,7 @@ class KpiValue(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="When this value was recorded",
     )
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional context about this value"
     )
 
@@ -33,8 +33,8 @@ class KpiValidationResult(BaseModel):
     kpi_name: str
     value: float
     is_valid: bool
-    validation_message: Optional[str] = None
-    breach_type: Optional[str] = None  # "upper_bound", "lower_bound", or None
+    validation_message: str | None = None
+    breach_type: str | None = None  # "upper_bound", "lower_bound", or None
 
 
 class KpiAnomaly(BaseModel):
@@ -42,7 +42,7 @@ class KpiAnomaly(BaseModel):
 
     kpi_name: str
     current_value: float
-    expected_range: tuple[Optional[float], Optional[float]]
+    expected_range: tuple[float | None, float | None]
     severity: str  # "critical", "warning", "info"
     description: str
     detected_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -62,10 +62,10 @@ class KpiContextProvider:
             kpi_registry: Registry containing KPI definitions
         """
         self.registry = kpi_registry
-        self.current_values: Dict[str, KpiValue] = {}
+        self.current_values: dict[str, KpiValue] = {}
 
     def update_kpi_value(
-        self, kpi_name: str, value: float, metadata: Optional[Dict[str, Any]] = None
+        self, kpi_name: str, value: float, metadata: dict[str, Any] | None = None
     ) -> None:
         """
         Update the current value for a KPI.
@@ -146,7 +146,7 @@ class KpiContextProvider:
             validation_message="Value within acceptable range",
         )
 
-    def detect_anomalies(self, kpi_values: Dict[str, float]) -> List[KpiAnomaly]:
+    def detect_anomalies(self, kpi_values: dict[str, float]) -> list[KpiAnomaly]:
         """
         Detect anomalies across multiple KPI values.
 
@@ -156,7 +156,7 @@ class KpiContextProvider:
         Returns:
             List of detected anomalies
         """
-        anomalies: List[KpiAnomaly] = []
+        anomalies: list[KpiAnomaly] = []
 
         for kpi_name, value in kpi_values.items():
             validation_result = self.validate_kpi_value(kpi_name, value)
@@ -190,8 +190,8 @@ class KpiContextProvider:
     def _determine_severity(
         self,
         value: float,
-        expected_range: tuple[Optional[float], Optional[float]],
-        breach_type: Optional[str],
+        expected_range: tuple[float | None, float | None],
+        breach_type: str | None,
     ) -> str:
         """
         Determine severity of a KPI breach.
@@ -228,7 +228,7 @@ class KpiContextProvider:
 
         return "warning"
 
-    def get_kpi_context_for_agent(self, kpi_names: Optional[List[str]] = None) -> Dict[str, Any]:
+    def get_kpi_context_for_agent(self, kpi_names: list[str] | None = None) -> dict[str, Any]:
         """
         Generate KPI context suitable for passing to agents.
 
@@ -241,7 +241,7 @@ class KpiContextProvider:
         if kpi_names is None:
             kpi_names = [kpi.name for kpi in self.registry.kpis]
 
-        context: Dict[str, Any] = {
+        context: dict[str, Any] = {
             "kpis": {},
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "total_kpis": len(kpi_names),
@@ -252,7 +252,7 @@ class KpiContextProvider:
                 kpi_def = self.get_kpi_definition(kpi_name)
                 current_value = self.current_values.get(kpi_name)
 
-                kpi_context: Dict[str, Any] = {
+                kpi_context: dict[str, Any] = {
                     "definition": {
                         "name": kpi_def.name,
                         "formula": kpi_def.formula,
@@ -276,7 +276,7 @@ class KpiContextProvider:
 
         return context
 
-    def format_kpi_summary(self, kpi_names: Optional[List[str]] = None) -> str:
+    def format_kpi_summary(self, kpi_names: list[str] | None = None) -> str:
         """
         Generate a human-readable summary of KPI status.
 

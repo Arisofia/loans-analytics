@@ -11,7 +11,7 @@ import os
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
@@ -83,16 +83,16 @@ class SeasonalityPattern(BaseModel):
 
     kpi_id: str = Field(..., description=KPI_IDENTIFIER_DESC)
     has_seasonality: bool = Field(..., description="Whether seasonality detected")
-    cycle_length_months: Optional[int] = Field(None, description="Seasonal cycle length")
-    peak_months: List[int] = Field(
+    cycle_length_months: int | None = Field(None, description="Seasonal cycle length")
+    peak_months: list[int] = Field(
         default_factory=list,
         description="Months with peak values (1-12)",
     )
-    trough_months: List[int] = Field(
+    trough_months: list[int] = Field(
         default_factory=list, description="Months with trough values (1-12)"
     )
     seasonal_strength: float = Field(..., description="Strength of seasonality (0-1)")
-    adjustment_factors: Dict[int, float] = Field(
+    adjustment_factors: dict[int, float] = Field(
         default_factory=dict, description="Monthly adjustment factors (month: factor)"
     )
 
@@ -128,7 +128,7 @@ class HistoricalDataBackend(Protocol):
         kpi_id: str,
         start_date: date,
         end_date: date,
-    ) -> List[KpiHistoricalValue]:
+    ) -> list[KpiHistoricalValue]:
         """
         Retrieve historical KPI values for the specified date range.
 
@@ -160,8 +160,8 @@ class HistoricalContextProvider:
     def __init__(
         self,
         cache_ttl_seconds: int = 3600,
-        mode: Optional[str] = None,
-        backend: Optional[HistoricalDataBackend] = None,
+        mode: str | None = None,
+        backend: HistoricalDataBackend | None = None,
     ):
         """
         Initialize historical context provider.
@@ -188,8 +188,8 @@ class HistoricalContextProvider:
             RuntimeError: If mode="REAL" but backend is None
         """
         self.cache_ttl_seconds = cache_ttl_seconds
-        self._cache: Dict[str, tuple[datetime, Any]] = {}
-        self._historical_data: Dict[str, List[KpiHistoricalValue]] = {}
+        self._cache: dict[str, tuple[datetime, Any]] = {}
+        self._historical_data: dict[str, list[KpiHistoricalValue]] = {}
 
         # Mode selection: default to MOCK for G4.1 backward compatibility
         env_mode = os.getenv("HISTORICAL_CONTEXT_MODE", "MOCK").upper()
@@ -210,7 +210,7 @@ class HistoricalContextProvider:
 
     def _load_historical_data(
         self, kpi_id: str, start_date: date, end_date: date
-    ) -> List[KpiHistoricalValue]:
+    ) -> list[KpiHistoricalValue]:
         """
         Load historical KPI data from configured data source.
 
@@ -281,7 +281,7 @@ class HistoricalContextProvider:
 
     def get_kpi_history(
         self, kpi_id: str, start_date: date, end_date: date
-    ) -> List[KpiHistoricalValue]:
+    ) -> list[KpiHistoricalValue]:
         """
         Fetch historical KPI values for a time range.
 
@@ -401,7 +401,7 @@ class HistoricalContextProvider:
             percent_change=percent_change,
         )
 
-    def get_moving_average(self, kpi_id: str, window_days: int = 30) -> Optional[float]:
+    def get_moving_average(self, kpi_id: str, window_days: int = 30) -> float | None:
         """
         Calculate moving average for a KPI.
 
@@ -553,7 +553,7 @@ class HistoricalContextProvider:
             percent_change=percent_change,
         )
 
-    def get_weighted_moving_average(self, kpi_id: str, window_days: int = 30) -> Optional[float]:
+    def get_weighted_moving_average(self, kpi_id: str, window_days: int = 30) -> float | None:
         """
         Calculate weighted moving average (more recent values have higher weight).
 
@@ -586,7 +586,7 @@ class HistoricalContextProvider:
 
         return result
 
-    def get_multi_period_trends(self, kpi_id: str) -> Dict[str, TrendAnalysis]:
+    def get_multi_period_trends(self, kpi_id: str) -> dict[str, TrendAnalysis]:
         """
         Calculate trends over multiple time periods.
 
@@ -607,7 +607,7 @@ class HistoricalContextProvider:
 
     def get_trend_confidence_interval(
         self, kpi_id: str, confidence: float = 0.95, periods: int = 12
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Calculate confidence interval for trend estimate.
 
@@ -637,7 +637,7 @@ class HistoricalContextProvider:
 
     def detect_change_point(
         self, kpi_id: str, window_size: int = 14, periods: int = 12
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Detect significant change points in historical data.
 
@@ -703,8 +703,8 @@ class HistoricalContextProvider:
     def _calculate_trend_from_values(
         self,
         kpi_id: str,
-        history: List[KpiHistoricalValue],
-        values: List[float],
+        history: list[KpiHistoricalValue],
+        values: list[float],
         period_days: int,
     ) -> TrendAnalysis:
         """Helper to calculate trend from value arrays."""
@@ -756,7 +756,7 @@ class HistoricalContextProvider:
         )
 
     @staticmethod
-    def _fit_linear(x_values: List[float], y_values: List[float]) -> tuple[float, float]:
+    def _fit_linear(x_values: list[float], y_values: list[float]) -> tuple[float, float]:
         """Fit linear regression (slope, intercept)."""
         n = len(x_values)
         x_mean = sum(x_values) / n
@@ -771,7 +771,7 @@ class HistoricalContextProvider:
         return slope, intercept
 
     @staticmethod
-    def _fit_quadratic(x_values: List[float], y_values: List[float]) -> tuple[float, float, float]:
+    def _fit_quadratic(x_values: list[float], y_values: list[float]) -> tuple[float, float, float]:
         """Fit quadratic regression (a, b, c for ax^2 + bx + c)."""
         n = len(x_values)
 

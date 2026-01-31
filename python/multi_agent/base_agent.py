@@ -3,7 +3,7 @@
 import os
 import time
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from openai import OpenAI
@@ -37,8 +37,8 @@ class BaseAgent(ABC):
         self,
         role: AgentRole,
         provider: LLMProvider = LLMProvider.OPENAI,
-        model: Optional[str] = None,
-        tracer: Optional[AgentTracer] = None,
+        model: str | None = None,
+        tracer: AgentTracer | None = None,
     ):
         self.role = role
         self.provider = provider
@@ -165,7 +165,7 @@ class BaseAgent(ABC):
 
             raise
 
-    def _sanitize_messages(self, messages: List[Message]) -> List[Message]:
+    def _sanitize_messages(self, messages: list[Message]) -> list[Message]:
         """Sanitize messages for PII."""
         sanitized = []
         for msg in messages:
@@ -179,7 +179,7 @@ class BaseAgent(ABC):
             )
         return sanitized
 
-    def _build_context_prompt(self, context: Dict[str, Any]) -> str:
+    def _build_context_prompt(self, context: dict[str, Any]) -> str:
         """Build context section for prompt."""
         if not context:
             return ""
@@ -190,7 +190,7 @@ class BaseAgent(ABC):
             lines.append(f"- {key}: {value}")
         return "\n".join(lines)
 
-    def _call_llm(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
+    def _call_llm(self, messages: list[dict[str, str]], request: AgentRequest) -> dict[str, Any]:
         """Call LLM provider."""
         if self.provider == LLMProvider.OPENAI:
             return self._call_openai(messages, request)
@@ -200,7 +200,7 @@ class BaseAgent(ABC):
             return self._call_gemini(messages, request)
         raise ValueError(f"Unsupported provider: {self.provider}")
 
-    def _call_openai(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
+    def _call_openai(self, messages: list[dict[str, str]], request: AgentRequest) -> dict[str, Any]:
         """Call OpenAI API."""
         response = self._client.chat.completions.create(
             model=self.model,
@@ -231,8 +231,8 @@ class BaseAgent(ABC):
         }
 
     def _call_anthropic(
-        self, messages: List[Dict[str, str]], request: AgentRequest
-    ) -> Dict[str, Any]:
+        self, messages: list[dict[str, str]], request: AgentRequest
+    ) -> dict[str, Any]:
         """Call Anthropic API."""
         system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
         user_messages = [m for m in messages if m["role"] != "system"]
@@ -260,7 +260,7 @@ class BaseAgent(ABC):
             "finish_reason": response.stop_reason,
         }
 
-    def _call_gemini(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
+    def _call_gemini(self, messages: list[dict[str, str]], request: AgentRequest) -> dict[str, Any]:
         """Call Gemini API."""
         model = self._client.GenerativeModel(self.model)
 

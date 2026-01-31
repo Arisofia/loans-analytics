@@ -2,7 +2,7 @@
 
 import hashlib
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 try:
     from opentelemetry import trace
@@ -26,8 +26,8 @@ class AgentTracer:
     def __init__(self, enable_otel: bool = False):
         self.enable_otel = enable_otel and OTEL_AVAILABLE
         self.tracer = trace.get_tracer(__name__) if self.enable_otel else None
-        self._cost_accumulator: Dict[str, float] = {}
-        self._token_accumulator: Dict[str, int] = {}
+        self._cost_accumulator: dict[str, float] = {}
+        self._token_accumulator: dict[str, int] = {}
 
     @staticmethod
     def generate_trace_id(prefix: str = "trace") -> str:
@@ -35,7 +35,7 @@ class AgentTracer:
         timestamp = str(time.time_ns())
         return f"{prefix}_{hashlib.sha256(timestamp.encode()).hexdigest()[:16]}"
 
-    def start_trace(self, agent_role: AgentRole, request: AgentRequest) -> Optional[Any]:
+    def start_trace(self, agent_role: AgentRole, request: AgentRequest) -> Any | None:
         """Start trace span."""
         if not self.enable_otel or not self.tracer:
             return None
@@ -54,9 +54,9 @@ class AgentTracer:
 
     def end_trace(
         self,
-        span: Optional[Any],
-        response: Optional[AgentResponse] = None,
-        error: Optional[Exception] = None,
+        span: Any | None,
+        response: AgentResponse | None = None,
+        error: Exception | None = None,
     ):
         """End trace span."""
         if not span:

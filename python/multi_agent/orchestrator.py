@@ -1,7 +1,7 @@
 """Multi-agent orchestrator with scenario support."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .agents import (
     ComplianceAgent,
@@ -51,7 +51,7 @@ class MultiAgentOrchestrator:
         self.agents = self._init_agents()
         self.scenarios = self._init_scenarios()
 
-    def _init_agents(self) -> Dict[AgentRole, BaseAgent]:
+    def _init_agents(self) -> dict[AgentRole, BaseAgent]:
         """Initialize all role-specific agents."""
         # pylint: disable=no-value-for-parameter
         return {
@@ -84,7 +84,7 @@ class MultiAgentOrchestrator:
             ),
         }
 
-    def _init_scenarios(self) -> Dict[str, Scenario]:
+    def _init_scenarios(self) -> dict[str, Scenario]:
         """Define standard scenarios."""
         return {
             "loan_risk_review": Scenario(
@@ -838,9 +838,9 @@ class MultiAgentOrchestrator:
     def run_agent(
         self,
         role: AgentRole,
-        messages: List[Message],
-        context: Optional[Dict[str, Any]] = None,
-        trace_id: Optional[str] = None,
+        messages: list[Message],
+        context: dict[str, Any] | None = None,
+        trace_id: str | None = None,
         **kwargs,
     ) -> AgentResponse:
         """Run a single agent.
@@ -871,9 +871,9 @@ class MultiAgentOrchestrator:
     def run_scenario(
         self,
         scenario_name: str,
-        initial_context: Dict[str, Any],
-        trace_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        initial_context: dict[str, Any],
+        trace_id: str | None = None,
+    ) -> dict[str, Any]:
         """Run a predefined scenario with context propagation.
 
         Args:
@@ -890,7 +890,7 @@ class MultiAgentOrchestrator:
 
         trace_id = trace_id or self.tracer.generate_trace_id()
         context = {**scenario.initial_context, **initial_context}
-        results: Dict[str, Any] = {}
+        results: dict[str, Any] = {}
 
         logger.info("Starting scenario: %s with trace_id: %s", scenario_name, trace_id)
 
@@ -957,10 +957,10 @@ class MultiAgentOrchestrator:
         self.scenarios[scenario.name] = scenario
         logger.info("Added scenario: %s", scenario.name)
 
-    def list_scenarios(self) -> List[str]:
+    def list_scenarios(self) -> list[str]:
         """List available scenario names."""
         return list(self.scenarios.keys())
 
-    def get_scenario(self, name: str) -> Optional[Scenario]:
+    def get_scenario(self, name: str) -> Scenario | None:
         """Get scenario definition by name."""
         return self.scenarios.get(name)

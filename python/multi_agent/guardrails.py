@@ -1,7 +1,7 @@
 """Guardrails for PII redaction and input/output validation."""
 
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 try:
     from pydantic import BaseModel, ValidationError
@@ -29,12 +29,12 @@ class Guardrails:
         return redacted
 
     @classmethod
-    def validate_input(cls, data: Dict[str, Any], required_keys: List[str]) -> bool:
+    def validate_input(cls, data: dict[str, Any], required_keys: list[str]) -> bool:
         """Validate required keys present."""
         return all(key in data for key in required_keys)
 
     @classmethod
-    def validate_schema(cls, data: Dict[str, Any], schema: type[BaseModel]) -> bool:
+    def validate_schema(cls, data: dict[str, Any], schema: type[BaseModel]) -> bool:
         """Validate data against Pydantic schema."""
         try:
             schema(**data)
@@ -43,9 +43,9 @@ class Guardrails:
             return False
 
     @classmethod
-    def sanitize_context(cls, context: Dict[str, Any]) -> Dict[str, Any]:
+    def sanitize_context(cls, context: dict[str, Any]) -> dict[str, Any]:
         """Sanitize context dictionary by redacting PII."""
-        sanitized: Dict[str, Any] = {}
+        sanitized: dict[str, Any] = {}
         for key, value in context.items():
             if isinstance(value, str):
                 sanitized[key] = cls.redact_pii(value)
