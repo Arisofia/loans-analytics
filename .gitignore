@@ -176,3 +176,12 @@ config/alertmanager.yml
 .venv/
 __pycache__/
 .pytest_cache/
+
+# Temporary session/status report files (should not be committed)
+AUTOMATION_SUMMARY*.md
+CLEANUP_COMPLETE.md
+CONSOLIDATION_*.md
+OPTIMIZATION_REPORT.md
+PROJECT_CLEANUP_STATUS.md
+SESSION_COMPLETE.md
+TECHNICAL_DEBT_*.md
