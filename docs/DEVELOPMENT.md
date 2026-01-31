@@ -19,12 +19,14 @@
    npm ci
    ```
 2. **Configure Environment**
+
    ```bash
    cp .env.example .env.local
    ```
 
    - Get credentials from [Supabase Dashboard](https://supabase.com/dashboard)
    - Add to `.env.local`
+
 3. **Start Development**
    ```bash
    npm run dev
@@ -163,6 +165,29 @@ npm run test:coverage
 - [ ] Run `npm run test`
 - [ ] Build: `npm run build`
 - [ ] Test build: `npm run start`
+
+## Developer Tools (Optional)
+
+The Gemini CLI can be used locally for experimentation and productivity, but it is **not** part of the production platform.
+
+### Gemini CLI (Local Development Only)
+
+**Usage** (local only, optional):
+
+```bash
+npx github:google-gemini/gemini-cli
+```
+
+**⚠️ Constraints:**
+
+- Safe for local development experimentation only
+- Do **not** reference in:
+  - `startup.sh` (Azure Web App startup)
+  - GitHub Actions workflows (`.github/workflows/`)
+  - Deployment guides (`DEPLOYMENT_*.md`, `OPERATIONS_*.md`)
+  - Production runbooks
+
+This keeps the production deployment path strictly **Python/Azure/GitHub Actions**, without Node-based tooling dependencies.
 
 ## Troubleshooting
 
