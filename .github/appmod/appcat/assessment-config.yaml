@@ -1,6 +1,6 @@
 # You can edit this file to configure the application assessment. Please note that any changes saved to this file will be applied the next time you run the assessment.
 # The configurable [AppCAT](https://aka.ms/appcat-java) arguments
-# 
+#
 # - target: target Azure compute service to run the apps on. Choosing multiple targets if you haven't decided which one to use and later you can choose and compare on the assessment report.
 #   |----------------------|------------------------------------------------------------------------|
 #   | Target               | Description                                                            |
