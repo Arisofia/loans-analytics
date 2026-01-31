@@ -96,11 +96,11 @@ amount = Decimal('1000.00')  # YES!
 
 **Type Hints (Required):**
 ```python
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 from decimal import Decimal
 
 def calculate_par30(
-    loans: List[Dict[str, any]],
+    loans: List[Dict[str, Any]],
     reference_date: str
 ) -> Decimal:
     """Calculate Portfolio at Risk 30 days.
