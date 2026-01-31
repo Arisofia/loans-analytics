@@ -105,7 +105,7 @@ def render_category_breakdown(merged, col):
             else:
                 if "categoria" in merged.columns and "outstanding_loan_value" not in merged.columns:
                     st.info(
-                        "Outstanding loan value column missing. Category breakdown " "unavailable."
+                        "Outstanding loan value column missing. Category breakdown unavailable."
                     )
                 else:
                     st.info("No outstanding balance data found for category breakdown.")
