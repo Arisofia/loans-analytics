@@ -239,14 +239,17 @@ class OutputPhase:
                 "source": "pipeline_phase_4",
             }
             
-            # Note: Actual webhook call would happen here
-            # For now, log the intent
-            logger.info("Dashboard refresh triggered via webhook: %s", webhook_url)
+            # Log the refresh event with payload details
+            logger.info(
+                "Dashboard refresh triggered: webhook=%s, payload=%s",
+                webhook_url,
+                payload,
+            )
             
             return {
                 "status": "triggered",
                 "webhook": webhook_url,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": payload["timestamp"],
             }
             
         except Exception as e:
