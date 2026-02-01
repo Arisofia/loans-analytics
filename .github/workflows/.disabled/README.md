@@ -46,8 +46,7 @@ This directory contains GitHub Actions workflows that have been temporarily disa
            with:
              languages: python
          - uses: github/codeql-action/analyze@v3
-           with:
-             timeout: 30  # Add timeout protection
+           timeout-minutes: 30  # Add timeout protection
    ```
 
 2. **Configure paths to skip**:
