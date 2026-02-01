@@ -25,7 +25,6 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-MAGENTA='\033[0;35m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
@@ -125,7 +124,8 @@ cleanup_pattern() {
   if [ -z "$found_files" ]; then
     echo -e "${GREEN}    ✓ No $description found${NC}"
   else
-    local count=$(echo "$found_files" | wc -l | xargs)
+    local count
+    count=$(echo "$found_files" | wc -l | xargs)
     echo -e "${YELLOW}    Found $count file(s)${NC}"
     
     echo "$found_files" | while read -r file; do
@@ -154,7 +154,8 @@ cleanup_path_pattern() {
   if [ -z "$found_files" ]; then
     echo -e "${GREEN}    ✓ No $description found${NC}"
   else
-    local count=$(echo "$found_files" | wc -l | xargs)
+    local count
+    count=$(echo "$found_files" | wc -l | xargs)
     echo -e "${YELLOW}    Found $count file(s)${NC}"
     echo "$found_files" | while read -r file; do
       if [ "$DRY_RUN" = true ]; then
@@ -362,6 +363,7 @@ if command -v docker &> /dev/null; then
       echo -e "${YELLOW}    [WOULD DELETE] $container_count stopped container(s)${NC}"
     else
       echo -e "${RED}    [DELETING] $container_count stopped container(s)${NC}"
+      # shellcheck disable=SC2086
       docker rm $stopped_containers
       echo -e "${GREEN}      ✓ Deleted${NC}"
     fi
@@ -377,6 +379,7 @@ if command -v docker &> /dev/null; then
       echo -e "${YELLOW}    [WOULD DELETE] $image_count dangling image(s)${NC}"
     else
       echo -e "${RED}    [DELETING] $image_count dangling image(s)${NC}"
+      # shellcheck disable=SC2086
       docker rmi $dangling_images
       echo -e "${GREEN}      ✓ Deleted${NC}"
     fi
@@ -393,6 +396,7 @@ if command -v docker &> /dev/null; then
         echo -e "${YELLOW}    [NUCLEAR] [WOULD DELETE] $volume_count unused volume(s)${NC}"
       else
         echo -e "${RED}    [NUCLEAR] [DELETING] $volume_count unused volume(s)${NC}"
+        # shellcheck disable=SC2086
         docker volume rm $unused_volumes
         echo -e "${GREEN}      ✓ Deleted${NC}"
       fi
