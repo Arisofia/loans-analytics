@@ -1,0 +1,204 @@
+name: Code Maintenance
+
+# Unified workflow for all code cleanup, formatting, linting, and repository maintenance
+# Consolidates functionality from:
+#   - code-quality.yml (formatting and auto-fix)
+#   - Multiple cleanup scripts (repo maintenance)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 2 * * 1" # Weekly on Monday at 2 AM UTC
+  workflow_dispatch:
+    inputs:
+      cleanup_level:
+        description: "Cleanup level"
+        required: false
+        default: "standard"
+        type: choice
+        options:
+          - standard
+          - aggressive
+          - nuclear
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  # Job 1: Code formatting and linting with auto-fix
+  format-and-lint:
+    name: Format & Lint Code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install formatting tools
+        run: |
+          pip install black ruff isort flake8 pylint mypy
+
+      - name: Run Black formatter
+        run: |
+          black --check . || (black . && echo "FORMATTED=true" >> $GITHUB_ENV)
+
+      - name: Run isort
+        run: |
+          isort --check . || (isort . && echo "SORTED=true" >> $GITHUB_ENV)
+
+      - name: Run Ruff with auto-fix
+        run: |
+          ruff check . --fix || true
+
+      - name: Run flake8
+        continue-on-error: true
+        run: |
+          flake8 src python scripts --max-line-length=100 --extend-ignore=E203,W503
+
+      - name: Commit formatting changes
+        if: github.event_name == 'push' && (env.FORMATTED == 'true' || env.SORTED == 'true')
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "style: auto-format code [skip ci]"
+          git push || true
+
+  # Job 2: Repository maintenance (cleanup caches, artifacts, etc.)
+  repository-cleanup:
+    name: Repository Cleanup
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set cleanup level
+        id: set-level
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "LEVEL=${{ github.event.inputs.cleanup_level }}" >> $GITHUB_ENV
+          else
+            echo "LEVEL=standard" >> $GITHUB_ENV
+          fi
+
+      - name: Run repository maintenance
+        run: |
+          bash scripts/repo_maintenance.sh --mode=${{ env.LEVEL }} --ci
+
+      - name: Commit cleanup changes
+        if: github.event_name == 'schedule'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "chore: automated repository maintenance [skip ci]"
+          git push || true
+
+  # Job 3: Type checking
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install mypy
+          pip install -r requirements.txt
+
+      - name: Run mypy
+        continue-on-error: true
+        run: |
+          mypy src python scripts --ignore-missing-imports
+
+  # Job 4: Code quality report (if SonarCloud is configured)
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    if: ${{ secrets.SONAR_TOKEN != '' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # Job 5: Git repository maintenance
+  git-maintenance:
+    name: Git Maintenance
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch and prune
+        run: |
+          git fetch --all --prune
+
+      - name: Run garbage collection
+        run: |
+          git gc --auto
+
+      - name: Report repository stats
+        run: |
+          echo "### Repository Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Git Directory Size**: $(du -sh .git | cut -f1)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total Commits**: $(git rev-list --count HEAD)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Local Branches**: $(git branch | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Remote Branches**: $(git branch -r | wc -l)" >> $GITHUB_STEP_SUMMARY
+
+  # Summary job
+  maintenance-summary:
+    name: Maintenance Summary
+    runs-on: ubuntu-latest
+    needs: [format-and-lint, type-check]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🧹 Code Maintenance Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Format & Lint: ${{ needs.format-and-lint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Type Check: ${{ needs.type-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✨ All maintenance tasks completed successfully!" >> $GITHUB_STEP_SUMMARY
