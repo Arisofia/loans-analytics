@@ -90,7 +90,11 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     sanitized = Path(sanitized_str)
 
     # Construct path under the allowed directory and resolve it
-    # CodeQL: sanitized is validated via character whitelist and parent traversal checks
+    # CodeQL[py/path-injection]: False positive - path is validated via:
+    # 1. Character whitelist (line 87): only alphanumeric, dash, underscore, slash, dot
+    # 2. Parent traversal rejection (line 78): no '..' components allowed
+    # 3. Absolute path rejection (line 76): no absolute paths allowed
+    # 4. Containment validation (line 98): relative_to() ensures result within allowed_dir
     # lgtm[py/path-injection]
     resolved = (allowed_dir / sanitized).resolve()  # nosec B108  # noqa: S108
     # Ensure the resolved path is still within the allowed_dir
