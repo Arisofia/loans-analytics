@@ -143,7 +143,6 @@ make clean                    # Build artifacts only
 - Black (Python formatter)
 - isort (import sorting)
 - Ruff (fast linter with auto-fix)
-- Flake8 (style checking)
 
 ### 🐍 Python Environment Cleanup
 - `__pycache__` directories
@@ -156,7 +155,7 @@ make clean                    # Build artifacts only
 - `node_modules/`
 - Backup files (`.bak`, `.old`, `.backup`)
 - Temporary files (`.tmp`, `.temp`)
-- Editor swap files (`.swp`, `.swo`)
+- Editor swap files (`.swp`)
 - Numbered copies and duplicates
 
 ### 🔧 Git Repository Maintenance
@@ -164,13 +163,14 @@ make clean                    # Build artifacts only
 - Delete merged branches
 - Garbage collection (standard/aggressive)
 - Repository optimization
-- Reflog cleanup (nuclear mode)
+- Reflog cleanup (nuclear mode with confirmation)
 
 ### 🐳 Docker Cleanup (Aggressive/Nuclear)
 - Stopped containers
 - Dangling images
-- Unused volumes
-- System-wide prune
+- System-wide prune (nuclear mode with confirmation)
+
+**Note**: Some specialized checks from the deprecated scripts (such as YAML validation, merge-conflict marker detection, and secret scanning) are available via the archived scripts or CI workflows.
 
 ---
 

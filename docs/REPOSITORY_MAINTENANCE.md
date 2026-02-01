@@ -36,7 +36,6 @@ This script consolidates all repository maintenance operations into a single, pr
 - Black formatter for Python
 - isort for import sorting
 - Ruff for fast linting with auto-fix
-- Flake8 for style checking
 
 🐍 **Python Environment Cleanup**
 - Removes __pycache__ directories
@@ -49,7 +48,7 @@ This script consolidates all repository maintenance operations into a single, pr
 - Removes node_modules (if present)
 - Deletes backup files (*.bak, *.old, *.backup)
 - Cleans temporary files (*.tmp, *.temp)
-- Removes editor swap files (.swp, .swo)
+- Removes editor swap files (.swp)
 - Eliminates numbered copies and duplicates
 
 🔧 **Git Repository Maintenance**
@@ -57,13 +56,14 @@ This script consolidates all repository maintenance operations into a single, pr
 - Deletes merged local branches
 - Runs garbage collection
 - Optimizes repository size
-- (Aggressive mode) Deep GC with reflog cleanup
+- (Nuclear mode) Deep GC with reflog cleanup (requires confirmation)
 
 🐳 **Docker Cleanup** (Aggressive/Nuclear modes only)
 - Removes stopped containers
 - Deletes dangling images
-- Prunes unused volumes
-- System-wide cleanup
+- (Nuclear mode) System-wide prune with volumes (requires confirmation)
+
+**Note**: Some specialized checks from the deprecated scripts (such as YAML validation, merge-conflict marker detection, and secret scanning) are available via the archived scripts or CI workflows.
 
 ### Usage Modes
 
@@ -274,11 +274,12 @@ Avoid nuclear mode. Use standard or aggressive instead.
 
 ## Integration with CI/CD
 
-The maintenance workflow is designed to integrate seamlessly with common automation tools:
+The maintenance workflow integrates seamlessly with:
 - **Pre-commit hooks**: Auto-format on commit
 - **GitHub Actions**: Auto-format on push, validate on PR
-- **Azure Pipelines (optional)**: You can configure your own Azure pipeline (not provided in this repo) to run the maintenance script (e.g., as a scheduled job or via webhook)
 - **Local development**: Make targets for quick access
+
+**Note**: Azure Pipelines integration is not included but can be configured separately if needed.
 
 ## Support
 

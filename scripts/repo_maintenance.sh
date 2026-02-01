@@ -78,6 +78,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Validate MODE parameter
+if [[ ! "$MODE" =~ ^(standard|aggressive|nuclear)$ ]]; then
+  echo -e "${RED}Error: Invalid mode '$MODE'${NC}"
+  echo -e "${YELLOW}Valid modes: standard, aggressive, nuclear${NC}"
+  exit 1
+fi
+
 # Banner
 echo -e "${BOLD}${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BOLD}${BLUE}║                                                                ║${NC}"
@@ -162,14 +169,21 @@ HAS_BLACK=$(command -v black &> /dev/null && echo true || echo false)
 HAS_ISORT=$(command -v isort &> /dev/null && echo true || echo false)
 HAS_RUFF=$(command -v ruff &> /dev/null && echo true || echo false)
 
+# Track formatting failures
+FORMAT_FAILED=false
+
 if [ "$HAS_BLACK" = true ]; then
   echo -e "${YELLOW}  Running Black formatter...${NC}"
   if [ "$DRY_RUN" = true ]; then
     black --check . 2>&1 | head -5 || echo "    (would format files)"
   else
-    black src/ tests/ scripts/ python/ --exclude '\.venv|venv|build|dist|\.eggs' || true
+    if black src/ tests/ scripts/ python/ --exclude '\.venv|venv|build|dist|\.eggs|archives'; then
+      echo -e "${GREEN}  ✓ Black complete${NC}"
+    else
+      echo -e "${RED}  ✗ Black failed${NC}"
+      FORMAT_FAILED=true
+    fi
   fi
-  echo -e "${GREEN}  ✓ Black complete${NC}"
 else
   echo -e "${YELLOW}  ⚠ Black not installed, skipping${NC}"
 fi
@@ -179,9 +193,13 @@ if [ "$HAS_ISORT" = true ]; then
   if [ "$DRY_RUN" = true ]; then
     isort --check . 2>&1 | head -5 || echo "    (would sort imports)"
   else
-    isort src/ tests/ scripts/ python/ --profile black --skip .venv --skip venv || true
+    if isort src/ tests/ scripts/ python/ --profile black --skip .venv --skip venv --skip archives; then
+      echo -e "${GREEN}  ✓ isort complete${NC}"
+    else
+      echo -e "${RED}  ✗ isort failed${NC}"
+      FORMAT_FAILED=true
+    fi
   fi
-  echo -e "${GREEN}  ✓ isort complete${NC}"
 else
   echo -e "${YELLOW}  ⚠ isort not installed, skipping${NC}"
 fi
@@ -191,9 +209,13 @@ if [ "$HAS_RUFF" = true ]; then
   if [ "$DRY_RUN" = true ]; then
     ruff check . 2>&1 | head -10 || true
   else
-    ruff check . --fix || true
+    if ruff check src python scripts tests --fix; then
+      echo -e "${GREEN}  ✓ Ruff complete${NC}"
+    else
+      echo -e "${RED}  ✗ Ruff found issues${NC}"
+      FORMAT_FAILED=true
+    fi
   fi
-  echo -e "${GREEN}  ✓ Ruff complete${NC}"
 else
   echo -e "${YELLOW}  ⚠ Ruff not installed, skipping${NC}"
 fi
@@ -201,8 +223,13 @@ fi
 # Exit early if format-only mode
 if [ "$FORMAT_ONLY" = true ]; then
   echo ""
-  echo -e "${GREEN}✅ Code formatting complete!${NC}"
-  exit 0
+  if [ "$FORMAT_FAILED" = true ]; then
+    echo -e "${RED}❌ Code formatting completed with errors${NC}"
+    exit 1
+  else
+    echo -e "${GREEN}✅ Code formatting complete!${NC}"
+    exit 0
+  fi
 fi
 
 echo ""
@@ -307,12 +334,26 @@ else
       echo -e "${GREEN}  ✓ GC complete${NC}"
     fi
     
-    # Nuclear mode: reflog cleanup
+    # Nuclear mode: reflog cleanup (with confirmation)
     if [ "$MODE" = "nuclear" ]; then
-      echo -e "${RED}  [NUCLEAR] Expiring reflog...${NC}"
-      git reflog expire --expire=now --all 2>/dev/null || true
-      git gc --prune=now 2>/dev/null || true
-      echo -e "${GREEN}  ✓ Reflog cleanup complete${NC}"
+      if [ "$CI_MODE" = false ]; then
+        echo -e "${RED}${BOLD}  ⚠️  WARNING: Nuclear mode will permanently delete reflog history!${NC}"
+        echo -e "${YELLOW}  This action is IRREVERSIBLE. Type 'yes' to confirm: ${NC}"
+        read -r confirmation
+        if [ "$confirmation" != "yes" ]; then
+          echo -e "${YELLOW}  Skipping reflog cleanup (user cancelled)${NC}"
+        else
+          echo -e "${RED}  [NUCLEAR] Expiring reflog...${NC}"
+          git reflog expire --expire=now --all 2>/dev/null || true
+          git gc --prune=now 2>/dev/null || true
+          echo -e "${GREEN}  ✓ Reflog cleanup complete${NC}"
+        fi
+      else
+        echo -e "${RED}  [NUCLEAR] Expiring reflog (CI mode - no confirmation)...${NC}"
+        git reflog expire --expire=now --all 2>/dev/null || true
+        git gc --prune=now 2>/dev/null || true
+        echo -e "${GREEN}  ✓ Reflog cleanup complete${NC}"
+      fi
     fi
   else
     echo -e "${YELLOW}  ℹ Git cleanup skipped in dry-run mode${NC}"
@@ -349,9 +390,22 @@ if [ "$MODE" = "aggressive" ] || [ "$MODE" = "nuclear" ]; then
       fi
       
       if [ "$MODE" = "nuclear" ]; then
-        echo -e "${RED}  [NUCLEAR] Running docker system prune...${NC}"
-        docker system prune -af --volumes 2>/dev/null || true
-        echo -e "${GREEN}  ✓ Complete${NC}"
+        if [ "$CI_MODE" = false ]; then
+          echo -e "${RED}${BOLD}  ⚠️  WARNING: Nuclear mode will remove ALL unused Docker resources including volumes!${NC}"
+          echo -e "${YELLOW}  This action is IRREVERSIBLE. Type 'yes' to confirm: ${NC}"
+          read -r confirmation
+          if [ "$confirmation" != "yes" ]; then
+            echo -e "${YELLOW}  Skipping Docker system prune (user cancelled)${NC}"
+          else
+            echo -e "${RED}  [NUCLEAR] Running docker system prune...${NC}"
+            docker system prune -af --volumes 2>/dev/null || true
+            echo -e "${GREEN}  ✓ Complete${NC}"
+          fi
+        else
+          echo -e "${RED}  [NUCLEAR] Running docker system prune (CI mode - no confirmation)...${NC}"
+          docker system prune -af --volumes 2>/dev/null || true
+          echo -e "${GREEN}  ✓ Complete${NC}"
+        fi
       fi
     else
       echo -e "${YELLOW}  ℹ Docker cleanup skipped in dry-run mode${NC}"
