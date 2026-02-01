@@ -167,7 +167,7 @@ The **Master Cleanup Script** is a comprehensive, nuclear-grade cleanup tool des
 2. **Confirmation Prompt**: Asks for confirmation before executing
 3. **Excludes Production Data**: Does not touch critical business data
 4. **Color-Coded Output**: Visual feedback for each operation
-5. **Respects .gitignore**: Aligns with repository ignore patterns
+5. **Aligns with .gitignore Patterns**: Uses a static ignore list kept in sync with the repository’s `.gitignore` (does not parse `.gitignore` at runtime)
 
 ## What This Script Does NOT Delete
 
