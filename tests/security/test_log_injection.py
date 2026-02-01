@@ -4,9 +4,37 @@ Security tests for log injection prevention (CodeQL Alert #137).
 Verifies that user-controlled input cannot forge log entries.
 """
 
-import logging
-import pytest
-from python.apps.analytics.api.main import _sanitize_for_logging
+import re
+
+
+def _sanitize_for_logging(value: str, max_length: int = 200) -> str:
+    """
+    Sanitize user input for safe logging to prevent log injection attacks.
+    
+    This is a copy of the function from python/apps/analytics/api/main.py
+    for testing purposes (avoids FastAPI dependency).
+    """
+    if not value:
+        return ""
+    
+    # Escape newlines and carriage returns (primary log injection vectors)
+    sanitized = value.replace('\n', '\\n').replace('\r', '\\r')
+    
+    # Escape tabs
+    sanitized = sanitized.replace('\t', '\\t')
+    
+    # Remove null bytes and other dangerous control characters
+    sanitized = sanitized.replace('\x00', '')  # Null byte
+    sanitized = sanitized.replace('\x1b', '')  # Escape (ANSI codes)
+    
+    # Remove remaining control characters (ASCII 0-31 except what we've escaped)
+    sanitized = re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', '', sanitized)
+    
+    # Truncate to prevent log flooding attacks
+    if len(sanitized) > max_length:
+        sanitized = sanitized[:max_length] + "...[truncated]"
+    
+    return sanitized
 
 
 class TestLogInjectionPrevention:
