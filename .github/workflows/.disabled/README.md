@@ -54,12 +54,7 @@ This directory contains GitHub Actions workflows that have been temporarily disa
    - uses: github/codeql-action/init@v3
      with:
        languages: python
-       config: |
-         paths-ignore:
-           - '**/node_modules/**'
-           - '**/vendor/**'
-           - '**/__pycache__/**'
-           - '**/dist/**'
+       config-file: .github/codeql/codeql-config.yml
    ```
 
 3. **Test with workflow_dispatch first**:
