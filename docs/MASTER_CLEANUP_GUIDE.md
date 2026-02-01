@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **Master Cleanup Script** is a comprehensive, nuclear-grade cleanup tool designed to maintain your repository in its cleanest, most production-ready state. This script removes ALL backups, copies, caches, and temporary files from both local and cloud environments.
+The **Master Cleanup Script** is a comprehensive, nuclear-grade cleanup tool designed to maintain your repository in its cleanest, most production-ready state. This script removes ALL backups, copies, caches, and temporary files from your local development environment. This guide also documents optional manual steps to clean up related cloud resources (for example, Supabase and Azure) when needed.
 
 **Philosophy**: ONE VERSION. NO BACKUPS. NO COPIES. NO CACHE. PRODUCTION ONLY.
 
