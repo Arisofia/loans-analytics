@@ -34,23 +34,13 @@ class TestEvaluationConfiguration:
             config = yaml.safe_load(f)
 
         # Validate required threshold keys
-        assert "test_coverage" in config, (
-            "Config must define test_coverage thresholds"
-        )
-        assert "min" in config["test_coverage"], (
-            "test_coverage must have 'min' threshold"
-        )
-        assert "target" in config["test_coverage"], (
-            "test_coverage must have 'target' threshold"
-        )
+        assert "test_coverage" in config, "Config must define test_coverage thresholds"
+        assert "min" in config["test_coverage"], "test_coverage must have 'min' threshold"
+        assert "target" in config["test_coverage"], "test_coverage must have 'target' threshold"
 
         # Validate threshold values are reasonable
-        assert 0 <= config["test_coverage"]["min"] <= 100, (
-            "test_coverage.min must be 0-100"
-        )
-        assert 0 <= config["test_coverage"]["target"] <= 100, (
-            "test_coverage.target must be 0-100"
-        )
+        assert 0 <= config["test_coverage"]["min"] <= 100, "test_coverage.min must be 0-100"
+        assert 0 <= config["test_coverage"]["target"] <= 100, "test_coverage.target must be 0-100"
 
     def test_check_thresholds_script_exists(self) -> None:
         """Verify check_thresholds.py script exists."""
@@ -81,9 +71,7 @@ class TestMetricsSchema:
         # This test documents the expected schema
         assert isinstance(expected_structure, dict), "Metrics schema is defined"
         assert "summary" in expected_structure, "Metrics must include summary"
-        assert "model_metrics" in expected_structure, (
-            "Metrics can include model_metrics"
-        )
+        assert "model_metrics" in expected_structure, "Metrics can include model_metrics"
 
     def test_threshold_results_json_schema(self) -> None:
         """Test that threshold results JSON has expected structure."""
@@ -161,9 +149,7 @@ class TestThresholdValidation:
 
         assert result["passed"] is False, "Invalid metrics should fail thresholds"
         assert len(result["failures"]) > 0, "Should have failures"
-        assert "Test pass rate" in result["failures"][0], (
-            "Should report test pass rate failure"
-        )
+        assert "Test pass rate" in result["failures"][0], "Should report test pass rate failure"
 
     def test_threshold_validation_warning_metrics(self) -> None:
         """Test threshold validation with metrics that trigger warnings."""
@@ -198,9 +184,7 @@ class TestThresholdValidation:
         assert "precision" in defaults, "Default thresholds must include precision"
         assert "recall" in defaults, "Default thresholds must include recall"
         assert "f1_score" in defaults, "Default thresholds must include f1_score"
-        assert "test_coverage" in defaults, (
-            "Default thresholds must include test_coverage"
-        )
+        assert "test_coverage" in defaults, "Default thresholds must include test_coverage"
 
         # Validate all thresholds have min and target
         for metric, config in defaults.items():
