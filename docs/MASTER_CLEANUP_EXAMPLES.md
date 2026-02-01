@@ -43,7 +43,6 @@ $ ./scripts/master_cleanup.sh --dry-run
     ...
 
 [10/10] 🔧 Git Repository Cleanup
-(Skipped in dry-run mode)
 
 ═══════════════════════════════════════════════════════════════
 
