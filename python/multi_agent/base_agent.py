@@ -75,10 +75,10 @@ class BaseAgent(ABC):
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY not set")
-        
+
         timeout = float(os.getenv("LLM_TIMEOUT", "60"))
         max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
-        
+
         return OpenAI(api_key=api_key, timeout=timeout, max_retries=max_retries)
 
     def _init_anthropic_client(self) -> Any:
@@ -235,10 +235,12 @@ class BaseAgent(ABC):
         # If we get here, all retries failed
         raise last_error or Exception("LLM call failed after retries")
 
-    def _call_openai(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
+    def _call_openai(
+        self, messages: List[Dict[str, str]], request: AgentRequest
+    ) -> Dict[str, Any]:
         """Call OpenAI API."""
         timeout = float(os.getenv("LLM_TIMEOUT", "60"))
-        
+
         response = self._client.chat.completions.create(
             model=self.model,
             messages=messages,
@@ -272,9 +274,11 @@ class BaseAgent(ABC):
         self, messages: List[Dict[str, str]], request: AgentRequest
     ) -> Dict[str, Any]:
         """Call Anthropic API."""
-        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        system_msg = next(
+            (m["content"] for m in messages if m["role"] == "system"), ""
+        )
         user_messages = [m for m in messages if m["role"] != "system"]
-        
+
         timeout = float(os.getenv("LLM_TIMEOUT", "60"))
 
         response = self._client.messages.create(
@@ -301,17 +305,19 @@ class BaseAgent(ABC):
             "finish_reason": response.stop_reason,
         }
 
-    def _call_gemini(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
+    def _call_gemini(
+        self, messages: List[Dict[str, str]], request: AgentRequest
+    ) -> Dict[str, Any]:
         """Call Gemini API."""
         import google.generativeai as genai
-        
+
         model = self._client.GenerativeModel(self.model)
 
         prompt_parts = []
         for msg in messages:
             prompt_parts.append(f"{msg['role'].upper()}: {msg['content']}")
         prompt = "\n\n".join(prompt_parts)
-        
+
         timeout = int(os.getenv("LLM_TIMEOUT", "60"))
 
         # Configure request with timeout

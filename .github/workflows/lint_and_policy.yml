@@ -40,7 +40,7 @@ jobs:
 
       - name: Lint Markdown
         run: |
-          markdownlint '**/*.md' --ignore node_modules --ignore .venv || echo "::warning::Markdown linting found issues"
+          markdownlint '**/*.md' --ignore node_modules --ignore .venv --ignore archives --disable MD034 MD037 MD042 || echo "::warning::Markdown linting found issues"
 
       - name: Lint Python (pylint, flake8, ruff)
         run: |

@@ -32,11 +32,13 @@ class OpenAILLMProvider:
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise RuntimeError("OPENAI_API_KEY must be set for OpenAILLMProvider")
-        model_name: str = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini") or "gpt-4o-mini"
-        
+        model_name: str = (
+            model or os.getenv("OPENAI_MODEL", "gpt-4o-mini") or "gpt-4o-mini"
+        )
+
         timeout = float(os.getenv("LLM_TIMEOUT", "60"))
         max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
-        
+
         self._model = ChatOpenAI(
             model=model_name,
             temperature=temperature,
