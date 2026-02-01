@@ -92,7 +92,7 @@ The **Master Cleanup Script** is a comprehensive, nuclear-grade cleanup tool des
 - `logs/runs/run_*/` (run log directories)
 - `data/archives/cascade/tmp*.csv` (cascade temporary files)
 
-⚠️ **Note**: This script does NOT delete production data files (e.g., `data/raw/sample_loans.csv`)
+⚠️ **Note**: This script does NOT delete production data files (e.g., files under `data/raw/`)
 
 ### 8. IDE & Editor Files (💻)
 
