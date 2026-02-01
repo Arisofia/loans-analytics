@@ -26,7 +26,7 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
     needs: unit-tests
-    if: ${{ secrets.SUPABASE_URL && secrets.SUPABASE_ANON_KEY }}
+    if: always()
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -42,6 +42,10 @@ jobs:
           pip install -r requirements.txt
       - name: Run integration tests
         run: |
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::warning::Skipping integration tests - SUPABASE_URL not configured"
+            exit 0
+          fi
           pytest tests/ -v -m "integration" --tb=short
 
   multi-agent-tests:
