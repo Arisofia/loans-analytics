@@ -13,7 +13,7 @@ jobs:
   cleanup:
     name: Delete Old Workflow Runs
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Delete workflow runs older than 15 days
         uses: Mattraks/delete-workflow-runs@v2
@@ -23,7 +23,7 @@ jobs:
           retain_days: 15
           keep_minimum_runs: 10
           delete_workflow_pattern: 'all'
-          
+
       - name: Cleanup summary
         run: |
           echo "✅ Cleaned up workflow runs older than 15 days"
