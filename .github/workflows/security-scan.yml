@@ -45,7 +45,7 @@ jobs:
   dependency-scan:
     name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
-    if: ${{ secrets.SNYK_TOKEN != '' }}
+    if: ${{ vars.ENABLE_SNYK_SCAN == 'true' }}
 
     steps:
       - uses: actions/checkout@v4
