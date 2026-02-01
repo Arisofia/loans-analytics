@@ -257,15 +257,17 @@ class HistoricalContextProvider:
 
         values = []
         current = start_date
-        base_value = 100.0
+        # Different KPIs get different base values to ensure distinction
+        base_value = 100.0 + (abs(hash(kpi_id)) % 50)
 
         while current <= end_date:
             # Generate mock trend data
             days_diff = (current - start_date).days
             # Slight upward trend
             trend_value = base_value + (days_diff * 0.1)
-            # ±5 variation
-            noise = (hash(f"{kpi_id}{current}") % 100) / 10.0 - 5.0
+            # ±5 variation with more diverse hashing to avoid collisions
+            hash_seed = abs(hash(f"{kpi_id}|{current.isoformat()}|{len(kpi_id)}"))
+            noise = (hash_seed % 100) / 10.0 - 5.0
 
             values.append(
                 KpiHistoricalValue(

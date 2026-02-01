@@ -144,7 +144,7 @@ groups:
       # Database growth trend
       - alert: DatabaseGrowthAccelerating
         expr: |
-          rate(pg_database_size_bytes[7d]) > 
+          rate(pg_database_size_bytes[7d]) >
           (rate(pg_database_size_bytes[30d]) * 1.5)
         for: 24h
         labels:
@@ -170,7 +170,7 @@ groups:
       # Transaction rate increasing
       - alert: TransactionRateIncreasing
         expr: |
-          rate(pg_stat_database_xact_commit[1h]) > 
+          rate(pg_stat_database_xact_commit[1h]) >
           (rate(pg_stat_database_xact_commit[7d]) * 1.2)
         for: 6h
         labels:

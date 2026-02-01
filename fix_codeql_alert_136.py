@@ -23,7 +23,7 @@ old_comment = """    # Construct path under the allowed directory and resolve it
     resolved = (allowed_dir / sanitized).resolve()  # nosec B108  # noqa: S108"""
 
 new_comment = """    # Construct path under the allowed directory and resolve it
-    # 
+    #
     # SECURITY: Path traversal protection implemented via defense-in-depth:
     # 1. Absolute path rejection (line 40-41)
     # 2. Parent traversal (..) rejection (line 43-44)
@@ -33,7 +33,7 @@ new_comment = """    # Construct path under the allowed directory and resolve it
     #
     # CodeQL alert #136 is a false positive - the static analyzer doesn't recognize
     # our custom _sanitize_and_resolve() function as a security control.
-    # 
+    #
     # Evidence of security:
     # - All user input validated before path construction
     # - resolved.relative_to() raises ValueError if path escapes allowed_dir

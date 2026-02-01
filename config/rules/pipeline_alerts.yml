@@ -183,7 +183,7 @@ groups:
       # Agent cost anomaly
       - alert: AgentCostAnomalyDetected
         expr: |
-          rate(agent_llm_cost_usd[1h]) > 
+          rate(agent_llm_cost_usd[1h]) >
           (rate(agent_llm_cost_usd[7d]) * 2)
         for: 2h
         labels:
@@ -227,7 +227,7 @@ groups:
       - alert: DataVolumeAnomalyDetected
         expr: |
           abs(
-            (fact_loans_row_count - avg_over_time(fact_loans_row_count[7d])) / 
+            (fact_loans_row_count - avg_over_time(fact_loans_row_count[7d])) /
             stddev_over_time(fact_loans_row_count[7d])
           ) > 3
         for: 30m
