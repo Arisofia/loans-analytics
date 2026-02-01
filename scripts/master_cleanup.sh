@@ -153,7 +153,7 @@ cleanup_path_pattern() {
         echo -e "${YELLOW}    [WOULD DELETE] $file${NC}"
       else
         echo -e "${RED}    [DELETING] $file${NC}"
-        rm -f "$file"
+        rm -f -- "$file"
       fi
     done
   fi
