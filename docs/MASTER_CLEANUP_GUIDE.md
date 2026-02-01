@@ -175,7 +175,7 @@ The **Master Cleanup Script** is a comprehensive, nuclear-grade cleanup tool des
 - Source code (`src/`, `python/`, `scripts/`)
 - Configuration files (`config/business_rules.yaml`, `pyproject.toml`)
 - Documentation (`docs/`, `README.md`)
-- Production data (`data/raw/sample_loans.csv`)
+- Production data in `data/raw/` (tracked loan datasets)
 - Tests (`tests/`)
 - Docker compose files
 - GitHub Actions workflows (`.github/workflows/`)
