@@ -53,15 +53,15 @@ jobs:
 
       - name: Run Black formatter
         run: |
-          black --check . || (black . && echo "FORMATTED=true" >> $GITHUB_ENV)
+          black --check src python scripts tests || (black src python scripts tests && echo "FORMATTED=true" >> $GITHUB_ENV)
 
       - name: Run isort
         run: |
-          isort --check . || (isort . && echo "SORTED=true" >> $GITHUB_ENV)
+          isort --check src python scripts tests || (isort src python scripts tests && echo "SORTED=true" >> $GITHUB_ENV)
 
       - name: Run Ruff with auto-fix
         run: |
-          ruff check . --fix || true
+          ruff check src python scripts tests --fix || true
 
       - name: Run flake8
         continue-on-error: true
