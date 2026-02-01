@@ -3,9 +3,9 @@ name: Run Daily KPI Pipeline
 on:
   schedule:
     # Run at 6 AM UTC daily (1 AM EST) - After Cascade extracts data
-    - cron: '0 6 * * *'
+    - cron: "0 6 * * *"
 
-  workflow_dispatch:  # Allow manual triggers from GitHub UI
+  workflow_dispatch: # Allow manual triggers from GitHub UI
     # CKV_GHA_7 compliance: No inputs allowed to prevent build manipulation
 
 permissions:
@@ -36,8 +36,8 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |

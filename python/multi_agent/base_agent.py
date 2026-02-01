@@ -75,7 +75,11 @@ class BaseAgent(ABC):
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY not set")
-        return OpenAI(api_key=api_key)
+        
+        timeout = float(os.getenv("LLM_TIMEOUT", "60"))
+        max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
+        
+        return OpenAI(api_key=api_key, timeout=timeout, max_retries=max_retries)
 
     def _init_anthropic_client(self) -> Any:
         """Initialize Anthropic client."""
@@ -191,22 +195,56 @@ class BaseAgent(ABC):
         return "\n".join(lines)
 
     def _call_llm(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
-        """Call LLM provider."""
-        if self.provider == LLMProvider.OPENAI:
-            return self._call_openai(messages, request)
-        if self.provider == LLMProvider.ANTHROPIC:
-            return self._call_anthropic(messages, request)
-        if self.provider == LLMProvider.GEMINI:
-            return self._call_gemini(messages, request)
-        raise ValueError(f"Unsupported provider: {self.provider}")
+        """Call LLM provider with retry logic for timeout errors."""
+        max_retries = int(os.getenv("LLM_MAX_RETRIES", "3"))
+        retry_delays = [1, 2, 4]  # Exponential backoff in seconds
+        
+        last_error = None
+        for attempt in range(max_retries):
+            try:
+                if self.provider == LLMProvider.OPENAI:
+                    return self._call_openai(messages, request)
+                if self.provider == LLMProvider.ANTHROPIC:
+                    return self._call_anthropic(messages, request)
+                if self.provider == LLMProvider.GEMINI:
+                    return self._call_gemini(messages, request)
+                raise ValueError(f"Unsupported provider: {self.provider}")
+            except Exception as e:
+                error_msg = str(e).lower()
+                # Check if it's a timeout or rate limit error
+                is_retryable = any(
+                    keyword in error_msg
+                    for keyword in ["timeout", "timed out", "rate limit", "503", "502", "504"]
+                )
+                
+                if is_retryable and attempt < max_retries - 1:
+                    delay = retry_delays[min(attempt, len(retry_delays) - 1)]
+                    logger.warning(
+                        "LLM call failed (attempt %d/%d): %s. Retrying in %ds...",
+                        attempt + 1,
+                        max_retries,
+                        str(e),
+                        delay,
+                    )
+                    time.sleep(delay)
+                    last_error = e
+                else:
+                    # Not retryable or last attempt
+                    raise
+        
+        # If we get here, all retries failed
+        raise last_error or Exception("LLM call failed after retries")
 
     def _call_openai(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
         """Call OpenAI API."""
+        timeout = float(os.getenv("LLM_TIMEOUT", "60"))
+        
         response = self._client.chat.completions.create(
             model=self.model,
             messages=messages,
             max_tokens=request.max_tokens,
             temperature=request.temperature,
+            timeout=timeout,
         )
 
         usage = response.usage
@@ -236,6 +274,8 @@ class BaseAgent(ABC):
         """Call Anthropic API."""
         system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
         user_messages = [m for m in messages if m["role"] != "system"]
+        
+        timeout = float(os.getenv("LLM_TIMEOUT", "60"))
 
         response = self._client.messages.create(
             model=self.model,
@@ -243,6 +283,7 @@ class BaseAgent(ABC):
             messages=user_messages,
             max_tokens=request.max_tokens,
             temperature=request.temperature,
+            timeout=timeout,
         )
 
         tokens = response.usage.input_tokens + response.usage.output_tokens
@@ -262,19 +303,25 @@ class BaseAgent(ABC):
 
     def _call_gemini(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
         """Call Gemini API."""
+        import google.generativeai as genai
+        
         model = self._client.GenerativeModel(self.model)
 
         prompt_parts = []
         for msg in messages:
             prompt_parts.append(f"{msg['role'].upper()}: {msg['content']}")
         prompt = "\n\n".join(prompt_parts)
+        
+        timeout = int(os.getenv("LLM_TIMEOUT", "60"))
 
+        # Configure request with timeout
         response = model.generate_content(
             prompt,
             generation_config={
                 "max_output_tokens": request.max_tokens,
                 "temperature": request.temperature,
             },
+            request_options={"timeout": timeout},
         )
 
         tokens = getattr(response, "usage_metadata", None)
