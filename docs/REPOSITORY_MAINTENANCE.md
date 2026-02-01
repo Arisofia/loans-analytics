@@ -274,10 +274,10 @@ Avoid nuclear mode. Use standard or aggressive instead.
 
 ## Integration with CI/CD
 
-The maintenance workflow integrates seamlessly with:
+The maintenance workflow is designed to integrate seamlessly with common automation tools:
 - **Pre-commit hooks**: Auto-format on commit
 - **GitHub Actions**: Auto-format on push, validate on PR
-- **Azure Pipelines**: Can be triggered via webhook
+- **Azure Pipelines (optional)**: You can configure your own Azure pipeline (not provided in this repo) to run the maintenance script (e.g., as a scheduled job or via webhook)
 - **Local development**: Make targets for quick access
 
 ## Support
