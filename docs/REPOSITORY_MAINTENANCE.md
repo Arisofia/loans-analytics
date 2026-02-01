@@ -247,7 +247,7 @@ This unified system replaces the following deprecated scripts (now in `archives/
 4. **repo-cleanup.sh** - Git repository maintenance
 5. **code-quality.yml** - GitHub Actions workflow
 
-All functionality is preserved and enhanced in the new system.
+The new system consolidates the most commonly used maintenance tasks. Some specialized checks from the deprecated scripts (such as YAML validation, merge-conflict marker and secret scanning, and additional cleanup targets) remain available via CI workflows and the archived scripts directory.
 
 ## Troubleshooting
 
