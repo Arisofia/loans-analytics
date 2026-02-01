@@ -412,7 +412,7 @@ See [LICENSE](../LICENSE) for details.
 For issues or questions:
 - Create an issue in GitHub
 - Review [REPO_OPERATIONS_MASTER.md](REPO_OPERATIONS_MASTER.md)
-- Consult [TROUBLESHOOTING.md](troubleshooting/README.md)
+- Consult [TROUBLESHOOTING.md](troubleshooting-terminal.md)
 
 ---
 
