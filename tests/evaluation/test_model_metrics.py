@@ -7,15 +7,9 @@ This module contains actual evaluation tests to validate:
 - Integration with check_thresholds.py script
 """
 
-import sys
 from pathlib import Path
 
 import pytest
-
-# Add scripts directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
-
 class TestEvaluationConfiguration:
     """Tests for evaluation configuration and setup."""
 
