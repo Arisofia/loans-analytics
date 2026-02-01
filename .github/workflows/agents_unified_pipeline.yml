@@ -2,7 +2,7 @@ name: Pipeline Orchestrator Agent
 
 on:
   schedule:
-    - cron: '15 5 * * *'
+    - cron: "15 5 * * *"
   workflow_dispatch:
 
 permissions:
@@ -28,8 +28,8 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -134,22 +134,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Build validation and compliance reports
         run: |
           mkdir -p logs/runs/${{ needs.pipeline-orchestrator.outputs.run_id }}
-          
+
           cat > /tmp/build_reports.py << 'EOF'
           import json
           from datetime import datetime, timezone
           from pathlib import Path
           import os
-          
+
           run_id = os.environ.get("RUN_ID", "unknown")
           run_dir = Path("logs/runs") / run_id
           results_file = run_dir / "pipeline_results.json"
-          
+
           validation_report = {
               "run_id": run_id,
               "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -158,7 +158,7 @@ jobs:
               "duplicates": {},
               "notes": [],
           }
-          
+
           compliance_report = {
               "run_id": run_id,
               "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -170,11 +170,11 @@ jobs:
               },
               "notes": ["Implement src/compliance for automated PII detection."],
           }
-          
+
           if results_file.exists():
               with results_file.open() as f:
                   results = json.load(f)
-          
+
               ingestion = results.get("phases", {}).get("ingestion", {})
               validation_report["status"] = (
                   "success" if ingestion.get("validation", {}).get("schema_valid") else "failed"
@@ -187,16 +187,16 @@ jobs:
               validation_report["duration_seconds"] = results.get("duration_seconds")
           else:
               validation_report["notes"].append("pipeline_results.json missing; unable to extract validation data.")
-          
+
           run_dir.mkdir(parents=True, exist_ok=True)
-          
+
           with (run_dir / "validation_report.json").open("w") as f:
               json.dump(validation_report, f, indent=2)
-          
+
           with (run_dir / "compliance_report.json").open("w") as f:
               json.dump(compliance_report, f, indent=2)
           EOF
-          
+
           python3 /tmp/build_reports.py
         env:
           RUN_ID: ${{ needs.pipeline-orchestrator.outputs.run_id }}
@@ -232,8 +232,8 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -243,19 +243,19 @@ jobs:
       - name: Generate performance metrics
         run: |
           mkdir -p metrics
-          
+
           cat > /tmp/gen_metrics.py << 'EOF'
           import json
           from datetime import datetime, timezone
           from pathlib import Path
           import os
-          
+
           run_id = os.environ.get("RUN_ID", "unknown")
           duration = float(os.environ.get("DURATION", "0") or "0")
           records = int(os.environ.get("RECORDS", "0") or "0")
           status = os.environ.get("STATUS", "unknown")
           results_file = Path("logs/runs") / run_id / "pipeline_results.json"
-          
+
           metrics = {
               "run_id": run_id,
               "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -265,20 +265,20 @@ jobs:
               "baseline_seconds": 10,
               "threshold_seconds": 15,
           }
-          
+
           if results_file.exists():
               with results_file.open() as f:
                   results = json.load(f)
               metrics["pipeline_status"] = results.get("status")
               metrics["phases"] = results.get("phases", {})
-          
+
           output_path = Path("metrics") / "pipeline_performance.json"
           output_path.parent.mkdir(parents=True, exist_ok=True)
-          
+
           with output_path.open("w") as f:
               json.dump(metrics, f, indent=2)
           EOF
-          
+
           python3 /tmp/gen_metrics.py
         env:
           RUN_ID: ${{ needs.pipeline-orchestrator.outputs.run_id }}
