@@ -107,12 +107,12 @@ cleanup_item() {
 cleanup_pattern() {
   local pattern="$1"
   local description="$2"
-  local exclude_dirs="-path ./.venv -o -path ./node_modules -o -path ./.git -o -path ./build"
+  local exclude_dirs="-path \"./.venv/*\" -o -path \"./node_modules/*\" -o -path \"./.git/*\" -o -path \"./build/*\""
   
   echo -e "${YELLOW}  Searching for $description...${NC}"
   
   local found_files
-  found_files=$(find . -type f \( -name "$pattern" \) ! \( $exclude_dirs \) 2>/dev/null || true)
+  found_files=$(find . -type f -name "$pattern" ! -path "./.venv/*" ! -path "./node_modules/*" ! -path "./.git/*" ! -path "./build/*" 2>/dev/null || true)
   
   if [ -z "$found_files" ]; then
     echo -e "${GREEN}    ✓ No $description found${NC}"
