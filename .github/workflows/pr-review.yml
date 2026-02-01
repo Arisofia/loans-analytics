@@ -286,10 +286,17 @@ jobs:
         if: steps.check-perplexity.outputs.secrets_available == 'true'
         id: get-diff
         run: |
-          # Fetch the base branch and compute the diff against HEAD, similar to perplexity_review.yml
-          git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=1
-          git diff "origin/${{ github.event.pull_request.base.ref }}"...HEAD > pr_diff.txt
-          echo "diff_size=$(wc -c < pr_diff.txt)" >> "$GITHUB_OUTPUT"
+          # Fetch the base branch with enough history to find common ancestor
+          git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=50
+          # Try three-dot diff first (preferred), fall back to two-dot if no merge base
+          if git diff "origin/${{ github.event.pull_request.base.ref }}"...HEAD > pr_diff.txt 2>/dev/null; then
+            echo "diff_size=$(wc -c < pr_diff.txt)" >> "$GITHUB_OUTPUT"
+          elif git diff "origin/${{ github.event.pull_request.base.ref }}"..HEAD > pr_diff.txt 2>/dev/null; then
+            echo "diff_size=$(wc -c < pr_diff.txt)" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Could not generate diff - possibly no common ancestor"
+            echo "diff_size=0" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Run Perplexity AI Analysis
         if: steps.check-perplexity.outputs.secrets_available == 'true'

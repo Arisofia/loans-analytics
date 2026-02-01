@@ -198,7 +198,7 @@ class BaseAgent(ABC):
         """Call LLM provider with retry logic for timeout errors."""
         max_retries = int(os.getenv("LLM_MAX_RETRIES", "3"))
         retry_delays = [1, 2, 4]  # Exponential backoff in seconds
-        
+
         last_error = None
         for attempt in range(max_retries):
             try:
@@ -216,7 +216,7 @@ class BaseAgent(ABC):
                     keyword in error_msg
                     for keyword in ["timeout", "timed out", "rate limit", "503", "502", "504"]
                 )
-                
+
                 if is_retryable and attempt < max_retries - 1:
                     delay = retry_delays[min(attempt, len(retry_delays) - 1)]
                     logger.warning(
@@ -231,13 +231,11 @@ class BaseAgent(ABC):
                 else:
                     # Not retryable or last attempt
                     raise
-        
+
         # If we get here, all retries failed
         raise last_error or Exception("LLM call failed after retries")
 
-    def _call_openai(
-        self, messages: List[Dict[str, str]], request: AgentRequest
-    ) -> Dict[str, Any]:
+    def _call_openai(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
         """Call OpenAI API."""
         timeout = float(os.getenv("LLM_TIMEOUT", "60"))
 
@@ -274,9 +272,7 @@ class BaseAgent(ABC):
         self, messages: List[Dict[str, str]], request: AgentRequest
     ) -> Dict[str, Any]:
         """Call Anthropic API."""
-        system_msg = next(
-            (m["content"] for m in messages if m["role"] == "system"), ""
-        )
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
         user_messages = [m for m in messages if m["role"] != "system"]
 
         timeout = float(os.getenv("LLM_TIMEOUT", "60"))
@@ -305,9 +301,7 @@ class BaseAgent(ABC):
             "finish_reason": response.stop_reason,
         }
 
-    def _call_gemini(
-        self, messages: List[Dict[str, str]], request: AgentRequest
-    ) -> Dict[str, Any]:
+    def _call_gemini(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
         """Call Gemini API."""
         import google.generativeai as genai
 
