@@ -25,11 +25,11 @@ jobs:
       - uses: github/codeql-action/analyze@v3
 
   snyk:
+    if: ${{ secrets.SNYK_TOKEN != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: snyk/actions/python@master
-        continue-on-error: true
+      - uses: snyk/actions/python@0.4.0
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -39,9 +39,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: |
-          echo "Scanning for secrets..."
-          git log -p | grep -iE '(password|secret|key|token|api)' || true
+      - name: Scan for secrets with gitleaks
+        uses: zricethezav/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   security-audit:
     runs-on: ubuntu-latest
@@ -52,5 +53,5 @@ jobs:
           python-version: "3.11"
       - run: |
           pip install safety bandit
-          safety check || true
-          bandit -r . -ll || true
+          safety check
+          bandit -r . -ll

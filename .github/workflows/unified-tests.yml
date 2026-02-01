@@ -17,7 +17,7 @@ jobs:
           cache: "pip"
       - run: |
           pip install -r requirements.txt
-          pytest tests/unit/ -v --cov
+          pytest tests/ -v --cov -m "not integration"
 
   integration-tests:
     runs-on: ubuntu-latest
@@ -33,7 +33,7 @@ jobs:
           cache: "pip"
       - run: |
           pip install -r requirements.txt
-          pytest tests/integration/ -v
+          pytest tests/ -v -m "integration"
 
   multi-agent-tests:
     runs-on: ubuntu-latest
@@ -46,7 +46,7 @@ jobs:
           cache: "pip"
       - run: |
           pip install -r requirements.txt
-          pytest python/multi_agent/tests/ -v
+          pytest python/multi_agent/ -v -k "test_"
 
   smoke-tests:
     runs-on: ubuntu-latest
@@ -59,4 +59,4 @@ jobs:
           cache: "pip"
       - run: |
           pip install -r requirements.txt
-          python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv --smoke-test
+          python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv --mode validate

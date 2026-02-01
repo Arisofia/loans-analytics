@@ -7,6 +7,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  issues: write
 
 jobs:
   python-qa:
@@ -26,9 +27,9 @@ jobs:
 
       - name: Run checks
         run: |
-          ruff check . || true
-          black --check . || true
-          pytest tests/ --maxfail=3 || true
+          ruff check .
+          black --check .
+          pytest tests/ --maxfail=3
 
       - name: Comment on PR
         if: always()

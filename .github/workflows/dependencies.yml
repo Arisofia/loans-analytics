@@ -22,8 +22,11 @@ jobs:
       - name: Update dependencies
         run: |
           pip install pip-tools
-          pip-compile requirements.in --upgrade || true
-          pip-compile requirements-dev.in --upgrade || true
+          if [ -f "requirements.in" ]; then
+            pip-compile requirements.in --upgrade
+          else
+            echo "requirements.in not found, skipping pip-compile"
+          fi
 
       - name: Create PR
         uses: peter-evans/create-pull-request@v6
@@ -35,7 +38,7 @@ jobs:
 
   dependency-review:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: false  # Disabled: workflow not triggered on pull_request
     steps:
       - uses: actions/checkout@v4
       - uses: actions/dependency-review-action@v4
