@@ -187,7 +187,7 @@ fi
 
 # Find and delete all __pycache__ directories
 echo -e "${YELLOW}  Searching for __pycache__ directories...${NC}"
-pycache_dirs=$(find . -type d -name "__pycache__" 2>/dev/null || true)
+pycache_dirs=$(find . -type d -name "__pycache__" ! -path "./.venv/*" ! -path "./node_modules/*" ! -path "./.git/*" 2>/dev/null || true)
 if [ -z "$pycache_dirs" ]; then
   echo -e "${GREEN}    ✓ No __pycache__ directories found${NC}"
 else
