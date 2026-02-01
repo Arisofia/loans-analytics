@@ -355,15 +355,15 @@ Total: ~90 MB
 
 ## Environment Variables
 
-The script respects these environment variables:
+The current version of `scripts/master_cleanup.sh` does **not** support any environment
+variable overrides. All behavior is controlled via CLI flags such as `--dry-run`,
+`--execute`, and `--nuclear`.
 
-- `DRY_RUN`: Set to `false` to execute without prompting
-- `SKIP_DOCKER`: Set to `true` to skip Docker cleanup
-- `SKIP_GIT`: Set to `true` to skip Git operations
+For headless or automated execution (e.g., CI pipelines), invoke the script directly
+with the desired flags:
 
 ```bash
-# Example: Headless execution
-DRY_RUN=false ./scripts/master_cleanup.sh --execute
+./scripts/master_cleanup.sh --execute
 ```
 
 ## Exit Codes
