@@ -133,19 +133,19 @@ cleanup_pattern() {
 cleanup_path_pattern() {
   local path_pattern="$1"
   local description="$2"
-  local exclude_dirs="-path ./.venv -o -path ./node_modules -o -path ./.git -o -path ./build"
-  
+
   echo -e "${YELLOW}  Searching for $description...${NC}"
-  
+
   local found_files
-  found_files=$(find . -type f -path "$path_pattern" ! \( $exclude_dirs \) 2>/dev/null || true)
-  
+  found_files=$(find . -type f -path "$path_pattern" \
+    ! -path "./.venv/*" ! -path "./node_modules/*" ! -path "./.git/*" ! -path "./build/*" \
+    2>/dev/null || true)
+
   if [ -z "$found_files" ]; then
     echo -e "${GREEN}    ✓ No $description found${NC}"
   else
     local count=$(echo "$found_files" | wc -l | xargs)
     echo -e "${YELLOW}    Found $count file(s)${NC}"
-    
     echo "$found_files" | while read -r file; do
       if [ "$DRY_RUN" = true ]; then
         echo -e "${YELLOW}    [WOULD DELETE] $file${NC}"
