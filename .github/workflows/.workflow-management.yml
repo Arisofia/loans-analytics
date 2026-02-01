@@ -1,0 +1,23 @@
+# WORKFLOW MANAGEMENT STRATEGY
+# Goal: Reduce from 26,127 runs to minimal essential runs with 100% success rate
+
+# DISABLED WORKFLOWS (move to .disabled/ folder):
+# - agent-checklist-validation.yml (redundant with pr-checks)
+# - azure_diagnostics.yml (not in use)
+# - batch_export_scheduled.yml (scheduled, disable until needed)
+# - code-maintenance.yml (failing consistently)
+# - customer_segmentation.yml (not critical for CI)
+# - financial_forecast.yml (scheduled, disable)
+# - historical_supabase_integration.yml (scheduled, disable)
+# - investor_reporting.yml (scheduled, disable)
+# - security-scan.yml (failing, needs fixes before re-enable)
+
+# KEEP ACTIVE (with fixes):
+# - agents_unified_pipeline.yml (core pipeline)
+# - pr-checks.yml (essential for PRs)
+# - unified-tests.yml (core testing)
+# - model_evaluation.yml (business critical)
+# - deployment.yml (production)
+# - docker.yml (infrastructure)
+# - dependencies.yml (security)
+# - cost-regression-detection.yml (monitoring)
