@@ -66,9 +66,41 @@ make monitoring-logs
 
 ## 🔧 Utility Scripts
 
-| Script           | Description            | Usage                         |
-| ---------------- | ---------------------- | ----------------------------- |
-| **pr_status.py** | Check GitHub PR status | `python scripts/pr_status.py` |
+| Script                  | Description                            | Usage                                      |
+| ----------------------- | -------------------------------------- | ------------------------------------------ |
+| **master_cleanup.sh**   | 🧹 Master cleanup (local + cloud)      | `./scripts/master_cleanup.sh --dry-run`    |
+| **cleanup_repo.sh**     | Code quality cleanup                   | `./scripts/cleanup_repo.sh`                |
+| **repo-cleanup.sh**     | Git repository cleanup                 | `./scripts/repo-cleanup.sh --aggressive`   |
+| **repo-doctor.sh**      | Repository health checks               | `./scripts/repo-doctor.sh`                 |
+| **pr_status.py**        | Check GitHub PR status                 | `python scripts/pr_status.py`              |
+
+### 🧹 Master Cleanup Script (Recommended)
+
+**Purpose**: Complete cleanup of local repository and cloud resources - removes ALL backups, copies, caches, and temporary files.
+
+**Quick Start**:
+```bash
+# Preview cleanup (safe)
+./scripts/master_cleanup.sh --dry-run
+
+# Execute cleanup
+./scripts/master_cleanup.sh --execute
+
+# Nuclear option (maximum cleanup)
+./scripts/master_cleanup.sh --nuclear
+```
+
+**What It Cleans**:
+- Python caches (`__pycache__/`, `.pytest_cache/`, `.mypy_cache/`)
+- Node modules and build artifacts (`node_modules/`, `dist/`, `.next/`)
+- Backup files (`*.backup`, `*.bak`, `*.old`, `*.copy`, numbered copies)
+- Temporary files (`tmp/`, `*.tmp`, `*.temp`, `*.swp`)
+- Logs and reports (`logs/`, `*.log`, `test-results/`)
+- Data run artifacts (`data/metrics/run_*`, `logs/runs/run_*`)
+- Docker resources (stopped containers, dangling images)
+- Git cleanup (merged branches, garbage collection)
+
+**Documentation**: [docs/MASTER_CLEANUP_GUIDE.md](../docs/MASTER_CLEANUP_GUIDE.md) | [Quick Reference](../docs/MASTER_CLEANUP_QUICK_REF.md)
 
 ## ⚙️ Environment Setup
 
