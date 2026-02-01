@@ -57,13 +57,15 @@ def main() -> int:
     status: SecretStatus = results.get("status", "unknown")
     error_obj: Exception | None = results.get("error")
 
-    # SAFE: Status is type-guaranteed to be non-sensitive enum value
-    # CodeQL[py/clear-text-logging-sensitive-data]: False positive - status is SecretStatus enum
-    # The SecretStatus type constrains value to only "ok", "error", or "unknown" (non-sensitive)
-    # Actual secrets are never logged - they are returned in the results dict, not logged
+    # SAFE: Log only completion without exposing any data
+    # CodeQL[py/clear-text-logging-sensitive-data]: Mitigated - no sensitive data logged
     # Security review: Approved 2026-02-01 per PCI-DSS 3.4 compliance
-    # lgtm[py/clear-text-logging-sensitive-data]
-    logger.info("load_secrets completed: status=%s", status)  # nosec B608
+    if status == "ok":
+        logger.info("load_secrets completed successfully")
+    elif status == "error":
+        logger.error("load_secrets completed with errors")
+    else:
+        logger.warning("load_secrets completed with unknown status")
 
     # SAFE: Log only error type, never the error message
     if error_obj:
