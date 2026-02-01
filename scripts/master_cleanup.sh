@@ -107,8 +107,6 @@ cleanup_item() {
 cleanup_pattern() {
   local pattern="$1"
   local description="$2"
-  local exclude_dirs="-path \"./.venv/*\" -o -path \"./node_modules/*\" -o -path \"./.git/*\" -o -path \"./build/*\""
-  
   echo -e "${YELLOW}  Searching for $description...${NC}"
   
   local found_files
