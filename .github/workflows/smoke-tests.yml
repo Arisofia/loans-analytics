@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install requests pytest pytest-timeout
+          pip install requests pytest pytest-timeout pytest-asyncio
 
       - name: Run basic agent orchestration
         timeout-minutes: 2
@@ -85,35 +85,9 @@ jobs:
 
       - name: Create issue on failure
         if: failure()
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-        with:
-          script: |
-            const fs = require('fs');
-            let body = '## 🚨 Smoke Test Failure\n\n';
-            body += '**Time:** ' + new Date().toISOString() + '\n\n';
-            body += '### Failed Checks\n\n';
-
-            if ('${{ steps.happy_path.outcome }}' !== 'success') {
-              body += '- ❌ Happy Path Tests\n';
-            }
-            if ('${{ steps.supabase.outcome }}' !== 'success') {
-              body += '- ❌ Supabase Connectivity\n';
-            }
-            if ('${{ steps.agents.outcome }}' !== 'success') {
-              body += '- ❌ Agent System\n';
-            }
-
-            body += '\n**Action Required:** Investigate immediately\n';
-            body += '\n[View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n';
-
-            // Create issue
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '🚨 Smoke Test Failure - ' + new Date().toISOString().split('T')[0],
-              body: body,
-              labels: ['smoke-test', 'critical']
-            });
+        run: |
+          echo "::warning::Smoke test failed. Issues are disabled in this repository."
+          echo "Check the workflow logs for details."
 
       - name: Upload smoke test report
         if: always()
