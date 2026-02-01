@@ -158,10 +158,6 @@ def main():
 
         logger.info("Threshold results written", extra={"path": str(args.output)})
 
-        # Exit with error code if thresholds failed
-        # Always exit with 0 - let workflow interpret JSON results
-    sys.exit(0)
-
     except Exception as e:
         logger.exception("Threshold check failed", extra={"error": str(e)})
         # Write error result even on failure
