@@ -25,15 +25,16 @@ This directory contains GitHub Actions workflows that have been temporarily disa
 1. **Missing build dependencies** - CodeQL autobuild may not handle complex Python project dependencies
 2. **JavaScript/TypeScript confusion** - 2.6% of codebase is TypeScript, CodeQL may be misconfigured
 3. **Timeout issues** - Large Python codebase (79%) may exceed CodeQL analysis limits
-4. **Matrix strategy** - Running Python + JavaScript in parallel may be resource-intensive
+4. **Multi-language analysis** - Running Python + JavaScript in a single job may be resource-intensive and harder to debug
 
 **How to Re-enable**:
 
-1. **Fix CodeQL Configuration** - Add explicit build steps:
+1. **Fix CodeQL Configuration** - Add explicit build steps and split into separate jobs:
    ```yaml
    jobs:
      codeql-python:
        runs-on: ubuntu-latest
+       timeout-minutes: 30  # Add timeout protection at job level
        steps:
          - uses: actions/checkout@v4
          - uses: actions/setup-python@v5
@@ -45,17 +46,41 @@ This directory contains GitHub Actions workflows that have been temporarily disa
          - uses: github/codeql-action/init@v3
            with:
              languages: python
+             config-file: .github/codeql/codeql-config.yml
          - uses: github/codeql-action/analyze@v3
-           timeout-minutes: 30  # Add timeout protection
+     
+     codeql-javascript:
+       runs-on: ubuntu-latest
+       timeout-minutes: 20
+       steps:
+         - uses: actions/checkout@v4
+         - uses: github/codeql-action/init@v3
+           with:
+             languages: javascript
+             config-file: .github/codeql/codeql-config.yml
+         - uses: github/codeql-action/autobuild@v3
+         - uses: github/codeql-action/analyze@v3
    ```
+   
+   **Note**: This approach separates Python and JavaScript into dedicated jobs for better isolation and debugging, unlike the previous single-job approach with comma-separated languages.
 
-2. **Configure paths to skip**:
+2. **Create CodeQL configuration file** at `.github/codeql/codeql-config.yml`:
    ```yaml
-   - uses: github/codeql-action/init@v3
-     with:
-       languages: python
-       config-file: .github/codeql/codeql-config.yml
+   name: "CodeQL Config"
+   
+   paths-ignore:
+     - '**/node_modules/**'
+     - '**/vendor/**'
+     - '**/__pycache__/**'
+     - '**/dist/**'
+     - '**/build/**'
+     - '**/.venv/**'
+   
+   queries:
+     - uses: security-and-quality
    ```
+   
+   Then reference it in the workflow as shown above using `config-file: .github/codeql/codeql-config.yml`.
 
 3. **Test with workflow_dispatch first**:
    ```yaml
@@ -111,7 +136,7 @@ gh api repos/Arisofia/abaco-loans-analytics/actions/workflows/security-scan.yml/
   | xargs -I {} gh api -X DELETE repos/Arisofia/abaco-loans-analytics/actions/runs/{}
 ```
 
-**Note**: Requires GitHub PAT with `repo` and `workflow` scopes.
+**Note**: Requires GitHub PAT with `repo` and `workflow` scopes. These commands reference the workflow by filename (`security-scan.yml`). If GitHub changes how it handles deleted workflows, you may need to use the numeric workflow ID instead. You can find the workflow ID by visiting the Actions tab and inspecting the URL (e.g., `.../workflows/12345`).
 
 ## Success Metrics
 
