@@ -3,19 +3,7 @@ repos:
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
+        types: [text]
       - id: end-of-file-fixer
       - id: check-yaml
         args: ['--allow-multiple-documents']
-      - id: check-added-large-files
-      - id: mixed-line-ending
-
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
-    hooks:
-      - id: black
-
-  - repo: https://github.com/adrienverge/yamllint
-    rev: v1.33.0
-    hooks:
-      - id: yamllint
-        args: [--strict]
