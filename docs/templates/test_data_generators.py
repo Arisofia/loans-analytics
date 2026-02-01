@@ -22,6 +22,7 @@ import csv
 from io import StringIO
 from typing import Literal
 
+
 class LoanDataGenerator:
     """Generate synthetic loan portfolio data for testing"""
 
@@ -36,9 +37,7 @@ class LoanDataGenerator:
             random.seed(seed)
 
     def generate_loans(
-        self,
-        count: int = 1000,
-        output_format: Literal['dict', 'csv', 'json', 'sql'] = 'dict'
+        self, count: int = 1000, output_format: Literal["dict", "csv", "json", "sql"] = "dict"
     ) -> list[dict] | str:
         """
         Generate synthetic loan data with realistic distributions
@@ -53,10 +52,10 @@ class LoanDataGenerator:
         loans = []
 
         # Realistic distributions
-        statuses = ['current', 'late', 'default', 'paid_off']
+        statuses = ["current", "late", "default", "paid_off"]
         status_weights = [0.75, 0.15, 0.05, 0.05]
 
-        segments = ['consumer', 'sme', 'auto']
+        segments = ["consumer", "sme", "auto"]
         segment_weights = [0.60, 0.30, 0.10]
 
         for i in range(count):
@@ -64,11 +63,11 @@ class LoanDataGenerator:
             segment = random.choices(segments, weights=segment_weights)[0]
 
             # Segment-specific parameters
-            if segment == 'consumer':
+            if segment == "consumer":
                 amount_range = (1000, 25000)
                 apr_range = (0.18, 0.35)
                 term_options = [6, 12, 24, 36]
-            elif segment == 'sme':
+            elif segment == "sme":
                 amount_range = (10000, 100000)
                 apr_range = (0.12, 0.25)
                 term_options = [12, 24, 36, 48, 60]
@@ -77,54 +76,54 @@ class LoanDataGenerator:
                 apr_range = (0.05, 0.15)
                 term_options = [24, 36, 48, 60, 72]
 
-            amount = Decimal(str(random.uniform(*amount_range))).quantize(Decimal('0.01'))
-            apr = Decimal(str(random.uniform(*apr_range))).quantize(Decimal('0.0001'))
+            amount = Decimal(str(random.uniform(*amount_range))).quantize(Decimal("0.01"))
+            apr = Decimal(str(random.uniform(*apr_range))).quantize(Decimal("0.0001"))
             term_months = random.choice(term_options)
 
             origination_date = self._random_date(365)
             dpd = self._calculate_dpd(status)
 
             # Calculate outstanding balance
-            if status == 'paid_off':
-                outstanding = Decimal('0.00')
+            if status == "paid_off":
+                outstanding = Decimal("0.00")
             else:
                 outstanding = amount * Decimal(str(random.uniform(0.3, 1.0)))
-                outstanding = outstanding.quantize(Decimal('0.01'))
+                outstanding = outstanding.quantize(Decimal("0.01"))
 
             loan = {
-                'loan_id': f'LOAN-{i+1:06d}',
-                'borrower_id': f'BORR-{random.randint(1, count//3):06d}',
-                'amount': str(amount),
-                'apr': str(apr),
-                'term_months': term_months,
-                'status': status,
-                'dpd': dpd,
-                'origination_date': origination_date.strftime('%Y-%m-%d'),
-                'outstanding_balance': str(outstanding),
-                'segment': segment,
-                'monthly_payment': str(self._calculate_monthly_payment(amount, apr, term_months))
+                "loan_id": f"LOAN-{i+1:06d}",
+                "borrower_id": f"BORR-{random.randint(1, count//3):06d}",
+                "amount": str(amount),
+                "apr": str(apr),
+                "term_months": term_months,
+                "status": status,
+                "dpd": dpd,
+                "origination_date": origination_date.strftime("%Y-%m-%d"),
+                "outstanding_balance": str(outstanding),
+                "segment": segment,
+                "monthly_payment": str(self._calculate_monthly_payment(amount, apr, term_months)),
             }
             loans.append(loan)
 
         # Format output
-        if output_format == 'dict':
+        if output_format == "dict":
             return loans
-        elif output_format == 'csv':
+        elif output_format == "csv":
             return self._to_csv(loans)
-        elif output_format == 'json':
+        elif output_format == "json":
             return json.dumps(loans, indent=2)
-        elif output_format == 'sql':
+        elif output_format == "sql":
             return self._to_sql(loans)
         else:
             raise ValueError(f"Unsupported output format: {output_format}")
 
     def _calculate_dpd(self, status: str) -> int:
         """Calculate Days Past Due based on loan status"""
-        if status == 'current':
+        if status == "current":
             return 0
-        elif status == 'late':
+        elif status == "late":
             return random.randint(1, 89)
-        elif status == 'default':
+        elif status == "default":
             return random.randint(90, 180)
         else:  # paid_off
             return 0
@@ -132,11 +131,15 @@ class LoanDataGenerator:
     def _calculate_monthly_payment(self, principal: Decimal, apr: Decimal, term: int) -> Decimal:
         """Calculate monthly payment amount"""
         if apr == 0:
-            return (principal / term).quantize(Decimal('0.01'))
+            return (principal / term).quantize(Decimal("0.01"))
 
         monthly_rate = apr / 12
-        payment = principal * (monthly_rate * (1 + monthly_rate)**term) / ((1 + monthly_rate)**term - 1)
-        return payment.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        payment = (
+            principal
+            * (monthly_rate * (1 + monthly_rate) ** term)
+            / ((1 + monthly_rate) ** term - 1)
+        )
+        return payment.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     def _random_date(self, days_back: int) -> datetime:
         """Generate random date within last N days"""
@@ -157,14 +160,14 @@ class LoanDataGenerator:
             return ""
 
         table_name = "loans"
-        fields = ', '.join(loans[0].keys())
+        fields = ", ".join(loans[0].keys())
 
         inserts = []
         for loan in loans:
-            values = ', '.join(f"'{v}'" if isinstance(v, str) else str(v) for v in loan.values())
+            values = ", ".join(f"'{v}'" if isinstance(v, str) else str(v) for v in loan.values())
             inserts.append(f"INSERT INTO {table_name} ({fields}) VALUES ({values});")
 
-        return '\n'.join(inserts)
+        return "\n".join(inserts)
 
 
 class UserDataGenerator:
@@ -174,14 +177,14 @@ class UserDataGenerator:
         if seed is not None:
             random.seed(seed)
 
-        self.first_names = ['John', 'Jane', 'Maria', 'Carlos', 'Ana', 'Miguel', 'Sofia', 'Diego']
-        self.last_names = ['Smith', 'Garcia', 'Rodriguez', 'Martinez', 'Lopez', 'Gonzalez']
+        self.first_names = ["John", "Jane", "Maria", "Carlos", "Ana", "Miguel", "Sofia", "Diego"]
+        self.last_names = ["Smith", "Garcia", "Rodriguez", "Martinez", "Lopez", "Gonzalez"]
 
     def generate_users(
         self,
         count: int = 100,
         mask_pii: bool = True,
-        output_format: Literal['dict', 'csv', 'json'] = 'dict'
+        output_format: Literal["dict", "csv", "json"] = "dict",
     ) -> list[dict] | str:
         """
         Generate synthetic user data
@@ -204,32 +207,36 @@ class UserDataGenerator:
             if mask_pii:
                 email = f"****@****.com"
 
-            ssn = f"{random.randint(100, 999)}-{random.randint(10, 99)}-{random.randint(1000, 9999)}"
+            ssn = (
+                f"{random.randint(100, 999)}-{random.randint(10, 99)}-{random.randint(1000, 9999)}"
+            )
             if mask_pii:
                 ssn = f"***-**-{ssn[-4:]}"
 
             user = {
-                'user_id': f'USER-{i+1:06d}',
-                'first_name': first,
-                'last_name': last,
-                'email': email,
-                'ssn': ssn,
-                'phone': f"+1-555-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
-                'created_at': (datetime.now() - timedelta(days=random.randint(1, 730))).strftime('%Y-%m-%d'),
-                'status': random.choice(['active', 'inactive', 'suspended'])
+                "user_id": f"USER-{i+1:06d}",
+                "first_name": first,
+                "last_name": last,
+                "email": email,
+                "ssn": ssn,
+                "phone": f"+1-555-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
+                "created_at": (datetime.now() - timedelta(days=random.randint(1, 730))).strftime(
+                    "%Y-%m-%d"
+                ),
+                "status": random.choice(["active", "inactive", "suspended"]),
             }
             users.append(user)
 
-        if output_format == 'dict':
+        if output_format == "dict":
             return users
-        elif output_format == 'csv':
+        elif output_format == "csv":
             output = StringIO()
             if users:
                 writer = csv.DictWriter(output, fieldnames=users[0].keys())
                 writer.writeheader()
                 writer.writerows(users)
             return output.getvalue()
-        elif output_format == 'json':
+        elif output_format == "json":
             return json.dumps(users, indent=2)
 
 
@@ -244,7 +251,7 @@ class PaymentDataGenerator:
         self,
         loan_ids: list[str],
         payments_per_loan: tuple[int, int] = (1, 12),
-        output_format: Literal['dict', 'csv', 'json'] = 'dict'
+        output_format: Literal["dict", "csv", "json"] = "dict",
     ) -> list[dict] | str:
         """
         Generate payment transactions for loans
@@ -264,55 +271,61 @@ class PaymentDataGenerator:
             num_payments = random.randint(*payments_per_loan)
 
             for i in range(num_payments):
-                amount = Decimal(str(random.uniform(100, 2000))).quantize(Decimal('0.01'))
+                amount = Decimal(str(random.uniform(100, 2000))).quantize(Decimal("0.01"))
 
                 payment = {
-                    'payment_id': f'PAY-{payment_id:08d}',
-                    'loan_id': loan_id,
-                    'amount': str(amount),
-                    'payment_date': (datetime.now() - timedelta(days=random.randint(1, 365))).strftime('%Y-%m-%d'),
-                    'payment_method': random.choice(['bank_transfer', 'card', 'check', 'cash']),
-                    'status': random.choice(['completed', 'pending', 'failed']) if random.random() < 0.05 else 'completed'
+                    "payment_id": f"PAY-{payment_id:08d}",
+                    "loan_id": loan_id,
+                    "amount": str(amount),
+                    "payment_date": (
+                        datetime.now() - timedelta(days=random.randint(1, 365))
+                    ).strftime("%Y-%m-%d"),
+                    "payment_method": random.choice(["bank_transfer", "card", "check", "cash"]),
+                    "status": (
+                        random.choice(["completed", "pending", "failed"])
+                        if random.random() < 0.05
+                        else "completed"
+                    ),
                 }
                 payments.append(payment)
                 payment_id += 1
 
-        if output_format == 'dict':
+        if output_format == "dict":
             return payments
-        elif output_format == 'csv':
+        elif output_format == "csv":
             output = StringIO()
             if payments:
                 writer = csv.DictWriter(output, fieldnames=payments[0].keys())
                 writer.writeheader()
                 writer.writerows(payments)
             return output.getvalue()
-        elif output_format == 'json':
+        elif output_format == "json":
             return json.dumps(payments, indent=2)
 
 
 # Example usage
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Generate loan data
     print("Generating loan data...")
     loan_gen = LoanDataGenerator(seed=42)
-    loans = loan_gen.generate_loans(count=1000, output_format='dict')
+    loans = loan_gen.generate_loans(count=1000, output_format="dict")
     print(f"Generated {len(loans)} loans")
 
     # Save to CSV
-    csv_data = loan_gen.generate_loans(count=1000, output_format='csv')
-    with open('data/test/loans_test_data.csv', 'w') as f:
+    csv_data = loan_gen.generate_loans(count=1000, output_format="csv")
+    with open("data/test/loans_test_data.csv", "w") as f:
         f.write(csv_data)
     print("Saved to data/test/loans_test_data.csv")
 
     # Generate user data with PII masking
     print("\nGenerating user data...")
     user_gen = UserDataGenerator(seed=42)
-    users = user_gen.generate_users(count=100, mask_pii=True, output_format='dict')
+    users = user_gen.generate_users(count=100, mask_pii=True, output_format="dict")
     print(f"Generated {len(users)} users (PII masked)")
 
     # Generate payment data
     print("\nGenerating payment data...")
-    loan_ids = [loan['loan_id'] for loan in loans[:100]]
+    loan_ids = [loan["loan_id"] for loan in loans[:100]]
     payment_gen = PaymentDataGenerator(seed=42)
     payments = payment_gen.generate_payments(loan_ids, payments_per_loan=(3, 12))
     print(f"Generated {len(payments)} payments")
