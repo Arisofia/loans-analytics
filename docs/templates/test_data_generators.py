@@ -14,11 +14,11 @@ Usage:
     users = user_gen.generate_users(count=100, mask_pii=True)
 """
 
-from decimal import Decimal, ROUND_HALF_UP
-from datetime import datetime, timedelta
-import random
-import json
 import csv
+import json
+import random
+from datetime import datetime, timedelta
+from decimal import ROUND_HALF_UP, Decimal
 from io import StringIO
 from typing import Literal
 
@@ -205,7 +205,7 @@ class UserDataGenerator:
 
             email = f"{first.lower()}.{last.lower()}{i}@test.com"
             if mask_pii:
-                email = f"****@****.com"
+                email = "****@****.com"
 
             ssn = (
                 f"{random.randint(100, 999)}-{random.randint(10, 99)}-{random.randint(1000, 9999)}"

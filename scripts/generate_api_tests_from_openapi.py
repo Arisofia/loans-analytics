@@ -96,17 +96,17 @@ def generate_test_function(
     @pytest.mark.api
     def test_{operation_id}_happy_path(self, api_client{"" if not requires_auth else ", auth_token"}):
         """TC-API: {summary} - Happy path"""
-        {f"# Payload" if test_payload else "# No payload required"}
+        {"# Payload" if test_payload else "# No payload required"}
         {f"payload = {test_payload}" if test_payload else ""}
 
         response = api_client.{method.lower()}(
             "{base_path}{endpoint}",
-            {f"json=payload," if test_payload else ""}
+            {"json=payload," if test_payload else ""}
             {"headers={'Authorization': f'Bearer {auth_token}'}" if requires_auth else ""}
         )
 
         assert response.status_code in [200, 201]
-        {f"# Validate response schema" if success_response else ""}
+        {"# Validate response schema" if success_response else ""}
 '''
 
     return test_code
