@@ -7,10 +7,8 @@ This module contains actual evaluation tests to validate:
 - Integration with check_thresholds.py script
 """
 
-import json
 import sys
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -205,7 +203,7 @@ class TestThresholdValidation:
             assert "min" in config, f"{metric} must have 'min' threshold"
             assert "target" in config, f"{metric} must have 'target' threshold"
 
-    def test_threshold_validation_edge_case_zero_tests(self) -> None:
+    def test_threshold_validation_with_zero_tests(self) -> None:
         """Test threshold validation with zero tests run."""
         from scripts.evaluation.check_thresholds import check_thresholds
 
