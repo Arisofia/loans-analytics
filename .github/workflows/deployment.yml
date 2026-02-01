@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -24,9 +28,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Verify deployment
+        env:
+          HEALTHCHECK_URL: ${{ vars.PRODUCTION_HEALTHCHECK_URL }}
         run: |
           echo "Verifying deployment..."
-          curl -f https://your-app-url/health || exit 1
+          if [ -z "${HEALTHCHECK_URL}" ]; then
+            echo "HEALTHCHECK_URL not set. Skipping verification."
+            exit 0
+          fi
+          echo "Checking health at ${HEALTHCHECK_URL}..."
+          curl -f "${HEALTHCHECK_URL}" || exit 1
 
       - name: Notify on failure
         if: failure()
