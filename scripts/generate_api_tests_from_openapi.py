@@ -91,7 +91,6 @@ def generate_test_function(
     requires_auth = "security" in operation or endpoint not in ["/auth/login", "/health"]
 
     # Generate test function
-    func_name = f"test_{operation_id}"
     test_code = f'''
     @pytest.mark.api
     def test_{operation_id}_happy_path(self, api_client{"" if not requires_auth else ", auth_token"}):
