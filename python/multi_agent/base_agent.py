@@ -303,7 +303,6 @@ class BaseAgent(ABC):
 
     def _call_gemini(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
         """Call Gemini API."""
-        import google.generativeai as genai
 
         model = self._client.GenerativeModel(self.model)
 
