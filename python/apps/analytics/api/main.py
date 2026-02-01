@@ -22,6 +22,47 @@ logger = logging.getLogger("apps.analytics.api")
 ALLOWED_DATA_DIR = Path("/data/archives").resolve()
 
 
+def _sanitize_for_logging(value: str, max_length: int = 200) -> str:
+    """
+    Sanitize user input for safe logging to prevent log injection attacks.
+    
+    Removes/escapes control characters that could forge log entries:
+    - Newlines (\\n, \\r) that could create fake log lines
+    - ANSI escape codes that could hide malicious activity
+    - Null bytes and other control characters
+    
+    Args:
+        value: User-provided string to sanitize
+        max_length: Maximum length before truncation (prevents log flooding)
+    
+    Returns:
+        Sanitized string safe for logging
+        
+    Security: Complies with OWASP Logging Cheat Sheet and CWE-117 mitigation
+    """
+    if not value:
+        return ""
+    
+    # Escape newlines and carriage returns (primary log injection vectors)
+    sanitized = value.replace('\n', '\\n').replace('\r', '\\r')
+    
+    # Escape tabs
+    sanitized = sanitized.replace('\t', '\\t')
+    
+    # Remove null bytes and other dangerous control characters
+    sanitized = sanitized.replace('\x00', '')  # Null byte
+    sanitized = sanitized.replace('\x1b', '')  # Escape (ANSI codes)
+    
+    # Remove remaining control characters (ASCII 0-31 except what we've escaped)
+    sanitized = re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', '', sanitized)
+    
+    # Truncate to prevent log flooding attacks
+    if len(sanitized) > max_length:
+        sanitized = sanitized[:max_length] + "...[truncated]"
+    
+    return sanitized
+
+
 def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     """Safely join and resolve a user-provided path candidate under allowed_dir.
     - Reject absolute candidate paths
@@ -71,11 +112,16 @@ def get_data(file_path: str):
     try:
         resolved = _sanitize_and_resolve(file_path, ALLOWED_DATA_DIR)
     except ValueError as exc:
-        # SECURE: Sanitize user input before logging to prevent log injection
-        from python.multi_agent.guardrails import Guardrails
-        safe_path = Guardrails.sanitize_for_logging(file_path)
-        safe_exc = Guardrails.sanitize_for_logging(str(exc))
-        logger.warning("Invalid data path requested: %s (%s)", safe_path, safe_exc)
+        # SECURITY FIX: Sanitize user input before logging to prevent log injection
+        # This prevents attackers from forging fake log entries via newlines/control chars
+        # Complies with: CWE-117, OWASP Logging Cheat Sheet, SOC 2 CC6.1
+        safe_path = _sanitize_for_logging(file_path)
+        safe_exc_msg = _sanitize_for_logging(str(exc))
+        logger.warning(
+            "Invalid data path requested: %s (%s)", 
+            safe_path, 
+            safe_exc_msg
+        )
         raise HTTPException(status_code=400, detail="Invalid path format") from exc
 
     if not resolved.exists() or not resolved.is_file():
