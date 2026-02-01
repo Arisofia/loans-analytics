@@ -100,7 +100,7 @@ make monitoring-logs
 - Docker resources (stopped containers, dangling images)
 - Git cleanup (merged branches, garbage collection)
 
-**Documentation**: [docs/MASTER_CLEANUP_GUIDE.md](../docs/MASTER_CLEANUP_GUIDE.md) | [Quick Reference](../docs/MASTER_CLEANUP_QUICK_REF.md)
+**Documentation**: [docs/MASTER_CLEANUP_GUIDE.md](../docs/MASTER_CLEANUP_GUIDE.md) | [Quick Reference](../docs/MASTER_CLEANUP_QUICK_REF.md) | [Examples](../docs/MASTER_CLEANUP_EXAMPLES.md)
 
 ## ⚙️ Environment Setup
 
