@@ -98,6 +98,7 @@ if page == "📤 Upload Data":
     # Import CSV upload component
     try:
         from streamlit_app.components.csv_upload import render_csv_upload
+
         render_csv_upload()
     except ImportError as e:
         st.error(f"Upload component not available: {e}")
