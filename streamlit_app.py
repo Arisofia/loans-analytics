@@ -96,9 +96,12 @@ with st.sidebar:
 # Main content
 if page == "📤 Upload Data":
     # Import CSV upload component
-    from streamlit_app.components.csv_upload import render_csv_upload
-
-    render_csv_upload()
+    try:
+        from streamlit_app.components.csv_upload import render_csv_upload
+        render_csv_upload()
+    except ImportError as e:
+        st.error(f"Upload component not available: {e}")
+        st.info("Please ensure the project is run from the root directory")
 
 elif page == "📊 Dashboard" and selected_run:
     run_dir = Path("logs/runs") / selected_run
