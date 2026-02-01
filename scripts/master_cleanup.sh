@@ -304,21 +304,6 @@ cleanup_path_pattern "*/data/metrics/run_*.parquet" "run Parquet files"
 cleanup_path_pattern "*/data/metrics/run_*_metrics.json" "run metrics JSON"
 cleanup_path_pattern "*/data/metrics/timeseries/run_*.parquet" "timeseries run files"
 
-# Logs from runs
-if [ -d "logs/runs" ]; then
-  echo -e "${YELLOW}  Checking logs/runs directory...${NC}"
-  run_dirs=$(find logs/runs -type d -name "run_*" 2>/dev/null || true)
-  if [ -n "$run_dirs" ]; then
-    count=$(echo "$run_dirs" | wc -l | xargs)
-    echo -e "${YELLOW}    Found $count run log director(ies)${NC}"
-    echo "$run_dirs" | while read -r dir; do
-      cleanup_item "$dir" "run log directory"
-    done
-  else
-    echo -e "${GREEN}    ✓ No run log directories found${NC}"
-  fi
-fi
-
 # Data cascade tmp files
 cleanup_path_pattern "*/data/archives/cascade/tmp*.csv" "cascade temporary files"
 
