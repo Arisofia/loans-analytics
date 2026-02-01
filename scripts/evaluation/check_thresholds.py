@@ -163,6 +163,20 @@ def main():
 
     except Exception as e:
         logger.exception("Threshold check failed", extra={"error": str(e)})
+        # Write error result even on failure
+        error_result = {
+            "passed": False,
+            "message": f"Error: {str(e)}",
+            "failures": [str(e)],
+            "warnings": [],
+            "tests_total": 0,
+            "tests_passed": 0,
+        }
+        try:
+            with args.output.open("w") as f:
+                json.dump(error_result, f, indent=2)
+        except Exception as write_error:
+            logger.error(f"Failed to write error result: {write_error}")
         sys.exit(1)
 
 
