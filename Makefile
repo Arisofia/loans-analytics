@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test clean monitoring-start monitoring-stop monitoring-logs monitoring-health dashboard-backup dashboard-restore
+.PHONY: help setup format lint type-check test clean maintenance monitoring-start monitoring-stop monitoring-logs monitoring-health dashboard-backup dashboard-restore
 PYTHON := python3
 VENV := .venv
 BIN := $(VENV)/bin
@@ -13,6 +13,7 @@ help:
 	@echo "make type-check     - Run mypy static type checking"
 	@echo "make test           - Run unit tests with pytest"
 	@echo "make clean          - Remove build artifacts and cache"
+	@echo "make maintenance    - Run unified repository maintenance (format + clean + git)"
 	@echo ""
 	@echo "Monitoring Stack:"
 	@echo "make monitoring-start    - Auto-start Prometheus + Grafana + Alertmanager"
@@ -43,6 +44,16 @@ clean:
 	rm -rf build dist *.egg-info
 	find . -name "*.pyc" -delete
 	find . -name "*.pyo" -delete
+
+# Unified Repository Maintenance
+maintenance:
+	@bash scripts/repo_maintenance.sh --mode=standard
+
+maintenance-aggressive:
+	@bash scripts/repo_maintenance.sh --mode=aggressive
+
+maintenance-dry-run:
+	@bash scripts/repo_maintenance.sh --dry-run
 
 # Monitoring Stack Automation
 monitoring-start:
