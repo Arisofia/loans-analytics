@@ -28,12 +28,12 @@ jobs:
 
       - name: Run linting
         run: |
-          ruff check . --exit-zero
-          black --check . --diff || true
+          ruff check .
+          black --check .
 
       - name: Run tests
         run: |
-          pytest tests/ --maxfail=1 -v --tb=short || echo "::warning::Some tests failed"
+          pytest tests/ --maxfail=3 -v --tb=short
 
       - name: Comment on PR
         if: always()
