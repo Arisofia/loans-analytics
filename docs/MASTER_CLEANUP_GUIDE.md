@@ -222,14 +222,14 @@ az storage blob delete-batch \
 
 ## Integration with Existing Scripts
 
-This master cleanup script **consolidates and supersedes**:
+This master cleanup script **consolidates and complements the cleanup aspects of**:
 
 1. `scripts/cleanup_repo.sh` - Code quality cleanup
 2. `scripts/repo-cleanup.sh` - Git repository cleanup
-3. `scripts/commit_cleanup.sh` - Commit-time cleanup
-4. `scripts/repo-doctor.sh` - Repository health checks
+3. `scripts/commit_cleanup.sh` - Commit-time cleanup helpers (commit-time workflow itself remains separate)
+4. `scripts/repo-doctor.sh` - Repository health checks (health-check workflows remain separate)
 
-**Recommendation**: Use `master_cleanup.sh` as your primary cleanup tool.
+**Recommendation**: Use `master_cleanup.sh` as your primary repository cleanup tool, and continue to use `repo-doctor.sh` for health checks and `commit_cleanup.sh` for commit-time behavior.
 
 ## Best Practices
 
