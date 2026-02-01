@@ -9,12 +9,18 @@ on:
     # CKV_GHA_7 compliance: No inputs allowed to prevent build manipulation
 
 permissions:
-  contents: write  # Allow committing pipeline outputs
+  contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   run-pipeline:
     name: Execute Data Pipeline
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     outputs:
       run_id: ${{ steps.pipeline.outputs.run_id }}
       status: ${{ steps.pipeline.outputs.status }}

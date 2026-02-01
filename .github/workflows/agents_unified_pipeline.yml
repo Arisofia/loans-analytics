@@ -140,62 +140,64 @@ jobs:
         run: |
           mkdir -p logs/runs/${{ needs.pipeline-orchestrator.outputs.run_id }}
           
-          python3 << 'PYTHON_SCRIPT'
-import json
-from datetime import datetime, timezone
-from pathlib import Path
-import os
-
-run_id = os.environ.get("RUN_ID", "unknown")
-run_dir = Path("logs/runs") / run_id
-results_file = run_dir / "pipeline_results.json"
-
-validation_report = {
-    "run_id": run_id,
-    "generated_at": datetime.now(timezone.utc).isoformat(),
-    "status": "unknown",
-    "schema_validation": {},
-    "duplicates": {},
-    "notes": [],
-}
-
-compliance_report = {
-    "run_id": run_id,
-    "generated_at": datetime.now(timezone.utc).isoformat(),
-    "status": "pending_implementation",
-    "pii_findings": {
-        "summary": "Compliance engine not yet implemented.",
-        "records_scanned": 0,
-        "masked_fields": [],
-    },
-    "notes": ["Implement src/compliance for automated PII detection."],
-}
-
-if results_file.exists():
-    with results_file.open() as f:
-        results = json.load(f)
-
-    ingestion = results.get("phases", {}).get("ingestion", {})
-    validation_report["status"] = (
-        "success" if ingestion.get("validation", {}).get("schema_valid") else "failed"
-    )
-    validation_report["schema_validation"] = ingestion.get("validation", {})
-    validation_report["duplicates"] = ingestion.get("duplicates", {})
-    validation_report["row_count"] = ingestion.get("row_count")
-    validation_report["column_count"] = ingestion.get("column_count")
-    validation_report["pipeline_status"] = results.get("status")
-    validation_report["duration_seconds"] = results.get("duration_seconds")
-else:
-    validation_report["notes"].append("pipeline_results.json missing; unable to extract validation data.")
-
-run_dir.mkdir(parents=True, exist_ok=True)
-
-with (run_dir / "validation_report.json").open("w") as f:
-    json.dump(validation_report, f, indent=2)
-
-with (run_dir / "compliance_report.json").open("w") as f:
-    json.dump(compliance_report, f, indent=2)
-PYTHON_SCRIPT
+          cat > /tmp/build_reports.py << 'EOF'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          import os
+          
+          run_id = os.environ.get("RUN_ID", "unknown")
+          run_dir = Path("logs/runs") / run_id
+          results_file = run_dir / "pipeline_results.json"
+          
+          validation_report = {
+              "run_id": run_id,
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "status": "unknown",
+              "schema_validation": {},
+              "duplicates": {},
+              "notes": [],
+          }
+          
+          compliance_report = {
+              "run_id": run_id,
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "status": "pending_implementation",
+              "pii_findings": {
+                  "summary": "Compliance engine not yet implemented.",
+                  "records_scanned": 0,
+                  "masked_fields": [],
+              },
+              "notes": ["Implement src/compliance for automated PII detection."],
+          }
+          
+          if results_file.exists():
+              with results_file.open() as f:
+                  results = json.load(f)
+          
+              ingestion = results.get("phases", {}).get("ingestion", {})
+              validation_report["status"] = (
+                  "success" if ingestion.get("validation", {}).get("schema_valid") else "failed"
+              )
+              validation_report["schema_validation"] = ingestion.get("validation", {})
+              validation_report["duplicates"] = ingestion.get("duplicates", {})
+              validation_report["row_count"] = ingestion.get("row_count")
+              validation_report["column_count"] = ingestion.get("column_count")
+              validation_report["pipeline_status"] = results.get("status")
+              validation_report["duration_seconds"] = results.get("duration_seconds")
+          else:
+              validation_report["notes"].append("pipeline_results.json missing; unable to extract validation data.")
+          
+          run_dir.mkdir(parents=True, exist_ok=True)
+          
+          with (run_dir / "validation_report.json").open("w") as f:
+              json.dump(validation_report, f, indent=2)
+          
+          with (run_dir / "compliance_report.json").open("w") as f:
+              json.dump(compliance_report, f, indent=2)
+          EOF
+          
+          python3 /tmp/build_reports.py
         env:
           RUN_ID: ${{ needs.pipeline-orchestrator.outputs.run_id }}
 
@@ -242,43 +244,42 @@ PYTHON_SCRIPT
         run: |
           mkdir -p metrics
           
-          python3 << 'PYTHON_SCRIPT'
-import json
-from datetime import datetime, timezone
-from pathlib import Path
-import os
-
-run_id = os.environ.get("RUN_ID", "unknown")
-duration = float(os.environ.get("DURATION", "0") or "0")
-records = int(os.environ.get("RECORDS", "0") or "0")
-status = os.environ.get("STATUS", "unknown")
-results_file = Path("logs/runs") / run_id / "pipeline_results.json"
-
-duration_str = "${{ needs.pipeline-orchestrator.outputs.duration }}"
-records_str = "${{ needs.pipeline-orchestrator.outputs.records }}"
-
-metrics = {
-    "run_id": run_id,
-    "generated_at": datetime.now(timezone.utc).isoformat(),
-    "duration_seconds": float(duration_str) if duration_str else 0.0,
-    "records_processed": int(records_str) if records_str else 0,
-    "status": "${{ needs.pipeline-orchestrator.outputs.status }}",
-    "baseline_seconds": 10,
-    "threshold_seconds": 15,
-}
-
-if results_file.exists():
-    with results_file.open() as f:
-        results = json.load(f)
-    metrics["pipeline_status"] = results.get("status")
-    metrics["phases"] = results.get("phases", {})
-
-output_path = Path("metrics") / "pipeline_performance.json"
-output_path.parent.mkdir(parents=True, exist_ok=True)
-
-with output_path.open("w") as f:
-    json.dump(metrics, f, indent=2)
-PYTHON_SCRIPT
+          cat > /tmp/gen_metrics.py << 'EOF'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          import os
+          
+          run_id = os.environ.get("RUN_ID", "unknown")
+          duration = float(os.environ.get("DURATION", "0") or "0")
+          records = int(os.environ.get("RECORDS", "0") or "0")
+          status = os.environ.get("STATUS", "unknown")
+          results_file = Path("logs/runs") / run_id / "pipeline_results.json"
+          
+          metrics = {
+              "run_id": run_id,
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "duration_seconds": duration,
+              "records_processed": records,
+              "status": status,
+              "baseline_seconds": 10,
+              "threshold_seconds": 15,
+          }
+          
+          if results_file.exists():
+              with results_file.open() as f:
+                  results = json.load(f)
+              metrics["pipeline_status"] = results.get("status")
+              metrics["phases"] = results.get("phases", {})
+          
+          output_path = Path("metrics") / "pipeline_performance.json"
+          output_path.parent.mkdir(parents=True, exist_ok=True)
+          
+          with output_path.open("w") as f:
+              json.dump(metrics, f, indent=2)
+          EOF
+          
+          python3 /tmp/gen_metrics.py
         env:
           RUN_ID: ${{ needs.pipeline-orchestrator.outputs.run_id }}
           DURATION: ${{ needs.pipeline-orchestrator.outputs.duration }}
