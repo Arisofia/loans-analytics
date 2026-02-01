@@ -439,7 +439,7 @@ elif [ "$DRY_RUN" = false ]; then
   
   # Delete merged local branches
   echo -e "${YELLOW}  Checking for merged local branches...${NC}"
-  merged_branches=$(git branch --merged | grep -v "\*" | grep -v "main" | grep -v "master" | grep -v "develop" 2>/dev/null || true)
+  merged_branches=$(git for-each-ref --format='%(refname:short)' --merged | grep -vE '^(main|master|develop)$' 2>/dev/null || true)
   if [ -n "$merged_branches" ]; then
     count=$(echo "$merged_branches" | wc -l | xargs)
     echo -e "${YELLOW}    Found $count merged branch(es)${NC}"
