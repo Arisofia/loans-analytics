@@ -15,16 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Delete workflow runs older than 30 days
+      - name: Delete workflow runs older than 15 days
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-          retain_days: 30
+          retain_days: 15
           keep_minimum_runs: 10
           delete_workflow_pattern: 'all'
           
       - name: Cleanup summary
         run: |
-          echo "✅ Cleaned up workflow runs older than 30 days"
-          echo "📊 Retention policy: Keep last 10 runs + runs from last 30 days"
+          echo "✅ Cleaned up workflow runs older than 15 days"
+          echo "📊 Retention policy: Keep last 10 runs + runs from last 15 days"
