@@ -477,18 +477,35 @@ python scripts/validate_structure.py --verbose
 deno run --allow-all main.ts
 ```
 
-### **Code Quality**
+### **Code Quality & Maintenance**
+
+Use the unified maintenance system:
 
 ```bash
-# Format code
-black src/ python/ scripts/
+# Quick formatting
+make format
 
-# Lint code
-pylint src/ python/ scripts/
+# Full maintenance (formatting + cleanup + git)
+make maintenance
 
-# Type checking
-mypy src/ python/ scripts/
+# Preview changes (dry-run)
+make maintenance-dry-run
+
+# Deep cleanup
+make maintenance-aggressive
 ```
+
+Or use the script directly:
+
+```bash
+# Standard maintenance
+./scripts/repo_maintenance.sh --mode=standard
+
+# View all options
+./scripts/repo_maintenance.sh --help
+```
+
+For details, see [Repository Maintenance Guide](docs/REPOSITORY_MAINTENANCE.md)
 
 ### **Adding New KPIs**
 
