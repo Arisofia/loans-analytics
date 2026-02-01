@@ -59,6 +59,7 @@ def main() -> int:
 
     # SAFE: Status is type-guaranteed to be non-sensitive enum value
     # CodeQL: SecretStatus type constrains value to "ok", "error", or "unknown"
+    # lgtm[py/clear-text-logging-sensitive-data]
     logger.info("load_secrets completed: status=%s", status)  # nosec B608
 
     # SAFE: Log only error type, never the error message
