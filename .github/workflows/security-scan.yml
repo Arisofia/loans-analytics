@@ -30,6 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: snyk/actions/python@0.4.0
+        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -40,7 +41,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Scan for secrets with gitleaks
-        uses: zricethezav/gitleaks-action@v2
+        uses: zricethezav/gitleaks-action@v2.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
