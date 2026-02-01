@@ -33,19 +33,23 @@ NC='\033[0m' # No Color
 # Default mode
 DRY_RUN=true
 NUCLEAR=false
+FLAGS_PASSED=()
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
     --dry-run)
+      FLAGS_PASSED+=("dry-run")
       DRY_RUN=true
       shift
       ;;
     --execute)
+      FLAGS_PASSED+=("execute")
       DRY_RUN=false
       shift
       ;;
     --nuclear)
+      FLAGS_PASSED+=("nuclear")
       NUCLEAR=true
       DRY_RUN=false
       shift
@@ -57,6 +61,12 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Validate that only one mode was specified
+if [ ${#FLAGS_PASSED[@]} -gt 1 ]; then
+  echo -e "${RED}Error: Multiple modes specified (${FLAGS_PASSED[*]}). Use only one of: --dry-run, --execute, or --nuclear${NC}"
+  exit 1
+fi
 
 # Banner
 echo -e "${BOLD}${RED}╔════════════════════════════════════════════════════════════════╗${NC}"
@@ -456,6 +466,8 @@ elif [ "$DRY_RUN" = false ]; then
     git gc --prune=now
     echo -e "${GREEN}    ✓ Complete${NC}"
   fi
+else
+  echo -e "${YELLOW}  ℹ Git cleanup skipped in dry-run mode${NC}"
 fi
 
 echo ""
