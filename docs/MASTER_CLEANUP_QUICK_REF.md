@@ -33,7 +33,7 @@
 - ✅ Source code (`src/`, `python/`, `scripts/`)
 - ✅ Configuration (`config/`, `pyproject.toml`)
 - ✅ Documentation (`docs/`, `README.md`)
-- ✅ Production data (`data/raw/sample_loans.csv`)
+- ✅ Production data directory (`data/raw/`)
 - ✅ Tests (`tests/`)
 - ✅ Environment templates (`.env.example`)
 - ✅ Git history (`.git/`)
