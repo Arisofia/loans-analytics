@@ -137,3 +137,24 @@ The main outstanding task is bulk cleanup of historical workflow runs, which is 
 **Report Generated**: 2026-02-01 22:19 UTC
 **Last Commit**: bd2fff2da (chore: upgrade CodeQL actions from v3 to v4)
 **Status**: ✅ PRODUCTION READY
+
+## 🔄 Post-Deployment Notes
+
+### CodeQL Alert Status
+The security fixes have been deployed successfully. CodeQL alerts #42, #136, and #137 will auto-close when the next security scan completes. The fixes are:
+
+1. **Alert #42 (Clear-text logging)**: Now logs only "completed successfully/with errors" - no sensitive data
+2. **Alert #136 (Path traversal)**: Already protected, documented as false positive  
+3. **Alert #137 (Log injection)**: Fixed with `_sanitize_for_logging()` function
+
+The next scheduled scan is Monday (weekly cron). Alerts should resolve automatically once the scan detects the fixes in the codebase.
+
+### Verification
+To manually verify the fixes:
+```bash
+# Check load_secrets.py - line 63-68 now logs safe messages only
+# Check main.py - lines 25-40 have sanitization function
+# Check main.py - line 74-80 use sanitization before logging
+```
+
+All code is merged to main and deployed. ✅
