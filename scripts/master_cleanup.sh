@@ -131,6 +131,34 @@ cleanup_pattern() {
   fi
 }
 
+# Helper function to find and delete path patterns (includes directory structure)
+cleanup_path_pattern() {
+  local path_pattern="$1"
+  local description="$2"
+  local exclude_dirs="-path ./.venv -o -path ./node_modules -o -path ./.git -o -path ./build"
+  
+  echo -e "${YELLOW}  Searching for $description...${NC}"
+  
+  local found_files
+  found_files=$(find . -type f -path "$path_pattern" ! \( $exclude_dirs \) 2>/dev/null || true)
+  
+  if [ -z "$found_files" ]; then
+    echo -e "${GREEN}    ✓ No $description found${NC}"
+  else
+    local count=$(echo "$found_files" | wc -l | xargs)
+    echo -e "${YELLOW}    Found $count file(s)${NC}"
+    
+    echo "$found_files" | while read -r file; do
+      if [ "$DRY_RUN" = true ]; then
+        echo -e "${YELLOW}    [WOULD DELETE] $file${NC}"
+      else
+        echo -e "${RED}    [DELETING] $file${NC}"
+        rm -f "$file"
+      fi
+    done
+  fi
+}
+
 # =============================================================================
 # SECTION 1: PYTHON ENVIRONMENT CLEANUP
 # =============================================================================
@@ -270,11 +298,11 @@ echo -e "${CYAN}${BOLD}[7/10] 📊 Data Directory Cleanup${NC}"
 echo ""
 
 # Temporary run data (as defined in .gitignore)
-cleanup_item "data/archives/raw/tmp*.csv" "temporary raw archives"
-cleanup_pattern "data/metrics/run_*.csv" "run CSV files"
-cleanup_pattern "data/metrics/run_*.parquet" "run Parquet files"
-cleanup_pattern "data/metrics/run_*_metrics.json" "run metrics JSON"
-cleanup_pattern "data/metrics/timeseries/run_*.parquet" "timeseries run files"
+cleanup_path_pattern "*/data/archives/raw/tmp*.csv" "temporary raw archives"
+cleanup_path_pattern "*/data/metrics/run_*.csv" "run CSV files"
+cleanup_path_pattern "*/data/metrics/run_*.parquet" "run Parquet files"
+cleanup_path_pattern "*/data/metrics/run_*_metrics.json" "run metrics JSON"
+cleanup_path_pattern "*/data/metrics/timeseries/run_*.parquet" "timeseries run files"
 
 # Logs from runs
 if [ -d "logs/runs" ]; then
@@ -292,7 +320,7 @@ if [ -d "logs/runs" ]; then
 fi
 
 # Data cascade tmp files
-cleanup_pattern "data/archives/cascade/tmp*.csv" "cascade temporary files"
+cleanup_path_pattern "*/data/archives/cascade/tmp*.csv" "cascade temporary files"
 
 echo ""
 
