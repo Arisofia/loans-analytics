@@ -474,11 +474,17 @@ else
   # Repository statistics
   REPO_SIZE=$(du -sh .git 2>/dev/null | cut -f1 || echo "unknown")
   WORK_SIZE=$(du -sh . 2>/dev/null | cut -f1 || echo "unknown")
+
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "detached-HEAD")
+  else
+    CURRENT_BRANCH="not a git repository"
+  fi
   
   echo -e "${BLUE}Repository Statistics:${NC}"
   echo -e "${BLUE}  Git Directory Size: ${REPO_SIZE}${NC}"
   echo -e "${BLUE}  Working Tree Size: ${WORK_SIZE}${NC}"
-  echo -e "${BLUE}  Current Branch: $(git branch --show-current)${NC}"
+  echo -e "${BLUE}  Current Branch: ${CURRENT_BRANCH}${NC}"
   echo ""
   
   echo -e "${GREEN}✨ Your repository is now clean!${NC}"
