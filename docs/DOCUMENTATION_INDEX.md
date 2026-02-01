@@ -272,6 +272,8 @@ Code Structure (active folders)
 ### **For Operations** 🛠️
 
 - [docs/OPERATIONS.md](docs/OPERATIONS.md) - Runbooks
+- [docs/MASTER_CLEANUP_GUIDE.md](docs/MASTER_CLEANUP_GUIDE.md) - 🧹 Repository cleanup
+- [docs/MASTER_CLEANUP_QUICK_REF.md](docs/MASTER_CLEANUP_QUICK_REF.md) - Quick reference card
 - [docs/TRACING_OBSERVABILITY.md](docs/TRACING_OBSERVABILITY.md) - Monitoring
 - [WORKFLOW_DIAGRAMS.md](WORKFLOW_DIAGRAMS.md) - Flow diagrams
 - [QUICK_START.md](QUICK_START.md#troubleshooting) - Common issues
