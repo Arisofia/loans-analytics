@@ -251,11 +251,11 @@ cleanup_pattern "*~" "editor backup files"
 cleanup_pattern "*.cleanup-backup" "cleanup backup files"
 
 # Numbered copies (macOS Finder, VS Code, browser downloads)
-cleanup_pattern "*\ \(1\).*" "numbered copies (1)"
-cleanup_pattern "*\ \(2\).*" "numbered copies (2)"
-cleanup_pattern "*\ \(3\).*" "numbered copies (3)"
-cleanup_pattern "*\ \(4\).*" "numbered copies (4)"
-cleanup_pattern "*\ \(5\).*" "numbered copies (5)"
+cleanup_pattern "* (1).*" "numbered copies (1)"
+cleanup_pattern "* (2).*" "numbered copies (2)"
+cleanup_pattern "* (3).*" "numbered copies (3)"
+cleanup_pattern "* (4).*" "numbered copies (4)"
+cleanup_pattern "* (5).*" "numbered copies (5)"
 cleanup_pattern "*\ copy.*" "copy files (lowercase)"
 
 echo ""
