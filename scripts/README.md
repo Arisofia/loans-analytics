@@ -66,17 +66,17 @@ make monitoring-logs
 
 ## 🔧 Utility Scripts
 
-| Script                  | Description                            | Usage                                      |
-| ----------------------- | -------------------------------------- | ------------------------------------------ |
-| **master_cleanup.sh**   | 🧹 Master cleanup (local + cloud)      | `./scripts/master_cleanup.sh --dry-run`    |
-| **cleanup_repo.sh**     | Code quality cleanup                   | `./scripts/cleanup_repo.sh`                |
-| **repo-cleanup.sh**     | Git repository cleanup                 | `./scripts/repo-cleanup.sh --aggressive`   |
-| **repo-doctor.sh**      | Repository health checks               | `./scripts/repo-doctor.sh`                 |
-| **pr_status.py**        | Check GitHub PR status                 | `python scripts/pr_status.py`              |
+| Script                  | Description                                      | Usage                                      |
+| ----------------------- | ------------------------------------------------ | ------------------------------------------ |
+| **master_cleanup.sh**   | 🧹 Master cleanup (local + cloud cleanup guidance) | `./scripts/master_cleanup.sh --dry-run`    |
+| **cleanup_repo.sh**     | Code quality cleanup                             | `./scripts/cleanup_repo.sh`                |
+| **repo-cleanup.sh**     | Git repository cleanup                           | `./scripts/repo-cleanup.sh --aggressive`   |
+| **repo-doctor.sh**      | Repository health checks                         | `./scripts/repo-doctor.sh`                 |
+| **pr_status.py**        | Check GitHub PR status                           | `python scripts/pr_status.py`              |
 
 ### 🧹 Master Cleanup Script (Recommended)
 
-**Purpose**: Complete cleanup of local repository and cloud resources - removes ALL backups, copies, caches, and temporary files.
+**Purpose**: Complete cleanup of the local repository plus guided cloud cleanup — removes ALL local backups, copies, caches, and temporary files, and provides manual checklists/instructions for safely cleaning Supabase/Azure resources (no automatic cloud deletion).
 
 **Quick Start**:
 ```bash
