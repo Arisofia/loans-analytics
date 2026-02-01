@@ -17,6 +17,9 @@ jobs:
           cache: "pip"
       - run: |
           pip install -r requirements.txt
+          if [ -f requirements-dev.txt ]; then
+            pip install -r requirements-dev.txt
+          fi
           pytest tests/ -v --cov -m "not integration"
 
   integration-tests:
@@ -33,6 +36,9 @@ jobs:
           cache: "pip"
       - run: |
           pip install -r requirements.txt
+          if [ -f requirements-dev.txt ]; then
+            pip install -r requirements-dev.txt
+          fi
           pytest tests/ -v -m "integration"
 
   multi-agent-tests:
@@ -46,6 +52,9 @@ jobs:
           cache: "pip"
       - run: |
           pip install -r requirements.txt
+          if [ -f requirements-dev.txt ]; then
+            pip install -r requirements-dev.txt
+          fi
           pytest python/multi_agent/ -v -k "test_"
 
   smoke-tests:
@@ -59,4 +68,7 @@ jobs:
           cache: "pip"
       - run: |
           pip install -r requirements.txt
+          if [ -f requirements-dev.txt ]; then
+            pip install -r requirements-dev.txt
+          fi
           python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv --mode validate
