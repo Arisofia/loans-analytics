@@ -3,11 +3,11 @@
 #
 #  MASTER CLEANUP SCRIPT - Abaco Loans Analytics
 #
-#  Purpose: Complete cleanup of local repository and cloud resources
-#  Strategy: Remove ALL backups, copies, caches, and temporary files
-#  Outcome: Keep ONLY production/real files - ONE VERSION, NO DUPLICATES
+#  Purpose: Complete cleanup of local repository (filesystem, Docker, Git state)
+#  Strategy: Remove ALL local backups, copies, caches, and temporary files
+#  Outcome: Keep ONLY production/real project files locally - ONE VERSION, NO DUPLICATES
 #
-#  ⚠️  WARNING: This script is DESTRUCTIVE and IRREVERSIBLE
+#  ⚠️  WARNING: This script is DESTRUCTIVE and IRREVERSIBLE (LOCAL ONLY)
 #  ⚠️  Review each section before executing
 #  ⚠️  Make a full backup BEFORE running if you're unsure
 #
