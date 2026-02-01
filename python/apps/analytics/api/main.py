@@ -71,8 +71,12 @@ def get_data(file_path: str):
     try:
         resolved = _sanitize_and_resolve(file_path, ALLOWED_DATA_DIR)
     except ValueError as exc:
-        logger.warning("Invalid data path requested: %s (%s)", file_path, exc)
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        # SECURE: Sanitize user input before logging to prevent log injection
+        from python.multi_agent.guardrails import Guardrails
+        safe_path = Guardrails.sanitize_for_logging(file_path)
+        safe_exc = Guardrails.sanitize_for_logging(str(exc))
+        logger.warning("Invalid data path requested: %s (%s)", safe_path, safe_exc)
+        raise HTTPException(status_code=400, detail="Invalid path format") from exc
 
     if not resolved.exists() or not resolved.is_file():
         raise HTTPException(status_code=404, detail="file not found")

@@ -43,6 +43,54 @@ class Guardrails:
             return False
 
     @classmethod
+    def sanitize_for_logging(cls, value: Any, max_length: int = 500) -> str:
+        """
+        Sanitize user input for safe logging.
+        
+        Prevents log injection by:
+        1. Converting to string
+        2. Escaping newlines and control characters
+        3. Truncating excessive length
+        4. Removing ANSI escape codes
+        
+        Security: Complies with OWASP Logging Cheat Sheet
+        Reference: https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html
+        
+        Args:
+            value: User-provided value to sanitize
+            max_length: Maximum length before truncation (default: 500)
+        
+        Returns:
+            Safe string suitable for logging
+        
+        Examples:
+            >>> Guardrails.sanitize_for_logging("normal.csv")
+            'normal.csv'
+            >>> Guardrails.sanitize_for_logging("file.csv\\nFAKE LOG ENTRY")
+            'file.csv\\\\nFAKE LOG ENTRY'
+        """
+        # Convert to string
+        text = str(value)
+        
+        # Escape control characters and newlines
+        text = (text
+            .replace('\n', '\\n')   # Newline
+            .replace('\r', '\\r')   # Carriage return
+            .replace('\t', '\\t')   # Tab
+            .replace('\x00', '')    # Null byte
+            .replace('\x1b', '')    # Escape (ANSI codes)
+        )
+        
+        # Remove other control characters (ASCII 0-31, 127)
+        text = re.sub(r'[\x00-\x1f\x7f]', '', text)
+        
+        # Truncate to prevent log flooding
+        if len(text) > max_length:
+            text = text[:max_length] + "...[truncated]"
+        
+        return text
+
+    @classmethod
     def sanitize_context(cls, context: Dict[str, Any]) -> Dict[str, Any]:
         """Sanitize context dictionary by redacting PII."""
         sanitized: Dict[str, Any] = {}
