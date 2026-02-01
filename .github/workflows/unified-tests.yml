@@ -19,6 +19,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
       - name: Run unit tests
         run: |
           pytest tests/ -v --cov --cov-report=term-missing -m "not integration" --tb=short
@@ -37,6 +38,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
       - name: Run integration tests
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -61,6 +63,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
       - name: Run multi-agent tests
         run: |
           pytest python/multi_agent/ -v -k "test_" --tb=short
