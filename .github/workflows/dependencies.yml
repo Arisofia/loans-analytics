@@ -1,1 +1,44 @@
-name: Dependencieson:  schedule:    - cron: "0 8 * * 1"  workflow_dispatch:permissions:  contents: write  pull-requests: writejobs:  update-dependencies:    runs-on: ubuntu-latest    steps:      - uses: actions/checkout@v4      - uses: actions/setup-python@v5        with:          python-version: "3.11"      - name: Update dependencies        run: |          pip install pip-tools          if [ -f "requirements.in" ]; then            pip-compile requirements.in --upgrade          else            echo "requirements.in not found, skipping pip-compile"          fi      - name: Create PR        uses: peter-evans/create-pull-request@v6        with:          commit-message: "chore: update dependencies"          title: "chore: update dependencies"          branch: "auto/update-dependencies"          labels: dependencies  dependency-review:    runs-on: ubuntu-latest    if: false # Disabled: workflow not triggered on pull_request    steps:      - uses: actions/checkout@v4      - uses: actions/dependency-review-action@v4
+name: Dependencies
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Update dependencies
+        run: |
+          pip install pip-tools
+          if [ -f "requirements.in" ]; then
+            pip-compile requirements.in --upgrade
+          else
+            echo "requirements.in not found, skipping pip-compile"
+          fi
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: update dependencies"
+          title: "chore: update dependencies"
+          branch: "auto/update-dependencies"
+          labels: dependencies
+
+  dependency-review:
+    runs-on: ubuntu-latest
+    if: false # Disabled: workflow not triggered on pull_request
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4

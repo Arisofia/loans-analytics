@@ -1,1 +1,311 @@
-name: Pipeline Orchestrator Agenton:  schedule:    - cron: "15 5 * * *"  workflow_dispatch:permissions:  contents: read  issues: writejobs:  pipeline-orchestrator:    name: Pipeline Orchestrator Agent    runs-on: ubuntu-latest    outputs:      run_id: ${{ steps.pipeline.outputs.run_id }}      status: ${{ steps.pipeline.outputs.status }}      duration: ${{ steps.pipeline.outputs.duration }}      records: ${{ steps.pipeline.outputs.records }}    steps:      - name: Checkout repository        uses: actions/checkout@v4        with:          fetch-depth: 1      - name: Set up Python 3.11        uses: actions/setup-python@v5        with:          python-version: "3.11"          cache: "pip"      - name: Install dependencies        run: |          python -m pip install --upgrade pip          pip install -r requirements.txt      - name: Verify Supabase credentials        env:          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}        run: |          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then            echo "❌ ERROR: Missing Supabase credentials in GitHub Secrets"            echo "Please add SUPABASE_URL and SUPABASE_ANON_KEY secrets"            exit 1          fi          echo "✓ Supabase credentials configured"      - name: Run pipeline and capture metadata        id: pipeline        env:          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}          LOG_LEVEL: INFO          GITHUB_SHA: ${{ github.sha }}          GITHUB_RUN_ID: ${{ github.run_id }}          GITHUB_ACTOR: ${{ github.actor }}          GITHUB_EVENT_NAME: ${{ github.event_name }}        run: |          set +e          INPUT_FILE="data/raw/sample_loans.csv"          echo "🚀 Unified agents pipeline run"          echo "Input: $INPUT_FILE"          echo "Commit: ${{ github.sha }}"          START_TIME=$(date +%s)          python scripts/run_data_pipeline.py --input "$INPUT_FILE" 2>&1 | tee pipeline_run.log          EXIT_CODE=${PIPESTATUS[0]}          END_TIME=$(date +%s)          WALL_DURATION=$((END_TIME - START_TIME))          RUN_ID=$(grep "Run ID:" pipeline_run.log | tail -1 | awk '{print $NF}')          if [ -z "$RUN_ID" ]; then            RUN_ID=$(date +%Y%m%d_%H%M%S)          fi          RUN_DIR="logs/runs/$RUN_ID"          RESULTS_FILE="$RUN_DIR/pipeline_results.json"          STATUS="unknown"          DURATION="$WALL_DURATION"          RECORDS="0"          if [ -f "$RESULTS_FILE" ]; then            STATUS=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f); print(data.get('status', 'unknown'))")            DURATION=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f); print(data.get('duration_seconds', 0))")            RECORDS=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f); print(data.get('phases', {}).get('ingestion', {}).get('row_count', 0))")          fi          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT          echo "status=$STATUS" >> $GITHUB_OUTPUT          echo "duration=$DURATION" >> $GITHUB_OUTPUT          echo "records=$RECORDS" >> $GITHUB_OUTPUT          echo "Run ID: $RUN_ID"          echo "Status: $STATUS"          echo "Duration: $DURATION"          echo "Records: $RECORDS"          if [ "$EXIT_CODE" -ne 0 ]; then            exit $EXIT_CODE          fi      - name: Upload pipeline artifacts        if: always()        uses: actions/upload-artifact@v4        with:          name: pipeline-run-${{ steps.pipeline.outputs.run_id }}          path: |            logs/runs/${{ steps.pipeline.outputs.run_id }}/            pipeline_run.log          retention-days: 30  validation-compliance:    name: Validation & Compliance Agent    runs-on: ubuntu-latest    needs: pipeline-orchestrator    if: always()    steps:      - name: Checkout repository        uses: actions/checkout@v4        with:          fetch-depth: 1      - name: Download pipeline artifacts        uses: actions/download-artifact@v4        with:          name: pipeline-run-${{ needs.pipeline-orchestrator.outputs.run_id }}          path: .      - name: Set up Python        uses: actions/setup-python@v5        with:          python-version: "3.11"      - name: Build validation and compliance reports        run: |          mkdir -p logs/runs/${{ needs.pipeline-orchestrator.outputs.run_id }}          cat > /tmp/build_reports.py << 'EOF'          import json          from datetime import datetime, timezone          from pathlib import Path          import os          run_id = os.environ.get("RUN_ID", "unknown")          run_dir = Path("logs/runs") / run_id          results_file = run_dir / "pipeline_results.json"          validation_report = {              "run_id": run_id,              "generated_at": datetime.now(timezone.utc).isoformat(),              "status": "unknown",              "schema_validation": {},              "duplicates": {},              "notes": [],          }          compliance_report = {              "run_id": run_id,              "generated_at": datetime.now(timezone.utc).isoformat(),              "status": "pending_implementation",              "pii_findings": {                  "summary": "Compliance engine not yet implemented.",                  "records_scanned": 0,                  "masked_fields": [],              },              "notes": ["Implement src/compliance for automated PII detection."],          }          if results_file.exists():              with results_file.open() as f:                  results = json.load(f)              ingestion = results.get("phases", {}).get("ingestion", {})              validation_report["status"] = (                  "success" if ingestion.get("validation", {}).get("schema_valid") else "failed"              )              validation_report["schema_validation"] = ingestion.get("validation", {})              validation_report["duplicates"] = ingestion.get("duplicates", {})              validation_report["row_count"] = ingestion.get("row_count")              validation_report["column_count"] = ingestion.get("column_count")              validation_report["pipeline_status"] = results.get("status")              validation_report["duration_seconds"] = results.get("duration_seconds")          else:              validation_report["notes"].append("pipeline_results.json missing; unable to extract validation data.")          run_dir.mkdir(parents=True, exist_ok=True)          with (run_dir / "validation_report.json").open("w") as f:              json.dump(validation_report, f, indent=2)          with (run_dir / "compliance_report.json").open("w") as f:              json.dump(compliance_report, f, indent=2)          EOF          python3 /tmp/build_reports.py        env:          RUN_ID: ${{ needs.pipeline-orchestrator.outputs.run_id }}      - name: Upload validation artifacts        if: always()        uses: actions/upload-artifact@v4        with:          name: validation-reports-${{ needs.pipeline-orchestrator.outputs.run_id }}          path: |            logs/runs/${{ needs.pipeline-orchestrator.outputs.run_id }}/validation_report.json            logs/runs/${{ needs.pipeline-orchestrator.outputs.run_id }}/compliance_report.json          retention-days: 30  observability-performance:    name: Observability & Performance Agent    runs-on: ubuntu-latest    needs: [pipeline-orchestrator, validation-compliance]    if: always()    steps:      - name: Checkout repository        uses: actions/checkout@v4        with:          fetch-depth: 1      - name: Download pipeline artifacts        uses: actions/download-artifact@v4        with:          name: pipeline-run-${{ needs.pipeline-orchestrator.outputs.run_id }}          path: .      - name: Set up Python 3.11        uses: actions/setup-python@v5        with:          python-version: "3.11"          cache: "pip"      - name: Install dependencies        run: |          python -m pip install --upgrade pip          pip install -r requirements.txt      - name: Generate performance metrics        run: |          mkdir -p metrics          cat > /tmp/gen_metrics.py << 'EOF'          import json          from datetime import datetime, timezone          from pathlib import Path          import os          run_id = os.environ.get("RUN_ID", "unknown")          duration = float(os.environ.get("DURATION", "0") or "0")          records = int(os.environ.get("RECORDS", "0") or "0")          status = os.environ.get("STATUS", "unknown")          results_file = Path("logs/runs") / run_id / "pipeline_results.json"          metrics = {              "run_id": run_id,              "generated_at": datetime.now(timezone.utc).isoformat(),              "duration_seconds": duration,              "records_processed": records,              "status": status,              "baseline_seconds": 10,              "threshold_seconds": 15,          }          if results_file.exists():              with results_file.open() as f:                  results = json.load(f)              metrics["pipeline_status"] = results.get("status")              metrics["phases"] = results.get("phases", {})          output_path = Path("metrics") / "pipeline_performance.json"          output_path.parent.mkdir(parents=True, exist_ok=True)          with output_path.open("w") as f:              json.dump(metrics, f, indent=2)          EOF          python3 /tmp/gen_metrics.py        env:          RUN_ID: ${{ needs.pipeline-orchestrator.outputs.run_id }}          DURATION: ${{ needs.pipeline-orchestrator.outputs.duration }}          RECORDS: ${{ needs.pipeline-orchestrator.outputs.records }}          STATUS: ${{ needs.pipeline-orchestrator.outputs.status }}      - name: Store metrics in database        run: python scripts/store_metrics.py metrics/pipeline_performance.json      - name: Raise performance alert when degraded        if: ${{ needs.pipeline-orchestrator.outputs.duration != '' && fromJSON(needs.pipeline-orchestrator.outputs.duration) > 15 }}        uses: actions/github-script@v7        with:          script: |            github.rest.issues.create({              owner: context.repo.owner,              repo: context.repo.repo,              title: '⚠️ Unified pipeline performance degradation',              body: `## Performance Degradation Detected\n\n**Run ID**: ${{ needs.pipeline-orchestrator.outputs.run_id }}\n**Duration**: ${{ needs.pipeline-orchestrator.outputs.duration }}s\n**Records**: ${{ needs.pipeline-orchestrator.outputs.records }}\n\n### Recommended Actions\n1. Review workflow logs and run artifacts.\n2. Check data volume spikes or upstream latency.\n3. Validate recent pipeline changes.\n`,              labels: ['performance', 'monitoring', 'pipeline']            })      - name: Upload metrics artifacts        if: always()        uses: actions/upload-artifact@v4        with:          name: performance-metrics-${{ needs.pipeline-orchestrator.outputs.run_id }}          path: metrics/          retention-days: 30
+name: Pipeline Orchestrator Agent
+
+on:
+  schedule:
+    - cron: "15 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  pipeline-orchestrator:
+    name: Pipeline Orchestrator Agent
+    runs-on: ubuntu-latest
+    outputs:
+      run_id: ${{ steps.pipeline.outputs.run_id }}
+      status: ${{ steps.pipeline.outputs.status }}
+      duration: ${{ steps.pipeline.outputs.duration }}
+      records: ${{ steps.pipeline.outputs.records }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify Supabase credentials
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "❌ ERROR: Missing Supabase credentials in GitHub Secrets"
+            echo "Please add SUPABASE_URL and SUPABASE_ANON_KEY secrets"
+            exit 1
+          fi
+          echo "✓ Supabase credentials configured"
+
+      - name: Run pipeline and capture metadata
+        id: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          LOG_LEVEL: INFO
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set +e
+          INPUT_FILE="data/raw/sample_loans.csv"
+          echo "🚀 Unified agents pipeline run"
+          echo "Input: $INPUT_FILE"
+          echo "Commit: ${{ github.sha }}"
+
+          START_TIME=$(date +%s)
+          python scripts/run_data_pipeline.py --input "$INPUT_FILE" 2>&1 | tee pipeline_run.log
+          EXIT_CODE=${PIPESTATUS[0]}
+          END_TIME=$(date +%s)
+          WALL_DURATION=$((END_TIME - START_TIME))
+
+          RUN_ID=$(grep "Run ID:" pipeline_run.log | tail -1 | awk '{print $NF}')
+          if [ -z "$RUN_ID" ]; then
+            RUN_ID=$(date +%Y%m%d_%H%M%S)
+          fi
+
+          RUN_DIR="logs/runs/$RUN_ID"
+          RESULTS_FILE="$RUN_DIR/pipeline_results.json"
+
+          STATUS="unknown"
+          DURATION="$WALL_DURATION"
+          RECORDS="0"
+
+          if [ -f "$RESULTS_FILE" ]; then
+            STATUS=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f); print(data.get('status', 'unknown'))")
+            DURATION=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f); print(data.get('duration_seconds', 0))")
+            RECORDS=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f); print(data.get('phases', {}).get('ingestion', {}).get('row_count', 0))")
+          fi
+
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "duration=$DURATION" >> $GITHUB_OUTPUT
+          echo "records=$RECORDS" >> $GITHUB_OUTPUT
+
+          echo "Run ID: $RUN_ID"
+          echo "Status: $STATUS"
+          echo "Duration: $DURATION"
+          echo "Records: $RECORDS"
+
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            exit $EXIT_CODE
+          fi
+
+      - name: Upload pipeline artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-run-${{ steps.pipeline.outputs.run_id }}
+          path: |
+            logs/runs/${{ steps.pipeline.outputs.run_id }}/
+            pipeline_run.log
+          retention-days: 30
+
+  validation-compliance:
+    name: Validation & Compliance Agent
+    runs-on: ubuntu-latest
+    needs: pipeline-orchestrator
+    if: always()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download pipeline artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: pipeline-run-${{ needs.pipeline-orchestrator.outputs.run_id }}
+          path: .
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build validation and compliance reports
+        run: |
+          mkdir -p logs/runs/${{ needs.pipeline-orchestrator.outputs.run_id }}
+
+          cat > /tmp/build_reports.py << 'EOF'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          import os
+
+          run_id = os.environ.get("RUN_ID", "unknown")
+          run_dir = Path("logs/runs") / run_id
+          results_file = run_dir / "pipeline_results.json"
+
+          validation_report = {
+              "run_id": run_id,
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "status": "unknown",
+              "schema_validation": {},
+              "duplicates": {},
+              "notes": [],
+          }
+
+          compliance_report = {
+              "run_id": run_id,
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "status": "pending_implementation",
+              "pii_findings": {
+                  "summary": "Compliance engine not yet implemented.",
+                  "records_scanned": 0,
+                  "masked_fields": [],
+              },
+              "notes": ["Implement src/compliance for automated PII detection."],
+          }
+
+          if results_file.exists():
+              with results_file.open() as f:
+                  results = json.load(f)
+
+              ingestion = results.get("phases", {}).get("ingestion", {})
+              validation_report["status"] = (
+                  "success" if ingestion.get("validation", {}).get("schema_valid") else "failed"
+              )
+              validation_report["schema_validation"] = ingestion.get("validation", {})
+              validation_report["duplicates"] = ingestion.get("duplicates", {})
+              validation_report["row_count"] = ingestion.get("row_count")
+              validation_report["column_count"] = ingestion.get("column_count")
+              validation_report["pipeline_status"] = results.get("status")
+              validation_report["duration_seconds"] = results.get("duration_seconds")
+          else:
+              validation_report["notes"].append("pipeline_results.json missing; unable to extract validation data.")
+
+          run_dir.mkdir(parents=True, exist_ok=True)
+
+          with (run_dir / "validation_report.json").open("w") as f:
+              json.dump(validation_report, f, indent=2)
+
+          with (run_dir / "compliance_report.json").open("w") as f:
+              json.dump(compliance_report, f, indent=2)
+          EOF
+
+          python3 /tmp/build_reports.py
+        env:
+          RUN_ID: ${{ needs.pipeline-orchestrator.outputs.run_id }}
+
+      - name: Upload validation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-reports-${{ needs.pipeline-orchestrator.outputs.run_id }}
+          path: |
+            logs/runs/${{ needs.pipeline-orchestrator.outputs.run_id }}/validation_report.json
+            logs/runs/${{ needs.pipeline-orchestrator.outputs.run_id }}/compliance_report.json
+          retention-days: 30
+
+  observability-performance:
+    name: Observability & Performance Agent
+    runs-on: ubuntu-latest
+    needs: [pipeline-orchestrator, validation-compliance]
+    if: always()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download pipeline artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: pipeline-run-${{ needs.pipeline-orchestrator.outputs.run_id }}
+          path: .
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate performance metrics
+        run: |
+          mkdir -p metrics
+
+          cat > /tmp/gen_metrics.py << 'EOF'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          import os
+
+          run_id = os.environ.get("RUN_ID", "unknown")
+          duration = float(os.environ.get("DURATION", "0") or "0")
+          records = int(os.environ.get("RECORDS", "0") or "0")
+          status = os.environ.get("STATUS", "unknown")
+          results_file = Path("logs/runs") / run_id / "pipeline_results.json"
+
+          metrics = {
+              "run_id": run_id,
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "duration_seconds": duration,
+              "records_processed": records,
+              "status": status,
+              "baseline_seconds": 10,
+              "threshold_seconds": 15,
+          }
+
+          if results_file.exists():
+              with results_file.open() as f:
+                  results = json.load(f)
+              metrics["pipeline_status"] = results.get("status")
+              metrics["phases"] = results.get("phases", {})
+
+          output_path = Path("metrics") / "pipeline_performance.json"
+          output_path.parent.mkdir(parents=True, exist_ok=True)
+
+          with output_path.open("w") as f:
+              json.dump(metrics, f, indent=2)
+          EOF
+
+          python3 /tmp/gen_metrics.py
+        env:
+          RUN_ID: ${{ needs.pipeline-orchestrator.outputs.run_id }}
+          DURATION: ${{ needs.pipeline-orchestrator.outputs.duration }}
+          RECORDS: ${{ needs.pipeline-orchestrator.outputs.records }}
+          STATUS: ${{ needs.pipeline-orchestrator.outputs.status }}
+
+      - name: Store metrics in database
+        run: python scripts/store_metrics.py metrics/pipeline_performance.json
+
+      - name: Raise performance alert when degraded
+        if: ${{ needs.pipeline-orchestrator.outputs.duration != '' && fromJSON(needs.pipeline-orchestrator.outputs.duration) > 15 }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚠️ Unified pipeline performance degradation',
+              body: `## Performance Degradation Detected\n\n**Run ID**: ${{ needs.pipeline-orchestrator.outputs.run_id }}\n**Duration**: ${{ needs.pipeline-orchestrator.outputs.duration }}s\n**Records**: ${{ needs.pipeline-orchestrator.outputs.records }}\n\n### Recommended Actions\n1. Review workflow logs and run artifacts.\n2. Check data volume spikes or upstream latency.\n3. Validate recent pipeline changes.\n`,
+              labels: ['performance', 'monitoring', 'pipeline']
+            })
+
+      - name: Upload metrics artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-metrics-${{ needs.pipeline-orchestrator.outputs.run_id }}
+          path: metrics/
+          retention-days: 30
