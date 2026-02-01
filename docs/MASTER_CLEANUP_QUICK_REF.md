@@ -22,7 +22,7 @@
 | **Build** | `.gradle/`, `build/`, `coverage/` |
 | **Backups** | `*.backup`, `*.bak`, `*.old`, `*.copy`, `* (1).*` |
 | **Temp** | `tmp/`, `*.tmp`, `*.temp`, `*.swp` |
-| **Logs** | `logs/`, `*.log`, `test-results/`, `*_REPORT.md` |
+| **Logs** | `logs/`, `*.log`, `test-results/`, selected reports (`OPTIMIZATION_REPORT.md`, `TECHNICAL_DEBT_*.md`, ...) |
 | **Data** | `data/metrics/run_*`, `logs/runs/run_*` |
 | **IDE** | `.idea/`, `.vscode/cache/`, `.DS_Store` |
 | **Docker** | Stopped containers, dangling images |
