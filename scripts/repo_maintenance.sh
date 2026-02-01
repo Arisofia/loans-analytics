@@ -124,19 +124,22 @@ cleanup_item() {
 cleanup_pattern() {
   local pattern="$1"
   local description="$2"
-  
-  local found_files
-  found_files=$(find . -type f -name "$pattern" \
-    ! -path "./.venv/*" ! -path "./node_modules/*" ! -path "./.git/*" \
-    2>/dev/null || true)
-  
-  if [ -n "$found_files" ]; then
-    local count
-    count=$(echo "$found_files" | wc -l | xargs)
+
+  # Build base find command with exclusions
+  local -a find_cmd
+  find_cmd=(find . -type f -name "$pattern" \
+    ! -path "./.venv/*" ! -path "./node_modules/*" ! -path "./.git/*")
+
+  # Count matching files (suppress errors to keep set -e from aborting)
+  local count
+  count=$("${find_cmd[@]}" -print 2>/dev/null | wc -l | xargs)
+
+  if [ "$count" != "0" ]; then
     if [ "$DRY_RUN" = true ]; then
       echo -e "${YELLOW}  [WOULD DELETE] $count $description${NC}"
     else
-      echo "$found_files" | xargs -r rm -f
+      # Use -exec to safely delete files even with spaces/newlines in names
+      "${find_cmd[@]}" -exec rm -f -- {} + 2>/dev/null || true
       echo -e "${GREEN}  ✓ Deleted $count $description${NC}"
     fi
   fi
