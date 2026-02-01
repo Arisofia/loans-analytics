@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test clean maintenance monitoring-start monitoring-stop monitoring-logs monitoring-health dashboard-backup dashboard-restore
+.PHONY: help setup format lint type-check test clean maintenance maintenance-aggressive maintenance-dry-run monitoring-start monitoring-stop monitoring-logs monitoring-health dashboard-backup dashboard-restore
 PYTHON := python3
 VENV := .venv
 BIN := $(VENV)/bin
