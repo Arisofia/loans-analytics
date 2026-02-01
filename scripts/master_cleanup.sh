@@ -379,17 +379,25 @@ if command -v docker &> /dev/null; then
     unused_volumes=$(docker volume ls -qf "dangling=true" 2>/dev/null || true)
     if [ -n "$unused_volumes" ]; then
       volume_count=$(echo "$unused_volumes" | wc -l | xargs)
-      echo -e "${RED}    [NUCLEAR] [DELETING] $volume_count unused volume(s)${NC}"
-      docker volume rm $unused_volumes
-      echo -e "${GREEN}      ✓ Deleted${NC}"
+      if [ "$DRY_RUN" = true ]; then
+        echo -e "${YELLOW}    [NUCLEAR] [WOULD DELETE] $volume_count unused volume(s)${NC}"
+      else
+        echo -e "${RED}    [NUCLEAR] [DELETING] $volume_count unused volume(s)${NC}"
+        docker volume rm $unused_volumes
+        echo -e "${GREEN}      ✓ Deleted${NC}"
+      fi
     else
       echo -e "${GREEN}    ✓ No unused volumes${NC}"
     fi
     
     # System prune
-    echo -e "${RED}    [NUCLEAR] Running docker system prune...${NC}"
-    docker system prune -af --volumes
-    echo -e "${GREEN}      ✓ Complete${NC}"
+    if [ "$DRY_RUN" = true ]; then
+      echo -e "${YELLOW}    [NUCLEAR] [WOULD RUN] docker system prune -af --volumes${NC}"
+    else
+      echo -e "${RED}    [NUCLEAR] Running docker system prune...${NC}"
+      docker system prune -af --volumes
+      echo -e "${GREEN}      ✓ Complete${NC}"
+    fi
   fi
   
   # Local data directories
