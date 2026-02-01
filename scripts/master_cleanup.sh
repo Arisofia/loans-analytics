@@ -97,7 +97,7 @@ cleanup_item() {
       fi
     else
       echo -e "${RED}  [DELETING] $description: $path${NC}"
-      rm -rf "$path"
+      rm -rf -- "$path"
       echo -e "${GREEN}    ✓ Deleted${NC}"
     fi
   fi
@@ -172,8 +172,20 @@ cleanup_item ".ruff_cache" "ruff cache"
 cleanup_item ".cache" "general Python cache"
 cleanup_item "htmlcov" "coverage reports"
 cleanup_item ".coverage" "coverage data"
-cleanup_item "*.egg-info" "egg info directories"
 cleanup_item ".eggs" "eggs directory"
+
+# Find and delete all *.egg-info directories
+echo -e "${YELLOW}  Searching for *.egg-info directories...${NC}"
+egginfo_dirs=$(find . -type d -name "*.egg-info" ! -path "./.venv/*" ! -path "./node_modules/*" ! -path "./.git/*" 2>/dev/null || true)
+if [ -z "$egginfo_dirs" ]; then
+  echo -e "${GREEN}    ✓ No *.egg-info directories found${NC}"
+else
+  count=$(echo "$egginfo_dirs" | wc -l | xargs)
+  echo -e "${YELLOW}    Found $count *.egg-info director(ies)${NC}"
+  echo "$egginfo_dirs" | while read -r dir; do
+    cleanup_item "$dir" "*.egg-info"
+  done
+fi
 
 # Find and delete all __pycache__ directories
 echo -e "${YELLOW}  Searching for __pycache__ directories...${NC}"
@@ -395,7 +407,10 @@ echo ""
 echo -e "${CYAN}${BOLD}[10/10] 🔧 Git Repository Cleanup${NC}"
 echo ""
 
-if [ "$DRY_RUN" = false ]; then
+# Check if we're in a git repository
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+  echo -e "${YELLOW}  ⚠ Not in a git repository - skipping Git cleanup${NC}"
+elif [ "$DRY_RUN" = false ]; then
   # Fetch and prune
   echo -e "${YELLOW}  Fetching and pruning remote references...${NC}"
   git fetch --all --prune
