@@ -10,15 +10,17 @@ This module contains actual evaluation tests to validate:
 from pathlib import Path
 
 import pytest
+
+
 class TestEvaluationConfiguration:
     """Tests for evaluation configuration and setup."""
 
     def test_evaluation_config_exists(self) -> None:
         """Verify evaluation threshold configuration file exists."""
         config_path = Path("config/evaluation-thresholds.yml")
-        assert config_path.exists(), (
-            "Evaluation threshold config must exist at config/evaluation-thresholds.yml"
-        )
+        assert (
+            config_path.exists()
+        ), "Evaluation threshold config must exist at config/evaluation-thresholds.yml"
 
     def test_evaluation_config_valid_yaml(self) -> None:
         """Verify evaluation config is valid YAML with expected structure."""
@@ -34,17 +36,11 @@ class TestEvaluationConfiguration:
         # Validate required threshold keys
         assert "test_coverage" in config, "Config must define test_coverage thresholds"
         assert "min" in config["test_coverage"], "test_coverage must have 'min' threshold"
-        assert "target" in config["test_coverage"], (
-            "test_coverage must have 'target' threshold"
-        )
+        assert "target" in config["test_coverage"], "test_coverage must have 'target' threshold"
 
         # Validate threshold values are reasonable
-        assert 0 <= config["test_coverage"]["min"] <= 100, (
-            "test_coverage.min must be 0-100"
-        )
-        assert 0 <= config["test_coverage"]["target"] <= 100, (
-            "test_coverage.target must be 0-100"
-        )
+        assert 0 <= config["test_coverage"]["min"] <= 100, "test_coverage.min must be 0-100"
+        assert 0 <= config["test_coverage"]["target"] <= 100, "test_coverage.target must be 0-100"
 
     def test_check_thresholds_script_exists(self) -> None:
         """Verify check_thresholds.py script exists."""
@@ -153,9 +149,7 @@ class TestThresholdValidation:
 
         assert result["passed"] is False, "Invalid metrics should fail thresholds"
         assert len(result["failures"]) > 0, "Should have failures"
-        assert "Test pass rate" in result["failures"][0], (
-            "Should report test pass rate failure"
-        )
+        assert "Test pass rate" in result["failures"][0], "Should report test pass rate failure"
 
     def test_threshold_validation_warning_metrics(self) -> None:
         """Test threshold validation with metrics that trigger warnings."""
