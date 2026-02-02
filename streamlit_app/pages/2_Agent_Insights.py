@@ -173,7 +173,11 @@ if parsed_outputs:
         if dates:
             min_date = min(dates)
     except (ValueError, OSError):
-        pass
+        logger.warning(
+            "Failed to parse one or more agent interaction timestamps; "
+            "using default date filter of %s",
+            min_date,
+        )
 
 date_filter = st.sidebar.date_input(
     "Show interactions since",
