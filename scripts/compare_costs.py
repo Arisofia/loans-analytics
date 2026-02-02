@@ -9,6 +9,11 @@ import json
 import sys
 from pathlib import Path
 
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -26,13 +31,10 @@ def load_baselines(baseline_file: str) -> dict:
         if baseline_file.endswith(".json"):
             return json.load(f)
         elif baseline_file.endswith((".yml", ".yaml")):
-            try:
-                import yaml
-
-                return yaml.safe_load(f)
-            except ImportError:
+            if yaml is None:
                 print("⚠️  PyYAML not installed, cannot read YAML baselines")
                 return {}
+            return yaml.safe_load(f)
     return {}
 
 

@@ -22,8 +22,8 @@ from python.logging_config import get_logger
 try:
     from supabase import Client, create_client
 except ImportError:
-    Client = None
-    create_client = None
+    Client = None  # type: ignore[assignment,misc]
+    create_client = None  # type: ignore[assignment]
 
 if TYPE_CHECKING:
     from python.kpis.engine import KPIEngineV2

@@ -211,20 +211,18 @@ class KpiContextProvider:
             pct_over = ((value - max_val) / max_val) * 100
             if pct_over > 20:
                 return "critical"
-            elif pct_over > 10:
+            if pct_over > 10:
                 return "warning"
-            else:
-                return "info"
+            return "info"
 
-        elif breach_type == "lower_bound" and min_val is not None:
+        if breach_type == "lower_bound" and min_val is not None:
             # Calculate percentage under min
             pct_under = ((min_val - value) / min_val) * 100
             if pct_under > 20:
                 return "critical"
-            elif pct_under > 10:
+            if pct_under > 10:
                 return "warning"
-            else:
-                return "info"
+            return "info"
 
         return "warning"
 

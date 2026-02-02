@@ -165,7 +165,8 @@ class IngestionPhase:
                 if col in df.columns:
                     # Use list comprehension instead of .apply() to avoid cell variable issue
                     # Cast expected_type to type for mypy compatibility
-                    if not all(isinstance(val, expected_type) for val in df[col].dropna()):  # type: ignore[arg-type]
+                    # type: ignore[arg-type]
+                    if not all(isinstance(val, expected_type) for val in df[col].dropna()):
                         type_errors.append(col)
 
             if type_errors:

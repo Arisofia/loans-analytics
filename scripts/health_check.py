@@ -8,6 +8,7 @@ import argparse
 import os
 import sys
 import time
+from pathlib import Path
 from typing import Dict, Tuple
 
 try:
@@ -15,6 +16,12 @@ try:
 except ImportError:
     print("❌ requests library not found. Install with: pip install requests")
     sys.exit(1)
+
+try:
+    from src.agents.monitoring import CostTracker, PerformanceTracker
+except ImportError:
+    CostTracker = None
+    PerformanceTracker = None
 
 
 def check_supabase() -> Tuple[bool, str]:
@@ -80,24 +87,19 @@ def check_agents() -> Tuple[bool, str]:
     Returns:
         Tuple of (success, message)
     """
-    # Check if agent modules can be imported
+    # Check if agent modules are available
+    if CostTracker is None or PerformanceTracker is None:
+        return False, "Agent system import failed: monitoring module not available"
+    
     try:
-        import sys
-        from pathlib import Path
-
-        # Add src to path
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-
-        from src.agents.monitoring import CostTracker, PerformanceTracker
-
         # Try to create instances
         CostTracker()
         PerformanceTracker()
 
         return True, "Agent monitoring system operational"
 
-    except ImportError as e:
-        return False, f"Agent system import failed: {str(e)}"
+    except Exception as e:
+        return False, f"Agent system initialization failed: {str(e)}"
     except Exception as e:
         return False, f"Agent system check failed: {str(e)}"
 
