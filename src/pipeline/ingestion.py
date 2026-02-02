@@ -8,6 +8,8 @@ Responsibilities:
 - Raw data storage with immutable hashes
 
 NOTE: Cascade API integration has been deprecated (Jan 2026).
+NOTE: This module is not designed to be run directly as a script.
+      Use: python scripts/run_data_pipeline.py
 """
 
 import hashlib
