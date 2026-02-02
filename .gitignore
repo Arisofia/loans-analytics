@@ -219,4 +219,9 @@ reports/
 /fi-analytics/
 /projects/
 /models/*.pkl
+
+# Azure credentials (local only)
+.azure-credentials
+
+# Agent outputs
 data/agent_outputs/
