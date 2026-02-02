@@ -10,6 +10,7 @@ Responsibilities:
 """
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
@@ -17,6 +18,12 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 import pandas as pd
 
 from python.logging_config import get_logger
+
+try:
+    from supabase import Client, create_client
+except ImportError:
+    Client = None
+    create_client = None
 
 if TYPE_CHECKING:
     from python.kpis.engine import KPIEngineV2
@@ -179,10 +186,10 @@ class OutputPhase:
             return {"status": "skipped", "reason": "database_disabled"}
 
         try:
-            # Import Supabase client
-            import os
-
-            from supabase import Client, create_client
+            # Check if Supabase library is available
+            if Client is None or create_client is None:
+                logger.warning("Supabase library not installed")
+                return {"status": "skipped", "reason": "supabase_not_installed"}
 
             if not kpi_results or not isinstance(kpi_results, dict):
                 logger.warning("No KPI results to write to database")
