@@ -46,7 +46,7 @@ def _parse_cost_value(value) -> float:
 
 
 def _check_cost_regression(
-    scenario_name: str, current_cost: float, baseline_cost: float,
+    current_cost: float, baseline_cost: float,
     scenario_threshold: float
 ) -> tuple[bool, float, float]:
     """Check cost regression and return (alert, increase, increase_pct)."""
@@ -106,7 +106,7 @@ def _process_scenario(
 
     scenario_threshold = baseline_data.get("threshold", default_threshold)
     alert, _, increase_pct = _check_cost_regression(
-        scenario_name, current_cost, baseline_cost, scenario_threshold
+        current_cost, baseline_cost, scenario_threshold
     )
 
     _print_cost_result(
