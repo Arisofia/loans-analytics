@@ -111,69 +111,74 @@ def calculate_days_past_due(df: pd.DataFrame) -> pd.DataFrame:
 
     def get_dpd(row):
         """Calculate DPD from payment history."""
-        payment_history = parse_payment_history(row['payment_history_json'])
+        payment_history = parse_payment_history(row["payment_history_json"])
         if not payment_history:
             return 0
 
         # Get unpaid/late payments
         overdue_days = [
-            p['days_late'] for p in payment_history
-            if p['status'] in ['missed', 'defaulted']
-            or (p['status'] == 'late_paid' and p['days_late'] > 30)
+            p["days_late"]
+            for p in payment_history
+            if p["status"] in ["missed", "defaulted"]
+            or (p["status"] == "late_paid" and p["days_late"] > 30)
         ]
 
         return max(overdue_days) if overdue_days else 0
 
-    df['days_past_due'] = df.apply(get_dpd, axis=1)
+    df["days_past_due"] = df.apply(get_dpd, axis=1)
     return df
 
 
 def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
     """Calculate key portfolio metrics."""
     # Total portfolio value
-    total_portfolio = df['principal_amount'].sum()
+    total_portfolio = df["principal_amount"].sum()
 
     # Weighted average rate
-    total_principal = df['principal_amount'].sum()
-    weighted_rate = (df['principal_amount'] * df['interest_rate']).sum() / total_principal if total_principal > 0 else 0
+    total_principal = df["principal_amount"].sum()
+    weighted_rate = (
+        (df["principal_amount"] * df["interest_rate"]).sum() / total_principal
+        if total_principal > 0
+        else 0
+    )
 
     # Calculate DPD
     df = calculate_days_past_due(df)
 
     # Delinquency rates
     total_loans = len(df)
-    dpd_30_plus = len(df[df['days_past_due'] >= 30])
-    dpd_60_plus = len(df[df['days_past_due'] >= 60])
-    dpd_90_plus = len(df[df['days_past_due'] >= 90])
-    
+    dpd_30_plus = len(df[df["days_past_due"] >= 30])
+    dpd_60_plus = len(df[df["days_past_due"] >= 60])
+    dpd_90_plus = len(df[df["days_past_due"] >= 90])
+
     delinquency_rate_30 = (dpd_30_plus / total_loans * 100) if total_loans > 0 else 0
     delinquency_rate_60 = (dpd_60_plus / total_loans * 100) if total_loans > 0 else 0
     delinquency_rate_90 = (dpd_90_plus / total_loans * 100) if total_loans > 0 else 0
 
     # PAR (Portfolio at Risk) > 30
-    par_30_amount = df[df['days_past_due'] >= 30]['principal_amount'].sum()
+    par_30_amount = df[df["days_past_due"] >= 30]["principal_amount"].sum()
     par_30_rate = (par_30_amount / total_portfolio * 100) if total_portfolio > 0 else 0
 
     # Expected loss (simplified: average risk score * portfolio)
-    expected_loss = (df['risk_score'] * df['principal_amount']).sum()
+    expected_loss = (df["risk_score"] * df["principal_amount"]).sum()
     expected_loss_rate = (expected_loss / total_portfolio * 100) if total_portfolio > 0 else 0
 
     # Status distribution
-    status_dist = df['current_status'].value_counts().to_dict()
-    
+    status_dist = df["current_status"].value_counts().to_dict()
+
     return {
-        'total_portfolio': total_portfolio,
-        'weighted_avg_rate': weighted_rate,
-        'delinquency_rate_30': delinquency_rate_30,
-        'delinquency_rate_60': delinquency_rate_60,
-        'delinquency_rate_90': delinquency_rate_90,
-        'par_30_rate': par_30_rate,
-        'expected_loss': expected_loss,
-        'expected_loss_rate': expected_loss_rate,
-        'total_loans': total_loans,
-        'status_distribution': status_dist,
-        'avg_loan_size': df['principal_amount'].mean(),
-        'avg_risk_score': df['risk_score'].mean()
+        "total_portfolio": total_portfolio,
+        "weighted_avg_rate": weighted_rate,
+        "delinquency_rate_30": delinquency_rate_30,
+        "delinquency_rate_60": delinquency_rate_60,
+        "delinquency_rate_90": delinquency_rate_90,
+        "par_30_rate": par_30_rate,
+        "expected_loss": expected_loss,
+        "expected_loss_rate": expected_loss_rate,
+        "total_loans": total_loans,
+        "status_distribution": status_dist,
+        "avg_loan_size": df["principal_amount"].mean(),
+        "avg_risk_score": df["risk_score"].mean(),
     }
 
 
@@ -192,7 +197,7 @@ def render_metrics_cards(metrics: dict[str, Any]):
         st.metric(
             label="📊 Weighted Avg Rate",
             value=f"{metrics['weighted_avg_rate']:.2%}",
-            delta=f"Avg: €{metrics['avg_loan_size']:,.0f}"
+            delta=f"Avg: €{metrics['avg_loan_size']:,.0f}",
         )
 
     with col3:
@@ -215,50 +220,67 @@ def render_metrics_cards(metrics: dict[str, Any]):
 def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
     """Create delinquency trend line chart."""
     df = df.copy()
-    df['origination_date'] = pd.to_datetime(df['origination_date'])
+    df["origination_date"] = pd.to_datetime(df["origination_date"])
     df = calculate_days_past_due(df)
 
     # Group by month
-    df['origination_month'] = df['origination_date'].dt.to_period('M').astype(str)
+    df["origination_month"] = df["origination_date"].dt.to_period("M").astype(str)
 
     # Calculate delinquency rates by cohort
     cohort_data = []
-    for month in sorted(df['origination_month'].unique()):
-        cohort = df[df['origination_month'] == month]
+    for month in sorted(df["origination_month"].unique()):
+        cohort = df[df["origination_month"] == month]
         total = len(cohort)
-        dpd_30 = len(cohort[cohort['days_past_due'] >= 30])
-        dpd_60 = len(cohort[cohort['days_past_due'] >= 60])
-        dpd_90 = len(cohort[cohort['days_past_due'] >= 90])
+        dpd_30 = len(cohort[cohort["days_past_due"] >= 30])
+        dpd_60 = len(cohort[cohort["days_past_due"] >= 60])
+        dpd_90 = len(cohort[cohort["days_past_due"] >= 90])
 
-        cohort_data.append({
-            'month': month,
-            'DPD 30+': (dpd_30 / total * 100) if total > 0 else 0,
-            'DPD 60+': (dpd_60 / total * 100) if total > 0 else 0,
-            'DPD 90+': (dpd_90 / total * 100) if total > 0 else 0
-        })
+        cohort_data.append(
+            {
+                "month": month,
+                "DPD 30+": (dpd_30 / total * 100) if total > 0 else 0,
+                "DPD 60+": (dpd_60 / total * 100) if total > 0 else 0,
+                "DPD 90+": (dpd_90 / total * 100) if total > 0 else 0,
+            }
+        )
 
     cohort_df = pd.DataFrame(cohort_data)
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=cohort_df['month'], y=cohort_df['DPD 30+'],
-        name='30+ Days', mode='lines+markers', line=dict(color='#ffc107', width=2)
-    ))
-    fig.add_trace(go.Scatter(
-        x=cohort_df['month'], y=cohort_df['DPD 60+'],
-        name='60+ Days', mode='lines+markers', line=dict(color='#ff9800', width=2)
-    ))
-    fig.add_trace(go.Scatter(
-        x=cohort_df['month'], y=cohort_df['DPD 90+'],
-        name='90+ Days', mode='lines+markers', line=dict(color='#dc3545', width=2)
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=cohort_df["month"],
+            y=cohort_df["DPD 30+"],
+            name="30+ Days",
+            mode="lines+markers",
+            line={"color": "#ffc107", "width": 2},
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=cohort_df["month"],
+            y=cohort_df["DPD 60+"],
+            name="60+ Days",
+            mode="lines+markers",
+            line={"color": "#ff9800", "width": 2},
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=cohort_df["month"],
+            y=cohort_df["DPD 90+"],
+            name="90+ Days",
+            mode="lines+markers",
+            line={"color": "#dc3545", "width": 2},
+        )
+    )
 
     fig.update_layout(
-        title='Delinquency Trend by Origination Cohort',
-        xaxis_title='Origination Month',
-        yaxis_title='Delinquency Rate (%)',
-        hovermode='x unified',
-        height=400
+        title="Delinquency Trend by Origination Cohort",
+        xaxis_title="Origination Month",
+        yaxis_title="Delinquency Rate (%)",
+        hovermode="x unified",
+        height=400,
     )
 
     return fig
@@ -267,17 +289,19 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
 def create_risk_distribution(df: pd.DataFrame) -> go.Figure:
     """Create risk score distribution histogram."""
     fig = px.histogram(
-        df, x='risk_score', nbins=20,
-        title='Risk Score Distribution',
-        labels={'risk_score': 'Risk Score', 'count': 'Number of Loans'},
-        color_discrete_sequence=['#667eea']
+        df,
+        x="risk_score",
+        nbins=20,
+        title="Risk Score Distribution",
+        labels={"risk_score": "Risk Score", "count": "Number of Loans"},
+        color_discrete_sequence=["#667eea"],
     )
 
     fig.update_layout(
-        xaxis_title='Risk Score',
-        yaxis_title='Number of Loans',
+        xaxis_title="Risk Score",
+        yaxis_title="Number of Loans",
         height=400,
-        showlegend=False
+        showlegend=False,
     )
 
     return fig
@@ -321,67 +345,74 @@ def build_agent_portfolio_context(df: pd.DataFrame) -> dict[str, Any]:
 def create_regional_heatmap(df: pd.DataFrame) -> go.Figure:
     """Create regional concentration heatmap for Spanish regions."""
     # Calculate metrics by region
-    regional_data = df.groupby('region').agg({
-        'principal_amount': ['sum', 'count'],
-        'risk_score': 'mean'
-    }).reset_index()
-    
-    regional_data.columns = ['region', 'total_amount', 'loan_count', 'avg_risk']
-    regional_data['concentration'] = (regional_data['total_amount'] / regional_data['total_amount'].sum() * 100)
-    
+    regional_data = (
+        df.groupby("region")
+        .agg({"principal_amount": ["sum", "count"], "risk_score": "mean"})
+        .reset_index()
+    )
+
+    regional_data.columns = ["region", "total_amount", "loan_count", "avg_risk"]
+    regional_data["concentration"] = (
+        regional_data["total_amount"] / regional_data["total_amount"].sum() * 100
+    )
+
     # Sort by concentration
-    regional_data = regional_data.sort_values('concentration', ascending=False)
-    
+    regional_data = regional_data.sort_values("concentration", ascending=False)
+
     fig = px.bar(
         regional_data.head(10),
-        x='region',
-        y='concentration',
-        color='avg_risk',
-        title='Top 10 Regions by Portfolio Concentration',
-        labels={'concentration': 'Portfolio %', 'avg_risk': 'Avg Risk', 'region': 'Region'},
-        color_continuous_scale='RdYlGn_r',
-        text='concentration'
+        x="region",
+        y="concentration",
+        color="avg_risk",
+        title="Top 10 Regions by Portfolio Concentration",
+        labels={"concentration": "Portfolio %", "avg_risk": "Avg Risk", "region": "Region"},
+        color_continuous_scale="RdYlGn_r",
+        text="concentration",
     )
-    
-    fig.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+
+    fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
     fig.update_layout(height=400, xaxis_tickangle=-45)
-    
+
     return fig
 
 
 def create_vintage_analysis(df: pd.DataFrame) -> go.Figure:
     """Create vintage analysis visualization."""
     df = df.copy()
-    df['origination_date'] = pd.to_datetime(df['origination_date'])
-    df['origination_quarter'] = df['origination_date'].dt.to_period('Q').astype(str)
+    df["origination_date"] = pd.to_datetime(df["origination_date"])
+    df["origination_quarter"] = df["origination_date"].dt.to_period("Q").astype(str)
 
-    vintage_data = df.groupby(['origination_quarter', 'current_status']).size().unstack(fill_value=0)
+    vintage_data = (
+        df.groupby(["origination_quarter", "current_status"]).size().unstack(fill_value=0)
+    )
     vintage_pct = vintage_data.div(vintage_data.sum(axis=1), axis=0) * 100
 
     fig = go.Figure()
 
     status_colors = {
-        'current': '#28a745',
-        'paid-off': '#17a2b8',
-        'delinquent': '#ffc107',
-        'default': '#dc3545'
+        "current": "#28a745",
+        "paid-off": "#17a2b8",
+        "delinquent": "#ffc107",
+        "default": "#dc3545",
     }
 
     for status in vintage_pct.columns:
-        fig.add_trace(go.Bar(
-            name=status.title(),
-            x=vintage_pct.index,
-            y=vintage_pct[status],
-            marker_color=status_colors.get(status, '#6c757d')
-        ))
+        fig.add_trace(
+            go.Bar(
+                name=status.title(),
+                x=vintage_pct.index,
+                y=vintage_pct[status],
+                marker_color=status_colors.get(status, "#6c757d"),
+            )
+        )
 
     fig.update_layout(
-        title='Vintage Analysis - Loan Status by Origination Quarter',
-        xaxis_title='Origination Quarter',
-        yaxis_title='Percentage (%)',
-        barmode='stack',
+        title="Vintage Analysis - Loan Status by Origination Quarter",
+        xaxis_title="Origination Quarter",
+        yaxis_title="Percentage (%)",
+        barmode="stack",
         height=400,
-        hovermode='x unified'
+        hovermode="x unified",
     )
 
     return fig
@@ -397,62 +428,72 @@ def render_loan_table(df: pd.DataFrame):
     with col1:
         status_filter = st.multiselect(
             "Status",
-            options=df['current_status'].unique().tolist(),
-            default=df['current_status'].unique().tolist()
+            options=df["current_status"].unique().tolist(),
+            default=df["current_status"].unique().tolist(),
         )
 
     with col2:
-        regions = sorted(df['region'].unique().tolist())
+        regions = sorted(df["region"].unique().tolist())
         region_filter = st.multiselect(
             "Region",
             options=regions,
-            default=[]
+            default=[],
         )
 
     with col3:
-        min_amount = float(df['principal_amount'].min())
-        max_amount = float(df['principal_amount'].max())
+        min_amount = float(df["principal_amount"].min())
+        max_amount = float(df["principal_amount"].max())
         amount_range = st.slider(
             "Principal Amount (€)",
             min_value=min_amount,
             max_value=max_amount,
             value=(min_amount, max_amount),
-            format="€%.0f"
+            format="€%.0f",
         )
 
     with col4:
         search_term = st.text_input("🔍 Search (Loan ID or Borrower)", "")
 
     # Apply filters
-    filtered_df = df[df['current_status'].isin(status_filter)]
+    filtered_df = df[df["current_status"].isin(status_filter)]
 
     if region_filter:
-        filtered_df = filtered_df[filtered_df['region'].isin(region_filter)]
+        filtered_df = filtered_df[filtered_df["region"].isin(region_filter)]
 
     filtered_df = filtered_df[
-        (filtered_df['principal_amount'] >= amount_range[0]) &
-        (filtered_df['principal_amount'] <= amount_range[1])
+        (filtered_df["principal_amount"] >= amount_range[0])
+        & (filtered_df["principal_amount"] <= amount_range[1])
     ]
 
     if search_term:
         filtered_df = filtered_df[
-            filtered_df['loan_id'].str.contains(search_term, case=False) |
-            filtered_df['borrower_name'].str.contains(search_term, case=False)
+            filtered_df["loan_id"].str.contains(search_term, case=False)
+            | filtered_df["borrower_name"].str.contains(search_term, case=False)
         ]
 
     # Display count
     st.info(f"Showing {len(filtered_df)} of {len(df)} loans")
 
     # Prepare display dataframe
-    display_df = filtered_df[[
-        'loan_id', 'borrower_name', 'region', 'principal_amount',
-        'interest_rate', 'term_months', 'origination_date',
-        'current_status', 'risk_score'
-    ]].copy()
+    display_df = filtered_df[
+        [
+            "loan_id",
+            "borrower_name",
+            "region",
+            "principal_amount",
+            "interest_rate",
+            "term_months",
+            "origination_date",
+            "current_status",
+            "risk_score",
+        ]
+    ].copy()
 
-    display_df['principal_amount'] = display_df['principal_amount'].apply(lambda x: f"€{x:,.2f}")
-    display_df['interest_rate'] = display_df['interest_rate'].apply(lambda x: f"{x:.2%}")
-    display_df['risk_score'] = display_df['risk_score'].apply(lambda x: f"{x:.4f}")
+    display_df["principal_amount"] = display_df["principal_amount"].apply(
+        lambda x: f"€{x:,.2f}"
+    )
+    display_df["interest_rate"] = display_df["interest_rate"].apply(lambda x: f"{x:.2%}")
+    display_df["risk_score"] = display_df["risk_score"].apply(lambda x: f"{x:.4f}")
 
     # Display table
     st.dataframe(
@@ -476,12 +517,12 @@ def render_loan_table(df: pd.DataFrame):
     # Export buttons
     col1, col2 = st.columns([1, 5])
     with col1:
-        csv = filtered_df.to_csv(index=False).encode('utf-8')
+        csv = filtered_df.to_csv(index=False).encode("utf-8")
         st.download_button(
             label="📥 Export CSV",
             data=csv,
             file_name=f"loan_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            mime="text/csv"
+            mime="text/csv",
         )
 
 
@@ -495,16 +536,18 @@ def main():
 
         uploaded_file = st.file_uploader(
             "Upload CSV file",
-            type=['csv'],
-            help="Upload a CSV file with loan data. Required columns: " + ", ".join(REQUIRED_COLUMNS[:6]) + "..."
+            type=["csv"],
+            help="Upload a CSV file with loan data. Required columns: "
+            + ", ".join(REQUIRED_COLUMNS[:6])
+            + "...",
         )
 
         # Quick load sample data
         if st.button("📂 Load Sample Data (Spanish Loans)"):
             sample_file = ROOT_DIR / "data" / "raw" / "spanish_loans_seed.csv"
             if sample_file.exists():
-                st.session_state['data_loaded'] = True
-                st.session_state['loan_data'] = pd.read_csv(sample_file)
+                st.session_state["data_loaded"] = True
+                st.session_state["loan_data"] = pd.read_csv(sample_file)
                 st.success("✅ Sample data loaded!")
                 st.rerun()
             else:
@@ -547,8 +590,8 @@ def main():
             valid, missing_cols = validate_uploaded_data(df)
 
             if valid:
-                st.session_state['data_loaded'] = True
-                st.session_state['loan_data'] = df
+                st.session_state["data_loaded"] = True
+                st.session_state["loan_data"] = df
                 st.success("✅ Data uploaded and validated successfully!")
             else:
                 st.error(f"❌ Missing required columns: {', '.join(missing_cols)}")
@@ -559,8 +602,13 @@ def main():
             return
 
     # Check if data is loaded
-    if 'data_loaded' not in st.session_state or not st.session_state['data_loaded']:
-        st.info("👆 Please upload a CSV file or load sample data from the sidebar to begin analysis")
+    if (
+        "data_loaded" not in st.session_state
+        or not st.session_state["data_loaded"]
+    ):
+        st.info(
+            "👆 Please upload a CSV file or load sample data from the sidebar to begin analysis"
+        )
 
         st.markdown("### 📋 Required Data Format")
         st.markdown("Your CSV file must include these columns:")
@@ -587,7 +635,7 @@ def main():
         return
 
     # Load data
-    df = st.session_state['loan_data']
+    df = st.session_state["loan_data"]
 
     # Calculate metrics
     metrics = calculate_portfolio_metrics(df)
@@ -616,13 +664,15 @@ def main():
     st.markdown("---")
 
     # Visualizations
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📈 Delinquency Trends",
-        "📊 Risk Distribution",
-        "🗺️ Regional Analysis",
-        "📅 Vintage Analysis",
-        "📋 Loan Table"
-    ])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        [
+            "📈 Delinquency Trends",
+            "📊 Risk Distribution",
+            "🗺️ Regional Analysis",
+            "📅 Vintage Analysis",
+            "📋 Loan Table",
+        ]
+    )
     
     with tab1:
         st.plotly_chart(create_delinquency_trend(df), use_container_width=True)
@@ -649,20 +699,24 @@ def main():
         st.plotly_chart(create_regional_heatmap(df), use_container_width=True)
 
         st.markdown("#### Regional Distribution")
-        regional_summary = df.groupby('region').agg({
-            'principal_amount': 'sum',
-            'loan_id': 'count',
-            'risk_score': 'mean'
-        }).round(2)
-        regional_summary.columns = ['Total Amount (€)', 'Loan Count', 'Avg Risk']
-        regional_summary = regional_summary.sort_values('Total Amount (€)', ascending=False)
+        regional_summary = df.groupby("region").agg(
+            {
+                "principal_amount": "sum",
+                "loan_id": "count",
+                "risk_score": "mean",
+            }
+        ).round(2)
+        regional_summary.columns = ["Total Amount (€)", "Loan Count", "Avg Risk"]
+        regional_summary = regional_summary.sort_values(
+            "Total Amount (€)", ascending=False
+        )
         st.dataframe(regional_summary, use_container_width=True)
 
     with tab4:
         st.plotly_chart(create_vintage_analysis(df), use_container_width=True)
 
         st.markdown("#### Status Distribution")
-        status_counts = df['current_status'].value_counts()
+        status_counts = df["current_status"].value_counts()
         status_pct = (status_counts / len(df) * 100).round(1)
 
         col1, col2, col3, col4 = st.columns(4)
@@ -671,7 +725,7 @@ def main():
             with col:
                 st.metric(
                     status.title(),
-                    f"{count} ({status_pct[status]:.1f}%)"
+                    f"{count} ({status_pct[status]:.1f}%)",
                 )
 
     with tab5:
