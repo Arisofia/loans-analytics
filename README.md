@@ -102,6 +102,56 @@ streamlit run streamlit_app.py
 # Opens http://localhost:8501
 ```
 
+### **6. Start Grafana Monitoring (Optional)**
+
+```bash
+# Quick start with automated setup
+bash scripts/start_grafana.sh
+
+# Or manual setup
+export GRAFANA_ADMIN_PASSWORD="your_secure_password"
+docker-compose -f docker-compose.monitoring.yml up -d
+
+# Access: http://localhost:3001
+```
+
+---
+
+## 📚 Complete User Guides
+
+**New to the platform? Start here:**
+
+### 🎯 **[User Operations Guide](docs/USER_OPERATIONS_GUIDE.md)** ⭐ START HERE
+Complete guide answering:
+- **Where is Grafana?** How to start monitoring dashboards
+- **Where can I see agent feedback?** View AI agent conversations and insights
+- **Where to upload files?** Daily data processing workflows
+- **Where are predictions?** Current AI capabilities and future ML roadmap
+- **How to create users?** Authentication setup for all components
+
+### 🔮 **[ML & Continuous Learning Roadmap](docs/ML_CONTINUOUS_LEARNING_ROADMAP.md)**
+Strategic plan for predictive models:
+- Default risk prediction
+- Customer churn forecasting
+- Dynamic pricing optimization
+- Fraud detection scoring
+- Automated retraining infrastructure
+
+### 🔐 **[Authentication Setup Guide](docs/AUTHENTICATION_SETUP_GUIDE.md)**
+Secure your platform with:
+- Streamlit built-in auth (15 min setup)
+- FastAPI OAuth2 + JWT (production-grade)
+- Supabase Auth (cloud-ready)
+- Role-based access control (RBAC)
+- Security best practices
+
+### 📊 **[Grafana Quickstart](docs/PROMETHEUS_GRAFANA_QUICKSTART.md)**
+Monitoring infrastructure:
+- Prometheus metrics (520+ Supabase metrics)
+- Pre-configured dashboards
+- Alert rules for critical events
+- Self-hosted or cloud deployment
+
 ---
 
 ## 📁 Repository Structure
