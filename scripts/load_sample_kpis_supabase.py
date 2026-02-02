@@ -254,6 +254,10 @@ class KpiDataLoader:
             logger.warning("  Rows failed: %d", total_failed)
         logger.info("  Run ID: %s", run_id)
         logger.info("%s", separator)
+
+
+def main():
+    """CLI entry point for loading KPI data."""
     parser = argparse.ArgumentParser(
         description="Load realistic KPI data into Supabase historical_kpis table"
     )

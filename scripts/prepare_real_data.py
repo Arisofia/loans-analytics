@@ -4,10 +4,11 @@ Prepare Real Abaco Data for Pipeline Processing
 Merges relational tables into single pipeline-ready dataset.
 """
 
-import pandas as pd
-from pathlib import Path
 import logging
 from datetime import datetime
+from pathlib import Path
+
+import pandas as pd
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ FILES = {
     'historic_payments': 'Abaco - Loan Tape_Historic Real Payment_Table (3).csv'
 }
 
+
 def load_table(data_dir: Path, table_name: str) -> pd.DataFrame:
     """Load and inspect a table."""
     filepath = data_dir / FILES[table_name]
@@ -32,12 +34,13 @@ def load_table(data_dir: Path, table_name: str) -> pd.DataFrame:
 
     return df
 
+
 def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
     """
     Map real Abaco columns to pipeline schema.
 
     Expected pipeline columns (from validation.py):
-    - loan_id, borrower_id, borrower_name, principal_amount, 
+    - loan_id, borrower_id, borrower_name, principal_amount,
     - interest_rate, term_months, origination_date, maturity_date,
     - current_status, days_past_due, outstanding_balance, etc.
     """
@@ -107,14 +110,14 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
             mapped_df['amount'] = mapped_df['principal_amount']
         else:
             mapped_df['amount'] = 0
-            logger.info(f"   ⚠️  Added 'amount' with default value 0")
+            logger.info("   ⚠️  Added 'amount' with default value 0")
 
     if 'status' not in mapped_df.columns:
         if 'current_status' in mapped_df.columns:
             mapped_df['status'] = mapped_df['current_status']
         else:
             mapped_df['status'] = 'Unknown'
-            logger.info(f"   ⚠️  Added 'status' with default value 'Unknown'")
+            logger.info("   ⚠️  Added 'status' with default value 'Unknown'")
 
     # Convert interest rate to decimal if it's percentage
     if 'interest_rate' in mapped_df.columns:
@@ -122,7 +125,7 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
         sample_rate = mapped_df['interest_rate'].dropna().iloc[0] if not mapped_df['interest_rate'].dropna().empty else 0
         if sample_rate > 1:
             mapped_df['interest_rate'] = mapped_df['interest_rate'] / 100
-            logger.info(f"   🔄 Converted interest_rate from percentage to decimal")
+            logger.info("   🔄 Converted interest_rate from percentage to decimal")
 
     # Convert term to months if in different unit
     if 'term_unit' in mapped_df.columns and 'term_months' in mapped_df.columns:
@@ -140,31 +143,39 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
                 return term
 
         mapped_df['term_months'] = mapped_df.apply(convert_to_months, axis=1)
-        logger.info(f"   🔄 Normalized term_months from various units")
+        logger.info("   🔄 Normalized term_months from various units")
 
     # Calculate maturity_date if missing (origination_date + term_months)
     if 'maturity_date' not in mapped_df.columns:
         if 'origination_date' in mapped_df.columns and 'term_months' in mapped_df.columns:
             try:
-                mapped_df['origination_date'] = pd.to_datetime(mapped_df['origination_date'], errors='coerce')
+                mapped_df['origination_date'] = pd.to_datetime(
+                    mapped_df['origination_date'], errors='coerce'
+                )
                 mapped_df['maturity_date'] = mapped_df.apply(
-                    lambda row: row['origination_date'] + pd.DateOffset(months=int(row['term_months'])) 
-                    if pd.notna(row['origination_date']) and pd.notna(row['term_months']) 
-                    else pd.NaT,
+                    lambda row: (
+                        row['origination_date'] + pd.DateOffset(months=int(row['term_months']))
+                        if pd.notna(row['origination_date']) and pd.notna(row['term_months'])
+                        else pd.NaT
+                    ),
                     axis=1
                 )
-                logger.info(f"   ✅ Calculated maturity_date from origination_date + term_months")
+                logger.info(
+                    "   ✅ Calculated maturity_date from origination_date + term_months"
+                )
             except Exception as e:
                 logger.warning(f"   ⚠️  Could not calculate maturity_date: {e}")
                 mapped_df['maturity_date'] = pd.NaT
         else:
             mapped_df['maturity_date'] = pd.NaT
-            logger.info(f"   ⚠️  Added 'maturity_date' with null values")
+            logger.info("   ⚠️  Added 'maturity_date' with null values")
 
     # Ensure outstanding_balance uses current balance if available
     if 'current_balance' in mapped_df.columns and mapped_df['outstanding_balance'].isna().sum() > 0:
-        mapped_df['outstanding_balance'] = mapped_df['outstanding_balance'].fillna(mapped_df['current_balance'])
-        logger.info(f"   🔄 Filled missing outstanding_balance with current_balance")
+        mapped_df['outstanding_balance'] = mapped_df['outstanding_balance'].fillna(
+            mapped_df['current_balance']
+        )
+        logger.info("   🔄 Filled missing outstanding_balance with current_balance")
 
     # Add other required columns with defaults if missing
     required_columns = {
@@ -186,6 +197,7 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
             logger.info(f"   ⚠️  Added required column '{col}' with default value")
 
     return mapped_df
+
 
 def main():
     """Main data preparation pipeline."""
@@ -232,9 +244,18 @@ def main():
     # Merge customer data (left join to preserve all loans)
     if 'customer' in tables:
         # Select customer columns not already in loan_data
-        customer_cols = ['Customer ID', 'Loan ID', 'Sales Channel', 'Location City', 
-                        'Location State Province', 'Location Country', 'Internal Credit Score',
-                        'Client Type', 'Industry', 'Equifax Score']
+        customer_cols = [
+            'Customer ID',
+            'Loan ID',
+            'Sales Channel',
+            'Location City',
+            'Location State Province',
+            'Location Country',
+            'Internal Credit Score',
+            'Client Type',
+            'Industry',
+            'Equifax Score',
+        ]
         customer_df = tables['customer'][customer_cols].drop_duplicates(subset=['Loan ID'])
         merged = merged.merge(customer_df, on='Loan ID', how='left', suffixes=('', '_cust'))
         logger.info(f"   🔗 + customer data ({len(customer_df):,} unique loans)")
@@ -263,8 +284,12 @@ def main():
             'True Total Payment': 'sum',  # Total amount paid
             'True Outstanding Loan Value': 'last',  # Current balance
         }).reset_index()
-        historic_agg.columns = ['Loan ID', 'True Payment Date', 'True Total Payment', 
-                               'True Outstanding Loan Value']
+        historic_agg.columns = [
+            'Loan ID',
+            'True Payment Date',
+            'True Total Payment',
+            'True Outstanding Loan Value',
+        ]
         merged = merged.merge(historic_agg, on='Loan ID', how='left')
         logger.info(f"   🔗 + historic payments (aggregated, {len(historic_agg):,} loans)")
 
@@ -282,9 +307,9 @@ def main():
     logger.info("\n" + "=" * 60)
     logger.info("✅ Data Preparation Complete!")
     logger.info("=" * 60)
-    logger.info(f"📄 Output file: {output_file}")
-    logger.info(f"📊 Total loans: {len(final_df):,}")
-    logger.info(f"📋 Columns: {len(final_df.columns)}")
+    logger.info("📄 Output file: %s", output_file)
+    logger.info("📊 Total loans: %d", len(final_df))
+    logger.info("📋 Columns: %d", len(final_df.columns))
 
     # Show key statistics
     if 'principal_amount' in final_df.columns:
@@ -297,14 +322,18 @@ def main():
 
     if 'current_status' in final_df.columns:
         status_counts = final_df['current_status'].value_counts()
-        logger.info(f"\n📈 Loan status distribution:")
+        logger.info("\\n\ud83d\udcc8 Loan status distribution:")
         for status, count in status_counts.head(5).items():
             pct = (count / len(final_df)) * 100
-            logger.info(f"   {status}: {count:,} ({pct:.1f}%)")
+            logger.info("   %s: %s (%.1f%%)", status, f"{count:,}", pct)
 
     logger.info("\n🚀 Next steps:")
-    logger.info(f"  1. Inspect: head {output_file}")
-    logger.info(f"  2. Run pipeline: .venv/bin/python scripts/run_data_pipeline.py --input {output_file} --verbose")
+    logger.info("  1. Inspect: head %s", output_file)
+    logger.info(
+        "  2. Run pipeline: .venv/bin/python scripts/run_data_pipeline.py --input %s --verbose",
+        output_file,
+    )
+
 
 if __name__ == '__main__':
     main()
