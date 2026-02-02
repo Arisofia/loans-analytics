@@ -619,17 +619,9 @@ class TransformationPhase:
     def _check_dangerous_patterns(self, expression: str) -> bool:
         """Check for dangerous patterns in expression."""
         dangerous_patterns = [
-            "import",
-            "exec",
-            "eval",
-            "compile",
-            "__import__",
-            "__builtins__",
-            "__class__",
-            "__getattr__",
-            "__setattr__",
-            "open",
-            "file",
+            "import", "exec", "eval", "compile", "__import__",
+            "__builtins__", "__class__", "__getattr__", "__setattr__",
+            "open", "file",
         ]
         expression_lower = expression.lower()
         if any(pattern in expression_lower for pattern in dangerous_patterns):
