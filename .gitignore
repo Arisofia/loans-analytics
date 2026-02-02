@@ -209,3 +209,13 @@ reports/
 /profile.ps1
 /AzuriteConfig
 /__azurite_db_*.json
+
+# Duplicate documentation (use archive/ or docs/archive/ instead)
+/docs/*SUMMARY*.md
+/docs/*MASTER_CLEANUP*.md
+/docs/CLEANUP_*.md
+
+# Orphaned project directories (use proper structure)
+/fi-analytics/
+/projects/
+/models/*.pkl
