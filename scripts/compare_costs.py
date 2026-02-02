@@ -72,7 +72,7 @@ def _print_cost_result(
 
 
 def _check_budget_limits(
-    scenario_name: str, scenario_data: dict, baseline_data: dict
+    scenario_data: dict, baseline_data: dict
 ) -> bool:
     """Check token and API call budget limits. Returns True if all limits exceeded."""
     budget_exceeded = False
@@ -114,7 +114,7 @@ def _process_scenario(
         scenario_threshold, alert
     )
 
-    budget_exceeded = _check_budget_limits(scenario_name, scenario_data, baseline_data)
+    budget_exceeded = _check_budget_limits(scenario_data, baseline_data)
     print()
 
     return not alert and not budget_exceeded
