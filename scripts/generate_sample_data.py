@@ -20,7 +20,6 @@ import csv
 import json
 import random
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Any
 
 # Realistic Spanish names for borrowers
