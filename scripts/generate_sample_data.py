@@ -116,33 +116,51 @@ def generate_mexican_rfc() -> str:
     return f"{letters}{digits}{suffix}"
 
 
+def _determine_payment_status(status: str, month: int, current_month: int) -> str:
+    """Determine payment status based on loan status and month."""
+    if status == "current" or (status == "delinquent" and month < current_month - 2):
+        return "paid" if random.random() > 0.05 else "late"
+    if status == "delinquent":
+        return random.choice(["late", "missed"])
+    if status == "defaulted":
+        return "missed" if month >= current_month - 6 else "paid"
+    return "paid"  # paid_off
+
+
+def _calculate_days_late(payment_status: str, status: str) -> int:
+    """Calculate days late based on payment status."""
+    if payment_status == "paid":
+        return 0
+    if status == "delinquent" and payment_status == "late":
+        return random.randint(30, 90)
+    if status != "defaulted" and payment_status == "late":
+        return random.randint(1, 15)
+    return 0
+
+
+def _calculate_amount_paid(payment_status: str) -> float:
+    """Calculate amount paid based on payment status."""
+    if payment_status == "missed":
+        return 0
+    return round(random.uniform(5000, 15000), 2)
+
+
 def generate_payment_history(
     term_months: int, current_month: int, status: str
 ) -> list[dict[str, Any]]:
     """Generate realistic payment history."""
     history = []
     for month in range(1, min(current_month + 1, term_months + 1)):
-        if status == "current" or (status == "delinquent" and month < current_month - 2):
-            payment_status = "paid" if random.random() > 0.05 else "late"
-            days_late = 0 if payment_status == "paid" else random.randint(1, 15)
-        elif status == "delinquent":
-            payment_status = random.choice(["late", "missed"])
-            days_late = random.randint(30, 90) if payment_status == "late" else 0
-        elif status == "defaulted":
-            payment_status = "missed" if month >= current_month - 6 else "paid"
-            days_late = 0
-        else:  # paid_off
-            payment_status = "paid"
-            days_late = 0
+        payment_status = _determine_payment_status(status, month, current_month)
+        days_late = _calculate_days_late(payment_status, status)
+        amount_paid = _calculate_amount_paid(payment_status)
 
         history.append(
             {
                 "month": month,
                 "status": payment_status,
                 "days_late": days_late,
-                "amount_paid": (
-                    round(random.uniform(5000, 15000), 2) if payment_status != "missed" else 0
-                ),
+                "amount_paid": amount_paid,
             }
         )
     return history
