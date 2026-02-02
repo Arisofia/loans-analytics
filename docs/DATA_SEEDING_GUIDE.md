@@ -386,8 +386,8 @@ FROM fact_loans;
 **Step 5: KPI recalculation**
 
 ```bash
-# Trigger KPI recalculation for all historical data
-python scripts/recalculate_kpis.py --backfill --start-date 2023-01-01
+# Trigger full pipeline run (includes KPI calculation) for all historical data
+python scripts/run_data_pipeline.py --input data/raw/historical_loans.csv
 
 # Verify KPIs populated
 psql -h db.your-project.supabase.co -U postgres -c \
