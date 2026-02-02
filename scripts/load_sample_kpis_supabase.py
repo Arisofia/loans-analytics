@@ -4,6 +4,14 @@ This script populates the historical_kpis Supabase table with realistic,
 multi-dimensional KPI observations for 90+ days, enabling REAL mode testing
 and integration.
 
+SECURITY NOTE (python:S2245 - PRNG Usage):
+This script generates SYNTHETIC KPI DATA for testing with reproducible randomness.
+The `random` module usage is NOT cryptographically secure, but this is ACCEPTABLE because:
+1. All data is synthetic metrics for testing/simulation, not production secrets
+2. Reproducibility is REQUIRED - each KPI gets same random sequence via seed (line 95)
+3. No security-sensitive data (IDs, tokens, passwords) is generated
+4. KPI values need statistical distributions, not cryptographic unpredictability
+
 Usage:
     # Load sample KPIs into Supabase
     export SUPABASE_URL="https://your-project.supabase.co"

@@ -8,6 +8,18 @@ Creates realistic loan portfolio data with proper distributions:
 - Names: Real Spanish names
 - Dates: Realistic vintages (6-36 months old)
 
+SECURITY NOTE (python:S2245 - PRNG Usage):
+This script generates SYNTHETIC TEST DATA with reproducible randomness (--seed parameter).
+Most random operations use the standard `random` module which is NOT cryptographically secure,
+but this is ACCEPTABLE because:
+1. All data is synthetic/test data, not production data
+2. Reproducibility (via --seed) is required for consistent test scenarios
+3. EXCEPTION: National tax IDs (RFC) use `secrets` module for security
+
+Security-sensitive operations that use secrets module:
+- generate_mexican_rfc(): Tax ID generation (lines 111-123)
+- region selection (line 229): Already uses secrets.choice()
+
 Usage:
     python scripts/generate_sample_data.py --output data/raw/sample_loans.csv --count 800
     python scripts/generate_sample_data.py --start-date 2023-01-01 --end-date 2024-12-31
@@ -109,10 +121,17 @@ REGIONS = [
 
 
 def generate_mexican_rfc() -> str:
-    """Generate realistic Mexican RFC (Registro Federal de Contribuyentes)."""
-    letters = "".join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=4))
-    digits = "".join(random.choices("0123456789", k=6))
-    suffix = "".join(random.choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=3))
+    """Generate realistic Mexican RFC (Registro Federal de Contribuyentes).
+    
+    Uses secrets module for cryptographically secure random generation to avoid
+    accidentally generating predictable or real RFC numbers. Even for test data,
+    national tax IDs should use secure randomness.
+    
+    Security: python:S2245 - Uses CSPRNG (secrets) instead of PRNG (random)
+    """
+    letters = "".join(secrets.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for _ in range(4))
+    digits = "".join(secrets.choice("0123456789") for _ in range(6))
+    suffix = "".join(secrets.choice("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ") for _ in range(3))
     return f"{letters}{digits}{suffix}"
 
 
