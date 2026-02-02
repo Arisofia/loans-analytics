@@ -73,18 +73,18 @@ The platform includes **9 specialized AI agents**:
 # Activate virtual environment
 source .venv/bin/activate
 
-# Run single agent query
-python -m python.multi_agent.cli \
-  --agent risk \
+# Run single agent query (using the Risk Analyst agent role)
+python -m python.multi_agent.cli run-agent \
+  risk_analyst \
   --query "Analyze portfolio risk for loans with DPD > 30 days"
 
-# Run pre-built scenario
-python -m python.multi_agent.cli \
-  --scenario "monthly_portfolio_health" \
-  --data data/raw/sample_loans.csv
+# Run pre-built scenario with input data
+python -m python.multi_agent.cli run-scenario \
+  monthly_portfolio_health \
+  --input data/raw/sample_loans.csv
 
 # List all available scenarios
-python -m python.multi_agent.cli --list-scenarios
+python -m python.multi_agent.cli list-scenarios
 ```
 
 ### Viewing Agent Feedback in Streamlit Dashboard
