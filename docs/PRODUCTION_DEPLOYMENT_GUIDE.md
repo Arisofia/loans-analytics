@@ -301,7 +301,7 @@ gcloud run deploy abaco-loans-analytics \
 ### Post-Deployment
 
 - [ ] **Health check**: `curl https://your-app.com/health` returns 200
-- [ ] **Smoke test**: Run `python scripts/test_production_deployment.py`
+- [ ] **Smoke test**: Run `python scripts/test_supabase_connection.py`
 - [ ] **Log aggregation**: Verify logs appear in Application Insights / CloudWatch / Stackdriver
 - [ ] **Alert rules**: Prometheus alerts firing on test violations
 - [ ] **Dashboard**: Grafana dashboards loading data
