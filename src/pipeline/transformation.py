@@ -11,6 +11,7 @@ Responsibilities:
 
 import traceback
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -333,6 +334,7 @@ class TransformationPhase:
 
         logger.info("Applied %d type conversions", len(conversions))
         return df, metrics
+
 
     def _apply_business_rules(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
