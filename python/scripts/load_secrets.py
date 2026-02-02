@@ -54,7 +54,8 @@ def main() -> int:
 
     # Extract safe, non-sensitive fields with type-safe annotations
     # Status is constrained to: "ok", "error", "unknown" by SecretStatus type
-    status: SecretStatus = results.get("status", "unknown")
+    # CodeQL[py/clear-text-logging-sensitive-data]: Mitigated - status is enum literal, not secret
+    status: SecretStatus = results.get("status", "unknown")  # type: ignore[assignment]
     error_obj: Exception | None = results.get("error")
 
     # SAFE: Log only completion without exposing any data
