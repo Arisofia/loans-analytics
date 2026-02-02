@@ -68,10 +68,30 @@ st.markdown(
         font-size: 0.9rem;
         opacity: 0.9;
     }
-    .status-current { background-color: #28a745; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
-    .status-delinquent { background-color: #ffc107; color: black; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
-    .status-default { background-color: #dc3545; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
-    .status-paid-off { background-color: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
+    .status-current {
+        background-color: #28a745;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+    }
+    .status-delinquent {
+        background-color: #ffc107;
+        color: black;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+    }
+    .status-default {
+        background-color: #dc3545;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+    }
+    .status-paid-off {
+        background-color: #17a2b8;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+    }
 </style>
 """,
     unsafe_allow_html=True,
@@ -533,10 +553,8 @@ def render_loan_table(df: pd.DataFrame):
 # Main app
 def main():
     st.markdown(
-        '<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True
-    )
-    st.markdown(
-        '<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True
+        '<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>',
+        unsafe_allow_html=True,
     )
 
     # Sidebar - File upload
@@ -707,13 +725,6 @@ def main():
         st.markdown("#### Regional Distribution")
         regional_summary = (
             df.groupby("region")
-            .agg({"principal_amount": "sum", "loan_id": "count", "risk_score": "mean"})
-            .round(2)
-        )
-        regional_summary.columns = ["Total Amount (€)", "Loan Count", "Avg Risk"]
-        regional_summary = regional_summary.sort_values("Total Amount (€)", ascending=False)
-        regional_summary = (
-            df.groupby("region")
             .agg(
                 {
                     "principal_amount": "sum",
@@ -738,7 +749,6 @@ def main():
         for i, (status, count) in enumerate(status_counts.items()):
             col = [col1, col2, col3, col4][i % 4]
             with col:
-                st.metric(status.title(), f"{count} ({status_pct[status]:.1f}%)")
                 st.metric(
                     status.title(),
                     f"{count} ({status_pct[status]:.1f}%)",
