@@ -75,7 +75,10 @@ def generate_payment_history(
             "month": month,
             "status": payment_status,
             "days_late": days_late,
-            "amount_paid": round(random.uniform(5000, 15000), 2) if payment_status != "missed" else 0
+            "amount_paid": (
+                round(random.uniform(5000, 15000), 2)
+                if payment_status != "missed" else 0
+            )
         })
     return history
 
@@ -116,17 +119,22 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
 
     # Borrower details
     first_name = random.choice(FIRST_NAMES)
-    last_name = f"{random.choice(LAST_NAMES)} {random.choice(LAST_NAMES)}"
+    last_name = (
+        f"{random.choice(LAST_NAMES)} {random.choice(LAST_NAMES)}"
+    )
     company_name = f"{random.choice(['Comercial', 'Distribuidora', 'Importadora', 'Exportadora'])} {last_name.split()[0]}"
 
     borrower_id = f"BRW{loan_id:06d}"
-    
+
     return {
         "loan_id": f"ABF{loan_id:06d}",
         "borrower_id": borrower_id,  # Required for validation
         "borrower_name": company_name,
         "borrower_contact": f"{first_name} {last_name}",
-        "borrower_email": f"{first_name.lower()}.{last_name.split()[0].lower()}@{company_name.replace(' ', '').lower()}.mx",
+        "borrower_email": (
+            f"{first_name.lower()}.{last_name.split()[0].lower()}"
+            f"@{company_name.replace(' ', '').lower()}.mx"
+        ),
         "borrower_id_number": generate_mexican_rfc(),
         "amount": round(amount, 2),  # Match expected column name
         "principal_amount": round(amount, 2),
