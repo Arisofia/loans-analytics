@@ -231,9 +231,16 @@ class SupabaseConnectionPool:
         """
         try:
             async with self.acquire() as conn:
-                await conn.execute(query, *args, timeout=timeout or self.command_timeout)
+                await asyncio.wait_for(
+                    conn.execute(query, *args),
+                    timeout=timeout or self.command_timeout
+                )
                 self._metrics["queries_executed"] += 1
                 return "success"
+        except asyncio.TimeoutError:
+            self._metrics["queries_failed"] += 1
+            logger.error("Query execution timed out after %ss", timeout or self.command_timeout)
+            raise
         except Exception as e:
             self._metrics["queries_failed"] += 1
             logger.error("Query execution failed: %s", e, exc_info=True)
@@ -255,9 +262,16 @@ class SupabaseConnectionPool:
         """
         try:
             async with self.acquire() as conn:
-                result = await conn.fetch(query, *args, timeout=timeout or self.command_timeout)
+                result = await asyncio.wait_for(
+                    conn.fetch(query, *args),
+                    timeout=timeout or self.command_timeout
+                )
                 self._metrics["queries_executed"] += 1
                 return result
+        except asyncio.TimeoutError:
+            self._metrics["queries_failed"] += 1
+            logger.error("Query fetch timed out after %ss", timeout or self.command_timeout)
+            raise
         except Exception as e:
             self._metrics["queries_failed"] += 1
             logger.error("Query fetch failed: %s", e, exc_info=True)
@@ -279,9 +293,16 @@ class SupabaseConnectionPool:
         """
         try:
             async with self.acquire() as conn:
-                result = await conn.fetchrow(query, *args, timeout=timeout or self.command_timeout)
+                result = await asyncio.wait_for(
+                    conn.fetchrow(query, *args),
+                    timeout=timeout or self.command_timeout
+                )
                 self._metrics["queries_executed"] += 1
                 return result
+        except asyncio.TimeoutError:
+            self._metrics["queries_failed"] += 1
+            logger.error("Query fetchrow timed out after %ss", timeout or self.command_timeout)
+            raise
         except Exception as e:
             self._metrics["queries_failed"] += 1
             logger.error("Query fetchrow failed: %s", e, exc_info=True)
