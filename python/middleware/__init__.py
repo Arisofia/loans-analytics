@@ -1,6 +1,7 @@
 """Middleware components for production-grade request handling."""
 
 from python.middleware.rate_limiter import (
+    RateLimitExceeded,
     RateLimiter,
     TokenBucketRateLimiter,
     api_limiter,
@@ -10,6 +11,7 @@ from python.middleware.rate_limiter import (
 )
 
 __all__ = [
+    "RateLimitExceeded",
     "RateLimiter",
     "TokenBucketRateLimiter",
     "api_limiter",

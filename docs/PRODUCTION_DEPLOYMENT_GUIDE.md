@@ -146,7 +146,7 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.4.0  # Pinned to specific version for security
     ports:
       - '3000:3000'
     environment:
