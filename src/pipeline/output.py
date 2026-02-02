@@ -129,7 +129,7 @@ class OutputPhase:
         output_path = run_dir / "kpis_output.csv"
 
         df = pd.DataFrame([kpi_results])
-        
+
         # Convert financial columns to Decimal for monetary precision
         financial_columns = {
             "amount",
@@ -139,7 +139,7 @@ class OutputPhase:
             "payment_amount",
             "interest_rate",
         }
-        
+
         for col in financial_columns:
             if col in df.columns and df[col].iloc[0] is not None:
                 try:
@@ -152,7 +152,7 @@ class OutputPhase:
                         df.at[0, col] = str(decimal_val)
                 except (ValueError, TypeError) as e:
                     logger.warning("Could not convert %s to Decimal: %s", col, e)
-        
+
         df.to_csv(output_path, index=False)
 
         logger.info("Exported CSV with Decimal precision: %s", output_path)
