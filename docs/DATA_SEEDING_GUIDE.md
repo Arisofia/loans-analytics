@@ -174,7 +174,6 @@ GROUP BY status;
 
 ```python
 import pandas as pd
-from supabase import create_client
 from python.supabase_pool import get_connection_pool
 
 import asyncio
