@@ -142,9 +142,7 @@ def _normalize_interest_rate(df: pd.DataFrame) -> pd.DataFrame:
         return df
 
     sample_rate = (
-        df["interest_rate"].dropna().iloc[0]
-        if not df["interest_rate"].dropna().empty
-        else 0
+        df["interest_rate"].dropna().iloc[0] if not df["interest_rate"].dropna().empty else 0
     )
 
     if sample_rate > 1:
