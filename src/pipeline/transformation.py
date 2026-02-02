@@ -7,6 +7,9 @@ Responsibilities:
 - Type conversion
 - Business rules application
 - Referential integrity checks
+
+NOTE: This module is not designed to be run directly as a script.
+      Use: python scripts/run_data_pipeline.py
 """
 
 import traceback

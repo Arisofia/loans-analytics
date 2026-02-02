@@ -7,7 +7,8 @@ Coordinates all 4 phases of the data pipeline:
 3. Calculation
 4. Output
 
-Entry point: scripts/run_data_pipeline.py
+NOTE: This module is not designed to be run directly as a script.
+      Use: python scripts/run_data_pipeline.py
 """
 
 import hashlib
