@@ -374,7 +374,7 @@ def _save_output(df: pd.DataFrame, output_file: Path) -> None:
 
 def _log_summary_statistics(df: pd.DataFrame, output_file: Path) -> None:
     """Log summary statistics about the processed dataset."""
-    logger.info("\n" + "=" * 60)
+    logger.info("=" * 60)
     logger.info("✅ Data Preparation Complete!")
     logger.info("=" * 60)
     logger.info("📄 Output file: %s", output_file)
