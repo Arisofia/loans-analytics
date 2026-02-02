@@ -45,12 +45,12 @@ jobs:
   dependency-scan:
     name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
-    if: secrets.SNYK_TOKEN != ''
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Run Snyk to check for vulnerabilities
+        if: ${{ env.SNYK_TOKEN != '' }}
         uses: snyk/actions/python@0.4.0
         continue-on-error: true
         env:
