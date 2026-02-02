@@ -3,31 +3,16 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "location": {
-      "value": "eastus"
+      "value": "spaincentral"
     },
     "webAppName": {
-      "value": "abaco-webapp"
+      "value": "abaco-loans-app"
     },
     "storageAccountName": {
       "value": "abacostg2026feb"
     },
-    "sqlServerName": {
-      "value": "abacosql2026feb"
-    },
-    "sqlDbName": {
-      "value": "abacodb"
-    },
-    "sqlAdminLogin": {
-      "value": "sqladminuser"
-    },
-    "sqlAdminPassword": {
-      "value": "${SQL_ADMIN_PASSWORD}"
-    },
-    "allowAzureServices": {
-      "value": true
-    },
-    "sqlFirewallRules": {
-      "value": []
+    "containerImage": {
+      "value": "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
     }
   }
 }
