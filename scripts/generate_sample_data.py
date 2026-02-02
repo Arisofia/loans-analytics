@@ -20,27 +20,90 @@ import csv
 import json
 import random
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 # Realistic Spanish names for borrowers
 FIRST_NAMES = [
-    "Carlos", "María", "José", "Ana", "Francisco", "Carmen", "Antonio", "Isabel",
-    "Manuel", "Dolores", "David", "Laura", "Javier", "Marta", "Miguel", "Elena",
-    "Pedro", "Rosa", "Fernando", "Patricia", "Rafael", "Teresa", "Luis", "Sofía",
-    "Ángel", "Cristina", "Jorge", "Lucía", "Ramón", "Pilar", "Diego", "Beatriz",
+    "Carlos",
+    "María",
+    "José",
+    "Ana",
+    "Francisco",
+    "Carmen",
+    "Antonio",
+    "Isabel",
+    "Manuel",
+    "Dolores",
+    "David",
+    "Laura",
+    "Javier",
+    "Marta",
+    "Miguel",
+    "Elena",
+    "Pedro",
+    "Rosa",
+    "Fernando",
+    "Patricia",
+    "Rafael",
+    "Teresa",
+    "Luis",
+    "Sofía",
+    "Ángel",
+    "Cristina",
+    "Jorge",
+    "Lucía",
+    "Ramón",
+    "Pilar",
+    "Diego",
+    "Beatriz",
 ]
 
 LAST_NAMES = [
-    "García", "Rodríguez", "González", "Fernández", "López", "Martínez", "Sánchez",
-    "Pérez", "Gómez", "Martín", "Jiménez", "Ruiz", "Hernández", "Díaz", "Moreno",
-    "Muñoz", "Álvarez", "Romero", "Alonso", "Gutiérrez", "Navarro", "Torres",
-    "Domínguez", "Vázquez", "Ramos", "Gil", "Ramírez", "Serrano", "Blanco", "Suárez",
+    "García",
+    "Rodríguez",
+    "González",
+    "Fernández",
+    "López",
+    "Martínez",
+    "Sánchez",
+    "Pérez",
+    "Gómez",
+    "Martín",
+    "Jiménez",
+    "Ruiz",
+    "Hernández",
+    "Díaz",
+    "Moreno",
+    "Muñoz",
+    "Álvarez",
+    "Romero",
+    "Alonso",
+    "Gutiérrez",
+    "Navarro",
+    "Torres",
+    "Domínguez",
+    "Vázquez",
+    "Ramos",
+    "Gil",
+    "Ramírez",
+    "Serrano",
+    "Blanco",
+    "Suárez",
 ]
 
 # Regions in Mexico (Abaco's market)
 REGIONS = [
-    "Ciudad de México", "Guadalajara", "Monterrey", "Puebla", "Tijuana",
-    "León", "Querétaro", "Mérida", "Aguascalientes", "Hermosillo"
+    "Ciudad de México",
+    "Guadalajara",
+    "Monterrey",
+    "Puebla",
+    "Tijuana",
+    "León",
+    "Querétaro",
+    "Mérida",
+    "Aguascalientes",
+    "Hermosillo",
 ]
 
 
@@ -71,15 +134,16 @@ def generate_payment_history(
             payment_status = "paid"
             days_late = 0
 
-        history.append({
-            "month": month,
-            "status": payment_status,
-            "days_late": days_late,
-            "amount_paid": (
-                round(random.uniform(5000, 15000), 2)
-                if payment_status != "missed" else 0
-            )
-        })
+        history.append(
+            {
+                "month": month,
+                "status": payment_status,
+                "days_late": days_late,
+                "amount_paid": (
+                    round(random.uniform(5000, 15000), 2) if payment_status != "missed" else 0
+                ),
+            }
+        )
     return history
 
 
@@ -96,8 +160,7 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
 
     # Status: realistic distribution
     status = random.choices(
-        ["current", "delinquent", "defaulted", "paid_off"],
-        weights=[0.70, 0.20, 0.05, 0.05]
+        ["current", "delinquent", "defaulted", "paid_off"], weights=[0.70, 0.20, 0.05, 0.05]
     )[0]
 
     # Calculate current month
@@ -119,9 +182,7 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
 
     # Borrower details
     first_name = random.choice(FIRST_NAMES)
-    last_name = (
-        f"{random.choice(LAST_NAMES)} {random.choice(LAST_NAMES)}"
-    )
+    last_name = f"{random.choice(LAST_NAMES)} {random.choice(LAST_NAMES)}"
     company_name = f"{random.choice(['Comercial', 'Distribuidora', 'Importadora', 'Exportadora'])} {last_name.split()[0]}"
 
     borrower_id = f"BRW{loan_id:06d}"
