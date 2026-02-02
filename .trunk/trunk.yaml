@@ -40,10 +40,6 @@ lint:
     - trufflehog@3.92.5
     - yamllint@1.38.0
 
-  disabled:
-    # Streamlit is a frontend framework app - excluded from Python linting
-    # Python linting is enforced on src/ and python/ core business logic
-
 actions:
   disabled:
     - trunk-announce
