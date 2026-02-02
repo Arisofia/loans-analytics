@@ -40,6 +40,15 @@ lint:
     - trufflehog@3.92.5
     - yamllint@1.38.0
 
+  disabled:
+    # Exclude secret scanning from test files (they contain test secrets)
+    - trufflehog@3.92.5
+
+  definitions:
+    - name: trufflehog
+      disabled:
+        - files: ['tests/**']
+
 actions:
   disabled:
     - trunk-announce
