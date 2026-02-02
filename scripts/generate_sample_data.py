@@ -215,6 +215,17 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
 
     borrower_id = f"BRW{loan_id:06d}"
 
+    # Convert Decimal objects to strings for JSON serialization
+    payment_history_serializable = [
+        {
+            "month": p["month"],
+            "status": p["status"],
+            "days_late": p["days_late"],
+            "amount_paid": str(p["amount_paid"]),  # Decimal → string for JSON
+        }
+        for p in payment_history
+    ]
+
     return {
         "loan_id": f"ABF{loan_id:06d}",
         "borrower_id": borrower_id,  # Required for validation
@@ -233,7 +244,7 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
         "origination_date": origination_date.strftime("%Y-%m-%d"),
         "status": status,  # Match expected column name
         "current_status": status,
-        "payment_history_json": json.dumps(payment_history),
+        "payment_history_json": json.dumps(payment_history_serializable),
         "risk_score": risk_score,
         "region": secrets.choice(REGIONS),
     }

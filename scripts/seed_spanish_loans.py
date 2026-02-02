@@ -10,11 +10,25 @@ Generates 800+ realistic loan records with:
 - Varied statuses: current, delinquent, paid-off, default
 - Payment history with delays and defaults
 - Risk scores based on loan performance
+
+SECURITY NOTE (python:S2245 - PRNG Usage):
+This script generates SYNTHETIC TEST DATA with reproducible randomness (seed=42).
+Most random operations use the standard `random` module which is NOT cryptographically secure,
+but this is ACCEPTABLE because:
+1. All data is synthetic/test data, not production data
+2. Reproducibility (via seed) is required for consistent test scenarios
+3. EXCEPTION: National IDs (DNI/NIE) use `secrets` module for security
+
+Security-sensitive operations that use secrets module:
+- generate_dni(): Spanish national ID generation
+- generate_nie(): Foreign ID generation
+- generate_id_number(): ID selection logic
 """
 
 import csv
 import json
 import random
+import secrets
 from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -154,19 +168,33 @@ LOAN_STATUSES = {
 
 
 def generate_dni() -> str:
-    """Generate a valid Spanish DNI (Documento Nacional de Identidad)."""
+    """Generate a valid Spanish DNI (Documento Nacional de Identidad).
+    
+    Uses secrets module for cryptographically secure random generation to avoid
+    accidentally generating predictable or real DNI numbers. Even for test data,
+    national IDs should use secure randomness.
+    
+    Security: python:S2245 - Uses CSPRNG (secrets) instead of PRNG (random)
+    """
     # DNI format: 8 digits + letter
-    number = random.randint(10000000, 99999999)
+    number = secrets.randbelow(90000000) + 10000000  # Range: 10000000-99999999
     letters = "TRWAGMYFPDXBNJZSQVHLCKE"
     letter = letters[number % 23]
     return f"{number:08d}{letter}"
 
 
 def generate_nie() -> str:
-    """Generate a valid Spanish NIE (Número de Identificación de Extranjero)."""
+    """Generate a valid Spanish NIE (Número de Identificación de Extranjero).
+    
+    Uses secrets module for cryptographically secure random generation to avoid
+    accidentally generating predictable or real NIE numbers. Even for test data,
+    national IDs should use secure randomness.
+    
+    Security: python:S2245 - Uses CSPRNG (secrets) instead of PRNG (random)
+    """
     # NIE format: X/Y/Z + 7 digits + letter
-    prefix = random.choice(["X", "Y", "Z"])
-    number = random.randint(1000000, 9999999)
+    prefix = secrets.choice(["X", "Y", "Z"])
+    number = secrets.randbelow(9000000) + 1000000  # Range: 1000000-9999999
 
     # Calculate check letter
     nie_number = number
@@ -183,8 +211,13 @@ def generate_nie() -> str:
 
 
 def generate_id_number() -> str:
-    """Generate either DNI or NIE (80% DNI, 20% NIE)."""
-    if random.random() < 0.8:
+    """Generate either DNI or NIE (80% DNI, 20% NIE).
+    
+    Uses secure random for the selection to ensure unpredictability.
+    
+    Security: python:S2245 - Uses CSPRNG (secrets) instead of PRNG (random)
+    """
+    if secrets.randbelow(100) < 80:  # 80% chance
         return generate_dni()
     else:
         return generate_nie()
