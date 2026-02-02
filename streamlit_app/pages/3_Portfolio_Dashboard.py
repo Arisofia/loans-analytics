@@ -259,7 +259,6 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
             y=cohort_df["DPD 30+"],
             name="30+ Days",
             mode=CHART_MODE,
-            mode="lines+markers",
             line={"color": "#ffc107", "width": 2},
         )
     )
@@ -269,7 +268,6 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
             y=cohort_df["DPD 60+"],
             name="60+ Days",
             mode=CHART_MODE,
-            mode="lines+markers",
             line={"color": "#ff9800", "width": 2},
         )
     )
@@ -279,7 +277,6 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
             y=cohort_df["DPD 90+"],
             name="90+ Days",
             mode=CHART_MODE,
-            mode="lines+markers",
             line={"color": "#dc3545", "width": 2},
         )
     )
@@ -307,7 +304,6 @@ def create_risk_distribution(df: pd.DataFrame) -> go.Figure:
     )
 
     fig.update_layout(
-        xaxis_title="Risk Score", yaxis_title="Number of Loans", height=400, showlegend=False
         xaxis_title="Risk Score",
         yaxis_title="Number of Loans",
         height=400,
@@ -499,9 +495,7 @@ def render_loan_table(df: pd.DataFrame):
     ].copy()
 
     display_df["principal_amount"] = display_df["principal_amount"].apply(lambda x: f"€{x:,.2f}")
-    display_df["principal_amount"] = display_df["principal_amount"].apply(
-        lambda x: f"€{x:,.2f}"
-    )
+    display_df["principal_amount"] = display_df["principal_amount"].apply(lambda x: f"€{x:,.2f}")
     display_df["interest_rate"] = display_df["interest_rate"].apply(lambda x: f"{x:.2%}")
     display_df["risk_score"] = display_df["risk_score"].apply(lambda x: f"{x:.4f}")
 
@@ -541,7 +535,9 @@ def main():
     st.markdown(
         '<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True
     )
-    st.markdown('<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True
+    )
 
     # Sidebar - File upload
     with st.sidebar:
@@ -616,10 +612,6 @@ def main():
 
     # Check if data is loaded
     if "data_loaded" not in st.session_state or not st.session_state["data_loaded"]:
-    if (
-        "data_loaded" not in st.session_state
-        or not st.session_state["data_loaded"]
-    ):
         st.info(
             "👆 Please upload a CSV file or load sample data from the sidebar to begin analysis"
         )
@@ -688,7 +680,6 @@ def main():
         ]
     )
 
-    
     with tab1:
         st.plotly_chart(create_delinquency_trend(df), use_container_width=True)
 
@@ -721,17 +712,19 @@ def main():
         )
         regional_summary.columns = ["Total Amount (€)", "Loan Count", "Avg Risk"]
         regional_summary = regional_summary.sort_values("Total Amount (€)", ascending=False)
-        regional_summary = df.groupby("region").agg(
-            {
-                "principal_amount": "sum",
-                "loan_id": "count",
-                "risk_score": "mean",
-            }
-        ).round(2)
-        regional_summary.columns = ["Total Amount (€)", "Loan Count", "Avg Risk"]
-        regional_summary = regional_summary.sort_values(
-            "Total Amount (€)", ascending=False
+        regional_summary = (
+            df.groupby("region")
+            .agg(
+                {
+                    "principal_amount": "sum",
+                    "loan_id": "count",
+                    "risk_score": "mean",
+                }
+            )
+            .round(2)
         )
+        regional_summary.columns = ["Total Amount (€)", "Loan Count", "Avg Risk"]
+        regional_summary = regional_summary.sort_values("Total Amount (€)", ascending=False)
         st.dataframe(regional_summary, use_container_width=True)
 
     with tab4:
