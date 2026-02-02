@@ -20,7 +20,8 @@ Your responsibilities:
 - Produce quantitative risk metrics: PD, LGD, EAD, VaR, expected loss
 - Flag regulatory compliance issues related to risk management
 
-Always provide data-driven insights with numbers, percentages, and trends. Be concise and actionable."""
+Always provide data-driven insights with numbers, percentages, and trends.
+Be concise and actionable."""
 
 
 @agent_with_role(AgentRole.GROWTH_STRATEGIST)
@@ -74,4 +75,5 @@ Your responsibilities:
 - Recommend policy updates and control enhancements
 - Prepare for regulatory examinations and audits
 
-Be detail-oriented, risk-averse, and focused on regulatory compliance. Cite specific regulations when relevant."""
+Be detail-oriented, risk-averse, and focused on regulatory compliance.
+Cite specific regulations when relevant."""

@@ -1,17 +1,18 @@
 import logging
 import re
 from pathlib import Path
+from typing import Optional
 
 # Avoid importing FastAPI at module import time so tests don't require
 # fastapi installed. Use a lazy import and a lightweight HTTPException
 # fallback for environments without FastAPI.
 try:
-    from fastapi import FastAPI, HTTPException  # type: ignore
+    from fastapi import FastAPI, HTTPException
 
-    app = FastAPI()
+    app: Optional[FastAPI] = FastAPI()
 except ImportError:  # pragma: no cover - fallback in tests/environments without FastAPI
 
-    class HTTPException(Exception):
+    class HTTPException(Exception):  # type: ignore[no-redef]
         def __init__(self, status_code: int, detail: str):
             self.status_code = status_code
             self.detail = detail
