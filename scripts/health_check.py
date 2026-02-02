@@ -8,7 +8,6 @@ import argparse
 import os
 import sys
 import time
-from pathlib import Path
 from typing import Dict, Tuple
 
 try:
@@ -90,7 +89,7 @@ def check_agents() -> Tuple[bool, str]:
     # Check if agent modules are available
     if CostTracker is None or PerformanceTracker is None:
         return False, "Agent system import failed: monitoring module not available"
-    
+
     try:
         # Try to create instances
         CostTracker()
@@ -100,8 +99,6 @@ def check_agents() -> Tuple[bool, str]:
 
     except Exception as e:
         return False, f"Agent system initialization failed: {str(e)}"
-    except Exception as e:
-        return False, f"Agent system check failed: {str(e)}"
 
 
 def check_llm_provider() -> Tuple[bool, str]:

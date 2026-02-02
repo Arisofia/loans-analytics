@@ -41,7 +41,7 @@ def load_secrets(use_vault_fallback: bool = False) -> SecretResult:
     # Return a dict with status and optionally secrets (never log them)
     if use_vault_fallback:
         # pretend we found secrets
-        return {
+        return {  # type: ignore[typeddict-item]
             "status": "ok",
             "api_key": "<sensitive>",
             "secret_token": "<sensitive>",
@@ -72,7 +72,7 @@ def main() -> int:
         logger.error("load_secrets failed: error_type=%s", type(error_obj).__name__)
 
     # SAFE: Full structure with redaction applied for debugging
-    safe = redact_dict(results)
+    safe = redact_dict(results)  # type: ignore[arg-type]
     logger.debug("load_secrets payload (redacted)=%s", safe)
 
     return 0 if status == "ok" else 1

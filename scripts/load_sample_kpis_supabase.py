@@ -246,17 +246,14 @@ class KpiDataLoader:
             total_loaded += loaded
             total_failed += failed
 
-        logger.info("\n%s", "=" * 70)
+        separator = "=" * 70
+        logger.info("\n%s", separator)
         logger.info("Loading complete!")
         logger.info("  Rows loaded: %d", total_loaded)
         if total_failed:
             logger.warning("  Rows failed: %d", total_failed)
         logger.info("  Run ID: %s", run_id)
-        logger.info("=" * 70)
-
-
-def main():
-    """CLI entry point."""
+        logger.info("%s", separator)
     parser = argparse.ArgumentParser(
         description="Load realistic KPI data into Supabase historical_kpis table"
     )

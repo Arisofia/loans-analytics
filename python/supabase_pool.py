@@ -16,7 +16,7 @@ from typing import Any, AsyncGenerator, Optional
 try:
     import asyncpg
 except ImportError:
-    asyncpg = None  # type: ignore
+    asyncpg = None  # type: ignore[assignment,misc]
 
 from python.config import settings
 
