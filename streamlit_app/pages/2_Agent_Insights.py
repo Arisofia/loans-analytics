@@ -8,13 +8,14 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+from python.logging_config import get_logger
 
 # Add project root to path
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Configure page
 st.set_page_config(
