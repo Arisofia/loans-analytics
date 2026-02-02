@@ -14,14 +14,15 @@ Usage:
 
 from __future__ import annotations
 
-import logging
 import threading
 import time
 from collections import defaultdict
 from functools import wraps
 from typing import Any, Callable, Dict, Optional
 
-logger = logging.getLogger(__name__)
+from python.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class RateLimiter:

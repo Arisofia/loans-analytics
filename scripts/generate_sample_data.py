@@ -20,6 +20,7 @@ import csv
 import json
 import random
 from datetime import datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -76,7 +77,7 @@ def generate_payment_history(
             "month": month,
             "status": payment_status,
             "days_late": days_late,
-            "amount_paid": round(random.uniform(5000, 15000), 2) if payment_status != "missed" else 0
+            "amount_paid": float(Decimal(str(round(random.uniform(5000, 15000), 2)))) if payment_status != "missed" else 0
         })
     return history
 
@@ -84,7 +85,8 @@ def generate_payment_history(
 def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
     """Generate a single realistic loan record."""
     # Amount: log-normal distribution (median ~$75K, range $10K-$500K)
-    amount = min(500000, max(10000, random.lognormvariate(11.2, 0.7)))
+    # Use Decimal for proper financial precision
+    amount = Decimal(str(min(500000, max(10000, random.lognormvariate(11.2, 0.7))))).quantize(Decimal('0.01'))
 
     # Interest rate: normal distribution (mean 34%, std 4%)
     rate = min(45, max(28, random.gauss(34, 4)))
@@ -129,8 +131,8 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
         "borrower_contact": f"{first_name} {last_name}",
         "borrower_email": f"{first_name.lower()}.{last_name.split()[0].lower()}@{company_name.replace(' ', '').lower()}.mx",
         "borrower_id_number": generate_mexican_rfc(),
-        "amount": round(amount, 2),  # Match expected column name
-        "principal_amount": round(amount, 2),
+        "amount": float(amount),  # Convert Decimal to float for CSV/JSON output
+        "principal_amount": float(amount),
         "rate": round(rate / 100, 4),  # Convert to decimal (0.34 for 34%)
         "interest_rate": round(rate, 2),
         "term_months": term_months,

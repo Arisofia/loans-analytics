@@ -146,7 +146,7 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.4.0
     ports:
       - '3000:3000'
     environment:
@@ -283,7 +283,7 @@ gcloud run deploy abaco-loans-analytics \
 
 - [ ] **Environment variables**: All required vars set (see above)
 - [ ] **Secrets management**: Use cloud provider's secret store (Azure Key Vault, AWS Secrets Manager, GCP Secret Manager)
-- [ ] **Database migrations**: Run `python scripts/run_migrations.py` (if schema changes)
+- [ ] **Database migrations**: Run `python scripts/setup_supabase_tables.py` (if schema changes)
 - [ ] **PII compliance**: Verify `PII_MASKING_ENABLED=true` in production
 - [ ] **Rate limiting**: Configure `python/middleware/rate_limiter.py` thresholds based on expected load
 - [ ] **Monitoring**: Application Insights / Prometheus configured
@@ -301,7 +301,7 @@ gcloud run deploy abaco-loans-analytics \
 ### Post-Deployment
 
 - [ ] **Health check**: `curl https://your-app.com/health` returns 200
-- [ ] **Smoke test**: Run `python scripts/test_production_deployment.py`
+- [ ] **Smoke test**: Run `python scripts/test_supabase_connection.py`
 - [ ] **Log aggregation**: Verify logs appear in Application Insights / CloudWatch / Stackdriver
 - [ ] **Alert rules**: Prometheus alerts firing on test violations
 - [ ] **Dashboard**: Grafana dashboards loading data
@@ -335,13 +335,13 @@ Import the pre-built dashboard:
 
 ```bash
 # From repo root
-cp grafana/dashboards/abaco-loans-analytics.json /path/to/grafana/provisioning/dashboards/
+cp grafana/dashboards/kpi-overview.json /path/to/grafana/provisioning/dashboards/
 ```
 
 **Manual Import**:
 
 1. Navigate to Grafana → Dashboards → Import
-2. Upload `grafana/dashboards/abaco-loans-analytics.json`
+2. Upload `grafana/dashboards/kpi-overview.json` or `grafana/dashboards/supabase-postgresql.json`
 3. Select Prometheus data source
 4. Verify panels load data
 
@@ -360,7 +360,7 @@ cp grafana/dashboards/abaco-loans-analytics.json /path/to/grafana/provisioning/d
 - LLM API errors > 5% over 5min
 - Disk usage > 80%
 
-See `config/alertmanager.yml` for full alert rules.
+See `config/alertmanager.yml.template` for full alert rules (copy or rename to `config/alertmanager.yml` for your environment).
 
 ## Disaster Recovery
 

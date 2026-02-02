@@ -177,27 +177,39 @@ import pandas as pd
 from supabase import create_client
 from python.supabase_pool import get_connection_pool
 
-# Read CSV
-df = pd.read_csv("data/raw/large_dataset.csv")
+import asyncio
 
-# Validate
+from python.logging_config import get_logger
 from python.validation import validate_dataframe
-is_valid, errors = validate_dataframe(df)
-if not is_valid:
-    raise ValueError(f"Validation failed: {errors}")
 
-# Convert DataFrame to list of dicts
-records = df.to_dict(orient="records")
+logger = get_logger(__name__)
 
-# Batch insert (1000 rows at a time)
-pool = get_connection_pool()
-async with pool.acquire() as conn:
-    for i in range(0, len(records), 1000):
-        batch = records[i:i+1000]
-        await conn.table("fact_loans").insert(batch).execute()
-        print(f"Inserted {i+1000}/{len(records)} rows")
 
-print(f"✅ Imported {len(records)} loans successfully")
+async def main() -> None:
+    # Read CSV
+    df = pd.read_csv("data/raw/large_dataset.csv")
+
+    # Validate
+    is_valid, errors = validate_dataframe(df)
+    if not is_valid:
+        raise ValueError(f"Validation failed: {errors}")
+
+    # Convert DataFrame to list of dicts
+    records = df.to_dict(orient="records")
+
+    # Batch insert (1000 rows at a time)
+    pool = get_connection_pool()
+    async with pool.acquire() as conn:
+        for i in range(0, len(records), 1000):
+            batch = records[i : i + 1000]
+            await conn.table("fact_loans").insert(batch).execute()
+            logger.info("Inserted %s/%s rows", i + 1000, len(records))
+
+    logger.info("✅ Imported %s loans successfully", len(records))
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 ### Handling Duplicates
@@ -374,8 +386,8 @@ FROM fact_loans;
 **Step 5: KPI recalculation**
 
 ```bash
-# Trigger KPI recalculation for all historical data
-python scripts/recalculate_kpis.py --backfill --start-date 2023-01-01
+# Trigger full pipeline run (includes KPI calculation) for all historical data
+python scripts/run_data_pipeline.py --input data/raw/historical_loans.csv
 
 # Verify KPIs populated
 psql -h db.your-project.supabase.co -U postgres -c \
@@ -668,9 +680,9 @@ ANALYZE fact_loans;
 **Anomaly: "PAR-30 = 0% after import"**
 
 - **Check**: Verify `days_past_due` calculated correctly
-- **Fix**: Recalculate DPD:
-  ```python
-  python scripts/recalculate_kpis.py --metric par_30 --backfill
+- **Fix**: Recalculate DPD by running the full pipeline:
+  ```bash
+  python scripts/run_data_pipeline.py --input data/raw/imported_loans.csv
   ```
 
 **Anomaly: "All loans show 'current' status"**
