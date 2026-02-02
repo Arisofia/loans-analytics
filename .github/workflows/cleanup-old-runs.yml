@@ -1,1 +1,29 @@
-name: Cleanup Old Workflow Runson:  workflow_dispatch:  schedule:    - cron: '0 2 * * 0'  # Weekly on Sunday at 2am UTCpermissions:  actions: write  contents: readjobs:  cleanup:    name: Delete Old Workflow Runs    runs-on: ubuntu-latest    steps:      - name: Delete workflow runs older than 15 days        uses: Mattraks/delete-workflow-runs@v2        with:          token: ${{ secrets.GITHUB_TOKEN }}          repository: ${{ github.repository }}          retain_days: 15          keep_minimum_runs: 10          delete_workflow_pattern: 'all'      - name: Cleanup summary        run: |          echo "✅ Cleaned up workflow runs older than 15 days"          echo "📊 Retention policy: Keep last 10 runs + runs from last 15 days"
+name: Cleanup Old Workflow Runs
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * 0' # Weekly on Sunday at 2am UTC
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cleanup:
+    name: Delete Old Workflow Runs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete workflow runs older than 15 days
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          retain_days: 15
+          keep_minimum_runs: 10
+          delete_workflow_pattern: 'all'
+
+      - name: Cleanup summary
+        run: |
+          echo "✅ Cleaned up workflow runs older than 15 days"
+          echo "📊 Retention policy: Keep last 10 runs + runs from last 15 days"
