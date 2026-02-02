@@ -251,32 +251,38 @@ class TransformationPhase:
 
         for col, null_count in null_columns.items():
             null_pct = null_count / total_rows * 100
-
             if pd.api.types.is_numeric_dtype(df[col]):
-                if null_pct < self.LOW_NULL_THRESHOLD_PCT:
-                    median_val = df[col].median()
-                    if pd.isna(median_val):
-                        median_val = 0
-                    df[col] = df[col].fillna(median_val)
-                    actions[col] = f"filled_median ({median_val:.2f})"
-                elif null_pct < self.HIGH_NULL_THRESHOLD_PCT:
-                    df[col] = df[col].fillna(self.MISSING_NUMERIC_INDICATOR)
-                    actions[col] = f"filled_missing_indicator ({self.MISSING_NUMERIC_INDICATOR})"
-                else:
-                    df[col] = df[col].fillna(0)
-                    actions[col] = f"filled_zero (high_null: {null_pct:.1f}%)"
-                    logger.warning("Column '%s' has %.1f%% nulls", col, null_pct)
+                action = self._handle_numeric_nulls(df, col, null_pct)
             else:
-                if null_pct < self.LOW_NULL_THRESHOLD_PCT:
-                    mode_val = df[col].mode()
-                    fill_val = mode_val.iloc[0] if len(mode_val) > 0 else "unknown"
-                    df[col] = df[col].fillna(fill_val)
-                    actions[col] = f"filled_mode ({fill_val})"
-                else:
-                    df[col] = df[col].fillna("missing")
-                    actions[col] = "filled_missing_label"
+                action = self._handle_categorical_nulls(df, col, null_pct)
+            actions[col] = action
 
         return df, {"smart_actions": actions}
+
+    def _handle_numeric_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
+        """Apply numeric null handling strategy for a column."""
+        if null_pct < self.LOW_NULL_THRESHOLD_PCT:
+            median_val = df[col].median()
+            if pd.isna(median_val):
+                median_val = 0
+            df[col] = df[col].fillna(median_val)
+            return f"filled_median ({median_val:.2f})"
+        if null_pct < self.HIGH_NULL_THRESHOLD_PCT:
+            df[col] = df[col].fillna(self.MISSING_NUMERIC_INDICATOR)
+            return f"filled_missing_indicator ({self.MISSING_NUMERIC_INDICATOR})"
+        df[col] = df[col].fillna(0)
+        logger.warning("Column '%s' has %.1f%% nulls", col, null_pct)
+        return f"filled_zero (high_null: {null_pct:.1f}%)"
+
+    def _handle_categorical_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
+        """Apply categorical null handling strategy for a column."""
+        if null_pct < self.LOW_NULL_THRESHOLD_PCT:
+            mode_val = df[col].mode()
+            fill_val = mode_val.iloc[0] if len(mode_val) > 0 else "unknown"
+            df[col] = df[col].fillna(fill_val)
+            return f"filled_mode ({fill_val})"
+        df[col] = df[col].fillna("missing")
+        return "filled_missing_label"
 
     def _normalize_types(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
@@ -299,7 +305,23 @@ class TransformationPhase:
 
         conversions: Dict[str, Dict[str, str]] = {}
 
-        # Normalize date columns
+        self._normalize_date_columns(df, conversions)
+        self._normalize_numeric_columns(df, conversions)
+        self._normalize_status_column(df, conversions)
+
+        metrics = {
+            "enabled": True,
+            "conversions_applied": len(conversions),
+            "conversion_details": conversions,
+        }
+
+        logger.info("Applied %d type conversions", len(conversions))
+        return df, metrics
+
+    def _normalize_date_columns(
+        self, df: pd.DataFrame, conversions: Dict[str, Dict[str, str]]
+    ) -> None:
+        """Normalize date columns to datetime."""
         for col in df.columns:
             if col in self.DATE_COLUMNS or col.endswith("_date"):
                 if pd.api.types.is_string_dtype(df[col]) or df[col].dtype == "object":
@@ -309,7 +331,10 @@ class TransformationPhase:
                     except Exception as e:
                         logger.warning("Could not convert %s to datetime: %s", col, e)
 
-        # Normalize numeric columns
+    def _normalize_numeric_columns(
+        self, df: pd.DataFrame, conversions: Dict[str, Dict[str, str]]
+    ) -> None:
+        """Normalize numeric columns to numeric dtype."""
         for col in df.columns:
             if col in self.NUMERIC_COLUMNS or any(
                 kw in col.lower() for kw in ["amount", "balance", "rate", "count", "dpd"]
@@ -321,22 +346,17 @@ class TransformationPhase:
                     except Exception as e:
                         logger.warning("Could not convert %s to numeric: %s", col, e)
 
-        # Normalize status column if present (vectorized for performance)
-        if "status" in df.columns:
-            original_values = df["status"].unique().tolist()
-            df["status"] = df["status"].map(
-                lambda x: self.STATUS_MAPPINGS.get(x, str(x).lower() if pd.notna(x) else x)
-            )
-            conversions["status"] = {"normalized_values": original_values}
-
-        metrics = {
-            "enabled": True,
-            "conversions_applied": len(conversions),
-            "conversion_details": conversions,
-        }
-
-        logger.info("Applied %d type conversions", len(conversions))
-        return df, metrics
+    def _normalize_status_column(
+        self, df: pd.DataFrame, conversions: Dict[str, Dict[str, str]]
+    ) -> None:
+        """Normalize status values to standardized labels."""
+        if "status" not in df.columns:
+            return
+        original_values = df["status"].unique().tolist()
+        df["status"] = df["status"].map(
+            lambda x: self.STATUS_MAPPINGS.get(x, str(x).lower() if pd.notna(x) else x)
+        )
+        conversions["status"] = {"normalized_values": original_values}
 
 
     def _apply_business_rules(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
@@ -360,49 +380,10 @@ class TransformationPhase:
         rules_applied: List[str] = []
         fields_created: List[str] = []
 
-        # Apply DPD bucket assignment if dpd column exists (vectorized)
-        if "dpd" in df.columns:
-            df["dpd_bucket"] = pd.cut(
-                df["dpd"],
-                bins=[-np.inf, -0.001, 0.001, 30, 60, 90, 180, np.inf],
-                labels=["unknown", "current", "1-29", "30-59", "60-89", "90-179", "180+"],
-                include_lowest=True,
-            ).astype(str)
-            # Handle NaN values
-            df.loc[df["dpd"].isna(), "dpd_bucket"] = "unknown"
-            fields_created.append("dpd_bucket")
-            rules_applied.append("dpd_bucket_assignment")
-
-        # Apply risk categorization based on multiple factors
-        if "status" in df.columns and "dpd" in df.columns:
-            df["risk_category"] = df.apply(self._calculate_risk_category, axis=1)
-            fields_created.append("risk_category")
-            rules_applied.append("risk_categorization")
-
-        # Apply amount tier classification if amount column exists (vectorized)
-        if "amount" in df.columns:
-            # Note: right=False means bins are (left, right] except first bin which includes left
-            # This matches original logic: < 5000, < 25000, < 100000, < 500000
-            df["amount_tier"] = pd.cut(
-                df["amount"],
-                bins=[-np.inf, 0, 5000, 25000, 100000, 500000, np.inf],
-                labels=["invalid", "micro", "small", "medium", "large", "jumbo"],
-                right=False,  # Makes bins [left, right) to match < comparison
-            ).astype(str)
-            # Handle NaN values
-            df.loc[df["amount"].isna(), "amount_tier"] = "invalid"
-            fields_created.append("amount_tier")
-            rules_applied.append("amount_tier_classification")
-
-        # Apply custom business rules from configuration
-        custom_rules = self.business_rules.get("transformations", [])
-        for rule in custom_rules:
-            try:
-                df, success = self._apply_custom_rule(df, rule)
-                if success:
-                    rules_applied.append(rule.get("name", "unnamed_rule"))
-            except Exception as e:
-                logger.warning("Failed to apply custom rule: %s", e)
+        self._apply_dpd_bucket_rule(df, rules_applied, fields_created)
+        self._apply_risk_category_rule(df, rules_applied, fields_created)
+        self._apply_amount_tier_rule(df, rules_applied, fields_created)
+        self._apply_custom_rules(df, rules_applied)
 
         metrics = {
             "rules_applied": len(rules_applied),
@@ -412,6 +393,58 @@ class TransformationPhase:
 
         logger.info("Applied %d business rules", len(rules_applied))
         return df, metrics
+
+    def _apply_dpd_bucket_rule(
+        self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]
+    ) -> None:
+        """Apply DPD bucket assignment."""
+        if "dpd" not in df.columns:
+            return
+        df["dpd_bucket"] = pd.cut(
+            df["dpd"],
+            bins=[-np.inf, -0.001, 0.001, 30, 60, 90, 180, np.inf],
+            labels=["unknown", "current", "1-29", "30-59", "60-89", "90-179", "180+"],
+            include_lowest=True,
+        ).astype(str)
+        df.loc[df["dpd"].isna(), "dpd_bucket"] = "unknown"
+        fields_created.append("dpd_bucket")
+        rules_applied.append("dpd_bucket_assignment")
+
+    def _apply_risk_category_rule(
+        self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]
+    ) -> None:
+        """Apply risk categorization rule."""
+        if "status" in df.columns and "dpd" in df.columns:
+            df["risk_category"] = df.apply(self._calculate_risk_category, axis=1)
+            fields_created.append("risk_category")
+            rules_applied.append("risk_categorization")
+
+    def _apply_amount_tier_rule(
+        self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]
+    ) -> None:
+        """Apply amount tier classification rule."""
+        if "amount" not in df.columns:
+            return
+        df["amount_tier"] = pd.cut(
+            df["amount"],
+            bins=[-np.inf, 0, 5000, 25000, 100000, 500000, np.inf],
+            labels=["invalid", "micro", "small", "medium", "large", "jumbo"],
+            right=False,
+        ).astype(str)
+        df.loc[df["amount"].isna(), "amount_tier"] = "invalid"
+        fields_created.append("amount_tier")
+        rules_applied.append("amount_tier_classification")
+
+    def _apply_custom_rules(self, df: pd.DataFrame, rules_applied: List[str]) -> None:
+        """Apply custom business rules from configuration."""
+        custom_rules = self.business_rules.get("transformations", [])
+        for rule in custom_rules:
+            try:
+                df, success = self._apply_custom_rule(df, rule)
+                if success:
+                    rules_applied.append(rule.get("name", "unnamed_rule"))
+            except Exception as e:
+                logger.warning("Failed to apply custom rule: %s", e)
 
     def _assign_dpd_bucket(self, dpd: float) -> str:
         """Assign DPD (Days Past Due) bucket."""
@@ -473,64 +506,75 @@ class TransformationPhase:
         rule_type = rule.get("type")
 
         if rule_type == "column_mapping":
-            source_col = rule.get("source_column")
-            target_col = rule.get("target_column")
-            mapping = rule.get("mapping", {})
-            if source_col and target_col and source_col in df.columns:
-                df[target_col] = df[source_col].map(mapping).fillna(df[source_col])
-                return df, True
-
-            logger.warning(
-                "Invalid column_mapping rule configuration or missing source column: "
-                f"source_column={source_col!r}, target_column={target_col!r}"
-            )
-            return df, False
-
+            return self._apply_column_mapping_rule(df, rule)
         if rule_type == "derived_field":
-            target_col = rule.get("target_column")
-            expression = rule.get("expression", "")
-            if expression and target_col:
-                # Only allow safe expressions using pandas eval with restricted operations
-                # Allowed: column names, basic arithmetic (+, -, *, /)
-                # Note: allowed_chars includes both upper and lowercase letters.
-                # The dangerous_patterns check uses expression.lower() to catch uppercase
-                # variants of dangerous keywords (e.g., "IMPORT", "EXEC").
-                allowed_chars = set(
-                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). "
-                )
-                if not all(c in allowed_chars for c in expression):
-                    logger.warning(
-                        "Unsafe characters in expression '%s', skipping rule", expression
-                    )
-                    return df, False
-                # Check for any dangerous patterns (case-insensitive via lower()).
-                # We explicitly block dangerous dunder names instead of any double underscore.
-                dangerous_patterns = [
-                    "import",
-                    "exec",
-                    "eval",
-                    "compile",
-                    "__import__",
-                    "__builtins__",
-                    "__class__",
-                    "__getattr__",
-                    "__setattr__",
-                    "open",
-                    "file",
-                ]
-                if any(pattern in expression.lower() for pattern in dangerous_patterns):
-                    logger.warning(
-                        f"Dangerous pattern detected in expression '{expression}', skipping rule"
-                    )
-                    return df, False
-                try:
-                    df[target_col] = df.eval(expression)
-                    return df, True
-                except Exception as e:
-                    logger.warning("Failed to evaluate expression '%s': %s", expression, e)
-                    return df, False
+            return self._apply_derived_field_rule(df, rule)
 
         return df, False
+
+    def _apply_column_mapping_rule(
+        self, df: pd.DataFrame, rule: Dict[str, Any]
+    ) -> Tuple[pd.DataFrame, bool]:
+        """Apply a column mapping custom rule."""
+        source_col = rule.get("source_column")
+        target_col = rule.get("target_column")
+        mapping = rule.get("mapping", {})
+        if source_col and target_col and source_col in df.columns:
+            df[target_col] = df[source_col].map(mapping).fillna(df[source_col])
+            return df, True
+
+        logger.warning(
+            "Invalid column_mapping rule configuration or missing source column: "
+            f"source_column={source_col!r}, target_column={target_col!r}"
+        )
+        return df, False
+
+    def _apply_derived_field_rule(
+        self, df: pd.DataFrame, rule: Dict[str, Any]
+    ) -> Tuple[pd.DataFrame, bool]:
+        """Apply a derived field custom rule with safety checks."""
+        target_col = rule.get("target_column")
+        expression = rule.get("expression", "")
+        if not expression or not target_col:
+            return df, False
+
+        if not self._is_safe_expression(expression):
+            return df, False
+
+        try:
+            df[target_col] = df.eval(expression)
+            return df, True
+        except Exception as e:
+            logger.warning("Failed to evaluate expression '%s': %s", expression, e)
+            return df, False
+
+    def _is_safe_expression(self, expression: str) -> bool:
+        """Validate that an expression is safe for pandas eval."""
+        allowed_chars = set(
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). "
+        )
+        if not all(c in allowed_chars for c in expression):
+            logger.warning("Unsafe characters in expression '%s', skipping rule", expression)
+            return False
+        dangerous_patterns = [
+            "import",
+            "exec",
+            "eval",
+            "compile",
+            "__import__",
+            "__builtins__",
+            "__class__",
+            "__getattr__",
+            "__setattr__",
+            "open",
+            "file",
+        ]
+        if any(pattern in expression.lower() for pattern in dangerous_patterns):
+            logger.warning(
+                "Dangerous pattern detected in expression '%s', skipping rule", expression
+            )
+            return False
+        return True
 
     def _detect_outliers(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
