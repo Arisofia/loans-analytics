@@ -8,18 +8,6 @@ Creates realistic loan portfolio data with proper distributions:
 - Names: Real Spanish names
 - Dates: Realistic vintages (6-36 months old)
 
-SECURITY NOTE (python:S2245 - PRNG Usage):
-This script generates SYNTHETIC TEST DATA with reproducible randomness (--seed parameter).
-Most random operations use the standard `random` module which is NOT cryptographically secure,
-but this is ACCEPTABLE because:
-1. All data is synthetic/test data, not production data
-2. Reproducibility (via --seed) is required for consistent test scenarios
-3. EXCEPTION: National tax IDs (RFC) use `secrets` module for security
-
-Security-sensitive operations that use secrets module:
-- generate_mexican_rfc(): Tax ID generation (lines 123-135)
-- region selection (line 248): Already uses secrets.choice()
-
 Usage:
     python scripts/generate_sample_data.py --output data/raw/sample_loans.csv --count 800
     python scripts/generate_sample_data.py --start-date 2023-01-01 --end-date 2024-12-31
@@ -122,17 +110,10 @@ REGIONS = [
 
 
 def generate_mexican_rfc() -> str:
-    """Generate realistic Mexican RFC (Registro Federal de Contribuyentes).
-    
-    Uses secrets module for cryptographically secure random generation to avoid
-    accidentally generating predictable or real RFC numbers. Even for test data,
-    national tax IDs should use secure randomness.
-    
-    Security: python:S2245 - Uses CSPRNG (secrets) instead of PRNG (random)
-    """
-    letters = "".join(secrets.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for _ in range(4))
-    digits = "".join(secrets.choice("0123456789") for _ in range(6))
-    suffix = "".join(secrets.choice("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ") for _ in range(3))
+    """Generate realistic Mexican RFC (Registro Federal de Contribuyentes)."""
+    letters = "".join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=4))
+    digits = "".join(random.choices("0123456789", k=6))
+    suffix = "".join(random.choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=3))
     return f"{letters}{digits}{suffix}"
 
 
@@ -159,11 +140,12 @@ def _calculate_days_late(payment_status: str, status: str) -> int:
 
 
 def _calculate_amount_paid(payment_status: str) -> Decimal:
-    """Calculate amount paid based on payment status."""
+    """Calculate amount paid based on payment status using Decimal for precision."""
     if payment_status == "missed":
-        return Decimal("0")
-    amount = Decimal(str(random.uniform(5000, 15000)))
-    return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return Decimal("0.00")
+    # Generate random amount between 5000 and 15000 with 2 decimal places
+    amount_float = random.uniform(5000, 15000)
+    return Decimal(str(amount_float)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def generate_payment_history(
@@ -190,12 +172,16 @@ def generate_payment_history(
 def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
     """Generate a single realistic loan record."""
     # Amount: log-normal distribution (median ~$75K, range $10K-$500K)
-    amount_float = min(500000, max(10000, random.lognormvariate(11.2, 0.7)))
+    # Use Decimal for financial accuracy
+    amount_float = random.lognormvariate(11.2, 0.7)
+    amount_float = min(500000, max(10000, amount_float))
     amount = Decimal(str(amount_float)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     # Interest rate: normal distribution (mean 34%, std 4%)
-    rate_float = min(45, max(28, random.gauss(34, 4)))
-    rate = Decimal(str(rate_float / 100)).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+    # Store as Decimal percentage (e.g., Decimal("34.50") for 34.50%)
+    rate_float = random.gauss(34, 4)
+    rate_float = min(45, max(28, rate_float))
+    rate = Decimal(str(rate_float)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     # Term: common terms (12, 18, 24, 36 months)
     term_months = random.choices([12, 18, 24, 36], weights=[0.2, 0.3, 0.3, 0.2])[0]
@@ -229,13 +215,13 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
 
     borrower_id = f"BRW{loan_id:06d}"
 
-    # Convert Decimal to float for JSON serialization in payment history
+    # Convert Decimal objects to strings for JSON serialization
     payment_history_serializable = [
         {
             "month": p["month"],
             "status": p["status"],
             "days_late": p["days_late"],
-            "amount_paid": float(p["amount_paid"]),  # Decimal → float for JSON
+            "amount_paid": str(p["amount_paid"]),  # Decimal → string for JSON
         }
         for p in payment_history
     ]
@@ -250,10 +236,10 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
             f"@{company_name.replace(' ', '').lower()}.mx"
         ),
         "borrower_id_number": generate_mexican_rfc(),
-        "amount": float(amount),  # Convert Decimal to float for compatibility
-        "principal_amount": float(amount),
-        "rate": float(rate),  # Already in decimal form (0.34 for 34%)
-        "interest_rate": float(rate * 100),  # Convert back to percentage
+        "amount": str(amount),  # Convert Decimal to string for CSV
+        "principal_amount": str(amount),
+        "rate": str(rate / Decimal("100")),  # Convert percentage to decimal (e.g., 0.3450)
+        "interest_rate": str(rate),  # Keep as percentage string
         "term_months": term_months,
         "origination_date": origination_date.strftime("%Y-%m-%d"),
         "status": status,  # Match expected column name
