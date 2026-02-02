@@ -19,6 +19,7 @@ import argparse
 import csv
 import json
 import random
+import secrets
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -207,7 +208,7 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
         "current_status": status,
         "payment_history_json": json.dumps(payment_history),
         "risk_score": risk_score,
-        "region": random.choice(REGIONS),
+        "region": secrets.choice(REGIONS),
     }
 
 
