@@ -5,5 +5,5 @@ metadata:
 services:
     abaco-loans-analytics:
         project: .
-        host: function
+        host: containerapp
         language: python
