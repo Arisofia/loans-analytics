@@ -34,11 +34,11 @@ Replaced `random` with `secrets` for all ID/sensitive value generation:
 
 | File | Function | Before | After | Line |
 |------|----------|--------|-------|------|
-| `generate_sample_data.py` | `generate_mexican_rfc()` | `random.choices()` | `secrets.choice()` | 111-123 |
-| `seed_spanish_loans.py` | `generate_dni()` | `random.randint()` | `secrets.randbelow()` | 169-175 |
-| `seed_spanish_loans.py` | `generate_nie()` | `random.choice()`, `random.randint()` | `secrets.choice()`, `secrets.randbelow()` | 178-195 |
-| `seed_spanish_loans.py` | `generate_id_number()` | `random.random()` | `secrets.randbelow()` | 198-205 |
-| `test_data_generators.py` | SSN generation | `random.randint()` | `secrets.randbelow()` | 210-214 |
+| `generate_sample_data.py` | `generate_mexican_rfc()` | `random.choices()` | `secrets.choice()` | 123-135 |
+| `seed_spanish_loans.py` | `generate_dni()` | `random.randint()` | `secrets.randbelow()` | 169-182 |
+| `seed_spanish_loans.py` | `generate_nie()` | `random.choice()`, `random.randint()` | `secrets.choice()`, `secrets.randbelow()` | 185-209 |
+| `seed_spanish_loans.py` | `generate_id_number()` | `random.random()` | `secrets.randbelow()` | 212-222 |
+| `test_data_generators.py` | SSN generation | `random.randint()` | `secrets.randbelow()` | 224-228 |
 
 ### Non-Security Operations → Kept `random` (Documented)
 
