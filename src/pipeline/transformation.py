@@ -194,34 +194,53 @@ class TransformationPhase:
             logger.info("No null values found")
             return df, {"total_nulls": 0, "strategy_applied": "none", "columns_affected": []}
 
-        metrics = {
+        metrics = self._create_null_metrics(total_nulls, null_columns)
+        df, strategy_metrics = self._apply_null_strategy(df, null_columns)
+        metrics.update(strategy_metrics)
+
+        final_nulls = df.isnull().sum().sum()
+        metrics["final_total_nulls"] = int(final_nulls)
+
+        return df, metrics
+
+    def _create_null_metrics(
+        self, total_nulls: int, null_columns: Dict[str, int]
+    ) -> Dict[str, Any]:
+        """Create initial metrics for null handling."""
+        return {
             "initial_total_nulls": int(total_nulls),
             "null_columns": null_columns,
             "strategy_applied": self.null_strategy,
             "columns_affected": list(null_columns.keys()),
         }
 
-        if self.null_strategy == "drop":
-            rows_before = len(df)
-            df = df.dropna()
-            rows_dropped = rows_before - len(df)
-            metrics["rows_dropped"] = rows_dropped
-            logger.info("Dropped %d rows with null values", rows_dropped)
+    def _apply_null_strategy(
+        self, df: pd.DataFrame, null_columns: Dict[str, int]
+    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        """Apply the configured null handling strategy using strategy dispatch."""
+        strategy_handlers = {
+            "drop": lambda: self._apply_drop_strategy(df),
+            "fill": lambda: self._apply_fill_strategy(df),
+            "smart": lambda: self._smart_null_handling(df, null_columns),
+        }
+        handler = strategy_handlers.get(self.null_strategy)
+        if handler:
+            return handler()
+        return df, {}
 
-        elif self.null_strategy == "fill":
-            df = self._fill_nulls_by_type(df)
-            metrics["fill_values_used"] = self.fill_values
-            logger.info("Filled null values with configured defaults")
+    def _apply_drop_strategy(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        """Apply drop strategy for null handling."""
+        rows_before = len(df)
+        df = df.dropna()
+        rows_dropped = rows_before - len(df)
+        logger.info("Dropped %d rows with null values", rows_dropped)
+        return df, {"rows_dropped": rows_dropped}
 
-        elif self.null_strategy == "smart":
-            df, smart_metrics = self._smart_null_handling(df, null_columns)
-            metrics.update(smart_metrics)
-            logger.info("Applied smart null handling")
-
-        final_nulls = df.isnull().sum().sum()
-        metrics["final_total_nulls"] = int(final_nulls)
-
-        return df, metrics
+    def _apply_fill_strategy(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        """Apply fill strategy for null handling."""
+        df = self._fill_nulls_by_type(df)
+        logger.info("Filled null values with configured defaults")
+        return df, {"fill_values_used": self.fill_values}
 
     def _fill_nulls_by_type(self, df: pd.DataFrame) -> pd.DataFrame:
         """Fill nulls based on column data type."""
@@ -243,30 +262,48 @@ class TransformationPhase:
         - LOW to HIGH_NULL_THRESHOLD_PCT: Fill with missing indicator
         - > HIGH_NULL_THRESHOLD_PCT: Log warning, fill with default
         """
-        actions: Dict[str, str] = {}
         total_rows = len(df)
+        actions = self._process_null_columns(df, null_columns, total_rows)
+        return df, {"smart_actions": actions}
 
+    def _process_null_columns(
+        self, df: pd.DataFrame, null_columns: Dict[str, int], total_rows: int
+    ) -> Dict[str, str]:
+        """Process null values for each column based on column type."""
+        actions: Dict[str, str] = {}
         for col, null_count in null_columns.items():
             null_pct = null_count / total_rows * 100
-            if pd.api.types.is_numeric_dtype(df[col]):
-                action = self._handle_numeric_nulls(df, col, null_pct)
-            else:
-                action = self._handle_categorical_nulls(df, col, null_pct)
+            action = (
+                self._handle_numeric_nulls(df, col, null_pct)
+                if pd.api.types.is_numeric_dtype(df[col])
+                else self._handle_categorical_nulls(df, col, null_pct)
+            )
             actions[col] = action
-
-        return df, {"smart_actions": actions}
+        return actions
 
     def _handle_numeric_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
         """Apply numeric null handling strategy for a column."""
         if null_pct < self.LOW_NULL_THRESHOLD_PCT:
-            median_val = df[col].median()
-            if pd.isna(median_val):
-                median_val = 0
-            df[col] = df[col].fillna(median_val)
-            return f"filled_median ({median_val:.2f})"
+            return self._fill_numeric_with_median(df, col)
         if null_pct < self.HIGH_NULL_THRESHOLD_PCT:
-            df[col] = df[col].fillna(self.MISSING_NUMERIC_INDICATOR)
-            return f"filled_missing_indicator ({self.MISSING_NUMERIC_INDICATOR})"
+            return self._fill_numeric_with_indicator(df, col)
+        return self._fill_numeric_with_zero(df, col, null_pct)
+
+    def _fill_numeric_with_median(self, df: pd.DataFrame, col: str) -> str:
+        """Fill numeric nulls with median value."""
+        median_val = df[col].median()
+        if pd.isna(median_val):
+            median_val = 0
+        df[col] = df[col].fillna(median_val)
+        return f"filled_median ({median_val:.2f})"
+
+    def _fill_numeric_with_indicator(self, df: pd.DataFrame, col: str) -> str:
+        """Fill numeric nulls with missing indicator."""
+        df[col] = df[col].fillna(self.MISSING_NUMERIC_INDICATOR)
+        return f"filled_missing_indicator ({self.MISSING_NUMERIC_INDICATOR})"
+
+    def _fill_numeric_with_zero(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
+        """Fill numeric nulls with zero for high null percentage columns."""
         df[col] = df[col].fillna(0)
         logger.warning("Column '%s' has %.1f%% nulls", col, null_pct)
         return f"filled_zero (high_null: {null_pct:.1f}%)"
@@ -274,10 +311,18 @@ class TransformationPhase:
     def _handle_categorical_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
         """Apply categorical null handling strategy for a column."""
         if null_pct < self.LOW_NULL_THRESHOLD_PCT:
-            mode_val = df[col].mode()
-            fill_val = mode_val.iloc[0] if len(mode_val) > 0 else "unknown"
-            df[col] = df[col].fillna(fill_val)
-            return f"filled_mode ({fill_val})"
+            return self._fill_categorical_with_mode(df, col)
+        return self._fill_categorical_with_missing(df, col)
+
+    def _fill_categorical_with_mode(self, df: pd.DataFrame, col: str) -> str:
+        """Fill categorical nulls with mode value."""
+        mode_val = df[col].mode()
+        fill_val = mode_val.iloc[0] if len(mode_val) > 0 else "unknown"
+        df[col] = df[col].fillna(fill_val)
+        return f"filled_mode ({fill_val})"
+
+    def _fill_categorical_with_missing(self, df: pd.DataFrame, col: str) -> str:
+        """Fill categorical nulls with missing label."""
         df[col] = df[col].fillna("missing")
         return "filled_missing_label"
 
@@ -422,6 +467,16 @@ class TransformationPhase:
         """Apply amount tier classification rule."""
         if "amount" not in df.columns:
             return
+        self._categorize_amount_tiers(df)
+        self._record_applied_rule(rules_applied, fields_created)
+
+    def _record_applied_rule(self, rules_applied: List[str], fields_created: List[str]) -> None:
+        """Record that amount tier rule was applied."""
+        fields_created.append("amount_tier")
+        rules_applied.append("amount_tier_classification")
+
+    def _categorize_amount_tiers(self, df: pd.DataFrame) -> None:
+        """Categorize amounts into tiers using binning."""
         df["amount_tier"] = pd.cut(
             df["amount"],
             bins=[-np.inf, 0, 5000, 25000, 100000, 500000, np.inf],
@@ -429,8 +484,6 @@ class TransformationPhase:
             right=False,
         ).astype(str)
         df.loc[df["amount"].isna(), "amount_tier"] = "invalid"
-        fields_created.append("amount_tier")
-        rules_applied.append("amount_tier_classification")
 
     def _apply_custom_rules(self, df: pd.DataFrame, rules_applied: List[str]) -> None:
         """Apply custom business rules from configuration."""
@@ -547,31 +600,36 @@ class TransformationPhase:
 
     def _is_safe_expression(self, expression: str) -> bool:
         """Validate that an expression is safe for pandas eval."""
+        if not self._check_allowed_chars(expression):
+            return False
+        if self._check_dangerous_patterns(expression):
+            return False
+        return True
+
+    def _check_allowed_chars(self, expression: str) -> bool:
+        """Verify expression contains only allowed characters."""
         allowed_chars = set(
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_+-*/(). "
         )
         if not all(c in allowed_chars for c in expression):
             logger.warning("Unsafe characters in expression '%s', skipping rule", expression)
             return False
+        return True
+
+    def _check_dangerous_patterns(self, expression: str) -> bool:
+        """Check for dangerous patterns in expression."""
         dangerous_patterns = [
-            "import",
-            "exec",
-            "eval",
-            "compile",
-            "__import__",
-            "__builtins__",
-            "__class__",
-            "__getattr__",
-            "__setattr__",
-            "open",
-            "file",
+            "import", "exec", "eval", "compile", "__import__",
+            "__builtins__", "__class__", "__getattr__", "__setattr__",
+            "open", "file",
         ]
-        if any(pattern in expression.lower() for pattern in dangerous_patterns):
+        expression_lower = expression.lower()
+        if any(pattern in expression_lower for pattern in dangerous_patterns):
             logger.warning(
                 "Dangerous pattern detected in expression '%s', skipping rule", expression
             )
-            return False
-        return True
+            return True
+        return False
 
     def _detect_outliers(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
@@ -592,31 +650,52 @@ class TransformationPhase:
         if not self.outlier_enabled:
             return df, {"enabled": False}
 
-        outlier_counts: Dict[str, int] = {}
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-
-        # Skip columns that shouldn't be checked for outliers:
-        # - loan_id, id: Identifiers, not meaningful for outlier detection
-        # - dpd: Days Past Due can legitimately range from 0 to 180+ in business context;
-        #        extremely high values (> 365) could indicate data quality issues but are
-        #        handled separately by business rules (dpd_bucket assignment)
         skip_cols = {"loan_id", "id", "dpd"}
         check_cols = [col for col in numeric_cols if col not in skip_cols]
 
-        for col in check_cols:
-            if self.outlier_method == "iqr":
-                outliers = self._detect_outliers_iqr(df[col])
-            else:  # zscore
-                outliers = self._detect_outliers_zscore(df[col])
+        df, outlier_counts = self._flag_outliers(df, check_cols)
+        metrics = self._create_outlier_metrics(check_cols, outlier_counts)
 
+        return df, metrics
+
+    def _flag_outliers(
+        self, df: pd.DataFrame, check_cols: List[str]
+    ) -> Tuple[pd.DataFrame, Dict[str, int]]:
+        """Detect and flag outliers in specified columns."""
+        outlier_counts: Dict[str, int] = {}
+
+        for col in check_cols:
+            outliers = (
+                self._detect_outliers_iqr(df[col])
+                if self.outlier_method == "iqr"
+                else self._detect_outliers_zscore(df[col])
+            )
             outlier_count = outliers.sum()
             if outlier_count > 0:
-                outlier_flag_col = f"{col}_outlier"
-                df[outlier_flag_col] = outliers
-                outlier_counts[col] = int(outlier_count)
-                logger.info("Found %d outliers in column '%s'", outlier_count, col)
+                self._record_outlier_flag(df, col, outliers, outlier_count, outlier_counts)
 
-        metrics = {
+        return df, outlier_counts
+
+    def _record_outlier_flag(
+        self,
+        df: pd.DataFrame,
+        col: str,
+        outliers: pd.Series,
+        outlier_count: int,
+        outlier_counts: Dict[str, int],
+    ) -> None:
+        """Record outlier flag for a column."""
+        outlier_flag_col = f"{col}_outlier"
+        df[outlier_flag_col] = outliers
+        outlier_counts[col] = int(outlier_count)
+        logger.info("Found %d outliers in column '%s'", outlier_count, col)
+
+    def _create_outlier_metrics(
+        self, check_cols: List[str], outlier_counts: Dict[str, int]
+    ) -> Dict[str, Any]:
+        """Create metrics dictionary for outlier detection results."""
+        return {
             "enabled": True,
             "method": self.outlier_method,
             "threshold": self.outlier_threshold,
@@ -624,8 +703,6 @@ class TransformationPhase:
             "outliers_detected": outlier_counts,
             "total_outlier_rows": sum(outlier_counts.values()),
         }
-
-        return df, metrics
 
     def _detect_outliers_iqr(self, series: pd.Series) -> pd.Series:
         """Detect outliers using IQR method."""
@@ -645,16 +722,12 @@ class TransformationPhase:
         # Work on non-null values to avoid NaN propagation in statistics and flags
         non_null = series.dropna()
 
-        # If there are no non-null values, there can be no outliers
-        if non_null.empty:
+        # If there are no non-null values or no variation, there can be no outliers
+        if non_null.empty or non_null.std() == 0:
             return pd.Series(False, index=series.index)
 
         mean = non_null.mean()
         std = non_null.std()
-
-        # If there is no variation, there are no outliers
-        if std == 0:
-            return pd.Series(False, index=series.index)
 
         z_scores = np.abs((non_null - mean) / std)
         outliers_non_null = z_scores > self.outlier_threshold
@@ -682,69 +755,10 @@ class TransformationPhase:
         logger.info("Checking referential integrity")
 
         integrity_issues: List[Dict[str, Any]] = []
-
-        # Check for unique loan_id if present
-        if "loan_id" in df.columns:
-            duplicates = df["loan_id"].duplicated().sum()
-            if duplicates > 0:
-                integrity_issues.append(
-                    {
-                        "type": "duplicate_primary_key",
-                        "column": "loan_id",
-                        "count": int(duplicates),
-                    }
-                )
-                logger.warning("Found %d duplicate loan_id values", duplicates)
-
-        # Check for orphan records (borrower_id without valid reference)
-        if "borrower_id" in df.columns:
-            null_borrowers = df["borrower_id"].isnull().sum()
-            if null_borrowers > 0:
-                integrity_issues.append(
-                    {
-                        "type": "null_foreign_key",
-                        "column": "borrower_id",
-                        "count": int(null_borrowers),
-                    }
-                )
-
-        # Check date consistency
-        date_cols = [col for col in df.columns if col.endswith("_date")]
-        if (
-            "origination_date" in date_cols
-            and "due_date" in date_cols
-            and df["origination_date"].dtype == "datetime64[ns]"
-            and df["due_date"].dtype == "datetime64[ns]"
-        ):
-            # Filter out NaT values before comparing dates
-            valid_mask = df["due_date"].notna() & df["origination_date"].notna()
-            invalid_dates = (
-                df.loc[valid_mask, "due_date"] < df.loc[valid_mask, "origination_date"]
-            ).sum()
-            if invalid_dates > 0:
-                integrity_issues.append(
-                    {
-                        "type": "invalid_date_sequence",
-                        "description": "due_date before origination_date",
-                        "count": int(invalid_dates),
-                    }
-                )
-
-        # Check for negative amounts in columns that should be positive
-        positive_cols = ["amount", "current_balance", "original_amount"]
-        for col in positive_cols:
-            if col in df.columns:
-                # Filter out NaN values before checking for negatives
-                valid_values = df[col].dropna()
-                negative_count = (valid_values < 0).sum()
-                if negative_count > 0:
-                    integrity_issues.append(
-                        {
-                            "type": "negative_value",
-                            "column": col,
-                            "count": int(negative_count),
-                        }
-                    )
+        self._check_primary_key_integrity(df, integrity_issues)
+        self._check_foreign_key_integrity(df, integrity_issues)
+        self._check_date_consistency(df, integrity_issues)
+        self._check_positive_amounts(df, integrity_issues)
 
         metrics = {
             "checks_performed": 4,
@@ -759,3 +773,86 @@ class TransformationPhase:
             logger.info("Referential integrity checks passed")
 
         return df, metrics
+
+    def _check_primary_key_integrity(
+        self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]
+    ) -> None:
+        """Check for duplicate primary keys (loan_id)."""
+        if "loan_id" not in df.columns:
+            return
+
+        duplicates = df["loan_id"].duplicated().sum()
+        if duplicates > 0:
+            integrity_issues.append(
+                {
+                    "type": "duplicate_primary_key",
+                    "column": "loan_id",
+                    "count": int(duplicates),
+                }
+            )
+            logger.warning("Found %d duplicate loan_id values", duplicates)
+
+    def _check_foreign_key_integrity(
+        self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]
+    ) -> None:
+        """Check for orphan records with null foreign keys."""
+        if "borrower_id" not in df.columns:
+            return
+
+        null_borrowers = df["borrower_id"].isnull().sum()
+        if null_borrowers > 0:
+            integrity_issues.append(
+                {
+                    "type": "null_foreign_key",
+                    "column": "borrower_id",
+                    "count": int(null_borrowers),
+                }
+            )
+
+    def _check_date_consistency(
+        self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]
+    ) -> None:
+        """Check date consistency (due_date should not be before origination_date)."""
+        date_cols = [col for col in df.columns if col.endswith("_date")]
+        has_both_dates = (
+            "origination_date" in date_cols
+            and "due_date" in date_cols
+            and df["origination_date"].dtype == "datetime64[ns]"
+            and df["due_date"].dtype == "datetime64[ns]"
+        )
+
+        if not has_both_dates:
+            return
+
+        valid_mask = df["due_date"].notna() & df["origination_date"].notna()
+        invalid_dates = (
+            df.loc[valid_mask, "due_date"] < df.loc[valid_mask, "origination_date"]
+        ).sum()
+        if invalid_dates > 0:
+            integrity_issues.append(
+                {
+                    "type": "invalid_date_sequence",
+                    "description": "due_date before origination_date",
+                    "count": int(invalid_dates),
+                }
+            )
+
+    def _check_positive_amounts(
+        self, df: pd.DataFrame, integrity_issues: List[Dict[str, Any]]
+    ) -> None:
+        """Check for negative amounts in columns that should be positive."""
+        positive_cols = ["amount", "current_balance", "original_amount"]
+        for col in positive_cols:
+            if col not in df.columns:
+                continue
+
+            valid_values = df[col].dropna()
+            negative_count = (valid_values < 0).sum()
+            if negative_count > 0:
+                integrity_issues.append(
+                    {
+                        "type": "negative_value",
+                        "column": col,
+                        "count": int(negative_count),
+                    }
+                )
