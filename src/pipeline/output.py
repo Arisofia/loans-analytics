@@ -130,7 +130,6 @@ class OutputPhase:
     def _export_csv(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
         """Export KPI results to CSV format with Decimal precision for financial columns."""
         output_path = run_dir / "kpis_output.csv"
-
         df = pd.DataFrame([kpi_results])
 
         # Convert financial columns to Decimal for monetary precision
