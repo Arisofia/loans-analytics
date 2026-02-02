@@ -17,8 +17,8 @@ but this is ACCEPTABLE because:
 3. EXCEPTION: National tax IDs (RFC) use `secrets` module for security
 
 Security-sensitive operations that use secrets module:
-- generate_mexican_rfc(): Tax ID generation (lines 111-123)
-- region selection (line 229): Already uses secrets.choice()
+- generate_mexican_rfc(): Tax ID generation (lines 123-135)
+- region selection (line 248): Already uses secrets.choice()
 
 Usage:
     python scripts/generate_sample_data.py --output data/raw/sample_loans.csv --count 800

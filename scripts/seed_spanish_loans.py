@@ -20,8 +20,9 @@ but this is ACCEPTABLE because:
 3. EXCEPTION: National IDs (DNI/NIE) use `secrets` module for security
 
 Security-sensitive operations that use secrets module:
-- generate_dni(): Spanish national ID generation (lines 156-163)
-- generate_nie(): Foreign ID generation (lines 165-183)
+- generate_dni(): Spanish national ID generation (lines 169-182)
+- generate_nie(): Foreign ID generation (lines 185-209)
+- generate_id_number(): ID selection logic (lines 212-222)
 """
 
 import csv

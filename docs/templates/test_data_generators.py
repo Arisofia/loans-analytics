@@ -11,7 +11,7 @@ but this is ACCEPTABLE because:
 3. EXCEPTION: PII like SSNs use `secrets` module for security even in test data
 
 Security-sensitive operations that use secrets module:
-- SSN generation in UserDataGenerator (lines 210-214)
+- SSN generation in UserDataGenerator (lines 224-228)
 
 Usage:
     from test_data_generators import LoanDataGenerator, UserDataGenerator
