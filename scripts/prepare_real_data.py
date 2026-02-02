@@ -19,6 +19,15 @@ CUSTOMER_ID = "Customer ID"
 UNKNOWN_STR = "Unknown"
 UNKNOWN_ID = "UNKNOWN"
 
+# Column names for mapping
+COL_TRUE_PAYMENT_DATE = "True Payment Date"
+COL_TRUE_TOTAL_PAYMENT = "True Total Payment"
+COL_TRUE_OUTSTANDING_LOAN_VALUE = "True Outstanding Loan Value"
+COL_PAYMENT_DATE = "Payment Date"
+COL_TOTAL_PAYMENT = "Total Payment"
+COL_COLLATERAL_TYPE = "Collateral Type"
+COL_COLLATERAL_CURRENT = "Collateral Current"
+
 # Table names
 TABLE_LOAN_DATA = "loan_data"
 TABLE_CUSTOMER = "customer"
@@ -39,11 +48,12 @@ FILES = {
 def load_table(data_dir: Path, table_name: str) -> pd.DataFrame:
     """Load and inspect a table."""
     filepath = data_dir / FILES[table_name]
-    logger.info(f"📄 Loading {table_name}: {filepath.name}")
+    logger.info("📄 Loading %s: %s", table_name, filepath.name)
 
     df = pd.read_csv(filepath)
-    logger.info(f"   ✅ Loaded {len(df):,} rows, {len(df.columns)} columns")
-    logger.info(f"   📋 Columns: {', '.join(df.columns[:5])}{'...' if len(df.columns) > 5 else ''}")
+    logger.info("   ✅ Loaded %s rows, %s columns", len(df), len(df.columns))
+    cols_str = ", ".join(df.columns[:5]) + ("..." if len(df.columns) > 5 else "")
+    logger.info("   📋 Columns: %s", cols_str)
 
     return df
 
@@ -52,8 +62,8 @@ def _apply_column_rename(df: pd.DataFrame) -> pd.DataFrame:
     """Apply column name mappings."""
     column_mapping = {
         # Loan identifiers
-        "Loan ID": "loan_id",
-        "Customer ID": "borrower_id",
+        LOAN_ID: "loan_id",
+        CUSTOMER_ID: "borrower_id",
         "Cliente": "borrower_name",
         "Pagador": "payor_name",
         # Loan amounts and terms
@@ -83,21 +93,23 @@ def _apply_column_rename(df: pd.DataFrame) -> pd.DataFrame:
         "Client Type": "client_type",
         "Industry": "industry",
         # Collateral
-        "Collateral Type": "collateral_type",
-        "Collateral Current": "collateral_value",
+        COL_COLLATERAL_TYPE: "collateral_type",
+        COL_COLLATERAL_CURRENT: "collateral_value",
         # Payment tracking
-        "True Payment Date": "last_payment_date",
-        "True Total Payment": "last_payment_amount",
-        "True Outstanding Loan Value": "current_balance",
+        COL_TRUE_PAYMENT_DATE: "last_payment_date",
+        COL_TRUE_TOTAL_PAYMENT: "last_payment_amount",
+        COL_TRUE_OUTSTANDING_LOAN_VALUE: "current_balance",
     }
 
-    logger.info(f"   📋 Original columns: {len(df.columns)}")
+    logger.info("   📋 Original columns: %d", len(df.columns))
     renamed_df = df.rename(columns=column_mapping)
 
     mapped_cols = [col for col in column_mapping.values() if col in renamed_df.columns]
-    logger.info(f"   ✅ Mapped {len(mapped_cols)} columns")
+    logger.info("   ✅ Mapped %d columns", len(mapped_cols))
     logger.info(
-        f"   📋 New columns: {', '.join(mapped_cols[:10])}{'...' if len(mapped_cols) > 10 else ''}"
+        "   📋 New columns: %s%s",
+        ", ".join(mapped_cols[:10]),
+        "..." if len(mapped_cols) > 10 else "",
     )
 
     return renamed_df
@@ -258,19 +270,19 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
 
 def _load_all_tables(files_in_downloads: dict) -> dict | None:
     """Load all required tables from CSV files."""
-    logger.info(f"\n📂 Loading tables from {files_in_downloads[TABLE_LOAN_DATA].parent}/...")
+    logger.info("\n📂 Loading tables from %s/...", files_in_downloads[TABLE_LOAN_DATA].parent)
     tables = {}
 
     for table_name, filepath in files_in_downloads.items():
         try:
             df = pd.read_csv(filepath)
             tables[table_name] = df
-            logger.info(f"   ✅ {table_name}: {len(df):,} rows, {len(df.columns)} columns")
+            logger.info("   ✅ %s: %s rows, %s columns", table_name, len(df), len(df.columns))
         except FileNotFoundError:
-            logger.error(f"   ❌ File not found: {filepath}")
+            logger.error("   ❌ File not found: %s", filepath)
             return None
         except Exception as e:
-            logger.error(f"   ❌ Error loading {table_name}: {e}")
+            logger.error("   ❌ Error loading %s: %s", table_name, e)
             return None
 
     return tables
@@ -278,11 +290,11 @@ def _load_all_tables(files_in_downloads: dict) -> dict | None:
 
 def _merge_tables(tables: dict) -> pd.DataFrame:
     """Merge all tables on Loan ID."""
-    logger.info(f"\n🔗 Merging tables on '{LOAN_ID}'...")
+    logger.info("\n🔗 Merging tables on '%s'...", LOAN_ID)
 
     # Start with loan data as base
     merged = tables[TABLE_LOAN_DATA].copy()
-    logger.info(f"   📊 Base: {TABLE_LOAN_DATA} ({len(merged):,} loans)")
+    logger.info("   📊 Base: %s (%s loans)", TABLE_LOAN_DATA, len(merged))
 
     # Merge customer data (left join to preserve all loans)
     if TABLE_CUSTOMER in tables:
@@ -300,14 +312,14 @@ def _merge_tables(tables: dict) -> pd.DataFrame:
         ]
         customer_df = tables[TABLE_CUSTOMER][customer_cols].drop_duplicates(subset=[LOAN_ID])
         merged = merged.merge(customer_df, on=LOAN_ID, how="left", suffixes=("", "_cust"))
-        logger.info(f"   🔗 + {TABLE_CUSTOMER} data ({len(customer_df):,} unique loans)")
+        logger.info("   🔗 + %s data (%s unique loans)", TABLE_CUSTOMER, len(customer_df))
 
     # Merge collateral (left join, aggregate if multiple per loan)
     if TABLE_COLLATERAL in tables:
-        collateral_cols = [LOAN_ID, "Collateral Type", "Collateral Current"]
+        collateral_cols = [LOAN_ID, COL_COLLATERAL_TYPE, COL_COLLATERAL_CURRENT]
         collateral_df = tables[TABLE_COLLATERAL][collateral_cols].drop_duplicates(subset=[LOAN_ID])
         merged = merged.merge(collateral_df, on=LOAN_ID, how="left", suffixes=("", "_coll"))
-        logger.info(f"   🔗 + {TABLE_COLLATERAL} data ({len(collateral_df):,} unique loans)")
+        logger.info("   🔗 + %s data (%s unique loans)", TABLE_COLLATERAL, len(collateral_df))
 
     # Aggregate payment schedule (scheduled payments)
     if TABLE_PAYMENT_SCHEDULE in tables:
@@ -316,15 +328,15 @@ def _merge_tables(tables: dict) -> pd.DataFrame:
             .groupby(LOAN_ID)
             .agg(
                 {
-                    "Payment Date": "max",  # Last scheduled payment date
-                    "Total Payment": "sum",  # Total scheduled payments
+                    COL_PAYMENT_DATE: "max",  # Last scheduled payment date
+                    COL_TOTAL_PAYMENT: "sum",  # Total scheduled payments
                 }
             )
             .reset_index()
         )
         payment_agg.columns = [LOAN_ID, "last_scheduled_date", "total_scheduled"]
         merged = merged.merge(payment_agg, on=LOAN_ID, how="left")
-        logger.info(f"   🔗 + {TABLE_PAYMENT_SCHEDULE} (aggregated, {len(payment_agg):,} loans)")
+        logger.info("   🔗 + %s (aggregated, %s loans)", TABLE_PAYMENT_SCHEDULE, len(payment_agg))
 
     # Aggregate historic payments (actual payments made)
     if TABLE_HISTORIC_PAYMENTS in tables:
@@ -333,31 +345,31 @@ def _merge_tables(tables: dict) -> pd.DataFrame:
             .groupby(LOAN_ID)
             .agg(
                 {
-                    "True Payment Date": "max",  # Last payment date
-                    "True Total Payment": "sum",  # Total amount paid
-                    "True Outstanding Loan Value": "last",  # Current balance
+                    COL_TRUE_PAYMENT_DATE: "max",  # Last payment date
+                    COL_TRUE_TOTAL_PAYMENT: "sum",  # Total amount paid
+                    COL_TRUE_OUTSTANDING_LOAN_VALUE: "last",  # Current balance
                 }
             )
             .reset_index()
         )
         historic_agg.columns = [
             LOAN_ID,
-            "True Payment Date",
-            "True Total Payment",
-            "True Outstanding Loan Value",
+            COL_TRUE_PAYMENT_DATE,
+            COL_TRUE_TOTAL_PAYMENT,
+            COL_TRUE_OUTSTANDING_LOAN_VALUE,
         ]
         merged = merged.merge(historic_agg, on=LOAN_ID, how="left")
-        logger.info(f"   🔗 + {TABLE_HISTORIC_PAYMENTS} (aggregated, {len(historic_agg):,} loans)")
+        logger.info("   🔗 + %s (aggregated, %s loans)", TABLE_HISTORIC_PAYMENTS, len(historic_agg))
 
-    logger.info(f"\n   ✅ Merged dataset: {len(merged):,} rows, {len(merged.columns)} columns")
+    logger.info("\n   ✅ Merged dataset: %s rows, %s columns", len(merged), len(merged.columns))
     return merged
 
 
 def _save_output(df: pd.DataFrame, output_file: Path) -> None:
     """Save processed data to CSV."""
-    logger.info(f"\n💾 Saving to: {output_file.name}")
+    logger.info("\n💾 Saving to: %s", output_file.name)
     df.to_csv(output_file, index=False)
-    logger.info(f"   ✅ Saved {len(df):,} loans to {output_file}")
+    logger.info("   ✅ Saved %s loans to %s", len(df), output_file)
 
 
 def _log_summary_statistics(df: pd.DataFrame, output_file: Path) -> None:
