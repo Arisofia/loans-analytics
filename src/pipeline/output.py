@@ -11,6 +11,7 @@ Responsibilities:
 
 import json
 import os
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
@@ -124,13 +125,37 @@ class OutputPhase:
         return output_path
 
     def _export_csv(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
-        """Export KPI results to CSV format."""
+        """Export KPI results to CSV format with Decimal precision for financial columns."""
         output_path = run_dir / "kpis_output.csv"
 
         df = pd.DataFrame([kpi_results])
+        
+        # Convert financial columns to Decimal for monetary precision
+        financial_columns = {
+            "amount",
+            "principal_amount",
+            "original_amount",
+            "current_balance",
+            "payment_amount",
+            "interest_rate",
+        }
+        
+        for col in financial_columns:
+            if col in df.columns and df[col].iloc[0] is not None:
+                try:
+                    value = df[col].iloc[0]
+                    if isinstance(value, (int, float)):
+                        # Convert to Decimal with proper rounding
+                        decimal_val = Decimal(str(value)).quantize(
+                            Decimal("0.01"), rounding=ROUND_HALF_UP
+                        )
+                        df.at[0, col] = str(decimal_val)
+                except (ValueError, TypeError) as e:
+                    logger.warning("Could not convert %s to Decimal: %s", col, e)
+        
         df.to_csv(output_path, index=False)
 
-        logger.info("Exported CSV: %s", output_path)
+        logger.info("Exported CSV with Decimal precision: %s", output_path)
         return output_path
 
     def _export_json(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
