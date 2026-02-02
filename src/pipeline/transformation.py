@@ -442,6 +442,11 @@ class TransformationPhase:
         """Apply DPD bucket assignment."""
         if "dpd" not in df.columns:
             return
+        
+        # Ensure dpd column is numeric (handle both float and Decimal types)
+        if not pd.api.types.is_numeric_dtype(df["dpd"]):
+            df["dpd"] = pd.to_numeric(df["dpd"], errors="coerce")
+        
         df["dpd_bucket"] = pd.cut(
             df["dpd"],
             bins=[-np.inf, -0.001, 0.001, 30, 60, 90, 180, np.inf],
@@ -477,6 +482,10 @@ class TransformationPhase:
 
     def _categorize_amount_tiers(self, df: pd.DataFrame) -> None:
         """Categorize amounts into tiers using binning."""
+        # Ensure amount column is numeric (handle both float and Decimal types)
+        if not pd.api.types.is_numeric_dtype(df["amount"]):
+            df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
+        
         df["amount_tier"] = pd.cut(
             df["amount"],
             bins=[-np.inf, 0, 5000, 25000, 100000, 500000, np.inf],
