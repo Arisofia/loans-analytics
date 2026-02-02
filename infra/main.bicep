@@ -78,8 +78,8 @@ resource sqldb 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
     maxSizeBytes: 2147483648
   }
   sku: {
-    name: 'Basic'
-    tier: 'Basic'
+    name: 'Standard'
+    tier: 'Standard'
   }
 }
 resource keyvault 'Microsoft.KeyVault/vaults@2023-02-01' = {

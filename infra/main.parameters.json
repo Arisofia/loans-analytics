@@ -9,10 +9,10 @@
       "value": "abaco-webapp"
     },
     "storageAccountName": {
-      "value": "abacostorage"
+      "value": "abacostg2026feb"
     },
     "sqlServerName": {
-      "value": "abacosqlserver"
+      "value": "abacosql2026feb"
     },
     "sqlDbName": {
       "value": "abacodb"
