@@ -73,11 +73,18 @@ def generate_payment_history(
             payment_status = "paid"
             days_late = 0
 
+        # Generate payment amount using Decimal for precision
+        if payment_status != "missed":
+            payment_decimal = Decimal(str(random.uniform(5000, 15000))).quantize(Decimal('0.01'))
+            amount_paid = float(payment_decimal)
+        else:
+            amount_paid = 0
+        
         history.append({
             "month": month,
             "status": payment_status,
             "days_late": days_late,
-            "amount_paid": float(Decimal(str(round(random.uniform(5000, 15000), 2)))) if payment_status != "missed" else 0
+            "amount_paid": amount_paid
         })
     return history
 
