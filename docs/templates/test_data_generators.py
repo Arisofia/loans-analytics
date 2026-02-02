@@ -222,9 +222,9 @@ class UserDataGenerator:
             # SSN generation uses secrets module for security even in test data
             # Security: python:S2245 - Uses CSPRNG (secrets) instead of PRNG (random)
             ssn = (
-                f"{secrets.randbelow(899) + 1}-"
-                f"{secrets.randbelow(90) + 10}-"
-                f"{secrets.randbelow(9000) + 1000}"
+                f"{secrets.randbelow(899) + 1:03d}-"
+                f"{secrets.randbelow(90) + 10:02d}-"
+                f"{secrets.randbelow(9000) + 1000:04d}"
             )
             if mask_pii:
                 ssn = f"***-**-{ssn[-4:]}"
