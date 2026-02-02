@@ -137,9 +137,13 @@ def test_reproducible_test_data_uses_random_with_seed():
     loan2 = generate_loan(1, datetime(2024, 1, 1))
 
     # Amounts and rates should be identical (reproducible)
-    assert loan1["amount"] == loan2["amount"], "Amounts should be reproducible with seed"
-    assert loan1["rate"] == loan2["rate"], "Rates should be reproducible with seed"
-    assert loan1["term_months"] == loan2["term_months"], "Terms should be reproducible"
+    # Convert to float for comparison to handle both float and Decimal types
+    assert float(loan1["amount"]) == float(loan2["amount"]), \
+        "Amounts should be reproducible with seed"
+    assert float(loan1["rate"]) == float(loan2["rate"]), \
+        "Rates should be reproducible with seed"
+    assert loan1["term_months"] == loan2["term_months"], \
+        "Terms should be reproducible"
 
     # BUT: Security-sensitive fields (RFC, region) should NOT be seeded
     # RFC uses secrets module - will be different
