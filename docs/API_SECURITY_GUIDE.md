@@ -253,7 +253,7 @@ user_rate_limiter = RateLimiter(max_requests=1000, window_seconds=3600)  # 1000/
 def query_agent():
     identifier = f"user:{request.user_id}"
 
-    if not user_rate_limiter.allow_request(identifier):
+    if not user_rate_limiter.is_allowed(identifier):
         return jsonify({
             "error": "Rate limit exceeded",
             "retry_after": user_rate_limiter.window_seconds
