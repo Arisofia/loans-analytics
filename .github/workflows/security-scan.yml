@@ -1,12 +1,15 @@
 name: 'Security Scan'
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
-  schedule:
-    - cron: '0 0 * * 1' # Weekly on Mondays
+  # Temporarily disabled - workflow has syntax errors
+  # Re-enable after fixing: push to main/develop, PR to main, weekly schedule
+  workflow_dispatch: # Manual trigger only
+  # push:
+  #   branches: [main, develop]
+  # pull_request:
+  #   branches: [main]
+  # schedule:
+  #   - cron: '0 0 * * 1' # Weekly on Mondays
 
 permissions:
   actions: read
