@@ -39,7 +39,7 @@ streamlit run streamlit_app.py
 
 #### Option 2: Command Line
 ```bash
-python -m python.multi_agent.cli --agent risk --query "Your question"
+python -m python.multi_agent.cli run-agent risk_analyst --query "Your question"
 ```
 
 #### Option 3: Raw Files
