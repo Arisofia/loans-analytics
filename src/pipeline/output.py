@@ -7,6 +7,9 @@ Responsibilities:
 - Dashboard refresh triggers
 - Audit trail generation
 - SLA monitoring
+
+NOTE: This module is not designed to be run directly as a script.
+      Use: python scripts/run_data_pipeline.py
 """
 
 import json
