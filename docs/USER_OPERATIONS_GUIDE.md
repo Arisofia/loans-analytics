@@ -89,16 +89,20 @@ python -m python.multi_agent.cli --list-scenarios
 
 ### Viewing Agent Feedback in Streamlit Dashboard
 
-**COMING SOON: Agent History Viewer**
+**Agent Insights Page (Streamlit)**
 
-The Streamlit dashboard will include an "Agent Insights" page showing:
-- Past agent conversations
-- Query history with timestamps
-- Agent recommendations and actions taken
-- Export capability for reports
+The Streamlit dashboard includes an **Agent Insights** page where you can:
+- Review past agent conversations by agent and scenario
+- See query history with timestamps and basic metadata
+- Inspect agent recommendations and any logged follow-up actions
+- Download or export insights for further analysis (where enabled)
 
-**Current Access Method:**
-Agent outputs are saved to:
+**How to Access in Streamlit:**
+- Launch the Streamlit app (see the main project README for the exact command).
+- In the left sidebar, select the **Agent Insights** page (labelled `2_Agent_Insights` or **Agent Insights**, depending on your environment).
+
+**Additional Raw Access Method:**
+Agent outputs are also saved to:
 ```
 data/agent_outputs/<timestamp>_<agent_name>_response.json
 ```
