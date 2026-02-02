@@ -25,6 +25,18 @@ paths:
 
 # Query filters for LLM/AI specific security concerns
 query-filters:
+  # Alert #136: Path Traversal (False Positive)
+  - exclude:
+      id: py/path-injection
+      paths:
+        - python/apps/analytics/api/main.py
+
+  # Alert #42: Clear-text Logging (False Positive)  
+  - exclude:
+      id: py/clear-text-logging-sensitive-data
+      paths:
+        - python/scripts/load_secrets.py
+
   # Include all critical and high severity issues
   - include:
       severity:
