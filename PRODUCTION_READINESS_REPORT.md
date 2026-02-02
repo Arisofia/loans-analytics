@@ -359,7 +359,7 @@ docker-compose up -d
    serverless deploy --stage production
    ```
 
-5. **GCP Cloud Run** (Google cloud)
+5. **GCP Cloud Run** (Google Cloud)
    ```bash
    gcloud run deploy abaco-loans-analytics --image gcr.io/your-project/abaco-loans-analytics
    ```
