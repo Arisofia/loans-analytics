@@ -66,7 +66,7 @@ class KpiDataLoader:
             else:
                 logger.error("Supabase validation failed: %s %s", resp.status_code, resp.text)
                 return False
-        except (requests.RequestException, OSError) as e:
+        except OSError as e:
             logger.error("Supabase connection error: %s", e)
             return False
 
@@ -177,7 +177,7 @@ class KpiDataLoader:
             else:
                 logger.error("Load failed: %s %s", resp.status_code, resp.text[:200])
                 return 0, len(rows)
-        except requests.RequestException as e:
+        except OSError as e:
             logger.error("Load error: %s", e)
             return 0, len(rows)
 
