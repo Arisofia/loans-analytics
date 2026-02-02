@@ -170,12 +170,12 @@ def run_agent_analysis(agent_name: str, query: str) -> dict[str, Any]:
         return response
 
     except ImportError:
-        print(f"  ⚠️ Multi-agent system not available, creating placeholder")
+        print("  ⚠️ Multi-agent system not available, creating placeholder")
         return {
             "agent": agent_name,
             "timestamp": datetime.now().isoformat(),
             "query": query,
-            "response": f"Multi-agent system not configured. Install dependencies and configure API keys.",
+            "response": "Multi-agent system not configured. Install dependencies and configure API keys.",
             "status": "not_configured",
         }
 

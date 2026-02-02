@@ -118,9 +118,9 @@ def validate_scripts() -> dict[str, bool]:
         import os
 
         if os.access(deploy_script, os.X_OK):
-            print(f"  ✅ Deploy script is executable")
+            print("  ✅ Deploy script is executable")
         else:
-            print(f"  ⚠️  Deploy script needs chmod +x")
+            print("  ⚠️  Deploy script needs chmod +x")
 
     return results
 
@@ -214,7 +214,7 @@ def check_agent_analysis_results() -> dict[str, bool]:
     latest_analysis = ROOT_DIR / "data" / "agent_analysis" / "latest_analysis.json"
 
     if latest_analysis.exists():
-        print(f"  ✅ Latest analysis found")
+        print("  ✅ Latest analysis found")
 
         try:
             with open(latest_analysis, "r", encoding="utf-8") as f:
@@ -225,17 +225,17 @@ def check_agent_analysis_results() -> dict[str, bool]:
                 print(f"  ✅ {agent_count} agent analyses present")
                 results["has_analyses"] = True
             else:
-                print(f"  ⚠️  No agent analyses in results")
+                print("  ⚠️  No agent analyses in results")
                 results["has_analyses"] = False
 
             if "portfolio_metrics" in data:
                 metrics = data["portfolio_metrics"]
-                print(f"  ✅ Portfolio metrics calculated")
+                print("  ✅ Portfolio metrics calculated")
                 print(f"     - Total loans: {metrics.get('total_loans', 'N/A')}")
                 print(f"     - Portfolio value: €{metrics.get('total_portfolio', 0):,.2f}")
                 results["has_metrics"] = True
             else:
-                print(f"  ⚠️  No portfolio metrics in results")
+                print("  ⚠️  No portfolio metrics in results")
                 results["has_metrics"] = False
 
         except Exception as e:
@@ -243,9 +243,9 @@ def check_agent_analysis_results() -> dict[str, bool]:
             results["has_analyses"] = False
             results["has_metrics"] = False
     else:
-        print(f"  ⚠️  No analysis results found")
+        print("  ⚠️  No analysis results found")
         print(
-            f"     Run: python scripts/run_daily_agent_analysis.py --input data/raw/spanish_loans_seed.csv"
+            "     Run: python scripts/run_daily_agent_analysis.py --input data/raw/spanish_loans_seed.csv"
         )
         results["has_analyses"] = False
         results["has_metrics"] = False
@@ -274,13 +274,13 @@ def print_summary(all_results: dict[str, dict[str, bool]]):
     print(f"  Success Rate: {success_rate:.1f}%")
 
     if success_rate == 100:
-        print(f"\n  🎉 ALL CHECKS PASSED! Stack is ready for deployment.")
+        print("\n  🎉 ALL CHECKS PASSED! Stack is ready for deployment.")
         return 0
     elif success_rate >= 80:
-        print(f"\n  ✅ Most checks passed. Minor issues may need attention.")
+        print("\n  ✅ Most checks passed. Minor issues may need attention.")
         return 0
     else:
-        print(f"\n  ⚠️  Several checks failed. Review errors above.")
+        print("\n  ⚠️  Several checks failed. Review errors above.")
         return 1
 
 
@@ -289,7 +289,7 @@ def main():
     print("=" * 60)
     print("  🔍 ABACO LOANS ANALYTICS - STACK VALIDATION")
     print("=" * 60)
-    print(f"\n  Validating complete stack deployment...")
+    print("\n  Validating complete stack deployment...")
     print(f"  Root directory: {ROOT_DIR}")
 
     # Run all validations
