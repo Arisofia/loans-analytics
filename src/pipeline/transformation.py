@@ -114,11 +114,10 @@ class TransformationPhase:
 
         try:
             # Load data
-            if df is None:
-                if raw_data_path and raw_data_path.exists():
-                    df = pd.read_parquet(raw_data_path)
-                else:
-                    raise ValueError("No data provided for transformation")
+            if df is None and raw_data_path and raw_data_path.exists():
+                df = pd.read_parquet(raw_data_path)
+            elif df is None:
+                raise ValueError("No data provided for transformation")
 
             initial_rows = len(df)
             transformation_metrics: Dict[str, Any] = {}
@@ -228,11 +227,10 @@ class TransformationPhase:
     def _fill_nulls_by_type(self, df: pd.DataFrame) -> pd.DataFrame:
         """Fill nulls based on column data type."""
         for col in df.columns:
-            if df[col].isnull().any():
-                if pd.api.types.is_numeric_dtype(df[col]):
-                    df[col] = df[col].fillna(self.fill_values.get("numeric", 0))
-                else:
-                    df[col] = df[col].fillna(self.fill_values.get("categorical", "unknown"))
+            if df[col].isnull().any() and pd.api.types.is_numeric_dtype(df[col]):
+                df[col] = df[col].fillna(self.fill_values.get("numeric", 0))
+            elif df[col].isnull().any():
+                df[col] = df[col].fillna(self.fill_values.get("categorical", "unknown"))
         return df
 
     def _smart_null_handling(
@@ -323,13 +321,14 @@ class TransformationPhase:
     ) -> None:
         """Normalize date columns to datetime."""
         for col in df.columns:
-            if col in self.DATE_COLUMNS or col.endswith("_date"):
-                if pd.api.types.is_string_dtype(df[col]) or df[col].dtype == "object":
-                    try:
-                        df[col] = pd.to_datetime(df[col], format=self.date_format, errors="coerce")
-                        conversions[col] = {"from": "string", "to": "datetime64"}
-                    except Exception as e:
-                        logger.warning("Could not convert %s to datetime: %s", col, e)
+            if (col in self.DATE_COLUMNS or col.endswith("_date")) and (
+                pd.api.types.is_string_dtype(df[col]) or df[col].dtype == "object"
+            ):
+                try:
+                    df[col] = pd.to_datetime(df[col], format=self.date_format, errors="coerce")
+                    conversions[col] = {"from": "string", "to": "datetime64"}
+                except Exception as e:
+                    logger.warning("Could not convert %s to datetime: %s", col, e)
 
     def _normalize_numeric_columns(
         self, df: pd.DataFrame, conversions: Dict[str, Dict[str, str]]
@@ -713,24 +712,25 @@ class TransformationPhase:
 
         # Check date consistency
         date_cols = [col for col in df.columns if col.endswith("_date")]
-        if "origination_date" in date_cols and "due_date" in date_cols:
-            if (
-                df["origination_date"].dtype == "datetime64[ns]"
-                and df["due_date"].dtype == "datetime64[ns]"
-            ):
-                # Filter out NaT values before comparing dates
-                valid_mask = df["due_date"].notna() & df["origination_date"].notna()
-                invalid_dates = (
-                    df.loc[valid_mask, "due_date"] < df.loc[valid_mask, "origination_date"]
-                ).sum()
-                if invalid_dates > 0:
-                    integrity_issues.append(
-                        {
-                            "type": "invalid_date_sequence",
-                            "description": "due_date before origination_date",
-                            "count": int(invalid_dates),
-                        }
-                    )
+        if (
+            "origination_date" in date_cols
+            and "due_date" in date_cols
+            and df["origination_date"].dtype == "datetime64[ns]"
+            and df["due_date"].dtype == "datetime64[ns]"
+        ):
+            # Filter out NaT values before comparing dates
+            valid_mask = df["due_date"].notna() & df["origination_date"].notna()
+            invalid_dates = (
+                df.loc[valid_mask, "due_date"] < df.loc[valid_mask, "origination_date"]
+            ).sum()
+            if invalid_dates > 0:
+                integrity_issues.append(
+                    {
+                        "type": "invalid_date_sequence",
+                        "description": "due_date before origination_date",
+                        "count": int(invalid_dates),
+                    }
+                )
 
         # Check for negative amounts in columns that should be positive
         positive_cols = ["amount", "current_balance", "original_amount"]
