@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.3.0] – 2026-02-02 (Production Release)
 
-### Summary
+### Summary – v1.3.0
 
 **Security Hardening & Code Quality Excellence** – Comprehensive security audit resolving PRNG vulnerability (python:S2245), extensive code quality improvements reducing cognitive complexity (S3776) and eliminating nested conditionals (S1066), full dependency audit with lock file, and multi-agent dashboard integration.
 
@@ -70,7 +70,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **User Experience**: Non-blocking agent analysis; maintains dashboard responsiveness
 - **Testing**: Full integration with existing portfolio metrics; backward compatible
 
-### Testing & Quality Metrics
+### Testing & Quality Metrics – v1.3.0
 
 - **Test Coverage**: 270 passing tests, 18 skipped (100% pass rate)
 - **Code Quality**:
@@ -81,7 +81,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - ✅ Code Coverage: >95% (enforced by SonarQube quality gates)
 - **CI/CD**: All 48 GitHub Actions workflows passing
 
-### Files Changed
+### Files Changed – v1.3.0
 
 - **Modified**:
   - `src/pipeline/transformation.py` (refactored for complexity, removed unused imports)
@@ -92,21 +92,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - **No Deletions**: All functionality preserved; only internal improvements
 
-### Compliance & Governance
+### Compliance & Governance – v1.3.0
 
 - ✅ **PII Protection**: No changes to guardrails; existing masking in `src/compliance.py` still active
 - ✅ **Financial Accuracy**: All Decimal calculations verified; zero float errors
 - ✅ **Audit Trail**: Complete traceability via PR #220 merge and git history
 - ✅ **Regulatory**: No compliance gaps introduced; maintained <4% default rate guardrails
 
-### Deployment Notes
+### Deployment Notes – v1.3.0
 
 - **Zero Breaking Changes**: Fully backward compatible with v1.2.0
 - **Safe to Deploy**: All tests passing; no API/schema changes
 - **Recommended**: Update to v1.3.0 for security hardening and code quality improvements
 - **Rollback**: Not needed; no database migrations or breaking changes
 
-### Next Steps
+### Next Steps – v1.3.0
 
 - Phase G4: Historical context integration (trend analysis, seasonality, benchmarking)
 - Real-time KPI streaming: Polars adoption for high-volume datasets
@@ -114,9 +114,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [Unreleased]
+## [Unreleased] – Next Release
 
-### Changed
+### Changes (Next Release)
 
 #### Code Quality & Refactoring
 
@@ -133,7 +133,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.2.0] – 2026-01-28 (v1.2.0-g3-complete)
 
-### Summary
+### Summary – v1.2.0
 
 **Phase G3 Complete: Full Product-Specific Scenario Coverage** – Expanded multi-agent system from 11 to 20 scenarios, adding comprehensive workflows for SME loans, auto loans, and portfolio-level operations. All lending product verticals now have complete scenario coverage with 54 passing tests.
 
@@ -163,7 +163,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `regulatory_review`: Compliance → Risk → Ops (3-step audit and remediation)
 - **Context**: Portfolio metrics, KPI integration, market analysis, regulatory requirements
 
-#### Testing
+### Testing – v1.2.0
 
 - **12 New Tests** (SME: 4, Auto: 4, Portfolio: 4)
 - **5 Updated Integration Tests** (scenario count, dependency validation)
@@ -173,14 +173,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - 25 product scenario tests
 - Test execution time: ~0.25s
 
-### Changed
+### Changes – v1.2.0
 
 - **Scenarios**: Increased from 11 to **20 total workflows**
 - **Test Coverage**: Expanded from 42 to 54 tests (+28% increase)
 - **Product Coverage**: Now covers 4 lending verticals (Retail, SME, Auto, Portfolio-level)
 - **Orchestrator**: Updated `_init_scenarios()` with 9 new product workflows
 
-### Documentation
+### Documentation – v1.2.0
 
 - Updated `docs/phase-g-fintech-intelligence.md`:
   - Added complete SME, Auto, Portfolio scenario documentation
@@ -189,7 +189,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Marked G3 as ✅ Complete
 - Updated test instructions for new scenario classes
 
-### Files Changed
+### Files Changed – v1.2.0
 
 - **Updated**:
   - `python/multi_agent/orchestrator.py` (+170 lines, 9 new scenarios)
@@ -208,7 +208,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - ✅ Portfolio (3 scenarios)
 - ⏳ **G4**: Historical Context Integration (planned)
 
-### Roadmap
+### Roadmap – v1.2.0
 
 - **Next**: Phase G4 (trend analysis, seasonality, benchmarking, forecasting)
 - **Future**: Multi-region deployment, real-time streaming integration
@@ -217,7 +217,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.1.0] – 2026-01-28 (v1.1.0-g2-g3-retail)
 
-### Summary
+### Summary – v1.1.0
 
 **Phase G2 & G3: Fintech Intelligence & Product-Specific Scenarios** – Enhanced multi-agent system from 4 to 8 specialized agents with domain expertise in collections, fraud detection, pricing, and customer retention. Added KPI integration and product-specific scenario packs starting with retail lending workflows.
 
@@ -250,14 +250,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `KpiContextProvider`: Real-time KPI validation and anomaly detection
 - 18 KPI integration tests with full coverage
 
-### Changed
+### Changes – v1.1.0
 
 - **Agent System**: Expanded from 4 to 8 agents
 - **Scenarios**: Increased from 4 to 11 total workflows
 - **Protocol**: Extended `AgentRole` enum with 4 new roles (COLLECTIONS, FRAUD_DETECTION, PRICING, CUSTOMER_RETENTION)
 - **Orchestrator**: Now initializes 8 agents and 11 scenarios
 
-### Testing
+### Testing – v1.1.0
 
 - **42 Tests Passing** (100% success rate):
   - 18 KPI integration tests
@@ -266,13 +266,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Test execution time: ~0.15s
 - All tests include comprehensive validation of workflows, system prompts, and agent coordination
 
-### Documentation
+### Documentation – v1.1.0
 
 - Created `docs/phase-g-fintech-intelligence.md`: Complete guide with usage examples, agent mapping, and roadmap
 - Updated `python/multi_agent/README.md`: Architecture diagrams, feature badges, test instructions
 - Updated main `README.md`: Highlights section with system capabilities
 
-### Files Changed
+### Files Changed – v1.1.0
 
 - **Created**:
   - `python/multi_agent/specialized_agents.py` (180+ lines, 4 agents)
@@ -284,7 +284,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `python/multi_agent/orchestrator.py` (8 agents, 11 scenarios)
   - `python/multi_agent/README.md`, `README.md`
 
-### Roadmap
+### Roadmap – v1.1.0
 
 - **Next**: Phase G3 continuation (SME loans, auto loans, portfolio-level scenarios)
 - **Future**: Phase G4 (historical context integration, trend analysis, forecasting)
@@ -293,11 +293,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.0.0] – 2025-12-30
 
-### Summary
+### Summary – v1.0.0
 
 **Analytics Engine Hardening & Pandas Compatibility** – Refactored dual-engine KPI stack to eliminate FutureWarnings and ensure forward compatibility with pandas v2.x+. All KPI definitions and calculations remain mathematically identical; only implementation optimizations applied.
 
-### Changed
+### Changes – v1.0.0
 
 #### Python Analytics Engine (`src/analytics/kpi_catalog_processor.py`)
 
@@ -307,10 +307,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `get_weighted_apr()` – Portfolio-weighted interest rate
   - `get_weighted_fee_rate()` – Portfolio-weighted origination fees
   - `get_concentration()` – Top loan concentration (1%, 3%, 10%)
+
 - **Performance improvements**:
   - Eliminated Python-level lambda and nested apply operations
   - Pure NumPy/Pandas vectorization for 5–10x faster execution on large portfolios
   - Reduced memory overhead through explicit column aggregation
+
 - **Code quality**:
   - Zero FutureWarnings from analytics engine (pandas 2.0+ compatible)
   - Improved readability with explicit aggregation steps
@@ -324,13 +326,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - ✅ **Backward compatibility**: No breaking changes to column names, KPI group names, or downstream contract
 - ✅ **Code style**: Consistent with existing codebase (vectorization, type hints, logging)
 
-### Testing
+### Testing – v1.0.0
 
 - All KPI sync checks pass: `python3 tools/check_kpi_sync.py --print-json`
 - Complete analytics pipeline runs without warnings: `python3 run_complete_analytics.py`
 - KPI parity test suite ready: `pytest tests/test_kpi_parity.py` (requires DATABASE_URL + psycopg)
 
-### Governance
+### Governance – v1.0.0
 
 Per **CLAUDE.md** (Phase 4: Engineering Standards):
 
@@ -338,17 +340,17 @@ Per **CLAUDE.md** (Phase 4: Engineering Standards):
 - ✅ Any future KPI changes must update both Python and SQL together
 - ✅ Parity tests enforce consistency across engines
 
-### Migration Notes
+### Migration Notes – v1.0.0
 
-## No action required for consumers. The analytics engine is fully backward compatible. Existing dashboards, exports, and downstream integrations continue to work unchanged.
+No action required for consumers. The analytics engine is fully backward compatible. Existing dashboards, exports, and downstream integrations continue to work unchanged.
 
-## [1.0.0] – 2025-12-26
+## [1.0.0] – 2025-12-26 (Initial Release)
 
-### Summary
+### Summary – v1.0.0 Initial
 
 Initial release of Abaco Loans Analytics dual-engine KPI stack with comprehensive portfolio metrics, risk analysis, and customer segmentation.
 
-### Features
+### Features – v1.0.0 Initial
 
 - **Core KPI Groups**:
   - Monthly pricing (APR, fee rate, effective rate)
