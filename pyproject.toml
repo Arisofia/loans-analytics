@@ -40,3 +40,13 @@ skip = [".venv", ".lint_venv", "node_modules", "build", "dist"]
 
 [tool.flake8]
 extend-exclude = [".coveragerc", "*.ini", "*.cfg"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore E402 (module level import not at top of file) for Streamlit apps
+# These require sys.path modifications before imports
+"streamlit_app.py" = ["E402"]
+"streamlit_app/pages/*.py" = ["E402"]
