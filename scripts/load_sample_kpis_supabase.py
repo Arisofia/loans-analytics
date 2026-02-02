@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import random
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
@@ -91,8 +92,6 @@ class KpiDataLoader:
         Returns:
             List of dicts matching historical_kpis schema
         """
-        import random
-
         random.seed(hash(kpi_id) % 2**32)  # Reproducible per KPI
 
         series = []
@@ -247,7 +246,7 @@ class KpiDataLoader:
             total_loaded += loaded
             total_failed += failed
 
-        logger.info("\n" + "=" * 70)
+        logger.info("\n%s", "=" * 70)
         logger.info("Loading complete!")
         logger.info("  Rows loaded: %d", total_loaded)
         if total_failed:

@@ -10,6 +10,7 @@ Usage:
     python scripts/validate_structure.py --verbose
 """
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -212,8 +213,6 @@ def generate_report(found: List, missing: List, structure: Dict):
 
 def main():
     """Main validation function"""
-    import argparse
-
     parser = argparse.ArgumentParser(description="Validate repository structure")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     args = parser.parse_args()

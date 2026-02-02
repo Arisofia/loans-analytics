@@ -481,7 +481,7 @@ class TransformationPhase:
             )
             return df, False
 
-        elif rule_type == "derived_field":
+        if rule_type == "derived_field":
             target_col = rule.get("target_column")
             expression = rule.get("expression", "")
             if expression and target_col:
