@@ -117,7 +117,8 @@ class UnifiedPipeline:
             results["phases"]["ingestion"] = phase1_results
 
             if phase1_results["status"] != "success":
-                raise Exception(f"Phase 1 failed: {phase1_results.get('error')}")
+                error_msg = f"Phase 1 (Ingestion) failed: {phase1_results.get('error')}"
+                raise RuntimeError(error_msg)
 
             if mode == "dry-run":
                 logger.info("Dry-run mode: stopping after ingestion")
@@ -136,7 +137,8 @@ class UnifiedPipeline:
             results["phases"]["transformation"] = phase2_results
 
             if phase2_results["status"] != "success":
-                raise Exception(f"Phase 2 failed: {phase2_results.get('error')}")
+                error_msg = f"Phase 2 (Transformation) failed: {phase2_results.get('error')}"
+                raise RuntimeError(error_msg)
 
             if mode == "validate":
                 logger.info("Validate mode: stopping after transformation")
@@ -155,7 +157,8 @@ class UnifiedPipeline:
             results["phases"]["calculation"] = phase3_results
 
             if phase3_results["status"] != "success":
-                raise Exception(f"Phase 3 failed: {phase3_results.get('error')}")
+                error_msg = f"Phase 3 (Calculation) failed: {phase3_results.get('error')}"
+                raise RuntimeError(error_msg)
 
             # PHASE 4: OUTPUT
             logger.info("\n%s", separator)
@@ -167,7 +170,8 @@ class UnifiedPipeline:
             results["phases"]["output"] = phase4_results
 
             if phase4_results["status"] != "success":
-                raise Exception(f"Phase 4 failed: {phase4_results.get('error')}")
+                error_msg = f"Phase 4 (Output) failed: {phase4_results.get('error')}"
+                raise RuntimeError(error_msg)
 
             return self._finalize_results(results, run_dir)
 

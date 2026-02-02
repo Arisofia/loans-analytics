@@ -338,6 +338,7 @@ class TransformationPhase:
         logger.info("Applied %d type conversions", len(conversions))
         return df, metrics
 
+
     def _apply_business_rules(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Apply business rules from configuration.

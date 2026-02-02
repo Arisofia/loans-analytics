@@ -14,6 +14,7 @@ NOTE: This module is not designed to be run directly as a script.
 
 import json
 import os
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
@@ -127,13 +128,37 @@ class OutputPhase:
         return output_path
 
     def _export_csv(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
-        """Export KPI results to CSV format."""
+        """Export KPI results to CSV format with Decimal precision for financial columns."""
         output_path = run_dir / "kpis_output.csv"
 
         df = pd.DataFrame([kpi_results])
+        
+        # Convert financial columns to Decimal for monetary precision
+        financial_columns = {
+            "amount",
+            "principal_amount",
+            "original_amount",
+            "current_balance",
+            "payment_amount",
+            "interest_rate",
+        }
+        
+        for col in financial_columns:
+            if col in df.columns and df[col].iloc[0] is not None:
+                try:
+                    value = df[col].iloc[0]
+                    if isinstance(value, (int, float)):
+                        # Convert to Decimal with proper rounding
+                        decimal_val = Decimal(str(value)).quantize(
+                            Decimal("0.01"), rounding=ROUND_HALF_UP
+                        )
+                        df.at[0, col] = str(decimal_val)
+                except (ValueError, TypeError) as e:
+                    logger.warning("Could not convert %s to Decimal: %s", col, e)
+        
         df.to_csv(output_path, index=False)
 
-        logger.info("Exported CSV: %s", output_path)
+        logger.info("Exported CSV with Decimal precision: %s", output_path)
         return output_path
 
     def _export_json(self, kpi_results: Dict[str, Any], run_dir: Path) -> Path:
@@ -181,78 +206,111 @@ class OutputPhase:
             logger.error("Failed to export KPI audit trail: %s", str(e), exc_info=True)
             return None
 
-    def _write_to_database(self, kpi_results: Dict[str, Any]) -> Dict[str, Any]:
-        """Write results to Supabase database."""
-        # Check if database output is enabled
+    def _check_database_prerequisites(self) -> Optional[Dict[str, Any]]:
+        """Check if database output is enabled and return early error if not."""
         if not self.config.get("database", {}).get("enabled", False):
             logger.debug("Database output is disabled in configuration")
             return {"status": "skipped", "reason": "database_disabled"}
+        return None
+
+    def _validate_supabase_setup(self) -> Optional[Dict[str, Any]]:
+        """Check if Supabase library and credentials are available."""
+        if Client is None or create_client is None:
+            logger.warning("Supabase library not installed")
+            return {"status": "skipped", "reason": "supabase_not_installed"}
+
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_ANON_KEY")
+
+        if not supabase_url or not supabase_key:
+            logger.warning("Supabase credentials not configured in environment")
+            return {"status": "skipped", "reason": "missing_credentials"}
+
+        return None
+
+    def _validate_kpi_results(self, kpi_results: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Validate KPI results are present and valid."""
+        if not kpi_results or not isinstance(kpi_results, dict):
+            logger.warning("No KPI results to write to database")
+            return {"status": "skipped", "reason": "empty_kpi_results"}
+        return None
+
+    def _prepare_kpi_rows(self, kpi_results: Dict[str, Any]) -> tuple[list, str, str]:
+        """Prepare rows for batch insert, filtering out NULL values."""
+        rows_to_insert = []
+        timestamp = datetime.now().isoformat()
+        run_date = datetime.now().date().isoformat()
+
+        for kpi_name, kpi_value in kpi_results.items():
+            if kpi_value is None:
+                logger.debug("Skipping NULL KPI: %s", kpi_name)
+                continue
+
+            rows_to_insert.append(
+                {
+                    "kpi_name": kpi_name,
+                    "kpi_value": (
+                        float(kpi_value) if isinstance(kpi_value, (int, float)) else None
+                    ),
+                    "timestamp": timestamp,
+                    "run_date": run_date,
+                    "source": "pipeline_v2",
+                }
+            )
+
+        return rows_to_insert, timestamp, run_date
+
+    def _insert_batch_rows(self, supabase: Client, table_name: str, rows: list) -> int:
+        """Insert rows in batches to Supabase."""
+        batch_size = 100
+        total_inserted = 0
+
+        for i in range(0, len(rows), batch_size):
+            batch = rows[i : i + batch_size]
+            supabase.table(table_name).insert(batch).execute()
+            total_inserted += len(batch)
+            logger.info(
+                "Inserted batch",
+                extra={"batch_start": i, "batch_end": i + len(batch), "batch_size": len(batch)},
+            )
+
+        return total_inserted
+
+    def _write_to_database(self, kpi_results: Dict[str, Any]) -> Dict[str, Any]:
+        """Write results to Supabase database."""
+        # Check prerequisites
+        prereq_error = self._check_database_prerequisites()
+        if prereq_error:
+            return prereq_error
+
+        # Validate input data
+        input_error = self._validate_kpi_results(kpi_results)
+        if input_error:
+            return input_error
 
         try:
-            # Check if Supabase library is available
-            if Client is None or create_client is None:
-                logger.warning("Supabase library not installed")
-                return {"status": "skipped", "reason": "supabase_not_installed"}
-
-            if not kpi_results or not isinstance(kpi_results, dict):
-                logger.warning("No KPI results to write to database")
-                return {"status": "skipped", "reason": "empty_kpi_results"}
-
-            # Get Supabase credentials from environment
-            supabase_url = os.getenv("SUPABASE_URL")
-            supabase_key = os.getenv("SUPABASE_ANON_KEY")
-
-            if not supabase_url or not supabase_key:
-                logger.warning("Supabase credentials not configured in environment")
-                return {"status": "skipped", "reason": "missing_credentials"}
+            # Validate Supabase setup
+            setup_error = self._validate_supabase_setup()
+            if setup_error:
+                return setup_error
 
             # Create Supabase client
+            supabase_url = os.getenv("SUPABASE_URL")
+            supabase_key = os.getenv("SUPABASE_ANON_KEY")
             supabase: Client = create_client(supabase_url, supabase_key)
 
-            # Prepare rows for batch insert
-            rows_to_insert = []
-            timestamp = datetime.now().isoformat()
-            run_date = datetime.now().date().isoformat()
-
-            for kpi_name, kpi_value in kpi_results.items():
-                if kpi_value is None:
-                    logger.debug("Skipping NULL KPI: %s", kpi_name)
-                    continue
-
-                rows_to_insert.append(
-                    {
-                        "kpi_name": kpi_name,
-                        "kpi_value": (
-                            float(kpi_value) if isinstance(kpi_value, (int, float)) else None
-                        ),
-                        "timestamp": timestamp,
-                        "run_date": run_date,
-                        "source": "pipeline_v2",
-                    }
-                )
+            # Prepare rows for insert
+            rows_to_insert, timestamp, _ = self._prepare_kpi_rows(kpi_results)
 
             if not rows_to_insert:
                 logger.warning("No rows to insert after filtering")
                 return {"status": "skipped", "reason": "no_valid_kpis"}
 
-            # Write to kpi_timeseries_daily table
+            # Write to database
             table_name = self.config.get("database", {}).get("table", "kpi_timeseries_daily")
-            logger.info(
-                "Writing %d KPI records to Supabase table: %s", len(rows_to_insert), table_name
-            )
+            logger.info("Writing %d KPI records to Supabase table: %s", len(rows_to_insert), table_name)
 
-            # Insert data in batches (Supabase recommends max 1000 per batch)
-            batch_size = 100
-            total_inserted = 0
-
-            for i in range(0, len(rows_to_insert), batch_size):
-                batch = rows_to_insert[i : i + batch_size]
-                supabase.table(table_name).insert(batch).execute()
-                total_inserted += len(batch)
-                logger.info(
-                    "Inserted batch",
-                    extra={"batch_start": i, "batch_end": i + len(batch), "batch_size": len(batch)},
-                )
+            total_inserted = self._insert_batch_rows(supabase, table_name, rows_to_insert)
 
             logger.info("Successfully wrote %d KPI records to database", total_inserted)
             return {

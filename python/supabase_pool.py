@@ -217,14 +217,13 @@ class SupabaseConnectionPool:
                     logger.error("All %d connection attempts failed", max_retries, exc_info=True)
                     raise
 
-    async def execute(self, query: str, *args: Any, timeout: Optional[float] = None) -> str:
+    async def execute(self, query: str, *args: Any) -> str:
         """
         Execute a query with automatic retry.
 
         Args:
             query: SQL query to execute
             *args: Query parameters
-            timeout: Optional query timeout override
 
         Returns:
             Query execution status
@@ -233,13 +232,13 @@ class SupabaseConnectionPool:
             async with self.acquire() as conn:
                 await asyncio.wait_for(
                     conn.execute(query, *args),
-                    timeout=timeout or self.command_timeout
+                    timeout=self.command_timeout
                 )
                 self._metrics["queries_executed"] += 1
                 return "success"
         except asyncio.TimeoutError:
             self._metrics["queries_failed"] += 1
-            logger.error("Query execution timed out after %ss", timeout or self.command_timeout)
+            logger.error("Query execution timed out after %ss", self.command_timeout)
             raise
         except Exception as e:
             self._metrics["queries_failed"] += 1
@@ -247,7 +246,7 @@ class SupabaseConnectionPool:
             raise
 
     async def fetch(
-        self, query: str, *args: Any, timeout: Optional[float] = None
+        self, query: str, *args: Any
     ) -> list[asyncpg.Record]:
         """
         Fetch multiple rows with automatic retry.
@@ -255,7 +254,6 @@ class SupabaseConnectionPool:
         Args:
             query: SQL query to execute
             *args: Query parameters
-            timeout: Optional query timeout override
 
         Returns:
             List of records
@@ -264,13 +262,13 @@ class SupabaseConnectionPool:
             async with self.acquire() as conn:
                 result = await asyncio.wait_for(
                     conn.fetch(query, *args),
-                    timeout=timeout or self.command_timeout
+                    timeout=self.command_timeout
                 )
                 self._metrics["queries_executed"] += 1
                 return result
         except asyncio.TimeoutError:
             self._metrics["queries_failed"] += 1
-            logger.error("Query fetch timed out after %ss", timeout or self.command_timeout)
+            logger.error("Query fetch timed out after %ss", self.command_timeout)
             raise
         except Exception as e:
             self._metrics["queries_failed"] += 1
@@ -278,7 +276,7 @@ class SupabaseConnectionPool:
             raise
 
     async def fetchrow(
-        self, query: str, *args: Any, timeout: Optional[float] = None
+        self, query: str, *args: Any
     ) -> Optional[asyncpg.Record]:
         """
         Fetch a single row with automatic retry.
@@ -286,7 +284,6 @@ class SupabaseConnectionPool:
         Args:
             query: SQL query to execute
             *args: Query parameters
-            timeout: Optional query timeout override
 
         Returns:
             Single record or None
@@ -295,13 +292,13 @@ class SupabaseConnectionPool:
             async with self.acquire() as conn:
                 result = await asyncio.wait_for(
                     conn.fetchrow(query, *args),
-                    timeout=timeout or self.command_timeout
+                    timeout=self.command_timeout
                 )
                 self._metrics["queries_executed"] += 1
                 return result
         except asyncio.TimeoutError:
             self._metrics["queries_failed"] += 1
-            logger.error("Query fetchrow timed out after %ss", timeout or self.command_timeout)
+            logger.error("Query fetchrow timed out after %ss", self.command_timeout)
             raise
         except Exception as e:
             self._metrics["queries_failed"] += 1
