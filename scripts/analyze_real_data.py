@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Quick analysis of real Abaco data files."""
 
-import pandas as pd
 from pathlib import Path
-import sys
+
+import pandas as pd
 
 # Define files
 FILES = {

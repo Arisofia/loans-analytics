@@ -17,7 +17,6 @@ Usage:
 import json
 import sys
 from pathlib import Path
-from typing import Any
 
 # Add project root to path
 ROOT_DIR = Path(__file__).resolve().parent.parent

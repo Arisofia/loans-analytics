@@ -168,11 +168,11 @@ LOAN_STATUSES = {
 
 def generate_dni() -> str:
     """Generate a valid Spanish DNI (Documento Nacional de Identidad).
-    
+
     Uses secrets module for cryptographically secure random generation to avoid
     accidentally generating predictable or real DNI numbers. Even for test data,
     national IDs should use secure randomness.
-    
+
     Security: python:S2245 - Uses CSPRNG (secrets) instead of PRNG (random)
     """
     # DNI format: 8 digits + letter
@@ -184,11 +184,11 @@ def generate_dni() -> str:
 
 def generate_nie() -> str:
     """Generate a valid Spanish NIE (Número de Identificación de Extranjero).
-    
+
     Uses secrets module for cryptographically secure random generation to avoid
     accidentally generating predictable or real NIE numbers. Even for test data,
     national IDs should use secure randomness.
-    
+
     Security: python:S2245 - Uses CSPRNG (secrets) instead of PRNG (random)
     """
     # NIE format: X/Y/Z + 7 digits + letter
@@ -211,9 +211,9 @@ def generate_nie() -> str:
 
 def generate_id_number() -> str:
     """Generate either DNI or NIE (80% DNI, 20% NIE).
-    
+
     Uses secure random for the selection to ensure unpredictability.
-    
+
     Security: python:S2245 - Uses CSPRNG (secrets) instead of PRNG (random)
     """
     if secrets.randbelow(100) < 80:  # 80% chance

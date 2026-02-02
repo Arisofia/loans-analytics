@@ -356,7 +356,6 @@ class TransformationPhase:
         )
         conversions["status"] = {"normalized_values": original_values}
 
-
     def _apply_business_rules(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Apply business rules from configuration.

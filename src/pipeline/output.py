@@ -14,8 +14,8 @@ NOTE: This module is not designed to be run directly as a script.
 
 import json
 import os
-from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
@@ -308,7 +308,9 @@ class OutputPhase:
 
             # Write to database
             table_name = self.config.get("database", {}).get("table", "kpi_timeseries_daily")
-            logger.info("Writing %d KPI records to Supabase table: %s", len(rows_to_insert), table_name)
+            logger.info(
+                "Writing %d KPI records to Supabase table: %s", len(rows_to_insert), table_name
+            )
 
             total_inserted = self._insert_batch_rows(supabase, table_name, rows_to_insert)
 

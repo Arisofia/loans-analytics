@@ -154,9 +154,6 @@ def calculate_summary_metrics(csv_file: Path) -> dict[str, Any]:
 def run_agent_analysis(agent_name: str, query: str) -> dict[str, Any]:
     """Run analysis with a specific agent."""
     try:
-        # Try to import multi-agent system
-        from python.multi_agent.cli import main as agent_cli_main
-
         # This would call the actual multi-agent system
         # For now, we'll create a placeholder response
         print(f"  Running {agent_name} agent analysis...")

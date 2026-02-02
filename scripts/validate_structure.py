@@ -50,9 +50,7 @@ def check_path(path: Path, item_type: str = "file") -> bool:
         return path.exists()
 
 
-def _validate_file(
-    path_str: str, path: Path, purpose: str, verbose: bool
-) -> Tuple[bool, tuple]:
+def _validate_file(path_str: str, path: Path, purpose: str, verbose: bool) -> Tuple[bool, tuple]:
     """Validate a single file and return (exists, result_tuple)."""
     if check_path(path, "file"):
         print(f"{Colors.GREEN}✅{Colors.END} {path_str}")
@@ -64,9 +62,7 @@ def _validate_file(
         return False, (path_str, "file", purpose)
 
 
-def _validate_expected_files(
-    path: Path, expected_files: list, verbose: bool
-) -> None:
+def _validate_expected_files(path: Path, expected_files: list, verbose: bool) -> None:
     """Validate expected files within a directory."""
     if not (expected_files and verbose):
         return
@@ -138,9 +134,7 @@ def validate_active_folders(
     return found, missing
 
 
-def validate_config_files(
-    repo_root: Path, verbose: bool = False
-) -> Tuple[List, List]:
+def validate_config_files(repo_root: Path, verbose: bool = False) -> Tuple[List, List]:
     """Validate configuration files"""
     print(f"\n{Colors.BOLD}{Colors.BLUE}Validating CONFIGURATION FILES{Colors.END}")
     print("=" * 80)
@@ -171,9 +165,7 @@ def validate_config_files(
     return found, missing
 
 
-def validate_archive_structure(
-    structure: Dict, repo_root: Path
-) -> Tuple[List, List]:
+def validate_archive_structure(structure: Dict, repo_root: Path) -> Tuple[List, List]:
     """Validate archive_legacy structure"""
     print(f"\n{Colors.BOLD}{Colors.BLUE}Validating ARCHIVE STRUCTURE{Colors.END}")
     print("=" * 80)

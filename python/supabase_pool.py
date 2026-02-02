@@ -230,10 +230,7 @@ class SupabaseConnectionPool:
         """
         try:
             async with self.acquire() as conn:
-                await asyncio.wait_for(
-                    conn.execute(query, *args),
-                    timeout=self.command_timeout
-                )
+                await asyncio.wait_for(conn.execute(query, *args), timeout=self.command_timeout)
                 self._metrics["queries_executed"] += 1
                 return "success"
         except asyncio.TimeoutError:
@@ -245,9 +242,7 @@ class SupabaseConnectionPool:
             logger.error("Query execution failed: %s", e, exc_info=True)
             raise
 
-    async def fetch(
-        self, query: str, *args: Any
-    ) -> list[asyncpg.Record]:
+    async def fetch(self, query: str, *args: Any) -> list[asyncpg.Record]:
         """
         Fetch multiple rows with automatic retry.
 
@@ -261,8 +256,7 @@ class SupabaseConnectionPool:
         try:
             async with self.acquire() as conn:
                 result = await asyncio.wait_for(
-                    conn.fetch(query, *args),
-                    timeout=self.command_timeout
+                    conn.fetch(query, *args), timeout=self.command_timeout
                 )
                 self._metrics["queries_executed"] += 1
                 return result
@@ -275,9 +269,7 @@ class SupabaseConnectionPool:
             logger.error("Query fetch failed: %s", e, exc_info=True)
             raise
 
-    async def fetchrow(
-        self, query: str, *args: Any
-    ) -> Optional[asyncpg.Record]:
+    async def fetchrow(self, query: str, *args: Any) -> Optional[asyncpg.Record]:
         """
         Fetch a single row with automatic retry.
 
@@ -291,8 +283,7 @@ class SupabaseConnectionPool:
         try:
             async with self.acquire() as conn:
                 result = await asyncio.wait_for(
-                    conn.fetchrow(query, *args),
-                    timeout=self.command_timeout
+                    conn.fetchrow(query, *args), timeout=self.command_timeout
                 )
                 self._metrics["queries_executed"] += 1
                 return result

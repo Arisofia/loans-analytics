@@ -1,13 +1,13 @@
 """Agent Insights - View AI agent feedback and conversation history."""
 
 import json
-import logging
 import sys
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+
 from python.logging_config import get_logger
 
 # Add project root to path
@@ -33,7 +33,7 @@ def get_agent_output_files() -> list[Path]:
     """Get all agent output files sorted by timestamp (newest first)."""
     if not AGENT_OUTPUTS_DIR.exists():
         return []
-    
+
     files = list(AGENT_OUTPUTS_DIR.glob("*_response.json"))
     return sorted(files, key=lambda f: f.stat().st_mtime, reverse=True)
 
@@ -43,21 +43,21 @@ def parse_agent_output(file_path: Path) -> dict[str, str]:
     try:
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
-        
+
         # Extract metadata from filename: <timestamp>_<agent_name>_response.json
         filename = file_path.stem  # Remove .json
         parts = filename.split("_")
-        
+
         timestamp_str = parts[0] if len(parts) > 0 else "unknown"
         agent_name = parts[1] if len(parts) > 1 else "unknown"
-        
+
         # Parse timestamp
         try:
             timestamp = datetime.fromisoformat(timestamp_str)
             formatted_time = timestamp.strftime("%Y-%m-%d %H:%M:%S")
         except (ValueError, OSError):
             formatted_time = timestamp_str
-        
+
         return {
             "timestamp": formatted_time,
             "agent": agent_name.replace("-", " ").title(),
@@ -100,10 +100,10 @@ if not output_files:
         "```bash\n"
         "python -m python.multi_agent.cli \\\n"
         "  --agent risk \\\n"
-        "  --query \"Your question here\"\n"
+        '  --query "Your question here"\n'
         "```"
     )
-    
+
     # Show instructions
     with st.expander("📖 How to Use Multi-Agent System"):
         st.markdown("""
@@ -147,7 +147,7 @@ if not output_files:
         
         This page automatically loads and displays all saved agent interactions.
         """)
-    
+
     st.stop()
 
 # Parse all outputs
@@ -186,15 +186,13 @@ date_filter = st.sidebar.date_input(
 )
 
 # Filter outputs
-filtered_outputs = [
-    output for output in parsed_outputs
-    if output["agent"] in selected_agents
-]
+filtered_outputs = [output for output in parsed_outputs if output["agent"] in selected_agents]
 
 # Apply date filter
 if date_filter:
     filtered_outputs = [
-        output for output in filtered_outputs
+        output
+        for output in filtered_outputs
         if output["timestamp"] != "Error"
         and datetime.fromisoformat(output["timestamp"]).date() >= date_filter
     ]
@@ -226,12 +224,12 @@ display_mode = st.radio(
 if display_mode == "💬 Conversations":
     # Conversation view - show each interaction
     st.subheader("Agent Conversations")
-    
+
     for i, output in enumerate(filtered_outputs):
         with st.expander(
             f"🤖 {output['agent']} - {output['timestamp']} "
             f"({'✅' if output['status'] == 'success' else '❌'})",
-            expanded=(i == 0)  # Expand first one by default
+            expanded=(i == 0),  # Expand first one by default
         ):
             # Metadata
             col1, col2, col3 = st.columns(3)
@@ -241,18 +239,18 @@ if display_mode == "💬 Conversations":
                 st.caption(f"**Tokens:** {output['tokens']}")
             with col3:
                 st.caption(f"**Cost:** ${output['cost']:.4f}")
-            
+
             # Query
             st.markdown("**Query:**")
             st.info(output["query"])
-            
+
             # Response
             st.markdown("**Response:**")
             if output["status"] == "success":
                 st.success(output["response"])
             else:
                 st.error(output["response"])
-            
+
             # Raw data toggle
             with st.expander("🔍 View Raw JSON"):
                 st.json(output["raw_data"])
@@ -260,26 +258,30 @@ if display_mode == "💬 Conversations":
 elif display_mode == "📊 Summary Table":
     # Table view
     st.subheader("Summary Table")
-    
+
     # Create DataFrame
-    df = pd.DataFrame([
-        {
-            "Timestamp": output["timestamp"],
-            "Agent": output["agent"],
-            "Status": output["status"],
-            "Query": output["query"][:100] + "..." if len(output["query"]) > 100 else output["query"],
-            "Tokens": output["tokens"],
-            "Cost ($)": output["cost"],
-        }
-        for output in filtered_outputs
-    ])
-    
+    df = pd.DataFrame(
+        [
+            {
+                "Timestamp": output["timestamp"],
+                "Agent": output["agent"],
+                "Status": output["status"],
+                "Query": (
+                    output["query"][:100] + "..." if len(output["query"]) > 100 else output["query"]
+                ),
+                "Tokens": output["tokens"],
+                "Cost ($)": output["cost"],
+            }
+            for output in filtered_outputs
+        ]
+    )
+
     st.dataframe(
         df,
         use_container_width=True,
         hide_index=True,
     )
-    
+
     # Export button
     if st.button("📥 Export to CSV"):
         csv = df.to_csv(index=False)
@@ -292,42 +294,40 @@ elif display_mode == "📊 Summary Table":
 
 else:  # Analytics view
     st.subheader("Agent Analytics")
-    
+
     if not filtered_outputs:
         st.info("No data to display")
     else:
         # Agent usage distribution
         col1, col2 = st.columns(2)
-        
+
         with col1:
             st.markdown("#### Interactions by Agent")
             agent_counts = {}
             for output in filtered_outputs:
                 agent_counts[output["agent"]] = agent_counts.get(output["agent"], 0) + 1
-            
-            agent_df = pd.DataFrame([
-                {"Agent": agent, "Count": count}
-                for agent, count in agent_counts.items()
-            ]).sort_values("Count", ascending=False)
-            
+
+            agent_df = pd.DataFrame(
+                [{"Agent": agent, "Count": count} for agent, count in agent_counts.items()]
+            ).sort_values("Count", ascending=False)
+
             st.bar_chart(agent_df.set_index("Agent"))
-        
+
         with col2:
             st.markdown("#### Cost by Agent")
             agent_costs = {}
             for output in filtered_outputs:
                 agent_costs[output["agent"]] = agent_costs.get(output["agent"], 0) + output["cost"]
-            
-            cost_df = pd.DataFrame([
-                {"Agent": agent, "Cost ($)": cost}
-                for agent, cost in agent_costs.items()
-            ]).sort_values("Cost ($)", ascending=False)
-            
+
+            cost_df = pd.DataFrame(
+                [{"Agent": agent, "Cost ($)": cost} for agent, cost in agent_costs.items()]
+            ).sort_values("Cost ($)", ascending=False)
+
             st.bar_chart(cost_df.set_index("Agent"))
-        
+
         # Timeline
         st.markdown("#### Interaction Timeline")
-        
+
         # Group by date
         timeline_data = {}
         for output in filtered_outputs:
@@ -337,12 +337,14 @@ else:  # Analytics view
                     timeline_data[date] = timeline_data.get(date, 0) + 1
                 except (ValueError, OSError):
                     continue
-        
+
         if timeline_data:
-            timeline_df = pd.DataFrame([
-                {"Date": date, "Interactions": count}
-                for date, count in sorted(timeline_data.items())
-            ])
+            timeline_df = pd.DataFrame(
+                [
+                    {"Date": date, "Interactions": count}
+                    for date, count in sorted(timeline_data.items())
+                ]
+            )
             st.line_chart(timeline_df.set_index("Date"))
 
 # Footer

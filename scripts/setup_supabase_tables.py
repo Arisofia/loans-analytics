@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+
 from supabase import Client, create_client
 
 project_root = Path(__file__).parent.parent
