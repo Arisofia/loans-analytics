@@ -283,7 +283,7 @@ gcloud run deploy abaco-loans-analytics \
 
 - [ ] **Environment variables**: All required vars set (see above)
 - [ ] **Secrets management**: Use cloud provider's secret store (Azure Key Vault, AWS Secrets Manager, GCP Secret Manager)
-- [ ] **Database migrations**: Run `python scripts/run_migrations.py` (if schema changes)
+- [ ] **Database migrations**: Run `python scripts/setup_supabase_tables.py` (if schema changes)
 - [ ] **PII compliance**: Verify `PII_MASKING_ENABLED=true` in production
 - [ ] **Rate limiting**: Configure `python/middleware/rate_limiter.py` thresholds based on expected load
 - [ ] **Monitoring**: Application Insights / Prometheus configured
