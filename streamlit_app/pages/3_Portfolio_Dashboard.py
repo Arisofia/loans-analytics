@@ -10,6 +10,7 @@ Complete dashboard with:
 """
 
 import json
+import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -22,8 +23,15 @@ import streamlit as st
 
 # Add project root to path
 ROOT_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from python.multi_agent.guardrails import Guardrails
+from python.multi_agent.orchestrator import MultiAgentOrchestrator
+from python.multi_agent.protocol import LLMProvider
 
 # Page configuration
 st.set_page_config(
@@ -262,15 +270,50 @@ def create_risk_distribution(df: pd.DataFrame) -> go.Figure:
         labels={'risk_score': 'Risk Score', 'count': 'Number of Loans'},
         color_discrete_sequence=['#667eea']
     )
-    
+
     fig.update_layout(
         xaxis_title='Risk Score',
         yaxis_title='Number of Loans',
         height=400,
         showlegend=False
     )
-    
+
     return fig
+
+
+def build_agent_portfolio_context(df: pd.DataFrame) -> dict[str, Any]:
+    """Build sanitized portfolio context for multi-agent analysis."""
+    metrics = calculate_portfolio_metrics(df)
+    status_counts = (
+        df["current_status"].value_counts(dropna=False).to_dict()
+        if "current_status" in df.columns
+        else {}
+    )
+    region_counts = (
+        df["region"].value_counts(dropna=False).head(10).to_dict()
+        if "region" in df.columns
+        else {}
+    )
+
+    def to_native(value: Any) -> Any:
+        if isinstance(value, (int, float, str)) or value is None:
+            return value
+        if hasattr(value, "item"):
+            return value.item()
+        return float(value) if isinstance(value, (int, float)) else str(value)
+
+    portfolio_data = {
+        "total_loans": int(metrics.get("total_loans", 0)),
+        "total_portfolio": to_native(metrics.get("total_portfolio", 0)),
+        "avg_interest_rate": to_native(metrics.get("avg_interest_rate", 0)),
+        "delinquency_rate_30": to_native(metrics.get("delinquency_rate_30", 0)),
+        "delinquency_rate_60": to_native(metrics.get("delinquency_rate_60", 0)),
+        "delinquency_rate_90": to_native(metrics.get("delinquency_rate_90", 0)),
+        "status_distribution": {k: int(v) for k, v in status_counts.items()},
+        "top_regions": {k: int(v) for k, v in region_counts.items()},
+    }
+
+    return Guardrails.sanitize_context({"portfolio_data": portfolio_data})
 
 
 def create_regional_heatmap(df: pd.DataFrame) -> go.Figure:
@@ -470,8 +513,27 @@ def main():
         # Agent Analysis
         st.header("🤖 AI Analysis")
         if st.button("🔍 Run Agent Analysis"):
-            st.info("Agent analysis will be triggered on the loaded data")
-            # TODO: Integrate with multi-agent system
+            if not st.session_state.get("data_loaded"):
+                st.warning("Please upload data before running agent analysis.")
+            elif not os.getenv("OPENAI_API_KEY"):
+                st.warning("OPENAI_API_KEY is not set. Please configure it to run agents.")
+            else:
+                with st.spinner("Running multi-agent analysis..."):
+                    try:
+                        df = st.session_state.get("loan_data")
+                        context = build_agent_portfolio_context(df)
+                        orchestrator = MultiAgentOrchestrator(
+                            provider=LLMProvider.OPENAI,
+                            enable_tracing=False,
+                        )
+                        results = orchestrator.run_scenario(
+                            "loan_risk_review",
+                            context,
+                        )
+                        st.session_state["agent_results"] = results
+                        st.success("✅ Agent analysis completed")
+                    except Exception as exc:  # pylint: disable=broad-except
+                        st.error(f"❌ Agent analysis failed: {exc}")
         
         st.markdown("---")
         st.caption("💡 Upload your own CSV or load sample Spanish loan data")
@@ -531,6 +593,23 @@ def main():
     # Display metrics
     st.markdown("### 📊 Key Portfolio Metrics")
     render_metrics_cards(metrics)
+
+    if "agent_results" in st.session_state:
+        st.markdown("### 🤖 AI Analysis Results")
+        results = st.session_state.get("agent_results", {})
+        with st.expander("View multi-agent outputs", expanded=True):
+            if results.get("risk_analysis"):
+                st.markdown("**Risk Analysis**")
+                st.write(results["risk_analysis"])
+            if results.get("compliance_review"):
+                st.markdown("**Compliance Review**")
+                st.write(results["compliance_review"])
+            if results.get("ops_recommendations"):
+                st.markdown("**Ops Recommendations**")
+                st.write(results["ops_recommendations"])
+            metadata = results.get("_metadata")
+            if metadata:
+                st.caption(f"Trace ID: {metadata.get('trace_id', 'n/a')}")
     
     st.markdown("---")
     
