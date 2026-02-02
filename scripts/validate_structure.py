@@ -109,7 +109,7 @@ def validate_active_folders(
 
 
 def validate_config_files(
-    structure: Dict, repo_root: Path, verbose: bool = False
+    repo_root: Path, verbose: bool = False
 ) -> Tuple[List, List]:
     """Validate configuration files"""
     print(f"\n{Colors.BOLD}{Colors.BLUE}Validating CONFIGURATION FILES{Colors.END}")
@@ -142,7 +142,7 @@ def validate_config_files(
 
 
 def validate_archive_structure(
-    structure: Dict, repo_root: Path, verbose: bool = False
+    structure: Dict, repo_root: Path
 ) -> Tuple[List, List]:
     """Validate archive_legacy structure"""
     print(f"\n{Colors.BOLD}{Colors.BLUE}Validating ARCHIVE STRUCTURE{Colors.END}")
@@ -236,12 +236,12 @@ def main():
     all_missing.extend(missing)
 
     # Configuration files
-    found, missing = validate_config_files(structure, repo_root, args.verbose)
+    found, missing = validate_config_files(repo_root, args.verbose)
     all_found.extend(found)
     all_missing.extend(missing)
 
     # Archive structure
-    found, missing = validate_archive_structure(structure, repo_root, args.verbose)
+    found, missing = validate_archive_structure(structure, repo_root)
     all_found.extend(found)
     all_missing.extend(missing)
 
