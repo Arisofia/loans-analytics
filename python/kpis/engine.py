@@ -87,7 +87,8 @@ class KPIEngineV2:
 
         Args:
             df: Input DataFrame with loan/payment data
-            actor: Identity of the entity requesting calculations (e.g., "reporting_service", "api", "user:john@example.com")
+            actor: Identity of the entity requesting calculations. Examples:
+                "reporting_service", "api", "user:john@example.com"
             run_id: Optional unique identifier for this calculation run
         """
         self.df = df
