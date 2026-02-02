@@ -6,8 +6,7 @@ properly prevents directory traversal attacks.
 """
 
 import pytest
-from pathlib import Path
-from python.apps.analytics.api.main import _sanitize_and_resolve, HTTPException
+from python.apps.analytics.api.main import _sanitize_and_resolve
 
 
 class TestPathTraversalPrevention:
