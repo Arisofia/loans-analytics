@@ -153,6 +153,10 @@ scripts/
 
 - 📚 **[docs/README.md](docs/README.md)** - Complete documentation index (updated Jan 31, 2026)
 - 🎯 **Master Documents**: Setup Guide, CTO Audit Report, Operations Master
+- 🚀 **Production Guides** (NEW - Feb 2, 2026):
+  - **[Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT_GUIDE.md)** - Multi-platform deployment (Azure, AWS, GCP, Railway)
+  - **[API Security Guide](docs/API_SECURITY_GUIDE.md)** - Authentication, authorization, rate limiting, security headers
+  - **[Data Seeding Guide](docs/DATA_SEEDING_GUIDE.md)** - Real data import, validation, sample generation
 - 🏗️ Architecture guides and system design
 - 🔧 Operations runbooks and deployment guides
 - 📋 Planning documents and roadmaps
@@ -160,6 +164,7 @@ scripts/
 
 **Recent Updates:**
 
+- ✅ Production-Grade Enhancements (Feb 2, 2026)
 - ✅ Phase 2 Consolidation Complete (Jan 31, 2026)
 - ✅ 15 files archived, -2,685 lines from active docs
 - ✅ 6 organized archive categories created
@@ -348,7 +353,17 @@ pytest tests/test_data_integrity.py
 
 # Validate pipeline with sample data
 python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv --mode validate
+
+# Generate realistic sample data for testing
+python scripts/generate_sample_data.py --num-loans 500 --output data/raw/test_loans.csv
 ```
+
+**Sample Data Generation**: Creates realistic loan portfolios with:
+- Log-normal distribution of loan amounts ($10K-$500K)
+- Normal distribution of interest rates (28%-45%)
+- Realistic status distribution (70% active, 20% delinquent, 5% defaulted, 5% closed)
+- Multiple borrowers with repeat loans
+- See [Data Seeding Guide](docs/DATA_SEEDING_GUIDE.md) for production data import procedures
 
 ---
 
@@ -578,9 +593,20 @@ Traces AI agent decision-making, API calls, and multi-agent interactions:
 
 ### **Delivery Standards**
 
-- **Security & Compliance**: Maintain secrets in `.env` only; never commit credentials or PII. Use credential masking in all logging contexts.
+- **Security & Compliance**: 
+  - JWT authentication support via Supabase
+  - Rate limiting middleware (`python/middleware/rate_limiter.py`)
+  - PII masking in logs and outputs (`src/compliance.py`)
+  - Input validation and path traversal prevention (`python/validation.py`)
+  - Security headers and CORS configuration
+  - See [API Security Guide](docs/API_SECURITY_GUIDE.md) for complete security implementation
 - **Data Quality**: Enforce schema validation and anomaly detection before KPI publication.
 - **Performance**: Track pipeline run health, latency, and failure rates via Grafana for operational visibility and OpenTelemetry for application tracing.
+- **Production Deployment**:
+  - Multi-platform support (Azure, AWS ECS/Beanstalk, GCP Cloud Run, Railway)
+  - Containerization with Docker and docker-compose
+  - Complete CI/CD with 12+ GitHub Actions workflows
+  - See [Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT_GUIDE.md) for deployment procedures
 
 ---
 
