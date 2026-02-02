@@ -360,7 +360,7 @@ cp grafana/dashboards/abaco-loans-analytics.json /path/to/grafana/provisioning/d
 - LLM API errors > 5% over 5min
 - Disk usage > 80%
 
-See `config/alertmanager.yml` for full alert rules.
+See `config/alertmanager.yml.template` for full alert rules (copy or rename to `config/alertmanager.yml` for your environment).
 
 ## Disaster Recovery
 
