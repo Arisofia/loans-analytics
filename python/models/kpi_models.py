@@ -12,9 +12,14 @@ class KpiValidationConfig(BaseModel):
 
     validation_range: Optional[Tuple[Optional[float], Optional[float]]] = Field(
         default=None,
-        description="Inclusive min/max bounds for KPI values. Use None to disable a side of the range.",
+        description=(
+            "Inclusive min/max bounds for KPI values. "
+            "Use None to disable a side of the range."
+        ),
     )
-    precision: int = Field(default=2, ge=0, description="Decimal precision for rounding outputs.")
+    precision: int = Field(
+        default=2, ge=0, description="Decimal precision for rounding outputs."
+    )
 
 
 class KpiDefinition(BaseModel):
