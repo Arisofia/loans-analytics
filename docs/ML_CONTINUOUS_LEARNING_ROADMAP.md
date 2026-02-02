@@ -530,18 +530,18 @@ While full ML infrastructure is being built, you can:
 
 ```bash
 # Risk assessment
-python -m python.multi_agent.cli \
-  --agent risk \
+python -m python.multi_agent.cli run-agent \
+  --role RISK_ANALYST \
   --query "Predict default risk for loans with these characteristics: principal=$50K, DPD history=2 instances, debt-to-income=0.45"
 
 # Churn prediction
-python -m python.multi_agent.cli \
-  --agent retention \
+python -m python.multi_agent.cli run-agent \
+  --role RETENTION \
   --query "Which customers are likely to churn based on: 90 days since last loan, 3 total loans, average delay 5 days"
 
 # Pricing recommendation
-python -m python.multi_agent.cli \
-  --agent pricing \
+python -m python.multi_agent.cli run-agent \
+  --role PRICING \
   --query "Recommend APR for: $75K loan, 12 months, customer risk score 0.15, market rate 34%"
 ```
 
