@@ -21,6 +21,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+from python.multi_agent.guardrails import Guardrails
+from python.multi_agent.orchestrator import MultiAgentOrchestrator
+from python.multi_agent.protocol import LLMProvider
+
 # Add project root to path
 ROOT_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -28,10 +32,6 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
-
-from python.multi_agent.guardrails import Guardrails
-from python.multi_agent.orchestrator import MultiAgentOrchestrator
-from python.multi_agent.protocol import LLMProvider
 
 # Page configuration
 st.set_page_config(
@@ -120,21 +120,32 @@ def calculate_days_past_due(df: pd.DataFrame) -> pd.DataFrame:
 
         # Get unpaid/late payments
         overdue_days = [
+<<<<<<< HEAD
             p["days_late"]
             for p in payment_history
             if p["status"] in ["missed", "defaulted"]
             or (p["status"] == "late_paid" and p["days_late"] > 30)
+=======
+            p['days_late'] for p in payment_history
+            if p['status'] in ['missed', 'defaulted']
+            or (p['status'] == 'late_paid' and p['days_late'] > 30)
+>>>>>>> remotes/origin/main
         ]
 
         return max(overdue_days) if overdue_days else 0
 
+<<<<<<< HEAD
     df["days_past_due"] = df.apply(get_dpd, axis=1)
+=======
+    df['days_past_due'] = df.apply(get_dpd, axis=1)
+>>>>>>> remotes/origin/main
     return df
 
 
 def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
     """Calculate key portfolio metrics."""
     # Total portfolio value
+<<<<<<< HEAD
     total_portfolio = df["principal_amount"].sum()
 
     # Weighted average rate
@@ -144,6 +155,13 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
         if total_principal > 0
         else 0
     )
+=======
+    total_portfolio = df['principal_amount'].sum()
+
+    # Weighted average rate
+    total_principal = df['principal_amount'].sum()
+    weighted_rate = (df['principal_amount'] * df['interest_rate']).sum() / total_principal if total_principal > 0 else 0
+>>>>>>> remotes/origin/main
 
     # Calculate DPD
     df = calculate_days_past_due(df)
@@ -230,13 +248,18 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
     df = calculate_days_past_due(df)
 
     # Group by month
+<<<<<<< HEAD
     df["origination_month"] = df["origination_date"].dt.to_period("M").astype(str)
+=======
+    df['origination_month'] = df['origination_date'].dt.to_period('M').astype(str)
+>>>>>>> remotes/origin/main
 
     # Calculate delinquency rates by cohort
     cohort_data = []
     for month in sorted(df["origination_month"].unique()):
         cohort = df[df["origination_month"] == month]
         total = len(cohort)
+<<<<<<< HEAD
         dpd_30 = len(cohort[cohort["days_past_due"] >= 30])
         dpd_60 = len(cohort[cohort["days_past_due"] >= 60])
         dpd_90 = len(cohort[cohort["days_past_due"] >= 90])
@@ -249,10 +272,23 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
                 "DPD 90+": (dpd_90 / total * 100) if total > 0 else 0,
             }
         )
+=======
+        dpd_30 = len(cohort[cohort['days_past_due'] >= 30])
+        dpd_60 = len(cohort[cohort['days_past_due'] >= 60])
+        dpd_90 = len(cohort[cohort['days_past_due'] >= 90])
+
+        cohort_data.append({
+            'month': month,
+            'DPD 30+': (dpd_30 / total * 100) if total > 0 else 0,
+            'DPD 60+': (dpd_60 / total * 100) if total > 0 else 0,
+            'DPD 90+': (dpd_90 / total * 100) if total > 0 else 0
+        })
+>>>>>>> remotes/origin/main
 
     cohort_df = pd.DataFrame(cohort_data)
 
     fig = go.Figure()
+<<<<<<< HEAD
     fig.add_trace(
         go.Scatter(
             x=cohort_df["month"],
@@ -288,6 +324,28 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
         hovermode="x unified",
         height=400,
     )
+=======
+    fig.add_trace(go.Scatter(
+        x=cohort_df['month'], y=cohort_df['DPD 30+'],
+        name='30+ Days', mode='lines+markers', line=dict(color='#ffc107', width=2)
+    ))
+    fig.add_trace(go.Scatter(
+        x=cohort_df['month'], y=cohort_df['DPD 60+'],
+        name='60+ Days', mode='lines+markers', line=dict(color='#ff9800', width=2)
+    ))
+    fig.add_trace(go.Scatter(
+        x=cohort_df['month'], y=cohort_df['DPD 90+'],
+        name='90+ Days', mode='lines+markers', line=dict(color='#dc3545', width=2)
+    ))
+
+    fig.update_layout(
+        title='Delinquency Trend by Origination Cohort',
+        xaxis_title='Origination Month',
+        yaxis_title='Delinquency Rate (%)',
+        hovermode='x unified',
+        height=400
+    )
+>>>>>>> remotes/origin/main
 
     return fig
 
@@ -346,10 +404,33 @@ def build_agent_portfolio_context(df: pd.DataFrame) -> dict[str, Any]:
 def create_regional_heatmap(df: pd.DataFrame) -> go.Figure:
     """Create regional concentration heatmap for Spanish regions."""
     # Calculate metrics by region
+<<<<<<< HEAD
     regional_data = (
         df.groupby("region")
         .agg({"principal_amount": ["sum", "count"], "risk_score": "mean"})
         .reset_index()
+=======
+    regional_data = df.groupby('region').agg({
+        'principal_amount': ['sum', 'count'],
+        'risk_score': 'mean'
+    }).reset_index()
+    
+    regional_data.columns = ['region', 'total_amount', 'loan_count', 'avg_risk']
+    regional_data['concentration'] = (regional_data['total_amount'] / regional_data['total_amount'].sum() * 100)
+    
+    # Sort by concentration
+    regional_data = regional_data.sort_values('concentration', ascending=False)
+    
+    fig = px.bar(
+        regional_data.head(10),
+        x='region',
+        y='concentration',
+        color='avg_risk',
+        title='Top 10 Regions by Portfolio Concentration',
+        labels={'concentration': 'Portfolio %', 'avg_risk': 'Avg Risk', 'region': 'Region'},
+        color_continuous_scale='RdYlGn_r',
+        text='concentration'
+>>>>>>> remotes/origin/main
     )
 
     regional_data.columns = ["region", "total_amount", "loan_count", "avg_risk"]
@@ -380,6 +461,7 @@ def create_regional_heatmap(df: pd.DataFrame) -> go.Figure:
 def create_vintage_analysis(df: pd.DataFrame) -> go.Figure:
     """Create vintage analysis visualization."""
     df = df.copy()
+<<<<<<< HEAD
     df["origination_date"] = pd.to_datetime(df["origination_date"])
     df["origination_quarter"] = df["origination_date"].dt.to_period("Q").astype(str)
 
@@ -415,6 +497,39 @@ def create_vintage_analysis(df: pd.DataFrame) -> go.Figure:
         height=400,
         hovermode="x unified",
     )
+=======
+    df['origination_date'] = pd.to_datetime(df['origination_date'])
+    df['origination_quarter'] = df['origination_date'].dt.to_period('Q').astype(str)
+
+    vintage_data = df.groupby(['origination_quarter', 'current_status']).size().unstack(fill_value=0)
+    vintage_pct = vintage_data.div(vintage_data.sum(axis=1), axis=0) * 100
+
+    fig = go.Figure()
+
+    status_colors = {
+        'current': '#28a745',
+        'paid-off': '#17a2b8',
+        'delinquent': '#ffc107',
+        'default': '#dc3545'
+    }
+
+    for status in vintage_pct.columns:
+        fig.add_trace(go.Bar(
+            name=status.title(),
+            x=vintage_pct.index,
+            y=vintage_pct[status],
+            marker_color=status_colors.get(status, '#6c757d')
+        ))
+
+    fig.update_layout(
+        title='Vintage Analysis - Loan Status by Origination Quarter',
+        xaxis_title='Origination Quarter',
+        yaxis_title='Percentage (%)',
+        barmode='stack',
+        height=400,
+        hovermode='x unified'
+    )
+>>>>>>> remotes/origin/main
 
     return fig
 
@@ -434,8 +549,17 @@ def render_loan_table(df: pd.DataFrame):
         )
 
     with col2:
+<<<<<<< HEAD
         regions = sorted(df["region"].unique().tolist())
         region_filter = st.multiselect("Region", options=regions, default=[])
+=======
+        regions = sorted(df['region'].unique().tolist())
+        region_filter = st.multiselect(
+            "Region",
+            options=regions,
+            default=[]
+        )
+>>>>>>> remotes/origin/main
 
     with col3:
         min_amount = float(df["principal_amount"].min())
@@ -452,10 +576,17 @@ def render_loan_table(df: pd.DataFrame):
         search_term = st.text_input("🔍 Search (Loan ID or Borrower)", "")
 
     # Apply filters
+<<<<<<< HEAD
     filtered_df = df[df["current_status"].isin(status_filter)]
 
     if region_filter:
         filtered_df = filtered_df[filtered_df["region"].isin(region_filter)]
+=======
+    filtered_df = df[df['current_status'].isin(status_filter)]
+
+    if region_filter:
+        filtered_df = filtered_df[filtered_df['region'].isin(region_filter)]
+>>>>>>> remotes/origin/main
 
     filtered_df = filtered_df[
         (filtered_df["principal_amount"] >= amount_range[0])
@@ -472,6 +603,7 @@ def render_loan_table(df: pd.DataFrame):
     st.info(f"Showing {len(filtered_df)} of {len(df)} loans")
 
     # Prepare display dataframe
+<<<<<<< HEAD
     display_df = filtered_df[
         [
             "loan_id",
@@ -489,6 +621,17 @@ def render_loan_table(df: pd.DataFrame):
     display_df["principal_amount"] = display_df["principal_amount"].apply(lambda x: f"€{x:,.2f}")
     display_df["interest_rate"] = display_df["interest_rate"].apply(lambda x: f"{x:.2%}")
     display_df["risk_score"] = display_df["risk_score"].apply(lambda x: f"{x:.4f}")
+=======
+    display_df = filtered_df[[
+        'loan_id', 'borrower_name', 'region', 'principal_amount',
+        'interest_rate', 'term_months', 'origination_date',
+        'current_status', 'risk_score'
+    ]].copy()
+
+    display_df['principal_amount'] = display_df['principal_amount'].apply(lambda x: f"€{x:,.2f}")
+    display_df['interest_rate'] = display_df['interest_rate'].apply(lambda x: f"{x:.2%}")
+    display_df['risk_score'] = display_df['risk_score'].apply(lambda x: f"{x:.4f}")
+>>>>>>> remotes/origin/main
 
     # Display table
     st.dataframe(
@@ -523,9 +666,13 @@ def render_loan_table(df: pd.DataFrame):
 
 # Main app
 def main():
+<<<<<<< HEAD
     st.markdown(
         '<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True
     )
+=======
+    st.markdown('<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True)
+>>>>>>> remotes/origin/main
 
     # Sidebar - File upload
     with st.sidebar:
@@ -599,10 +746,15 @@ def main():
             return
 
     # Check if data is loaded
+<<<<<<< HEAD
     if "data_loaded" not in st.session_state or not st.session_state["data_loaded"]:
         st.info(
             "👆 Please upload a CSV file or load sample data from the sidebar to begin analysis"
         )
+=======
+    if 'data_loaded' not in st.session_state or not st.session_state['data_loaded']:
+        st.info("👆 Please upload a CSV file or load sample data from the sidebar to begin analysis")
+>>>>>>> remotes/origin/main
 
         st.markdown("### 📋 Required Data Format")
         st.markdown("Your CSV file must include these columns:")
@@ -629,7 +781,11 @@ def main():
         return
 
     # Load data
+<<<<<<< HEAD
     df = st.session_state["loan_data"]
+=======
+    df = st.session_state['loan_data']
+>>>>>>> remotes/origin/main
 
     # Calculate metrics
     metrics = calculate_portfolio_metrics(df)
@@ -658,6 +814,7 @@ def main():
     st.markdown("---")
 
     # Visualizations
+<<<<<<< HEAD
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
         [
             "📈 Delinquency Trends",
@@ -668,6 +825,16 @@ def main():
         ]
     )
 
+=======
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "📈 Delinquency Trends",
+        "📊 Risk Distribution",
+        "🗺️ Regional Analysis",
+        "📅 Vintage Analysis",
+        "📋 Loan Table"
+    ])
+    
+>>>>>>> remotes/origin/main
     with tab1:
         st.plotly_chart(create_delinquency_trend(df), use_container_width=True)
 
@@ -713,7 +880,14 @@ def main():
         for i, (status, count) in enumerate(status_counts.items()):
             col = [col1, col2, col3, col4][i % 4]
             with col:
+<<<<<<< HEAD
                 st.metric(status.title(), f"{count} ({status_pct[status]:.1f}%)")
+=======
+                st.metric(
+                    status.title(),
+                    f"{count} ({status_pct[status]:.1f}%)"
+                )
+>>>>>>> remotes/origin/main
 
     with tab5:
         render_loan_table(df)
