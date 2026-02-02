@@ -16,7 +16,6 @@ import csv
 import json
 import random
 from datetime import datetime, timedelta
-from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -513,21 +512,21 @@ def generate_loan_dataset(num_records: int = 800) -> list[dict[str, Any]]:
     print("DATASET SUMMARY")
     print("=" * 60)
     print(f"Total records: {len(records)}")
-    print(f"\nStatus distribution:")
+    print("\nStatus distribution:")
     for status, count in sorted(status_counts.items(), key=lambda x: -x[1]):
         print(f"  {status}: {count}")
-    print(f"\nTop 5 regions:")
+    print("\nTop 5 regions:")
     for region, count in sorted(region_counts.items(), key=lambda x: -x[1])[:5]:
         print(f"  {region}: {count}")
-    print(f"\nPrincipal amount statistics:")
+    print("\nPrincipal amount statistics:")
     print(f"  Mean: €{sum(principals)/len(principals):,.2f}")
     print(f"  Min: €{min(principals):,.2f}")
     print(f"  Max: €{max(principals):,.2f}")
-    print(f"\nInterest rate statistics:")
+    print("\nInterest rate statistics:")
     print(f"  Mean: {sum(rates)/len(rates):.2%}")
     print(f"  Min: {min(rates):.2%}")
     print(f"  Max: {max(rates):.2%}")
-    print(f"\nRisk score statistics:")
+    print("\nRisk score statistics:")
     print(f"  Mean: {sum(risks)/len(risks):.4f}")
     print(f"  Min: {min(risks):.4f}")
     print(f"  Max: {max(risks):.4f}")
@@ -561,7 +560,7 @@ def main():
         writer.writerows(records)
 
     print(f"\n✅ Dataset saved to: {output_file}")
-    print(f"✅ Ready to upload or process through pipeline")
+    print("✅ Ready to upload or process through pipeline")
 
     # Also save a sample for quick testing
     sample_file = output_dir / "spanish_loans_sample.csv"
