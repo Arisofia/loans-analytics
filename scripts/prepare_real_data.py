@@ -13,13 +13,26 @@ import pandas as pd
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
+# String constants
+LOAN_ID = "Loan ID"
+CUSTOMER_ID = "Customer ID"
+UNKNOWN_STR = "Unknown"
+UNKNOWN_ID = "UNKNOWN"
+
+# Table names
+TABLE_LOAN_DATA = "loan_data"
+TABLE_CUSTOMER = "customer"
+TABLE_COLLATERAL = "collateral"
+TABLE_PAYMENT_SCHEDULE = "payment_schedule"
+TABLE_HISTORIC_PAYMENTS = "historic_payments"
+
 # File mappings
 FILES = {
-    "loan_data": "Abaco - Loan Tape_Loan Data_Table (3).csv",
-    "customer": "Abaco - Loan Tape_Customer Data_Table (3).csv",
-    "collateral": "Abaco - Loan Tape_Collateral_Table (3).csv",
-    "payment_schedule": "Abaco - Loan Tape_Payment Schedule_Table (3).csv",
-    "historic_payments": "Abaco - Loan Tape_Historic Real Payment_Table (3).csv",
+    TABLE_LOAN_DATA: "Abaco - Loan Tape_Loan Data_Table (3).csv",
+    TABLE_CUSTOMER: "Abaco - Loan Tape_Customer Data_Table (3).csv",
+    TABLE_COLLATERAL: "Abaco - Loan Tape_Collateral_Table (3).csv",
+    TABLE_PAYMENT_SCHEDULE: "Abaco - Loan Tape_Payment Schedule_Table (3).csv",
+    TABLE_HISTORIC_PAYMENTS: "Abaco - Loan Tape_Historic Real Payment_Table (3).csv",
 }
 
 
@@ -105,8 +118,8 @@ def _add_computed_fields(df: pd.DataFrame) -> pd.DataFrame:
         if "current_status" in df.columns:
             df["status"] = df["current_status"]
         else:
-            df["status"] = "Unknown"
-            logger.info("   ⚠️  Added 'status' with default value 'Unknown'")
+            df["status"] = UNKNOWN_STR
+            logger.info(f"   ⚠️  Added 'status' with default value '{UNKNOWN_STR}'")
 
     return df
 
@@ -200,14 +213,14 @@ def _fill_outstanding_balance(df: pd.DataFrame) -> pd.DataFrame:
 def _add_required_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Add required columns with default values if missing."""
     required_columns = {
-        "loan_id": "UNKNOWN",
-        "borrower_id": "UNKNOWN",
-        "borrower_name": "Unknown",
+        "loan_id": UNKNOWN_ID,
+        "borrower_id": UNKNOWN_ID,
+        "borrower_name": UNKNOWN_STR,
         "principal_amount": 0.0,
         "interest_rate": 0.0,
         "term_months": 0,
         "origination_date": pd.NaT,
-        "current_status": "Unknown",
+        "current_status": UNKNOWN_STR,
         "days_past_due": 0,
         "outstanding_balance": 0.0,
     }
@@ -245,7 +258,7 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
 
 def _load_all_tables(files_in_downloads: dict) -> dict | None:
     """Load all required tables from CSV files."""
-    logger.info(f"\n📂 Loading tables from {files_in_downloads['loan_data'].parent}/...")
+    logger.info(f"\n📂 Loading tables from {files_in_downloads[TABLE_LOAN_DATA].parent}/...")
     tables = {}
 
     for table_name, filepath in files_in_downloads.items():
@@ -265,17 +278,17 @@ def _load_all_tables(files_in_downloads: dict) -> dict | None:
 
 def _merge_tables(tables: dict) -> pd.DataFrame:
     """Merge all tables on Loan ID."""
-    logger.info("\n🔗 Merging tables on 'Loan ID'...")
+    logger.info(f"\n🔗 Merging tables on '{LOAN_ID}'...")
 
     # Start with loan data as base
-    merged = tables["loan_data"].copy()
-    logger.info(f"   📊 Base: loan_data ({len(merged):,} loans)")
+    merged = tables[TABLE_LOAN_DATA].copy()
+    logger.info(f"   📊 Base: {TABLE_LOAN_DATA} ({len(merged):,} loans)")
 
     # Merge customer data (left join to preserve all loans)
-    if "customer" in tables:
+    if TABLE_CUSTOMER in tables:
         customer_cols = [
-            "Customer ID",
-            "Loan ID",
+            CUSTOMER_ID,
+            LOAN_ID,
             "Sales Channel",
             "Location City",
             "Location State Province",
@@ -285,22 +298,22 @@ def _merge_tables(tables: dict) -> pd.DataFrame:
             "Industry",
             "Equifax Score",
         ]
-        customer_df = tables["customer"][customer_cols].drop_duplicates(subset=["Loan ID"])
-        merged = merged.merge(customer_df, on="Loan ID", how="left", suffixes=("", "_cust"))
-        logger.info(f"   🔗 + customer data ({len(customer_df):,} unique loans)")
+        customer_df = tables[TABLE_CUSTOMER][customer_cols].drop_duplicates(subset=[LOAN_ID])
+        merged = merged.merge(customer_df, on=LOAN_ID, how="left", suffixes=("", "_cust"))
+        logger.info(f"   🔗 + {TABLE_CUSTOMER} data ({len(customer_df):,} unique loans)")
 
     # Merge collateral (left join, aggregate if multiple per loan)
-    if "collateral" in tables:
-        collateral_cols = ["Loan ID", "Collateral Type", "Collateral Current"]
-        collateral_df = tables["collateral"][collateral_cols].drop_duplicates(subset=["Loan ID"])
-        merged = merged.merge(collateral_df, on="Loan ID", how="left", suffixes=("", "_coll"))
-        logger.info(f"   🔗 + collateral data ({len(collateral_df):,} unique loans)")
+    if TABLE_COLLATERAL in tables:
+        collateral_cols = [LOAN_ID, "Collateral Type", "Collateral Current"]
+        collateral_df = tables[TABLE_COLLATERAL][collateral_cols].drop_duplicates(subset=[LOAN_ID])
+        merged = merged.merge(collateral_df, on=LOAN_ID, how="left", suffixes=("", "_coll"))
+        logger.info(f"   🔗 + {TABLE_COLLATERAL} data ({len(collateral_df):,} unique loans)")
 
     # Aggregate payment schedule (scheduled payments)
-    if "payment_schedule" in tables:
+    if TABLE_PAYMENT_SCHEDULE in tables:
         payment_agg = (
-            tables["payment_schedule"]
-            .groupby("Loan ID")
+            tables[TABLE_PAYMENT_SCHEDULE]
+            .groupby(LOAN_ID)
             .agg(
                 {
                     "Payment Date": "max",  # Last scheduled payment date
@@ -309,15 +322,15 @@ def _merge_tables(tables: dict) -> pd.DataFrame:
             )
             .reset_index()
         )
-        payment_agg.columns = ["Loan ID", "last_scheduled_date", "total_scheduled"]
-        merged = merged.merge(payment_agg, on="Loan ID", how="left")
-        logger.info(f"   🔗 + payment schedule (aggregated, {len(payment_agg):,} loans)")
+        payment_agg.columns = [LOAN_ID, "last_scheduled_date", "total_scheduled"]
+        merged = merged.merge(payment_agg, on=LOAN_ID, how="left")
+        logger.info(f"   🔗 + {TABLE_PAYMENT_SCHEDULE} (aggregated, {len(payment_agg):,} loans)")
 
     # Aggregate historic payments (actual payments made)
-    if "historic_payments" in tables:
+    if TABLE_HISTORIC_PAYMENTS in tables:
         historic_agg = (
-            tables["historic_payments"]
-            .groupby("Loan ID")
+            tables[TABLE_HISTORIC_PAYMENTS]
+            .groupby(LOAN_ID)
             .agg(
                 {
                     "True Payment Date": "max",  # Last payment date
@@ -328,13 +341,13 @@ def _merge_tables(tables: dict) -> pd.DataFrame:
             .reset_index()
         )
         historic_agg.columns = [
-            "Loan ID",
+            LOAN_ID,
             "True Payment Date",
             "True Total Payment",
             "True Outstanding Loan Value",
         ]
-        merged = merged.merge(historic_agg, on="Loan ID", how="left")
-        logger.info(f"   🔗 + historic payments (aggregated, {len(historic_agg):,} loans)")
+        merged = merged.merge(historic_agg, on=LOAN_ID, how="left")
+        logger.info(f"   🔗 + {TABLE_HISTORIC_PAYMENTS} (aggregated, {len(historic_agg):,} loans)")
 
     logger.info(f"\n   ✅ Merged dataset: {len(merged):,} rows, {len(merged.columns)} columns")
     return merged
@@ -392,11 +405,11 @@ def main():
 
     # Updated file mappings with actual filenames
     files_in_downloads = {
-        "loan_data": downloads_dir / "Abaco - Loan Tape_Loan Data_Table (3).csv",
-        "customer": downloads_dir / "Abaco - Loan Tape_Customer Data_Table (3).csv",
-        "collateral": downloads_dir / "Abaco - Loan Tape_Collateral_Table (3).csv",
-        "payment_schedule": downloads_dir / "Abaco - Loan Tape_Payment Schedule_Table (3).csv",
-        "historic_payments": downloads_dir
+        TABLE_LOAN_DATA: downloads_dir / "Abaco - Loan Tape_Loan Data_Table (3).csv",
+        TABLE_CUSTOMER: downloads_dir / "Abaco - Loan Tape_Customer Data_Table (3).csv",
+        TABLE_COLLATERAL: downloads_dir / "Abaco - Loan Tape_Collateral_Table (3).csv",
+        TABLE_PAYMENT_SCHEDULE: downloads_dir / "Abaco - Loan Tape_Payment Schedule_Table (3).csv",
+        TABLE_HISTORIC_PAYMENTS: downloads_dir
         / "Abaco - Loan Tape_Historic Real Payment_Table (3).csv",
     }
 
