@@ -10,16 +10,16 @@ from pathlib import Path
 
 import pandas as pd
 
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 # File mappings
 FILES = {
-    'loan_data': 'Abaco - Loan Tape_Loan Data_Table (3).csv',
-    'customer': 'Abaco - Loan Tape_Customer Data_Table (3).csv',
-    'collateral': 'Abaco - Loan Tape_Collateral_Table (3).csv',
-    'payment_schedule': 'Abaco - Loan Tape_Payment Schedule_Table (3).csv',
-    'historic_payments': 'Abaco - Loan Tape_Historic Real Payment_Table (3).csv'
+    "loan_data": "Abaco - Loan Tape_Loan Data_Table (3).csv",
+    "customer": "Abaco - Loan Tape_Customer Data_Table (3).csv",
+    "collateral": "Abaco - Loan Tape_Collateral_Table (3).csv",
+    "payment_schedule": "Abaco - Loan Tape_Payment Schedule_Table (3).csv",
+    "historic_payments": "Abaco - Loan Tape_Historic Real Payment_Table (3).csv",
 }
 
 
@@ -49,50 +49,43 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
     # Real Abaco column mappings
     column_mapping = {
         # Loan identifiers
-        'Loan ID': 'loan_id',
-        'Customer ID': 'borrower_id',
-        'Cliente': 'borrower_name',
-        'Pagador': 'payor_name',
-
+        "Loan ID": "loan_id",
+        "Customer ID": "borrower_id",
+        "Cliente": "borrower_name",
+        "Pagador": "payor_name",
         # Loan amounts and terms
-        'Disbursement Amount': 'principal_amount',
-        'Interest Rate APR': 'interest_rate',
-        'Term': 'term_months',
-        'Term Unit': 'term_unit',
-        'Disbursement Date': 'origination_date',
-
+        "Disbursement Amount": "principal_amount",
+        "Interest Rate APR": "interest_rate",
+        "Term": "term_months",
+        "Term Unit": "term_unit",
+        "Disbursement Date": "origination_date",
         # Status and performance
-        'Loan Status': 'current_status',
-        'Days in Default': 'days_past_due',
-        'Outstanding Loan Value': 'outstanding_balance',
-
+        "Loan Status": "current_status",
+        "Days in Default": "days_past_due",
+        "Outstanding Loan Value": "outstanding_balance",
         # Additional context
-        'Product Type': 'product_type',
-        'Payment Frequency': 'payment_frequency',
-        'Loan Currency': 'currency',
-        'TPV': 'tpv',
-
+        "Product Type": "product_type",
+        "Payment Frequency": "payment_frequency",
+        "Loan Currency": "currency",
+        "TPV": "tpv",
         # Fees and charges
-        'Origination Fee': 'origination_fee',
-        'Origination Fee Taxes': 'origination_fee_taxes',
-
+        "Origination Fee": "origination_fee",
+        "Origination Fee Taxes": "origination_fee_taxes",
         # Customer info
-        'Sales Channel': 'sales_channel',
-        'Location City': 'city',
-        'Location State Province': 'state',
-        'Location Country': 'country',
-        'Internal Credit Score': 'credit_score',
-        'Client Type': 'client_type',
-        'Industry': 'industry',
-
+        "Sales Channel": "sales_channel",
+        "Location City": "city",
+        "Location State Province": "state",
+        "Location Country": "country",
+        "Internal Credit Score": "credit_score",
+        "Client Type": "client_type",
+        "Industry": "industry",
         # Collateral
-        'Collateral Type': 'collateral_type',
-        'Collateral Current': 'collateral_value',
-
+        "Collateral Type": "collateral_type",
+        "Collateral Current": "collateral_value",
         # Payment tracking
-        'True Payment Date': 'last_payment_date',
-        'True Total Payment': 'last_payment_amount',
-        'True Outstanding Loan Value': 'current_balance',
+        "True Payment Date": "last_payment_date",
+        "True Total Payment": "last_payment_amount",
+        "True Outstanding Loan Value": "current_balance",
     }
 
     # Apply mapping
@@ -102,93 +95,97 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
     # Log what was mapped
     mapped_cols = [col for col in column_mapping.values() if col in mapped_df.columns]
     logger.info(f"   ✅ Mapped {len(mapped_cols)} columns")
-    logger.info(f"   📋 New columns: {', '.join(mapped_cols[:10])}{'...' if len(mapped_cols) > 10 else ''}")
+    logger.info(
+        f"   📋 New columns: {', '.join(mapped_cols[:10])}{'...' if len(mapped_cols) > 10 else ''}"
+    )
 
     # Add computed fields if missing
-    if 'amount' not in mapped_df.columns:
-        if 'principal_amount' in mapped_df.columns:
-            mapped_df['amount'] = mapped_df['principal_amount']
+    if "amount" not in mapped_df.columns:
+        if "principal_amount" in mapped_df.columns:
+            mapped_df["amount"] = mapped_df["principal_amount"]
         else:
-            mapped_df['amount'] = 0
+            mapped_df["amount"] = 0
             logger.info("   ⚠️  Added 'amount' with default value 0")
 
-    if 'status' not in mapped_df.columns:
-        if 'current_status' in mapped_df.columns:
-            mapped_df['status'] = mapped_df['current_status']
+    if "status" not in mapped_df.columns:
+        if "current_status" in mapped_df.columns:
+            mapped_df["status"] = mapped_df["current_status"]
         else:
-            mapped_df['status'] = 'Unknown'
+            mapped_df["status"] = "Unknown"
             logger.info("   ⚠️  Added 'status' with default value 'Unknown'")
 
     # Convert interest rate to decimal if it's percentage
-    if 'interest_rate' in mapped_df.columns:
+    if "interest_rate" in mapped_df.columns:
         # Check if values are > 1 (likely percentage format like 34.5)
-        sample_rate = mapped_df['interest_rate'].dropna().iloc[0] if not mapped_df['interest_rate'].dropna().empty else 0
+        sample_rate = (
+            mapped_df["interest_rate"].dropna().iloc[0]
+            if not mapped_df["interest_rate"].dropna().empty
+            else 0
+        )
         if sample_rate > 1:
-            mapped_df['interest_rate'] = mapped_df['interest_rate'] / 100
+            mapped_df["interest_rate"] = mapped_df["interest_rate"] / 100
             logger.info("   🔄 Converted interest_rate from percentage to decimal")
 
     # Convert term to months if in different unit
-    if 'term_unit' in mapped_df.columns and 'term_months' in mapped_df.columns:
+    if "term_unit" in mapped_df.columns and "term_months" in mapped_df.columns:
         # Handle 'Days', 'Weeks', 'Months', 'Years'
         def convert_to_months(row):
-            term = row.get('term_months', 0)
-            unit = str(row.get('term_unit', 'months')).lower()
-            if 'day' in unit:
+            term = row.get("term_months", 0)
+            unit = str(row.get("term_unit", "months")).lower()
+            if "day" in unit:
                 return term / 30
-            elif 'week' in unit:
+            elif "week" in unit:
                 return term / 4
-            elif 'year' in unit:
+            elif "year" in unit:
                 return term * 12
             else:  # months
                 return term
 
-        mapped_df['term_months'] = mapped_df.apply(convert_to_months, axis=1)
+        mapped_df["term_months"] = mapped_df.apply(convert_to_months, axis=1)
         logger.info("   🔄 Normalized term_months from various units")
 
     # Calculate maturity_date if missing (origination_date + term_months)
-    if 'maturity_date' not in mapped_df.columns:
-        if 'origination_date' in mapped_df.columns and 'term_months' in mapped_df.columns:
+    if "maturity_date" not in mapped_df.columns:
+        if "origination_date" in mapped_df.columns and "term_months" in mapped_df.columns:
             try:
-                mapped_df['origination_date'] = pd.to_datetime(
-                    mapped_df['origination_date'], errors='coerce'
+                mapped_df["origination_date"] = pd.to_datetime(
+                    mapped_df["origination_date"], errors="coerce"
                 )
-                mapped_df['maturity_date'] = mapped_df.apply(
+                mapped_df["maturity_date"] = mapped_df.apply(
                     lambda row: (
-                        row['origination_date'] + pd.DateOffset(months=int(row['term_months']))
-                        if pd.notna(row['origination_date']) and pd.notna(row['term_months'])
+                        row["origination_date"] + pd.DateOffset(months=int(row["term_months"]))
+                        if pd.notna(row["origination_date"]) and pd.notna(row["term_months"])
                         else pd.NaT
                     ),
-                    axis=1
+                    axis=1,
                 )
-                logger.info(
-                    "   ✅ Calculated maturity_date from origination_date + term_months"
-                )
+                logger.info("   ✅ Calculated maturity_date from origination_date + term_months")
             except Exception as e:
                 logger.warning(f"   ⚠️  Could not calculate maturity_date: {e}")
-                mapped_df['maturity_date'] = pd.NaT
+                mapped_df["maturity_date"] = pd.NaT
         else:
-            mapped_df['maturity_date'] = pd.NaT
+            mapped_df["maturity_date"] = pd.NaT
             logger.info("   ⚠️  Added 'maturity_date' with null values")
 
     # Ensure outstanding_balance uses current balance if available
-    if 'current_balance' in mapped_df.columns and mapped_df['outstanding_balance'].isna().sum() > 0:
-        mapped_df['outstanding_balance'] = mapped_df['outstanding_balance'].fillna(
-            mapped_df['current_balance']
+    if "current_balance" in mapped_df.columns and mapped_df["outstanding_balance"].isna().sum() > 0:
+        mapped_df["outstanding_balance"] = mapped_df["outstanding_balance"].fillna(
+            mapped_df["current_balance"]
         )
         logger.info("   🔄 Filled missing outstanding_balance with current_balance")
 
     # Add other required columns with defaults if missing
     required_columns = {
-        'loan_id': 'UNKNOWN',
-        'borrower_id': 'UNKNOWN',
-        'borrower_name': 'Unknown',
-        'principal_amount': 0.0,
-        'interest_rate': 0.0,
-        'term_months': 0,
-        'origination_date': pd.NaT,
-        'current_status': 'Unknown',
-        'days_past_due': 0,
-        'outstanding_balance': 0.0
+        "loan_id": "UNKNOWN",
+        "borrower_id": "UNKNOWN",
+        "borrower_name": "Unknown",
+        "principal_amount": 0.0,
+        "interest_rate": 0.0,
+        "term_months": 0,
+        "origination_date": pd.NaT,
+        "current_status": "Unknown",
+        "days_past_due": 0,
+        "outstanding_balance": 0.0,
     }
 
     for col, default_val in required_columns.items():
@@ -206,17 +203,18 @@ def main():
     logger.info("=" * 60)
 
     # Use Downloads folder as source
-    downloads_dir = Path.home() / 'Downloads'
-    data_dir = Path(__file__).parent.parent / 'data' / 'raw'
-    output_file = data_dir / f'abaco_real_data_{datetime.now():%Y%m%d}.csv'
+    downloads_dir = Path.home() / "Downloads"
+    data_dir = Path(__file__).parent.parent / "data" / "raw"
+    output_file = data_dir / f"abaco_real_data_{datetime.now():%Y%m%d}.csv"
 
     # Updated file mappings with actual filenames
     files_in_downloads = {
-        'loan_data': downloads_dir / 'Abaco - Loan Tape_Loan Data_Table (3).csv',
-        'customer': downloads_dir / 'Abaco - Loan Tape_Customer Data_Table (3).csv',
-        'collateral': downloads_dir / 'Abaco - Loan Tape_Collateral_Table (3).csv',
-        'payment_schedule': downloads_dir / 'Abaco - Loan Tape_Payment Schedule_Table (3).csv',
-        'historic_payments': downloads_dir / 'Abaco - Loan Tape_Historic Real Payment_Table (3).csv'
+        "loan_data": downloads_dir / "Abaco - Loan Tape_Loan Data_Table (3).csv",
+        "customer": downloads_dir / "Abaco - Loan Tape_Customer Data_Table (3).csv",
+        "collateral": downloads_dir / "Abaco - Loan Tape_Collateral_Table (3).csv",
+        "payment_schedule": downloads_dir / "Abaco - Loan Tape_Payment Schedule_Table (3).csv",
+        "historic_payments": downloads_dir
+        / "Abaco - Loan Tape_Historic Real Payment_Table (3).csv",
     }
 
     # Load all tables
@@ -238,59 +236,73 @@ def main():
     logger.info("\n🔗 Merging tables on 'Loan ID'...")
 
     # Start with loan data as base
-    merged = tables['loan_data'].copy()
+    merged = tables["loan_data"].copy()
     logger.info(f"   📊 Base: loan_data ({len(merged):,} loans)")
 
     # Merge customer data (left join to preserve all loans)
-    if 'customer' in tables:
+    if "customer" in tables:
         # Select customer columns not already in loan_data
         customer_cols = [
-            'Customer ID',
-            'Loan ID',
-            'Sales Channel',
-            'Location City',
-            'Location State Province',
-            'Location Country',
-            'Internal Credit Score',
-            'Client Type',
-            'Industry',
-            'Equifax Score',
+            "Customer ID",
+            "Loan ID",
+            "Sales Channel",
+            "Location City",
+            "Location State Province",
+            "Location Country",
+            "Internal Credit Score",
+            "Client Type",
+            "Industry",
+            "Equifax Score",
         ]
-        customer_df = tables['customer'][customer_cols].drop_duplicates(subset=['Loan ID'])
-        merged = merged.merge(customer_df, on='Loan ID', how='left', suffixes=('', '_cust'))
+        customer_df = tables["customer"][customer_cols].drop_duplicates(subset=["Loan ID"])
+        merged = merged.merge(customer_df, on="Loan ID", how="left", suffixes=("", "_cust"))
         logger.info(f"   🔗 + customer data ({len(customer_df):,} unique loans)")
 
     # Merge collateral (left join, aggregate if multiple per loan)
-    if 'collateral' in tables:
-        collateral_cols = ['Loan ID', 'Collateral Type', 'Collateral Current']
-        collateral_df = tables['collateral'][collateral_cols].drop_duplicates(subset=['Loan ID'])
-        merged = merged.merge(collateral_df, on='Loan ID', how='left', suffixes=('', '_coll'))
+    if "collateral" in tables:
+        collateral_cols = ["Loan ID", "Collateral Type", "Collateral Current"]
+        collateral_df = tables["collateral"][collateral_cols].drop_duplicates(subset=["Loan ID"])
+        merged = merged.merge(collateral_df, on="Loan ID", how="left", suffixes=("", "_coll"))
         logger.info(f"   🔗 + collateral data ({len(collateral_df):,} unique loans)")
 
     # Aggregate payment schedule (scheduled payments)
-    if 'payment_schedule' in tables:
-        payment_agg = tables['payment_schedule'].groupby('Loan ID').agg({
-            'Payment Date': 'max',  # Last scheduled payment date
-            'Total Payment': 'sum',  # Total scheduled payments
-        }).reset_index()
-        payment_agg.columns = ['Loan ID', 'last_scheduled_date', 'total_scheduled']
-        merged = merged.merge(payment_agg, on='Loan ID', how='left')
+    if "payment_schedule" in tables:
+        payment_agg = (
+            tables["payment_schedule"]
+            .groupby("Loan ID")
+            .agg(
+                {
+                    "Payment Date": "max",  # Last scheduled payment date
+                    "Total Payment": "sum",  # Total scheduled payments
+                }
+            )
+            .reset_index()
+        )
+        payment_agg.columns = ["Loan ID", "last_scheduled_date", "total_scheduled"]
+        merged = merged.merge(payment_agg, on="Loan ID", how="left")
         logger.info(f"   🔗 + payment schedule (aggregated, {len(payment_agg):,} loans)")
 
     # Aggregate historic payments (actual payments made)
-    if 'historic_payments' in tables:
-        historic_agg = tables['historic_payments'].groupby('Loan ID').agg({
-            'True Payment Date': 'max',  # Last payment date
-            'True Total Payment': 'sum',  # Total amount paid
-            'True Outstanding Loan Value': 'last',  # Current balance
-        }).reset_index()
+    if "historic_payments" in tables:
+        historic_agg = (
+            tables["historic_payments"]
+            .groupby("Loan ID")
+            .agg(
+                {
+                    "True Payment Date": "max",  # Last payment date
+                    "True Total Payment": "sum",  # Total amount paid
+                    "True Outstanding Loan Value": "last",  # Current balance
+                }
+            )
+            .reset_index()
+        )
         historic_agg.columns = [
-            'Loan ID',
-            'True Payment Date',
-            'True Total Payment',
-            'True Outstanding Loan Value',
+            "Loan ID",
+            "True Payment Date",
+            "True Total Payment",
+            "True Outstanding Loan Value",
         ]
-        merged = merged.merge(historic_agg, on='Loan ID', how='left')
+        merged = merged.merge(historic_agg, on="Loan ID", how="left")
         logger.info(f"   🔗 + historic payments (aggregated, {len(historic_agg):,} loans)")
 
     logger.info(f"\n   ✅ Merged dataset: {len(merged):,} rows, {len(merged.columns)} columns")
@@ -312,16 +324,16 @@ def main():
     logger.info("📋 Columns: %d", len(final_df.columns))
 
     # Show key statistics
-    if 'principal_amount' in final_df.columns:
-        total_disbursed = final_df['principal_amount'].sum()
+    if "principal_amount" in final_df.columns:
+        total_disbursed = final_df["principal_amount"].sum()
         logger.info(f"💰 Total disbursed: ${total_disbursed:,.2f}")
 
-    if 'outstanding_balance' in final_df.columns:
-        total_outstanding = final_df['outstanding_balance'].sum()
+    if "outstanding_balance" in final_df.columns:
+        total_outstanding = final_df["outstanding_balance"].sum()
         logger.info(f"📊 Total outstanding: ${total_outstanding:,.2f}")
 
-    if 'current_status' in final_df.columns:
-        status_counts = final_df['current_status'].value_counts()
+    if "current_status" in final_df.columns:
+        status_counts = final_df["current_status"].value_counts()
         logger.info("\\n\ud83d\udcc8 Loan status distribution:")
         for status, count in status_counts.head(5).items():
             pct = (count / len(final_df)) * 100
@@ -335,5 +347,5 @@ def main():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
