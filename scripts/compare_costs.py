@@ -46,8 +46,7 @@ def _parse_cost_value(value) -> float:
 
 
 def _check_cost_regression(
-    current_cost: float, baseline_cost: float,
-    scenario_threshold: float
+    current_cost: float, baseline_cost: float, scenario_threshold: float
 ) -> tuple[bool, float, float]:
     """Check cost regression and return (alert, increase, increase_pct)."""
     increase = (current_cost - baseline_cost) / baseline_cost
@@ -57,8 +56,12 @@ def _check_cost_regression(
 
 
 def _print_cost_result(
-    scenario_name: str, baseline_cost: float, current_cost: float,
-    increase_pct: float, scenario_threshold: float, alert: bool
+    scenario_name: str,
+    baseline_cost: float,
+    current_cost: float,
+    increase_pct: float,
+    scenario_threshold: float,
+    alert: bool,
 ) -> None:
     """Print cost comparison result."""
     status = "🚨 ALERT" if alert else "✅ OK"
@@ -71,9 +74,7 @@ def _print_cost_result(
         print("  ⚠️  Cost increased beyond acceptable threshold!")
 
 
-def _check_budget_limits(
-    scenario_data: dict, baseline_data: dict
-) -> bool:
+def _check_budget_limits(scenario_data: dict, baseline_data: dict) -> bool:
     """Check token and API call budget limits. Returns True if all limits exceeded."""
     budget_exceeded = False
 
@@ -93,8 +94,7 @@ def _check_budget_limits(
 
 
 def _process_scenario(
-    scenario_name: str, scenario_data: dict, baseline_data: dict,
-    default_threshold: float
+    scenario_name: str, scenario_data: dict, baseline_data: dict, default_threshold: float
 ) -> bool:
     """Process a single scenario and return whether all checks passed."""
     current_cost = scenario_data.get("total_cost_usd", 0.0)
@@ -105,13 +105,10 @@ def _process_scenario(
         return True
 
     scenario_threshold = baseline_data.get("threshold", default_threshold)
-    alert, _, increase_pct = _check_cost_regression(
-        current_cost, baseline_cost, scenario_threshold
-    )
+    alert, _, increase_pct = _check_cost_regression(current_cost, baseline_cost, scenario_threshold)
 
     _print_cost_result(
-        scenario_name, baseline_cost, current_cost, increase_pct,
-        scenario_threshold, alert
+        scenario_name, baseline_cost, current_cost, increase_pct, scenario_threshold, alert
     )
 
     budget_exceeded = _check_budget_limits(scenario_data, baseline_data)

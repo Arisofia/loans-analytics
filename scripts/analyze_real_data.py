@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Quick analysis of real Abaco data files."""
 
-import pandas as pd
 from pathlib import Path
-import sys
+
+import pandas as pd
 
 # Define files
 FILES = {
@@ -29,7 +29,7 @@ def main():
             print(f"   Columns ({len(df.columns)}): {', '.join(df.columns)}")
 
             # Show sample
-            print(f"\n   First row sample:")
+            print("\n   First row sample:")
             for col in df.columns[:5]:
                 print(f"     {col}: {df[col].iloc[0]}")
             if len(df.columns) > 5:

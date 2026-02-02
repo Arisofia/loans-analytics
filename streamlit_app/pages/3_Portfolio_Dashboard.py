@@ -38,11 +38,12 @@ st.set_page_config(
     page_title="Abaco Loans Analytics",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 # Custom CSS for better styling
-st.markdown("""
+st.markdown(
+    """
 <style>
     .main-header {
         font-size: 2.5rem;
@@ -72,7 +73,9 @@ st.markdown("""
     .status-default { background-color: #dc3545; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
     .status-paid-off { background-color: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # Required columns for loan data
 REQUIRED_COLUMNS = [
@@ -87,7 +90,7 @@ REQUIRED_COLUMNS = [
     "current_status",
     "payment_history_json",
     "risk_score",
-    "region"
+    "region",
 ]
 
 
@@ -190,7 +193,7 @@ def render_metrics_cards(metrics: dict[str, Any]):
         st.metric(
             label="💰 Total Portfolio Value",
             value=f"€{metrics['total_portfolio']:,.0f}",
-            delta=f"{metrics['total_loans']} loans"
+            delta=f"{metrics['total_loans']} loans",
         )
 
     with col2:
@@ -205,7 +208,7 @@ def render_metrics_cards(metrics: dict[str, Any]):
             label="⚠️ Delinquency Rate (30+ DPD)",
             value=f"{metrics['delinquency_rate_30']:.1f}%",
             delta=f"60+: {metrics['delinquency_rate_60']:.1f}%",
-            delta_color="inverse"
+            delta_color="inverse",
         )
 
     with col4:
@@ -213,12 +216,15 @@ def render_metrics_cards(metrics: dict[str, Any]):
             label="🎯 PAR > 30",
             value=f"{metrics['par_30_rate']:.2f}%",
             delta=f"Expected Loss: {metrics['expected_loss_rate']:.2f}%",
-            delta_color="inverse"
+            delta_color="inverse",
         )
 
 
 def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
     """Create delinquency trend line chart."""
+    # Constants
+    CHART_MODE = "lines+markers"
+
     df = df.copy()
     df["origination_date"] = pd.to_datetime(df["origination_date"])
     df = calculate_days_past_due(df)
@@ -252,6 +258,7 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
             x=cohort_df["month"],
             y=cohort_df["DPD 30+"],
             name="30+ Days",
+            mode=CHART_MODE,
             mode="lines+markers",
             line={"color": "#ffc107", "width": 2},
         )
@@ -261,6 +268,7 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
             x=cohort_df["month"],
             y=cohort_df["DPD 60+"],
             name="60+ Days",
+            mode=CHART_MODE,
             mode="lines+markers",
             line={"color": "#ff9800", "width": 2},
         )
@@ -270,6 +278,7 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
             x=cohort_df["month"],
             y=cohort_df["DPD 90+"],
             name="90+ Days",
+            mode=CHART_MODE,
             mode="lines+markers",
             line={"color": "#dc3545", "width": 2},
         )
@@ -298,6 +307,7 @@ def create_risk_distribution(df: pd.DataFrame) -> go.Figure:
     )
 
     fig.update_layout(
+        xaxis_title="Risk Score", yaxis_title="Number of Loans", height=400, showlegend=False
         xaxis_title="Risk Score",
         yaxis_title="Number of Loans",
         height=400,
@@ -316,9 +326,7 @@ def build_agent_portfolio_context(df: pd.DataFrame) -> dict[str, Any]:
         else {}
     )
     region_counts = (
-        df["region"].value_counts(dropna=False).head(10).to_dict()
-        if "region" in df.columns
-        else {}
+        df["region"].value_counts(dropna=False).head(10).to_dict() if "region" in df.columns else {}
     )
 
     def to_native(value: Any) -> Any:
@@ -434,6 +442,7 @@ def render_loan_table(df: pd.DataFrame):
 
     with col2:
         regions = sorted(df["region"].unique().tolist())
+        region_filter = st.multiselect("Region", options=regions, default=[])
         region_filter = st.multiselect(
             "Region",
             options=regions,
@@ -489,6 +498,7 @@ def render_loan_table(df: pd.DataFrame):
         ]
     ].copy()
 
+    display_df["principal_amount"] = display_df["principal_amount"].apply(lambda x: f"€{x:,.2f}")
     display_df["principal_amount"] = display_df["principal_amount"].apply(
         lambda x: f"€{x:,.2f}"
     )
@@ -511,7 +521,7 @@ def render_loan_table(df: pd.DataFrame):
             "origination_date": st.column_config.DateColumn("Orig. Date", width="small"),
             "current_status": st.column_config.TextColumn("Status", width="small"),
             "risk_score": st.column_config.TextColumn("Risk", width="small"),
-        }
+        },
     )
 
     # Export buttons
@@ -528,6 +538,9 @@ def render_loan_table(df: pd.DataFrame):
 
 # Main app
 def main():
+    st.markdown(
+        '<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True
+    )
     st.markdown('<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True)
 
     # Sidebar - File upload
@@ -582,7 +595,7 @@ def main():
 
         st.markdown("---")
         st.caption("💡 Upload your own CSV or load sample Spanish loan data")
-    
+
     # Handle file upload
     if uploaded_file is not None:
         try:
@@ -602,6 +615,7 @@ def main():
             return
 
     # Check if data is loaded
+    if "data_loaded" not in st.session_state or not st.session_state["data_loaded"]:
     if (
         "data_loaded" not in st.session_state
         or not st.session_state["data_loaded"]
@@ -673,6 +687,7 @@ def main():
             "📋 Loan Table",
         ]
     )
+
     
     with tab1:
         st.plotly_chart(create_delinquency_trend(df), use_container_width=True)
@@ -699,6 +714,13 @@ def main():
         st.plotly_chart(create_regional_heatmap(df), use_container_width=True)
 
         st.markdown("#### Regional Distribution")
+        regional_summary = (
+            df.groupby("region")
+            .agg({"principal_amount": "sum", "loan_id": "count", "risk_score": "mean"})
+            .round(2)
+        )
+        regional_summary.columns = ["Total Amount (€)", "Loan Count", "Avg Risk"]
+        regional_summary = regional_summary.sort_values("Total Amount (€)", ascending=False)
         regional_summary = df.groupby("region").agg(
             {
                 "principal_amount": "sum",
@@ -723,6 +745,7 @@ def main():
         for i, (status, count) in enumerate(status_counts.items()):
             col = [col1, col2, col3, col4][i % 4]
             with col:
+                st.metric(status.title(), f"{count} ({status_pct[status]:.1f}%)")
                 st.metric(
                     status.title(),
                     f"{count} ({status_pct[status]:.1f}%)",
