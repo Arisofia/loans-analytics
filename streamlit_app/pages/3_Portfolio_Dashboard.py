@@ -222,6 +222,9 @@ def render_metrics_cards(metrics: dict[str, Any]):
 
 def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
     """Create delinquency trend line chart."""
+    # Constants
+    CHART_MODE = "lines+markers"
+
     df = df.copy()
     df["origination_date"] = pd.to_datetime(df["origination_date"])
     df = calculate_days_past_due(df)
@@ -255,8 +258,8 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
             x=cohort_df["month"],
             y=cohort_df["DPD 30+"],
             name="30+ Days",
-            mode="lines+markers",
-            line=dict(color="#ffc107", width=2),
+            mode=CHART_MODE,
+            line={"color": "#ffc107", "width": 2},
         )
     )
     fig.add_trace(
@@ -264,8 +267,8 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
             x=cohort_df["month"],
             y=cohort_df["DPD 60+"],
             name="60+ Days",
-            mode="lines+markers",
-            line=dict(color="#ff9800", width=2),
+            mode=CHART_MODE,
+            line={"color": "#ff9800", "width": 2},
         )
     )
     fig.add_trace(
@@ -273,8 +276,8 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
             x=cohort_df["month"],
             y=cohort_df["DPD 90+"],
             name="90+ Days",
-            mode="lines+markers",
-            line=dict(color="#dc3545", width=2),
+            mode=CHART_MODE,
+            line={"color": "#dc3545", "width": 2},
         )
     )
 
