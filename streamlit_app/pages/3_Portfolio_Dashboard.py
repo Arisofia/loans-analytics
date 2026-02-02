@@ -21,6 +21,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+from python.multi_agent.guardrails import Guardrails
+from python.multi_agent.orchestrator import MultiAgentOrchestrator
+from python.multi_agent.protocol import LLMProvider
+
 # Add project root to path
 ROOT_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -28,10 +32,6 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
-
-from python.multi_agent.guardrails import Guardrails
-from python.multi_agent.orchestrator import MultiAgentOrchestrator
-from python.multi_agent.protocol import LLMProvider
 
 # Page configuration
 st.set_page_config(
@@ -259,6 +259,7 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
             y=cohort_df["DPD 30+"],
             name="30+ Days",
             mode=CHART_MODE,
+            mode="lines+markers",
             line={"color": "#ffc107", "width": 2},
         )
     )
@@ -268,6 +269,7 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
             y=cohort_df["DPD 60+"],
             name="60+ Days",
             mode=CHART_MODE,
+            mode="lines+markers",
             line={"color": "#ff9800", "width": 2},
         )
     )
@@ -277,6 +279,7 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
             y=cohort_df["DPD 90+"],
             name="90+ Days",
             mode=CHART_MODE,
+            mode="lines+markers",
             line={"color": "#dc3545", "width": 2},
         )
     )
@@ -305,6 +308,10 @@ def create_risk_distribution(df: pd.DataFrame) -> go.Figure:
 
     fig.update_layout(
         xaxis_title="Risk Score", yaxis_title="Number of Loans", height=400, showlegend=False
+        xaxis_title="Risk Score",
+        yaxis_title="Number of Loans",
+        height=400,
+        showlegend=False,
     )
 
     return fig
@@ -436,6 +443,11 @@ def render_loan_table(df: pd.DataFrame):
     with col2:
         regions = sorted(df["region"].unique().tolist())
         region_filter = st.multiselect("Region", options=regions, default=[])
+        region_filter = st.multiselect(
+            "Region",
+            options=regions,
+            default=[],
+        )
 
     with col3:
         min_amount = float(df["principal_amount"].min())
@@ -487,6 +499,9 @@ def render_loan_table(df: pd.DataFrame):
     ].copy()
 
     display_df["principal_amount"] = display_df["principal_amount"].apply(lambda x: f"€{x:,.2f}")
+    display_df["principal_amount"] = display_df["principal_amount"].apply(
+        lambda x: f"€{x:,.2f}"
+    )
     display_df["interest_rate"] = display_df["interest_rate"].apply(lambda x: f"{x:.2%}")
     display_df["risk_score"] = display_df["risk_score"].apply(lambda x: f"{x:.4f}")
 
@@ -526,6 +541,7 @@ def main():
     st.markdown(
         '<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True
     )
+    st.markdown('<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True)
 
     # Sidebar - File upload
     with st.sidebar:
@@ -600,6 +616,10 @@ def main():
 
     # Check if data is loaded
     if "data_loaded" not in st.session_state or not st.session_state["data_loaded"]:
+    if (
+        "data_loaded" not in st.session_state
+        or not st.session_state["data_loaded"]
+    ):
         st.info(
             "👆 Please upload a CSV file or load sample data from the sidebar to begin analysis"
         )
@@ -668,6 +688,7 @@ def main():
         ]
     )
 
+    
     with tab1:
         st.plotly_chart(create_delinquency_trend(df), use_container_width=True)
 
@@ -700,6 +721,17 @@ def main():
         )
         regional_summary.columns = ["Total Amount (€)", "Loan Count", "Avg Risk"]
         regional_summary = regional_summary.sort_values("Total Amount (€)", ascending=False)
+        regional_summary = df.groupby("region").agg(
+            {
+                "principal_amount": "sum",
+                "loan_id": "count",
+                "risk_score": "mean",
+            }
+        ).round(2)
+        regional_summary.columns = ["Total Amount (€)", "Loan Count", "Avg Risk"]
+        regional_summary = regional_summary.sort_values(
+            "Total Amount (€)", ascending=False
+        )
         st.dataframe(regional_summary, use_container_width=True)
 
     with tab4:
@@ -714,6 +746,10 @@ def main():
             col = [col1, col2, col3, col4][i % 4]
             with col:
                 st.metric(status.title(), f"{count} ({status_pct[status]:.1f}%)")
+                st.metric(
+                    status.title(),
+                    f"{count} ({status_pct[status]:.1f}%)",
+                )
 
     with tab5:
         render_loan_table(df)
