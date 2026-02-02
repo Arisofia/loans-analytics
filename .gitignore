@@ -178,11 +178,34 @@ __pycache__/
 .pytest_cache/
 
 # Temporary session/status report files (should not be committed)
-AUTOMATION_SUMMARY*.md
-CLEANUP_COMPLETE.md
+AUTOMATION_*.md
+CLEANUP_*.md
+COMPLETION_*.md
+COMPREHENSIVE_*.md
 CONSOLIDATION_*.md
-OPTIMIZATION_REPORT.md
-PROJECT_CLEANUP_STATUS.md
-SESSION_COMPLETE.md
+CRITICAL_FIX_*.md
+FINAL_*.md
+FIX_ALL_*.md
+OPTIMIZATION_*.md
+PROJECT_CLEANUP_*.md
+SESSION_*.md
+STATUS_*.md
 TECHNICAL_DEBT_*.md
+WORKFLOW_*.md
 reports/
+
+# One-time fix scripts (archive in scripts/archives/ if needed)
+/fix_*.py
+/cleanup_*.sh
+
+# Legacy build systems (not applicable to this project)
+/build.gradle
+/gradlew
+/gradlew.bat
+/gradle/
+
+# Orphaned files
+/main.ts
+/profile.ps1
+/AzuriteConfig
+/__azurite_db_*.json
