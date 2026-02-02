@@ -6,6 +6,7 @@ properly prevents directory traversal attacks.
 """
 
 import pytest
+
 from python.apps.analytics.api.main import _sanitize_and_resolve
 
 
