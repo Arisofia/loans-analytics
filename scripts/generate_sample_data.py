@@ -20,6 +20,7 @@ import csv
 import json
 import random
 import secrets
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -138,11 +139,13 @@ def _calculate_days_late(payment_status: str, status: str) -> int:
     return 0
 
 
-def _calculate_amount_paid(payment_status: str) -> float:
-    """Calculate amount paid based on payment status."""
+def _calculate_amount_paid(payment_status: str) -> Decimal:
+    """Calculate amount paid based on payment status using Decimal for precision."""
     if payment_status == "missed":
-        return 0
-    return round(random.uniform(5000, 15000), 2)
+        return Decimal("0.00")
+    # Generate random amount between 5000 and 15000 with 2 decimal places
+    amount_float = random.uniform(5000, 15000)
+    return Decimal(str(amount_float)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def generate_payment_history(
@@ -169,10 +172,16 @@ def generate_payment_history(
 def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
     """Generate a single realistic loan record."""
     # Amount: log-normal distribution (median ~$75K, range $10K-$500K)
-    amount = min(500000, max(10000, random.lognormvariate(11.2, 0.7)))
+    # Use Decimal for financial accuracy
+    amount_float = random.lognormvariate(11.2, 0.7)
+    amount_float = min(500000, max(10000, amount_float))
+    amount = Decimal(str(amount_float)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     # Interest rate: normal distribution (mean 34%, std 4%)
-    rate = min(45, max(28, random.gauss(34, 4)))
+    # Store as Decimal percentage (e.g., Decimal("34.50") for 34.50%)
+    rate_float = random.gauss(34, 4)
+    rate_float = min(45, max(28, rate_float))
+    rate = Decimal(str(rate_float)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     # Term: common terms (12, 18, 24, 36 months)
     term_months = random.choices([12, 18, 24, 36], weights=[0.2, 0.3, 0.3, 0.2])[0]
@@ -216,10 +225,10 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
             f"@{company_name.replace(' ', '').lower()}.mx"
         ),
         "borrower_id_number": generate_mexican_rfc(),
-        "amount": round(amount, 2),  # Match expected column name
-        "principal_amount": round(amount, 2),
-        "rate": round(rate / 100, 4),  # Convert to decimal (0.34 for 34%)
-        "interest_rate": round(rate, 2),
+        "amount": str(amount),  # Convert Decimal to string for CSV
+        "principal_amount": str(amount),
+        "rate": str(rate / Decimal("100")),  # Convert percentage to decimal (e.g., 0.3450)
+        "interest_rate": str(rate),  # Keep as percentage string
         "term_months": term_months,
         "origination_date": origination_date.strftime("%Y-%m-%d"),
         "status": status,  # Match expected column name
