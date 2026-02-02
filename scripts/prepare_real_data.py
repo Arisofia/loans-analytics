@@ -102,16 +102,24 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
     logger.info(f"   📋 New columns: {', '.join(mapped_cols[:10])}{'...' if len(mapped_cols) > 10 else ''}")
     
     # Add computed fields if missing
-    if 'amount' not in mapped_df.columns and 'principal_amount' in mapped_df.columns:
-        mapped_df['amount'] = mapped_df['principal_amount']
+    if 'amount' not in mapped_df.columns:
+        if 'principal_amount' in mapped_df.columns:
+            mapped_df['amount'] = mapped_df['principal_amount']
+        else:
+            mapped_df['amount'] = 0
+            logger.info(f"   ⚠️  Added 'amount' with default value 0")
     
-    if 'status' not in mapped_df.columns and 'current_status' in mapped_df.columns:
-        mapped_df['status'] = mapped_df['current_status']
+    if 'status' not in mapped_df.columns:
+        if 'current_status' in mapped_df.columns:
+            mapped_df['status'] = mapped_df['current_status']
+        else:
+            mapped_df['status'] = 'Unknown'
+            logger.info(f"   ⚠️  Added 'status' with default value 'Unknown'")
     
     # Convert interest rate to decimal if it's percentage
     if 'interest_rate' in mapped_df.columns:
         # Check if values are > 1 (likely percentage format like 34.5)
-        sample_rate = mapped_df['interest_rate'].iloc[0]
+        sample_rate = mapped_df['interest_rate'].dropna().iloc[0] if not mapped_df['interest_rate'].dropna().empty else 0
         if sample_rate > 1:
             mapped_df['interest_rate'] = mapped_df['interest_rate'] / 100
             logger.info(f"   🔄 Converted interest_rate from percentage to decimal")
@@ -133,6 +141,49 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
         
         mapped_df['term_months'] = mapped_df.apply(convert_to_months, axis=1)
         logger.info(f"   🔄 Normalized term_months from various units")
+    
+    # Calculate maturity_date if missing (origination_date + term_months)
+    if 'maturity_date' not in mapped_df.columns:
+        if 'origination_date' in mapped_df.columns and 'term_months' in mapped_df.columns:
+            try:
+                mapped_df['origination_date'] = pd.to_datetime(mapped_df['origination_date'], errors='coerce')
+                mapped_df['maturity_date'] = mapped_df.apply(
+                    lambda row: row['origination_date'] + pd.DateOffset(months=int(row['term_months'])) 
+                    if pd.notna(row['origination_date']) and pd.notna(row['term_months']) 
+                    else pd.NaT,
+                    axis=1
+                )
+                logger.info(f"   ✅ Calculated maturity_date from origination_date + term_months")
+            except Exception as e:
+                logger.warning(f"   ⚠️  Could not calculate maturity_date: {e}")
+                mapped_df['maturity_date'] = pd.NaT
+        else:
+            mapped_df['maturity_date'] = pd.NaT
+            logger.info(f"   ⚠️  Added 'maturity_date' with null values")
+    
+    # Ensure outstanding_balance uses current balance if available
+    if 'current_balance' in mapped_df.columns and mapped_df['outstanding_balance'].isna().sum() > 0:
+        mapped_df['outstanding_balance'] = mapped_df['outstanding_balance'].fillna(mapped_df['current_balance'])
+        logger.info(f"   🔄 Filled missing outstanding_balance with current_balance")
+    
+    # Add other required columns with defaults if missing
+    required_columns = {
+        'loan_id': 'UNKNOWN',
+        'borrower_id': 'UNKNOWN',
+        'borrower_name': 'Unknown',
+        'principal_amount': 0.0,
+        'interest_rate': 0.0,
+        'term_months': 0,
+        'origination_date': pd.NaT,
+        'current_status': 'Unknown',
+        'days_past_due': 0,
+        'outstanding_balance': 0.0
+    }
+    
+    for col, default_val in required_columns.items():
+        if col not in mapped_df.columns:
+            mapped_df[col] = default_val
+            logger.info(f"   ⚠️  Added required column '{col}' with default value")
     
     return mapped_df
 
