@@ -35,18 +35,8 @@ def load_table(data_dir: Path, table_name: str) -> pd.DataFrame:
     return df
 
 
-def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Map real Abaco columns to pipeline schema.
-
-    Expected pipeline columns (from validation.py):
-    - loan_id, borrower_id, borrower_name, principal_amount,
-    - interest_rate, term_months, origination_date, maturity_date,
-    - current_status, days_past_due, outstanding_balance, etc.
-    """
-    logger.info("\n🔄 Mapping to pipeline schema...")
-
-    # Real Abaco column mappings
+def _apply_column_rename(df: pd.DataFrame) -> pd.DataFrame:
+    """Apply column name mappings."""
     column_mapping = {
         # Loan identifiers
         "Loan ID": "loan_id",
@@ -88,93 +78,127 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
         "True Outstanding Loan Value": "current_balance",
     }
 
-    # Apply mapping
-    logger.info(f"   📋 Original columns: {len(merged_df.columns)}")
-    mapped_df = merged_df.rename(columns=column_mapping)
+    logger.info(f"   📋 Original columns: {len(df.columns)}")
+    renamed_df = df.rename(columns=column_mapping)
 
-    # Log what was mapped
-    mapped_cols = [col for col in column_mapping.values() if col in mapped_df.columns]
+    mapped_cols = [col for col in column_mapping.values() if col in renamed_df.columns]
     logger.info(f"   ✅ Mapped {len(mapped_cols)} columns")
     logger.info(
         f"   📋 New columns: {', '.join(mapped_cols[:10])}{'...' if len(mapped_cols) > 10 else ''}"
     )
 
-    # Add computed fields if missing
-    if "amount" not in mapped_df.columns:
-        if "principal_amount" in mapped_df.columns:
-            mapped_df["amount"] = mapped_df["principal_amount"]
+    return renamed_df
+
+
+def _add_computed_fields(df: pd.DataFrame) -> pd.DataFrame:
+    """Add computed fields like amount and status."""
+    # Add amount if missing
+    if "amount" not in df.columns:
+        if "principal_amount" in df.columns:
+            df["amount"] = df["principal_amount"]
         else:
-            mapped_df["amount"] = 0
+            df["amount"] = 0
             logger.info("   ⚠️  Added 'amount' with default value 0")
 
-    if "status" not in mapped_df.columns:
-        if "current_status" in mapped_df.columns:
-            mapped_df["status"] = mapped_df["current_status"]
+    # Add status if missing
+    if "status" not in df.columns:
+        if "current_status" in df.columns:
+            df["status"] = df["current_status"]
         else:
-            mapped_df["status"] = "Unknown"
+            df["status"] = "Unknown"
             logger.info("   ⚠️  Added 'status' with default value 'Unknown'")
 
-    # Convert interest rate to decimal if it's percentage
-    if "interest_rate" in mapped_df.columns:
-        # Check if values are > 1 (likely percentage format like 34.5)
-        sample_rate = (
-            mapped_df["interest_rate"].dropna().iloc[0]
-            if not mapped_df["interest_rate"].dropna().empty
-            else 0
+    return df
+
+
+def _normalize_interest_rate(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert interest rate to decimal if it's percentage."""
+    if "interest_rate" not in df.columns:
+        return df
+
+    sample_rate = (
+        df["interest_rate"].dropna().iloc[0]
+        if not df["interest_rate"].dropna().empty
+        else 0
+    )
+
+    if sample_rate > 1:
+        df["interest_rate"] = df["interest_rate"] / 100
+        logger.info("   🔄 Converted interest_rate from percentage to decimal")
+
+    return df
+
+
+def _convert_term_to_months(row: pd.Series) -> float:
+    """Convert term duration to months based on unit."""
+    term = row.get("term_months", 0)
+    unit = str(row.get("term_unit", "months")).lower()
+
+    if "day" in unit:
+        return term / 30
+    elif "week" in unit:
+        return term / 4
+    elif "year" in unit:
+        return term * 12
+    else:  # months
+        return term
+
+
+def _normalize_term_months(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize term_months from various units."""
+    if "term_unit" not in df.columns or "term_months" not in df.columns:
+        return df
+
+    df["term_months"] = df.apply(_convert_term_to_months, axis=1)
+    logger.info("   🔄 Normalized term_months from various units")
+
+    return df
+
+
+def _calculate_maturity_date(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate maturity_date from origination_date + term_months."""
+    if "maturity_date" in df.columns:
+        return df
+
+    if "origination_date" not in df.columns or "term_months" not in df.columns:
+        df["maturity_date"] = pd.NaT
+        logger.info("   ⚠️  Added 'maturity_date' with null values")
+        return df
+
+    try:
+        df["origination_date"] = pd.to_datetime(df["origination_date"], errors="coerce")
+        df["maturity_date"] = df.apply(
+            lambda row: (
+                row["origination_date"] + pd.DateOffset(months=int(row["term_months"]))
+                if pd.notna(row["origination_date"]) and pd.notna(row["term_months"])
+                else pd.NaT
+            ),
+            axis=1,
         )
-        if sample_rate > 1:
-            mapped_df["interest_rate"] = mapped_df["interest_rate"] / 100
-            logger.info("   🔄 Converted interest_rate from percentage to decimal")
+        logger.info("   ✅ Calculated maturity_date from origination_date + term_months")
+    except Exception as e:
+        logger.warning(f"   ⚠️  Could not calculate maturity_date: {e}")
+        df["maturity_date"] = pd.NaT
 
-    # Convert term to months if in different unit
-    if "term_unit" in mapped_df.columns and "term_months" in mapped_df.columns:
-        # Handle 'Days', 'Weeks', 'Months', 'Years'
-        def convert_to_months(row):
-            term = row.get("term_months", 0)
-            unit = str(row.get("term_unit", "months")).lower()
-            if "day" in unit:
-                return term / 30
-            elif "week" in unit:
-                return term / 4
-            elif "year" in unit:
-                return term * 12
-            else:  # months
-                return term
+    return df
 
-        mapped_df["term_months"] = mapped_df.apply(convert_to_months, axis=1)
-        logger.info("   🔄 Normalized term_months from various units")
 
-    # Calculate maturity_date if missing (origination_date + term_months)
-    if "maturity_date" not in mapped_df.columns:
-        if "origination_date" in mapped_df.columns and "term_months" in mapped_df.columns:
-            try:
-                mapped_df["origination_date"] = pd.to_datetime(
-                    mapped_df["origination_date"], errors="coerce"
-                )
-                mapped_df["maturity_date"] = mapped_df.apply(
-                    lambda row: (
-                        row["origination_date"] + pd.DateOffset(months=int(row["term_months"]))
-                        if pd.notna(row["origination_date"]) and pd.notna(row["term_months"])
-                        else pd.NaT
-                    ),
-                    axis=1,
-                )
-                logger.info("   ✅ Calculated maturity_date from origination_date + term_months")
-            except Exception as e:
-                logger.warning(f"   ⚠️  Could not calculate maturity_date: {e}")
-                mapped_df["maturity_date"] = pd.NaT
-        else:
-            mapped_df["maturity_date"] = pd.NaT
-            logger.info("   ⚠️  Added 'maturity_date' with null values")
+def _fill_outstanding_balance(df: pd.DataFrame) -> pd.DataFrame:
+    """Fill missing outstanding_balance with current_balance."""
+    if "current_balance" not in df.columns:
+        return df
 
-    # Ensure outstanding_balance uses current balance if available
-    if "current_balance" in mapped_df.columns and mapped_df["outstanding_balance"].isna().sum() > 0:
-        mapped_df["outstanding_balance"] = mapped_df["outstanding_balance"].fillna(
-            mapped_df["current_balance"]
-        )
-        logger.info("   🔄 Filled missing outstanding_balance with current_balance")
+    if "outstanding_balance" not in df.columns or df["outstanding_balance"].isna().sum() == 0:
+        return df
 
-    # Add other required columns with defaults if missing
+    df["outstanding_balance"] = df["outstanding_balance"].fillna(df["current_balance"])
+    logger.info("   🔄 Filled missing outstanding_balance with current_balance")
+
+    return df
+
+
+def _add_required_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Add required columns with default values if missing."""
     required_columns = {
         "loan_id": "UNKNOWN",
         "borrower_id": "UNKNOWN",
@@ -189,37 +213,41 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
     }
 
     for col, default_val in required_columns.items():
-        if col not in mapped_df.columns:
-            mapped_df[col] = default_val
+        if col not in df.columns:
+            df[col] = default_val
             logger.info(f"   ⚠️  Added required column '{col}' with default value")
 
-    return mapped_df
+    return df
 
 
-def main():
-    """Main data preparation pipeline."""
-    logger.info("=" * 60)
-    logger.info("🚀 Preparing Real Abaco Data for Pipeline")
-    logger.info("=" * 60)
+def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Map real Abaco columns to pipeline schema.
 
-    # Use Downloads folder as source
-    downloads_dir = Path.home() / "Downloads"
-    data_dir = Path(__file__).parent.parent / "data" / "raw"
-    output_file = data_dir / f"abaco_real_data_{datetime.now():%Y%m%d}.csv"
+    Expected pipeline columns (from validation.py):
+    - loan_id, borrower_id, borrower_name, principal_amount,
+    - interest_rate, term_months, origination_date, maturity_date,
+    - current_status, days_past_due, outstanding_balance, etc.
+    """
+    logger.info("\n🔄 Mapping to pipeline schema...")
 
-    # Updated file mappings with actual filenames
-    files_in_downloads = {
-        "loan_data": downloads_dir / "Abaco - Loan Tape_Loan Data_Table (3).csv",
-        "customer": downloads_dir / "Abaco - Loan Tape_Customer Data_Table (3).csv",
-        "collateral": downloads_dir / "Abaco - Loan Tape_Collateral_Table (3).csv",
-        "payment_schedule": downloads_dir / "Abaco - Loan Tape_Payment Schedule_Table (3).csv",
-        "historic_payments": downloads_dir
-        / "Abaco - Loan Tape_Historic Real Payment_Table (3).csv",
-    }
+    # Apply transformations in sequence
+    df = _apply_column_rename(merged_df)
+    df = _add_computed_fields(df)
+    df = _normalize_interest_rate(df)
+    df = _normalize_term_months(df)
+    df = _calculate_maturity_date(df)
+    df = _fill_outstanding_balance(df)
+    df = _add_required_columns(df)
 
-    # Load all tables
-    logger.info(f"\n📂 Loading tables from {downloads_dir}/...")
+    return df
+
+
+def _load_all_tables(files_in_downloads: dict) -> dict | None:
+    """Load all required tables from CSV files."""
+    logger.info(f"\n📂 Loading tables from {files_in_downloads['loan_data'].parent}/...")
     tables = {}
+
     for table_name, filepath in files_in_downloads.items():
         try:
             df = pd.read_csv(filepath)
@@ -227,12 +255,16 @@ def main():
             logger.info(f"   ✅ {table_name}: {len(df):,} rows, {len(df.columns)} columns")
         except FileNotFoundError:
             logger.error(f"   ❌ File not found: {filepath}")
-            return
+            return None
         except Exception as e:
             logger.error(f"   ❌ Error loading {table_name}: {e}")
-            return
+            return None
 
-    # Merge tables
+    return tables
+
+
+def _merge_tables(tables: dict) -> pd.DataFrame:
+    """Merge all tables on Loan ID."""
     logger.info("\n🔗 Merging tables on 'Loan ID'...")
 
     # Start with loan data as base
@@ -241,7 +273,6 @@ def main():
 
     # Merge customer data (left join to preserve all loans)
     if "customer" in tables:
-        # Select customer columns not already in loan_data
         customer_cols = [
             "Customer ID",
             "Loan ID",
@@ -306,37 +337,38 @@ def main():
         logger.info(f"   🔗 + historic payments (aggregated, {len(historic_agg):,} loans)")
 
     logger.info(f"\n   ✅ Merged dataset: {len(merged):,} rows, {len(merged.columns)} columns")
+    return merged
 
-    # Map to pipeline schema
-    final_df = map_to_pipeline_schema(merged)
 
-    # Save
+def _save_output(df: pd.DataFrame, output_file: Path) -> None:
+    """Save processed data to CSV."""
     logger.info(f"\n💾 Saving to: {output_file.name}")
-    final_df.to_csv(output_file, index=False)
-    logger.info(f"   ✅ Saved {len(final_df):,} loans to {output_file}")
+    df.to_csv(output_file, index=False)
+    logger.info(f"   ✅ Saved {len(df):,} loans to {output_file}")
 
-    # Summary
+
+def _log_summary_statistics(df: pd.DataFrame, output_file: Path) -> None:
+    """Log summary statistics about the processed dataset."""
     logger.info("\n" + "=" * 60)
     logger.info("✅ Data Preparation Complete!")
     logger.info("=" * 60)
     logger.info("📄 Output file: %s", output_file)
-    logger.info("📊 Total loans: %d", len(final_df))
-    logger.info("📋 Columns: %d", len(final_df.columns))
+    logger.info("📊 Total loans: %d", len(df))
+    logger.info("📋 Columns: %d", len(df.columns))
 
-    # Show key statistics
-    if "principal_amount" in final_df.columns:
-        total_disbursed = final_df["principal_amount"].sum()
+    if "principal_amount" in df.columns:
+        total_disbursed = df["principal_amount"].sum()
         logger.info(f"💰 Total disbursed: ${total_disbursed:,.2f}")
 
-    if "outstanding_balance" in final_df.columns:
-        total_outstanding = final_df["outstanding_balance"].sum()
+    if "outstanding_balance" in df.columns:
+        total_outstanding = df["outstanding_balance"].sum()
         logger.info(f"📊 Total outstanding: ${total_outstanding:,.2f}")
 
-    if "current_status" in final_df.columns:
-        status_counts = final_df["current_status"].value_counts()
+    if "current_status" in df.columns:
+        status_counts = df["current_status"].value_counts()
         logger.info("\\n\ud83d\udcc8 Loan status distribution:")
         for status, count in status_counts.head(5).items():
-            pct = (count / len(final_df)) * 100
+            pct = (count / len(df)) * 100
             logger.info("   %s: %s (%.1f%%)", status, f"{count:,}", pct)
 
     logger.info("\n🚀 Next steps:")
@@ -345,6 +377,43 @@ def main():
         "  2. Run pipeline: .venv/bin/python scripts/run_data_pipeline.py --input %s --verbose",
         output_file,
     )
+
+
+def main():
+    """Main data preparation pipeline."""
+    logger.info("=" * 60)
+    logger.info("🚀 Preparing Real Abaco Data for Pipeline")
+    logger.info("=" * 60)
+
+    # Use Downloads folder as source
+    downloads_dir = Path.home() / "Downloads"
+    data_dir = Path(__file__).parent.parent / "data" / "raw"
+    output_file = data_dir / f"abaco_real_data_{datetime.now():%Y%m%d}.csv"
+
+    # Updated file mappings with actual filenames
+    files_in_downloads = {
+        "loan_data": downloads_dir / "Abaco - Loan Tape_Loan Data_Table (3).csv",
+        "customer": downloads_dir / "Abaco - Loan Tape_Customer Data_Table (3).csv",
+        "collateral": downloads_dir / "Abaco - Loan Tape_Collateral_Table (3).csv",
+        "payment_schedule": downloads_dir / "Abaco - Loan Tape_Payment Schedule_Table (3).csv",
+        "historic_payments": downloads_dir
+        / "Abaco - Loan Tape_Historic Real Payment_Table (3).csv",
+    }
+
+    # Load all tables
+    tables = _load_all_tables(files_in_downloads)
+    if tables is None:
+        return
+
+    # Merge tables
+    merged = _merge_tables(tables)
+
+    # Map to pipeline schema
+    final_df = map_to_pipeline_schema(merged)
+
+    # Save and summarize
+    _save_output(final_df, output_file)
+    _log_summary_statistics(final_df, output_file)
 
 
 if __name__ == "__main__":
