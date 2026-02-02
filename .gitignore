@@ -219,3 +219,4 @@ reports/
 /fi-analytics/
 /projects/
 /models/*.pkl
+data/agent_outputs/
