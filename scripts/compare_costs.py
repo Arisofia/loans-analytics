@@ -38,6 +38,88 @@ def load_baselines(baseline_file: str) -> dict:
     return {}
 
 
+def _parse_cost_value(value) -> float:
+    """Parse cost value from string or float format."""
+    if isinstance(value, str):
+        return float(value.replace("$", ""))
+    return float(value)
+
+
+def _check_cost_regression(
+    scenario_name: str, current_cost: float, baseline_cost: float,
+    scenario_threshold: float
+) -> tuple[bool, float, float]:
+    """Check cost regression and return (alert, increase, increase_pct)."""
+    increase = (current_cost - baseline_cost) / baseline_cost
+    increase_pct = increase * 100
+    alert = increase > scenario_threshold
+    return alert, increase, increase_pct
+
+
+def _print_cost_result(
+    scenario_name: str, baseline_cost: float, current_cost: float,
+    increase_pct: float, scenario_threshold: float, alert: bool
+) -> None:
+    """Print cost comparison result."""
+    status = "🚨 ALERT" if alert else "✅ OK"
+    print(f"{status} {scenario_name}:")
+    print(f"  Baseline: ${baseline_cost:.4f}")
+    print(f"  Current:  ${current_cost:.4f}")
+    print(f"  Change:   {increase_pct:+.1f}%")
+    print(f"  Threshold: {scenario_threshold*100:.1f}%")
+    if alert:
+        print("  ⚠️  Cost increased beyond acceptable threshold!")
+
+
+def _check_budget_limits(
+    scenario_name: str, scenario_data: dict, baseline_data: dict
+) -> bool:
+    """Check token and API call budget limits. Returns True if all limits exceeded."""
+    budget_exceeded = False
+
+    token_budget = baseline_data.get("token_budget", 0)
+    current_tokens = scenario_data.get("total_tokens", 0)
+    if token_budget > 0 and current_tokens > token_budget:
+        print(f"  ⚠️  Token budget exceeded: {current_tokens} > {token_budget}")
+        budget_exceeded = True
+
+    api_budget = baseline_data.get("api_calls_budget", 0)
+    current_api_calls = scenario_data.get("total_api_calls", 0)
+    if api_budget > 0 and current_api_calls > api_budget:
+        print(f"  ⚠️  API call budget exceeded: {current_api_calls} > {api_budget}")
+        budget_exceeded = True
+
+    return budget_exceeded
+
+
+def _process_scenario(
+    scenario_name: str, scenario_data: dict, baseline_data: dict,
+    default_threshold: float
+) -> bool:
+    """Process a single scenario and return whether all checks passed."""
+    current_cost = scenario_data.get("total_cost_usd", 0.0)
+    baseline_cost = _parse_cost_value(baseline_data.get("baseline_cost", 0.0))
+
+    if baseline_cost == 0:
+        print(f"⚠️  {scenario_name}: No baseline found, skipping")
+        return True
+
+    scenario_threshold = baseline_data.get("threshold", default_threshold)
+    alert, _, increase_pct = _check_cost_regression(
+        scenario_name, current_cost, baseline_cost, scenario_threshold
+    )
+
+    _print_cost_result(
+        scenario_name, baseline_cost, current_cost, increase_pct,
+        scenario_threshold, alert
+    )
+
+    budget_exceeded = _check_budget_limits(scenario_name, scenario_data, baseline_data)
+    print()
+
+    return not alert and not budget_exceeded
+
+
 def compare_costs(report_file: str, threshold: float = 0.10) -> bool:
     """Compare costs in report to baseline.
 
@@ -67,53 +149,9 @@ def compare_costs(report_file: str, threshold: float = 0.10) -> bool:
     print("\n📊 Cost Regression Analysis:\n")
 
     for scenario_name, scenario_data in report.get("scenarios", {}).items():
-        current_cost = scenario_data.get("total_cost_usd", 0.0)
-
         baseline_data = baselines.get("scenarios", {}).get(scenario_name, {})
-        baseline_cost = baseline_data.get("baseline_cost", 0.0)
-
-        # Convert from string format like "$0.05" to float
-        if isinstance(baseline_cost, str):
-            baseline_cost = float(baseline_cost.replace("$", ""))
-
-        if baseline_cost == 0:
-            print(f"⚠️  {scenario_name}: No baseline found, skipping")
-            continue
-
-        # Calculate increase
-        increase = (current_cost - baseline_cost) / baseline_cost
-        increase_pct = increase * 100
-
-        # Check threshold
-        scenario_threshold = baseline_data.get("threshold", threshold)
-        alert = increase > scenario_threshold
-
-        status = "🚨 ALERT" if alert else "✅ OK"
-        print(f"{status} {scenario_name}:")
-        print(f"  Baseline: ${baseline_cost:.4f}")
-        print(f"  Current:  ${current_cost:.4f}")
-        print(f"  Change:   {increase_pct:+.1f}%")
-        print(f"  Threshold: {scenario_threshold*100:.1f}%")
-
-        if alert:
-            all_ok = False
-            print("  ⚠️  Cost increased beyond acceptable threshold!")
-
-        # Check token budget
-        token_budget = baseline_data.get("token_budget", 0)
-        current_tokens = scenario_data.get("total_tokens", 0)
-        if token_budget > 0 and current_tokens > token_budget:
-            print(f"  ⚠️  Token budget exceeded: {current_tokens} > {token_budget}")
-            all_ok = False
-
-        # Check API call budget
-        api_budget = baseline_data.get("api_calls_budget", 0)
-        current_api_calls = scenario_data.get("total_api_calls", 0)
-        if api_budget > 0 and current_api_calls > api_budget:
-            print(f"  ⚠️  API call budget exceeded: {current_api_calls} > {api_budget}")
-            all_ok = False
-
-        print()
+        scenario_ok = _process_scenario(scenario_name, scenario_data, baseline_data, threshold)
+        all_ok = all_ok and scenario_ok
 
     return all_ok
 
