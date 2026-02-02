@@ -72,6 +72,7 @@ def main() -> int:
         logger.error("load_secrets failed: error_type=%s", type(error_obj).__name__)
 
     # SAFE: Full structure with redaction applied for debugging
+    # CodeQL[py/clear-text-logging-sensitive-data]: False positive - redact_dict removes all PII
     safe = redact_dict(results)  # type: ignore[arg-type]
     logger.debug("load_secrets payload (redacted)=%s", safe)
 
