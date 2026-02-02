@@ -57,17 +57,10 @@ resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
       ingress: {
         external: true
         targetPort: 8000
-        allowInsecure: false
-        traffic: [
-          {
-            percentWeight: 100
-            revisionName: 'latest'
-          }
-        ]
+        allowInsecure: true
       }
     }
     template: {
-      revisionSuffix: 'v1'
       containers: [
         {
           name: 'app'
@@ -76,29 +69,13 @@ resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
             cpu: json('0.25')
             memory: '0.5Gi'
           }
-          env: [
-            {
-              name: 'AZURE_STORAGE_ACCOUNT'
-              value: storage.name
-            }
-            {
-              name: 'AZURE_STORAGE_CONNECTION_STRING'
-              secretRef: 'storage-connection'
-            }
-          ]
         }
       ]
       scale: {
         minReplicas: 1
-        maxReplicas: 3
+        maxReplicas: 2
       }
     }
-    secrets: [
-      {
-        name: 'storage-connection'
-        value: 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${storage.listKeys().keys[0].value};EndpointSuffix=core.windows.net'
-      }
-    ]
   }
 }
 
