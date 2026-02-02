@@ -1,4 +1,4 @@
-name: "CodeQL Configuration for LLM Integrations"
+name: 'CodeQL Configuration for LLM Integrations'
 
 # This configuration file customizes CodeQL analysis for AI/LLM security concerns
 
@@ -9,19 +9,19 @@ queries:
 
 # Paths to exclude from analysis
 paths-ignore:
-  - "**/node_modules/**"
-  - "**/test/**"
-  - "**/tests/**"
-  - "**/__pycache__/**"
-  - "**/dist/**"
-  - "**/build/**"
+  - '**/node_modules/**'
+  - '**/test/**'
+  - '**/tests/**'
+  - '**/__pycache__/**'
+  - '**/dist/**'
+  - '**/build/**'
 
 # Paths to specifically include
 paths:
-  - "src/agents/**"
-  - "src/**"
-  - "apps/**"
-  - "streamlit_app/**"
+  - 'src/agents/**'
+  - 'src/**'
+  - 'apps/**'
+  - 'streamlit_app/**'
 
 # Query filters for LLM/AI specific security concerns
 query-filters:
@@ -31,11 +31,12 @@ query-filters:
       paths:
         - python/apps/analytics/api/main.py
 
-  # Alert #42: Clear-text Logging (False Positive)  
+  # Alert #42: Clear-text Logging (False Positive)
   - exclude:
       id: py/clear-text-logging-sensitive-data
       paths:
-        - python/scripts/load_secrets.py
+        - 'python/scripts/load_secrets.py'
+        - 'scripts/load_secrets.py'
 
   # Include all critical and high severity issues
   - include:
@@ -54,6 +55,7 @@ query-filters:
         - external/cwe/cwe-327 # Weak Crypto
         - external/cwe/cwe-502 # Deserialization
         - external/cwe/cwe-798 # Hard-coded Credentials
+
 
 # Custom security patterns for AI agents
 # Note: These would require custom CodeQL queries in practice
