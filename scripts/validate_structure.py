@@ -50,6 +50,72 @@ def check_path(path: Path, item_type: str = "file") -> bool:
         return path.exists()
 
 
+def _validate_file(
+    path_str: str, path: Path, purpose: str, verbose: bool
+) -> Tuple[bool, tuple]:
+    """Validate a single file and return (exists, result_tuple)."""
+    if check_path(path, "file"):
+        print(f"{Colors.GREEN}✅{Colors.END} {path_str}")
+        if verbose:
+            print(f"   Purpose: {purpose}")
+        return True, (path_str, "file", purpose)
+    else:
+        print(f"{Colors.RED}❌{Colors.END} {path_str} (MISSING)")
+        return False, (path_str, "file", purpose)
+
+
+def _validate_expected_files(
+    path: Path, expected_files: list, verbose: bool
+) -> None:
+    """Validate expected files within a directory."""
+    if not (expected_files and verbose):
+        return
+
+    for file_name in expected_files:
+        file_path = path / file_name
+        if file_path.exists():
+            print(f"   {Colors.GREEN}✓{Colors.END} {file_name}")
+        else:
+            print(f"   {Colors.YELLOW}⚠{Colors.END} {file_name} (missing)")
+
+
+def _validate_directory(
+    path_str: str, path: Path, folder_def: dict, purpose: str, verbose: bool
+) -> Tuple[bool, tuple]:
+    """Validate a directory and return (exists, result_tuple)."""
+    if check_path(path, "folder"):
+        print(f"{Colors.GREEN}✅{Colors.END} {path_str}/")
+        if verbose:
+            print(f"   Purpose: {purpose}")
+
+        expected_files = folder_def.get("files", [])
+        _validate_expected_files(path, expected_files, verbose)
+        return True, (path_str, "folder", purpose)
+    else:
+        print(f"{Colors.RED}❌{Colors.END} {path_str}/ (MISSING)")
+        return False, (path_str, "folder", purpose)
+
+
+def _process_folder_item(
+    folder_def: dict, repo_root: Path, verbose: bool
+) -> Tuple[tuple | None, tuple | None]:
+    """Process a single folder definition and return (found_tuple, missing_tuple)."""
+    path_str = folder_def.get("path", "")
+    purpose = folder_def.get("purpose", "N/A")
+
+    if not path_str:
+        return None, None
+
+    path = repo_root / path_str
+
+    if path_str.endswith(".py"):
+        exists, result = _validate_file(path_str, path, purpose, verbose)
+    else:
+        exists, result = _validate_directory(path_str, path, folder_def, purpose, verbose)
+
+    return (result, None) if exists else (None, result)
+
+
 def validate_active_folders(
     structure: Dict, repo_root: Path, verbose: bool = False
 ) -> Tuple[List, List]:
@@ -63,47 +129,11 @@ def validate_active_folders(
     missing = []
 
     for folder_def in folders:
-        path_str = folder_def.get("path", "")
-        purpose = folder_def.get("purpose", "N/A")
-
-        if not path_str:
-            continue
-
-        # Handle single file vs directory
-        path = repo_root / path_str
-
-        if path_str.endswith(".py"):
-            # Single file
-            if check_path(path, "file"):
-                found.append((path_str, "file", purpose))
-                print(f"{Colors.GREEN}✅{Colors.END} {path_str}")
-
-                if verbose:
-                    print(f"   Purpose: {purpose}")
-            else:
-                missing.append((path_str, "file", purpose))
-                print(f"{Colors.RED}❌{Colors.END} {path_str} (MISSING)")
-        else:
-            # Directory
-            if check_path(path, "folder"):
-                found.append((path_str, "folder", purpose))
-                print(f"{Colors.GREEN}✅{Colors.END} {path_str}/")
-
-                if verbose:
-                    print(f"   Purpose: {purpose}")
-
-                # Check for expected files
-                expected_files = folder_def.get("files", [])
-                if expected_files and verbose:
-                    for file_name in expected_files:
-                        file_path = path / file_name
-                        if file_path.exists():
-                            print(f"   {Colors.GREEN}✓{Colors.END} {file_name}")
-                        else:
-                            print(f"   {Colors.YELLOW}⚠{Colors.END} {file_name} (missing)")
-            else:
-                missing.append((path_str, "folder", purpose))
-                print(f"{Colors.RED}❌{Colors.END} {path_str}/ (MISSING)")
+        found_item, missing_item = _process_folder_item(folder_def, repo_root, verbose)
+        if found_item:
+            found.append(found_item)
+        if missing_item:
+            missing.append(missing_item)
 
     return found, missing
 
