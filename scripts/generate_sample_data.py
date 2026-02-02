@@ -20,7 +20,6 @@ import csv
 import json
 import random
 from datetime import datetime, timedelta
-from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -121,16 +120,22 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
     last_name = f"{random.choice(LAST_NAMES)} {random.choice(LAST_NAMES)}"
     company_name = f"{random.choice(['Comercial', 'Distribuidora', 'Importadora', 'Exportadora'])} {last_name.split()[0]}"
 
+    borrower_id = f"BRW{loan_id:06d}"
+    
     return {
         "loan_id": f"ABF{loan_id:06d}",
+        "borrower_id": borrower_id,  # Required for validation
         "borrower_name": company_name,
         "borrower_contact": f"{first_name} {last_name}",
         "borrower_email": f"{first_name.lower()}.{last_name.split()[0].lower()}@{company_name.replace(' ', '').lower()}.mx",
         "borrower_id_number": generate_mexican_rfc(),
+        "amount": round(amount, 2),  # Match expected column name
         "principal_amount": round(amount, 2),
+        "rate": round(rate / 100, 4),  # Convert to decimal (0.34 for 34%)
         "interest_rate": round(rate, 2),
         "term_months": term_months,
         "origination_date": origination_date.strftime("%Y-%m-%d"),
+        "status": status,  # Match expected column name
         "current_status": status,
         "payment_history_json": json.dumps(payment_history),
         "risk_score": risk_score,
@@ -204,7 +209,7 @@ def main():
 
     print(f"✅ Generated {len(loans)} realistic loan records")
     print(f"📁 Output: {output_path}")
-    print(f"\nDistribution:")
+    print("\nDistribution:")
     status_counts = {}
     for loan in loans:
         status = loan["current_status"]
