@@ -50,6 +50,9 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2023-04-01-preview' 
 resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
   name: webAppName
   location: location
+  tags: {
+    'azd-service-name': 'abaco-loans-analytics'
+  }
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
