@@ -111,10 +111,10 @@ REGIONS = [
 
 def generate_mexican_rfc() -> str:
     """Generate realistic Mexican RFC (Registro Federal de Contribuyentes).
-    
+
     RFC format: 4 letters + 6 digits + 3 alphanumeric characters (13 total).
     Example: GARC850101ABC
-    
+
     Returns:
         str: A randomly generated RFC string.
     """
@@ -126,12 +126,12 @@ def generate_mexican_rfc() -> str:
 
 def _determine_payment_status(loan_status: str, month: int, current_month: int) -> str:
     """Determine payment status based on loan status and month.
-    
+
     Args:
         loan_status: Current loan status ('current', 'delinquent', 'defaulted', 'paid_off').
         month: Payment month number (1-based).
         current_month: Current month in loan lifecycle.
-    
+
     Returns:
         str: Payment status ('paid', 'late', or 'missed').
     """
@@ -146,11 +146,11 @@ def _determine_payment_status(loan_status: str, month: int, current_month: int) 
 
 def _calculate_days_late(payment_status: str, loan_status: str) -> int:
     """Calculate days late based on payment status.
-    
+
     Args:
         payment_status: Individual payment status ('paid', 'late', 'missed').
         loan_status: Overall loan status ('current', 'delinquent', 'defaulted', 'paid_off').
-    
+
     Returns:
         int: Number of days payment is late (0 if paid on time).
     """
@@ -165,12 +165,12 @@ def _calculate_days_late(payment_status: str, loan_status: str) -> int:
 
 def _calculate_amount_paid(payment_status: str) -> Decimal:
     """Calculate amount paid based on payment status.
-    
+
     Uses Decimal for financial precision (2 decimal places).
-    
+
     Args:
         payment_status: Individual payment status ('paid', 'late', 'missed').
-    
+
     Returns:
         Decimal: Amount paid (MXN 5,000-15,000 or 0.00 if missed).
     """
@@ -185,15 +185,15 @@ def generate_payment_history(
     term_months: int, current_month: int, loan_status: str
 ) -> list[dict[str, Any]]:
     """Generate realistic payment history for a loan.
-    
+
     Creates month-by-month payment records with realistic delinquency patterns
     based on the loan's overall status.
-    
+
     Args:
         term_months: Total loan term in months (12, 18, 24, or 36).
         current_month: Number of months elapsed since origination.
         loan_status: Overall loan status ('current', 'delinquent', 'defaulted', 'paid_off').
-    
+
     Returns:
         list[dict]: Payment history with keys: month, status, days_late, amount_paid.
     """
@@ -216,18 +216,18 @@ def generate_payment_history(
 
 def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
     """Generate a single realistic loan record for Abaco Factoring portfolio.
-    
+
     Distributions:
     - Principal Amount: Log-normal (MXN 10K-500K, median ~75K)
     - Interest Rate: Normal (28%-45%, mean 34%, std 4%)
     - Term: Weighted choice (12, 18, 24, 36 months)
     - Status: Realistic (70% current, 20% delinquent, 5% defaulted, 5% paid_off)
     - Risk Score: Based on loan status (current: 600-850, delinquent: 500-650, etc.)
-    
+
     Args:
         loan_id: Unique loan identifier (1-based integer).
         origination_date: Date when the loan was originated.
-    
+
     Returns:
         dict: Complete loan record with borrower details, terms, and payment history.
     """
@@ -317,7 +317,7 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
 
 def main() -> None:
     """Main entry point for sample loan data generation.
-    
+
     Command-line interface for generating realistic Mexican loan portfolio data
     with configurable parameters for count, date range, and random seed.
     """

@@ -89,12 +89,12 @@ critical = ['supabase-db', 'prometheus']
 try:
     data = json.load(sys.stdin)
     targets = data.get('data', {}).get('activeTargets', [])
-    
+
     critical_failed = False
     for target in targets:
         job = target.get('labels', {}).get('job', 'unknown')
         health = target.get('health', 'unknown')
-        
+
         if health == 'up':
             print(f'  \033[0;32m✓ {job}\033[0m')
         else:
@@ -103,7 +103,7 @@ try:
                 critical_failed = True
             else:
                 print(f'  \033[1;33m⚠ {job}\033[0m - {health} (optional service)')
-    
+
     if critical_failed:
         sys.exit(1)
 except json.JSONDecodeError as e:

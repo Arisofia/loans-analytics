@@ -82,12 +82,12 @@ if [ -z "$GRAFANA_ADMIN_PASSWORD" ]; then
     echo "Please confirm the password:"
     read -s -p "Password: " GRAFANA_ADMIN_PASSWORD_CONFIRM
     echo ""
-    
+
     if [ "$GRAFANA_ADMIN_PASSWORD" != "$GRAFANA_ADMIN_PASSWORD_CONFIRM" ]; then
         echo -e "${RED}❌ Error: Passwords do not match${NC}"
         exit 1
     fi
-    
+
     # Add to .env.local
     echo "GRAFANA_ADMIN_PASSWORD=$GRAFANA_ADMIN_PASSWORD" >> .env.local
     echo -e "${GREEN}✅ Password saved to .env.local${NC}"

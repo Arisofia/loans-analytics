@@ -62,16 +62,16 @@ FAILED_COUNT=0
 
 while IFS='|' read -r uid title folder; do
     echo "📥 Exporting: ${title} (folder: ${folder})"
-    
+
     # Sanitize filename
     SAFE_TITLE=$(echo "${title}" | tr ' /' '_' | tr -cd '[:alnum:]_-')
     SAFE_FOLDER=$(echo "${folder}" | tr ' /' '_' | tr -cd '[:alnum:]_-')
     FILENAME="${SAFE_FOLDER}__${SAFE_TITLE}.json"
-    
+
     # Fetch dashboard JSON
     DASHBOARD_JSON=$(curl -s -u "${GRAFANA_USER}:${GRAFANA_PASSWORD}" \
         "${GRAFANA_URL}/api/dashboards/uid/${uid}")
-    
+
     # Check if successful
     if echo "${DASHBOARD_JSON}" | grep -q '"dashboard"'; then
         # Extract dashboard object and pretty-print
@@ -96,7 +96,7 @@ output = {
 }
 print(json.dumps(output, indent=2, sort_keys=True))
 " > "${OUTPUT_DIR}/${FILENAME}"
-        
+
         echo -e "  ${GREEN}✓ Saved to ${FILENAME}${NC}"
         SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
     else

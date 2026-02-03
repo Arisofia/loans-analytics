@@ -68,15 +68,15 @@ echo -e "${YELLOW}Starting health monitoring...${NC}\n"
 while [[ $(date +%s) -lt $END_TIME ]]; do
     TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
     TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-    
+
     # Health check with latency
     START_TIME=$(date +%s%N)
     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL$HEALTH_PATH" 2>/dev/null || echo "000")
     END_TIME_CURL=$(date +%s%N)
-    
+
     LATENCY=$(( (END_TIME_CURL - START_TIME) / 1000000 ))  # Convert nanoseconds to milliseconds
     LATENCIES+=($LATENCY)
-    
+
     if [[ "$HTTP_CODE" == "200" ]]; then
         SUCCESSFUL_CHECKS=$((SUCCESSFUL_CHECKS + 1))
         STATUS="${GREEN}✅ OK${NC}"
@@ -87,9 +87,9 @@ while [[ $(date +%s) -lt $END_TIME ]]; do
         ERROR_RESPONSES=$((ERROR_RESPONSES + 1))
         STATUS="${YELLOW}⚠️  HTTP $HTTP_CODE${NC}"
     fi
-    
+
     printf "[%s] %s | Latency: %dms | Status: %b\n" "$TIMESTAMP" "Check #$TOTAL_CHECKS" "$LATENCY" "$STATUS"
-    
+
     # Sleep before next check (unless we're at the end)
     if [[ $(date +%s) -lt $END_TIME ]]; then
         sleep $CHECK_INTERVAL
@@ -117,15 +117,15 @@ if [[ ${#LATENCIES[@]} -gt 0 ]]; then
     MIN_LATENCY=${sorted_latencies[0]}
     MAX_LATENCY=${sorted_latencies[-1]}
     AVG_LATENCY=0
-    
+
     for latency in "${LATENCIES[@]}"; do
         AVG_LATENCY=$((AVG_LATENCY + latency))
     done
     AVG_LATENCY=$((AVG_LATENCY / ${#LATENCIES[@]}))
-    
+
     MEDIAN_INDEX=$(( (${#sorted_latencies[@]} - 1) / 2 ))
     MEDIAN_LATENCY=${sorted_latencies[$MEDIAN_INDEX]}
-    
+
     echo "Latency Statistics:"
     echo "  Min:    ${MIN_LATENCY}ms"
     echo "  Max:    ${MAX_LATENCY}ms"

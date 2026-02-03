@@ -112,7 +112,7 @@ while IFS= read -r run_id; do
   else
     FAILED=$((FAILED + 1))
   fi
-  
+
   # Rate limiting: pause every 100 deletions
   if [[ $((DELETED % 100)) -eq 0 ]]; then
     echo "   Pausing for rate limits..."

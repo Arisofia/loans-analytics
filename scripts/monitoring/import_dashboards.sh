@@ -45,10 +45,10 @@ for dashboard_file in "$DASHBOARD_DIR"/*.json; do
     if [[ ! -f "$dashboard_file" ]]; then
         continue
     fi
-    
+
     DASHBOARD_NAME=$(basename "$dashboard_file" .json)
     echo "Importing: $DASHBOARD_NAME..."
-    
+
     # Create import payload with Python
     IMPORT_PAYLOAD=$(python3 << EOF
 import json
@@ -85,14 +85,14 @@ import_payload = {
 print(json.dumps(import_payload))
 EOF
 )
-    
+
     # Import dashboard
     RESPONSE=$(curl -s -X POST \
         -H "Content-Type: application/json" \
         -u "$GRAFANA_USER:$GRAFANA_PASSWORD" \
         "$GRAFANA_URL/api/dashboards/import" \
         -d "$IMPORT_PAYLOAD" 2>&1)
-    
+
     if echo "$RESPONSE" | grep -q "imported\|uid"; then
         DASHBOARD_URL=$(echo "$RESPONSE" | python3 -c "import sys, json; print(json.load(sys.stdin).get('importedUrl', ''))" 2>/dev/null || echo "")
         echo "  ✓ Imported successfully"

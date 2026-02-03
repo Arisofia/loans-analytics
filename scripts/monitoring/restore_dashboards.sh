@@ -82,14 +82,14 @@ SKIPPED_COUNT=0
 while IFS= read -r FILE; do
     FILENAME=$(basename "${FILE}")
     echo "📤 Restoring: ${FILENAME}"
-    
+
     # Check if file is valid JSON
     if ! python3 -c "import json; json.load(open('${FILE}'))" 2>/dev/null; then
         echo -e "  ${RED}✗ Invalid JSON file${NC}"
         FAILED_COUNT=$((FAILED_COUNT + 1))
         continue
     fi
-    
+
     # Prepare import payload
     IMPORT_PAYLOAD=$(python3 <<EOF
 import json, sys
@@ -134,13 +134,13 @@ payload = {
 print(json.dumps(payload))
 EOF
 )
-    
+
     # Import to Grafana
     RESPONSE=$(curl -s -u "${GRAFANA_USER}:${GRAFANA_PASSWORD}" \
         -H "Content-Type: application/json" \
         -X POST "${GRAFANA_URL}/api/dashboards/db" \
         -d "${IMPORT_PAYLOAD}")
-    
+
     # Check response
     STATUS=$(echo "${RESPONSE}" | python3 -c "
 import sys, json
@@ -150,7 +150,7 @@ try:
 except:
     print('error')
 ")
-    
+
     if [ "${STATUS}" = "success" ]; then
         DASHBOARD_URL=$(echo "${RESPONSE}" | python3 -c "
 import sys, json

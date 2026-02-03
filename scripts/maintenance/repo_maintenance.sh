@@ -4,7 +4,7 @@
 #  UNIFIED REPOSITORY MAINTENANCE SCRIPT - Abaco Loans Analytics
 #
 #  Purpose: Complete repository maintenance (cleanup, formatting, linting, git)
-#  
+#
 #  Consolidates functionality from:
 #    - cleanup_repo.sh (code quality and formatting)
 #    - commit_cleanup.sh (commit automation)
@@ -112,7 +112,7 @@ echo ""
 cleanup_item() {
   local path="$1"
   local description="$2"
-  
+
   if [ -e "$path" ]; then
     if [ "$DRY_RUN" = true ]; then
       echo -e "${YELLOW}  [WOULD DELETE] $description: $path${NC}"
@@ -309,7 +309,7 @@ else
     echo -e "${YELLOW}  Fetching and pruning...${NC}"
     git fetch --all --prune 2>/dev/null || true
     echo -e "${GREEN}  ✓ Fetch & prune complete${NC}"
-    
+
     # Delete merged branches (not in CI mode)
     if [ "$CI_MODE" = false ]; then
       merged_branches=$(git branch --merged | grep -v "\*" | grep -vE "^(main|master|develop)$" 2>/dev/null || true)
@@ -322,7 +322,7 @@ else
         echo -e "${GREEN}  ✓ No merged branches to delete${NC}"
       fi
     fi
-    
+
     # Garbage collection
     if [ "$MODE" = "aggressive" ] || [ "$MODE" = "nuclear" ]; then
       echo -e "${YELLOW}  Running aggressive garbage collection...${NC}"
@@ -333,7 +333,7 @@ else
       git gc 2>/dev/null || true
       echo -e "${GREEN}  ✓ GC complete${NC}"
     fi
-    
+
     # Nuclear mode: reflog cleanup (with confirmation)
     if [ "$MODE" = "nuclear" ]; then
       if [ "$CI_MODE" = false ]; then
@@ -368,7 +368,7 @@ echo ""
 if [ "$MODE" = "aggressive" ] || [ "$MODE" = "nuclear" ]; then
   echo -e "${CYAN}${BOLD}[5/5] 🐳 Docker Cleanup${NC}"
   echo ""
-  
+
   if command -v docker &> /dev/null; then
     if [ "$DRY_RUN" = false ]; then
       # Remove stopped containers
@@ -379,7 +379,7 @@ if [ "$MODE" = "aggressive" ] || [ "$MODE" = "nuclear" ]; then
         echo "$stopped" | xargs -r docker rm 2>/dev/null || true
         echo -e "${GREEN}  ✓ Complete${NC}"
       fi
-      
+
       # Remove dangling images
       dangling=$(docker images -qf "dangling=true" 2>/dev/null || true)
       if [ -n "$dangling" ]; then
@@ -388,7 +388,7 @@ if [ "$MODE" = "aggressive" ] || [ "$MODE" = "nuclear" ]; then
         echo "$dangling" | xargs -r docker rmi 2>/dev/null || true
         echo -e "${GREEN}  ✓ Complete${NC}"
       fi
-      
+
       if [ "$MODE" = "nuclear" ]; then
         if [ "$CI_MODE" = false ]; then
           echo -e "${RED}${BOLD}  ⚠️  WARNING: Nuclear mode will remove ALL unused Docker resources including volumes!${NC}"
@@ -413,7 +413,7 @@ if [ "$MODE" = "aggressive" ] || [ "$MODE" = "nuclear" ]; then
   else
     echo -e "${GREEN}  ✓ Docker not installed - skipping${NC}"
   fi
-  
+
   echo ""
 else
   echo -e "${CYAN}${BOLD}[5/5] 🐳 Docker Cleanup${NC}"
@@ -438,20 +438,20 @@ if [ "$DRY_RUN" = true ]; then
 else
   echo -e "${GREEN}${BOLD}✅ MAINTENANCE COMPLETE${NC}"
   echo ""
-  
+
   # Repository statistics
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     REPO_SIZE=$(du -sh .git 2>/dev/null | cut -f1 || echo "unknown")
     COMMITS=$(git rev-list --count HEAD 2>/dev/null || echo "unknown")
     BRANCHES=$(git branch | wc -l 2>/dev/null || echo "unknown")
-    
+
     echo -e "${BLUE}Repository Statistics:${NC}"
     echo -e "${BLUE}  Git Size: ${REPO_SIZE}${NC}"
     echo -e "${BLUE}  Commits: ${COMMITS}${NC}"
     echo -e "${BLUE}  Branches: ${BRANCHES}${NC}"
     echo ""
   fi
-  
+
   echo -e "${GREEN}✨ Your repository is clean and well-maintained!${NC}"
 fi
 

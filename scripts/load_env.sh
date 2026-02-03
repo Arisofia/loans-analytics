@@ -18,11 +18,11 @@ while IFS='=' read -r key value; do
     # Skip comments and empty lines
     [[ $key =~ ^#.*$ ]] && continue
     [[ -z "$key" ]] && continue
-    
+
     # Remove leading/trailing whitespace
     key=$(echo "$key" | xargs)
     value=$(echo "$value" | xargs)
-    
+
     # Evaluate variable expansions (e.g., ${VAR})
     eval "export $key=\"$value\""
 done < "$ENV_FILE"

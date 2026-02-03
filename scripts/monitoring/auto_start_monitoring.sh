@@ -2,7 +2,7 @@
 #
 # Auto Start Monitoring Stack
 # Complete automation script for Prometheus + Grafana + Alertmanager
-# 
+#
 # Usage: bash scripts/auto_start_monitoring.sh
 #
 
@@ -30,7 +30,7 @@ if ! docker ps >/dev/null 2>&1; then
     echo -e "${RED}✗ Docker is not running${NC}"
     echo -e "${YELLOW}Starting Docker Desktop...${NC}"
     open -a Docker
-    
+
     # Wait for Docker to be ready
     echo -e "${YELLOW}Waiting for Docker daemon (max 60s)...${NC}"
     for i in {1..30}; do
@@ -41,7 +41,7 @@ if ! docker ps >/dev/null 2>&1; then
         echo -n "."
         sleep 2
     done
-    
+
     if ! docker ps >/dev/null 2>&1; then
         echo -e "${RED}✗ Docker failed to start after 60s${NC}"
         exit 1
@@ -152,7 +152,7 @@ if [[ "$DATASOURCE_CHECK" == "not_found" ]] || echo "$DATASOURCE_CHECK" | grep -
           "access": "proxy",
           "isDefault": true
         }' 2>/dev/null || echo "error")
-    
+
     if echo "$RESPONSE" | grep -q "Datasource added"; then
         echo -e "${GREEN}✓ Datasource created successfully${NC}"
     else

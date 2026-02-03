@@ -24,7 +24,7 @@ async function testConnection() {
       .from('kpi_definitions')
       .select('*')
       .limit(1);
-    
+
     if (e1) {
       console.log(`❌ FAILED: ${e1.message}`);
       console.log(`   Detalle: ${JSON.stringify(e1, null, 2)}`);
@@ -38,7 +38,7 @@ async function testConnection() {
       .from('kpi_values')
       .select('*')
       .limit(1);
-    
+
     if (e2) {
       console.log(`❌ FAILED: ${e2.message}`);
     } else {
@@ -51,7 +51,7 @@ async function testConnection() {
       .from('historical_kpis')
       .select('*')
       .limit(1);
-    
+
     if (e3) {
       console.log(`❌ FAILED: ${e3.message}`);
     } else {
@@ -81,13 +81,13 @@ async function testConnection() {
       console.log(`   Detalle: ${JSON.stringify(e4, null, 2)}`);
     } else {
       console.log(`✅ SUCCESS: Insertado registro con ID: ${insertResult[0].id}`);
-      
+
       // Cleanup
       const { error: e5 } = await supabase
         .from('kpi_values')
         .delete()
         .eq('id', insertResult[0].id);
-      
+
       if (e5) {
         console.log(`⚠️  Cleanup warning: ${e5.message}`);
       } else {
@@ -101,7 +101,7 @@ async function testConnection() {
     console.log('\n✅ Supabase está conectado y funcionando correctamente');
     console.log(`📊 Proyecto: ${SUPABASE_URL.split('//')[1].split('.')[0]}`);
     console.log(`🔗 Dashboard: https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte`);
-    
+
     process.exit(0);
 
   } catch (err) {
