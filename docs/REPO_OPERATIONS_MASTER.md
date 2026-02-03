@@ -263,7 +263,7 @@ git push origin feature-branch
 
 ### 2.5 Escalation & Complex Cases
 
-**Case: Merge has > 50 conflicts across > 20 files**
+#### Case: Merge has > 50 conflicts across > 20 files
 
 → **Action:** Abort immediately.
 
@@ -275,13 +275,13 @@ git pull origin main
 
 → **Then:** Contact Tech Lead. Replan feature to use feature flags or staged rollout.
 
-**Case: Conflict in critical orchestration file**
+#### Case: Conflict in critical orchestration file
 
 → **Action:** Require code review + manual testing before merge.
 
 → **Approvers:** Tech Lead + domain expert (see CODEOWNERS).
 
-**Case: Merge causes test failures post-resolution**
+#### Case: Merge causes test failures post-resolution
 
 → **Action:** Revert merge if failure is critical (production-blocking).
 
@@ -332,7 +332,7 @@ Phase F builds on G4.2 foundation to establish production-grade observability, c
 
 #### Immediate Actions (This Week: Jan 29 - Feb 4)
 
-**Action 1: Verify First Automated Cleanup Run**
+##### Action 1: Verify First Automated Cleanup Run
 
 - **Timeline:** 2026-02-02 (Sunday) at 02:00 UTC
 - **Steps:**
@@ -345,7 +345,7 @@ Phase F builds on G4.2 foundation to establish production-grade observability, c
 - **Effort:** 15 minutes
 - **Success:** Automation works in production ✅
 
-**Action 2: Team Notification & Training**
+##### Action 2: Team Notification & Training
 
 - **Timeline:** 2026-01-31
 - **Steps:**
@@ -358,7 +358,7 @@ Phase F builds on G4.2 foundation to establish production-grade observability, c
 - **Effort:** 1 hour
 - **Success:** Team understands new procedures ✅
 
-**Action 3: Operational Handover**
+##### Action 3: Operational Handover
 
 - **Timeline:** 2026-02-01
 - **Steps:**
@@ -373,7 +373,7 @@ Phase F builds on G4.2 foundation to establish production-grade observability, c
 
 #### Short-Term Actions (This Month: Feb)
 
-**Action 4: Branch Protection Rules (Feb 5)**
+##### Action 4: Branch Protection Rules (Feb 5)
 
 **GitHub Settings:**
 
@@ -405,7 +405,7 @@ gh repo edit \
 - Stale approvals dismissed on new commits
 - History preserved with merge commits
 
-**Action 5: Dependabot Configuration (Feb 8)**
+##### Action 5: Dependabot Configuration (Feb 8)
 
 **File:** `.github/dependabot.yml`
 
@@ -447,7 +447,7 @@ updates:
 - Auto-merge for patch updates (low risk)
 - Manual review for minor/major versions
 
-**Action 6: Code Owners Configuration (Feb 10)**
+##### Action 6: Code Owners Configuration (Feb 10)
 
 **File:** `CODEOWNERS` (create in repository root)
 
@@ -476,7 +476,7 @@ supabase/ @data-engineer
 
 #### Medium-Term Actions (Q1 2026: Feb 28 - Mar 31)
 
-**Action 7: Monitoring & Observability (Feb 28)**
+##### Action 7: Monitoring & Observability (Feb 28)
 
 **Implement:**
 
@@ -502,7 +502,7 @@ supabase/ @data-engineer
 - Early warning of repository bloat
 - Data-driven optimization decisions
 
-**Action 8: Documentation Videos (Feb 20)**
+##### Action 8: Documentation Videos (Feb 20)
 
 **Create & Distribute:**
 
@@ -526,7 +526,7 @@ supabase/ @data-engineer
 - Faster onboarding for new team members
 - Reference material for asynchronous learning
 
-**Action 9: Extended Automation (Feb 28)**
+##### Action 9: Extended Automation (Feb 28)
 
 **Enhancements:**
 
@@ -545,7 +545,7 @@ supabase/ @data-engineer
 - Faster feedback on security/quality issues
 - Consistent code review standards
 
-**Action 10: Quarterly Review (Mar 31)**
+##### Action 10: Quarterly Review (Mar 31)
 
 **Review Checklist:**
 
@@ -729,16 +729,16 @@ All repository operations must be traceable:
 
 When delivering filtered source code or artifacts to clients/auditors:
 
-**Principles:**
+#### Principles
 
 - Preserve audit trail (commit history)
 - Remove proprietary code (internal orchestration, cost models)
 - Redact credentials and sensitive config
 - Document what was filtered and why
 
-**Techniques:**
+#### Techniques
 
-**Option 1: Sparse Checkout**
+##### Option 1: Sparse Checkout
 
 ```bash
 # Clone only relevant directories (e.g., documentation + interfaces)
@@ -748,7 +748,7 @@ cd abaco-loans-analytics
 git sparse-checkout set docs/ api/ interfaces/
 ```
 
-**Option 2: Git Filter-Repo**
+##### Option 2: Git Filter-Repo
 
 ```bash
 # Remove sensitive directories from history (create clean export branch)
@@ -756,7 +756,7 @@ git filter-repo --invert-paths --path 'internal_cost_models/'
 # This rewrites history, so do on a branch, not main!
 ```
 
-**Option 3: Archive with Exclusions**
+##### Option 3: Archive with Exclusions
 
 ```bash
 # Create filtered tarball (preferred for exports)
@@ -1057,4 +1057,4 @@ git show <commit-hash>:docs/REPO_CLEANUP_AND_CONFLICT_PLAYBOOK.md
 
 ---
 
-**END OF MASTER RUNBOOK**
+## End of Master Runbook
