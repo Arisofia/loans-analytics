@@ -3,4 +3,6 @@
 from scripts.seed_spanish_loans import (
     generate_dni,
     generate_nie,
-)  # noqa: F401
+)
+
+__all__ = ["generate_dni", "generate_nie"]
