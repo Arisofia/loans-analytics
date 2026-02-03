@@ -52,7 +52,7 @@ jobs:
 
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/python@cdb760004ba9ea4d525f2e043745dfe85bb9077e # v1.1.0
-        continue-on-error: false  # Fail build on high/critical vulnerabilities
+        continue-on-error: false # Fail build on high/critical vulnerabilities
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
