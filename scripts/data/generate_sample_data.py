@@ -367,14 +367,14 @@ def main() -> None:
     except ValueError as e:
         print(f"❌ Error: Invalid date format. Use YYYY-MM-DD. Details: {e}")
         return
-    
+
     # Validate date range
     if end_date < start_date:
         print("❌ Error: End date must be after start date.")
         return
-    
+
     date_range = (end_date - start_date).days
-    
+
     # Validate count parameter
     if args.count <= 0:
         print("❌ Error: Count must be a positive integer.")

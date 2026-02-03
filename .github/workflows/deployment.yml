@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  PRODUCTION_HEALTHCHECK_URL: ''
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -30,7 +33,7 @@ jobs:
 
       - name: Verify deployment
         env:
-          HEALTHCHECK_URL: ${{ vars.PRODUCTION_HEALTHCHECK_URL }}
+          HEALTHCHECK_URL: ${{ env.PRODUCTION_HEALTHCHECK_URL }}
         run: |
           echo "Verifying deployment..."
           if [ -z "${HEALTHCHECK_URL}" ]; then
