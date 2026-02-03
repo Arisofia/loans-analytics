@@ -14,9 +14,33 @@ resource storage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
     name: 'Standard_LRS'
   }
   kind: 'StorageV2'
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     minimumTlsVersion: 'TLS1_2'
     allowBlobPublicAccess: false
+    encryption: {
+      services: {
+        blob: {
+          enabled: true
+          keyType: 'Account'
+        }
+        file: {
+          enabled: true
+          keyType: 'Account'
+        }
+        table: {
+          enabled: true
+          keyType: 'Account'
+        }
+        queue: {
+          enabled: true
+          keyType: 'Account'
+        }
+      }
+      keySource: 'Microsoft.Storage'
+    }
   }
 }
 
@@ -66,6 +90,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
         targetPort: 8000
         allowInsecure: false  // HTTPS only for security
         transport: 'auto'
+        clientCertificateMode: 'accept'
       }
       secrets: [
         {
