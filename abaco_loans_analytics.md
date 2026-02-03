@@ -10,10 +10,12 @@ This document is a **high-level platform overview only**. Detailed architecture,
 
 ## Where to read more (single source of truth)
 
-- **Architecture, KPIs, quick start, repo structure**: see the root [README.md](README.md).
+- **Architecture, KPIs, features, repo structure**: see the root [README.md](README.md).
 - **Full documentation index and topic-specific guides**: see [docs/DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md).
 - **Documentation policy and conventions**: see [docs/DOCUMENTATION_POLICY.md](docs/DOCUMENTATION_POLICY.md).
 - **Repository operations**: see [docs/REPO_OPERATIONS_MASTER.md](docs/REPO_OPERATIONS_MASTER.md).
+
+> **Note**: When running scripts, always use full paths with subdirectories (e.g., `python scripts/data/run_data_pipeline.py`, `python scripts/maintenance/validate_structure.py`) as shown in this document's examples.
 
 ---
 
