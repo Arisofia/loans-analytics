@@ -237,3 +237,95 @@ class UnifiedPipeline:
         except Exception as e:
             logger.warning("Failed to hash input file: %s, using timestamp", e)
             return datetime.now().strftime("%H%M%S")
+
+def main() -> int:
+    """
+    CLI entry point for the unified pipeline.
+
+    Supports multiple execution modes for different use cases:
+    - full: All 4 phases (Ingestion → Transformation → Calculation → Output)
+    - validate: Stop after transformation (for schema validation)
+    - dry-run: Stop after ingestion (for data source testing)
+
+    Usage:
+        python scripts/run_data_pipeline.py --input data/raw/loans.csv
+        python scripts/run_data_pipeline.py --mode validate
+        python scripts/run_data_pipeline.py --mode dry-run --config config/custom.yml
+
+    Returns:
+        Exit code: 0 for success, 1 for failure
+    """
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(
+        description="Unified 4-Phase Data Pipeline (Ingestion → Transformation → Calculation → Output)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run full pipeline with CSV input
+  python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
+
+  # Validation mode (stop after transformation for schema checks)
+  python scripts/run_data_pipeline.py --mode validate
+
+  # Dry-run mode (stop after ingestion for data source testing)
+  python scripts/run_data_pipeline.py --mode dry-run
+
+  # Custom config file
+  python scripts/run_data_pipeline.py --config config/custom_pipeline.yml
+
+  # Show this help and exit
+  python scripts/run_data_pipeline.py --help
+        """,
+    )
+
+    parser.add_argument(
+        "--input",
+        type=str,
+        default=None,
+        help="Path to input CSV file (optional, uses default from config if omitted)",
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="config/pipeline.yml",
+        help="Path to pipeline.yml config (default: config/pipeline.yml)",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["full", "validate", "dry-run"],
+        default="full",
+        help="Execution mode: full=all phases, validate=stop after transformation, dry-run=stop after ingestion",
+    )
+
+    args = parser.parse_args()
+
+    try:
+        # Initialize pipeline
+        config_path = Path(args.config) if args.config else None
+        pipeline = UnifiedPipeline(config_path=config_path)
+
+        # Execute pipeline
+        input_path = Path(args.input) if args.input else None
+        results = pipeline.execute(input_path=input_path, mode=args.mode)
+
+        # Check status and exit accordingly
+        if results.get("status") == "success":
+            logger.info("✓ Pipeline completed successfully")
+            return 0
+        else:
+            error_msg = results.get("error", "Unknown error")
+            logger.error("✗ Pipeline failed: %s", error_msg)
+            return 1
+
+    except Exception as e:
+        logger.error("Fatal error: %s", e)
+        logger.error("%s", traceback.format_exc())
+        return 1
+
+
+if __name__ == "__main__":
+    import sys
+
+    sys.exit(main())
