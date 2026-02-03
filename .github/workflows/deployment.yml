@@ -29,11 +29,12 @@ jobs:
 
       - name: Verify deployment
         env:
-          HEALTHCHECK_URL: ${{ vars.PRODUCTION_HEALTHCHECK_URL }}
+          HEALTHCHECK_URL: ${{ vars.PRODUCTION_HEALTHCHECK_URL || 'https://placeholder.example.com/health' }}
         run: |
           echo "Verifying deployment..."
-          if [ -z "${HEALTHCHECK_URL}" ]; then
-            echo "HEALTHCHECK_URL not set. Skipping verification."
+          if [ "${HEALTHCHECK_URL}" = "https://placeholder.example.com/health" ]; then
+            echo "⚠️  PRODUCTION_HEALTHCHECK_URL not configured. Skipping verification."
+            echo "To enable: Set repository variable PRODUCTION_HEALTHCHECK_URL in GitHub Settings"
             exit 0
           fi
           echo "Checking health at ${HEALTHCHECK_URL}..."
