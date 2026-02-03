@@ -106,7 +106,7 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     return resolved
 
 
-@app.get("/data/{file_path:path}")
+@app.get("/data/{file_path:path}") if app else lambda f: f
 def get_data(file_path: str):
     """Return file contents for a path under ALLOWED_DATA_DIR after sanitization."""
     # Validate input is not empty or only whitespace
