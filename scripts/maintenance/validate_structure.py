@@ -29,7 +29,7 @@ class Colors:
 
 def load_structure_definition() -> Dict:
     """Load .repo-structure.json"""
-    repo_root = Path(__file__).parent.parent
+    repo_root = Path(__file__).parent.parent.parent  # 3 levels up to repo root
     structure_file = repo_root / ".repo-structure.json"
 
     if not structure_file.exists():
@@ -239,7 +239,7 @@ def main():
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     args = parser.parse_args()
 
-    repo_root = Path(__file__).parent.parent
+    repo_root = Path(__file__).parent.parent.parent  # 3 levels up to repo root
 
     print(f"{Colors.BOLD}{Colors.BLUE}REPOSITORY STRUCTURE VALIDATION{Colors.END}")
     print(f"Repository: {repo_root.name}")
