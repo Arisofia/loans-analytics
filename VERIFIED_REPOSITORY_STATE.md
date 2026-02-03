@@ -94,6 +94,28 @@ contents in this file; capture them only in a timestamped archival report.
 
    ```bash
    git rev-parse --is-shallow-repository
+   ```
+
+   - If the output is `true`, the repository is shallow.
+   - If the output is `false`, the repository has full history.
+
+2. (Optional) Inspect the shallow boundary if the repo is shallow:
+
+   ```bash
+   test -f .git/shallow && cat .git/shallow || echo "No .git/shallow file (not shallow)."
+   ```
+
+   - Do **not** copy the resulting commit hashes into this template.
+   - Instead, paste the command and its output into your run‑specific archive file
+     (e.g., `docs/archive/repository_state_<YYYY-MM-DD_HHMMSS>.md`).
+
+3. (Optional) Capture high‑level clone metadata (without specific SHAs) in your archive:
+
+   - Clone type: `shallow` or `full` (based on step 1).
+   - Remote URL(s) (e.g., `origin`).
+   - Current branch name.
+   - Any relevant reflog entries, if needed for audit, **including SHAs only in the archive**.
+
 ---
 
 ## Truth Source: Remote vs Local
