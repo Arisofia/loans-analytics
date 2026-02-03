@@ -53,6 +53,9 @@ resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
   tags: {
     'azd-service-name': 'abaco-loans-analytics'
   }
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
@@ -60,18 +63,64 @@ resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
       ingress: {
         external: true
         targetPort: 8000
-        allowInsecure: true
+        allowInsecure: false  // HTTPS only for security
+        transport: 'auto'
       }
+      secrets: [
+        {
+          name: 'supabase-url'
+          keyVaultUrl: '${keyvault.properties.vaultUri}secrets/supabase-url'
+          identity: 'system'
+        }
+        {
+          name: 'supabase-anon-key'
+          keyVaultUrl: '${keyvault.properties.vaultUri}secrets/supabase-anon-key'
+          identity: 'system'
+        }
+        {
+          name: 'storage-connection-string'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${storage.listKeys().keys[0].value};EndpointSuffix=core.windows.net'
+        }
+      ]
     }
     template: {
       containers: [
         {
           name: 'app'
           image: containerImage
+          env: [
+            {
+              name: 'SUPABASE_URL'
+              secretRef: 'supabase-url'
+            }
+            {
+              name: 'SUPABASE_ANON_KEY'
+              secretRef: 'supabase-anon-key'
+            }
+            {
+              name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+              value: appinsights.properties.ConnectionString
+            }
+            {
+              name: 'AZURE_STORAGE_CONNECTION_STRING'
+              secretRef: 'storage-connection-string'
+            }
+          ]
           resources: {
-            cpu: json('0.25')
-            memory: '0.5Gi'
+            cpu: json('1.0')
+            memory: '2.0Gi'
           }
+          probes: [
+            {
+              type: 'Liveness'
+              httpGet: {
+                path: '/health'
+                port: 8000
+              }
+              initialDelaySeconds: 30
+              periodSeconds: 10
+            }
+          ]
         }
       ]
       scale: {
@@ -106,6 +155,46 @@ resource appinsights 'Microsoft.Insights/components@2020-02-02' = {
   properties: {
     Application_Type: 'web'
     RetentionInDays: 90
+  }
+}
+
+// Key Vault RBAC - Grant Container App access to secrets
+resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyvault.id, containerApp.id, '4633458b-17de-408a-b874-0445c86b69e6')
+  scope: keyvault
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') // Key Vault Secrets User
+    principalId: containerApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Storage diagnostic settings for audit logging
+resource storageDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: 'storage-audit-logs'
+  scope: storage
+  properties: {
+    workspaceId: logAnalyticsWorkspace.id
+    metrics: [
+      {
+        category: 'Transaction'
+        enabled: true
+        retentionPolicy: {
+          enabled: true
+          days: 90
+        }
+      }
+    ]
+  }
+}
+
+// Resource lock to prevent accidental deletion
+resource storageLock 'Microsoft.Authorization/locks@2020-05-01' = {
+  name: 'storage-lock'
+  scope: storage
+  properties: {
+    level: 'CanNotDelete'
+    notes: 'Prevent accidental deletion of financial data'
   }
 }
 
