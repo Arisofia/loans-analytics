@@ -2,54 +2,28 @@
 
 ## Overview
 
-**Abaco Loans Analytics** is a production-grade fintech lending analytics platform designed for B2B invoice factoring targeting Latin American SMEs. The platform provides liquidity against accounts receivable while maintaining sophisticated risk management and portfolio analytics.
+**Abaco Loans Analytics** is a production-grade fintech lending analytics platform for B2B invoice factoring in Latin America. It provides liquidity against accounts receivable while enforcing strict risk guardrails and portfolio analytics to support scaling AUM with controlled default rates.
 
-### Business Context
-
-- **Mission**: Provide fast, data-driven lending decisions for SME invoice factoring
-- **North Star Metric**: Weekly/Monthly Recurrent TPV (Total Processed Volume) from Active Clients
-- **Current Scale**: Active growth phase scaling Assets Under Management (AUM)
-- **Risk Target**: Maintain <4% default rate across portfolio
+This document is a **high-level platform overview only**. Detailed architecture, KPIs, quick start commands, and repository structure are defined in the canonical documentation listed below.
 
 ---
 
-## Platform Architecture
+## Where to read more (single source of truth)
 
-The platform features a dual-architecture design optimized for both data processing and AI-powered analytics:
+- **Architecture, KPIs, quick start, repo structure**: see the root [README](../README.md).
+- **Full documentation index and topic-specific guides**: see [DOCUMENTATION_INDEX](DOCUMENTATION_INDEX.md) in the `docs/` directory.
+- **Documentation policy and conventions**: see [`docs/DOCUMENTATION_POLICY.md`](DOCUMENTATION_POLICY.md).
 
-### 1. Unified Data Pipeline (`src/pipeline/`)
+---
 
-A 4-phase ETL orchestration system for loan portfolio analytics:
+## Platform at a glance
 
-```
-Phase 1: Ingestion     → CSV/Supabase data intake with schema validation
-Phase 2: Transformation → PII masking + data normalization (regulatory compliance)
-Phase 3: Calculation    → 19 KPIs across 6 categories (risk, growth, collections, etc.)
-Phase 4: Output         → Multi-format export (Parquet/CSV/JSON) + compliance reports
-```
+At a high level, Abaco Loans Analytics combines:
 
-**Entry Point**: `scripts/data/run_data_pipeline.py`
+- A unified data pipeline for ingesting, transforming, and analyzing loan and portfolio data.
+- A multi-agent AI layer that uses lending domain knowledge to generate risk, growth, and operations insights.
 
-### 2. Multi-Agent AI System (`python/multi_agent/`)
-
-8 specialized LLM-powered agents for lending intelligence:
-
-- **Risk Analyst**: Portfolio risk assessment and early warning signals
-- **Growth Strategist**: Expansion opportunities and market insights
-- **Ops Optimizer**: Process efficiency and operational improvements
-- **Compliance Officer**: Regulatory adherence and audit trails
-- **Collections Manager**: Recovery strategies and payment tracking
-- **Fraud Detector**: Anomaly detection and suspicious pattern identification
-- **Pricing Analyst**: APR optimization and competitive positioning
-- **Retention Specialist**: Client lifetime value and churn prevention
-
-**Key Features**:
-
-- 20+ pre-built lending scenarios
-- KPI-aware with real-time anomaly detection
-- Guardrails for PII redaction and regulatory compliance
-- OpenTelemetry tracing for cost and latency monitoring
-
+For implementation details (including pipeline phases, configuration files, agent roles, and observability), refer to the root README and the documentation index rather than this overview.
 ---
 
 ## Tech Stack
