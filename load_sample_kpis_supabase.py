@@ -3,4 +3,6 @@
 from scripts.load_sample_kpis_supabase import (
     KpiDataLoader,
     KpiRecord,
-)  # noqa: F401
+)
+
+__all__ = ["KpiDataLoader", "KpiRecord"]
