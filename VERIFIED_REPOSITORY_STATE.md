@@ -133,9 +133,9 @@ git log --oneline -20
 git remote -v
 git ls-remote --heads origin
 git log --oneline --all --graph -30
-git diff copilot/verify-repository-status origin/main --stat
-git diff origin/main copilot/verify-repository-status --name-status
-git merge-base origin/main copilot/verify-repository-status
+git diff "$(git branch --show-current)" origin/main --stat
+git diff origin/main "$(git branch --show-current)" --name-status
+git merge-base origin/main "$(git branch --show-current)"
 ```
 
 ---
