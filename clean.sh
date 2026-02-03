@@ -227,7 +227,7 @@ fi
 # ============================================================================
 # PHASE 4: GitHub Actions Workflow Runs
 # ============================================================================
-if [[ "$MODE" == "workflows" ]]; then
+if [[ "${MODE}" == "workflows" ]]; then
   echo "PHASE 4: GitHub Actions Workflow Runs"
   echo "======================================"
   echo ""
