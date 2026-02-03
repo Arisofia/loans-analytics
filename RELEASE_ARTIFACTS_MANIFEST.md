@@ -205,13 +205,13 @@
 
 ## Quick Links
 
-| Item            | Link                                                         |
-| --------------- | ------------------------------------------------------------ |
-| Quick Start     | [PRODUCTION_RELEASE_v1.3.0.md](PRODUCTION_RELEASE_v1.3.0.md) |
-| Full Guide      | [RELEASE_NOTES_v1.3.0.md](RELEASE_NOTES_v1.3.0.md)           |
-| Full Summary    | [RELEASE_SUMMARY_v1.3.0.md](RELEASE_SUMMARY_v1.3.0.md)       |
-| Version History | [CHANGELOG.md](CHANGELOG.md)                                 |
-| GitHub Repo     | https://github.com/Arisofia/abaco-loans-analytics            |
+| Item            | Link                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| Quick Start     | [PRODUCTION_RELEASE_v1.3.0.md](PRODUCTION_RELEASE_v1.3.0.md)                                           |
+| Full Guide      | [RELEASE_NOTES_v1.3.0.md](RELEASE_NOTES_v1.3.0.md)                                                     |
+| Full Summary    | [RELEASE_SUMMARY_v1.3.0.md](RELEASE_SUMMARY_v1.3.0.md)                                                 |
+| Version History | [CHANGELOG.md](CHANGELOG.md)                                                                           |
+| GitHub Repo     | [https://github.com/Arisofia/abaco-loans-analytics](https://github.com/Arisofia/abaco-loans-analytics) |
 
 ---
 

@@ -27,7 +27,7 @@ This production release encompasses **comprehensive security hardening, extensiv
 
 ### 1. Security Hardening (python:S2245)
 
-**PRNG → CSPRNG Migration**
+### PRNG → CSPRNG Migration
 
 - Replaced all `random` module usage with cryptographically secure `secrets` module
 - Files affected: `scripts/generate_sample_data.py`
@@ -82,7 +82,7 @@ This production release encompasses **comprehensive security hardening, extensiv
 
 ### 4. Feature Additions
 
-**Multi-Agent Dashboard Integration**
+#### Multi-Agent Dashboard Integration
 
 - **File**: `streamlit_app/pages/3_Portfolio_Dashboard.py`
 - **Enhancement**: Integrated multi-agent portfolio analysis
@@ -311,7 +311,7 @@ python scripts/run_data_pipeline.py --mode validate
 **Questions or Issues?**
 
 1. Review [RELEASE_NOTES_v1.3.0.md](RELEASE_NOTES_v1.3.0.md) for detailed documentation
-2. Check GitHub Issues: https://github.com/Arisofia/abaco-loans-analytics/issues
+2. Check GitHub Issues: [https://github.com/Arisofia/abaco-loans-analytics/issues](https://github.com/Arisofia/abaco-loans-analytics/issues)
 3. Run diagnostics: `python scripts/validate_structure.py`
 4. Review logs: `data/logs/` directory
 
