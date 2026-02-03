@@ -43,7 +43,7 @@
                 "stage": "CONFIGURATION"
             },
             {
-                "path": "scripts/run_data_pipeline.py",
+                "path": "scripts/data/run_data_pipeline.py",
                 "purpose": "Main entry point for pipeline execution",
                 "trigger": "Manual execution, GitHub Actions, scheduled jobs",
                 "stage": "EXECUTION ENTRY POINT"
