@@ -11,8 +11,8 @@ This script is the primary entry point for running the 4-phase ETL pipeline:
 The actual implementation is in src.pipeline.orchestrator.main().
 
 Invoked by:
-- CI/CD workflows (daily-ingest.yml, agents_unified_pipeline.yml, unified-tests.yml)
-- Local development: python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
+- CI/CD workflows (daily-ingest.yml, agents_unified_pipeline.yml)
+- Local development: python scripts/run_data_pipeline.py
 - Validation mode: python scripts/run_data_pipeline.py --mode validate
 """
 
@@ -26,4 +26,3 @@ from src.pipeline.orchestrator import main
 
 if __name__ == "__main__":
     sys.exit(main())
-

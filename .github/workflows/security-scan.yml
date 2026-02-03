@@ -100,7 +100,7 @@ jobs:
 
       - name: Upload security reports
         if: always()
-        uses: actions/upload-artifact@ea165f8badec1bcc55c3df98f1237b827be20f1f # v4.4.3
+        uses: actions/upload-artifact@eb49c4ebd462377d49ea4c9b105dcb5a0f9974ad # v4.4.3
         with:
           name: security-reports
           path: |

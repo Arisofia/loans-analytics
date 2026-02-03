@@ -11,8 +11,10 @@ NOTE: This module is not designed to be run directly as a script.
       Use: python scripts/run_data_pipeline.py
 """
 
+import argparse
 import hashlib
 import json
+import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -242,41 +244,33 @@ def main() -> int:
     """
     CLI entry point for the unified pipeline.
 
-    Supports multiple execution modes for different use cases:
+    Supports multiple execution modes:
     - full: All 4 phases (Ingestion → Transformation → Calculation → Output)
     - validate: Stop after transformation (for schema validation)
     - dry-run: Stop after ingestion (for data source testing)
 
-    Usage:
-        python scripts/run_data_pipeline.py --input data/raw/loans.csv
-        python scripts/run_data_pipeline.py --mode validate
-        python scripts/run_data_pipeline.py --mode dry-run --config config/custom.yml
-
     Returns:
         Exit code: 0 for success, 1 for failure
     """
-    import argparse
-    import sys
-
     parser = argparse.ArgumentParser(
-        description="Unified 4-Phase Data Pipeline (Ingestion → Transformation → Calculation → Output)",
+        description=(
+            "Unified 4-Phase Data Pipeline "
+            "(Ingestion → Transformation → Calculation → Output)"
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        epilog="""\
 Examples:
   # Run full pipeline with CSV input
   python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
 
-  # Validation mode (stop after transformation for schema checks)
+  # Validation mode (stop after transformation)
   python scripts/run_data_pipeline.py --mode validate
 
-  # Dry-run mode (stop after ingestion for data source testing)
+  # Dry-run mode (stop after ingestion)
   python scripts/run_data_pipeline.py --mode dry-run
 
   # Custom config file
   python scripts/run_data_pipeline.py --config config/custom_pipeline.yml
-
-  # Show this help and exit
-  python scripts/run_data_pipeline.py --help
         """,
     )
 
@@ -284,7 +278,7 @@ Examples:
         "--input",
         type=str,
         default=None,
-        help="Path to input CSV file (optional, uses default from config if omitted)",
+        help="Path to input CSV file (optional, uses config default)",
     )
     parser.add_argument(
         "--config",
@@ -296,7 +290,11 @@ Examples:
         "--mode",
         choices=["full", "validate", "dry-run"],
         default="full",
-        help="Execution mode: full=all phases, validate=stop after transformation, dry-run=stop after ingestion",
+        help=(
+            "Execution mode: full (all phases), "
+            "validate (stop after transformation), "
+            "dry-run (stop after ingestion)"
+        ),
     )
 
     args = parser.parse_args()
@@ -310,14 +308,14 @@ Examples:
         input_path = Path(args.input) if args.input else None
         results = pipeline.execute(input_path=input_path, mode=args.mode)
 
-        # Check status and exit accordingly
+        # Check status
         if results.get("status") == "success":
             logger.info("✓ Pipeline completed successfully")
             return 0
-        else:
-            error_msg = results.get("error", "Unknown error")
-            logger.error("✗ Pipeline failed: %s", error_msg)
-            return 1
+
+        error_msg = results.get("error", "Unknown error")
+        logger.error("✗ Pipeline failed: %s", error_msg)
+        return 1
 
     except Exception as e:
         logger.error("Fatal error: %s", e)
@@ -326,6 +324,4 @@ Examples:
 
 
 if __name__ == "__main__":
-    import sys
-
     sys.exit(main())
