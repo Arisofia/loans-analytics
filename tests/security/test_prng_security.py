@@ -20,7 +20,6 @@ scripts_path = Path(__file__).parent.parent.parent / "scripts"
 sys.path.insert(0, str(scripts_path))
 
 
-@pytest.mark.skip(reason="Sample data generators were archived; module path changed")
 def test_mexican_rfc_generation_uses_secrets():
     """Test that Mexican RFC generation uses secrets module for unpredictability.
 
@@ -42,7 +41,6 @@ def test_mexican_rfc_generation_uses_secrets():
     assert len(set(rfcs)) == len(rfcs), "RFCs should be unique"
 
 
-@pytest.mark.skip(reason="Sample data generators were archived; module path changed")
 def test_spanish_dni_generation_uses_secrets():
     """Test that Spanish DNI generation uses secrets module for unpredictability.
 
@@ -70,7 +68,6 @@ def test_spanish_dni_generation_uses_secrets():
     assert len(set(dnis)) == len(dnis), "DNIs should be unique"
 
 
-@pytest.mark.skip(reason="Sample data generators were archived; module path changed")
 def test_spanish_nie_generation_uses_secrets():
     """Test that Spanish NIE generation uses secrets module for unpredictability.
 
@@ -119,7 +116,6 @@ def test_user_ssn_generation_uses_secrets():
     assert len(set(ssns)) == len(ssns), "SSNs should be unique"
 
 
-@pytest.mark.skip(reason="Sample data generators were archived; module path changed")
 def test_reproducible_test_data_uses_random_with_seed():
     """Test that non-security-sensitive test data uses random with seed for reproducibility.
 
@@ -132,23 +128,22 @@ def test_reproducible_test_data_uses_random_with_seed():
     """
     # Generate loans with same seed should be reproducible
     import random
-    from datetime import datetime
+    from datetime import date
 
     from generate_sample_data import generate_loan
 
     random.seed(42)
-    loan1 = generate_loan(1, datetime(2024, 1, 1))
+    loan1 = generate_loan(1, date(2024, 1, 1))
 
     random.seed(42)
-    loan2 = generate_loan(1, datetime(2024, 1, 1))
+    loan2 = generate_loan(1, date(2024, 1, 1))
 
     # Amounts and rates should be identical (reproducible)
-    # Convert to float for comparison to handle both float and Decimal types
-    assert float(loan1["amount"]) == float(loan2["amount"]), \
+    assert loan1.principal_amount == loan2.principal_amount, \
         "Amounts should be reproducible with seed"
-    assert float(loan1["rate"]) == float(loan2["rate"]), \
+    assert loan1.interest_rate == loan2.interest_rate, \
         "Rates should be reproducible with seed"
-    assert loan1["term_months"] == loan2["term_months"], \
+    assert loan1.term_months == loan2.term_months, \
         "Terms should be reproducible"
 
     # BUT: Security-sensitive fields (RFC, region) should NOT be seeded
@@ -156,7 +151,6 @@ def test_reproducible_test_data_uses_random_with_seed():
     # Region uses secrets.choice - will be different
 
 
-@pytest.mark.skip(reason="Sample data generators were archived; module path changed")
 def test_kpi_data_generation_reproducibility():
     """Test that KPI synthetic data uses random with seed for reproducibility.
 
@@ -171,33 +165,34 @@ def test_kpi_data_generation_reproducibility():
 
     from load_sample_kpis_supabase import KpiDataLoader
 
-    loader = KpiDataLoader()
+    loader = KpiDataLoader(seed=42)
 
     # Generate series - should be reproducible per KPI
     series1 = loader.generate_kpi_series(
         "test_kpi",
         date(2024, 1, 1),
         days=5,
-        base_value=1.0,
+        base_value=100.0,
         trend=0.001,
         noise=0.05,
     )
 
-    series2 = loader.generate_kpi_series(
+    loader2 = KpiDataLoader(seed=42)
+    series2 = loader2.generate_kpi_series(
         "test_kpi",  # Same KPI ID = same seed
         date(2024, 1, 1),
         days=5,
-        base_value=1.0,
+        base_value=100.0,
         trend=0.001,
         noise=0.05,
     )
 
-    # Should be identical (reproducible via seed from KPI ID hash)
+    # Should be identical (reproducible via seed)
     assert len(series1) == len(series2) == 5
     for i in range(5):
         assert (
-            series1[i]["value_numeric"] == series2[i]["value_numeric"]
-        ), "KPI values should be reproducible with same KPI ID"
+            series1[i].value == series2[i].value
+        ), "KPI values should be reproducible with same seed"
 
 
 if __name__ == "__main__":
