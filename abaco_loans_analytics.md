@@ -167,10 +167,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # 2. Validate structure
-python scripts/validate_structure.py
+python scripts/maintenance/validate_structure.py
 
 # 3. Run pipeline with sample data
-python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
+python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv
 
 # 4. Run tests
 make test  # or: pytest
