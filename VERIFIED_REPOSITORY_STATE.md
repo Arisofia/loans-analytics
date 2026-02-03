@@ -86,21 +86,14 @@ gradlew | 248 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 ## Repository Clone Details
 
-**Clone Type:** Shallow clone  
-**Shallow Commit:** `9fc703bc735b25d8110040af34e19a36d1bd490f`  
-**Grafted History:** Yes (limited history available)
+This section documents **how to determine** whether your local clone is shallow and how to
+record that fact for audit purposes. Do **not** hard‑code specific SHAs or `.git/shallow`
+contents in this file; capture them only in a timestamped archival report.
 
-```
-$ cat .git/shallow
-9fc703bc735b25d8110040af34e19a36d1bd490f
-```
+1. Check whether the repository is a shallow clone:
 
-**Reflog Shows:**
-```
-Clone operation: from https://github.com/Arisofia/abaco-loans-analytics
-Branch created: copilot/verify-repository-status
-```
-
+   ```bash
+   git rev-parse --is-shallow-repository
 ---
 
 ## Truth Source: Remote vs Local
