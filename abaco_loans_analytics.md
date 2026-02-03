@@ -244,7 +244,7 @@ Optional:
 ### Security & Compliance
 
 - **PII Masking**: Automatic in Phase 2 transformation
-- **Secret Scanning**: Enforced by 48 CI/CD workflows
+- **Secret Scanning**: Enforced by comprehensive CI/CD workflows
 - **Compliance Reports**: Generated per pipeline run in `data/compliance/`
 - **Audit Trails**: All financial decisions traceable to code/data source
 
