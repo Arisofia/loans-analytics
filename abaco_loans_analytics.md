@@ -49,29 +49,7 @@ A 4-phase ETL orchestration system for loan portfolio analytics:
 
 ## Quick Start
 
-For detailed setup instructions, see the [README.md](README.md). Brief overview:
-
-```bash
-# 1. Clone and setup
-git clone https://github.com/Arisofia/abaco-loans-analytics.git
-cd abaco-loans-analytics
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# 2. Validate structure
-python scripts/maintenance/validate_structure.py
-
-# 3. Run pipeline with sample data
-python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv
-
-# 4. Run tests
-make test  # or: pytest
-
-# 5. Launch dashboard
-streamlit run streamlit_app.py
-```
-
+For end-to-end onboarding (environment setup, pipeline execution, tests, and dashboard launch), see the **Quick Start** section in the root [README.md](README.md).
 ---
 
 ## Key Resources
