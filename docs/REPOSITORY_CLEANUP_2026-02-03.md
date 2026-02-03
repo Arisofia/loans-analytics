@@ -9,6 +9,7 @@ Major repository consolidation to improve maintainability and reduce clutter.
 ### 📦 Archive Management
 
 **Created Archive Structure:**
+
 - `archives/releases/v1.3.0/` - All v1.3.0 release documentation
 - `archives/documentation/old-production/` - Superseded production docs
 - `archives/docker/` - Deprecated Docker configurations
@@ -16,6 +17,7 @@ Major repository consolidation to improve maintainability and reduce clutter.
 **Files Archived (29 total):**
 
 #### Release v1.3.0 (8 files)
+
 - RELEASE_NOTES_v1.3.0.md
 - RELEASE_PACKAGE_v1.3.0.md
 - RELEASE_SUMMARY_v1.3.0.md
@@ -26,6 +28,7 @@ Major repository consolidation to improve maintainability and reduce clutter.
 - VISUAL_SUMMARY_v1.3.0.md
 
 #### Production Documentation (6 files)
+
 - PRODUCTION_READY_v1.0.0.md
 - PRODUCTION_RELEASE_COMPLETE.md
 - PRODUCTION_RELEASE_v1.3.0.md
@@ -35,6 +38,7 @@ Major repository consolidation to improve maintainability and reduce clutter.
 - DEPLOYMENT_SUMMARY.md
 
 #### Status Reports (7 files)
+
 - COMPLETE_RESOLUTION_SUMMARY.md
 - COMPLEXITY_FIXES_FINAL.md
 - LINTING_RESOLUTION_SUMMARY.md
@@ -44,24 +48,29 @@ Major repository consolidation to improve maintainability and reduce clutter.
 - VALIDATION_STATUS_REPORT.md
 
 #### Docker (1 file)
+
 - docker-compose.override.yml → archived as .deprecated
 
 ### 📝 Documentation Improvements
 
 **Moved to docs/**:
+
 - DASHBOARD_VISUAL_GUIDE.md (better organization)
 
 **Added Documentation**:
+
 - archives/releases/v1.3.0/README.md (archive index)
 - .requirements-consolidation.md (consolidation rationale)
 
 ### 🐍 Requirements Consolidation
 
 **Removed Duplicates:**
+
 - `python/requirements.txt` (superseded by root requirements.txt)
 - `python/requirements-dev.txt` (superseded by root requirements-dev.txt)
 
 **Current Structure:**
+
 ```
 requirements.txt           # All runtime dependencies
 requirements-dev.txt       # All development dependencies
@@ -74,6 +83,7 @@ tests/agents/requirements-test.txt  # Agent-specific test deps (specialized)
 ### 🐳 Docker Configuration
 
 **Current Files:**
+
 - `Dockerfile` - Main application
 - `Dockerfile.pipeline` - Data pipeline
 - `Dockerfile.dashboard` - Standalone dashboard
@@ -83,11 +93,13 @@ tests/agents/requirements-test.txt  # Agent-specific test deps (specialized)
 - `docker-compose.monitoring.yml` - Prometheus/Grafana stack
 
 **Archived:**
+
 - `docker-compose.override.yml` - No longer used
 
 ## Current Repository Root
 
 **Active Documentation (Root):**
+
 - README.md - Project overview and quickstart
 - CHANGELOG.md - Version history
 - SECURITY.md - Security policy
@@ -95,6 +107,7 @@ tests/agents/requirements-test.txt  # Agent-specific test deps (specialized)
 - PRODUCTION_READINESS_REPORT.md - Current production status
 
 **Organized Directories:**
+
 - `docs/` - Active operational documentation
 - `archives/` - Historical documentation by category
 - `config/` - Configuration files (pipeline, KPIs, business rules)
@@ -113,6 +126,7 @@ tests/agents/requirements-test.txt  # Agent-specific test deps (specialized)
 ## Finding Archived Files
 
 **Historical Release Notes:**
+
 ```bash
 # All v1.3.0 documentation
 ls archives/releases/v1.3.0/
@@ -122,12 +136,14 @@ cat archives/releases/v1.3.0/RELEASE_NOTES_v1.3.0.md
 ```
 
 **Old Production Docs:**
+
 ```bash
 # All superseded production documentation
 ls archives/documentation/old-production/
 ```
 
 **Status Reports:**
+
 ```bash
 # Historical fix/completion reports
 ls archives/documentation/
@@ -141,6 +157,7 @@ ls archives/documentation/
 ## Next Steps
 
 Consider consolidating:
+
 - [ ] Scripts directory (multiple one-off maintenance scripts)
 - [ ] Test fixtures (some duplication across test directories)
 - [ ] Documentation in docs/ (opportunity to merge similar guides)
