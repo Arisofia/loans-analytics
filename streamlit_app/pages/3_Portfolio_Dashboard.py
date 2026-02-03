@@ -113,6 +113,11 @@ REQUIRED_COLUMNS = [
     "region",
 ]
 
+# DPD bucket constants
+DPD_30_PLUS = "DPD 30+"
+DPD_60_PLUS = "DPD 60+"
+DPD_90_PLUS = "DPD 90+"
+
 
 def validate_uploaded_data(df: pd.DataFrame) -> tuple[bool, list[str]]:
     """Validate uploaded data has all required columns."""
@@ -264,9 +269,9 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
         cohort_data.append(
             {
                 "month": month,
-                "DPD 30+": (dpd_30 / total * 100) if total > 0 else 0,
-                "DPD 60+": (dpd_60 / total * 100) if total > 0 else 0,
-                "DPD 90+": (dpd_90 / total * 100) if total > 0 else 0,
+                DPD_30_PLUS: (dpd_30 / total * 100) if total > 0 else 0,
+                DPD_60_PLUS: (dpd_60 / total * 100) if total > 0 else 0,
+                DPD_90_PLUS: (dpd_90 / total * 100) if total > 0 else 0,
             }
         )
 
@@ -276,7 +281,7 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
     fig.add_trace(
         go.Scatter(
             x=cohort_df["month"],
-            y=cohort_df["DPD 30+"],
+            y=cohort_df[DPD_30_PLUS],
             name="30+ Days",
             mode=CHART_MODE,
             line={"color": "#ffc107", "width": 2},
@@ -285,7 +290,7 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
     fig.add_trace(
         go.Scatter(
             x=cohort_df["month"],
-            y=cohort_df["DPD 60+"],
+            y=cohort_df[DPD_60_PLUS],
             name="60+ Days",
             mode=CHART_MODE,
             line={"color": "#ff9800", "width": 2},
@@ -294,7 +299,7 @@ def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
     fig.add_trace(
         go.Scatter(
             x=cohort_df["month"],
-            y=cohort_df["DPD 90+"],
+            y=cohort_df[DPD_90_PLUS],
             name="90+ Days",
             mode=CHART_MODE,
             line={"color": "#dc3545", "width": 2},
@@ -442,6 +447,186 @@ def create_vintage_analysis(df: pd.DataFrame) -> go.Figure:
     return fig
 
 
+def render_sidebar() -> Any:
+    """Render sidebar with file upload and agent analysis controls."""
+    st.header("📤 Upload Loan Data")
+
+    uploaded_file = st.file_uploader(
+        "Upload CSV file",
+        type=["csv"],
+        help="Upload a CSV file with loan data. Required columns: "
+        + ", ".join(REQUIRED_COLUMNS[:6])
+        + "...",
+    )
+
+    if st.button("📂 Load Sample Data (Spanish Loans)"):
+        sample_file = ROOT_DIR / "data" / "raw" / "spanish_loans_seed.csv"
+        if sample_file.exists():
+            st.session_state["data_loaded"] = True
+            st.session_state["loan_data"] = pd.read_csv(sample_file)
+            st.success("✅ Sample data loaded!")
+            st.rerun()
+        else:
+            st.error("Sample file not found. Run: `python scripts/seed_spanish_loans.py`")
+
+    st.markdown("---")
+
+    st.header("🤖 AI Analysis")
+    if st.button("🔍 Run Agent Analysis"):
+        if not st.session_state.get("data_loaded"):
+            st.warning("Please upload data before running agent analysis.")
+        elif not os.getenv("OPENAI_API_KEY"):
+            st.warning("OPENAI_API_KEY is not set. Please configure it to run agents.")
+        else:
+            with st.spinner("Running multi-agent analysis..."):
+                try:
+                    df = st.session_state.get("loan_data")
+                    context = build_agent_portfolio_context(df)
+                    orchestrator = MultiAgentOrchestrator(
+                        provider=LLMProvider.OPENAI,
+                        enable_tracing=False,
+                    )
+                    results = orchestrator.run_scenario("loan_risk_review", context)
+                    st.session_state["agent_results"] = results
+                    st.success("✅ Agent analysis completed")
+                except Exception as exc:
+                    st.error(f"❌ Agent analysis failed: {exc}")
+
+    st.markdown("---")
+    st.caption("💡 Upload your own CSV or load sample Spanish loan data")
+
+    return uploaded_file
+
+
+def handle_file_upload(uploaded_file: Any) -> bool:
+    """Handle file upload and validation. Returns True if data was loaded."""
+    if uploaded_file is None:
+        return False
+
+    try:
+        df = pd.read_csv(uploaded_file)
+        valid, missing_cols = validate_uploaded_data(df)
+
+        if valid:
+            st.session_state["data_loaded"] = True
+            st.session_state["loan_data"] = df
+            st.success("✅ Data uploaded and validated successfully!")
+            return True
+
+        st.error(f"❌ Missing required columns: {', '.join(missing_cols)}")
+        st.info(f"Required columns: {', '.join(REQUIRED_COLUMNS)}")
+        return False
+    except Exception as e:
+        st.error(f"❌ Error loading file: {str(e)}")
+        return False
+
+
+def render_data_format_guide():
+    """Render the data format guide when no data is loaded."""
+    st.info("👆 Please upload a CSV file or load sample data from the sidebar to begin analysis")
+
+    st.markdown("### 📋 Required Data Format")
+    st.markdown("Your CSV file must include these columns:")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**Borrower Information:**")
+        st.markdown("- `loan_id`")
+        st.markdown("- `borrower_name`")
+        st.markdown("- `borrower_email`")
+        st.markdown("- `borrower_id_number`")
+        st.markdown("- `region`")
+
+    with col2:
+        st.markdown("**Loan Details:**")
+        st.markdown("- `principal_amount`")
+        st.markdown("- `interest_rate`")
+        st.markdown("- `term_months`")
+        st.markdown("- `origination_date`")
+        st.markdown("- `current_status`")
+        st.markdown("- `payment_history_json`")
+        st.markdown("- `risk_score`")
+
+
+def render_agent_results():
+    """Render AI agent analysis results if available."""
+    if "agent_results" not in st.session_state:
+        return
+
+    st.markdown("### 🤖 AI Analysis Results")
+    results = st.session_state.get("agent_results", {})
+    with st.expander("View multi-agent outputs", expanded=True):
+        if results.get("risk_analysis"):
+            st.markdown("**Risk Analysis**")
+            st.write(results["risk_analysis"])
+        if results.get("compliance_review"):
+            st.markdown("**Compliance Review**")
+            st.write(results["compliance_review"])
+        if results.get("ops_recommendations"):
+            st.markdown("**Ops Recommendations**")
+            st.write(results["ops_recommendations"])
+        metadata = results.get("_metadata")
+        if metadata:
+            st.caption(f"Trace ID: {metadata.get('trace_id', 'n/a')}")
+
+
+def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
+    """Render all visualization tabs."""
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        [
+            "📈 Delinquency Trends",
+            "📊 Risk Distribution",
+            "🗺️ Regional Analysis",
+            "📅 Vintage Analysis",
+            "📋 Loan Table",
+        ]
+    )
+
+    with tab1:
+        st.plotly_chart(create_delinquency_trend(df), use_container_width=True)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("DPD 30+", f"{metrics['delinquency_rate_30']:.1f}%")
+        with col2:
+            st.metric("DPD 60+", f"{metrics['delinquency_rate_60']:.1f}%")
+        with col3:
+            st.metric("DPD 90+", f"{metrics['delinquency_rate_90']:.1f}%")
+
+    with tab2:
+        st.plotly_chart(create_risk_distribution(df), use_container_width=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Average Risk Score", f"{metrics['avg_risk_score']:.4f}")
+        with col2:
+            st.metric("Expected Loss", f"€{metrics['expected_loss']:,.0f}")
+
+    with tab3:
+        st.plotly_chart(create_regional_heatmap(df), use_container_width=True)
+        st.markdown("#### Regional Distribution")
+        regional_summary = (
+            df.groupby("region")
+            .agg({"principal_amount": "sum", "loan_id": "count", "risk_score": "mean"})
+            .round(2)
+        )
+        regional_summary.columns = ["Total Amount (€)", "Loan Count", "Avg Risk"]
+        regional_summary = regional_summary.sort_values("Total Amount (€)", ascending=False)
+        st.dataframe(regional_summary, use_container_width=True)
+
+    with tab4:
+        st.plotly_chart(create_vintage_analysis(df), use_container_width=True)
+        st.markdown("#### Status Distribution")
+        status_counts = df["current_status"].value_counts()
+        status_pct = (status_counts / len(df) * 100).round(1)
+        col1, col2, col3, col4 = st.columns(4)
+        for i, (status, count) in enumerate(status_counts.items()):
+            col = [col1, col2, col3, col4][i % 4]
+            with col:
+                st.metric(status.title(), f"{count} ({status_pct[status]:.1f}%)")
+
+    with tab5:
+        render_loan_table(df)
+
+
 def render_loan_table(df: pd.DataFrame):
     """Render interactive loan table with filters."""
     st.subheader("📋 Loan Portfolio - Detailed View")
@@ -458,7 +643,6 @@ def render_loan_table(df: pd.DataFrame):
 
     with col2:
         regions = sorted(df["region"].unique().tolist())
-        region_filter = st.multiselect("Region", options=regions, default=[])
         region_filter = st.multiselect(
             "Region",
             options=regions,
@@ -515,7 +699,6 @@ def render_loan_table(df: pd.DataFrame):
     ].copy()
 
     display_df["principal_amount"] = display_df["principal_amount"].apply(lambda x: f"€{x:,.2f}")
-    display_df["principal_amount"] = display_df["principal_amount"].apply(lambda x: f"€{x:,.2f}")
     display_df["interest_rate"] = display_df["interest_rate"].apply(lambda x: f"{x:.2%}")
     display_df["risk_score"] = display_df["risk_score"].apply(lambda x: f"{x:.4f}")
 
@@ -550,212 +733,33 @@ def render_loan_table(df: pd.DataFrame):
         )
 
 
-# Main app
 def main():
+    """Main application entry point."""
     st.markdown(
         '<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>',
         unsafe_allow_html=True,
     )
 
-    # Sidebar - File upload
     with st.sidebar:
-        st.header("📤 Upload Loan Data")
+        uploaded_file = render_sidebar()
 
-        uploaded_file = st.file_uploader(
-            "Upload CSV file",
-            type=["csv"],
-            help="Upload a CSV file with loan data. Required columns: "
-            + ", ".join(REQUIRED_COLUMNS[:6])
-            + "...",
-        )
-
-        # Quick load sample data
-        if st.button("📂 Load Sample Data (Spanish Loans)"):
-            sample_file = ROOT_DIR / "data" / "raw" / "spanish_loans_seed.csv"
-            if sample_file.exists():
-                st.session_state["data_loaded"] = True
-                st.session_state["loan_data"] = pd.read_csv(sample_file)
-                st.success("✅ Sample data loaded!")
-                st.rerun()
-            else:
-                st.error("Sample file not found. Run: `python scripts/seed_spanish_loans.py`")
-
-        st.markdown("---")
-
-        # Agent Analysis
-        st.header("🤖 AI Analysis")
-        if st.button("🔍 Run Agent Analysis"):
-            if not st.session_state.get("data_loaded"):
-                st.warning("Please upload data before running agent analysis.")
-            elif not os.getenv("OPENAI_API_KEY"):
-                st.warning("OPENAI_API_KEY is not set. Please configure it to run agents.")
-            else:
-                with st.spinner("Running multi-agent analysis..."):
-                    try:
-                        df = st.session_state.get("loan_data")
-                        context = build_agent_portfolio_context(df)
-                        orchestrator = MultiAgentOrchestrator(
-                            provider=LLMProvider.OPENAI,
-                            enable_tracing=False,
-                        )
-                        results = orchestrator.run_scenario(
-                            "loan_risk_review",
-                            context,
-                        )
-                        st.session_state["agent_results"] = results
-                        st.success("✅ Agent analysis completed")
-                    except Exception as exc:  # pylint: disable=broad-except
-                        st.error(f"❌ Agent analysis failed: {exc}")
-
-        st.markdown("---")
-        st.caption("💡 Upload your own CSV or load sample Spanish loan data")
-
-    # Handle file upload
-    if uploaded_file is not None:
-        try:
-            df = pd.read_csv(uploaded_file)
-            valid, missing_cols = validate_uploaded_data(df)
-
-            if valid:
-                st.session_state["data_loaded"] = True
-                st.session_state["loan_data"] = df
-                st.success("✅ Data uploaded and validated successfully!")
-            else:
-                st.error(f"❌ Missing required columns: {', '.join(missing_cols)}")
-                st.info(f"Required columns: {', '.join(REQUIRED_COLUMNS)}")
-                return
-        except Exception as e:
-            st.error(f"❌ Error loading file: {str(e)}")
-            return
-
-    # Check if data is loaded
-    if "data_loaded" not in st.session_state or not st.session_state["data_loaded"]:
-        st.info(
-            "👆 Please upload a CSV file or load sample data from the sidebar to begin analysis"
-        )
-
-        st.markdown("### 📋 Required Data Format")
-        st.markdown("Your CSV file must include these columns:")
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("**Borrower Information:**")
-            st.markdown("- `loan_id`")
-            st.markdown("- `borrower_name`")
-            st.markdown("- `borrower_email`")
-            st.markdown("- `borrower_id_number`")
-            st.markdown("- `region`")
-
-        with col2:
-            st.markdown("**Loan Details:**")
-            st.markdown("- `principal_amount`")
-            st.markdown("- `interest_rate`")
-            st.markdown("- `term_months`")
-            st.markdown("- `origination_date`")
-            st.markdown("- `current_status`")
-            st.markdown("- `payment_history_json`")
-            st.markdown("- `risk_score`")
-
+    if not handle_file_upload(uploaded_file) and uploaded_file is not None:
         return
 
-    # Load data
-    df = st.session_state["loan_data"]
+    if "data_loaded" not in st.session_state or not st.session_state["data_loaded"]:
+        render_data_format_guide()
+        return
 
-    # Calculate metrics
+    df = st.session_state["loan_data"]
     metrics = calculate_portfolio_metrics(df)
 
-    # Display metrics
     st.markdown("### 📊 Key Portfolio Metrics")
     render_metrics_cards(metrics)
 
-    if "agent_results" in st.session_state:
-        st.markdown("### 🤖 AI Analysis Results")
-        results = st.session_state.get("agent_results", {})
-        with st.expander("View multi-agent outputs", expanded=True):
-            if results.get("risk_analysis"):
-                st.markdown("**Risk Analysis**")
-                st.write(results["risk_analysis"])
-            if results.get("compliance_review"):
-                st.markdown("**Compliance Review**")
-                st.write(results["compliance_review"])
-            if results.get("ops_recommendations"):
-                st.markdown("**Ops Recommendations**")
-                st.write(results["ops_recommendations"])
-            metadata = results.get("_metadata")
-            if metadata:
-                st.caption(f"Trace ID: {metadata.get('trace_id', 'n/a')}")
+    render_agent_results()
 
     st.markdown("---")
-
-    # Visualizations
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        [
-            "📈 Delinquency Trends",
-            "📊 Risk Distribution",
-            "🗺️ Regional Analysis",
-            "📅 Vintage Analysis",
-            "📋 Loan Table",
-        ]
-    )
-
-    with tab1:
-        st.plotly_chart(create_delinquency_trend(df), use_container_width=True)
-
-        # Additional delinquency metrics
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("DPD 30+", f"{metrics['delinquency_rate_30']:.1f}%")
-        with col2:
-            st.metric("DPD 60+", f"{metrics['delinquency_rate_60']:.1f}%")
-        with col3:
-            st.metric("DPD 90+", f"{metrics['delinquency_rate_90']:.1f}%")
-
-    with tab2:
-        st.plotly_chart(create_risk_distribution(df), use_container_width=True)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Average Risk Score", f"{metrics['avg_risk_score']:.4f}")
-        with col2:
-            st.metric("Expected Loss", f"€{metrics['expected_loss']:,.0f}")
-
-    with tab3:
-        st.plotly_chart(create_regional_heatmap(df), use_container_width=True)
-
-        st.markdown("#### Regional Distribution")
-        regional_summary = (
-            df.groupby("region")
-            .agg(
-                {
-                    "principal_amount": "sum",
-                    "loan_id": "count",
-                    "risk_score": "mean",
-                }
-            )
-            .round(2)
-        )
-        regional_summary.columns = ["Total Amount (€)", "Loan Count", "Avg Risk"]
-        regional_summary = regional_summary.sort_values("Total Amount (€)", ascending=False)
-        st.dataframe(regional_summary, use_container_width=True)
-
-    with tab4:
-        st.plotly_chart(create_vintage_analysis(df), use_container_width=True)
-
-        st.markdown("#### Status Distribution")
-        status_counts = df["current_status"].value_counts()
-        status_pct = (status_counts / len(df) * 100).round(1)
-
-        col1, col2, col3, col4 = st.columns(4)
-        for i, (status, count) in enumerate(status_counts.items()):
-            col = [col1, col2, col3, col4][i % 4]
-            with col:
-                st.metric(
-                    status.title(),
-                    f"{count} ({status_pct[status]:.1f}%)",
-                )
-
-    with tab5:
-        render_loan_table(df)
+    render_visualization_tabs(df, metrics)
 
 
 if __name__ == "__main__":

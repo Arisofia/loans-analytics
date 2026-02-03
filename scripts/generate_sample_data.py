@@ -211,7 +211,8 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
     # Borrower details
     first_name = random.choice(FIRST_NAMES)
     last_name = f"{random.choice(LAST_NAMES)} {random.choice(LAST_NAMES)}"
-    company_name = f"{random.choice(['Comercial', 'Distribuidora', 'Importadora', 'Exportadora'])} {last_name.split()[0]}"
+    company_types = ["Comercial", "Distribuidora", "Importadora", "Exportadora"]
+    company_name = f"{random.choice(company_types)} {last_name.split()[0]}"
 
     borrower_id = f"BRW{loan_id:06d}"
 

@@ -37,6 +37,9 @@ from python.logging_config import get_logger
 
 logger = get_logger(__name__)
 
+# Log message format constants
+_LOG_KPI_CALCULATED = "Calculated %s: %s"
+
 
 def _handle_kpi_calculation_error(kpi_name: str) -> Callable:
     """
@@ -64,7 +67,9 @@ def _handle_kpi_calculation_error(kpi_name: str) -> Callable:
                 logger.error("Failed to calculate %s: %s", kpi_name, error_msg)
                 fallback_value = 0.0
                 error_context = {"error": error_msg}
-                self._record_calculation(kpi_name, fallback_value, error_context, error_msg)
+                self._record_calculation(  # pylint: disable=protected-access
+                    kpi_name, fallback_value, error_context, error_msg
+                )
                 return fallback_value, error_context
 
         return wrapper
@@ -148,7 +153,7 @@ class KPIEngineV2:
             "calculation_method": "v1_legacy",
         }
         self._record_calculation(kpi_name, value, context)
-        logger.debug("Calculated %s: %s", kpi_name, value)
+        logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
         return value, context
 
     @_handle_kpi_calculation_error("COLLECTION_RATE")
@@ -169,7 +174,7 @@ class KPIEngineV2:
             "calculation_method": "v1_legacy",
         }
         self._record_calculation(kpi_name, value, context)
-        logger.debug("Calculated %s: %s", kpi_name, value)
+        logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
         return value, context
 
     @_handle_kpi_calculation_error("LTV")
@@ -214,7 +219,7 @@ class KPIEngineV2:
             "calculation_method": "v2_engine",
         }
         self._record_calculation(kpi_name, value, context)
-        logger.debug("Calculated %s: %s", kpi_name, value)
+        logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
         return value, context
 
     def calculate_all(self) -> Dict[str, Dict[str, Any]]:
