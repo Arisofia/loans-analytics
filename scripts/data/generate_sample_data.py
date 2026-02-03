@@ -110,52 +110,97 @@ REGIONS = [
 
 
 def generate_mexican_rfc() -> str:
-    """Generate realistic Mexican RFC (Registro Federal de Contribuyentes)."""
+    """Generate realistic Mexican RFC (Registro Federal de Contribuyentes).
+    
+    RFC format: 4 letters + 6 digits + 3 alphanumeric characters (13 total).
+    Example: GARC850101ABC
+    
+    Returns:
+        str: A randomly generated RFC string.
+    """
     letters = "".join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=4))
     digits = "".join(random.choices("0123456789", k=6))
     suffix = "".join(random.choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=3))
     return f"{letters}{digits}{suffix}"
 
 
-def _determine_payment_status(status: str, month: int, current_month: int) -> str:
-    """Determine payment status based on loan status and month."""
-    if status == "current" or (status == "delinquent" and month < current_month - 2):
+def _determine_payment_status(loan_status: str, month: int, current_month: int) -> str:
+    """Determine payment status based on loan status and month.
+    
+    Args:
+        loan_status: Current loan status ('current', 'delinquent', 'defaulted', 'paid_off').
+        month: Payment month number (1-based).
+        current_month: Current month in loan lifecycle.
+    
+    Returns:
+        str: Payment status ('paid', 'late', or 'missed').
+    """
+    if loan_status == "current" or (loan_status == "delinquent" and month < current_month - 2):
         return "paid" if random.random() > 0.05 else "late"
-    if status == "delinquent":
+    if loan_status == "delinquent":
         return random.choice(["late", "missed"])
-    if status == "defaulted":
+    if loan_status == "defaulted":
         return "missed" if month >= current_month - 6 else "paid"
-    return "paid"  # paid_off
+    return "paid"  # paid_off loans
 
 
-def _calculate_days_late(payment_status: str, status: str) -> int:
-    """Calculate days late based on payment status."""
+def _calculate_days_late(payment_status: str, loan_status: str) -> int:
+    """Calculate days late based on payment status.
+    
+    Args:
+        payment_status: Individual payment status ('paid', 'late', 'missed').
+        loan_status: Overall loan status ('current', 'delinquent', 'defaulted', 'paid_off').
+    
+    Returns:
+        int: Number of days payment is late (0 if paid on time).
+    """
     if payment_status == "paid":
         return 0
-    if status == "delinquent" and payment_status == "late":
-        return random.randint(30, 90)
-    if status != "defaulted" and payment_status == "late":
-        return random.randint(1, 15)
+    if loan_status == "delinquent" and payment_status == "late":
+        return random.randint(30, 90)  # Delinquent loans: 30-90 days late
+    if loan_status != "defaulted" and payment_status == "late":
+        return random.randint(1, 15)  # Current loans: 1-15 days late
     return 0
 
 
 def _calculate_amount_paid(payment_status: str) -> Decimal:
-    """Calculate amount paid based on payment status using Decimal for precision."""
+    """Calculate amount paid based on payment status.
+    
+    Uses Decimal for financial precision (2 decimal places).
+    
+    Args:
+        payment_status: Individual payment status ('paid', 'late', 'missed').
+    
+    Returns:
+        Decimal: Amount paid (MXN 5,000-15,000 or 0.00 if missed).
+    """
     if payment_status == "missed":
         return Decimal("0.00")
-    # Generate random amount between 5000 and 15000 with 2 decimal places
+    # Generate random payment amount between MXN 5,000 and 15,000
     amount_float = random.uniform(5000, 15000)
     return Decimal(str(amount_float)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def generate_payment_history(
-    term_months: int, current_month: int, status: str
+    term_months: int, current_month: int, loan_status: str
 ) -> list[dict[str, Any]]:
-    """Generate realistic payment history."""
+    """Generate realistic payment history for a loan.
+    
+    Creates month-by-month payment records with realistic delinquency patterns
+    based on the loan's overall status.
+    
+    Args:
+        term_months: Total loan term in months (12, 18, 24, or 36).
+        current_month: Number of months elapsed since origination.
+        loan_status: Overall loan status ('current', 'delinquent', 'defaulted', 'paid_off').
+    
+    Returns:
+        list[dict]: Payment history with keys: month, status, days_late, amount_paid.
+    """
     history = []
     for month in range(1, min(current_month + 1, term_months + 1)):
-        payment_status = _determine_payment_status(status, month, current_month)
-        days_late = _calculate_days_late(payment_status, status)
+        payment_status = _determine_payment_status(loan_status, month, current_month)
+        days_late = _calculate_days_late(payment_status, loan_status)
         amount_paid = _calculate_amount_paid(payment_status)
 
         history.append(
@@ -170,9 +215,24 @@ def generate_payment_history(
 
 
 def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
-    """Generate a single realistic loan record."""
-    # Amount: log-normal distribution (median ~$75K, range $10K-$500K)
-    # Use Decimal for financial accuracy
+    """Generate a single realistic loan record for Abaco Factoring portfolio.
+    
+    Distributions:
+    - Principal Amount: Log-normal (MXN 10K-500K, median ~75K)
+    - Interest Rate: Normal (28%-45%, mean 34%, std 4%)
+    - Term: Weighted choice (12, 18, 24, 36 months)
+    - Status: Realistic (70% current, 20% delinquent, 5% defaulted, 5% paid_off)
+    - Risk Score: Based on loan status (current: 600-850, delinquent: 500-650, etc.)
+    
+    Args:
+        loan_id: Unique loan identifier (1-based integer).
+        origination_date: Date when the loan was originated.
+    
+    Returns:
+        dict: Complete loan record with borrower details, terms, and payment history.
+    """
+    # Amount: log-normal distribution (median ~MXN 75K, range MXN 10K-500K)
+    # Use Decimal for financial accuracy (regulatory compliance)
     amount_float = random.lognormvariate(11.2, 0.7)
     amount_float = min(500000, max(10000, amount_float))
     amount = Decimal(str(amount_float)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -198,13 +258,17 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
     # Payment history
     payment_history = generate_payment_history(term_months, current_month, status)
 
-    # Risk score based on status
+    # Risk score based on loan status (Mexican credit scoring range)
+    # Current loans: Good to excellent credit (600-850)
     if status == "current":
         risk_score = random.randint(600, 850)
+    # Delinquent loans: Fair to good credit (500-650)
     elif status == "delinquent":
         risk_score = random.randint(500, 650)
+    # Defaulted loans: Poor to fair credit (300-550)
     elif status == "defaulted":
         risk_score = random.randint(300, 550)
+    # Paid-off loans: Good to excellent credit (650-850)
     else:  # paid_off
         risk_score = random.randint(650, 850)
 
@@ -251,7 +315,12 @@ def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
     }
 
 
-def main():
+def main() -> None:
+    """Main entry point for sample loan data generation.
+    
+    Command-line interface for generating realistic Mexican loan portfolio data
+    with configurable parameters for count, date range, and random seed.
+    """
     parser = argparse.ArgumentParser(
         description="Generate realistic sample loan data for Abaco Factoring"
     )
@@ -288,15 +357,31 @@ def main():
 
     args = parser.parse_args()
 
-    # Set random seed
+    # Set random seed for reproducibility
     random.seed(args.seed)
 
-    # Parse dates
-    start_date = datetime.strptime(args.start_date, "%Y-%m-%d")
-    end_date = datetime.strptime(args.end_date, "%Y-%m-%d")
+    # Parse and validate dates
+    try:
+        start_date = datetime.strptime(args.start_date, "%Y-%m-%d")
+        end_date = datetime.strptime(args.end_date, "%Y-%m-%d")
+    except ValueError as e:
+        print(f"❌ Error: Invalid date format. Use YYYY-MM-DD. Details: {e}")
+        return
+    
+    # Validate date range
+    if end_date < start_date:
+        print("❌ Error: End date must be after start date.")
+        return
+    
     date_range = (end_date - start_date).days
+    
+    # Validate count parameter
+    if args.count <= 0:
+        print("❌ Error: Count must be a positive integer.")
+        return
 
-    # Generate loans
+    # Generate loans with realistic distributions
+    print(f"🔄 Generating {args.count} loan records...")
     loans = []
     for i in range(1, args.count + 1):
         origination_date = start_date + timedelta(days=random.randint(0, date_range))
