@@ -42,6 +42,10 @@ jobs:
         uses: github/codeql-action/analyze@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
         with:
           category: '/language:${{ matrix.language }}'
+          # Disable differential analysis extensions to prevent restrictAlertsTo errors
+          # with undefined values from diff parsing
+          upload: true
+          skip-queries: false
 
   dependency-scan:
     name: Dependency Vulnerability Scan
