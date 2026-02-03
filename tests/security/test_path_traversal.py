@@ -146,7 +146,7 @@ class TestComplianceRequirements:
         secret_dir.mkdir(exist_ok=True)
         secret_file = secret_dir / "credentials.env"
         # Test data only - not a real credential
-        secret_file.write_text("DATABASE_PASSWORD=fake_test_password_not_real")
+        secret_file.write_text("DATABASE_PASSWORD=fake_test_password_not_real")  # NOSONAR
 
         allowed_dir = tmp_path / "public"
         allowed_dir.mkdir()
@@ -164,7 +164,7 @@ class TestComplianceRequirements:
 
         # Secret file should remain inaccessible
         assert secret_file.exists()
-        assert secret_file.read_text() == "DATABASE_PASSWORD=fake_test_password_not_real"
+        assert secret_file.read_text() == "DATABASE_PASSWORD=fake_test_password_not_real"  # NOSONAR
 
     def test_defense_in_depth(self, tmp_path):
         """
