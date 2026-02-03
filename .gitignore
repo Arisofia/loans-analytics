@@ -198,6 +198,15 @@ reports/
 /fix_*.py
 /cleanup_*.sh
 
+# Root-level script wrappers (use files in scripts/ directory directly)
+# These patterns prevent accidental commits of convenience wrappers
+/generate_sample_data.py
+/load_sample_kpis_supabase.py
+/seed_spanish_loans.py
+/run_data_pipeline.py
+/analyze_real_data.py
+/prepare_real_data.py
+
 # Legacy build systems (not applicable to this project)
 /build.gradle
 /gradlew

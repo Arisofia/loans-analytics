@@ -2,6 +2,8 @@
 
 This directory contains automation scripts for the Abaco Loans Analytics platform, organized by purpose.
 
+> ⚠️ **IMPORTANT**: Always run scripts using their full paths (e.g., `python scripts/data/generate_sample_data.py`). Do NOT create wrapper files in the repository root directory - they are ignored by `.gitignore` and may cause linting errors.
+
 ## 📁 Directory Structure
 
 ```
