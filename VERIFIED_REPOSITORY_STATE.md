@@ -147,4 +147,4 @@ git merge-base origin/main copilot/verify-repository-status
 
 ---
 
-**Analysis Complete:** All information verified against remote repository state, not memory or narrative.
+**Analysis Complete:** Remote-related information verified against remote repository state; local Git details based on direct local inspection, not memory or narrative.
