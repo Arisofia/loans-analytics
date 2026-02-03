@@ -222,7 +222,7 @@ git checkout v1.2.0
 
 ### Reporting Issues
 
-1. Check existing GitHub issues: https://github.com/Arisofia/abaco-loans-analytics/issues
+1. Check existing GitHub issues: [https://github.com/Arisofia/abaco-loans-analytics/issues](https://github.com/Arisofia/abaco-loans-analytics/issues)
 2. Run diagnostics: `python scripts/validate_structure.py`
 3. Check logs: `data/logs/` directory
 4. Create new issue with:

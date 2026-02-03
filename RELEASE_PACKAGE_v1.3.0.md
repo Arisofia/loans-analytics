@@ -256,7 +256,7 @@ python scripts/validate_structure.py
 3. **Technical Details**: Read [RELEASE_SUMMARY_v1.3.0.md](RELEASE_SUMMARY_v1.3.0.md)
 4. **Run Diagnostics**: `python scripts/validate_structure.py`
 5. **Check Logs**: `data/logs/` directory
-6. **Report Issues**: https://github.com/Arisofia/abaco-loans-analytics/issues
+6. **Report Issues**: [https://github.com/Arisofia/abaco-loans-analytics/issues](https://github.com/Arisofia/abaco-loans-analytics/issues)
 
 ### Escalation Path
 
@@ -299,7 +299,7 @@ python scripts/validate_structure.py
 
 ## 🔐 Security & Compliance
 
-### Security
+### Security – v1.3.0
 
 - ✅ PRNG vulnerability fixed (python:S2245)
 - ✅ Cryptographically secure randomness verified
@@ -343,7 +343,7 @@ python scripts/validate_structure.py
 2. ✅ Schedule deployment window
 3. ✅ Prepare deployment team
 
-### Deployment
+### Deployment – v1.3.0
 
 1. ✅ Checkout v1.3.0
 2. ✅ Run validation tests
