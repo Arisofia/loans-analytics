@@ -8,7 +8,7 @@
 
 - **Mission**: Provide fast, data-driven lending decisions for SME invoice factoring
 - **North Star Metric**: Weekly/Monthly Recurrent TPV (Total Processed Volume) from Active Clients
-- **Current Scale**: Scaling from $7.4M → $16.3M AUM (Assets Under Management)
+- **Current Scale**: Active growth phase scaling Assets Under Management (AUM)
 - **Risk Target**: Maintain <4% default rate across portfolio
 
 ---
@@ -274,7 +274,7 @@ Optional:
 ### Code is Law
 
 - Compliance embedded, not retrofitted
-- Governance enforced by automated CI/CD (CodeRabbit, SonarQube, Bandit)
+- Governance enforced by comprehensive CI/CD workflows (CodeRabbit, SonarQube, Bandit)
 - Human review as fallback, automation as primary
 
 ---
@@ -360,7 +360,9 @@ All critical debt items have been resolved:
 
 ## Scaling Considerations
 
-**Current Phase**: Growth from $7.4M → $16.3M AUM
+**Current Phase**: Active growth phase expanding Assets Under Management (AUM)
+
+> 📊 **Note**: Current AUM and scaling targets should be queried from `fact_loans` and `kpi_timeseries_daily` tables. See Data Governance Policy for details.
 
 ### Identified Bottlenecks
 
