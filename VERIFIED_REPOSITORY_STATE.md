@@ -133,11 +133,11 @@ This is the core discrepancy between:
 ## Verification Commands Used
 
 ```bash
+git fetch --all --prune
 git status
 git branch -a
 git log --oneline -20
 git remote -v
-git fetch --all
 git ls-remote --heads origin
 git log --oneline --all --graph -30
 git diff copilot/verify-repository-status origin/main --stat
