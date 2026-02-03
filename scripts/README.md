@@ -79,15 +79,19 @@ python scripts/maintenance/validate_structure.py
 ## 📊 Script Categories
 
 ### Data Scripts (`data/`)
+
 Data generation, ETL pipeline, database operations. See [data/README.md](data/README.md)
 
 ### Deployment Scripts (`deployment/`)
+
 Azure deployment, health checks, rollback procedures. See [deployment/README.md](deployment/README.md)
 
 ### Monitoring Scripts (`monitoring/`)
+
 Prometheus/Grafana stack, metrics, dashboards. See [monitoring/README.md](monitoring/README.md)
 
 ### Maintenance Scripts (`maintenance/`)
+
 Repository health, validation, housekeeping. See [maintenance/README.md](maintenance/README.md)
 
 ## 📋 Common Tasks
@@ -140,19 +144,20 @@ The following sections contain detailed documentation for individual scripts. Fo
 
 ## 🔧 Utility Scripts
 
-| Script                  | Description                                      | Usage                                      |
-| ----------------------- | ------------------------------------------------ | ------------------------------------------ |
-| **master_cleanup.sh**   | 🧹 Master cleanup (local + cloud cleanup guidance) | `./scripts/master_cleanup.sh --dry-run`    |
-| **cleanup_repo.sh**     | Code quality cleanup                             | `./scripts/cleanup_repo.sh`                |
-| **repo-cleanup.sh**     | Git repository cleanup                           | `./scripts/repo-cleanup.sh --aggressive`   |
-| **repo-doctor.sh**      | Repository health checks                         | `./scripts/repo-doctor.sh`                 |
-| **pr_status.py**        | Check GitHub PR status                           | `python scripts/pr_status.py`              |
+| Script                | Description                                        | Usage                                    |
+| --------------------- | -------------------------------------------------- | ---------------------------------------- |
+| **master_cleanup.sh** | 🧹 Master cleanup (local + cloud cleanup guidance) | `./scripts/master_cleanup.sh --dry-run`  |
+| **cleanup_repo.sh**   | Code quality cleanup                               | `./scripts/cleanup_repo.sh`              |
+| **repo-cleanup.sh**   | Git repository cleanup                             | `./scripts/repo-cleanup.sh --aggressive` |
+| **repo-doctor.sh**    | Repository health checks                           | `./scripts/repo-doctor.sh`               |
+| **pr_status.py**      | Check GitHub PR status                             | `python scripts/pr_status.py`            |
 
 ### 🧹 Master Cleanup Script (Recommended)
 
 **Purpose**: Complete cleanup of the local repository plus guided cloud cleanup — removes ALL local backups, copies, caches, and temporary files, and provides manual checklists/instructions for safely cleaning Supabase/Azure resources (no automatic cloud deletion).
 
 **Quick Start**:
+
 ```bash
 # Preview cleanup (safe)
 ./scripts/master_cleanup.sh --dry-run
@@ -165,6 +170,7 @@ The following sections contain detailed documentation for individual scripts. Fo
 ```
 
 **What It Cleans**:
+
 - Python caches (`__pycache__/`, `.pytest_cache/`, `.mypy_cache/`)
 - Node modules and build artifacts (`node_modules/`, `dist/`, `.next/`)
 - Backup files (`*.backup`, `*.bak`, `*.old`, `*.copy`, numbered copies)

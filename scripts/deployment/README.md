@@ -5,11 +5,13 @@ Scripts for deploying and managing production environments.
 ## Scripts
 
 **Deployment:**
+
 - `deploy_to_azure.sh` - Deploy application to Azure
 - `deploy_stack.sh` - Deploy complete infrastructure stack
 - `rollback_deployment.sh` - Rollback to previous deployment
 
 **Monitoring:**
+
 - `monitor_deployment.sh` - Monitor deployment progress
 - `production_health_check.sh` - Check production system health
 - `health_check.py` - Comprehensive health check utility
