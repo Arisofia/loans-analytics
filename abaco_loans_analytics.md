@@ -36,7 +36,7 @@ A 4-phase ETL orchestration system for loan portfolio analytics:
 
 ### 2. Multi-Agent AI System (`python/multi_agent/`)
 
-8 specialized LLM-powered agents for lending intelligence:
+A set of specialized LLM-powered agents for lending intelligence, including:
 
 - **Risk Analyst**: Portfolio risk assessment and early warning signals
 - **Growth Strategist**: Expansion opportunities and market insights
