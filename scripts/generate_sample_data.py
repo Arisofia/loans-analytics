@@ -15,7 +15,6 @@ from datetime import date
 from decimal import Decimal
 from secrets import choice as secrets_choice
 
-
 RFC_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 RFC_DIGITS = "0123456789"
 RFC_HOMONYM_CHARSET = RFC_DIGITS + RFC_LETTERS
@@ -31,12 +30,8 @@ def generate_mexican_rfc() -> str:
     prefix = "".join(secrets_choice(RFC_LETTERS) for _ in range(4))
     # Random, non-realistic date components to avoid mapping to real DOBs
     year = "".join(secrets_choice(RFC_DIGITS) for _ in range(2))
-    month = "".join(
-        secrets_choice("01") + secrets_choice(RFC_DIGITS[1:])
-    )  # 01–12-like
-    day = "".join(
-        secrets_choice("012") + secrets_choice(RFC_DIGITS[1:])
-    )  # 01–29-like
+    month = "".join(secrets_choice("01") + secrets_choice(RFC_DIGITS[1:]))  # 01–12-like
+    day = "".join(secrets_choice("012") + secrets_choice(RFC_DIGITS[1:]))  # 01–29-like
     homonym = "".join(secrets_choice(RFC_HOMONYM_CHARSET) for _ in range(3))
     return f"{prefix}{year}{month}{day}{homonym}"
 
