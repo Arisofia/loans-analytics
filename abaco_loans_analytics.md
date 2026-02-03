@@ -28,7 +28,7 @@ Phase 3: Calculation    → 19 KPIs across 6 categories (risk, growth, collectio
 Phase 4: Output         → Multi-format export (Parquet/CSV/JSON) + compliance reports
 ```
 
-**Entry Point**: `scripts/run_data_pipeline.py`
+**Entry Point**: `scripts/data/run_data_pipeline.py`
 
 ### 2. Multi-Agent AI System (`python/multi_agent/`)
 
