@@ -26,20 +26,20 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
         with:
           languages: ${{ matrix.language }}
           queries: security-extended
           config-file: ./.github/codeql-config.yml
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
         with:
           category: '/language:${{matrix.language}}'
 
@@ -48,24 +48,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/python@0.4.0
-        continue-on-error: true
+        uses: snyk/actions/python@cdb760004ba9ea4d525f2e043745dfe85bb9077e # v1.1.0
+        continue-on-error: false  # Fail build on high/critical vulnerabilities
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high
+          args: --severity-threshold=high --fail-on=all
 
   security-audit:
     name: Python Security Audit
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -73,20 +73,33 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install safety bandit
+          pip install safety bandit[sarif]
 
       - name: Run safety check
-        run: safety check --json --output safety-report.json || true
+        run: |
+          safety check --json --output safety-report.json
+          safety check --continue-on-error --save-json safety-results.json
 
       - name: Run bandit security linter
-        run: bandit -r python/ src/ -ll -f json -o bandit-report.json || true
+        run: |
+          bandit -r python/ src/ -f json -o bandit-report.json
+          bandit -r python/ src/ -f sarif -o bandit-results.sarif --severity-level medium
+
+      - name: Upload Bandit SARIF results
+        if: always()
+        uses: github/codeql-action/upload-sarif@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
+        with:
+          sarif_file: bandit-results.sarif
+          category: bandit
 
       - name: Upload security reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8badec1bcc55c3df98f1237b827be20f1f # v4.5.0
         with:
           name: security-reports
           path: |
             safety-report.json
+            safety-results.json
             bandit-report.json
+            bandit-results.sarif
           retention-days: 30
