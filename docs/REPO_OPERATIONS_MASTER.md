@@ -204,26 +204,26 @@ Choose the right strategy based on authoritativeness and business logic:
 **Manual Merge Example (pytest.ini conflict):**
 
 ```ini
-# Conflict markers (before resolution):
-<<<<<<< HEAD
+# Conflict example (before resolution):
+[conflict-start]
 [tool:pytest]
 markers =
-    integration_supabase: tests requiring Supabase
+  integration_supabase: tests requiring Supabase
 
-======= (incoming from main)
+[conflict-divider]
 [tool:pytest]
 markers =
-    asyncio: async tests
-    timeout: tests with time limits
+  asyncio: async tests
+  timeout: tests with time limits
 
->>>>>>>
+[conflict-end]
 
 # Resolved (keep both markers):
 [tool:pytest]
 markers =
-    asyncio: async tests
-    timeout: tests with time limits
-    integration_supabase: tests requiring Supabase
+  asyncio: async tests
+  timeout: tests with time limits
+  integration_supabase: tests requiring Supabase
 ```
 
 ### 2.3 Complete the Merge

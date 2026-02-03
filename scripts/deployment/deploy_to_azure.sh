@@ -141,7 +141,7 @@ if [[ -n "$WORKFLOW_RUN" ]]; then
     # Poll workflow status
     for i in {1..60}; do
         STATUS=$(gh run view "$WORKFLOW_RUN" -R "$REPO_OWNER/$REPO_NAME" --json conclusion -q '.conclusion' 2>/dev/null || echo "pending")
-        
+
         if [[ "$STATUS" == "success" ]]; then
             echo -e "${GREEN}✅ Deployment workflow completed successfully${NC}\n"
             break
@@ -172,7 +172,7 @@ SUCCESS=false
 while [[ $ATTEMPT -lt $MAX_HEALTH_CHECK_ATTEMPTS ]]; do
     ATTEMPT=$((ATTEMPT + 1))
     echo "Health check attempt $ATTEMPT/$MAX_HEALTH_CHECK_ATTEMPTS..."
-    
+
     if RESPONSE=$(curl -f -s -o /dev/null -w "%{http_code}" "$HEALTH_CHECK_URL" 2>/dev/null); then
         if [[ "$RESPONSE" == "200" ]]; then
             echo -e "${GREEN}✅ Health check passed (HTTP 200)${NC}"
@@ -184,7 +184,7 @@ while [[ $ATTEMPT -lt $MAX_HEALTH_CHECK_ATTEMPTS ]]; do
     else
         echo "Connection failed - retrying..."
     fi
-    
+
     if [[ $ATTEMPT -lt $MAX_HEALTH_CHECK_ATTEMPTS ]]; then
         sleep $HEALTH_CHECK_INTERVAL
     fi

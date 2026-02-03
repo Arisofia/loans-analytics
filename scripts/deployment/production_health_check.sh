@@ -27,7 +27,7 @@ print_status() {
     local check=$1
     local status=$2
     local message=$3
-    
+
     if [ "$status" = "✅" ]; then
         echo -e "${GREEN}${status} ${check}${NC}: ${message}"
     elif [ "$status" = "⚠️" ]; then
@@ -47,12 +47,12 @@ BODY=$(echo "$RESPONSE" | head -n -1)
 
 if [ "$HTTP_CODE" = "200" ]; then
     print_status "Health Endpoint" "✅" "Responding normally (HTTP $HTTP_CODE)"
-    
+
     # Parse health response if JSON
     if echo "$BODY" | jq . > /dev/null 2>&1; then
         STATUS=$(echo "$BODY" | jq -r '.status' 2>/dev/null || echo "unknown")
         print_status "Status Field" "✅" "$STATUS"
-        
+
         # Check sub-components
         if echo "$BODY" | jq '.checks' > /dev/null 2>&1; then
             echo "  Sub-component status:"
@@ -72,7 +72,7 @@ RESPONSE_TIME=$(curl -s -o /dev/null -w "%{time_total}" -m $TIMEOUT "$APP_URL" 2
 
 if [ "$RESPONSE_TIME" != "timeout" ]; then
     RESPONSE_TIME_MS=$(echo "$RESPONSE_TIME" | awk '{printf "%.0f", $1 * 1000}')
-    
+
     if [ "$RESPONSE_TIME_MS" -lt 1000 ]; then
         print_status "Response Time" "✅" "${RESPONSE_TIME_MS}ms (excellent)"
     elif [ "$RESPONSE_TIME_MS" -lt 5000 ]; then
@@ -119,7 +119,7 @@ if [ -f "pyproject.toml" ]; then
             fi
         fi
     fi
-    
+
     # Check for active TODOs
     TODO_COUNT=$(grep -r "TODO:" src/ python/ --include="*.py" 2>/dev/null | wc -l || echo "0")
     if [ "$TODO_COUNT" = "0" ]; then
