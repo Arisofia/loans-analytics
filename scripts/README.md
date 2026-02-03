@@ -1,8 +1,47 @@
 # Automation Scripts
 
-This directory contains automation scripts for the Abaco Loans Analytics platform.
+This directory contains automation scripts for the Abaco Loans Analytics platform, organized by purpose.
+
+## 📁 Directory Structure
+
+```
+scripts/
+├── data/          # Data generation, processing, and database operations
+├── deployment/    # Deployment and production management
+├── monitoring/    # Monitoring stack and metrics collection
+├── maintenance/   # Repository maintenance and validation
+└── evaluation/    # Model evaluation and performance testing
+```
+
+See individual README.md files in each subdirectory for detailed documentation.
 
 ## 🚀 Quick Start
+
+### Data Operations
+
+```bash
+# Generate sample data
+python scripts/data/generate_sample_data.py
+
+# Run ETL pipeline
+python scripts/data/run_data_pipeline.py --input data/raw/loans.csv
+
+# Setup database
+python scripts/data/setup_supabase_tables.py
+```
+
+### Deployment
+
+```bash
+# Deploy to Azure
+./scripts/deployment/deploy_to_azure.sh
+
+# Health check
+python scripts/deployment/health_check.py
+
+# Rollback if needed
+./scripts/deployment/rollback_deployment.sh
+```
 
 ### Start Monitoring Stack (Fully Automated)
 
@@ -11,7 +50,7 @@ This directory contains automation scripts for the Abaco Loans Analytics platfor
 make monitoring-start
 
 # Option 2: Direct script execution
-bash scripts/auto_start_monitoring.sh
+bash scripts/monitoring/auto_start_monitoring.sh
 ```
 
 This will automatically:
@@ -23,6 +62,35 @@ This will automatically:
 5. ✅ Start Prometheus + Grafana + Alertmanager
 6. ✅ Configure Grafana datasource
 7. ✅ Open Grafana in your browser (optional)
+
+### Repository Maintenance
+
+```bash
+# Run health check
+./scripts/maintenance/repo-doctor.sh
+
+# Validate structure
+python scripts/maintenance/validate_structure.py
+
+# Cleanup old workflows
+./scripts/maintenance/cleanup_workflow_runs_by_count.sh
+```
+
+## 📊 Script Categories
+
+### Data Scripts (`data/`)
+Data generation, ETL pipeline, database operations. See [data/README.md](data/README.md)
+
+### Deployment Scripts (`deployment/`)
+Azure deployment, health checks, rollback procedures. See [deployment/README.md](deployment/README.md)
+
+### Monitoring Scripts (`monitoring/`)
+Prometheus/Grafana stack, metrics, dashboards. See [monitoring/README.md](monitoring/README.md)
+
+### Maintenance Scripts (`maintenance/`)
+Repository health, validation, housekeeping. See [maintenance/README.md](maintenance/README.md)
+
+## 📋 Common Tasks
 
 ### Stop Monitoring Stack
 
@@ -36,7 +104,13 @@ make monitoring-stop
 make monitoring-logs
 ```
 
-## 📊 Monitoring Scripts
+## Legacy Documentation
+
+The following sections contain detailed documentation for individual scripts. For new development, prefer the organized structure above.
+
+---
+
+## 📊 Monitoring Scripts (Legacy)
 
 | Script                         | Description                                                  | Usage                                             |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
