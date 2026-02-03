@@ -54,6 +54,7 @@ Major repository consolidation to improve maintainability and reduce clutter.
 ### � VS Code Configuration Fix
 
 **Task Type Error Resolved:**
+
 - Fixed "no registered task type 'func'" error in `.vscode/tasks.json`
 - Converted Azure Functions task from `type: "func"` to `type: "shell"`
 - Updated command from `"host start"` to `"func host start"`
@@ -138,11 +139,13 @@ tests/agents/requirements-test.txt  # Agent-specific test deps (specialized)
 ### Quick Reference
 
 **All Archives:**
+
 ```bash
 tree archives/ -L 2
 ```
 
 **Historical Release Notes:**
+
 ```bash
 # All v1.3.0 documentation
 ls archives/releases/v1.3.0/
@@ -155,6 +158,7 @@ grep -r "keyword" archives/releases/v1.3.0/
 ```
 
 **Old Production Docs:**
+
 ```bash
 # All superseded production documentation
 ls archives/documentation/old-production/
@@ -164,6 +168,7 @@ cat archives/documentation/old-production/PRODUCTION_RELEASE_v1.3.0_COMPLETE.md
 ```
 
 **Status Reports:**
+
 ```bash
 # Historical fix/completion reports
 ls archives/documentation/
@@ -173,6 +178,7 @@ cat archives/documentation/LINTING_RESOLUTION_SUMMARY.md
 ```
 
 **Docker Archives:**
+
 ```bash
 # View archived Docker configurations
 ls archives/docker/
@@ -184,6 +190,7 @@ diff archives/docker/docker-compose.override.yml.deprecated docker-compose.yml
 ### Using Git History
 
 All archived files remain in git history:
+
 ```bash
 # Find when a file was moved
 git log --follow -- archives/releases/v1.3.0/RELEASE_NOTES_v1.3.0.md
@@ -204,20 +211,23 @@ All changes pushed to `origin/main`:
    - Security: Added --ignore-scripts to pnpm install (S6505)
    - Code quality: Refactored Portfolio Dashboard (reduced complexity)
    - Code quality: Modernized clean.sh with Bash best practices
-Best Practices Established
+     Best Practices Established
 
 ### Archive Policy
+
 - **When to Archive**: Files related to completed releases, superseded docs, or temporary status reports
 - **Archive Structure**: Organize by category and version (releases/vX.Y.Z/, documentation/category/)
 - **Always Include**: README.md in each archive directory explaining contents
 - **Keep Active**: Only current version docs, active guides, and essential references at root
 
 ### Documentation Maintenance
+
 - **Root Level**: Only README.md, CHANGELOG.md, SECURITY.md, REPO_STRUCTURE.md, and current production status
 - **docs/**: Active operational guides, development docs, and runbooks
 - **archives/**: Historical documentation, old releases, superseded guides
 
 ### Dependency Management
+
 - **Single Source**: All requirements at repository root
 - **Lock File**: requirements.lock.txt for reproducible builds
 - **Specialized Only**: Keep only truly specialized requirements (e.g., test-specific) in subdirectories
@@ -246,17 +256,20 @@ Consider consolidating:
 ## References
 
 ### Active Documentation
+
 - [CHANGELOG.md](../CHANGELOG.md) - Current version history and what's new
 - [DEPLOYMENT_OPERATIONS_GUIDE.md](DEPLOYMENT_OPERATIONS_GUIDE.md) - Current deployment procedures
 - [PRODUCTION_READINESS_REPORT.md](../PRODUCTION_READINESS_REPORT.md) - Current production status
 - [DOCKER_SETUP.md](DOCKER_SETUP.md) - Docker configuration guide
 
 ### Policy Documents
+
 - [DATA_GOVERNANCE.md](DATA_GOVERNANCE.md) - Data handling policies
 - [DOCUMENTATION_POLICY.md](DOCUMENTATION_POLICY.md) - Documentation standards
 - [.vscode/README.md](../.vscode/README.md) - VS Code configuration policy
 
 ### Related Cleanup Efforts
+
 - [CTO_AUDIT_REPORT.md](CTO_AUDIT_REPORT.md) - Technical debt audit from Jan 2026
 - [CRITICAL_DEBT_FIXES_2026.md](CRITICAL_DEBT_FIXES_2026.md) - Critical fixes resolved
 
@@ -269,18 +282,21 @@ Consider consolidating:
 ## Statistics
 
 **Before Cleanup:**
+
 - Root directory files: 100+ files
 - Scattered release documentation across root
 - Duplicate requirements in 3 locations
 - Multiple obsolete production status files
 
 **After Cleanup:**
+
 - Root directory files: 71 files (29 fewer)
 - Organized archives by category and version
 - Single source of truth for requirements
 - Clear separation: active vs. historical docs
 
 **File Reduction by Category:**
+
 - Release documentation: -8 files (archived to v1.3.0/)
 - Production docs: -7 files (archived to old-production/)
 - Status reports: -7 files (archived to documentation/)
