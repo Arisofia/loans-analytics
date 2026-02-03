@@ -84,6 +84,4 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) file for 
 
 ---
 
-**Last Updated**: 2026-02-03  
-**Platform Version**: v2.0 (Unified Pipeline Architecture)  
-**Status**: Production-Ready ✅
+For the latest platform version and production readiness status, see [CHANGELOG.md](CHANGELOG.md) and [PRODUCTION_READINESS_REPORT.md](PRODUCTION_READINESS_REPORT.md). This overview intentionally avoids hard-coded version or status values to remain evergreen.
