@@ -5,12 +5,14 @@ Scripts for repository maintenance, validation, and housekeeping.
 ## Scripts
 
 **Repository Maintenance:**
+
 - `repo-doctor.sh` - Comprehensive repository health check
 - `repo_maintenance.sh` - Routine maintenance tasks
 - `cleanup_workflow_runs_by_count.sh` - Clean up old workflow runs
 - `merge_all_branches.sh` - Batch merge branches
 
 **Validation:**
+
 - `validate_structure.py` - Validate repository structure
 - `validate_complete_stack.py` - Validate full application stack
 - `validate_copilot_agents.py` - Validate AI agent configurations
