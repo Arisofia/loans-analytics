@@ -5,14 +5,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  issues: write
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -24,6 +22,9 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     needs: deploy
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v4
 
