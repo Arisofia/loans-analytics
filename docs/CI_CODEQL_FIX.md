@@ -122,7 +122,7 @@ Modified `.github/workflows/security-scan.yml`:
 - ✅ Reliable CI/CD execution
 - ⚠️ Slightly slower (~10-20 seconds additional analysis time)
 
-**Decision:** For a security-critical fintech application processing $7.4M+ AUM, **reliability and thoroughness are paramount**. The minimal performance cost is acceptable.
+**Decision:** For a security-critical fintech application processing client assets under management (AUM), **reliability and thoroughness are paramount**. The minimal performance cost is acceptable.
 
 ---
 
