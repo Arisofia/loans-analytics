@@ -118,7 +118,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changes (Next Release)
 
-#### Code Quality & Refactoring
+#### Code Quality & Refactoring (Next Release)
 
 - **Agent Initialization Pattern**: Eliminated duplicate `__init__` boilerplate from 8 agent classes using new `@agent_with_role` decorator
   - Created `python/multi_agent/agent_factory.py` with decorator pattern
@@ -137,7 +137,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 **Phase G3 Complete: Full Product-Specific Scenario Coverage** – Expanded multi-agent system from 11 to 20 scenarios, adding comprehensive workflows for SME loans, auto loans, and portfolio-level operations. All lending product verticals now have complete scenario coverage with 54 passing tests.
 
-### Added
+### Added – v1.2.0
 
 #### Phase G3: SME Loan Scenarios
 
@@ -221,7 +221,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 **Phase G2 & G3: Fintech Intelligence & Product-Specific Scenarios** – Enhanced multi-agent system from 4 to 8 specialized agents with domain expertise in collections, fraud detection, pricing, and customer retention. Added KPI integration and product-specific scenario packs starting with retail lending workflows.
 
-### Added
+### Added – v1.1.0
 
 #### Phase G2: Specialized Fintech Agents
 

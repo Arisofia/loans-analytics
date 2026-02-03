@@ -232,7 +232,7 @@ All changes pushed to `origin/main`:
 - **Lock File**: requirements.lock.txt for reproducible builds
 - **Specialized Only**: Keep only truly specialized requirements (e.g., test-specific) in subdirectories
 
-## Next Steps
+## Next Steps (Post-Cleanup)
 
 Consider consolidating:
 
@@ -253,7 +253,7 @@ Consider consolidating:
 3. **Documentation**: Always document consolidation decisions and rationale
 4. **Git History**: Maintain full git history - archives don't replace version control
 
-## References
+## References (Post-Cleanup)
 
 ### Active Documentation
 
