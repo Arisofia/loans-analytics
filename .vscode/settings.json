@@ -86,5 +86,18 @@
     "abaco-loans-analytics/.github/workflows/agent-orchestrator.yml"
   ],
   "chat.useAgentSkills": true,
-  "mssql.enableSqlParser": false
+  "mssql.enableSqlParser": false,
+  "extensions.ignoreRecommendations": false,
+  "extensions.autoCheckUpdates": true,
+  "extensions.autoUpdate": false,
+  // Disable problematic extensions for this workspace
+  "google.geminicodeassist": {
+    "enabled": false
+  },
+  "zencoderai.zencoder": {
+    "enabled": false
+  },
+  "trunk.io": {
+    "enabled": false
+  }
 }
