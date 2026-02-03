@@ -1,18 +1,29 @@
 # VERIFIED REPOSITORY STATE
 
-**Report Generated:** 2026-02-03T22:50:11.311Z  
-**Repository:** Arisofia/abaco-loans-analytics  
-**Analysis Method:** Direct git inspection (not from memory)
+This document defines a **reusable procedure** for verifying the state of the repository.  
+Per `docs/DOCUMENTATION_POLICY.md` (§2 "No Duplicates or Stale Files" and §3 "Minimalism & Relevance"):
+
+> Do **not** commit point‑in‑time snapshots here (timestamps, specific branches, exact commit SHAs, file sizes, etc.).  
+> This file documents **how** to verify the state, not **what** the current state is.
 
 ---
 
-## Current Branch Status
+## 1. Prerequisites
 
-**Local Branch:** `copilot/verify-repository-status`  
-**Remote Tracking:** `origin/copilot/verify-repository-status`  
-**Working Tree:** Clean (no uncommitted changes)  
-**Sync Status:** Up to date with remote
+- You have a local clone of the repository.
+- `git` is installed and available on your PATH.
+- You are on the branch you want to verify (e.g., `main`, `feat/...`, `fix/...`).
 
+Optional (recommended for audits):
+
+- Record the command outputs to a timestamped file under an archival path, e.g.  
+  `docs/archive/repository_state_<YYYY-MM-DD_HHMMSS>.md`.
+
+---
+
+## 2. Verify Working Tree Status
+
+Run:
 ```
 HEAD -> copilot/verify-repository-status
 origin/copilot/verify-repository-status (synced)
