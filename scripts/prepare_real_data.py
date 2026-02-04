@@ -242,9 +242,12 @@ def main():
     # Merge collateral (left join, aggregate if multiple per loan)
     if 'collateral' in tables:
         collateral_cols = ['Loan ID', 'Collateral Type', 'Collateral Current']
-        collateral_df = tables['collateral'][collateral_cols].drop_duplicates(subset=['Loan ID'])
-        merged = merged.merge(collateral_df, on='Loan ID', how='left', suffixes=('', '_coll'))
-        logger.info(f"   🔗 + collateral data ({len(collateral_df):,} unique loans)")
+        collateral_agg = tables['collateral'][collateral_cols].groupby('Loan ID').agg({
+            'Collateral Type': 'first',      # Use first type if multiple; assumes consistency per loan
+            'Collateral Current': 'sum',     # Total collateral value per loan
+        }).reset_index()
+        merged = merged.merge(collateral_agg, on='Loan ID', how='left', suffixes=('', '_coll'))
+        logger.info(f"   🔗 + collateral data (aggregated, {len(collateral_agg):,} loans)")
 
     # Aggregate payment schedule (scheduled payments)
     if 'payment_schedule' in tables:
