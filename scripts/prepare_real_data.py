@@ -320,7 +320,8 @@ def main():
     logger.info("✅ Data Preparation Complete!")
     logger.info("%s", "=" * 60)
     logger.info("📄 Output file: %s", output_file)
-    logger.info("📊 Total loans: %s", len(final_df))
+    formatted_loan_count = f"{len(final_df):,}"
+    logger.info("📊 Total loans: %s", formatted_loan_count)
     logger.info("📋 Columns: %s", len(final_df.columns))
 
     # Show key statistics
