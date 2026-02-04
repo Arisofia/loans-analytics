@@ -11,4 +11,3 @@
 | C-03 | Empty Input CSV Handling | Low | Functional | Yes | [ ] |
 | D-01 | CLI Argument Validation (Invalid Paths) | Low | Functional | Yes | [ ] |
 | H-01 | GHA Workflow Compatibility (Local Simulation) | High | Functional | Yes | [ ] |
-

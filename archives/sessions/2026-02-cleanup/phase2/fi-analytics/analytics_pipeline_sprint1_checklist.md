@@ -12,4 +12,3 @@
 | F-02 | Invalid Token Revocation Handling | High | Security | Yes | [ ] |
 | F-03 | Env Var Injection Security | Medium | Security | Partial | [ ] |
 | I-01 | End-to-End Trace Verification | High | Usability | No | [ ] |
-

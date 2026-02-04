@@ -236,4 +236,3 @@ See full documentation in `fi-analytics/` directory:
 *Created*: 2026-01-03
 *Duration*: Sprint 0 (Days 1-2)
 *Next*: Sprint 1 (Integration & Tracing)
-
