@@ -316,7 +316,8 @@ def main():
     logger.info("   ✅ Saved %s loans to %s", f"{len(final_df):,}", output_file)
 
     # Summary
-    logger.info("\n" + "=" * 60)
+    logger.info("")
+    logger.info("%s", "=" * 60)
     logger.info("✅ Data Preparation Complete!")
     logger.info("=" * 60)
     logger.info("📄 Output file: %s", output_file)
