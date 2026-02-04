@@ -2,7 +2,7 @@ name: Pipeline Orchestrator Agent
 
 on:
   schedule:
-    - cron: "15 5 * * *"
+    - cron: '15 5 * * *'
   workflow_dispatch:
 
 permissions:
@@ -28,8 +28,8 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pip"
+          python-version: '3.12'
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
@@ -105,7 +105,7 @@ jobs:
 
       - name: Upload pipeline artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: pipeline-run-${{ steps.pipeline.outputs.run_id }}
           path: |
@@ -134,7 +134,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.12'
 
       - name: Build validation and compliance reports
         run: |
@@ -203,7 +203,7 @@ jobs:
 
       - name: Upload validation artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: validation-reports-${{ needs.pipeline-orchestrator.outputs.run_id }}
           path: |
@@ -232,8 +232,8 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pip"
+          python-version: '3.12'
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
@@ -304,7 +304,7 @@ jobs:
 
       - name: Upload metrics artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: performance-metrics-${{ needs.pipeline-orchestrator.outputs.run_id }}
           path: metrics/
