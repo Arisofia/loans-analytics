@@ -140,8 +140,10 @@ class TestServiceStatusChecker:
         
         checker.check_git_status = failing_check
         
-        # Should not raise, should capture error
-        results = checker.run_all_checks()
+        # Should not raise, should capture error. Mock run_command so no external
+        # subprocesses (pytest, ruff, git, etc.) are spawned during this unit test.
+        with patch.object(checker, "run_command", return_value=(True, "", "")):
+            results = checker.run_all_checks()
         
         assert "git" in results
         assert results["git"]["success"] is False
