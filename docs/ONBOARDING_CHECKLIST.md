@@ -221,7 +221,7 @@ After completing all sections above, request sign-off from Tech Lead or Reposito
 | Day 3-4: Team Onboarding                 | [ ]       | \***\*\_\_\*\*** |
 | Role-Specific Onboarding (if applicable) | [ ]       | \***\*\_\_\*\*** |
 
-**Reviewer:** \***\*\*\*\*\*\*\***\_\***\*\*\*\*\*\*\*** (Tech Lead / Repository Admin)<br>
+**Reviewer:** \***\*\*\*\*\*\*\***\_\***\*\*\*\*\*\*\*** (Tech Lead / Repository Admin)
 **Date:** \***\*\_\_\*\***
 
 **Notes:**
