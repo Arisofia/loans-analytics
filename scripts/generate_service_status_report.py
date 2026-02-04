@@ -560,6 +560,7 @@ def main():
                     indent=2,
                 )
         except Exception:
+            # Silently ignore write failures for error artifact - best effort only
             pass
     finally:
         # Always exit 0 - script is non-blocking and should not fail CI/CD

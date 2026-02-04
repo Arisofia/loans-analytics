@@ -74,8 +74,9 @@ node_modules/
 # Project-specific artifacts
 apps/.DS_Store
 
-# Generated reports (JSON only - keep markdown tracked)
+# Generated reports (not source documentation per DATA_GOVERNANCE.md)
 service_status_report.json
+service_status_report.md
 
 # Local repository clones
 abaco-loans-analytics/
