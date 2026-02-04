@@ -81,10 +81,18 @@ class ServiceStatusChecker:
             )
             overall_success = False
 
-        # Check for uncommitted changes
+        # Check for uncommitted changes (exclude report files to avoid false positives)
         success, stdout, stderr = self.run_command(["git", "status", "--porcelain"])
         if success:
-            has_changes = bool(stdout.strip())
+            # Filter out service_status_report files
+            filtered_lines = [
+                line for line in stdout.strip().split("\n")
+                if line and not any(
+                    exclude in line
+                    for exclude in ["service_status_report.md", "service_status_report.json"]
+                )
+            ]
+            has_changes = bool(filtered_lines)
             status["details"]["uncommitted_changes"] = has_changes
             status["details"]["clean_working_tree"] = not has_changes
         else:
@@ -177,24 +185,33 @@ class ServiceStatusChecker:
         
         # Check ruff
         success, stdout, stderr = self.run_command(
-            ["python", "-m", "ruff", "check", ".", "--quiet"],
+            [sys.executable, "-m", "ruff", "check", ".", "--quiet"],
             timeout=60
         )
         status["details"]["ruff"] = "✅ Pass" if success else "❌ Issues found"
         if not success:
             status["success"] = False
             
-        # Check for TODO count
-        success, stdout, _ = self.run_command(
-            ["grep", "-r", "TODO:", "src/", "python/", "--include=*.py"],
-        )
-        todo_count = len(stdout.strip().split("\n")) if stdout.strip() else 0
-        status["details"]["active_todos"] = f"{todo_count} items"
+        # Check for TODO count - use Python instead of grep for portability
+        try:
+            todo_count = 0
+            for pattern in ["src/", "python/"]:
+                search_dir = self.repo_root / pattern
+                if search_dir.exists():
+                    for py_file in search_dir.rglob("*.py"):
+                        try:
+                            with open(py_file, "r", encoding="utf-8") as f:
+                                todo_count += sum(1 for line in f if "TODO:" in line)
+                        except Exception:
+                            pass  # Skip files that can't be read
+            status["details"]["active_todos"] = f"{todo_count} items"
+        except Exception as e:
+            status["details"]["active_todos"] = f"unknown (error: {str(e)})"
         
         return status
 
-    def check_supabase_connectivity(self) -> dict[str, Any]:
-        """Check Supabase connectivity.
+    def check_supabase_configuration(self) -> dict[str, Any]:
+        """Check Supabase configuration.
 
         A successful status requires both SUPABASE_URL and a Supabase key
         (SUPABASE_ANON_KEY or SUPABASE_KEY) to be configured.
@@ -222,7 +239,7 @@ class ServiceStatusChecker:
             return status
 
         status["success"] = True
-        status["details"]["message"] = "Configuration present"
+        status["details"]["message"] = "Configuration complete"
         return status
 
     def check_pipeline(self) -> dict[str, Any]:
@@ -348,7 +365,7 @@ class ServiceStatusChecker:
             ("python", self.check_python_environment),
             ("tests", self.check_tests),
             ("linting", self.check_linting),
-            ("supabase", self.check_supabase_connectivity),
+            ("supabase", self.check_supabase_configuration),
             ("pipeline", self.check_pipeline),
             ("agents", self.check_multi_agent_system),
             ("docs", self.check_documentation),
