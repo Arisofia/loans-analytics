@@ -7,7 +7,7 @@ Designed to be run daily via cron/scheduler to provide continuous insights.
 
 Usage:
     python scripts/run_daily_agent_analysis.py --input data/raw/spanish_loans_seed.csv
-    
+
     # Or with cron:
     0 2 * * * cd /path/to/repo && python scripts/run_daily_agent_analysis.py --input data/raw/spanish_loans_seed.csv
 """
@@ -65,193 +65,204 @@ def calculate_summary_metrics(csv_file: Path) -> dict[str, Any]:
     """Calculate summary metrics from CSV file without pandas dependency."""
     import csv
     import json
-    
+
     loans = []
-    with open(csv_file, 'r', encoding='utf-8') as f:
+    with open(csv_file, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            loans.append({
-                'loan_id': row['loan_id'],
-                'principal_amount': float(row['principal_amount']),
-                'interest_rate': float(row['interest_rate']),
-                'current_status': row['current_status'],
-                'risk_score': float(row['risk_score']),
-                'payment_history_json': row['payment_history_json']
-            })
-    
+            loans.append(
+                {
+                    "loan_id": row["loan_id"],
+                    "principal_amount": float(row["principal_amount"]),
+                    "interest_rate": float(row["interest_rate"]),
+                    "current_status": row["current_status"],
+                    "risk_score": float(row["risk_score"]),
+                    "payment_history_json": row["payment_history_json"],
+                }
+            )
+
     # Calculate metrics
     total_loans = len(loans)
-    total_portfolio = sum(loan['principal_amount'] for loan in loans)
+    total_portfolio = sum(loan["principal_amount"] for loan in loans)
     avg_loan_size = total_portfolio / total_loans if total_loans > 0 else 0
-    
+
     # Weighted average rate
-    weighted_rate = sum(loan['principal_amount'] * loan['interest_rate'] for loan in loans) / total_portfolio if total_portfolio > 0 else 0
-    
+    weighted_rate = (
+        sum(loan["principal_amount"] * loan["interest_rate"] for loan in loans) / total_portfolio
+        if total_portfolio > 0
+        else 0
+    )
+
     # Risk metrics
-    avg_risk = sum(loan['risk_score'] for loan in loans) / total_loans if total_loans > 0 else 0
-    expected_loss = sum(loan['risk_score'] * loan['principal_amount'] for loan in loans)
+    avg_risk = sum(loan["risk_score"] for loan in loans) / total_loans if total_loans > 0 else 0
+    expected_loss = sum(loan["risk_score"] * loan["principal_amount"] for loan in loans)
     expected_loss_rate = (expected_loss / total_portfolio * 100) if total_portfolio > 0 else 0
-    
+
     # Calculate DPD from payment history
     dpd_30_count = 0
     dpd_60_count = 0
     dpd_90_count = 0
     par_30_amount = 0
-    
+
     for loan in loans:
         try:
-            payment_history = json.loads(loan['payment_history_json'])
-            overdue_days = [p['days_late'] for p in payment_history 
-                           if p['status'] in ['missed', 'defaulted'] or 
-                           (p['status'] == 'late_paid' and p['days_late'] > 30)]
+            payment_history = json.loads(loan["payment_history_json"])
+            overdue_days = [
+                p["days_late"]
+                for p in payment_history
+                if p["status"] in ["missed", "defaulted"]
+                or (p["status"] == "late_paid" and p["days_late"] > 30)
+            ]
             max_dpd = max(overdue_days) if overdue_days else 0
-            
+
             if max_dpd >= 30:
                 dpd_30_count += 1
-                par_30_amount += loan['principal_amount']
+                par_30_amount += loan["principal_amount"]
             if max_dpd >= 60:
                 dpd_60_count += 1
             if max_dpd >= 90:
                 dpd_90_count += 1
         except (json.JSONDecodeError, KeyError):
             pass
-    
+
     delinquency_rate_30 = (dpd_30_count / total_loans * 100) if total_loans > 0 else 0
     delinquency_rate_60 = (dpd_60_count / total_loans * 100) if total_loans > 0 else 0
     delinquency_rate_90 = (dpd_90_count / total_loans * 100) if total_loans > 0 else 0
     par_30_rate = (par_30_amount / total_portfolio * 100) if total_portfolio > 0 else 0
-    
+
     # Status distribution
     status_dist = {}
     for loan in loans:
-        status = loan['current_status']
+        status = loan["current_status"]
         status_dist[status] = status_dist.get(status, 0) + 1
-    
+
     return {
-        'total_loans': total_loans,
-        'total_portfolio': total_portfolio,
-        'avg_loan_size': avg_loan_size,
-        'weighted_avg_rate': weighted_rate,
-        'avg_risk_score': avg_risk,
-        'expected_loss_rate': expected_loss_rate,
-        'delinquency_rate_30': delinquency_rate_30,
-        'delinquency_rate_60': delinquency_rate_60,
-        'delinquency_rate_90': delinquency_rate_90,
-        'par_30_rate': par_30_rate,
-        'status_dist': status_dist
+        "total_loans": total_loans,
+        "total_portfolio": total_portfolio,
+        "avg_loan_size": avg_loan_size,
+        "weighted_avg_rate": weighted_rate,
+        "avg_risk_score": avg_risk,
+        "expected_loss_rate": expected_loss_rate,
+        "delinquency_rate_30": delinquency_rate_30,
+        "delinquency_rate_60": delinquency_rate_60,
+        "delinquency_rate_90": delinquency_rate_90,
+        "par_30_rate": par_30_rate,
+        "status_dist": status_dist,
     }
 
 
 def run_agent_analysis(agent_name: str, query: str) -> dict[str, Any]:
     """Run analysis with a specific agent."""
     try:
-        # Try to import multi-agent system
-        from python.multi_agent.cli import main as agent_cli_main
-        
         # This would call the actual multi-agent system
         # For now, we'll create a placeholder response
         print(f"  Running {agent_name} agent analysis...")
-        
+
         # Placeholder - in production this would call the actual agent
         response = {
-            'agent': agent_name,
-            'timestamp': datetime.now().isoformat(),
-            'query': query,
-            'response': f"[{agent_name} analysis would appear here in production]",
-            'status': 'placeholder'
+            "agent": agent_name,
+            "timestamp": datetime.now().isoformat(),
+            "query": query,
+            "response": f"[{agent_name} analysis would appear here in production]",
+            "status": "placeholder",
         }
-        
+
         return response
-        
+
     except ImportError:
-        print(f"  ⚠️ Multi-agent system not available, creating placeholder")
+        print("  ⚠️ Multi-agent system not available, creating placeholder")
         return {
-            'agent': agent_name,
-            'timestamp': datetime.now().isoformat(),
-            'query': query,
-            'response': f"Multi-agent system not configured. Install dependencies and configure API keys.",
-            'status': 'not_configured'
+            "agent": agent_name,
+            "timestamp": datetime.now().isoformat(),
+            "query": query,
+            "response": "Multi-agent system not configured. Install dependencies and configure API keys.",
+            "status": "not_configured",
         }
 
 
 def save_analysis_results(results: dict[str, Any], output_dir: Path):
     """Save analysis results to file."""
     output_dir.mkdir(parents=True, exist_ok=True)
-    
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = output_dir / f"daily_analysis_{timestamp}.json"
-    
-    with open(output_file, 'w', encoding='utf-8') as f:
+
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
-    
+
     print(f"\n✅ Analysis results saved to: {output_file}")
-    
+
     # Also save latest for easy access
     latest_file = output_dir / "latest_analysis.json"
-    with open(latest_file, 'w', encoding='utf-8') as f:
+    with open(latest_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
-    
+
     print(f"✅ Latest analysis: {latest_file}")
 
 
 def main():
     """Main function for daily agent analysis."""
-    parser = argparse.ArgumentParser(description='Run daily agent analysis on loan portfolio')
-    parser.add_argument('--input', type=str, required=True, help='Path to loan data CSV file')
-    parser.add_argument('--output', type=str, default='data/agent_analysis', help='Output directory for analysis results')
-    
+    parser = argparse.ArgumentParser(description="Run daily agent analysis on loan portfolio")
+    parser.add_argument("--input", type=str, required=True, help="Path to loan data CSV file")
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="data/agent_analysis",
+        help="Output directory for analysis results",
+    )
+
     args = parser.parse_args()
-    
+
     input_file = Path(args.input)
     output_dir = Path(args.output)
-    
+
     if not input_file.exists():
         print(f"❌ Error: Input file not found: {input_file}")
         sys.exit(1)
-    
-    print("="*60)
+
+    print("=" * 60)
     print("🤖 DAILY AGENT ANALYSIS")
-    print("="*60)
+    print("=" * 60)
     print(f"Input file: {input_file}")
     print(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("")
-    
+
     # Calculate portfolio metrics
     print("📊 Calculating portfolio metrics...")
     metrics = calculate_summary_metrics(input_file)
-    
+
     # Generate analysis query
     analysis_query = analyze_portfolio_summary(metrics)
-    
+
     print("\n🔍 Running agent analyses...")
-    
+
     # Run analyses with different agents
     agents_to_run = [
-        ('risk', 'Risk Analyst'),
-        ('growth', 'Growth Strategist'),
-        ('collections', 'Collections Specialist'),
-        ('compliance', 'Compliance Officer')
+        ("risk", "Risk Analyst"),
+        ("growth", "Growth Strategist"),
+        ("collections", "Collections Specialist"),
+        ("compliance", "Compliance Officer"),
     ]
-    
+
     results = {
-        'timestamp': datetime.now().isoformat(),
-        'input_file': str(input_file),
-        'portfolio_metrics': metrics,
-        'agent_analyses': {}
+        "timestamp": datetime.now().isoformat(),
+        "input_file": str(input_file),
+        "portfolio_metrics": metrics,
+        "agent_analyses": {},
     }
-    
+
     for agent_key, agent_name in agents_to_run:
         response = run_agent_analysis(agent_name, analysis_query)
-        results['agent_analyses'][agent_key] = response
+        results["agent_analyses"][agent_key] = response
         print(f"  ✓ {agent_name} analysis complete")
-    
+
     # Save results
     print("\n💾 Saving results...")
     save_analysis_results(results, output_dir)
-    
-    print("\n"+"="*60)
+
+    print("\n" + "=" * 60)
     print("✅ DAILY ANALYSIS COMPLETE")
-    print("="*60)
+    print("=" * 60)
     print("\n📌 Summary:")
     print(f"  • Analyzed {metrics['total_loans']} loans")
     print(f"  • Portfolio value: €{metrics['total_portfolio']:,.2f}")

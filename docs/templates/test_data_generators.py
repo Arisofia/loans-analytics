@@ -2,6 +2,17 @@
 Test Data Generators for TestCraftPro v2.0
 Generate realistic synthetic test data for various testing scenarios.
 
+SECURITY NOTE (python:S2245 - PRNG Usage):
+These generators create SYNTHETIC TEST DATA with reproducible randomness (seed parameter).
+Most random operations use the standard `random` module which is NOT cryptographically secure,
+but this is ACCEPTABLE because:
+1. All data is synthetic/test data, not production data
+2. Reproducibility (via seed) is required for consistent test scenarios
+3. EXCEPTION: PII like SSNs use `secrets` module for security even in test data
+
+Security-sensitive operations that use secrets module:
+- SSN generation in UserDataGenerator (see _generate_ssn)
+
 Usage:
     from test_data_generators import LoanDataGenerator, UserDataGenerator
 
@@ -17,6 +28,7 @@ Usage:
 import csv
 import json
 import random
+import secrets
 from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from io import StringIO
@@ -207,8 +219,12 @@ class UserDataGenerator:
             if mask_pii:
                 email = "****@****.com"
 
+            # SSN generation uses secrets module for security even in test data
+            # Security: python:S2245 - Uses CSPRNG (secrets) instead of PRNG (random)
             ssn = (
-                f"{random.randint(100, 999)}-{random.randint(10, 99)}-{random.randint(1000, 9999)}"
+                f"{secrets.randbelow(899) + 1:03d}-"
+                f"{secrets.randbelow(90) + 10:02d}-"
+                f"{secrets.randbelow(9000) + 1000:04d}"
             )
             if mask_pii:
                 ssn = f"***-**-{ssn[-4:]}"

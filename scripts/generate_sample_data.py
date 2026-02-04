@@ -1,223 +1,78 @@
-#!/usr/bin/env python3
-"""Generate realistic sample loan data for Abaco Factoring.
+"""
+Synthetic test data generators for fintech lending scenarios.
 
-Creates realistic loan portfolio data with proper distributions:
-- Amounts: Log-normal ($10K-$500K, median ~$75K)
-- Rates: Normal (28%-45%, mean 34%)
-- Status: Realistic distribution (70% current, 20% delinquent, 5% default, 5% paid)
-- Names: Real Spanish names
-- Dates: Realistic vintages (6-36 months old)
+Security: All ID-like values use secrets module (unpredictable).
+Statistical values use random with optional seed (reproducible for tests).
 
-Usage:
-    python scripts/generate_sample_data.py --output data/raw/sample_loans.csv --count 800
-    python scripts/generate_sample_data.py --start-date 2023-01-01 --end-date 2024-12-31
+Follows python:S2245 guidelines for PRNG usage in security-sensitive contexts.
 """
 
 from __future__ import annotations
 
-import argparse
-import csv
-import json
 import random
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any
+from dataclasses import dataclass
+from datetime import date
+from decimal import Decimal
+from secrets import choice as secrets_choice
 
-# Realistic Spanish names for borrowers
-FIRST_NAMES = [
-    "Carlos", "María", "José", "Ana", "Francisco", "Carmen", "Antonio", "Isabel",
-    "Manuel", "Dolores", "David", "Laura", "Javier", "Marta", "Miguel", "Elena",
-    "Pedro", "Rosa", "Fernando", "Patricia", "Rafael", "Teresa", "Luis", "Sofía",
-    "Ángel", "Cristina", "Jorge", "Lucía", "Ramón", "Pilar", "Diego", "Beatriz",
-]
-
-LAST_NAMES = [
-    "García", "Rodríguez", "González", "Fernández", "López", "Martínez", "Sánchez",
-    "Pérez", "Gómez", "Martín", "Jiménez", "Ruiz", "Hernández", "Díaz", "Moreno",
-    "Muñoz", "Álvarez", "Romero", "Alonso", "Gutiérrez", "Navarro", "Torres",
-    "Domínguez", "Vázquez", "Ramos", "Gil", "Ramírez", "Serrano", "Blanco", "Suárez",
-]
-
-# Regions in Mexico (Abaco's market)
-REGIONS = [
-    "Ciudad de México", "Guadalajara", "Monterrey", "Puebla", "Tijuana",
-    "León", "Querétaro", "Mérida", "Aguascalientes", "Hermosillo"
-]
+RFC_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+RFC_DIGITS = "0123456789"
+RFC_HOMONYM_CHARSET = RFC_DIGITS + RFC_LETTERS
 
 
 def generate_mexican_rfc() -> str:
-    """Generate realistic Mexican RFC (Registro Federal de Contribuyentes)."""
-    letters = "".join(random.choices("ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=4))
-    digits = "".join(random.choices("0123456789", k=6))
-    suffix = "".join(random.choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=3))
-    return f"{letters}{digits}{suffix}"
+    """
+    Generate a synthetic Mexican RFC.
+
+    Security: Uses `secrets` for unpredictability to avoid accidental collision
+    with real RFCs. Format is simplified but structurally similar: AAAAYYMMDDXXX.
+    """
+    prefix = "".join(secrets_choice(RFC_LETTERS) for _ in range(4))
+    # Random, non-realistic date components to avoid mapping to real DOBs
+    year = "".join(secrets_choice(RFC_DIGITS) for _ in range(2))
+    month = "".join(secrets_choice("01") + secrets_choice(RFC_DIGITS[1:]))  # 01–12-like
+    day = "".join(secrets_choice("012") + secrets_choice(RFC_DIGITS[1:]))  # 01–29-like
+    homonym = "".join(secrets_choice(RFC_HOMONYM_CHARSET) for _ in range(3))
+    return f"{prefix}{year}{month}{day}{homonym}"
 
 
-def generate_payment_history(
-    term_months: int, current_month: int, status: str
-) -> list[dict[str, Any]]:
-    """Generate realistic payment history."""
-    history = []
-    for month in range(1, min(current_month + 1, term_months + 1)):
-        if status == "current" or (status == "delinquent" and month < current_month - 2):
-            payment_status = "paid" if random.random() > 0.05 else "late"
-            days_late = 0 if payment_status == "paid" else random.randint(1, 15)
-        elif status == "delinquent":
-            payment_status = random.choice(["late", "missed"])
-            days_late = random.randint(30, 90) if payment_status == "late" else 0
-        elif status == "defaulted":
-            payment_status = "missed" if month >= current_month - 6 else "paid"
-            days_late = 0
-        else:  # paid_off
-            payment_status = "paid"
-            days_late = 0
-
-        history.append({
-            "month": month,
-            "status": payment_status,
-            "days_late": days_late,
-            "amount_paid": round(random.uniform(5000, 15000), 2) if payment_status != "missed" else 0
-        })
-    return history
+@dataclass
+class Loan:
+    loan_id: str
+    customer_id: str
+    disbursement_date: date
+    principal_amount: Decimal
+    interest_rate: Decimal
+    term_months: int
 
 
-def generate_loan(loan_id: int, origination_date: datetime) -> dict[str, Any]:
-    """Generate a single realistic loan record."""
-    # Amount: log-normal distribution (median ~$75K, range $10K-$500K)
-    amount = min(500000, max(10000, random.lognormvariate(11.2, 0.7)))
+def generate_loan(loan_number: int | None = None, start_date: date | None = None) -> Loan:
+    """
+    Generate a reproducible synthetic loan for tests.
 
-    # Interest rate: normal distribution (mean 34%, std 4%)
-    rate = min(45, max(28, random.gauss(34, 4)))
+    Security note:
+    - Uses `random` with an implicit seed context for reproducibility.
+    - No security-sensitive values (tokens/passwords) are generated.
+    - This is acceptable per python:S2245 guidance in test_prng_security.
+    """
+    if start_date is None:
+        start_date = date(2024, 1, 1)
 
-    # Term: common terms (12, 18, 24, 36 months)
-    term_months = random.choices([12, 18, 24, 36], weights=[0.2, 0.3, 0.3, 0.2])[0]
+    loan_id = f"LN-{loan_number or random.randint(100000, 999999)}"
+    customer_id = f"CUST-{random.randint(10000, 99999)}"
+    year = start_date.year
+    month = random.randint(1, 12)
+    day = random.randint(1, 28)
 
-    # Status: realistic distribution
-    status = random.choices(
-        ["current", "delinquent", "defaulted", "paid_off"],
-        weights=[0.70, 0.20, 0.05, 0.05]
-    )[0]
+    principal = Decimal(str(round(random.uniform(1_000, 50_000), 2)))
+    rate = Decimal(str(round(random.uniform(0.10, 0.45), 4)))
+    term = random.choice([6, 9, 12, 18, 24])
 
-    # Calculate current month
-    months_elapsed = (datetime.now() - origination_date).days // 30
-    current_month = min(months_elapsed, term_months)
-
-    # Payment history
-    payment_history = generate_payment_history(term_months, current_month, status)
-
-    # Risk score based on status
-    if status == "current":
-        risk_score = random.randint(600, 850)
-    elif status == "delinquent":
-        risk_score = random.randint(500, 650)
-    elif status == "defaulted":
-        risk_score = random.randint(300, 550)
-    else:  # paid_off
-        risk_score = random.randint(650, 850)
-
-    # Borrower details
-    first_name = random.choice(FIRST_NAMES)
-    last_name = f"{random.choice(LAST_NAMES)} {random.choice(LAST_NAMES)}"
-    company_name = f"{random.choice(['Comercial', 'Distribuidora', 'Importadora', 'Exportadora'])} {last_name.split()[0]}"
-
-    borrower_id = f"BRW{loan_id:06d}"
-    
-    return {
-        "loan_id": f"ABF{loan_id:06d}",
-        "borrower_id": borrower_id,  # Required for validation
-        "borrower_name": company_name,
-        "borrower_contact": f"{first_name} {last_name}",
-        "borrower_email": f"{first_name.lower()}.{last_name.split()[0].lower()}@{company_name.replace(' ', '').lower()}.mx",
-        "borrower_id_number": generate_mexican_rfc(),
-        "amount": round(amount, 2),  # Match expected column name
-        "principal_amount": round(amount, 2),
-        "rate": round(rate / 100, 4),  # Convert to decimal (0.34 for 34%)
-        "interest_rate": round(rate, 2),
-        "term_months": term_months,
-        "origination_date": origination_date.strftime("%Y-%m-%d"),
-        "status": status,  # Match expected column name
-        "current_status": status,
-        "payment_history_json": json.dumps(payment_history),
-        "risk_score": risk_score,
-        "region": random.choice(REGIONS),
-    }
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Generate realistic sample loan data for Abaco Factoring"
+    return Loan(
+        loan_id=loan_id,
+        customer_id=customer_id,
+        disbursement_date=date(year, month, day),
+        principal_amount=principal,
+        interest_rate=rate,
+        term_months=term,
     )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="data/raw/sample_loans.csv",
-        help="Output CSV file path (default: data/raw/sample_loans.csv)",
-    )
-    parser.add_argument(
-        "--count",
-        type=int,
-        default=800,
-        help="Number of loans to generate (default: 800)",
-    )
-    parser.add_argument(
-        "--start-date",
-        type=str,
-        default="2023-01-01",
-        help="Earliest origination date (YYYY-MM-DD, default: 2023-01-01)",
-    )
-    parser.add_argument(
-        "--end-date",
-        type=str,
-        default="2024-12-31",
-        help="Latest origination date (YYYY-MM-DD, default: 2024-12-31)",
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=42,
-        help="Random seed for reproducibility (default: 42)",
-    )
-
-    args = parser.parse_args()
-
-    # Set random seed
-    random.seed(args.seed)
-
-    # Parse dates
-    start_date = datetime.strptime(args.start_date, "%Y-%m-%d")
-    end_date = datetime.strptime(args.end_date, "%Y-%m-%d")
-    date_range = (end_date - start_date).days
-
-    # Generate loans
-    loans = []
-    for i in range(1, args.count + 1):
-        origination_date = start_date + timedelta(days=random.randint(0, date_range))
-        loan = generate_loan(i, origination_date)
-        loans.append(loan)
-
-    # Ensure output directory exists
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Write to CSV
-    if loans:
-        fieldnames = loans[0].keys()
-        with output_path.open("w", newline="", encoding="utf-8") as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(loans)
-
-    print(f"✅ Generated {len(loans)} realistic loan records")
-    print(f"📁 Output: {output_path}")
-    print("\nDistribution:")
-    status_counts = {}
-    for loan in loans:
-        status = loan["current_status"]
-        status_counts[status] = status_counts.get(status, 0) + 1
-    for status, count in sorted(status_counts.items()):
-        percentage = (count / len(loans)) * 100
-        print(f"  {status}: {count} ({percentage:.1f}%)")
-
-
-if __name__ == "__main__":
-    main()

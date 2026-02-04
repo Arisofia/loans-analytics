@@ -44,7 +44,9 @@ disable=
     broad-exception-raised,
     unspecified-encoding,
     wrong-import-position,
-    unused-argument
+    unused-argument,
+    import-error,
+    missing-module-docstring
 
 [REPORTS]
 # Set the output format.

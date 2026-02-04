@@ -137,9 +137,7 @@ class TokenBucketRateLimiter:
 
             # Add tokens based on time elapsed
             time_elapsed = current_time - bucket["last_update"]
-            bucket["tokens"] = min(
-                self.capacity, bucket["tokens"] + time_elapsed * self.rate
-            )
+            bucket["tokens"] = min(self.capacity, bucket["tokens"] + time_elapsed * self.rate)
             bucket["last_update"] = current_time
 
             # Check if sufficient tokens
@@ -226,9 +224,7 @@ def rate_limit(
                     identifier,
                     remaining,
                 )
-                raise RateLimitExceeded(
-                    f"Rate limit exceeded. Remaining: {remaining}"
-                )
+                raise RateLimitExceeded(f"Rate limit exceeded. Remaining: {remaining}")
 
             return func(*args, **kwargs)
 

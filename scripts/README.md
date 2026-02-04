@@ -1,8 +1,49 @@
 # Automation Scripts
 
-This directory contains automation scripts for the Abaco Loans Analytics platform.
+This directory contains automation scripts for the Abaco Loans Analytics platform, organized by purpose.
+
+> ⚠️ **IMPORTANT**: Always run scripts using their full paths (e.g., `python scripts/data/generate_sample_data.py`). Do NOT create wrapper files in the repository root directory — `.gitignore` only ignores a specific set of wrapper filenames, and additional wrappers may cause linting errors.
+
+## 📁 Directory Structure
+
+```
+scripts/
+├── data/          # Data generation, processing, and database operations
+├── deployment/    # Deployment and production management
+├── monitoring/    # Monitoring stack and metrics collection
+├── maintenance/   # Repository maintenance and validation
+└── evaluation/    # Model evaluation and performance testing
+```
+
+See individual README.md files in each subdirectory for detailed documentation.
 
 ## 🚀 Quick Start
+
+### Data Operations
+
+```bash
+# Generate sample data
+python scripts/data/generate_sample_data.py
+
+# Run ETL pipeline
+python scripts/data/run_data_pipeline.py --input data/raw/loans.csv
+
+# Setup database
+python scripts/data/setup_supabase_tables.py
+```
+
+### Deployment
+
+```bash
+# Deploy to Azure
+./scripts/deployment/deploy_to_azure.sh
+
+# Health check
+python scripts/deployment/health_check.py
+
+# Rollback if needed
+./scripts/deployment/rollback_deployment.sh
+```
 
 ### Start Monitoring Stack (Fully Automated)
 
@@ -11,7 +52,7 @@ This directory contains automation scripts for the Abaco Loans Analytics platfor
 make monitoring-start
 
 # Option 2: Direct script execution
-bash scripts/auto_start_monitoring.sh
+bash scripts/monitoring/auto_start_monitoring.sh
 ```
 
 This will automatically:
@@ -23,6 +64,39 @@ This will automatically:
 5. ✅ Start Prometheus + Grafana + Alertmanager
 6. ✅ Configure Grafana datasource
 7. ✅ Open Grafana in your browser (optional)
+
+### Repository Maintenance
+
+```bash
+# Run health check
+./scripts/maintenance/repo-doctor.sh
+
+# Validate structure
+python scripts/maintenance/validate_structure.py
+
+# Cleanup old workflows
+./scripts/maintenance/cleanup_workflow_runs_by_count.sh
+```
+
+## 📊 Script Categories
+
+### Data Scripts (`data/`)
+
+Data generation, ETL pipeline, database operations. See [data/README.md](data/README.md)
+
+### Deployment Scripts (`deployment/`)
+
+Azure deployment, health checks, rollback procedures. See [deployment/README.md](deployment/README.md)
+
+### Monitoring Scripts (`monitoring/`)
+
+Prometheus/Grafana stack, metrics, dashboards. See [monitoring/README.md](monitoring/README.md)
+
+### Maintenance Scripts (`maintenance/`)
+
+Repository health, validation, housekeeping. See [maintenance/README.md](maintenance/README.md)
+
+## 📋 Common Tasks
 
 ### Stop Monitoring Stack
 
@@ -36,7 +110,13 @@ make monitoring-stop
 make monitoring-logs
 ```
 
-## 📊 Monitoring Scripts
+## Legacy Documentation
+
+The following sections contain detailed documentation for individual scripts. For new development, prefer the organized structure above.
+
+---
+
+## 📊 Monitoring Scripts (Legacy)
 
 | Script                         | Description                                                  | Usage                                             |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
@@ -66,19 +146,20 @@ make monitoring-logs
 
 ## 🔧 Utility Scripts
 
-| Script                  | Description                                      | Usage                                      |
-| ----------------------- | ------------------------------------------------ | ------------------------------------------ |
-| **master_cleanup.sh**   | 🧹 Master cleanup (local + cloud cleanup guidance) | `./scripts/master_cleanup.sh --dry-run`    |
-| **cleanup_repo.sh**     | Code quality cleanup                             | `./scripts/cleanup_repo.sh`                |
-| **repo-cleanup.sh**     | Git repository cleanup                           | `./scripts/repo-cleanup.sh --aggressive`   |
-| **repo-doctor.sh**      | Repository health checks                         | `./scripts/repo-doctor.sh`                 |
-| **pr_status.py**        | Check GitHub PR status                           | `python scripts/pr_status.py`              |
+| Script                | Description                                        | Usage                                    |
+| --------------------- | -------------------------------------------------- | ---------------------------------------- |
+| **master_cleanup.sh** | 🧹 Master cleanup (local + cloud cleanup guidance) | `./scripts/master_cleanup.sh --dry-run`  |
+| **cleanup_repo.sh**   | Code quality cleanup                               | `./scripts/cleanup_repo.sh`              |
+| **repo-cleanup.sh**   | Git repository cleanup                             | `./scripts/repo-cleanup.sh --aggressive` |
+| **repo-doctor.sh**    | Repository health checks                           | `./scripts/repo-doctor.sh`               |
+| **pr_status.py**      | Check GitHub PR status                             | `python scripts/pr_status.py`            |
 
 ### 🧹 Master Cleanup Script (Recommended)
 
 **Purpose**: Complete cleanup of the local repository plus guided cloud cleanup — removes ALL local backups, copies, caches, and temporary files, and provides manual checklists/instructions for safely cleaning Supabase/Azure resources (no automatic cloud deletion).
 
 **Quick Start**:
+
 ```bash
 # Preview cleanup (safe)
 ./scripts/master_cleanup.sh --dry-run
@@ -91,6 +172,7 @@ make monitoring-logs
 ```
 
 **What It Cleans**:
+
 - Python caches (`__pycache__/`, `.pytest_cache/`, `.mypy_cache/`)
 - Node modules and build artifacts (`node_modules/`, `dist/`, `.next/`)
 - Backup files (`*.backup`, `*.bak`, `*.old`, `*.copy`, numbered copies)

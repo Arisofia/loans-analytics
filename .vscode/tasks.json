@@ -16,11 +16,14 @@
       "command": "bash -lc 'source ${workspaceFolder}/.venv/bin/activate && coverage run -m pytest && coverage report -m'"
     },
     {
-      "type": "func",
+      "type": "shell",
       "label": "func: host start",
-      "command": "host start",
+      "command": "func host start",
       "problemMatcher": "$func-powershell-watch",
-      "isBackground": true
+      "isBackground": true,
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
     }
   ]
 }
