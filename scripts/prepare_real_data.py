@@ -28,7 +28,9 @@ def load_table(data_dir: Path, table_name: str) -> pd.DataFrame:
     logger.info("📄 Loading %s: %s", table_name, filepath.name)
 
     df = pd.read_csv(filepath)
-    logger.info("   ✅ Loaded %s rows, %s columns", len(df), len(df.columns))
+    formatted_rows = f"{len(df):,}"
+    formatted_cols = f"{len(df.columns):,}"
+    logger.info("   ✅ Loaded %s rows, %s columns", formatted_rows, formatted_cols)
     preview_cols = ", ".join(df.columns[:5])
     ellipsis = "..." if len(df.columns) > 5 else ""
     logger.info("   📋 Columns: %s%s", preview_cols, ellipsis)
@@ -96,12 +98,14 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
     }
 
     # Apply mapping
-    logger.info("   📋 Original columns: %s", len(merged_df.columns))
+    formatted_orig_cols = f"{len(merged_df.columns):,}"
+    logger.info("   📋 Original columns: %s", formatted_orig_cols)
     mapped_df = merged_df.rename(columns=column_mapping)
 
     # Log what was mapped
     mapped_cols = [col for col in column_mapping.values() if col in mapped_df.columns]
-    logger.info("   ✅ Mapped %s columns", len(mapped_cols))
+    formatted_mapped_cols = f"{len(mapped_cols):,}"
+    logger.info("   ✅ Mapped %s columns", formatted_mapped_cols)
     mapped_preview = ", ".join(mapped_cols[:10])
     mapped_ellipsis = "..." if len(mapped_cols) > 10 else ""
     logger.info("   📋 New columns: %s%s", mapped_preview, mapped_ellipsis)
@@ -247,7 +251,8 @@ def main():
 
     # Start with loan data as base
     merged = tables['loan_data'].copy()
-    logger.info("   📊 Base: loan_data (%s loans)", len(merged))
+    formatted_base_loans = f"{len(merged):,}"
+    logger.info("   📊 Base: loan_data (%s loans)", formatted_base_loans)
 
     # Merge customer data (left join to preserve all loans)
     if 'customer' in tables:
@@ -266,14 +271,16 @@ def main():
         ]
         customer_df = tables['customer'][customer_cols].drop_duplicates(subset=['Loan ID'])
         merged = merged.merge(customer_df, on='Loan ID', how='left', suffixes=('', '_cust'))
-        logger.info("   🔗 + customer data (%s unique loans)", len(customer_df))
+        formatted_customer_loans = f"{len(customer_df):,}"
+        logger.info("   🔗 + customer data (%s unique loans)", formatted_customer_loans)
 
     # Merge collateral (left join, aggregate if multiple per loan)
     if 'collateral' in tables:
         collateral_cols = ['Loan ID', 'Collateral Type', 'Collateral Current']
         collateral_df = tables['collateral'][collateral_cols].drop_duplicates(subset=['Loan ID'])
         merged = merged.merge(collateral_df, on='Loan ID', how='left', suffixes=('', '_coll'))
-        logger.info("   🔗 + collateral data (%s unique loans)", len(collateral_df))
+        formatted_collateral_loans = f"{len(collateral_df):,}"
+        logger.info("   🔗 + collateral data (%s unique loans)", formatted_collateral_loans)
 
     # Aggregate payment schedule (scheduled payments)
     if 'payment_schedule' in tables:
@@ -283,7 +290,8 @@ def main():
         }).reset_index()
         payment_agg.columns = ['Loan ID', 'last_scheduled_date', 'total_scheduled']
         merged = merged.merge(payment_agg, on='Loan ID', how='left')
-        logger.info("   🔗 + payment schedule (aggregated, %s loans)", len(payment_agg))
+        formatted_payment_loans = f"{len(payment_agg):,}"
+        logger.info("   🔗 + payment schedule (aggregated, %s loans)", formatted_payment_loans)
 
     # Aggregate historic payments (actual payments made)
     if 'historic_payments' in tables:
@@ -299,12 +307,13 @@ def main():
             'True Outstanding Loan Value',
         ]
         merged = merged.merge(historic_agg, on='Loan ID', how='left')
-        logger.info("   🔗 + historic payments (aggregated, %s loans)", len(historic_agg))
+        formatted_historic_loans = f"{len(historic_agg):,}"
+        logger.info("   🔗 + historic payments (aggregated, %s loans)", formatted_historic_loans)
 
     logger.info(
         "\n   ✅ Merged dataset: %s rows, %s columns",
-        len(merged),
-        len(merged.columns),
+        f"{len(merged):,}",
+        f"{len(merged.columns):,}",
     )
 
     # Map to pipeline schema
@@ -313,7 +322,8 @@ def main():
     # Save
     logger.info("\n💾 Saving to: %s", output_file.name)
     final_df.to_csv(output_file, index=False)
-    logger.info("   ✅ Saved %s loans to %s", len(final_df), output_file)
+    formatted_saved_loans = f"{len(final_df):,}"
+    logger.info("   ✅ Saved %s loans to %s", formatted_saved_loans, output_file)
 
     # Summary
     logger.info("\n%s", "=" * 60)
@@ -322,7 +332,8 @@ def main():
     logger.info("📄 Output file: %s", output_file)
     formatted_loan_count = f"{len(final_df):,}"
     logger.info("📊 Total loans: %s", formatted_loan_count)
-    logger.info("📋 Columns: %s", len(final_df.columns))
+    formatted_column_count = f"{len(final_df.columns):,}"
+    logger.info("📋 Columns: %s", formatted_column_count)
 
     # Show key statistics
     # NOTE: These are diagnostic logs only (non-authoritative, approximate totals).
