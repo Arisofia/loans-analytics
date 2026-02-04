@@ -23,8 +23,18 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create policies safely (Postgres does not support CREATE POLICY IF NOT EXISTS)
+-- First, check if schema exists before attempting to create policies
 DO $$
 BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.schemata
+    WHERE schema_name = 'monitoring'
+  ) THEN
+    RAISE NOTICE 'Schema monitoring does not exist, skipping all policy creation.';
+    RETURN;
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1
     FROM pg_catalog.pg_policies p
@@ -37,13 +47,7 @@ BEGIN
       USING (true)
       WITH CHECK ((auth.jwt() ->> 'role') = 'service_role');
   END IF;
-EXCEPTION WHEN undefined_table THEN
-  RAISE NOTICE 'Table monitoring.kpi_values does not exist, skipping policy creation.';
-END;
-$$ LANGUAGE plpgsql;
 
-DO $$
-BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM pg_catalog.pg_policies p
@@ -58,13 +62,7 @@ BEGIN
         AND auth.jwt()->>'email' LIKE '%@abaco.%'
       );
   END IF;
-EXCEPTION WHEN undefined_table THEN
-  RAISE NOTICE 'Table monitoring.kpi_values does not exist, skipping policy creation.';
-END;
-$$ LANGUAGE plpgsql;
 
-DO $$
-BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM pg_catalog.pg_policies p
