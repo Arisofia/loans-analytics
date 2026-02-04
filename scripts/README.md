@@ -146,29 +146,31 @@ The following sections contain detailed documentation for individual scripts. Fo
 
 ## 🔧 Utility Scripts
 
-| Script                | Description                                        | Usage                                    |
-| --------------------- | -------------------------------------------------- | ---------------------------------------- |
-| **master_cleanup.sh** | 🧹 Master cleanup (local + cloud cleanup guidance) | `./scripts/master_cleanup.sh --dry-run`  |
-| **cleanup_repo.sh**   | Code quality cleanup                               | `./scripts/cleanup_repo.sh`              |
-| **repo-cleanup.sh**   | Git repository cleanup                             | `./scripts/repo-cleanup.sh --aggressive` |
-| **repo-doctor.sh**    | Repository health checks                           | `./scripts/repo-doctor.sh`               |
-| **pr_status.py**      | Check GitHub PR status                             | `python scripts/pr_status.py`            |
+| Script                                | Description                       | Usage                                                               |
+| ------------------------------------- | --------------------------------- | ------------------------------------------------------------------- |
+| **repo_maintenance.sh**               | 🧹 Unified repository maintenance | `./scripts/maintenance/repo_maintenance.sh --mode=standard`         |
+| **cleanup_workflow_runs_by_count.sh** | Delete old workflow runs by count | `./scripts/maintenance/cleanup_workflow_runs_by_count.sh --keep 25` |
+| **repo-doctor.sh**                    | Repository health checks          | `./scripts/repo-doctor.sh`                                          |
+| **pr_status.py**                      | Check GitHub PR status            | `python scripts/pr_status.py`                                       |
 
-### 🧹 Master Cleanup Script (Recommended)
+### 🧹 Repository Maintenance Script (Recommended)
 
-**Purpose**: Complete cleanup of the local repository plus guided cloud cleanup — removes ALL local backups, copies, caches, and temporary files, and provides manual checklists/instructions for safely cleaning Supabase/Azure resources (no automatic cloud deletion).
+**Purpose**: Unified cleanup, formatting, linting, and git maintenance for the local repository. Provides standard/aggressive/nuclear modes and optional dry-run.
 
 **Quick Start**:
 
 ```bash
 # Preview cleanup (safe)
-./scripts/master_cleanup.sh --dry-run
+./scripts/maintenance/repo_maintenance.sh --dry-run
 
-# Execute cleanup
-./scripts/master_cleanup.sh --execute
+# Standard cleanup
+./scripts/maintenance/repo_maintenance.sh --mode=standard
+
+# Aggressive cleanup
+./scripts/maintenance/repo_maintenance.sh --mode=aggressive
 
 # Nuclear option (maximum cleanup)
-./scripts/master_cleanup.sh --nuclear
+./scripts/maintenance/repo_maintenance.sh --mode=nuclear
 ```
 
 **What It Cleans**:
@@ -182,7 +184,7 @@ The following sections contain detailed documentation for individual scripts. Fo
 - Docker resources (stopped containers, dangling images)
 - Git cleanup (merged branches, garbage collection)
 
-**Documentation**: [docs/MASTER_CLEANUP_GUIDE.md](../docs/MASTER_CLEANUP_GUIDE.md) | [Quick Reference](../docs/MASTER_CLEANUP_QUICK_REF.md) | [Examples](../docs/MASTER_CLEANUP_EXAMPLES.md)
+**Documentation**: [docs/REPOSITORY_MAINTENANCE.md](../docs/REPOSITORY_MAINTENANCE.md)
 
 ## ⚙️ Environment Setup
 

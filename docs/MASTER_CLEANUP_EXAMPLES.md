@@ -1,14 +1,14 @@
-# Master Cleanup Script - Examples & Demonstrations
+# Repository Maintenance Script - Examples & Demonstrations
 
 ## Example 1: First Time Dry-Run
 
 ```bash
-$ ./scripts/master_cleanup.sh --dry-run
+$ ./scripts/maintenance/repo_maintenance.sh --dry-run
 ╔════════════════════════════════════════════════════════════════╗
 ║                                                                ║
-║           🧹 MASTER CLEANUP SCRIPT - ABACO ANALYTICS           ║
+║        🧹 REPOSITORY MAINTENANCE - ABACO ANALYTICS             ║
 ║                                                                ║
-║  ONE VERSION. NO BACKUPS. NO COPIES. NO CACHE. PRODUCTION.    ║
+║   Unified script for cleanup, formatting, linting & git ops   ║
 ║                                                                ║
 ╚════════════════════════════════════════════════════════════════╝
 
@@ -51,21 +51,21 @@ $ ./scripts/master_cleanup.sh --dry-run
 No files were deleted. This was a preview only.
 
 To actually execute the cleanup:
-  ./scripts/master_cleanup.sh --execute
+  ./scripts/maintenance/repo_maintenance.sh --mode=standard
 
 For maximum cleanup (including Docker, volumes, reflog):
-  ./scripts/master_cleanup.sh --nuclear
+  ./scripts/maintenance/repo_maintenance.sh --mode=nuclear
 ```
 
 ## Example 2: Execute Standard Cleanup
 
 ```bash
-$ ./scripts/master_cleanup.sh --execute
+$ ./scripts/maintenance/repo_maintenance.sh --mode=standard
 ╔════════════════════════════════════════════════════════════════╗
 ║                                                                ║
-║           🧹 MASTER CLEANUP SCRIPT - ABACO ANALYTICS           ║
+║        🧹 REPOSITORY MAINTENANCE - ABACO ANALYTICS             ║
 ║                                                                ║
-║  ONE VERSION. NO BACKUPS. NO COPIES. NO CACHE. PRODUCTION.    ║
+║   Unified script for cleanup, formatting, linting & git ops   ║
 ║                                                                ║
 ╚════════════════════════════════════════════════════════════════╝
 
@@ -119,7 +119,7 @@ Repository Statistics:
 ## Example 3: Nuclear Mode (Maximum Cleanup)
 
 ```bash
-$ ./scripts/master_cleanup.sh --nuclear
+$ ./scripts/maintenance/repo_maintenance.sh --mode=nuclear
 ╔════════════════════════════════════════════════════════════════╗
 ║                                                                ║
 ║           🧹 MASTER CLEANUP SCRIPT - ABACO ANALYTICS           ║
@@ -186,11 +186,11 @@ $ du -sh .git
 185M    .git
 
 # Step 2: Preview cleanup
-$ ./scripts/master_cleanup.sh --dry-run
+$ ./scripts/maintenance/repo_maintenance.sh --dry-run
 [... output shows what will be deleted ...]
 
 # Step 3: Execute cleanup
-$ ./scripts/master_cleanup.sh --execute
+$ ./scripts/maintenance/repo_maintenance.sh --mode=standard
 [... cleanup runs ...]
 
 # Step 4: Verify results
@@ -222,13 +222,13 @@ $ # Ready to work!
 $ crontab -e
 
 # Add this line for automatic weekly cleanup every Sunday at 2 AM
-0 2 * * 0 cd /path/to/abaco-loans-analytics && ./scripts/master_cleanup.sh --execute >> /var/log/cleanup.log 2>&1
+0 2 * * 0 cd /path/to/abaco-loans-analytics && ./scripts/maintenance/repo_maintenance.sh --mode=standard >> /var/log/cleanup.log 2>&1
 
 # Save and exit
 
 # Verify crontab
 $ crontab -l
-0 2 * * 0 cd /path/to/abaco-loans-analytics && ./scripts/master_cleanup.sh --execute >> /var/log/cleanup.log 2>&1
+0 2 * * 0 cd /path/to/abaco-loans-analytics && ./scripts/maintenance/repo_maintenance.sh --mode=standard >> /var/log/cleanup.log 2>&1
 ```
 
 ## Example 6: Cloud Cleanup (Manual)
@@ -285,12 +285,12 @@ Total: 2 blobs deleted
 
 ## Size Reduction Comparison
 
-| Scenario | Before | After | Reduction |
-|----------|--------|-------|-----------|
-| **Fresh Clone** | 350 MB | 340 MB | 3% |
-| **After Development** | 720 MB | 195 MB | 73% |
-| **With node_modules** | 1.2 GB | 180 MB | 85% |
-| **Nuclear Mode** | 720 MB | 95 MB | 87% |
+| Scenario              | Before | After  | Reduction |
+| --------------------- | ------ | ------ | --------- |
+| **Fresh Clone**       | 350 MB | 340 MB | 3%        |
+| **After Development** | 720 MB | 195 MB | 73%       |
+| **With node_modules** | 1.2 GB | 180 MB | 85%       |
+| **Nuclear Mode**      | 720 MB | 95 MB  | 87%       |
 
 ## Common Output Messages
 

@@ -44,13 +44,13 @@ Keep your local checkout lean and performant by following this cadence:
 
 ```bash
 # Standard cleanup
-./scripts/repo-cleanup.sh
+./scripts/maintenance/repo_maintenance.sh --mode=standard
 
 # Aggressive mode (optimizes repository size)
-./scripts/repo-cleanup.sh --aggressive
+./scripts/maintenance/repo_maintenance.sh --mode=aggressive
 
-# Full cleanup including remote pruning
-./scripts/repo-cleanup.sh --all
+# Nuclear option (maximum cleanup)
+./scripts/maintenance/repo_maintenance.sh --mode=nuclear
 ```
 
 ### 1.2 Remote Repository Hygiene
@@ -145,12 +145,11 @@ Target size:     < 500 MB (comfortable)
 
 ```bash
 # Local automation (run before committing major work)
-./scripts/repo-cleanup.sh
+./scripts/maintenance/repo_maintenance.sh --mode=standard
 
 # Cloud automation (runs every Sunday 02:00 UTC)
-# File: .github/workflows/repo-cleanup.yml
+# File: .github/workflows/cleanup-old-runs.yml
 # Status: Active & Scheduled
-# Last run: 2026-02-02 (first automated execution)
 ```
 
 ---
@@ -365,7 +364,7 @@ Phase F builds on G4.2 foundation to establish production-grade observability, c
   1. Transfer local automation setup
   2. Verify all scripts are executable on all machines
   3. Confirm git config applied (local + global)
-  4. Test repo-cleanup.sh locally on sample machine
+  4. Test repo_maintenance.sh locally on sample machine
   5. Document any local customizations
 - **Owner:** Tech Lead
 - **Effort:** 2 hours
@@ -861,13 +860,13 @@ git fsck --full
 
 ```bash
 # Standard cleanup
-./scripts/repo-cleanup.sh
+./scripts/maintenance/repo_maintenance.sh --mode=standard
 
 # Aggressive cleanup (optimizes size)
-./scripts/repo-cleanup.sh --aggressive
+./scripts/maintenance/repo_maintenance.sh --mode=aggressive
 
-# Full cleanup (includes remote)
-./scripts/repo-cleanup.sh --all
+# Nuclear cleanup (maximum)
+./scripts/maintenance/repo_maintenance.sh --mode=nuclear
 
 # Apply git configuration
 ./scripts/git-config-setup.sh
@@ -966,8 +965,8 @@ Lint Status:                ✅ Passing
 Type Hints:                 ✅ Configured
 
 Automation Status:
-  - Local scripts:          ✅ Deployed (repo-cleanup.sh, git-config-setup.sh)
-  - GitHub Actions:         ✅ Active (repo-cleanup.yml)
+  - Local scripts:          ✅ Deployed (repo_maintenance.sh, git-config-setup.sh)
+  - GitHub Actions:         ✅ Active (cleanup-old-runs.yml)
   - Schedule:               ✅ Sundays 02:00 UTC
   - Manual trigger:         ✅ Available
 ```

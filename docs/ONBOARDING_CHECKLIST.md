@@ -68,7 +68,7 @@
   - [ ] Merge PR to `main` via GitHub UI
 
 - [ ] **Repository Cleanup Practice**
-  - [ ] Run local cleanup: `./scripts/repo-cleanup.sh`
+  - [ ] Run local cleanup: `./scripts/maintenance/repo_maintenance.sh --mode=standard`
   - [ ] Review output (merged branches removed, GC optimized, stats reported)
   - [ ] Verify no errors: Exit code should be 0
 
@@ -213,16 +213,16 @@
 
 After completing all sections above, request sign-off from Tech Lead or Repository Admin:
 
-| Item                                     | Completed | Date         |
-| ---------------------------------------- | --------- | ------------ |
-| Day 1: Account & Access Setup            | [ ]       | ****\_\_**** |
-| Day 1-2: Documentation & Standards       | [ ]       | ****\_\_**** |
-| Day 2-3: Hands-On Practice               | [ ]       | ****\_\_**** |
-| Day 3-4: Team Onboarding                 | [ ]       | ****\_\_**** |
-| Role-Specific Onboarding (if applicable) | [ ]       | ****\_\_**** |
+| Item                                     | Completed | Date             |
+| ---------------------------------------- | --------- | ---------------- |
+| Day 1: Account & Access Setup            | [ ]       | \***\*\_\_\*\*** |
+| Day 1-2: Documentation & Standards       | [ ]       | \***\*\_\_\*\*** |
+| Day 2-3: Hands-On Practice               | [ ]       | \***\*\_\_\*\*** |
+| Day 3-4: Team Onboarding                 | [ ]       | \***\*\_\_\*\*** |
+| Role-Specific Onboarding (if applicable) | [ ]       | \***\*\_\_\*\*** |
 
-**Reviewer:** ************\_************ (Tech Lead / Repository Admin)  
-**Date:** ****\_\_****
+**Reviewer:** \***\*\*\*\*\*\*\***\_\***\*\*\*\*\*\*\*** (Tech Lead / Repository Admin)  
+**Date:** \***\*\_\_\*\***
 
 **Notes:**
 
@@ -238,7 +238,7 @@ After completing all sections above, request sign-off from Tech Lead or Reposito
 | ---------------------------------------- | -------------------------------------------------------------------------------------- |
 | How do I run tests?                      | `pytest -m "not integration_supabase" -v`                                              |
 | How do I resolve a merge conflict?       | See [§ 2.2](docs/REPO_OPERATIONS_MASTER.md#22-resolution-strategies) of master runbook |
-| How do I clean up my local repo?         | `./scripts/repo-cleanup.sh` (or `--aggressive` for size opt)                           |
+| How do I clean up my local repo?         | `./scripts/maintenance/repo_maintenance.sh --mode=standard`                            |
 | How do I apply git config?               | `./scripts/git-config-setup.sh`                                                        |
 | What's the master runbook?               | [docs/REPO_OPERATIONS_MASTER.md](docs/REPO_OPERATIONS_MASTER.md) — Read it!            |
 | Where do I ask for help?                 | #devops-automation (Slack) or file [RUNBOOK-QUESTION] issue                            |
