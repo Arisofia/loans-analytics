@@ -11,7 +11,7 @@
 
 - [ ] **GitHub Account**
   - [ ] Request invitation to `Arisofia/abaco-loans-analytics` organization
-  - [ ] Verify access: Visit https://github.com/Arisofia/abaco-loans-analytics
+  - [ ] Verify access: Visit [github.com/Arisofia/abaco-loans-analytics](https://github.com/Arisofia/abaco-loans-analytics)
   - [ ] Configure 2FA (two-factor authentication) on GitHub account
   - [ ] Set up SSH keys (`ssh-keygen -t rsa`, add to GitHub settings)
 
@@ -107,8 +107,8 @@
 ### Weekly
 
 - [ ] **Repository Health Monitoring**
-  - [ ] Check GitHub Actions for failed tests: https://github.com/Arisofia/abaco-loans-analytics/actions
-  - [ ] Review Dependabot alerts (if any): https://github.com/Arisofia/abaco-loans-analytics/security/dependabot
+  - [ ] Check GitHub Actions for failed tests: [Actions](https://github.com/Arisofia/abaco-loans-analytics/actions)
+  - [ ] Review Dependabot alerts (if any): [Dependabot alerts](https://github.com/Arisofia/abaco-loans-analytics/security/dependabot)
   - [ ] Participate in team standup (discuss blockers, repository issues)
 
 - [ ] **Personal Development**
@@ -221,7 +221,7 @@ After completing all sections above, request sign-off from Tech Lead or Reposito
 | Day 3-4: Team Onboarding                 | [ ]       | \***\*\_\_\*\*** |
 | Role-Specific Onboarding (if applicable) | [ ]       | \***\*\_\_\*\*** |
 
-**Reviewer:** \***\*\*\*\*\*\*\***\_\***\*\*\*\*\*\*\*** (Tech Lead / Repository Admin)  
+**Reviewer:** \***\*\*\*\*\*\*\***\_\***\*\*\*\*\*\*\*** (Tech Lead / Repository Admin)<br>
 **Date:** \***\*\_\_\*\***
 
 **Notes:**
