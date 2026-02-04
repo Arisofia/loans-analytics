@@ -38,6 +38,7 @@ jobs:
           # Disable automatic PR diff analysis feature to avoid undefined values error
           # This makes CodeQL analyze the full codebase on every run instead of just diffs
           CODEQL_ACTION_DISABLE_PR_ANNOTATIONS: 'true'
+          CODEQL_ACTION_FEATURE_DISABLE_PR_DIFFS: 'true'
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
@@ -51,6 +52,7 @@ jobs:
         env:
           # Disable PR diff range extension to prevent undefined value errors
           CODEQL_ACTION_DISABLE_PR_ANNOTATIONS: 'true'
+          CODEQL_ACTION_FEATURE_DISABLE_PR_DIFFS: 'true'
 
   dependency-scan:
     name: Dependency Vulnerability Scan
