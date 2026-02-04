@@ -377,7 +377,14 @@ class ServiceStatusChecker:
         
         for key, check_func in checks:
             try:
-                print(f"  Checking {check_func.__doc__.split('.')[0].strip()}...")
+                # Safely derive a human-readable description even if __doc__ is missing
+                doc = getattr(check_func, "__doc__", None) or ""
+                if doc:
+                    description = doc.split(".")[0].strip()
+                else:
+                    check_name = getattr(check_func, "__name__", key)
+                    description = f"{check_name.replace('_', ' ').title()} status"
+                print(f"  Checking {description}...")
                 self.results[key] = check_func()
             except Exception as e:
                 print(f"  ❌ Error in {key}: {e}")
