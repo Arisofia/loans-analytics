@@ -28,8 +28,8 @@ def load_table(data_dir: Path, table_name: str) -> pd.DataFrame:
     logger.info("📄 Loading %s: %s", table_name, filepath.name)
 
     df = pd.read_csv(filepath)
-    formatted_rows = f"{len(df):,}"
-    formatted_cols = f"{len(df.columns):,}"
+    formatted_rows = format(len(df), ",")
+    formatted_cols = format(len(df.columns), ",")
     logger.info("   ✅ Loaded %s rows, %s columns", formatted_rows, formatted_cols)
     preview_cols = ", ".join(df.columns[:5])
     ellipsis = "..." if len(df.columns) > 5 else ""
