@@ -63,14 +63,14 @@ supabase db push
 
 ```sql
 -- Check tables without RLS (expected: 0 rows)
-SELECT schemaname, tablename, rowsecurity 
-FROM pg_tables 
-WHERE schemaname IN ('public', 'analytics') 
+SELECT schemaname, tablename, rowsecurity
+FROM pg_tables
+WHERE schemaname IN ('public', 'analytics')
 AND rowsecurity = false;
 
 -- List all policies
-SELECT schemaname, tablename, policyname, cmd, qual 
-FROM pg_policies 
+SELECT schemaname, tablename, policyname, cmd, qual
+FROM pg_policies
 WHERE schemaname IN ('public', 'analytics')
 ORDER BY schemaname, tablename;
 ```
@@ -83,10 +83,10 @@ ORDER BY schemaname, tablename;
 
 **Resource Groups**:
 
-| Name | Location | State |
-|------|----------|-------|
-| `abaco-rg` | Canada Central | Succeeded |
-| `ai_abaco-loans-app-insights_*_managed` | Spain Central | Succeeded |
+| Name                                    | Location       | State     |
+| --------------------------------------- | -------------- | --------- |
+| `abaco-rg`                              | Canada Central | Succeeded |
+| `ai_abaco-loans-app-insights_*_managed` | Spain Central  | Succeeded |
 
 **Deployments**: ✅ No failed deployments detected
 
@@ -100,6 +100,7 @@ az deployment group list -g abaco-rg \
 ```
 
 **Resources in `abaco-rg`**:
+
 - Azure Functions (loan analytics pipeline)
 - Application Insights (monitoring)
 - Storage Account (pipeline artifacts)
@@ -122,16 +123,19 @@ az deployment group list -g abaco-rg \
 **Impact**: None observed on our project (`goxdevkqozomyhsyxhte`)
 
 **Monitoring**:
+
 - Check Supabase Status Page: <https://status.supabase.com/>
 - Monitor project health: <https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/settings/general>
 
 **Observed Metrics**:
+
 - ✅ Database: Responding normally
 - ✅ API: All endpoints operational
 - ✅ Auth: No authentication issues
 - ✅ Storage: Read/write operations working
 
 **Action Plan**:
+
 1. Continue monitoring Supabase status page
 2. Enable email notifications for status updates
 3. If issue persists >24h, consider fallback to local dev database
@@ -145,6 +149,7 @@ az deployment group list -g abaco-rg \
 **Issue**: Code block formatting in `docs/SETUP_GUIDE_CONSOLIDATED.md`
 
 **Fix Applied**:
+
 - Added blank line before code block (line 230)
 - Ensures proper markdown rendering of alertmanager test command
 
@@ -189,6 +194,7 @@ az deployment group list -g abaco-rg \
 ## 🔔 Alert Configuration
 
 **Email Notifications** (via Alertmanager):
+
 - Critical: Immediate notification
 - Warning: Digest every 4 hours
 - Info: Daily summary
