@@ -28,7 +28,9 @@ class TestServiceStatusChecker:
     def test_run_command_success(self):
         """Test run_command with successful command."""
         checker = ServiceStatusChecker()
-        success, stdout, stderr = checker.run_command(["echo", "test"])
+        success, stdout, stderr = checker.run_command(
+            [sys.executable, "-c", 'import sys; sys.stdout.write("test")']
+        )
         assert success is True
         assert "test" in stdout
         assert stderr == ""
