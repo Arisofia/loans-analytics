@@ -326,18 +326,21 @@ def main():
     # Show key statistics
     if 'principal_amount' in final_df.columns:
         total_disbursed = final_df['principal_amount'].sum()
-        logger.info("💰 Total disbursed: $%.2f", total_disbursed)
+        formatted_disbursed = f"{total_disbursed:,.2f}"
+        logger.info("💰 Total disbursed: $%s", formatted_disbursed)
 
     if 'outstanding_balance' in final_df.columns:
         total_outstanding = final_df['outstanding_balance'].sum()
-        logger.info("📊 Total outstanding: $%.2f", total_outstanding)
+        formatted_outstanding = f"{total_outstanding:,.2f}"
+        logger.info("📊 Total outstanding: $%s", formatted_outstanding)
 
     if 'current_status' in final_df.columns:
         status_counts = final_df['current_status'].value_counts()
         logger.info("\n📈 Loan status distribution:")
         for status, count in status_counts.head(5).items():
             pct = (count / len(final_df)) * 100
-            logger.info("   %s: %s (%.1f%%)", status, count, pct)
+            formatted_count = f"{count:,}"
+            logger.info("   %s: %s (%.1f%%)", status, formatted_count, pct)
 
     logger.info("\n🚀 Next steps:")
     logger.info("  1. Inspect: head %s", output_file)
