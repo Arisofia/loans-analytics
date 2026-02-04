@@ -503,43 +503,63 @@ def main():
     
     # Run all checks
     checker = ServiceStatusChecker()
-    results = checker.run_all_checks()
-    
-    # Generate markdown report
-    print("📝 Generating markdown report...")
-    report = generate_markdown_report(results)
-    
-    # Write to file
-    output_file = Path(__file__).parent.parent / "service_status_report.md"
-    output_file.write_text(report, encoding="utf-8")
-    
-    print(f"✅ Report written to: {output_file}")
-    print()
-    
-    # Also output JSON for programmatic use
-    json_file = Path(__file__).parent.parent / "service_status_report.json"
-    with open(json_file, "w", encoding="utf-8") as f:
-        json.dump(
-            {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "results": results,
-            },
-            f,
-            indent=2,
-        )
-    print(f"✅ JSON data written to: {json_file}")
-    print()
-    
-    # Print summary
-    total = len(results)
-    passed = sum(1 for r in results.values() if r.get("success", False))
-    
-    print("=" * 70)
-    print(f"Summary: {passed}/{total} checks passed")
-    print("=" * 70)
-    
-    # Always exit 0 - script is non-blocking and should not fail CI/CD
-    sys.exit(0)
+    try:
+        results = checker.run_all_checks()
+        
+        # Generate markdown report
+        print("📝 Generating markdown report...")
+        report = generate_markdown_report(results)
+        
+        # Write to file
+        output_file = Path(__file__).parent.parent / "service_status_report.md"
+        output_file.write_text(report, encoding="utf-8")
+        
+        print(f"✅ Report written to: {output_file}")
+        print()
+        
+        # Also output JSON for programmatic use
+        json_file = Path(__file__).parent.parent / "service_status_report.json"
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "results": results,
+                },
+                f,
+                indent=2,
+            )
+        print(f"✅ JSON data written to: {json_file}")
+        print()
+        
+        # Print summary
+        total = len(results)
+        passed = sum(1 for r in results.values() if r.get("success", False))
+        
+        print("=" * 70)
+        print(f"Summary: {passed}/{total} checks passed")
+        print("=" * 70)
+    except Exception as exc:
+        # Best-effort error reporting without breaking CI/CD
+        error_message = f"Error while generating service status report: {exc}"
+        print(error_message, file=sys.stderr)
+        # Attempt to write a minimal JSON error artifact; ignore failures
+        try:
+            json_file = Path(__file__).parent.parent / "service_status_report.json"
+            with open(json_file, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "results": {},
+                        "error": error_message,
+                    },
+                    f,
+                    indent=2,
+                )
+        except Exception:
+            pass
+    finally:
+        # Always exit 0 - script is non-blocking and should not fail CI/CD
+        sys.exit(0)
 
 
 if __name__ == "__main__":
