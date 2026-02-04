@@ -52,7 +52,11 @@ maintenance:
 
 # Service Status Report
 service-status:
-	@$(PYTHON) scripts/generate_service_status_report.py
+	@if [ -x "$(BIN)/python" ]; then \
+		"$(BIN)/python" scripts/generate_service_status_report.py; \
+	else \
+		"$(PYTHON)" scripts/generate_service_status_report.py; \
+	fi
 
 maintenance-aggressive:
 	@bash scripts/repo_maintenance.sh --mode=aggressive
