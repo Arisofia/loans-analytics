@@ -113,7 +113,7 @@ Before importing dashboards, configure the Supabase PostgreSQL datasource:
 
 ```yaml
 Name: Supabase PostgreSQL
-Host: db.goxdevkqozomyhsyxhte.supabase.co:5432
+Host: db.<YOUR_PROJECT_REF>.supabase.co:5432
 Database: postgres
 User: postgres
 Password: <your-supabase-db-password>
@@ -122,17 +122,19 @@ SSL Mode: require
 
 4. Click **Save & Test**
 
-### 2. Alternative: Supabase Direct Connection
+### 2. Alternative: Supabase Connection Pooler
 
 For Grafana Cloud, you may need to use the Supabase connection pooler:
 
 ```yaml
-Host: aws-0-us-east-1.pooler.supabase.com:6543
+Host: aws-0-<REGION>.pooler.supabase.com:6543
 Database: postgres
-User: postgres.goxdevkqozomyhsyxhte
+User: postgres.<YOUR_PROJECT_REF>
 Password: <your-supabase-db-password>
 SSL Mode: require
 ```
+
+> **Note:** Get your project reference from Supabase Dashboard → Settings → General
 
 ---
 
