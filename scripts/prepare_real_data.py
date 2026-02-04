@@ -28,9 +28,7 @@ def load_table(data_dir: Path, table_name: str) -> pd.DataFrame:
     logger.info("📄 Loading %s: %s", table_name, filepath.name)
 
     df = pd.read_csv(filepath)
-    formatted_rows = format(len(df), ",")
-    formatted_cols = format(len(df.columns), ",")
-    logger.info("   ✅ Loaded %s rows, %s columns", formatted_rows, formatted_cols)
+    logger.info("   ✅ Loaded %s rows, %s columns", f"{len(df):,}", len(df.columns))
     preview_cols = ", ".join(df.columns[:5])
     ellipsis = "..." if len(df.columns) > 5 else ""
     logger.info("   📋 Columns: %s%s", preview_cols, ellipsis)
@@ -98,14 +96,12 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
     }
 
     # Apply mapping
-    formatted_orig_cols = format(len(merged_df.columns), ",")
-    logger.info("   📋 Original columns: %s", formatted_orig_cols)
+    logger.info("   📋 Original columns: %s", len(merged_df.columns))
     mapped_df = merged_df.rename(columns=column_mapping)
 
     # Log what was mapped
     mapped_cols = [col for col in column_mapping.values() if col in mapped_df.columns]
-    formatted_mapped_cols = format(len(mapped_cols), ",")
-    logger.info("   ✅ Mapped %s columns", formatted_mapped_cols)
+    logger.info("   ✅ Mapped %s columns", len(mapped_cols))
     mapped_preview = ", ".join(mapped_cols[:10])
     mapped_ellipsis = "..." if len(mapped_cols) > 10 else ""
     logger.info("   📋 New columns: %s%s", mapped_preview, mapped_ellipsis)
@@ -236,8 +232,8 @@ def main():
             logger.info(
                 "   ✅ %s: %s rows, %s columns",
                 table_name,
-                format(len(df), ","),
-                format(len(df.columns), ","),
+                f"{len(df):,}",
+                len(df.columns),
             )
         except FileNotFoundError:
             logger.error("   ❌ File not found: %s", filepath)
@@ -251,8 +247,7 @@ def main():
 
     # Start with loan data as base
     merged = tables['loan_data'].copy()
-    formatted_base_loans = format(len(merged), ",")
-    logger.info("   📊 Base: loan_data (%s loans)", formatted_base_loans)
+    logger.info("   📊 Base: loan_data (%s loans)", f"{len(merged):,}")
 
     # Merge customer data (left join to preserve all loans)
     if 'customer' in tables:
@@ -271,16 +266,14 @@ def main():
         ]
         customer_df = tables['customer'][customer_cols].drop_duplicates(subset=['Loan ID'])
         merged = merged.merge(customer_df, on='Loan ID', how='left', suffixes=('', '_cust'))
-        formatted_customer_loans = format(len(customer_df), ",")
-        logger.info("   🔗 + customer data (%s unique loans)", formatted_customer_loans)
+        logger.info("   🔗 + customer data (%s unique loans)", f"{len(customer_df):,}")
 
     # Merge collateral (left join, aggregate if multiple per loan)
     if 'collateral' in tables:
         collateral_cols = ['Loan ID', 'Collateral Type', 'Collateral Current']
         collateral_df = tables['collateral'][collateral_cols].drop_duplicates(subset=['Loan ID'])
         merged = merged.merge(collateral_df, on='Loan ID', how='left', suffixes=('', '_coll'))
-        formatted_collateral_loans = format(len(collateral_df), ",")
-        logger.info("   🔗 + collateral data (%s unique loans)", formatted_collateral_loans)
+        logger.info("   🔗 + collateral data (%s unique loans)", f"{len(collateral_df):,}")
 
     # Aggregate payment schedule (scheduled payments)
     if 'payment_schedule' in tables:
@@ -290,8 +283,7 @@ def main():
         }).reset_index()
         payment_agg.columns = ['Loan ID', 'last_scheduled_date', 'total_scheduled']
         merged = merged.merge(payment_agg, on='Loan ID', how='left')
-        formatted_payment_loans = format(len(payment_agg), ",")
-        logger.info("   🔗 + payment schedule (aggregated, %s loans)", formatted_payment_loans)
+        logger.info("   🔗 + payment schedule (aggregated, %s loans)", f"{len(payment_agg):,}")
 
     # Aggregate historic payments (actual payments made)
     if 'historic_payments' in tables:
@@ -307,13 +299,12 @@ def main():
             'True Outstanding Loan Value',
         ]
         merged = merged.merge(historic_agg, on='Loan ID', how='left')
-        formatted_historic_loans = format(len(historic_agg), ",")
-        logger.info("   🔗 + historic payments (aggregated, %s loans)", formatted_historic_loans)
+        logger.info("   🔗 + historic payments (aggregated, %s loans)", f"{len(historic_agg):,}")
 
     logger.info(
         "\n   ✅ Merged dataset: %s rows, %s columns",
-        format(len(merged), ","),
-        format(len(merged.columns), ","),
+        f"{len(merged):,}",
+        len(merged.columns),
     )
 
     # Map to pipeline schema
@@ -322,40 +313,32 @@ def main():
     # Save
     logger.info("\n💾 Saving to: %s", output_file.name)
     final_df.to_csv(output_file, index=False)
-    formatted_saved_loans = format(len(final_df), ",")
-    logger.info("   ✅ Saved %s loans to %s", formatted_saved_loans, output_file)
+    logger.info("   ✅ Saved %s loans to %s", f"{len(final_df):,}", output_file)
 
     # Summary
-    logger.info("\n%s", "=" * 60)
-    logger.info("✅ Data Preparation Complete!")
+    logger.info("")
     logger.info("%s", "=" * 60)
+    logger.info("✅ Data Preparation Complete!")
+    logger.info("=" * 60)
     logger.info("📄 Output file: %s", output_file)
-    formatted_loan_count = format(len(final_df), ",")
-    logger.info("📊 Total loans: %s", formatted_loan_count)
-    formatted_column_count = format(len(final_df.columns), ",")
-    logger.info("📋 Columns: %s", formatted_column_count)
+    logger.info("📊 Total loans: %s", f"{len(final_df):,}")
+    logger.info("📋 Columns: %s", len(final_df.columns))
 
     # Show key statistics
-    # NOTE: These are diagnostic logs only (non-authoritative, approximate totals).
-    # Uses pandas .sum() with float arithmetic for quick visibility.
-    # For authoritative financial calculations, convert to Decimal first per project standards.
     if 'principal_amount' in final_df.columns:
         total_disbursed = final_df['principal_amount'].sum()
-        formatted_disbursed = f"{total_disbursed:,.2f}"
-        logger.info("💰 Total disbursed: $%s", formatted_disbursed)
+        logger.info("💰 Total disbursed: $%s", f"{total_disbursed:,.2f}")
 
     if 'outstanding_balance' in final_df.columns:
         total_outstanding = final_df['outstanding_balance'].sum()
-        formatted_outstanding = f"{total_outstanding:,.2f}"
-        logger.info("📊 Total outstanding: $%s", formatted_outstanding)
+        logger.info("📊 Total outstanding: $%s", f"{total_outstanding:,.2f}")
 
     if 'current_status' in final_df.columns:
         status_counts = final_df['current_status'].value_counts()
         logger.info("\n📈 Loan status distribution:")
         for status, count in status_counts.head(5).items():
             pct = (count / len(final_df)) * 100
-            formatted_count = f"{count:,}"
-            logger.info("   %s: %s (%.1f%%)", status, formatted_count, pct)
+            logger.info("   %s: %s (%s%%)", status, f"{count:,}", f"{pct:.1f}")
 
     logger.info("\n🚀 Next steps:")
     logger.info("  1. Inspect: head %s", output_file)
