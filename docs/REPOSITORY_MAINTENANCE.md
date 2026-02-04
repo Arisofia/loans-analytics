@@ -49,8 +49,8 @@ This script consolidates all repository maintenance operations into a single, pr
 
 - Clears build/, dist/ directories
 - Removes node_modules (if present)
-- Deletes backup files (_.bak, _.old, \*.backup)
-- Cleans temporary files (_.tmp, _.temp)
+- Deletes backup files (\*.bak, \*.old, \*.backup)
+- Cleans temporary files (\*.tmp, \*.temp)
 - Removes editor swap files (.swp)
 - Eliminates numbered copies and duplicates
 
