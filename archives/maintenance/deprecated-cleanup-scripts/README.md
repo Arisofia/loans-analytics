@@ -6,6 +6,7 @@
 ## Scripts Archived
 
 ### 1. `cleanup_repo.sh` (4.5KB)
+
 - **Purpose**: Code quality cleanup (formatting, linting, trailing whitespace)
 - **Features**:
   - Removed trailing whitespace
@@ -15,6 +16,7 @@
   - Security checks
 
 ### 2. `commit_cleanup.sh` (2.5KB)
+
 - **Purpose**: Automated commit of cleanup changes
 - **Features**:
   - Staged all changes
@@ -22,9 +24,10 @@
   - Pushed to remote
 
 ### 3. `master_cleanup.sh` (19KB)
+
 - **Purpose**: Comprehensive filesystem and Docker cleanup
 - **Features**:
-  - Python environment cleanup (__pycache__, .pyc files)
+  - Python environment cleanup (`__pycache__`, `.pyc` files)
   - Node/NPM cleanup
   - Build artifacts cleanup
   - Backup/copy files cleanup
@@ -37,6 +40,7 @@
 - **Modes**: dry-run, execute, nuclear
 
 ### 4. `repo-cleanup.sh` (5.2KB)
+
 - **Purpose**: Git repository maintenance
 - **Features**:
   - Fetch and prune remote references
