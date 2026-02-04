@@ -26,8 +26,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -37,39 +36,8 @@ from python.logging_config import get_logger
 
 logger = get_logger(__name__)
 
-
-def _handle_kpi_calculation_error(kpi_name: str) -> Callable:
-    """
-    Decorator to handle errors in KPI calculations consistently.
-
-    Returns 0.0 as fallback value on error and records the error in audit trail.
-    Note: 0.0 is used as a neutral fallback to prevent pipeline crashes while
-    maintaining audit trail visibility of failures. Consumers should check the
-    context for "error" key before using the value.
-
-    Args:
-        kpi_name: Name of the KPI being calculated
-
-    Returns:
-        Decorated function with error handling
-    """
-
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        def wrapper(self, *args, **kwargs) -> Tuple[float, Dict[str, Any]]:
-            try:
-                return func(self, *args, **kwargs)
-            except Exception as e:
-                error_msg = str(e)
-                logger.error("Failed to calculate %s: %s", kpi_name, error_msg)
-                fallback_value = 0.0
-                error_context = {"error": error_msg}
-                self._record_calculation(kpi_name, fallback_value, error_context, error_msg)
-                return fallback_value, error_context
-
-        return wrapper
-
-    return decorator
+# Log message format constants
+_LOG_KPI_CALCULATED = "Calculated %s: %s"
 
 
 class KPIEngineV2:
@@ -87,7 +55,8 @@ class KPIEngineV2:
 
         Args:
             df: Input DataFrame with loan/payment data
-            actor: Identity of the entity requesting calculations (e.g., "reporting_service", "api", "user:john@example.com")
+            actor: Identity of the entity requesting calculations. Examples:
+                "reporting_service", "api", "user:john@example.com"
             run_id: Optional unique identifier for this calculation run
         """
         self.df = df
@@ -129,7 +98,6 @@ class KPIEngineV2:
         }
         self._audit_records.append(record)
 
-    @_handle_kpi_calculation_error("PAR30")
     def calculate_par_30(self) -> Tuple[float, Dict[str, Any]]:
         """
         Calculate Portfolio at Risk (30+ days).
@@ -140,17 +108,24 @@ class KPIEngineV2:
             - context: Dict with calculation details or error message
         """
         kpi_name = "PAR30"
-        value = calculate_par_30(self.df)
-        context = {
-            "formula": "SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100",
-            "rows_processed": len(self.df),
-            "calculation_method": "v1_legacy",
-        }
-        self._record_calculation(kpi_name, value, context)
-        logger.debug("Calculated %s: %s", kpi_name, value)
-        return value, context
+        try:
+            value = calculate_par_30(self.df)
+            context = {
+                "formula": "SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100",
+                "rows_processed": len(self.df),
+                "calculation_method": "v1_legacy",
+            }
+            self._record_calculation(kpi_name, value, context)
+            logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
+            return value, context
+        except Exception as e:
+            error_msg = str(e)
+            logger.error("Failed to calculate %s: %s", kpi_name, error_msg)
+            fallback_value = 0.0
+            error_context = {"error": error_msg}
+            self._record_calculation(kpi_name, fallback_value, error_context, error_msg)
+            return fallback_value, error_context
 
-    @_handle_kpi_calculation_error("COLLECTION_RATE")
     def calculate_collection_rate(self) -> Tuple[float, Dict[str, Any]]:
         """
         Calculate collection rate.
@@ -161,17 +136,24 @@ class KPIEngineV2:
             - context: Dict with calculation details or error message
         """
         kpi_name = "COLLECTION_RATE"
-        value, _ = calculate_collection_rate(self.df)
-        context = {
-            "formula": "payments_collected / payments_due * 100",
-            "rows_processed": len(self.df),
-            "calculation_method": "v1_legacy",
-        }
-        self._record_calculation(kpi_name, value, context)
-        logger.debug("Calculated %s: %s", kpi_name, value)
-        return value, context
+        try:
+            value, _ = calculate_collection_rate(self.df)
+            context = {
+                "formula": "payments_collected / payments_due * 100",
+                "rows_processed": len(self.df),
+                "calculation_method": "v1_legacy",
+            }
+            self._record_calculation(kpi_name, value, context)
+            logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
+            return value, context
+        except Exception as e:
+            error_msg = str(e)
+            logger.error("Failed to calculate %s: %s", kpi_name, error_msg)
+            fallback_value = 0.0
+            error_context = {"error": error_msg}
+            self._record_calculation(kpi_name, fallback_value, error_context, error_msg)
+            return fallback_value, error_context
 
-    @_handle_kpi_calculation_error("LTV")
     def calculate_ltv(self) -> Tuple[float, Dict[str, Any]]:
         """
         Calculate Loan-to-Value ratio (on-demand KPI).
@@ -213,7 +195,7 @@ class KPIEngineV2:
             "calculation_method": "v2_engine",
         }
         self._record_calculation(kpi_name, value, context)
-        logger.debug("Calculated %s: %s", kpi_name, value)
+        logger.debug(_LOG_KPI_CALCULATED, kpi_name, value)
         return value, context
 
     def calculate_all(self) -> Dict[str, Dict[str, Any]]:

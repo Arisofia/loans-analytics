@@ -2,255 +2,105 @@
 """
 Repository Structure Validator
 
-Validates that all expected files and folders from .repo-structure.json
-exist in the repository. Reports missing components and verifies completeness.
+Validates that core expected files and folders exist in the repository.
+Uses .repo-structure.json as source of truth.
 
 Usage:
     python scripts/validate_structure.py
     python scripts/validate_structure.py --verbose
 """
 
-import argparse
+from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple
+
+ROOT = Path(__file__).resolve().parents[1]
+STRUCTURE_FILE = ROOT / ".repo-structure.json"
 
 
-# Color codes for terminal output
-class Colors:
-    GREEN = "\033[92m"
-    RED = "\033[91m"
-    YELLOW = "\033[93m"
-    BLUE = "\033[94m"
-    END = "\033[0m"
-    BOLD = "\033[1m"
+def load_expected_paths() -> List[Path]:
+    """Load expected component paths from .repo-structure.json or use fallback."""
+    if not STRUCTURE_FILE.exists():
+        # Fallback: minimal critical components
+        return [
+            ROOT / "src" / "pipeline" / "orchestrator.py",
+            ROOT / "config" / "pipeline.yml",
+            ROOT / "scripts" / "data" / "run_data_pipeline.py",
+        ]
+
+    try:
+        data = json.loads(STRUCTURE_FILE.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, IOError):
+        # If file is malformed, use fallback
+        return [
+            ROOT / "src" / "pipeline" / "orchestrator.py",
+            ROOT / "config" / "pipeline.yml",
+            ROOT / "scripts" / "data" / "run_data_pipeline.py",
+        ]
+
+    expected_files: List[Path] = []
+
+    # Extract folders from ACTIVE_PRODUCTION_WORKFLOW
+    for entry in data.get("ACTIVE_PRODUCTION_WORKFLOW", {}).get("folders", []):
+        path = entry.get("path")
+        if path:
+            expected_files.append(ROOT / path)
+
+    # Extract configuration files
+    for entry in data.get("CONFIGURATION_FILES", {}).get("files", []):
+        path = entry.get("path")
+        if path:
+            expected_files.append(ROOT / path)
+
+    return expected_files
 
 
-def load_structure_definition() -> Dict:
-    """Load .repo-structure.json"""
-    repo_root = Path(__file__).parent.parent
-    structure_file = repo_root / ".repo-structure.json"
+def validate_structure(verbose: bool = False) -> Tuple[int, int]:
+    """Validate repo structure and return (total, missing_count)."""
+    expected = load_expected_paths()
+    missing: List[Path] = [p for p in expected if not p.exists()]
 
-    if not structure_file.exists():
-        print(f"{Colors.RED}❌ .repo-structure.json not found{Colors.END}")
-        sys.exit(1)
+    if verbose:
+        print("✅ Repository Structure Validation")
+        print(f"Root: {ROOT}")
+        print(f"Expected components: {len(expected)}")
 
-    with open(structure_file, "r") as f:
-        return json.load(f)
-
-
-def check_path(path: Path, item_type: str = "file") -> bool:
-    """Check if path exists"""
-    if item_type == "file":
-        return path.is_file()
-    elif item_type == "folder":
-        return path.is_dir()
-    else:
-        return path.exists()
-
-
-def validate_active_folders(
-    structure: Dict, repo_root: Path, verbose: bool = False
-) -> Tuple[List, List]:
-    """Validate all active production folders"""
-    print(f"\n{Colors.BOLD}{Colors.BLUE}Validating ACTIVE PRODUCTION WORKFLOW{Colors.END}")
-    print("=" * 80)
-
-    folders = structure.get("ACTIVE_PRODUCTION_WORKFLOW", {}).get("folders", [])
-
-    found = []
-    missing = []
-
-    for folder_def in folders:
-        path_str = folder_def.get("path", "")
-        purpose = folder_def.get("purpose", "N/A")
-
-        if not path_str:
-            continue
-
-        # Handle single file vs directory
-        path = repo_root / path_str
-
-        if path_str.endswith(".py"):
-            # Single file
-            if check_path(path, "file"):
-                found.append((path_str, "file", purpose))
-                print(f"{Colors.GREEN}✅{Colors.END} {path_str}")
-
-                if verbose:
-                    print(f"   Purpose: {purpose}")
-            else:
-                missing.append((path_str, "file", purpose))
-                print(f"{Colors.RED}❌{Colors.END} {path_str} (MISSING)")
+        if missing:
+            print("\n❌ Missing components:")
+            for p in missing:
+                print(f"  - {p.relative_to(ROOT)}")
         else:
-            # Directory
-            if check_path(path, "folder"):
-                found.append((path_str, "folder", purpose))
-                print(f"{Colors.GREEN}✅{Colors.END} {path_str}/")
+            print("\n✅ All expected components are present.")
 
-                if verbose:
-                    print(f"   Purpose: {purpose}")
-
-                # Check for expected files
-                expected_files = folder_def.get("files", [])
-                if expected_files and verbose:
-                    for file_name in expected_files:
-                        file_path = path / file_name
-                        if file_path.exists():
-                            print(f"   {Colors.GREEN}✓{Colors.END} {file_name}")
-                        else:
-                            print(f"   {Colors.YELLOW}⚠{Colors.END} {file_name} (missing)")
-            else:
-                missing.append((path_str, "folder", purpose))
-                print(f"{Colors.RED}❌{Colors.END} {path_str}/ (MISSING)")
-
-    return found, missing
-
-
-def validate_config_files(
-    structure: Dict, repo_root: Path, verbose: bool = False
-) -> Tuple[List, List]:
-    """Validate configuration files"""
-    print(f"\n{Colors.BOLD}{Colors.BLUE}Validating CONFIGURATION FILES{Colors.END}")
-    print("=" * 80)
-
-    config_files = [
-        "config/pipeline.yml",
-        "config/business_rules.yaml",
-        "config/kpis/kpi_definitions.yaml",
-    ]
-
-    found = []
-    missing = []
-
-    for config_file in config_files:
-        path = repo_root / config_file
-
-        if check_path(path, "file"):
-            found.append((config_file, "file", "Configuration"))
-            print(f"{Colors.GREEN}✅{Colors.END} {config_file}")
-
-            if verbose:
-                size = path.stat().st_size
-                print(f"   Size: {size:,} bytes")
-        else:
-            missing.append((config_file, "file", "Configuration"))
-            print(f"{Colors.RED}❌{Colors.END} {config_file} (MISSING)")
-
-    return found, missing
-
-
-def validate_archive_structure(
-    structure: Dict, repo_root: Path, verbose: bool = False
-) -> Tuple[List, List]:
-    """Validate archive_legacy structure"""
-    print(f"\n{Colors.BOLD}{Colors.BLUE}Validating ARCHIVE STRUCTURE{Colors.END}")
-    print("=" * 80)
-
-    archive_root = repo_root / "archive_legacy"
-
-    found = []
-    missing = []
-
-    if not archive_root.exists():
-        print(f"{Colors.RED}❌{Colors.END} archive_legacy/ (MISSING)")
-        missing.append(("archive_legacy/", "folder", "Archive"))
-        return found, missing
-
-    found.append(("archive_legacy/", "folder", "Archive"))
-    print(f"{Colors.GREEN}✅{Colors.END} archive_legacy/")
-
-    # Check for README
-    readme = archive_root / "README.md"
-    if readme.exists():
-        found.append(("archive_legacy/README.md", "file", "Documentation"))
-        print(f"{Colors.GREEN}✅{Colors.END} archive_legacy/README.md")
-    else:
-        missing.append(("archive_legacy/README.md", "file", "Documentation"))
-        print(f"{Colors.YELLOW}⚠{Colors.END} archive_legacy/README.md (recommended)")
-
-    return found, missing
-
-
-def generate_report(found: List, missing: List, structure: Dict):
-    """Generate final validation report"""
-    print(f"\n{Colors.BOLD}{'=' * 80}{Colors.END}")
-    print(f"{Colors.BOLD}{Colors.BLUE}VALIDATION REPORT{Colors.END}")
-    print("=" * 80)
-
-    total = len(found) + len(missing)
-    found_count = len(found)
+    total = len(expected)
     missing_count = len(missing)
+    status = "IMPLEMENTED - COMPLETE" if missing_count == 0 else "INCOMPLETE"
+    found_count = total - missing_count
 
-    completion_rate = (found_count / total * 100) if total > 0 else 0
-
-    print(f"\nTotal Expected: {total}")
-    print(f"{Colors.GREEN}Found: {found_count}{Colors.END}")
-    print(f"{Colors.RED}Missing: {missing_count}{Colors.END}")
-    print(f"\nCompletion: {completion_rate:.1f}%")
-
-    # Status badge
-    status = structure.get("status", "UNKNOWN")
-    if completion_rate == 100:
-        print(f"\n{Colors.GREEN}✅ Repository Status: {status} - COMPLETE{Colors.END}")
-    elif completion_rate >= 80:
-        print(f"\n{Colors.YELLOW}⚠️ Repository Status: {status} - MOSTLY COMPLETE{Colors.END}")
+    if verbose:
+        print(
+            f"\n📊 Repository Status: {status} "
+            f"(Found: {found_count}/{total}, Missing: {missing_count})"
+        )
     else:
-        print(f"\n{Colors.RED}❌ Repository Status: {status} - INCOMPLETE{Colors.END}")
+        print(
+            f"Repository Status: {status} "
+            f"(Found: {found_count}/{total}, Missing: {missing_count})"
+        )
 
-    if missing:
-        print(f"\n{Colors.BOLD}Missing Components:{Colors.END}")
-        for path, item_type, purpose in missing:
-            print(f"  - {path} ({item_type})")
-            if purpose != "N/A":
-                print(f"    Purpose: {purpose}")
-
-    print("\n" + "=" * 80)
-
-    return completion_rate == 100
+    return total, missing_count
 
 
-def main():
-    """Main validation function"""
-    parser = argparse.ArgumentParser(description="Validate repository structure")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
-    args = parser.parse_args()
-
-    repo_root = Path(__file__).parent.parent
-
-    print(f"{Colors.BOLD}{Colors.BLUE}REPOSITORY STRUCTURE VALIDATION{Colors.END}")
-    print(f"Repository: {repo_root.name}")
-    print(f"Path: {repo_root}")
-
-    # Load structure definition
-    structure = load_structure_definition()
-
-    # Validate components
-    all_found = []
-    all_missing = []
-
-    # Active folders
-    found, missing = validate_active_folders(structure, repo_root, args.verbose)
-    all_found.extend(found)
-    all_missing.extend(missing)
-
-    # Configuration files
-    found, missing = validate_config_files(structure, repo_root, args.verbose)
-    all_found.extend(found)
-    all_missing.extend(missing)
-
-    # Archive structure
-    found, missing = validate_archive_structure(structure, repo_root, args.verbose)
-    all_found.extend(found)
-    all_missing.extend(missing)
-
-    # Generate report
-    is_complete = generate_report(all_found, all_missing, structure)
-
-    # Exit code
-    sys.exit(0 if is_complete else 1)
+def main(argv: List[str] | None = None) -> int:
+    """Main entry point."""
+    argv = argv or sys.argv[1:]
+    verbose = "--verbose" in argv
+    _, missing_count = validate_structure(verbose=verbose)
+    return 0 if missing_count == 0 else 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

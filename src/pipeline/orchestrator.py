@@ -7,11 +7,14 @@ Coordinates all 4 phases of the data pipeline:
 3. Calculation
 4. Output
 
-Entry point: scripts/run_data_pipeline.py
+NOTE: This module is not designed to be run directly as a script.
+      Use: python scripts/run_data_pipeline.py
 """
 
+import argparse
 import hashlib
 import json
+import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -116,7 +119,8 @@ class UnifiedPipeline:
             results["phases"]["ingestion"] = phase1_results
 
             if phase1_results["status"] != "success":
-                raise Exception(f"Phase 1 failed: {phase1_results.get('error')}")
+                error_msg = f"Phase 1 (Ingestion) failed: {phase1_results.get('error')}"
+                raise RuntimeError(error_msg)
 
             if mode == "dry-run":
                 logger.info("Dry-run mode: stopping after ingestion")
@@ -135,7 +139,8 @@ class UnifiedPipeline:
             results["phases"]["transformation"] = phase2_results
 
             if phase2_results["status"] != "success":
-                raise Exception(f"Phase 2 failed: {phase2_results.get('error')}")
+                error_msg = f"Phase 2 (Transformation) failed: {phase2_results.get('error')}"
+                raise RuntimeError(error_msg)
 
             if mode == "validate":
                 logger.info("Validate mode: stopping after transformation")
@@ -154,7 +159,8 @@ class UnifiedPipeline:
             results["phases"]["calculation"] = phase3_results
 
             if phase3_results["status"] != "success":
-                raise Exception(f"Phase 3 failed: {phase3_results.get('error')}")
+                error_msg = f"Phase 3 (Calculation) failed: {phase3_results.get('error')}"
+                raise RuntimeError(error_msg)
 
             # PHASE 4: OUTPUT
             logger.info("\n%s", separator)
@@ -166,7 +172,8 @@ class UnifiedPipeline:
             results["phases"]["output"] = phase4_results
 
             if phase4_results["status"] != "success":
-                raise Exception(f"Phase 4 failed: {phase4_results.get('error')}")
+                error_msg = f"Phase 4 (Output) failed: {phase4_results.get('error')}"
+                raise RuntimeError(error_msg)
 
             return self._finalize_results(results, run_dir)
 
@@ -232,3 +239,89 @@ class UnifiedPipeline:
         except Exception as e:
             logger.warning("Failed to hash input file: %s, using timestamp", e)
             return datetime.now().strftime("%H%M%S")
+
+def main() -> int:
+    """
+    CLI entry point for the unified pipeline.
+
+    Supports multiple execution modes:
+    - full: All 4 phases (Ingestion → Transformation → Calculation → Output)
+    - validate: Stop after transformation (for schema validation)
+    - dry-run: Stop after ingestion (for data source testing)
+
+    Returns:
+        Exit code: 0 for success, 1 for failure
+    """
+    parser = argparse.ArgumentParser(
+        description=(
+            "Unified 4-Phase Data Pipeline "
+            "(Ingestion → Transformation → Calculation → Output)"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""\
+Examples:
+  # Run full pipeline with CSV input
+  python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
+
+  # Validation mode (stop after transformation)
+  python scripts/run_data_pipeline.py --mode validate
+
+  # Dry-run mode (stop after ingestion)
+  python scripts/run_data_pipeline.py --mode dry-run
+
+  # Custom config file
+  python scripts/run_data_pipeline.py --config config/custom_pipeline.yml
+        """,
+    )
+
+    parser.add_argument(
+        "--input",
+        type=str,
+        default=None,
+        help="Path to input CSV file (optional, uses config default)",
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="config/pipeline.yml",
+        help="Path to pipeline.yml config (default: config/pipeline.yml)",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["full", "validate", "dry-run"],
+        default="full",
+        help=(
+            "Execution mode: full (all phases), "
+            "validate (stop after transformation), "
+            "dry-run (stop after ingestion)"
+        ),
+    )
+
+    args = parser.parse_args()
+
+    try:
+        # Initialize pipeline
+        config_path = Path(args.config) if args.config else None
+        pipeline = UnifiedPipeline(config_path=config_path)
+
+        # Execute pipeline
+        input_path = Path(args.input) if args.input else None
+        results = pipeline.execute(input_path=input_path, mode=args.mode)
+
+        # Check status
+        if results.get("status") == "success":
+            logger.info("✓ Pipeline completed successfully")
+            return 0
+
+        error_msg = results.get("error", "Unknown error")
+        logger.error("✗ Pipeline failed: %s", error_msg)
+        return 1
+
+    except Exception as e:
+        logger.error("Fatal error: %s", e)
+        logger.error("%s", traceback.format_exc())
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

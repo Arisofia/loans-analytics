@@ -13,7 +13,6 @@ This guide covers security implementation for the Abaco Loans Analytics API, inc
 **Implementation** (see `src/auth.py` if exists, or integrate with your auth module):
 
 ```python
-import os
 import jwt
 from datetime import datetime, timedelta
 from functools import wraps

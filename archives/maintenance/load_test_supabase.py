@@ -22,6 +22,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from python.supabase_pool import SupabaseConnectionPool  # noqa: E402
 
+# SQL query constants for load testing
+SIMPLE_COUNT_QUERY = "SELECT COUNT(*) FROM fact_loans"
+
 
 @dataclass
 class LoadTestResult:
@@ -213,28 +216,28 @@ async def main():
     scenarios = [
         {
             "name": "Baseline - Current Volume",
-            "query": "SELECT COUNT(*) FROM fact_loans",
+            "query": SIMPLE_COUNT_QUERY,
             "total_queries": 300,
             "concurrent": 5,
             "pool_config": {"min_size": 2, "max_size": 5},
         },
         {
             "name": "3× Volume - Small Pool",
-            "query": "SELECT COUNT(*) FROM fact_loans",
+            "query": SIMPLE_COUNT_QUERY,
             "total_queries": 900,
             "concurrent": 15,
             "pool_config": {"min_size": 2, "max_size": 5},
         },
         {
             "name": "3× Volume - Medium Pool",
-            "query": "SELECT COUNT(*) FROM fact_loans",
+            "query": SIMPLE_COUNT_QUERY,
             "total_queries": 900,
             "concurrent": 15,
             "pool_config": {"min_size": 5, "max_size": 10},
         },
         {
             "name": "3× Volume - Large Pool",
-            "query": "SELECT COUNT(*) FROM fact_loans",
+            "query": SIMPLE_COUNT_QUERY,
             "total_queries": 900,
             "concurrent": 15,
             "pool_config": {"min_size": 10, "max_size": 20},
@@ -255,7 +258,7 @@ async def main():
         },
         {
             "name": "Peak Load - 5× Volume",
-            "query": "SELECT COUNT(*) FROM fact_loans",
+            "query": SIMPLE_COUNT_QUERY,
             "total_queries": 1500,
             "concurrent": 25,
             "pool_config": {"min_size": 10, "max_size": 20},

@@ -6,6 +6,7 @@ properly prevents directory traversal attacks.
 """
 
 import pytest
+
 from python.apps.analytics.api.main import _sanitize_and_resolve
 
 
@@ -91,7 +92,8 @@ class TestPathTraversalPrevention:
         outside_dir = tmp_path.parent / "outside"
         outside_dir.mkdir(exist_ok=True)
         secret_file = outside_dir / "secret.txt"
-        secret_file.write_text("secret data")
+        # Test data only - not a real secret
+        secret_file.write_text("fake_secret_data_for_testing")
 
         allowed_dir = tmp_path / "allowed"
         allowed_dir.mkdir()
@@ -143,7 +145,8 @@ class TestComplianceRequirements:
         secret_dir = tmp_path.parent / "secrets"
         secret_dir.mkdir(exist_ok=True)
         secret_file = secret_dir / "credentials.env"
-        secret_file.write_text("DATABASE_PASSWORD=secret123")
+        # Test data only - not a real credential
+        secret_file.write_text("DATABASE_PASSWORD=fake_test_password_not_real")  # NOSONAR
 
         allowed_dir = tmp_path / "public"
         allowed_dir.mkdir()
@@ -161,7 +164,7 @@ class TestComplianceRequirements:
 
         # Secret file should remain inaccessible
         assert secret_file.exists()
-        assert secret_file.read_text() == "DATABASE_PASSWORD=secret123"
+        assert secret_file.read_text() == "DATABASE_PASSWORD=fake_test_password_not_real"  # NOSONAR
 
     def test_defense_in_depth(self, tmp_path):
         """
