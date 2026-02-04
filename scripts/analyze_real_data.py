@@ -41,7 +41,7 @@ def main():
     print("\n" + "=" * 70)
     print("✅ Analysis complete!")
     print("\nNext steps:")
-    print("  1. Merge tables using scripts/prepare_real_data.py")
+    print("  1. Merge tables using scripts/data/prepare_real_data.py")
     print("  2. Run pipeline on merged data")
 
 if __name__ == '__main__':
