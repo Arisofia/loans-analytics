@@ -473,7 +473,11 @@ def generate_markdown_report(results: dict[str, dict[str, Any]]) -> str:
     ])
     
     # List failed checks
-    failed_checks = [r["name"] for r in results.values() if not r.get("success", False)]
+    failed_checks = [
+        r.get("name", key.title())
+        for key, r in results.items()
+        if not r.get("success", False)
+    ]
     if failed_checks:
         lines.append("The following components require attention:")
         lines.append("")
