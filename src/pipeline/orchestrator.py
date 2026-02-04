@@ -240,6 +240,7 @@ class UnifiedPipeline:
             logger.warning("Failed to hash input file: %s, using timestamp", e)
             return datetime.now().strftime("%H%M%S")
 
+
 def main() -> int:
     """
     CLI entry point for the unified pipeline.
@@ -254,8 +255,7 @@ def main() -> int:
     """
     parser = argparse.ArgumentParser(
         description=(
-            "Unified 4-Phase Data Pipeline "
-            "(Ingestion → Transformation → Calculation → Output)"
+            "Unified 4-Phase Data Pipeline " "(Ingestion → Transformation → Calculation → Output)"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
