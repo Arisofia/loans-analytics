@@ -256,6 +256,10 @@ class ServiceStatusChecker:
         config_file = self.repo_root / "config" / "pipeline.yml"
         status["details"]["config_exists"] = config_file.exists()
         
+        # Mark as failed if critical artifacts are missing
+        if not pipeline_script.exists() or not config_file.exists():
+            status["success"] = False
+        
         # Check if pipeline modules exist
         pipeline_dir = self.repo_root / "src" / "pipeline"
         if pipeline_dir.exists():
@@ -312,8 +316,8 @@ class ServiceStatusChecker:
         status["details"]["docs_directory_exists"] = docs_dir.exists()
         
         if docs_dir.exists():
-            # Count documentation files
-            md_files = list(docs_dir.glob("*.md"))
+            # Count documentation files recursively
+            md_files = list(docs_dir.rglob("*.md"))
             status["details"]["markdown_files"] = len(md_files)
             
             # Check for key documentation
