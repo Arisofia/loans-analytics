@@ -144,17 +144,16 @@ class ServiceStatusChecker:
             "details": {},
         }
         
-        # Check if tests directory exists
+        # Check if tests directory exists (for informational purposes)
         tests_dir = self.repo_root / "tests"
         status["details"]["tests_directory_exists"] = tests_dir.exists()
         
-        if not tests_dir.exists():
-            status["details"]["message"] = "Tests directory not found"
-            return status
+        # Always attempt to run pytest so that pytest.ini testpaths are respected,
+        # even if the legacy tests/ directory does not exist.
         
-        # Try to run pytest
+        # Try to run pytest using repository configuration
         success, stdout, stderr = self.run_command(
-            [sys.executable, "-m", "pytest", "tests/", "-v", "--tb=short", "--maxfail=5"],
+            [sys.executable, "-m", "pytest", "-v", "--tb=short", "--maxfail=5"],
             timeout=120
         )
         
