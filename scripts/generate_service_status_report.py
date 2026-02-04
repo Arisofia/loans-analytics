@@ -566,9 +566,12 @@ def main():
                     f,
                     indent=2,
                 )
-        except Exception:
-            # Silently ignore write failures for error artifact - best effort only
-            pass
+        except Exception as artifact_exc:
+            # Ignore write failures for error artifact - best effort only, but log for visibility
+            print(
+                f"Warning: failed to write error artifact JSON: {artifact_exc}",
+                file=sys.stderr,
+            )
     finally:
         # Always exit 0 - script is non-blocking and should not fail CI/CD
         sys.exit(0)
