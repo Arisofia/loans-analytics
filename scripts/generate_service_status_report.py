@@ -194,26 +194,35 @@ class ServiceStatusChecker:
         return status
 
     def check_supabase_connectivity(self) -> dict[str, Any]:
-        """Check Supabase connectivity."""
+        """Check Supabase connectivity.
+
+        A successful status requires both SUPABASE_URL and a Supabase key
+        (SUPABASE_ANON_KEY or SUPABASE_KEY) to be configured.
+        """
         status = {
             "name": "Supabase",
             "success": False,
             "details": {},
         }
-        
+
         supabase_url = os.getenv("SUPABASE_URL")
         supabase_key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_KEY")
-        
+
         status["details"]["url_configured"] = supabase_url is not None
         status["details"]["key_configured"] = supabase_key is not None
-        
+
         if not supabase_url:
             status["details"]["message"] = "SUPABASE_URL not configured"
             return status
-            
+
+        if not supabase_key:
+            status["details"]["message"] = (
+                "Supabase URL configured but key missing; connectivity not available"
+            )
+            return status
+
         status["success"] = True
         status["details"]["message"] = "Configuration present"
-        
         return status
 
     def check_pipeline(self) -> dict[str, Any]:
