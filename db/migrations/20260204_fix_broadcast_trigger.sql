@@ -2,7 +2,7 @@
 -- Date: 2026-02-04
 -- Purpose: Prevent SQL injection via mutable search_path
 -- Severity: HIGH - Supabase security alert
--- Related: SECURITY_STATUS_2026_02_04.md
+-- Related: docs/SECURITY_STATUS_REPORT.md
 
 BEGIN;
 

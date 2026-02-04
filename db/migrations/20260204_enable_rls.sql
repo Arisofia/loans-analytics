@@ -1,7 +1,7 @@
 -- Migration: Enable Row Level Security on sensitive tables
 -- Date: 2026-02-04
 -- Purpose: Address Supabase security alerts - enable RLS on all public tables
--- Related: SECURITY_STATUS_2026_02_04.md
+-- Related: docs/SECURITY_STATUS_REPORT.md
 
 BEGIN;
 
