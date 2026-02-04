@@ -93,9 +93,10 @@ python scripts/generate_service_status_report.py
 This will:
 - ✅ Check all system components (Git, Python, Tests, Linting, Supabase, Pipeline, Agents, Docs, CI/CD)
 - ✅ Continue checking even if some components fail
-- ✅ Generate `service_status_report.md` with real data
+- ✅ Generate `service_status_report.md` with real-time status details (generated artifact, not source documentation)
 - ✅ Generate `service_status_report.json` for programmatic use
 
+Both `service_status_report.md` and `service_status_report.json` are generated artifacts and MUST NOT be committed to the repository. When run locally, they are written to your current working directory and can be archived outside of git (for example under `archives/` with a timestamp). When run in CI, refer to the corresponding workflow configuration to locate these reports in job artifacts or logs, if enabled.
 The report shows:
 - Current system status with pass/fail for each component
 - Detailed information about each check
