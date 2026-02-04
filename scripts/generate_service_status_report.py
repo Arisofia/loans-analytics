@@ -10,7 +10,7 @@ import json
 import os
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -337,7 +337,7 @@ class ServiceStatusChecker:
 def generate_markdown_report(results: dict[str, dict[str, Any]]) -> str:
     """Generate markdown report from check results."""
     
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     
     # Count overall status
     total_checks = len(results)
@@ -468,7 +468,7 @@ def main():
     with open(json_file, "w") as f:
         json.dump(
             {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "results": results,
             },
             f,
@@ -485,8 +485,8 @@ def main():
     print(f"Summary: {passed}/{total} checks passed")
     print("=" * 70)
     
-    # Exit with appropriate code
-    sys.exit(0 if passed == total else 0)  # Always exit 0 - don't stop on failures
+    # Always exit 0 - script is non-blocking and should not fail CI/CD
+    sys.exit(0)
 
 
 if __name__ == "__main__":
