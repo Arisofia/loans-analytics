@@ -20,8 +20,8 @@
 
 - **Total Loans**: 18,189
 - **Total Columns**: 46 (after merging and mapping)
-- **Total Disbursed**: $59,905,545.75
-- **Current Outstanding**: $8,025,331.17
+- **Total Disbursed**: computed at run time from the merged loan dataset (sum of disbursed principal across all loans).
+- **Current Outstanding**: computed at run time from the merged loan dataset (sum of outstanding principal for all non-closed / active loans).
 
 ### Loan Status Distribution
 
