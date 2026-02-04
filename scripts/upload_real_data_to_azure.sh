@@ -9,13 +9,21 @@ STORAGE_ACCOUNT="abacodata202602"
 LOCATION="canadacentral"
 
 # Files to upload
-FILES=(
-  "/Users/jenineferderas/Downloads/Abaco - Loan Tape_Historic Real Payment_Table (3).csv"
-  "/Users/jenineferderas/Downloads/Abaco - Loan Tape_Collateral_Table (3).csv"
-  "/Users/jenineferderas/Downloads/Abaco - Loan Tape_Customer Data_Table (3).csv"
-  "/Users/jenineferderas/Downloads/Abaco - Loan Tape_Payment Schedule_Table (3).csv"
-  "/Users/jenineferderas/Downloads/Abaco - Loan Tape_Loan Data_Table (3).csv"
-)
+# Prefer explicit file list via CLI args:
+#   ./scripts/upload_real_data_to_azure.sh file1.csv file2.csv ...
+# If no args are provided, fall back to a configured data directory.
+if [ "$#" -gt 0 ]; then
+  FILES=("$@")
+else
+  DATA_DIR="${DATA_DIR:-$HOME/Downloads}"
+  FILES=(
+    "$DATA_DIR/Abaco - Loan Tape_Historic Real Payment_Table (3).csv"
+    "$DATA_DIR/Abaco - Loan Tape_Collateral_Table (3).csv"
+    "$DATA_DIR/Abaco - Loan Tape_Customer Data_Table (3).csv"
+    "$DATA_DIR/Abaco - Loan Tape_Payment Schedule_Table (3).csv"
+    "$DATA_DIR/Abaco - Loan Tape_Loan Data_Table (3).csv"
+  )
+fi
 
 # Create storage account if not exists
 echo "📦 Creating Azure Storage..."
