@@ -224,8 +224,8 @@ class ServiceStatusChecker:
         supabase_url = os.getenv("SUPABASE_URL")
         supabase_key = os.getenv("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_KEY")
 
-        status["details"]["url_configured"] = supabase_url is not None
-        status["details"]["key_configured"] = supabase_key is not None
+        status["details"]["url_configured"] = bool(supabase_url)
+        status["details"]["key_configured"] = bool(supabase_key)
 
         if not supabase_url:
             status["details"]["message"] = "SUPABASE_URL not configured"
