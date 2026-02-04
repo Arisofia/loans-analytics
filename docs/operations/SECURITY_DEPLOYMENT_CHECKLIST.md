@@ -53,6 +53,7 @@ az provider show \
    - Verify deployment succeeds
 
 3. Verify alerts are active:
+
    ```bash
    az monitor alert-rule list \
      --resource-group abaco-rg \
@@ -88,27 +89,35 @@ supabase db push
 2. Run migrations **in this exact order**:
 
    a. **Enable RLS** (foundation):
+
    ```bash
    cat db/migrations/20260204_enable_rls.sql
    ```
+
    Copy output → Paste in SQL Editor → Click "Run"
 
    b. **Create Policies** (access control):
+
    ```bash
    cat db/migrations/20260204_rls_policies.sql
    ```
+
    Copy output → Paste in SQL Editor → Click "Run"
 
    c. **Fix Broadcast Trigger** (SQL injection fix):
+
    ```bash
    cat db/migrations/20260204_fix_broadcast_trigger.sql
    ```
+
    Copy output → Paste in SQL Editor → Click "Run"
 
    d. **Harden KPI Policy** (audit trail):
+
    ```bash
    cat db/migrations/20260204_fix_kpi_values_policy.sql
    ```
+
    Copy output → Paste in SQL Editor → Click "Run"
 
 ---
@@ -129,7 +138,7 @@ AND tablename IN (
   'financial_statements', 'payment_schedule', 'real_payment',
   'loan_data', 'customer_data', 'historical_kpis',
   'kpi_timeseries_daily', 'analytics_facts',
-  'data_lineage', 'lineage_columns', 'lineage_dependencies', 
+  'data_lineage', 'lineage_columns', 'lineage_dependencies',
   'lineage_audit_log', 'kpi_values'
 )
 ORDER BY schemaname, tablename;
@@ -141,8 +150,8 @@ ORDER BY schemaname, tablename;
 #### 2. Count Policies
 
 ```sql
-SELECT 
-  schemaname, 
+SELECT
+  schemaname,
   COUNT(*) as policy_count,
   array_agg(DISTINCT cmd::text ORDER BY cmd::text) as policy_types
 FROM pg_policies
@@ -152,6 +161,7 @@ ORDER BY schemaname;
 ```
 
 **Expected**:
+
 - `public`: 28+ policies (SELECT, INSERT, UPDATE, DELETE)
 - `monitoring`: 3 policies (SELECT, INSERT, ALL)
 
@@ -160,10 +170,10 @@ ORDER BY schemaname;
 #### 3. Verify Function Fix
 
 ```sql
-SELECT 
+SELECT
   p.proname AS function_name,
-  CASE 
-    WHEN pg_get_functiondef(p.oid) LIKE '%SET search_path%' 
+  CASE
+    WHEN pg_get_functiondef(p.oid) LIKE '%SET search_path%'
     THEN '✅ search_path pinned'
     ELSE '❌ search_path NOT pinned'
   END AS security_status
@@ -179,8 +189,8 @@ AND p.proname = 'loan_data_broadcast_trigger';
 #### 4. Check KPI Audit Trail
 
 ```sql
-SELECT 
-  column_name, 
+SELECT
+  column_name,
   data_type,
   is_nullable
 FROM information_schema.columns
@@ -216,10 +226,10 @@ az monitor alert-rule list \
 const { data, error } = await supabase
   .from('loan_data')
   .select('*')
-  .eq('customer_id', currentUser.id);
+  .eq('customer_id', currentUser.id)
 
 // Expected: Success with user's loan records
-console.log('Test 1:', error ? 'FAIL' : 'PASS');
+console.log('Test 1:', error ? 'FAIL' : 'PASS')
 ```
 
 #### Test 2: Customer Cannot Read Others' Data
@@ -228,28 +238,28 @@ console.log('Test 1:', error ? 'FAIL' : 'PASS');
 const { data, error } = await supabase
   .from('customer_data')
   .select('*')
-  .neq('user_id', currentUser.id);
+  .neq('user_id', currentUser.id)
 
 // Expected: Empty array (RLS blocks access)
-console.log('Test 2:', data?.length === 0 ? 'PASS' : 'FAIL');
+console.log('Test 2:', data?.length === 0 ? 'PASS' : 'FAIL')
 ```
 
 #### Test 3: Service Role Has Full Access
 
 ```javascript
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+)
 
 const { data, error } = await supabaseAdmin
   .from('customer_data')
-  .select('count');
+  .select('count')
 
 // Expected: Success with total count
-console.log('Test 3:', error ? 'FAIL' : 'PASS');
+console.log('Test 3:', error ? 'FAIL' : 'PASS')
 ```
 
 ---
@@ -297,8 +307,8 @@ supabase db reset
 
 ```sql
 -- List all policies to drop
-SELECT 
-  'DROP POLICY IF EXISTS "' || policyname || '" ON ' || 
+SELECT
+  'DROP POLICY IF EXISTS "' || policyname || '" ON ' ||
   schemaname || '.' || tablename || ';'
 FROM pg_policies
 WHERE schemaname IN ('public', 'monitoring')
@@ -314,6 +324,7 @@ ORDER BY schemaname, tablename;
 ### First 24 Hours
 
 1. **Monitor Application Logs**:
+
    ```bash
    # Check for RLS policy violations
    tail -f logs/app.log | grep -i "permission denied\|row-level security"
@@ -359,14 +370,14 @@ ORDER BY schemaname, tablename;
 
 ## ✅ Deployment Sign-Off
 
-| Step | Owner | Status | Date | Notes |
-|------|-------|--------|------|-------|
-| Azure Provider Registration | DevOps | ⏳ Pending | | |
-| Azure Alert Rules Redeployment | DevOps | ⏳ Pending | | |
-| Supabase Migrations | Backend Team | ⏳ Pending | | |
-| Verification Tests | QA | ⏳ Pending | | |
-| Security Review | Security Team | ⏳ Pending | | |
-| Production Monitoring | On-Call | ⏳ Pending | | |
+| Step                           | Owner         | Status     | Date | Notes |
+| ------------------------------ | ------------- | ---------- | ---- | ----- |
+| Azure Provider Registration    | DevOps        | ⏳ Pending |      |       |
+| Azure Alert Rules Redeployment | DevOps        | ⏳ Pending |      |       |
+| Supabase Migrations            | Backend Team  | ⏳ Pending |      |       |
+| Verification Tests             | QA            | ⏳ Pending |      |       |
+| Security Review                | Security Team | ⏳ Pending |      |       |
+| Production Monitoring          | On-Call       | ⏳ Pending |      |       |
 
 ---
 

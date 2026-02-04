@@ -52,6 +52,7 @@ This document tracks external Supabase service issues that may impact Abaco Loan
    - Check "Health" tab for service metrics
 
 3. **Automated Monitoring**:
+
    ```bash
    # Add to cron or GitHub Actions workflow
    curl -f https://status.supabase.com/api/v2/status.json | jq '.status.indicator'
@@ -151,8 +152,8 @@ curl -H "apikey: $SUPABASE_ANON_KEY" \
 
 ### Contact Information
 
-- **Supabase Support**: support@supabase.com
-- **Emergency Slack**: #infra-alerts
+- **Supabase Support**: <support@supabase.com>
+- **Emergency Slack**: <#infra-alerts>
 - **On-Call Engineer**: See PagerDuty rotation
 
 ---
