@@ -35,9 +35,9 @@ jobs:
           queries: security-extended
           config-file: ./.github/codeql-config.yml
         env:
-          # Disable automatic PR diff analysis feature to avoid undefined values error
-          # This makes CodeQL analyze the full codebase on every run instead of just diffs
-          CODEQL_ACTION_DISABLE_PR_ANNOTATIONS: 'true'
+          # Disable PR diff analysis to prevent undefined value errors in extension pack
+          # This forces CodeQL to analyze the full codebase instead of just PR diffs
+          CODEQL_EXTRACTOR_PYTHON_OPTION_ANALYZE_PR_DIFF: 'false'
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
@@ -48,9 +48,6 @@ jobs:
           category: '/language:${{ matrix.language }}'
           upload: true
           skip-queries: false
-        env:
-          # Disable PR diff range extension to prevent undefined value errors
-          CODEQL_ACTION_DISABLE_PR_ANNOTATIONS: 'true'
 
   dependency-scan:
     name: Dependency Vulnerability Scan
