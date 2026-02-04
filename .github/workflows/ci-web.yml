@@ -1,14 +1,9 @@
 name: CI Web
 
+# Disabled: No web app exists in this repository (Python analytics platform)
+# This workflow was for a planned web frontend that was never implemented
 on:
-  workflow_dispatch:
-  push:
-    paths:
-      - 'apps/web/**'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'apps/web/**'
+  workflow_dispatch: # Keep manual trigger only
 
 jobs:
   build-pr:
