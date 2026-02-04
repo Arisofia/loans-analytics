@@ -3,7 +3,6 @@
 
 import pandas as pd
 from pathlib import Path
-import sys
 
 # Define files
 FILES = {
@@ -28,7 +27,7 @@ def main():
             print(f"   Columns ({len(df.columns)}): {', '.join(df.columns)}")
             
             # Show sample
-            print(f"\n   First row sample:")
+            print("\n   First row sample:")
             for col in df.columns[:5]:
                 print(f"     {col}: {df[col].iloc[0]}")
             if len(df.columns) > 5:
