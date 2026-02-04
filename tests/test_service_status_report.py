@@ -35,7 +35,9 @@ class TestServiceStatusChecker:
     def test_run_command_failure(self):
         """Test run_command with failing command."""
         checker = ServiceStatusChecker()
-        success, stdout, stderr = checker.run_command(["false"])
+        success, stdout, stderr = checker.run_command(
+            [sys.executable, "-c", "import sys; sys.exit(1)"]
+        )
         assert success is False
 
     def test_check_git_status_success(self):
