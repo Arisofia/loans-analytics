@@ -201,23 +201,23 @@ az provider show \
 
 ### Documentation (docs/)
 
-5. **azure/ALERTS_PROVIDER_SETUP.md**
+1. **azure/ALERTS_PROVIDER_SETUP.md**
    - Provider registration instructions
    - Troubleshooting guide
    - Automation integration examples
 
-6. **operations/AZURE_DEPLOYMENT_NOTES.md**
+2. **operations/AZURE_DEPLOYMENT_NOTES.md**
    - Container App status verification
    - Historical deployment context
    - Future deployment troubleshooting
 
-7. **security/SUPABASE_RLS_HARDENING.md**
+3. **security/SUPABASE_RLS_HARDENING.md**
    - Comprehensive RLS design documentation
    - Policy patterns explained
    - Deployment and verification procedures
    - Troubleshooting guide
 
-8. **operations/SUPABASE_STATUS_NOTES.md**
+4. **operations/SUPABASE_STATUS_NOTES.md**
    - Regional incident tracking
    - Monitoring procedures
    - Escalation process
@@ -243,6 +243,7 @@ az provider show \
 - [ ] **Redeploy Failed Azure Alert Rules** (after provider registration)
 
 - [ ] **Verify Supabase RLS**:
+
   ```sql
   -- Run verification queries from SUPABASE_RLS_HARDENING.md
   ```
