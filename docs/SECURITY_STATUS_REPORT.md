@@ -134,7 +134,7 @@ WHERE tablename = 'kpi_values';
 **1. Register Provider** (one-time, per subscription):
 
 ```bash
-az account set --subscription 695e4491-d568-4105-a1e1-8f2baf3b54df
+az account set --subscription <your-subscription-id>
 az provider register --namespace Microsoft.AlertsManagement
 
 # Verify registration
