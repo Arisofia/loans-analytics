@@ -495,14 +495,14 @@ def main():
     
     # Write to file
     output_file = Path(__file__).parent.parent / "service_status_report.md"
-    output_file.write_text(report)
+    output_file.write_text(report, encoding="utf-8")
     
     print(f"✅ Report written to: {output_file}")
     print()
     
     # Also output JSON for programmatic use
     json_file = Path(__file__).parent.parent / "service_status_report.json"
-    with open(json_file, "w") as f:
+    with open(json_file, "w", encoding="utf-8") as f:
         json.dump(
             {
                 "timestamp": datetime.now(timezone.utc).isoformat(),
