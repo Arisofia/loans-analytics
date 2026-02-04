@@ -29,7 +29,11 @@ Pre-configured dashboards for ABACO Loans Analytics observability.
 - Time range selector (top-right)
 - KPI category filter (coming soon)
 
-### 2. **Data Quality Dashboard** (Coming Soon)
+### 2. **Supabase PostgreSQL** (`supabase-postgresql.json`)
+
+**Purpose:** Monitor Supabase database performance and health
+
+### 3. **Data Quality Dashboard** (Coming Soon)
 
 **Metrics:**
 
@@ -38,7 +42,101 @@ Pre-configured dashboards for ABACO Loans Analytics observability.
 - Null/completeness percentage
 - Ingestion pipeline health
 
-## Importing Dashboards
+---
+
+## Importing to Grafana Cloud
+
+### Prerequisites
+
+1. Grafana Cloud account with admin access
+2. Supabase PostgreSQL datasource configured in Grafana Cloud
+
+### Option 1: Manual Import (Recommended for Grafana Cloud)
+
+1. **Open Grafana Cloud**: Navigate to your Grafana Cloud instance
+2. **Go to Dashboards**: Click "Dashboards" in the left sidebar
+3. **Import Dashboard**:
+   - Click **New** → **Import**
+   - Click **Upload JSON file**
+   - Select `kpi-overview.json` from this directory
+4. **Configure Datasource**:
+   - Map `Supabase PostgreSQL` to your configured datasource
+   - Click **Import**
+5. **Repeat** for `supabase-postgresql.json`
+
+### Option 2: Grafana API Import
+
+```bash
+# Set your Grafana Cloud credentials
+export GRAFANA_URL="https://your-stack.grafana.net"
+export GRAFANA_API_KEY="your-api-key"
+
+# Import KPI Overview dashboard
+curl -X POST "$GRAFANA_URL/api/dashboards/db" \
+  -H "Authorization: Bearer $GRAFANA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @- << EOF
+{
+  "dashboard": $(cat grafana/dashboards/kpi-overview.json),
+  "overwrite": false,
+  "folderId": 0
+}
+EOF
+```
+
+### Option 3: Grafana Cloud CLI (grizzly)
+
+```bash
+# Install grizzly
+go install github.com/grafana/grizzly/cmd/grr@latest
+
+# Configure Grafana Cloud
+export GRAFANA_URL="https://your-stack.grafana.net"
+export GRAFANA_TOKEN="your-api-key"
+
+# Import dashboards
+grr apply grafana/dashboards/kpi-overview.json
+grr apply grafana/dashboards/supabase-postgresql.json
+```
+
+---
+
+## Setting Up Datasource in Grafana Cloud
+
+Before importing dashboards, configure the Supabase PostgreSQL datasource:
+
+### 1. Add PostgreSQL Datasource
+
+1. Go to **Configuration** → **Data sources** → **Add data source**
+2. Select **PostgreSQL**
+3. Configure connection:
+
+```yaml
+Name: Supabase PostgreSQL
+Host: db.goxdevkqozomyhsyxhte.supabase.co:5432
+Database: postgres
+User: postgres
+Password: <your-supabase-db-password>
+SSL Mode: require
+```
+
+4. Click **Save & Test**
+
+### 2. Alternative: Supabase Direct Connection
+
+For Grafana Cloud, you may need to use the Supabase connection pooler:
+
+```yaml
+Host: aws-0-us-east-1.pooler.supabase.com:6543
+Database: postgres
+User: postgres.goxdevkqozomyhsyxhte
+Password: <your-supabase-db-password>
+SSL Mode: require
+```
+
+---
+
+## Importing Dashboards (Local Docker)
 
 ### Option 1: Auto-Provisioning (Recommended)
 
