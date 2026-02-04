@@ -124,7 +124,7 @@ jobs:
           path: |
             reports/
             threshold-results.json
-          retention-days: 30
+          retention-days: 15
           if-no-files-found: ignore
 
       - name: Comment on PR with results
