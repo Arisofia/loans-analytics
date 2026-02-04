@@ -108,6 +108,7 @@ Total Skipped: 2
 
 - **Cause**: RLS not enabled or policy allows anonymous
 - **Fix**: Run SQL in Supabase dashboard:
+
   ```sql
   ALTER TABLE public.customer_data ENABLE ROW LEVEL SECURITY;
   SELECT * FROM pg_policies WHERE tablename = 'customer_data';
@@ -117,6 +118,7 @@ Total Skipped: 2
 
 - **Cause**: Policy restricts service_role or permission denied
 - **Fix**: Check service_role has `sql` permission and policies allow it:
+
   ```sql
   SELECT * FROM pg_policies WHERE tablename = 'customer_data';
   -- Should show policies that allow service_role or use USING (true)
@@ -126,6 +128,7 @@ Total Skipped: 2
 
 - **Cause**: Invalid JWT token or user doesn't exist
 - **Fix**: Verify user is signed up in Supabase Auth, or create test user:
+
   ```bash
   supabase auth users create --email "test@abaco.com" --password "test123"
   ```
