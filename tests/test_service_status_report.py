@@ -283,6 +283,8 @@ class TestEdgeCases:
     def test_todo_count_with_unreadable_files(self):
         """Test TODO count gracefully handles unreadable files."""
         checker = ServiceStatusChecker()
+        # Mock run_command to avoid invoking external linter in unit test
+        checker.run_command = MagicMock(return_value=(True, "", ""))
         result = checker.check_linting()
         
         # Should have active_todos key even if some files can't be read
