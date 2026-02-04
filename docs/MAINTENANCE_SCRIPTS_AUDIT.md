@@ -21,10 +21,11 @@ Your repository has **3 active cleanup scripts** and **5+ deprecated scripts** (
 ### Active Scripts
 
 **1. clean.sh** (Master cleanup orchestrator)
+
 - **Status**: ✅ Production-ready
 - **Phase 1**: Root directory cleanup (status reports, temp scripts, Gradle files, orphaned files)
 - **Phase 2**: Consolidate duplicates (6 docs, 3 scripts)
-- **Phase 3**: Caches (__pycache__, .pytest_cache, .mypy_cache, .ruff_cache, .next, .turbo)
+- **Phase 3**: Caches (**pycache**, .pytest_cache, .mypy_cache, .ruff_cache, .next, .turbo)
 - **Phase 4**: GitHub workflow runs (30-day threshold)
 - **Phase 5**: Empty directories + syntax validation
 - **Risk Level**: 🟡 Medium (has --dry-run safeguard)
@@ -32,6 +33,7 @@ Your repository has **3 active cleanup scripts** and **5+ deprecated scripts** (
 - **Safety**: Excellent; archives deleted items; has validation
 
 **2. cleanup_workflow_runs_by_count.sh** (Workflow retention policy)
+
 - **Status**: ✅ Production-ready
 - **Purpose**: Delete all workflow runs except most recent N (default: 25)
 - **Risk Level**: 🟢 Low
@@ -41,6 +43,7 @@ Your repository has **3 active cleanup scripts** and **5+ deprecated scripts** (
 - **Safety**: Excellent; cloud-hosted logs, easy to re-run CI
 
 **3. repo-doctor.sh** (Health check + auto-fix)
+
 - **Status**: ✅ Functional but opinionated
 - **Purpose**: Check prerequisites, install ffmpeg, scan workflows, auto-commit/push
 - **Risk Level**: 🔴 HIGH (auto-commits without review)
@@ -53,6 +56,7 @@ Your repository has **3 active cleanup scripts** and **5+ deprecated scripts** (
 - **Recommendation**: Extract only the diagnostic parts (workflow scanning); handle git ops manually
 
 **4. merge_all_branches.sh** (Branch cleanup)
+
 - **Status**: ✅ Safe
 - **Purpose**: Delete local branches already merged into main
 - **Risk Level**: 🟢 Low
@@ -64,6 +68,7 @@ Your repository has **3 active cleanup scripts** and **5+ deprecated scripts** (
 ### Deprecated Scripts (Archived)
 
 Located in `archives/maintenance/deprecated-cleanup-scripts/`:
+
 - cleanup_repo.sh (superseded by clean.sh)
 - master_cleanup.sh (superseded by clean.sh)
 - repo-cleanup.sh (superseded by clean.sh)
@@ -76,14 +81,14 @@ Located in `archives/maintenance/deprecated-cleanup-scripts/`:
 
 ## Risk Analysis
 
-| Risk | Issue | Mitigation | Status |
-|------|-------|-----------|--------|
-| **🔴 repo-doctor.sh auto-commits** | Stages all changes, commits, and pushes without human review | DO NOT USE; extract diagnostics manually | Critical |
-| **🟡 Root file deletion** | Deletes main.ts, profile.ps1, AzuriteConfig, etc. | Always use --dry-run first; already cleaned once safely | Mitigated |
-| **🟡 Path references** | If code references orphaned files, deletion breaks imports | Manual verification before cleanup; none found in baseline | Mitigated |
-| **🟢 Cache deletion** | Safe; caches auto-regenerate | Harmless; no safeguard needed | Low |
-| **🟢 Workflow run deletion** | Historical logs deleted; no data loss (cloud-hosted) | 30-day grace period; rate-limiting built-in | Low |
-| **🟢 Branch deletion** | Merged branches deleted locally | Can be re-created from remote; safe | Low |
+| Risk                               | Issue                                                        | Mitigation                                                 | Status    |
+| ---------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- | --------- |
+| **🔴 repo-doctor.sh auto-commits** | Stages all changes, commits, and pushes without human review | DO NOT USE; extract diagnostics manually                   | Critical  |
+| **🟡 Root file deletion**          | Deletes main.ts, profile.ps1, AzuriteConfig, etc.            | Always use --dry-run first; already cleaned once safely    | Mitigated |
+| **🟡 Path references**             | If code references orphaned files, deletion breaks imports   | Manual verification before cleanup; none found in baseline | Mitigated |
+| **🟢 Cache deletion**              | Safe; caches auto-regenerate                                 | Harmless; no safeguard needed                              | Low       |
+| **🟢 Workflow run deletion**       | Historical logs deleted; no data loss (cloud-hosted)         | 30-day grace period; rate-limiting built-in                | Low       |
+| **🟢 Branch deletion**             | Merged branches deleted locally                              | Can be re-created from remote; safe                        | Low       |
 
 ---
 
