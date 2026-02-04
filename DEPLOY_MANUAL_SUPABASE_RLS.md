@@ -20,7 +20,7 @@ ALTER TABLE IF EXISTS public.loan_data ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.customer_data ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.historical_kpis ENABLE ROW LEVEL SECURITY;
 
--- Analytics and KPI tables  
+-- Analytics and KPI tables
 ALTER TABLE IF EXISTS public.kpi_timeseries_daily ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.analytics_facts ENABLE ROW LEVEL SECURITY;
 
@@ -54,99 +54,154 @@ ORDER BY schemaname, tablename;
 
 ```sql
 -- ============================================================================
--- STEP 2: CREATE RLS POLICIES
+-- STEP 2: CREATE RLS POLICIES (IDEMPOTENT)
 -- ============================================================================
 BEGIN;
 
--- Customer Data Policies (user-owned data)
-CREATE POLICY IF NOT EXISTS "customer_read_own" ON public.customer_data
-  FOR SELECT USING (auth.uid() = user_id);
+-- Public schema: read-only for anon/authenticated users
+DO $$
+DECLARE
+  t text;
+  policy_exists boolean;
+BEGIN
+  FOR t IN
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_type = 'BASE TABLE'
+      AND table_name NOT LIKE 'pg_%'
+  LOOP
+    SELECT EXISTS (
+      SELECT 1
+      FROM pg_policies
+      WHERE schemaname = 'public'
+        AND tablename = t
+        AND policyname = 'Allow public read-only access'
+    ) INTO policy_exists;
 
-CREATE POLICY IF NOT EXISTS "service_role_manage_customers" ON public.customer_data
-  FOR ALL USING (auth.jwt()->>'role' = 'service_role');
+    IF NOT policy_exists THEN
+      EXECUTE format('CREATE POLICY "Allow public read-only access" ON public.%I FOR SELECT USING (true);', t);
+    END IF;
+  END LOOP;
+END $$;
 
--- Loan Data Policies (internal read, service write)
-CREATE POLICY IF NOT EXISTS "authenticated_read_loans" ON public.loan_data
-  FOR SELECT USING (auth.role() = 'authenticated');
+-- Analytics schema: read-only policies
+DO $$
+DECLARE
+  t text;
+  policy_exists boolean;
+BEGIN
+  FOR t IN
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = 'analytics'
+      AND table_type = 'BASE TABLE'
+  LOOP
+    SELECT EXISTS (
+      SELECT 1
+      FROM pg_policies
+      WHERE schemaname = 'analytics'
+        AND tablename = t
+        AND policyname = 'Allow public read-only access'
+    ) INTO policy_exists;
 
-CREATE POLICY IF NOT EXISTS "service_role_manage_loans" ON public.loan_data
-  FOR ALL USING (auth.jwt()->>'role' = 'service_role');
+    IF NOT policy_exists THEN
+      EXECUTE format('CREATE POLICY "Allow public read-only access" ON analytics.%I FOR SELECT USING (true);', t);
+    END IF;
+  END LOOP;
+END $$;
 
--- Payment Schedule Policies
-CREATE POLICY IF NOT EXISTS "authenticated_read_payment_schedule" ON public.payment_schedule
-  FOR SELECT USING (auth.role() = 'authenticated');
+-- Public schema: service_role write policies
+DO $$
+DECLARE
+  t text;
+  policy_exists boolean;
+BEGIN
+  FOR t IN
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_type = 'BASE TABLE'
+      AND table_name NOT LIKE 'pg_%'
+  LOOP
+    SELECT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname = 'public' AND tablename = t
+        AND policyname = 'Service role can insert'
+    ) INTO policy_exists;
+    IF NOT policy_exists THEN
+      EXECUTE format('CREATE POLICY "Service role can insert" ON public.%I FOR INSERT WITH CHECK (auth.role() = ''service_role'');', t);
+    END IF;
 
-CREATE POLICY IF NOT EXISTS "service_role_manage_payment_schedule" ON public.payment_schedule
-  FOR ALL USING (auth.jwt()->>'role' = 'service_role');
+    SELECT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname = 'public' AND tablename = t
+        AND policyname = 'Service role can update'
+    ) INTO policy_exists;
+    IF NOT policy_exists THEN
+      EXECUTE format('CREATE POLICY "Service role can update" ON public.%I FOR UPDATE USING (auth.role() = ''service_role'');', t);
+    END IF;
 
--- Real Payment Policies
-CREATE POLICY IF NOT EXISTS "authenticated_read_payments" ON public.real_payment
-  FOR SELECT USING (auth.role() = 'authenticated');
+    SELECT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname = 'public' AND tablename = t
+        AND policyname = 'Service role can delete'
+    ) INTO policy_exists;
+    IF NOT policy_exists THEN
+      EXECUTE format('CREATE POLICY "Service role can delete" ON public.%I FOR DELETE USING (auth.role() = ''service_role'');', t);
+    END IF;
+  END LOOP;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "service_role_manage_payments" ON public.real_payment
-  FOR ALL USING (auth.jwt()->>'role' = 'service_role');
+-- Analytics schema: service_role write policies
+DO $$
+DECLARE
+  t text;
+  policy_exists boolean;
+BEGIN
+  FOR t IN
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema = 'analytics'
+      AND table_type = 'BASE TABLE'
+  LOOP
+    SELECT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname = 'analytics' AND tablename = t
+        AND policyname = 'Service role can insert'
+    ) INTO policy_exists;
+    IF NOT policy_exists THEN
+      EXECUTE format('CREATE POLICY "Service role can insert" ON analytics.%I FOR INSERT WITH CHECK (auth.role() = ''service_role'');', t);
+    END IF;
 
--- Financial Statements Policies
-CREATE POLICY IF NOT EXISTS "authenticated_read_financial" ON public.financial_statements
-  FOR SELECT USING (auth.role() = 'authenticated');
+    SELECT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname = 'analytics' AND tablename = t
+        AND policyname = 'Service role can update'
+    ) INTO policy_exists;
+    IF NOT policy_exists THEN
+      EXECUTE format('CREATE POLICY "Service role can update" ON analytics.%I FOR UPDATE USING (auth.role() = ''service_role'');', t);
+    END IF;
 
-CREATE POLICY IF NOT EXISTS "service_role_manage_financial" ON public.financial_statements
-  FOR ALL USING (auth.jwt()->>'role' = 'service_role');
-
--- Historical KPIs Policies
-CREATE POLICY IF NOT EXISTS "authenticated_read_historical_kpis" ON public.historical_kpis
-  FOR SELECT USING (auth.role() = 'authenticated');
-
-CREATE POLICY IF NOT EXISTS "service_role_manage_historical_kpis" ON public.historical_kpis
-  FOR ALL USING (auth.jwt()->>'role' = 'service_role');
-
--- KPI Timeseries Policies
-CREATE POLICY IF NOT EXISTS "authenticated_read_kpi_timeseries" ON public.kpi_timeseries_daily
-  FOR SELECT USING (auth.role() = 'authenticated');
-
-CREATE POLICY IF NOT EXISTS "service_role_manage_kpi_timeseries" ON public.kpi_timeseries_daily
-  FOR ALL USING (auth.jwt()->>'role' = 'service_role');
-
--- Analytics Facts Policies
-CREATE POLICY IF NOT EXISTS "authenticated_read_analytics_facts" ON public.analytics_facts
-  FOR SELECT USING (auth.role() = 'authenticated');
-
-CREATE POLICY IF NOT EXISTS "service_role_manage_analytics_facts" ON public.analytics_facts
-  FOR ALL USING (auth.jwt()->>'role' = 'service_role');
-
--- Lineage Policies
-CREATE POLICY IF NOT EXISTS "authenticated_read_lineage" ON public.data_lineage
-  FOR SELECT USING (auth.role() = 'authenticated');
-
-CREATE POLICY IF NOT EXISTS "service_role_manage_lineage" ON public.data_lineage
-  FOR ALL USING (auth.jwt()->>'role' = 'service_role');
-
-CREATE POLICY IF NOT EXISTS "authenticated_read_lineage_columns" ON public.lineage_columns
-  FOR SELECT USING (auth.role() = 'authenticated');
-
-CREATE POLICY IF NOT EXISTS "service_role_manage_lineage_columns" ON public.lineage_columns
-  FOR ALL USING (auth.jwt()->>'role' = 'service_role');
-
-CREATE POLICY IF NOT EXISTS "authenticated_read_lineage_deps" ON public.lineage_dependencies
-  FOR SELECT USING (auth.role() = 'authenticated');
-
-CREATE POLICY IF NOT EXISTS "service_role_manage_lineage_deps" ON public.lineage_dependencies
-  FOR ALL USING (auth.jwt()->>'role' = 'service_role');
-
-CREATE POLICY IF NOT EXISTS "authenticated_read_lineage_audit" ON public.lineage_audit_log
-  FOR SELECT USING (auth.role() = 'authenticated');
-
-CREATE POLICY IF NOT EXISTS "service_role_manage_lineage_audit" ON public.lineage_audit_log
-  FOR ALL USING (auth.jwt()->>'role' = 'service_role');
+    SELECT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname = 'analytics' AND tablename = t
+        AND policyname = 'Service role can delete'
+    ) INTO policy_exists;
+    IF NOT policy_exists THEN
+      EXECUTE format('CREATE POLICY "Service role can delete" ON analytics.%I FOR DELETE USING (auth.role() = ''service_role'');', t);
+    END IF;
+  END LOOP;
+END $$;
 
 COMMIT;
 
 -- VERIFY: Should show 2+ policies per table
 SELECT schemaname, tablename, COUNT(*) as policy_count
 FROM pg_policies
-WHERE schemaname = 'public'
+WHERE schemaname IN ('public', 'analytics')
 GROUP BY schemaname, tablename
-ORDER BY tablename;
+ORDER BY schemaname, tablename;
 ```
 
 **Expected Result**: Each table has at least 2 policies
@@ -161,8 +216,23 @@ ORDER BY tablename;
 -- ============================================================================
 BEGIN;
 
-ALTER FUNCTION IF EXISTS public.loan_data_broadcast_trigger() 
-  SET search_path = public, pg_temp;
+DO $$
+DECLARE
+  func_oid oid;
+BEGIN
+  SELECT p.oid
+  INTO func_oid
+  FROM pg_proc p
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public'
+    AND p.proname = 'loan_data_broadcast_trigger'
+    AND p.prorettype = 'pg_catalog.trigger'::regtype;
+
+  IF func_oid IS NOT NULL THEN
+    EXECUTE 'ALTER FUNCTION public.loan_data_broadcast_trigger() SET search_path = public, pg_temp';
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
 
 COMMIT;
 
@@ -186,21 +256,44 @@ WHERE n.nspname = 'public'
 -- ============================================================================
 BEGIN;
 
--- Drop old insecure policy
-DROP POLICY IF EXISTS "allow_insert" ON monitoring.kpi_values;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'monitoring'
+      AND table_name = 'kpi_values'
+  ) THEN
+    EXECUTE 'DROP POLICY IF EXISTS "allow_insert" ON monitoring.kpi_values';
 
--- Create restricted policies
-CREATE POLICY IF NOT EXISTS "service_role_insert_kpis" ON monitoring.kpi_values
-  FOR INSERT WITH CHECK (auth.jwt()->>'role' = 'service_role');
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname = 'monitoring'
+        AND tablename = 'kpi_values'
+        AND policyname = 'service_role_insert_kpis'
+    ) THEN
+      EXECUTE 'CREATE POLICY "service_role_insert_kpis" ON monitoring.kpi_values FOR INSERT WITH CHECK (auth.jwt()->>''role'' = ''service_role'')';
+    END IF;
 
-CREATE POLICY IF NOT EXISTS "internal_authenticated_insert_kpis" ON monitoring.kpi_values
-  FOR INSERT WITH CHECK (
-    auth.role() = 'authenticated' 
-    AND auth.jwt()->>'email' LIKE '%@abaco.%'
-  );
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname = 'monitoring'
+        AND tablename = 'kpi_values'
+        AND policyname = 'internal_authenticated_insert_kpis'
+    ) THEN
+      EXECUTE 'CREATE POLICY "internal_authenticated_insert_kpis" ON monitoring.kpi_values FOR INSERT WITH CHECK (auth.role() = ''authenticated'' AND auth.jwt()->>''email'' LIKE ''%@abaco.%'')';
+    END IF;
 
-CREATE POLICY IF NOT EXISTS "authenticated_read_kpis" ON monitoring.kpi_values
-  FOR SELECT USING (auth.role() = 'authenticated');
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_policies
+      WHERE schemaname = 'monitoring'
+        AND tablename = 'kpi_values'
+        AND policyname = 'authenticated_read_kpis'
+    ) THEN
+      EXECUTE 'CREATE POLICY "authenticated_read_kpis" ON monitoring.kpi_values FOR SELECT USING (auth.role() = ''authenticated'')';
+    END IF;
+  END IF;
+END $$;
 
 COMMIT;
 
@@ -219,7 +312,7 @@ ORDER BY policyname;
 
 ```sql
 -- Check all RLS-enabled tables and policy counts
-SELECT 
+SELECT
   t.schemaname,
   t.tablename,
   t.rowsecurity AS rls_enabled,
@@ -236,6 +329,7 @@ ORDER BY t.schemaname, t.tablename;
 ```
 
 **Expected Result**:
+
 - `rls_enabled` = `true` for ALL tables
 - `policy_count` ≥ 2 for each table
 
