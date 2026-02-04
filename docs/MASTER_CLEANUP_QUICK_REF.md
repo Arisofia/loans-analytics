@@ -1,32 +1,35 @@
-# Master Cleanup Quick Reference Card
+# Repository Maintenance Quick Reference Card
 
 ## 🚀 Quick Commands
 
 ```bash
 # Preview cleanup (safe)
-./scripts/master_cleanup.sh --dry-run
+./scripts/maintenance/repo_maintenance.sh --dry-run
 
-# Execute cleanup
-./scripts/master_cleanup.sh --execute
+# Standard cleanup
+./scripts/maintenance/repo_maintenance.sh --mode=standard
+
+# Aggressive cleanup
+./scripts/maintenance/repo_maintenance.sh --mode=aggressive
 
 # Nuclear option (maximum cleanup)
-./scripts/master_cleanup.sh --nuclear
+./scripts/maintenance/repo_maintenance.sh --mode=nuclear
 ```
 
 ## 📋 What Gets Deleted
 
-| Category | Files/Directories |
-|----------|-------------------|
-| **Python** | `__pycache__/`, `.pytest_cache/`, `.mypy_cache/`, `*.pyc` |
-| **Node** | `node_modules/`, `.npm/`, `.next/`, `dist/`, `out/` |
-| **Build** | `.gradle/`, `build/`, `coverage/` |
-| **Backups** | `*.backup`, `*.bak`, `*.old`, `*.copy`, `* (1).*` |
-| **Temp** | `tmp/`, `*.tmp`, `*.temp`, `*.swp` |
-| **Logs** | `logs/`, `*.log`, `test-results/`, selected reports (`OPTIMIZATION_REPORT.md`, `TECHNICAL_DEBT_*.md`, ...) |
-| **Data** | `data/metrics/run_*`, `logs/runs/run_*` |
-| **IDE** | `.idea/`, `.vscode/cache/`, `.DS_Store` |
-| **Docker** | Stopped containers, dangling images |
-| **Git** | Merged branches, reflog (nuclear) |
+| Category    | Files/Directories                                                                                          |
+| ----------- | ---------------------------------------------------------------------------------------------------------- |
+| **Python**  | `__pycache__/`, `.pytest_cache/`, `.mypy_cache/`, `*.pyc`                                                  |
+| **Node**    | `node_modules/`, `.npm/`, `.next/`, `dist/`, `out/`                                                        |
+| **Build**   | `.gradle/`, `build/`, `coverage/`                                                                          |
+| **Backups** | `*.backup`, `*.bak`, `*.old`, `*.copy`, `* (1).*`                                                          |
+| **Temp**    | `tmp/`, `*.tmp`, `*.temp`, `*.swp`                                                                         |
+| **Logs**    | `logs/`, `*.log`, `test-results/`, selected reports (`OPTIMIZATION_REPORT.md`, `TECHNICAL_DEBT_*.md`, ...) |
+| **Data**    | `data/metrics/run_*`, `logs/runs/run_*`                                                                    |
+| **IDE**     | `.idea/`, `.vscode/cache/`, `.DS_Store`                                                                    |
+| **Docker**  | Stopped containers, dangling images                                                                        |
+| **Git**     | Merged branches, reflog (nuclear)                                                                          |
 
 ## ✅ What's Preserved
 
@@ -40,15 +43,17 @@
 
 ## 🎯 Mode Comparison
 
-| Mode | Destructive? | Docker Volumes? | Git Reflog? | Use Case |
-|------|--------------|-----------------|-------------|----------|
-| `--dry-run` | ❌ No | N/A | N/A | Preview only |
-| `--execute` | ⚠️ Yes | ❌ No | ❌ No | Standard cleanup |
-| `--nuclear` | 🔥 Maximum | ✅ Yes | ✅ Yes | Deep clean |
+| Mode                | Destructive? | Docker Volumes? | Git Reflog? | Use Case          |
+| ------------------- | ------------ | --------------- | ----------- | ----------------- |
+| `--dry-run`         | ❌ No        | N/A             | N/A         | Preview only      |
+| `--mode=standard`   | ⚠️ Yes       | ❌ No           | ❌ No       | Standard cleanup  |
+| `--mode=aggressive` | ⚠️ Yes       | ❌ No           | ⚠️ Limited  | Size optimization |
+| `--mode=nuclear`    | 🔥 Maximum   | ✅ Yes          | ✅ Yes      | Deep clean        |
 
 ## 💡 Best Practices
 
 ### ✅ DO
+
 - Run `--dry-run` first
 - Review output carefully
 - Run before deployments
@@ -56,6 +61,7 @@
 - Check git status after
 
 ### ❌ DON'T
+
 - Run during active development
 - Skip the dry-run
 - Run without reviewing output
@@ -66,13 +72,13 @@
 
 ```bash
 # 1. Preview
-./scripts/master_cleanup.sh --dry-run
+./scripts/maintenance/repo_maintenance.sh --dry-run
 
 # 2. Review (check for surprises)
 # Look for any files you want to keep
 
 # 3. Execute
-./scripts/master_cleanup.sh --execute
+./scripts/maintenance/repo_maintenance.sh --mode=standard
 
 # 4. Verify
 git status
@@ -86,44 +92,46 @@ pytest tests/
 
 ```
 Before:  ~700 MB (working tree + git)
-After:   ~200 MB (--execute)
-Nuclear: ~90 MB  (--nuclear)
+After:   ~200 MB (--mode=standard)
+Nuclear: ~90 MB  (--mode=nuclear)
 Savings: 70-85%
 ```
 
 ## ⚠️ Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Permission denied | `chmod +x scripts/master_cleanup.sh` |
-| Docker fails | Ensure Docker daemon is running |
-| Branch delete fails | `git branch -D <branch>` to force |
-| Deleted too much | `git checkout HEAD -- <file>` |
+| Problem             | Solution                                           |
+| ------------------- | -------------------------------------------------- |
+| Permission denied   | `chmod +x scripts/maintenance/repo_maintenance.sh` |
+| Docker fails        | Ensure Docker daemon is running                    |
+| Branch delete fails | `git branch -D <branch>` to force                  |
+| Deleted too much    | `git checkout HEAD -- <file>`                      |
 
 ## 🌐 Cloud Cleanup
 
 **Supabase** (manual):
+
 ```bash
 # Via Dashboard: supabase.com/dashboard
 # Or SQL: psql "$SUPABASE_DB_URL"
 ```
 
 **Azure** (manual):
+
 ```bash
 az storage blob delete-batch --source <container> --pattern "tmp*"
 ```
 
 ## 🔗 Related Scripts
 
-- `scripts/cleanup_repo.sh` - Code quality only
-- `scripts/repo-cleanup.sh` - Git only
+- `scripts/maintenance/repo_maintenance.sh` - Unified maintenance
+- `scripts/maintenance/cleanup_workflow_runs_by_count.sh` - Delete old workflow runs
 - `scripts/repo-doctor.sh` - Health checks
 
-**Use `master_cleanup.sh` as your primary tool.**
+**Use `repo_maintenance.sh` as your primary tool.**
 
 ## 📚 Full Documentation
 
-See [docs/MASTER_CLEANUP_GUIDE.md](MASTER_CLEANUP_GUIDE.md) for complete details.
+See [docs/REPOSITORY_MAINTENANCE.md](REPOSITORY_MAINTENANCE.md) for complete details.
 
 ---
 

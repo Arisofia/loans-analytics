@@ -33,25 +33,29 @@ This script consolidates all repository maintenance operations into a single, pr
 ### Features
 
 ✨ **Code Formatting & Linting**
+
 - Black formatter for Python
 - isort for import sorting
 - Ruff for fast linting with auto-fix
 
 🐍 **Python Environment Cleanup**
-- Removes __pycache__ directories
+
+- Removes **pycache** directories
 - Cleans .pyc, .pyo bytecode files
 - Clears pytest, mypy, ruff caches
 - Removes coverage artifacts
 
 🏗️ **Build Artifacts & Temp Files**
+
 - Clears build/, dist/ directories
 - Removes node_modules (if present)
-- Deletes backup files (*.bak, *.old, *.backup)
-- Cleans temporary files (*.tmp, *.temp)
+- Deletes backup files (_.bak, _.old, \*.backup)
+- Cleans temporary files (_.tmp, _.temp)
 - Removes editor swap files (.swp)
 - Eliminates numbered copies and duplicates
 
 🔧 **Git Repository Maintenance**
+
 - Fetches and prunes remote references
 - Deletes merged local branches
 - Runs garbage collection
@@ -59,6 +63,7 @@ This script consolidates all repository maintenance operations into a single, pr
 - (Nuclear mode) Deep GC with reflog cleanup (requires confirmation)
 
 🐳 **Docker Cleanup** (Aggressive/Nuclear modes only)
+
 - Removes stopped containers
 - Deletes dangling images
 - (Nuclear mode) System-wide prune with volumes (requires confirmation)
@@ -68,6 +73,7 @@ This script consolidates all repository maintenance operations into a single, pr
 ### Usage Modes
 
 #### Standard Mode (Recommended)
+
 ```bash
 ./scripts/repo_maintenance.sh --mode=standard
 # OR
@@ -75,6 +81,7 @@ make maintenance
 ```
 
 **What it does**:
+
 - Formats code (Black, isort, Ruff)
 - Cleans Python caches
 - Removes build artifacts and temp files
@@ -85,6 +92,7 @@ make maintenance
 ---
 
 #### Aggressive Mode
+
 ```bash
 ./scripts/repo_maintenance.sh --mode=aggressive
 # OR
@@ -92,6 +100,7 @@ make maintenance-aggressive
 ```
 
 **What it does**:
+
 - Everything in Standard mode
 - **Aggressive Git GC** (more thorough, takes longer)
 - **Docker cleanup** (stopped containers, dangling images)
@@ -101,16 +110,19 @@ make maintenance-aggressive
 ---
 
 #### Nuclear Mode ⚠️
+
 ```bash
 ./scripts/repo_maintenance.sh --mode=nuclear
 ```
 
 **What it does**:
+
 - Everything in Aggressive mode
 - **Git reflog expiration** (removes reflog history)
 - **Docker system prune with volumes** (deletes ALL unused Docker resources)
 
-**When to use**: 
+**When to use**:
+
 - Extreme repo bloat situations
 - Recovering from extensive experimentation
 - ⚠️ **CAUTION**: Cannot recover deleted reflog entries or Docker volumes
@@ -118,6 +130,7 @@ make maintenance-aggressive
 ---
 
 #### Format-Only Mode
+
 ```bash
 ./scripts/repo_maintenance.sh --format-only
 # OR
@@ -131,6 +144,7 @@ make format
 ---
 
 #### Dry-Run Mode
+
 ```bash
 ./scripts/repo_maintenance.sh --dry-run
 # OR
@@ -144,6 +158,7 @@ make maintenance-dry-run
 ---
 
 #### CI Mode
+
 ```bash
 ./scripts/repo_maintenance.sh --ci
 ```
@@ -247,34 +262,41 @@ This unified system replaces the following deprecated scripts (now in `archives/
 4. **repo-cleanup.sh** - Git repository maintenance
 5. **code-quality.yml** - GitHub Actions workflow
 
-The new system consolidates the most commonly used maintenance tasks. Some specialized checks from the deprecated scripts (such as YAML validation, merge-conflict marker and secret scanning, and additional cleanup targets) remain available via CI workflows and the archived scripts directory.
+The new system consolidates the most commonly used maintenance tasks. Any references to the deprecated scripts in onboarding or operations docs should use `./scripts/maintenance/repo_maintenance.sh` instead.
 
 ## Troubleshooting
 
 ### "Black not installed"
+
 ```bash
 source .venv/bin/activate
 pip install black isort ruff
 ```
 
 ### "Not in a git repository"
+
 Ensure you're in the repository root:
+
 ```bash
 cd /path/to/abaco-loans-analytics
 ```
 
 ### Git GC takes too long
+
 Use standard mode instead of aggressive:
+
 ```bash
 ./scripts/repo_maintenance.sh --mode=standard
 ```
 
 ### Want to keep reflog history
+
 Avoid nuclear mode. Use standard or aggressive instead.
 
 ## Integration with CI/CD
 
 The maintenance workflow integrates seamlessly with:
+
 - **Pre-commit hooks**: Auto-format on commit
 - **GitHub Actions**: Auto-format on push, validate on PR
 - **Local development**: Make targets for quick access
@@ -284,6 +306,7 @@ The maintenance workflow integrates seamlessly with:
 ## Support
 
 For issues or questions about repository maintenance:
+
 1. Check this documentation
 2. Review `scripts/repo_maintenance.sh --help`
 3. See GitHub Actions runs for automated maintenance logs

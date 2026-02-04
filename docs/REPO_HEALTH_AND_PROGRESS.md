@@ -63,10 +63,10 @@ Test Execution Time:  0.35s
 
 **Status:** Deployed & Tested
 
-| Script                        | Size   | Status        | Purpose                  |
-| ----------------------------- | ------ | ------------- | ------------------------ |
-| `scripts/repo-cleanup.sh`     | 5.2 KB | ✅ Executable | Local repository hygiene |
-| `scripts/git-config-setup.sh` | 3.8 KB | ✅ Executable | Git configuration setup  |
+| Script                                    | Size   | Status        | Purpose                        |
+| ----------------------------------------- | ------ | ------------- | ------------------------------ |
+| `scripts/maintenance/repo_maintenance.sh` | 18 KB  | ✅ Executable | Unified repository maintenance |
+| `scripts/git-config-setup.sh`             | 3.8 KB | ✅ Executable | Git configuration setup        |
 
 **Last Execution:** 2026-01-29 02:00 UTC  
 **Results:** Clean repository, no stale branches, GC optimized
@@ -75,10 +75,10 @@ Test Execution Time:  0.35s
 
 **Status:** Active & Scheduled
 
-| Workflow           | Schedule          | Status       | Mode              |
-| ------------------ | ----------------- | ------------ | ----------------- |
-| `repo-cleanup.yml` | Sundays 02:00 UTC | ✅ Active    | Automatic         |
-| Manual Trigger     | On-demand         | ✅ Available | workflow_dispatch |
+| Workflow               | Schedule          | Status       | Mode              |
+| ---------------------- | ----------------- | ------------ | ----------------- |
+| `cleanup-old-runs.yml` | Sundays 02:00 UTC | ✅ Active    | Automatic         |
+| Manual Trigger         | On-demand         | ✅ Available | workflow_dispatch |
 
 **Cleanup Modes Available:**
 
@@ -200,7 +200,7 @@ Documentation:        ✅ Complete
 
 ✅ **Section 1.1 - Local Hygiene**
 
-- Daily: `./scripts/repo-cleanup.sh`
+- Daily: `./scripts/maintenance/repo_maintenance.sh --mode=standard`
 - Merged branch cleanup: Automated ✅
 - Untracked file management: Available ✅
 - Garbage collection: Implemented ✅
@@ -329,9 +329,9 @@ Documentation:        ✅ Complete
 
 ```bash
 # Local cleanup
-./scripts/repo-cleanup.sh
-./scripts/repo-cleanup.sh --aggressive
-./scripts/repo-cleanup.sh --all
+./scripts/maintenance/repo_maintenance.sh --mode=standard
+./scripts/maintenance/repo_maintenance.sh --mode=aggressive
+./scripts/maintenance/repo_maintenance.sh --mode=nuclear
 
 # Git config
 ./scripts/git-config-setup.sh
@@ -345,10 +345,10 @@ git config --global --list
 **Solution:** See Section 2 of Playbook, use `git mergetool`
 
 **Problem:** Stale branches  
-**Solution:** Run `./scripts/repo-cleanup.sh --remote`
+**Solution:** Run `./scripts/maintenance/repo_maintenance.sh --mode=aggressive`
 
 **Problem:** Large repository  
-**Solution:** Run `./scripts/repo-cleanup.sh --aggressive`
+**Solution:** Run `./scripts/maintenance/repo_maintenance.sh --mode=aggressive`
 
 ---
 

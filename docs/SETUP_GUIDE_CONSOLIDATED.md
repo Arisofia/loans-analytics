@@ -423,8 +423,8 @@ pre-commit install --force
 **5. Git conflicts**
 
 ```bash
-# Run repo cleanup
-bash scripts/repo-cleanup.sh
+# Run repo maintenance
+./scripts/maintenance/repo_maintenance.sh --mode=standard
 ```
 
 ---
