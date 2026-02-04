@@ -53,21 +53,49 @@ class ServiceStatusChecker:
             "success": True,
             "details": {},
         }
-        
+        overall_success = True
+
         # Get current branch
-        success, stdout, _ = self.run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-        status["details"]["current_branch"] = stdout.strip() if success else "unknown"
-        
+        success, stdout, stderr = self.run_command(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+        )
+        if success:
+            status["details"]["current_branch"] = stdout.strip()
+        else:
+            status["details"]["current_branch"] = "unknown"
+            status["details"]["current_branch_error"] = (
+                stderr.strip() or "git rev-parse failed"
+            )
+            overall_success = False
+
         # Get latest commit
-        success, stdout, _ = self.run_command(["git", "log", "--oneline", "-1"])
-        status["details"]["latest_commit"] = stdout.strip() if success else "unknown"
-        
+        success, stdout, stderr = self.run_command(
+            ["git", "log", "--oneline", "-1"]
+        )
+        if success:
+            status["details"]["latest_commit"] = stdout.strip()
+        else:
+            status["details"]["latest_commit"] = "unknown"
+            status["details"]["latest_commit_error"] = (
+                stderr.strip() or "git log failed"
+            )
+            overall_success = False
+
         # Check for uncommitted changes
-        success, stdout, _ = self.run_command(["git", "status", "--porcelain"])
-        has_changes = bool(stdout.strip())
-        status["details"]["uncommitted_changes"] = has_changes
-        status["details"]["clean_working_tree"] = not has_changes
-        
+        success, stdout, stderr = self.run_command(["git", "status", "--porcelain"])
+        if success:
+            has_changes = bool(stdout.strip())
+            status["details"]["uncommitted_changes"] = has_changes
+            status["details"]["clean_working_tree"] = not has_changes
+        else:
+            status["details"]["uncommitted_changes"] = "unknown"
+            status["details"]["clean_working_tree"] = "unknown"
+            status["details"]["working_tree_status_error"] = (
+                stderr.strip() or "git status failed"
+            )
+            overall_success = False
+
+        status["success"] = overall_success
         return status
 
     def check_python_environment(self) -> dict[str, Any]:
