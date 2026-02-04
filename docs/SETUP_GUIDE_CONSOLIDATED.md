@@ -228,6 +228,7 @@ make monitoring-stop
    ```
 
 4. **Test email notification**:
+
    ```bash
    curl -X POST http://localhost:9093/api/v2/alerts \
      -H "Content-Type: application/json" \
