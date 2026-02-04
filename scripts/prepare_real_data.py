@@ -28,7 +28,7 @@ def load_table(data_dir: Path, table_name: str) -> pd.DataFrame:
     logger.info("📄 Loading %s: %s", table_name, filepath.name)
 
     df = pd.read_csv(filepath)
-    logger.info("   ✅ Loaded %s rows, %s columns", f"{len(df):,}", len(df.columns))
+    logger.info("   ✅ Loaded %s rows, %s columns", len(df), len(df.columns))
     preview_cols = ", ".join(df.columns[:5])
     ellipsis = "..." if len(df.columns) > 5 else ""
     logger.info("   📋 Columns: %s%s", preview_cols, ellipsis)
@@ -247,7 +247,7 @@ def main():
 
     # Start with loan data as base
     merged = tables['loan_data'].copy()
-    logger.info("   📊 Base: loan_data (%s loans)", f"{len(merged):,}")
+    logger.info("   📊 Base: loan_data (%s loans)", len(merged))
 
     # Merge customer data (left join to preserve all loans)
     if 'customer' in tables:
@@ -266,14 +266,14 @@ def main():
         ]
         customer_df = tables['customer'][customer_cols].drop_duplicates(subset=['Loan ID'])
         merged = merged.merge(customer_df, on='Loan ID', how='left', suffixes=('', '_cust'))
-        logger.info("   🔗 + customer data (%s unique loans)", f"{len(customer_df):,}")
+        logger.info("   🔗 + customer data (%s unique loans)", len(customer_df))
 
     # Merge collateral (left join, aggregate if multiple per loan)
     if 'collateral' in tables:
         collateral_cols = ['Loan ID', 'Collateral Type', 'Collateral Current']
         collateral_df = tables['collateral'][collateral_cols].drop_duplicates(subset=['Loan ID'])
         merged = merged.merge(collateral_df, on='Loan ID', how='left', suffixes=('', '_coll'))
-        logger.info("   🔗 + collateral data (%s unique loans)", f"{len(collateral_df):,}")
+        logger.info("   🔗 + collateral data (%s unique loans)", len(collateral_df))
 
     # Aggregate payment schedule (scheduled payments)
     if 'payment_schedule' in tables:
@@ -283,7 +283,7 @@ def main():
         }).reset_index()
         payment_agg.columns = ['Loan ID', 'last_scheduled_date', 'total_scheduled']
         merged = merged.merge(payment_agg, on='Loan ID', how='left')
-        logger.info("   🔗 + payment schedule (aggregated, %s loans)", f"{len(payment_agg):,}")
+        logger.info("   🔗 + payment schedule (aggregated, %s loans)", len(payment_agg))
 
     # Aggregate historic payments (actual payments made)
     if 'historic_payments' in tables:
@@ -299,11 +299,11 @@ def main():
             'True Outstanding Loan Value',
         ]
         merged = merged.merge(historic_agg, on='Loan ID', how='left')
-        logger.info("   🔗 + historic payments (aggregated, %s loans)", f"{len(historic_agg):,}")
+        logger.info("   🔗 + historic payments (aggregated, %s loans)", len(historic_agg))
 
     logger.info(
         "\n   ✅ Merged dataset: %s rows, %s columns",
-        f"{len(merged):,}",
+        len(merged),
         len(merged.columns),
     )
 
@@ -313,31 +313,31 @@ def main():
     # Save
     logger.info("\n💾 Saving to: %s", output_file.name)
     final_df.to_csv(output_file, index=False)
-    logger.info("   ✅ Saved %s loans to %s", f"{len(final_df):,}", output_file)
+    logger.info("   ✅ Saved %s loans to %s", len(final_df), output_file)
 
     # Summary
-    logger.info("\n" + "=" * 60)
+    logger.info("\n%s", "=" * 60)
     logger.info("✅ Data Preparation Complete!")
-    logger.info("=" * 60)
+    logger.info("%s", "=" * 60)
     logger.info("📄 Output file: %s", output_file)
-    logger.info("📊 Total loans: %s", f"{len(final_df):,}")
+    logger.info("📊 Total loans: %s", len(final_df))
     logger.info("📋 Columns: %s", len(final_df.columns))
 
     # Show key statistics
     if 'principal_amount' in final_df.columns:
         total_disbursed = final_df['principal_amount'].sum()
-        logger.info("💰 Total disbursed: $%s", f"{total_disbursed:,.2f}")
+        logger.info("💰 Total disbursed: $%.2f", total_disbursed)
 
     if 'outstanding_balance' in final_df.columns:
         total_outstanding = final_df['outstanding_balance'].sum()
-        logger.info("📊 Total outstanding: $%s", f"{total_outstanding:,.2f}")
+        logger.info("📊 Total outstanding: $%.2f", total_outstanding)
 
     if 'current_status' in final_df.columns:
         status_counts = final_df['current_status'].value_counts()
         logger.info("\n📈 Loan status distribution:")
         for status, count in status_counts.head(5).items():
             pct = (count / len(final_df)) * 100
-            logger.info("   %s: %s (%s%%)", status, f"{count:,}", f"{pct:.1f}")
+            logger.info("   %s: %s (%.1f%%)", status, count, pct)
 
     logger.info("\n🚀 Next steps:")
     logger.info("  1. Inspect: head %s", output_file)
