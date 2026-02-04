@@ -147,7 +147,7 @@ curl -H "apikey: $SUPABASE_ANON_KEY" \
 
 5. **Communication**:
    - Post status update on internal Slack
-   - If customer-facing: Email support@abaco.co with ETA
+   - If customer-facing: Email <support@abaco.co> with ETA
    - Escalate to CTO if downtime >30 minutes
 
 ### Contact Information
