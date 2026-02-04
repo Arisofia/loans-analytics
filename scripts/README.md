@@ -78,6 +78,30 @@ python scripts/maintenance/validate_structure.py
 ./scripts/maintenance/cleanup_workflow_runs_by_count.sh
 ```
 
+### Service Status Report
+
+Generate a comprehensive service status report for all system components:
+
+```bash
+# Using make (recommended)
+make service-status
+
+# Or run directly
+python scripts/generate_service_status_report.py
+```
+
+This will:
+- ✅ Check all system components (Git, Python, Tests, Linting, Supabase, Pipeline, Agents, Docs, CI/CD)
+- ✅ Continue checking even if some components fail
+- ✅ Generate `service_status_report.md` with real data
+- ✅ Generate `service_status_report.json` for programmatic use
+
+The report shows:
+- Current system status with pass/fail for each component
+- Detailed information about each check
+- Actions required to fix any issues
+- Timestamp of report generation
+
 ## 📊 Script Categories
 
 ### Data Scripts (`data/`)
