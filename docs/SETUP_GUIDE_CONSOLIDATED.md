@@ -8,15 +8,15 @@
 
 ## 📑 Table of Contents
 
-1. [Local Development Setup](#local-development-setup)
-2. [Python Environment Setup](#python-environment-setup)
-3. [Code Quality Setup](#code-quality-setup)
-4. [Integration Tests Setup](#integration-tests-setup)
-5. [Monitoring & Alertmanager Setup](#monitoring--alertmanager-setup)
-6. [Secrets & Environment Setup](#secrets--environment-setup)
-7. [Azure Cloud Setup](#azure-cloud-setup)
-8. [Supabase Database Setup](#supabase-database-setup)
-9. [Workspace Configuration](#workspace-configuration)
+1. [Local Development Setup](#1-local-development-setup)
+2. [Python Environment Setup](#2-python-environment-setup)
+3. [Code Quality Setup](#3-code-quality-setup)
+4. [Integration Tests Setup](#4-integration-tests-setup)
+5. [Monitoring & Alertmanager Setup](#5-monitoring--alertmanager-setup)
+6. [Secrets & Environment Setup](#6-secrets--environment-setup)
+7. [Azure Cloud Setup](#7-azure-cloud-setup)
+8. [Supabase Database Setup](#8-supabase-database-setup)
+9. [Workspace Configuration](#9-workspace-configuration)
 
 ---
 
@@ -74,6 +74,7 @@ make test
    ```
 
 5. **Verify setup**
+
    ```bash
    make test
    make lint
@@ -215,7 +216,7 @@ make monitoring-stop
    ```
 
 2. **Generate Gmail App Password**:
-   - Go to: https://myaccount.google.com/apppasswords
+   - Go to: <https://myaccount.google.com/apppasswords>
    - Name it "Alertmanager"
    - Copy 16-character code
 
@@ -323,7 +324,7 @@ func azure functionapp publish your-function-app
 
 ### Create Project
 
-1. Go to: https://supabase.com/dashboard
+1. Go to: <https://supabase.com/dashboard>
 2. Click "New Project"
 3. Choose region, set password
 4. Copy URL and keys
@@ -384,11 +385,11 @@ python scripts/load_sample_kpis_supabase.py
 
 ---
 
-## 📞 Troubleshooting
+## 📞 Common Troubleshooting
 
-### Common Issues
+### Frequent Issues
 
-**1. Port already in use (Grafana, Prometheus, etc.)**
+#### Port already in use (Grafana, Prometheus, etc.)
 
 ```bash
 # Find process using port
@@ -396,7 +397,7 @@ lsof -i :3001  # or :9090, :9093
 kill -9 <PID>
 ```
 
-**2. Docker not running**
+#### Docker not running
 
 ```bash
 # Start Docker Desktop
@@ -404,7 +405,7 @@ open -a Docker  # macOS
 # Or start Docker service on Linux/Windows
 ```
 
-**3. Python module not found**
+#### Python module not found
 
 ```bash
 # Ensure venv is activated
@@ -412,7 +413,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**4. Pre-commit hooks failing**
+#### Pre-commit hooks failing
 
 ```bash
 # Update hooks
@@ -420,7 +421,7 @@ pre-commit autoupdate
 pre-commit install --force
 ```
 
-**5. Git conflicts**
+#### Git conflicts
 
 ```bash
 # Run repo maintenance
@@ -435,7 +436,7 @@ After setup:
 
 1. **Run the pipeline**: `python scripts/run_data_pipeline.py`
 2. **Start monitoring**: `make monitoring-start`
-3. **Explore dashboards**: http://localhost:3001 (Grafana)
+3. **Explore dashboards**: <http://localhost:3001> (Grafana)
 4. **Run multi-agent**: See `python/multi_agent/README.md`
 5. **Read architecture**: [ARCHITECTURE.md](ARCHITECTURE.md)
 
