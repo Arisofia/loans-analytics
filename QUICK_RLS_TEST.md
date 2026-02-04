@@ -8,8 +8,8 @@ npm install @supabase/supabase-js
 
 # Set your API keys (from Supabase Dashboard > Settings > API)
 export SUPABASE_URL="https://goxdevkqozomyhsyxhte.supabase.co"
-export SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  # From dashboard
-export SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  # From dashboard (KEEP PRIVATE!)
+export SUPABASE_ANON_KEY="<your-supabase-anon-key>"  # From dashboard
+export SUPABASE_SERVICE_ROLE_KEY="<your-supabase-service-role-key>"  # From dashboard (KEEP PRIVATE!)
 
 # Run tests
 node scripts/test-rls.js

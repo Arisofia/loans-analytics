@@ -312,6 +312,7 @@ Add these checks to your observability dashboard:
    ```
 
 3. **Policy Performance**: Monitor slow queries on policy-filtered tables
+
    ```sql
    SELECT query, mean_time, calls
    FROM pg_stat_statements
@@ -337,6 +338,6 @@ Add these checks to your observability dashboard:
 3. If all pass → **deployment verified**
 4. If any fail → Post errors to `#security-incidents` channel
 
-**Test Completion Date**: ******\_\_\_******  
-**Verified By**: ******\_\_\_******  
-**Notes**: ******\_\_\_******
+**Test Completion Date**: **\*\***\_\_\_**\*\***  
+**Verified By**: **\*\***\_\_\_**\*\***  
+**Notes**: **\*\***\_\_\_**\*\***
