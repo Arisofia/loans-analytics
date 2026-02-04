@@ -324,6 +324,9 @@ def main():
     logger.info("📋 Columns: %s", len(final_df.columns))
 
     # Show key statistics
+    # NOTE: These are diagnostic logs only (non-authoritative, approximate totals).
+    # Uses pandas .sum() with float arithmetic for quick visibility.
+    # For authoritative financial calculations, convert to Decimal first per project standards.
     if 'principal_amount' in final_df.columns:
         total_disbursed = final_df['principal_amount'].sum()
         formatted_disbursed = f"{total_disbursed:,.2f}"
