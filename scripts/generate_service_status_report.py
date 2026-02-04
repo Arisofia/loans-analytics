@@ -393,8 +393,8 @@ def generate_markdown_report(results: dict[str, dict[str, Any]]) -> str:
                     for sub_key, sub_value in detail_value.items():
                         lines.append(f"  - {sub_key}: {sub_value}")
                 elif isinstance(detail_value, bool):
-                    icon = "✅" if detail_value else "❌"
-                    lines.append(f"- {icon} {formatted_key}")
+                    bool_text = "Yes" if detail_value else "No"
+                    lines.append(f"- **{formatted_key}:** {bool_text}")
                 else:
                     lines.append(f"- **{formatted_key}:** {detail_value}")
             lines.append("")
