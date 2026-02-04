@@ -1,6 +1,6 @@
 # Service Status Report
 
-**Generated:** 2026-02-04 08:35:23 UTC
+**Generated:** 2026-02-04 08:57:43 UTC
 **Status:** 5/9 checks passed
 
 ## Executive Summary
@@ -18,9 +18,9 @@
 **Details:**
 
 - **Current Branch:** copilot/fix-service-status-report-errors
-- **Latest Commit:** 23b5b1c fix: correct UTC timestamps in service status report
-- ❌ Uncommitted Changes
-- ✅ Clean Working Tree
+- **Latest Commit:** 444552f Update scripts/generate_service_status_report.py
+- **Uncommitted Changes:** Yes
+- **Clean Working Tree:** No
 
 ---
 
@@ -31,7 +31,7 @@
 **Details:**
 
 - **Python Version:** 3.12.3
-- ❌ Virtual Env Active
+- **Virtual Env Active:** No
 - **Virtual Env Path:** None
 - **Packages:**
   - pandas: ❌ Not installed
@@ -48,7 +48,7 @@
 
 **Details:**
 
-- ✅ Tests Directory Exists
+- **Tests Directory Exists:** Yes
 - **Result Summary:** No test results
 - **Exit Code:** non-zero
 
@@ -71,8 +71,8 @@
 
 **Details:**
 
-- ❌ Url Configured
-- ❌ Key Configured
+- **Url Configured:** No
+- **Key Configured:** No
 - **Message:** SUPABASE_URL not configured
 
 ---
@@ -83,8 +83,8 @@
 
 **Details:**
 
-- ✅ Script Exists
-- ✅ Config Exists
+- **Script Exists:** Yes
+- **Config Exists:** Yes
 - **Modules:** 4/4 present
 
 ---
@@ -95,9 +95,9 @@
 
 **Details:**
 
-- ✅ Directory Exists
+- **Directory Exists:** Yes
 - **Core Modules:** 4/4 present
-- ❌ Llm Provider Configured
+- **Llm Provider Configured:** No
 
 ---
 
@@ -107,7 +107,7 @@
 
 **Details:**
 
-- ✅ Docs Directory Exists
+- **Docs Directory Exists:** Yes
 - **Markdown Files:** 97
 - **Key Docs:** 3/3 present
 
@@ -119,7 +119,7 @@
 
 **Details:**
 
-- ✅ Workflows Directory Exists
+- **Workflows Directory Exists:** Yes
 - **Workflow Count:** 12
 - **Key Workflows:** 3/3 present
 
@@ -148,4 +148,4 @@ To regenerate this report:
 python scripts/generate_service_status_report.py
 ```
 
-*Last updated: 2026-02-04 08:35:23 UTC*
+*Last updated: 2026-02-04 08:57:43 UTC*
