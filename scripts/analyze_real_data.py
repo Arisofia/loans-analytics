@@ -22,8 +22,7 @@ def main():
         "loan_data": args.data_dir / "Abaco - Loan Tape_Loan Data_Table (3).csv",
         "customer": args.data_dir / "Abaco - Loan Tape_Customer Data_Table (3).csv",
         "collateral": args.data_dir / "Abaco - Loan Tape_Collateral_Table (3).csv",
-        "payment_schedule": args.data_dir
-        / "Abaco - Loan Tape_Payment Schedule_Table (3).csv",
+        "payment_schedule": args.data_dir / "Abaco - Loan Tape_Payment Schedule_Table (3).csv",
         "historic_payments": args.data_dir
         / "Abaco - Loan Tape_Historic Real Payment_Table (3).csv",
     }
