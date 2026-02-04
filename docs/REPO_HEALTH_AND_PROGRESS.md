@@ -293,24 +293,24 @@ Documentation:        ✅ Complete
 
 ### Short-term (This Month)
 
-3. **Monitor automation**
+1. **Monitor automation**
    - Review weekly cleanup reports
    - Check artifact uploads
    - Verify branch cleanup
 
-4. **Extend automation**
+2. **Extend automation**
    - Add Dependabot auto-merge
    - Configure branch protection rules
    - Set up code owners
 
 ### Medium-term (This Quarter)
 
-5. **Optimize workflows**
+1. **Optimize workflows**
    - Monitor cleanup performance
    - Refine schedule as needed
    - Gather team feedback
 
-6. **Expand documentation**
+2. **Expand documentation**
    - Create video tutorials
    - Add troubleshooting guide
    - Document common scenarios
