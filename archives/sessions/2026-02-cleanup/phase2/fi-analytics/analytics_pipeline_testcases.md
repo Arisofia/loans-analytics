@@ -119,4 +119,3 @@
 1. Run pipeline on CSV missing DPD columns - partial_dataset.csv - Exit code 0
 2. Verify `par_0_7_pct` defaults to 0.0 in JSON output - N/A - Value is 0.0
 3. Check logs for warnings about missing columns - N/A - Warnings logged
-

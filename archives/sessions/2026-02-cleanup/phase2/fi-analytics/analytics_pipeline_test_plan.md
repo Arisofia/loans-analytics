@@ -52,4 +52,3 @@
 - 100% of automated tests (Smoke, Correctness, Schema) passing.
 - No memory leaks detected during 100k row processing.
 - All artifact fields populated (no unexpected nulls).
-

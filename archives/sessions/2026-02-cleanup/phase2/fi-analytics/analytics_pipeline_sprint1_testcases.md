@@ -118,4 +118,3 @@
 1. Attempt Meta API sync with restricted token - `restricted_token` - API returns 403
 2. Verify pipeline handles status code - N/A - Pipeline logs "CRITICAL: Insufficient permissions for Meta integration"
 3. Confirm exit code is non-zero - N/A - Exit code 1 (Security failure)
-
