@@ -1,7 +1,7 @@
 -- Migration: Define RLS policies for sensitive tables
 -- Date: 2026-02-04
 -- Purpose: Implement secure access control policies for fintech data
--- Related: SECURITY_STATUS_2026_02_04.md, docs/security/SUPABASE_RLS_HARDENING.md
+-- Related: docs/SECURITY_STATUS_REPORT.md, docs/security/SUPABASE_RLS_HARDENING.md
 
 BEGIN;
 
