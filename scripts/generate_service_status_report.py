@@ -146,7 +146,7 @@ class ServiceStatusChecker:
         
         # Try to run pytest
         success, stdout, stderr = self.run_command(
-            ["python", "-m", "pytest", "tests/", "-v", "--tb=short", "--maxfail=5"],
+            [sys.executable, "-m", "pytest", "tests/", "-v", "--tb=short", "--maxfail=5"],
             timeout=120
         )
         
