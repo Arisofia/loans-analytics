@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test clean maintenance maintenance-aggressive maintenance-dry-run monitoring-start monitoring-stop monitoring-logs monitoring-health dashboard-backup dashboard-restore
+.PHONY: help setup format lint type-check test clean maintenance maintenance-aggressive maintenance-dry-run monitoring-start monitoring-stop monitoring-logs monitoring-health dashboard-backup dashboard-restore service-status
 PYTHON := python3
 VENV := .venv
 BIN := $(VENV)/bin
@@ -14,6 +14,7 @@ help:
 	@echo "make test           - Run unit tests with pytest"
 	@echo "make clean          - Remove build artifacts and cache"
 	@echo "make maintenance    - Run unified repository maintenance (format + clean + git)"
+	@echo "make service-status - Generate comprehensive service status report"
 	@echo ""
 	@echo "Monitoring Stack:"
 	@echo "make monitoring-start    - Auto-start Prometheus + Grafana + Alertmanager"
@@ -48,6 +49,14 @@ clean:
 # Unified Repository Maintenance
 maintenance:
 	@bash scripts/repo_maintenance.sh --mode=standard
+
+# Service Status Report
+service-status:
+	@if [ -x "$(BIN)/python" ]; then \
+		"$(BIN)/python" scripts/generate_service_status_report.py; \
+	else \
+		"$(PYTHON)" scripts/generate_service_status_report.py; \
+	fi
 
 maintenance-aggressive:
 	@bash scripts/repo_maintenance.sh --mode=aggressive
