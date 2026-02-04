@@ -135,8 +135,6 @@ class TestServiceStatusChecker:
         checker = ServiceStatusChecker()
         
         # Mock one check to raise an exception
-        original_check = checker.check_git_status
-        
         def failing_check():
             raise ValueError("Test error")
         
