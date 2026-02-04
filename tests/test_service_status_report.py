@@ -300,4 +300,7 @@ class TestEdgeCases:
         result = checker.check_tests()
         
         assert result["success"] is False
-        assert "message" in result["details"]
+        # check_tests does not set a generic "message" field on failure;
+        # instead, it is expected to populate structured details such as
+        # a result summary and/or an exit code.
+        assert any(key in result["details"] for key in ("result_summary", "exit_code"))
