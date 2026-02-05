@@ -459,16 +459,6 @@ def render_sidebar() -> Any:
         + "...",
     )
 
-    if st.button("📂 Load Sample Data (Spanish Loans)"):
-        sample_file = ROOT_DIR / "data" / "raw" / "spanish_loans_seed.csv"
-        if sample_file.exists():
-            st.session_state["data_loaded"] = True
-            st.session_state["loan_data"] = pd.read_csv(sample_file)
-            st.success("✅ Sample data loaded!")
-            st.rerun()
-        else:
-            st.error("Sample file not found. Run: `python scripts/seed_spanish_loans.py`")
-
     st.markdown("---")
 
     st.header("🤖 AI Analysis")
@@ -493,7 +483,7 @@ def render_sidebar() -> Any:
                     st.error(f"❌ Agent analysis failed: {exc}")
 
     st.markdown("---")
-    st.caption("💡 Upload your own CSV or load sample Spanish loan data")
+    st.caption("💡 Upload your own CSV to analyze the loan portfolio")
 
     return uploaded_file
 
