@@ -1,5 +1,5 @@
-# Base image - pinned to specific version for security and reproducibility
-FROM python:3.11.11-slim
+# Base image - pin to Python 3.12 (minor) while tracking latest patch for security updates
+FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
 # Install system dependencies

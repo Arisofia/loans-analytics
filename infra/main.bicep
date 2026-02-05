@@ -20,27 +20,7 @@ resource storage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   properties: {
     minimumTlsVersion: 'TLS1_2'
     allowBlobPublicAccess: false
-    encryption: {
-      services: {
-        blob: {
-          enabled: true
-          keyType: 'Account'
-        }
-        file: {
-          enabled: true
-          keyType: 'Account'
-        }
-        table: {
-          enabled: true
-          keyType: 'Account'
-        }
-        queue: {
-          enabled: true
-          keyType: 'Account'
-        }
-      }
-      keySource: 'Microsoft.Storage'
-    }
+
   }
 }
 
@@ -159,7 +139,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
 
 // Key Vault for secrets management
 resource keyvault 'Microsoft.KeyVault/vaults@2023-02-01' = {
-  name: '${webAppName}-kv'
+  name: 'abacokv${uniqueString(resourceGroup().id)}'
   location: location
   properties: {
     sku: {
@@ -205,10 +185,7 @@ resource storageDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
       {
         category: 'Transaction'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 90
-        }
+
       }
     ]
   }
