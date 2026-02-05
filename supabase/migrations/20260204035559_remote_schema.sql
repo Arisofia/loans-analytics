@@ -14,7 +14,7 @@ drop trigger if exists "trg_historical_kpis_updated_at" on "public"."historical_
 
 drop policy "Allow public read-only access" on "analytics"."data_quality_results";
 
-drop policy "Service role can delete" on "analytics"."data_quality_results";
+drop policy IF EXISTS "Service role can delete" on "analytics"."data_quality_results";
 
 drop policy "Service role can insert" on "analytics"."data_quality_results";
 
