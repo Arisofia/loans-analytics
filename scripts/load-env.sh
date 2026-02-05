@@ -20,7 +20,7 @@ MISSING_VARS=()
 
 for var in "${REQUIRED_VARS[@]}"; do
 	if [[ -z ${!var} ]] || [[ ${!var} == "REPLACE_WITH_"* ]]; then
-		MISSING_VARS+=("$var")
+		MISSING_VARS+=("${var}")
 	fi
 done
 
@@ -39,7 +39,7 @@ if [[ ${#MISSING_VARS[@]} -gt 0 ]]; then
 	return 1
 else
 	echo "✅ Environment variables loaded successfully"
-	echo "   URL: $SUPABASE_URL"
+	echo "   URL: ${SUPABASE_URL}"
 	echo "   Service Key: ${SUPABASE_SERVICE_ROLE_KEY:0:20}..."
-	echo "   Test User: $TEST_USER_EMAIL"
+	echo "   Test User: ${TEST_USER_EMAIL}"
 fi
