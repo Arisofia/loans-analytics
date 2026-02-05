@@ -100,10 +100,11 @@ def compare_performance(metrics_file: str, threshold: float = 0.20) -> bool:
 
         # 5% tolerance
         if current_success_rate < baseline_success_rate - 5:
-            print(
-                f"  ⚠️  Success rate dropped: {current_success_rate:.1f}% < "
-                f"{baseline_success_rate:.1f}%"
+            msg = (
+                f"  ⚠️  Success rate dropped: "
+                f"{current_success_rate:.1f}% < {baseline_success_rate:.1f}%"
             )
+            print(msg)
             all_ok = False
 
         print()
