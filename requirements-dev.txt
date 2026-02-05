@@ -9,6 +9,6 @@ pytest-benchmark>=4.0.0
 allure-pytest==2.15.3
 python-dotenv==1.2.1
 psycopg[binary]==3.3.2
-fastapi==0.128.0
+fastapi==0.128.1
 pandas>=2.0.0
 streamlit>=1.33.0
