@@ -1,5 +1,5 @@
 # Base image - pinned to specific version for security and reproducibility
-FROM python:3.11.11-slim
+FROM python:3.14.3-slim
 # Set working directory
 WORKDIR /app
 # Install system dependencies
