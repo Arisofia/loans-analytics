@@ -1,0 +1,11 @@
+apiVersion: 1
+
+groups:
+  - name: ABACO Alerts
+    # Default interval for evaluating alerts
+    interval: 1m
+    rules: []
+    # Rules will be added dynamically via Grafana UI or API
+
+# Note: Alert notification channels (contact points) are configured in Alertmanager
+# This file provides the alert rule definitions structure
