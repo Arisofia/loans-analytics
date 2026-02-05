@@ -48,7 +48,7 @@ clean:
 
 # Unified Repository Maintenance
 maintenance:
-	@bash scripts/repo_maintenance.sh --mode=standard
+	@bash clean.sh
 
 # Service Status Report
 service-status:
@@ -59,10 +59,10 @@ service-status:
 	fi
 
 maintenance-aggressive:
-	@bash scripts/repo_maintenance.sh --mode=aggressive
+	@bash clean.sh --caches-only
 
 maintenance-dry-run:
-	@bash scripts/repo_maintenance.sh --dry-run
+	@bash clean.sh --dry-run
 
 # Monitoring Stack Automation
 monitoring-start:
