@@ -12,47 +12,47 @@ create sequence "public"."payment_schedule_schedule_id_seq";
 
 drop trigger if exists "trg_historical_kpis_updated_at" on "public"."historical_kpis";
 
-drop policy "Allow public read-only access" on "analytics"."data_quality_results";
+drop policy IF EXISTS "Allow public read-only access" on "analytics"."data_quality_results";
 
 drop policy IF EXISTS "Service role can delete" on "analytics"."data_quality_results";
 
-drop policy "Service role can insert" on "analytics"."data_quality_results";
+drop policy IF EXISTS "Service role can insert" on "analytics"."data_quality_results";
 
-drop policy "Service role can update" on "analytics"."data_quality_results";
+drop policy IF EXISTS "Service role can update" on "analytics"."data_quality_results";
 
-drop policy "Allow public read-only access" on "analytics"."kpi_values";
+drop policy IF EXISTS "Allow public read-only access" on "analytics"."kpi_values";
 
-drop policy "Service role can delete" on "analytics"."kpi_values";
+drop policy IF EXISTS "Service role can delete" on "analytics"."kpi_values";
 
-drop policy "Service role can insert" on "analytics"."kpi_values";
+drop policy IF EXISTS "Service role can insert" on "analytics"."kpi_values";
 
-drop policy "Service role can update" on "analytics"."kpi_values";
+drop policy IF EXISTS "Service role can update" on "analytics"."kpi_values";
 
-drop policy "Allow public read-only access" on "analytics"."pipeline_runs";
+drop policy IF EXISTS "Allow public read-only access" on "analytics"."pipeline_runs";
 
-drop policy "Service role can delete" on "analytics"."pipeline_runs";
+drop policy IF EXISTS "Service role can delete" on "analytics"."pipeline_runs";
 
-drop policy "Service role can insert" on "analytics"."pipeline_runs";
+drop policy IF EXISTS "Service role can insert" on "analytics"."pipeline_runs";
 
-drop policy "Service role can update" on "analytics"."pipeline_runs";
+drop policy IF EXISTS "Service role can update" on "analytics"."pipeline_runs";
 
-drop policy "Allow public read-only access" on "analytics"."raw_artifacts";
+drop policy IF EXISTS "Allow public read-only access" on "analytics"."raw_artifacts";
 
-drop policy "Service role can delete" on "analytics"."raw_artifacts";
+drop policy IF EXISTS "Service role can delete" on "analytics"."raw_artifacts";
 
-drop policy "Service role can insert" on "analytics"."raw_artifacts";
+drop policy IF EXISTS "Service role can insert" on "analytics"."raw_artifacts";
 
-drop policy "Service role can update" on "analytics"."raw_artifacts";
+drop policy IF EXISTS "Service role can update" on "analytics"."raw_artifacts";
 
-drop policy "Allow public read-only access" on "public"."analytics_facts";
+drop policy IF EXISTS "Allow public read-only access" on "public"."analytics_facts";
 
-drop policy "Service role can delete" on "public"."analytics_facts";
+drop policy IF EXISTS "Service role can delete" on "public"."analytics_facts";
 
-drop policy "Service role can insert" on "public"."analytics_facts";
+drop policy IF EXISTS "Service role can insert" on "public"."analytics_facts";
 
-drop policy "Service role can update" on "public"."analytics_facts";
+drop policy IF EXISTS "Service role can update" on "public"."analytics_facts";
 
-drop policy "historical_kpis_service_role_access" on "public"."historical_kpis";
+drop policy IF EXISTS "historical_kpis_service_role_access" on "public"."historical_kpis";
 
 revoke delete on table "public"."analytics_facts" from "anon";
 
