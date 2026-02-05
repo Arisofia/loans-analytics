@@ -44,7 +44,7 @@ class TestServiceStatusChecker:
         """Test check_git_status with successful git commands."""
         checker = ServiceStatusChecker()
         result = checker.check_git_status()
-        
+
         assert "name" in result
         assert result["name"] == "Git Repository"
         assert "success" in result
@@ -53,7 +53,7 @@ class TestServiceStatusChecker:
     def test_check_git_status_excludes_report_files(self):
         """Test that git status check excludes report files."""
         checker = ServiceStatusChecker()
-        
+
         # Mock run_command to return status with report files
         def mock_run_command(cmd, timeout=30):
             if "status" in cmd and "--porcelain" in cmd:
@@ -63,10 +63,10 @@ class TestServiceStatusChecker:
                     "",
                 )
             return True, "main\n", ""
-        
+
         checker.run_command = mock_run_command
         result = checker.check_git_status()
-        
+
         # Should show uncommitted changes (other_file.py) but not report files
         assert result["details"]["uncommitted_changes"] is True
 
@@ -74,7 +74,7 @@ class TestServiceStatusChecker:
         """Test check_python_environment."""
         checker = ServiceStatusChecker()
         result = checker.check_python_environment()
-        
+
         assert result["name"] == "Python Environment"
         assert "python_version" in result["details"]
         assert "virtual_env_active" in result["details"]
@@ -83,10 +83,10 @@ class TestServiceStatusChecker:
     def test_check_supabase_configuration_missing_url(self):
         """Test Supabase check with missing URL."""
         checker = ServiceStatusChecker()
-        
+
         with patch.dict("os.environ", {}, clear=True):
             result = checker.check_supabase_configuration()
-        
+
         assert result["success"] is False
         assert "url_configured" in result["details"]
         assert result["details"]["url_configured"] is False
@@ -95,10 +95,10 @@ class TestServiceStatusChecker:
     def test_check_supabase_configuration_missing_key(self):
         """Test Supabase check with URL but missing key."""
         checker = ServiceStatusChecker()
-        
+
         with patch.dict("os.environ", {"SUPABASE_URL": "http://example.com"}, clear=True):
             result = checker.check_supabase_configuration()
-        
+
         assert result["success"] is False
         assert result["details"]["url_configured"] is True
         assert result["details"]["key_configured"] is False
@@ -107,14 +107,14 @@ class TestServiceStatusChecker:
     def test_check_supabase_configuration_complete(self):
         """Test Supabase check with complete configuration."""
         checker = ServiceStatusChecker()
-        
+
         with patch.dict(
             "os.environ",
             {"SUPABASE_URL": "http://example.com", "SUPABASE_ANON_KEY": "test-key"},
             clear=True,
         ):
             result = checker.check_supabase_configuration()
-        
+
         assert result["success"] is True
         assert result["details"]["url_configured"] is True
         assert result["details"]["key_configured"] is True
@@ -124,7 +124,7 @@ class TestServiceStatusChecker:
         """Test check_pipeline."""
         checker = ServiceStatusChecker()
         result = checker.check_pipeline()
-        
+
         assert result["name"] == "Data Pipeline"
         assert "script_exists" in result["details"]
         assert "config_exists" in result["details"]
@@ -133,22 +133,22 @@ class TestServiceStatusChecker:
     def test_run_all_checks_continues_on_error(self):
         """Test that run_all_checks continues even when individual checks fail."""
         checker = ServiceStatusChecker()
-        
+
         # Mock one check to raise an exception
         def failing_check():
             raise ValueError("Test error")
-        
+
         checker.check_git_status = failing_check
-        
+
         # Should not raise, should capture error. Mock run_command so no external
         # subprocesses (pytest, ruff, git, etc.) are spawned during this unit test.
         with patch.object(checker, "run_command", return_value=(True, "", "")):
             results = checker.run_all_checks()
-        
+
         assert "git" in results
         assert results["git"]["success"] is False
         assert "error" in results["git"]["details"]
-        
+
         # Other checks should still run
         assert len(results) == 9  # All 9 checks
 
@@ -159,7 +159,7 @@ class TestGenerateMarkdownReport:
     def test_generate_markdown_report_empty_results(self):
         """Test generating report with empty results."""
         report = generate_markdown_report({})
-        
+
         assert "# Service Status Report" in report
         assert "0/0 checks passed" in report
 
@@ -177,9 +177,9 @@ class TestGenerateMarkdownReport:
                 "details": {},
             },
         }
-        
+
         report = generate_markdown_report(results)
-        
+
         assert "# Service Status Report" in report
         assert "2/2 checks passed" in report
         assert "✅ Test Component 1" in report
@@ -200,9 +200,9 @@ class TestGenerateMarkdownReport:
                 "details": {"error": "Something went wrong"},
             },
         }
-        
+
         report = generate_markdown_report(results)
-        
+
         assert "1/2 checks passed" in report
         assert "✅ Passing Check" in report
         assert "❌ Failing Check" in report
@@ -221,9 +221,9 @@ class TestGenerateMarkdownReport:
                 },
             },
         }
-        
+
         report = generate_markdown_report(results)
-        
+
         # Booleans should be rendered as Yes/No
         assert "**Boolean True:** Yes" in report
         assert "**Boolean False:** No" in report
@@ -242,9 +242,9 @@ class TestGenerateMarkdownReport:
                 },
             },
         }
-        
+
         report = generate_markdown_report(results)
-        
+
         assert "**Packages:**" in report
         assert "pandas: ✅ Installed" in report
         assert "numpy: ❌ Not installed" in report
@@ -258,9 +258,9 @@ class TestGenerateMarkdownReport:
                 "details": {},
             },
         }
-        
+
         report = generate_markdown_report(results)
-        
+
         # Should contain UTF-8 emoji characters
         assert "✅" in report
 
@@ -271,14 +271,14 @@ class TestEdgeCases:
     def test_check_with_no_git(self):
         """Test git check when git command is not available."""
         checker = ServiceStatusChecker()
-        
+
         # Mock run_command to simulate git not being available
         def mock_run_command(cmd, timeout=30):
             return False, "", "git: command not found"
-        
+
         checker.run_command = mock_run_command
         result = checker.check_git_status()
-        
+
         assert result["success"] is False
         assert "error" in str(result["details"]).lower()
 
@@ -288,7 +288,7 @@ class TestEdgeCases:
         # Mock run_command to avoid invoking external linter in unit test
         checker.run_command = MagicMock(return_value=(True, "", ""))
         result = checker.check_linting()
-        
+
         # Should have active_todos key even if some files can't be read
         assert "active_todos" in result["details"]
         assert isinstance(result["details"]["active_todos"], str)
@@ -297,9 +297,9 @@ class TestEdgeCases:
         """Test check_tests when tests directory doesn't exist."""
         checker = ServiceStatusChecker()
         checker.repo_root = Path("/nonexistent/path")
-        
+
         result = checker.check_tests()
-        
+
         assert result["success"] is False
         # check_tests does not set a generic "message" field on failure;
         # instead, it is expected to populate structured details such as
