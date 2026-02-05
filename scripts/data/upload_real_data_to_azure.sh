@@ -5,16 +5,12 @@ echo "🚀 Uploading Abaco Real Data to Azure..."
 
 # Configuration
 RESOURCE_GROUP="AI-MultiAgent-Ecosystem-RG"
-STORAGE_ACCOUNT="abacodata202602"
-LOCATION="canadacentral"
+STORAGE_ACCOUNT="abacoanalytics1770302288"
+LOCATION="eastus"
 
 # Files to upload
 FILES=(
-	"/Users/jenineferderas/Downloads/Abaco - Loan Tape_Historic Real Payment_Table (3).csv"
-	"/Users/jenineferderas/Downloads/Abaco - Loan Tape_Collateral_Table (3).csv"
-	"/Users/jenineferderas/Downloads/Abaco - Loan Tape_Customer Data_Table (3).csv"
-	"/Users/jenineferderas/Downloads/Abaco - Loan Tape_Payment Schedule_Table (3).csv"
-	"/Users/jenineferderas/Downloads/Abaco - Loan Tape_Loan Data_Table (3).csv"
+	"archive_legacy/sample_loans_800.csv"
 )
 
 # Create storage account if not exists
