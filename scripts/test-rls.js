@@ -24,7 +24,7 @@ const { createClient } = require('@supabase/supabase-js')
 const config = {
   supabaseUrl:
     process.env.SUPABASE_URL || '***REMOVED***',
-  anonKey: process.env.SUPABASE_ANON_KEY,
+  anonKey: "***REMOVED***",
   serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   testUserEmail: process.env.TEST_USER_EMAIL,
   testUserPassword: process.env.TEST_USER_PASSWORD,
@@ -151,7 +151,13 @@ async function testServiceRoleFullAccess() {
   }
 
   try {
-    const adminClient = createClient(config.supabaseUrl, config.serviceRoleKey)
+    const adminClient = createClient(config.supabaseUrl, config.anonKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${config.serviceRoleKey}`
+        }
+      }
+    })
 
     // Test read access to customer_data
     const { data, error } = await adminClient
@@ -200,7 +206,7 @@ async function testServiceRoleFullAccess() {
       .limit(1)
 
      if (kpiError) {
-      console.error(kpiError) // <--- Added for debugging
+
       recordResult(
         'Service role kpi_values read',
         false,
@@ -311,7 +317,13 @@ async function testRLSEnabled() {
   }
 
   try {
-    const adminClient = createClient(config.supabaseUrl, config.serviceRoleKey)
+    const adminClient = createClient(config.supabaseUrl, config.anonKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${config.serviceRoleKey}`
+        }
+      }
+    })
 
     // Query system catalog (requires admin) - RPC method may not exist
     let data = null
