@@ -195,14 +195,12 @@ async function testServiceRoleFullAccess() {
 
     // Test access to kpi_values (optional table)
     const { data: kpiData, error: kpiError } = await adminClient
-      .from('monitoring.kpi_values')
+      .from('kpi_values', { schema: 'monitoring' })
       .select('*')
       .limit(1)
 
-    if (kpiError && kpiError.message.includes('not find the table')) {
-      logWarn(`kpi_values table does not exist yet (optional) - skipping test`)
-      results.skipped++
-    } else if (kpiError) {
+     if (kpiError) {
+      console.error(kpiError) // <--- Added for debugging
       recordResult(
         'Service role kpi_values read',
         false,
@@ -274,7 +272,7 @@ async function testAuthenticatedAccess() {
 
     // Test KPI values access
     const { data: kpiData, error: kpiError } = await userClient
-      .from('monitoring.kpi_values')
+      .from('kpi_values', { schema: 'monitoring' })
       .select('*')
       .limit(1)
 
@@ -291,9 +289,6 @@ async function testAuthenticatedAccess() {
         `Authenticated user can read kpi_values (returned ${kpiData?.length || 0} rows, limited by RLS policy)`
       )
     }
-
-    // Sign out
-    await userClient.auth.signOut()
   } catch (err) {
     recordResult(
       'Authenticated user access',
