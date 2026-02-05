@@ -1,4 +1,4 @@
-# Base image - pinned to specific version for security and reproducibility
+# Base image - pin to Python 3.12 (minor) while tracking latest patch for security updates
 FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
