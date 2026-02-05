@@ -1,5 +1,6 @@
 # Dockerfile for Streamlit Dashboard Deployment
-FROM python:3.14.3-slim
+# Base image - pin to Python 3.12 (minor) while tracking latest patch for security updates
+FROM python:3.12-slim
 
 # Set working directory
 WORKDIR /app
