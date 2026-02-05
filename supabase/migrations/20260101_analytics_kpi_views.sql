@@ -2,9 +2,13 @@
 -- Abaco Analytics – Base + KPI Views
 -- Schema: analytics
 -- =====================================================================
+
 BEGIN;
+
 CREATE SCHEMA IF NOT EXISTS analytics;
+
 SET search_path TO public, analytics;
+
 -- ---------------------------------------------------------------------
 -- 1. CUSTOMER SEGMENT VIEW
 -- ---------------------------------------------------------------------
@@ -37,6 +41,7 @@ SELECT
         ELSE 'Other'
     END AS business_segment
 FROM src;
+
 -- ---------------------------------------------------------------------
 -- 2. LOAN_MONTH VIEW
 -- ---------------------------------------------------------------------
@@ -89,6 +94,7 @@ SELECT
 FROM cum_disb cd
 JOIN loan_meta lm ON lm.loan_id = cd.loan_id
 LEFT JOIN cum_pay cp ON cd.loan_id = cp.loan_id AND cd.month_end = cp.month_end;
+
 -- ---------------------------------------------------------------------
 -- 3. PRICING KPI VIEW
 -- ---------------------------------------------------------------------
@@ -141,6 +147,7 @@ LEFT JOIN income_per_loan i ON i.loan_id = lr.loan_id AND i.month_end = lr.month
 WHERE lr.outstanding > 1e-4
 GROUP BY 1
 ORDER BY 1;
+
 -- ---------------------------------------------------------------------
 -- 4. RISK KPI VIEW
 -- ---------------------------------------------------------------------
@@ -148,24 +155,30 @@ CREATE OR REPLACE VIEW analytics.kpi_monthly_risk AS
 SELECT
     month_end AS year_month,
     SUM(outstanding) AS total_outstanding,
+
     SUM(CASE WHEN days_past_due >= 7  THEN outstanding ELSE 0 END) AS dpd7_amount,
     SUM(CASE WHEN days_past_due >= 7  THEN outstanding ELSE 0 END)
         / NULLIF(SUM(outstanding),0)                               AS dpd7_pct,
+
     SUM(CASE WHEN days_past_due >= 15 THEN outstanding ELSE 0 END) AS dpd15_amount,
     SUM(CASE WHEN days_past_due >= 15 THEN outstanding ELSE 0 END)
         / NULLIF(SUM(outstanding),0)                               AS dpd15_pct,
+
     SUM(CASE WHEN days_past_due >= 30 THEN outstanding ELSE 0 END) AS dpd30_amount,
     SUM(CASE WHEN days_past_due >= 30 THEN outstanding ELSE 0 END)
         / NULLIF(SUM(outstanding),0)                               AS dpd30_pct,
+
     SUM(CASE WHEN days_past_due >= 60 THEN outstanding ELSE 0 END) AS dpd60_amount,
     SUM(CASE WHEN days_past_due >= 60 THEN outstanding ELSE 0 END)
         / NULLIF(SUM(outstanding),0)                               AS dpd60_pct,
+
     SUM(CASE WHEN days_past_due >= 90 THEN outstanding ELSE 0 END) AS dpd90_amount,
     SUM(CASE WHEN days_past_due >= 90 THEN outstanding ELSE 0 END)
         / NULLIF(SUM(outstanding),0)                               AS default_pct
 FROM analytics.loan_month
 GROUP BY 1
 ORDER BY 1;
+
 -- ---------------------------------------------------------------------
 -- 5. CUSTOMER TYPES KPI VIEW
 -- ---------------------------------------------------------------------
@@ -203,6 +216,7 @@ SELECT
 FROM classified
 GROUP BY 1, 2
 ORDER BY 1, 2;
+
 -- ---------------------------------------------------------------------
 -- 6. ACTIVE UNIQUE CUSTOMERS KPI VIEW
 -- ---------------------------------------------------------------------
@@ -214,6 +228,7 @@ FROM analytics.loan_month
 WHERE outstanding > 1e-4
 GROUP BY 1
 ORDER BY 1;
+
 -- ---------------------------------------------------------------------
 -- 7. AVERAGE TICKET KPI VIEW
 -- ---------------------------------------------------------------------
@@ -241,6 +256,7 @@ SELECT
 FROM src
 GROUP BY 1, 2
 ORDER BY 1, 2;
+
 -- ---------------------------------------------------------------------
 -- 8. INTENSITY SEGMENTATION KPI VIEW
 -- ---------------------------------------------------------------------
@@ -271,6 +287,7 @@ FROM loan_data l
 JOIN intensity i ON l.customer_id = i.customer_id
 GROUP BY 1, 2
 ORDER BY 1, 2;
+
 -- ---------------------------------------------------------------------
 -- 9. LINE SIZE SEGMENTATION KPI VIEW
 -- ---------------------------------------------------------------------
@@ -296,6 +313,7 @@ SELECT
 FROM src
 GROUP BY 1, 2
 ORDER BY 1, 2;
+
 -- ---------------------------------------------------------------------
 -- 10. CONCENTRATION KPI VIEW
 -- ---------------------------------------------------------------------
@@ -328,6 +346,7 @@ SELECT
     top1_amount / NULLIF(total_outstanding, 0) AS top1_concentration
 FROM bands
 ORDER BY 1;
+
 -- ---------------------------------------------------------------------
 -- 11. WEIGHTED APR KPI VIEW
 -- ---------------------------------------------------------------------
@@ -339,6 +358,7 @@ FROM analytics.loan_month
 WHERE outstanding > 1e-4
 GROUP BY 1
 ORDER BY 1;
+
 -- ---------------------------------------------------------------------
 -- 12. WEIGHTED FEE RATE KPI VIEW
 -- ---------------------------------------------------------------------
@@ -352,5 +372,95 @@ WHERE outstanding > 1e-4
 GROUP BY 1
 ORDER BY 1;
 
+-- ---------------------------------------------------------------------
+-- 13. ANALYTICS FACTS TABLE (For CSV Imports)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.analytics_facts (
+    month                       DATE PRIMARY KEY,
+    outstanding                 NUMERIC,
+    active_clients              INTEGER,
+    sched_revenue               NUMERIC,
+    recv_revenue_paid_month     NUMERIC,
+    sched_interest              NUMERIC,
+    recv_interest_paid_month    NUMERIC,
+    recv_fee_paid_month         NUMERIC,
+    sched_fee                   NUMERIC,
+    new_clients                 NUMERIC,
+    reactivated_clients         NUMERIC,
+    recovered_clients           NUMERIC,
+    recurrent_clients           NUMERIC,
+    disbursement                NUMERIC,
+    top10_concentration         NUMERIC,
+    early                       NUMERIC,
+    late                        NUMERIC,
+    on_time                     NUMERIC,
+    unmapped                    NUMERIC,
+    collection_rate_due_month   NUMERIC,
+    cum_scheduled               NUMERIC,
+    cum_received_paid_month     NUMERIC,
+    cum_received_due_month      NUMERIC,
+    outstanding_proj            NUMERIC,
+    planned_disbursement        NUMERIC,
+    remaining_capital           NUMERIC,
+    recv_interest_for_month     NUMERIC,
+    recv_fee_for_month          NUMERIC,
+    recv_revenue_for_month      NUMERIC,
+    recurrence_pct              NUMERIC,
+    throughput_12m              NUMERIC,
+    rotation                    NUMERIC,
+    apr_realized                NUMERIC,
+    yield_incl_fees             NUMERIC,
+    sam_penetration             NUMERIC,
+    cac                         NUMERIC,
+    ltv_realized                NUMERIC,
+    ltv_cac_ratio               NUMERIC,
+    cum_unique_customers        NUMERIC
+);
+
+-- ---------------------------------------------------------------------
+-- 14. FIGMA DASHBOARD VIEW
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE VIEW public.figma_dashboard AS
+SELECT
+  month::date                AS "Month",
+  to_char(month,'YYYY-MM')   AS "Month Label",
+  active_clients             AS "Active Clients",
+  new_clients                AS "New Clients",
+  recurrent_clients          AS "Recurrent Clients",
+  recovered_clients          AS "Recovered Clients",
+  outstanding                AS "Outstanding",
+  outstanding_proj           AS "Outstanding (Proj)",
+  disbursement               AS "Disbursement",
+  top10_concentration        AS "Top10 Concentration",
+  planned_disbursement       AS "Planned Disbursement",
+  remaining_capital          AS "Remaining Capital",
+  sched_interest             AS "Sched Interest",
+  sched_fee                  AS "Sched Fee",
+  sched_revenue              AS "Sched Revenue",
+  recv_interest_for_month    AS "Recv Interest for Month",
+  recv_fee_for_month         AS "Recv Fee for Month",
+  recv_revenue_for_month     AS "Recv Revenue for Month",
+  recv_interest_paid_month   AS "Recv Interest (Paid Month)",
+  recv_fee_paid_month        AS "Recv Fee (Paid Month)",
+  recv_revenue_paid_month    AS "Recv Revenue (Paid Month)",
+  early                      AS "Early",
+  on_time                    AS "On-time",
+  late                       AS "Late",
+  unmapped                   AS "Unmapped",
+  collection_rate_due_month  AS "Collection Rate (for Due Month)",
+  cum_scheduled              AS "Cum Scheduled",
+  cum_received_paid_month    AS "Cum Received (Paid Month)",
+  cum_received_due_month     AS "Cum Received (for Due Month)",
+  recurrence_pct             AS "Recurrence (%)",
+  throughput_12m             AS "Throughput 12M",
+  rotation                   AS "Rotation",
+  apr_realized               AS "APR Realized",
+  yield_incl_fees            AS "Yield incl. Fees",
+  sam_penetration            AS "SAM Penetration",
+  cac                        AS "CAC",
+  ltv_realized               AS "LTV Realized",
+  ltv_cac_ratio              AS "LTV/CAC Ratio",
+  cum_unique_customers       AS "Clients EOP"
+FROM public.analytics_facts;
 
 COMMIT;
