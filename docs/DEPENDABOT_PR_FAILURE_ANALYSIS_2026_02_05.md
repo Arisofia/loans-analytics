@@ -21,6 +21,7 @@
 ### Failure Pattern
 
 All 10 Dependabot PRs show:
+
 - ✅ **7/12 CI checks passing** (unit/integration/multi-agent/smoke tests)
 - ❌ **3/12 CI checks failing**:
   - Python QA
@@ -64,18 +65,18 @@ Feb 5, 2026:  66ee73e67 - Current main HEAD ⬅️ INCLUDES F-STRING FIX
 
 ## Affected PRs
 
-| PR # | Title | Base Commit | Status |
-|------|-------|-------------|--------|
-| #247 | wrapt 1.17.3 → 2.1.1 | 8fbe75801 | ❌ CI Failing |
-| #246 | cachetools 6.2.6 → 7.0.0 | 8fbe75801 | ❌ CI Failing |
-| #245 | marshmallow 3.26.2 → 4.2.2 | 8fbe75801 | ❌ CI Failing |
-| #244 | azure-monitor-opentelemetry-exporter 1.0.0b45 → 1.0.0b47 | 8fbe75801 | ❌ CI Failing |
-| #243 | minor-and-patch group (25 updates) | 8fbe75801 | ❌ CI Failing |
-| #241 | actions/upload-artifact 4.4.3 → 6.0.0 | 8fbe75801 | ❌ CI Failing |
-| #240 | snyk/actions (hash update) | 8fbe75801 | ❌ CI Failing |
-| #239 | actions/download-artifact 4 → 7 | 8fbe75801 | ❌ CI Failing |
-| #238 | peter-evans/create-pull-request 6 → 8 | 8fbe75801 | ❌ CI Failing |
-| #237 | minor-and-patch group (2 updates) | 8fbe75801 | ❌ CI Failing |
+| PR # | Title                                                    | Base Commit | Status        |
+| ---- | -------------------------------------------------------- | ----------- | ------------- |
+| #247 | wrapt 1.17.3 → 2.1.1                                     | 8fbe75801   | ❌ CI Failing |
+| #246 | cachetools 6.2.6 → 7.0.0                                 | 8fbe75801   | ❌ CI Failing |
+| #245 | marshmallow 3.26.2 → 4.2.2                               | 8fbe75801   | ❌ CI Failing |
+| #244 | azure-monitor-opentelemetry-exporter 1.0.0b45 → 1.0.0b47 | 8fbe75801   | ❌ CI Failing |
+| #243 | minor-and-patch group (25 updates)                       | 8fbe75801   | ❌ CI Failing |
+| #241 | actions/upload-artifact 4.4.3 → 6.0.0                    | 8fbe75801   | ❌ CI Failing |
+| #240 | snyk/actions (hash update)                               | 8fbe75801   | ❌ CI Failing |
+| #239 | actions/download-artifact 4 → 7                          | 8fbe75801   | ❌ CI Failing |
+| #238 | peter-evans/create-pull-request 6 → 8                    | 8fbe75801   | ❌ CI Failing |
+| #237 | minor-and-patch group (2 updates)                        | 8fbe75801   | ❌ CI Failing |
 
 ---
 
@@ -86,6 +87,7 @@ Feb 5, 2026:  66ee73e67 - Current main HEAD ⬅️ INCLUDES F-STRING FIX
 **Approach**: Use GitHub's "Update branch" button to rebase PRs against current main
 
 **Steps**:
+
 ```bash
 # For each PR, update via UI or CLI:
 gh pr view 247 --json url --jq '.url' | xargs open  # Opens in browser
@@ -99,11 +101,13 @@ done
 ```
 
 **Pros**:
+
 - ✅ Preserves PRs and GitHub discussion threads
 - ✅ Dependabot maintains PR ownership
 - ✅ Only updates base commits, no code changes
 
 **Cons**:
+
 - ⚠️ Requires maintainer permissions for CLI method
 - ⚠️ Manual if using UI (10 clicks)
 
@@ -114,6 +118,7 @@ done
 **Approach**: Close all stale PRs, let Dependabot recreate against fresh main
 
 **Steps**:
+
 ```bash
 # Close all Dependabot PRs with explanation
 for pr_num in 247 246 245 244 243 241 240 239 238 237; do
@@ -128,11 +133,13 @@ gh api repos/Arisofia/abaco-loans-analytics/dependabot/alerts \
 ```
 
 **Pros**:
+
 - ✅ Fully automated (scriptable)
 - ✅ Clean slate - new PRs based on latest main
 - ✅ No manual UI interaction needed
 
 **Cons**:
+
 - ⚠️ Loses existing PR comment threads (minimal impact for Dependabot)
 - ⚠️ Triggers new CI runs (cost impact)
 
@@ -143,6 +150,7 @@ gh api repos/Arisofia/abaco-loans-analytics/dependabot/alerts \
 **Approach**: Manually fix f-string in each PR branch
 
 **Why NOT recommended**:
+
 - ❌ **Anti-pattern**: Pollutes Dependabot automation
 - ❌ **Time-consuming**: 10 PRs to manually edit
 - ❌ **Fragile**: Breaks "Dependabot owns the branch" principle
@@ -174,7 +182,7 @@ echo ""
 
 for pr_num in "${PRS[@]}"; do
   echo "Updating PR #${pr_num}..."
-  
+
   # Try API method (requires maintainer permissions)
   if gh api "repos/${REPO}/pulls/${pr_num}/update-branch" \
        -X PUT -H "Accept: application/vnd.github+json" 2>/dev/null; then
@@ -183,7 +191,7 @@ for pr_num in "${PRS[@]}"; do
     echo "⚠️  PR #${pr_num} requires manual update (open in browser):"
     gh pr view "${pr_num}" --json url --jq '.url'
   fi
-  
+
   echo ""
 done
 
@@ -193,6 +201,7 @@ echo "════════════════════════�
 ```
 
 **Usage**:
+
 ```bash
 chmod +x scripts/update-dependabot-prs.sh
 bash scripts/update-dependabot-prs.sh
@@ -223,14 +232,15 @@ After updating PRs (Option A or B):
 
 2. **Configure Dependabot Rebase Strategy**:
    Add to `.github/dependabot.yml`:
+
    ```yaml
    version: 2
    updates:
-     - package-ecosystem: "pip"
-       directory: "/"
+     - package-ecosystem: 'pip'
+       directory: '/'
        schedule:
-         interval: "weekly"
-       rebase-strategy: "auto"  # ⬅️ NEW: Auto-rebase on base changes
+         interval: 'weekly'
+       rebase-strategy: 'auto' # ⬅️ NEW: Auto-rebase on base changes
    ```
 
 3. **Add Pre-Commit Hook for F-Strings**:
@@ -248,13 +258,13 @@ After updating PRs (Option A or B):
 
 ## Business Impact Assessment
 
-| Dimension | Impact | Notes |
-|-----------|--------|-------|
-| **Security** | ✅ None | Not a security vulnerability; linting issue |
-| **Production** | ✅ None | Main branch is clean; only affects PR CI |
-| **Developer Velocity** | ⚠️ Low | 10 PRs blocked; automated fix available |
-| **Technical Debt** | ✅ Already Fixed | F-string issue resolved in main (48c7f753f) |
-| **Cost** | 💰 Minimal | Re-running CI (~$0.05 per PR run) |
+| Dimension              | Impact           | Notes                                       |
+| ---------------------- | ---------------- | ------------------------------------------- |
+| **Security**           | ✅ None          | Not a security vulnerability; linting issue |
+| **Production**         | ✅ None          | Main branch is clean; only affects PR CI    |
+| **Developer Velocity** | ⚠️ Low           | 10 PRs blocked; automated fix available     |
+| **Technical Debt**     | ✅ Already Fixed | F-string issue resolved in main (48c7f753f) |
+| **Cost**               | 💰 Minimal       | Re-running CI (~$0.05 per PR run)           |
 
 ---
 
@@ -263,14 +273,14 @@ After updating PRs (Option A or B):
 ### Representative Failure (PR #247)
 
 ```
-Python QA       Run linting     2026-02-05T14:21:40.3065278Z    
+Python QA       Run linting     2026-02-05T14:21:40.3065278Z
 --> scripts/generate_service_status_report.py:426:22
     |
 424 | lines.append(f"⚠️ **Degraded** - {total_checks - passed_checks} component(s) need attention.")
 425 | else:
 426 | lines.append(f"❌ **Critical** - Multiple systems require immediate attention.")
     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-427 | 
+427 |
 428 | lines.extend(["", "---", "", "## Component Status", ""])
     |
 help: Remove extraneous `f` prefix
