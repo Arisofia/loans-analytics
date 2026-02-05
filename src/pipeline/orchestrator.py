@@ -260,8 +260,8 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
-  # Run full pipeline with CSV input
-  python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
+  # Run full pipeline with a specific CSV input file
+  python scripts/run_data_pipeline.py --input /path/to/your/data.csv
 
   # Validation mode (stop after transformation)
   python scripts/run_data_pipeline.py --mode validate
