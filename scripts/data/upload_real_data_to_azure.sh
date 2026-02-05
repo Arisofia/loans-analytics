@@ -4,17 +4,13 @@ set -e
 echo "🚀 Uploading Abaco Real Data to Azure..."
 
 # Configuration
-RESOURCE_GROUP="abaco-rg"
-STORAGE_ACCOUNT="abacodata202602"
-LOCATION="canadacentral"
+RESOURCE_GROUP="AI-MultiAgent-Ecosystem-RG"
+STORAGE_ACCOUNT="abacoanalytics1770302288"
+LOCATION="eastus"
 
 # Files to upload
 FILES=(
-	"/Users/jenineferderas/Downloads/Abaco - Loan Tape_Historic Real Payment_Table (3).csv"
-	"/Users/jenineferderas/Downloads/Abaco - Loan Tape_Collateral_Table (3).csv"
-	"/Users/jenineferderas/Downloads/Abaco - Loan Tape_Customer Data_Table (3).csv"
-	"/Users/jenineferderas/Downloads/Abaco - Loan Tape_Payment Schedule_Table (3).csv"
-	"/Users/jenineferderas/Downloads/Abaco - Loan Tape_Loan Data_Table (3).csv"
+	"archive_legacy/sample_loans_800.csv"
 )
 
 # Create storage account if not exists
@@ -51,7 +47,7 @@ echo "✅ Container ready"
 echo ""
 echo "⬆️  Uploading files..."
 for FILE in "${FILES[@]}"; do
-	if [[ -f "${FILE}" ]]; then
+	if [[ -f ${FILE} ]]; then
 		BASENAME=$(basename "${FILE}")
 		echo "  📄 Uploading ${BASENAME}"
 		az storage blob upload \
@@ -64,7 +60,7 @@ for FILE in "${FILES[@]}"; do
 			--output none
 		echo "     ✅ Done"
 	else
-		echo "  ⚠️  File not fou${d: $}FILE"
+		echo "  ⚠️  File not fou${d:$}FILE"
 	fi
 done
 
