@@ -4,7 +4,7 @@ set -e
 echo "🚀 Uploading Abaco Real Data to Azure..."
 
 # Configuration
-RESOURCE_GROUP="abaco-rg"
+RESOURCE_GROUP="AI-MultiAgent-Ecosystem-RG"
 STORAGE_ACCOUNT="abacodata202602"
 LOCATION="canadacentral"
 
@@ -51,7 +51,7 @@ echo "✅ Container ready"
 echo ""
 echo "⬆️  Uploading files..."
 for FILE in "${FILES[@]}"; do
-	if [[ -f "${FILE}" ]]; then
+	if [[ -f ${FILE} ]]; then
 		BASENAME=$(basename "${FILE}")
 		echo "  📄 Uploading ${BASENAME}"
 		az storage blob upload \
@@ -64,7 +64,7 @@ for FILE in "${FILES[@]}"; do
 			--output none
 		echo "     ✅ Done"
 	else
-		echo "  ⚠️  File not fou${d: $}FILE"
+		echo "  ⚠️  File not fou${d:$}FILE"
 	fi
 done
 
