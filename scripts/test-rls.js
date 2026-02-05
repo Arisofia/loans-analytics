@@ -24,7 +24,7 @@ const { createClient } = require('@supabase/supabase-js')
 const config = {
   supabaseUrl:
     process.env.SUPABASE_URL || '***REMOVED***',
-  anonKey: "***REMOVED***",
+  anonKey: '***REMOVED***',
   serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   testUserEmail: process.env.TEST_USER_EMAIL,
   testUserPassword: process.env.TEST_USER_PASSWORD,
@@ -154,9 +154,9 @@ async function testServiceRoleFullAccess() {
     const adminClient = createClient(config.supabaseUrl, config.anonKey, {
       global: {
         headers: {
-          Authorization: `Bearer ${config.serviceRoleKey}`
-        }
-      }
+          Authorization: `Bearer ${config.serviceRoleKey}`,
+        },
+      },
     })
 
     // Test read access to customer_data
@@ -199,14 +199,13 @@ async function testServiceRoleFullAccess() {
       )
     }
 
-    // Test access to kpi_values (optional table)
+    // Test access to kpi_values (optional table via public view)
     const { data: kpiData, error: kpiError } = await adminClient
-      .from('kpi_values', { schema: 'monitoring' })
+      .from('kpi_values')
       .select('*')
       .limit(1)
 
-     if (kpiError) {
-
+    if (kpiError) {
       recordResult(
         'Service role kpi_values read',
         false,
@@ -276,10 +275,9 @@ async function testAuthenticatedAccess() {
       `User signed in: ${config.testUserEmail}`
     )
 
-    // Test KPI values access
+    // Test KPI values access via public view
     const { data: kpiData, error: kpiError } = await userClient
-      .from('kpi_values', { schema: 'monitoring' })
-      .select('*')
+      .from('kpi_values')
       .limit(1)
 
     if (kpiError) {
@@ -320,9 +318,9 @@ async function testRLSEnabled() {
     const adminClient = createClient(config.supabaseUrl, config.anonKey, {
       global: {
         headers: {
-          Authorization: `Bearer ${config.serviceRoleKey}`
-        }
-      }
+          Authorization: `Bearer ${config.serviceRoleKey}`,
+        },
+      },
     })
 
     // Query system catalog (requires admin) - RPC method may not exist
