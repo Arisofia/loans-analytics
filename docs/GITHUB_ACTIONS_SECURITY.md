@@ -23,7 +23,7 @@ Below is the mapping of actions to their pinned commit hashes:
 | `actions/setup-python` | v5.3.0 | `fe75d2dea0e804b9c2cf7c1fe0718524504cc6e3` |
 | `actions/setup-node` | v4.1.0 | `b7dde419cc031a3d665baa4a62731727917cd13e` |
 | `actions/upload-artifact` | v4.4.3 | `250e9d8087e4d33cdf6c33e180d803782f68fdb1` |
-| `actions/download-artifact` | v4.1.8 | `fa0a91b85d4f404e444e00e005971372dc801d16` |
+| `actions/download-artifact` | v7.0.0 | `37930b1c2abaa49bbe596cd826c3c89aef350131` |
 | `actions/github-script` | v7.0.1 | `60a0d83cf42496352c7b1c5b6cf25dc6aa6f8c93` |
 | `actions/cache` | v4.1.2 | `b6c6e19650157c2e813776fd7f8b2bf258a5a410` |
 | `actions/setup-java` | v4.5.0 | `8df1039502a15bceb9433410b1a100fbe190c53b` |
