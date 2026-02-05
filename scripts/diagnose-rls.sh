@@ -11,16 +11,16 @@ echo "════════════════════════�
 echo ""
 
 # Check 1: URL
-if [[ -z $SUPABASE_URL ]]; then
+if [[ -z ${SUPABASE_URL} ]]; then
 	echo "❌ SUPABASE_URL is not set"
 else
-	echo "✅ SUPABASE_URL: $SUPABASE_URL"
+	echo "✅ SUPABASE_URL: ${SUPABASE_URL}"
 fi
 
 # Check 2: Anon key
-if [[ -z $SUPABASE_ANON_KEY ]]; then
+if [[ -z ${SUPABASE_ANON_KEY} ]]; then
 	echo "❌ SUPABASE_ANON_KEY is not set"
-elif [[ $SUPABASE_ANON_KEY == *"..."* ]]; then
+elif [[ ${SUPABASE_ANON_KEY} == *"..."* ]]; then
 	echo "⚠️  SUPABASE_ANON_KEY appears incomplete (contains '...')"
 	echo "   Value: ${SUPABASE_ANON_KEY:0:50}..."
 else
@@ -29,9 +29,9 @@ else
 fi
 
 # Check 3: Service role key
-if [[ -z $SUPABASE_SERVICE_ROLE_KEY ]]; then
+if [[ -z ${SUPABASE_SERVICE_ROLE_KEY} ]]; then
 	echo "❌ SUPABASE_SERVICE_ROLE_KEY is not set"
-elif [[ $SUPABASE_SERVICE_ROLE_KEY == *"..."* ]]; then
+elif [[ ${SUPABASE_SERVICE_ROLE_KEY} == *"..."* ]]; then
 	echo "❌ SUPABASE_SERVICE_ROLE_KEY is INCOMPLETE (contains '...')"
 	echo "   Current value: ${SUPABASE_SERVICE_ROLE_KEY:0:50}..."
 	echo "   ⚠️  Error: Invalid API key - this is why tests are failing!"
@@ -41,16 +41,16 @@ else
 fi
 
 # Check 4: Test user email
-if [[ -z $TEST_USER_EMAIL ]]; then
+if [[ -z ${TEST_USER_EMAIL} ]]; then
 	echo "❌ TEST_USER_EMAIL is not set"
 else
-	echo "✅ TEST_USER_EMAIL: $TEST_USER_EMAIL"
+	echo "✅ TEST_USER_EMAIL: ${TEST_USER_EMAIL}"
 fi
 
 # Check 5: Test user password
-if [[ -z $TEST_USER_PASSWORD ]]; then
+if [[ -z ${TEST_USER_PASSWORD} ]]; then
 	echo "❌ TEST_USER_PASSWORD is not set"
-elif [[ $TEST_USER_PASSWORD == "YourSecurePassword123!"* ]]; then
+elif [[ ${TEST_USER_PASSWORD} == "YourSecurePassword123!"* ]]; then
 	echo "⚠️  TEST_USER_PASSWORD appears to be placeholder"
 	echo "   ⚠️  Error: Invalid login credentials - user doesn't exist!"
 else
