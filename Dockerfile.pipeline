@@ -1,5 +1,6 @@
 # Python Dockerfile for Abaco Loans Analytics Pipeline
-FROM python:3.14-slim
+# Base image - pin to Python 3.12 (minor) while tracking latest patch for security updates
+FROM python:3.12-slim
 WORKDIR /app
 
 # Install system dependencies (if needed)
