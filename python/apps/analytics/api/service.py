@@ -13,6 +13,7 @@ from python.apps.analytics.api.models import (
     ValidationResponse,
 )
 from python.logging_config import get_logger
+from python.config import settings
 
 logger = get_logger(__name__)
 
@@ -33,7 +34,7 @@ class KPIService:
         Returns:
             List of KpiSingleResponse objects.
         """
-        pool = await get_pool()
+        pool = await get_pool(settings.database_url)
 
         query = """
             SELECT

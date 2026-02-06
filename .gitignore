@@ -156,6 +156,7 @@ logs/runs/run_*/
 .rollback/
 .zencoder/
 .zenflow/
+.benchmarks/
 .gradle/
 
 # Local environment variables (NEVER commit)

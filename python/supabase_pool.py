@@ -353,10 +353,12 @@ async def get_pool(database_url: Optional[str] = None) -> SupabaseConnectionPool
     """
     # pylint: disable=protected-access  # Intentional singleton pattern
     if SupabaseConnectionPool._global_pool is None:
-        if not database_url:
+        # Use database_url from settings if not explicitly provided
+        db_url = database_url if database_url is not None else settings.database_url
+        if not db_url:
             raise ValueError("database_url required for pool initialization")
 
-        SupabaseConnectionPool._global_pool = SupabaseConnectionPool(database_url)
+        SupabaseConnectionPool._global_pool = SupabaseConnectionPool(db_url)
         await SupabaseConnectionPool._global_pool.initialize()
 
     return SupabaseConnectionPool._global_pool

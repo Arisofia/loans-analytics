@@ -11,7 +11,29 @@
   "files.exclude": {
     "**/.venv": true,
     "**/.venv-1": true,
-    "**/.git": true
+    "**/.git": true,
+    "**/node_modules": true,
+    "**/__pycache__": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.venv": true,
+    "**/data/output": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.venv/**": true,
+    "**/.venv-1/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/__pycache__/**": true,
+    "**/.mypy_cache/**": true,
+    "**/.pytest_cache/**": true,
+    "**/data/output/**": true,
+    "**/archives/**": true,
+    "**/.ruff_cache/**": true
   },
   "files.associations": {
     ".coveragerc": "ini",
@@ -22,6 +44,16 @@
     "connectionId": "abaco-technol",
     "projectKey": "abaco-loans-analytics"
   },
+  "sonarlint.disableTelemetry": true,
+  "sonarlint.analysisExcludesStandalone": {
+    "**/node_modules/**": true,
+    "**/.venv/**": true,
+    "**/data/**": true,
+    "**/__pycache__/**": true,
+    "**/archives/**": true
+  },
+  "sonarlint.output.showAnalyzerLogs": false,
+  "sonarlint.output.showVerboseLogs": false,
   "java.configuration.updateBuildConfiguration": "automatic",
   "zencoder.mcpServers": {
     "github": {
