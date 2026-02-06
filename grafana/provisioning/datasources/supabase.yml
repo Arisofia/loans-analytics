@@ -4,7 +4,7 @@ datasources:
   - name: Supabase PostgreSQL
     type: postgres
     access: proxy
-    url: db.goxdevkqozomyhsyxhte.supabase.co:5432
+    url: db.sddviizcgheusvwqpthm.supabase.co:5432
     database: postgres
     user: postgres
     secureJsonData:
@@ -20,7 +20,7 @@ datasources:
   - name: Supabase REST API
     type: grafana-simple-json-datasource
     access: proxy
-    url: ***REMOVED***/rest/v1
+    url: https://sddviizcgheusvwqpthm.supabase.co/rest/v1
     basicAuth: false
     withCredentials: false
     jsonData:
@@ -39,5 +39,13 @@ datasources:
       cloudName: azuremonitor
       azureAuthType: msi
       subscriptionId: ${AZURE_SUBSCRIPTION_ID}
+    editable: true
+    version: 1
+
+  - name: Prometheus Local
+    type: prometheus
+    access: proxy
+    url: http://localhost:9090
+    isDefault: false
     editable: true
     version: 1
