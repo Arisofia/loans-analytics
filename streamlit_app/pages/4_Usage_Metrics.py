@@ -38,7 +38,7 @@ if not events:
 else:
     # Convert to DataFrame for easier analysis
     df = pd.DataFrame([e.to_dict() for e in events])
-    
+
     # Summary stats
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -47,34 +47,34 @@ else:
         st.metric("Unique Features", df['feature_name'].nunique())
     with col3:
         st.metric("Unique Actions", df['action'].nunique())
-    
+
     st.subheader("Event Log")
     st.dataframe(df.sort_values(by="timestamp", ascending=False), use_container_width=True)
-    
+
     st.subheader("Feature Usage Breakdown")
     feature_counts = df['feature_name'].value_counts().reset_index()
     feature_counts.columns = ['Feature', 'Count']
     st.bar_chart(feature_counts.set_index('Feature'))
-    
+
     st.subheader("Export Metrics")
     export_col1, export_col2, export_col3 = st.columns(3)
-    
+
     with export_col1:
         if st.button("Export to JSON"):
             output_path = ROOT_DIR / "exports" / "usage_metrics.json"
-            tracker.export(output_path, format="json")
+            tracker.export(output_path, export_format="json")
             st.success(f"Exported to {output_path}")
-            
+
     with export_col2:
         if st.button("Export to CSV"):
             output_path = ROOT_DIR / "exports" / "usage_metrics.csv"
-            tracker.export(output_path, format="csv")
+            tracker.export(output_path, export_format="csv")
             st.success(f"Exported to {output_path}")
-            
+
     with export_col3:
         if st.button("Export to Parquet"):
             output_path = ROOT_DIR / "exports" / "usage_metrics.parquet"
-            tracker.export(output_path, format="parquet")
+            tracker.export(output_path, export_format="parquet")
             st.success(f"Exported to {output_path}")
 
 # Track visit to this page

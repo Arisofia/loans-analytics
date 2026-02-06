@@ -35,8 +35,8 @@ def generate_ascii_chart(data: list, max_width: int = 50) -> str:
     chart = []
     for i, val in enumerate(data):
         bar_width = int((val / max_val) * max_width)
-        bar = "█" * bar_width
-        chart.append(f"{i:3d} | {bar} {val:.2f}")
+        bar_segment = "█" * bar_width
+        chart.append(f"{i:3d} | {bar_segment} {val:.2f}")
 
     return "\n".join(chart)
 

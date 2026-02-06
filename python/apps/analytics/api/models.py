@@ -1,27 +1,45 @@
 from datetime import datetime
-from decimal import Decimal
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 # --- Schemas from openapi.yaml ---
 
+
 class LoanRecord(BaseModel):
     loan_amount: float = Field(..., description="Original loan amount")
-    appraised_value: float = Field(..., description="Appraised value of the collateral property")
+    appraised_value: float = Field(
+        ...,
+        description="Appraised value of the collateral property",
+    )
     borrower_income: float = Field(..., description="Annual borrower income")
     monthly_debt: float = Field(..., description="Monthly debt obligations")
-    loan_status: str = Field(..., description="Current loan status",
-                              examples=["current", "30-59 days past due", "90+ days past due"])
-    interest_rate: float = Field(..., description="Annual interest rate as decimal (e.g., 0.035 for 3.5%)",
-                                 ge=0, le=1)
+    loan_status: str = Field(
+        ...,
+        description="Current loan status",
+        examples=["current", "30-59 days past due", "90+ days past due"],
+    )
+    interest_rate: float = Field(
+        ...,
+        description="Annual interest rate as decimal (e.g., 0.035 for 3.5%)",
+        ge=0,
+        le=1,
+    )
     principal_balance: float = Field(..., description="Current outstanding principal balance")
 
 
 class LoanPortfolioRequest(BaseModel):
-    loans: List[LoanRecord] = Field(..., min_items=1, max_items=10000,
-                                     description="Array of loan records for analysis")
-    # Adding loan_ids here for backwards compatibility if needed, but primary input is 'loans'
-    # loan_ids: Optional[List[str]] = Field(None, description="Optional list of loan IDs for filtering/context")
+    loans: List[LoanRecord] = Field(
+        ...,
+        min_items=1,
+        max_items=10000,
+        description="Array of loan records for analysis",
+    )
+    # Adding loan_ids here for backwards compatibility if needed.
+    # Primary input remains 'loans'.
+    # loan_ids: Optional[List[str]] = Field(
+    #     None,
+    #     description="Optional list of loan IDs for filtering/context",
+    # )
 
 
 class KpiContext(BaseModel):
@@ -47,7 +65,8 @@ class KpiResponse(BaseModel):
     LTV: Optional[KpiSingleResponse] = None
     DTI: Optional[KpiSingleResponse] = None
     PortfolioYield: Optional[KpiSingleResponse] = None
-    audit_trail: Optional[List[Dict[str, Any]]] = None # Changed from AuditEntry as it's not defined in this file.
+    # Changed from AuditEntry as it's not defined in this file.
+    audit_trail: Optional[List[Dict[str, Any]]] = None
 
 
 class RiskLoan(BaseModel):
@@ -57,9 +76,18 @@ class RiskLoan(BaseModel):
 
 
 class RiskAlertsResponse(BaseModel):
-    high_risk_count: Optional[int] = Field(None, description="Number of high-risk loans identified")
-    total_loans: Optional[int] = Field(None, description="Total loans analyzed")
-    risk_ratio: Optional[float] = Field(None, description="Percentage of portfolio flagged as high-risk")
+    high_risk_count: Optional[int] = Field(
+        None,
+        description="Number of high-risk loans identified",
+    )
+    total_loans: Optional[int] = Field(
+        None,
+        description="Total loans analyzed",
+    )
+    risk_ratio: Optional[float] = Field(
+        None,
+        description="Percentage of portfolio flagged as high-risk",
+    )
     high_risk_loans: List[RiskLoan] = Field(..., description="List of high-risk loans")
 
 

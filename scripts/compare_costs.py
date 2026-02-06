@@ -7,35 +7,24 @@ This script compares cost reports against baseline values and alerts on regressi
 import argparse
 import json
 import sys
+from dataclasses import dataclass
 from pathlib import Path
-
-try:
-    import yaml
-except ImportError:
-    yaml = None
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from scripts.baseline_utils import load_baselines
 from scripts.path_utils import validate_path
 
 
-def load_baselines(baseline_file: str) -> dict:
-    """Load baseline costs from YAML or JSON file."""
-    baseline_path = Path(baseline_file)
-    if not baseline_path.exists():
-        print(f"⚠️  Baseline file not found: {baseline_file}")
-        return {}
-
-    with open(baseline_path) as f:
-        if baseline_file.endswith(".json"):
-            return json.load(f)
-        elif baseline_file.endswith((".yml", ".yaml")):
-            if yaml is None:
-                print("⚠️  PyYAML not installed, cannot read YAML baselines")
-                return {}
-            return yaml.safe_load(f)
-    return {}
+@dataclass(frozen=True)
+class CostComparison:
+    scenario_name: str
+    baseline_cost: float
+    current_cost: float
+    increase_pct: float
+    scenario_threshold: float
+    alert: bool
 
 
 def _parse_cost_value(value) -> float:
@@ -55,22 +44,15 @@ def _check_cost_regression(
     return alert, increase, increase_pct
 
 
-def _print_cost_result(
-    scenario_name: str,
-    baseline_cost: float,
-    current_cost: float,
-    increase_pct: float,
-    scenario_threshold: float,
-    alert: bool,
-) -> None:
+def _print_cost_result(result: CostComparison) -> None:
     """Print cost comparison result."""
-    status = "🚨 ALERT" if alert else "✅ OK"
-    print(f"{status} {scenario_name}:")
-    print(f"  Baseline: ${baseline_cost:.4f}")
-    print(f"  Current:  ${current_cost:.4f}")
-    print(f"  Change:   {increase_pct:+.1f}%")
-    print(f"  Threshold: {scenario_threshold*100:.1f}%")
-    if alert:
+    status = "🚨 ALERT" if result.alert else "✅ OK"
+    print(f"{status} {result.scenario_name}:")
+    print(f"  Baseline: ${result.baseline_cost:.4f}")
+    print(f"  Current:  ${result.current_cost:.4f}")
+    print(f"  Change:   {result.increase_pct:+.1f}%")
+    print(f"  Threshold: {result.scenario_threshold*100:.1f}%")
+    if result.alert:
         print("  ⚠️  Cost increased beyond acceptable threshold!")
 
 
@@ -80,13 +62,13 @@ def _check_budget_limits(scenario_data: dict, baseline_data: dict) -> bool:
 
     token_budget = baseline_data.get("token_budget", 0)
     current_tokens = scenario_data.get("total_tokens", 0)
-    if token_budget > 0 and current_tokens > token_budget:
+    if 0 < token_budget < current_tokens:
         print(f"  ⚠️  Token budget exceeded: {current_tokens} > {token_budget}")
         budget_exceeded = True
 
     api_budget = baseline_data.get("api_calls_budget", 0)
     current_api_calls = scenario_data.get("total_api_calls", 0)
-    if api_budget > 0 and current_api_calls > api_budget:
+    if 0 < api_budget < current_api_calls:
         print(f"  ⚠️  API call budget exceeded: {current_api_calls} > {api_budget}")
         budget_exceeded = True
 
@@ -107,9 +89,15 @@ def _process_scenario(
     scenario_threshold = baseline_data.get("threshold", default_threshold)
     alert, _, increase_pct = _check_cost_regression(current_cost, baseline_cost, scenario_threshold)
 
-    _print_cost_result(
-        scenario_name, baseline_cost, current_cost, increase_pct, scenario_threshold, alert
+    comparison = CostComparison(
+        scenario_name=scenario_name,
+        baseline_cost=baseline_cost,
+        current_cost=current_cost,
+        increase_pct=increase_pct,
+        scenario_threshold=scenario_threshold,
+        alert=alert,
     )
+    _print_cost_result(comparison)
 
     budget_exceeded = _check_budget_limits(scenario_data, baseline_data)
     print()

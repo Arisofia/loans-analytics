@@ -13,7 +13,6 @@ NOTE: This module is not designed to be run directly as a script.
 """
 
 import hashlib
-import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -21,6 +20,7 @@ from typing import Any, Dict, Optional
 import pandas as pd
 
 from python.logging_config import get_logger
+from src.pipeline.utils import format_error_response
 
 logger = get_logger(__name__)
 
@@ -98,14 +98,8 @@ class IngestionPhase:
             return results
 
         except Exception as e:
-            traceback_str = traceback.format_exc()
             logger.error("Ingestion failed: %s", str(e), exc_info=True)
-            return {
-                "status": "failed",
-                "error": str(e),
-                "traceback": traceback_str,
-                "timestamp": datetime.now().isoformat(),
-            }
+            return format_error_response(e)
 
     def _load_from_file(self, file_path: Path) -> pd.DataFrame:
         """Load data from CSV file."""

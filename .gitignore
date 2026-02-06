@@ -26,6 +26,7 @@ config/*.yaml
 
 # Logs
 *.log
+nohup.out
 
 # Test/coverage output
 *.coverage

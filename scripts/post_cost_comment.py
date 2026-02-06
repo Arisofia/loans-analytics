@@ -54,7 +54,10 @@ def format_cost_comment(report_file: str) -> str:
 
         comment += f"| {scenario_name} | ${cost:.4f} | {tokens} | {api_calls} | {agents} |\n"
 
-    comment += f"| **TOTAL** | **${total_cost:.4f}** | **{total_tokens}** | **{total_api_calls}** | - |\n\n"
+    comment += (
+        f"| **TOTAL** | **${total_cost:.4f}** | **{total_tokens}** | "
+        f"**{total_api_calls}** | - |\n\n"
+    )
 
     # Add agent breakdown for first scenario
     if scenarios:

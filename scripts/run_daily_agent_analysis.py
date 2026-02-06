@@ -9,10 +9,12 @@ Usage:
     python scripts/run_daily_agent_analysis.py --input data/raw/spanish_loans_seed.csv
 
     # Or with cron:
-    0 2 * * * cd /path/to/repo && python scripts/run_daily_agent_analysis.py --input data/raw/spanish_loans_seed.csv
+    0 2 * * * cd /path/to/repo && \
+        python scripts/run_daily_agent_analysis.py --input data/raw/spanish_loans_seed.csv
 """
 
 import argparse
+import csv
 import json
 import sys
 from datetime import datetime
@@ -63,9 +65,6 @@ Please provide:
 
 def calculate_summary_metrics(csv_file: Path) -> dict[str, Any]:
     """Calculate summary metrics from CSV file without pandas dependency."""
-    import csv
-    import json
-
     loans = []
     with open(csv_file, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
@@ -175,7 +174,9 @@ def run_agent_analysis(agent_name: str, query: str) -> dict[str, Any]:
             "agent": agent_name,
             "timestamp": datetime.now().isoformat(),
             "query": query,
-            "response": "Multi-agent system not configured. Install dependencies and configure API keys.",
+            "response": (
+                "Multi-agent system not configured. Install dependencies and configure API keys."
+            ),
             "status": "not_configured",
         }
 

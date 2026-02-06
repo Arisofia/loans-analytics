@@ -1,11 +1,10 @@
 """Tests for UsageTracker utility."""
 
 import json
-from pathlib import Path
 
 import pandas as pd
 import pytest
-from python.utils.usage_tracker import UsageTracker, UsageEvent
+from python.utils.usage_tracker import UsageTracker
 
 
 @pytest.fixture
@@ -54,7 +53,7 @@ def test_export_json(temp_storage, tmp_path):
     tracker.track("feature", "action")
     
     export_path = tmp_path / "export.json"
-    tracker.export(export_path, format="json")
+    tracker.export(export_path, export_format="json")
     
     assert export_path.exists()
     with open(export_path, "r") as f:
@@ -69,7 +68,7 @@ def test_export_csv(temp_storage, tmp_path):
     tracker.track("feature", "action")
     
     export_path = tmp_path / "export.csv"
-    tracker.export(export_path, format="csv")
+    tracker.export(export_path, export_format="csv")
     
     assert export_path.exists()
     df = pd.read_csv(export_path)
@@ -83,7 +82,7 @@ def test_export_parquet(temp_storage, tmp_path):
     tracker.track("feature", "action")
     
     export_path = tmp_path / "export.parquet"
-    tracker.export(export_path, format="parquet")
+    tracker.export(export_path, export_format="parquet")
     
     assert export_path.exists()
     df = pd.read_parquet(export_path)

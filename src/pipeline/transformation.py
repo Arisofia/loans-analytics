@@ -12,7 +12,6 @@ NOTE: This module is not designed to be run directly as a script.
       Use: python scripts/run_data_pipeline.py
 """
 
-import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -21,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 from python.logging_config import get_logger
+from src.pipeline.utils import format_error_response
 
 logger = get_logger(__name__)
 
@@ -160,14 +160,8 @@ class TransformationPhase:
             return results
 
         except Exception as e:
-            traceback_str = traceback.format_exc()
             logger.error("Transformation failed: %s", str(e), exc_info=True)
-            return {
-                "status": "failed",
-                "error": str(e),
-                "traceback": traceback_str,
-                "timestamp": datetime.now().isoformat(),
-            }
+            return format_error_response(e)
 
     def _handle_nulls(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
@@ -508,18 +502,20 @@ class TransformationPhase:
     def _assign_dpd_bucket(self, dpd: float) -> str:
         """Assign DPD (Days Past Due) bucket."""
         if pd.isna(dpd) or dpd < 0:
-            return "unknown"
-        if dpd == 0:
-            return "current"
-        if dpd < 30:
-            return "1-29"
-        if dpd < 60:
-            return "30-59"
-        if dpd < 90:
-            return "60-89"
-        if dpd < 180:
-            return "90-179"
-        return "180+"
+            bucket = "unknown"
+        elif dpd == 0:
+            bucket = "current"
+        elif dpd < 30:
+            bucket = "1-29"
+        elif dpd < 60:
+            bucket = "30-59"
+        elif dpd < 90:
+            bucket = "60-89"
+        elif dpd < 180:
+            bucket = "90-179"
+        else:
+            bucket = "180+"
+        return bucket
 
     def _calculate_risk_category(self, row: pd.Series) -> str:
         """Calculate risk category based on status and DPD."""
@@ -527,28 +523,32 @@ class TransformationPhase:
         dpd = row.get("dpd", 0)
 
         if status == "defaulted":
-            return "critical"
-        if status == "delinquent" or (pd.notna(dpd) and dpd >= 90):
-            return "high"
-        if pd.notna(dpd) and dpd >= 30:
-            return "medium"
-        if status == "active" and (pd.isna(dpd) or dpd < 30):
-            return "low"
-        return "unknown"
+            category = "critical"
+        elif status == "delinquent" or (pd.notna(dpd) and dpd >= 90):
+            category = "high"
+        elif pd.notna(dpd) and dpd >= 30:
+            category = "medium"
+        elif status == "active" and (pd.isna(dpd) or dpd < 30):
+            category = "low"
+        else:
+            category = "unknown"
+        return category
 
     def _assign_amount_tier(self, amount: float) -> str:
         """Assign loan amount tier."""
         if pd.isna(amount) or amount <= 0:
-            return "invalid"
-        if amount < 5000:
-            return "micro"
-        if amount < 25000:
-            return "small"
-        if amount < 100000:
-            return "medium"
-        if amount < 500000:
-            return "large"
-        return "jumbo"
+            tier = "invalid"
+        elif amount < 5000:
+            tier = "micro"
+        elif amount < 25000:
+            tier = "small"
+        elif amount < 100000:
+            tier = "medium"
+        elif amount < 500000:
+            tier = "large"
+        else:
+            tier = "jumbo"
+        return tier
 
     def _apply_custom_rule(
         self, df: pd.DataFrame, rule: Dict[str, Any]
@@ -690,7 +690,7 @@ class TransformationPhase:
             )
             outlier_count = outliers.sum()
             if outlier_count > 0:
-                self._record_outlier_flag(df, col, outliers, outlier_count, outlier_counts)
+                self._record_outlier_flag(df, col, outliers, outlier_counts)
 
         return df, outlier_counts
 
@@ -699,13 +699,13 @@ class TransformationPhase:
         df: pd.DataFrame,
         col: str,
         outliers: pd.Series,
-        outlier_count: int,
         outlier_counts: Dict[str, int],
     ) -> None:
         """Record outlier flag for a column."""
+        outlier_count = int(outliers.sum())
         outlier_flag_col = f"{col}_outlier"
         df[outlier_flag_col] = outliers
-        outlier_counts[col] = int(outlier_count)
+        outlier_counts[col] = outlier_count
         logger.info("Found %d outliers in column '%s'", outlier_count, col)
 
     def _create_outlier_metrics(
