@@ -83,8 +83,10 @@ def test_export_csv(temp_storage, tmp_path):
     csv_path_exists = export_path.exists()
     assert csv_path_exists
     df = pd.read_csv(export_path)
-    assert len(df) == 1
-    assert df.iloc[0]["feature_name"] == "feature"
+    df_len = len(df)
+    assert df_len == 1
+    feature_name_csv = df.iloc[0]["feature_name"]
+    assert feature_name_csv == "feature"
 
 
 def test_export_parquet(temp_storage, tmp_path):
@@ -95,7 +97,10 @@ def test_export_parquet(temp_storage, tmp_path):
     export_path = tmp_path / "export.parquet"
     tracker.export(export_path, export_format="parquet")
 
-    assert export_path.exists()
+    parquet_path_exists = export_path.exists()
+    assert parquet_path_exists
     df = pd.read_parquet(export_path)
-    assert len(df) == 1
-    assert df.iloc[0]["feature_name"] == "feature"
+    df_len = len(df)
+    assert df_len == 1
+    feature_name_parquet = df.iloc[0]["feature_name"]
+    assert feature_name_parquet == "feature"
