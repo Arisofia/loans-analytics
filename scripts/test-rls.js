@@ -23,9 +23,9 @@ const { createClient } = require('@supabase/supabase-js')
 // Configuration
 const config = {
   supabaseUrl:
-    process.env.SUPABASE_URL || 'https://goxdevkqozomyhsyxhte.supabase.co',
-  anonKey: 'sb_publishable_OhuP5HeTGM8GjttnEFiqig_Frq-OS8M',
-  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    process.env.SUPABASE_URL || 'https://pljjgdtczxmrxydfuaep.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsampnZHRjenhtcnh5ZGZ1YWVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNjc0NjQsImV4cCI6MjA3ODg0MzQ2NH0.xGhXNb7d-9wyTD4gQ3h94cqitwUZGxNozt4Dtqv1dEg',
+  serviceRoleKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsampnZHRjenhtcnh5ZGZ1YWVwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzI2NzQ2NCwiZXhwIjoyMDc4ODQzNDY0fQ.oI2VEuQgsx0jr108JqQ6IvLfNPtpggcFUsOkKSXYYKU',
   testUserEmail: process.env.TEST_USER_EMAIL,
   testUserPassword: process.env.TEST_USER_PASSWORD,
 }
@@ -278,6 +278,7 @@ async function testAuthenticatedAccess() {
     // Test KPI values access via public view
     const { data: kpiData, error: kpiError } = await userClient
       .from('kpi_values')
+      .select('*')
       .limit(1)
 
     if (kpiError) {
