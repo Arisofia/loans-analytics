@@ -69,7 +69,10 @@ Examples:
         "--mode",
         choices=["full", "validate", "dry-run"],
         default="full",
-        help="Execution mode: full (all phases), validate (stop after transformation), dry-run (ingestion only)",
+        help=(
+            "Execution mode: full (all phases), validate (stop after transformation), "
+            "dry-run (ingestion only)"
+        ),
     )
 
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
