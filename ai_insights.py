@@ -1,19 +1,16 @@
 import os
+from functools import lru_cache
 from typing import Any, Dict
 
 from openai import OpenAI
 
-_client: OpenAI | None = None
 
-
+@lru_cache(maxsize=1)
 def _get_client() -> OpenAI:
-    global _client
-    if _client is None:
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise RuntimeError("OPENAI_API_KEY not set")
-        _client = OpenAI(api_key=api_key)
-    return _client
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY not set")
+    return OpenAI(api_key=api_key)
 
 
 def generate_kpi_insights(kpis: Dict[str, Any], context: str = "") -> str:

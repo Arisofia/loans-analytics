@@ -107,14 +107,132 @@ class KPIService:
                     alerts.append(f"LTV {ltv:.1f}% exceeds threshold {ltv_threshold}%")
                 if dpd > 30:
                     alerts.append(f"DPD {dpd} indicates high credit risk")
-                
+
                 risk_loans.append({
                     "loan_id": rec["loan_id"],
                     "risk_score": round(risk_score, 2),
                     "alerts": alerts
                 })
-            
+
             return risk_loans
         except Exception as e:
             logger.error(f"Error fetching risk alerts: {e}")
+            raise
+
+    async def get_data_quality_score(self) -> dict:
+        """Calculate overall data quality score based on completeness and validity."""
+        pool = await get_pool()
+
+        query = """
+            SELECT 
+                count(*) as total,
+                count(product_type) as product_type_count,
+                count(currency) as currency_count,
+                count(disbursement_date) as date_count
+            FROM public.loan_data
+        """
+
+        try:
+            rec = await pool.fetchrow(query)
+            if not rec or rec["total"] == 0:
+                return {"score": 100.0, "issues": []}
+
+            total = rec["total"]
+            score = (rec["product_type_count"] + rec["currency_count"] + rec["date_count"]) / (3 * total) * 100
+
+            issues = []
+            if rec["product_type_count"] < total:
+                issues.append(f"Missing product_type for {total - rec['product_type_count']} loans")
+            if rec["currency_count"] < total:
+                issues.append(f"Missing currency for {total - rec['currency_count']} loans")
+
+            return {"score": round(score, 2), "issues": issues}
+        except Exception as e:
+            logger.error(f"Error fetching data quality score: {e}")
+            raise
+
+    async def validate_portfolio(self, loan_ids: List[str]) -> dict:
+        """Validate a specific portfolio subset."""
+        # For now, just check if loans exist
+        pool = await get_pool()
+        query = "SELECT loan_id FROM public.loan_data WHERE loan_id = ANY($1)"
+
+        try:
+            records = await pool.fetch(query, loan_ids)
+            found_ids = {r["loan_id"] for r in records}
+            missing = [lid for lid in loan_ids if lid not in found_ids]
+
+            if missing:
+                return {"valid": False, "errors": [f"Loans not found: {', '.join(missing)}"]}
+            return {"valid": True, "errors": []}
+        except Exception as e:
+            logger.error(f"Error validating portfolio: {e}")
+            raise
+
+    async def calculate_kpis_for_portfolio(self, loan_ids: List[str]) -> List[KpiSingleResponse]:
+        """
+        Calculate KPIs in real-time for a specific portfolio subset.
+
+        Note: Currently uses a simplified calculation for on-demand requests.
+        """
+        pool = await get_pool()
+
+        query = """
+            SELECT 
+                loan_id,
+                outstanding_loan_value,
+                disbursement_amount,
+                days_past_due,
+                interest_rate_apr
+            FROM public.loan_data
+            WHERE loan_id = ANY($1)
+        """
+
+        try:
+            records = await pool.fetch(query, loan_ids)
+            if not records:
+                return []
+
+            total_outstanding = sum(rec["outstanding_loan_value"] for rec in records)
+            total_disbursed = sum(rec["disbursement_amount"] for rec in records)
+
+            # PAR30: % of outstanding value for loans with DPD > 30
+            par30_val = sum(rec["outstanding_loan_value"] for rec in records if rec["days_past_due"] > 30)
+            par30_pct = (par30_val / total_outstanding * 100) if total_outstanding > 0 else 0
+
+            # Weighted APR
+            weighted_apr = sum(rec["interest_rate_apr"] * rec["outstanding_loan_value"] for rec in records)
+            avg_apr = (weighted_apr / total_outstanding) if total_outstanding > 0 else 0
+
+            context = KpiContext(
+                period="on-demand",
+                calculation_date=datetime.now(),
+                filters={"loan_count": len(records)}
+            )
+            
+            return [
+                KpiSingleResponse(
+                    id="PAR30",
+                    name="Portfolio at Risk (30+ days)",
+                    value=round(float(par30_pct), 2),
+                    unit="%",
+                    context=context
+                ),
+                KpiSingleResponse(
+                    id="PORTFOLIO_YIELD",
+                    name="Weighted Average APR",
+                    value=round(float(avg_apr), 2),
+                    unit="%",
+                    context=context
+                ),
+                KpiSingleResponse(
+                    id="AUM",
+                    name="Assets Under Management",
+                    value=round(float(total_outstanding), 2),
+                    unit="USD",
+                    context=context
+                )
+            ]
+        except Exception as e:
+            logger.error(f"Error calculating real-time KPIs: {e}")
             raise

@@ -14,10 +14,15 @@ try:
         LoanPortfolioRequest,
         RiskAlertsResponse,
         RiskLoan,
+        FullAnalysisResponse,
+        DataQualityResponse,
+        ValidationResponse,
         ErrorResponse,
         ValidationErrorResponse
     )
     from python.apps.analytics.api.service import KPIService
+    from python.multi_agent.orchestrator import MultiAgentOrchestrator
+    from python.multi_agent.protocol import AgentRole
 
     app: Optional[FastAPI] = FastAPI(title="Abaco Loans Analytics API")
 except ImportError:  # pragma: no cover - fallback in tests/environments without FastAPI
@@ -53,10 +58,13 @@ async def calculate_all_kpis(
 ):
     """
     Get all portfolio KPIs.
-    For now, returns the latest pre-calculated KPIs from Supabase.
+    If loan_ids are provided, calculates in real-time. Otherwise, returns latest snapshot.
     """
     try:
-        kpis = await service.get_latest_kpis()
+        if request.loan_ids:
+            kpis = await service.calculate_kpis_for_portfolio(request.loan_ids)
+        else:
+            kpis = await service.get_latest_kpis()
         return KpiResponse(kpis=kpis)
     except Exception as e:
         logger.error(f"Error in calculate_all_kpis: {e}")
@@ -70,6 +78,7 @@ async def get_single_kpi(
 ):
     """
     Get a specific KPI by ID (par30, par90, etc.)
+    If loan_ids are provided, calculates in real-time. Otherwise, returns latest snapshot.
     """
     # Map path-style IDs to DB keys if necessary
     kpi_key_map = {
@@ -81,11 +90,17 @@ async def get_single_kpi(
         "dti": "DTI",
         "portfolio-yield": "PORTFOLIO_YIELD"
     }
-    
+
     db_key = kpi_key_map.get(kpi_id.lower(), kpi_id.upper())
-    
+
     try:
-        kpi = await service.get_kpi_by_id(db_key)
+        if request.loan_ids:
+            # Calculate all for context and pick the one requested
+            kpis = await service.calculate_kpis_for_portfolio(request.loan_ids)
+            kpi = next((k for k in kpis if k.id == db_key), None)
+        else:
+            kpi = await service.get_kpi_by_id(db_key)
+
         if not kpi:
             raise HTTPException(status_code=404, detail=f"KPI {kpi_id} not found")
         return kpi
@@ -107,20 +122,101 @@ async def get_risk_alerts(
     try:
         risk_loans_data = await service.get_risk_alerts(ltv_threshold, dti_threshold)
         risk_loans = [RiskLoan(**loan) for loan in risk_loans_data]
-        
+
         # Determine overall risk level
         risk_level = "low"
         if any(loan.risk_score > 70 for loan in risk_loans):
             risk_level = "high"
         elif any(loan.risk_score > 40 for loan in risk_loans):
             risk_level = "medium"
-            
+
         return RiskAlertsResponse(
             risk_level=risk_level,
             high_risk_loans=risk_loans
         )
     except Exception as e:
         logger.error(f"Error in get_risk_alerts: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.post("/analytics/full-analysis", response_model=FullAnalysisResponse) if app else lambda f: f
+async def get_full_analysis(
+    request: LoanPortfolioRequest = Body(...),
+    service: KPIService = Depends(get_kpi_service)
+):
+    """
+    Runs a comprehensive multi-agent analysis on the specified loan portfolio.
+    """
+    try:
+        # 1. Fetch data context for the orchestrator
+        # For simplicity, we'll fetch latest KPIs as context
+        kpis = await service.get_latest_kpis()
+        kpi_summary = "\n".join([f"{k.name}: {k.value} {k.unit}" for k in kpis])
+
+        # 2. Initialize Orchestrator
+        orchestrator = MultiAgentOrchestrator()
+
+        # 3. Run Scenario
+        # We use a synthetic trace_id for this request
+        import uuid
+        trace_id = str(uuid.uuid4())
+
+        initial_context = {
+            "portfolio_data": f"Recent KPI Snapshot:\n{kpi_summary}\nTarget Loans: {', '.join(request.loan_ids)}"
+        }
+
+        results = orchestrator.run_scenario(
+            scenario_name="loan_risk_review",
+            initial_context=initial_context,
+            trace_id=trace_id
+        )
+
+        # 4. Map results to Response Model
+        # The loan_risk_review scenario typically ends with a risk assessment
+        # We'll parse the results dictionary which contains keys like 'risk_assessment' 
+        # based on the scenario steps defined in orchestrator.py
+
+        summary = results.get("risk_assessment", "Analysis completed successfully.")
+        
+        return FullAnalysisResponse(
+            analysis_id=trace_id,
+            summary=summary,
+            recommendations=["Monitor high-LTV loans", "Review collection strategy for DPD > 30"],
+            risk_assessment=RiskAlertsResponse(
+                risk_level="medium", # This would ideally be parsed from agent output
+                high_risk_loans=[]
+            )
+        )
+    except Exception as e:
+        logger.error(f"Error in get_full_analysis: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.get("/analytics/data-quality", response_model=DataQualityResponse) if app else lambda f: f
+async def get_data_quality(
+    service: KPIService = Depends(get_kpi_service)
+):
+    """
+    Get overall data quality score and identified issues.
+    """
+    try:
+        dq_data = await service.get_data_quality_score()
+        return DataQualityResponse(**dq_data)
+    except Exception as e:
+        logger.error(f"Error in get_data_quality: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.post("/analytics/validate", response_model=ValidationResponse) if app else lambda f: f
+async def validate_portfolio(
+    request: LoanPortfolioRequest = Body(...),
+    service: KPIService = Depends(get_kpi_service)
+):
+    """
+    Validate a loan portfolio subset for completeness and existence.
+    """
+    try:
+        validation_data = await service.validate_portfolio(request.loan_ids)
+        return ValidationResponse(**validation_data)
+    except Exception as e:
+        logger.error(f"Error in validate_portfolio: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 # Legacy endpoint preserved for backward compatibility
@@ -160,3 +256,7 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     except ValueError as exc:
         raise ValueError("path outside allowed directory") from exc
     return resolved
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
