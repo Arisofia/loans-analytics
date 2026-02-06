@@ -227,7 +227,10 @@ elif page == "📊 Dashboard" and selected_run:
 
                 ai_context = st.text_area(
                     "Optional context (e.g., target market, constraints, current strategy)",
-                    value="Retail loans portfolio, focus on risk-adjusted growth and NPL reduction.",
+                    value=(
+                        "Retail loans portfolio, focus on risk-adjusted growth and "
+                        "NPL reduction."
+                    ),
                 )
 
                 if st.button("Generate AI Insights for this run"):
