@@ -9,10 +9,6 @@ Run with:
     streamlit run streamlit_app.py
 """
 
-from logging_config import init_sentry
-
-init_sentry(service_name="streamlit_app")
-
 import json
 from pathlib import Path
 
@@ -20,6 +16,9 @@ import pandas as pd
 import streamlit as st
 
 from api_client import AbacoAnalyticsApiClient
+from logging_config import init_sentry
+
+init_sentry(service_name="streamlit_app")
 
 # Set page config
 st.set_page_config(
@@ -52,7 +51,10 @@ st.markdown(
 )
 
 # Title
-st.markdown('<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>', unsafe_allow_html=True)
+st.markdown(
+    '<p class="main-header">📊 Abaco Loans Analytics Dashboard</p>',
+    unsafe_allow_html=True,
+)
 st.markdown("---")
 
 # Sidebar
