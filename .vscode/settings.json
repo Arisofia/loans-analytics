@@ -17,18 +17,21 @@
     "**/.mypy_cache": true,
     "**/.pytest_cache": true,
     "**/.ruff_cache": true,
-    "**/.benchmarks": true
+    "**/.benchmarks": true,
+    "**/data/output": true,
+    "**/archives": true
   },
   "search.exclude": {
-    "**/node_modules": true,
     "**/.venv": true,
     "**/.venv-1": true,
-    "**/data/output": true,
+    "**/.git": true,
+    "**/node_modules": true,
     "**/__pycache__": true,
     "**/.mypy_cache": true,
     "**/.pytest_cache": true,
     "**/.ruff_cache": true,
     "**/.benchmarks": true,
+    "**/data/output": true,
     "**/archives": true
   },
   "files.watcherExclude": {
