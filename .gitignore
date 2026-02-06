@@ -239,3 +239,13 @@ reports/
 
 # Agent outputs
 data/agent_outputs/
+
+# Temporary files from testing/development process
+.S.swp
+tmp_curl_output.txt
+uvicorn.pid
+uvicorn.log
+nohup.out
+loan_portfolio_dq.json
+get_jwt_token.js
+create_test_user.mjs
