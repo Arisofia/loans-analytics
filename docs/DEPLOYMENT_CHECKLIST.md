@@ -2,24 +2,13 @@
 
 **Last Updated**: 2026-02-06
 **Status**: Active
-**Working Directory (Mac)**: `cd "/Users/jenineferderas/Documents/Documentos - MacBook Pro (6)/abaco-loans-analytics"`
+**Verified Against**: Actual repository contents on `main` branch
+
+All paths, scripts, workflow names, and configurations below have been verified to exist in the repository. Run all commands from the repository root.
 
 ---
 
-## Key Improvements to the Deployment Checklist Prompt
-
-- **Alignment with Repo Structure**: Updated file paths and names based on actual repository contents (e.g., `repo_maintenance.sh` is under `scripts/maintenance/`, no `start_grafana.sh` found—replaced with equivalent Docker commands; added references to existing tools like Prefect for orchestration and LangChain for agents).
-- **Realism for Connections**: Incorporated placeholders for Supabase credentials via environment variables (e.g., `$SUPABASE_URL`, `$SUPABASE_SERVICE_ROLE_KEY`) to avoid hardcoding; added verification for actual integrations like n8n workflows and Azure traces, as these are present in the repo. Removed assumptions about non-existent files like `CLEANUP_SCRIPTS_AUDIT.md` and adjusted workflow names to match GitHub Actions (e.g., "Security Scan" instead of "Python QA").
-- **Enhanced Thoroughness and Safety**: Added checks for additional repo elements (e.g., n8n configs, Prefect flows); emphasized dry-run modes for scripts; included modern best practices like dependency vulnerability scans with `pip-audit`; made RLS tests more robust with actual queries; ensured no real data in `data/` by specifying exclusion of PII-sensitive files.
-- **Conciseness and Clarity**: Streamlined redundant sections, used consistent formatting, and added optional flags for tools to handle errors gracefully. Ensured the prompt accounts for the repo's 2026-dated elements as forward-looking but treats them as current for deployment.
-
----
-
-## Checklist
-
-Before approving deployment to production, run and confirm ALL of the following checks from the repository root. Do not deploy unless every item passes with no unexpected differences, no sample/demo data, and no leftover "pruebas" or dev artifacts.
-
-### 1. Git & Branch Hygiene
+## 1. Git & Branch Hygiene
 
 ```bash
 git checkout main
@@ -28,249 +17,439 @@ git pull origin main
 git status
 ```
 
-**Expected**: On branch main. Your branch is up to date with 'origin/main'. Nothing to commit, working tree clean.
+**Expected**: On branch `main`, up to date with `origin/main`, working tree clean.
 
-Also confirm:
-
-```bash
-git branch -vv
-```
-
-Only main and any actively used feature branches. No stale local branches; delete merged ones:
+Delete merged local branches:
 
 ```bash
 git branch --merged main | grep -v "main" | xargs -I {} git branch -d "{}" 2>/dev/null || true
 ```
 
-### 2. No Sample / Demo Data in Production Paths
+---
 
-Check for any remaining sample/demo/test data in active paths:
+## 2. No Sample / Demo / Dev Artifacts in Production Paths
+
+Scan for leftover test/demo data in production-facing directories:
 
 ```bash
-rg "sample_" data/ scripts/ src/ docs/ || echo "No 'sample_' references found"
-rg "demo" data/ scripts/ src/ docs/ || echo "No 'demo' references found"
-rg "prueba" data/ scripts/ src/ docs/ || echo "No 'prueba' references found"
-rg "test_data" data/ scripts/ src/ docs/ || echo "No 'test_data' references found"
+rg "sample_" data/ scripts/ src/ python/ streamlit_app/ || echo "No 'sample_' references found"
+rg "prueba" data/ scripts/ src/ python/ streamlit_app/ || echo "No 'prueba' references found"
+rg "test_data" data/ scripts/ src/ python/ streamlit_app/ || echo "No 'test_data' references found"
 ```
 
-**Actions**: Any hits in production paths (src/, scripts/, data/, streamlit_app/, infra/) must be removed or moved to archives/ or tests/. Re-run the rg commands until no unintended references remain. Also ensure there are no real data files under data/ that should not be deployed (e.g., exclude PII-sensitive CSVs):
+Review what's in `data/` for any PII-sensitive or ad-hoc experiment files:
 
 ```bash
-find data -type f
+find data -type f | head -50
 ```
 
-Only expected production data locations for runtime (or empty); no ad-hoc CSVs from experiments.
+**Actions**: Hits in `src/`, `python/`, `streamlit_app/`, or `scripts/` (outside `tests/`) must be removed or moved to `archives/` or `tests/`. The `data/` directory should only contain expected runtime data, ML models (`data/models/`), and usage metrics.
 
-### 3. Run Cleanup & Maintenance Scripts
+---
 
-Execute the project's cleanup and maintenance tooling to remove orphaned files, caches, and dev artifacts.
+## 3. Run Cleanup & Maintenance Scripts
+
+Both scripts exist at the paths below:
 
 ```bash
-bash clean.sh --dry-run  # review first, then run without --dry-run if safe
-bash scripts/maintenance/repo_maintenance.sh --mode=standard --dry-run  # review, then run
+bash clean.sh --dry-run
+# Review output, then run without --dry-run if safe:
+bash clean.sh
+```
+
+```bash
+bash scripts/maintenance/repo_maintenance.sh --mode=standard --dry-run
+# Review output, then run without --dry-run if safe:
+bash scripts/maintenance/repo_maintenance.sh --mode=standard
+```
+
+Alternatively, use the Makefile targets:
+
+```bash
+make maintenance-dry-run   # Preview cleanup
+make maintenance           # Execute cleanup (runs clean.sh)
+```
+
+```bash
 git status
 ```
 
-**Expected**: No orphaned files, no temporary artifacts, no stray logs or local config. git status should be clean or only show intentional, reviewable changes (which must then be committed or reverted).
+**Expected**: No orphaned files, no temporary artifacts. Working tree should be clean or only show intentional changes (commit or revert them).
 
-If there are additional maintenance scripts documented in docs/MAINTENANCE_SCRIPTS_AUDIT.md, run them as instructed there and confirm they complete without errors.
+---
 
-> **Note**: No `CLEANUP_SCRIPTS_AUDIT.md` exists; rely on `MAINTENANCE_SCRIPTS_AUDIT.md`.
+## 4. Full Test Suite
 
-### 4. Full Test Suite – Unit + Integration + Multi-Agent
-
-Activate the virtual environment if not already:
+Activate the virtual environment:
 
 ```bash
 source .venv/bin/activate
 ```
 
-Run the full Python test suite:
+The `pytest.ini` defines testpaths as `python/multi_agent`, `python/tests`, and `tests`. Run the full suite:
 
 ```bash
-pytest tests/ -v
+pytest -v
 ```
 
-**Expected**: All unit tests and non-credentialled integration tests must pass. Any remaining failures must be explicitly documented as: requiring external credentials (e.g., Supabase, external APIs), or out of scope for this deployment. No new failures relative to the baseline (docs/SPRINT_STATUS_2026_02_04.md).
+Or use the Makefile:
 
-For multi-agent / pipeline integration tests (under tests/agents/ and tests/integration/):
+```bash
+make test
+```
+
+**Expected**: All unit tests pass. The suite has ~145+ test functions across 27 files. Any failures must be documented as requiring external credentials or being out of scope.
+
+### 4.1 Agent Tests
+
+Agent tests cover base agents, orchestrator, protocol, scenarios (happy path, error, concurrency, timeout), integration (chaining, communication, webhooks, Supabase), and concrete agents (risk, analytics, validation, custom):
 
 ```bash
 pytest tests/agents/ -v
+```
+
+### 4.2 Integration Tests
+
+Integration tests include real Supabase tests (opt-in) and financial analytics:
+
+```bash
 pytest tests/integration/ -v
 ```
 
-**Confirm**: Agent orchestration (using LangChain), scenarios, and Supabase integration tests behave as expected. Any skipped tests are documented and intentional.
+**Note**: Real Supabase integration tests require `RUN_REAL_SUPABASE_TESTS=1` and valid credentials. It is acceptable to skip these if credentials are not available locally; CI handles them.
 
-For data integrity checks:
+### 4.3 Security Tests
+
+```bash
+pytest tests/security/ -v
+```
+
+### 4.4 Data Integrity
 
 ```bash
 pytest tests/test_data_integrity.py -v
 ```
 
-### 5. Supabase & RLS / Monitoring Schema Verification
+---
 
-Ensure database schema and RLS are aligned with migrations. (Use env vars: export `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from .env)
+## 5. Supabase & RLS Verification
 
-List migrations:
-
-```bash
-supabase migration list --db-url $SUPABASE_URL
-```
-
-**Expected**: Local and remote migration IDs match (no pending migrations).
-
-Optionally, verify monitoring schema and KPI policies:
+Export credentials from `.env` (see `.env.example` for the full variable list):
 
 ```bash
-supabase db dump --linked | rg -i "monitoring.kpi_values|ENABLE ROW LEVEL SECURITY|CREATE POLICY" | head -40
+export SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL"
+export SUPABASE_SERVICE_ROLE_KEY="<from .env>"
 ```
 
-**Confirm**: monitoring.kpi_values exists with RLS enabled. Policies for authenticated and service_role access are present and restrictive (no "allow all" inserts).
+### 5.1 Migration Status
 
-If you added an RLS smoke test runner (e.g., scripts/test-rls.js):
+The repo has migrations in two locations:
+
+- `supabase/migrations/` (15 migration files, including RLS, security hardening, monitoring schemas)
+- `db/migrations/` (7 migration files for KPI tables, RLS policies)
+
+```bash
+supabase migration list --db-url "$SUPABASE_DATABASE_URL"
+```
+
+**Expected**: Local and remote migration IDs match. No pending migrations.
+
+### 5.2 RLS Smoke Test
+
+The RLS test script exists at `scripts/test-rls.js`:
 
 ```bash
 node scripts/test-rls.js
 ```
 
-**Expected**: Anonymous key: cannot read/write sensitive tables. Authenticated users: can access only their own rows per policy. Service role: has expected, controlled access. Refer to docs/RLS_VERIFICATION_TESTS.md for additional queries.
-
-### 6. Observability & Grafana/Monitoring Integration
-
-Validate that the observability stack (Prometheus + Grafana + Alerting) is wired correctly to this version.
-
-#### 6.1 Local/Dev Monitoring Stack
-
-If you have a local monitoring stack:
+Additional RLS diagnostics:
 
 ```bash
-docker-compose -f docker-compose.monitoring.yml up -d
+bash scripts/diagnose-rls.sh
 ```
 
-> No `start_grafana.sh` found; use Docker directly.
+**Expected**: Anonymous key cannot read/write sensitive tables. Service role has controlled access. RLS is enabled on `financial_statements`, `payment_schedule`, and `monitoring.kpi_values`.
 
-Then: Access Grafana at http://localhost:3000 (default port). Confirm dashboards are loading and data sources connected: Pipeline run dashboard, Data quality / KPI panels, Supabase metrics if applicable.
-
-#### 6.2 Metrics from Current Build
-
-Run a pipeline execution to generate metrics/traces:
+### 5.3 Schema Verification (Optional)
 
 ```bash
-python scripts/run_data_pipeline.py --mode validate --verbose --input data/sample_loans.csv
+supabase db dump --linked | rg -i "ENABLE ROW LEVEL SECURITY|CREATE POLICY" | head -40
 ```
 
-**Confirm**: Metrics and logs appear in Grafana/Prometheus (or your chosen backend). No hard-coded sample metrics or fake series are left in production dashboards.
+---
 
-If you have OpenTelemetry/Azure monitor integration: Verify traces for pipeline phases (using Prefect) and multi-agent flows are visible in your tracing backend (Application Insights / Azure Monitor). Check n8n/ for workflow integrations.
+## 6. Observability & Monitoring Stack
 
-### 7. CI / Workflow Health Check (GitHub Actions)
+### 6.1 Start the Monitoring Stack
 
-Validate that all workflows relevant for production are green:
+Use the Makefile or scripts:
 
-In GitHub → Actions, confirm latest runs on main: Security Scan (CodeQL + Bandit/Snyk), Model Evaluation Pipeline, Tests, Deployment.
+```bash
+make monitoring-start
+# Or directly:
+bash scripts/monitoring/start_monitoring.sh
+```
 
-Optionally, trigger a manual run of the core workflows on main: security-scan.yml, model-evaluation.yml.
+This brings up Prometheus, Grafana, and Alertmanager via `docker-compose.monitoring.yml`:
 
-**Confirm**: All jobs complete successfully. No failing or flaky steps. actions/upload-artifact is pinned to the expected SHA (v4.4.3 in your repo).
+- **Prometheus**: http://localhost:9090 (60s scrape interval, 30-day retention)
+- **Grafana**: http://localhost:3001 (note: port 3001, not 3000)
+- **Alertmanager**: http://localhost:9093
 
-### 8. Static Analysis, Lint, and Security Tools
+### 6.2 Verify Grafana Dashboards
 
-Run core static analysis locally:
+Access Grafana at http://localhost:3001. Confirm these dashboards load with live data:
 
-#### 8.1 Python compile + lint
+- `kpi-overview.json` - KPI tracking
+- `supabase-postgresql.json` - Database metrics
+
+Dashboard files are in `grafana/dashboards/`, provisioned via `grafana/provisioning/dashboards/default.yml`.
+
+Datasources configured in `grafana/provisioning/datasources/supabase.yml`:
+
+1. Supabase PostgreSQL (default)
+2. Supabase REST API
+3. Azure Monitor
+4. Prometheus Local
+
+### 6.3 Verify Alert Rules
+
+Alert rules are in `config/rules/`:
+
+- `config/rules/pipeline_alerts.yml`
+- `config/rules/supabase_alerts.yml`
+
+Alertmanager config: `config/alertmanager.yml` (template at `config/alertmanager.yml.template`).
+
+### 6.4 Health Check
+
+```bash
+make monitoring-health
+# Or directly:
+bash scripts/monitoring/health_check_monitoring.sh
+```
+
+### 6.5 Backup Dashboards (Before Deploy)
+
+```bash
+make dashboard-backup
+# Or: bash scripts/monitoring/backup_dashboards.sh
+```
+
+---
+
+## 7. Docker Builds
+
+The repo has three Dockerfiles:
+
+| Dockerfile             | Purpose               | Port | Healthcheck                                 |
+| ---------------------- | --------------------- | ---- | ------------------------------------------- |
+| `Dockerfile`           | FastAPI Analytics API | 8000 | `curl http://localhost:8000/health`         |
+| `Dockerfile.pipeline`  | Data Pipeline         | -    | -                                           |
+| `Dockerfile.dashboard` | Streamlit Dashboard   | 8501 | `curl http://localhost:8501/_stcore/health` |
+
+Build and verify each:
+
+```bash
+docker build -t abaco-api -f Dockerfile .
+docker build -t abaco-pipeline -f Dockerfile.pipeline .
+docker build -t abaco-dashboard -f Dockerfile.dashboard .
+```
+
+Test the dashboard stack locally:
+
+```bash
+docker-compose -f docker-compose.dashboard.yml up -d
+# Verify at http://localhost:8501
+docker-compose -f docker-compose.dashboard.yml down
+```
+
+---
+
+## 8. CI / GitHub Actions Workflow Health
+
+### 8.1 Active Workflows (13)
+
+Verify these are green on `main` in GitHub Actions:
+
+| Workflow File                   | Purpose                                        | Trigger                                               |
+| ------------------------------- | ---------------------------------------------- | ----------------------------------------------------- |
+| `pr-checks.yml`                 | Python QA (ruff, black, pytest)                | PR events                                             |
+| `unified-tests.yml`             | Unit + integration + multi-agent + smoke tests | Push to main/develop, PRs                             |
+| `deployment.yml`                | Deploy to production                           | Push to main, manual                                  |
+| `docker.yml`                    | Build/push Docker images to ghcr.io            | Dockerfile changes, manual                            |
+| `daily-ingest.yml`              | Daily data ingestion pipeline                  | Cron 2 AM UTC, manual                                 |
+| `security-scan.yml`             | CodeQL + Snyk + Bandit + Safety                | Push to main, PRs, Monday schedule                    |
+| `model_evaluation.yml`          | Model evaluation + threshold checks            | PRs, nightly 2 AM UTC                                 |
+| `agents_unified_pipeline.yml`   | Agent pipeline orchestration + validation      | Cron 5:15 AM UTC, manual                              |
+| `cost-regression-detection.yml` | Cost benchmark on agent changes                | PRs touching src/agents/ or config/cost_baselines.yml |
+| `dependencies.yml`              | Auto-update dependencies                       | Monday 8 AM UTC, manual                               |
+| `cleanup-old-runs.yml`          | Delete old workflow runs (>15 days)            | Sunday 2 AM UTC, manual                               |
+| `ci-web.yml`                    | Web frontend CI (placeholder)                  | Push/PR                                               |
+| `azure-static-web-apps-*.yml`   | Azure Static Web Apps                          | Auto-generated                                        |
+
+### 8.2 Disabled Workflows (9)
+
+Located in `.github/workflows/.disabled/`. These were disabled due to failures or being unused. Verify none have been accidentally re-enabled:
+
+```bash
+ls .github/workflows/.disabled/
+```
+
+**Expected**: 9 `.yml.disabled` files (agent-checklist-validation, azure_diagnostics, batch_export_scheduled, code-maintenance, customer_segmentation, financial_forecast, historical_supabase_integration, investor_reporting, security-scan).
+
+---
+
+## 9. Static Analysis & Security
+
+### 9.1 Python Compile + Lint
 
 ```bash
 python -m compileall -q src python
-pylint src python || true
+make lint
+# Or manually:
+# ruff check src python
+# black --check src python
+# pylint src python || true
 ```
 
-Fix any errors; warnings are acceptable only if understood and documented.
+### 9.2 Trunk Check (Full Linter Suite)
 
-#### 8.2 Markdown & YAML
+Trunk orchestrates 20+ linters (bandit, black, flake8, gitleaks, hadolint, isort, markdownlint, mypy, pylint, ruff, shellcheck, yamllint, etc.). Run the full check:
 
 ```bash
-markdownlint-cli2 "**/*.md" --ignore node_modules --ignore .venv || true
-yamllint . || true
+trunk check --all
 ```
 
-No new MD0xx violations (headings, lists, tables, fences). No YAML syntax errors or critical style issues in .github/workflows, config/, infra/, openapi.yaml, etc.
-
-#### 8.3 Secret scanning
+### 9.3 Secret Scanning
 
 ```bash
 gitleaks detect --no-banner --redact || true
 ```
 
-**Confirm**: No API keys, secrets, passwords, or key-like patterns in committed files. .env.example and other templates use placeholders only.
+**Confirm**: No API keys, secrets, or key-like patterns in committed files. `.env.example` and `n8n/.env.example` use placeholders only.
 
-#### 8.4 Security & dependency scans (CI)
-
-Confirm in GitHub Actions: CodeQL Analysis: passing; Snyk dependency scan: clean or risk accepted and documented; Python Security Audit: safety/bandit have no untriaged critical findings.
+### 9.4 Dependency Vulnerability Scan
 
 ```bash
 pip-audit
 ```
 
-### 9. Baseline Comparison – No Hidden Regressions
-
-Compare current main against the baseline Tag v1.0.0-baseline:
-
-```bash
-git diff v1.0.0-baseline..main --stat
-```
-
-**Confirm**: Every difference is understood and intentional. No reintroduction of: sample/demo/test-only artifacts, weakened RLS or security policies, removed logging/observability hooks.
-
-Optionally, compare test counts to baseline (documented in docs/SPRINT_STATUS_2026_02_04.md):
-
-```bash
-pytest tests/ -q > /tmp/tests_current.txt 2>&1
-grep -E "tests collected|passed|failed|skipped" docs/SPRINT_STATUS_2026_02_04.md
-grep -E "tests collected|passed|failed|skipped" /tmp/tests_current.txt
-```
-
-Any deltas must be explained (new tests added, expected skips, etc.).
+Also confirm in GitHub Actions that the `security-scan.yml` workflow (CodeQL + Snyk + Bandit + Safety) is passing.
 
 ---
 
-## Final Go / No-Go Confirmation (Team Reply)
+## 10. Infrastructure Configuration
 
-In the deployment channel, each responsible owner replies with:
+### 10.1 Azure Bicep (infra/)
+
+The `infra/` directory contains Azure Bicep templates:
+
+- `main.bicep` - Main infrastructure
+- `appinsights.bicep` - Application Insights
+- `loganalytics-workspace.bicep` - Log Analytics
+- `main.parameters.json` - Parameters
+
+Verify parameters are correct for production:
+
+```bash
+cat infra/main.parameters.json
+```
+
+### 10.2 Environment Variables
+
+Cross-check `.env.example` against the actual `.env` to ensure all required variables are set:
+
+```bash
+diff <(grep -oP '^[A-Z_]+' .env.example | sort) <(grep -oP '^[A-Z_]+' .env | sort)
+```
+
+Key variable groups (from `.env.example`):
+
+- **Supabase**: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DATABASE_URL`, `SUPABASE_JWT_SECRET`
+- **LLM/Agents**: `AGENT_PROVIDER`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`
+- **Observability**: `ENABLE_OTEL`, `OTEL_ENDPOINT`, `APPLICATIONINSIGHTS_CONNECTION_STRING`
+- **Application**: `NODE_ENV`, `LOG_LEVEL`, `PIPELINE_RUN_SCHEDULE`
+
+### 10.3 N8N Automation
+
+Verify n8n configuration if using webhook-based flows:
+
+```bash
+cat n8n/.env.example
+ls n8n/workflows/
+```
+
+---
+
+## 11. Deployment Execution
+
+### Option A: Azure App Service (Primary)
+
+Use the deployment script:
+
+```bash
+bash scripts/deployment/deploy_to_azure.sh
+```
+
+This script:
+
+1. Validates git state (clean, on main, synced)
+2. Runs local tests
+3. Triggers `deployment.yml` via GitHub CLI
+4. Polls workflow status (10-minute timeout)
+5. Runs health checks against https://abaco-analytics-dashboard.azurewebsites.net
+
+### Option B: Docker Stack (Self-Hosted)
+
+```bash
+bash scripts/deployment/deploy_stack.sh
+```
+
+This builds and brings up `docker-compose.dashboard.yml`.
+
+### Post-Deploy Health Check
+
+```bash
+bash scripts/deployment/production_health_check.sh
+```
+
+Checks: application health, response time, git status, code quality, environment, and test suite.
+
+---
+
+## 12. Rollback Plan
+
+If deployment fails, rollback is available:
+
+```bash
+bash scripts/deployment/rollback_deployment.sh [commits_back]
+# Default: 1 commit back
+```
+
+This script:
+
+1. Validates branch state
+2. Shows target commit details
+3. Requires explicit confirmation
+4. Resets and force-pushes
+5. Triggers redeployment
+6. Runs health checks
+
+---
+
+## Final Go / No-Go Confirmation
+
+Each responsible owner replies with:
 
 - **Git/Branch**: CLEAN (main = origin/main, no uncommitted changes)
-- **Tests**: PASS (details: X passed, Y skipped, Z known/accepted)
-- **Multi-agent & Pipeline**: PASS (or documented limitations)
-- **Supabase & RLS**: PASS (migrations applied, RLS verified, no open security alerts)
-- **Grafana/Monitoring**: PASS (dashboards & metrics confirmed for this build)
-- **CI/Workflows**: PASS (all relevant GitHub Actions jobs green)
-- **Security & Secrets**: PASS (CodeQL, Snyk, gitleaks; no hardcoded secrets)
-- **Docs & Governance**: PASS (status docs updated, no sample/demo data, planning aligned)
+- **Tests**: PASS (X passed, Y skipped, Z known/accepted)
+- **Agent Tests**: PASS (or documented limitations for credential-dependent tests)
+- **Supabase & RLS**: PASS (migrations applied, RLS verified via test-rls.js)
+- **Monitoring**: PASS (Grafana dashboards load, Prometheus scraping, alerts configured)
+- **Docker Builds**: PASS (all 3 Dockerfiles build successfully)
+- **CI/Workflows**: PASS (all 13 active GitHub Actions workflows green)
+- **Security**: PASS (gitleaks clean, pip-audit clean, Trunk check passing)
+- **Infrastructure**: PASS (Bicep parameters correct, env vars complete)
 
-If any item is not PASS: Deployment is blocked. Open a short incident note with: Problem, Risk, Fix plan and owner. Only after the fix is implemented and re-validated may deployment proceed.
-
----
-
-## Repository Context
-
-The Abaco Loans Analytics repository represents a comprehensive fintech platform focused on loan portfolio management, featuring:
-
-- A unified 4-phase data pipeline (Ingestion, Transformation, Calculation, Output)
-- AI multi-agent systems with 9 specialized agents (e.g., Risk Assessment, Fraud Detection)
-- Real-time visualizations via Streamlit and Grafana
-- Secure data handling through Supabase with Row Level Security (RLS)
-
-Integrations: Prometheus (metrics), OpenTelemetry (tracing), Prefect (orchestration), LangChain (AI agents), n8n (workflows), Azure (cloud deployment).
-
----
-
-## Alignment Analysis
-
-| Category        | Original Prompt Issues                                                              | Improvements Made                                                                            | Repo Alignment                                      |
-| --------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| Script Paths    | Assumes root-level `repo_maintenance.sh`; mentions non-existent `start_grafana.sh`. | Updated to `scripts/maintenance/repo_maintenance.sh`; replaced with `docker-compose`.        | Matches scripts/ structure; grafana/ uses Docker.   |
-| Docs References | References non-existent `CLEANUP_SCRIPTS_AUDIT.md`.                                 | Removed; focused on existing `MAINTENANCE_SCRIPTS_AUDIT.md` and `RLS_VERIFICATION_TESTS.md`. | docs/ has 90+ files, including sprint and RLS docs. |
-| Test Suite      | Assumes specific subdirs; no mention of LangChain.                                  | Added LangChain agent confirmation; verbose flags.                                           | tests/ has agents/, integration/; ~232 tests total. |
-| Supabase        | No env vars; assumes project ID.                                                    | Added env exports; noted fictional ID.                                                       | supabase/ configs use placeholders; RLS in docs/.   |
-| CI Workflows    | Mismatched names (e.g., "Python QA").                                               | Updated to actual: Security Scan, Model Evaluation.                                          | Actions page shows green runs for key workflows.    |
-| Security Tools  | Basic scans only.                                                                   | Added `pip-audit` for deps.                                                                  | .github/ has CodeQL, Snyk integrated.               |
+If any item is not PASS: Deployment is blocked. Document the problem, risk, and fix plan. Only proceed after the fix is implemented and re-validated.
