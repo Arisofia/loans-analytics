@@ -16,7 +16,7 @@ import pandas as pd
 import streamlit as st
 
 from api_client import AbacoAnalyticsApiClient
-from logging_config import init_sentry
+from python.logging_config import init_sentry
 
 init_sentry(service_name="streamlit_app")
 

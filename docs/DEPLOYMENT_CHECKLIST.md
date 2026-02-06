@@ -192,13 +192,13 @@ bash scripts/monitoring/start_monitoring.sh
 
 This brings up Prometheus, Grafana, and Alertmanager via `docker-compose.monitoring.yml`:
 
-- **Prometheus**: http://localhost:9090 (60s scrape interval, 30-day retention)
-- **Grafana**: http://localhost:3001 (note: port 3001, not 3000)
-- **Alertmanager**: http://localhost:9093
+- **Prometheus**: <http://localhost:9090> (60s scrape interval, 30-day retention)
+- **Grafana**: <http://localhost:3001> (note: port 3001, not 3000)
+- **Alertmanager**: <http://localhost:9093>
 
 ### 6.2 Verify Grafana Dashboards
 
-Access Grafana at http://localhost:3001. Confirm these dashboards load with live data:
+Access Grafana at <http://localhost:3001>. Confirm these dashboards load with live data:
 
 - `kpi-overview.json` - KPI tracking
 - `supabase-postgresql.json` - Database metrics
@@ -260,7 +260,7 @@ Test the dashboard stack locally:
 
 ```bash
 docker-compose -f docker-compose.dashboard.yml up -d
-# Verify at http://localhost:8501
+# Verify at <http://localhost:8501>
 docker-compose -f docker-compose.dashboard.yml down
 ```
 
@@ -398,7 +398,7 @@ This script:
 2. Runs local tests
 3. Triggers `deployment.yml` via GitHub CLI
 4. Polls workflow status (10-minute timeout)
-5. Runs health checks against https://abaco-analytics-dashboard.azurewebsites.net
+5. Runs health checks against <https://abaco-analytics-dashboard.azurewebsites.net>
 
 ### Option B: Docker Stack (Self-Hosted)
 
