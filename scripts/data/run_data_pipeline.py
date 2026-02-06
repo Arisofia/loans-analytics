@@ -22,8 +22,10 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from python.logging_config import get_logger  # noqa: E402
+from python.logging_config import get_logger, init_sentry  # noqa: E402
 from src.pipeline.orchestrator import UnifiedPipeline  # noqa: E402
+
+init_sentry(service_name="data_pipeline")
 
 logger = get_logger(__name__)
 

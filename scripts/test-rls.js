@@ -24,8 +24,12 @@ const { createClient } = require('@supabase/supabase-js')
 const config = {
   supabaseUrl:
     process.env.SUPABASE_URL || 'https://pljjgdtczxmrxydfuaep.supabase.co',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsampnZHRjenhtcnh5ZGZ1YWVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNjc0NjQsImV4cCI6MjA3ODg0MzQ2NH0.xGhXNb7d-9wyTD4gQ3h94cqitwUZGxNozt4Dtqv1dEg',
-  serviceRoleKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsampnZHRjenhtcnh5ZGZ1YWVwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzI2NzQ2NCwiZXhwIjoyMDc4ODQzNDY0fQ.oI2VEuQgsx0jr108JqQ6IvLfNPtpggcFUsOkKSXYYKU',
+  anonKey:
+    process.env.SUPABASE_ANON_KEY ||
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsampnZHRjenhtcnh5ZGZ1YWVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNjc0NjQsImV4cCI6MjA3ODg0MzQ2NH0.xGhXNb7d-9wyTD4gQ3h94cqitwUZGxNozt4Dtqv1dEg',
+  serviceRoleKey:
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsampnZHRjenhtcnh5ZGZ1YWVwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzI2NzQ2NCwiZXhwIjoyMDc4ODQzNDY0fQ.oI2VEuQgsx0jr108JqQ6IvLfNPtpggcFUsOkKSXYYKU',
   testUserEmail: process.env.TEST_USER_EMAIL,
   testUserPassword: process.env.TEST_USER_PASSWORD,
 }
@@ -151,13 +155,7 @@ async function testServiceRoleFullAccess() {
   }
 
   try {
-    const adminClient = createClient(config.supabaseUrl, config.anonKey, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${config.serviceRoleKey}`,
-        },
-      },
-    })
+    const adminClient = createClient(config.supabaseUrl, config.serviceRoleKey)
 
     // Test read access to customer_data
     const { data, error } = await adminClient
@@ -316,13 +314,7 @@ async function testRLSEnabled() {
   }
 
   try {
-    const adminClient = createClient(config.supabaseUrl, config.anonKey, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${config.serviceRoleKey}`,
-        },
-      },
-    })
+    const adminClient = createClient(config.supabaseUrl, config.serviceRoleKey)
 
     // Query system catalog (requires admin) - RPC method may not exist
     let data = null

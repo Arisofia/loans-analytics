@@ -18,6 +18,7 @@ from python.config.tracing_setup import enable_auto_instrumentation, init_tracin
 from python.kpis.catalog_processor import KPICatalogProcessor  # noqa: E402
 from python.utils.dashboard import format_kpi_value, kpi_label  # noqa: E402
 from python.utils.normalization import normalize_dataframe_complete  # noqa: E402
+from python.utils.usage_tracker import UsageTracker  # noqa: E402
 from streamlit_app.components.analytics_tabs import render_advanced_intelligence  # noqa: E402
 from streamlit_app.components.charts import (  # noqa: E402
     render_cashflow_trends,
@@ -48,6 +49,14 @@ except ImportError:
 except Exception as exc:
     logger.error("Error initializing tracing: %s", exc)
 
+
+# Initialize usage tracker
+usage_tracker = UsageTracker()
+
+# Track dashboard visit
+if "tracked_visit" not in st.session_state:
+    usage_tracker.track("dashboard", "visit")
+    st.session_state["tracked_visit"] = True
 
 def resolve_exports_dir(create: bool = False) -> Path:
     for candidate in EXPORTS_DIR_CANDIDATES:
@@ -350,6 +359,7 @@ with st.sidebar:
                 st.session_state["data"] = final_data
                 st.session_state["loaded"] = True
                 st.success("Data ingested successfully.")
+                usage_tracker.track("data_ingestion", "manual_upload", file_count=len(uploaded_files))
                 with st.spinner("Generating KPI exports from uploaded data..."):
                     try:
                         output_path = generate_kpi_exports(
