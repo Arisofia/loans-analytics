@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -186,7 +186,9 @@ class Settings(BaseSettings):
     kpis: KPISettings = KPISettings()
     api: ApiSettings = ApiSettings()
     supabase_pool: SupabasePoolSettings = SupabasePoolSettings()
-    database_url: str = Field(..., env="SUPABASE_DATABASE_URL")
+    database_url: Optional[str] = Field(
+        default=None, description="Supabase database URL for connection pooling"
+    )
 
     @classmethod
     def load_settings(cls) -> "Settings":
