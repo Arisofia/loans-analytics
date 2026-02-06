@@ -3,49 +3,51 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
-
-class DrilldownStatusResponse(BaseModel):
-    id: str
-    status: str
-    created_at: datetime
-
+# --- Schemas from openapi.yaml ---
 
 class LoanRecord(BaseModel):
-    id: str
-    amount: Decimal
-    status: str
-    disbursed_at: datetime
-    metadata: Optional[Dict[str, Any]] = None
+    loan_amount: float = Field(..., description="Original loan amount")
+    appraised_value: float = Field(..., description="Appraised value of the collateral property")
+    borrower_income: float = Field(..., description="Annual borrower income")
+    monthly_debt: float = Field(..., description="Monthly debt obligations")
+    loan_status: str = Field(..., description="Current loan status",
+                              examples=["current", "30-59 days past due", "90+ days past due"])
+    interest_rate: float = Field(..., description="Annual interest rate as decimal (e.g., 0.035 for 3.5%)",
+                                 ge=0, le=1)
+    principal_balance: float = Field(..., description="Current outstanding principal balance")
 
 
 class LoanPortfolioRequest(BaseModel):
-    loan_ids: List[str]
-    context: Optional[Dict[str, Any]] = None
+    loans: List[LoanRecord] = Field(..., min_items=1, max_items=10000,
+                                     description="Array of loan records for analysis")
+    # Adding loan_ids here for backwards compatibility if needed, but primary input is 'loans'
+    # loan_ids: Optional[List[str]] = Field(None, description="Optional list of loan IDs for filtering/context")
 
 
 class KpiContext(BaseModel):
+    metric: Optional[str] = Field(None, description="Name of the KPI metric")
+    timestamp: Optional[datetime] = Field(None, description="Calculation timestamp")
+    formula: Optional[str] = Field(None, description="Formula used for calculation")
+    sample_size: Optional[int] = Field(None, description="Number of records used in calculation")
     period: str
     calculation_date: datetime
     filters: Optional[Dict[str, Any]] = None
 
 
 class KpiSingleResponse(BaseModel):
-    id: str
-    name: str
-    value: float
-    unit: str
+    value: float = Field(..., description="Calculated KPI value")
     context: KpiContext
 
 
 class KpiResponse(BaseModel):
-    kpis: List[KpiSingleResponse]
-
-
-class AuditEntry(BaseModel):
-    timestamp: datetime
-    user_id: str
-    action: str
-    details: Dict[str, Any]
+    PAR30: Optional[KpiSingleResponse] = None
+    PAR90: Optional[KpiSingleResponse] = None
+    CollectionRate: Optional[KpiSingleResponse] = None
+    PortfolioHealth: Optional[KpiSingleResponse] = None
+    LTV: Optional[KpiSingleResponse] = None
+    DTI: Optional[KpiSingleResponse] = None
+    PortfolioYield: Optional[KpiSingleResponse] = None
+    audit_trail: Optional[List[Dict[str, Any]]] = None # Changed from AuditEntry as it's not defined in this file.
 
 
 class RiskLoan(BaseModel):
@@ -55,8 +57,10 @@ class RiskLoan(BaseModel):
 
 
 class RiskAlertsResponse(BaseModel):
-    risk_level: str
-    high_risk_loans: List[RiskLoan]
+    high_risk_count: Optional[int] = Field(None, description="Number of high-risk loans identified")
+    total_loans: Optional[int] = Field(None, description="Total loans analyzed")
+    risk_ratio: Optional[float] = Field(None, description="Percentage of portfolio flagged as high-risk")
+    high_risk_loans: List[RiskLoan] = Field(..., description="List of high-risk loans")
 
 
 class FullAnalysisResponse(BaseModel):
@@ -67,13 +71,10 @@ class FullAnalysisResponse(BaseModel):
 
 
 class DataQualityResponse(BaseModel):
-    score: float
-    issues: List[str]
-
-
-class ValidationResponse(BaseModel):
-    valid: bool
-    errors: Optional[List[str]] = None
+    duplicate_ratio: Optional[float] = None
+    average_null_ratio: Optional[float] = None
+    invalid_numeric_ratio: Optional[float] = None
+    data_quality_score: Optional[float] = Field(None, ge=0, le=100)
 
 
 class ValidationErrorDetail(BaseModel):
@@ -86,6 +87,15 @@ class ValidationErrorResponse(BaseModel):
     detail: List[ValidationErrorDetail]
 
 
+class ValidationResponse(BaseModel):
+    valid: bool
+    message: Optional[str] = None
+    columns_present: Optional[List[str]] = None
+
+
 class ErrorResponse(BaseModel):
-    code: str
+    error: str
     message: str
+    details: Optional[Dict[str, Any]] = None
+
+# --- End Schemas from openapi.yaml ---
