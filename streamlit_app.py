@@ -9,11 +9,17 @@ Run with:
     streamlit run streamlit_app.py
 """
 
+from logging_config import init_sentry
+
+init_sentry(service_name="streamlit_app")
+
 import json
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+
+from api_client import AbacoAnalyticsApiClient
 
 # Set page config
 st.set_page_config(
@@ -184,8 +190,55 @@ elif page == "📊 Dashboard" and selected_run:
 
         kpis = calculation.get("kpis", {})
 
+        st.subheader("🛰 Backend Portfolio Analysis (API)")
+
+        portfolio_request = results.get("portfolio")
+
+        if portfolio_request:
+            api_client = AbacoAnalyticsApiClient()
+            col_api1, col_api2 = st.columns(2)
+            with col_api1:
+                if st.button("Run Full Analysis via API"):
+                    with st.spinner("Calling Abaco Analytics API..."):
+                        try:
+                            full_analysis = api_client.run_full_analysis(portfolio_request)
+                            st.success("Full analysis completed via API.")
+                            st.json(full_analysis)
+                        except Exception as exc:
+                            st.error(f"API call failed: {exc}")
+            with col_api2:
+                if st.button("Check Drilldown Status via API"):
+                    with st.spinner("Fetching drilldown statuses..."):
+                        try:
+                            statuses = api_client.get_drilldown_statuses()
+                            st.json(statuses)
+                        except Exception as exc:
+                            st.error(f"Status fetch failed: {exc}")
+        else:
+            st.info("No portfolio payload found in results to send to the API.")
+
         if kpis:
             kpi_df = pd.DataFrame([kpis])
+
+            with st.expander("🤖 AI Portfolio Insights", expanded=False):
+                st.markdown("Get strategic, AI-generated insights on this run's KPIs.")
+
+                ai_context = st.text_area(
+                    "Optional context (e.g., target market, constraints, current strategy)",
+                    value="Retail loans portfolio, focus on risk-adjusted growth and NPL reduction.",
+                )
+
+                if st.button("Generate AI Insights for this run"):
+                    with st.spinner("Generating AI insights..."):
+                        try:
+                            from ai_insights import generate_kpi_insights
+
+                            insights = generate_kpi_insights(kpis=kpis, context=ai_context)
+                            st.markdown("### Strategic Insights")
+                            st.markdown(insights)
+                        except Exception as exc:
+                            st.error(f"AI insights generation failed: {exc}")
+                            st.info("Check OPENAI_API_KEY and network connectivity.")
 
             # Display as metrics
             kpi_cols = st.columns(min(3, len(kpis)))
