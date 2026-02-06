@@ -58,11 +58,13 @@ async def calculate_all_kpis(
 ):
     """
     Get all portfolio KPIs.
-    If loan_ids are provided, calculates in real-time. Otherwise, returns latest snapshot.
+    If loan data is provided, calculates in real-time. Otherwise, returns latest snapshot.
     """
     try:
-        if request.loan_ids:
-            kpis = await service.calculate_kpis_for_portfolio(request.loan_ids)
+        if request.loans:
+            # Extract loan_ids from the provided loan records
+            loan_ids_from_request = [loan.id for loan in request.loans]
+            kpis = await service.calculate_kpis_for_portfolio(loan_ids_from_request)
         else:
             kpis = await service.get_latest_kpis()
         return KpiResponse(kpis=kpis)
@@ -78,7 +80,7 @@ async def get_single_kpi(
 ):
     """
     Get a specific KPI by ID (par30, par90, etc.)
-    If loan_ids are provided, calculates in real-time. Otherwise, returns latest snapshot.
+    If loan data is provided, calculates in real-time. Otherwise, returns latest snapshot.
     """
     # Map path-style IDs to DB keys if necessary
     kpi_key_map = {
@@ -94,9 +96,10 @@ async def get_single_kpi(
     db_key = kpi_key_map.get(kpi_id.lower(), kpi_id.upper())
 
     try:
-        if request.loan_ids:
+        if request.loans:
+            loan_ids_from_request = [loan.id for loan in request.loans]
             # Calculate all for context and pick the one requested
-            kpis = await service.calculate_kpis_for_portfolio(request.loan_ids)
+            kpis = await service.calculate_kpis_for_portfolio(loan_ids_from_request)
             kpi = next((k for k in kpis if k.id == db_key), None)
         else:
             kpi = await service.get_kpi_by_id(db_key)
@@ -159,11 +162,13 @@ async def get_full_analysis(
         # We use a synthetic trace_id for this request
         trace_id = str(uuid.uuid4())
 
+        loan_ids_from_request = [loan.id for loan in request.loans] if request.loans else []
+
         initial_context = {
             "portfolio_data": (
                 "Recent KPI Snapshot:\n"
                 f"{kpi_summary}\n"
-                f"Target Loans: {', '.join(request.loan_ids)}"
+                f"Target Loans: {', '.join(loan_ids_from_request)}"
             )
         }
 
@@ -196,33 +201,34 @@ async def get_full_analysis(
         logger.error(f"Error in get_full_analysis: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
-@app.get("/analytics/data-quality", response_model=DataQualityResponse) if app else lambda f: f
-async def get_data_quality(
-    service: KPIService = Depends(get_kpi_service)
-):
-    """
-    Get overall data quality score and identified issues.
-    """
-    try:
-        dq_data = await service.get_data_quality_score()
-        return DataQualityResponse(**dq_data)
-    except Exception as e:
-        logger.error(f"Error in get_data_quality: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-@app.post("/analytics/validate", response_model=ValidationResponse) if app else lambda f: f
-async def validate_portfolio(
+@app.post("/data-quality/profile", response_model=DataQualityResponse) if app else lambda f: f
+async def get_data_quality_profile(
     request: LoanPortfolioRequest = Body(...),
     service: KPIService = Depends(get_kpi_service)
 ):
     """
-    Validate a loan portfolio subset for completeness and existence.
+    Generate data quality profile for the provided loan portfolio data.
     """
     try:
-        validation_data = await service.validate_portfolio(request.loan_ids)
-        return ValidationResponse(**validation_data)
+        dq_profile = await service.get_data_quality_profile(request.loans)
+        return dq_profile
     except Exception as e:
-        logger.error(f"Error in validate_portfolio: {e}")
+        logger.error(f"Error in get_data_quality_profile: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
+
+@app.post("/data-quality/validate", response_model=ValidationResponse) if app else lambda f: f
+async def validate_loan_data(
+    request: LoanPortfolioRequest = Body(...),
+    service: KPIService = Depends(get_kpi_service)
+):
+    """
+    Validates that the provided loan data contains all required columns and meets schema requirements.
+    """
+    try:
+        validation_result = await service.validate_loan_portfolio_schema(request.loans)
+        return validation_result
+    except Exception as e:
+        logger.error(f"Error in validate_loan_data: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 # Legacy endpoint preserved for backward compatibility

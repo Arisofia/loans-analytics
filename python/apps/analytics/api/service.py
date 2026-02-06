@@ -1,9 +1,16 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
+
+import pandas as pd
+from starlette.concurrency import run_in_threadpool
 
 from python.supabase_pool import get_pool
-from python.apps.analytics.api.models import KpiSingleResponse, KpiContext
+from python.apps.analytics.api.models import (
+    KpiSingleResponse, KpiContext, LoanRecord,
+    DataQualityResponse, ValidationResponse, ErrorResponse
+)
 from python.logging_config import get_logger
+from python import validation
 
 logger = get_logger(__name__)
 
@@ -133,59 +140,101 @@ class KPIService:
             logger.error(f"Error fetching risk alerts: {e}")
             raise
 
-    async def get_data_quality_score(self) -> dict:
-        """Calculate overall data quality score based on completeness and validity."""
-        pool = await get_pool()
+    def _convert_loan_records_to_dataframe(self, loans: List[LoanRecord]) -> pd.DataFrame:
+        """Converts a list of LoanRecord Pydantic models to a Pandas DataFrame."""
+        return pd.DataFrame([loan.model_dump() for loan in loans])
 
-        query = """
-            SELECT 
-                count(*) as total,
-                count(product_type) as product_type_count,
-                count(currency) as currency_count,
-                count(disbursement_date) as date_count
-            FROM public.loan_data
+    async def get_data_quality_profile(self, loans: List[LoanRecord]) -> DataQualityResponse:
         """
-
+        Calculates an overall data quality profile based on completeness, validity, and duplicates
+        of an incoming list of LoanRecord objects.
+        """
         try:
-            rec = await pool.fetchrow(query)
-            if not rec or rec["total"] == 0:
-                return {"score": 100.0, "issues": []}
+            df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
 
-            total = rec["total"]
-            score = (
-                (rec["product_type_count"] + rec["currency_count"] + rec["date_count"])
-                / (3 * total)
-                * 100
-            )
+            total_records = len(df)
+            if total_records == 0:
+                return DataQualityResponse(score=100.0, issues=[])
+
+            # Duplicate Ratio
+            duplicate_ratio = df.duplicated().sum() / total_records * 100.0
+
+            # Average Null Ratio
+            # We'll check for nulls across all expected columns from the LoanRecord model
+            all_loan_record_columns = LoanRecord.model_fields.keys()
+            null_counts = df[list(all_loan_record_columns)].isnull().sum()
+            average_null_ratio = (null_counts.sum() / (total_records * len(all_loan_record_columns))) * 100.0
+
+            # Invalid Numeric Ratio (simplified example)
+            # This would require more detailed validation from `validation.py`
+            # For now, let's use a placeholder. Real implementation would involve iterating
+            # through numeric columns and applying `validation.safe_numeric`.
+            invalid_numeric_ratio = 0.0 # Placeholder
+
+            # Overall Score - simple inverse of issues
+            # A more sophisticated score would weigh different issues
+            data_quality_score = 100.0 - (duplicate_ratio * 0.5 + average_null_ratio * 0.5)
+            data_quality_score = max(0.0, data_quality_score) # Ensure score is not negative
 
             issues = []
-            if rec["product_type_count"] < total:
-                issues.append(f"Missing product_type for {total - rec['product_type_count']} loans")
-            if rec["currency_count"] < total:
-                issues.append(f"Missing currency for {total - rec['currency_count']} loans")
+            if duplicate_ratio > 0:
+                issues.append(f"Duplicate records found: {duplicate_ratio:.2f}%")
+            if average_null_ratio > 0:
+                issues.append(f"Average null values across columns: {average_null_ratio:.2f}%")
 
-            return {"score": round(score, 2), "issues": issues}
+            return DataQualityResponse(
+                duplicate_ratio=round(duplicate_ratio, 2),
+                average_null_ratio=round(average_null_ratio, 2),
+                invalid_numeric_ratio=round(invalid_numeric_ratio, 2),
+                data_quality_score=round(data_quality_score, 2),
+                issues=issues
+            )
         except Exception as e:
-            logger.error(f"Error fetching data quality score: {e}")
+            logger.error(f"Error calculating data quality profile for actor {self.actor}: {e}")
             raise
 
-    async def validate_portfolio(self, loan_ids: List[str]) -> dict:
-        """Validate a specific portfolio subset."""
-        # For now, just check if loans exist
-        pool = await get_pool()
-        query = "SELECT loan_id FROM public.loan_data WHERE loan_id = ANY($1)"
-
+    async def validate_loan_portfolio_schema(self, loans: List[LoanRecord]) -> ValidationResponse:
+        """
+        Validates the schema and data types of an incoming list of LoanRecord objects.
+        """
         try:
-            records = await pool.fetch(query, loan_ids)
-            found_ids = {r["loan_id"] for r in records}
-            missing = [lid for lid in loan_ids if lid not in found_ids]
+            df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
 
-            if missing:
-                return {"valid": False, "errors": [f"Loans not found: {', '.join(missing)}"]}
-            return {"valid": True, "errors": []}
+            errors: List[str] = []
+            required_columns = list(LoanRecord.model_fields.keys())
+            
+            # Check for missing columns in the DataFrame
+            missing_cols = validation._missing_columns(df, required_columns)
+            if missing_cols:
+                errors.append(f"Missing required columns: {', '.join(missing_cols)}")
+            
+            # Basic type validation using pandas dtypes and explicit checks
+            # This is a simplified example; full validation would be more extensive
+            for field_name, field_info in LoanRecord.model_fields.items():
+                if field_name not in df.columns:
+                    continue # Already reported missing
+
+                if field_info.annotation == float:
+                    # Check if column can be coerced to numeric. `validation.safe_numeric` could be used here.
+                    if not pd.api.types.is_numeric_dtype(df[field_name]):
+                        errors.append(f"Column '{field_name}' is not numeric.")
+                elif field_info.annotation == str:
+                    if not pd.api.types.is_string_dtype(df[field_name]):
+                        errors.append(f"Column '{field_name}' is not string type.")
+                elif field_info.annotation == datetime:
+                    # Check if column can be parsed to datetime. `validation.validate_iso8601_dates` could be used here.
+                    try:
+                        pd.to_datetime(df[field_name], errors='raise')
+                    except Exception:
+                        errors.append(f"Column '{field_name}' contains invalid datetime format.")
+
+            if errors:
+                return ValidationResponse(valid=False, errors=errors)
+            return ValidationResponse(valid=True)
         except Exception as e:
-            logger.error(f"Error validating portfolio: {e}")
+            logger.error(f"Error validating loan portfolio schema for actor {self.actor}: {e}")
             raise
+
 
     async def calculate_kpis_for_portfolio(self, loan_ids: List[str]) -> List[KpiSingleResponse]:
         """Calculate KPIs in real-time for a specific portfolio subset.

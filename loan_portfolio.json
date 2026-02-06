@@ -1,0 +1,23 @@
+{
+  "loan_ids": ["loan_001", "loan_002"],
+  "loans": [
+    {
+      "loan_amount": 100000.0,
+      "appraised_value": 120000.0,
+      "borrower_income": 50000.0,
+      "monthly_debt": 1000.0,
+      "loan_status": "current",
+      "interest_rate": 0.04,
+      "principal_balance": 95000.0
+    },
+    {
+      "loan_amount": 200000.0,
+      "appraised_value": 250000.0,
+      "borrower_income": 80000.0,
+      "monthly_debt": 1500.0,
+      "loan_status": "30-59 days past due",
+      "interest_rate": 0.05,
+      "principal_balance": 190000.0
+    }
+  ]
+}
