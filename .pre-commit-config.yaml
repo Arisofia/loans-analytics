@@ -6,4 +6,8 @@ repos:
         types: [text]
       - id: end-of-file-fixer
       - id: check-yaml
-        args: ['--allow-multiple-documents']
+        args: ["--allow-multiple-documents"]
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4 # Use the latest stable version
+    hooks:
+      - id: gitleaks
