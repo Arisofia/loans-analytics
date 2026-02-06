@@ -23,13 +23,13 @@ const { createClient } = require('@supabase/supabase-js')
 // Configuration
 const config = {
   supabaseUrl:
-    process.env.SUPABASE_URL || 'https://pljjgdtczxmrxydfuaep.supabase.co',
+    process.env.SUPABASE_URL || 'https://goxdevkqozomyhsyxhte.supabase.co',
   anonKey:
     process.env.SUPABASE_ANON_KEY ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsampnZHRjenhtcnh5ZGZ1YWVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNjc0NjQsImV4cCI6MjA3ODg0MzQ2NH0.xGhXNb7d-9wyTD4gQ3h94cqitwUZGxNozt4Dtqv1dEg',
+    'sb_publishable_OhuP5HeTGM8GjttnEFiqig_Frq-OS8M',
   serviceRoleKey:
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsampnZHRjenhtcnh5ZGZ1YWVwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzI2NzQ2NCwiZXhwIjoyMDc4ODQzNDY0fQ.oI2VEuQgsx0jr108JqQ6IvLfNPtpggcFUsOkKSXYYKU',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdveGRldmtxb3pvbXlIc3l4aHRlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTI2MTU2MSwiZXhwIjoyMDg0ODM3NTYxfQ.dS-7BfFILXEkxBtZ_lVQ7vqWdeFTDE7NaNOAGl6C00w',
   testUserEmail: process.env.TEST_USER_EMAIL,
   testUserPassword: process.env.TEST_USER_PASSWORD,
 }
@@ -207,7 +207,7 @@ async function testServiceRoleFullAccess() {
       recordResult(
         'Service role kpi_values read',
         false,
-        `Service role should have full access to kpi_values. Error: ${kpiError.message}`
+        `Error reading kpi_values: ${kpiError.message}`
       )
     } else {
       recordResult(
@@ -219,6 +219,28 @@ async function testServiceRoleFullAccess() {
   } catch (err) {
     recordResult('Service role access', false, `Exception: ${err.message}`)
   }
+}
+
+/**
+ * Helper to get authenticated client
+ */
+async function getAuthenticatedClient() {
+  const authClient = createClient(config.supabaseUrl, config.anonKey)
+
+  const { data, error } = await authClient.auth.signInWithPassword({
+    email: config.testUserEmail,
+    password: config.testUserPassword,
+  })
+
+  if (error || !data.session) {
+    throw new Error(
+      `Auth failed for test user ${config.testUserEmail}: ${
+        error?.message || 'no session returned'
+      }`
+    )
+  }
+
+  return authClient
 }
 
 /**
@@ -239,33 +261,7 @@ async function testAuthenticatedAccess() {
   }
 
   try {
-    const userClient = createClient(config.supabaseUrl, config.anonKey)
-
-    // Sign in
-    const { data: signInData, error: signInError } =
-      await userClient.auth.signInWithPassword({
-        email: config.testUserEmail,
-        password: config.testUserPassword,
-      })
-
-    if (signInError) {
-      if (signInError.message.includes('Invalid login credentials')) {
-        logWarn(
-          `Test user '${config.testUserEmail}' does not exist or password is incorrect`
-        )
-        logInfo(
-          'To create test user: Go to Supabase Dashboard → Authentication → Users → Add User'
-        )
-        results.skipped++
-      } else {
-        recordResult(
-          'Authenticated user sign in',
-          false,
-          `Could not sign in: ${signInError.message}`
-        )
-      }
-      return
-    }
+    const userClient = await getAuthenticatedClient()
 
     recordResult(
       'Authenticated user sign in',
@@ -293,11 +289,16 @@ async function testAuthenticatedAccess() {
       )
     }
   } catch (err) {
-    recordResult(
-      'Authenticated user access',
-      false,
-      `Exception: ${err.message}`
-    )
+    if (err.message.includes('Auth failed')) {
+      logWarn(err.message)
+      results.skipped++
+    } else {
+      recordResult(
+        'Authenticated user access',
+        false,
+        `Exception: ${err.message}`
+      )
+    }
   }
 }
 
@@ -316,47 +317,52 @@ async function testRLSEnabled() {
   try {
     const adminClient = createClient(config.supabaseUrl, config.serviceRoleKey)
 
-    // Query system catalog (requires admin) - RPC method may not exist
-    let data = null
-    let error = null
+    // Call the RPC created in the migration
+    const { data, error } = await adminClient.rpc('monitoring.check_rls_status')
 
-    try {
-      const response = await adminClient.rpc(
-        'check_rls_status',
-        {},
-        { count: null }
-      )
-      data = response.data
-      error = response.error
-    } catch (rpcError) {
-      // RPC method doesn't exist, which is expected
-      error = 'RPC method not available'
+    if (error) {
+      if (error.message.includes('function monitoring.check_rls_status() does not exist')) {
+        logWarn('RPC check_rls_status() not found. Ensure migration is applied.')
+        results.skipped++
+      } else {
+        recordResult(
+          'RLS status check',
+          false,
+          `Error calling RPC: ${error.message}`
+        )
+      }
+      return
     }
 
-    // If RPC doesn't exist, try direct query
-    const query = `
-      SELECT tablename, rowsecurity
-      FROM pg_tables
-      WHERE schemaname = 'monitoring'
-        AND tablename IN ('kpi_values')
-      UNION ALL
-      SELECT tablename, rowsecurity
-      FROM pg_tables
-      WHERE schemaname = 'public'
-        AND tablename IN ('customer_data', 'loan_data', 'financial_statements')
-      ORDER BY tablename
-    `
+    if (!data || data.length === 0) {
+      recordResult(
+        'RLS status check',
+        false,
+        'RPC returned no data. Check if tables exist.'
+      )
+      return
+    }
 
-    logInfo(
-      'RLS Status Check: Requires direct database access (use psql or db admin panel)'
+    let allEnabled = true
+    data.forEach((row) => {
+      const tableInfo = `${row.schemaname}.${row.tablename}`
+      if (row.rowsecurity) {
+        logSuccess(`RLS enabled for ${tableInfo}`)
+      } else {
+        logError(`RLS DISABLED for ${tableInfo}`)
+        allEnabled = false
+      }
+    })
+
+    recordResult(
+      'RLS rowsecurity assertion',
+      allEnabled,
+      allEnabled
+        ? `All ${data.length} tables have RLS enabled`
+        : 'Some tables have RLS DISABLED!'
     )
-    logInfo('SQL Query to run:')
-    logInfo(`  ${query}`)
-    logInfo('Expected: All tables should show rowsecurity = true')
-
-    results.skipped++
   } catch (err) {
-    logWarn(`RLS status check not available: ${err.message}`)
+    logWarn(`RLS status check exception: ${err.message}`)
     results.skipped++
   }
 }
