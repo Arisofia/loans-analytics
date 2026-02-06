@@ -11,8 +11,8 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from python.utils.usage_tracker import UsageTracker
 from python.config.theme import ABACO_THEME
+from python.utils.usage_tracker import UsageTracker
 
 st.set_page_config(page_title="Usage Metrics - Abaco", layout="wide")
 
@@ -44,17 +44,17 @@ else:
     with col1:
         st.metric("Total Events", len(df))
     with col2:
-        st.metric("Unique Features", df['feature_name'].nunique())
+        st.metric("Unique Features", df["feature_name"].nunique())
     with col3:
-        st.metric("Unique Actions", df['action'].nunique())
+        st.metric("Unique Actions", df["action"].nunique())
 
     st.subheader("Event Log")
     st.dataframe(df.sort_values(by="timestamp", ascending=False), use_container_width=True)
 
     st.subheader("Feature Usage Breakdown")
-    feature_counts = df['feature_name'].value_counts().reset_index()
-    feature_counts.columns = ['Feature', 'Count']
-    st.bar_chart(feature_counts.set_index('Feature'))
+    feature_counts = df["feature_name"].value_counts().reset_index()
+    feature_counts.columns = ["Feature", "Count"]
+    st.bar_chart(feature_counts.set_index("Feature"))
 
     st.subheader("Export Metrics")
     export_col1, export_col2, export_col3 = st.columns(3)

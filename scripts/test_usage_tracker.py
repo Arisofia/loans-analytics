@@ -1,6 +1,7 @@
 """Test script for UsageTracker."""
 
 from pathlib import Path
+
 from python.utils.usage_tracker import UsageTracker
 
 

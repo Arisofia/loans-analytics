@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 # --- Schemas from openapi.yaml ---
@@ -125,5 +126,6 @@ class ErrorResponse(BaseModel):
     error: str
     message: str
     details: Optional[Dict[str, Any]] = None
+
 
 # --- End Schemas from openapi.yaml ---
