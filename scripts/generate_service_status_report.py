@@ -8,7 +8,7 @@ It continues checking all components even if some fail.
 
 import json
 import os
-import subprocess
+import subprocess  # nosec B404 - subprocess used with hardcoded commands only
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,7 +33,7 @@ class ServiceStatusChecker:
             Tuple of (success, stdout, stderr)
         """
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 - cmd is always a hardcoded list
                 cmd,
                 capture_output=True,
                 text=True,
@@ -193,8 +193,8 @@ class ServiceStatusChecker:
                         try:
                             with open(py_file, "r", encoding="utf-8") as f:
                                 todo_count += sum(1 for line in f if "TODO:" in line)
-                        except Exception:
-                            pass  # Skip files that can't be read
+                        except (OSError, UnicodeDecodeError):
+                            continue  # Skip files that can't be read
             status["details"]["active_todos"] = f"{todo_count} items"
         except Exception as e:
             status["details"]["active_todos"] = f"unknown (error: {str(e)})"
@@ -472,9 +472,7 @@ def generate_markdown_report(results: dict[str, dict[str, Any]]) -> str:
 
     # List failed checks
     failed_checks = [
-        r.get("name", key.title())
-        for key, r in results.items()
-        if not r.get("success", False)
+        r.get("name", key.title()) for key, r in results.items() if not r.get("success", False)
     ]
     if failed_checks:
         lines.append("The following components require attention:")

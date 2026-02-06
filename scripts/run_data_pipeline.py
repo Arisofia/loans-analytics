@@ -22,7 +22,7 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.pipeline.orchestrator import main
+from src.pipeline.orchestrator import main  # noqa: E402
 
 if __name__ == "__main__":
     from python.logging_config import init_sentry

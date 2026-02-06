@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 import uuid
 from pathlib import Path
@@ -8,7 +9,8 @@ from typing import Optional
 # fastapi installed. Use a lazy import and a lightweight HTTPException
 # fallback for environments without FastAPI.
 try:
-    from fastapi import FastAPI, HTTPException, Depends, Body
+    from fastapi import Body, Depends, FastAPI, HTTPException
+
     from python.apps.analytics.api.models import (
         DataQualityResponse,
         FullAnalysisResponse,
@@ -24,6 +26,7 @@ try:
 
     app: Optional[FastAPI] = FastAPI(title="Abaco Loans Analytics API")
 except ImportError:  # pragma: no cover - fallback in tests/environments without FastAPI
+
     class HTTPException(Exception):  # type: ignore[no-redef]
         def __init__(self, status_code: int, detail: str):
             self.status_code = status_code
@@ -56,8 +59,7 @@ async def health_check():
 
 @app.post("/analytics/kpis", response_model=KpiResponse) if app else lambda f: f
 async def calculate_all_kpis(
-    request: LoanPortfolioRequest = Body(...),
-    service: KPIService = Depends(get_kpi_service)
+    request: LoanPortfolioRequest = Body(...), service: KPIService = Depends(get_kpi_service)
 ):
     """
     Get all portfolio KPIs.
@@ -80,7 +82,7 @@ async def calculate_all_kpis(
 async def get_single_kpi(
     kpi_id: str,
     request: LoanPortfolioRequest = Body(...),
-    service: KPIService = Depends(get_kpi_service)
+    service: KPIService = Depends(get_kpi_service),
 ):
     """
     Get a specific KPI by ID (par30, par90, etc.)
@@ -94,7 +96,7 @@ async def get_single_kpi(
         "portfolio-health": "PORTFOLIO_HEALTH",
         "ltv": "LTV",
         "dti": "DTI",
-        "portfolio-yield": "PORTFOLIO_YIELD"
+        "portfolio-yield": "PORTFOLIO_YIELD",
     }
 
     db_key = kpi_key_map.get(kpi_id.lower(), kpi_id.upper())
@@ -122,7 +124,7 @@ async def get_single_kpi(
 async def get_risk_alerts(
     ltv_threshold: float = Body(80.0, embed=True),
     dti_threshold: float = Body(50.0, embed=True),
-    service: KPIService = Depends(get_kpi_service)
+    service: KPIService = Depends(get_kpi_service),
 ):
     """
     Identifies high-risk loans based on LTV and DTI thresholds.
@@ -138,10 +140,7 @@ async def get_risk_alerts(
         elif any(loan.risk_score > 40 for loan in risk_loans):
             risk_level = "medium"
 
-        return RiskAlertsResponse(
-            risk_level=risk_level,
-            high_risk_loans=risk_loans
-        )
+        return RiskAlertsResponse(risk_level=risk_level, high_risk_loans=risk_loans)
     except Exception as e:
         logger.error(f"Error in get_risk_alerts: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e
@@ -149,8 +148,7 @@ async def get_risk_alerts(
 
 @app.post("/analytics/full-analysis", response_model=FullAnalysisResponse) if app else lambda f: f
 async def get_full_analysis(
-    request: LoanPortfolioRequest = Body(...),
-    service: KPIService = Depends(get_kpi_service)
+    request: LoanPortfolioRequest = Body(...), service: KPIService = Depends(get_kpi_service)
 ):
     """
     Runs a comprehensive multi-agent analysis on the specified loan portfolio.
@@ -210,8 +208,7 @@ async def get_full_analysis(
 
 @app.post("/data-quality/profile", response_model=DataQualityResponse) if app else lambda f: f
 async def get_data_quality_profile(
-    request: LoanPortfolioRequest = Body(...),
-    service: KPIService = Depends(get_kpi_service)
+    request: LoanPortfolioRequest = Body(...), service: KPIService = Depends(get_kpi_service)
 ):
     """
     Generate data quality profile for the provided loan portfolio data.
@@ -224,16 +221,20 @@ async def get_data_quality_profile(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@app.post(
-    "/data-quality/validate",
-    response_model=ValidationResponse,
-) if app else (lambda f: f)
+@(
+    app.post(
+        "/data-quality/validate",
+        response_model=ValidationResponse,
+    )
+    if app
+    else (lambda f: f)
+)
 async def validate_loan_data(
-    request: LoanPortfolioRequest = Body(...),
-    service: KPIService = Depends(get_kpi_service)
+    request: LoanPortfolioRequest = Body(...), service: KPIService = Depends(get_kpi_service)
 ):
     """
-    Validates that the provided loan data contains all required columns and meets schema requirements.
+    Validate that the provided loan data contains all required
+    columns and meets schema requirements.
     """
     try:
         validation_result = await service.validate_loan_portfolio_schema(request.loans)
@@ -300,4 +301,7 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    host = os.getenv("API_HOST", "127.0.0.1")
+    port = int(os.getenv("API_PORT", "8000"))
+    uvicorn.run(app, host=host, port=port)

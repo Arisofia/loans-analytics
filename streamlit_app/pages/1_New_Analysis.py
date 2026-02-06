@@ -8,8 +8,8 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent  # Adjusted path for pa
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from python.logging_config import get_logger
-from python.config.theme import ABACO_THEME
+from python.config.theme import ABACO_THEME  # noqa: E402
+from python.logging_config import get_logger  # noqa: E402
 
 logger = get_logger(__name__)
 

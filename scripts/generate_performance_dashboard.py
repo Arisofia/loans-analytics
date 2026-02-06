@@ -12,7 +12,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from scripts.path_utils import validate_path
+from scripts.path_utils import validate_path  # noqa: E402
 
 
 def generate_ascii_chart(data: list, max_width: int = 50) -> str:

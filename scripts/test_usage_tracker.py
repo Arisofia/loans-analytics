@@ -1,6 +1,7 @@
 """Test script for UsageTracker."""
 
 from pathlib import Path
+
 from python.utils.usage_tracker import UsageTracker
 
 
@@ -23,9 +24,12 @@ def test_usage_tracker():
     print(f"Exported to {exports_dir}")
 
     # Check if files exist
-    assert (exports_dir / "usage.json").exists()
-    assert (exports_dir / "usage.csv").exists()
-    assert (exports_dir / "usage.parquet").exists()
+    if not (exports_dir / "usage.json").exists():
+        raise RuntimeError("Expected usage.json export file does not exist")
+    if not (exports_dir / "usage.csv").exists():
+        raise RuntimeError("Expected usage.csv export file does not exist")
+    if not (exports_dir / "usage.parquet").exists():
+        raise RuntimeError("Expected usage.parquet export file does not exist")
 
     print("Test passed!")
 

@@ -13,8 +13,8 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from scripts.baseline_utils import load_baselines
-from scripts.path_utils import validate_path
+from scripts.baseline_utils import load_baselines  # noqa: E402
+from scripts.path_utils import validate_path  # noqa: E402
 
 
 @dataclass(frozen=True)

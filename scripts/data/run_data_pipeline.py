@@ -23,7 +23,9 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from python.logging_config import get_logger, init_sentry  # noqa: E402
-from src.pipeline.orchestrator import UnifiedPipeline  # noqa: E402
+from src.pipeline.orchestrator import (  # noqa: E402  # pylint: disable=wrong-import-order
+    UnifiedPipeline,
+)
 
 init_sentry(service_name="data_pipeline")
 
