@@ -25,7 +25,7 @@ const config = {
   supabaseUrl:
     process.env.SUPABASE_URL || '***REMOVED***',
   anonKey: '***REMOVED***',
-  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  serviceRoleKey: '***REMOVED***',
   testUserEmail: process.env.TEST_USER_EMAIL,
   testUserPassword: process.env.TEST_USER_PASSWORD,
 }
@@ -278,6 +278,7 @@ async function testAuthenticatedAccess() {
     // Test KPI values access via public view
     const { data: kpiData, error: kpiError } = await userClient
       .from('kpi_values')
+      .select('*')
       .limit(1)
 
     if (kpiError) {
