@@ -1,7 +1,8 @@
 import logging
 import re
+import uuid
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional
 
 # Avoid importing FastAPI at module import time so tests don't require
 # fastapi installed. Use a lazy import and a lightweight HTTPException
@@ -9,20 +10,17 @@ from typing import Optional, List
 try:
     from fastapi import FastAPI, HTTPException, Depends, Body
     from python.apps.analytics.api.models import (
-        KpiResponse, 
-        KpiSingleResponse, 
+        DataQualityResponse,
+        FullAnalysisResponse,
+        KpiResponse,
+        KpiSingleResponse,
         LoanPortfolioRequest,
         RiskAlertsResponse,
         RiskLoan,
-        FullAnalysisResponse,
-        DataQualityResponse,
         ValidationResponse,
-        ErrorResponse,
-        ValidationErrorResponse
     )
     from python.apps.analytics.api.service import KPIService
     from python.multi_agent.orchestrator import MultiAgentOrchestrator
-    from python.multi_agent.protocol import AgentRole
 
     app: Optional[FastAPI] = FastAPI(title="Abaco Loans Analytics API")
 except ImportError:  # pragma: no cover - fallback in tests/environments without FastAPI
@@ -32,10 +30,12 @@ except ImportError:  # pragma: no cover - fallback in tests/environments without
             self.detail = detail
 
     class Depends:
-        def __init__(self, *args, **kwargs): pass
+        def __init__(self, *args, **kwargs):
+            pass
 
     class Body:
-        def __init__(self, *args, **kwargs): pass
+        def __init__(self, *args, **kwargs):
+            pass
 
     app = None
 
@@ -68,7 +68,7 @@ async def calculate_all_kpis(
         return KpiResponse(kpis=kpis)
     except Exception as e:
         logger.error(f"Error in calculate_all_kpis: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 @app.post("/analytics/kpis/{kpi_id}", response_model=KpiSingleResponse) if app else lambda f: f
 async def get_single_kpi(
@@ -108,7 +108,7 @@ async def get_single_kpi(
         raise
     except Exception as e:
         logger.error(f"Error in get_single_kpi: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 @app.post("/analytics/risk-alerts", response_model=RiskAlertsResponse) if app else lambda f: f
 async def get_risk_alerts(
@@ -136,7 +136,7 @@ async def get_risk_alerts(
         )
     except Exception as e:
         logger.error(f"Error in get_risk_alerts: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 @app.post("/analytics/full-analysis", response_model=FullAnalysisResponse) if app else lambda f: f
 async def get_full_analysis(
@@ -157,38 +157,44 @@ async def get_full_analysis(
 
         # 3. Run Scenario
         # We use a synthetic trace_id for this request
-        import uuid
         trace_id = str(uuid.uuid4())
 
         initial_context = {
-            "portfolio_data": f"Recent KPI Snapshot:\n{kpi_summary}\nTarget Loans: {', '.join(request.loan_ids)}"
+            "portfolio_data": (
+                "Recent KPI Snapshot:\n"
+                f"{kpi_summary}\n"
+                f"Target Loans: {', '.join(request.loan_ids)}"
+            )
         }
 
         results = orchestrator.run_scenario(
             scenario_name="loan_risk_review",
             initial_context=initial_context,
-            trace_id=trace_id
+            trace_id=trace_id,
         )
 
         # 4. Map results to Response Model
         # The loan_risk_review scenario typically ends with a risk assessment
-        # We'll parse the results dictionary which contains keys like 'risk_assessment' 
+        # We'll parse the results dictionary which contains keys like 'risk_assessment'
         # based on the scenario steps defined in orchestrator.py
 
         summary = results.get("risk_assessment", "Analysis completed successfully.")
-        
+
         return FullAnalysisResponse(
             analysis_id=trace_id,
             summary=summary,
-            recommendations=["Monitor high-LTV loans", "Review collection strategy for DPD > 30"],
+            recommendations=[
+                "Monitor high-LTV loans",
+                "Review collection strategy for DPD > 30",
+            ],
             risk_assessment=RiskAlertsResponse(
-                risk_level="medium", # This would ideally be parsed from agent output
-                high_risk_loans=[]
-            )
+                risk_level="medium",  # This would ideally be parsed from agent output
+                high_risk_loans=[],
+            ),
         )
     except Exception as e:
         logger.error(f"Error in get_full_analysis: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 @app.get("/analytics/data-quality", response_model=DataQualityResponse) if app else lambda f: f
 async def get_data_quality(
@@ -202,7 +208,7 @@ async def get_data_quality(
         return DataQualityResponse(**dq_data)
     except Exception as e:
         logger.error(f"Error in get_data_quality: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 @app.post("/analytics/validate", response_model=ValidationResponse) if app else lambda f: f
 async def validate_portfolio(
@@ -217,7 +223,7 @@ async def validate_portfolio(
         return ValidationResponse(**validation_data)
     except Exception as e:
         logger.error(f"Error in validate_portfolio: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 # Legacy endpoint preserved for backward compatibility
 @app.get("/data/{file_path:path}") if app else lambda f: f
@@ -235,22 +241,35 @@ def get_data(file_path: str):
 
     if not resolved.exists() or not resolved.is_file():
         raise HTTPException(status_code=404, detail="file not found")
-    
+
     return {"status": "ok", "path": str(resolved)}
 
 def _sanitize_for_logging(value: str, max_length: int = 200) -> str:
-    if not value: return ""
-    sanitized = value.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t").replace("\x00", "").replace("\x1b", "")
+    if not value:
+        return ""
+    sanitized = (
+        value.replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+        .replace("\x00", "")
+        .replace("\x1b", "")
+    )
     sanitized = re.sub(r"[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]", "", sanitized)
-    return sanitized[:max_length] + "...[truncated]" if len(sanitized) > max_length else sanitized
+    if len(sanitized) > max_length:
+        return sanitized[:max_length] + "...[truncated]"
+    return sanitized
 
 def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
-    if not candidate: raise ValueError("empty path")
+    if not candidate:
+        raise ValueError("empty path")
     normalized = candidate.replace("\\", "/")
     candidate_path = Path(normalized)
-    if candidate_path.is_absolute(): raise ValueError("absolute paths are not allowed")
-    if any(p == ".." for p in candidate_path.parts): raise ValueError("parent traversal is not allowed")
-    if not re.match(r"^[a-zA-Z0-9_./\-]+$", str(candidate_path)): raise ValueError("invalid characters")
+    if candidate_path.is_absolute():
+        raise ValueError("absolute paths are not allowed")
+    if any(p == ".." for p in candidate_path.parts):
+        raise ValueError("parent traversal is not allowed")
+    if not re.match(r"^[a-zA-Z0-9_./\-]+$", str(candidate_path)):
+        raise ValueError("invalid characters")
     resolved = (allowed_dir / candidate_path).resolve()
     try:
         resolved.relative_to(allowed_dir.resolve())
