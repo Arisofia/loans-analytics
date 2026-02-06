@@ -24,12 +24,8 @@ const { createClient } = require('@supabase/supabase-js')
 const config = {
   supabaseUrl:
     process.env.SUPABASE_URL || 'https://goxdevkqozomyhsyxhte.supabase.co',
-  anonKey:
-    process.env.SUPABASE_ANON_KEY ||
-    'sb_publishable_OhuP5HeTGM8GjttnEFiqig_Frq-OS8M',
-  serviceRoleKey:
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdveGRldmtxb3pvbXlIc3l4aHRlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTI2MTU2MSwiZXhwIjoyMDg0ODM3NTYxfQ.dS-7BfFILXEkxBtZ_lVQ7vqWdeFTDE7NaNOAGl6C00w',
+  anonKey: process.env.SUPABASE_ANON_KEY,
+  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   testUserEmail: process.env.TEST_USER_EMAIL,
   testUserPassword: process.env.TEST_USER_PASSWORD,
 }
@@ -321,8 +317,14 @@ async function testRLSEnabled() {
     const { data, error } = await adminClient.rpc('monitoring.check_rls_status')
 
     if (error) {
-      if (error.message.includes('function monitoring.check_rls_status() does not exist')) {
-        logWarn('RPC check_rls_status() not found. Ensure migration is applied.')
+      if (
+        error.message.includes(
+          'function monitoring.check_rls_status() does not exist'
+        )
+      ) {
+        logWarn(
+          'RPC check_rls_status() not found. Ensure migration is applied.'
+        )
         results.skipped++
       } else {
         recordResult(

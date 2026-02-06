@@ -15,7 +15,8 @@ class LLMProvider(Protocol):
     instead of concrete SDKs.
     """
 
-    def complete(self, messages: List[Dict[str, str]], **kwargs: Any) -> str: ...
+    def complete(self, messages: List[Dict[str, str]], **kwargs: Any) -> str:
+        raise NotImplementedError
 
 
 class OpenAILLMProvider:

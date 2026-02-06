@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""
-Workflow Linter: Checks for unquoted $GITHUB_OUTPUT and malformed echo output blocks in .github/workflows/*.yml
-"""
+"""Workflow linter for malformed $GITHUB_OUTPUT echo blocks."""
 
 import re
+import sys
 from pathlib import Path
 
 WORKFLOWS = Path(__file__).parent.parent / ".github" / "workflows"
@@ -18,4 +17,4 @@ for wf in WORKFLOWS.glob("*.yml"):
             failures.append((wf.name, m.group(0)))
 if failures:
     # Logging removed for production. Use logging module if needed.
-    exit(1)
+    sys.exit(1)

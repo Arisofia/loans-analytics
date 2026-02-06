@@ -113,9 +113,10 @@ class KPIFormulaEngine:
 
     def _execute_simple_formula(self, formula: str) -> float:
         """Execute simple aggregation formulas."""
+        result = 0.0
         agg_match = re.match(r"(SUM|AVG|COUNT)\((.+?)\)", formula, re.IGNORECASE)
         if not agg_match:
-            return 0.0
+            return result
 
         agg_func = agg_match.group(1).upper()
         content = agg_match.group(2).strip()
@@ -134,26 +135,27 @@ class KPIFormulaEngine:
             column = content
             filtered_df = self.df
 
-        if filtered_df.empty:
-            return 0.0
-
-        if column not in filtered_df.columns:
-            logger.debug("Column '%s' not found in data", column)
-            return 0.0
+        if filtered_df.empty or column not in filtered_df.columns:
+            if column not in filtered_df.columns:
+                logger.debug("Column '%s' not found in data", column)
+            return result
 
         if agg_func == "SUM":
-            return float(filtered_df[column].sum())
-        if agg_func == "AVG":
-            return float(filtered_df[column].mean())
-        if agg_func == "COUNT":
-            if distinct:
-                return float(filtered_df[column].nunique())
-            return float(filtered_df[column].count())
+            result = float(filtered_df[column].sum())
+        elif agg_func == "AVG":
+            result = float(filtered_df[column].mean())
+        elif agg_func == "COUNT":
+            result = float(
+                filtered_df[column].nunique()
+                if distinct
+                else filtered_df[column].count()
+            )
 
-        return 0.0
+        return result
 
     def _apply_where_clause(self, condition: str) -> pd.DataFrame:
         """Apply WHERE clause to filter DataFrame."""
+        filtered_df = self.df
         try:
             if ">=" in condition:
                 parts = condition.split(">=")
@@ -162,12 +164,12 @@ class KPIFormulaEngine:
 
                 if value == "MONTH_START":
                     if col in self.df.columns:
-                        return self.df[
+                        filtered_df = self.df[
                             pd.to_datetime(self.df[col], errors="coerce") >= self.month_start
                         ]
                 elif value.isdigit():
                     if col in self.df.columns:
-                        return self.df[self.df[col] >= int(value)]
+                        filtered_df = self.df[self.df[col] >= int(value)]
 
             elif " IN " in condition:
                 match = re.match(r"(.+?)\s+IN\s+\[(.+?)\]", condition, re.IGNORECASE)
@@ -175,26 +177,26 @@ class KPIFormulaEngine:
                     col = match.group(1).strip()
                     values = [v.strip().strip("'\"") for v in match.group(2).split(",")]
                     if col in self.df.columns:
-                        return self.df[self.df[col].isin(values)]
+                        filtered_df = self.df[self.df[col].isin(values)]
 
             elif "!=" in condition:
                 parts = condition.split("!=")
                 col = parts[0].strip()
                 value = parts[1].strip().strip("'\"")
                 if col in self.df.columns:
-                    return self.df[self.df[col] != value]
+                    filtered_df = self.df[self.df[col] != value]
 
             elif "=" in condition:
                 parts = condition.split("=")
                 col = parts[0].strip()
                 value = parts[1].strip().strip("'\"")
                 if col in self.df.columns:
-                    return self.df[self.df[col] == value]
+                    filtered_df = self.df[self.df[col] == value]
 
         except Exception as e:
             logger.debug("WHERE clause failed: %s - %s", condition, str(e))
 
-        return self.df
+        return filtered_df
 
 
 class CalculationPhase:

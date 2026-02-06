@@ -6,7 +6,7 @@ import json
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 import pandas as pd
 from pydantic import BaseModel, Field
@@ -30,7 +30,8 @@ class UsageEvent(BaseModel):
         """Convert to dictionary for export."""
         data = self.model_dump()
         # Convert datetime to ISO string
-        data["timestamp"] = self.timestamp.isoformat()
+        timestamp = cast(datetime, self.timestamp)
+        data["timestamp"] = timestamp.isoformat()  # pylint: disable=no-member
         return data
 
 
@@ -83,9 +84,11 @@ class UsageTracker:
         )
         self.events.append(event)
         self._persist_event(event)
-        
+
         logger.info(
-            f"Usage tracked: {feature_name}:{action}",
+            "Usage tracked: %s:%s",
+            feature_name,
+            action,
             extra={"feature": feature_name, "action": action, "user_id": user_id}
         )
         return event
@@ -94,13 +97,13 @@ class UsageTracker:
         """Get all tracked events."""
         return self.events
 
-    def export(self, output_path: Union[str, Path], format: str = "json") -> Path:
+    def export(self, output_path: Union[str, Path], export_format: str = "json") -> Path:
         """
         Export events to a file.
 
         Args:
             output_path: Path to save the exported file
-            format: Export format ('json', 'csv', 'parquet')
+            export_format: Export format ('json', 'csv', 'parquet')
 
         Returns:
             Path to the exported file
@@ -111,9 +114,9 @@ class UsageTracker:
         if not self.events:
             logger.warning("No events to export")
             # Create an empty file or just return
-            if format == "json":
+            if export_format == "json":
                 output_path.write_text("[]")
-            elif format == "csv":
+            elif export_format == "csv":
                 pd.DataFrame().to_csv(output_path, index=False)
             return output_path
 
@@ -121,19 +124,24 @@ class UsageTracker:
         df = pd.DataFrame(data)
 
         # Handle metadata for CSV/Parquet as they don't like nested dicts/empty structs
-        if format in ["csv", "parquet"]:
+        if export_format in ["csv", "parquet"]:
             df["metadata"] = df["metadata"].apply(json.dumps)
 
-        if format == "json":
+        if export_format == "json":
             output_path.write_text(json.dumps(data, indent=2))
-        elif format == "csv":
+        elif export_format == "csv":
             df.to_csv(output_path, index=False)
-        elif format == "parquet":
+        elif export_format == "parquet":
             df.to_parquet(output_path, index=False)
         else:
-            raise ValueError(f"Unsupported export format: {format}")
+            raise ValueError(f"Unsupported export format: {export_format}")
 
-        logger.info(f"Exported {len(self.events)} events to {output_path} ({format})")
+        logger.info(
+            "Exported %s events to %s (%s)",
+            len(self.events),
+            output_path,
+            export_format,
+        )
         return output_path
 
     def _persist_event(self, event: UsageEvent) -> None:
@@ -142,7 +150,7 @@ class UsageTracker:
             with open(self.storage_path, "a") as f:
                 f.write(event.model_dump_json() + "\n")
         except Exception as e:
-            logger.error(f"Failed to persist usage event: {e}")
+            logger.error("Failed to persist usage event: %s", e)
 
     def _load_events(self) -> None:
         """Load events from the storage file."""
@@ -156,6 +164,6 @@ class UsageTracker:
                         try:
                             self.events.append(UsageEvent.model_validate_json(line))
                         except Exception as e:
-                            logger.warning(f"Failed to parse usage event line: {e}")
+                            logger.warning("Failed to parse usage event line: %s", e)
         except Exception as e:
-            logger.error(f"Failed to load usage events: {e}")
+            logger.error("Failed to load usage events: %s", e)

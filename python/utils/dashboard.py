@@ -64,12 +64,14 @@ def format_kpi_value(name: str, value: Any) -> str:
         "fte",
     )
     if any(hint in name_lower for hint in percent_hints):
-        return format_percent(float(value))
-    if any(hint in name_lower for hint in currency_hints):
-        return f"${float(value):,.2f}"
-    if any(hint in name_lower for hint in count_hints):
-        return f"{float(value):,.0f}"
-    return f"{float(value):,.2f}"
+        formatted = format_percent(float(value))
+    elif any(hint in name_lower for hint in currency_hints):
+        formatted = f"${float(value):,.2f}"
+    elif any(hint in name_lower for hint in count_hints):
+        formatted = f"{float(value):,.0f}"
+    else:
+        formatted = f"{float(value):,.2f}"
+    return formatted
 
 
 def kpi_label(name: str) -> str:

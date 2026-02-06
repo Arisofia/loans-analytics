@@ -7,32 +7,9 @@ Detects performance regressions by comparing current metrics to baseline values.
 import argparse
 import json
 import sys
-from pathlib import Path
 
-try:
-    import yaml
-except ImportError:
-    yaml = None
-
+from scripts.baseline_utils import load_baselines
 from scripts.path_utils import validate_path
-
-
-def load_baseline(baseline_file: str) -> dict:
-    """Load baseline metrics from YAML or JSON file."""
-    baseline_path = Path(baseline_file)
-    if not baseline_path.exists():
-        print(f"⚠️  Baseline file not found: {baseline_file}")
-        return {}
-
-    with open(baseline_path) as f:
-        if baseline_file.endswith(".json"):
-            return json.load(f)
-        elif baseline_file.endswith((".yml", ".yaml")):
-            if yaml is None:
-                print("⚠️  PyYAML not installed, cannot read YAML baselines")
-                return {}
-            return yaml.safe_load(f)
-    return {}
 
 
 def compare_performance(metrics_file: str, threshold: float = 0.20) -> bool:
@@ -52,9 +29,9 @@ def compare_performance(metrics_file: str, threshold: float = 0.20) -> bool:
         metrics = json.load(f)
 
     # Load baselines
-    baselines = load_baseline("metrics/latency_baseline.yml")
+    baselines = load_baselines("metrics/latency_baseline.yml")
     if not baselines:
-        baselines = load_baseline("metrics/latency_baseline.json")
+        baselines = load_baselines("metrics/latency_baseline.json")
 
     if not baselines:
         print("⚠️  No baselines found, treating current metrics as baseline")

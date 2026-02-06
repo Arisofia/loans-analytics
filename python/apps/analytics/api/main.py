@@ -43,13 +43,16 @@ logger = logging.getLogger("apps.analytics.api")
 # Directory that contains allowed data files (must be absolute)
 ALLOWED_DATA_DIR = Path("/data/archives").resolve()
 
+
 def get_kpi_service():
     # In a real scenario, we'd extract the user/actor from the auth token
     return KPIService(actor="api_user")
 
+
 @app.get("/health") if app else lambda f: f
 async def health_check():
     return {"status": "ok"}
+
 
 @app.post("/analytics/kpis", response_model=KpiResponse) if app else lambda f: f
 async def calculate_all_kpis(
@@ -71,6 +74,7 @@ async def calculate_all_kpis(
     except Exception as e:
         logger.error(f"Error in calculate_all_kpis: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e
+
 
 @app.post("/analytics/kpis/{kpi_id}", response_model=KpiSingleResponse) if app else lambda f: f
 async def get_single_kpi(
@@ -113,6 +117,7 @@ async def get_single_kpi(
         logger.error(f"Error in get_single_kpi: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
+
 @app.post("/analytics/risk-alerts", response_model=RiskAlertsResponse) if app else lambda f: f
 async def get_risk_alerts(
     ltv_threshold: float = Body(80.0, embed=True),
@@ -140,6 +145,7 @@ async def get_risk_alerts(
     except Exception as e:
         logger.error(f"Error in get_risk_alerts: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e
+
 
 @app.post("/analytics/full-analysis", response_model=FullAnalysisResponse) if app else lambda f: f
 async def get_full_analysis(
@@ -201,6 +207,7 @@ async def get_full_analysis(
         logger.error(f"Error in get_full_analysis: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
+
 @app.post("/data-quality/profile", response_model=DataQualityResponse) if app else lambda f: f
 async def get_data_quality_profile(
     request: LoanPortfolioRequest = Body(...),
@@ -216,7 +223,11 @@ async def get_data_quality_profile(
         logger.error(f"Error in get_data_quality_profile: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
-@app.post("/data-quality/validate", response_model=ValidationResponse) if app else lambda f: f
+
+@app.post(
+    "/data-quality/validate",
+    response_model=ValidationResponse,
+) if app else (lambda f: f)
 async def validate_loan_data(
     request: LoanPortfolioRequest = Body(...),
     service: KPIService = Depends(get_kpi_service)
@@ -230,6 +241,7 @@ async def validate_loan_data(
     except Exception as e:
         logger.error(f"Error in validate_loan_data: {e}")
         raise HTTPException(status_code=500, detail="Internal server error") from e
+
 
 # Legacy endpoint preserved for backward compatibility
 @app.get("/data/{file_path:path}") if app else lambda f: f
@@ -250,6 +262,7 @@ def get_data(file_path: str):
 
     return {"status": "ok", "path": str(resolved)}
 
+
 def _sanitize_for_logging(value: str, max_length: int = 200) -> str:
     if not value:
         return ""
@@ -264,6 +277,7 @@ def _sanitize_for_logging(value: str, max_length: int = 200) -> str:
     if len(sanitized) > max_length:
         return sanitized[:max_length] + "...[truncated]"
     return sanitized
+
 
 def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     if not candidate:
@@ -282,6 +296,7 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     except ValueError as exc:
         raise ValueError("outside the allowed data directory") from exc
     return resolved
+
 
 if __name__ == "__main__":
     import uvicorn

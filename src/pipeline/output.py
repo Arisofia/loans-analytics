@@ -279,19 +279,23 @@ class OutputPhase:
         """Write results to Supabase database."""
         # Check prerequisites
         prereq_error = self._check_database_prerequisites()
+        result: Dict[str, Any]
         if prereq_error:
-            return prereq_error
+            result = prereq_error
+            return result
 
         # Validate input data
         input_error = self._validate_kpi_results(kpi_results)
         if input_error:
-            return input_error
+            result = input_error
+            return result
 
         try:
             # Validate Supabase setup
             setup_error = self._validate_supabase_setup()
             if setup_error:
-                return setup_error
+                result = setup_error
+                return result
 
             # Create Supabase client
             supabase_url = os.getenv("SUPABASE_URL")
@@ -303,30 +307,34 @@ class OutputPhase:
 
             if not rows_to_insert:
                 logger.warning("No rows to insert after filtering")
-                return {"status": "skipped", "reason": "no_valid_kpis"}
+                result = {"status": "skipped", "reason": "no_valid_kpis"}
+                return result
 
             # Write to database
             table_name = self.config.get("database", {}).get("table", "kpi_timeseries_daily")
             logger.info(
-                "Writing %d KPI records to Supabase table: %s", len(rows_to_insert), table_name
+                "Writing %d KPI records to Supabase table: %s",
+                len(rows_to_insert),
+                table_name,
             )
 
             total_inserted = self._insert_batch_rows(supabase, table_name, rows_to_insert)
 
             logger.info("Successfully wrote %d KPI records to database", total_inserted)
-            return {
+            result = {
                 "status": "success",
                 "records_written": total_inserted,
                 "timestamp": timestamp,
                 "table": table_name,
             }
-
         except ImportError as e:
             logger.warning("Supabase library not available: %s", e)
-            return {"status": "skipped", "reason": "supabase_not_installed"}
+            result = {"status": "skipped", "reason": "supabase_not_installed"}
         except Exception as e:
             logger.error("Database write failed: %s", e, exc_info=True)
-            return {"status": "error", "error": str(e)}
+            result = {"status": "error", "error": str(e)}
+
+        return result
 
     def _trigger_dashboard_refresh(self) -> Dict[str, str]:
         """Trigger dashboard to refresh data."""

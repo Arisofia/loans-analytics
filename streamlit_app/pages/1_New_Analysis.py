@@ -7,14 +7,19 @@ import streamlit as st
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent  # Adjusted path for pages
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
+
+from python.logging_config import get_logger
+from python.config.theme import ABACO_THEME
+
+logger = get_logger(__name__)
+
 # Robust Bootstrap Import (if needed for individual page execution)
 try:
     from streamlit_app.bootstrap import bootstrap_repo_root
 
     bootstrap_repo_root()
 except ImportError:
-    pass
-from src.theme import ABACO_THEME  # noqa: E402
+    logger.info("Bootstrap module not available; proceeding without repo bootstrap.")
 
 st.set_page_config(page_title="New Analysis", layout="wide")
 # Apply custom CSS using ABACO_THEME

@@ -133,12 +133,11 @@ def map_to_pipeline_schema(merged_df: pd.DataFrame) -> pd.DataFrame:
             unit = str(row.get("term_unit", "months")).lower()
             if "day" in unit:
                 return term / 30
-            elif "week" in unit:
+            if "week" in unit:
                 return term / 4
-            elif "year" in unit:
+            if "year" in unit:
                 return term * 12
-            else:  # months
-                return term
+            return term
 
         mapped_df["term_months"] = mapped_df.apply(convert_to_months, axis=1)
         logger.info("   🔄 Normalized term_months from various units")
