@@ -19,17 +19,20 @@ def test_track_event(temp_storage):
     tracker = UsageTracker(storage_path=temp_storage)
     event = tracker.track("test_feature", "test_action", user_id="user_1", key="value")
 
-    assert len(tracker.get_events()) == 1
+    events = tracker.get_events()
+    assert len(events) == 1
     assert event.feature_name == "test_feature"
     assert event.action == "test_action"
     assert event.user_id == "user_1"
     assert event.metadata == {"key": "value"}
 
     # Verify persistence
-    assert temp_storage.exists()
+    storage_exists = temp_storage.exists()
+    assert storage_exists
     with open(temp_storage, "r") as f:
         stored_data = json.loads(f.read())
-        assert stored_data["feature_name"] == "test_feature"
+        feature_name = stored_data["feature_name"]
+        assert feature_name == "test_feature"
 
 
 def test_persistence_load(temp_storage):
@@ -43,9 +46,12 @@ def test_persistence_load(temp_storage):
     tracker2 = UsageTracker(storage_path=temp_storage)
     events = tracker2.get_events()
 
-    assert len(events) == 2
-    assert events[0].feature_name == "feature1"
-    assert events[1].feature_name == "feature2"
+    events_count = len(events)
+    assert events_count == 2
+    feature_name_0 = events[0].feature_name
+    assert feature_name_0 == "feature1"
+    feature_name_1 = events[1].feature_name
+    assert feature_name_1 == "feature2"
 
 
 def test_export_json(temp_storage, tmp_path):
@@ -56,11 +62,14 @@ def test_export_json(temp_storage, tmp_path):
     export_path = tmp_path / "export.json"
     tracker.export(export_path, export_format="json")
 
-    assert export_path.exists()
+    json_path_exists = export_path.exists()
+    assert json_path_exists
     with open(export_path, "r") as f:
         data = json.load(f)
-        assert len(data) == 1
-        assert data[0]["feature_name"] == "feature"
+        data_len = len(data)
+        assert data_len == 1
+        feature_name_json = data[0]["feature_name"]
+        assert feature_name_json == "feature"
 
 
 def test_export_csv(temp_storage, tmp_path):
@@ -71,7 +80,8 @@ def test_export_csv(temp_storage, tmp_path):
     export_path = tmp_path / "export.csv"
     tracker.export(export_path, export_format="csv")
 
-    assert export_path.exists()
+    csv_path_exists = export_path.exists()
+    assert csv_path_exists
     df = pd.read_csv(export_path)
     assert len(df) == 1
     assert df.iloc[0]["feature_name"] == "feature"
