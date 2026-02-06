@@ -5,6 +5,17 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
+import sentry_sdk
+
+sentry_dsn = os.getenv("SENTRY_DSN")
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        send_default_pii=True,
+    )
+    logging.getLogger("sentry_sdk").setLevel(logging.ERROR)  # Suppress Sentry debug logs
+
+
 # Avoid importing FastAPI at module import time so tests don't require
 # fastapi installed. Use a lazy import and a lightweight HTTPException
 # fallback for environments without FastAPI.
