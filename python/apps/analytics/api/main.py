@@ -246,15 +246,16 @@ def _sanitize_for_logging(value: str, max_length: int = 200) -> str:
 
 def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     if not candidate: raise ValueError("empty path")
-    candidate_path = Path(candidate)
+    normalized = candidate.replace("\\", "/")
+    candidate_path = Path(normalized)
     if candidate_path.is_absolute(): raise ValueError("absolute paths are not allowed")
     if any(p == ".." for p in candidate_path.parts): raise ValueError("parent traversal is not allowed")
     if not re.match(r"^[a-zA-Z0-9_./\-]+$", str(candidate_path)): raise ValueError("invalid characters")
     resolved = (allowed_dir / candidate_path).resolve()
     try:
-        resolved.relative_to(allowed_dir)
+        resolved.relative_to(allowed_dir.resolve())
     except ValueError as exc:
-        raise ValueError("path outside allowed directory") from exc
+        raise ValueError("outside the allowed data directory") from exc
     return resolved
 
 if __name__ == "__main__":
