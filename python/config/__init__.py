@@ -186,6 +186,7 @@ class Settings(BaseSettings):
     kpis: KPISettings = KPISettings()
     api: ApiSettings = ApiSettings()
     supabase_pool: SupabasePoolSettings = SupabasePoolSettings()
+    database_url: str = Field(..., env="SUPABASE_DATABASE_URL")
 
     @classmethod
     def load_settings(cls) -> "Settings":
