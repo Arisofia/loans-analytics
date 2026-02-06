@@ -20,7 +20,8 @@ if sentry_dsn:
 # fastapi installed. Use a lazy import and a lightweight HTTPException
 # fallback for environments without FastAPI.
 try:
-    from fastapi import Body, Depends, FastAPI, HTTPException
+    from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
+    from fastapi.responses import JSONResponse
 
     from python.apps.analytics.api.models import (
         DataQualityResponse,
@@ -32,6 +33,16 @@ try:
         RiskLoan,
         ValidationResponse,
     )
+    from python.apps.analytics.api.monitoring_models import (
+        CommandCreate,
+        CommandsListResponse,
+        CommandStatus,
+        CommandUpdate,
+        EventSeverity,
+        EventsListResponse,
+        OperationalEventCreate,
+    )
+    from python.apps.analytics.api.monitoring_service import MonitoringService
     from python.apps.analytics.api.service import KPIService
     from python.multi_agent.orchestrator import MultiAgentOrchestrator
 
@@ -51,6 +62,10 @@ except ImportError:  # pragma: no cover - fallback in tests/environments without
         def __init__(self, *args, **kwargs):
             pass
 
+    class Query:
+        def __init__(self, *args, **kwargs):
+            pass
+
     app = None
 
 logger = logging.getLogger("apps.analytics.api")
@@ -61,6 +76,26 @@ ALLOWED_DATA_DIR = Path("/data/archives").resolve()
 def get_kpi_service():
     # In a real scenario, we'd extract the user/actor from the auth token
     return KPIService(actor="api_user")
+
+
+def get_monitoring_service():
+    return MonitoringService(actor="api_user")
+
+
+# ---------------------------------------------------------------------------
+# Correlation-ID Middleware
+# ---------------------------------------------------------------------------
+if app is not None:
+
+    @app.middleware("http")
+    async def correlation_id_middleware(request: Request, call_next):
+        """Inject or propagate X-Correlation-ID and tag Sentry."""
+        correlation_id = request.headers.get("X-Correlation-ID", str(uuid.uuid4()))
+        sentry_sdk.set_tag("correlation_id", correlation_id)
+        sentry_sdk.set_context("monitoring", {"correlation_id": correlation_id})
+        response = await call_next(request)
+        response.headers["X-Correlation-ID"] = correlation_id
+        return response
 
 
 @app.get("/health") if app else lambda f: f
@@ -308,6 +343,130 @@ def _sanitize_and_resolve(candidate: str, allowed_dir: Path) -> Path:
     except ValueError as exc:
         raise ValueError("outside the allowed data directory") from exc
     return resolved
+
+
+# ---------------------------------------------------------------------------
+# Monitoring & Command Endpoints
+# ---------------------------------------------------------------------------
+
+
+@app.post("/monitoring/events", response_model=EventsListResponse) if app else lambda f: f
+async def emit_event(
+    event: OperationalEventCreate = Body(...),
+    service: MonitoringService = Depends(get_monitoring_service),
+):
+    """Emit an operational event (pipeline complete, KPI breach, etc.)."""
+    try:
+        created = await service.emit_event(event)
+        return EventsListResponse(events=[created], count=1)
+    except Exception as e:
+        logger.error("Error emitting event: %s", e)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+@app.get("/monitoring/events", response_model=EventsListResponse) if app else lambda f: f
+async def list_events(
+    severity: Optional[str] = Query(None, description="Filter by severity"),
+    source: Optional[str] = Query(None, description="Filter by source"),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    service: MonitoringService = Depends(get_monitoring_service),
+):
+    """List operational events with optional filters."""
+    try:
+        sev = EventSeverity(severity) if severity else None
+        events = await service.list_events(severity=sev, source=source, limit=limit, offset=offset)
+        return EventsListResponse(events=events, count=len(events))
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid severity: {severity}. Must be info, warning, or critical",
+        )
+    except Exception as e:
+        logger.error("Error listing events: %s", e)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+@app.post("/monitoring/events/{event_id}/ack") if app else lambda f: f
+async def acknowledge_event(
+    event_id: str,
+    service: MonitoringService = Depends(get_monitoring_service),
+):
+    """Acknowledge an operational event."""
+    try:
+        eid = uuid.UUID(event_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid event ID format")
+
+    try:
+        result = await service.acknowledge_event(eid)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Event not found")
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error acknowledging event %s: %s", event_id, e)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+@app.post("/monitoring/commands", response_model=CommandsListResponse) if app else lambda f: f
+async def create_command(
+    cmd: CommandCreate = Body(...),
+    service: MonitoringService = Depends(get_monitoring_service),
+):
+    """Create a new command for n8n or operators to execute."""
+    try:
+        created = await service.create_command(cmd)
+        return CommandsListResponse(commands=[created], count=1)
+    except Exception as e:
+        logger.error("Error creating command: %s", e)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+@app.get("/monitoring/commands", response_model=CommandsListResponse) if app else lambda f: f
+async def list_commands(
+    status: Optional[str] = Query(None, description="Filter by status"),
+    limit: int = Query(50, ge=1, le=500),
+    service: MonitoringService = Depends(get_monitoring_service),
+):
+    """List commands with optional status filter."""
+    try:
+        st = CommandStatus(status) if status else None
+        commands = await service.list_commands(status=st, limit=limit)
+        return CommandsListResponse(commands=commands, count=len(commands))
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid status: {status}. Must be pending, running, completed, or failed",
+        )
+    except Exception as e:
+        logger.error("Error listing commands: %s", e)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+@(app.patch("/monitoring/commands/{cmd_id}") if app else (lambda f: f))
+async def update_command(
+    cmd_id: str,
+    update: CommandUpdate = Body(...),
+    service: MonitoringService = Depends(get_monitoring_service),
+):
+    """Update command status and result (used by n8n after execution)."""
+    try:
+        cid = uuid.UUID(cmd_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid command ID format")
+
+    try:
+        result = await service.update_command_status(cid, update)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Command not found")
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error updating command %s: %s", cmd_id, e)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 if __name__ == "__main__":

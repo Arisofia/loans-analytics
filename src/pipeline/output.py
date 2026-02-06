@@ -24,6 +24,11 @@ import pandas as pd
 from python.logging_config import get_logger
 
 try:
+    import httpx
+except ImportError:
+    httpx = None  # type: ignore[assignment]
+
+try:
     from supabase import Client, create_client
 except ImportError:
     Client = None  # type: ignore[assignment,misc]
@@ -337,26 +342,31 @@ class OutputPhase:
         return result
 
     def _trigger_dashboard_refresh(self) -> Dict[str, str]:
-        """Trigger dashboard to refresh data."""
+        """Trigger dashboard to refresh data via HTTP POST."""
         try:
-            # Configuration: webhook_url from config or env
             webhook_url = self.config.get("dashboard_webhook_url")
             if not webhook_url:
                 logger.debug("Dashboard webhook URL not configured - refresh skipped")
                 return {"status": "skipped", "reason": "no_webhook_configured"}
 
-            # Prepare refresh payload
+            if httpx is None:
+                logger.warning("httpx not installed - webhook POST skipped")
+                return {"status": "skipped", "reason": "httpx_not_installed"}
+
             payload = {
                 "event": "kpi_pipeline_complete",
                 "timestamp": datetime.now().isoformat(),
                 "source": "pipeline_phase_4",
             }
 
-            # Log the refresh event with payload details
+            with httpx.Client(timeout=10.0) as client:
+                resp = client.post(webhook_url, json=payload)
+                resp.raise_for_status()
+
             logger.info(
-                "Dashboard refresh triggered: webhook=%s, payload=%s",
+                "Dashboard refresh triggered: webhook=%s status=%d",
                 webhook_url,
-                payload,
+                resp.status_code,
             )
 
             return {

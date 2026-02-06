@@ -82,3 +82,13 @@ def init_sentry(service_name: str) -> None:
         traces_sample_rate=_get_float_env("SENTRY_TRACES_SAMPLE_RATE", 0.1),
         profiles_sample_rate=_get_float_env("SENTRY_PROFILES_SAMPLE_RATE", 0.0),
     )
+
+
+def set_sentry_correlation(correlation_id: str) -> None:
+    """Tag the current Sentry scope with a correlation_id.
+
+    This links Sentry errors/transactions to operational events stored in
+    monitoring.operational_events, enabling end-to-end traceability.
+    """
+    sentry_sdk.set_tag("correlation_id", correlation_id)
+    sentry_sdk.set_context("monitoring", {"correlation_id": correlation_id})
