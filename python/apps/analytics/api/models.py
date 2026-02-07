@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 # --- Schemas from openapi.yaml ---
@@ -33,6 +34,14 @@ class LoanPortfolioRequest(BaseModel):
         min_items=1,
         max_items=10000,
         description="Array of loan records for analysis",
+    )
+    ltv_threshold: Optional[float] = Field(
+        80.0,
+        description="LTV threshold for risk alerts (default: 80.0)",
+    )
+    dti_threshold: Optional[float] = Field(
+        50.0,
+        description="DTI threshold for risk alerts (default: 50.0)",
     )
     # Adding loan_ids here for backwards compatibility if needed.
     # Primary input remains 'loans'.
@@ -125,5 +134,6 @@ class ErrorResponse(BaseModel):
     error: str
     message: str
     details: Optional[Dict[str, Any]] = None
+
 
 # --- End Schemas from openapi.yaml ---

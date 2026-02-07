@@ -70,7 +70,7 @@ class BaseAgent(ABC):
 
     def _init_openai_client(self) -> Any:
         """Initialize OpenAI client."""
-        if not OpenAI:  # type: ignore
+        if not OpenAI:
             raise ImportError("openai package required")
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:

@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import sys
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -53,15 +54,15 @@ except ImportError:  # pragma: no cover - fallback in tests/environments without
             self.status_code = status_code
             self.detail = detail
 
-    class Depends:
+    class Depends:  # type: ignore[no-redef]
         def __init__(self, *args, **kwargs):
             pass
 
-    class Body:
+    class Body:  # type: ignore[no-redef]
         def __init__(self, *args, **kwargs):
             pass
 
-    class Query:
+    class Query:  # type: ignore[no-redef]
         def __init__(self, *args, **kwargs):
             pass
 
@@ -167,15 +168,20 @@ async def get_single_kpi(
 
 @app.post("/analytics/risk-alerts", response_model=RiskAlertsResponse) if app else lambda f: f
 async def get_risk_alerts(
-    ltv_threshold: float = Body(80.0, embed=True),
-    dti_threshold: float = Body(50.0, embed=True),
+    request: LoanPortfolioRequest = Body(...),
     service: KPIService = Depends(get_kpi_service),
 ):
     """
     Identifies high-risk loans based on LTV and DTI thresholds.
     """
     try:
-        risk_loans_data = await service.get_risk_alerts(ltv_threshold, dti_threshold)
+        # Use thresholds from request or defaults
+        ltv = request.ltv_threshold if request.ltv_threshold is not None else 80.0
+        dti = request.dti_threshold if request.dti_threshold is not None else 50.0
+
+        risk_loans_data = await service.get_risk_alerts(
+            loans=request.loans, ltv_threshold=ltv, dti_threshold=dti
+        )
         risk_loans = [RiskLoan(**loan) for loan in risk_loans_data]
 
         # Determine overall risk level
@@ -473,4 +479,8 @@ if __name__ == "__main__":
 
     host = os.getenv("API_HOST", "127.0.0.1")
     port = int(os.getenv("API_PORT", "8000"))
-    uvicorn.run(app, host=host, port=port)
+    if app is not None:
+        uvicorn.run(app, host=host, port=port)
+    else:
+        print("FastAPI app not initialized. Check imports.")
+        sys.exit(1)

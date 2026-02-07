@@ -4,7 +4,6 @@ from typing import List, Optional
 import pandas as pd
 from starlette.concurrency import run_in_threadpool
 
-from python.supabase_pool import get_pool
 from python.apps.analytics.api.models import (
     DataQualityResponse,
     KpiContext,
@@ -12,8 +11,9 @@ from python.apps.analytics.api.models import (
     LoanRecord,
     ValidationResponse,
 )
-from python.logging_config import get_logger
 from python.config import settings
+from python.logging_config import get_logger
+from python.supabase_pool import get_pool
 
 logger = get_logger(__name__)
 
@@ -104,17 +104,13 @@ class KPIService:
         try:
             df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
 
-            risk_loans = []
+            risk_loans: List[dict] = []
             if df.empty:
                 return risk_loans
 
             # Calculate LTV and DTI for each loan
-            df['ltv'] = (
-                df['principal_balance'] / df['appraised_value'] * 100
-            ).fillna(0)
-            df['dti'] = (
-                df['monthly_debt'] / df['borrower_income'] * 100
-            ).fillna(0)
+            df["ltv"] = (df["principal_balance"] / df["appraised_value"] * 100).fillna(0)
+            df["dti"] = (df["monthly_debt"] / df["borrower_income"] * 100).fillna(0)
 
             # Assuming 'loan_status' can be mapped to days past due for risk calculation
             # This is a simplification; a real system would have a 'days_past_due' column
@@ -127,38 +123,30 @@ class KPIService:
                     return 100
                 return 0
 
-            df['days_past_due'] = df['loan_status'].apply(get_dpd)
+            df["days_past_due"] = df["loan_status"].apply(get_dpd)
 
             # Identify high-risk loans
             high_risk_df = df[
-                (df['ltv'] > ltv_threshold)
-                | (df['dti'] > dti_threshold)
-                | (df['days_past_due'] > 30)
+                (df["ltv"] > ltv_threshold)
+                | (df["dti"] > dti_threshold)
+                | (df["days_past_due"] > 30)
             ]
 
             for _, rec in high_risk_df.iterrows():
                 # Calculate a mock risk score
-                ltv = rec['ltv']
-                dti = rec['dti']
-                dpd = rec['days_past_due']
+                ltv = rec["ltv"]
+                dti = rec["dti"]
+                dpd = rec["days_past_due"]
 
                 # Simple risk score: weighted average of LTV, DTI and DPD impact
-                risk_score = (
-                    (ltv / 100 * 0.3)
-                    + (dti / 100 * 0.3)
-                    + (dpd / 100 * 0.4)
-                )
+                risk_score = (ltv / 100 * 0.3) + (dti / 100 * 0.3) + (dpd / 100 * 0.4)
                 risk_score = min(100.0, risk_score * 100)  # Normalize to 0-100
 
                 alerts = []
                 if ltv > ltv_threshold:
-                    alerts.append(
-                        f"LTV {ltv:.1f}% exceeds threshold {ltv_threshold}%"
-                    )
+                    alerts.append(f"LTV {ltv:.1f}% exceeds threshold {ltv_threshold}%")
                 if dti > dti_threshold:
-                    alerts.append(
-                        f"DTI {dti:.1f}% exceeds threshold {dti_threshold}%"
-                    )
+                    alerts.append(f"DTI {dti:.1f}% exceeds threshold {dti_threshold}%")
                 if dpd > 30:
                     alerts.append(f"DPD {dpd} indicates high credit risk")
 
@@ -214,9 +202,7 @@ class KPIService:
 
             # Overall Score - simple inverse of issues
             # A more sophisticated score would weigh different issues
-            data_quality_score = 100.0 - (
-                duplicate_ratio * 0.5 + average_null_ratio * 0.5
-            )
+            data_quality_score = 100.0 - (duplicate_ratio * 0.5 + average_null_ratio * 0.5)
             data_quality_score = max(0.0, data_quality_score)  # Ensure score is not negative
 
             issues = []
@@ -276,7 +262,7 @@ class KPIService:
                     # Check if column can be parsed to datetime. `validation.validate_iso8601_dates`
                     # could be used here.
                     try:
-                        pd.to_datetime(df[field_name], errors='raise')
+                        pd.to_datetime(df[field_name], errors="raise")
                     except Exception:
                         errors.append(f"Column '{field_name}' contains invalid datetime format.")
 
@@ -303,18 +289,18 @@ class KPIService:
                 return []
 
             # Ensure numeric types
-            for col in ['loan_amount', 'principal_balance', 'interest_rate']:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
+            for col in ["loan_amount", "principal_balance", "interest_rate"]:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
 
             # Drop rows with NaN in critical calculation columns
             df.dropna(
-                subset=['loan_amount', 'principal_balance', 'interest_rate'],
+                subset=["loan_amount", "principal_balance", "interest_rate"],
                 inplace=True,
             )
             if df.empty:
                 return []
 
-            total_outstanding = df['principal_balance'].sum()
+            total_outstanding = df["principal_balance"].sum()
 
             # Placeholder for DPD (Days Past Due) logic
             # Needs to align with 'loan_status' enum from LoanRecord
@@ -327,35 +313,23 @@ class KPIService:
                     return 100
                 return 0
 
-            df['dpd'] = df['loan_status'].apply(get_dpd_category)
+            df["dpd"] = df["loan_status"].apply(get_dpd_category)
 
             # PAR30: % of outstanding value for loans with DPD > 30
-            par30_val = df[df['dpd'] > 30]['principal_balance'].sum()
-            par30_pct = (
-                (par30_val / total_outstanding * 100)
-                if total_outstanding > 0
-                else 0
-            )
+            par30_val = df[df["dpd"] > 30]["principal_balance"].sum()
+            par30_pct = (par30_val / total_outstanding * 100) if total_outstanding > 0 else 0
 
             # Weighted Average Interest Rate (Portfolio Yield proxy)
-            weighted_interest_rate = (
-                df['interest_rate'] * df['principal_balance']
-            ).sum()
+            weighted_interest_rate = (df["interest_rate"] * df["principal_balance"]).sum()
             avg_interest_rate = (
-                (weighted_interest_rate / total_outstanding)
-                if total_outstanding > 0
-                else 0
+                (weighted_interest_rate / total_outstanding) if total_outstanding > 0 else 0
             )
 
             # LTV, DTI for average
-            df['ltv_ratio'] = (
-                df['loan_amount'] / df['appraised_value'] * 100
-            ).fillna(0)
-            df['dti_ratio'] = (
-                df['monthly_debt'] / df['borrower_income'] * 100
-            ).fillna(0)
-            avg_ltv = df['ltv_ratio'].mean()
-            avg_dti = df['dti_ratio'].mean()
+            df["ltv_ratio"] = (df["loan_amount"] / df["appraised_value"] * 100).fillna(0)
+            df["dti_ratio"] = (df["monthly_debt"] / df["borrower_income"] * 100).fillna(0)
+            avg_ltv = df["ltv_ratio"].mean()
+            avg_dti = df["dti_ratio"].mean()
 
             context = KpiContext(
                 period="on-demand",
@@ -399,7 +373,7 @@ class KPIService:
                     value=round(float(avg_dti), 2),
                     unit="%",
                     context=context,
-                )
+                ),
             ]
         except Exception as e:
             logger.error(

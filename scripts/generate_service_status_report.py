@@ -18,7 +18,7 @@ from typing import Any
 class ServiceStatusChecker:
     """Check status of all system components."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.results: dict[str, dict[str, Any]] = {}
         self.repo_root = Path(__file__).parent.parent
 
@@ -49,7 +49,7 @@ class ServiceStatusChecker:
 
     def check_git_status(self) -> dict[str, Any]:
         """Check Git repository status."""
-        status = {
+        status: dict[str, Any] = {
             "name": "Git Repository",
             "success": True,
             "details": {},
@@ -101,7 +101,7 @@ class ServiceStatusChecker:
 
     def check_python_environment(self) -> dict[str, Any]:
         """Check Python environment and dependencies."""
-        status = {
+        status: dict[str, Any] = {
             "name": "Python Environment",
             "success": True,
             "details": {},
@@ -131,7 +131,7 @@ class ServiceStatusChecker:
 
     def check_tests(self) -> dict[str, Any]:
         """Check test suite status."""
-        status = {
+        status: dict[str, Any] = {
             "name": "Test Suite",
             "success": False,
             "details": {},
@@ -168,7 +168,7 @@ class ServiceStatusChecker:
 
     def check_linting(self) -> dict[str, Any]:
         """Check code quality/linting status."""
-        status = {
+        status: dict[str, Any] = {
             "name": "Code Quality (Linting)",
             "success": True,
             "details": {},
@@ -207,7 +207,7 @@ class ServiceStatusChecker:
         A successful status requires both SUPABASE_URL and a Supabase key
         (SUPABASE_ANON_KEY or SUPABASE_KEY) to be configured.
         """
-        status = {
+        status: dict[str, Any] = {
             "name": "Supabase",
             "success": False,
             "details": {},
@@ -235,7 +235,7 @@ class ServiceStatusChecker:
 
     def check_pipeline(self) -> dict[str, Any]:
         """Check data pipeline status."""
-        status = {
+        status: dict[str, Any] = {
             "name": "Data Pipeline",
             "success": True,
             "details": {},
@@ -266,7 +266,7 @@ class ServiceStatusChecker:
 
     def check_multi_agent_system(self) -> dict[str, Any]:
         """Check multi-agent system status."""
-        status = {
+        status: dict[str, Any] = {
             "name": "Multi-Agent System",
             "success": True,
             "details": {},
@@ -298,7 +298,7 @@ class ServiceStatusChecker:
 
     def check_documentation(self) -> dict[str, Any]:
         """Check documentation status."""
-        status = {
+        status: dict[str, Any] = {
             "name": "Documentation",
             "success": True,
             "details": {},
@@ -324,7 +324,7 @@ class ServiceStatusChecker:
 
     def check_ci_cd(self) -> dict[str, Any]:
         """Check CI/CD configuration."""
-        status = {
+        status: dict[str, Any] = {
             "name": "CI/CD",
             "success": True,
             "details": {},
@@ -508,7 +508,7 @@ def generate_markdown_report(results: dict[str, dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     print("=" * 70)
     print("Service Status Report Generator")
