@@ -33,7 +33,7 @@ NC='\033[0m' # No Color
 REPO_OWNER="Arisofia"
 REPO_NAME="abaco-loans-analytics"
 WORKFLOW_NAME="deployment.yml"
-APP_URL="https://abaco-analytics-dashboard.azurewebsites.net"
+APP_URL="https://abaco-loans-dashboard.azurewebsites.net"
 HEALTH_CHECK_PATH="/?page=health"
 MAX_HEALTH_CHECK_ATTEMPTS=10
 HEALTH_CHECK_INTERVAL=30
