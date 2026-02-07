@@ -76,7 +76,7 @@ class MetricsRegistry:
         """Collect metrics from pipeline execution logs."""
         try:
             # Find most recent pipeline run
-            runs_dir = Path("data/runs")
+            runs_dir = Path("logs/runs")
             if not runs_dir.exists():
                 return
 
@@ -85,7 +85,7 @@ class MetricsRegistry:
                 return
 
             latest_run = run_dirs[0]
-            result_file = latest_run / "result.json"
+            result_file = latest_run / "pipeline_results.json"
 
             if result_file.exists():
                 with open(result_file) as f:
@@ -203,7 +203,7 @@ class MetricsRegistry:
         """Collect KPI calculation metrics from calculation phase logs."""
         try:
             # Find latest calculation logs
-            runs_dir = Path("data/runs")
+            runs_dir = Path("logs/runs")
             if not runs_dir.exists():
                 return
 
@@ -212,7 +212,7 @@ class MetricsRegistry:
                 return
 
             latest_run = run_dirs[0]
-            result_file = latest_run / "result.json"
+            result_file = latest_run / "pipeline_results.json"
 
             if result_file.exists():
                 with open(result_file) as f:
