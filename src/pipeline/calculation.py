@@ -146,9 +146,7 @@ class KPIFormulaEngine:
             result = float(filtered_df[column].mean())
         elif agg_func == "COUNT":
             result = float(
-                filtered_df[column].nunique()
-                if distinct
-                else filtered_df[column].count()
+                filtered_df[column].nunique() if distinct else filtered_df[column].count()
             )
 
         return result

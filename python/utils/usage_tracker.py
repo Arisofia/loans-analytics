@@ -89,7 +89,7 @@ class UsageTracker:
             "Usage tracked: %s:%s",
             feature_name,
             action,
-            extra={"feature": feature_name, "action": action, "user_id": user_id}
+            extra={"feature": feature_name, "action": action, "user_id": user_id},
         )
         return event
 
