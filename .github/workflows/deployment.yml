@@ -97,17 +97,23 @@ jobs:
         id: repo
         run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
-      - name: Deploy API to Azure App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: abaco-loans-api
-          images: ghcr.io/${{ steps.repo.outputs.name }}/api:${{ github.sha }}
+      - name: Deploy API container
+        run: |
+          az webapp config container set \
+            --name abaco-loans-api \
+            --resource-group abaco-loans-rg \
+            --container-image-name "ghcr.io/${{ steps.repo.outputs.name }}/api:${{ github.sha }}" \
+            --container-registry-url "https://ghcr.io"
+          az webapp restart --name abaco-loans-api --resource-group abaco-loans-rg
 
-      - name: Deploy Dashboard to Azure App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: abaco-loans-dashboard
-          images: ghcr.io/${{ steps.repo.outputs.name }}/dashboard:${{ github.sha }}
+      - name: Deploy Dashboard container
+        run: |
+          az webapp config container set \
+            --name abaco-loans-dashboard \
+            --resource-group abaco-loans-rg \
+            --container-image-name "ghcr.io/${{ steps.repo.outputs.name }}/dashboard:${{ github.sha }}" \
+            --container-registry-url "https://ghcr.io"
+          az webapp restart --name abaco-loans-dashboard --resource-group abaco-loans-rg
 
       - name: Azure Logout
         if: always()
