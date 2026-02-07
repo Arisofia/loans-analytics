@@ -103,7 +103,7 @@ jobs:
             --name abaco-loans-api \
             --resource-group abaco-loans-rg \
             --container-image-name "ghcr.io/${{ steps.repo.outputs.name }}/api:${{ github.sha }}" \
-            --container-registry-url "https://ghcr.io"
+            --container-registry-url "https://ghcr.io" && \
           az webapp restart --name abaco-loans-api --resource-group abaco-loans-rg
 
       - name: Deploy Dashboard container
@@ -112,7 +112,7 @@ jobs:
             --name abaco-loans-dashboard \
             --resource-group abaco-loans-rg \
             --container-image-name "ghcr.io/${{ steps.repo.outputs.name }}/dashboard:${{ github.sha }}" \
-            --container-registry-url "https://ghcr.io"
+            --container-registry-url "https://ghcr.io" && \
           az webapp restart --name abaco-loans-dashboard --resource-group abaco-loans-rg
 
       - name: Azure Logout
@@ -158,7 +158,6 @@ jobs:
           done
           echo "Dashboard did not respond with 200 after 5 attempts."
           exit 1
-
       - name: Notify on failure
         if: failure()
         uses: actions/github-script@v7
