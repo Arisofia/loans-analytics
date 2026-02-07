@@ -35,14 +35,12 @@ try:
     )
     from python.apps.analytics.api.monitoring_models import (
         CommandCreate,
-        CommandResponse,
         CommandsListResponse,
         CommandStatus,
         CommandUpdate,
         EventSeverity,
         EventsListResponse,
         OperationalEventCreate,
-        OperationalEventResponse,
     )
     from python.apps.analytics.api.monitoring_service import MonitoringService
     from python.apps.analytics.api.service import KPIService
@@ -101,10 +99,9 @@ if app is not None:
         response.headers["X-Correlation-ID"] = correlation_id
         return response
 
-# ---------------------------------------------------------------------------
-# Monitoring & Command Endpoints
-# ---------------------------------------------------------------------------
-
+    # -------------------------------------------------------------------
+    # Monitoring & Command Endpoints
+    # -------------------------------------------------------------------
 
     @app.post("/monitoring/events", response_model=EventsListResponse)
     async def emit_event(
@@ -119,7 +116,6 @@ if app is not None:
             logger.error("Error emitting event: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
-
     @app.get("/monitoring/events", response_model=EventsListResponse)
     async def list_events(
         severity: Optional[str] = Query(None, description="Filter by severity"),
@@ -131,7 +127,9 @@ if app is not None:
         """List operational events with optional filters."""
         try:
             sev = EventSeverity(severity) if severity else None
-            events = await service.list_events(severity=sev, source=source, limit=limit, offset=offset)
+            events = await service.list_events(
+                severity=sev, source=source, limit=limit, offset=offset
+            )
             return EventsListResponse(events=events, count=len(events))
         except ValueError as exc:
             raise HTTPException(
@@ -141,7 +139,6 @@ if app is not None:
         except Exception as e:
             logger.error("Error listing events: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
-
 
     @app.post("/monitoring/events/{event_id}/ack")
     async def acknowledge_event(
@@ -165,7 +162,6 @@ if app is not None:
             logger.error("Error acknowledging event %s: %s", event_id, e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
-
     @app.post("/monitoring/commands", response_model=CommandsListResponse)
     async def create_command(
         cmd: CommandCreate = Body(...),
@@ -178,7 +174,6 @@ if app is not None:
         except Exception as e:
             logger.error("Error creating command: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
-
 
     @app.get("/monitoring/commands", response_model=CommandsListResponse)
     async def list_commands(
@@ -199,7 +194,6 @@ if app is not None:
         except Exception as e:
             logger.error("Error listing commands: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
-
 
     @app.patch("/monitoring/commands/{cmd_id}")
     async def update_command(
@@ -224,11 +218,9 @@ if app is not None:
             logger.error("Error updating command %s: %s", cmd_id, e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
-
     @app.get("/health")
     async def health_check():
         return {"status": "ok"}
-
 
     @app.post("/analytics/kpis", response_model=KpiResponse)
     async def calculate_all_kpis(
@@ -249,7 +241,6 @@ if app is not None:
         except Exception as e:
             logger.error(f"Error in calculate_all_kpis: {e}")
             raise HTTPException(status_code=500, detail="Internal server error") from e
-
 
     @app.post("/analytics/kpis/{kpi_id}", response_model=KpiSingleResponse)
     async def get_single_kpi(
@@ -292,7 +283,6 @@ if app is not None:
             logger.error(f"Error in get_single_kpi: {e}")
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
-
     @app.post("/analytics/risk-alerts", response_model=RiskAlertsResponse)
     async def get_risk_alerts(
         request: LoanPortfolioRequest = Body(...),
@@ -322,7 +312,6 @@ if app is not None:
         except Exception as e:
             logger.error(f"Error in get_risk_alerts: {e}")
             raise HTTPException(status_code=500, detail="Internal server error") from e
-
 
     @app.post("/analytics/full-analysis", response_model=FullAnalysisResponse)
     async def get_full_analysis(
@@ -383,7 +372,6 @@ if app is not None:
             logger.error(f"Error in get_full_analysis: {e}")
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
-
     @app.post("/data-quality/profile", response_model=DataQualityResponse)
     async def get_data_quality_profile(
         request: LoanPortfolioRequest = Body(...), service: KPIService = Depends(get_kpi_service)
@@ -397,7 +385,6 @@ if app is not None:
         except Exception as e:
             logger.error(f"Error in get_data_quality_profile: {e}")
             raise HTTPException(status_code=500, detail="Internal server error") from e
-
 
     @app.post(
         "/data-quality/validate",
@@ -416,7 +403,6 @@ if app is not None:
         except Exception as e:
             logger.error(f"Error in validate_loan_data: {e}")
             raise HTTPException(status_code=500, detail="Internal server error") from e
-
 
     @app.get("/data/{file_path:path}")
     def get_data(file_path: str):
