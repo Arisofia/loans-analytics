@@ -169,10 +169,20 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const {owner, repo} = context.repo;
+            const runUrl = [
+              context.serverUrl, owner, repo,
+              'actions/runs', context.runId
+            ].join('/');
+            const body = [
+              `Deployment verification failed for commit ${context.sha}.`,
+              '',
+              `Check the [workflow logs](${runUrl}).`
+            ].join('\n');
             github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner,
+              repo,
               title: 'Deployment verification failed',
-              body: `Deployment verification failed for commit ${context.sha}.\n\nCheck the [workflow logs](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`,
+              body,
               labels: ['deployment', 'bug']
             })
