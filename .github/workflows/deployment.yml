@@ -131,22 +131,22 @@ jobs:
     needs: deploy
     steps:
       - name: Wait for App Service cold start
-        run: sleep 30
+        run: sleep 60
 
       - name: Health check - API
         run: |
           API_URL="https://abaco-loans-api.azurewebsites.net/health"
           echo "Checking API at ${API_URL}..."
-          for i in 1 2 3 4 5; do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${API_URL}" || echo "000")
+          for i in $(seq 1 10); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "${API_URL}" || echo "000")
             echo "Attempt ${i}: HTTP ${HTTP_CODE}"
             if [ "${HTTP_CODE}" = "200" ]; then
               echo "API is healthy."
               exit 0
             fi
-            sleep 15
+            sleep 30
           done
-          echo "API did not respond with 200 after 5 attempts."
+          echo "API did not respond with 200 after 10 attempts."
           exit 1
 
       - name: Health check - Dashboard

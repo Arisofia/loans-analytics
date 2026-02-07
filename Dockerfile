@@ -15,6 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 # Expose FastAPI port
 EXPOSE 8000
+# Bind to all interfaces so Azure health probes can reach the app
+ENV API_HOST=0.0.0.0
 # Create non-root user and set permissions
 RUN useradd --system --create-home --home-dir /app appuser \
   && chown -R appuser:appuser /app
