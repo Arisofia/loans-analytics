@@ -47,6 +47,20 @@ try:
     from python.multi_agent.orchestrator import MultiAgentOrchestrator
 
     app: Optional[FastAPI] = FastAPI(title="Abaco Loans Analytics API")
+
+    from python.apps.analytics.api.monitoring_models import (
+        CommandCreate,
+        CommandResponse,
+        CommandsListResponse,
+        CommandStatus,
+        CommandUpdate,
+        EventSeverity,
+        EventsListResponse,
+        OperationalEventCreate,
+        OperationalEventResponse,
+    )
+    from python.apps.analytics.api.monitoring_service import MonitoringService
+
 except ImportError:  # pragma: no cover - fallback in tests/environments without FastAPI
 
     class HTTPException(Exception):  # type: ignore[no-redef]
@@ -79,7 +93,11 @@ def get_kpi_service():
 
 
 def get_monitoring_service():
+    # In a real scenario, we'd extract the user/actor from the auth token
     return MonitoringService(actor="api_user")
+
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -97,13 +115,137 @@ if app is not None:
         response.headers["X-Correlation-ID"] = correlation_id
         return response
 
+# ---------------------------------------------------------------------------
+# Monitoring & Command Endpoints
+# ---------------------------------------------------------------------------
 
-@app.get("/health") if app else lambda f: f
+
+    @app.post("/monitoring/events", response_model=EventsListResponse)
+    async def emit_event(
+        event: OperationalEventCreate = Body(...),
+        service: MonitoringService = Depends(get_monitoring_service),
+    ):
+        """Emit an operational event (pipeline complete, KPI breach, etc.)."""
+        try:
+            created = await service.emit_event(event)
+            return EventsListResponse(events=[created], count=1)
+        except Exception as e:
+            logger.error("Error emitting event: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+    @app.get("/monitoring/events", response_model=EventsListResponse)
+    async def list_events(
+        severity: Optional[str] = Query(None, description="Filter by severity"),
+        source: Optional[str] = Query(None, description="Filter by source"),
+        limit: int = Query(50, ge=1, le=500),
+        offset: int = Query(0, ge=0),
+        service: MonitoringService = Depends(get_monitoring_service),
+    ):
+        """List operational events with optional filters."""
+        try:
+            sev = EventSeverity(severity) if severity else None
+            events = await service.list_events(severity=sev, source=source, limit=limit, offset=offset)
+            return EventsListResponse(events=events, count=len(events))
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid severity: {severity}. Must be info, warning, or critical",
+            ) from exc
+        except Exception as e:
+            logger.error("Error listing events: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+    @app.post("/monitoring/events/{event_id}/ack")
+    async def acknowledge_event(
+        event_id: str,
+        service: MonitoringService = Depends(get_monitoring_service),
+    ):
+        """Acknowledge an operational event."""
+        try:
+            eid = uuid.UUID(event_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Invalid event ID format") from exc
+
+        try:
+            result = await service.acknowledge_event(eid)
+            if result is None:
+                raise HTTPException(status_code=404, detail="Event not found")
+            return result
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Error acknowledging event %s: %s", event_id, e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+    @app.post("/monitoring/commands", response_model=CommandsListResponse)
+    async def create_command(
+        cmd: CommandCreate = Body(...),
+        service: MonitoringService = Depends(get_monitoring_service),
+    ):
+        """Create a new command for n8n or operators to execute."""
+        try:
+            created = await service.create_command(cmd)
+            return CommandsListResponse(commands=[created], count=1)
+        except Exception as e:
+            logger.error("Error creating command: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+    @app.get("/monitoring/commands", response_model=CommandsListResponse)
+    async def list_commands(
+        status: Optional[str] = Query(None, description="Filter by status"),
+        limit: int = Query(50, ge=1, le=500),
+        service: MonitoringService = Depends(get_monitoring_service),
+    ):
+        """List commands with optional status filter."""
+        try:
+            st = CommandStatus(status) if status else None
+            commands = await service.list_commands(status=st, limit=limit)
+            return CommandsListResponse(commands=commands, count=len(commands))
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid status: {status}. Must be pending, running, completed, or failed",
+            ) from exc
+        except Exception as e:
+            logger.error("Error listing commands: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+    @(app.patch("/monitoring/commands/{cmd_id}"))
+    async def update_command(
+        cmd_id: str,
+        update: CommandUpdate = Body(...),
+        service: MonitoringService = Depends(get_monitoring_service),
+    ):
+        """Update command status and result (used by n8n after execution)."""
+        try:
+            cid = uuid.UUID(cmd_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Invalid command ID format") from exc
+
+        try:
+            result = await service.update_command_status(cid, update)
+            if result is None:
+                raise HTTPException(status_code=404, detail="Command not found")
+            return result
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Error updating command %s: %s", cmd_id, e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+
+@app.get("/health")
 async def health_check():
     return {"status": "ok"}
 
 
-@app.post("/analytics/kpis", response_model=KpiResponse) if app else lambda f: f
+
+@app.post("/analytics/kpis", response_model=KpiResponse)
 async def calculate_all_kpis(
     request: LoanPortfolioRequest = Body(...), service: KPIService = Depends(get_kpi_service)
 ):
@@ -124,7 +266,7 @@ async def calculate_all_kpis(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@app.post("/analytics/kpis/{kpi_id}", response_model=KpiSingleResponse) if app else lambda f: f
+@app.post("/analytics/kpis/{kpi_id}", response_model=KpiSingleResponse)
 async def get_single_kpi(
     kpi_id: str,
     request: LoanPortfolioRequest = Body(...),
@@ -166,7 +308,7 @@ async def get_single_kpi(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@app.post("/analytics/risk-alerts", response_model=RiskAlertsResponse) if app else lambda f: f
+@app.post("/analytics/risk-alerts", response_model=RiskAlertsResponse)
 async def get_risk_alerts(
     request: LoanPortfolioRequest = Body(...),
     service: KPIService = Depends(get_kpi_service),
@@ -197,7 +339,7 @@ async def get_risk_alerts(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@app.post("/analytics/full-analysis", response_model=FullAnalysisResponse) if app else lambda f: f
+@app.post("/analytics/full-analysis", response_model=FullAnalysisResponse)
 async def get_full_analysis(
     request: LoanPortfolioRequest = Body(...), service: KPIService = Depends(get_kpi_service)
 ):
@@ -257,7 +399,7 @@ async def get_full_analysis(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@app.post("/data-quality/profile", response_model=DataQualityResponse) if app else lambda f: f
+@app.post("/data-quality/profile", response_model=DataQualityResponse)
 async def get_data_quality_profile(
     request: LoanPortfolioRequest = Body(...), service: KPIService = Depends(get_kpi_service)
 ):
@@ -277,8 +419,6 @@ async def get_data_quality_profile(
         "/data-quality/validate",
         response_model=ValidationResponse,
     )
-    if app
-    else (lambda f: f)
 )
 async def validate_loan_data(
     request: LoanPortfolioRequest = Body(...), service: KPIService = Depends(get_kpi_service)
@@ -296,7 +436,7 @@ async def validate_loan_data(
 
 
 # Legacy endpoint preserved for backward compatibility
-@app.get("/data/{file_path:path}") if app else lambda f: f
+@app.get("/data/{file_path:path}")
 def get_data(file_path: str):
     """Return file contents for a path under ALLOWED_DATA_DIR after sanitization."""
     if not file_path or not file_path.strip():
@@ -450,7 +590,7 @@ async def list_commands(
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
-@(app.patch("/monitoring/commands/{cmd_id}") if app else (lambda f: f))
+    @app.patch("/monitoring/commands/{cmd_id}")
 async def update_command(
     cmd_id: str,
     update: CommandUpdate = Body(...),
