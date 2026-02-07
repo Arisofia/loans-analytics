@@ -5,44 +5,142 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+  issues: write
+
 env:
-  PRODUCTION_HEALTHCHECK_URL: ''
+  REGISTRY: ghcr.io
+  API_IMAGE: ghcr.io/${{ github.repository }}/api
+  DASHBOARD_IMAGE: ghcr.io/${{ github.repository }}/dashboard
 
 jobs:
-  deploy:
+  # ------------------------------------------------------------------
+  # Job 1: Run tests before deploying
+  # ------------------------------------------------------------------
+  test:
     runs-on: ubuntu-latest
-    environment: production
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to production
-        run: |
-          echo "✅ Deployment placeholder - configure actual deployment steps"
-          echo "Deployment would happen here in production setup"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
 
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: pytest tests/ -q --tb=line
+
+  # ------------------------------------------------------------------
+  # Job 2: Build and push Docker images to GHCR
+  # ------------------------------------------------------------------
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    outputs:
+      api_tag: ${{ steps.meta-api.outputs.tags }}
+      dashboard_tag: ${{ steps.meta-dashboard.outputs.tags }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase repository name
+        id: repo
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push API image
+        id: meta-api
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.repo.outputs.name }}/api:latest
+            ghcr.io/${{ steps.repo.outputs.name }}/api:${{ github.sha }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build and push Dashboard image
+        id: meta-dashboard
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.dashboard
+          push: true
+          tags: |
+            ghcr.io/${{ steps.repo.outputs.name }}/dashboard:latest
+            ghcr.io/${{ steps.repo.outputs.name }}/dashboard:${{ github.sha }}
+          cache-from: type=gha,scope=dashboard
+          cache-to: type=gha,mode=max,scope=dashboard
+
+  # ------------------------------------------------------------------
+  # Job 3: Deploy to Azure App Service
+  # ------------------------------------------------------------------
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Lowercase repository name
+        id: repo
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy Dashboard to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: abaco-analytics-dashboard
+          images: ghcr.io/${{ steps.repo.outputs.name }}/dashboard:${{ github.sha }}
+
+      - name: Azure Logout
+        if: always()
+        run: az logout
+
+  # ------------------------------------------------------------------
+  # Job 4: Post-deployment health check
+  # ------------------------------------------------------------------
   verify:
     runs-on: ubuntu-latest
     needs: deploy
-    permissions:
-      contents: read
-      issues: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify deployment
-        env:
-          HEALTHCHECK_URL: ${{ env.PRODUCTION_HEALTHCHECK_URL }}
+      - name: Wait for App Service cold start
+        run: sleep 30
+
+      - name: Health check - Dashboard
         run: |
-          echo "Verifying deployment..."
-          if [ -z "${HEALTHCHECK_URL}" ]; then
-            echo "⚠️  PRODUCTION_HEALTHCHECK_URL not configured. Skipping verification."
-            echo "To enable: Set repository variable PRODUCTION_HEALTHCHECK_URL in GitHub Settings"
-            exit 0
-          fi
-          echo "Checking health at ${HEALTHCHECK_URL}..."
-          curl -f "${HEALTHCHECK_URL}" || exit 1
+          APP_URL="https://abaco-analytics-dashboard.azurewebsites.net"
+          echo "Checking dashboard at ${APP_URL}..."
+          for i in 1 2 3 4 5; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${APP_URL}" || echo "000")
+            echo "Attempt ${i}: HTTP ${HTTP_CODE}"
+            if [ "${HTTP_CODE}" = "200" ]; then
+              echo "Dashboard is healthy."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Dashboard did not respond with 200 after 5 attempts."
+          exit 1
 
       - name: Notify on failure
         if: failure()
@@ -52,7 +150,7 @@ jobs:
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: '🚨 Deployment verification failed',
-              body: 'Deployment verification failed. Check logs.',
+              title: 'Deployment verification failed',
+              body: `Deployment verification failed for commit ${context.sha}.\n\nCheck the [workflow logs](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`,
               labels: ['deployment', 'bug']
             })
