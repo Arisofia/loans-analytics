@@ -24,7 +24,7 @@ import pandas as pd
 from python.logging_config import get_logger
 
 try:
-    import httpx
+    import httpx  # pylint: disable=unused-import  # used in _trigger_dashboard_refresh
 except ImportError:
     httpx = None  # type: ignore[assignment]
 

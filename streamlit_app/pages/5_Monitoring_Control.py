@@ -81,13 +81,13 @@ with col_limit:
     event_limit = st.number_input("Limit", min_value=1, max_value=500, value=50)
 
 if st.button("Refresh Events", key="refresh_events"):
-    params: dict = {"limit": event_limit}
+    event_params: dict = {"limit": event_limit}
     if severity_filter != "all":
-        params["severity"] = severity_filter
+        event_params["severity"] = severity_filter
     if source_filter:
-        params["source"] = source_filter
+        event_params["source"] = source_filter
 
-    data = _api_get("/monitoring/events", params=params)
+    data = _api_get("/monitoring/events", params=event_params)
     if data and data.get("events"):
         st.session_state["events_data"] = data["events"]
     elif data:
@@ -169,11 +169,11 @@ status_filter = st.selectbox(
 )
 
 if st.button("Refresh Commands", key="refresh_cmds"):
-    params = {"limit": 50}
+    cmd_query_params = {"limit": 50}
     if status_filter != "all":
-        params["status"] = status_filter
+        cmd_query_params["status"] = status_filter
 
-    data = _api_get("/monitoring/commands", params=params)
+    data = _api_get("/monitoring/commands", params=cmd_query_params)
     if data and data.get("commands"):
         st.session_state["commands_data"] = data["commands"]
     elif data:

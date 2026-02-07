@@ -87,7 +87,7 @@ class MonitoringService:
             {where}
             ORDER BY created_at DESC
             LIMIT ${idx} OFFSET ${idx + 1}
-        """
+        """  # nosec B608 -- parameterized via asyncpg $N placeholders
 
         rows = await pool.fetch(query, *params)
         return [self._row_to_event(r) for r in rows]
@@ -162,7 +162,7 @@ class MonitoringService:
             {where}
             ORDER BY created_at DESC
             LIMIT ${idx}
-        """
+        """  # nosec B608 -- parameterized via asyncpg $N placeholders
 
         rows = await pool.fetch(query, *params)
         return [self._row_to_command(r) for r in rows]
