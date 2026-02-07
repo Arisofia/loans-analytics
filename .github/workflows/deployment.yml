@@ -103,7 +103,9 @@ jobs:
             --name abaco-loans-api \
             --resource-group abaco-loans-rg \
             --container-image-name "ghcr.io/${{ steps.repo.outputs.name }}/api:${{ github.sha }}" \
-            --container-registry-url "https://ghcr.io" && \
+            --container-registry-url "https://ghcr.io" \
+            --container-registry-user "${{ github.actor }}" \
+            --container-registry-password "${{ secrets.GITHUB_TOKEN }}" && \
           az webapp restart --name abaco-loans-api --resource-group abaco-loans-rg
 
       - name: Deploy Dashboard container
@@ -112,7 +114,9 @@ jobs:
             --name abaco-loans-dashboard \
             --resource-group abaco-loans-rg \
             --container-image-name "ghcr.io/${{ steps.repo.outputs.name }}/dashboard:${{ github.sha }}" \
-            --container-registry-url "https://ghcr.io" && \
+            --container-registry-url "https://ghcr.io" \
+            --container-registry-user "${{ github.actor }}" \
+            --container-registry-password "${{ secrets.GITHUB_TOKEN }}" && \
           az webapp restart --name abaco-loans-dashboard --resource-group abaco-loans-rg
 
       - name: Azure Logout
@@ -138,10 +142,12 @@ jobs:
             echo "Attempt ${i}: HTTP ${HTTP_CODE}"
             if [ "${HTTP_CODE}" = "200" ]; then
               echo "API is healthy."
-              break
+              exit 0
             fi
             sleep 15
           done
+          echo "API did not respond with 200 after 5 attempts."
+          exit 1
 
       - name: Health check - Dashboard
         run: |
