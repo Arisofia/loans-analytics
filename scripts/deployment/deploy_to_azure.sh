@@ -50,15 +50,16 @@ if ! command -v gh &>/dev/null; then
 	exit 1
 fi
 
-if [[ -n $(git status -s) ]]; then
+git_status_output=$(git status -s)
+if [[ -n ${git_status_output} ]]; then
 	echo -e "${RED}❌ Uncommitted changes detected. Please commit all changes first.${NC}"
 	git status
 	exit 1
 fi
 
 CURRENT_BRANCH=$(git branch --show-current)
-if [[ $CURRENT_BRANCH != "main" ]]; then
-	echo -e "${RED}❌ Not on 'main' branch. Currently on: $CURRENT_BRANCH${NC}"
+if [[ ${CURRENT_BRANCH} != "main" ]]; then
+	echo -e "${RED}❌ Not on 'main' branch. Currently on: ${CURRENT_BRANCH}${NC}"
 	exit 1
 fi
 
@@ -71,16 +72,16 @@ git fetch origin main
 LOCAL_COMMIT=$(git rev-parse main)
 REMOTE_COMMIT=$(git rev-parse origin/main)
 
-if [[ $LOCAL_COMMIT != "$REMOTE_COMMIT" ]]; then
+if [[ ${LOCAL_COMMIT} != "${REMOTE_COMMIT}" ]]; then
 	echo -e "${RED}❌ Local and remote main branches differ.${NC}"
-	echo "Local: $LOCAL_COMMIT"
-	echo "Remote: $REMOTE_COMMIT"
+	echo "Local: ${LOCAL_COMMIT}"
+	echo "Remote: ${REMOTE_COMMIT}"
 	echo "Please pull/push to sync."
 	exit 1
 fi
 
 echo -e "${GREEN}✅ main branch is synced with origin/main${NC}"
-echo "Latest commit: $(git log -1 --oneline)"
+echo "Latest commit: $(git log -1 --oneline || true)"
 echo ""
 
 # Step 3: Validate tests pass locally
@@ -104,7 +105,7 @@ fi
 # Step 4: Check GitHub secrets exist
 echo -e "${YELLOW}[Step 4] Checking GitHub deployment secrets...${NC}"
 
-if gh secret list -R "$REPO_OWNER/$REPO_NAME" | grep -qE "AZURE_CREDENTIALS|AZURE_WEBAPP_PUBLISH_PROFILE"; then
+if gh secret list -R "${REPO_OWNER}/${REPO_NAME}" | grep -qE "AZURE_CREDENTIALS|AZURE_WEBAPP_PUBLISH_PROFILE"; then
 	echo -e "${GREEN}✅ Azure deployment secrets configured${NC}\n"
 else
 	echo -e "${RED}❌ Neither AZURE_CREDENTIALS nor AZURE_WEBAPP_PUBLISH_PROFILE found.${NC}"
@@ -115,23 +116,23 @@ fi
 # Step 5: Trigger GitHub Actions workflow
 echo -e "${YELLOW}[Step 5] Triggering GitHub Actions deployment...${NC}"
 
-WORKFLOW_RUN=$(gh workflow run "$WORKFLOW_NAME" -R "$REPO_OWNER/$REPO_NAME" --ref main 2>&1 | grep -oP '(?<=Run ID: )\d+' || echo "")
+WORKFLOW_RUN=$(gh workflow run "${WORKFLOW_NAME}" -R "${REPO_OWNER}/${REPO_NAME}" --ref main 2>&1 | grep -oP '(?<=Run ID: )\d+' || echo "")
 
-if [[ -z $WORKFLOW_RUN ]]; then
+if [[ -z ${WORKFLOW_RUN} ]]; then
 	# Try alternative approach if previous didn't work
 	echo "Attempting alternative workflow trigger..."
-	gh workflow run "$WORKFLOW_NAME" -R "$REPO_OWNER/$REPO_NAME" --ref main
+	gh workflow run "${WORKFLOW_NAME}" -R "${REPO_OWNER}/${REPO_NAME}" --ref main
 	sleep 5
-	WORKFLOW_RUN=$(gh run list -R "$REPO_OWNER/$REPO_OWNER/$REPO_NAME" -w "$WORKFLOW_NAME" --limit 1 --json databaseId -q '.[0].databaseId')
+	WORKFLOW_RUN=$(gh run list -R "${REPO_OWNER}/${REPO_OWNER}/${REPO_NAME}" -w "${WORKFLOW_NAME}" --limit 1 --json databaseId -q '.[0].databaseId')
 fi
 
-if [[ -z $WORKFLOW_RUN ]]; then
+if [[ -z ${WORKFLOW_RUN} ]]; then
 	echo -e "${YELLOW}⚠️  Could not capture workflow run ID automatically.${NC}"
-	echo "Visit: https://github.com/$REPO_OWNER/$REPO_NAME/actions/workflows/$WORKFLOW_NAME"
+	echo "Visit: https://github.com/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${WORKFLOW_NAME}"
 	echo "to monitor the deployment manually."
 else
-	echo -e "${GREEN}✅ Workflow triggered: Run ID $WORKFLOW_RUN${NC}"
-	echo "Monitor at: https://github.com/$REPO_OWNER/$REPO_NAME/actions/runs/$WORKFLOW_RUN"
+	echo -e "${GREEN}✅ Workflow triggered: Run ID ${WORKFLOW_RUN}${NC}"
+	echo "Monitor at: https://github.com/${REPO_OWNER}/${REPO_NAME}/actions/runs/${WORKFLOW_RUN}"
 fi
 
 echo ""
@@ -141,17 +142,17 @@ echo -e "${YELLOW}[Step 6] Waiting for deployment to complete (this may take 5-1
 echo "Check workflow status above while we wait..."
 echo ""
 
-if [[ -n $WORKFLOW_RUN ]]; then
+if [[ -n ${WORKFLOW_RUN} ]]; then
 	# Poll workflow status
-	for i in {1..60}; do
-		STATUS=$(gh run view "$WORKFLOW_RUN" -R "$REPO_OWNER/$REPO_NAME" --json conclusion -q '.conclusion' 2>/dev/null || echo "pending")
+	for _ in {1..60}; do
+		STATUS=$(gh run view "${WORKFLOW_RUN}" -R "${REPO_OWNER}/${REPO_NAME}" --json conclusion -q '.conclusion' 2>/dev/null || echo "pending")
 
-		if [[ $STATUS == "success" ]]; then
+		if [[ ${STATUS} == "success" ]]; then
 			echo -e "${GREEN}✅ Deployment workflow completed successfully${NC}\n"
 			break
-		elif [[ $STATUS == "failure" ]]; then
+		elif [[ ${STATUS} == "failure" ]]; then
 			echo -e "${RED}❌ Deployment workflow failed${NC}"
-			echo "View logs: https://github.com/$REPO_OWNER/$REPO_NAME/actions/runs/$WORKFLOW_RUN"
+			echo "View logs: https://github.com/${REPO_OWNER}/${REPO_NAME}/actions/runs/${WORKFLOW_RUN}"
 			exit 1
 		else
 			echo -n "."
@@ -173,37 +174,37 @@ HEALTH_CHECK_URL="${APP_URL}${HEALTH_CHECK_PATH}"
 ATTEMPT=0
 SUCCESS=false
 
-while [[ $ATTEMPT -lt $MAX_HEALTH_CHECK_ATTEMPTS ]]; do
+while [[ ${ATTEMPT} -lt ${MAX_HEALTH_CHECK_ATTEMPTS} ]]; do
 	ATTEMPT=$((ATTEMPT + 1))
-	echo "Health check attempt $ATTEMPT/$MAX_HEALTH_CHECK_ATTEMPTS..."
+	echo "Health check attempt ${ATTEMPT}/${MAX_HEALTH_CHECK_ATTEMPTS}..."
 
-	if RESPONSE=$(curl -f -s -o /dev/null -w "%{http_code}" "$HEALTH_CHECK_URL" 2>/dev/null); then
-		if [[ $RESPONSE == "200" ]]; then
+	if RESPONSE=$(curl -f -s -o /dev/null -w "%{http_code}" "${HEALTH_CHECK_URL}" 2>/dev/null); then
+		if [[ ${RESPONSE} == "200" ]]; then
 			echo -e "${GREEN}✅ Health check passed (HTTP 200)${NC}"
 			SUCCESS=true
 			break
 		else
-			echo "HTTP $RESPONSE - retrying..."
+			echo "HTTP ${RESPONSE} - retrying..."
 		fi
 	else
 		echo "Connection failed - retrying..."
 	fi
 
-	if [[ $ATTEMPT -lt $MAX_HEALTH_CHECK_ATTEMPTS ]]; then
-		sleep $HEALTH_CHECK_INTERVAL
+	if [[ ${ATTEMPT} -lt ${MAX_HEALTH_CHECK_ATTEMPTS} ]]; then
+		sleep "${HEALTH_CHECK_INTERVAL}"
 	fi
 done
 
-if [[ $SUCCESS == false ]]; then
-	echo -e "${YELLOW}⚠️  Health check did not pass in $MAX_HEALTH_CHECK_ATTEMPTS attempts${NC}"
+if [[ ${SUCCESS} == false ]]; then
+	echo -e "${YELLOW}⚠️  Health check did not pass in ${MAX_HEALTH_CHECK_ATTEMPTS} attempts${NC}"
 	echo "The app may still be initializing. Check status at:"
-	echo "  - URL: $APP_URL"
+	echo "  - URL: ${APP_URL}"
 	echo "  - Azure Portal: https://portal.azure.com"
 	echo "  - Logs: Tail App Service logs for details"
 else
 	echo ""
 	echo -e "${GREEN}✅ App is healthy and responding${NC}"
-	echo "Access your dashboard: ${BLUE}$APP_URL${NC}"
+	echo "Access your dashboard: ${BLUE}${APP_URL}${NC}"
 fi
 
 # Summary
@@ -211,19 +212,19 @@ echo ""
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}Deployment Summary${NC}"
 echo -e "${BLUE}========================================${NC}"
-echo "Repository: $REPO_OWNER/$REPO_NAME"
+echo "Repository: ${REPO_OWNER}/${REPO_NAME}"
 echo "Branch: main"
-echo "Commit: $(git log -1 --oneline)"
-echo "Workflow: $WORKFLOW_NAME"
-if [[ -n $WORKFLOW_RUN ]]; then
-	echo "Run ID: $WORKFLOW_RUN"
+echo "Commit: $(git log -1 --oneline || true)"
+echo "Workflow: ${WORKFLOW_NAME}"
+if [[ -n ${WORKFLOW_RUN} ]]; then
+	echo "Run ID: ${WORKFLOW_RUN}"
 fi
-echo "App URL: $APP_URL"
+echo "App URL: ${APP_URL}"
 echo ""
 echo -e "${GREEN}✅ Deployment automation complete!${NC}"
 echo ""
 echo "Next steps:"
-echo "  1. Visit $APP_URL to verify the app loads"
+echo "  1. Visit ${APP_URL} to verify the app loads"
 echo "  2. Test key features (upload, analysis, dashboards)"
 echo "  3. Monitor logs in Azure Portal for the next 24 hours"
 echo "  4. Confirm scheduled workflows run successfully"

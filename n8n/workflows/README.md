@@ -11,7 +11,7 @@ This directory contains automation workflows for the ABACO Loans Analytics platf
 ### 1. KPI Data Ingestion (`kpi-ingestion.json`)
 
 **Schedule:** Every 6 hours  
-**Trigger:** Cron (0 _/6 _ \* \*)
+**Trigger:** Cron (`0 */6 * * *`)
 
 **Steps:**
 
@@ -23,7 +23,7 @@ This directory contains automation workflows for the ABACO Loans Analytics platf
 ### 2. KPI Alert Monitor (`kpi-alerts.json`)
 
 **Schedule:** Every 15 minutes  
-**Trigger:** Cron (_/15 _ \* \* \*)
+**Trigger:** Cron (`*/15 * * * *`)
 
 **Steps:**
 
@@ -37,7 +37,7 @@ This directory contains automation workflows for the ABACO Loans Analytics platf
 ### 3. Dashboard Refresh (`dashboard-refresh.json`)
 
 **Schedule:** Every 30 minutes
-**Trigger:** Cron (_/30 _ \* \* \*)
+**Trigger:** Cron (`*/30 * * * *`)
 
 **Steps:**
 
@@ -61,7 +61,8 @@ The following workflows integrate with the Monitoring & Command API (`/monitorin
 2. **HTTP Request** node - `GET http://localhost:8000/monitoring/events?severity=critical&limit=10`
 3. **IF** node - Check if `count > 0`
 4. **HTTP Request** node (true branch) - Create a command:
-   ```
+
+   ```text
    POST http://localhost:8000/monitoring/commands
    Body: {
      "command_type": "notify_team",
@@ -70,6 +71,7 @@ The following workflows integrate with the Monitoring & Command API (`/monitorin
      "parameters": { "channel": "ops", "message": "Critical event detected" }
    }
    ```
+
 5. **Email** or **Webhook** node - Send notification to ops team
 
 ### 5. Command Executor
@@ -83,16 +85,19 @@ The following workflows integrate with the Monitoring & Command API (`/monitorin
 3. **IF** node - Check if `count > 0`
 4. **Loop Over Items** node - For each pending command:
    a. **PATCH** - Mark as running:
-   ```
+
+   ```text
    PATCH http://localhost:8000/monitoring/commands/{{ $json.id }}
    Body: { "status": "running" }
    ```
+
    b. **Switch** node on `command_type`:
    - `rerun_pipeline` → **Execute Command** node: `python scripts/run_data_pipeline.py`
    - `notify_team` → **Email** or **Webhook** node
    - `scale_up` → Custom HTTP call to cloud provider
      c. **PATCH** - Mark as completed/failed:
-   ```
+
+   ```text
    PATCH http://localhost:8000/monitoring/commands/{{ $json.id }}
    Body: { "status": "completed", "result": { "output": "..." } }
    ```
@@ -105,6 +110,7 @@ The following workflows integrate with the Monitoring & Command API (`/monitorin
 
 1. **Webhook** node - Listen on `/webhook/sentry-events` (POST)
 2. **Set** node - Extract fields from Sentry payload:
+
    ```json
    {
      "event_type": "sentry_issue",
@@ -117,6 +123,7 @@ The following workflows integrate with the Monitoring & Command API (`/monitorin
      }
    }
    ```
+
 3. **HTTP Request** node - `POST http://localhost:8000/monitoring/events` with the mapped body
 4. **IF** node - If severity is critical, auto-create a command to notify team
 
@@ -124,7 +131,7 @@ The following workflows integrate with the Monitoring & Command API (`/monitorin
 
 ## Creating New Workflows
 
-1. Access n8n: http://localhost:5678
+1. Access n8n: <http://localhost:5678>
 2. Click "New Workflow"
 3. Add nodes and configure
 4. Export as JSON: Menu → Export → JSON

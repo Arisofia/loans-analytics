@@ -1,7 +1,8 @@
 """Service layer for the self-healing monitoring and command system."""
 
+import json
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
 from python.apps.analytics.api.monitoring_models import (
@@ -39,7 +40,7 @@ class MonitoringService:
             event.severity.value,
             event.source,
             event.correlation_id,
-            event.payload,
+            json.dumps(event.payload),
         )
 
         logger.info(
@@ -126,7 +127,7 @@ class MonitoringService:
             cmd.command_type,
             cmd.requested_by,
             cmd.event_id,
-            cmd.parameters,
+            json.dumps(cmd.parameters),
         )
 
         logger.info(
@@ -172,13 +173,7 @@ class MonitoringService:
         pool = await get_pool(settings.database_url)
 
         now = datetime.now(timezone.utc)
-        started_at_expr = "started_at"
-        completed_at_expr = "completed_at"
-
-        if update.status == CommandStatus.running:
-            started_at_expr = "$4"
-        if update.status in (CommandStatus.completed, CommandStatus.failed):
-            completed_at_expr = "$4"
+        result_json = json.dumps(update.result) if update.result is not None else None
 
         # Build the update dynamically based on status transition
         if update.status == CommandStatus.running:
@@ -191,7 +186,7 @@ class MonitoringService:
                           parameters, result, created_at, started_at, completed_at
                 """,
                 update.status.value,
-                update.result,
+                result_json,
                 now,
                 cmd_id,
             )
@@ -205,7 +200,7 @@ class MonitoringService:
                           parameters, result, created_at, started_at, completed_at
                 """,
                 update.status.value,
-                update.result,
+                result_json,
                 now,
                 cmd_id,
             )
@@ -219,7 +214,7 @@ class MonitoringService:
                           parameters, result, created_at, started_at, completed_at
                 """,
                 update.status.value,
-                update.result,
+                result_json,
                 cmd_id,
             )
 
@@ -234,28 +229,44 @@ class MonitoringService:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _row_to_event(row) -> OperationalEventResponse:
+    def _parse_json(value) -> dict:
+        """Parse a jsonb value that may be str or dict from asyncpg."""
+        if value is None:
+            return {}
+        if isinstance(value, str):
+            return json.loads(value)
+        return value
+
+    @staticmethod
+    def _parse_json_nullable(value):
+        """Parse a nullable jsonb value from asyncpg."""
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return json.loads(value)
+        return value
+
+    def _row_to_event(self, row) -> OperationalEventResponse:
         return OperationalEventResponse(
             id=row["id"],
             event_type=row["event_type"],
             severity=EventSeverity(row["severity"]),
             source=row["source"],
             correlation_id=row["correlation_id"],
-            payload=row["payload"] or {},
+            payload=self._parse_json(row["payload"]),
             created_at=row["created_at"],
             acknowledged_at=row["acknowledged_at"],
         )
 
-    @staticmethod
-    def _row_to_command(row) -> CommandResponse:
+    def _row_to_command(self, row) -> CommandResponse:
         return CommandResponse(
             id=row["id"],
             command_type=row["command_type"],
             status=CommandStatus(row["status"]),
             requested_by=row["requested_by"],
             event_id=row["event_id"],
-            parameters=row["parameters"] or {},
-            result=row["result"],
+            parameters=self._parse_json(row["parameters"]),
+            result=self._parse_json_nullable(row["result"]),
             created_at=row["created_at"],
             started_at=row["started_at"],
             completed_at=row["completed_at"],

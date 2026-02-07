@@ -101,14 +101,14 @@ class SupabaseConnectionPool:
         if url.startswith("postgres://") and not url.startswith("postgresql://"):
             url = url.replace("postgres://", "postgresql://", 1)
 
-        # Handle Supabase connection pooler format: postgres.[PROJECT_REF]:[PASSWORD]@host
-        # Extract and reformat to standard postgres://user:password@host format
+        # Supabase pooler format uses postgres.[PROJECT_REF] as the username.
+        # Supavisor REQUIRES this dotted username to route to the correct tenant.
+        # asyncpg handles dotted usernames fine, so we only log for observability.
         pooler_pattern = r"postgresql://postgres\.([^:]+):([^@]+)@(.+)"
         match = re.match(pooler_pattern, url)
         if match:
-            project_ref, password, rest = match.groups()
-            url = f"postgresql://postgres:{password}@{rest}"
-            logger.info("Normalized Supabase pooler URL (project: %s)", project_ref)
+            project_ref = match.group(1)
+            logger.info("Detected Supabase pooler URL (project: %s)", project_ref)
 
         return url
 
