@@ -43,6 +43,9 @@ lint:
     - linters: [bandit]
       paths:
         - tests/**
+    - linters: [black]
+      paths:
+        - python/apps/analytics/api/main.py
 actions:
   enabled:
     - trunk-announce
