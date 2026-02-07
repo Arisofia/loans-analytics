@@ -21,7 +21,6 @@ if sentry_dsn:
 # fallback for environments without FastAPI.
 try:
     from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
-    from fastapi.responses import JSONResponse
 
     from python.apps.analytics.api.models import (
         DataQualityResponse,
@@ -377,11 +376,11 @@ async def list_events(
         sev = EventSeverity(severity) if severity else None
         events = await service.list_events(severity=sev, source=source, limit=limit, offset=offset)
         return EventsListResponse(events=events, count=len(events))
-    except ValueError:
+    except ValueError as exc:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid severity: {severity}. Must be info, warning, or critical",
-        )
+        ) from exc
     except Exception as e:
         logger.error("Error listing events: %s", e)
         raise HTTPException(status_code=500, detail="Internal server error") from e
@@ -395,8 +394,8 @@ async def acknowledge_event(
     """Acknowledge an operational event."""
     try:
         eid = uuid.UUID(event_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid event ID format")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid event ID format") from exc
 
     try:
         result = await service.acknowledge_event(eid)
@@ -435,11 +434,11 @@ async def list_commands(
         st = CommandStatus(status) if status else None
         commands = await service.list_commands(status=st, limit=limit)
         return CommandsListResponse(commands=commands, count=len(commands))
-    except ValueError:
+    except ValueError as exc:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid status: {status}. Must be pending, running, completed, or failed",
-        )
+        ) from exc
     except Exception as e:
         logger.error("Error listing commands: %s", e)
         raise HTTPException(status_code=500, detail="Internal server error") from e
@@ -454,8 +453,8 @@ async def update_command(
     """Update command status and result (used by n8n after execution)."""
     try:
         cid = uuid.UUID(cmd_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid command ID format")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid command ID format") from exc
 
     try:
         result = await service.update_command_status(cid, update)
