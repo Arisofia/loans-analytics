@@ -21,7 +21,7 @@
 
 1. Navigate to: https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/settings/api
 2. Copy these values:
-   - **Project URL:** `***REMOVED***`
+   - **Project URL:** `https://goxdevkqozomyhsyxhte.supabase.co`
    - **anon/public key:** `eyJhbGciOiJIUzI1NiIs...` (long string)
    - **service_role key:** `eyJhbGciOiJIUzI1NiIs...` (different long string)
 
@@ -138,7 +138,7 @@ az account set --subscription <your-subscription-id>
 # Add Supabase credentials
 az keyvault secret set --vault-name aiagent-secrets-kv \
   --name SUPABASE-URL \
-  --value "***REMOVED***"
+  --value "https://goxdevkqozomyhsyxhte.supabase.co"
 
 az keyvault secret set --vault-name aiagent-secrets-kv \
   --name SUPABASE-ANON-KEY \
@@ -192,7 +192,7 @@ az webapp config appsettings set --name abaco-analytics-app \
    - **Slack** → Send alert message
 4. Configure HTTP Request:
    ```
-   URL: ***REMOVED***/rest/v1/monitoring.kpi_values?status=eq.red
+   URL: https://goxdevkqozomyhsyxhte.supabase.co/rest/v1/monitoring.kpi_values?status=eq.red
    Headers:
      apikey: {{ $env.SUPABASE_ANON_KEY }}
      Authorization: Bearer {{ $env.SUPABASE_ANON_KEY }}

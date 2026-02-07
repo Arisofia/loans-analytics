@@ -12,7 +12,7 @@ services:
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - WEBHOOK_URL=http://localhost:5678/
-      - SUPABASE_URL=${SUPABASE_URL:-***REMOVED***}
+      - SUPABASE_URL=${SUPABASE_URL:-https://goxdevkqozomyhsyxhte.supabase.co}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
     volumes:

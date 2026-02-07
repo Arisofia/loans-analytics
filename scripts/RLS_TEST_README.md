@@ -14,7 +14,7 @@ npm install @supabase/supabase-js
 
 ```bash
 # Required
-export SUPABASE_URL="***REMOVED***"
+export SUPABASE_URL="https://goxdevkqozomyhsyxhte.supabase.co"
 export SUPABASE_ANON_KEY="your-anon-key-here"           # From Supabase Dashboard > Settings > API
 export SUPABASE_SERVICE_ROLE_KEY="your-service-key"    # From Supabase Dashboard > Settings > API (KEEP PRIVATE)
 
@@ -67,7 +67,7 @@ node scripts/test-rls.js
      RLS SMOKE TEST SUITE - SUPABASE PRODUCTION SECURITY
 ═══════════════════════════════════════════════════════════════
 
-ℹ️  Testing: ***REMOVED***
+ℹ️  Testing: https://goxdevkqozomyhsyxhte.supabase.co
 ℹ️  Anon Key: ✓ Set
 ℹ️  Service Role Key: ✓ Set
 ℹ️  Test User: ✗ Missing

@@ -107,7 +107,7 @@ If Abaco expands operations to Middle East/North Africa:
 # Example: Test from Yemen via VPN
 curl -H "apikey: $SUPABASE_ANON_KEY" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-  ***REMOVED***/rest/v1/customer_data \
+  https://goxdevkqozomyhsyxhte.supabase.co/rest/v1/customer_data \
   --max-time 10
 
 # Expected: 200 OK within 10 seconds
@@ -177,7 +177,7 @@ curl https://api.supabase.com/v1/projects \
 ```bash
 # Measure API response time
 time curl -s -o /dev/null -H "apikey: $SUPABASE_ANON_KEY" \
-  ***REMOVED***/rest/v1/customer_data?select=id&limit=1
+  https://goxdevkqozomyhsyxhte.supabase.co/rest/v1/customer_data?select=id&limit=1
 
 # Expected: <200ms from North America, <100ms from Europe
 ```

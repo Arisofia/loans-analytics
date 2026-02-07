@@ -86,7 +86,7 @@ All 8 Supabase security vulnerabilities have been **deployed to production**, **
 ```bash
 # Step 1: Get API keys from Supabase Dashboard > Settings > API
 # Step 2: Set environment variables
-export SUPABASE_URL="***REMOVED***"
+export SUPABASE_URL="https://goxdevkqozomyhsyxhte.supabase.co"
 export SUPABASE_ANON_KEY="your-anon-key"
 export SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 

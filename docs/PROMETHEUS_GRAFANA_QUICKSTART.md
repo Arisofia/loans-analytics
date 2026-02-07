@@ -7,7 +7,7 @@
 ## ✅ COMPLETADO: Supabase Metrics API
 
 - Estado: ✅ Funcionando (520 métricas disponibles)
-- Endpoint: ***REMOVED***/customer/v1/privileged/metrics
+- Endpoint: https://goxdevkqozomyhsyxhte.supabase.co/customer/v1/privileged/metrics
 - Autenticación: Basic Auth (service_role:SECRET_API_KEY)
 - Test: `bash scripts/test_metrics_api.sh` → HTTP 200 ✅
 

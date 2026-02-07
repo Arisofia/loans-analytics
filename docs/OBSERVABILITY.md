@@ -59,7 +59,7 @@ https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/settings/api
 
 Required variables:
 
-- `SUPABASE_URL=***REMOVED***`
+- `SUPABASE_URL=https://goxdevkqozomyhsyxhte.supabase.co`
 - `SUPABASE_ANON_KEY=<your-anon-key>`
 - `SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>`
 
@@ -115,7 +115,7 @@ Configured automatically via provisioning:
    - SSL: Required
 
 2. **Supabase REST API** (Secondary)
-   - REST endpoint: `***REMOVED***/rest/v1`
+   - REST endpoint: `https://goxdevkqozomyhsyxhte.supabase.co/rest/v1`
    - Auth: Bearer token with SUPABASE_ANON_KEY
 
 3. **Azure Monitor** (Optional)
@@ -192,7 +192,7 @@ Add to **Azure Key Vault: aiagent-secrets-kv**
 
 | Secret Name                 | Value                                      | Purpose              |
 | --------------------------- | ------------------------------------------ | -------------------- |
-| `SUPABASE-URL`              | `***REMOVED***` | Supabase project URL |
+| `SUPABASE-URL`              | `https://goxdevkqozomyhsyxhte.supabase.co` | Supabase project URL |
 | `SUPABASE-ANON-KEY`         | `<anon-key>`                               | Public API key       |
 | `SUPABASE-SERVICE-ROLE-KEY` | `<service-role-key>`                       | Admin operations     |
 | `GRAFANA-ADMIN-PASSWORD`    | `<secure-password>`                        | Grafana login        |
@@ -207,7 +207,7 @@ az account set --subscription <subscription-id>
 # Add secrets to Key Vault
 az keyvault secret set --vault-name aiagent-secrets-kv \
   --name SUPABASE-URL \
-  --value "***REMOVED***"
+  --value "https://goxdevkqozomyhsyxhte.supabase.co"
 
 az keyvault secret set --vault-name aiagent-secrets-kv \
   --name SUPABASE-ANON-KEY \
@@ -248,7 +248,7 @@ Expected output:
 ```
 🔍 Testing Supabase Connection...
 
-📍 Supabase URL: ***REMOVED***
+📍 Supabase URL: https://goxdevkqozomyhsyxhte.supabase.co
 🔑 API Key: eyJhbGciOiJIUzI1NiIs...xHte
 
 🧪 Test 1: Querying monitoring.kpi_definitions...

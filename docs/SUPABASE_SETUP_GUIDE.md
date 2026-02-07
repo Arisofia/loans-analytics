@@ -55,7 +55,7 @@ Replace the placeholder values:
 
 ```dotenv
 # PUBLIC KEYS (safe to expose)
-NEXT_PUBLIC_SUPABASE_URL=***REMOVED***
+NEXT_PUBLIC_SUPABASE_URL=https://goxdevkqozomyhsyxhte.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=<paste-your-anon-public-key-here>
 
 # SECRET KEYS (server-side only - NEVER commit to git)
@@ -78,7 +78,7 @@ python scripts/setup_supabase_tables.py --verify-only
 
 ```
 ✓ Loaded environment from .env.local
-✓ Supabase URL: ***REMOVED***
+✓ Supabase URL: https://goxdevkqozomyhsyxhte.supabase.co
 ✓ Connected to Supabase
 ✓ Table kpi_timeseries_daily exists and is accessible
 ```
@@ -193,7 +193,7 @@ az container create \
   --cpu 1 \
   --memory 2 \
   --environment-variables \
-    SUPABASE_URL=***REMOVED*** \
+    SUPABASE_URL=https://goxdevkqozomyhsyxhte.supabase.co \
     SUPABASE_ANON_KEY=<your-anon-key> \
     STREAMLIT_SERVER_PORT=8501
 ```
@@ -258,14 +258,14 @@ jobs:
 
 **Required GitHub Secrets:**
 
-- `SUPABASE_URL`: ***REMOVED***
+- `SUPABASE_URL`: https://goxdevkqozomyhsyxhte.supabase.co
 - `SUPABASE_ANON_KEY`: Your anon public key
 
 **Setup:**
 
 ```bash
 # Add secrets to GitHub
-gh secret set SUPABASE_URL --body "***REMOVED***"
+gh secret set SUPABASE_URL --body "https://goxdevkqozomyhsyxhte.supabase.co"
 gh secret set SUPABASE_ANON_KEY --body "<your-anon-key>"
 ```
 

@@ -30,7 +30,7 @@ supabase db dump --linked | grep -i "create schema.*monitoring"
 // supabase-js example (Node.js or browser)
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = '***REMOVED***'
+const SUPABASE_URL = 'https://goxdevkqozomyhsyxhte.supabase.co'
 const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE'
 
 const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -76,7 +76,7 @@ Data (expected: null): null
 ```javascript
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = '***REMOVED***'
+const SUPABASE_URL = 'https://goxdevkqozomyhsyxhte.supabase.co'
 const SERVICE_ROLE_KEY = 'YOUR_SERVICE_ROLE_KEY_HERE' // Private - never expose
 
 const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
@@ -122,7 +122,7 @@ Rows returned: 1
 ```javascript
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = '***REMOVED***'
+const SUPABASE_URL = 'https://goxdevkqozomyhsyxhte.supabase.co'
 const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE'
 
 const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)

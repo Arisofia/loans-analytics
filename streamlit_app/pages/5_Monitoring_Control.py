@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+from urllib.parse import quote, urljoin
 
 import pandas as pd
 import requests
@@ -39,7 +40,14 @@ API_BASE = st.sidebar.text_input("API Base URL", value="http://localhost:8000", 
 
 def _api_get(path: str, params: dict | None = None):
     try:
-        resp = requests.get(f"{API_BASE}{path}", params=params, timeout=5)
+        if ".." in path:
+            st.error("Invalid path: path traversal detected.")
+            return None
+        url = urljoin(API_BASE, path)
+        if not url.startswith(API_BASE):
+            st.error("Invalid URL: attempted to escape API_BASE.")
+            return None
+        resp = requests.get(url, params=params, timeout=5)
         resp.raise_for_status()
         return resp.json()
     except Exception as e:
@@ -49,7 +57,14 @@ def _api_get(path: str, params: dict | None = None):
 
 def _api_post(path: str, json_body: dict | None = None):
     try:
-        resp = requests.post(f"{API_BASE}{path}", json=json_body, timeout=5)
+        if ".." in path:
+            st.error("Invalid path: path traversal detected.")
+            return None
+        url = urljoin(API_BASE, path)
+        if not url.startswith(API_BASE):
+            st.error("Invalid URL: attempted to escape API_BASE.")
+            return None
+        resp = requests.post(url, json=json_body, timeout=5)
         resp.raise_for_status()
         return resp.json()
     except Exception as e:
@@ -59,7 +74,14 @@ def _api_post(path: str, json_body: dict | None = None):
 
 def _api_patch(path: str, json_body: dict | None = None):
     try:
-        resp = requests.patch(f"{API_BASE}{path}", json=json_body, timeout=5)
+        if ".." in path:
+            st.error("Invalid path: path traversal detected.")
+            return None
+        url = urljoin(API_BASE, path)
+        if not url.startswith(API_BASE):
+            st.error("Invalid URL: attempted to escape API_BASE.")
+            return None
+        resp = requests.patch(url, json=json_body, timeout=5)
         resp.raise_for_status()
         return resp.json()
     except Exception as e:
@@ -110,7 +132,9 @@ if "events_data" in st.session_state and st.session_state["events_data"]:
     event_id_to_ack = st.text_input("Event ID to acknowledge")
     if st.button("Acknowledge", key="ack_btn"):
         if event_id_to_ack:
-            result = _api_post(f"/monitoring/events/{event_id_to_ack}/ack")
+            # Sanitize event ID to prevent path traversal
+            safe_id = quote(event_id_to_ack, safe="")
+            result = _api_post(f"/monitoring/events/{safe_id}/ack")
             if result:
                 st.success(f"Event {event_id_to_ack} acknowledged.")
         else:

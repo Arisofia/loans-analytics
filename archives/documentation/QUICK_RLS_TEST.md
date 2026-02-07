@@ -7,7 +7,7 @@
 npm install @supabase/supabase-js
 
 # Set your API keys (from Supabase Dashboard > Settings > API)
-export SUPABASE_URL="***REMOVED***"
+export SUPABASE_URL="https://goxdevkqozomyhsyxhte.supabase.co"
 export SUPABASE_ANON_KEY="REDACTED"  # From dashboard
 export SUPABASE_SERVICE_ROLE_KEY="REDACTED"  # From dashboard (KEEP PRIVATE!)
 

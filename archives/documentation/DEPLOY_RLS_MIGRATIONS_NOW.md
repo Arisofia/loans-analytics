@@ -318,14 +318,14 @@ ORDER BY t.schemaname, t.tablename;
 
 ```bash
 # Test that anon key CANNOT insert data (should return 403)
-curl -X POST '***REMOVED***/rest/v1/customer_data' \
+curl -X POST 'https://goxdevkqozomyhsyxhte.supabase.co/rest/v1/customer_data' \
   -H "apikey: $SUPABASE_ANON_KEY" \
   -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name": "Test"}'
 
 # Test that service_role CAN insert data (should return 201)
-curl -X POST '***REMOVED***/rest/v1/customer_data' \
+curl -X POST 'https://goxdevkqozomyhsyxhte.supabase.co/rest/v1/customer_data' \
   -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
   -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
   -H "Content-Type: application/json" \

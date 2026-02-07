@@ -110,7 +110,7 @@ $ bash scripts/test_metrics_api.sh
 
 ```bash
 $ curl --user "service_role:$SUPABASE_SECRET_API_KEY" \
-  "***REMOVED***/customer/v1/privileged/metrics"
+  "https://goxdevkqozomyhsyxhte.supabase.co/customer/v1/privileged/metrics"
 # Respuesta: HTTP 200 con métricas Prometheus
 ```
 

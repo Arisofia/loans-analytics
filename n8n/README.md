@@ -116,7 +116,7 @@ To manually import:
 // Trigger: Schedule (every 15 minutes)
 // Step 1: HTTP Request to Supabase
 const response = await fetch(
-  '***REMOVED***/rest/v1/monitoring.kpi_values?status=eq.red',
+  'https://goxdevkqozomyhsyxhte.supabase.co/rest/v1/monitoring.kpi_values?status=eq.red',
   {
     headers: {
       apikey: '{{ $env.SUPABASE_ANON_KEY }}',

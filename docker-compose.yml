@@ -8,7 +8,7 @@ services:
       - "3000:3000"
     environment:
       # Next.js reads these at runtime/server and also may expose NEXT_PUBLIC_* to the client
-      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-***REMOVED***}
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-https://goxdevkqozomyhsyxhte.supabase.co}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     healthcheck:
       test: [ "CMD", "node", "-e", "fetch('http://localhost:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))" ]
@@ -26,7 +26,7 @@ services:
       - "8501:8501"
     environment:
       # Streamlit dashboard
-      SUPABASE_URL: ${SUPABASE_URL:-***REMOVED***}
+      SUPABASE_URL: ${SUPABASE_URL:-https://goxdevkqozomyhsyxhte.supabase.co}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
     healthcheck:
