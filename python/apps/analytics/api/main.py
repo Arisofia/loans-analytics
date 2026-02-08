@@ -6,15 +6,11 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from python.logging_config import init_sentry, set_sentry_correlation
-
 # Avoid importing FastAPI at module import time so tests don't require
 # fastapi installed. Use a lazy import and a lightweight HTTPException
 # fallback for environments without FastAPI.
 try:
     from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
-
-    init_sentry(service_name="analytics-api")
 
     from python.apps.analytics.api.models import (
         DataQualityResponse,
@@ -39,7 +35,10 @@ try:
     )
     from python.apps.analytics.api.monitoring_service import MonitoringService
     from python.apps.analytics.api.service import KPIService
+    from python.logging_config import init_sentry, set_sentry_correlation
     from python.multi_agent.orchestrator import MultiAgentOrchestrator
+
+    init_sentry(service_name="analytics-api")
 
     app: Optional[FastAPI] = FastAPI(title="Abaco Loans Analytics API")
 
