@@ -141,23 +141,23 @@ class ErrorResponse(BaseModel):
 
 
 class DefaultPredictionRequest(BaseModel):
-    principal_amount: float = Field(..., description="Original loan amount")
-    interest_rate: float = Field(..., description="Annual interest rate")
-    term_months: float = Field(12.0, description="Loan term in months")
-    collateral_value: float = Field(0.0, description="Collateral value")
-    outstanding_balance: float = Field(..., description="Current outstanding balance")
-    tpv: float = Field(0.0, description="Total processed value")
-    equifax_score: Optional[float] = Field(None, description="Equifax credit score")
-    last_payment_amount: float = Field(0.0, description="Last payment amount")
-    total_scheduled: float = Field(0.0, description="Total scheduled payments")
-    origination_fee: float = Field(0.0, description="Origination fee")
-    days_past_due: int = Field(0, description="Days past due (for real-time model)")
+    """Request body for the /predict/default endpoint."""
+
+    loan_amount: float = Field(..., description="Loan principal amount")
+    interest_rate: float = Field(..., description="Annual interest rate (percentage)")
+    term_months: int = Field(..., description="Loan term in months")
+    ltv_ratio: float = Field(0.0, description="Loan-to-Value ratio")
+    dti_ratio: float = Field(0.0, description="Debt-to-Income ratio")
+    credit_score: float = Field(0.0, description="Borrower credit score")
+    days_past_due: int = Field(0, description="Current days past due")
+    monthly_income: float = Field(0.0, description="Borrower monthly income")
+    employment_length_years: float = Field(0.0, description="Years of employment")
+    num_open_accounts: int = Field(0, description="Number of open credit accounts")
 
 
 class DefaultPredictionResponse(BaseModel):
+    """Response body for the /predict/default endpoint."""
+
     probability: float = Field(..., description="Default probability (0-1)")
-    risk_level: str = Field(..., description="Risk level: low/medium/high/critical")
-    model_version: str = Field("xgb_v1", description="Model version used")
-
-
-# --- End Schemas from openapi.yaml ---
+    risk_level: str = Field(..., description="Risk level: low, medium, high, critical")
+    model_version: str = Field(..., description="Model version identifier")

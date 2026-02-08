@@ -251,7 +251,7 @@ if app is not None:
                 audit_trail=[{"kpi_count": len(kpis), "source": "production-snapshot"}],
             )
         except Exception as e:
-            logger.error(f"Error in calculate_all_kpis: {e}")
+            logger.error("Error in calculate_all_kpis: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post("/analytics/kpis/{kpi_id}", response_model=KpiSingleResponse)
@@ -290,7 +290,7 @@ if app is not None:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error in get_single_kpi: {e}")
+            logger.error("Error in get_single_kpi: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post("/analytics/risk-alerts", response_model=RiskAlertsResponse)
@@ -321,7 +321,7 @@ if app is not None:
                 high_risk_loans=risk_loans,
             )
         except Exception as e:
-            logger.error(f"Error in get_risk_alerts: {e}")
+            logger.error("Error in get_risk_alerts: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post("/analytics/full-analysis", response_model=FullAnalysisResponse)
@@ -364,7 +364,7 @@ if app is not None:
                 )
                 summary = results.get("risk_assessment", "Analysis completed successfully.")
             except Exception as orch_err:
-                logger.info(f"Using High-Fidelity Local Analytical Engine: {orch_err}")
+                logger.info("Using High-Fidelity Local Analytical Engine: %s", orch_err)
                 trace_id = str(uuid.uuid4())
 
                 # High-fidelity deterministic analysis
@@ -401,7 +401,7 @@ if app is not None:
                 ),
             )
         except Exception as e:
-            logger.error(f"Error in get_full_analysis: {e}")
+            logger.error("Error in get_full_analysis: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post("/data-quality/profile", response_model=DataQualityResponse)
@@ -415,7 +415,7 @@ if app is not None:
             dq_profile = await service.get_data_quality_profile(request.loans)
             return dq_profile
         except Exception as e:
-            logger.error(f"Error in get_data_quality_profile: {e}")
+            logger.error("Error in get_data_quality_profile: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post(
@@ -433,7 +433,7 @@ if app is not None:
             validation_result = await service.validate_loan_portfolio_schema(request.loans)
             return validation_result
         except Exception as e:
-            logger.error(f"Error in validate_loan_data: {e}")
+            logger.error("Error in validate_loan_data: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.get("/data/{file_path:path}")
