@@ -18,6 +18,7 @@ LABEL_FAIL = "\033[91mFAIL\033[0m"
 LABEL_WARN = "\033[93mWARN\033[0m"
 
 results = []
+warnings = []
 
 
 def check(name, ok, detail=""):
@@ -30,7 +31,8 @@ def check(name, ok, detail=""):
 def check_warn(name, ok, detail=""):
     """Record a non-blocking check: WARNs do not affect the exit code."""
     status = LABEL_PASS if ok else LABEL_WARN
-    # Intentionally do not append to `results` so WARN-only runs do not fail the script
+    warnings.append((name, ok))
+    # Intentionally append to warnings, not results, so WARN-only runs do not fail the script
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -429,8 +431,10 @@ def main():
     # ==========================================
     passed = sum(1 for _, ok in results if ok)
     failed = sum(1 for _, ok in results if not ok)
+    warned = sum(1 for _, ok in warnings if not ok)
+    total_checks = len(results) + len(warnings)
     print("\n" + "=" * 70)
-    print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {len(results)} total")
+    print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {warned} warned, {total_checks} total")
     if failed == 0:
         print(f"  [{LABEL_PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
     else:

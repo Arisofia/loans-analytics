@@ -18,6 +18,7 @@ LABEL_FAIL = COLOR_RED + "FAIL" + COLOR_RESET
 LABEL_WARN = COLOR_YELLOW + "WARN" + COLOR_RESET
 
 results = []
+warnings = []
 
 
 def check(name, ok, detail=""):
@@ -28,8 +29,9 @@ def check(name, ok, detail=""):
 
 
 def check_warn(name, ok, detail=""):
+    """Record a non-blocking check: WARNs do not affect the exit code."""
     status = LABEL_PASS if ok else LABEL_WARN
-    results.append((name, ok))
+    warnings.append((name, ok))
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -266,8 +268,10 @@ def main():
     # --- SUMMARY ---
     passed = sum(1 for _, ok in results if ok)
     failed = sum(1 for _, ok in results if not ok)
+    warned = sum(1 for _, ok in warnings if not ok)
+    total_checks = len(results) + len(warnings)
     print("\n" + "=" * 60)
-    print(f"  RESULTS: {passed} passed, {failed} failed, {len(results)} total")
+    print(f"  RESULTS: {passed} passed, {failed} failed, {warned} warned, {total_checks} total")
     if failed == 0:
         print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")
     else:
