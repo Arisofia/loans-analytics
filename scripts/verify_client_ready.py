@@ -31,6 +31,8 @@ def check(name, ok, detail=""):
 def check_warn(name, ok, detail=""):
     """Record a warning-level check that doesn't affect exit code."""
     status = LABEL_PASS if ok else LABEL_WARN
+    # Record in both overall results and warnings so summaries remain consistent.
+    results.append((name, ok))
     warnings.append((name, ok))  # Track separately
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
