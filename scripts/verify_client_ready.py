@@ -9,16 +9,20 @@ import sys
 import urllib.request
 from datetime import datetime, timezone
 
-PASS = "\033[92mPASS\033[0m"
-FAIL = "\033[91mFAIL\033[0m"
-WARN = "\033[93mWARN\033[0m"
+COLOR_GREEN = "\033[92m"
+COLOR_RED = "\033[91m"
+COLOR_YELLOW = "\033[93m"
+COLOR_RESET = "\033[0m"
+LABEL_PASS = COLOR_GREEN + "PASS" + COLOR_RESET
+LABEL_FAIL = COLOR_RED + "FAIL" + COLOR_RESET
+LABEL_WARN = COLOR_YELLOW + "WARN" + COLOR_RESET
 
 results = []
 warnings = []  # Track warnings separately from failures
 
 
 def check(name, ok, detail=""):
-    status = PASS if ok else FAIL
+    status = LABEL_PASS if ok else LABEL_FAIL
     results.append((name, ok))
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
@@ -26,7 +30,7 @@ def check(name, ok, detail=""):
 
 def check_warn(name, ok, detail=""):
     """Record a warning-level check that doesn't affect exit code."""
-    status = PASS if ok else WARN
+    status = LABEL_PASS if ok else LABEL_WARN
     warnings.append((name, ok))  # Track separately
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
@@ -139,13 +143,20 @@ def main():
     print("\n3. SUPABASE REST API")
     if envs.get("SUPABASE_URL") and envs.get("SUPABASE_ANON_KEY"):
         try:
+            base_url = envs["SUPABASE_URL"].rstrip("/")
+            anon_key = envs["SUPABASE_ANON_KEY"]
+            health_table = "monitoring_operational_events"
+            url = f"{base_url}/rest/v1/{health_table}?select=id&limit=1"
             req = urllib.request.Request(
-                envs["SUPABASE_URL"] + "/rest/v1/",
-                headers={"apikey": envs["SUPABASE_ANON_KEY"]},
+                url,
+                headers={
+                    "apikey": anon_key,
+                    "Accept": "application/json",
+                },
             )
             resp = urllib.request.urlopen(req, timeout=10)
-            data = json.loads(resp.read())
-            check("REST API", True, f"{len(data)} endpoints")
+            status = resp.getcode()
+            check("REST API", 200 <= status < 300, f"HTTP {status} on {health_table}")
         except Exception as e:
             check("REST API", False, str(e)[:80])
     else:
@@ -174,9 +185,17 @@ def main():
     # --- 5. SENTRY ---
     print("\n5. SENTRY / OBSERVABILITY")
     dsn = envs.get("SENTRY_DSN", "")
-    check_warn("Sentry DSN", "ingest" in dsn, dsn[:40] + "...")
+    check_warn(
+        "Sentry DSN",
+        bool(dsn) and "ingest" in dsn,
+        dsn[:40] + "..." if dsn else "MISSING (optional)",
+    )
     otel = envs.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
-    check_warn("OTEL endpoint", "ingest" in otel, otel[:50] + "...")
+    check_warn(
+        "OTEL endpoint",
+        bool(otel),
+        otel[:50] + "..." if otel else "MISSING (optional)",
+    )
 
     # --- 6. PIPELINE ---
     print("\n6. PIPELINE (dry run)")
@@ -191,6 +210,7 @@ def main():
             capture_output=True,
             text=True,
             timeout=30,
+            check=False,
         )
         ok = result.returncode == 0
         if ok:
@@ -200,7 +220,6 @@ def main():
             stdout_snippet = (result.stdout or "").strip()
             message_source = stderr_snippet or stdout_snippet
             if message_source:
-                # Normalize and truncate to keep output concise and safe
                 normalized = message_source.replace("\n", " ")
                 snippet = normalized[:160]
                 detail = f"non-zero exit code {result.returncode}: {snippet}"
@@ -211,7 +230,7 @@ def main():
         check(
             "Pipeline config validation",
             False,
-            (f"pipeline validation timed out after {e.timeout} seconds")[:80],
+            f"pipeline validation timed out after {e.timeout} seconds",
         )
     except OSError as e:
         check(
@@ -219,10 +238,17 @@ def main():
             False,
             (f"OSError while running pipeline validation: {e.strerror or str(e)}")[:80],
         )
+    except subprocess.SubprocessError as e:
+        check(
+            "Pipeline config validation",
+            False,
+            (f"Subprocess error during pipeline validation: {str(e)}")[:80],
+        )
 
     # --- 7. KEY FILES ---
     print("\n7. KEY FILES")
-    key_files = [
+
+    core_files = [
         "src/pipeline/orchestrator.py",
         "src/pipeline/ingestion.py",
         "src/pipeline/transformation.py",
@@ -233,13 +259,17 @@ def main():
         "config/pipeline.yml",
         "config/kpis/kpi_definitions.yaml",
         "config/business_rules.yaml",
-        "data/raw/abaco_real_data_20260202.csv",
         "requirements.txt",
         ".gitignore",
     ]
-    for f in key_files:
+    for f in core_files:
         exists = os.path.exists(f)
         check(f, exists)
+
+    # Real data file is optional but useful for live runs
+    real_data_file = "data/raw/abaco_real_data_20260202.csv"
+    exists_real = os.path.exists(real_data_file)
+    check(real_data_file, exists_real, "present" if exists_real else "optional (not found)")
 
     # --- SUMMARY ---
     passed = sum(1 for _, ok in results if ok)
@@ -247,16 +277,19 @@ def main():
     warned = sum(1 for _, ok in warnings if not ok)
     total_checks = len(results) + len(warnings)
     print("\n" + "=" * 60)
-    print(f"  RESULTS: {passed} passed, {failed} failed, {warned} warnings, {total_checks} total checks")
+    print(
+        f"  RESULTS: {passed} passed, {failed} failed, "
+        f"{warned} warnings, {total_checks} total checks"
+    )
     if failed == 0:
-        print(f"  [{PASS}] SYSTEM IS CLIENT-READY")
+        print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")
     else:
-        print(f"  [{FAIL}] {failed} CHECK(S) NEED ATTENTION")
+        print(f"  [{LABEL_FAIL}] {failed} CHECK(S) NEED ATTENTION")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
     if warned > 0:
-        print(f"  [{WARN}] {warned} OPTIONAL CHECK(S) FAILED (non-blocking)")
+        print(f"  [{LABEL_WARN}] {warned} OPTIONAL CHECK(S) FAILED (non-blocking)")
     print("=" * 60)
     return 0 if failed == 0 else 1
 

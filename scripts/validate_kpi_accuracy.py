@@ -13,16 +13,16 @@ from pathlib import Path
 
 import pandas as pd
 
-PASS = "\033[92mPASS\033[0m"
-FAIL = "\033[91mFAIL\033[0m"
-WARN = "\033[93mWARN\033[0m"
+LABEL_PASS = "\033[92mPASS\033[0m"
+LABEL_FAIL = "\033[91mFAIL\033[0m"
+LABEL_WARN = "\033[93mWARN\033[0m"
 
 results = []
 warnings = []  # Track warnings separately from failures
 
 
 def check(name, ok, detail=""):
-    status = PASS if ok else FAIL
+    status = LABEL_PASS if ok else LABEL_FAIL
     results.append((name, ok))
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
@@ -30,7 +30,7 @@ def check(name, ok, detail=""):
 
 def check_warn(name, ok, detail=""):
     """Record a non-blocking check: WARNs do not affect the exit code."""
-    status = PASS if ok else WARN
+    status = LABEL_PASS if ok else LABEL_WARN
     warnings.append((name, ok))  # Track separately from results
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
@@ -128,11 +128,6 @@ def main():
             df["status"] = df["status"].map(status_map).fillna(df["status"].str.lower())
 
         # 2. Rename columns to match pipeline schema
-        col_map = {
-            "days_past_due": "dpd",
-            "outstanding_balance": "outstanding_balance",
-            "principal_amount": "principal_amount",
-        }
         if "days_past_due" in df.columns:
             df["dpd"] = pd.to_numeric(df["days_past_due"], errors="coerce").fillna(0).astype(int)
 
@@ -433,14 +428,14 @@ def main():
     print("\n" + "=" * 70)
     print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {warned} warnings, {total_checks} total")
     if failed == 0:
-        print(f"  [{PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
+        print(f"  [{LABEL_PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
     else:
-        print(f"  [{FAIL}] {failed} KPI(S) HAVE DISCREPANCIES:")
+        print(f"  [{LABEL_FAIL}] {failed} KPI(S) HAVE DISCREPANCIES:")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
     if warned > 0:
-        print(f"  [{WARN}] {warned} WARNING(S) (non-blocking)")
+        print(f"  [{LABEL_WARN}] {warned} WARNING(S) (non-blocking)")
     print("=" * 70)
     return 0 if failed == 0 else 1
 

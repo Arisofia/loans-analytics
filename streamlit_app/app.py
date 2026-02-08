@@ -81,69 +81,71 @@ def get_table_type_from_filename(filename: str) -> Optional[str]:
 def load_local_exports() -> dict[str, pd.DataFrame]:
     export_data: dict[str, pd.DataFrame] = {}
     if LOCAL_EXPORTS_DIR.exists():
-        for file_path in LOCAL_EXPORTS_DIR.iterdir():
-            if file_path.suffix.lower() == ".csv":
-                key = get_table_type_from_filename(file_path.name)
-                if key:
+        for local_exports_file_item in LOCAL_EXPORTS_DIR.iterdir():
+            if local_exports_file_item.suffix.lower() == ".csv":
+                export_file_map_key = get_table_type_from_filename(local_exports_file_item.name)
+                if export_file_map_key:
                     try:
-                        export_data[key] = pd.read_csv(file_path)
+                        export_data[export_file_map_key] = pd.read_csv(local_exports_file_item)
                     except Exception as exc:
-                        st.error(f"Error loading local file {file_path.name}: {exc}")
+                        st.error(f"Error loading local file {local_exports_file_item.name}: {exc}")
     return export_data
 
 
 def handle_file_uploads() -> dict[str, pd.DataFrame]:
-    uploaded_files = st.sidebar.file_uploader(
+    sidebar_uploaded_files_widget = st.sidebar.file_uploader(
         "Upload CSV Exports",
         type="csv",
         accept_multiple_files=True,
     )
     upload_data: dict[str, pd.DataFrame] = {}
-    if uploaded_files:
-        for uploaded_file in uploaded_files:
-            key = get_table_type_from_filename(uploaded_file.name)
-            if key:
+    if sidebar_uploaded_files_widget:
+        for uploaded_file_widget_item in sidebar_uploaded_files_widget:
+            upload_widget_key = get_table_type_from_filename(uploaded_file_widget_item.name)
+            if upload_widget_key:
                 try:
-                    upload_data[key] = pd.read_csv(uploaded_file)
-                    st.sidebar.success(f"Mapped '{uploaded_file.name}' to {key}")
+                    upload_data[upload_widget_key] = pd.read_csv(uploaded_file_widget_item)
+                    st.sidebar.success(
+                        f"Mapped '{uploaded_file_widget_item.name}' to {upload_widget_key}"
+                    )
                 except Exception as exc:
-                    st.sidebar.error(f"Error reading {uploaded_file.name}: {exc}")
+                    st.sidebar.error(f"Error reading {uploaded_file_widget_item.name}: {exc}")
             else:
                 st.sidebar.warning(
-                    f"Could not map file '{uploaded_file.name}' to known data types."
+                    f"Could not map file '{uploaded_file_widget_item.name}' to known data types."
                 )
     return upload_data
 
 
 def get_normalized_table_type(filename: str) -> Optional[str]:
-    base_name = filename.lower()
-    if "loan" in base_name:
+    normalized_file_name = filename.lower()
+    if "loan" in normalized_file_name:
         return "loan_data"
-    if "customer" in base_name:
+    if "customer" in normalized_file_name:
         return "customer_data"
-    if "payment" in base_name:
+    if "payment" in normalized_file_name:
         return "historic_payment_data"
-    if "schedule" in base_name:
+    if "schedule" in normalized_file_name:
         return "schedule_data"
     return None
 
 
 def fuzzy_map_core_tables(
-    dfs: dict[str, pd.DataFrame | dict[str, pd.DataFrame]],
+    input_dfs: dict[str, pd.DataFrame | dict[str, pd.DataFrame]],
 ) -> dict[str, pd.DataFrame]:
-    mapped_dfs: dict[str, pd.DataFrame] = {}
-    for name, df in dfs.items():
-        if isinstance(df, dict):
-            for sheet_name, sheet_df in df.items():
-                table_key = get_normalized_table_type(sheet_name)
-                if table_key and table_key not in mapped_dfs:
-                    mapped_dfs[table_key] = sheet_df
+    mapped_core_tables_dict: dict[str, pd.DataFrame] = {}
+    for core_table_map_name, core_table_map_val in input_dfs.items():
+        if isinstance(core_table_map_val, dict):
+            for core_sheet_map_name, core_sheet_map_df in core_table_map_val.items():
+                core_table_map_key = get_normalized_table_type(core_sheet_map_name)
+                if core_table_map_key and core_table_map_key not in mapped_core_tables_dict:
+                    mapped_core_tables_dict[core_table_map_key] = core_sheet_map_df
         else:
-            name_lower = name.lower()
-            table_key = get_normalized_table_type(name_lower)
-            if table_key and table_key not in mapped_dfs:  # Prioritize first match
-                mapped_dfs[table_key] = df
-    return mapped_dfs
+            core_name_map_lower = core_table_map_name.lower()
+            core_table_map_key = get_normalized_table_type(core_name_map_lower)
+            if core_table_map_key and core_table_map_key not in mapped_core_tables_dict:
+                mapped_core_tables_dict[core_table_map_key] = core_table_map_val
+    return mapped_core_tables_dict
 
 
 def load_kpi_dashboard() -> dict:
@@ -175,23 +177,25 @@ def load_analytics_facts() -> pd.DataFrame:
 
 
 def build_kpi_snapshot(
-    dashboard_metrics: dict, analytics_facts: pd.DataFrame
+    input_dashboard_metrics: dict, input_analytics_facts: pd.DataFrame
 ) -> tuple[dict[str, float], Optional[pd.Timestamp]]:
-    snapshot: dict[str, float] = {}
-    snapshot_month: Optional[pd.Timestamp] = None
-    if not analytics_facts.empty:
-        for column in ("month", "month_end", "date"):
-            if column in analytics_facts.columns:
-                parsed = pd.to_datetime(analytics_facts[column], errors="coerce").dropna()
-                if not parsed.empty:
-                    snapshot_month = parsed.max()
+    kpi_snapshot: dict[str, float] = {}
+    kpi_snapshot_month: Optional[pd.Timestamp] = None
+    if not input_analytics_facts.empty:
+        for kpi_col_name in ("month", "month_end", "date"):
+            if kpi_col_name in input_analytics_facts.columns:
+                kpi_parsed = pd.to_datetime(
+                    input_analytics_facts[kpi_col_name], errors="coerce"
+                ).dropna()
+                if not kpi_parsed.empty:
+                    kpi_snapshot_month = kpi_parsed.max()
                     break
-    extended_kpis = dashboard_metrics.get("extended_kpis", {})
-    executive_strip = extended_kpis.get("executive_strip", {})
-    for key, value in executive_strip.items():
-        if isinstance(value, (int, float)):
-            snapshot[key] = float(value)
-    root_keys = (
+    kpi_extended_kpis = input_dashboard_metrics.get("extended_kpis", {})
+    kpi_executive_strip = kpi_extended_kpis.get("executive_strip", {})
+    for unique_key_var, kpi_exec_value_item in kpi_executive_strip.items():
+        if isinstance(kpi_exec_value_item, (int, float)):
+            kpi_snapshot[unique_key_var] = float(kpi_exec_value_item)
+    kpi_root_keys = (
         "total_aum_usd",
         "active_clients",
         "monthly_revenue_usd",
@@ -201,11 +205,11 @@ def build_kpi_snapshot(
         "par_90_ratio_pct",
         "delinquency_rate_30_pct",
     )
-    for key in root_keys:
-        value = dashboard_metrics.get(key)
-        if isinstance(value, (int, float)):
-            snapshot.setdefault(key, float(value))
-    return snapshot, snapshot_month
+    for unique_root_key_var in kpi_root_keys:
+        kpi_root_value_item = input_dashboard_metrics.get(unique_root_key_var)
+        if isinstance(kpi_root_value_item, (int, float)):
+            kpi_snapshot.setdefault(unique_root_key_var, float(kpi_root_value_item))
+    return kpi_snapshot, kpi_snapshot_month
 
 
 def load_agent_headcount() -> pd.DataFrame:
@@ -336,34 +340,34 @@ with st.sidebar:
             st.warning("No data artifacts found in local_exports.")
             st.caption("Upload data or switch to Manual upload.")
     else:
-        uploaded_files = st.file_uploader(
+        main_uploaded_files = st.file_uploader(
             "Upload Loan Tape CSVs and Financial XLSX",
             accept_multiple_files=True,
             type=["csv", "xlsx"],
         )
-        if st.button("Ingest Data") or uploaded_files:
-            dfs: dict[str, pd.DataFrame | dict[str, pd.DataFrame]] = {}
-            for file in uploaded_files:
-                if file.name.endswith(".csv"):
-                    dfs[file.name] = pd.read_csv(file)
-                elif file.name.endswith(".xlsx"):
-                    dfs[file.name] = pd.read_excel(file, sheet_name=None)
-            if dfs:
-                for name, df in dfs.items():
-                    if isinstance(df, dict):
-                        for sheet, sheet_df in df.items():
-                            df[sheet] = normalize_dataframe_complete(sheet_df)
+        if st.button("Ingest Data") or main_uploaded_files:
+            main_dfs: dict[str, pd.DataFrame | dict[str, pd.DataFrame]] = {}
+            for main_file in main_uploaded_files:
+                if main_file.name.endswith(".csv"):
+                    main_dfs[main_file.name] = pd.read_csv(main_file)
+                elif main_file.name.endswith(".xlsx"):
+                    main_dfs[main_file.name] = pd.read_excel(main_file, sheet_name=None)
+            if main_dfs:
+                for main_name, main_df in main_dfs.items():
+                    if isinstance(main_df, dict):
+                        for main_sheet, main_sheet_df in main_df.items():
+                            main_df[main_sheet] = normalize_dataframe_complete(main_sheet_df)
                     else:
-                        dfs[name] = normalize_dataframe_complete(df)
-                mapped_dfs = fuzzy_map_core_tables(dfs)
-                final_data = {**dfs, **mapped_dfs}
+                        main_dfs[main_name] = normalize_dataframe_complete(main_df)
+                main_mapped_dfs = fuzzy_map_core_tables(main_dfs)
+                final_data = {**main_dfs, **main_mapped_dfs}
                 st.session_state["data"] = final_data
                 st.session_state["loaded"] = True
                 st.success("Data ingested successfully.")
                 usage_tracker.track(
                     "data_ingestion",
                     "manual_upload",
-                    file_count=len(uploaded_files),
+                    file_count=len(main_uploaded_files),
                 )
                 with st.spinner("Generating KPI exports from uploaded data..."):
                     try:
@@ -386,60 +390,75 @@ with st.sidebar:
     st.session_state["target_outstanding"] = target_outstanding
     st.session_state["target_loans"] = target_loans
 st.title("💰 ABACO Financial Intelligence")
-dashboard_metrics = load_kpi_dashboard()
-analytics_facts = load_analytics_facts()
-if not dashboard_metrics and analytics_facts.empty:
+global_dashboard_metrics_var = load_kpi_dashboard()
+global_analytics_facts_var = load_analytics_facts()
+if not global_dashboard_metrics_var and global_analytics_facts_var.empty:
     st.warning(
         "No KPI exports detected. Generate KPI exports from the sidebar or add "
         "complete_kpi_dashboard.json and analytics_facts.csv to the exports "
         "directory."
     )
-kpi_snapshot, snapshot_month = build_kpi_snapshot(dashboard_metrics, analytics_facts)
-render_kpi_snapshot(kpi_snapshot, snapshot_month)
-render_cashflow_trends(analytics_facts)
+global_kpi_snapshot, global_snapshot_month_var = build_kpi_snapshot(
+    global_dashboard_metrics_var, global_analytics_facts_var
+)
+render_kpi_snapshot(global_kpi_snapshot, global_snapshot_month_var)
+render_cashflow_trends(global_analytics_facts_var)
 if not st.session_state["loaded"]:
     st.info("Upload data files in the sidebar to unlock loan-level diagnostics.")
     st.stop()
 session_data = st.session_state["data"]
-loan_data = session_data.get("loan_data")
-customer_data = session_data.get("customer_data", pd.DataFrame())
-if loan_data is None:
-    mapped = fuzzy_map_core_tables(session_data)
-    loan_data = mapped.get("loan_data")
-    if customer_data.empty:
-        customer_data = mapped.get("customer_data", pd.DataFrame())
-if loan_data is None:
+loan_data_df = session_data.get("loan_data")
+customer_data_df = session_data.get("customer_data", pd.DataFrame())
+if loan_data_df is None:
+    global_mapped_dfs_var = fuzzy_map_core_tables(session_data)
+    loan_data_df = global_mapped_dfs_var.get("loan_data")
+    if customer_data_df.empty:
+        customer_data_df = global_mapped_dfs_var.get("customer_data", pd.DataFrame())
+if loan_data_df is None:
     st.error("Core loan data missing in uploads.")
     st.stop()
-merged = loan_data.copy()
-if not customer_data.empty and "loan_id" in merged.columns and "loan_id" in customer_data.columns:
-    merged = merged.merge(
-        customer_data,
+merged_df = loan_data_df.copy()
+if (
+    not customer_data_df.empty
+    and "loan_id" in merged_df.columns
+    and "loan_id" in customer_data_df.columns
+):
+    merged_df = merged_df.merge(
+        customer_data_df,
         on="loan_id",
         how="left",
         suffixes=("", "_cust"),
     )
-total_outstanding = render_executive_summary(merged)
+total_outstanding = render_executive_summary(merged_df)
 g_col2 = render_growth_analysis(total_outstanding)
-render_category_breakdown(merged, g_col2)
-render_sales_performance(merged, load_agent_headcount)
-render_risk_analysis(merged)
-render_advanced_intelligence(dashboard_metrics)
+render_category_breakdown(merged_df, g_col2)
+render_sales_performance(merged_df, load_agent_headcount)
+render_risk_analysis(merged_df)
+render_advanced_intelligence(global_dashboard_metrics_var)
 st.header("📋 KPI Catalog")
 with st.expander("View all computed KPIs"):
-    all_kpis = dashboard_metrics.get("extended_kpis", {})
-    if all_kpis:
-        flat_kpis = []
-        for key, value in all_kpis.items():
-            if isinstance(value, (int, float, str)):
-                flat_kpis.append({"KPI": kpi_label(key), "Value": format_kpi_value(key, value)})
-        if flat_kpis:
-            st.table(pd.DataFrame(flat_kpis))
+    all_kpis_expanded = global_dashboard_metrics_var.get("extended_kpis", {})
+    if all_kpis_expanded:
+        flat_kpis_expanded = []
+        for unique_kpi_key_exp, kpi_value_exp in all_kpis_expanded.items():
+            if isinstance(kpi_value_exp, (int, float, str)):
+                flat_kpis_expanded.append(
+                    {
+                        "KPI": kpi_label(unique_kpi_key_exp),
+                        "Value": format_kpi_value(unique_kpi_key_exp, kpi_value_exp),
+                    }
+                )
+        if flat_kpis_expanded:
+            st.table(pd.DataFrame(flat_kpis_expanded))
         st.write("**Detailed Data Tables:**")
-        table_keys = [key for key, value in all_kpis.items() if isinstance(value, list) and value]
-        selected_table = st.selectbox("Select table to view", table_keys)
-        if selected_table:
-            st.dataframe(pd.DataFrame(all_kpis[selected_table]))
+        table_keys_expanded = [
+            unique_table_key_exp
+            for unique_table_key_exp, v_exp in all_kpis_expanded.items()
+            if isinstance(v_exp, list) and v_exp
+        ]
+        selected_table_expanded = st.selectbox("Select table to view", table_keys_expanded)
+        if selected_table_expanded:
+            st.dataframe(pd.DataFrame(all_kpis_expanded[selected_table_expanded]))
     else:
         st.info("No extended KPIs found.")
 st.divider()
