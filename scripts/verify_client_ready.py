@@ -138,19 +138,21 @@ def main():
     try:
         base_url = envs.get("SUPABASE_URL", "").rstrip("/")
         anon_key = envs.get("SUPABASE_ANON_KEY", "")
-        # Use a known small table as a health check; adjust if you prefer another table
-        health_table = "monitoring_operational_events"
-        url = f"{base_url}/rest/v1/{health_table}?select=id&limit=1"
-        req = urllib.request.Request(
-            url,
-            headers={
-                "apikey": anon_key,
-                "Accept": "application/json",
-            },
-        )
-        resp = urllib.request.urlopen(req, timeout=10)  # noqa: S310
-        status = resp.getcode()
-        check("REST API", 200 <= status < 300, f"HTTP {status} on {health_table}")
+        if not base_url.startswith("https://"):
+            check("REST API", False, "SUPABASE_URL must use https://")
+        else:
+            health_table = "monitoring_operational_events"
+            url = f"{base_url}/rest/v1/{health_table}?select=id&limit=1"
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "apikey": anon_key,
+                    "Accept": "application/json",
+                },
+            )
+            resp = urllib.request.urlopen(req, timeout=10)  # noqa: S310 — validated https
+            status = resp.getcode()
+            check("REST API", 200 <= status < 300, f"HTTP {status} on {health_table}")
     except Exception as e:
         check("REST API", False, str(e)[:80])
 
@@ -164,7 +166,7 @@ def main():
             "https://api.openai.com/v1/models",
             headers={"Authorization": f"Bearer {openai_key}"},
         )
-        resp = urllib.request.urlopen(req, timeout=30)  # noqa: S310
+        resp = urllib.request.urlopen(req, timeout=30)  # noqa: S310 — trusted static URL
         models = json.loads(resp.read())
         gpt4 = [m["id"] for m in models["data"] if "gpt-4" in m["id"]]
         check_warn("OpenAI API live", True, f"{len(models['data'])} models, {len(gpt4)} GPT-4")
