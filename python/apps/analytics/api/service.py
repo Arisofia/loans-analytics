@@ -118,9 +118,19 @@ class KPIService:
             if df.empty:
                 return risk_loans
 
-            # Calculate LTV and DTI for each loan
-            df["ltv"] = (df["principal_balance"] / df["appraised_value"] * 100).fillna(0)
-            df["dti"] = (df["monthly_debt"] / df["borrower_income"] * 100).fillna(0)
+            # Calculate LTV and DTI for each loan (optional for invoice factoring)
+            if "appraised_value" in df.columns and df["appraised_value"].notna().any():
+                df["ltv"] = (df["principal_balance"] / df["appraised_value"] * 100).fillna(0)
+            else:
+                df["ltv"] = 0.0
+            if (
+                "monthly_debt" in df.columns
+                and "borrower_income" in df.columns
+                and df["borrower_income"].notna().any()
+            ):
+                df["dti"] = (df["monthly_debt"] / df["borrower_income"] * 100).fillna(0)
+            else:
+                df["dti"] = 0.0
 
             # Assuming 'loan_status' can be mapped to days past due for risk calculation
             # This is a simplification; a real system would have a 'days_past_due' column
@@ -349,9 +359,19 @@ class KPIService:
                 (weighted_interest_rate / total_outstanding) if total_outstanding > 0 else 0
             )
 
-            # LTV, DTI for average
-            df["ltv_ratio"] = (df["loan_amount"] / df["appraised_value"] * 100).fillna(0)
-            df["dti_ratio"] = (df["monthly_debt"] / df["borrower_income"] * 100).fillna(0)
+            # LTV, DTI for average (optional for invoice factoring)
+            if "appraised_value" in df.columns and df["appraised_value"].notna().any():
+                df["ltv_ratio"] = (df["loan_amount"] / df["appraised_value"] * 100).fillna(0)
+            else:
+                df["ltv_ratio"] = 0.0
+            if (
+                "monthly_debt" in df.columns
+                and "borrower_income" in df.columns
+                and df["borrower_income"].notna().any()
+            ):
+                df["dti_ratio"] = (df["monthly_debt"] / df["borrower_income"] * 100).fillna(0)
+            else:
+                df["dti_ratio"] = 0.0
             avg_ltv = df["ltv_ratio"].mean()
             avg_dti = df["dti_ratio"].mean()
 

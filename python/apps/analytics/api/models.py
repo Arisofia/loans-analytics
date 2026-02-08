@@ -7,14 +7,34 @@ from pydantic import BaseModel, Field
 
 
 class LoanRecord(BaseModel):
+    """Loan record compatible with both real Abaco data and generic portfolio analysis.
+
+    Required fields: loan_amount, loan_status, interest_rate, principal_balance
+    Optional fields: appraised_value, borrower_income, monthly_debt (not present in
+    invoice factoring datasets — defaults provided for LTV/DTI calculations).
+    """
+
     id: Optional[str] = Field(None, description="Loan identifier")
     loan_amount: float = Field(..., description="Original loan amount")
-    appraised_value: float = Field(
-        ...,
-        description="Appraised value of the collateral property",
+    appraised_value: Optional[float] = Field(
+        None,
+        description=(
+            "Appraised value of the collateral. "
+            "Optional for invoice factoring; defaults to collateral_value if available."
+        ),
     )
-    borrower_income: float = Field(..., description="Annual borrower income")
-    monthly_debt: float = Field(..., description="Monthly debt obligations")
+    borrower_income: Optional[float] = Field(
+        None,
+        description=(
+            "Annual borrower income. " "Optional for invoice factoring (not typically available)."
+        ),
+    )
+    monthly_debt: Optional[float] = Field(
+        None,
+        description=(
+            "Monthly debt obligations. " "Optional for invoice factoring (not typically available)."
+        ),
+    )
     loan_status: str = Field(
         ...,
         description="Current loan status",

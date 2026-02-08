@@ -263,6 +263,9 @@ Examples:
   # Run full pipeline with a specific CSV input file
   python scripts/run_data_pipeline.py --input /path/to/your/data.csv
 
+  # Live mode (alias for full - all 4 phases)
+  python scripts/run_data_pipeline.py --mode live --input data/raw/abaco_real_data_20260202.csv
+
   # Validation mode (stop after transformation)
   python scripts/run_data_pipeline.py --mode validate
 
@@ -288,10 +291,10 @@ Examples:
     )
     parser.add_argument(
         "--mode",
-        choices=["full", "validate", "dry-run"],
+        choices=["full", "live", "validate", "dry-run"],
         default="full",
         help=(
-            "Execution mode: full (all phases), "
+            "Execution mode: full/live (all phases), "
             "validate (stop after transformation), "
             "dry-run (stop after ingestion)"
         ),
@@ -304,9 +307,10 @@ Examples:
         config_path = Path(args.config) if args.config else None
         pipeline = UnifiedPipeline(config_path=config_path)
 
-        # Execute pipeline
+        # Execute pipeline ('live' is an alias for 'full')
         input_path = Path(args.input) if args.input else None
-        results = pipeline.execute(input_path=input_path, mode=args.mode)
+        mode = "full" if args.mode == "live" else args.mode
+        results = pipeline.execute(input_path=input_path, mode=mode)
 
         # Check status
         if results.get("status") == "success":

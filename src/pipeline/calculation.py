@@ -411,11 +411,13 @@ class CalculationPhase:
 
         try:
             # Define normal ranges for key KPIs (tuples: min, max)
+            # Values are in PERCENTAGE units to match KPI engine output
+            # (e.g., 30% = 30, not 0.30)
             normal_ranges = {
-                "assetquality_par30": (0, 0.30),  # PAR-30 should be <30%
-                "assetquality_par90": (0, 0.15),  # PAR-90 should be <15%
-                "assetquality_default_rate": (0, 0.04),  # Default rate <4%
-                "portfolio_yield": (0.25, 0.50),  # Yield 25-50%
+                "par_30": (0, 30),  # PAR-30 should be <30%
+                "par_90": (0, 15),  # PAR-90 should be <15%
+                "default_rate": (0, 4),  # Default rate <4%
+                "portfolio_yield": (25, 50),  # Yield 25-50%
             }
 
             for kpi_name, kpi_value in kpi_results.items():
