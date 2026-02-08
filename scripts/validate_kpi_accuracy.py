@@ -435,8 +435,16 @@ def main():
     total_checks = len(results) + len(warnings)
     print("\n" + "=" * 70)
     print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {warned} warned, {total_checks} total")
-    if failed == 0:
+    if failed == 0 and warned == 0:
+        # All blocking checks passed and there are no warnings.
         print(f"  [{LABEL_PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
+    elif failed == 0 and warned > 0:
+        # All blocking checks passed, but some non-blocking checks have warnings/skips.
+        print(f"  [{LABEL_PASS}] ALL BLOCKING KPI CHECKS PASSED (WARNINGS PRESENT)")
+        print("  The following checks have warnings/non-blocking issues:")
+        for name, ok in warnings:
+            if not ok:
+                print(f"    - {name}")
     else:
         print(f"  [{LABEL_FAIL}] {failed} KPI(S) HAVE DISCREPANCIES:")
         for name, ok in results:
