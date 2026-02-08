@@ -92,6 +92,7 @@ if app is not None:
     # --- Prometheus metrics (exposes GET /metrics) ---
     try:
         from prometheus_fastapi_instrumentator import Instrumentator
+
         Instrumentator().instrument(app).expose(app, endpoint="/metrics")
     except ImportError:
         logger.warning("prometheus-fastapi-instrumentator not installed; /metrics disabled")

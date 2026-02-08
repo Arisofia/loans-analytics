@@ -20,8 +20,8 @@
       },
       "targets": [
         {
-          "expr": "pg_stat_database_numbackends{job=\"supabase-db\"}",
-          "legendFormat": "{{datname}}",
+          "expr": "pg_stat_database_num_backends{job=\"supabase-db\"}",
+          "legendFormat": "{{server}}",
           "refId": "A"
         }
       ],
@@ -48,13 +48,13 @@
       },
       "targets": [
         {
-          "expr": "rate(pg_stat_database_xact_commit{job=\"supabase-db\"}[5m])",
-          "legendFormat": "Commits - {{datname}}",
+          "expr": "rate(pg_stat_database_xact_commit_total{job=\"supabase-db\"}[5m])",
+          "legendFormat": "Commits",
           "refId": "A"
         },
         {
-          "expr": "rate(pg_stat_database_xact_rollback{job=\"supabase-db\"}[5m])",
-          "legendFormat": "Rollbacks - {{datname}}",
+          "expr": "rate(pg_stat_database_xact_rollback_total{job=\"supabase-db\"}[5m])",
+          "legendFormat": "Rollbacks",
           "refId": "B"
         }
       ],
@@ -81,23 +81,23 @@
       },
       "targets": [
         {
-          "expr": "rate(pg_stat_database_tup_fetched{job=\"supabase-db\"}[5m])",
-          "legendFormat": "Rows Fetched - {{datname}}",
+          "expr": "rate(pg_stat_database_tup_fetched_total{job=\"supabase-db\"}[5m])",
+          "legendFormat": "Rows Fetched",
           "refId": "A"
         },
         {
-          "expr": "rate(pg_stat_database_tup_inserted{job=\"supabase-db\"}[5m])",
-          "legendFormat": "Rows Inserted - {{datname}}",
+          "expr": "rate(pg_stat_database_tup_inserted_total{job=\"supabase-db\"}[5m])",
+          "legendFormat": "Rows Inserted",
           "refId": "B"
         },
         {
-          "expr": "rate(pg_stat_database_tup_updated{job=\"supabase-db\"}[5m])",
-          "legendFormat": "Rows Updated - {{datname}}",
+          "expr": "rate(pg_stat_database_tup_updated_total{job=\"supabase-db\"}[5m])",
+          "legendFormat": "Rows Updated",
           "refId": "C"
         },
         {
-          "expr": "rate(pg_stat_database_tup_deleted{job=\"supabase-db\"}[5m])",
-          "legendFormat": "Rows Deleted - {{datname}}",
+          "expr": "rate(pg_stat_database_tup_deleted_total{job=\"supabase-db\"}[5m])",
+          "legendFormat": "Rows Deleted",
           "refId": "D"
         }
       ],
@@ -125,12 +125,12 @@
       "targets": [
         {
           "expr": "pgbouncer_pools_server_active_connections{job=\"supabase-db\"}",
-          "legendFormat": "Active - {{database}}",
+          "legendFormat": "Active - {{exported_database}}",
           "refId": "A"
         },
         {
           "expr": "pgbouncer_pools_server_idle_connections{job=\"supabase-db\"}",
-          "legendFormat": "Idle - {{database}}",
+          "legendFormat": "Idle - {{exported_database}}",
           "refId": "B"
         }
       ],
@@ -157,7 +157,7 @@
       },
       "targets": [
         {
-          "expr": "sum(pg_stat_database_blks_hit{job=\"supabase-db\"}) / (sum(pg_stat_database_blks_hit{job=\"supabase-db\"}) + sum(pg_stat_database_blks_read{job=\"supabase-db\"}))",
+          "expr": "sum(pg_stat_database_blks_hit_total{job=\"supabase-db\"}) / (sum(pg_stat_database_blks_hit_total{job=\"supabase-db\"}) + sum(pg_stat_database_blks_read_total{job=\"supabase-db\"}))",
           "refId": "A"
         }
       ],
