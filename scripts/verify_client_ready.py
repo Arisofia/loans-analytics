@@ -199,7 +199,7 @@ def main():
         check(
             "Pipeline config validation",
             False,
-            f"pipeline validation timed out after {e.timeout} seconds",
+            (f"pipeline validation timed out after {e.timeout} seconds")[:80],
         )
     except OSError as e:
         check(
