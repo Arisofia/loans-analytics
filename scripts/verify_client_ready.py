@@ -143,7 +143,6 @@ def main():
                     else:
                         check(f"Table '{t}'", False, "not found")
             except Exception as e:
-                # Report the error more specifically
                 if conn is None:
                     check("PostgreSQL connect", False, str(e)[:80])
                 else:
@@ -210,8 +209,6 @@ def main():
         dsn_ok = True
         dsn_detail = f"configured (contains 'ingest', {len(dsn)} chars)"
     else:
-        # DSN is present but does not match the expected 'ingest' pattern.
-        # Treat presence as configured for this optional check, but surface the format concern.
         dsn_ok = True
         dsn_detail = (
             f"present but unexpected format (host does not contain 'ingest'; {len(dsn)} chars)"
@@ -297,47 +294,26 @@ def main():
     check(real_data_file, exists_real, "present" if exists_real else "optional (not found)")
 
     # --- SUMMARY ---
-<<<<<<< HEAD
-    passed_results = sum(1 for _, ok in results if ok)
-    failed_results = sum(1 for _, ok in results if not ok)
-    passed_warnings = sum(1 for _, ok in warnings if ok)
-    failed_warnings = sum(1 for _, ok in warnings if not ok)
-    total_passed = passed_results + passed_warnings
-    total_failed = failed_results  # Only blocking failures count toward exit code
-    total_checks = len(results) + len(warnings)
-||||||| parent of a31a90ae8 (Fix warning tracking - separate warnings from failures)
-    passed = sum(1 for _, ok in results if ok)
-    failed = sum(1 for _, ok in results if not ok)
-=======
     passed = sum(1 for _, ok in results if ok)
     failed = sum(1 for _, ok in results if not ok)
     warned = sum(1 for _, ok in warnings if not ok)
     total_checks = len(results) + len(warnings)
->>>>>>> a31a90ae8 (Fix warning tracking - separate warnings from failures)
     print("\n" + "=" * 60)
-<<<<<<< HEAD
     print(
-        f"  RESULTS: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
-        f"{total_failed} failed (blocking), {failed_warnings} failed (optional), {total_checks} total checks"
+        f"  RESULTS: {passed} passed, {failed} failed, "
+        f"{warned} warned, {total_checks} total"
     )
-    if total_failed == 0:
-||||||| parent of a31a90ae8 (Fix warning tracking - separate warnings from failures)
-    print(f"  RESULTS: {passed} passed, {failed} failed, {len(results)} total")
     if failed == 0:
-=======
-    print(f"  RESULTS: {passed} passed, {failed} failed, {warned} warned, {total_checks} total")
-    if failed == 0:
->>>>>>> a31a90ae8 (Fix warning tracking - separate warnings from failures)
         print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")
     else:
-        print(f"  [{LABEL_FAIL}] {total_failed} CHECK(S) NEED ATTENTION")
+        print(f"  [{LABEL_FAIL}] {failed} CHECK(S) NEED ATTENTION")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
-    if failed_warnings > 0:
-        print(f"  [{LABEL_WARN}] {failed_warnings} OPTIONAL CHECK(S) FAILED (non-blocking)")
+    if warned > 0:
+        print(f"  [{LABEL_WARN}] {warned} OPTIONAL CHECK(S) (non-blocking)")
     print("=" * 60)
-    return 0 if total_failed == 0 else 1
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":

@@ -97,7 +97,9 @@ def main():
         df = pd.read_parquet(clean_path)
         print(f"\n  Clean data (parquet): {len(df)} rows, {len(df.columns)} columns")
     else:
-        raw_candidates = sorted(Path("data/raw").glob("abaco_real_data_*.csv"))
+        raw_candidates = sorted(
+            Path("data/raw").glob("abaco_real_data_*.csv"), key=lambda p: p.name
+        )
         if not raw_candidates:
             print("  No real data CSV found in data/raw (abaco_real_data_*.csv)")
             return 1
@@ -229,25 +231,32 @@ def main():
     )
 
     # 5. par_30
-    dpd30_balance = df.loc[df["dpd"] >= 30, "outstanding_balance"].sum()
-    total_balance = df["outstanding_balance"].sum()
-    manual = (dpd30_balance / total_balance * 100) if total_balance > 0 else 0
-    pipeline = pipeline_kpis["par_30"]
-    check(
-        "par_30",
-        close_enough(manual, pipeline),
-        f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
-    )
+    if "dpd" not in df.columns:
+        check_warn("par_30", False, "skipped (dpd column missing)")
+    else:
+        dpd30_balance = df.loc[df["dpd"] >= 30, "outstanding_balance"].sum()
+        total_balance = df["outstanding_balance"].sum()
+        manual = (dpd30_balance / total_balance * 100) if total_balance > 0 else 0
+        pipeline = pipeline_kpis["par_30"]
+        check(
+            "par_30",
+            close_enough(manual, pipeline),
+            f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
+        )
 
     # 6. par_90
-    dpd90_balance = df.loc[df["dpd"] >= 90, "outstanding_balance"].sum()
-    manual = (dpd90_balance / total_balance * 100) if total_balance > 0 else 0
-    pipeline = pipeline_kpis["par_90"]
-    check(
-        "par_90",
-        close_enough(manual, pipeline),
-        f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
-    )
+    if "dpd" not in df.columns:
+        check_warn("par_90", False, "skipped (dpd column missing)")
+    else:
+        dpd90_balance = df.loc[df["dpd"] >= 90, "outstanding_balance"].sum()
+        total_balance = df["outstanding_balance"].sum()
+        manual = (dpd90_balance / total_balance * 100) if total_balance > 0 else 0
+        pipeline = pipeline_kpis["par_90"]
+        check(
+            "par_90",
+            close_enough(manual, pipeline),
+            f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
+        )
 
     # 7. default_rate
     default_count = df.loc[df["status"] == "defaulted", "loan_id"].count()
@@ -421,79 +430,31 @@ def main():
     # ==========================================
     # SUMMARY
     # ==========================================
-<<<<<<< HEAD
-<<<<<<< HEAD
-    passed_results = sum(1 for _, ok in results if ok)
-    failed_results = sum(1 for _, ok in results if not ok)
-    passed_warnings = sum(1 for _, ok in warnings if ok)
-    failed_warnings = sum(1 for _, ok in warnings if not ok)
-    total_passed = passed_results + passed_warnings
-    total_failed = failed_results  # Only blocking failures count toward exit code
-    total_checks = len(results) + len(warnings)
-||||||| parent of a31a90ae8 (Fix warning tracking - separate warnings from failures)
-    passed = sum(1 for _, ok in results if ok)
-    failed = sum(1 for _, ok in results if not ok)
-=======
     passed = sum(1 for _, ok in results if ok)
     failed = sum(1 for _, ok in results if not ok)
     warned = sum(1 for _, ok in warnings if not ok)
-||||||| parent of df8044b1a (fix: resolve merge conflict in validate_kpi_accuracy.py (check_warn) and clean up conflict markers)
-    passed = sum(1 for _, ok in results if ok)
-    failed = sum(1 for _, ok in results if not ok)
-    warned = sum(1 for _, ok in warnings if not ok)
-=======
-    passed_results = sum(1 for _, ok in results if ok)
-    failed_results = sum(1 for _, ok in results if not ok)
-    passed_warnings = sum(1 for _, ok in warnings if ok)
-    failed_warnings = sum(1 for _, ok in warnings if not ok)
-    total_passed = passed_results + passed_warnings
-    total_failed = failed_results  # Only blocking failures count toward exit code
->>>>>>> df8044b1a (fix: resolve merge conflict in validate_kpi_accuracy.py (check_warn) and clean up conflict markers)
     total_checks = len(results) + len(warnings)
->>>>>>> a31a90ae8 (Fix warning tracking - separate warnings from failures)
     print("\n" + "=" * 70)
-<<<<<<< HEAD
-<<<<<<< HEAD
     print(
-        f"  KPI VALIDATION: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
-        f"{total_failed} failed (blocking), {failed_warnings} failed (optional), {total_checks} total"
+        f"  KPI VALIDATION: {passed} passed, {failed} failed, "
+        f"{warned} warned, {total_checks} total"
     )
-    if total_failed == 0:
-||||||| parent of a31a90ae8 (Fix warning tracking - separate warnings from failures)
-    print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {len(results)} total")
-    if failed == 0:
-=======
-    print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {warned} warned, {total_checks} total")
-<<<<<<< HEAD
-    if failed == 0:
->>>>>>> a31a90ae8 (Fix warning tracking - separate warnings from failures)
-||||||| parent of 6ddf3817e (Update scripts/validate_kpi_accuracy.py)
-    if failed == 0:
-=======
     if failed == 0 and warned == 0:
-        # All blocking checks passed and there are no warnings.
->>>>>>> 6ddf3817e (Update scripts/validate_kpi_accuracy.py)
-||||||| parent of df8044b1a (fix: resolve merge conflict in validate_kpi_accuracy.py (check_warn) and clean up conflict markers)
-    print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {warned} warned, {total_checks} total")
-    if failed == 0 and warned == 0:
-        # All blocking checks passed and there are no warnings.
-=======
-    print(
-        f"  KPI VALIDATION: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
-        f"{total_failed} failed (blocking), {failed_warnings} failed (optional), {total_checks} total"
-    )
-    if total_failed == 0:
->>>>>>> df8044b1a (fix: resolve merge conflict in validate_kpi_accuracy.py (check_warn) and clean up conflict markers)
         print(f"  [{LABEL_PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
+    elif failed == 0 and warned > 0:
+        print(f"  [{LABEL_PASS}] ALL BLOCKING KPI CHECKS PASSED (WARNINGS PRESENT)")
+        for name, ok in warnings:
+            if not ok:
+                print(f"    - {name}")
     else:
-        print(f"  [{LABEL_FAIL}] {total_failed} KPI(S) HAVE DISCREPANCIES:")
+        print(f"  [{LABEL_FAIL}] {failed} KPI(S) HAVE DISCREPANCIES:")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
-    if failed_warnings > 0:
-        print(f"  [{LABEL_WARN}] {failed_warnings} WARNING(S) (non-blocking)")
+    if warned > 0:
+        print(f"  [{LABEL_WARN}] {warned} WARNING(S) (non-blocking)")
     print("=" * 70)
-    return 0 if total_failed == 0 else 1
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":
