@@ -252,3 +252,4 @@ models/risk/*.ubj
 models/risk/*.bin
 models/risk/*.json
 !models/risk/.gitkeep
+supabase/.temp/
