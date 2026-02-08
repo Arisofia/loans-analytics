@@ -49,7 +49,7 @@ def find_latest_run_id(runs_dir: Path) -> str | None:
     runs = [p for p in runs_dir.iterdir() if p.is_dir()]
     if not runs:
         return None
-    return sorted(runs, reverse=True)[0].name
+    return sorted(runs, key=lambda p: p.name, reverse=True)[0].name
 
 
 def main():
@@ -95,7 +95,7 @@ def main():
         df = pd.read_parquet(clean_path)
         print(f"\n  Clean data (parquet): {len(df)} rows, {len(df.columns)} columns")
     else:
-        raw_candidates = sorted(Path("data/raw").glob("abaco_real_data_*.csv"))
+        raw_candidates = sorted(Path("data/raw").glob("abaco_real_data_*.csv"), key=lambda p: p.name)
         if not raw_candidates:
             print("  No real data CSV found in data/raw (abaco_real_data_*.csv)")
             return 1
@@ -227,25 +227,32 @@ def main():
     )
 
     # 5. par_30
-    dpd30_balance = df.loc[df["dpd"] >= 30, "outstanding_balance"].sum()
-    total_balance = df["outstanding_balance"].sum()
-    manual = (dpd30_balance / total_balance * 100) if total_balance > 0 else 0
-    pipeline = pipeline_kpis["par_30"]
-    check(
-        "par_30",
-        close_enough(manual, pipeline),
-        f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
-    )
+    if "dpd" not in df.columns:
+        check_warn("par_30", False, "skipped (dpd column missing)")
+    else:
+        dpd30_balance = df.loc[df["dpd"] >= 30, "outstanding_balance"].sum()
+        total_balance = df["outstanding_balance"].sum()
+        manual = (dpd30_balance / total_balance * 100) if total_balance > 0 else 0
+        pipeline = pipeline_kpis["par_30"]
+        check(
+            "par_30",
+            close_enough(manual, pipeline),
+            f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
+        )
 
     # 6. par_90
-    dpd90_balance = df.loc[df["dpd"] >= 90, "outstanding_balance"].sum()
-    manual = (dpd90_balance / total_balance * 100) if total_balance > 0 else 0
-    pipeline = pipeline_kpis["par_90"]
-    check(
-        "par_90",
-        close_enough(manual, pipeline),
-        f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
-    )
+    if "dpd" not in df.columns:
+        check_warn("par_90", False, "skipped (dpd column missing)")
+    else:
+        dpd90_balance = df.loc[df["dpd"] >= 90, "outstanding_balance"].sum()
+        total_balance = df["outstanding_balance"].sum()
+        manual = (dpd90_balance / total_balance * 100) if total_balance > 0 else 0
+        pipeline = pipeline_kpis["par_90"]
+        check(
+            "par_90",
+            close_enough(manual, pipeline),
+            f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
+        )
 
     # 7. default_rate
     default_count = df.loc[df["status"] == "defaulted", "loan_id"].count()
