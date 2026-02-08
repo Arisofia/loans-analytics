@@ -18,12 +18,7 @@ LABEL_FAIL = "\033[91mFAIL\033[0m"
 LABEL_WARN = "\033[93mWARN\033[0m"
 
 results = []
-<<<<<<< HEAD
 warnings = []  # Track warnings separately from failures
-||||||| parent of a31a90ae8 (Fix warning tracking - separate warnings from failures)
-=======
-warnings = []
->>>>>>> a31a90ae8 (Fix warning tracking - separate warnings from failures)
 
 
 def check(name, ok, detail=""):
@@ -463,9 +458,23 @@ def main():
     if failed == 0:
 =======
     print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {warned} warned, {total_checks} total")
+<<<<<<< HEAD
     if failed == 0:
 >>>>>>> a31a90ae8 (Fix warning tracking - separate warnings from failures)
+||||||| parent of 6ddf3817e (Update scripts/validate_kpi_accuracy.py)
+    if failed == 0:
+=======
+    if failed == 0 and warned == 0:
+        # All blocking checks passed and there are no warnings.
+>>>>>>> 6ddf3817e (Update scripts/validate_kpi_accuracy.py)
         print(f"  [{LABEL_PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
+    elif failed == 0 and warned > 0:
+        # All blocking checks passed, but some non-blocking checks have warnings/skips.
+        print(f"  [{LABEL_PASS}] ALL BLOCKING KPI CHECKS PASSED (WARNINGS PRESENT)")
+        print("  The following checks have warnings/non-blocking issues:")
+        for name, ok in warnings:
+            if not ok:
+                print(f"    - {name}")
     else:
         print(f"  [{LABEL_FAIL}] {total_failed} KPI(S) HAVE DISCREPANCIES:")
         for name, ok in results:
