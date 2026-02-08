@@ -102,6 +102,7 @@ def main():
         except (ImportError, OSError) as e:
             check_warn("psycopg", False, f"import failed ({e}); database checks skipped")
         else:
+            conn = None
             try:
                 conn = psycopg.connect(envs.get("DATABASE_URL", ""), connect_timeout=10)
                 cur = conn.cursor()
@@ -135,10 +136,11 @@ def main():
                         check(f"Table '{t}'", True, f"{cnt} rows")
                     else:
                         check(f"Table '{t}'", False, "not found")
-
-                conn.close()
             except Exception as e:
                 check("PostgreSQL connect", False, str(e)[:80])
+            finally:
+                if conn is not None:
+                    conn.close()
 
     # --- 3. SUPABASE REST API ---
     print("\n3. SUPABASE REST API")
