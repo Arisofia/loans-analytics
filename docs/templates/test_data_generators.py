@@ -45,8 +45,9 @@ class LoanDataGenerator:
         Args:
             seed: Random seed for reproducible data generation
         """
-        if seed is not None:
-            random.seed(seed)
+        # Security: python:S2245 - Use of `random` is acceptable for synthetic test data.
+        # PII-like fields (SSN) use `secrets` for CSPRNG.
+        self._rng = random.Random(seed)
 
     def generate_loans(
         self, count: int = 1000, output_format: Literal["dict", "csv", "json", "sql"] = "dict"
@@ -71,8 +72,8 @@ class LoanDataGenerator:
         segment_weights = [0.60, 0.30, 0.10]
 
         for i in range(count):
-            status = random.choices(statuses, weights=status_weights)[0]
-            segment = random.choices(segments, weights=segment_weights)[0]
+            status = self._rng.choices(statuses, weights=status_weights)[0]
+            segment = self._rng.choices(segments, weights=segment_weights)[0]
 
             # Segment-specific parameters
             if segment == "consumer":
@@ -88,9 +89,9 @@ class LoanDataGenerator:
                 apr_range = (0.05, 0.15)
                 term_options = [24, 36, 48, 60, 72]
 
-            amount = Decimal(str(random.uniform(*amount_range))).quantize(Decimal("0.01"))
-            apr = Decimal(str(random.uniform(*apr_range))).quantize(Decimal("0.0001"))
-            term_months = random.choice(term_options)
+            amount = Decimal(str(self._rng.uniform(*amount_range))).quantize(Decimal("0.01"))
+            apr = Decimal(str(self._rng.uniform(*apr_range))).quantize(Decimal("0.0001"))
+            term_months = self._rng.choice(term_options)
 
             origination_date = self._random_date(365)
             dpd = self._calculate_dpd(status)
@@ -99,12 +100,12 @@ class LoanDataGenerator:
             if status == "paid_off":
                 outstanding = Decimal("0.00")
             else:
-                outstanding = amount * Decimal(str(random.uniform(0.3, 1.0)))
+                outstanding = amount * Decimal(str(self._rng.uniform(0.3, 1.0)))
                 outstanding = outstanding.quantize(Decimal("0.01"))
 
             loan = {
                 "loan_id": f"LOAN-{i+1:06d}",
-                "borrower_id": f"BORR-{random.randint(1, count//3):06d}",
+                "borrower_id": f"BORR-{self._rng.randint(1, count//3):06d}",
                 "amount": str(amount),
                 "apr": str(apr),
                 "term_months": term_months,
@@ -133,12 +134,11 @@ class LoanDataGenerator:
         """Calculate Days Past Due based on loan status"""
         if status == "current":
             return 0
-        elif status == "late":
-            return random.randint(1, 89)
-        elif status == "default":
-            return random.randint(90, 180)
-        else:  # paid_off
-            return 0
+        if status == "late":
+            return self._rng.randint(1, 89)
+        if status == "default":
+            return self._rng.randint(90, 180)
+        return 0  # paid_off
 
     def _calculate_monthly_payment(self, principal: Decimal, apr: Decimal, term: int) -> Decimal:
         """Calculate monthly payment amount"""
@@ -155,7 +155,7 @@ class LoanDataGenerator:
 
     def _random_date(self, days_back: int) -> datetime:
         """Generate random date within last N days"""
-        return datetime.now() - timedelta(days=random.randint(1, days_back))
+        return datetime.now() - timedelta(days=self._rng.randint(1, days_back))
 
     def _to_csv(self, loans: list[dict]) -> str:
         """Convert to CSV format"""
@@ -186,9 +186,7 @@ class UserDataGenerator:
     """Generate synthetic user/customer data with PII masking"""
 
     def __init__(self, seed: int | None = 42):
-        if seed is not None:
-            random.seed(seed)
-
+        self._rng = random.Random(seed)
         self.first_names = ["John", "Jane", "Maria", "Carlos", "Ana", "Miguel", "Sofia", "Diego"]
         self.last_names = ["Smith", "Garcia", "Rodriguez", "Martinez", "Lopez", "Gonzalez"]
 
@@ -212,12 +210,12 @@ class UserDataGenerator:
         users = []
 
         for i in range(count):
-            first = random.choice(self.first_names)
-            last = random.choice(self.last_names)
+            first = self._rng.choice(self.first_names)
+            last = self._rng.choice(self.last_names)
 
             email = f"{first.lower()}.{last.lower()}{i}@test.com"
             if mask_pii:
-                email = "****@****.com"
+                email = "masked@example.test"
 
             # SSN generation uses secrets module for security even in test data
             # Security: python:S2245 - Uses CSPRNG (secrets) instead of PRNG (random)
@@ -235,11 +233,11 @@ class UserDataGenerator:
                 "last_name": last,
                 "email": email,
                 "ssn": ssn,
-                "phone": f"+1-555-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
-                "created_at": (datetime.now() - timedelta(days=random.randint(1, 730))).strftime(
+                "phone": f"+1-555-{self._rng.randint(100, 999)}-{self._rng.randint(1000, 9999)}",
+                "created_at": (datetime.now() - timedelta(days=self._rng.randint(1, 730))).strftime(
                     "%Y-%m-%d"
                 ),
-                "status": random.choice(["active", "inactive", "suspended"]),
+                "status": self._rng.choice(["active", "inactive", "suspended"]),
             }
             users.append(user)
 
@@ -260,8 +258,7 @@ class PaymentDataGenerator:
     """Generate synthetic payment transaction data"""
 
     def __init__(self, seed: int | None = 42):
-        if seed is not None:
-            random.seed(seed)
+        self._rng = random.Random(seed)
 
     def generate_payments(
         self,
@@ -284,24 +281,25 @@ class PaymentDataGenerator:
         payment_id = 1
 
         for loan_id in loan_ids:
-            num_payments = random.randint(*payments_per_loan)
+            num_payments = self._rng.randint(*payments_per_loan)
 
             for _i in range(num_payments):
-                amount = Decimal(str(random.uniform(100, 2000))).quantize(Decimal("0.01"))
+                amount = Decimal(str(self._rng.uniform(100, 2000))).quantize(Decimal("0.01"))
+
+                if self._rng.random() < 0.05:
+                    status = self._rng.choice(["pending", "failed"])
+                else:
+                    status = "completed"
 
                 payment = {
                     "payment_id": f"PAY-{payment_id:08d}",
                     "loan_id": loan_id,
                     "amount": str(amount),
                     "payment_date": (
-                        datetime.now() - timedelta(days=random.randint(1, 365))
+                        datetime.now() - timedelta(days=self._rng.randint(1, 365))
                     ).strftime("%Y-%m-%d"),
-                    "payment_method": random.choice(["bank_transfer", "card", "check", "cash"]),
-                    "status": (
-                        random.choice(["completed", "pending", "failed"])
-                        if random.random() < 0.05
-                        else "completed"
-                    ),
+                    "payment_method": self._rng.choice(["bank_transfer", "card", "check", "cash"]),
+                    "status": status,
                 }
                 payments.append(payment)
                 payment_id += 1
@@ -321,15 +319,21 @@ class PaymentDataGenerator:
 
 # Example usage
 if __name__ == "__main__":
+    from pathlib import Path
+
     # Generate loan data
     print("Generating loan data...")
     loan_gen = LoanDataGenerator(seed=42)
     loans = loan_gen.generate_loans(count=1000, output_format="dict")
     print(f"Generated {len(loans)} loans")
 
+    # Ensure output directory exists
+    out_dir = Path("data/test")
+    out_dir.mkdir(parents=True, exist_ok=True)
+
     # Save to CSV
     csv_data = loan_gen.generate_loans(count=1000, output_format="csv")
-    with open("data/test/loans_test_data.csv", "w") as f:
+    with open(out_dir / "loans_test_data.csv", "w", encoding="utf-8") as f:
         f.write(csv_data)
     print("Saved to data/test/loans_test_data.csv")
 

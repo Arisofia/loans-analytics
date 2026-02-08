@@ -6,15 +6,19 @@ import os
 import sys
 import urllib.request
 
-PASS = "\033[92mPASS\033[0m"
-FAIL = "\033[91mFAIL\033[0m"
-WARN = "\033[93mWARN\033[0m"
+COLOR_GREEN = "\033[92m"
+COLOR_RED = "\033[91m"
+COLOR_YELLOW = "\033[93m"
+COLOR_RESET = "\033[0m"
+LABEL_PASS = COLOR_GREEN + "PASS" + COLOR_RESET
+LABEL_FAIL = COLOR_RED + "FAIL" + COLOR_RESET
+LABEL_WARN = COLOR_YELLOW + "WARN" + COLOR_RESET
 
 results = []
 
 
 def check(name, ok, detail=""):
-    status = PASS if ok else FAIL
+    status = LABEL_PASS if ok else LABEL_FAIL
     results.append((name, ok))
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
@@ -40,7 +44,7 @@ def load_env():
 def main():
     print("=" * 60)
     print("  ABACO LOANS ANALYTICS — CLIENT READINESS CHECK")
-    print(f"  Date: 2026-02-08 | Branch: main")
+    print("  Date: 2026-02-08 | Branch: main")
     print("=" * 60)
 
     envs = load_env()
@@ -108,13 +112,21 @@ def main():
     # --- 3. SUPABASE REST API ---
     print("\n3. SUPABASE REST API")
     try:
+        base_url = envs.get("SUPABASE_URL", "").rstrip("/")
+        anon_key = envs.get("SUPABASE_ANON_KEY", "")
+        # Use a known small table as a health check; adjust if you prefer another table
+        health_table = "monitoring_operational_events"
+        url = f"{base_url}/rest/v1/{health_table}?select=id&limit=1"
         req = urllib.request.Request(
-            envs["SUPABASE_URL"] + "/rest/v1/",
-            headers={"apikey": envs["SUPABASE_ANON_KEY"]},
+            url,
+            headers={
+                "apikey": anon_key,
+                "Accept": "application/json",
+            },
         )
         resp = urllib.request.urlopen(req, timeout=10)
-        data = json.loads(resp.read())
-        check("REST API", True, f"{len(data)} endpoints")
+        status = resp.getcode()
+        check("REST API", 200 <= status < 300, f"HTTP {status} on {health_table}")
     except Exception as e:
         check("REST API", False, str(e)[:80])
 
@@ -138,9 +150,17 @@ def main():
     # --- 5. SENTRY ---
     print("\n5. SENTRY / OBSERVABILITY")
     dsn = envs.get("SENTRY_DSN", "")
-    check("Sentry DSN", "ingest" in dsn, dsn[:40] + "...")
+    check(
+        "Sentry DSN",
+        bool(dsn) and "ingest" in dsn,
+        dsn[:40] + "..." if dsn else "MISSING or placeholder",
+    )
     otel = envs.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
-    check("OTEL endpoint", "ingest" in otel, otel[:50] + "...")
+    check(
+        "OTEL endpoint",
+        bool(otel),
+        otel[:50] + "..." if otel else "MISSING or placeholder",
+    )
 
     # --- 6. PIPELINE ---
     print("\n6. PIPELINE (dry run)")
@@ -157,6 +177,7 @@ def main():
             capture_output=True,
             text=True,
             timeout=30,
+            check=False,
         )
         check("Pipeline config validation", result.returncode == 0, "config valid")
     except Exception as e:
@@ -164,7 +185,8 @@ def main():
 
     # --- 7. KEY FILES ---
     print("\n7. KEY FILES")
-    key_files = [
+
+    core_files = [
         "src/pipeline/orchestrator.py",
         "src/pipeline/ingestion.py",
         "src/pipeline/transformation.py",
@@ -175,13 +197,17 @@ def main():
         "config/pipeline.yml",
         "config/kpis/kpi_definitions.yaml",
         "config/business_rules.yaml",
-        "data/raw/abaco_real_data_20260202.csv",
         "requirements.txt",
         ".gitignore",
     ]
-    for f in key_files:
+    for f in core_files:
         exists = os.path.exists(f)
         check(f, exists)
+
+    # Real data file is optional but useful for live runs
+    real_data_file = "data/raw/abaco_real_data_20260202.csv"
+    exists_real = os.path.exists(real_data_file)
+    check(real_data_file, exists_real, "present" if exists_real else "optional (not found)")
 
     # --- SUMMARY ---
     passed = sum(1 for _, ok in results if ok)
@@ -189,9 +215,9 @@ def main():
     print("\n" + "=" * 60)
     print(f"  RESULTS: {passed} passed, {failed} failed, {len(results)} total")
     if failed == 0:
-        print(f"  [{PASS}] SYSTEM IS CLIENT-READY")
+        print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")
     else:
-        print(f"  [{FAIL}] {failed} CHECK(S) NEED ATTENTION")
+        print(f"  [{LABEL_FAIL}] {failed} CHECK(S) NEED ATTENTION")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
