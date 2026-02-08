@@ -271,26 +271,29 @@ def main():
     check(real_data_file, exists_real, "present" if exists_real else "optional (not found)")
 
     # --- SUMMARY ---
-    passed = sum(1 for _, ok in results if ok)
-    failed = sum(1 for _, ok in results if not ok)
-    warned = sum(1 for _, ok in warnings if not ok)
+    passed_results = sum(1 for _, ok in results if ok)
+    failed_results = sum(1 for _, ok in results if not ok)
+    passed_warnings = sum(1 for _, ok in warnings if ok)
+    failed_warnings = sum(1 for _, ok in warnings if not ok)
+    total_passed = passed_results + passed_warnings
+    total_failed = failed_results  # Only blocking failures count toward exit code
     total_checks = len(results) + len(warnings)
     print("\n" + "=" * 60)
     print(
-        f"  RESULTS: {passed} passed, {failed} failed, "
-        f"{warned} warnings, {total_checks} total checks"
+        f"  RESULTS: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
+        f"{total_failed} failed, {failed_warnings} warnings, {total_checks} total checks"
     )
-    if failed == 0:
+    if total_failed == 0:
         print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")
     else:
-        print(f"  [{LABEL_FAIL}] {failed} CHECK(S) NEED ATTENTION")
+        print(f"  [{LABEL_FAIL}] {total_failed} CHECK(S) NEED ATTENTION")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
-    if warned > 0:
-        print(f"  [{LABEL_WARN}] {warned} OPTIONAL CHECK(S) FAILED (non-blocking)")
+    if failed_warnings > 0:
+        print(f"  [{LABEL_WARN}] {failed_warnings} OPTIONAL CHECK(S) FAILED (non-blocking)")
     print("=" * 60)
-    return 0 if failed == 0 else 1
+    return 0 if total_failed == 0 else 1
 
 
 if __name__ == "__main__":
