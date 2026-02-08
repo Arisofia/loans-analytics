@@ -6,15 +6,9 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-import sentry_sdk
+from python.logging_config import init_sentry, set_sentry_correlation
 
-sentry_dsn = os.getenv("SENTRY_DSN")
-if sentry_dsn:
-    sentry_sdk.init(
-        dsn=sentry_dsn,
-        send_default_pii=True,
-    )
-    logging.getLogger("sentry_sdk").setLevel(logging.ERROR)  # Suppress Sentry debug logs
+init_sentry(service_name="analytics-api")
 
 
 # Avoid importing FastAPI at module import time so tests don't require
@@ -25,6 +19,8 @@ try:
 
     from python.apps.analytics.api.models import (
         DataQualityResponse,
+        DefaultPredictionRequest,
+        DefaultPredictionResponse,
         FullAnalysisResponse,
         KpiResponse,
         KpiSingleResponse,
@@ -101,8 +97,7 @@ if app is not None:
     async def correlation_id_middleware(request: Request, call_next):
         """Inject or propagate X-Correlation-ID and tag Sentry."""
         correlation_id = request.headers.get("X-Correlation-ID", str(uuid.uuid4()))
-        sentry_sdk.set_tag("correlation_id", correlation_id)
-        sentry_sdk.set_context("monitoring", {"correlation_id": correlation_id})
+        set_sentry_correlation(correlation_id)
         response = await call_next(request)
         response.headers["X-Correlation-ID"] = correlation_id
         return response
@@ -460,6 +455,60 @@ if app is not None:
             raise HTTPException(status_code=404, detail="file not found")
 
         return {"status": "ok", "path": str(resolved)}
+
+    # -------------------------------------------------------------------
+    # ML Prediction Endpoint
+    # -------------------------------------------------------------------
+
+    # Lazy-load model on first request
+    _risk_model = None
+
+    def _get_risk_model():
+        nonlocal _risk_model
+        if _risk_model is None:
+            try:
+                from python.models.default_risk_model import DefaultRiskModel
+                model_path = Path(__file__).resolve().parents[4] / "models" / "risk" / "default_risk_xgb.json"
+                if model_path.exists():
+                    _risk_model = DefaultRiskModel.load(str(model_path))
+                    logger.info("Loaded default risk model from %s", model_path)
+                else:
+                    logger.warning("Risk model not found at %s", model_path)
+            except Exception as e:
+                logger.error("Failed to load risk model: %s", e)
+        return _risk_model
+
+    @app.post("/predict/default", response_model=DefaultPredictionResponse)
+    async def predict_default(request: DefaultPredictionRequest = Body(...)):
+        """Predict default probability for a loan using the XGBoost model."""
+        model = _get_risk_model()
+        if model is None:
+            raise HTTPException(
+                status_code=503,
+                detail="Risk model not available. Run: python scripts/train_default_risk_model.py",
+            )
+
+        try:
+            loan_data = request.model_dump()
+            probability = model.predict_proba(loan_data)
+
+            if probability >= 0.7:
+                risk_level = "critical"
+            elif probability >= 0.4:
+                risk_level = "high"
+            elif probability >= 0.15:
+                risk_level = "medium"
+            else:
+                risk_level = "low"
+
+            return DefaultPredictionResponse(
+                probability=round(probability, 4),
+                risk_level=risk_level,
+                model_version="xgb_v1",
+            )
+        except Exception as e:
+            logger.error("Error in predict_default: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 def _sanitize_for_logging(value: str, max_length: int = 200) -> str:

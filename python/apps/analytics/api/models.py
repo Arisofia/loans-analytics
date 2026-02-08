@@ -140,4 +140,24 @@ class ErrorResponse(BaseModel):
     details: Optional[Dict[str, Any]] = None
 
 
+class DefaultPredictionRequest(BaseModel):
+    principal_amount: float = Field(..., description="Original loan amount")
+    interest_rate: float = Field(..., description="Annual interest rate")
+    term_months: float = Field(12.0, description="Loan term in months")
+    collateral_value: float = Field(0.0, description="Collateral value")
+    outstanding_balance: float = Field(..., description="Current outstanding balance")
+    tpv: float = Field(0.0, description="Total processed value")
+    equifax_score: Optional[float] = Field(None, description="Equifax credit score")
+    last_payment_amount: float = Field(0.0, description="Last payment amount")
+    total_scheduled: float = Field(0.0, description="Total scheduled payments")
+    origination_fee: float = Field(0.0, description="Origination fee")
+    days_past_due: int = Field(0, description="Days past due (for real-time model)")
+
+
+class DefaultPredictionResponse(BaseModel):
+    probability: float = Field(..., description="Default probability (0-1)")
+    risk_level: str = Field(..., description="Risk level: low/medium/high/critical")
+    model_version: str = Field("xgb_v1", description="Model version used")
+
+
 # --- End Schemas from openapi.yaml ---

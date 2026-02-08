@@ -117,7 +117,7 @@ class SupabaseHistoricalBackend(HistoricalDataBackend):
 
         params = {
             "kpi_id": f"eq.{kpi_id}",
-            "date": f"gte.{start_iso},lte.{end_iso}",
+            "and": f"(date.gte.{start_iso},date.lte.{end_iso})",
             "order": "date.asc",
             "select": "kpi_id,date,value_numeric,ts_utc",
         }
