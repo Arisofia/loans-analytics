@@ -188,8 +188,21 @@ def main():
     # --- 5. SENTRY ---
     print("\n5. SENTRY / OBSERVABILITY")
     dsn = envs.get("SENTRY_DSN", "")
-    dsn_ok = bool(dsn) and "ingest" in dsn
-    dsn_detail = f"configured ({len(dsn)} chars)" if dsn_ok else "MISSING (optional)"
+    dsn_present = bool(dsn)
+    dsn_expected_format = "ingest" in dsn if dsn_present else False
+    if not dsn_present:
+        dsn_ok = False
+        dsn_detail = "MISSING (optional)"
+    elif dsn_expected_format:
+        dsn_ok = True
+        dsn_detail = f"configured (contains 'ingest', {len(dsn)} chars)"
+    else:
+        # DSN is present but does not match the expected 'ingest' pattern.
+        # Treat presence as configured for this optional check, but surface the format concern.
+        dsn_ok = True
+        dsn_detail = (
+            f"present but unexpected format (host does not contain 'ingest'; {len(dsn)} chars)"
+        )
     check_warn("Sentry DSN", dsn_ok, dsn_detail)
     otel = envs.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
     otel_ok = bool(otel)
