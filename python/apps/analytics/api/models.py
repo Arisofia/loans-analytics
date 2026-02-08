@@ -30,9 +30,9 @@ class LoanRecord(BaseModel):
 
 
 class LoanPortfolioRequest(BaseModel):
-    loans: List[LoanRecord] = Field(
-        ...,
-        min_items=1,
+    loans: Optional[List[LoanRecord]] = Field(
+        None,
+        min_items=0,
         max_items=10000,
         description="Array of loan records for analysis",
     )

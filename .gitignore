@@ -1,171 +1,10 @@
-# Gradle
-.gradle/
-build/
-**/.gradle/
-**/build/
-
+# ===========================================
 # OS
+# ===========================================
 .DS_Store
-
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-.venv/
-venv/
 *.tmp
-.cache/
-*.egg-info/
-.eggs/
 
-# Config
-config/*.yaml
-# Exception: business_rules.yaml is part of the documented repo structure
-!config/business_rules.yaml
-
-# Logs
-*.log
-nohup.out
-
-# Test/coverage output
-*.coverage
-.coverage.*
-htmlcov/
-
-# Editor/IDE files
-.idea/
-.settings/
-.vscode/
-*.code-workspace
-.vscode/history/
-.vscode/cache/
-
-# Project documentation/settings policy
-# See README.md for policy on documentation, settings, and config file retention.
-
-# Streamlit
-.streamlit/
-
-# Data outputs (NO versionar)
-data/metrics/
-data/archives/
-data_samples/*.csv
-logs/
-exports/
-outputs/
-
-# Build / tooling
-.next/
-.turbo/
-dist/
-coverage/
-out/
-
-# IDE
-.vscode/tasks.json
-
-# Node modules
-node_modules/
-.npm/
-.yarn/
-.pnpm-debug.log*
-*.tsbuildinfo
-
-# Project-specific artifacts
-apps/.DS_Store
-
-# Generated reports (not source documentation per DATA_GOVERNANCE.md)
-service_status_report.json
-service_status_report.md
-
-# Local repository clones
-abaco-loans-analytics/
-data_samples/
-gemini-cli/
-
-# Environment variables
-.env
-.env.local
-.env.*.local
-n8n/.env
-grafana/.env
-
-# Docker volumes and data
-grafana/data/
-n8n/workflows/*.json
-docker-compose.override.yml
-
-.vercel/
-nvm/
-
-# Other
-failed_workflows.csv
-
-
-.env
-# DO NOT IGNORE .env.example - it's a template that should be versioned
-# .env.example
-
-# Python virtual environments
-.venv/
-.venv-1/
-.venv-2/
-.lint-venv/
-
-# Azurite local storage state
-AzuriteConfig
-__azurite_db_*.json
-__azurite_db_*_extent__.json
-scripts/setup_azure.sh
-.azure
-tmp/
-data/archives/cascade/tmp*.csv
-
-# Playwright artifacts and test caches
-apps/web/playwright-report/
-playwright/.e2e
-playwright/.auth
-test-results/
-.pytest_cache/
-.mypy_cache/
-pytest-report/
-coverage.xml
-junit.xml
-
-# Ignore generated media files
-*.mp4
-*.mov
-*.mp3
-
-# ============================================ 
-# Temporary run data (should not be committed)
-# ============================================ 
-data/archives/raw/tmp*.csv
-data/metrics/run_*.csv
-data/metrics/run_*.parquet
-data/metrics/run_*_metrics.json
-data/metrics/timeseries/run_*.parquet
-logs/runs/run_*/
-
-# Integration backups (cleanup artifacts)
-*.cleanup-backup
-*.backup
-
-# Hidden tool folders
-.rollback/
-.zencoder/
-.zenflow/
-.benchmarks/
-.gradle/
-
-# Local environment variables (NEVER commit)
-.env.local
-.env.*.local
-*.env.local
-.lint_venv/
-
-# OS/Editor duplicate files (macOS Finder, VS Code "Save As", browser downloads)
+# macOS Finder / VS Code "Save As" / browser download duplicates
 *\ (1).*
 *\ (2).*
 *\ (3).*
@@ -175,17 +14,173 @@ logs/runs/run_*/
 *\ copy.*
 *\ Copy.*
 
+# ===========================================
+# Editor / IDE
+# ===========================================
+.idea/
+.settings/
+.vscode/
+*.code-workspace
+.S.swp
 
-# Auto-generated alertmanager config (contains credentials)
-config/alertmanager.yml
-# Generated Prometheus config (contains substituted secrets)
-config/prometheus.generated.yml
-.venv311/
-.venv/
+# ===========================================
+# Python
+# ===========================================
 __pycache__/
-.pytest_cache/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+.cache/
 
-# Temporary session/status report files (should not be committed)
+# Virtual environments
+.venv/
+.venv-1/
+.venv-2/
+.venv311/
+venv/
+.lint-venv/
+.lint_venv/
+
+# Linters / type checkers
+.ruff_cache/
+.mypy_cache/
+
+# ===========================================
+# Node / JavaScript
+# ===========================================
+node_modules/
+.npm/
+.yarn/
+.pnpm-debug.log*
+*.tsbuildinfo
+
+# ===========================================
+# Environment variables (NEVER commit)
+# ===========================================
+.env
+.env.local
+.env.*.local
+*.env.local
+n8n/.env
+grafana/.env
+
+# DO NOT IGNORE .env.example — it's a template that should be versioned
+
+# ===========================================
+# Config (generated / credentials)
+# ===========================================
+config/*.yaml
+# Exception: business_rules.yaml is part of the documented repo structure
+!config/business_rules.yaml
+config/alertmanager.yml
+config/prometheus.generated.yml
+
+# ===========================================
+# Build / tooling
+# ===========================================
+.gradle/
+**/build/
+.next/
+.turbo/
+dist/
+coverage/
+out/
+
+# Legacy build systems (not applicable to this project)
+/build.gradle
+/gradlew
+/gradlew.bat
+/gradle/
+
+# ===========================================
+# Test / coverage
+# ===========================================
+*.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+pytest-report/
+coverage.xml
+junit.xml
+test-results/
+
+# ===========================================
+# Logs
+# ===========================================
+*.log
+nohup.out
+logs/
+
+# ===========================================
+# Data outputs
+# ===========================================
+data/metrics/
+data/archives/
+data/agent_outputs/
+data_samples/
+exports/
+outputs/
+
+# ===========================================
+# Docker / containers
+# ===========================================
+grafana/data/
+n8n/workflows/*.json
+docker-compose.override.yml
+
+# ===========================================
+# Azure / Azurite
+# ===========================================
+.azure
+.azure-credentials
+AzuriteConfig
+__azurite_db_*.json
+scripts/setup_azure.sh
+
+# ===========================================
+# Playwright
+# ===========================================
+apps/web/playwright-report/
+playwright/.e2e
+playwright/.auth
+
+# ===========================================
+# Streamlit
+# ===========================================
+.streamlit/
+
+# ===========================================
+# Media files
+# ===========================================
+*.mp4
+*.mov
+*.mp3
+
+# ===========================================
+# Backup / cleanup artifacts
+# ===========================================
+*.cleanup-backup
+*.backup
+
+# ===========================================
+# Hidden tool / agent folders
+# ===========================================
+.rollback/
+.zencoder/
+.zenflow/
+.benchmarks/
+.vercel/
+nvm/
+
+# ===========================================
+# Generated reports (not source docs)
+# ===========================================
+service_status_report.json
+service_status_report.md
+reports/
+
+# Temporary session/status report files
 AUTOMATION_*.md
 CLEANUP_*.md
 COMPLETION_*.md
@@ -200,14 +195,15 @@ SESSION_*.md
 STATUS_*.md
 TECHNICAL_DEBT_*.md
 WORKFLOW_*.md
-reports/
 
-# One-time fix scripts (archive in scripts/archives/ if needed)
+# ===========================================
+# Root-level scripts / orphaned files
+# ===========================================
+# One-time fix/cleanup scripts
 /fix_*.py
 /cleanup_*.sh
 
-# Root-level script wrappers (use files in scripts/ directory directly)
-# These patterns prevent accidental commits of convenience wrappers
+# Root-level script wrappers (use scripts/ directory directly)
 /generate_sample_data.py
 /load_sample_kpis_supabase.py
 /seed_spanish_loans.py
@@ -215,41 +211,41 @@ reports/
 /analyze_real_data.py
 /prepare_real_data.py
 
-# Legacy build systems (not applicable to this project)
-/build.gradle
-/gradlew
-/gradlew.bat
-/gradle/
-
-# Orphaned files
+# Root-level orphaned files
 /main.ts
 /profile.ps1
-/AzuriteConfig
-/__azurite_db_*.json
 
-# Duplicate documentation (use archive/ or docs/archive/ instead)
-/docs/*SUMMARY*.md
-/docs/*MASTER_CLEANUP*.md
-/docs/CLEANUP_*.md
+# Root-level JS utilities
+get_jwt_token.js
+create_test_user.mjs
+check_kpi_values.js
 
-# Orphaned project directories (use proper structure)
+# Root-level test data
+loan_portfolio.json
+loan_portfolio_dq.json
+
+# ===========================================
+# Project-specific
+# ===========================================
+# Local repository clones
+abaco-loans-analytics/
+gemini-cli/
+
+# Orphaned project directories
 /fi-analytics/
 /projects/
 /models/*.pkl
 
-# Azure credentials (local only)
-.azure-credentials
+# Duplicate documentation
+/docs/*SUMMARY*.md
+/docs/*MASTER_CLEANUP*.md
+/docs/CLEANUP_*.md
 
-# Agent outputs
-data/agent_outputs/
-
-# Temporary files from testing/development process
-.S.swp
+# Other one-off artifacts
+failed_workflows.csv
 tmp_curl_output.txt
 uvicorn.pid
 uvicorn.log
-nohup.out
-loan_portfolio_dq.json
-get_jwt_token.js
-create_test_user.mjs
-.ruff_cache/
+
+# Disabled workflow archive
+.github/workflows/.disabled/

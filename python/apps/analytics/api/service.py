@@ -38,24 +38,25 @@ class KPIService:
 
         query = """
             SELECT
-                v.kpi_key as id,
-                d.display_name as name,
-                v.value,
-                d.unit,
-                v.as_of_date,
-                v.created_at
-            FROM public.kpi_values v
-            JOIN public.kpi_definitions d ON v.kpi_key = d.kpi_key
+                v.kpi_name as id,
+                v.kpi_name as name,
+                v.kpi_value as value,
+                '%' as unit,
+                v.run_date as as_of_date,
+                v.timestamp as created_at
+            FROM public.kpi_timeseries_daily v
             WHERE v.id IN (
                 SELECT MAX(id)
-                FROM public.kpi_values
-                GROUP BY kpi_key
+                FROM public.kpi_timeseries_daily
+                GROUP BY kpi_name
             )
         """
 
         params = []
         if kpi_keys:
-            query += " AND v.kpi_key = ANY($1)"
+            # Map API keys to pipeline names if needed
+            # For now, assume they match or are handled by the caller
+            query += " AND v.kpi_name = ANY($1)"
             params.append(kpi_keys)
 
         try:
@@ -63,6 +64,13 @@ class KPIService:
 
             responses = []
             for rec in records:
+                # Handle potential string or date/datetime objects
+                as_of_date = rec["as_of_date"]
+                if hasattr(as_of_date, "isoformat"):
+                    as_of_date_str = as_of_date.isoformat()
+                else:
+                    as_of_date_str = str(as_of_date)
+
                 responses.append(
                     KpiSingleResponse(
                         id=rec["id"],
@@ -72,7 +80,7 @@ class KPIService:
                         context=KpiContext(
                             period="latest",
                             calculation_date=rec["created_at"],
-                            filters={"as_of_date": rec["as_of_date"].isoformat()},
+                            filters={"as_of_date": as_of_date_str},
                         ),
                     )
                 )
@@ -93,7 +101,7 @@ class KPIService:
 
     async def get_risk_alerts(
         self,
-        loans: List[LoanRecord],
+        loans: Optional[List[LoanRecord]],
         ltv_threshold: float = 80.0,
         dti_threshold: float = 50.0,
     ) -> List[dict]:
@@ -102,6 +110,8 @@ class KPIService:
         LoanRecord objects.
         """
         try:
+            if loans is None:
+                return []
             df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
 
             risk_loans: List[dict] = []
@@ -171,12 +181,22 @@ class KPIService:
         """Converts a list of LoanRecord Pydantic models to a Pandas DataFrame."""
         return pd.DataFrame([loan.model_dump() for loan in loans])
 
-    async def get_data_quality_profile(self, loans: List[LoanRecord]) -> DataQualityResponse:
+    async def get_data_quality_profile(
+        self, loans: Optional[List[LoanRecord]]
+    ) -> DataQualityResponse:
         """
         Calculates an overall data quality profile based on completeness, validity, and
         duplicates of an incoming list of LoanRecord objects.
         """
         try:
+            if loans is None:
+                return DataQualityResponse(
+                    duplicate_ratio=0.0,
+                    average_null_ratio=0.0,
+                    invalid_numeric_ratio=0.0,
+                    data_quality_score=100.0,
+                    issues=["No data provided for real-time profiling."],
+                )
             df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
 
             total_records = len(df)
@@ -228,12 +248,14 @@ class KPIService:
 
     async def validate_loan_portfolio_schema(
         self,
-        loans: List[LoanRecord],
+        loans: Optional[List[LoanRecord]],
     ) -> ValidationResponse:
         """
         Validates the schema and data types of an incoming list of LoanRecord objects.
         """
         try:
+            if loans is None:
+                return ValidationResponse(valid=True, message="No loans provided to validate.")
             df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
 
             errors: List[str] = []
@@ -279,10 +301,12 @@ class KPIService:
 
     async def calculate_kpis_for_portfolio(
         self,
-        loans: List[LoanRecord],
+        loans: Optional[List[LoanRecord]],
     ) -> List[KpiSingleResponse]:
         """Calculate KPIs in real-time for a specific portfolio subset from incoming loan data."""
         try:
+            if loans is None:
+                return []
             df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
 
             if df.empty:
