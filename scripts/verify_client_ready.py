@@ -281,7 +281,7 @@ def main():
     print("\n" + "=" * 60)
     print(
         f"  RESULTS: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
-        f"{total_failed} failed, {failed_warnings} warnings, {total_checks} total checks"
+        f"{total_failed} failed (blocking), {failed_warnings} failed (optional), {total_checks} total checks"
     )
     if total_failed == 0:
         print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")

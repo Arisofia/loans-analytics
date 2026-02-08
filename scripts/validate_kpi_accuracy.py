@@ -431,7 +431,7 @@ def main():
     print("\n" + "=" * 70)
     print(
         f"  KPI VALIDATION: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
-        f"{total_failed} failed, {failed_warnings} warnings, {total_checks} total"
+        f"{total_failed} failed (blocking), {failed_warnings} failed (optional), {total_checks} total"
     )
     if total_failed == 0:
         print(f"  [{LABEL_PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
