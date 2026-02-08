@@ -54,7 +54,7 @@ def validate_data_files() -> dict[str, bool]:
 
     # Logs / runs directory for pipeline outputs
     runs_dir = ROOT_DIR / "logs" / "runs"
-    results["logs_runs_dir"] = True
+    results["logs_runs_dir"] = runs_dir.exists()
     if runs_dir.exists():
         latest_runs = sorted(runs_dir.glob("*"), reverse=True)[:3]
         print(f"  ✅ logs/runs exists ({len(list(runs_dir.glob('*')))} run(s))")
