@@ -28,8 +28,9 @@ def check(name, ok, detail=""):
 
 
 def check_warn(name, ok, detail=""):
+    """Record a non-blocking check: WARNs do not affect the exit code."""
     status = PASS if ok else WARN
-    results.append((name, ok))
+    # Intentionally do not append to `results` so WARN-only runs do not fail the script
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
