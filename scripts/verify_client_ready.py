@@ -193,7 +193,19 @@ def main():
             timeout=30,
         )
         ok = result.returncode == 0
-        detail = "config valid" if ok else f"non-zero exit code {result.returncode}"
+        if ok:
+            detail = "config valid"
+        else:
+            stderr_snippet = (result.stderr or "").strip()
+            stdout_snippet = (result.stdout or "").strip()
+            message_source = stderr_snippet or stdout_snippet
+            if message_source:
+                # Normalize and truncate to keep output concise and safe
+                normalized = message_source.replace("\n", " ")
+                snippet = normalized[:160]
+                detail = f"non-zero exit code {result.returncode}: {snippet}"
+            else:
+                detail = f"non-zero exit code {result.returncode}"
         check("Pipeline config validation", ok, detail)
     except subprocess.TimeoutExpired as e:
         check(
