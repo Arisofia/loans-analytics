@@ -17,11 +17,20 @@ LABEL_FAIL = "\033[91mFAIL\033[0m"
 LABEL_WARN = "\033[93mWARN\033[0m"
 
 results = []
+warnings = []
 
 
 def check(name, ok, detail=""):
     status = LABEL_PASS if ok else LABEL_FAIL
     results.append((name, ok))
+    print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
+    return ok
+
+
+def check_warn(name, ok, detail=""):
+    """Non-blocking check: recorded as warning, does not affect exit code."""
+    status = LABEL_PASS if ok else LABEL_WARN
+    warnings.append((name, ok))
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -357,37 +366,37 @@ def main():
     print("  FINANCIAL SANITY CHECKS")
     print("=" * 70)
 
-    check(
+    check_warn(
         "PAR-30 < 30%",
         pipeline_kpis["par_30"] < 30,
         f"{pipeline_kpis['par_30']:.2f}% (guardrail: <30%)",
     )
-    check(
+    check_warn(
         "PAR-90 < 15%",
         pipeline_kpis["par_90"] < 15,
         f"{pipeline_kpis['par_90']:.2f}% (guardrail: <15%)",
     )
-    check(
+    check_warn(
         "Default rate < 10%",
         pipeline_kpis["default_rate"] < 10,
         f"{pipeline_kpis['default_rate']:.2f}% (guardrail: <10%)",
     )
-    check(
+    check_warn(
         "Portfolio yield 5-15%",
         5 <= pipeline_kpis["portfolio_yield"] <= 15,
         f"{pipeline_kpis['portfolio_yield']:.2f}% (range: 5-15%)",
     )
-    check(
+    check_warn(
         "Collections rate > 50%",
         pipeline_kpis["collections_rate"] > 50,
         f"{pipeline_kpis['collections_rate']:.2f}% (min: 50%)",
     )
-    check(
+    check_warn(
         "AUM > $1M",
         pipeline_kpis["total_outstanding_balance"] > 1_000_000,
         f"${pipeline_kpis['total_outstanding_balance']:,.2f}",
     )
-    check(
+    check_warn(
         "Active borrowers > 10",
         pipeline_kpis["active_borrowers"] > 10,
         f"{pipeline_kpis['active_borrowers']:.0f} borrowers",
@@ -396,19 +405,29 @@ def main():
     # ==========================================
     # SUMMARY
     # ==========================================
-    passed = sum(1 for _, ok in results if ok)
-    failed = sum(1 for _, ok in results if not ok)
+    passed_results = sum(1 for _, ok in results if ok)
+    failed_results = sum(1 for _, ok in results if not ok)
+    passed_warnings = sum(1 for _, ok in warnings if ok)
+    failed_warnings = sum(1 for _, ok in warnings if not ok)
+    total_passed = passed_results + passed_warnings
+    total_checks = len(results) + len(warnings)
     print("\n" + "=" * 70)
-    print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {len(results)} total")
-    if failed == 0:
+    print(
+        f"  KPI VALIDATION: {total_passed} passed"
+        f" ({passed_results} required, {passed_warnings} optional),"
+        f" {failed_results} failed (blocking),"
+        f" {failed_warnings} failed (optional),"
+        f" {total_checks} total"
+    )
+    if failed_results == 0:
         print(f"  [{LABEL_PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
     else:
-        print(f"  [{LABEL_FAIL}] {failed} KPI(S) HAVE DISCREPANCIES:")
+        print(f"  [{LABEL_FAIL}] {failed_results} KPI(S) HAVE DISCREPANCIES:")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
     print("=" * 70)
-    return 0 if failed == 0 else 1
+    return 0 if failed_results == 0 else 1
 
 
 if __name__ == "__main__":

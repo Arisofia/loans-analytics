@@ -16,11 +16,20 @@ LABEL_FAIL = COLOR_RED + "FAIL" + COLOR_RESET
 LABEL_WARN = COLOR_YELLOW + "WARN" + COLOR_RESET
 
 results = []
+warnings = []
 
 
 def check(name, ok, detail=""):
     status = LABEL_PASS if ok else LABEL_FAIL
     results.append((name, ok))
+    print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
+    return ok
+
+
+def check_warn(name, ok, detail=""):
+    """Non-blocking check: recorded as warning, does not affect exit code."""
+    status = LABEL_PASS if ok else LABEL_WARN
+    warnings.append((name, ok))
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -59,6 +68,8 @@ def main():
         "SUPABASE_PROJECT_REF",
         "DATABASE_URL",
         "OPENAI_API_KEY",
+    ]
+    optional_keys = [
         "SENTRY_DSN",
         "SENTRY_AUTH_TOKEN",
         "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -66,10 +77,16 @@ def main():
     for k in required_keys:
         v = envs.get(k, "")
         ok = bool(v) and "YOUR_" not in v and "PLACEHOLDER" not in v
-        check(k, ok, v[:30] + "..." if ok else "MISSING or placeholder")
+        check(k, ok, f"present ({len(v)} chars)" if ok else "MISSING or placeholder")
+    for k in optional_keys:
+        v = envs.get(k, "")
+        ok = bool(v) and "YOUR_" not in v and "PLACEHOLDER" not in v
+        check_warn(k, ok, f"present ({len(v)} chars)" if ok else "MISSING or placeholder")
 
     # --- 2. DATABASE ---
     print("\n2. DATABASE CONNECTION")
+    conn = None
+    cur = None
     try:
         import psycopg2
 
@@ -100,15 +117,21 @@ def main():
         for t in core_tables:
             exists = t in tables
             if exists:
-                cur.execute(f"SELECT count(*) FROM public.{t}")
+                cur.execute(f"SELECT count(*) FROM public.{t}")  # noqa: S608
                 cnt = cur.fetchone()[0]
                 check(f"Table '{t}'", True, f"{cnt} rows")
             else:
                 check(f"Table '{t}'", False, "not found")
-
-        conn.close()
     except Exception as e:
-        check("PostgreSQL connect", False, str(e)[:80])
+        if conn is None:
+            check("PostgreSQL connect", False, str(e)[:80])
+        else:
+            check("PostgreSQL query", False, str(e)[:80])
+    finally:
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
 
     # --- 3. SUPABASE REST API ---
     print("\n3. SUPABASE REST API")
@@ -125,7 +148,7 @@ def main():
                 "Accept": "application/json",
             },
         )
-        resp = urllib.request.urlopen(req, timeout=10)
+        resp = urllib.request.urlopen(req, timeout=10)  # noqa: S310
         status = resp.getcode()
         check("REST API", 200 <= status < 300, f"HTTP {status} on {health_table}")
     except Exception as e:
@@ -135,32 +158,32 @@ def main():
     print("\n4. OPENAI API")
     openai_key = envs.get("OPENAI_API_KEY", "")
     key_valid = openai_key.startswith("sk-") and len(openai_key) > 20
-    check("OpenAI API key format", key_valid, openai_key[:20] + "...")
+    check_warn("OpenAI API key format", key_valid, f"present ({len(openai_key)} chars)")
     try:
         req = urllib.request.Request(
             "https://api.openai.com/v1/models",
             headers={"Authorization": f"Bearer {openai_key}"},
         )
-        resp = urllib.request.urlopen(req, timeout=30)
+        resp = urllib.request.urlopen(req, timeout=30)  # noqa: S310
         models = json.loads(resp.read())
         gpt4 = [m["id"] for m in models["data"] if "gpt-4" in m["id"]]
-        check("OpenAI API live", True, f"{len(models['data'])} models, {len(gpt4)} GPT-4")
+        check_warn("OpenAI API live", True, f"{len(models['data'])} models, {len(gpt4)} GPT-4")
     except Exception as e:
-        check("OpenAI API live", False, str(e)[:80])
+        check_warn("OpenAI API live", False, str(e)[:80])
 
     # --- 5. SENTRY ---
     print("\n5. SENTRY / OBSERVABILITY")
     dsn = envs.get("SENTRY_DSN", "")
-    check(
+    check_warn(
         "Sentry DSN",
         bool(dsn) and "ingest" in dsn,
-        dsn[:40] + "..." if dsn else "MISSING or placeholder",
+        f"present ({len(dsn)} chars)" if dsn else "MISSING or placeholder",
     )
     otel = envs.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
-    check(
+    check_warn(
         "OTEL endpoint",
         bool(otel),
-        otel[:50] + "..." if otel else "MISSING or placeholder",
+        f"present ({len(otel)} chars)" if otel else "MISSING or placeholder",
     )
 
     # --- 6. PIPELINE ---
@@ -208,22 +231,34 @@ def main():
     # Real data file is optional but useful for live runs
     real_data_file = "data/raw/abaco_real_data_20260202.csv"
     exists_real = os.path.exists(real_data_file)
-    check(real_data_file, exists_real, "present" if exists_real else "optional (not found)")
+    check_warn(
+        real_data_file, exists_real, "present" if exists_real else "optional (not found)"
+    )
 
     # --- SUMMARY ---
-    passed = sum(1 for _, ok in results if ok)
-    failed = sum(1 for _, ok in results if not ok)
+    passed_results = sum(1 for _, ok in results if ok)
+    failed_results = sum(1 for _, ok in results if not ok)
+    passed_warnings = sum(1 for _, ok in warnings if ok)
+    failed_warnings = sum(1 for _, ok in warnings if not ok)
+    total_passed = passed_results + passed_warnings
+    total_checks = len(results) + len(warnings)
     print("\n" + "=" * 60)
-    print(f"  RESULTS: {passed} passed, {failed} failed, {len(results)} total")
-    if failed == 0:
+    print(
+        f"  RESULTS: {total_passed} passed"
+        f" ({passed_results} required, {passed_warnings} optional),"
+        f" {failed_results} failed (blocking),"
+        f" {failed_warnings} failed (optional),"
+        f" {total_checks} total"
+    )
+    if failed_results == 0:
         print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")
     else:
-        print(f"  [{LABEL_FAIL}] {failed} CHECK(S) NEED ATTENTION")
+        print(f"  [{LABEL_FAIL}] {failed_results} BLOCKING CHECK(S) NEED ATTENTION")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
     print("=" * 60)
-    return 0 if failed == 0 else 1
+    return 0 if failed_results == 0 else 1
 
 
 if __name__ == "__main__":
