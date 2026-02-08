@@ -417,7 +417,7 @@ class CalculationPhase:
                 "par_30": (0, 30),  # PAR-30 should be <30%
                 "par_90": (0, 15),  # PAR-90 should be <15%
                 "default_rate": (0, 4),  # Default rate <4%
-                "portfolio_yield": (25, 50),  # Yield 25-50%
+                "portfolio_yield": (5, 15),  # Yield 5-15% (factoring)
             }
 
             for kpi_name, kpi_value in kpi_results.items():

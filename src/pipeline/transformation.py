@@ -468,6 +468,7 @@ class TransformationPhase:
         rules_applied: List[str] = []
         fields_created: List[str] = []
 
+        self._normalize_interest_rate(df, rules_applied)
         self._apply_dpd_bucket_rule(df, rules_applied, fields_created)
         self._apply_risk_category_rule(df, rules_applied, fields_created)
         self._apply_amount_tier_rule(df, rules_applied, fields_created)
@@ -481,6 +482,64 @@ class TransformationPhase:
 
         logger.info("Applied %d business rules", len(rules_applied))
         return df, metrics
+
+    def _normalize_interest_rate(self, df: pd.DataFrame, rules_applied: List[str]) -> None:
+        """Normalize interest_rate to annual decimal based on data semantics.
+
+        Abaco factoring data stores interest_rate as a monthly percentage
+        (e.g. 0.65 means 0.65 %/month).  The KPI formula ``AVG(interest_rate)
+        * 100`` expects an annual decimal (e.g. 0.0775 → 7.75 %).
+
+        Detection heuristic:
+        - If median rate < 5 **and** median term < 6 months, the rates are
+          monthly percentages → annualize (× 12) then divide by 100.
+        - If median rate > 1, rates look like whole-number percentages
+          → divide by 100.
+        - Otherwise, assume already annual decimal — no conversion.
+        """
+        if "interest_rate" not in df.columns:
+            return
+
+        rates = pd.to_numeric(df["interest_rate"], errors="coerce")
+        valid = rates.dropna()
+        if valid.empty:
+            return
+
+        median_rate = valid.median()
+
+        # Determine median term length (months)
+        median_term = None
+        if "term_months" in df.columns:
+            terms = pd.to_numeric(df["term_months"], errors="coerce").dropna()
+            if not terms.empty:
+                median_term = terms.median()
+
+        if median_rate < 5 and median_term is not None and median_term < 6:
+            # Monthly percentage rates (factoring): annualize and
+            # convert to decimal so AVG * 100 gives correct annual %.
+            df["interest_rate"] = rates * 12 / 100
+            logger.info(
+                "Normalized interest_rate: monthly %% → annual decimal "
+                "(median %.4f%%/mo → %.4f annual)",
+                median_rate,
+                median_rate * 12 / 100,
+            )
+            rules_applied.append("interest_rate_monthly_pct_to_annual")
+        elif median_rate > 1:
+            # Whole-number percentage (e.g. 24.5 meaning 24.5% annual)
+            df["interest_rate"] = rates / 100
+            logger.info(
+                "Normalized interest_rate: whole %% → annual decimal " "(median %.2f%% → %.4f)",
+                median_rate,
+                median_rate / 100,
+            )
+            rules_applied.append("interest_rate_pct_to_decimal")
+        else:
+            logger.info(
+                "interest_rate appears to be annual decimal already "
+                "(median=%.4f); no conversion applied",
+                median_rate,
+            )
 
     def _apply_dpd_bucket_rule(
         self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]

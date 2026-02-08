@@ -38,9 +38,9 @@ portfolio_kpis:
     unit: "percentage"
     description: "Average annualized interest rate across portfolio"
     thresholds:
-      warning: 10
-      target: 15
-      critical: 8
+      warning: 12
+      target: 8
+      critical: 5
 
 # Asset Quality KPIs
 asset_quality_kpis:
