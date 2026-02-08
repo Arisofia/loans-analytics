@@ -16,6 +16,7 @@ Output:
     models/risk/origination_risk_metadata.json       — Origination metrics
 """
 
+import json
 import sys
 from pathlib import Path
 
@@ -25,7 +26,7 @@ import pandas as pd
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
-from python.models.default_risk_model import DefaultRiskModel
+from python.models.default_risk_model import DefaultRiskModel  # noqa: E402
 
 
 def print_metrics(metrics, model_name, auc_target=0.75):
@@ -48,8 +49,8 @@ def print_metrics(metrics, model_name, auc_target=0.75):
     for i, (feat, imp) in enumerate(metrics["feature_importance"].items()):
         if i >= 10:
             break
-        bar = "#" * int(imp * 50)
-        print(f"    {feat:25s} {imp:.4f} {bar}")
+        importance_bar = "#" * int(imp * 50)
+        print(f"    {feat:25s} {imp:.4f} {importance_bar}")
 
 
 def main():
@@ -90,7 +91,6 @@ def main():
     orig_path = Path("models/risk")
     orig_path.mkdir(parents=True, exist_ok=True)
     orig_model.model.save_model(str(orig_path / "origination_risk_xgb.ubj"))
-    import json
 
     with open(orig_path / "origination_risk_metadata.json", "w") as f:
         json.dump(orig_model.metadata, f, indent=2, default=str)
@@ -103,7 +103,8 @@ def main():
         f"  Real-time model:   AUC={rt_metrics['auc_roc']:.4f}  (models/risk/default_risk_xgb.json)"
     )
     print(
-        f"  Origination model: AUC={orig_metrics['auc_roc']:.4f}  (models/risk/origination_risk_xgb.json)"
+        f"  Origination model: AUC={orig_metrics['auc_roc']:.4f}  "
+        f"(models/risk/origination_risk_xgb.json)"
     )
 
     if rt_metrics["auc_roc"] == 1.0:
@@ -118,9 +119,8 @@ def main():
         for _, row in subset.iterrows():
             row_dict = row.to_dict()
             prob = orig_model.predict_proba(row_dict)
-            print(
-                f"  Loan {row_dict.get('loan_id', '?'):15s} | {status_val:10s} | P(default)={prob:.4f}"
-            )
+            loan_id = row_dict.get("loan_id", "?")
+            print(f"  Loan {loan_id:15s} | {status_val:10s} | P(default)={prob:.4f}")
 
 
 if __name__ == "__main__":
