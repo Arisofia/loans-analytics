@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Client-readiness verification script. Run all checks."""
 
+import importlib.util
 import json
 import os
+import subprocess
 import sys
 import urllib.request
+from datetime import datetime, timezone
 
 COLOR_GREEN = "\033[92m"
 COLOR_RED = "\033[91m"
@@ -19,6 +22,13 @@ results = []
 
 def check(name, ok, detail=""):
     status = LABEL_PASS if ok else LABEL_FAIL
+    results.append((name, ok))
+    print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
+    return ok
+
+
+def check_warn(name, ok, detail=""):
+    status = LABEL_PASS if ok else LABEL_WARN
     results.append((name, ok))
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
@@ -42,9 +52,18 @@ def load_env():
 
 
 def main():
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    try:
+        branch = (
+            subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True)
+            .strip()
+        )
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
+        branch = "unknown"
+
     print("=" * 60)
     print("  ABACO LOANS ANALYTICS — CLIENT READINESS CHECK")
-    print("  Date: 2026-02-08 | Branch: main")
+    print(f"  Date: {now} | Branch: {branch}")
     print("=" * 60)
 
     envs = load_env()
@@ -54,9 +73,11 @@ def main():
     required_keys = [
         "SUPABASE_URL",
         "SUPABASE_ANON_KEY",
+        "DATABASE_URL",
+    ]
+    optional_keys = [
         "SUPABASE_SERVICE_ROLE_KEY",
         "SUPABASE_PROJECT_REF",
-        "DATABASE_URL",
         "OPENAI_API_KEY",
         "SENTRY_DSN",
         "SENTRY_AUTH_TOKEN",
@@ -66,107 +87,117 @@ def main():
         v = envs.get(k, "")
         ok = bool(v) and "YOUR_" not in v and "PLACEHOLDER" not in v
         check(k, ok, v[:30] + "..." if ok else "MISSING or placeholder")
+    for k in optional_keys:
+        v = envs.get(k, "")
+        ok = bool(v) and "YOUR_" not in v and "PLACEHOLDER" not in v
+        check_warn(k, ok, v[:30] + "..." if ok else "MISSING (optional)")
 
     # --- 2. DATABASE ---
     print("\n2. DATABASE CONNECTION")
-    try:
-        import psycopg2
+    if importlib.util.find_spec("psycopg") is None:
+        check_warn("psycopg", False, "not installed; database checks skipped")
+    else:
+        import psycopg
 
-        conn = psycopg2.connect(envs.get("DATABASE_URL", ""), connect_timeout=10)
-        cur = conn.cursor()
-        cur.execute("SELECT version();")
-        ver = cur.fetchone()[0]
-        check("PostgreSQL connect", True, ver[:55])
+        try:
+            conn = psycopg.connect(envs.get("DATABASE_URL", ""), connect_timeout=10)
+            cur = conn.cursor()
+            cur.execute("SELECT version();")
+            ver = cur.fetchone()[0]
+            check("PostgreSQL connect", True, ver[:55])
 
-        cur.execute(
-            "SELECT schemaname, count(*) FROM pg_tables "
-            "WHERE schemaname NOT IN ('pg_catalog','information_schema') "
-            "GROUP BY schemaname ORDER BY schemaname"
-        )
-        schemas = cur.fetchall()
-        for s, c in schemas:
-            check(f"Schema '{s}'", True, f"{c} tables")
+            cur.execute(
+                "SELECT schemaname, count(*) FROM pg_tables "
+                "WHERE schemaname NOT IN ('pg_catalog','information_schema') "
+                "GROUP BY schemaname ORDER BY schemaname"
+            )
+            schemas = cur.fetchall()
+            for s, c in schemas:
+                check(f"Schema '{s}'", True, f"{c} tables")
 
-        cur.execute(
-            "SELECT table_name FROM information_schema.tables "
-            "WHERE table_schema='public' ORDER BY table_name"
-        )
-        tables = [r[0] for r in cur.fetchall()]
-        check("Public tables", len(tables) > 0, ", ".join(tables[:10]))
+            cur.execute(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema='public' ORDER BY table_name"
+            )
+            tables = [r[0] for r in cur.fetchall()]
+            check("Public tables", len(tables) > 0, ", ".join(tables[:10]))
 
-        # Check for core tables
-        core_tables = ["fact_loans", "kpi_timeseries_daily"]
-        for t in core_tables:
-            exists = t in tables
-            if exists:
-                cur.execute(f"SELECT count(*) FROM public.{t}")
-                cnt = cur.fetchone()[0]
-                check(f"Table '{t}'", True, f"{cnt} rows")
-            else:
-                check(f"Table '{t}'", False, "not found")
+            # Check for core tables
+            core_tables = ["fact_loans", "kpi_timeseries_daily"]
+            for t in core_tables:
+                exists = t in tables
+                if exists:
+                    cur.execute(f"SELECT count(*) FROM public.{t}")
+                    cnt = cur.fetchone()[0]
+                    check(f"Table '{t}'", True, f"{cnt} rows")
+                else:
+                    check(f"Table '{t}'", False, "not found")
 
-        conn.close()
-    except Exception as e:
-        check("PostgreSQL connect", False, str(e)[:80])
+            conn.close()
+        except Exception as e:
+            check("PostgreSQL connect", False, str(e)[:80])
 
     # --- 3. SUPABASE REST API ---
     print("\n3. SUPABASE REST API")
-    try:
-        base_url = envs.get("SUPABASE_URL", "").rstrip("/")
-        anon_key = envs.get("SUPABASE_ANON_KEY", "")
-        # Use a known small table as a health check; adjust if you prefer another table
-        health_table = "monitoring_operational_events"
-        url = f"{base_url}/rest/v1/{health_table}?select=id&limit=1"
-        req = urllib.request.Request(
-            url,
-            headers={
-                "apikey": anon_key,
-                "Accept": "application/json",
-            },
-        )
-        resp = urllib.request.urlopen(req, timeout=10)
-        status = resp.getcode()
-        check("REST API", 200 <= status < 300, f"HTTP {status} on {health_table}")
-    except Exception as e:
-        check("REST API", False, str(e)[:80])
+    if envs.get("SUPABASE_URL") and envs.get("SUPABASE_ANON_KEY"):
+        try:
+            base_url = envs["SUPABASE_URL"].rstrip("/")
+            anon_key = envs["SUPABASE_ANON_KEY"]
+            health_table = "monitoring_operational_events"
+            url = f"{base_url}/rest/v1/{health_table}?select=id&limit=1"
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "apikey": anon_key,
+                    "Accept": "application/json",
+                },
+            )
+            resp = urllib.request.urlopen(req, timeout=10)
+            status = resp.getcode()
+            check("REST API", 200 <= status < 300, f"HTTP {status} on {health_table}")
+        except Exception as e:
+            check("REST API", False, str(e)[:80])
+    else:
+        check_warn("REST API", False, "missing SUPABASE_URL or SUPABASE_ANON_KEY")
 
     # --- 4. OPENAI API ---
     print("\n4. OPENAI API")
     openai_key = envs.get("OPENAI_API_KEY", "")
     key_valid = openai_key.startswith("sk-") and len(openai_key) > 20
-    check("OpenAI API key format", key_valid, openai_key[:20] + "...")
-    try:
-        req = urllib.request.Request(
-            "https://api.openai.com/v1/models",
-            headers={"Authorization": f"Bearer {openai_key}"},
-        )
-        resp = urllib.request.urlopen(req, timeout=30)
-        models = json.loads(resp.read())
-        gpt4 = [m["id"] for m in models["data"] if "gpt-4" in m["id"]]
-        check("OpenAI API live", True, f"{len(models['data'])} models, {len(gpt4)} GPT-4")
-    except Exception as e:
-        check("OpenAI API live", False, str(e)[:80])
+    check_warn("OpenAI API key format", key_valid, openai_key[:20] + "...")
+    if key_valid:
+        try:
+            req = urllib.request.Request(
+                "https://api.openai.com/v1/models",
+                headers={"Authorization": f"Bearer {openai_key}"},
+            )
+            resp = urllib.request.urlopen(req, timeout=30)
+            models = json.loads(resp.read())
+            gpt4 = [m["id"] for m in models["data"] if "gpt-4" in m["id"]]
+            check_warn(
+                "OpenAI API live", True, f"{len(models['data'])} models, {len(gpt4)} GPT-4"
+            )
+        except Exception as e:
+            check_warn("OpenAI API live", False, str(e)[:80])
 
     # --- 5. SENTRY ---
     print("\n5. SENTRY / OBSERVABILITY")
     dsn = envs.get("SENTRY_DSN", "")
-    check(
+    check_warn(
         "Sentry DSN",
         bool(dsn) and "ingest" in dsn,
-        dsn[:40] + "..." if dsn else "MISSING or placeholder",
+        dsn[:40] + "..." if dsn else "MISSING (optional)",
     )
     otel = envs.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
-    check(
+    check_warn(
         "OTEL endpoint",
         bool(otel),
-        otel[:50] + "..." if otel else "MISSING or placeholder",
+        otel[:50] + "..." if otel else "MISSING (optional)",
     )
 
     # --- 6. PIPELINE ---
     print("\n6. PIPELINE (dry run)")
     try:
-        import subprocess
-
         result = subprocess.run(
             [
                 sys.executable,
@@ -179,9 +210,27 @@ def main():
             timeout=30,
             check=False,
         )
-        check("Pipeline config validation", result.returncode == 0, "config valid")
-    except Exception as e:
-        check("Pipeline config validation", False, str(e)[:80])
+        ok = result.returncode == 0
+        detail = "config valid" if ok else f"non-zero exit code {result.returncode}"
+        check("Pipeline config validation", ok, detail)
+    except subprocess.TimeoutExpired as e:
+        check(
+            "Pipeline config validation",
+            False,
+            f"pipeline validation timed out after {e.timeout} seconds",
+        )
+    except OSError as e:
+        check(
+            "Pipeline config validation",
+            False,
+            (f"OSError while running pipeline validation: {e.strerror or str(e)}")[:80],
+        )
+    except subprocess.SubprocessError as e:
+        check(
+            "Pipeline config validation",
+            False,
+            (f"Subprocess error during pipeline validation: {str(e)}")[:80],
+        )
 
     # --- 7. KEY FILES ---
     print("\n7. KEY FILES")

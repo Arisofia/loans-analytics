@@ -66,7 +66,7 @@ def validate_data_files() -> dict[str, bool]:
             for d in latest_runs:
                 print(f"     - {d.name}")
     else:
-        print("  [WARN] logs/runs directory missing (have you run the pipeline?)")
+        print("  [WARN] logs/runs directory missing (run pipeline to generate artifacts)")
 
     return results
 
@@ -258,10 +258,14 @@ def check_agent_analysis_results() -> dict[str, bool]:
             results["has_metrics"] = False
     else:
         print("  [WARN] No analysis results found")
-        cmd = (
-            "python scripts/run_daily_agent_analysis.py "
-            "--input data/raw/<your_real_loans_file>.csv"
-        )
+        raw_candidates = sorted((ROOT_DIR / "data" / "raw").glob("abaco_real_data_*.csv"))
+        if raw_candidates:
+            cmd = f"python scripts/run_daily_agent_analysis.py --input {raw_candidates[-1]}"
+        else:
+            cmd = (
+                "python scripts/run_daily_agent_analysis.py "
+                "--input data/raw/<your_real_loans_file>.csv"
+            )
         print(f"     Run to generate: {cmd}")
         results["has_analyses"] = False
         results["has_metrics"] = False
@@ -325,7 +329,7 @@ def main() -> None:
     print("\n  1. Fix any failed checks above")
     print("  2. Run your deployment workflow")
     print("  3. Access dashboard: http://localhost:8501 or your prod URL")
-    print("  4. Select a real pipeline run from the Streamlit sidebar")
+    print("  4. Run the pipeline with real data to generate logs/runs artifacts")
     print("  5. Explore KPIs, agent insights, and monitoring/command pages")
     print("\n" + "=" * 60)
 

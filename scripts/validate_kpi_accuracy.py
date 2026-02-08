@@ -5,6 +5,7 @@ Cross-checks pipeline KPI output against manual pandas calculations on raw data.
 Then tests multi-agent system with real KPI context.
 """
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -25,6 +26,14 @@ def check(name, ok, detail=""):
     return ok
 
 
+def check_warn(name, ok, detail=""):
+    """Record a non-blocking check: WARNs do not affect the exit code."""
+    status = PASS if ok else WARN
+    # Intentionally do not append to `results` so WARN-only runs do not fail the script
+    print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
+    return ok
+
+
 def close_enough(a, b, tol=0.01):
     """Check if two values are within tolerance (1%)."""
     if a == 0 and b == 0:
@@ -34,13 +43,36 @@ def close_enough(a, b, tol=0.01):
     return abs(a - b) / max(abs(a), abs(b)) < tol
 
 
+def find_latest_run_id(runs_dir: Path) -> str | None:
+    if not runs_dir.exists():
+        return None
+    runs = [p for p in runs_dir.iterdir() if p.is_dir()]
+    if not runs:
+        return None
+    return sorted(runs, key=lambda p: p.name, reverse=True)[0].name
+
+
 def main():
     print("=" * 70)
     print("  KPI ACCURACY VALIDATION — Cross-check vs Raw Data")
     print("=" * 70)
 
+    parser = argparse.ArgumentParser(description="Validate pipeline KPI accuracy")
+    parser.add_argument("--run-id", type=str, default=None, help="Pipeline run ID to validate")
+    args = parser.parse_args()
+
+    run_id = args.run_id or os.environ.get("KPI_VALIDATION_RUN_ID")
+    if not run_id:
+        run_id = find_latest_run_id(Path("logs/runs"))
+        if run_id:
+            print(f"  No run ID provided; using latest run: {run_id}")
+
+    if not run_id:
+        print("  No pipeline run found. Run the pipeline to generate logs/runs/<run_id>.")
+        return 1
+
     # Load pipeline KPI output
-    kpi_file = Path("logs/runs/20260208_1c0def53/kpis_output.json")
+    kpi_file = Path("logs/runs") / run_id / "kpis_output.json"
     if not kpi_file.exists():
         print(f"  KPI output not found: {kpi_file}")
         return 1
@@ -58,14 +90,18 @@ def main():
     print("  MANUAL RECALCULATION FROM PIPELINE CLEAN DATA")
     print("=" * 70)
 
-    clean_path = Path("logs/runs/20260208_1c0def53/clean_data.parquet")
+    clean_path = Path("logs/runs") / run_id / "clean_data.parquet"
     if clean_path.exists():
         df = pd.read_parquet(clean_path)
         print(f"\n  Clean data (parquet): {len(df)} rows, {len(df.columns)} columns")
     else:
-        # Fallback to raw CSV with manual transforms
-        df = pd.read_csv("data/raw/abaco_real_data_20260202.csv")
-        print(f"\n  Fallback to raw CSV: {len(df)} rows, {len(df.columns)} columns")
+        raw_candidates = sorted(Path("data/raw").glob("abaco_real_data_*.csv"))
+        if not raw_candidates:
+            print("  No real data CSV found in data/raw (abaco_real_data_*.csv)")
+            return 1
+        raw_path = raw_candidates[-1]
+        df = pd.read_csv(raw_path)
+        print(f"\n  Fallback to raw CSV: {raw_path} ({len(df)} rows, {len(df.columns)} columns)")
 
     # Apply transforms only when using raw CSV fallback
     needs_transform = not clean_path.exists()
@@ -131,8 +167,14 @@ def main():
         pass
 
     print(f"  After transforms: {len(df)} rows")
-    print(f"  Status distribution: {df['status'].value_counts().to_dict()}")
-    print(f"  DPD range: {df['dpd'].min()} - {df['dpd'].max()}")
+    if "status" in df.columns:
+        print(f"  Status distribution: {df['status'].value_counts().to_dict()}")
+    else:
+        check_warn("status column present", False, "missing; KPI checks may be incomplete")
+    if "dpd" in df.columns:
+        print(f"  DPD range: {df['dpd'].min()} - {df['dpd'].max()}")
+    else:
+        check_warn("dpd column present", False, "missing; PAR checks may be incomplete")
 
     # ==========================================
     # MANUAL KPI CALCULATIONS
@@ -140,6 +182,10 @@ def main():
     print("\n" + "=" * 70)
     print("  KPI-BY-KPI CROSS-VALIDATION")
     print("=" * 70)
+
+    if "status" not in df.columns:
+        print("  Required 'status' column missing. Cannot validate KPIs.")
+        return 1
 
     active_mask = df["status"].isin(["active", "defaulted"])
     not_closed = df["status"] != "closed"
