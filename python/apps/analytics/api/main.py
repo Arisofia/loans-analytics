@@ -8,14 +8,13 @@ from typing import Optional
 
 from python.logging_config import init_sentry, set_sentry_correlation
 
-init_sentry(service_name="analytics-api")
-
-
 # Avoid importing FastAPI at module import time so tests don't require
 # fastapi installed. Use a lazy import and a lightweight HTTPException
 # fallback for environments without FastAPI.
 try:
     from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
+
+    init_sentry(service_name="analytics-api")
 
     from python.apps.analytics.api.models import (
         DataQualityResponse,
@@ -368,12 +367,12 @@ if app is not None:
             except Exception as orch_err:
                 logger.info(f"Using High-Fidelity Local Analytical Engine: {orch_err}")
                 trace_id = str(uuid.uuid4())
-                
+
                 # High-fidelity deterministic analysis
                 par30 = next((k.value for k in kpis if k.id == "par_30"), 0.0)
                 yield_val = next((k.value for k in kpis if k.id == "portfolio_yield"), 0.0)
                 loans_count = next((k.value for k in kpis if k.id == "total_loans_count"), 0)
-                
+
                 risk_status = "CRITICAL" if par30 > 10 else "STABLE"
                 summary = (
                     f"PROPORTIONAL PORTFOLIO ANALYSIS ({risk_status})\n"
@@ -460,23 +459,26 @@ if app is not None:
     # ML Prediction Endpoint
     # -------------------------------------------------------------------
 
-    # Lazy-load model on first request
-    _risk_model = None
+    # Lazy-load model on first request (mutable container for closure)
+    _risk_model_cache: dict = {}
 
     def _get_risk_model():
-        nonlocal _risk_model
-        if _risk_model is None:
+        if "model" not in _risk_model_cache:
             try:
                 from python.models.default_risk_model import DefaultRiskModel
-                model_path = Path(__file__).resolve().parents[4] / "models" / "risk" / "default_risk_xgb.json"
+
+                base_path = Path(__file__).resolve().parents[4]
+                model_path = base_path / "models" / "risk" / "default_risk_xgb.ubj"
                 if model_path.exists():
-                    _risk_model = DefaultRiskModel.load(str(model_path))
+                    _risk_model_cache["model"] = DefaultRiskModel.load(str(model_path))
                     logger.info("Loaded default risk model from %s", model_path)
                 else:
                     logger.warning("Risk model not found at %s", model_path)
+                    _risk_model_cache["model"] = None
             except Exception as e:
                 logger.error("Failed to load risk model: %s", e)
-        return _risk_model
+                _risk_model_cache["model"] = None
+        return _risk_model_cache.get("model")
 
     @app.post("/predict/default", response_model=DefaultPredictionResponse)
     async def predict_default(request: DefaultPredictionRequest = Body(...)):

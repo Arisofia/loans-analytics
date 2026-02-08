@@ -89,7 +89,7 @@ def main():
     # Save origination model with different filenames
     orig_path = Path("models/risk")
     orig_path.mkdir(parents=True, exist_ok=True)
-    orig_model.model.save_model(str(orig_path / "origination_risk_xgb.json"))
+    orig_model.model.save_model(str(orig_path / "origination_risk_xgb.ubj"))
     import json
 
     with open(orig_path / "origination_risk_metadata.json", "w") as f:

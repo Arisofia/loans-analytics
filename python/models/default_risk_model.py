@@ -25,7 +25,7 @@ Usage:
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -286,7 +286,7 @@ class DefaultRiskModel:
         path = Path(model_dir)
         path.mkdir(parents=True, exist_ok=True)
 
-        model_path = path / "default_risk_xgb.json"
+        model_path = path / "default_risk_xgb.ubj"
         self.model.save_model(str(model_path))
 
         meta_path = path / "default_risk_metadata.json"
@@ -297,7 +297,7 @@ class DefaultRiskModel:
         return str(model_path)
 
     @classmethod
-    def load(cls, model_path: str = "models/risk/default_risk_xgb.json") -> "DefaultRiskModel":
+    def load(cls, model_path: str = "models/risk/default_risk_xgb.ubj") -> "DefaultRiskModel":
         """Load a trained model from disk."""
         model = xgb.XGBClassifier()
         model.load_model(model_path)

@@ -11,7 +11,6 @@ Usage:
     python scripts/seed_historical_kpis.py
 """
 
-import json
 import math
 import os
 import random
@@ -313,9 +312,7 @@ def main():
         try:
             count = insert_batch(batch)
             inserted += count
-            print(
-                f"  Inserted batch {i // BATCH_SIZE + 1}: {count} records (total: {inserted}/{total})"
-            )
+            print(f"  Batch {i // BATCH_SIZE + 1}: {count} recs (total: {inserted}/{total})")
         except requests.HTTPError as e:
             print(f"  ERROR inserting batch {i // BATCH_SIZE + 1}: {e}")
             print(f"  Response: {e.response.text if e.response else 'N/A'}")
@@ -335,7 +332,7 @@ def main():
         timeout=10,
     )
     if resp.ok:
-        print(f"\nVerification (latest 5 records):")
+        print("\nVerification (latest 5 records):")
         for row in resp.json():
             print(f"  {row['kpi_id']}: {row['date']}")
 
