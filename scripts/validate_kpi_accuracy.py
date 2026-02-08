@@ -7,6 +7,7 @@ Then tests multi-agent system with real KPI context.
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -28,7 +29,7 @@ def check(name, ok, detail=""):
 
 def check_warn(name, ok, detail=""):
     """Record a non-blocking check: WARNs do not affect the exit code."""
-    status = PASS if ok else WARN
+    status = LABEL_PASS if ok else LABEL_WARN
     # Intentionally do not append to `results` so WARN-only runs do not fail the script
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
