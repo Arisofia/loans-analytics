@@ -108,6 +108,7 @@ def main():
             check_warn("psycopg", False, f"import failed ({e}); database checks skipped")
         else:
             conn = None
+            cur = None
             try:
                 conn = psycopg.connect(envs.get("DATABASE_URL", ""), connect_timeout=10)
                 cur = conn.cursor()
@@ -142,8 +143,14 @@ def main():
                     else:
                         check(f"Table '{t}'", False, "not found")
             except Exception as e:
-                check("PostgreSQL connect", False, str(e)[:80])
+                # Report the error more specifically
+                if conn is None:
+                    check("PostgreSQL connect", False, str(e)[:80])
+                else:
+                    check("PostgreSQL query", False, str(e)[:80])
             finally:
+                if cur is not None:
+                    cur.close()
                 if conn is not None:
                     conn.close()
 
