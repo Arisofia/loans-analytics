@@ -45,7 +45,7 @@ def main():
     if run_id:
         kpi_file = Path(f"logs/runs/{run_id}/kpis_output.json")
     else:
-        # Auto-discover latest run directory
+        # Auto-discover latest run directory (dirs named YYYYMMDD_<hash>, lexicographic = chronological)
         runs_dir = Path("logs/runs")
         if runs_dir.exists():
             run_dirs = sorted(

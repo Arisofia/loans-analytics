@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import urllib.request
+from datetime import date
 
 COLOR_GREEN = "\033[92m"
 COLOR_RED = "\033[91m"
@@ -42,8 +43,6 @@ def load_env():
 
 
 def main():
-    from datetime import date
-
     print("=" * 60)
     print("  ABACO LOANS ANALYTICS — CLIENT READINESS CHECK")
     print(f"  Date: {date.today().isoformat()}")
