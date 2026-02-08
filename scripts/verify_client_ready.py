@@ -17,8 +17,9 @@ LABEL_PASS = COLOR_GREEN + "PASS" + COLOR_RESET
 LABEL_FAIL = COLOR_RED + "FAIL" + COLOR_RESET
 LABEL_WARN = COLOR_YELLOW + "WARN" + COLOR_RESET
 
+
 results = []
-warnings = []
+warnings = []  # Track warnings separately from failures
 
 
 def check(name, ok, detail=""):
@@ -29,9 +30,9 @@ def check(name, ok, detail=""):
 
 
 def check_warn(name, ok, detail=""):
-    """Record a non-blocking check: WARNs do not affect the exit code."""
+    """Record a warning-level check that doesn't affect exit code."""
     status = LABEL_PASS if ok else LABEL_WARN
-    warnings.append((name, ok))
+    warnings.append((name, ok))  # Track separately
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -88,11 +89,13 @@ def main():
     for k in required_keys:
         v = envs.get(k, "")
         ok = bool(v) and "YOUR_" not in v and "PLACEHOLDER" not in v
-        check(k, ok, v[:30] + "..." if ok else "MISSING or placeholder")
+        detail = f"present ({len(v)} chars)" if ok else "MISSING or placeholder"
+        check(k, ok, detail)
     for k in optional_keys:
         v = envs.get(k, "")
         ok = bool(v) and "YOUR_" not in v and "PLACEHOLDER" not in v
-        check_warn(k, ok, v[:30] + "..." if ok else "MISSING (optional)")
+        detail = f"present ({len(v)} chars)" if ok else "MISSING (optional)"
+        check_warn(k, ok, detail)
 
     # --- 2. DATABASE ---
     print("\n2. DATABASE CONNECTION")
@@ -140,7 +143,6 @@ def main():
                     else:
                         check(f"Table '{t}'", False, "not found")
             except Exception as e:
-                # Report the error more specifically
                 if conn is None:
                     check("PostgreSQL connect", False, str(e)[:80])
                 else:
@@ -178,7 +180,8 @@ def main():
     print("\n4. OPENAI API")
     openai_key = envs.get("OPENAI_API_KEY", "")
     key_valid = openai_key.startswith("sk-") and len(openai_key) > 20
-    check_warn("OpenAI API key format", key_valid, openai_key[:20] + "...")
+    detail = f"valid format ({len(openai_key)} chars)" if key_valid else "invalid or missing"
+    check_warn("OpenAI API key format", key_valid, detail)
     if key_valid:
         try:
             req = urllib.request.Request(
@@ -197,17 +200,24 @@ def main():
     # --- 5. SENTRY ---
     print("\n5. SENTRY / OBSERVABILITY")
     dsn = envs.get("SENTRY_DSN", "")
-    check_warn(
-        "Sentry DSN",
-        bool(dsn) and "ingest" in dsn,
-        dsn[:40] + "..." if dsn else "MISSING (optional)",
-    )
+    dsn_present = bool(dsn)
+    dsn_expected_format = "ingest" in dsn if dsn_present else False
+    if not dsn_present:
+        dsn_ok = False
+        dsn_detail = "MISSING (optional)"
+    elif dsn_expected_format:
+        dsn_ok = True
+        dsn_detail = f"configured (contains 'ingest', {len(dsn)} chars)"
+    else:
+        dsn_ok = True
+        dsn_detail = (
+            f"present but unexpected format (host does not contain 'ingest'; {len(dsn)} chars)"
+        )
+    check_warn("Sentry DSN", dsn_ok, dsn_detail)
     otel = envs.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
-    check_warn(
-        "OTEL endpoint",
-        bool(otel),
-        otel[:50] + "..." if otel else "MISSING (optional)",
-    )
+    otel_ok = bool(otel)
+    otel_detail = f"configured ({len(otel)} chars)" if otel_ok else "MISSING (optional)"
+    check_warn("OTEL endpoint", otel_ok, otel_detail)
 
     # --- 6. PIPELINE ---
     print("\n6. PIPELINE (dry run)")
@@ -225,7 +235,18 @@ def main():
             check=False,
         )
         ok = result.returncode == 0
-        detail = "config valid" if ok else f"non-zero exit code {result.returncode}"
+        if ok:
+            detail = "config valid"
+        else:
+            stderr_snippet = (result.stderr or "").strip()
+            stdout_snippet = (result.stdout or "").strip()
+            message_source = stderr_snippet or stdout_snippet
+            if message_source:
+                normalized = message_source.replace("\n", " ")
+                snippet = normalized[:160]
+                detail = f"non-zero exit code {result.returncode}: {snippet}"
+            else:
+                detail = f"non-zero exit code {result.returncode}"
         check("Pipeline config validation", ok, detail)
     except subprocess.TimeoutExpired as e:
         check(
@@ -278,7 +299,10 @@ def main():
     warned = sum(1 for _, ok in warnings if not ok)
     total_checks = len(results) + len(warnings)
     print("\n" + "=" * 60)
-    print(f"  RESULTS: {passed} passed, {failed} failed, {warned} warned, {total_checks} total")
+    print(
+        f"  RESULTS: {passed} passed, {failed} failed, "
+        f"{warned} warned, {total_checks} total"
+    )
     if failed == 0:
         print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")
     else:
@@ -286,6 +310,8 @@ def main():
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
+    if warned > 0:
+        print(f"  [{LABEL_WARN}] {warned} OPTIONAL CHECK(S) (non-blocking)")
     print("=" * 60)
     return 0 if failed == 0 else 1
 

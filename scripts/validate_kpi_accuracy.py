@@ -18,7 +18,7 @@ LABEL_FAIL = "\033[91mFAIL\033[0m"
 LABEL_WARN = "\033[93mWARN\033[0m"
 
 results = []
-warnings = []
+warnings = []  # Track warnings separately from failures
 
 
 def check(name, ok, detail=""):
@@ -31,8 +31,7 @@ def check(name, ok, detail=""):
 def check_warn(name, ok, detail=""):
     """Record a non-blocking check: WARNs do not affect the exit code."""
     status = LABEL_PASS if ok else LABEL_WARN
-    warnings.append((name, ok))
-    # Intentionally append to warnings, not results, so WARN-only runs do not fail the script
+    warnings.append((name, ok))  # Track separately from results
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -98,7 +97,9 @@ def main():
         df = pd.read_parquet(clean_path)
         print(f"\n  Clean data (parquet): {len(df)} rows, {len(df.columns)} columns")
     else:
-        raw_candidates = sorted(Path("data/raw").glob("abaco_real_data_*.csv"), key=lambda p: p.name)
+        raw_candidates = sorted(
+            Path("data/raw").glob("abaco_real_data_*.csv"), key=lambda p: p.name
+        )
         if not raw_candidates:
             print("  No real data CSV found in data/raw (abaco_real_data_*.csv)")
             return 1
@@ -434,14 +435,14 @@ def main():
     warned = sum(1 for _, ok in warnings if not ok)
     total_checks = len(results) + len(warnings)
     print("\n" + "=" * 70)
-    print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {warned} warned, {total_checks} total")
+    print(
+        f"  KPI VALIDATION: {passed} passed, {failed} failed, "
+        f"{warned} warned, {total_checks} total"
+    )
     if failed == 0 and warned == 0:
-        # All blocking checks passed and there are no warnings.
         print(f"  [{LABEL_PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
     elif failed == 0 and warned > 0:
-        # All blocking checks passed, but some non-blocking checks have warnings/skips.
         print(f"  [{LABEL_PASS}] ALL BLOCKING KPI CHECKS PASSED (WARNINGS PRESENT)")
-        print("  The following checks have warnings/non-blocking issues:")
         for name, ok in warnings:
             if not ok:
                 print(f"    - {name}")
@@ -450,6 +451,8 @@ def main():
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
+    if warned > 0:
+        print(f"  [{LABEL_WARN}] {warned} WARNING(S) (non-blocking)")
     print("=" * 70)
     return 0 if failed == 0 else 1
 
