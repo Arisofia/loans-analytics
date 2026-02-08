@@ -14,6 +14,7 @@ FAIL = "\033[91mFAIL\033[0m"
 WARN = "\033[93mWARN\033[0m"
 
 results = []
+warnings = []  # Track warnings separately from failures
 
 
 def check(name, ok, detail=""):
@@ -24,8 +25,9 @@ def check(name, ok, detail=""):
 
 
 def check_warn(name, ok, detail=""):
+    """Record a warning-level check that doesn't affect exit code."""
     status = PASS if ok else WARN
-    results.append((name, ok))
+    warnings.append((name, ok))  # Track separately
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -54,7 +56,7 @@ def main():
             subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True)
             .strip()
         )
-    except subprocess.SubprocessError:
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
         branch = "unknown"
 
     print("=" * 60)
@@ -178,18 +180,39 @@ def main():
 
     # --- 6. PIPELINE ---
     print("\n6. PIPELINE (dry run)")
-    result = subprocess.run(
-        [
-            sys.executable,
-            "scripts/run_data_pipeline.py",
-            "--mode",
-            "validate",
-        ],
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    check("Pipeline config validation", result.returncode == 0, "config valid")
+    try:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/run_data_pipeline.py",
+                "--mode",
+                "validate",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        ok = result.returncode == 0
+        detail = "config valid" if ok else f"non-zero exit code {result.returncode}"
+        check("Pipeline config validation", ok, detail)
+    except subprocess.TimeoutExpired as e:
+        check(
+            "Pipeline config validation",
+            False,
+            f"pipeline validation timed out after {e.timeout} seconds",
+        )
+    except OSError as e:
+        check(
+            "Pipeline config validation",
+            False,
+            (f"OSError while running pipeline validation: {e.strerror or str(e)}")[:80],
+        )
+    except subprocess.SubprocessError as e:
+        check(
+            "Pipeline config validation",
+            False,
+            (f"Subprocess error during pipeline validation: {str(e)}")[:80],
+        )
 
     # --- 7. KEY FILES ---
     print("\n7. KEY FILES")
@@ -215,8 +238,9 @@ def main():
     # --- SUMMARY ---
     passed = sum(1 for _, ok in results if ok)
     failed = sum(1 for _, ok in results if not ok)
+    warned = sum(1 for _, ok in warnings if not ok)
     print("\n" + "=" * 60)
-    print(f"  RESULTS: {passed} passed, {failed} failed, {len(results)} total")
+    print(f"  RESULTS: {passed} passed, {failed} failed, {warned} warnings, {len(results)} total checks")
     if failed == 0:
         print(f"  [{PASS}] SYSTEM IS CLIENT-READY")
     else:
@@ -224,6 +248,8 @@ def main():
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
+    if warned > 0:
+        print(f"  [{WARN}] {warned} OPTIONAL CHECK(S) FAILED (non-blocking)")
     print("=" * 60)
     return 0 if failed == 0 else 1
 

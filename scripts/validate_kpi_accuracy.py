@@ -18,6 +18,7 @@ FAIL = "\033[91mFAIL\033[0m"
 WARN = "\033[93mWARN\033[0m"
 
 results = []
+warnings = []  # Track warnings separately from failures
 
 
 def check(name, ok, detail=""):
@@ -28,8 +29,9 @@ def check(name, ok, detail=""):
 
 
 def check_warn(name, ok, detail=""):
+    """Record a non-blocking check: WARNs do not affect the exit code."""
     status = PASS if ok else WARN
-    results.append((name, ok))
+    warnings.append((name, ok))  # Track separately from results
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -426,8 +428,9 @@ def main():
     # ==========================================
     passed = sum(1 for _, ok in results if ok)
     failed = sum(1 for _, ok in results if not ok)
+    warned = sum(1 for _, ok in warnings if not ok)
     print("\n" + "=" * 70)
-    print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {len(results)} total")
+    print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {warned} warnings, {len(results)} total")
     if failed == 0:
         print(f"  [{PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
     else:
@@ -435,6 +438,8 @@ def main():
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
+    if warned > 0:
+        print(f"  [{WARN}] {warned} WARNING(S) (non-blocking)")
     print("=" * 70)
     return 0 if failed == 0 else 1
 
