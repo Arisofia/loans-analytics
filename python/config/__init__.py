@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Set
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -46,7 +45,7 @@ class SLASettings(BaseModel):
 class AnalyticsSettings(BaseModel):
     """Settings for analytics engine and KPI calculations."""
 
-    required_columns: List[str] = Field(
+    required_columns: list[str] = Field(
         default=[
             "loan_amount",
             "appraised_value",
@@ -57,7 +56,7 @@ class AnalyticsSettings(BaseModel):
             "principal_balance",
         ]
     )
-    numeric_columns: List[str] = Field(
+    numeric_columns: list[str] = Field(
         default=[
             "loan_amount",
             "appraised_value",
@@ -67,7 +66,7 @@ class AnalyticsSettings(BaseModel):
             "principal_balance",
         ]
     )
-    delinquent_statuses: Set[str] = Field(
+    delinquent_statuses: set[str] = Field(
         default={
             "30-59 days past due",
             "60-89 days past due",
@@ -76,7 +75,7 @@ class AnalyticsSettings(BaseModel):
         }
     )
     # Ingestion specific numeric columns
-    ingestion_numeric_columns: List[str] = Field(
+    ingestion_numeric_columns: list[str] = Field(
         default=[
             "dpd_0_7_usd",
             "dpd_7_30_usd",
@@ -98,16 +97,19 @@ class AnalyticsSettings(BaseModel):
 class KPISettings(BaseModel):
     """Thresholds for individual KPIs."""
 
-    portfolio_risk: Dict[str, float] = Field(default={"warning": 0.03, "critical": 0.05})
-    loan_book_growth: Dict[str, float] = Field(default={"warning": 0.05, "critical": 0.02})
-    liquidity_ratio: Dict[str, float] = Field(default={"warning": 1.2, "critical": 1.0})
-    compliance_breaches: Dict[str, int] = Field(default={"warning": 1, "critical": 3})
+    portfolio_risk: dict[str, float] = Field(default={"warning": 0.03, "critical": 0.05})
+    loan_book_growth: dict[str, float] = Field(default={"warning": 0.05, "critical": 0.02})
+    liquidity_ratio: dict[str, float] = Field(default={"warning": 1.2, "critical": 1.0})
+    compliance_breaches: dict[str, int] = Field(default={"warning": 1, "critical": 3})
 
 
 class ApiSettings(BaseModel):
     """Settings for the Analytics API."""
 
-    api_key: str = Field(default="abaco_secret_token")
+    api_key: str = Field(
+        default_factory=lambda: os.getenv("ABACO_API_KEY", ""),
+        description="API key loaded from ABACO_API_KEY env var; must not be hardcoded",
+    )
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8000)
 
@@ -186,7 +188,7 @@ class Settings(BaseSettings):
     kpis: KPISettings = KPISettings()
     api: ApiSettings = ApiSettings()
     supabase_pool: SupabasePoolSettings = SupabasePoolSettings()
-    database_url: Optional[str] = Field(
+    database_url: str | None = Field(
         default=None, description="Supabase database URL for connection pooling"
     )
 

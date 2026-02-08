@@ -6,6 +6,7 @@ Then tests multi-agent system with real KPI context.
 """
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -39,10 +40,32 @@ def main():
     print("  KPI ACCURACY VALIDATION — Cross-check vs Raw Data")
     print("=" * 70)
 
-    # Load pipeline KPI output
-    kpi_file = Path("logs/runs/20260208_1c0def53/kpis_output.json")
+    # Load pipeline KPI output - resolve run directory dynamically
+    run_id = os.environ.get("KPI_VALIDATION_RUN_ID", "")
+    if run_id:
+        kpi_file = Path(f"logs/runs/{run_id}/kpis_output.json")
+    else:
+        # Auto-discover latest run directory
+        runs_dir = Path("logs/runs")
+        if runs_dir.exists():
+            run_dirs = sorted(
+                [d for d in runs_dir.iterdir() if d.is_dir()],
+                key=lambda d: d.name,
+                reverse=True,
+            )
+            if run_dirs:
+                kpi_file = run_dirs[0] / "kpis_output.json"
+                run_id = run_dirs[0].name
+            else:
+                print("  No run directories found under logs/runs/")
+                return 1
+        else:
+            print("  logs/runs/ directory not found")
+            return 1
+
     if not kpi_file.exists():
         print(f"  KPI output not found: {kpi_file}")
+        print("  Hint: set KPI_VALIDATION_RUN_ID env var or run the pipeline first")
         return 1
     with open(kpi_file) as f:
         pipeline_kpis = json.load(f)
@@ -58,7 +81,7 @@ def main():
     print("  MANUAL RECALCULATION FROM PIPELINE CLEAN DATA")
     print("=" * 70)
 
-    clean_path = Path("logs/runs/20260208_1c0def53/clean_data.parquet")
+    clean_path = kpi_file.parent / "clean_data.parquet"
     if clean_path.exists():
         df = pd.read_parquet(clean_path)
         print(f"\n  Clean data (parquet): {len(df)} rows, {len(df.columns)} columns")

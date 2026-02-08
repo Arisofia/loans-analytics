@@ -42,9 +42,11 @@ def load_env():
 
 
 def main():
+    from datetime import date
+
     print("=" * 60)
     print("  ABACO LOANS ANALYTICS — CLIENT READINESS CHECK")
-    print("  Date: 2026-02-08 | Branch: main")
+    print(f"  Date: {date.today().isoformat()}")
     print("=" * 60)
 
     envs = load_env()
