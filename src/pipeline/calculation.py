@@ -173,6 +173,36 @@ class KPIFormulaEngine:
                     else:
                         filtered_df = self.df.iloc[:0]
 
+            elif "<=" in condition:
+                parts = condition.split("<=")
+                col = parts[0].strip()
+                value = parts[1].strip()
+                if value.isdigit() or value.replace(".", "", 1).isdigit():
+                    if col in self.df.columns:
+                        filtered_df = self.df[self.df[col] <= float(value)]
+                    else:
+                        filtered_df = self.df.iloc[:0]
+
+            elif ">" in condition and "=" not in condition.replace(">=", ""):
+                parts = condition.split(">")
+                col = parts[0].strip()
+                value = parts[1].strip()
+                if value.isdigit() or value.replace(".", "", 1).isdigit():
+                    if col in self.df.columns:
+                        filtered_df = self.df[self.df[col] > float(value)]
+                    else:
+                        filtered_df = self.df.iloc[:0]
+
+            elif "<" in condition and "=" not in condition.replace("<=", ""):
+                parts = condition.split("<")
+                col = parts[0].strip()
+                value = parts[1].strip()
+                if value.isdigit() or value.replace(".", "", 1).isdigit():
+                    if col in self.df.columns:
+                        filtered_df = self.df[self.df[col] < float(value)]
+                    else:
+                        filtered_df = self.df.iloc[:0]
+
             elif " IN " in condition:
                 match = re.match(r"(.+?)\s+IN\s+\[(.+?)\]", condition, re.IGNORECASE)
                 if match:
