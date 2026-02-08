@@ -85,7 +85,10 @@ cash_flow_kpis:
       critical: 80
 
   recovery_rate:
-    formula: "SUM(last_payment_amount WHERE status = 'defaulted') / SUM(outstanding_balance WHERE status = 'defaulted') * 100"
+    formula: >-
+      SUM(last_payment_amount WHERE status = 'defaulted')
+      / SUM(outstanding_balance WHERE status = 'defaulted')
+      * 100
     unit: "percentage"
     description: "Recovery rate on defaulted loans"
 
@@ -119,7 +122,9 @@ customer_kpis:
     description: "Number of active borrowers"
 
   repeat_borrower_rate:
-    formula: "COUNT(DISTINCT borrower_id WHERE loan_count > 1) / COUNT(DISTINCT borrower_id) * 100"
+    formula: >-
+      COUNT(DISTINCT borrower_id WHERE loan_count > 1)
+      / COUNT(DISTINCT borrower_id) * 100
     unit: "percentage"
     description: "Percentage of repeat borrowers"
 

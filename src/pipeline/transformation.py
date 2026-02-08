@@ -209,7 +209,8 @@ class TransformationPhase:
                 if null_or_zero.mean() > 0.8:  # If more than 80% are zero/null
                     df["current_balance"] = df["outstanding_balance"]
                     logger.info(
-                        "Overwrote current_balance with outstanding_balance (due to high null/zero rate)"
+                        "Overwrote current_balance with outstanding_balance "
+                        "(due to high null/zero rate)"
                     )
 
         return df
