@@ -178,18 +178,39 @@ def main():
 
     # --- 6. PIPELINE ---
     print("\n6. PIPELINE (dry run)")
-    result = subprocess.run(
-        [
-            sys.executable,
-            "scripts/run_data_pipeline.py",
-            "--mode",
-            "validate",
-        ],
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    check("Pipeline config validation", result.returncode == 0, "config valid")
+    try:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/run_data_pipeline.py",
+                "--mode",
+                "validate",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        ok = result.returncode == 0
+        detail = "config valid" if ok else f"non-zero exit code {result.returncode}"
+        check("Pipeline config validation", ok, detail)
+    except subprocess.TimeoutExpired as e:
+        check(
+            "Pipeline config validation",
+            False,
+            f"pipeline validation timed out after {e.timeout} seconds",
+        )
+    except OSError as e:
+        check(
+            "Pipeline config validation",
+            False,
+            (f"OSError while running pipeline validation: {e.strerror or str(e)}")[:80],
+        )
+    except subprocess.SubprocessError as e:
+        check(
+            "Pipeline config validation",
+            False,
+            (f"Subprocess error during pipeline validation: {str(e)}")[:80],
+        )
 
     # --- 7. KEY FILES ---
     print("\n7. KEY FILES")
