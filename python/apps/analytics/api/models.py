@@ -32,8 +32,8 @@ class LoanRecord(BaseModel):
 class LoanPortfolioRequest(BaseModel):
     loans: Optional[List[LoanRecord]] = Field(
         None,
-        min_items=0,
-        max_items=10000,
+        min_length=0,
+        max_length=10000,
         description="Array of loan records for analysis",
     )
     ltv_threshold: Optional[float] = Field(

@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+
+
+def _make_mock_xgboost(predict_return):
+    """Create a mock xgboost module with a DMatrix that delegates to the booster."""
+    mock_xgb = MagicMock()
+    mock_xgb.DMatrix.return_value = MagicMock()
+    return mock_xgb
 
 
 # ---------------------------------------------------------------------------
@@ -29,22 +37,17 @@ class TestDefaultRiskModel:
         with pytest.raises(FileNotFoundError):
             DefaultRiskModel.load("/nonexistent/path/model.ubj")
 
-    @patch("python.models.default_risk_model.xgb", create=True)
     def test_predict_proba(self):
         """predict_proba returns a float in [0, 1]."""
         from python.models.default_risk_model import FEATURE_COLUMNS, DefaultRiskModel
 
         mock_booster = MagicMock()
         mock_booster.predict.return_value = np.array([0.42])
-
         model = DefaultRiskModel(booster=mock_booster)
-
         loan = {col: 1.0 for col in FEATURE_COLUMNS}
 
-        with patch("python.models.default_risk_model.xgb", create=True) as mock_xgb:
-            mock_xgb.DMatrix.return_value = MagicMock()
-            mock_booster.predict.return_value = np.array([0.42])
-
+        mock_xgb = _make_mock_xgboost([0.42])
+        with patch.dict(sys.modules, {"xgboost": mock_xgb}):
             prob = model.predict_proba(loan)
 
         assert isinstance(prob, float)
@@ -55,13 +58,11 @@ class TestDefaultRiskModel:
         from python.models.default_risk_model import DefaultRiskModel
 
         mock_booster = MagicMock()
-
+        mock_booster.predict.return_value = np.array([1.5])
         model = DefaultRiskModel(booster=mock_booster)
 
-        with patch("python.models.default_risk_model.xgb", create=True) as mock_xgb:
-            mock_xgb.DMatrix.return_value = MagicMock()
-            mock_booster.predict.return_value = np.array([1.5])
-
+        mock_xgb = _make_mock_xgboost([1.5])
+        with patch.dict(sys.modules, {"xgboost": mock_xgb}):
             prob = model.predict_proba({"loan_amount": 100})
 
         assert prob == 1.0
@@ -71,13 +72,11 @@ class TestDefaultRiskModel:
         from python.models.default_risk_model import DefaultRiskModel
 
         mock_booster = MagicMock()
-
+        mock_booster.predict.return_value = np.array([-0.1])
         model = DefaultRiskModel(booster=mock_booster)
 
-        with patch("python.models.default_risk_model.xgb", create=True) as mock_xgb:
-            mock_xgb.DMatrix.return_value = MagicMock()
-            mock_booster.predict.return_value = np.array([-0.1])
-
+        mock_xgb = _make_mock_xgboost([-0.1])
+        with patch.dict(sys.modules, {"xgboost": mock_xgb}):
             prob = model.predict_proba({"loan_amount": 100})
 
         assert prob == 0.0
@@ -87,15 +86,12 @@ class TestDefaultRiskModel:
         from python.models.default_risk_model import DefaultRiskModel
 
         mock_booster = MagicMock()
-
+        mock_booster.predict.return_value = np.array([0.3, 0.7])
         model = DefaultRiskModel(booster=mock_booster)
-
         loans = [{"loan_amount": 100}, {"loan_amount": 200}]
 
-        with patch("python.models.default_risk_model.xgb", create=True) as mock_xgb:
-            mock_xgb.DMatrix.return_value = MagicMock()
-            mock_booster.predict.return_value = np.array([0.3, 0.7])
-
+        mock_xgb = _make_mock_xgboost([0.3, 0.7])
+        with patch.dict(sys.modules, {"xgboost": mock_xgb}):
             probs = model.predict_batch(loans)
 
         assert len(probs) == 2
