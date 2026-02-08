@@ -263,3 +263,71 @@ groups:
             4. Audit exposed data and notify security team
             5. Verify PII patterns in src/transformation.py
           runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/PII-Incident-Response
+
+  # ============================================
+  # PORTFOLIO KPI ALERTS
+  # ============================================
+  - name: portfolio-kpi-alerts
+    interval: 300s
+    rules:
+      # PAR-90 breach (Portfolio at Risk 90+ days past due)
+      - alert: PAR90AboveThreshold
+        expr: |
+          abaco_par90_ratio > 0.045
+        for: 15m
+        labels:
+          severity: critical
+          team: risk
+          component: kpi-engine
+        annotations:
+          summary: "PAR-90 at {{ $value | humanizePercentage }} — exceeds 4.5% threshold"
+          description: |
+            Portfolio at Risk (90+ days past due) has breached the 4.5% risk
+            guardrail.  Current default-rate target is <4%.  Immediate review
+            of delinquent cohorts is required.
+          action: |
+            1. Query fact_loans WHERE days_past_due >= 90
+            2. Run python -m python.multi_agent.orchestrator --scenario risk_review
+            3. Review PAR-90 trend in Grafana KPI dashboard
+            4. Escalate to CRO if value persists above 5%
+          runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/PAR-Breach
+
+      # PAR-30 warning (early delinquency signal)
+      - alert: PAR30Warning
+        expr: |
+          abaco_par30_ratio > 0.08
+        for: 15m
+        labels:
+          severity: warning
+          team: risk
+          component: kpi-engine
+        annotations:
+          summary: "PAR-30 at {{ $value | humanizePercentage }} — exceeds 8% warning level"
+          description: |
+            Early-stage delinquency (30+ DPD) is elevated.  If the trend
+            continues, PAR-90 is likely to breach within 60 days.
+          action: |
+            1. Review recent originations for underwriting quality
+            2. Check collection_rate trend in Grafana
+            3. Run python -m python.multi_agent.orchestrator --scenario collections_review
+          runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/PAR-Breach
+
+      # Default rate approaching guardrail
+      - alert: DefaultRateHigh
+        expr: |
+          abaco_default_rate > 0.035
+        for: 30m
+        labels:
+          severity: warning
+          team: risk
+          component: kpi-engine
+        annotations:
+          summary: "Default rate at {{ $value | humanizePercentage }} — approaching 4% guardrail"
+          description: |
+            Default rate is within 0.5pp of the 4% risk guardrail.
+            Tightening origination criteria may be warranted.
+          action: |
+            1. Review cohort-level default rates
+            2. Check concentration risk (top-10 obligors ≤30%)
+            3. Evaluate pricing adjustments via pricing agent
+          runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/Default-Rate

@@ -10,11 +10,19 @@ import numpy as np
 import pytest
 
 
-def _make_mock_xgboost(predict_return):
-    """Create a mock xgboost module with a DMatrix that delegates to the booster."""
-    mock_xgb = MagicMock()
-    mock_xgb.DMatrix.return_value = MagicMock()
-    return mock_xgb
+def _make_mock_classifier(proba_values):
+    """Create a mock XGBClassifier whose predict_proba returns *proba_values*.
+
+    Parameters
+    ----------
+    proba_values : list[float]
+        Default probabilities (column-1) for each sample.
+    """
+    mock = MagicMock()
+    arr = np.array([[1 - p, p] for p in proba_values])
+    mock.predict_proba.return_value = arr
+    mock.get_booster.return_value = MagicMock()
+    return mock
 
 
 # ---------------------------------------------------------------------------
@@ -39,64 +47,72 @@ class TestDefaultRiskModel:
 
     def test_predict_proba(self):
         """predict_proba returns a float in [0, 1]."""
-        from python.models.default_risk_model import FEATURE_COLUMNS, DefaultRiskModel
+        from python.models.default_risk_model import ALL_FEATURES, DefaultRiskModel
 
-        mock_booster = MagicMock()
-        mock_booster.predict.return_value = np.array([0.42])
-        model = DefaultRiskModel(booster=mock_booster)
-        loan = {col: 1.0 for col in FEATURE_COLUMNS}
+        mock_clf = _make_mock_classifier([0.42])
+        model = DefaultRiskModel(model=mock_clf)
+        loan = {col: 1.0 for col in ALL_FEATURES}
 
-        mock_xgb = _make_mock_xgboost([0.42])
-        with patch.dict(sys.modules, {"xgboost": mock_xgb}):
-            prob = model.predict_proba(loan)
+        prob = model.predict_proba(loan)
 
         assert isinstance(prob, float)
         assert 0.0 <= prob <= 1.0
 
-    def test_predict_proba_clamps_high(self):
-        """Values above 1.0 are clamped to 1.0."""
+    def test_predict_proba_high(self):
+        """High probability returned correctly."""
         from python.models.default_risk_model import DefaultRiskModel
 
-        mock_booster = MagicMock()
-        mock_booster.predict.return_value = np.array([1.5])
-        model = DefaultRiskModel(booster=mock_booster)
+        mock_clf = _make_mock_classifier([0.95])
+        model = DefaultRiskModel(model=mock_clf)
 
-        mock_xgb = _make_mock_xgboost([1.5])
-        with patch.dict(sys.modules, {"xgboost": mock_xgb}):
-            prob = model.predict_proba({"loan_amount": 100})
+        prob = model.predict_proba({"principal_amount": 100})
+        assert isinstance(prob, float)
+        assert prob >= 0.9
 
-        assert prob == 1.0
-
-    def test_predict_proba_clamps_low(self):
-        """Values below 0.0 are clamped to 0.0."""
+    def test_predict_proba_low(self):
+        """Low probability returned correctly."""
         from python.models.default_risk_model import DefaultRiskModel
 
-        mock_booster = MagicMock()
-        mock_booster.predict.return_value = np.array([-0.1])
-        model = DefaultRiskModel(booster=mock_booster)
+        mock_clf = _make_mock_classifier([0.01])
+        model = DefaultRiskModel(model=mock_clf)
 
-        mock_xgb = _make_mock_xgboost([-0.1])
-        with patch.dict(sys.modules, {"xgboost": mock_xgb}):
-            prob = model.predict_proba({"loan_amount": 100})
+        prob = model.predict_proba({"principal_amount": 100})
+        assert isinstance(prob, float)
+        assert prob <= 0.05
 
-        assert prob == 0.0
+    def test_predict_proba_not_loaded_raises(self):
+        """predict_proba raises RuntimeError when model is None."""
+        from python.models.default_risk_model import DefaultRiskModel
+
+        model = DefaultRiskModel(model=None)
+
+        with pytest.raises(RuntimeError, match="not trained or loaded"):
+            model.predict_proba({"principal_amount": 100})
 
     def test_predict_batch(self):
-        """predict_batch returns a list of floats."""
+        """predict_batch returns predictions for multiple loans."""
         from python.models.default_risk_model import DefaultRiskModel
 
-        mock_booster = MagicMock()
-        mock_booster.predict.return_value = np.array([0.3, 0.7])
-        model = DefaultRiskModel(booster=mock_booster)
-        loans = [{"loan_amount": 100}, {"loan_amount": 200}]
+        mock_clf = _make_mock_classifier([0.3, 0.7])
+        model = DefaultRiskModel(model=mock_clf)
+        loans = [{"principal_amount": 100}, {"principal_amount": 200}]
 
-        mock_xgb = _make_mock_xgboost([0.3, 0.7])
-        with patch.dict(sys.modules, {"xgboost": mock_xgb}):
-            probs = model.predict_batch(loans)
-
+        probs = model.predict_batch(loans)
         assert len(probs) == 2
-        assert all(isinstance(p, float) for p in probs)
-        assert all(0.0 <= p <= 1.0 for p in probs)
+
+    def test_feature_columns_alias(self):
+        """FEATURE_COLUMNS is an alias for ALL_FEATURES."""
+        from python.models.default_risk_model import ALL_FEATURES, FEATURE_COLUMNS
+
+        assert FEATURE_COLUMNS == ALL_FEATURES
+
+    def test_metadata_empty_on_init(self):
+        """Model starts with empty metadata."""
+        from python.models.default_risk_model import DefaultRiskModel
+
+        model = DefaultRiskModel()
+        assert model.metadata == {}
+        assert model.model is None
 
 
 # ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test clean maintenance maintenance-aggressive maintenance-dry-run monitoring-start monitoring-stop monitoring-logs monitoring-health dashboard-backup dashboard-restore service-status
+.PHONY: help setup format lint type-check test clean maintenance maintenance-aggressive maintenance-dry-run monitoring-start monitoring-stop monitoring-logs monitoring-health dashboard-backup dashboard-restore service-status dev
 PYTHON := python3
 VENV := .venv
 BIN := $(VENV)/bin
@@ -13,6 +13,7 @@ help:
 	@echo "make type-check     - Run mypy static type checking"
 	@echo "make test           - Run unit tests with pytest"
 	@echo "make clean          - Remove build artifacts and cache"
+	@echo "make dev            - Start API server with hot-reload (uvicorn)"
 	@echo "make maintenance    - Run unified repository maintenance (format + clean + git)"
 	@echo "make service-status - Generate comprehensive service status report"
 	@echo ""
@@ -85,3 +86,8 @@ dashboard-restore:
 
 # NOTE: run-analytics target removed (legacy script deleted in Phase B)
 # Pipeline modernization tracked separately
+
+# Development Server (hot-reload)
+dev:
+	@echo "Starting API server on http://127.0.0.1:8000 with hot-reload..."
+	$(BIN)/uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir python --reload-dir src --reload-dir config
