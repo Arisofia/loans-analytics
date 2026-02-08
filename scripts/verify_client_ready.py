@@ -31,8 +31,6 @@ def check(name, ok, detail=""):
 def check_warn(name, ok, detail=""):
     """Record a warning-level check that doesn't affect exit code."""
     status = LABEL_PASS if ok else LABEL_WARN
-    # Record in both overall results and warnings so summaries remain consistent.
-    results.append((name, ok))
     warnings.append((name, ok))  # Track separately
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
@@ -90,11 +88,13 @@ def main():
     for k in required_keys:
         v = envs.get(k, "")
         ok = bool(v) and "YOUR_" not in v and "PLACEHOLDER" not in v
-        check(k, ok, v[:30] + "..." if ok else "MISSING or placeholder")
+        detail = f"present ({len(v)} chars)" if ok else "MISSING or placeholder"
+        check(k, ok, detail)
     for k in optional_keys:
         v = envs.get(k, "")
         ok = bool(v) and "YOUR_" not in v and "PLACEHOLDER" not in v
-        check_warn(k, ok, v[:30] + "..." if ok else "MISSING (optional)")
+        detail = f"present ({len(v)} chars)" if ok else "MISSING (optional)"
+        check_warn(k, ok, detail)
 
     # --- 2. DATABASE ---
     print("\n2. DATABASE CONNECTION")
@@ -168,7 +168,8 @@ def main():
     print("\n4. OPENAI API")
     openai_key = envs.get("OPENAI_API_KEY", "")
     key_valid = openai_key.startswith("sk-") and len(openai_key) > 20
-    check_warn("OpenAI API key format", key_valid, openai_key[:20] + "...")
+    detail = f"valid format ({len(openai_key)} chars)" if key_valid else "invalid or missing"
+    check_warn("OpenAI API key format", key_valid, detail)
     if key_valid:
         try:
             req = urllib.request.Request(
@@ -187,17 +188,13 @@ def main():
     # --- 5. SENTRY ---
     print("\n5. SENTRY / OBSERVABILITY")
     dsn = envs.get("SENTRY_DSN", "")
-    check_warn(
-        "Sentry DSN",
-        bool(dsn) and "ingest" in dsn,
-        dsn[:40] + "..." if dsn else "MISSING (optional)",
-    )
+    dsn_ok = bool(dsn) and "ingest" in dsn
+    dsn_detail = f"configured ({len(dsn)} chars)" if dsn_ok else "MISSING (optional)"
+    check_warn("Sentry DSN", dsn_ok, dsn_detail)
     otel = envs.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
-    check_warn(
-        "OTEL endpoint",
-        bool(otel),
-        otel[:50] + "..." if otel else "MISSING (optional)",
-    )
+    otel_ok = bool(otel)
+    otel_detail = f"configured ({len(otel)} chars)" if otel_ok else "MISSING (optional)"
+    check_warn("OTEL endpoint", otel_ok, otel_detail)
 
     # --- 6. PIPELINE ---
     print("\n6. PIPELINE (dry run)")
