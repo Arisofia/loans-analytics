@@ -49,7 +49,7 @@ def find_latest_run_id(runs_dir: Path) -> str | None:
     runs = [p for p in runs_dir.iterdir() if p.is_dir()]
     if not runs:
         return None
-    return sorted(runs, reverse=True)[0].name
+    return sorted(runs, key=lambda p: p.name, reverse=True)[0].name
 
 
 def main():
