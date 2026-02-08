@@ -219,12 +219,6 @@ def main():
             False,
             (f"OSError while running pipeline validation: {e.strerror or str(e)}")[:80],
         )
-    except subprocess.SubprocessError as e:
-        check(
-            "Pipeline config validation",
-            False,
-            (f"Subprocess error during pipeline validation: {str(e)}")[:80],
-        )
 
     # --- 7. KEY FILES ---
     print("\n7. KEY FILES")
