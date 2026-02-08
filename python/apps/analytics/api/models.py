@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class LoanRecord(BaseModel):
+    id: Optional[str] = Field(None, description="Loan identifier")
     loan_amount: float = Field(..., description="Original loan amount")
     appraised_value: float = Field(
         ...,
@@ -62,7 +63,10 @@ class KpiContext(BaseModel):
 
 
 class KpiSingleResponse(BaseModel):
+    id: Optional[str] = Field(None, description="KPI identifier")
+    name: Optional[str] = Field(None, description="KPI display name")
     value: float = Field(..., description="Calculated KPI value")
+    unit: Optional[str] = Field(None, description="Unit of measurement")
     context: KpiContext
 
 

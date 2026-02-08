@@ -252,3 +252,4 @@ nohup.out
 loan_portfolio_dq.json
 get_jwt_token.js
 create_test_user.mjs
+.ruff_cache/

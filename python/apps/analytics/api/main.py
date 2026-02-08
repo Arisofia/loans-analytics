@@ -240,12 +240,18 @@ if app is not None:
         """
         try:
             if request.loans:
-                # Extract loan_ids from the provided loan records
-                loan_ids_from_request = [loan.id for loan in request.loans]
-                kpis = await service.calculate_kpis_for_portfolio(loan_ids_from_request)
+                kpis = await service.calculate_kpis_for_portfolio(request.loans)
             else:
                 kpis = await service.get_latest_kpis()
-            return KpiResponse(kpis=kpis)
+            # Map list of KpiSingleResponse to named fields
+            kpi_map = {k.id: k for k in kpis} if kpis else {}
+            return KpiResponse(
+                PAR30=kpi_map.get("PAR30"),
+                PortfolioYield=kpi_map.get("PORTFOLIO_YIELD"),
+                LTV=kpi_map.get("AVG_LTV"),
+                DTI=kpi_map.get("AVG_DTI"),
+                audit_trail=[{"kpi_count": len(kpis), "source": "real-time"}],
+            )
         except Exception as e:
             logger.error(f"Error in calculate_all_kpis: {e}")
             raise HTTPException(status_code=500, detail="Internal server error") from e
@@ -275,9 +281,7 @@ if app is not None:
 
         try:
             if request.loans:
-                loan_ids_from_request = [loan.id for loan in request.loans]
-                # Calculate all for context and pick the one requested
-                kpis = await service.calculate_kpis_for_portfolio(loan_ids_from_request)
+                kpis = await service.calculate_kpis_for_portfolio(request.loans)
                 kpi = next((k for k in kpis if k.id == db_key), None)
             else:
                 kpi = await service.get_kpi_by_id(db_key)
