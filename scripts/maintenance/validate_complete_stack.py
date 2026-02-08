@@ -5,91 +5,65 @@ Complete Stack Validation Script
 Validates that all components of the Abaco Loans Analytics stack are working correctly.
 Runs checks on:
 - Data files
-- Scripts
-- Dashboard components
-- Agent analysis
-- Docker configuration
+- Core pipeline scripts
+- Streamlit dashboards
+- Agent analysis artifacts
+- Docker / monitoring configuration
 
 Usage:
-    python scripts/validate_complete_stack.py
+    python scripts/maintenance/validate_complete_stack.py
 """
 
 import json
 import sys
 from pathlib import Path
 
-# Add project root to path
-ROOT_DIR = Path(__file__).resolve().parent.parent
+ROOT_DIR = Path(__file__).resolve().parents[2]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 
-def print_section(title: str):
-    """Print a section header."""
+def print_section(title: str) -> None:
     print("\n" + "=" * 60)
     print(f"  {title}")
     print("=" * 60)
 
 
 def check_file_exists(file_path: Path, description: str) -> bool:
-    """Check if a file exists."""
     if file_path.exists():
-        print(f"  ✅ {description}: {file_path.name}")
+        print(f"  ✅ {description}: {file_path}")
         return True
-    else:
-        print(f"  ❌ {description} NOT FOUND: {file_path}")
-        return False
+    print(f"  ❌ {description} NOT FOUND: {file_path}")
+    return False
 
 
 def validate_data_files() -> dict[str, bool]:
-    """Validate that all required data files exist."""
+    """Validate that key data locations exist (no demo-only dependencies)."""
     print_section("📊 DATA FILES")
 
-    results = {}
+    results: dict[str, bool] = {}
 
-    # Seed data
-    results["seed_data"] = check_file_exists(
-        ROOT_DIR / "data" / "raw" / "spanish_loans_seed.csv",
-        "Spanish Loans Seed Data (850 records)",
-    )
+    # Real / governed data directory
+    raw_dir = ROOT_DIR / "data" / "raw"
+    results["raw_dir"] = raw_dir.exists()
+    if raw_dir.exists():
+        files = list(raw_dir.glob("*.csv"))
+        print(f"  ✅ data/raw exists ({len(files)} CSV file(s))")
+    else:
+        print("  ⚠️  data/raw directory missing")
 
-    results["sample_data"] = check_file_exists(
-        ROOT_DIR / "data" / "raw" / "spanish_loans_sample.csv", "Sample Data (50 records)"
-    )
-
-    # Check if seed data has correct format
-    if results["seed_data"]:
-        try:
-            import csv
-
-            seed_file = ROOT_DIR / "data" / "raw" / "spanish_loans_seed.csv"
-            with open(seed_file, "r", encoding="utf-8") as f:
-                reader = csv.DictReader(f)
-                headers = reader.fieldnames
-                required = [
-                    "loan_id",
-                    "borrower_name",
-                    "borrower_email",
-                    "borrower_id_number",
-                    "principal_amount",
-                    "interest_rate",
-                    "term_months",
-                    "origination_date",
-                    "current_status",
-                    "payment_history_json",
-                    "risk_score",
-                    "region",
-                ]
-                missing = [col for col in required if col not in headers]
-                if missing:
-                    print(f"  ⚠️  Missing columns: {', '.join(missing)}")
-                    results["seed_data_valid"] = False
-                else:
-                    print(f"  ✅ All required columns present ({len(required)} columns)")
-                    results["seed_data_valid"] = True
-        except Exception as e:
-            print(f"  ⚠️  Error reading seed data: {str(e)}")
-            results["seed_data_valid"] = False
+    # Logs / runs directory for pipeline outputs
+    runs_dir = ROOT_DIR / "logs" / "runs"
+    results["logs_runs_dir"] = runs_dir.exists()
+    if runs_dir.exists():
+        latest_runs = sorted(runs_dir.glob("*"), reverse=True)[:3]
+        print(f"  ✅ logs/runs exists ({len(list(runs_dir.glob('*')))} run(s))")
+        if latest_runs:
+            print("  Recent runs:")
+            for d in latest_runs:
+                print(f"     - {d}")
+    else:
+        print("  ⚠️  logs/runs directory missing (have you run the pipeline?)")
 
     return results
 
@@ -244,9 +218,7 @@ def check_agent_analysis_results() -> dict[str, bool]:
             results["has_metrics"] = False
     else:
         print("  ⚠️  No analysis results found")
-        cmd = (
-            "python scripts/run_daily_agent_analysis.py" " --input data/raw/spanish_loans_seed.csv"
-        )
+        cmd = "python scripts/run_daily_agent_analysis.py --input data/raw/spanish_loans_seed.csv"
         print(f"     Run: {cmd}")
         results["has_analyses"] = False
         results["has_metrics"] = False
