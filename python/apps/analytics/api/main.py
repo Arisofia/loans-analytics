@@ -244,15 +244,17 @@ if app is not None:
             else:
                 kpis = await service.get_latest_kpis()
             # Map list of KpiSingleResponse to named fields
+            # Real-time IDs: PAR30, PORTFOLIO_YIELD, AUM, AVG_LTV, AVG_DTI
+            # DB snapshot IDs: par_30, par_90, portfolio_yield, collections_rate, etc.
             kpi_map = {k.id: k for k in kpis} if kpis else {}
             return KpiResponse(
-                PAR30=kpi_map.get("par_30"),
-                PAR90=kpi_map.get("par_90"),
-                CollectionRate=kpi_map.get("collections_rate"),
-                PortfolioHealth=kpi_map.get("portfolio_growth_rate"),
-                LTV=kpi_map.get("average_loan_size"),
-                DTI=kpi_map.get("default_rate"),
-                PortfolioYield=kpi_map.get("portfolio_yield"),
+                PAR30=kpi_map.get("PAR30") or kpi_map.get("par_30"),
+                PAR90=kpi_map.get("PAR90") or kpi_map.get("par_90"),
+                CollectionRate=kpi_map.get("COLLECTION_RATE") or kpi_map.get("collections_rate"),
+                PortfolioHealth=kpi_map.get("AUM") or kpi_map.get("portfolio_growth_rate"),
+                LTV=kpi_map.get("AVG_LTV") or kpi_map.get("average_loan_size"),
+                DTI=kpi_map.get("AVG_DTI") or kpi_map.get("default_rate"),
+                PortfolioYield=kpi_map.get("PORTFOLIO_YIELD") or kpi_map.get("portfolio_yield"),
                 audit_trail=[{"kpi_count": len(kpis), "source": "production-snapshot"}],
             )
         except Exception as e:
@@ -315,15 +317,16 @@ if app is not None:
                 loans=request.loans, ltv_threshold=ltv, dti_threshold=dti
             )
             risk_loans = [RiskLoan(**loan) for loan in risk_loans_data]
+            total = len(request.loans) if request.loans else 0
+            high_count = len(risk_loans)
+            ratio = (high_count / total * 100) if total > 0 else 0.0
 
-            # Determine overall risk level
-            risk_level = "low"
-            if any(loan.risk_score > 70 for loan in risk_loans):
-                risk_level = "high"
-            elif any(loan.risk_score > 40 for loan in risk_loans):
-                risk_level = "medium"
-
-            return RiskAlertsResponse(risk_level=risk_level, high_risk_loans=risk_loans)
+            return RiskAlertsResponse(
+                high_risk_count=high_count,
+                total_loans=total,
+                risk_ratio=round(ratio, 2),
+                high_risk_loans=risk_loans,
+            )
         except Exception as e:
             logger.error(f"Error in get_risk_alerts: {e}")
             raise HTTPException(status_code=500, detail="Internal server error") from e
@@ -398,7 +401,9 @@ if app is not None:
                     "Review collection strategy for DPD > 30",
                 ],
                 risk_assessment=RiskAlertsResponse(
-                    risk_level="medium",  # This would ideally be parsed from agent output
+                    high_risk_count=0,
+                    total_loans=len(request.loans) if request.loans else 0,
+                    risk_ratio=0.0,
                     high_risk_loans=[],
                 ),
             )
