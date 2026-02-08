@@ -178,6 +178,8 @@ logs/runs/run_*/
 
 # Auto-generated alertmanager config (contains credentials)
 config/alertmanager.yml
+# Generated Prometheus config (contains substituted secrets)
+config/prometheus.generated.yml
 .venv311/
 .venv/
 __pycache__/

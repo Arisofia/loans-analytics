@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   prometheus:
@@ -6,18 +6,17 @@ services:
     container_name: prometheus
     ports:
       - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/prometheus.generated.yml:/etc/prometheus/prometheus.yml:ro
       - ./config/rules:/etc/prometheus/rules:ro
       - prometheus-data:/prometheus
-    environment:
-      - SUPABASE_PROJECT_REF=${SUPABASE_PROJECT_REF}
-      - SUPABASE_SECRET_API_KEY=${SUPABASE_SECRET_API_KEY}
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=30d'
-      - '--web.enable-lifecycle'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.enable-lifecycle"
     restart: unless-stopped
     networks:
       - monitoring
@@ -36,8 +35,9 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
       - GF_SERVER_ROOT_URL=http://localhost:3001
       - GF_AUTH_ANONYMOUS_ENABLED=false
-      # Plugin installation disabled - install manually if needed
-      # - GF_INSTALL_PLUGINS=grafana-piechart-panel
+      - GF_INSTALL_PLUGINS=grafana-simple-json-datasource
+      - SUPABASE_DB_PASSWORD=${SUPABASE_DB_PASSWORD}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
     depends_on:
       - prometheus
     restart: unless-stopped
@@ -62,8 +62,8 @@ services:
       # Optional: Slack webhook
       - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
     command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
     restart: unless-stopped
     networks:
       - monitoring

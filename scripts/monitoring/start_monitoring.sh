@@ -9,29 +9,29 @@ echo ""
 
 # Load environment variables
 if [ ! -f .env.local ]; then
-    echo "❌ Error: .env.local not found"
-    echo "   Run: cp .env.example .env.local"
-    exit 1
+	echo "❌ Error: .env.local not found"
+	echo "   Run: cp .env.example .env.local"
+	exit 1
 fi
 
-source scripts/load_env.sh > /dev/null 2>&1
+source scripts/load_env.sh >/dev/null 2>&1
 
 # Check required variables
 if [ -z "$SUPABASE_SECRET_API_KEY" ]; then
-    echo "❌ Error: SUPABASE_SECRET_API_KEY not set in .env.local"
-    exit 1
+	echo "❌ Error: SUPABASE_SECRET_API_KEY not set in .env.local"
+	exit 1
 fi
 
 if [ -z "$SUPABASE_PROJECT_REF" ]; then
-    echo "❌ Error: SUPABASE_PROJECT_REF not set in .env.local"
-    exit 1
+	echo "❌ Error: SUPABASE_PROJECT_REF not set in .env.local"
+	exit 1
 fi
 
 # Set Grafana password if not set
 if [ -z "$GRAFANA_ADMIN_PASSWORD" ]; then
-    export GRAFANA_ADMIN_PASSWORD="admin123"
-    echo "⚠️  Using default Grafana password: admin123"
-    echo "   Set GRAFANA_ADMIN_PASSWORD in .env.local for production"
+	export GRAFANA_ADMIN_PASSWORD="admin123"
+	echo "⚠️  Using default Grafana password: admin123"
+	echo "   Set GRAFANA_ADMIN_PASSWORD in .env.local for production"
 fi
 
 # Export variables for docker-compose
@@ -42,11 +42,18 @@ export GRAFANA_ADMIN_PASSWORD
 echo "✅ Environment variables loaded"
 echo ""
 
+# Generate Prometheus config with substituted env vars
+# (Prometheus does not do native ${VAR} substitution)
+echo "📝 Generating Prometheus configuration..."
+envsubst <config/prometheus.yml >config/prometheus.generated.yml
+echo "✅ Prometheus config generated"
+echo ""
+
 # Check if Docker is running
-if ! docker info > /dev/null 2>&1; then
-    echo "❌ Error: Docker is not running"
-    echo "   Start Docker Desktop and try again"
-    exit 1
+if ! docker info >/dev/null 2>&1; then
+	echo "❌ Error: Docker is not running"
+	echo "   Start Docker Desktop and try again"
+	exit 1
 fi
 
 echo "🐳 Starting Docker containers..."

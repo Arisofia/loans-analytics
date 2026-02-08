@@ -8,7 +8,7 @@ datasources:
     database: postgres
     user: postgres
     secureJsonData:
-      password: ${SUPABASE_SERVICE_ROLE_KEY}
+      password: ${SUPABASE_DB_PASSWORD}
     jsonData:
       sslmode: require
       postgresVersion: 1400

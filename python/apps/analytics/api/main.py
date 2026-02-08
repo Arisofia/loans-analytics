@@ -89,6 +89,13 @@ def get_monitoring_service():
 # ---------------------------------------------------------------------------
 if app is not None:
 
+    # --- Prometheus metrics (exposes GET /metrics) ---
+    try:
+        from prometheus_fastapi_instrumentator import Instrumentator
+        Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+    except ImportError:
+        logger.warning("prometheus-fastapi-instrumentator not installed; /metrics disabled")
+
     @app.middleware("http")
     async def correlation_id_middleware(request: Request, call_next):
         """Inject or propagate X-Correlation-ID and tag Sentry."""
