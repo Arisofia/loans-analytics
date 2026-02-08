@@ -6,12 +6,13 @@ from pathlib import Path
 import pandas as pd
 
 # Define files
+_BASE = "/Users/jenineferderas/Downloads"
 FILES = {
-    "loan_data": "/Users/jenineferderas/Downloads/Abaco - Loan Tape_Loan Data_Table (3).csv",
-    "customer": "/Users/jenineferderas/Downloads/Abaco - Loan Tape_Customer Data_Table (3).csv",
-    "collateral": "/Users/jenineferderas/Downloads/Abaco - Loan Tape_Collateral_Table (3).csv",
-    "payment_schedule": "/Users/jenineferderas/Downloads/Abaco - Loan Tape_Payment Schedule_Table (3).csv",
-    "historic_payments": "/Users/jenineferderas/Downloads/Abaco - Loan Tape_Historic Real Payment_Table (3).csv",
+    "loan_data": f"{_BASE}/Abaco - Loan Tape_Loan Data_Table (3).csv",
+    "customer": f"{_BASE}/Abaco - Loan Tape_Customer Data_Table (3).csv",
+    "collateral": f"{_BASE}/Abaco - Loan Tape_Collateral_Table (3).csv",
+    "payment_schedule": f"{_BASE}/Abaco - Loan Tape_Payment Schedule_Table (3).csv",
+    "historic_payments": f"{_BASE}/Abaco - Loan Tape_Historic Real Payment_Table (3).csv",
 }
 
 

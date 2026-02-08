@@ -146,7 +146,7 @@ class TestMultiPeriodTrends(unittest.TestCase):
         self.assertIn("annual", trends)
 
         # All should be valid trends
-        for period, trend in trends.items():
+        for _period, trend in trends.items():
             self.assertEqual(trend.kpi_id, "test_kpi")
             self.assertIsNotNone(trend.direction)
             self.assertIsNotNone(trend.strength)

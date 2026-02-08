@@ -425,15 +425,15 @@ class TransformationPhase:
     ) -> None:
         """Normalize numeric columns to numeric dtype."""
         for col in df.columns:
-            if col in self.NUMERIC_COLUMNS or any(
-                kw in col.lower() for kw in ["amount", "balance", "rate", "count", "dpd"]
-            ):
-                if pd.api.types.is_string_dtype(df[col]) or df[col].dtype == "object":
-                    try:
-                        df[col] = pd.to_numeric(df[col], errors="coerce")
-                        conversions[col] = {"from": "string", "to": "numeric"}
-                    except Exception as e:
-                        logger.warning("Could not convert %s to numeric: %s", col, e)
+            if (
+                col in self.NUMERIC_COLUMNS
+                or any(kw in col.lower() for kw in ["amount", "balance", "rate", "count", "dpd"])
+            ) and (pd.api.types.is_string_dtype(df[col]) or df[col].dtype == "object"):
+                try:
+                    df[col] = pd.to_numeric(df[col], errors="coerce")
+                    conversions[col] = {"from": "string", "to": "numeric"}
+                except Exception as e:
+                    logger.warning("Could not convert %s to numeric: %s", col, e)
 
     def _normalize_status_column(
         self, df: pd.DataFrame, conversions: Dict[str, Dict[str, str]]
@@ -663,9 +663,7 @@ class TransformationPhase:
         """Validate that an expression is safe for pandas eval."""
         if not self._check_allowed_chars(expression):
             return False
-        if self._check_dangerous_patterns(expression):
-            return False
-        return True
+        return not self._check_dangerous_patterns(expression)
 
     def _check_allowed_chars(self, expression: str) -> bool:
         """Verify expression contains only allowed characters."""

@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 
 CSV_PATH = Path("data/raw/abaco_real_data_20260202.csv")
-OUT_PATH = Path("/tmp/abaco_api_payload.json")
+OUT_PATH = Path("data/output/abaco_api_payload.json")
 
 STATUS_MAP = {
     "Current": "current",
@@ -28,6 +28,7 @@ STATUS_MAP = {
 
 
 def safe_float(val, default=0.0):
+    """Safely convert a value to float, returning *default* on failure."""
     try:
         return float(val) if val else default
     except (ValueError, TypeError):
@@ -50,7 +51,7 @@ with open(CSV_PATH) as f:
 
             loans.append(
                 {
-                    "id": row.get("loan_id", "LOAN_%d" % i),
+                    "id": row.get("loan_id", f"LOAN_{i}"),
                     "loan_amount": principal if principal > 0 else outstanding,
                     "appraised_value": collateral if collateral > 0 else principal * 1.2,
                     "borrower_income": tpv * 12 if tpv > 0 else principal * 3,
@@ -67,5 +68,5 @@ payload = {"loans": loans}
 with open(OUT_PATH, "w") as f:
     json.dump(payload, f, indent=2)
 
-print("Wrote %d loans to %s" % (len(payload["loans"]), OUT_PATH))
+print(f"Wrote {len(payload['loans'])} loans to {OUT_PATH}")
 print(json.dumps(payload["loans"][0], indent=2))

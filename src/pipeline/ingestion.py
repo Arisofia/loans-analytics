@@ -158,12 +158,10 @@ class IngestionPhase:
 
             type_errors = []
             for col, expected_type in type_validation.items():
-                if col in df.columns:
-                    # Use list comprehension instead of .apply() to avoid cell variable issue
-                    # Cast expected_type to type for mypy compatibility
-                    # type: ignore[arg-type]
-                    if not all(isinstance(val, expected_type) for val in df[col].dropna()):
-                        type_errors.append(col)
+                if col in df.columns and not all(
+                    isinstance(val, expected_type) for val in df[col].dropna()
+                ):
+                    type_errors.append(col)
 
             if type_errors:
                 logger.warning("Type validation failed for columns: %s", type_errors)

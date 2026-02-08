@@ -244,9 +244,10 @@ def check_agent_analysis_results() -> dict[str, bool]:
             results["has_metrics"] = False
     else:
         print("  ⚠️  No analysis results found")
-        print(
-            "     Run: python scripts/run_daily_agent_analysis.py --input data/raw/spanish_loans_seed.csv"
+        cmd = (
+            "python scripts/run_daily_agent_analysis.py" " --input data/raw/spanish_loans_seed.csv"
         )
+        print(f"     Run: {cmd}")
         results["has_analyses"] = False
         results["has_metrics"] = False
 
@@ -260,8 +261,8 @@ def print_summary(all_results: dict[str, dict[str, bool]]):
     total_checks = 0
     passed_checks = 0
 
-    for category, results in all_results.items():
-        for check, passed in results.items():
+    for _category, results in all_results.items():
+        for _check, passed in results.items():
             total_checks += 1
             if passed:
                 passed_checks += 1

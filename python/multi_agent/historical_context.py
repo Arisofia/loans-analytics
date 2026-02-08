@@ -356,14 +356,16 @@ class HistoricalContextProvider:
         x_mean = sum(x_values) / n
         y_mean = sum(y_values) / n
 
-        numerator = sum((x - x_mean) * (y - y_mean) for x, y in zip(x_values, y_values))
+        numerator = sum(
+            (x - x_mean) * (y - y_mean) for x, y in zip(x_values, y_values, strict=False)
+        )
         denominator = sum((x - x_mean) ** 2 for x in x_values)
 
         slope = numerator / denominator if denominator != 0 else 0.0
 
         # Calculate R-squared
         y_pred = [slope * (x - x_mean) + y_mean for x in x_values]
-        ss_res = sum((y - yp) ** 2 for y, yp in zip(y_values, y_pred))
+        ss_res = sum((y - yp) ** 2 for y, yp in zip(y_values, y_pred, strict=False))
         ss_tot = sum((y - y_mean) ** 2 for y in y_values)
         r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0.0
 
@@ -510,7 +512,7 @@ class HistoricalContextProvider:
 
         # Calculate R-squared
         y_mean = sum(y_vals) / len(y_vals)
-        ss_res = sum((y - yp) ** 2 for y, yp in zip(y_vals, y_pred))
+        ss_res = sum((y - yp) ** 2 for y, yp in zip(y_vals, y_pred, strict=False))
         ss_tot = sum((y - y_mean) ** 2 for y in y_vals)
         r_squared = max(0.0, 1 - (ss_res / ss_tot) if ss_tot != 0 else 0.0)
 
@@ -578,7 +580,7 @@ class HistoricalContextProvider:
         n = len(history)
         weights = [(i + 1) / (n * (n + 1) / 2) for i in range(n)]
 
-        weighted_sum = sum(h.value * w for h, w in zip(history, weights))
+        weighted_sum = sum(h.value * w for h, w in zip(history, weights, strict=False))
         total_weight = sum(weights)
 
         result = None
@@ -714,13 +716,13 @@ class HistoricalContextProvider:
         x_values = list(range(n))
         y_mean = sum(values) / n
 
-        numerator = sum((x - n / 2) * (y - y_mean) for x, y in zip(x_values, values))
+        numerator = sum((x - n / 2) * (y - y_mean) for x, y in zip(x_values, values, strict=False))
         denominator = sum((x - n / 2) ** 2 for x in x_values)
         slope = numerator / denominator if denominator != 0 else 0.0
 
         # Calculate R-squared
         y_pred = [slope * (x - n / 2) + y_mean for x in x_values]
-        ss_res = sum((y - yp) ** 2 for y, yp in zip(values, y_pred))
+        ss_res = sum((y - yp) ** 2 for y, yp in zip(values, y_pred, strict=False))
         ss_tot = sum((y - y_mean) ** 2 for y in values)
         r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0.0
 
@@ -764,7 +766,9 @@ class HistoricalContextProvider:
         x_mean = sum(x_values) / n
         y_mean = sum(y_values) / n
 
-        numerator = sum((x - x_mean) * (y - y_mean) for x, y in zip(x_values, y_values))
+        numerator = sum(
+            (x - x_mean) * (y - y_mean) for x, y in zip(x_values, y_values, strict=False)
+        )
         denominator = sum((x - x_mean) ** 2 for x in x_values)
 
         slope = numerator / denominator if denominator != 0 else 0.0
@@ -783,8 +787,8 @@ class HistoricalContextProvider:
         sum_x3 = sum(x**3 for x in x_values)
         sum_x4 = sum(x**4 for x in x_values)
         sum_y = sum(y_values)
-        sum_xy = sum(x * y for x, y in zip(x_values, y_values))
-        sum_x2y = sum((x**2) * y for x, y in zip(x_values, y_values))
+        sum_xy = sum(x * y for x, y in zip(x_values, y_values, strict=False))
+        sum_x2y = sum((x**2) * y for x, y in zip(x_values, y_values, strict=False))
 
         # Simplified quadratic fit (2nd order)
         # For production, use numpy.polyfit

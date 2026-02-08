@@ -1,5 +1,4 @@
 import asyncio
-import os
 
 from python.config import settings
 from python.supabase_pool import get_pool
@@ -14,7 +13,7 @@ async def check_monitoring():
         # Check if table exists
         table_check_result = await pool.fetch("""
             SELECT EXISTS (
-                SELECT FROM information_schema.tables 
+                SELECT FROM information_schema.tables
                 WHERE  table_schema = 'monitoring'
                 AND    table_name   = 'operational_events'
             );
@@ -27,14 +26,14 @@ async def check_monitoring():
                 "SELECT * FROM monitoring.operational_events ORDER BY created_at DESC LIMIT 5"
             )
             for event in events:
-                print(
-                    f"[{event['created_at']}] {event['source']} - {event['severity']}: {event['event_type']}"
-                )
+                src = event["source"]
+                sev = event["severity"]
+                print(f"[{event['created_at']}] {src}" f" - {sev}: {event['event_type']}")
 
         print("\n--- Recent Monitoring Commands ---")
         cmd_table_check_result = await pool.fetch("""
             SELECT EXISTS (
-                SELECT FROM information_schema.tables 
+                SELECT FROM information_schema.tables
                 WHERE  table_schema = 'monitoring'
                 AND    table_name   = 'commands'
             );
@@ -47,9 +46,8 @@ async def check_monitoring():
                 "SELECT * FROM monitoring.commands ORDER BY created_at DESC LIMIT 5"
             )
             for cmd in commands:
-                print(
-                    f"[{cmd['created_at']}] {cmd['command_type']} - {cmd['status']}: {cmd['requested_by']}"
-                )
+                ctype = cmd["command_type"]
+                print(f"[{cmd['created_at']}] {ctype}" f" - {cmd['status']}: {cmd['requested_by']}")
 
     except Exception as e:
         print(f"Error: {e}")

@@ -248,10 +248,7 @@ class MetricsRegistry:
         metric_groups = {}
         for metric_key, value in self.metrics.items():
             # Extract metric name (before labels)
-            if "{" in metric_key:
-                metric_name = metric_key.split("{")[0]
-            else:
-                metric_name = metric_key
+            metric_name = metric_key.split("{")[0] if "{" in metric_key else metric_key
 
             if metric_name not in metric_groups:
                 metric_groups[metric_name] = []
@@ -285,7 +282,9 @@ class MetricsRegistry:
             "connection_pool_size": "Connection pool size by state (total, active, idle)",
             "connection_pool_queries_total": "Total queries executed through connection pool",
             "connection_pool_failures_total": "Total connection pool failures",
-            "connection_pool_health_check": "Connection pool health status (1=healthy, 0=unhealthy)",
+            "connection_pool_health_check": (
+                "Connection pool health status (1=healthy, 0=unhealthy)"
+            ),
             "idempotency_cache_hits_total": "Total idempotency cache hits",
             "idempotency_cache_misses_total": "Total idempotency cache misses",
             "kpi_calculations_total": "Total KPI calculations by status",
@@ -327,7 +326,6 @@ class MetricsHandler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         """Override to reduce log noise."""
-        pass
 
 
 def main():

@@ -260,7 +260,8 @@ class DefaultRiskModel:
 
         # Feature importance
         used_features = list(X_train.columns)
-        importance = dict(zip(used_features, self.model.feature_importances_.tolist()))
+        feat_importances = self.model.feature_importances_.tolist()
+        importance = dict(zip(used_features, feat_importances, strict=False))
         importance_sorted = dict(sorted(importance.items(), key=lambda x: x[1], reverse=True))
 
         # Cross-validation AUC
@@ -347,7 +348,7 @@ class DefaultRiskModel:
         """
         path = Path(path)
         if not path.exists():
-            raise FileNotFoundError("Model file not found: %s" % path)
+            raise FileNotFoundError(f"Model file not found: {path}")
 
         try:
             import xgboost as xgb
@@ -445,10 +446,7 @@ class DefaultRiskModel:
         try:
             import pandas as pd  # noqa: F811
 
-            if isinstance(loans, list):
-                df = pd.DataFrame(loans)
-            else:
-                df = loans
+            df = pd.DataFrame(loans) if isinstance(loans, list) else loans
             X = self.prepare_features(df)
             X = X[[c for c in self.feature_names if c in X.columns]]
             return pd.Series(self.model.predict_proba(X)[:, 1], index=df.index)

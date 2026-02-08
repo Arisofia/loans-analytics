@@ -56,10 +56,7 @@ def _supabase_configured() -> bool:
 
     # URL should have minimum structure of a real Supabase instance
     # Format: https://{project-ref}.supabase.co
-    if not (url.startswith("https://") and ".supabase.co" in url):
-        return False
-
-    return True
+    return url.startswith("https://") and ".supabase.co" in url
 
 
 @pytest.mark.integration_supabase

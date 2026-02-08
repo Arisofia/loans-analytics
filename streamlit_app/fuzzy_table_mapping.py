@@ -1,8 +1,11 @@
 def fuzzy_map_core_tables(dfs):
-    """
-    Fuzzy mapping of uploaded dataframes to core internal keys: loan_data, customer_data, historic_payment_data, schedule_data.
+    """Fuzzy mapping of uploaded dataframes to core internal keys.
+
+    Maps to: loan_data, customer_data, historic_payment_data, schedule_data.
+
     Args:
-        dfs (dict): Mapping of filename (str) to pd.DataFrame or dict of DataFrames (for Excel sheets).
+        dfs (dict): Mapping of filename (str) to pd.DataFrame
+            or dict of DataFrames (for Excel sheets).
     Returns:
         dict: Mapping of internal keys to DataFrames.
     """

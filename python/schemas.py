@@ -33,13 +33,14 @@ def validate_ingestion_contract(df: pl.DataFrame) -> bool:
             raise ValueError(f"Contract Violation: Missing column {col}")
     # 2. Value Range / Integrity Checks
     # Loan Amount must be positive
-    if "loan_amount" in df.columns:
-        if df.filter(pl.col("loan_amount") <= 0).height > 0:
-            logger.warning("Data Quality Issue: Found loans with non-positive amounts")
+    if "loan_amount" in df.columns and df.filter(pl.col("loan_amount") <= 0).height > 0:
+        logger.warning("Data Quality Issue: Found loans with non-positive amounts")
     # Interest Rate should be between 0.0 and 1.0 (as decimal)
-    if "interest_rate" in df.columns:
-        if df.filter((pl.col("interest_rate") < 0) | (pl.col("interest_rate") > 1.0)).height > 0:
-            logger.warning("Interest rate out of typical 0.0-1.0 range")
+    if (
+        "interest_rate" in df.columns
+        and df.filter((pl.col("interest_rate") < 0) | (pl.col("interest_rate") > 1.0)).height > 0
+    ):
+        logger.warning("Interest rate out of typical 0.0-1.0 range")
     # 3. Monotonicity Checks (Ensure measurement dates are not regressing)
     if "measurement_date" in df.columns:
         # Sort and check if dates are non-decreasing

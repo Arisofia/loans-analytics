@@ -47,7 +47,8 @@ def render_advanced_intelligence(dashboard_metrics):
             st.dataframe(styled_df(df_seg_display), use_container_width=True)
         else:
             st.info(
-                "Segmentation data not found. Ensure 'Client Segment' column is present in loans data."
+                "Segmentation data not found. Ensure 'Client Segment'"
+                " column is present in loans data."
             )
     with adv_tabs[1]:
         st.subheader("90-Day Churn Analysis")

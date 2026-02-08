@@ -48,7 +48,8 @@ def render_sales_performance(merged, load_agent_headcount):
             st.plotly_chart(apply_theme(fig_headcount), use_container_width=True)
         else:
             st.info(
-                "Sales agent data not found. Provide agent performance data to populate this section."
+                "Sales agent data not found. Provide agent"
+                " performance data to populate this section."
             )
 
 

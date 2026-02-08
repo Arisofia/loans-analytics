@@ -13,7 +13,9 @@ Test Cases:
 class TestAnalyticsIntegration:
     """Integration and observability tests."""
 
-    # def test_c01_figma_sync_success(self, analytics_test_env: Dict[str, Any], minimal_config_path) -> None:
+    # def test_c01_figma_sync_success(
+    #     self, analytics_test_env: Dict[str, Any], minimal_config_path,
+    # ) -> None:
     #     """
     #     C-01: Figma KPI Table Sync - Success Path.
     #     Verify pipeline calls Figma sync and logs success.
@@ -54,7 +56,9 @@ class TestAnalyticsIntegration:
     #     assert result.returncode == 0
     #     assert "Exporting to Figma" in result.stdout or "Exporting to Figma" in result.stderr
 
-    # def test_d01_otlp_span_generation(self, analytics_test_env: Dict[str, Any], minimal_config_path) -> None:
+    # def test_d01_otlp_span_generation(
+    #     self, analytics_test_env: Dict[str, Any], minimal_config_path,
+    # ) -> None:
     #     """
     #     D-01: OTLP Span Generation and Trace Consistency.
     #     Verify that spans are generated with consistent Trace IDs.
@@ -82,7 +86,9 @@ class TestAnalyticsIntegration:
     #     for span in spans:
     #         assert span.get_span_context().trace_id == trace_id, "Inconsistent Trace IDs"
 
-    # def test_f01_secret_masking(self, analytics_test_env: Dict[str, Any], minimal_config_path) -> None:
+    # def test_f01_secret_masking(
+    #     self, analytics_test_env: Dict[str, Any], minimal_config_path,
+    # ) -> None:
     #     """
     #     F-01: Security - Secret Masking in Logs.
     #     Verify that raw secrets are NOT logged.
@@ -126,7 +132,9 @@ class TestAnalyticsIntegration:
     #     combined_output = result.stdout + result.stderr
     #     assert raw_secret not in combined_output
 
-    # def test_c04_notion_timeout_simulation(self, analytics_test_env: Dict[str, Any], minimal_config_path) -> None:
+    # def test_c04_notion_timeout_simulation(
+    #     self, analytics_test_env: Dict[str, Any], minimal_config_path,
+    # ) -> None:
     #     """
     #     C-04: Integration Resilience - Notion API Timeout.
     #     Verify that pipeline continues even if an integration fails.
@@ -142,7 +150,11 @@ class TestAnalyticsIntegration:
     #             "enabled": True,
     #             "outputs": ["notion"],
     #             "clients": {
-    #                 "notion": {"enabled": True, "api_token": "valid_token", "database_id": "test_db"}
+    #                 "notion": {
+    #                     "enabled": True,
+    #                     "api_token": "valid_token",
+    #                     "database_id": "test_db",
+    #                 }
     #             }
     #         }
     #     }
@@ -166,7 +178,9 @@ class TestAnalyticsIntegration:
     #     assert result.returncode == 0
     #     assert "Exporting to Notion" in result.stdout or "Exporting to Notion" in result.stderr
 
-    # def test_f02_unauthorized_access(self, analytics_test_env: Dict[str, Any], minimal_config_path) -> None:
+    # def test_f02_unauthorized_access(
+    #     self, analytics_test_env: Dict[str, Any], minimal_config_path,
+    # ) -> None:
     #     """
     #     F-02: Unauthorized Access Handling.
     #     Verify handling of invalid configurations.
@@ -189,5 +203,10 @@ class TestAnalyticsIntegration:
     #     # The modern pipeline uses default config if not found but logs warning.
     #     # If it fails, it returns non-zero.
     #     # Actually scripts/run_data_pipeline.py returns False if exception occurs.
-    #     # If config file is missing, it might use defaults or fail depending on UnifiedPipeline implementation.
-    #     assert result.returncode != 0 or "Config file not found" in result.stdout or "Config file not found" in result.stderr
+    #     # If config file is missing, it might use defaults or fail
+    #     # depending on UnifiedPipeline implementation.
+    #     assert (
+    #         result.returncode != 0
+    #         or "Config file not found" in result.stdout
+    #         or "Config file not found" in result.stderr
+    #     )

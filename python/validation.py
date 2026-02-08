@@ -26,9 +26,11 @@ def _validate_numeric_column(df: pd.DataFrame, column: str, context_label: str) 
     if column not in df.columns:
         raise ValueError(f"{context_label} missing required numeric column: {column}")
     series = df[column]
-    if series.dtype == "object":
-        if series.dropna().apply(lambda value: isinstance(value, str)).any():
-            raise ValueError(f"{context_label} must be numeric: {column}")
+    if (
+        series.dtype == "object"
+        and series.dropna().apply(lambda value: isinstance(value, str)).any()
+    ):
+        raise ValueError(f"{context_label} must be numeric: {column}")
     coerced = pd.to_numeric(series, errors="coerce")
     if not pd.api.types.is_numeric_dtype(coerced):
         raise ValueError(f"{context_label} must be numeric: {column}")
@@ -40,7 +42,7 @@ def _default_percentage_columns(df: pd.DataFrame) -> List[str]:
     return [
         c
         for c in df.columns
-        if (("percent" in c) or ("rate" in c) or c.endswith("_pct") or c.endswith("_rate"))
+        if (("percent" in c) or ("rate" in c) or c.endswith(("_pct", "_rate")))
         and c not in exempt_columns
     ]
 
@@ -48,11 +50,9 @@ def _default_percentage_columns(df: pd.DataFrame) -> List[str]:
 def _is_iso8601_value(value) -> bool:
     if pd.isnull(value):
         return True
-    if isinstance(value, datetime):
-        return True
     if isinstance(value, str) and ISO8601_PATTERN.match(value):
         return True
-    return False
+    return isinstance(value, datetime)
 
 
 ANALYTICS_NUMERIC_COLUMNS: List[str] = settings.analytics.numeric_columns

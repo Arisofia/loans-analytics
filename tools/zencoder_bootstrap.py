@@ -96,9 +96,11 @@ def run_check_kpi_sync(repo_root: Path) -> Dict[str, Any]:
         report = json.loads(stdout)
     except json.JSONDecodeError as e:
         if proc.returncode != 0:
-            raise RuntimeError(
-                f"check_kpi_sync failed with code {proc.returncode}:\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}"
+            msg = (
+                f"check_kpi_sync failed with code {proc.returncode}:"
+                f"\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}"
             )
+            raise RuntimeError(msg) from e
         raise RuntimeError(
             f"Failed to parse JSON from check_kpi_sync: {e}\nRaw output:\n{stdout}"
         ) from e

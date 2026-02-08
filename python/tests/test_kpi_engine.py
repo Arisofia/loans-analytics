@@ -118,7 +118,7 @@ class TestKPIEngineV2(unittest.TestCase):
         self.assertIn("COLLECTION_RATE", results)
 
         # Each KPI should have value and context
-        for kpi_name, kpi_data in results.items():
+        for _kpi_name, kpi_data in results.items():
             self.assertIn("value", kpi_data)
             self.assertIn("context", kpi_data)
 

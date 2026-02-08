@@ -63,6 +63,6 @@ def test_validation_strict_raises(tmp_path):
     df = pd.DataFrame({"loan_id": ["a"]})
     try:
         ui._validate_dataframe(df)
-        assert False, "Expected ValueError"
+        raise AssertionError("Expected ValueError")
     except ValueError:
         pass

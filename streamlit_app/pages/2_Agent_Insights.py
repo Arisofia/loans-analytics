@@ -108,9 +108,9 @@ if not output_files:
     with st.expander("📖 How to Use Multi-Agent System"):
         st.markdown("""
         ### Available Agents
-        
+
         1. **Risk Analyst** - Portfolio risk assessment
-        2. **Growth Strategist** - Expansion opportunities  
+        2. **Growth Strategist** - Expansion opportunities
         3. **Operations Optimizer** - Process efficiency
         4. **Compliance Officer** - Regulatory adherence
         5. **Collections Specialist** - Recovery strategies
@@ -118,33 +118,33 @@ if not output_files:
         7. **Pricing Strategist** - Rate optimization
         8. **Retention Specialist** - Customer lifecycle
         9. **Database Designer** - Schema optimization
-        
+
         ### CLI Usage
-        
+
         ```bash
         # Activate environment
         source .venv/bin/activate
-        
+
         # Run single agent
         python -m python.multi_agent.cli \\
           --agent risk \\
           --query "Analyze portfolio with DPD > 30"
-        
+
         # Run pre-built scenario
         python -m python.multi_agent.cli \\
           --scenario "monthly_portfolio_health"
-        
+
         # List scenarios
         python -m python.multi_agent.cli --list-scenarios
         ```
-        
+
         ### Output Location
-        
+
         Agent responses are saved to:
         ```
         data/agent_outputs/<timestamp>_<agent_name>_response.json
         ```
-        
+
         This page automatically loads and displays all saved agent interactions.
         """)
 

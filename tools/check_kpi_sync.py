@@ -176,24 +176,23 @@ def main(argv: Optional[List[str]] = None) -> int:
     regenerate_result: Optional[CommandResult] = None
     pytest_result: Optional[CommandResult] = None
     # Decide whether to regenerate JSON
-    if not args.no_regenerate:
-        if not json_check.exists or not json_check.valid_json:
-            run_script = repo_root / "run_complete_analytics.py"
-            if run_script.is_file():
-                regenerate_result = run_command(
-                    [sys.executable, "run_complete_analytics.py"],
-                    cwd=repo_root,
-                )
-                # re-check JSON after regeneration
-                json_check = check_json_structure(repo_root)
-            else:
-                regenerate_result = CommandResult(
-                    command=f"{sys.executable} run_complete_analytics.py",
-                    success=False,
-                    returncode=1,
-                    stdout="",
-                    stderr="run_complete_analytics.py not found",
-                )
+    if not args.no_regenerate and (not json_check.exists or not json_check.valid_json):
+        run_script = repo_root / "run_complete_analytics.py"
+        if run_script.is_file():
+            regenerate_result = run_command(
+                [sys.executable, "run_complete_analytics.py"],
+                cwd=repo_root,
+            )
+            # re-check JSON after regeneration
+            json_check = check_json_structure(repo_root)
+        else:
+            regenerate_result = CommandResult(
+                command=f"{sys.executable} run_complete_analytics.py",
+                success=False,
+                returncode=1,
+                stdout="",
+                stderr="run_complete_analytics.py not found",
+            )
     # Optionally run pytest parity tests
     if not args.no_tests:
         test_file = repo_root / "tests" / "test_kpi_parity.py"

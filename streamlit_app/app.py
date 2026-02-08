@@ -58,6 +58,7 @@ if "tracked_visit" not in st.session_state:
     usage_tracker.track("dashboard", "visit")
     st.session_state["tracked_visit"] = True
 
+
 def resolve_exports_dir(create: bool = False) -> Path:
     for candidate in EXPORTS_DIR_CANDIDATES:
         if candidate.exists():
@@ -359,7 +360,11 @@ with st.sidebar:
                 st.session_state["data"] = final_data
                 st.session_state["loaded"] = True
                 st.success("Data ingested successfully.")
-                usage_tracker.track("data_ingestion", "manual_upload", file_count=len(uploaded_files))
+                usage_tracker.track(
+                    "data_ingestion",
+                    "manual_upload",
+                    file_count=len(uploaded_files),
+                )
                 with st.spinner("Generating KPI exports from uploaded data..."):
                     try:
                         output_path = generate_kpi_exports(

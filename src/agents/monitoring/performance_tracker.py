@@ -237,11 +237,9 @@ class PerformanceTracker:
         Returns:
             Dictionary with performance report
         """
-        scenarios = {
-            name: self.get_scenario_performance(name) for name in self.scenario_metrics.keys()
-        }
+        scenarios = {name: self.get_scenario_performance(name) for name in self.scenario_metrics}
 
-        agents = {name: self.get_agent_performance(name) for name in self.agent_metrics.keys()}
+        agents = {name: self.get_agent_performance(name) for name in self.agent_metrics}
 
         return {
             "timestamp": datetime.utcnow().isoformat(),

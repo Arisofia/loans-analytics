@@ -50,13 +50,11 @@ class AgentChecklistValidator:
         """Check if agent extends BaseAgent or similar base class."""
         has_base = False
         for node in ast.walk(self.tree):
-            if isinstance(node, ast.ClassDef):
-                if node.bases:
-                    for base in node.bases:
-                        if isinstance(base, ast.Name):
-                            if "Agent" in base.id or "Base" in base.id:
-                                has_base = True
-                                break
+            if isinstance(node, ast.ClassDef) and node.bases:
+                for base in node.bases:
+                    if isinstance(base, ast.Name) and ("Agent" in base.id or "Base" in base.id):
+                        has_base = True
+                        break
 
         self.results["base_agent"] = has_base
         if has_base:
@@ -81,12 +79,12 @@ class AgentChecklistValidator:
         self.results["required_methods"] = has_entry_point
 
         if has_entry_point:
-            self.messages.append(
-                f"✅ Required methods present (found: {found_methods.intersection(required_entry_points)})"
-            )
+            found = found_methods.intersection(required_entry_points)
+            self.messages.append(f"✅ Required methods present (found: {found})")
         else:
             self.messages.append(
-                f"⚠️  Missing required methods. Should implement at least one of: {required_entry_points}"
+                "⚠️  Missing required methods. Should implement"
+                f" at least one of: {required_entry_points}"
             )
 
     def check_docstrings(self) -> None:
@@ -132,9 +130,10 @@ class AgentChecklistValidator:
         for node in ast.walk(self.tree):
             if isinstance(node, ast.Try):
                 has_try_except = True
-            if isinstance(node, ast.FunctionDef):
-                if "error" in node.name.lower() or "handle" in node.name.lower():
-                    has_error_method = True
+            if isinstance(node, ast.FunctionDef) and (
+                "error" in node.name.lower() or "handle" in node.name.lower()
+            ):
+                has_error_method = True
 
         has_error_handling = has_try_except or has_error_method
         self.results["error_handling"] = has_error_handling

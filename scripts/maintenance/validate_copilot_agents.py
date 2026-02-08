@@ -44,7 +44,7 @@ def extract_frontmatter(content: str) -> Tuple[Dict, str]:
     try:
         config = yaml.safe_load(yaml_content)
     except yaml.YAMLError as e:
-        raise ValueError(f"Invalid YAML syntax: {e}")
+        raise ValueError(f"Invalid YAML syntax: {e}") from e
 
     if not isinstance(config, dict):
         raise ValueError("YAML frontmatter must be a dictionary")

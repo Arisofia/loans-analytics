@@ -286,7 +286,7 @@ class PaymentDataGenerator:
         for loan_id in loan_ids:
             num_payments = random.randint(*payments_per_loan)
 
-            for i in range(num_payments):
+            for _i in range(num_payments):
                 amount = Decimal(str(random.uniform(100, 2000))).quantize(Decimal("0.01"))
 
                 payment = {
