@@ -429,8 +429,9 @@ def main():
     passed = sum(1 for _, ok in results if ok)
     failed = sum(1 for _, ok in results if not ok)
     warned = sum(1 for _, ok in warnings if not ok)
+    total_checks = len(results) + len(warnings)
     print("\n" + "=" * 70)
-    print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {warned} warnings, {len(results)} total")
+    print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {warned} warnings, {total_checks} total")
     if failed == 0:
         print(f"  [{PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
     else:
