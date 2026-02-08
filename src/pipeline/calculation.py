@@ -165,9 +165,13 @@ class KPIFormulaEngine:
                         filtered_df = self.df[
                             pd.to_datetime(self.df[col], errors="coerce") >= self.month_start
                         ]
+                    else:
+                        filtered_df = self.df.iloc[:0]
                 elif value.isdigit():
                     if col in self.df.columns:
                         filtered_df = self.df[self.df[col] >= int(value)]
+                    else:
+                        filtered_df = self.df.iloc[:0]
 
             elif " IN " in condition:
                 match = re.match(r"(.+?)\s+IN\s+\[(.+?)\]", condition, re.IGNORECASE)
@@ -176,6 +180,8 @@ class KPIFormulaEngine:
                     values = [v.strip().strip("'\"") for v in match.group(2).split(",")]
                     if col in self.df.columns:
                         filtered_df = self.df[self.df[col].isin(values)]
+                    else:
+                        filtered_df = self.df.iloc[:0]
 
             elif "!=" in condition:
                 parts = condition.split("!=")
@@ -183,6 +189,8 @@ class KPIFormulaEngine:
                 value = parts[1].strip().strip("'\"")
                 if col in self.df.columns:
                     filtered_df = self.df[self.df[col] != value]
+                else:
+                    filtered_df = self.df.iloc[:0]
 
             elif "=" in condition:
                 parts = condition.split("=")
@@ -190,6 +198,8 @@ class KPIFormulaEngine:
                 value = parts[1].strip().strip("'\"")
                 if col in self.df.columns:
                     filtered_df = self.df[self.df[col] == value]
+                else:
+                    filtered_df = self.df.iloc[:0]
 
         except Exception as e:
             logger.debug("WHERE clause failed: %s - %s", condition, str(e))
@@ -290,6 +300,11 @@ class CalculationPhase:
     def _calculate_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Calculate all KPIs from definitions."""
         logger.info("Calculating KPIs")
+
+        # Derive columns needed by KPI formulas but not present in raw data
+        if "borrower_id" in df.columns and "loan_id" in df.columns:
+            loan_counts = df.groupby("borrower_id")["loan_id"].nunique().rename("loan_count")
+            df = df.merge(loan_counts, on="borrower_id", how="left")
 
         kpis: Dict[str, Optional[float]] = {}
         engine = KPIFormulaEngine(df)

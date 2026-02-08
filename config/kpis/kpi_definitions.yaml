@@ -1,13 +1,22 @@
 # KPI Definitions - All Formulas and Thresholds
-# Version 2.0
+# Version 3.0 — Aligned with abaco_real_data CSV schema
+#
+# Columns available after Phase 2 (Transformation):
+#   loan_id, borrower_id, principal_amount, outstanding_balance,
+#   current_balance, interest_rate, days_past_due, status,
+#   origination_date, last_payment_amount, total_scheduled,
+#   collateral_value, tpv, amount, term_months
+#
+# Status values after normalization:
+#   active (was "Current"), closed (was "Complete"), defaulted (was "Default")
 
-version: "2.0.0"
-last_updated: "2026-01-29"
+version: "3.0.0"
+last_updated: "2026-02-08"
 
 # Portfolio Performance KPIs
 portfolio_kpis:
   total_outstanding_balance:
-    formula: "SUM(current_balance WHERE status IN ['active', 'delinquent'])"
+    formula: "SUM(outstanding_balance WHERE status IN ['active', 'defaulted'])"
     unit: "USD"
     description: "Total outstanding principal across all active loans"
     thresholds:
@@ -20,14 +29,14 @@ portfolio_kpis:
     description: "Number of active loans in portfolio"
 
   average_loan_size:
-    formula: "AVG(original_amount)"
+    formula: "AVG(principal_amount)"
     unit: "USD"
     description: "Average original loan amount"
 
   portfolio_yield:
-    formula: "(SUM(interest_earned_ytd) / SUM(avg_outstanding_balance)) * 100"
+    formula: "AVG(interest_rate) * 100"
     unit: "percentage"
-    description: "Annualized yield on portfolio"
+    description: "Average annualized interest rate across portfolio"
     thresholds:
       warning: 10
       target: 15
@@ -36,7 +45,7 @@ portfolio_kpis:
 # Asset Quality KPIs
 asset_quality_kpis:
   par_30:
-    formula: "SUM(current_balance WHERE dpd >= 30) / SUM(current_balance) * 100"
+    formula: "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100"
     unit: "percentage"
     description: "Portfolio at Risk - 30 days past due"
     thresholds:
@@ -44,7 +53,7 @@ asset_quality_kpis:
       critical: 5
 
   par_90:
-    formula: "SUM(current_balance WHERE dpd >= 90) / SUM(current_balance) * 100"
+    formula: "SUM(outstanding_balance WHERE dpd >= 90) / SUM(outstanding_balance) * 100"
     unit: "percentage"
     description: "Portfolio at Risk - 90 days past due"
     thresholds:
@@ -60,35 +69,35 @@ asset_quality_kpis:
       critical: 5
 
   loss_rate:
-    formula: "SUM(charged_off_amount) / SUM(original_amount) * 100"
+    formula: "SUM(outstanding_balance WHERE status = 'defaulted') / SUM(principal_amount) * 100"
     unit: "percentage"
-    description: "Net charge-off rate"
+    description: "Outstanding balance at risk as percentage of disbursed principal"
 
 # Cash Flow KPIs
 cash_flow_kpis:
   collections_rate:
-    formula: "SUM(payments_received_mtd) / SUM(payments_due_mtd) * 100"
+    formula: "SUM(last_payment_amount) / SUM(total_scheduled) * 100"
     unit: "percentage"
-    description: "Monthly collection efficiency"
+    description: "Collection efficiency (payments received vs scheduled)"
     thresholds:
       warning: 85
       target: 95
       critical: 80
 
   recovery_rate:
-    formula: "SUM(recovered_amount) / SUM(defaulted_amount) * 100"
+    formula: "SUM(last_payment_amount WHERE status = 'defaulted') / SUM(outstanding_balance WHERE status = 'defaulted') * 100"
     unit: "percentage"
     description: "Recovery rate on defaulted loans"
 
   cash_on_hand:
-    formula: "SUM(available_cash)"
+    formula: "SUM(current_balance)"
     unit: "USD"
-    description: "Total available cash for operations"
+    description: "Total current cash position across portfolio"
 
 # Growth KPIs
 growth_kpis:
   disbursement_volume_mtd:
-    formula: "SUM(disbursed_amount WHERE disbursement_date >= MONTH_START)"
+    formula: "SUM(principal_amount WHERE origination_date >= MONTH_START)"
     unit: "USD"
     description: "Total disbursements month-to-date"
 
@@ -105,32 +114,32 @@ growth_kpis:
 # Customer KPIs
 customer_kpis:
   active_borrowers:
-    formula: "COUNT(DISTINCT borrower_id WHERE loan_status IN ['active', 'delinquent'])"
+    formula: "COUNT(DISTINCT borrower_id WHERE status IN ['active', 'defaulted'])"
     unit: "count"
     description: "Number of active borrowers"
 
   repeat_borrower_rate:
-    formula: "COUNT(borrower_id WHERE loan_count > 1) / COUNT(DISTINCT borrower_id) * 100"
+    formula: "COUNT(DISTINCT borrower_id WHERE loan_count > 1) / COUNT(DISTINCT borrower_id) * 100"
     unit: "percentage"
     description: "Percentage of repeat borrowers"
 
   customer_lifetime_value:
-    formula: "SUM(total_interest_paid) / COUNT(DISTINCT borrower_id)"
+    formula: "SUM(tpv) / COUNT(DISTINCT borrower_id)"
     unit: "USD"
-    description: "Average lifetime value per customer"
+    description: "Average total processed value per customer"
 
 # Operational KPIs
 operational_kpis:
   processing_time_avg:
-    formula: "AVG(approval_date - application_date)"
-    unit: "days"
-    description: "Average loan processing time"
+    formula: "AVG(term_months)"
+    unit: "months"
+    description: "Average loan term duration"
     thresholds:
-      warning: 5
-      target: 2
-      critical: 7
+      warning: 12
+      target: 6
+      critical: 24
 
   automation_rate:
-    formula: "COUNT(auto_approved) / COUNT(total_applications) * 100"
+    formula: "COUNT(loan_id WHERE payment_frequency = 'bullet') / COUNT(loan_id) * 100"
     unit: "percentage"
-    description: "Percentage of automatically approved applications"
+    description: "Percentage of bullet (auto-settlement) loans"

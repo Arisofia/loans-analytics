@@ -51,13 +51,21 @@ class TransformationPhase:
     STATUS_MAPPINGS: Dict[str, str] = {
         "Active": "active",
         "ACTIVE": "active",
+        "Current": "active",
+        "current": "active",
+        "CURRENT": "active",
         "Delinquent": "delinquent",
         "DELINQUENT": "delinquent",
+        "Complete": "closed",
+        "complete": "closed",
+        "COMPLETE": "closed",
         "Closed": "closed",
         "CLOSED": "closed",
+        "Default": "defaulted",
+        "default": "defaulted",
+        "DEFAULT": "defaulted",
         "Defaulted": "defaulted",
         "DEFAULTED": "defaulted",
-        "default": "defaulted",
     }
 
     # Null handling thresholds and constants
@@ -122,6 +130,7 @@ class TransformationPhase:
             transformation_metrics: Dict[str, Any] = {}
 
             # Apply transformations with metrics tracking
+            df = self._normalize_column_names(df)
             df, null_metrics = self._handle_nulls(df)
             transformation_metrics["null_handling"] = null_metrics
 
@@ -162,6 +171,48 @@ class TransformationPhase:
         except Exception as e:
             logger.error("Transformation failed: %s", str(e), exc_info=True)
             return format_error_response(e)
+
+    def _normalize_column_names(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Normalize column names to standard schema.
+        Maps source-specific names to canonical pipeline names.
+        """
+        # Mapping: Source Name -> Canonical Name
+        column_mapping = {
+            "days_past_due": "dpd",
+            "principal_amount": "amount",
+            "current_status": "status",
+            "loan_status": "status",
+            "principal_balance": "current_balance",
+            "loan_amount": "amount",
+        }
+
+        # Apply mapping for columns that exist in df
+        rename_dict = {
+            source: target
+            for source, target in column_mapping.items()
+            if source in df.columns and target not in df.columns
+        }
+
+        if rename_dict:
+            df = df.rename(columns=rename_dict)
+            logger.info("Renamed columns: %s", rename_dict)
+
+        # Special case for outstanding_balance -> current_balance
+        if "outstanding_balance" in df.columns:
+            if "current_balance" not in df.columns:
+                df = df.rename(columns={"outstanding_balance": "current_balance"})
+                logger.info("Renamed outstanding_balance to current_balance")
+            else:
+                # If both exist, use outstanding_balance if current_balance is mostly zero/null
+                null_or_zero = df["current_balance"].isna() | (df["current_balance"] == 0)
+                if null_or_zero.mean() > 0.8:  # If more than 80% are zero/null
+                    df["current_balance"] = df["outstanding_balance"]
+                    logger.info(
+                        "Overwrote current_balance with outstanding_balance (due to high null/zero rate)"
+                    )
+
+        return df
 
     def _handle_nulls(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
