@@ -1,9 +1,9 @@
 """Monitoring & Control dashboard for the self-healing platform."""
 
+import os
 import re
 import sys
 from pathlib import Path
-from urllib.parse import quote, urlparse
 
 import pandas as pd
 import requests
@@ -32,33 +32,11 @@ st.markdown(
 
 st.title("Monitoring & Control")
 
-API_BASE = st.sidebar.text_input("API Base URL", value="http://localhost:8000", key="api_base")
-
-# SSRF Protection: Whitelist of allowed API hosts
-ALLOWED_HOSTS = frozenset({"localhost", "127.0.0.1", "api.abaco.ai"})
-
-
-def _get_safe_api_base() -> str | None:
-    """Parse, validate, and reconstruct API_BASE from whitelisted components.
-
-    Reconstructing from parsed parts breaks the taint chain so that
-    static analysers (CodeQL) no longer see user input flowing into
-    the outbound request URL.
-    """
-    parsed = urlparse(API_BASE)
-
-    if parsed.scheme not in ("http", "https"):
-        st.error(f"Invalid protocol: {parsed.scheme}. Only http/https allowed.")
-        return None
-
-    hostname = parsed.hostname
-    if not hostname or hostname not in ALLOWED_HOSTS:
-        st.error(f"Blocked: {hostname} is not in the allowed hosts whitelist.")
-        return None
-
-    # Reconstruct from validated, known-safe components
-    port_suffix = f":{parsed.port}" if parsed.port else ""
-    return f"{parsed.scheme}://{hostname}{port_suffix}"
+# API base URL from server-side configuration (environment variable).
+# Not sourced from a Streamlit widget, so CodeQL does not treat it as
+# a RemoteFlowSource. Set ABACO_API_BASE in .env or deployment config.
+API_BASE: str = os.environ.get("ABACO_API_BASE", "http://localhost:8000")
+st.sidebar.text(f"API: {API_BASE}")
 
 
 # ---------------------------------------------------------------------------
@@ -78,7 +56,6 @@ def _get_safe_path(path: str) -> str | None:
     match = re.fullmatch(r"^/monitoring/events/([\w\-]+)/ack$", path)
     if match:
         event_id = match.group(1)
-        # Reconstruct to ensure we use validated components only
         return f"/monitoring/events/{event_id}/ack"
 
     return None
@@ -86,15 +63,11 @@ def _get_safe_path(path: str) -> str | None:
 
 def _api_get(path: str, params: dict | None = None):
     try:
-        base = _get_safe_api_base()
         safe_path = _get_safe_path(path)
-        if base is None or safe_path is None:
-            if safe_path is None:
-                st.error(f"Blocked: Path '{path}' is not in the allowed endpoints.")
+        if safe_path is None:
+            st.error(f"Blocked: Path '{path}' is not in the allowed endpoints.")
             return None
-
-        # Reconstruct final URL from whitelisted base and safe_path
-        url = f"{base}/{safe_path.lstrip('/')}"
+        url = f"{API_BASE}/{safe_path.lstrip('/')}"
         resp = requests.get(url, params=params, timeout=5)
         resp.raise_for_status()
         return resp.json()
@@ -105,14 +78,11 @@ def _api_get(path: str, params: dict | None = None):
 
 def _api_post(path: str, json_body: dict | None = None):
     try:
-        base = _get_safe_api_base()
         safe_path = _get_safe_path(path)
-        if base is None or safe_path is None:
-            if safe_path is None:
-                st.error(f"Blocked: Path '{path}' is not in the allowed endpoints.")
+        if safe_path is None:
+            st.error(f"Blocked: Path '{path}' is not in the allowed endpoints.")
             return None
-
-        url = f"{base}/{safe_path.lstrip('/')}"
+        url = f"{API_BASE}/{safe_path.lstrip('/')}"
         resp = requests.post(url, json=json_body, timeout=5)
         resp.raise_for_status()
         return resp.json()
@@ -123,14 +93,11 @@ def _api_post(path: str, json_body: dict | None = None):
 
 def _api_patch(path: str, json_body: dict | None = None):
     try:
-        base = _get_safe_api_base()
         safe_path = _get_safe_path(path)
-        if base is None or safe_path is None:
-            if safe_path is None:
-                st.error(f"Blocked: Path '{path}' is not in the allowed endpoints.")
+        if safe_path is None:
+            st.error(f"Blocked: Path '{path}' is not in the allowed endpoints.")
             return None
-
-        url = f"{base}/{safe_path.lstrip('/')}"
+        url = f"{API_BASE}/{safe_path.lstrip('/')}"
         resp = requests.patch(url, json=json_body, timeout=5)
         resp.raise_for_status()
         return resp.json()
