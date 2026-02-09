@@ -73,7 +73,11 @@ class MetricsRegistry:
             runs_dir = Path("logs/runs")
             if not runs_dir.exists():
                 return
-            run_dirs = sorted(runs_dir.glob("*"), reverse=True)
+            run_dirs = sorted(
+                runs_dir.glob("*"),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True,
+            )
             if not run_dirs:
                 return
             latest_run = run_dirs[0]
