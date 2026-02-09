@@ -67,9 +67,9 @@ def main():
         "SUPABASE_SERVICE_ROLE_KEY",
         "SUPABASE_PROJECT_REF",
         "DATABASE_URL",
-        "OPENAI_API_KEY",
     ]
     optional_keys = [
+        "OPENAI_API_KEY",
         "SENTRY_DSN",
         "SENTRY_AUTH_TOKEN",
         "OTEL_EXPORTER_OTLP_ENDPOINT",
