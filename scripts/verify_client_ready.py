@@ -54,7 +54,7 @@ def main():
             subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True)
             .strip()
         )
-    except subprocess.SubprocessError:
+    except (subprocess.SubprocessError, OSError):
         branch = "unknown"
 
     print("=" * 60)
