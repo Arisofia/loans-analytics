@@ -152,7 +152,7 @@ def main():
         # Validate HTTPS for non-localhost URLs (SSRF prevention)
         url_lower = supabase_url.lower()
         is_localhost = "localhost" in url_lower or "127.0.0.1" in url_lower
-        if not supabase_url.startswith("https://") and not is_localhost:
+        if not url_lower.startswith("https://") and not is_localhost:
             check_warn("REST API", False, "SUPABASE_URL should use https:// (non-localhost)")
         try:
             req = urllib.request.Request(
