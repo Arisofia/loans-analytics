@@ -18,6 +18,7 @@ FAIL = "\033[91mFAIL\033[0m"
 WARN = "\033[93mWARN\033[0m"
 
 results = []
+warnings = []
 
 
 def check(name, ok, detail=""):
@@ -29,7 +30,7 @@ def check(name, ok, detail=""):
 
 def check_warn(name, ok, detail=""):
     status = PASS if ok else WARN
-    results.append((name, ok))
+    warnings.append((name, ok))
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -49,7 +50,9 @@ def find_latest_run_id(runs_dir: Path) -> str | None:
     runs = [p for p in runs_dir.iterdir() if p.is_dir()]
     if not runs:
         return None
-    return sorted(runs, reverse=True)[0].name
+    # Sort explicitly by directory name to make "latest run" selection deterministic
+    latest_run = sorted(runs, key=lambda p: p.name, reverse=True)[0]
+    return latest_run.name
 
 
 def main():
@@ -424,19 +427,27 @@ def main():
     # ==========================================
     # SUMMARY
     # ==========================================
-    passed = sum(1 for _, ok in results if ok)
-    failed = sum(1 for _, ok in results if not ok)
+    passed_results = sum(1 for _, ok in results if ok)
+    failed_results = sum(1 for _, ok in results if not ok)
+    passed_warnings = sum(1 for _, ok in warnings if ok)
+    failed_warnings = sum(1 for _, ok in warnings if not ok)
+    total_passed = passed_results + passed_warnings
+    total_failed = failed_results
+    total_checks = len(results) + len(warnings)
+    
     print("\n" + "=" * 70)
-    print(f"  KPI VALIDATION: {passed} passed, {failed} failed, {len(results)} total")
-    if failed == 0:
+    print(f"  KPI VALIDATION: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
+          f"{total_failed} failed (blocking), {failed_warnings} failed (optional)")
+    print(f"  Total checks: {total_checks}")
+    if failed_results == 0:
         print(f"  [{PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
     else:
-        print(f"  [{FAIL}] {failed} KPI(S) HAVE DISCREPANCIES:")
+        print(f"  [{FAIL}] {failed_results} KPI(S) HAVE DISCREPANCIES:")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
     print("=" * 70)
-    return 0 if failed == 0 else 1
+    return 0 if failed_results == 0 else 1
 
 
 if __name__ == "__main__":

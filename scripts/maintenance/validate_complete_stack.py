@@ -54,7 +54,7 @@ def validate_data_files() -> dict[str, bool]:
 
     # Logs / runs directory for pipeline outputs
     runs_dir = ROOT_DIR / "logs" / "runs"
-    results["logs_runs_dir"] = True
+    results["logs_runs_dir"] = runs_dir.exists()
     if runs_dir.exists():
         latest_runs = sorted(runs_dir.glob("*"), reverse=True)[:3]
         print(f"  ✅ logs/runs exists ({len(list(runs_dir.glob('*')))} run(s))")
@@ -196,7 +196,7 @@ def check_agent_analysis_results() -> dict[str, bool]:
                 results["has_analyses"] = True
             else:
                 print("  ⚠️  No agent analyses in results")
-                results["has_analyses"] = True
+                results["has_analyses"] = False
 
             if "portfolio_metrics" in data:
                 metrics = data["portfolio_metrics"]
@@ -206,20 +206,20 @@ def check_agent_analysis_results() -> dict[str, bool]:
                 results["has_metrics"] = True
             else:
                 print("  ⚠️  No portfolio metrics in results")
-                results["has_metrics"] = True
+                results["has_metrics"] = False
 
         except Exception as e:
             print(f"  ⚠️  Error reading analysis: {str(e)}")
-            results["has_analyses"] = True
-            results["has_metrics"] = True
+            results["has_analyses"] = False
+            results["has_metrics"] = False
     else:
         print("  ⚠️  No analysis results found")
         raw_candidates = sorted((ROOT_DIR / "data" / "raw").glob("abaco_real_data_*.csv"))
         if raw_candidates:
             cmd = f"python scripts/run_daily_agent_analysis.py --input {raw_candidates[-1]}"
             print(f"     Run: {cmd}")
-        results["has_analyses"] = True
-        results["has_metrics"] = True
+        results["has_analyses"] = False
+        results["has_metrics"] = False
 
     return results
 

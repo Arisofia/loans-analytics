@@ -14,6 +14,7 @@ FAIL = "\033[91mFAIL\033[0m"
 WARN = "\033[93mWARN\033[0m"
 
 results = []
+warnings = []
 
 
 def check(name, ok, detail=""):
@@ -25,7 +26,7 @@ def check(name, ok, detail=""):
 
 def check_warn(name, ok, detail=""):
     status = PASS if ok else WARN
-    results.append((name, ok))
+    warnings.append((name, ok))
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -54,7 +55,7 @@ def main():
             subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True)
             .strip()
         )
-    except subprocess.SubprocessError:
+    except (subprocess.SubprocessError, OSError):
         branch = "unknown"
 
     print("=" * 60)
@@ -82,11 +83,13 @@ def main():
     for k in required_keys:
         v = envs.get(k, "")
         ok = bool(v) and "YOUR_" not in v and "PLACEHOLDER" not in v
-        check(k, ok, v[:30] + "..." if ok else "MISSING or placeholder")
+        detail = f"present ({len(v)} chars)" if ok else "MISSING or placeholder"
+        check(k, ok, detail)
     for k in optional_keys:
         v = envs.get(k, "")
         ok = bool(v) and "YOUR_" not in v and "PLACEHOLDER" not in v
-        check_warn(k, ok, v[:30] + "..." if ok else "MISSING (optional)")
+        detail = f"present ({len(v)} chars)" if ok else "MISSING (optional)"
+        check_warn(k, ok, detail)
 
     # --- 2. DATABASE ---
     print("\n2. DATABASE CONNECTION")
@@ -95,6 +98,8 @@ def main():
     else:
         import psycopg
 
+        conn = None
+        cur = None
         try:
             conn = psycopg.connect(envs.get("DATABASE_URL", ""), connect_timeout=10)
             cur = conn.cursor()
@@ -129,23 +134,32 @@ def main():
                 else:
                     check(f"Table '{t}'", False, "not found")
 
-            conn.close()
         except Exception as e:
-            check("PostgreSQL connect", False, str(e)[:80])
+            error_name = "PostgreSQL connect" if conn is None else "PostgreSQL query"
+            check(error_name, False, str(e)[:80])
+        finally:
+            if cur is not None:
+                cur.close()
+            if conn is not None:
+                conn.close()
 
     # --- 3. SUPABASE REST API ---
     print("\n3. SUPABASE REST API")
-    if envs.get("SUPABASE_URL") and envs.get("SUPABASE_ANON_KEY"):
-        try:
-            req = urllib.request.Request(
-                envs["SUPABASE_URL"] + "/rest/v1/",
-                headers={"apikey": envs["SUPABASE_ANON_KEY"]},
-            )
-            resp = urllib.request.urlopen(req, timeout=10)
-            data = json.loads(resp.read())
-            check("REST API", True, f"{len(data)} endpoints")
-        except Exception as e:
-            check("REST API", False, str(e)[:80])
+    supabase_url = envs.get("SUPABASE_URL", "")
+    if supabase_url and envs.get("SUPABASE_ANON_KEY"):
+        if not supabase_url.startswith("https://"):
+            check("REST API", False, "SUPABASE_URL must start with https://")
+        else:
+            try:
+                req = urllib.request.Request(
+                    supabase_url + "/rest/v1/",
+                    headers={"apikey": envs["SUPABASE_ANON_KEY"]},
+                )
+                resp = urllib.request.urlopen(req, timeout=10)
+                data = json.loads(resp.read())
+                check("REST API", True, f"{len(data)} endpoints")
+            except Exception as e:
+                check("REST API", False, str(e)[:80])
     else:
         check_warn("REST API", False, "missing SUPABASE_URL or SUPABASE_ANON_KEY")
 
@@ -153,7 +167,8 @@ def main():
     print("\n4. OPENAI API")
     openai_key = envs.get("OPENAI_API_KEY", "")
     key_valid = openai_key.startswith("sk-") and len(openai_key) > 20
-    check_warn("OpenAI API key format", key_valid, openai_key[:20] + "...")
+    detail = f"present ({len(openai_key)} chars)" if key_valid else "invalid format"
+    check_warn("OpenAI API key format", key_valid, detail)
     if key_valid:
         try:
             req = urllib.request.Request(
@@ -172,24 +187,47 @@ def main():
     # --- 5. SENTRY ---
     print("\n5. SENTRY / OBSERVABILITY")
     dsn = envs.get("SENTRY_DSN", "")
-    check_warn("Sentry DSN", "ingest" in dsn, dsn[:40] + "...")
+    dsn_ok = "ingest" in dsn
+    dsn_detail = f"present ({len(dsn)} chars)" if dsn_ok else "missing or invalid"
+    check_warn("Sentry DSN", dsn_ok, dsn_detail)
     otel = envs.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
-    check_warn("OTEL endpoint", "ingest" in otel, otel[:50] + "...")
+    otel_ok = "ingest" in otel
+    otel_detail = f"present ({len(otel)} chars)" if otel_ok else "missing or invalid"
+    check_warn("OTEL endpoint", otel_ok, otel_detail)
 
     # --- 6. PIPELINE ---
     print("\n6. PIPELINE (dry run)")
-    result = subprocess.run(
-        [
-            sys.executable,
-            "scripts/run_data_pipeline.py",
-            "--mode",
-            "validate",
-        ],
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    check("Pipeline config validation", result.returncode == 0, "config valid")
+    try:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/run_data_pipeline.py",
+                "--mode",
+                "validate",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        ok = result.returncode == 0
+        if ok:
+            detail = "config valid"
+        else:
+            stderr = (result.stderr or "").strip()
+            if stderr:
+                stderr = stderr[:200]
+                detail = f"exit code {result.returncode}; stderr: {stderr}"
+            else:
+                detail = f"exit code {result.returncode}"
+        check("Pipeline config validation", ok, detail)
+    except subprocess.TimeoutExpired as e:
+        detail = f"timeout after {e.timeout}s while running pipeline validation"
+        check("Pipeline config validation", False, detail[:80])
+    except OSError as e:
+        msg = e.strerror or str(e)
+        check("Pipeline config validation", False, f"OS error: {msg}"[:80])
+    except subprocess.SubprocessError as e:
+        check("Pipeline config validation", False, str(e)[:80])
 
     # --- 7. KEY FILES ---
     print("\n7. KEY FILES")
@@ -224,19 +262,27 @@ def main():
     )
 
     # --- SUMMARY ---
-    passed = sum(1 for _, ok in results if ok)
-    failed = sum(1 for _, ok in results if not ok)
+    passed_results = sum(1 for _, ok in results if ok)
+    failed_results = sum(1 for _, ok in results if not ok)
+    passed_warnings = sum(1 for _, ok in warnings if ok)
+    failed_warnings = sum(1 for _, ok in warnings if not ok)
+    total_passed = passed_results + passed_warnings
+    total_failed = failed_results
+    total_checks = len(results) + len(warnings)
+    
     print("\n" + "=" * 60)
-    print(f"  RESULTS: {passed} passed, {failed} failed, {len(results)} total")
-    if failed == 0:
+    print(f"  RESULTS: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
+          f"{total_failed} failed (blocking), {failed_warnings} failed (optional)")
+    print(f"  Total checks: {total_checks}")
+    if failed_results == 0:
         print(f"  [{PASS}] SYSTEM IS CLIENT-READY")
     else:
-        print(f"  [{FAIL}] {failed} CHECK(S) NEED ATTENTION")
+        print(f"  [{FAIL}] {failed_results} CHECK(S) NEED ATTENTION")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
     print("=" * 60)
-    return 0 if failed == 0 else 1
+    return 0 if failed_results == 0 else 1
 
 
 if __name__ == "__main__":
