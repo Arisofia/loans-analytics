@@ -96,40 +96,38 @@ def main():
         import psycopg
 
         try:
-            conn = psycopg.connect(envs.get("DATABASE_URL", ""), connect_timeout=10)
-            cur = conn.cursor()
-            cur.execute("SELECT version();")
-            ver = cur.fetchone()[0]
-            check("PostgreSQL connect", True, ver[:55])
+            with psycopg.connect(envs.get("DATABASE_URL", ""), connect_timeout=10) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT version();")
+                    ver = cur.fetchone()[0]
+                    check("PostgreSQL connect", True, ver[:55])
 
-            cur.execute(
-                "SELECT schemaname, count(*) FROM pg_tables "
-                "WHERE schemaname NOT IN ('pg_catalog','information_schema') "
-                "GROUP BY schemaname ORDER BY schemaname"
-            )
-            schemas = cur.fetchall()
-            for s, c in schemas:
-                check(f"Schema '{s}'", True, f"{c} tables")
+                    cur.execute(
+                        "SELECT schemaname, count(*) FROM pg_tables "
+                        "WHERE schemaname NOT IN ('pg_catalog','information_schema') "
+                        "GROUP BY schemaname ORDER BY schemaname"
+                    )
+                    schemas = cur.fetchall()
+                    for s, c in schemas:
+                        check(f"Schema '{s}'", True, f"{c} tables")
 
-            cur.execute(
-                "SELECT table_name FROM information_schema.tables "
-                "WHERE table_schema='public' ORDER BY table_name"
-            )
-            tables = [r[0] for r in cur.fetchall()]
-            check("Public tables", len(tables) > 0, ", ".join(tables[:10]))
+                    cur.execute(
+                        "SELECT table_name FROM information_schema.tables "
+                        "WHERE table_schema='public' ORDER BY table_name"
+                    )
+                    tables = [r[0] for r in cur.fetchall()]
+                    check("Public tables", len(tables) > 0, ", ".join(tables[:10]))
 
-            # Check for core tables
-            core_tables = ["fact_loans", "kpi_timeseries_daily"]
-            for t in core_tables:
-                exists = t in tables
-                if exists:
-                    cur.execute(f"SELECT count(*) FROM public.{t}")
-                    cnt = cur.fetchone()[0]
-                    check(f"Table '{t}'", True, f"{cnt} rows")
-                else:
-                    check(f"Table '{t}'", False, "not found")
-
-            conn.close()
+                    # Check for core tables
+                    core_tables = ["fact_loans", "kpi_timeseries_daily"]
+                    for t in core_tables:
+                        exists = t in tables
+                        if exists:
+                            cur.execute(f"SELECT count(*) FROM public.{t}")
+                            cnt = cur.fetchone()[0]
+                            check(f"Table '{t}'", True, f"{cnt} rows")
+                        else:
+                            check(f"Table '{t}'", False, "not found")
         except Exception as e:
             check("PostgreSQL connect", False, str(e)[:80])
 
