@@ -9,6 +9,7 @@ import sys
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 COLOR_GREEN = "\033[92m"
 COLOR_RED = "\033[91m"
@@ -36,6 +37,19 @@ def check_warn(name, ok, detail=""):
     warnings.append((name, ok))  # Track separately
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
+
+
+def safe_urlopen(url_or_req, **kwargs):
+    """Wrapper that blocks file:// and other dangerous schemes."""
+    if isinstance(url_or_req, urllib.request.Request):
+        url = url_or_req.full_url
+    else:
+        url = url_or_req
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ["http", "https"]:
+        raise ValueError(f"Blocked scheme: {parsed.scheme}. Only http/https allowed.")
+    return urllib.request.urlopen(url_or_req, **kwargs)
 
 
 def load_env():
@@ -134,10 +148,15 @@ def main():
 
                 # Check for core tables
                 core_tables = ["fact_loans", "kpi_timeseries_daily"]
+                from psycopg import sql
+
                 for t in core_tables:
                     exists = t in tables
                     if exists:
-                        cur.execute(f"SELECT count(*) FROM public.{t}")
+                        # Use psycopg.sql for safe identifier interpolation
+                        cur.execute(
+                            sql.SQL("SELECT count(*) FROM public.{}").format(sql.Identifier(t))
+                        )
                         cnt = cur.fetchone()[0]
                         check(f"Table '{t}'", True, f"{cnt} rows")
                     else:
@@ -173,7 +192,7 @@ def main():
                         "Accept": "application/json",
                     },
                 )
-                resp = urllib.request.urlopen(req, timeout=10)
+                resp = safe_urlopen(req, timeout=10)
                 status = resp.getcode()
                 check("REST API", 200 <= status < 300, f"HTTP {status}")
         except Exception as e:
@@ -193,7 +212,7 @@ def main():
                 "https://api.openai.com/v1/models",
                 headers={"Authorization": f"Bearer {openai_key}"},
             )
-            resp = urllib.request.urlopen(req, timeout=30)
+            resp = safe_urlopen(req, timeout=30)
             models = json.loads(resp.read())
             gpt4 = [m["id"] for m in models["data"] if "gpt-4" in m["id"]]
             check_warn("OpenAI API live", True, f"{len(models['data'])} models, {len(gpt4)} GPT-4")
@@ -303,7 +322,6 @@ def main():
     # --- SUMMARY ---
     passed_results = sum(1 for _, ok in results if ok)
     failed_results = sum(1 for _, ok in results if not ok)
-    passed_warnings = sum(1 for _, ok in warnings if ok)
     failed_warnings = sum(1 for _, ok in warnings if not ok)
     total_checks = len(results) + len(warnings)
 

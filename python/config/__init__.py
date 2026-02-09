@@ -108,7 +108,7 @@ class ApiSettings(BaseModel):
     """Settings for the Analytics API."""
 
     api_key: str = Field(default="abaco_secret_token")
-    host: str = Field(default="0.0.0.0")
+    host: str = Field(default="127.0.0.1")
     port: int = Field(default=8000)
 
 
