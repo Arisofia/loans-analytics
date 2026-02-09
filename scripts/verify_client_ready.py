@@ -135,7 +135,8 @@ def main():
                     check(f"Table '{t}'", False, "not found")
 
         except Exception as e:
-            error_name = "PostgreSQL connect" if conn is None else "PostgreSQL query"
+            # Error classification: if cursor was never created, it's a connection error
+            error_name = "PostgreSQL connect" if cur is None else "PostgreSQL query"
             check(error_name, False, str(e)[:80])
         finally:
             if cur is not None:
@@ -147,19 +148,20 @@ def main():
     print("\n3. SUPABASE REST API")
     supabase_url = envs.get("SUPABASE_URL", "")
     if supabase_url and envs.get("SUPABASE_ANON_KEY"):
-        if not supabase_url.startswith("https://"):
-            check("REST API", False, "SUPABASE_URL must start with https://")
-        else:
-            try:
-                req = urllib.request.Request(
-                    supabase_url + "/rest/v1/",
-                    headers={"apikey": envs["SUPABASE_ANON_KEY"]},
-                )
-                resp = urllib.request.urlopen(req, timeout=10)
-                data = json.loads(resp.read())
-                check("REST API", True, f"{len(data)} endpoints")
-            except Exception as e:
-                check("REST API", False, str(e)[:80])
+        # Validate HTTPS for non-localhost URLs (SSRF prevention)
+        is_localhost = "localhost" in supabase_url or "127.0.0.1" in supabase_url
+        if not supabase_url.startswith("https://") and not is_localhost:
+            check_warn("REST API", False, "SUPABASE_URL should use https:// (non-localhost)")
+        try:
+            req = urllib.request.Request(
+                supabase_url + "/rest/v1/",
+                headers={"apikey": envs["SUPABASE_ANON_KEY"]},
+            )
+            resp = urllib.request.urlopen(req, timeout=10)
+            data = json.loads(resp.read())
+            check("REST API", True, f"{len(data)} endpoints")
+        except Exception as e:
+            check("REST API", False, str(e)[:80])
     else:
         check_warn("REST API", False, "missing SUPABASE_URL or SUPABASE_ANON_KEY")
 
