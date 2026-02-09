@@ -345,7 +345,10 @@ with st.sidebar:
             accept_multiple_files=True,
             type=["csv", "xlsx"],
         )
-        if st.button("Ingest Data") or main_uploaded_files:
+        ingest_clicked = st.button("Ingest Data")
+        if ingest_clicked and not main_uploaded_files:
+            st.warning("Please upload at least one file before ingesting.")
+        elif main_uploaded_files:
             main_dfs: dict[str, pd.DataFrame | dict[str, pd.DataFrame]] = {}
             for main_file in main_uploaded_files:
                 if main_file.name.endswith(".csv"):
