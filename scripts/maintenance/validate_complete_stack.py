@@ -214,11 +214,22 @@ def check_agent_analysis_results() -> dict[str, bool]:
             results["has_analyses"] = False
             results["has_metrics"] = False
     else:
-        print("  ⚠️  No analysis results found")
+        print("  ⚠️  No analysis results found - this validation check will be marked as FAILED.")
         raw_candidates = sorted((ROOT_DIR / "data" / "raw").glob("abaco_real_data_*.csv"))
         if raw_candidates:
             cmd = f"python scripts/run_daily_agent_analysis.py --input {raw_candidates[-1]}"
             print(f"     Run: {cmd}")
+        else:
+            print(
+                "     To generate agent analysis results, first ensure you have at least one "
+                "raw data file matching 'data/raw/abaco_real_data_*.csv', then run the daily "
+                "agent analysis script. Example:"
+            )
+            example_cmd = (
+                "python scripts/run_daily_agent_analysis.py --input "
+                "data/raw/abaco_real_data_SAMPLE.csv"
+            )
+            print(f"     Run (adapt path and filename as needed): {example_cmd}")
         results["has_analyses"] = False
         results["has_metrics"] = False
 
