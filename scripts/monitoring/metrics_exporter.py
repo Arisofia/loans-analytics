@@ -82,9 +82,10 @@ class MetricsRegistry:
                 with open(result_file) as f:
                     result = json.load(f)
                 status = "success" if result.get("status") == "success" else "error"
-                self.register_counter(
-                    "pipeline_runs_total",
-                    1,
+                status_val = 1 if status == "success" else 0
+                self.register_gauge(
+                    "pipeline_last_run_status",
+                    status_val,
                     {"status": status, "run_id": latest_run.name},
                 )
                 if "duration_seconds" in result:
@@ -220,7 +221,7 @@ class MetricsRegistry:
 
     def _get_help_text(self, metric_name: str) -> str:
         help_texts = {
-            "pipeline_runs_total": "Total pipeline runs by status",
+            "pipeline_last_run_status": "Status of the last pipeline run (1=success, 0=error)",
             "pipeline_duration_seconds": "Pipeline execution duration",
             "pipeline_phase_runs_total": "Total runs per pipeline phase",
             "pipeline_phase_duration_seconds": "Duration of each phase",
@@ -276,7 +277,7 @@ def main() -> None:
     print("    static_configs:")
     print(f"      - targets: ['localhost:{port}']")
     print("=" * 60)
-    server = HTTPServer(("127.0.0.1", port), MetricsHandler)
+    server = HTTPServer(("0.0.0.0", port), MetricsHandler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

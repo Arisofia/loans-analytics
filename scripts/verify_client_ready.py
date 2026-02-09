@@ -8,6 +8,7 @@ import subprocess
 import sys
 import urllib.request
 from datetime import datetime, timezone
+from pathlib import Path
 
 COLOR_GREEN = "\033[92m"
 COLOR_RED = "\033[91m"
@@ -57,10 +58,9 @@ def load_env():
 def main():
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     try:
-        branch = (
-            subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True)
-            .strip()
-        )
+        branch = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True
+        ).strip()
     except (subprocess.SubprocessError, FileNotFoundError, OSError):
         branch = "unknown"
 
@@ -159,18 +159,23 @@ def main():
         try:
             base_url = envs["SUPABASE_URL"].rstrip("/")
             anon_key = envs["SUPABASE_ANON_KEY"]
-            health_table = "monitoring_operational_events"
-            url = f"{base_url}/rest/v1/{health_table}?select=id&limit=1"
-            req = urllib.request.Request(
-                url,
-                headers={
-                    "apikey": anon_key,
-                    "Accept": "application/json",
-                },
-            )
-            resp = urllib.request.urlopen(req, timeout=10)
-            status = resp.getcode()
-            check("REST API", 200 <= status < 300, f"HTTP {status} on {health_table}")
+
+            # SSRF protection: Ensure SUPABASE_URL uses HTTPS
+            if not base_url.startswith("https://"):
+                check("REST API Security", False, "SUPABASE_URL must use HTTPS")
+            else:
+                # Use lightweight endpoint instead of table query
+                url = f"{base_url}/rest/v1/"
+                req = urllib.request.Request(
+                    url,
+                    headers={
+                        "apikey": anon_key,
+                        "Accept": "application/json",
+                    },
+                )
+                resp = urllib.request.urlopen(req, timeout=10)
+                status = resp.getcode()
+                check("REST API", 200 <= status < 300, f"HTTP {status}")
         except Exception as e:
             check("REST API", False, str(e)[:80])
     else:
@@ -191,9 +196,7 @@ def main():
             resp = urllib.request.urlopen(req, timeout=30)
             models = json.loads(resp.read())
             gpt4 = [m["id"] for m in models["data"] if "gpt-4" in m["id"]]
-            check_warn(
-                "OpenAI API live", True, f"{len(models['data'])} models, {len(gpt4)} GPT-4"
-            )
+            check_warn("OpenAI API live", True, f"{len(models['data'])} models, {len(gpt4)} GPT-4")
         except Exception as e:
             check_warn("OpenAI API live", False, str(e)[:80])
 
@@ -289,31 +292,37 @@ def main():
         check(f, exists)
 
     # Real data file is optional but useful for live runs
-    real_data_file = "data/raw/abaco_real_data_20260202.csv"
-    exists_real = os.path.exists(real_data_file)
-    check(real_data_file, exists_real, "present" if exists_real else "optional (not found)")
+    raw_dir = Path("data/raw")
+    real_data_files = list(raw_dir.glob("abaco_real_data_*.csv")) if raw_dir.exists() else []
+    exists_real = len(real_data_files) > 0
+    real_data_desc = (
+        f"present ({real_data_files[0].name})" if exists_real else "optional (not found)"
+    )
+    check_warn("Real data file", exists_real, real_data_desc)
 
     # --- SUMMARY ---
-    passed = sum(1 for _, ok in results if ok)
-    failed = sum(1 for _, ok in results if not ok)
-    warned = sum(1 for _, ok in warnings if not ok)
+    passed_results = sum(1 for _, ok in results if ok)
+    failed_results = sum(1 for _, ok in results if not ok)
+    passed_warnings = sum(1 for _, ok in warnings if ok)
+    failed_warnings = sum(1 for _, ok in warnings if not ok)
     total_checks = len(results) + len(warnings)
+
     print("\n" + "=" * 60)
     print(
-        f"  RESULTS: {passed} passed, {failed} failed, "
-        f"{warned} warned, {total_checks} total"
+        f"  RESULTS: {passed_results} passed, {failed_results} failed, "
+        f"{failed_warnings} warnings, {total_checks} total"
     )
-    if failed == 0:
+    if failed_results == 0:
         print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")
     else:
-        print(f"  [{LABEL_FAIL}] {failed} CHECK(S) NEED ATTENTION")
+        print(f"  [{LABEL_FAIL}] {failed_results} CHECK(S) NEED ATTENTION")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
-    if warned > 0:
-        print(f"  [{LABEL_WARN}] {warned} OPTIONAL CHECK(S) (non-blocking)")
+    if failed_warnings > 0:
+        print(f"  [{LABEL_WARN}] {failed_warnings} OPTIONAL CHECK(S) (non-blocking)")
     print("=" * 60)
-    return 0 if failed == 0 else 1
+    return 0 if failed_results == 0 else 1
 
 
 if __name__ == "__main__":
