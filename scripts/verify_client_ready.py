@@ -168,7 +168,11 @@ def main():
     print("\n4. OPENAI API")
     openai_key = envs.get("OPENAI_API_KEY", "")
     key_valid = openai_key.startswith("sk-") and len(openai_key) > 20
-    check_warn("OpenAI API key format", key_valid, f"present ({len(openai_key)} chars)")
+    check_warn(
+        "OpenAI API key format",
+        key_valid,
+        f"present ({len(openai_key)} chars)" if openai_key else "MISSING or placeholder",
+    )
     try:
         req = urllib.request.Request(
             "https://api.openai.com/v1/models",
