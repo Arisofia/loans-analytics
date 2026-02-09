@@ -1,5 +1,6 @@
 """Monitoring & Control dashboard for the self-healing platform."""
 
+import re
 import sys
 from pathlib import Path
 from urllib.parse import quote, urlparse
@@ -70,6 +71,15 @@ def _api_get(path: str, params: dict | None = None):
         base = _get_safe_api_base()
         if base is None:
             return None
+        # Strict SSRF protection: only allow specific API paths
+        allowed_patterns = [
+            r"^/monitoring/events$",
+            r"^/monitoring/commands$",
+            r"^/monitoring/events/[\w\-]+/ack$",
+        ]
+        if not any(re.fullmatch(p, path) for p in allowed_patterns):
+            st.error("Invalid API path: not allowed.")
+            return None
         if ".." in path:
             st.error("Invalid path: path traversal detected.")
             return None
@@ -88,6 +98,14 @@ def _api_post(path: str, json_body: dict | None = None):
         base = _get_safe_api_base()
         if base is None:
             return None
+        # Strict SSRF protection: only allow specific API paths
+        allowed_patterns = [
+            r"^/monitoring/events/[\w\-]+/ack$",
+            r"^/monitoring/commands$",
+        ]
+        if not any(re.fullmatch(p, path) for p in allowed_patterns):
+            st.error("Invalid API path: not allowed.")
+            return None
         if ".." in path:
             st.error("Invalid path: path traversal detected.")
             return None
@@ -105,6 +123,14 @@ def _api_patch(path: str, json_body: dict | None = None):
     try:
         base = _get_safe_api_base()
         if base is None:
+            return None
+        # Strict SSRF protection: only allow specific API paths
+        allowed_patterns = [
+            r"^/monitoring/events$",
+            r"^/monitoring/commands$",
+        ]
+        if not any(re.fullmatch(p, path) for p in allowed_patterns):
+            st.error("Invalid API path: not allowed.")
             return None
         if ".." in path:
             st.error("Invalid path: path traversal detected.")
