@@ -54,19 +54,24 @@ def main():
     if run_id:
         kpi_file = Path(f"logs/runs/{run_id}/kpis_output.json")
     else:
-        # Auto-discover latest run directory (dirs named YYYYMMDD_<hash>, lexicographic = chronological)
+        # Auto-discover latest run directory.
+        # NOTE: run_id may be YYYYMMDD_<hash>, so lexicographic name order is NOT reliable.
         runs_dir = Path("logs/runs")
         if runs_dir.exists():
-            run_dirs = sorted(
-                [d for d in runs_dir.iterdir() if d.is_dir()],
-                key=lambda d: d.name,
-                reverse=True,
-            )
-            if run_dirs:
-                kpi_file = run_dirs[0] / "kpis_output.json"
-            else:
-                print("  No run directories found under logs/runs/")
+            # Consider only run directories that actually contain kpis_output.json
+            candidate_files = []
+            for d in runs_dir.iterdir():
+                if not d.is_dir():
+                    continue
+                candidate = d / "kpis_output.json"
+                if candidate.exists():
+                    candidate_files.append(candidate)
+            if not candidate_files:
+                print("  No kpis_output.json found under any run directory in logs/runs/")
+                print("  Hint: set KPI_VALIDATION_RUN_ID env var or run the pipeline first")
                 return 1
+            # Select the most recently modified KPI output file
+            kpi_file = max(candidate_files, key=lambda p: p.stat().st_mtime)
         else:
             print("  logs/runs/ directory not found")
             return 1
