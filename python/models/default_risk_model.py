@@ -96,6 +96,7 @@ class DefaultRiskModel:
         pandas.DataFrame
             Engineered features ready for model input.
         """
+
         import pandas as pd  # noqa: F811 – lazy import
 
         features = pd.DataFrame()
@@ -150,9 +151,6 @@ class DefaultRiskModel:
 
         return (df[status_col].str.strip().str.lower() == "default").astype(int)
 
-    # ------------------------------------------------------------------
-    # Training (requires xgboost, pandas, sklearn)
-    # ------------------------------------------------------------------
     def train(
         self,
         df: Any,
@@ -174,7 +172,7 @@ class DefaultRiskModel:
         * ``gamma=1.0`` adds a minimum loss reduction for further splits.
         """
         import xgboost as xgb  # lazy
-        from sklearn.metrics import (  # lazy
+        from sklearn.metrics import (
             accuracy_score,
             classification_report,
             f1_score,
@@ -182,7 +180,7 @@ class DefaultRiskModel:
             recall_score,
             roc_auc_score,
         )
-        from sklearn.model_selection import StratifiedKFold, train_test_split  # lazy
+        from sklearn.model_selection import StratifiedKFold, train_test_split
 
         logger.info("Preparing features and target...")
         X = self.prepare_features(df)
