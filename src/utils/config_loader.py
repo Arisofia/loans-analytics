@@ -47,7 +47,11 @@ def load_config(path: str | Path) -> dict[str, Any]:
 
     # Enforce env-var overrides for database secrets
     if "database" in config:
-        db_password = os.environ.get("DB_PASSWORD") or config["database"].get("password", "")
+        env_password = os.environ.get("DB_PASSWORD")
+        if env_password is not None:
+            db_password = env_password
+        else:
+            db_password = str(config["database"].get("password") or "")
         if db_password.lower() in _UNSAFE_DEFAULTS:
             raise ValueError(
                 "DB_PASSWORD environment variable not set or contains an unsafe default value."
