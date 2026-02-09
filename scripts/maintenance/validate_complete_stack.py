@@ -258,7 +258,10 @@ def check_agent_analysis_results() -> dict[str, bool]:
             results["has_metrics"] = False
     else:
         print("  [WARN] No analysis results found")
-        raw_candidates = sorted((ROOT_DIR / "data" / "raw").glob("abaco_real_data_*.csv"))
+        raw_candidates = sorted(
+            (ROOT_DIR / "data" / "raw").glob("abaco_real_data_*.csv"),
+            key=lambda p: p.name,
+        )
         if raw_candidates:
             cmd = f"python scripts/run_daily_agent_analysis.py --input {raw_candidates[-1]}"
         else:
