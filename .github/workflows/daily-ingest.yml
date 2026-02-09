@@ -1,8 +1,9 @@
-name: Daily Data Ingestion
+name: Daily Data Ingestion (DISABLED — cloud services stopped to reduce costs)
 
 on:
-  schedule:
-    - cron: '0 2 * * *' # Daily at 2 AM UTC
+  # DISABLED: Daily schedule stopped to eliminate cloud costs
+  # schedule:
+  #   - cron: '0 2 * * *' # Daily at 2 AM UTC
   workflow_dispatch:
 
 permissions:
@@ -19,8 +20,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install dependencies
         run: |

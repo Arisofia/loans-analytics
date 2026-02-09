@@ -1,8 +1,9 @@
-name: Pipeline Orchestrator Agent
+name: Pipeline Orchestrator Agent (DISABLED — cloud services stopped to reduce costs)
 
 on:
-  schedule:
-    - cron: '15 5 * * *'
+  # DISABLED: Daily schedule stopped to eliminate cloud costs
+  # schedule:
+  #   - cron: '15 5 * * *'
   workflow_dispatch:
 
 permissions:
@@ -28,8 +29,8 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -134,7 +135,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Build validation and compliance reports
         run: |
@@ -232,8 +233,8 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install dependencies
         run: |

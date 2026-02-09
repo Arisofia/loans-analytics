@@ -1,8 +1,9 @@
-name: Deployment
+name: Deployment (DISABLED — Azure services stopped to reduce costs)
 
 on:
-  push:
-    branches: [main]
+  # DISABLED: Azure App Service deployment stopped to eliminate cloud costs
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 permissions:

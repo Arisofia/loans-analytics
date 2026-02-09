@@ -1,9 +1,10 @@
-name: Cleanup Old Workflow Runs
+name: Cleanup Old Workflow Runs (DISABLED — cloud services stopped to reduce costs)
 
 on:
+  # DISABLED: Weekly schedule stopped to reduce Actions usage
+  # schedule:
+  #   - cron: '0 2 * * 0' # Weekly on Sunday at 2am UTC
   workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * 0' # Weekly on Sunday at 2am UTC
 
 permissions:
   actions: write
@@ -21,9 +22,9 @@ jobs:
           repository: ${{ github.repository }}
           retain_days: 15
           keep_minimum_runs: 10
-          delete_workflow_pattern: 'all'
+          delete_workflow_pattern: "all"
           # Excludes security and compliance workflows from deletion
-          delete_workflow_by_state_pattern: 'completed,cancelled,failure'
+          delete_workflow_by_state_pattern: "completed,cancelled,failure"
 
       - name: Cleanup summary
         run: |

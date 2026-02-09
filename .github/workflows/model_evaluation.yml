@@ -1,21 +1,13 @@
-name: Model Evaluation Pipeline
+name: Model Evaluation Pipeline (DISABLED — cloud services stopped to reduce costs)
 
 # Workflow-level permissions removed — granting permissions only to jobs that need them.
 on:
-  # Disabled push trigger to reduce Actions usage - runs on PR and nightly schedule
-  # push:
-  #   branches: [main, develop]
-  #   paths:
-  #     - "src/analytics/**"
-  #     - "src/**"
-  #     - "scripts/evaluation/**"
-  #     - "tests/evaluation/**"
-  #     - "requirements*.txt"
-  #     - ".github/workflows/model-evaluation.yml"
-  pull_request:
-    types: [opened, synchronize, reopened]
-  schedule:
-    - cron: '0 2 * * *'
+  # DISABLED: All automatic triggers stopped to eliminate cloud costs
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+  # schedule:
+  #   - cron: '0 2 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -37,8 +29,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install dependencies
         run: |

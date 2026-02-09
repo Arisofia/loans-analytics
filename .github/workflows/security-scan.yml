@@ -1,13 +1,16 @@
-name: Security Scan
+name: Security Scan (DISABLED — cloud services stopped to reduce costs)
 
 on:
+  # DISABLED: All automatic triggers stopped to eliminate cloud costs
+  # Snyk requires paid subscription for private repos
+  # workflow_dispatch:
+  # push:
+  #   branches: ["main", "develop"]
+  # pull_request:
+  #   branches: ["main"]
+  # schedule:
+  #   - cron: "0 0 * * 1" # Weekly on Mondays
   workflow_dispatch:
-  push:
-    branches: ["main", "develop"]
-  pull_request:
-    branches: ["main"]
-  schedule:
-    - cron: "0 0 * * 1" # Weekly on Mondays
 
 jobs:
   codeql:

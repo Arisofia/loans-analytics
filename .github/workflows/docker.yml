@@ -1,11 +1,12 @@
-name: Docker
+name: Docker (DISABLED — cloud services stopped to reduce costs)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "Dockerfile*"
-      - ".dockerignore"
+  # DISABLED: Docker build/push stopped to reduce GHCR storage costs
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - "Dockerfile*"
+  #     - ".dockerignore"
   workflow_dispatch:
 
 permissions:

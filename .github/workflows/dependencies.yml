@@ -1,8 +1,9 @@
-name: Dependencies
+name: Dependencies (DISABLED — cloud services stopped to reduce costs)
 
 on:
-  schedule:
-    - cron: "0 8 * * 1"
+  # DISABLED: Weekly schedule stopped to reduce Actions usage
+  # schedule:
+  #   - cron: "0 8 * * 1"
   workflow_dispatch:
 
 permissions:

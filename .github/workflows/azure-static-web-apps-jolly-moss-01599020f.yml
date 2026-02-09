@@ -1,17 +1,18 @@
-name: Azure Static Web Apps
+name: Azure Static Web Apps (DISABLED — Azure services stopped to reduce costs)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'apps/web/**'
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    branches:
-      - main
-    paths:
-      - 'apps/web/**'
+  # DISABLED: Azure Static Web Apps deployment stopped to eliminate cloud costs
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'apps/web/**'
+  # pull_request:
+  #   types: [opened, synchronize, reopened, closed]
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'apps/web/**'
   workflow_dispatch:
 
 permissions:
