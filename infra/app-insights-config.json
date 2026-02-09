@@ -6,7 +6,7 @@
     "kind": "web",
     "properties": {
         "Application_Type": "web",
-        "RetentionInDays": 90,
+        "RetentionInDays": 30,
         "publicNetworkAccessForIngestion": "Enabled",
         "publicNetworkAccessForQuery": "Enabled",
         "IngestionMode": "ApplicationInsights"
