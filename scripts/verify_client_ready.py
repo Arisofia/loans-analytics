@@ -217,9 +217,23 @@ def main():
         if ok:
             detail = "config valid"
         else:
-            stderr_full = (result.stderr or "").strip()
-            if stderr_full:
-                stderr_truncated = stderr_full[:200]
+            stderr_raw = result.stderr or ""
+            # Sanitize stderr to avoid control characters/newlines breaking formatting
+            # and to reduce the chance of leaking sensitive context.
+            if stderr_raw:
+                # Replace non-printable characters (including newlines) with spaces
+                stderr_sanitized = "".join(
+                    ch if ch.isprintable() else " " for ch in stderr_raw
+                )
+                # Collapse all whitespace to single spaces to keep it on one line
+                stderr_sanitized = " ".join(stderr_sanitized.split())
+            else:
+                stderr_sanitized = ""
+
+            if stderr_sanitized:
+                stderr_truncated = stderr_sanitized[:200]
+                if len(stderr_sanitized) > 200:
+                    stderr_truncated += "..."
                 detail = f"exit code {result.returncode}; stderr: {stderr_truncated}"
             else:
                 detail = f"exit code {result.returncode}"
