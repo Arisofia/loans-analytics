@@ -47,16 +47,26 @@ def load_config(path: str | Path) -> dict[str, Any]:
 
     # Enforce env-var overrides for database secrets
     if "database" in config:
+        db_section = config.get("database")
+        if not isinstance(db_section, dict):
+            raise ValueError("Invalid configuration: 'database' section must be a mapping.")
+
         env_password = os.environ.get("DB_PASSWORD")
         if env_password is not None:
             db_password = env_password
         else:
-            db_password = str(config["database"].get("password") or "")
+            raw_password = db_section.get("password")
+            if raw_password is None:
+                # Treat missing password as empty so it is caught by the unsafe-default check.
+                db_password = ""
+            else:
+                db_password = str(raw_password)
+
         if db_password.lower() in _UNSAFE_DEFAULTS:
             raise ValueError(
                 "DB_PASSWORD environment variable not set or contains an unsafe default value."
             )
-        config["database"]["password"] = db_password
+        db_section["password"] = db_password
 
     logger.debug("Loaded config from %s", config_path)
     return config
