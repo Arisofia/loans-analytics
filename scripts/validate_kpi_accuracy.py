@@ -50,8 +50,8 @@ def find_latest_run_id(runs_dir: Path) -> str | None:
     runs = [p for p in runs_dir.iterdir() if p.is_dir()]
     if not runs:
         return None
-    # Sort explicitly by directory name to make "latest run" selection deterministic
-    latest_run = sorted(runs, key=lambda p: p.name, reverse=True)[0]
+    # Select latest run by directory modification time to reflect most recent execution
+    latest_run = max(runs, key=lambda p: p.stat().st_mtime)
     return latest_run.name
 
 
