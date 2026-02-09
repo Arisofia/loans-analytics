@@ -28,5 +28,5 @@ BEGIN
             TO service_role
             WITH CHECK (true);
     END IF;
-END
+END;
 $$;
