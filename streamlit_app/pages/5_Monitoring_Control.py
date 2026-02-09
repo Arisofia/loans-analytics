@@ -66,24 +66,34 @@ def _get_safe_api_base() -> str | None:
 # ---------------------------------------------------------------------------
 
 
+def _get_safe_path(path: str) -> str | None:
+    """Validate and reconstruct path to break the taint chain for SSRF protection."""
+    # 1. Static paths
+    if path == "/monitoring/events":
+        return "/monitoring/events"
+    if path == "/monitoring/commands":
+        return "/monitoring/commands"
+
+    # 2. Dynamic paths with allowed characters
+    match = re.fullmatch(r"^/monitoring/events/([\w\-]+)/ack$", path)
+    if match:
+        event_id = match.group(1)
+        # Reconstruct to ensure we use validated components only
+        return f"/monitoring/events/{event_id}/ack"
+
+    return None
+
+
 def _api_get(path: str, params: dict | None = None):
     try:
         base = _get_safe_api_base()
-        if base is None:
+        safe_path = _get_safe_path(path)
+        if base is None or safe_path is None:
+            if safe_path is None:
+                st.error(f"Blocked: Path '{path}' is not in the allowed endpoints.")
             return None
-        # Strict SSRF protection: only allow specific API paths
-        allowed_patterns = [
-            r"^/monitoring/events$",
-            r"^/monitoring/commands$",
-            r"^/monitoring/events/[\w\-]+/ack$",
-        ]
-        if not any(re.fullmatch(p, path) for p in allowed_patterns):
-            st.error("Invalid API path: not allowed.")
-            return None
-        if ".." in path:
-            st.error("Invalid path: path traversal detected.")
-            return None
-        safe_path = quote(path, safe="/")
+
+        # Reconstruct final URL from whitelisted base and safe_path
         url = f"{base}/{safe_path.lstrip('/')}"
         resp = requests.get(url, params=params, timeout=5)
         resp.raise_for_status()
@@ -96,20 +106,12 @@ def _api_get(path: str, params: dict | None = None):
 def _api_post(path: str, json_body: dict | None = None):
     try:
         base = _get_safe_api_base()
-        if base is None:
+        safe_path = _get_safe_path(path)
+        if base is None or safe_path is None:
+            if safe_path is None:
+                st.error(f"Blocked: Path '{path}' is not in the allowed endpoints.")
             return None
-        # Strict SSRF protection: only allow specific API paths
-        allowed_patterns = [
-            r"^/monitoring/events/[\w\-]+/ack$",
-            r"^/monitoring/commands$",
-        ]
-        if not any(re.fullmatch(p, path) for p in allowed_patterns):
-            st.error("Invalid API path: not allowed.")
-            return None
-        if ".." in path:
-            st.error("Invalid path: path traversal detected.")
-            return None
-        safe_path = quote(path, safe="/")
+
         url = f"{base}/{safe_path.lstrip('/')}"
         resp = requests.post(url, json=json_body, timeout=5)
         resp.raise_for_status()
@@ -122,20 +124,12 @@ def _api_post(path: str, json_body: dict | None = None):
 def _api_patch(path: str, json_body: dict | None = None):
     try:
         base = _get_safe_api_base()
-        if base is None:
+        safe_path = _get_safe_path(path)
+        if base is None or safe_path is None:
+            if safe_path is None:
+                st.error(f"Blocked: Path '{path}' is not in the allowed endpoints.")
             return None
-        # Strict SSRF protection: only allow specific API paths
-        allowed_patterns = [
-            r"^/monitoring/events$",
-            r"^/monitoring/commands$",
-        ]
-        if not any(re.fullmatch(p, path) for p in allowed_patterns):
-            st.error("Invalid API path: not allowed.")
-            return None
-        if ".." in path:
-            st.error("Invalid path: path traversal detected.")
-            return None
-        safe_path = quote(path, safe="/")
+
         url = f"{base}/{safe_path.lstrip('/')}"
         resp = requests.patch(url, json=json_body, timeout=5)
         resp.raise_for_status()
