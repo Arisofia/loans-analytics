@@ -33,6 +33,33 @@ st.title("Monitoring & Control")
 
 API_BASE = st.sidebar.text_input("API Base URL", value="http://localhost:8000", key="api_base")
 
+# SSRF Protection: Whitelist of allowed API hosts
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "api.abaco.ai"]
+
+
+def _validate_api_base(url: str) -> bool:
+    """Validate API_BASE against whitelist and schemes."""
+    try:
+        from urllib.parse import urlparse
+
+        parsed = urlparse(url)
+
+        # Only allow http/https
+        if parsed.scheme not in ["http", "https"]:
+            st.error(f"Invalid protocol: {parsed.scheme}. Only http/https allowed.")
+            return False
+
+        # Check host whitelist
+        hostname = parsed.hostname
+        if not hostname or hostname not in ALLOWED_HOSTS:
+            st.error(f"Blocked: {hostname} is not in allowed hosts whitelist.")
+            return False
+
+        return True
+    except Exception:
+        return False
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -40,6 +67,8 @@ API_BASE = st.sidebar.text_input("API Base URL", value="http://localhost:8000", 
 
 def _api_get(path: str, params: dict | None = None):
     try:
+        if not _validate_api_base(API_BASE):
+            return None
         if ".." in path:
             st.error("Invalid path: path traversal detected.")
             return None
@@ -57,6 +86,8 @@ def _api_get(path: str, params: dict | None = None):
 
 def _api_post(path: str, json_body: dict | None = None):
     try:
+        if not _validate_api_base(API_BASE):
+            return None
         if ".." in path:
             st.error("Invalid path: path traversal detected.")
             return None
@@ -74,6 +105,8 @@ def _api_post(path: str, json_body: dict | None = None):
 
 def _api_patch(path: str, json_body: dict | None = None):
     try:
+        if not _validate_api_base(API_BASE):
+            return None
         if ".." in path:
             st.error("Invalid path: path traversal detected.")
             return None

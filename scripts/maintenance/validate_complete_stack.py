@@ -166,25 +166,25 @@ def validate_documentation() -> dict[str, bool]:
 
     results: dict[str, bool] = {}
 
-    results["deployment_checklist"] = check_file_exists(
-        ROOT_DIR / "docs" / "DEPLOYMENT_CHECKLIST.md", "Deployment Checklist"
+    results["deployment_guide"] = check_file_exists(
+        ROOT_DIR / "docs" / "PRODUCTION_DEPLOYMENT_GUIDE.md", "Production Deployment Guide"
     )
 
-    results["deployment_verification"] = check_file_exists(
-        ROOT_DIR / "docs" / "DEPLOYMENT_VERIFICATION_2026_02_05.md",
-        "Deployment Verification Report",
+    results["setup_guide"] = check_file_exists(
+        ROOT_DIR / "docs" / "SUPABASE_SETUP_GUIDE.md", "Supabase Setup Guide"
     )
 
-    results["maintenance_scripts_audit"] = check_file_exists(
-        ROOT_DIR / "docs" / "MAINTENANCE_SCRIPTS_AUDIT.md", "Maintenance Scripts Audit"
+    results["maintenance_guide"] = check_file_exists(
+        ROOT_DIR / "docs" / "REPOSITORY_MAINTENANCE.md", "Repository Maintenance Guide"
     )
 
     results["security_doc"] = check_file_exists(
         ROOT_DIR / "docs" / "SECURITY.md", "Security Documentation"
     )
 
-    results["supabase_setup"] = check_file_exists(
-        ROOT_DIR / "docs" / "SUPABASE_SETUP_GUIDE.md", "Supabase Setup Guide"
+    results["deployment_checklist"] = check_file_exists(
+        ROOT_DIR / "docs" / "operations" / "SECURITY_DEPLOYMENT_CHECKLIST.md",
+        "Security Deployment Checklist",
     )
 
     return results
