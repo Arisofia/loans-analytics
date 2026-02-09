@@ -129,9 +129,17 @@ def main():
             check("PostgreSQL query", False, str(e)[:80])
     finally:
         if cur is not None:
-            cur.close()
+            try:
+                cur.close()
+            except Exception:
+                # Ignore cleanup errors to avoid masking primary DB exceptions
+                pass
         if conn is not None:
-            conn.close()
+            try:
+                conn.close()
+            except Exception:
+                # Ignore cleanup errors to avoid masking primary DB exceptions
+                pass
 
     # --- 3. SUPABASE REST API ---
     print("\n3. SUPABASE REST API")
