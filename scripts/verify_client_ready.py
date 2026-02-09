@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
@@ -149,21 +150,37 @@ def main():
     print("\n3. SUPABASE REST API")
     supabase_url = envs.get("SUPABASE_URL", "")
     if supabase_url and envs.get("SUPABASE_ANON_KEY"):
-        # Validate HTTPS for non-localhost URLs (SSRF prevention)
-        url_lower = supabase_url.lower()
-        is_localhost = "localhost" in url_lower or "127.0.0.1" in url_lower
-        if not url_lower.startswith("https://") and not is_localhost:
-            check_warn("REST API", False, "SUPABASE_URL should use https:// (non-localhost)")
+        # Validate URL scheme and hostname (SSRF prevention)
         try:
-            req = urllib.request.Request(
-                supabase_url + "/rest/v1/",
-                headers={"apikey": envs["SUPABASE_ANON_KEY"]},
-            )
-            resp = urllib.request.urlopen(req, timeout=10)
-            data = json.loads(resp.read())
-            check("REST API", True, f"{len(data)} endpoints")
+            parsed = urllib.parse.urlparse(supabase_url)
+            scheme = parsed.scheme.lower()
+            hostname = parsed.hostname or ""
+            
+            # Check if this is localhost
+            is_localhost = hostname in ("localhost", "127.0.0.1", "::1") or hostname.startswith("127.")
+            
+            # Enforce allowed schemes
+            if scheme not in ("http", "https"):
+                check("SUPABASE_URL scheme", False, f"unsupported scheme '{scheme}' (only http/https allowed)")
+            elif scheme == "http" and not is_localhost:
+                check_warn("SUPABASE_URL scheme", False, "http:// for non-localhost (should use https://)")
+            else:
+                check("SUPABASE_URL scheme", True, f"{scheme}:// for {hostname}")
+            
+            # Only proceed with request if scheme is valid
+            if scheme in ("http", "https"):
+                try:
+                    req = urllib.request.Request(
+                        supabase_url + "/rest/v1/",
+                        headers={"apikey": envs["SUPABASE_ANON_KEY"]},
+                    )
+                    resp = urllib.request.urlopen(req, timeout=10)
+                    data = json.loads(resp.read())
+                    check("REST API reachability", True, f"{len(data)} endpoints")
+                except Exception as e:
+                    check("REST API reachability", False, str(e)[:80])
         except Exception as e:
-            check("REST API", False, str(e)[:80])
+            check("SUPABASE_URL scheme", False, f"invalid URL: {str(e)[:60]}")
     else:
         check_warn("REST API", False, "missing SUPABASE_URL or SUPABASE_ANON_KEY")
 
