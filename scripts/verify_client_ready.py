@@ -150,7 +150,8 @@ def main():
     supabase_url = envs.get("SUPABASE_URL", "")
     if supabase_url and envs.get("SUPABASE_ANON_KEY"):
         # Validate HTTPS for non-localhost URLs (SSRF prevention)
-        is_localhost = "localhost" in supabase_url or "127.0.0.1" in supabase_url
+        url_lower = supabase_url.lower()
+        is_localhost = "localhost" in url_lower or "127.0.0.1" in url_lower
         if not supabase_url.startswith("https://") and not is_localhost:
             check_warn("REST API", False, "SUPABASE_URL should use https:// (non-localhost)")
         try:
@@ -216,10 +217,10 @@ def main():
         if ok:
             detail = "config valid"
         else:
-            stderr = (result.stderr or "").strip()
-            if stderr:
-                stderr = stderr[:200]
-                detail = f"exit code {result.returncode}; stderr: {stderr}"
+            stderr_full = (result.stderr or "").strip()
+            if stderr_full:
+                stderr_truncated = stderr_full[:200]
+                detail = f"exit code {result.returncode}; stderr: {stderr_truncated}"
             else:
                 detail = f"exit code {result.returncode}"
         check("Pipeline config validation", ok, detail)
