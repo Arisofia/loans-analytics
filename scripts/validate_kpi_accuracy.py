@@ -45,6 +45,20 @@ def close_enough(a, b, tol=0.01):
 
 
 def find_latest_run_id(runs_dir: Path) -> str | None:
+    """Find the latest pipeline run ID by modification time.
+    
+    Returns the run_id (directory name) of the most recently modified run directory.
+    Uses mtime (modification time) rather than lexicographic name sorting because:
+    - Run IDs are YYYYMMDD_<hash8> format (no time component in name)
+    - Multiple runs on same day would have arbitrary hash ordering by name
+    - mtime reflects actual execution order
+    
+    Args:
+        runs_dir: Path to logs/runs directory
+        
+    Returns:
+        str: Run ID (directory name) of latest run, or None if no runs exist
+    """
     if not runs_dir.exists():
         return None
     runs = [p for p in runs_dir.iterdir() if p.is_dir()]
