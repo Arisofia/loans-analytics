@@ -43,8 +43,16 @@ def load_config(path: str | Path) -> dict[str, Any]:
         raise FileNotFoundError(f"Critical config missing: {config_path}")
 
     with open(config_path, "r", encoding="utf-8") as fh:
-        config: dict[str, Any] = yaml.safe_load(fh) or {}
+        loaded = yaml.safe_load(fh)
 
+    if loaded is None:
+        config: dict[str, Any] = {}
+    elif not isinstance(loaded, dict):
+        raise ValueError(
+            "Invalid configuration: root YAML object must be a mapping/dictionary."
+        )
+    else:
+        config = loaded
     # Enforce env-var overrides for database secrets
     if "database" in config:
         db_section = config.get("database")
