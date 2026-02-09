@@ -59,7 +59,7 @@ def validate_data_files() -> dict[str, bool]:
     results["logs_runs_dir"] = runs_dir.exists()
     if runs_dir.exists():
         all_runs = list(runs_dir.glob("*"))
-        latest_runs = sorted(all_runs, key=lambda p: p.name, reverse=True)[:3]
+        latest_runs = sorted(all_runs, reverse=True)[:3]
         print(f"  [OK] logs/runs exists ({len(all_runs)} run(s))")
         if latest_runs:
             print("  Recent runs:")
@@ -166,17 +166,17 @@ def validate_documentation() -> dict[str, bool]:
 
     results: dict[str, bool] = {}
 
-    # Check for actual documentation files that exist
-    results["production_deployment_guide"] = check_file_exists(
-        ROOT_DIR / "docs" / "PRODUCTION_DEPLOYMENT_GUIDE.md", "Production Deployment Guide"
+    results["deployment_checklist"] = check_file_exists(
+        ROOT_DIR / "docs" / "DEPLOYMENT_CHECKLIST.md", "Deployment Checklist"
     )
 
-    results["operations_doc"] = check_file_exists(
-        ROOT_DIR / "docs" / "OPERATIONS.md", "Operations Documentation"
+    results["deployment_verification"] = check_file_exists(
+        ROOT_DIR / "docs" / "DEPLOYMENT_VERIFICATION_2026_02_05.md",
+        "Deployment Verification Report",
     )
 
-    results["cto_audit_report"] = check_file_exists(
-        ROOT_DIR / "docs" / "CTO_AUDIT_REPORT.md", "CTO Audit Report"
+    results["maintenance_scripts_audit"] = check_file_exists(
+        ROOT_DIR / "docs" / "MAINTENANCE_SCRIPTS_AUDIT.md", "Maintenance Scripts Audit"
     )
 
     results["security_doc"] = check_file_exists(
@@ -258,10 +258,7 @@ def check_agent_analysis_results() -> dict[str, bool]:
             results["has_metrics"] = False
     else:
         print("  [WARN] No analysis results found")
-        raw_candidates = sorted(
-            (ROOT_DIR / "data" / "raw").glob("abaco_real_data_*.csv"),
-            key=lambda p: p.name,
-        )
+        raw_candidates = sorted((ROOT_DIR / "data" / "raw").glob("abaco_real_data_*.csv"))
         if raw_candidates:
             cmd = f"python scripts/run_daily_agent_analysis.py --input {raw_candidates[-1]}"
         else:

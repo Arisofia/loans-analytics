@@ -73,11 +73,7 @@ class MetricsRegistry:
             runs_dir = Path("logs/runs")
             if not runs_dir.exists():
                 return
-            run_dirs = sorted(
-                runs_dir.glob("*"),
-                key=lambda p: p.stat().st_mtime,
-                reverse=True,
-            )
+            run_dirs = sorted(runs_dir.glob("*"), reverse=True)
             if not run_dirs:
                 return
             latest_run = run_dirs[0]
@@ -86,11 +82,10 @@ class MetricsRegistry:
                 with open(result_file) as f:
                     result = json.load(f)
                 status = "success" if result.get("status") == "success" else "error"
-                # Use gauge instead of counter to avoid reset/spike issues
-                self.register_gauge(
-                    "pipeline_last_run_status",
-                    1 if status == "success" else 0,
-                    {"run_id": latest_run.name},
+                self.register_counter(
+                    "pipeline_runs_total",
+                    1,
+                    {"status": status, "run_id": latest_run.name},
                 )
                 if "duration_seconds" in result:
                     self.register_gauge(
@@ -175,7 +170,7 @@ class MetricsRegistry:
             runs_dir = Path("logs/runs")
             if not runs_dir.exists():
                 return
-            run_dirs = sorted(runs_dir.glob("*"), key=lambda p: p.name, reverse=True)
+            run_dirs = sorted(runs_dir.glob("*"), reverse=True)
             if not run_dirs:
                 return
             latest_run = run_dirs[0]
@@ -281,8 +276,7 @@ def main() -> None:
     print("    static_configs:")
     print(f"      - targets: ['localhost:{port}']")
     print("=" * 60)
-    # Bind to 0.0.0.0 so Prometheus in Docker can reach via host.docker.internal
-    server = HTTPServer(("0.0.0.0", port), MetricsHandler)
+    server = HTTPServer(("127.0.0.1", port), MetricsHandler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

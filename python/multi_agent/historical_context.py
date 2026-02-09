@@ -321,9 +321,7 @@ class HistoricalContextProvider:
 
         start_val: float = history[0].value
         end_val: float = history[-1].value
-        percent_change: float = (
-            (end_val - start_val) / start_val * 100 if start_val != 0 else 0.0
-        )
+        percent_change: float = ((end_val - start_val) / start_val * 100) if start_val != 0 else 0.0
 
         if abs(slope) < 0.01:
             direction = TrendDirection.STABLE
@@ -361,7 +359,7 @@ class HistoricalContextProvider:
         change_point = self.detect_change_point(kpi_id, window_size=14, periods=periods)
         return {
             "kpi_id": kpi_id,
-            "trend": trend.model_dump(),
+            "trend": trend.dict(),
             "moving_average_30d": moving_avg,
             "recent_change_point": change_point,
         }

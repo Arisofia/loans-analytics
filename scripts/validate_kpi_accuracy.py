@@ -430,33 +430,31 @@ def main():
     # ==========================================
     # SUMMARY
     # ==========================================
-    passed_results = sum(1 for _, ok in results if ok)
-    failed_results = sum(1 for _, ok in results if not ok)
-    passed_warnings = sum(1 for _, ok in warnings if ok)
-    failed_warnings = sum(1 for _, ok in warnings if not ok)
-    total_passed = passed_results + passed_warnings
+    passed = sum(1 for _, ok in results if ok)
+    failed = sum(1 for _, ok in results if not ok)
+    warned = sum(1 for _, ok in warnings if not ok)
     total_checks = len(results) + len(warnings)
     print("\n" + "=" * 70)
     print(
-        f"  KPI VALIDATION: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
-        f"{failed_results} failed (blocking), {failed_warnings} failed (optional), {total_checks} total"
+        f"  KPI VALIDATION: {passed} passed, {failed} failed, "
+        f"{warned} warned, {total_checks} total"
     )
-    if failed_results == 0 and failed_warnings == 0:
+    if failed == 0 and warned == 0:
         print(f"  [{LABEL_PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
-    elif failed_results == 0 and failed_warnings > 0:
+    elif failed == 0 and warned > 0:
         print(f"  [{LABEL_PASS}] ALL BLOCKING KPI CHECKS PASSED (WARNINGS PRESENT)")
         for name, ok in warnings:
             if not ok:
                 print(f"    - {name}")
     else:
-        print(f"  [{LABEL_FAIL}] {failed_results} KPI(S) HAVE DISCREPANCIES:")
+        print(f"  [{LABEL_FAIL}] {failed} KPI(S) HAVE DISCREPANCIES:")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
-    if failed_warnings > 0:
-        print(f"  [{LABEL_WARN}] {failed_warnings} WARNING(S) (non-blocking)")
+    if warned > 0:
+        print(f"  [{LABEL_WARN}] {warned} WARNING(S) (non-blocking)")
     print("=" * 70)
-    return 0 if failed_results == 0 else 1
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":
