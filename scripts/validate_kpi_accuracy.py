@@ -5,6 +5,7 @@ Cross-checks pipeline KPI output against manual pandas calculations on raw data.
 Then tests multi-agent system with real KPI context.
 """
 
+import argparse
 import json
 import os
 import sys
@@ -17,7 +18,7 @@ LABEL_FAIL = "\033[91mFAIL\033[0m"
 LABEL_WARN = "\033[93mWARN\033[0m"
 
 results = []
-warnings = []
+warnings = []  # Track warnings separately from failures
 
 
 def check(name, ok, detail=""):
@@ -28,9 +29,9 @@ def check(name, ok, detail=""):
 
 
 def check_warn(name, ok, detail=""):
-    """Non-blocking check: recorded as warning, does not affect exit code."""
+    """Record a non-blocking check: WARNs do not affect the exit code."""
     status = LABEL_PASS if ok else LABEL_WARN
-    warnings.append((name, ok))
+    warnings.append((name, ok))  # Track separately from results
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -44,41 +45,38 @@ def close_enough(a, b, tol=0.01):
     return abs(a - b) / max(abs(a), abs(b)) < tol
 
 
+def find_latest_run_id(runs_dir: Path) -> str | None:
+    if not runs_dir.exists():
+        return None
+    runs = [p for p in runs_dir.iterdir() if p.is_dir()]
+    if not runs:
+        return None
+    return sorted(runs, key=lambda p: p.name, reverse=True)[0].name
+
+
 def main():
     print("=" * 70)
     print("  KPI ACCURACY VALIDATION — Cross-check vs Raw Data")
     print("=" * 70)
 
-    # Load pipeline KPI output - resolve run directory dynamically
-    run_id = os.environ.get("KPI_VALIDATION_RUN_ID", "")
-    if run_id:
-        kpi_file = Path(f"logs/runs/{run_id}/kpis_output.json")
-    else:
-        # Auto-discover latest run directory.
-        # NOTE: run_id may be YYYYMMDD_<hash>, so lexicographic name order is NOT reliable.
-        runs_dir = Path("logs/runs")
-        if runs_dir.exists():
-            # Consider only run directories that actually contain kpis_output.json
-            candidate_files = []
-            for d in runs_dir.iterdir():
-                if not d.is_dir():
-                    continue
-                candidate = d / "kpis_output.json"
-                if candidate.exists():
-                    candidate_files.append(candidate)
-            if not candidate_files:
-                print("  No kpis_output.json found under any run directory in logs/runs/")
-                print("  Hint: set KPI_VALIDATION_RUN_ID env var or run the pipeline first")
-                return 1
-            # Select the most recently modified KPI output file
-            kpi_file = max(candidate_files, key=lambda p: p.stat().st_mtime)
-        else:
-            print("  logs/runs/ directory not found")
-            return 1
+    parser = argparse.ArgumentParser(description="Validate pipeline KPI accuracy")
+    parser.add_argument("--run-id", type=str, default=None, help="Pipeline run ID to validate")
+    args = parser.parse_args()
 
+    run_id = args.run_id or os.environ.get("KPI_VALIDATION_RUN_ID")
+    if not run_id:
+        run_id = find_latest_run_id(Path("logs/runs"))
+        if run_id:
+            print(f"  No run ID provided; using latest run: {run_id}")
+
+    if not run_id:
+        print("  No pipeline run found. Run the pipeline to generate logs/runs/<run_id>.")
+        return 1
+
+    # Load pipeline KPI output
+    kpi_file = Path("logs/runs") / run_id / "kpis_output.json"
     if not kpi_file.exists():
         print(f"  KPI output not found: {kpi_file}")
-        print("  Hint: set KPI_VALIDATION_RUN_ID env var or run the pipeline first")
         return 1
     with open(kpi_file) as f:
         pipeline_kpis = json.load(f)
@@ -94,14 +92,20 @@ def main():
     print("  MANUAL RECALCULATION FROM PIPELINE CLEAN DATA")
     print("=" * 70)
 
-    clean_path = kpi_file.parent / "clean_data.parquet"
+    clean_path = Path("logs/runs") / run_id / "clean_data.parquet"
     if clean_path.exists():
         df = pd.read_parquet(clean_path)
         print(f"\n  Clean data (parquet): {len(df)} rows, {len(df.columns)} columns")
     else:
-        # Fallback to raw CSV with manual transforms
-        df = pd.read_csv("data/raw/abaco_real_data_20260202.csv")
-        print(f"\n  Fallback to raw CSV: {len(df)} rows, {len(df.columns)} columns")
+        raw_candidates = sorted(
+            Path("data/raw").glob("abaco_real_data_*.csv"), key=lambda p: p.name
+        )
+        if not raw_candidates:
+            print("  No real data CSV found in data/raw (abaco_real_data_*.csv)")
+            return 1
+        raw_path = raw_candidates[-1]
+        df = pd.read_csv(raw_path)
+        print(f"\n  Fallback to raw CSV: {raw_path} ({len(df)} rows, {len(df.columns)} columns)")
 
     # Apply transforms only when using raw CSV fallback
     needs_transform = not clean_path.exists()
@@ -167,8 +171,14 @@ def main():
         pass
 
     print(f"  After transforms: {len(df)} rows")
-    print(f"  Status distribution: {df['status'].value_counts().to_dict()}")
-    print(f"  DPD range: {df['dpd'].min()} - {df['dpd'].max()}")
+    if "status" in df.columns:
+        print(f"  Status distribution: {df['status'].value_counts().to_dict()}")
+    else:
+        check_warn("status column present", False, "missing; KPI checks may be incomplete")
+    if "dpd" in df.columns:
+        print(f"  DPD range: {df['dpd'].min()} - {df['dpd'].max()}")
+    else:
+        check_warn("dpd column present", False, "missing; PAR checks may be incomplete")
 
     # ==========================================
     # MANUAL KPI CALCULATIONS
@@ -176,6 +186,10 @@ def main():
     print("\n" + "=" * 70)
     print("  KPI-BY-KPI CROSS-VALIDATION")
     print("=" * 70)
+
+    if "status" not in df.columns:
+        print("  Required 'status' column missing. Cannot validate KPIs.")
+        return 1
 
     active_mask = df["status"].isin(["active", "defaulted"])
     not_closed = df["status"] != "closed"
@@ -217,25 +231,32 @@ def main():
     )
 
     # 5. par_30
-    dpd30_balance = df.loc[df["dpd"] >= 30, "outstanding_balance"].sum()
-    total_balance = df["outstanding_balance"].sum()
-    manual = (dpd30_balance / total_balance * 100) if total_balance > 0 else 0
-    pipeline = pipeline_kpis["par_30"]
-    check(
-        "par_30",
-        close_enough(manual, pipeline),
-        f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
-    )
+    if "dpd" not in df.columns:
+        check_warn("par_30", False, "skipped (dpd column missing)")
+    else:
+        dpd30_balance = df.loc[df["dpd"] >= 30, "outstanding_balance"].sum()
+        total_balance = df["outstanding_balance"].sum()
+        manual = (dpd30_balance / total_balance * 100) if total_balance > 0 else 0
+        pipeline = pipeline_kpis["par_30"]
+        check(
+            "par_30",
+            close_enough(manual, pipeline),
+            f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
+        )
 
     # 6. par_90
-    dpd90_balance = df.loc[df["dpd"] >= 90, "outstanding_balance"].sum()
-    manual = (dpd90_balance / total_balance * 100) if total_balance > 0 else 0
-    pipeline = pipeline_kpis["par_90"]
-    check(
-        "par_90",
-        close_enough(manual, pipeline),
-        f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
-    )
+    if "dpd" not in df.columns:
+        check_warn("par_90", False, "skipped (dpd column missing)")
+    else:
+        dpd90_balance = df.loc[df["dpd"] >= 90, "outstanding_balance"].sum()
+        total_balance = df["outstanding_balance"].sum()
+        manual = (dpd90_balance / total_balance * 100) if total_balance > 0 else 0
+        pipeline = pipeline_kpis["par_90"]
+        check(
+            "par_90",
+            close_enough(manual, pipeline),
+            f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
+        )
 
     # 7. default_rate
     default_count = df.loc[df["status"] == "defaulted", "loan_id"].count()
@@ -370,37 +391,37 @@ def main():
     print("  FINANCIAL SANITY CHECKS")
     print("=" * 70)
 
-    check_warn(
+    check(
         "PAR-30 < 30%",
         pipeline_kpis["par_30"] < 30,
         f"{pipeline_kpis['par_30']:.2f}% (guardrail: <30%)",
     )
-    check_warn(
+    check(
         "PAR-90 < 15%",
         pipeline_kpis["par_90"] < 15,
         f"{pipeline_kpis['par_90']:.2f}% (guardrail: <15%)",
     )
-    check_warn(
+    check(
         "Default rate < 10%",
         pipeline_kpis["default_rate"] < 10,
         f"{pipeline_kpis['default_rate']:.2f}% (guardrail: <10%)",
     )
-    check_warn(
+    check(
         "Portfolio yield 5-15%",
         5 <= pipeline_kpis["portfolio_yield"] <= 15,
         f"{pipeline_kpis['portfolio_yield']:.2f}% (range: 5-15%)",
     )
-    check_warn(
+    check(
         "Collections rate > 50%",
         pipeline_kpis["collections_rate"] > 50,
         f"{pipeline_kpis['collections_rate']:.2f}% (min: 50%)",
     )
-    check_warn(
+    check(
         "AUM > $1M",
         pipeline_kpis["total_outstanding_balance"] > 1_000_000,
         f"${pipeline_kpis['total_outstanding_balance']:,.2f}",
     )
-    check_warn(
+    check(
         "Active borrowers > 10",
         pipeline_kpis["active_borrowers"] > 10,
         f"{pipeline_kpis['active_borrowers']:.0f} borrowers",
@@ -409,29 +430,31 @@ def main():
     # ==========================================
     # SUMMARY
     # ==========================================
-    passed_results = sum(1 for _, ok in results if ok)
-    failed_results = sum(1 for _, ok in results if not ok)
-    passed_warnings = sum(1 for _, ok in warnings if ok)
-    failed_warnings = sum(1 for _, ok in warnings if not ok)
-    total_passed = passed_results + passed_warnings
+    passed = sum(1 for _, ok in results if ok)
+    failed = sum(1 for _, ok in results if not ok)
+    warned = sum(1 for _, ok in warnings if not ok)
     total_checks = len(results) + len(warnings)
     print("\n" + "=" * 70)
     print(
-        f"  KPI VALIDATION: {total_passed} passed"
-        f" ({passed_results} required, {passed_warnings} optional),"
-        f" {failed_results} failed (blocking),"
-        f" {failed_warnings} failed (optional),"
-        f" {total_checks} total"
+        f"  KPI VALIDATION: {passed} passed, {failed} failed, "
+        f"{warned} warned, {total_checks} total"
     )
-    if failed_results == 0:
+    if failed == 0 and warned == 0:
         print(f"  [{LABEL_PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
+    elif failed == 0 and warned > 0:
+        print(f"  [{LABEL_PASS}] ALL BLOCKING KPI CHECKS PASSED (WARNINGS PRESENT)")
+        for name, ok in warnings:
+            if not ok:
+                print(f"    - {name}")
     else:
-        print(f"  [{LABEL_FAIL}] {failed_results} KPI(S) HAVE DISCREPANCIES:")
+        print(f"  [{LABEL_FAIL}] {failed} KPI(S) HAVE DISCREPANCIES:")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
+    if warned > 0:
+        print(f"  [{LABEL_WARN}] {warned} WARNING(S) (non-blocking)")
     print("=" * 70)
-    return 0 if failed_results == 0 else 1
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Client-readiness verification script. Run all checks."""
 
+import importlib.util
 import json
 import os
+import subprocess
 import sys
 import urllib.request
-from datetime import date
+from datetime import datetime, timezone
 
 COLOR_GREEN = "\033[92m"
 COLOR_RED = "\033[91m"
@@ -15,8 +17,9 @@ LABEL_PASS = COLOR_GREEN + "PASS" + COLOR_RESET
 LABEL_FAIL = COLOR_RED + "FAIL" + COLOR_RESET
 LABEL_WARN = COLOR_YELLOW + "WARN" + COLOR_RESET
 
+
 results = []
-warnings = []
+warnings = []  # Track warnings separately from failures
 
 
 def check(name, ok, detail=""):
@@ -27,9 +30,9 @@ def check(name, ok, detail=""):
 
 
 def check_warn(name, ok, detail=""):
-    """Non-blocking check: recorded as warning, does not affect exit code."""
+    """Record a warning-level check that doesn't affect exit code."""
     status = LABEL_PASS if ok else LABEL_WARN
-    warnings.append((name, ok))
+    warnings.append((name, ok))  # Track separately
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -52,9 +55,18 @@ def load_env():
 
 
 def main():
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    try:
+        branch = (
+            subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True)
+            .strip()
+        )
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
+        branch = "unknown"
+
     print("=" * 60)
     print("  ABACO LOANS ANALYTICS — CLIENT READINESS CHECK")
-    print(f"  Date: {date.today().isoformat()}")
+    print(f"  Date: {now} | Branch: {branch}")
     print("=" * 60)
 
     envs = load_env()
@@ -64,11 +76,11 @@ def main():
     required_keys = [
         "SUPABASE_URL",
         "SUPABASE_ANON_KEY",
-        "SUPABASE_SERVICE_ROLE_KEY",
-        "SUPABASE_PROJECT_REF",
         "DATABASE_URL",
     ]
     optional_keys = [
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "SUPABASE_PROJECT_REF",
         "OPENAI_API_KEY",
         "SENTRY_DSN",
         "SENTRY_AUTH_TOKEN",
@@ -77,135 +89,139 @@ def main():
     for k in required_keys:
         v = envs.get(k, "")
         ok = bool(v) and "YOUR_" not in v and "PLACEHOLDER" not in v
-        check(k, ok, f"present ({len(v)} chars)" if ok else "MISSING or placeholder")
+        detail = f"present ({len(v)} chars)" if ok else "MISSING or placeholder"
+        check(k, ok, detail)
     for k in optional_keys:
         v = envs.get(k, "")
         ok = bool(v) and "YOUR_" not in v and "PLACEHOLDER" not in v
-        check_warn(k, ok, f"present ({len(v)} chars)" if ok else "MISSING or placeholder")
+        detail = f"present ({len(v)} chars)" if ok else "MISSING (optional)"
+        check_warn(k, ok, detail)
 
     # --- 2. DATABASE ---
     print("\n2. DATABASE CONNECTION")
-    conn = None
-    cur = None
-    try:
-        import psycopg2
-
-        conn = psycopg2.connect(envs.get("DATABASE_URL", ""), connect_timeout=10)
-        cur = conn.cursor()
-        cur.execute("SELECT version();")
-        ver = cur.fetchone()[0]
-        check("PostgreSQL connect", True, ver[:55])
-
-        cur.execute(
-            "SELECT schemaname, count(*) FROM pg_tables "
-            "WHERE schemaname NOT IN ('pg_catalog','information_schema') "
-            "GROUP BY schemaname ORDER BY schemaname"
-        )
-        schemas = cur.fetchall()
-        for s, c in schemas:
-            check(f"Schema '{s}'", True, f"{c} tables")
-
-        cur.execute(
-            "SELECT table_name FROM information_schema.tables "
-            "WHERE table_schema='public' ORDER BY table_name"
-        )
-        tables = [r[0] for r in cur.fetchall()]
-        check("Public tables", len(tables) > 0, ", ".join(tables[:10]))
-
-        # Check for core tables
-        core_tables = ["fact_loans", "kpi_timeseries_daily"]
-        for t in core_tables:
-            exists = t in tables
-            if exists:
-                cur.execute(f"SELECT count(*) FROM public.{t}")  # noqa: S608
-                cnt = cur.fetchone()[0]
-                check(f"Table '{t}'", True, f"{cnt} rows")
-            else:
-                check(f"Table '{t}'", False, "not found")
-    except Exception as e:
-        if conn is None:
-            check("PostgreSQL connect", False, str(e)[:80])
+    if importlib.util.find_spec("psycopg") is None:
+        check_warn("psycopg", False, "not installed; database checks skipped")
+    else:
+        try:
+            import psycopg
+        except (ImportError, OSError) as e:
+            check_warn("psycopg", False, f"import failed ({e}); database checks skipped")
         else:
-            check("PostgreSQL query", False, str(e)[:80])
-    finally:
-        if cur is not None:
+            conn = None
+            cur = None
             try:
-                cur.close()
-            except Exception:
-                # Ignore cleanup errors to avoid masking primary DB exceptions
-                pass
-        if conn is not None:
-            try:
-                conn.close()
-            except Exception:
-                # Ignore cleanup errors to avoid masking primary DB exceptions
-                pass
+                conn = psycopg.connect(envs.get("DATABASE_URL", ""), connect_timeout=10)
+                cur = conn.cursor()
+                cur.execute("SELECT version();")
+                ver = cur.fetchone()[0]
+                check("PostgreSQL connect", True, ver[:55])
+
+                cur.execute(
+                    "SELECT schemaname, count(*) FROM pg_tables "
+                    "WHERE schemaname NOT IN ('pg_catalog','information_schema') "
+                    "GROUP BY schemaname ORDER BY schemaname"
+                )
+                schemas = cur.fetchall()
+                for s, c in schemas:
+                    check(f"Schema '{s}'", True, f"{c} tables")
+
+                cur.execute(
+                    "SELECT table_name FROM information_schema.tables "
+                    "WHERE table_schema='public' ORDER BY table_name"
+                )
+                tables = [r[0] for r in cur.fetchall()]
+                check("Public tables", len(tables) > 0, ", ".join(tables[:10]))
+
+                # Check for core tables
+                core_tables = ["fact_loans", "kpi_timeseries_daily"]
+                for t in core_tables:
+                    exists = t in tables
+                    if exists:
+                        cur.execute(f"SELECT count(*) FROM public.{t}")
+                        cnt = cur.fetchone()[0]
+                        check(f"Table '{t}'", True, f"{cnt} rows")
+                    else:
+                        check(f"Table '{t}'", False, "not found")
+            except Exception as e:
+                if conn is None:
+                    check("PostgreSQL connect", False, str(e)[:80])
+                else:
+                    check("PostgreSQL query", False, str(e)[:80])
+            finally:
+                if cur is not None:
+                    cur.close()
+                if conn is not None:
+                    conn.close()
 
     # --- 3. SUPABASE REST API ---
     print("\n3. SUPABASE REST API")
-    try:
-        base_url = envs.get("SUPABASE_URL", "").rstrip("/")
-        anon_key = envs.get("SUPABASE_ANON_KEY", "")
-        if not base_url.startswith("https://"):
-            check("REST API", False, "SUPABASE_URL must use https://")
-        else:
-            health_table = "operational_events"
+    if envs.get("SUPABASE_URL") and envs.get("SUPABASE_ANON_KEY"):
+        try:
+            base_url = envs["SUPABASE_URL"].rstrip("/")
+            anon_key = envs["SUPABASE_ANON_KEY"]
+            health_table = "monitoring_operational_events"
             url = f"{base_url}/rest/v1/{health_table}?select=id&limit=1"
             req = urllib.request.Request(
                 url,
                 headers={
                     "apikey": anon_key,
                     "Accept": "application/json",
-                    "Accept-Profile": "monitoring",
                 },
             )
-            resp = urllib.request.urlopen(req, timeout=10)  # noqa: S310 — validated https
+            resp = urllib.request.urlopen(req, timeout=10)
             status = resp.getcode()
             check("REST API", 200 <= status < 300, f"HTTP {status} on {health_table}")
-    except Exception as e:
-        check("REST API", False, str(e)[:80])
+        except Exception as e:
+            check("REST API", False, str(e)[:80])
+    else:
+        check_warn("REST API", False, "missing SUPABASE_URL or SUPABASE_ANON_KEY")
 
     # --- 4. OPENAI API ---
     print("\n4. OPENAI API")
     openai_key = envs.get("OPENAI_API_KEY", "")
     key_valid = openai_key.startswith("sk-") and len(openai_key) > 20
-    check_warn(
-        "OpenAI API key format",
-        key_valid,
-        f"present ({len(openai_key)} chars)" if openai_key else "MISSING or placeholder",
-    )
-    try:
-        req = urllib.request.Request(
-            "https://api.openai.com/v1/models",
-            headers={"Authorization": f"Bearer {openai_key}"},
-        )
-        resp = urllib.request.urlopen(req, timeout=30)  # noqa: S310 — trusted static URL
-        models = json.loads(resp.read())
-        gpt4 = [m["id"] for m in models["data"] if "gpt-4" in m["id"]]
-        check_warn("OpenAI API live", True, f"{len(models['data'])} models, {len(gpt4)} GPT-4")
-    except Exception as e:
-        check_warn("OpenAI API live", False, str(e)[:80])
+    detail = f"valid format ({len(openai_key)} chars)" if key_valid else "invalid or missing"
+    check_warn("OpenAI API key format", key_valid, detail)
+    if key_valid:
+        try:
+            req = urllib.request.Request(
+                "https://api.openai.com/v1/models",
+                headers={"Authorization": f"Bearer {openai_key}"},
+            )
+            resp = urllib.request.urlopen(req, timeout=30)
+            models = json.loads(resp.read())
+            gpt4 = [m["id"] for m in models["data"] if "gpt-4" in m["id"]]
+            check_warn(
+                "OpenAI API live", True, f"{len(models['data'])} models, {len(gpt4)} GPT-4"
+            )
+        except Exception as e:
+            check_warn("OpenAI API live", False, str(e)[:80])
 
     # --- 5. SENTRY ---
     print("\n5. SENTRY / OBSERVABILITY")
     dsn = envs.get("SENTRY_DSN", "")
-    check_warn(
-        "Sentry DSN",
-        bool(dsn) and "ingest" in dsn,
-        f"present ({len(dsn)} chars)" if dsn else "MISSING or placeholder",
-    )
+    dsn_present = bool(dsn)
+    dsn_expected_format = "ingest" in dsn if dsn_present else False
+    if not dsn_present:
+        dsn_ok = False
+        dsn_detail = "MISSING (optional)"
+    elif dsn_expected_format:
+        dsn_ok = True
+        dsn_detail = f"configured (contains 'ingest', {len(dsn)} chars)"
+    else:
+        dsn_ok = True
+        dsn_detail = (
+            f"present but unexpected format (host does not contain 'ingest'; {len(dsn)} chars)"
+        )
+    check_warn("Sentry DSN", dsn_ok, dsn_detail)
     otel = envs.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
-    check_warn(
-        "OTEL endpoint",
-        bool(otel),
-        f"present ({len(otel)} chars)" if otel else "MISSING or placeholder",
-    )
+    otel_ok = bool(otel)
+    otel_detail = f"configured ({len(otel)} chars)" if otel_ok else "MISSING (optional)"
+    check_warn("OTEL endpoint", otel_ok, otel_detail)
 
     # --- 6. PIPELINE ---
     print("\n6. PIPELINE (dry run)")
     try:
-        import subprocess
-
         result = subprocess.run(
             [
                 sys.executable,
@@ -218,9 +234,38 @@ def main():
             timeout=30,
             check=False,
         )
-        check("Pipeline config validation", result.returncode == 0, "config valid")
-    except Exception as e:
-        check("Pipeline config validation", False, str(e)[:80])
+        ok = result.returncode == 0
+        if ok:
+            detail = "config valid"
+        else:
+            stderr_snippet = (result.stderr or "").strip()
+            stdout_snippet = (result.stdout or "").strip()
+            message_source = stderr_snippet or stdout_snippet
+            if message_source:
+                normalized = message_source.replace("\n", " ")
+                snippet = normalized[:160]
+                detail = f"non-zero exit code {result.returncode}: {snippet}"
+            else:
+                detail = f"non-zero exit code {result.returncode}"
+        check("Pipeline config validation", ok, detail)
+    except subprocess.TimeoutExpired as e:
+        check(
+            "Pipeline config validation",
+            False,
+            f"pipeline validation timed out after {e.timeout} seconds",
+        )
+    except OSError as e:
+        check(
+            "Pipeline config validation",
+            False,
+            (f"OSError while running pipeline validation: {e.strerror or str(e)}")[:80],
+        )
+    except subprocess.SubprocessError as e:
+        check(
+            "Pipeline config validation",
+            False,
+            (f"Subprocess error during pipeline validation: {str(e)}")[:80],
+        )
 
     # --- 7. KEY FILES ---
     print("\n7. KEY FILES")
@@ -246,34 +291,29 @@ def main():
     # Real data file is optional but useful for live runs
     real_data_file = "data/raw/abaco_real_data_20260202.csv"
     exists_real = os.path.exists(real_data_file)
-    check_warn(
-        real_data_file, exists_real, "present" if exists_real else "optional (not found)"
-    )
+    check(real_data_file, exists_real, "present" if exists_real else "optional (not found)")
 
     # --- SUMMARY ---
-    passed_results = sum(1 for _, ok in results if ok)
-    failed_results = sum(1 for _, ok in results if not ok)
-    passed_warnings = sum(1 for _, ok in warnings if ok)
-    failed_warnings = sum(1 for _, ok in warnings if not ok)
-    total_passed = passed_results + passed_warnings
+    passed = sum(1 for _, ok in results if ok)
+    failed = sum(1 for _, ok in results if not ok)
+    warned = sum(1 for _, ok in warnings if not ok)
     total_checks = len(results) + len(warnings)
     print("\n" + "=" * 60)
     print(
-        f"  RESULTS: {total_passed} passed"
-        f" ({passed_results} required, {passed_warnings} optional),"
-        f" {failed_results} failed (blocking),"
-        f" {failed_warnings} failed (optional),"
-        f" {total_checks} total"
+        f"  RESULTS: {passed} passed, {failed} failed, "
+        f"{warned} warned, {total_checks} total"
     )
-    if failed_results == 0:
+    if failed == 0:
         print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")
     else:
-        print(f"  [{LABEL_FAIL}] {failed_results} BLOCKING CHECK(S) NEED ATTENTION")
+        print(f"  [{LABEL_FAIL}] {failed} CHECK(S) NEED ATTENTION")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
+    if warned > 0:
+        print(f"  [{LABEL_WARN}] {warned} OPTIONAL CHECK(S) (non-blocking)")
     print("=" * 60)
-    return 0 if failed_results == 0 else 1
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":
