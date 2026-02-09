@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import List, Optional
 
 import pandas as pd
 from starlette.concurrency import run_in_threadpool
@@ -23,8 +24,8 @@ class KPIService:
         self.actor = actor
 
     async def get_latest_kpis(
-        self, kpi_keys: Optional[List[str]] = None
-    ) -> List[KpiSingleResponse]:
+        self, kpi_keys: list[str] | None = None
+    ) -> list[KpiSingleResponse]:
         """
         Fetch the latest KPI values from the database.
 
@@ -91,20 +92,21 @@ class KPIService:
                 "Error fetching KPIs for actor %s: %s",
                 self.actor,
                 e,
+                exc_info=True,
             )
             raise
 
-    async def get_kpi_by_id(self, kpi_id: str) -> Optional[KpiSingleResponse]:
+    async def get_kpi_by_id(self, kpi_id: str) -> KpiSingleResponse | None:
         """Fetch a specific KPI by its ID."""
         kpis = await self.get_latest_kpis(kpi_keys=[kpi_id])
         return kpis[0] if kpis else None
 
     async def get_risk_alerts(
         self,
-        loans: Optional[List[LoanRecord]],
+        loans: list[LoanRecord] | None,
         ltv_threshold: float = 80.0,
         dti_threshold: float = 50.0,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """
         Calculates high-risk loans based on LTV and DTI thresholds from an incoming list of
         LoanRecord objects.
@@ -114,7 +116,7 @@ class KPIService:
                 return []
             df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
 
-            risk_loans: List[dict] = []
+            risk_loans: list[dict] = []
             if df.empty:
                 return risk_loans
 
@@ -184,15 +186,16 @@ class KPIService:
                 "Error calculating risk alerts for actor %s: %s",
                 self.actor,
                 e,
+                exc_info=True,
             )
             raise
 
-    def _convert_loan_records_to_dataframe(self, loans: List[LoanRecord]) -> pd.DataFrame:
+    def _convert_loan_records_to_dataframe(self, loans: list[LoanRecord]) -> pd.DataFrame:
         """Converts a list of LoanRecord Pydantic models to a Pandas DataFrame."""
         return pd.DataFrame([loan.model_dump() for loan in loans])
 
     async def get_data_quality_profile(
-        self, loans: Optional[List[LoanRecord]]
+        self, loans: list[LoanRecord] | None
     ) -> DataQualityResponse:
         """
         Calculates an overall data quality profile based on completeness, validity, and
@@ -253,12 +256,13 @@ class KPIService:
                 "Error calculating data quality profile for actor %s: %s",
                 self.actor,
                 e,
+                exc_info=True,
             )
             raise
 
     async def validate_loan_portfolio_schema(
         self,
-        loans: Optional[List[LoanRecord]],
+        loans: list[LoanRecord] | None,
     ) -> ValidationResponse:
         """
         Validates the schema and data types of an incoming list of LoanRecord objects.
@@ -268,7 +272,7 @@ class KPIService:
                 return ValidationResponse(valid=True, message="No loans provided to validate.")
             df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
 
-            errors: List[str] = []
+            errors: list[str] = []
             required_columns = list(LoanRecord.model_fields.keys())
 
             # Check for missing columns in the DataFrame
@@ -306,13 +310,14 @@ class KPIService:
                 "Error validating loan portfolio schema for actor %s: %s",
                 self.actor,
                 e,
+                exc_info=True,
             )
             raise
 
     async def calculate_kpis_for_portfolio(
         self,
-        loans: Optional[List[LoanRecord]],
-    ) -> List[KpiSingleResponse]:
+        loans: list[LoanRecord] | None,
+    ) -> list[KpiSingleResponse]:
         """Calculate KPIs in real-time for a specific portfolio subset from incoming loan data."""
         try:
             if loans is None:
@@ -424,5 +429,6 @@ class KPIService:
                 "Error calculating real-time KPIs for actor %s: %s",
                 self.actor,
                 e,
+                exc_info=True,
             )
             raise

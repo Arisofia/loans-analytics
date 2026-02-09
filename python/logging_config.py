@@ -1,13 +1,14 @@
 """Centralized logging configuration for consistent logging across the application."""
 
+from __future__ import annotations
+
 import logging
 import os
-from typing import Optional
 
 import sentry_sdk
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """
     Get a configured logger instance.
 
@@ -29,7 +30,7 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
     return logging.getLogger(name)
 
 
-def configure_logging(level: str = "INFO", format_string: Optional[str] = None) -> None:
+def configure_logging(level: str = "INFO", format_string: str | None = None) -> None:
     """
     Configure logging format and level for the entire application.
 
