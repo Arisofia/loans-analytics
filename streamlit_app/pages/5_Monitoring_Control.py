@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from urllib.parse import quote, urljoin
+from urllib.parse import quote, urlparse
 
 import pandas as pd
 import requests
@@ -34,30 +34,30 @@ st.title("Monitoring & Control")
 API_BASE = st.sidebar.text_input("API Base URL", value="http://localhost:8000", key="api_base")
 
 # SSRF Protection: Whitelist of allowed API hosts
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "api.abaco.ai"]
+ALLOWED_HOSTS = frozenset({"localhost", "127.0.0.1", "api.abaco.ai"})
 
 
-def _validate_api_base(url: str) -> bool:
-    """Validate API_BASE against whitelist and schemes."""
-    try:
-        from urllib.parse import urlparse
+def _get_safe_api_base() -> str | None:
+    """Parse, validate, and reconstruct API_BASE from whitelisted components.
 
-        parsed = urlparse(url)
+    Reconstructing from parsed parts breaks the taint chain so that
+    static analysers (CodeQL) no longer see user input flowing into
+    the outbound request URL.
+    """
+    parsed = urlparse(API_BASE)
 
-        # Only allow http/https
-        if parsed.scheme not in ["http", "https"]:
-            st.error(f"Invalid protocol: {parsed.scheme}. Only http/https allowed.")
-            return False
+    if parsed.scheme not in ("http", "https"):
+        st.error(f"Invalid protocol: {parsed.scheme}. Only http/https allowed.")
+        return None
 
-        # Check host whitelist
-        hostname = parsed.hostname
-        if not hostname or hostname not in ALLOWED_HOSTS:
-            st.error(f"Blocked: {hostname} is not in allowed hosts whitelist.")
-            return False
+    hostname = parsed.hostname
+    if not hostname or hostname not in ALLOWED_HOSTS:
+        st.error(f"Blocked: {hostname} is not in the allowed hosts whitelist.")
+        return None
 
-        return True
-    except Exception:
-        return False
+    # Reconstruct from validated, known-safe components
+    port_suffix = f":{parsed.port}" if parsed.port else ""
+    return f"{parsed.scheme}://{hostname}{port_suffix}"
 
 
 # ---------------------------------------------------------------------------
@@ -67,15 +67,14 @@ def _validate_api_base(url: str) -> bool:
 
 def _api_get(path: str, params: dict | None = None):
     try:
-        if not _validate_api_base(API_BASE):
+        base = _get_safe_api_base()
+        if base is None:
             return None
         if ".." in path:
             st.error("Invalid path: path traversal detected.")
             return None
-        url = urljoin(API_BASE, path)
-        if not url.startswith(API_BASE):
-            st.error("Invalid URL: attempted to escape API_BASE.")
-            return None
+        safe_path = quote(path, safe="/")
+        url = f"{base}/{safe_path.lstrip('/')}"
         resp = requests.get(url, params=params, timeout=5)
         resp.raise_for_status()
         return resp.json()
@@ -86,15 +85,14 @@ def _api_get(path: str, params: dict | None = None):
 
 def _api_post(path: str, json_body: dict | None = None):
     try:
-        if not _validate_api_base(API_BASE):
+        base = _get_safe_api_base()
+        if base is None:
             return None
         if ".." in path:
             st.error("Invalid path: path traversal detected.")
             return None
-        url = urljoin(API_BASE, path)
-        if not url.startswith(API_BASE):
-            st.error("Invalid URL: attempted to escape API_BASE.")
-            return None
+        safe_path = quote(path, safe="/")
+        url = f"{base}/{safe_path.lstrip('/')}"
         resp = requests.post(url, json=json_body, timeout=5)
         resp.raise_for_status()
         return resp.json()
@@ -105,15 +103,14 @@ def _api_post(path: str, json_body: dict | None = None):
 
 def _api_patch(path: str, json_body: dict | None = None):
     try:
-        if not _validate_api_base(API_BASE):
+        base = _get_safe_api_base()
+        if base is None:
             return None
         if ".." in path:
             st.error("Invalid path: path traversal detected.")
             return None
-        url = urljoin(API_BASE, path)
-        if not url.startswith(API_BASE):
-            st.error("Invalid URL: attempted to escape API_BASE.")
-            return None
+        safe_path = quote(path, safe="/")
+        url = f"{base}/{safe_path.lstrip('/')}"
         resp = requests.patch(url, json=json_body, timeout=5)
         resp.raise_for_status()
         return resp.json()
