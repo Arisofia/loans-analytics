@@ -135,8 +135,9 @@ def main():
                     check(f"Table '{t}'", False, "not found")
 
         except Exception as e:
-            # Error classification: if cursor was never created, it's a connection error
-            error_name = "PostgreSQL connect" if cur is None else "PostgreSQL query"
+            # Error classification: connection errors happen before cursor creation
+            # If we got far enough to create a cursor, classify as query error
+            error_name = "PostgreSQL connect" if conn is None else "PostgreSQL query"
             check(error_name, False, str(e)[:80])
         finally:
             if cur is not None:
@@ -271,7 +272,7 @@ def main():
     total_passed = passed_results + passed_warnings
     total_failed = failed_results
     total_checks = len(results) + len(warnings)
-    
+
     print("\n" + "=" * 60)
     print(f"  RESULTS: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
           f"{total_failed} failed (blocking), {failed_warnings} failed (optional)")

@@ -434,7 +434,7 @@ def main():
     total_passed = passed_results + passed_warnings
     total_failed = failed_results
     total_checks = len(results) + len(warnings)
-    
+
     print("\n" + "=" * 70)
     print(f"  KPI VALIDATION: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
           f"{total_failed} failed (blocking), {failed_warnings} failed (optional)")
