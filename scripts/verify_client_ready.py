@@ -49,7 +49,7 @@ def safe_urlopen(url_or_req, **kwargs):
     parsed = urlparse(url)
     if parsed.scheme not in ["http", "https"]:
         raise ValueError(f"Blocked scheme: {parsed.scheme}. Only http/https allowed.")
-    return urllib.request.urlopen(url_or_req, **kwargs)
+    return urllib.request.urlopen(url_or_req, **kwargs)  # nosec B310 — scheme validated above
 
 
 def load_env():

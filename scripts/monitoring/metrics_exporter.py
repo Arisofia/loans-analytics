@@ -277,7 +277,9 @@ def main() -> None:
     print("    static_configs:")
     print(f"      - targets: ['localhost:{port}']")
     print("=" * 60)
-    server = HTTPServer(("0.0.0.0", port), MetricsHandler)
+    server = HTTPServer(
+        ("0.0.0.0", port), MetricsHandler
+    )  # nosec B104 — Docker/Prometheus requires external access
     try:
         server.serve_forever()
     except KeyboardInterrupt:
