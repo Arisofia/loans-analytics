@@ -57,10 +57,9 @@ def load_env():
 def main():
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     try:
-        branch = (
-            subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True)
-            .strip()
-        )
+        branch = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True
+        ).strip()
     except (subprocess.SubprocessError, FileNotFoundError, OSError):
         branch = "unknown"
 
@@ -191,9 +190,7 @@ def main():
             resp = urllib.request.urlopen(req, timeout=30)
             models = json.loads(resp.read())
             gpt4 = [m["id"] for m in models["data"] if "gpt-4" in m["id"]]
-            check_warn(
-                "OpenAI API live", True, f"{len(models['data'])} models, {len(gpt4)} GPT-4"
-            )
+            check_warn("OpenAI API live", True, f"{len(models['data'])} models, {len(gpt4)} GPT-4")
         except Exception as e:
             check_warn("OpenAI API live", False, str(e)[:80])
 
@@ -299,10 +296,7 @@ def main():
     warned = sum(1 for _, ok in warnings if not ok)
     total_checks = len(results) + len(warnings)
     print("\n" + "=" * 60)
-    print(
-        f"  RESULTS: {passed} passed, {failed} failed, "
-        f"{warned} warned, {total_checks} total"
-    )
+    print(f"  RESULTS: {passed} passed, {failed} failed, " f"{warned} warned, {total_checks} total")
     if failed == 0:
         print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")
     else:

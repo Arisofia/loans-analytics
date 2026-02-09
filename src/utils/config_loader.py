@@ -48,9 +48,7 @@ def load_config(path: str | Path) -> dict[str, Any]:
     if loaded is None:
         config: dict[str, Any] = {}
     elif not isinstance(loaded, dict):
-        raise ValueError(
-            "Invalid configuration: root YAML object must be a mapping/dictionary."
-        )
+        raise ValueError("Invalid configuration: root YAML object must be a mapping/dictionary.")
     else:
         config = loaded
     # Enforce env-var overrides for database secrets

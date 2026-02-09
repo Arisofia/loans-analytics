@@ -15,9 +15,7 @@ class AbacoAnalyticsApiClient:
         timeout: float = 30.0,
     ) -> None:
         self.base_url = (
-            base_url
-            or os.getenv("ABACO_API_BASE_URL")
-            or "http://localhost:3000/api"
+            base_url or os.getenv("ABACO_API_BASE_URL") or "http://localhost:3000/api"
         ).rstrip("/")
         self.api_token = api_token or os.getenv("ABACO_API_TOKEN")
         self.timeout = timeout

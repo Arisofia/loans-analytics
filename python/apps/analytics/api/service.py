@@ -23,9 +23,7 @@ class KPIService:
     def __init__(self, actor: str = "api_user"):
         self.actor = actor
 
-    async def get_latest_kpis(
-        self, kpi_keys: list[str] | None = None
-    ) -> list[KpiSingleResponse]:
+    async def get_latest_kpis(self, kpi_keys: list[str] | None = None) -> list[KpiSingleResponse]:
         """
         Fetch the latest KPI values from the database.
 
@@ -194,9 +192,7 @@ class KPIService:
         """Converts a list of LoanRecord Pydantic models to a Pandas DataFrame."""
         return pd.DataFrame([loan.model_dump() for loan in loans])
 
-    async def get_data_quality_profile(
-        self, loans: list[LoanRecord] | None
-    ) -> DataQualityResponse:
+    async def get_data_quality_profile(self, loans: list[LoanRecord] | None) -> DataQualityResponse:
         """
         Calculates an overall data quality profile based on completeness, validity, and
         duplicates of an incoming list of LoanRecord objects.
