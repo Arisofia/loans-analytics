@@ -56,8 +56,9 @@ def validate_data_files() -> dict[str, bool]:
     runs_dir = ROOT_DIR / "logs" / "runs"
     results["logs_runs_dir"] = runs_dir.exists()
     if runs_dir.exists():
-        latest_runs = sorted(runs_dir.glob("*"), reverse=True)[:3]
-        print(f"  ✅ logs/runs exists ({len(list(runs_dir.glob('*')))} run(s))")
+        run_entries = list(runs_dir.glob("*"))
+        latest_runs = sorted(run_entries, key=lambda p: p.stat().st_mtime, reverse=True)[:3]
+        print(f"  ✅ logs/runs exists ({len(run_entries)} run(s))")
         if latest_runs:
             print("  Recent runs:")
             for d in latest_runs:
