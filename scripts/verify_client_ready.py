@@ -149,13 +149,14 @@ def main():
         if not base_url.startswith("https://"):
             check("REST API", False, "SUPABASE_URL must use https://")
         else:
-            health_table = "monitoring_operational_events"
+            health_table = "operational_events"
             url = f"{base_url}/rest/v1/{health_table}?select=id&limit=1"
             req = urllib.request.Request(
                 url,
                 headers={
                     "apikey": anon_key,
                     "Accept": "application/json",
+                    "Accept-Profile": "monitoring",
                 },
             )
             resp = urllib.request.urlopen(req, timeout=10)  # noqa: S310 — validated https
