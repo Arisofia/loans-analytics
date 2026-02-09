@@ -1,6 +1,7 @@
 // main.bicep
 // Azure Bicep template for fintech analytics platform
-// Optimized for VM-quota-free deployment using Container Apps + Supabase
+// Optimized for FREE TIER deployment using Container Apps + Supabase
+// All resources configured for minimum cost (scale-to-zero, minimal retention)
 
 param location string = resourceGroup().location
 param webAppName string
@@ -30,9 +31,9 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
   location: location
   properties: {
     sku: {
-      name: 'PerGB2018'
+      name: 'Free'
     }
-    retentionInDays: 30
+    retentionInDays: 7
   }
 }
 
@@ -113,8 +114,8 @@ resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
             }
           ]
           resources: {
-            cpu: json('1.0')
-            memory: '2.0Gi'
+            cpu: json('0.25')
+            memory: '0.5Gi'
           }
           probes: [
             {
@@ -130,8 +131,8 @@ resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
         }
       ]
       scale: {
-        minReplicas: 1
-        maxReplicas: 2
+        minReplicas: 0  // Scale to zero when idle (free tier)
+        maxReplicas: 1
       }
     }
   }
@@ -160,7 +161,7 @@ resource appinsights 'Microsoft.Insights/components@2020-02-02' = {
   kind: 'web'
   properties: {
     Application_Type: 'web'
-    RetentionInDays: 90
+    RetentionInDays: 30  // Minimum retention for free tier
   }
 }
 
