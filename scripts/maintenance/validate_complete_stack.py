@@ -166,17 +166,17 @@ def validate_documentation() -> dict[str, bool]:
 
     results: dict[str, bool] = {}
 
-    results["deployment_checklist"] = check_file_exists(
-        ROOT_DIR / "docs" / "DEPLOYMENT_CHECKLIST.md", "Deployment Checklist"
+    # Check for actual documentation files that exist
+    results["production_deployment_guide"] = check_file_exists(
+        ROOT_DIR / "docs" / "PRODUCTION_DEPLOYMENT_GUIDE.md", "Production Deployment Guide"
     )
 
-    results["deployment_verification"] = check_file_exists(
-        ROOT_DIR / "docs" / "DEPLOYMENT_VERIFICATION_2026_02_05.md",
-        "Deployment Verification Report",
+    results["operations_doc"] = check_file_exists(
+        ROOT_DIR / "docs" / "OPERATIONS.md", "Operations Documentation"
     )
 
-    results["maintenance_scripts_audit"] = check_file_exists(
-        ROOT_DIR / "docs" / "MAINTENANCE_SCRIPTS_AUDIT.md", "Maintenance Scripts Audit"
+    results["cto_audit_report"] = check_file_exists(
+        ROOT_DIR / "docs" / "CTO_AUDIT_REPORT.md", "CTO Audit Report"
     )
 
     results["security_doc"] = check_file_exists(

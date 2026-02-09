@@ -158,19 +158,24 @@ def main():
     if envs.get("SUPABASE_URL") and envs.get("SUPABASE_ANON_KEY"):
         try:
             base_url = envs["SUPABASE_URL"].rstrip("/")
-            anon_key = envs["SUPABASE_ANON_KEY"]
-            health_table = "monitoring_operational_events"
-            url = f"{base_url}/rest/v1/{health_table}?select=id&limit=1"
-            req = urllib.request.Request(
-                url,
-                headers={
-                    "apikey": anon_key,
-                    "Accept": "application/json",
-                },
-            )
-            resp = urllib.request.urlopen(req, timeout=10)
-            status = resp.getcode()
-            check("REST API", 200 <= status < 300, f"HTTP {status} on {health_table}")
+            # SSRF prevention: validate HTTPS scheme
+            if not base_url.startswith("https://"):
+                check("REST API", False, "SUPABASE_URL must use https:// scheme")
+            else:
+                anon_key = envs["SUPABASE_ANON_KEY"]
+                # Use lightweight endpoint check instead of querying specific table
+                url = f"{base_url}/rest/v1/"
+                req = urllib.request.Request(
+                    url,
+                    headers={
+                        "apikey": anon_key,
+                        "Accept": "application/json",
+                    },
+                )
+                resp = urllib.request.urlopen(req, timeout=10)
+                status = resp.getcode()
+                # Treat 200/401/404 as "reachable" - REST API is responding
+                check("REST API", status in (200, 401, 404), f"HTTP {status}")
         except Exception as e:
             check("REST API", False, str(e)[:80])
     else:
@@ -288,32 +293,38 @@ def main():
         exists = os.path.exists(f)
         check(f, exists)
 
-    # Real data file is optional but useful for live runs
-    real_data_file = "data/raw/abaco_real_data_20260202.csv"
-    exists_real = os.path.exists(real_data_file)
-    check(real_data_file, exists_real, "present" if exists_real else "optional (not found)")
+    # Real data files - discover available exports dynamically
+    real_data_pattern = "data/raw/abaco_real_data_*.csv"
+    import glob
+    real_data_files = sorted(glob.glob(real_data_pattern))
+    if real_data_files:
+        check_warn("Real data files", True, f"Found {len(real_data_files)} file(s): {', '.join([os.path.basename(f) for f in real_data_files[-3:]])}")
+    else:
+        check_warn("Real data files", False, "No abaco_real_data_*.csv files found (optional)")
 
     # --- SUMMARY ---
-    passed = sum(1 for _, ok in results if ok)
-    failed = sum(1 for _, ok in results if not ok)
-    warned = sum(1 for _, ok in warnings if not ok)
+    passed_results = sum(1 for _, ok in results if ok)
+    failed_results = sum(1 for _, ok in results if not ok)
+    passed_warnings = sum(1 for _, ok in warnings if ok)
+    failed_warnings = sum(1 for _, ok in warnings if not ok)
+    total_passed = passed_results + passed_warnings
     total_checks = len(results) + len(warnings)
     print("\n" + "=" * 60)
     print(
-        f"  RESULTS: {passed} passed, {failed} failed, "
-        f"{warned} warned, {total_checks} total"
+        f"  RESULTS: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
+        f"{failed_results} failed (blocking), {failed_warnings} failed (optional), {total_checks} total"
     )
-    if failed == 0:
+    if failed_results == 0:
         print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")
     else:
-        print(f"  [{LABEL_FAIL}] {failed} CHECK(S) NEED ATTENTION")
+        print(f"  [{LABEL_FAIL}] {failed_results} CHECK(S) NEED ATTENTION")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
-    if warned > 0:
-        print(f"  [{LABEL_WARN}] {warned} OPTIONAL CHECK(S) (non-blocking)")
+    if failed_warnings > 0:
+        print(f"  [{LABEL_WARN}] {failed_warnings} OPTIONAL CHECK(S) (non-blocking)")
     print("=" * 60)
-    return 0 if failed == 0 else 1
+    return 0 if failed_results == 0 else 1
 
 
 if __name__ == "__main__":

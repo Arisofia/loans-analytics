@@ -361,7 +361,7 @@ class HistoricalContextProvider:
         change_point = self.detect_change_point(kpi_id, window_size=14, periods=periods)
         return {
             "kpi_id": kpi_id,
-            "trend": trend.dict(),
+            "trend": trend.model_dump(),
             "moving_average_30d": moving_avg,
             "recent_change_point": change_point,
         }
