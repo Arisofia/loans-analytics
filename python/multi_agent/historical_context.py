@@ -321,7 +321,9 @@ class HistoricalContextProvider:
 
         start_val: float = history[0].value
         end_val: float = history[-1].value
-        percent_change: float = ((end_val - start_val) / start_val * 100) if start_val != 0 else 0.0
+        percent_change: float = (
+            (end_val - start_val) / start_val * 100 if start_val != 0 else 0.0
+        )
 
         if abs(slope) < 0.01:
             direction = TrendDirection.STABLE
