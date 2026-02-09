@@ -54,8 +54,8 @@ def validate_data_files() -> dict[str, bool]:
 
     # Logs / runs directory for pipeline outputs
     runs_dir = ROOT_DIR / "logs" / "runs"
-    results["logs_runs_dir"] = runs_dir.exists()
-    if runs_dir.exists():
+    results["logs_runs_dir"] = runs_dir.is_dir()
+    if runs_dir.is_dir():
         latest_runs = sorted(runs_dir.glob("*"), reverse=True)[:3]
         print(f"  ✅ logs/runs exists ({len(list(runs_dir.glob('*')))} run(s))")
         if latest_runs:
@@ -195,7 +195,7 @@ def check_agent_analysis_results() -> dict[str, bool]:
                 print(f"  ✅ {agent_count} agent analyses present")
                 results["has_analyses"] = True
             else:
-                print("  ⚠️  No agent analyses in results")
+                print("  ❌ No agent analyses in results - marked as FAILED")
                 results["has_analyses"] = False
 
             if "portfolio_metrics" in data:
@@ -215,9 +215,13 @@ def check_agent_analysis_results() -> dict[str, bool]:
             results["has_metrics"] = False
     else:
         print("  ⚠️  No analysis results found - this validation check will be marked as FAILED.")
-        raw_candidates = sorted((ROOT_DIR / "data" / "raw").glob("abaco_real_data_*.csv"))
+        raw_candidates = sorted(
+            (ROOT_DIR / "data" / "raw").glob("abaco_real_data_*.csv"),
+            key=lambda p: p.name
+        )
         if raw_candidates:
-            cmd = f"python scripts/run_daily_agent_analysis.py --input {raw_candidates[-1]}"
+            latest_file = raw_candidates[-1]
+            cmd = f"python scripts/run_daily_agent_analysis.py --input '{latest_file}'"
             print(f"     Run: {cmd}")
         else:
             print(
@@ -227,7 +231,7 @@ def check_agent_analysis_results() -> dict[str, bool]:
             )
             example_cmd = (
                 "python scripts/run_daily_agent_analysis.py --input "
-                "data/raw/abaco_real_data_SAMPLE.csv"
+                "'data/raw/abaco_real_data_SAMPLE.csv'"
             )
             print(f"     Run (adapt path and filename as needed): {example_cmd}")
         results["has_analyses"] = False
