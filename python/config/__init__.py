@@ -110,7 +110,7 @@ class ApiSettings(BaseModel):
         default_factory=lambda: os.getenv("ABACO_API_KEY", ""),
         description="API key loaded from ABACO_API_KEY env var; must not be hardcoded",
     )
-    host: str = Field(default="0.0.0.0")
+    host: str = Field(default="127.0.0.1")
     port: int = Field(default=8000)
 
 

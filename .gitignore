@@ -253,3 +253,5 @@ models/risk/*.bin
 models/risk/*.json
 !models/risk/.gitkeep
 supabase/.temp/
+bandit-report.json
+bandit-results.sarif

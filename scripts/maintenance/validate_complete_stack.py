@@ -174,16 +174,25 @@ def validate_documentation() -> dict[str, bool]:
         ROOT_DIR / "docs" / "OBSERVABILITY.md", "Observability Documentation"
     )
 
+    results["setup_guide"] = check_file_exists(
+        ROOT_DIR / "docs" / "SUPABASE_SETUP_GUIDE.md", "Supabase Setup Guide"
+    )
+
     results["operations"] = check_file_exists(
         ROOT_DIR / "docs" / "OPERATIONS.md", "Operations Documentation"
+    )
+
+    results["maintenance_guide"] = check_file_exists(
+        ROOT_DIR / "docs" / "REPOSITORY_MAINTENANCE.md", "Repository Maintenance Guide"
     )
 
     results["security_doc"] = check_file_exists(
         ROOT_DIR / "docs" / "SECURITY.md", "Security Documentation"
     )
 
-    results["supabase_setup"] = check_file_exists(
-        ROOT_DIR / "docs" / "SUPABASE_SETUP_GUIDE.md", "Supabase Setup Guide"
+    results["deployment_checklist"] = check_file_exists(
+        ROOT_DIR / "docs" / "operations" / "SECURITY_DEPLOYMENT_CHECKLIST.md",
+        "Security Deployment Checklist",
     )
 
     return results
