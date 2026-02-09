@@ -64,7 +64,6 @@ def main():
             )
             if run_dirs:
                 kpi_file = run_dirs[0] / "kpis_output.json"
-                run_id = run_dirs[0].name
             else:
                 print("  No run directories found under logs/runs/")
                 return 1
