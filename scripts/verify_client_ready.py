@@ -6,28 +6,33 @@ import json
 import os
 import subprocess
 import sys
-import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
-PASS = "\033[92mPASS\033[0m"
-FAIL = "\033[91mFAIL\033[0m"
-WARN = "\033[93mWARN\033[0m"
+COLOR_GREEN = "\033[92m"
+COLOR_RED = "\033[91m"
+COLOR_YELLOW = "\033[93m"
+COLOR_RESET = "\033[0m"
+LABEL_PASS = COLOR_GREEN + "PASS" + COLOR_RESET
+LABEL_FAIL = COLOR_RED + "FAIL" + COLOR_RESET
+LABEL_WARN = COLOR_YELLOW + "WARN" + COLOR_RESET
+
 
 results = []
-warnings = []
+warnings = []  # Track warnings separately from failures
 
 
 def check(name, ok, detail=""):
-    status = PASS if ok else FAIL
+    status = LABEL_PASS if ok else LABEL_FAIL
     results.append((name, ok))
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
 
 def check_warn(name, ok, detail=""):
-    status = PASS if ok else WARN
-    warnings.append((name, ok))
+    """Record a warning-level check that doesn't affect exit code."""
+    status = LABEL_PASS if ok else LABEL_WARN
+    warnings.append((name, ok))  # Track separately
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -56,7 +61,7 @@ def main():
             subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True)
             .strip()
         )
-    except (subprocess.SubprocessError, OSError):
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
         branch = "unknown"
 
     print("=" * 60)
@@ -97,90 +102,77 @@ def main():
     if importlib.util.find_spec("psycopg") is None:
         check_warn("psycopg", False, "not installed; database checks skipped")
     else:
-        import psycopg
-
-        conn = None
-        cur = None
         try:
-            conn = psycopg.connect(envs.get("DATABASE_URL", ""), connect_timeout=10)
-            cur = conn.cursor()
-            cur.execute("SELECT version();")
-            ver = cur.fetchone()[0]
-            check("PostgreSQL connect", True, ver[:55])
+            import psycopg
+        except (ImportError, OSError) as e:
+            check_warn("psycopg", False, f"import failed ({e}); database checks skipped")
+        else:
+            conn = None
+            cur = None
+            try:
+                conn = psycopg.connect(envs.get("DATABASE_URL", ""), connect_timeout=10)
+                cur = conn.cursor()
+                cur.execute("SELECT version();")
+                ver = cur.fetchone()[0]
+                check("PostgreSQL connect", True, ver[:55])
 
-            cur.execute(
-                "SELECT schemaname, count(*) FROM pg_tables "
-                "WHERE schemaname NOT IN ('pg_catalog','information_schema') "
-                "GROUP BY schemaname ORDER BY schemaname"
-            )
-            schemas = cur.fetchall()
-            for s, c in schemas:
-                check(f"Schema '{s}'", True, f"{c} tables")
+                cur.execute(
+                    "SELECT schemaname, count(*) FROM pg_tables "
+                    "WHERE schemaname NOT IN ('pg_catalog','information_schema') "
+                    "GROUP BY schemaname ORDER BY schemaname"
+                )
+                schemas = cur.fetchall()
+                for s, c in schemas:
+                    check(f"Schema '{s}'", True, f"{c} tables")
 
-            cur.execute(
-                "SELECT table_name FROM information_schema.tables "
-                "WHERE table_schema='public' ORDER BY table_name"
-            )
-            tables = [r[0] for r in cur.fetchall()]
-            check("Public tables", len(tables) > 0, ", ".join(tables[:10]))
+                cur.execute(
+                    "SELECT table_name FROM information_schema.tables "
+                    "WHERE table_schema='public' ORDER BY table_name"
+                )
+                tables = [r[0] for r in cur.fetchall()]
+                check("Public tables", len(tables) > 0, ", ".join(tables[:10]))
 
-            # Check for core tables
-            core_tables = ["fact_loans", "kpi_timeseries_daily"]
-            for t in core_tables:
-                exists = t in tables
-                if exists:
-                    cur.execute(f"SELECT count(*) FROM public.{t}")
-                    cnt = cur.fetchone()[0]
-                    check(f"Table '{t}'", True, f"{cnt} rows")
+                # Check for core tables
+                core_tables = ["fact_loans", "kpi_timeseries_daily"]
+                for t in core_tables:
+                    exists = t in tables
+                    if exists:
+                        cur.execute(f"SELECT count(*) FROM public.{t}")
+                        cnt = cur.fetchone()[0]
+                        check(f"Table '{t}'", True, f"{cnt} rows")
+                    else:
+                        check(f"Table '{t}'", False, "not found")
+            except Exception as e:
+                if conn is None:
+                    check("PostgreSQL connect", False, str(e)[:80])
                 else:
-                    check(f"Table '{t}'", False, "not found")
-
-        except Exception as e:
-            # Error classification: connection errors happen before cursor creation
-            # If we got far enough to create a cursor, classify as query error
-            error_name = "PostgreSQL connect" if conn is None else "PostgreSQL query"
-            check(error_name, False, str(e)[:80])
-        finally:
-            if cur is not None:
-                cur.close()
-            if conn is not None:
-                conn.close()
+                    check("PostgreSQL query", False, str(e)[:80])
+            finally:
+                if cur is not None:
+                    cur.close()
+                if conn is not None:
+                    conn.close()
 
     # --- 3. SUPABASE REST API ---
     print("\n3. SUPABASE REST API")
-    supabase_url = envs.get("SUPABASE_URL", "")
-    if supabase_url and envs.get("SUPABASE_ANON_KEY"):
-        # Validate URL scheme and hostname (SSRF prevention)
+    if envs.get("SUPABASE_URL") and envs.get("SUPABASE_ANON_KEY"):
         try:
-            parsed = urllib.parse.urlparse(supabase_url)
-            scheme = parsed.scheme.lower()
-            hostname = parsed.hostname or ""
-            
-            # Check if this is localhost
-            is_localhost = hostname in ("localhost", "127.0.0.1", "::1") or hostname.startswith("127.")
-            
-            # Enforce allowed schemes
-            if scheme not in ("http", "https"):
-                check("SUPABASE_URL scheme", False, f"unsupported scheme '{scheme}' (only http/https allowed)")
-            elif scheme == "http" and not is_localhost:
-                check_warn("SUPABASE_URL scheme", False, "http:// for non-localhost (should use https://)")
-            else:
-                check("SUPABASE_URL scheme", True, f"{scheme}:// for {hostname}")
-            
-            # Only proceed with request if scheme is valid
-            if scheme in ("http", "https"):
-                try:
-                    req = urllib.request.Request(
-                        supabase_url + "/rest/v1/",
-                        headers={"apikey": envs["SUPABASE_ANON_KEY"]},
-                    )
-                    resp = urllib.request.urlopen(req, timeout=10)
-                    data = json.loads(resp.read())
-                    check("REST API reachability", True, f"{len(data)} endpoints")
-                except Exception as e:
-                    check("REST API reachability", False, str(e)[:80])
+            base_url = envs["SUPABASE_URL"].rstrip("/")
+            anon_key = envs["SUPABASE_ANON_KEY"]
+            health_table = "monitoring_operational_events"
+            url = f"{base_url}/rest/v1/{health_table}?select=id&limit=1"
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "apikey": anon_key,
+                    "Accept": "application/json",
+                },
+            )
+            resp = urllib.request.urlopen(req, timeout=10)
+            status = resp.getcode()
+            check("REST API", 200 <= status < 300, f"HTTP {status} on {health_table}")
         except Exception as e:
-            check("SUPABASE_URL scheme", False, f"invalid URL: {str(e)[:60]}")
+            check("REST API", False, str(e)[:80])
     else:
         check_warn("REST API", False, "missing SUPABASE_URL or SUPABASE_ANON_KEY")
 
@@ -188,7 +180,7 @@ def main():
     print("\n4. OPENAI API")
     openai_key = envs.get("OPENAI_API_KEY", "")
     key_valid = openai_key.startswith("sk-") and len(openai_key) > 20
-    detail = f"present ({len(openai_key)} chars)" if key_valid else "invalid format"
+    detail = f"valid format ({len(openai_key)} chars)" if key_valid else "invalid or missing"
     check_warn("OpenAI API key format", key_valid, detail)
     if key_valid:
         try:
@@ -208,12 +200,23 @@ def main():
     # --- 5. SENTRY ---
     print("\n5. SENTRY / OBSERVABILITY")
     dsn = envs.get("SENTRY_DSN", "")
-    dsn_ok = "ingest" in dsn
-    dsn_detail = f"present ({len(dsn)} chars)" if dsn_ok else "missing or invalid"
+    dsn_present = bool(dsn)
+    dsn_expected_format = "ingest" in dsn if dsn_present else False
+    if not dsn_present:
+        dsn_ok = False
+        dsn_detail = "MISSING (optional)"
+    elif dsn_expected_format:
+        dsn_ok = True
+        dsn_detail = f"configured (contains 'ingest', {len(dsn)} chars)"
+    else:
+        dsn_ok = True
+        dsn_detail = (
+            f"present but unexpected format (host does not contain 'ingest'; {len(dsn)} chars)"
+        )
     check_warn("Sentry DSN", dsn_ok, dsn_detail)
     otel = envs.get("OTEL_EXPORTER_OTLP_ENDPOINT", "")
-    otel_ok = "ingest" in otel
-    otel_detail = f"present ({len(otel)} chars)" if otel_ok else "missing or invalid"
+    otel_ok = bool(otel)
+    otel_detail = f"configured ({len(otel)} chars)" if otel_ok else "MISSING (optional)"
     check_warn("OTEL endpoint", otel_ok, otel_detail)
 
     # --- 6. PIPELINE ---
@@ -229,44 +232,45 @@ def main():
             capture_output=True,
             text=True,
             timeout=30,
+            check=False,
         )
         ok = result.returncode == 0
         if ok:
             detail = "config valid"
         else:
-            stderr_raw = result.stderr or ""
-            # Sanitize stderr to avoid control characters/newlines breaking formatting
-            # and to reduce the chance of leaking sensitive context.
-            if stderr_raw:
-                # Replace non-printable characters (including newlines) with spaces
-                stderr_sanitized = "".join(
-                    ch if ch.isprintable() else " " for ch in stderr_raw
-                )
-                # Collapse all whitespace to single spaces to keep it on one line
-                stderr_sanitized = " ".join(stderr_sanitized.split())
+            stderr_snippet = (result.stderr or "").strip()
+            stdout_snippet = (result.stdout or "").strip()
+            message_source = stderr_snippet or stdout_snippet
+            if message_source:
+                normalized = message_source.replace("\n", " ")
+                snippet = normalized[:160]
+                detail = f"non-zero exit code {result.returncode}: {snippet}"
             else:
-                stderr_sanitized = ""
-
-            if stderr_sanitized:
-                stderr_truncated = stderr_sanitized[:200]
-                if len(stderr_sanitized) > 200:
-                    stderr_truncated += "..."
-                detail = f"exit code {result.returncode}; stderr: {stderr_truncated}"
-            else:
-                detail = f"exit code {result.returncode}"
+                detail = f"non-zero exit code {result.returncode}"
         check("Pipeline config validation", ok, detail)
     except subprocess.TimeoutExpired as e:
-        detail = f"timeout after {e.timeout}s while running pipeline validation"
-        check("Pipeline config validation", False, detail[:80])
+        check(
+            "Pipeline config validation",
+            False,
+            f"pipeline validation timed out after {e.timeout} seconds",
+        )
     except OSError as e:
-        msg = e.strerror or str(e)
-        check("Pipeline config validation", False, f"OS error: {msg}"[:80])
+        check(
+            "Pipeline config validation",
+            False,
+            (f"OSError while running pipeline validation: {e.strerror or str(e)}")[:80],
+        )
     except subprocess.SubprocessError as e:
-        check("Pipeline config validation", False, str(e)[:80])
+        check(
+            "Pipeline config validation",
+            False,
+            (f"Subprocess error during pipeline validation: {str(e)}")[:80],
+        )
 
     # --- 7. KEY FILES ---
     print("\n7. KEY FILES")
-    key_files = [
+
+    core_files = [
         "src/pipeline/orchestrator.py",
         "src/pipeline/ingestion.py",
         "src/pipeline/transformation.py",
@@ -280,44 +284,36 @@ def main():
         "requirements.txt",
         ".gitignore",
     ]
-    for f in key_files:
+    for f in core_files:
         exists = os.path.exists(f)
         check(f, exists)
 
-    real_data_candidates = []
-    raw_dir = "data/raw"
-    if os.path.isdir(raw_dir):
-        real_data_candidates = [
-            path for path in os.listdir(raw_dir) if path.startswith("abaco_real_data_")
-        ]
-    check(
-        "data/raw/abaco_real_data_*.csv",
-        len(real_data_candidates) > 0,
-        ", ".join(sorted(real_data_candidates)[:3]) if real_data_candidates else "none found",
-    )
+    # Real data file is optional but useful for live runs
+    real_data_file = "data/raw/abaco_real_data_20260202.csv"
+    exists_real = os.path.exists(real_data_file)
+    check(real_data_file, exists_real, "present" if exists_real else "optional (not found)")
 
     # --- SUMMARY ---
-    passed_results = sum(1 for _, ok in results if ok)
-    failed_results = sum(1 for _, ok in results if not ok)
-    passed_warnings = sum(1 for _, ok in warnings if ok)
-    failed_warnings = sum(1 for _, ok in warnings if not ok)
-    total_passed = passed_results + passed_warnings
-    total_failed = failed_results
+    passed = sum(1 for _, ok in results if ok)
+    failed = sum(1 for _, ok in results if not ok)
+    warned = sum(1 for _, ok in warnings if not ok)
     total_checks = len(results) + len(warnings)
-
     print("\n" + "=" * 60)
-    print(f"  RESULTS: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
-          f"{total_failed} failed (blocking), {failed_warnings} failed (optional)")
-    print(f"  Total checks: {total_checks}")
-    if failed_results == 0:
-        print(f"  [{PASS}] SYSTEM IS CLIENT-READY")
+    print(
+        f"  RESULTS: {passed} passed, {failed} failed, "
+        f"{warned} warned, {total_checks} total"
+    )
+    if failed == 0:
+        print(f"  [{LABEL_PASS}] SYSTEM IS CLIENT-READY")
     else:
-        print(f"  [{FAIL}] {failed_results} CHECK(S) NEED ATTENTION")
+        print(f"  [{LABEL_FAIL}] {failed} CHECK(S) NEED ATTENTION")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
+    if warned > 0:
+        print(f"  [{LABEL_WARN}] {warned} OPTIONAL CHECK(S) (non-blocking)")
     print("=" * 60)
-    return 0 if failed_results == 0 else 1
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":

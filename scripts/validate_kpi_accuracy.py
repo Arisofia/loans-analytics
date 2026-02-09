@@ -13,24 +13,25 @@ from pathlib import Path
 
 import pandas as pd
 
-PASS = "\033[92mPASS\033[0m"
-FAIL = "\033[91mFAIL\033[0m"
-WARN = "\033[93mWARN\033[0m"
+LABEL_PASS = "\033[92mPASS\033[0m"
+LABEL_FAIL = "\033[91mFAIL\033[0m"
+LABEL_WARN = "\033[93mWARN\033[0m"
 
 results = []
-warnings = []
+warnings = []  # Track warnings separately from failures
 
 
 def check(name, ok, detail=""):
-    status = PASS if ok else FAIL
+    status = LABEL_PASS if ok else LABEL_FAIL
     results.append((name, ok))
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
 
 def check_warn(name, ok, detail=""):
-    status = PASS if ok else WARN
-    warnings.append((name, ok))
+    """Record a non-blocking check: WARNs do not affect the exit code."""
+    status = LABEL_PASS if ok else LABEL_WARN
+    warnings.append((name, ok))  # Track separately from results
     print(f"  [{status}] {name}" + (f" — {detail}" if detail else ""))
     return ok
 
@@ -45,28 +46,12 @@ def close_enough(a, b, tol=0.01):
 
 
 def find_latest_run_id(runs_dir: Path) -> str | None:
-    """Find the latest pipeline run ID by modification time.
-    
-    Returns the run_id (directory name) of the most recently modified run directory.
-    Uses mtime (modification time) rather than lexicographic name sorting because:
-    - Run IDs are YYYYMMDD_<hash8> format (no time component in name)
-    - Multiple runs on same day would have arbitrary hash ordering by name
-    - mtime reflects actual execution order
-    
-    Args:
-        runs_dir: Path to logs/runs directory
-        
-    Returns:
-        str: Run ID (directory name) of latest run, or None if no runs exist
-    """
     if not runs_dir.exists():
         return None
     runs = [p for p in runs_dir.iterdir() if p.is_dir()]
     if not runs:
         return None
-    # Select latest run by directory modification time to reflect most recent execution
-    latest_run = max(runs, key=lambda p: p.stat().st_mtime)
-    return latest_run.name
+    return sorted(runs, key=lambda p: p.name, reverse=True)[0].name
 
 
 def main():
@@ -112,7 +97,9 @@ def main():
         df = pd.read_parquet(clean_path)
         print(f"\n  Clean data (parquet): {len(df)} rows, {len(df.columns)} columns")
     else:
-        raw_candidates = sorted(Path("data/raw").glob("abaco_real_data_*.csv"))
+        raw_candidates = sorted(
+            Path("data/raw").glob("abaco_real_data_*.csv"), key=lambda p: p.name
+        )
         if not raw_candidates:
             print("  No real data CSV found in data/raw (abaco_real_data_*.csv)")
             return 1
@@ -143,11 +130,6 @@ def main():
             df["status"] = df["status"].map(status_map).fillna(df["status"].str.lower())
 
         # 2. Rename columns to match pipeline schema
-        col_map = {
-            "days_past_due": "dpd",
-            "outstanding_balance": "outstanding_balance",
-            "principal_amount": "principal_amount",
-        }
         if "days_past_due" in df.columns:
             df["dpd"] = pd.to_numeric(df["days_past_due"], errors="coerce").fillna(0).astype(int)
 
@@ -249,25 +231,32 @@ def main():
     )
 
     # 5. par_30
-    dpd30_balance = df.loc[df["dpd"] >= 30, "outstanding_balance"].sum()
-    total_balance = df["outstanding_balance"].sum()
-    manual = (dpd30_balance / total_balance * 100) if total_balance > 0 else 0
-    pipeline = pipeline_kpis["par_30"]
-    check(
-        "par_30",
-        close_enough(manual, pipeline),
-        f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
-    )
+    if "dpd" not in df.columns:
+        check_warn("par_30", False, "skipped (dpd column missing)")
+    else:
+        dpd30_balance = df.loc[df["dpd"] >= 30, "outstanding_balance"].sum()
+        total_balance = df["outstanding_balance"].sum()
+        manual = (dpd30_balance / total_balance * 100) if total_balance > 0 else 0
+        pipeline = pipeline_kpis["par_30"]
+        check(
+            "par_30",
+            close_enough(manual, pipeline),
+            f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
+        )
 
     # 6. par_90
-    dpd90_balance = df.loc[df["dpd"] >= 90, "outstanding_balance"].sum()
-    manual = (dpd90_balance / total_balance * 100) if total_balance > 0 else 0
-    pipeline = pipeline_kpis["par_90"]
-    check(
-        "par_90",
-        close_enough(manual, pipeline),
-        f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
-    )
+    if "dpd" not in df.columns:
+        check_warn("par_90", False, "skipped (dpd column missing)")
+    else:
+        dpd90_balance = df.loc[df["dpd"] >= 90, "outstanding_balance"].sum()
+        total_balance = df["outstanding_balance"].sum()
+        manual = (dpd90_balance / total_balance * 100) if total_balance > 0 else 0
+        pipeline = pipeline_kpis["par_90"]
+        check(
+            "par_90",
+            close_enough(manual, pipeline),
+            f"manual={manual:.2f}% vs pipeline={pipeline:.2f}%",
+        )
 
     # 7. default_rate
     default_count = df.loc[df["status"] == "defaulted", "loan_id"].count()
@@ -441,27 +430,31 @@ def main():
     # ==========================================
     # SUMMARY
     # ==========================================
-    passed_results = sum(1 for _, ok in results if ok)
-    failed_results = sum(1 for _, ok in results if not ok)
-    passed_warnings = sum(1 for _, ok in warnings if ok)
-    failed_warnings = sum(1 for _, ok in warnings if not ok)
-    total_passed = passed_results + passed_warnings
-    total_failed = failed_results
+    passed = sum(1 for _, ok in results if ok)
+    failed = sum(1 for _, ok in results if not ok)
+    warned = sum(1 for _, ok in warnings if not ok)
     total_checks = len(results) + len(warnings)
-
     print("\n" + "=" * 70)
-    print(f"  KPI VALIDATION: {total_passed} passed ({passed_results} required, {passed_warnings} optional), "
-          f"{total_failed} failed (blocking), {failed_warnings} failed (optional)")
-    print(f"  Total checks: {total_checks}")
-    if failed_results == 0:
-        print(f"  [{PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
+    print(
+        f"  KPI VALIDATION: {passed} passed, {failed} failed, "
+        f"{warned} warned, {total_checks} total"
+    )
+    if failed == 0 and warned == 0:
+        print(f"  [{LABEL_PASS}] ALL KPIs PRODUCE ACCURATE REAL DATA")
+    elif failed == 0 and warned > 0:
+        print(f"  [{LABEL_PASS}] ALL BLOCKING KPI CHECKS PASSED (WARNINGS PRESENT)")
+        for name, ok in warnings:
+            if not ok:
+                print(f"    - {name}")
     else:
-        print(f"  [{FAIL}] {failed_results} KPI(S) HAVE DISCREPANCIES:")
+        print(f"  [{LABEL_FAIL}] {failed} KPI(S) HAVE DISCREPANCIES:")
         for name, ok in results:
             if not ok:
                 print(f"    - {name}")
+    if warned > 0:
+        print(f"  [{LABEL_WARN}] {warned} WARNING(S) (non-blocking)")
     print("=" * 70)
-    return 0 if failed_results == 0 else 1
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":

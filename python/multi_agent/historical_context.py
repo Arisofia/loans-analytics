@@ -9,7 +9,7 @@ Phase G4.1 Implementation
 
 import os
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
@@ -73,7 +73,7 @@ class TrendAnalysis(BaseModel):
     end_value: float = Field(..., description="Ending value")
     percent_change: float = Field(..., description="Percentage change")
     calculated_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC),
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Analysis timestamp (UTC)",
     )
 
@@ -162,51 +162,29 @@ class HistoricalContextProvider:
         cache_ttl_seconds: int = 3600,
         mode: Optional[str] = None,
         backend: Optional[HistoricalDataBackend] = None,
-    ):
+    ) -> None:
         """
-        Initialize historical context provider.
-
-        Args:
-            cache_ttl_seconds: Time-to-live for cached data (default 1 hour)
-            mode: Data source mode - "MOCK" (default) or "REAL".
-                  Can also be set via HISTORICAL_CONTEXT_MODE env var.
-            backend: Optional backend implementation for REAL mode.
-                     Required if mode="REAL".
-
-        Phase G4.1 Compatibility:
-            Calling HistoricalContextProvider() without arguments works
-            exactly as before - uses MOCK mode with synthetic data.
-
-        Phase G4.2 Usage:
-            provider = HistoricalContextProvider(
-                mode="REAL",
-                backend=SupabaseHistoricalBackend()
-            )
-
-        Raises:
-            ValueError: If mode is not "MOCK" or "REAL"
-            RuntimeError: If mode="REAL" but backend is None
+        Initialize historical context provider with backend validation and mode selection.
         """
-        self.cache_ttl_seconds = cache_ttl_seconds
+        self.cache_ttl_seconds: int = cache_ttl_seconds
         self._cache: Dict[str, tuple[datetime, Any]] = {}
         self._historical_data: Dict[str, List[KpiHistoricalValue]] = {}
 
-        # Mode selection: default to MOCK for G4.1 backward compatibility
         env_mode = os.getenv("HISTORICAL_CONTEXT_MODE", "MOCK").upper()
-        self.mode = (mode or env_mode).upper()
+        self.mode: str = (mode or env_mode).upper()
+        self._backend: Optional[HistoricalDataBackend] = backend
 
         if self.mode not in ("MOCK", "REAL"):
             raise ValueError(f"Invalid mode '{self.mode}'. Must be 'MOCK' or 'REAL'.")
-
-        self._backend = backend
-
-        # Validate REAL mode configuration
-        if self.mode == "REAL" and self._backend is None:
-            raise RuntimeError(
-                "HistoricalContextProvider in REAL mode requires a backend "
-                "implementing HistoricalDataBackend protocol. "
-                "Pass backend=YourBackend() to __init__."
-            )
+        if self.mode == "REAL":
+            if self._backend is None:
+                raise RuntimeError(
+                    "HistoricalContextProvider in REAL mode requires a backend "
+                    "implementing HistoricalDataBackend protocol."
+                )
+            # Validate backend interface at runtime
+            if not isinstance(self._backend, HistoricalDataBackend):
+                raise TypeError("Backend does not implement HistoricalDataBackend protocol.")
 
     def _load_historical_data(
         self, kpi_id: str, start_date: date, end_date: date
@@ -274,7 +252,7 @@ class HistoricalContextProvider:
                     kpi_id=kpi_id,
                     date=current,
                     value=trend_value + noise,
-                    timestamp=datetime.now(UTC),
+                    timestamp=datetime.now(timezone.utc),
                 )
             )
             current += timedelta(days=1)
@@ -301,83 +279,50 @@ class HistoricalContextProvider:
         cached_entry = self._cache.get(cache_key)
         if cached_entry:
             cached_time, cached_data = cached_entry
-            cache_age_seconds = (datetime.now(UTC) - cached_time).seconds
-
+            cache_age_seconds = (datetime.now(timezone.utc) - cached_time).total_seconds()
             cache_fresh = cache_age_seconds < self.cache_ttl_seconds
-            if not cache_fresh:
-                pass  # Proceed to load data
-            else:
+            if cache_fresh:
                 return cached_data
 
         # Load data
         data = self._load_historical_data(kpi_id, start_date, end_date)
 
         # Cache result
-        self._cache[cache_key] = (datetime.now(UTC), data)
+        self._cache[cache_key] = (datetime.now(timezone.utc), data)
 
         return data
 
     def get_trend(self, kpi_id: str, periods: int = 12) -> TrendAnalysis:
         """
-        Calculate trend for a KPI over the specified periods.
-
-        Args:
-            kpi_id: KPI identifier
-            periods: Number of periods to analyze (default 12 months)
-
-        Returns:
-            Trend analysis result
+        Calculate trend for a KPI over the specified periods (months).
+        Uses simple linear regression for clarity and auditability.
         """
-        # Get historical data for trend analysis
-        end_date = date.today()
-        start_date = end_date - timedelta(days=periods * 30)  # Approximate months
-
-        history = self.get_kpi_history(kpi_id, start_date, end_date)
-
+        end_date: date = date.today()
+        start_date: date = end_date - timedelta(days=periods * 30)
+        history: List[KpiHistoricalValue] = self.get_kpi_history(kpi_id, start_date, end_date)
         if len(history) < 2:
-            # Not enough data for trend
-            return TrendAnalysis(
-                kpi_id=kpi_id,
-                direction=TrendDirection.STABLE,
-                strength=TrendStrength.WEAK,
-                slope=0.0,
-                r_squared=0.0,
-                period_days=(end_date - start_date).days,
-                start_value=history[0].value if history else 0.0,
-                end_value=history[-1].value if history else 0.0,
-                percent_change=0.0,
-            )
+            return self._empty_trend(kpi_id, start_date, end_date)
 
-        # Simple linear regression
-        n = len(history)
-        x_values = list(range(n))
-        y_values = [h.value for h in history]
+        n: int = len(history)
+        x_values: List[float] = [float(i) for i in range(n)]
+        y_values: List[float] = [h.value for h in history]
 
-        x_mean = sum(x_values) / n
-        y_mean = sum(y_values) / n
-
-        numerator = sum(
+        x_mean: float = sum(x_values) / n
+        y_mean: float = sum(y_values) / n
+        numerator: float = sum(
             (x - x_mean) * (y - y_mean) for x, y in zip(x_values, y_values, strict=False)
         )
-        denominator = sum((x - x_mean) ** 2 for x in x_values)
+        denominator: float = sum((x - x_mean) ** 2 for x in x_values)
+        slope: float = numerator / denominator if denominator != 0 else 0.0
+        y_pred: List[float] = [slope * (x - x_mean) + y_mean for x in x_values]
+        ss_res: float = sum((y - yp) ** 2 for y, yp in zip(y_values, y_pred, strict=False))
+        ss_tot: float = sum((y - y_mean) ** 2 for y in y_values)
+        r_squared: float = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0.0
 
-        slope = numerator / denominator if denominator != 0 else 0.0
+        start_val: float = history[0].value
+        end_val: float = history[-1].value
+        percent_change: float = ((end_val - start_val) / start_val * 100) if start_val != 0 else 0.0
 
-        # Calculate R-squared
-        y_pred = [slope * (x - x_mean) + y_mean for x in x_values]
-        ss_res = sum((y - yp) ** 2 for y, yp in zip(y_values, y_pred, strict=False))
-        ss_tot = sum((y - y_mean) ** 2 for y in y_values)
-        r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0.0
-
-        # Determine direction and strength
-        start_val = history[0].value
-        end_val = history[-1].value
-        percent_change = 0.0
-        has_nonzero_start = start_val != 0
-        if has_nonzero_start:
-            percent_change = (end_val - start_val) / start_val * 100
-
-        # Direction
         if abs(slope) < 0.01:
             direction = TrendDirection.STABLE
         elif slope > 0:
@@ -385,7 +330,6 @@ class HistoricalContextProvider:
         else:
             direction = TrendDirection.DECREASING
 
-        # Strength based on R-squared
         if r_squared > 0.7:
             strength = TrendStrength.STRONG
         elif r_squared > 0.4:
@@ -404,6 +348,21 @@ class HistoricalContextProvider:
             end_value=end_val,
             percent_change=percent_change,
         )
+
+    def agent_summary(self, kpi_id: str, periods: int = 12) -> Dict[str, Any]:
+        """
+        Return a concise, agent-ready summary of historical context for a KPI.
+        Includes trend, moving average, and recent change point if detected.
+        """
+        trend = self.get_trend(kpi_id, periods)
+        moving_avg = self.get_moving_average(kpi_id, window_days=30)
+        change_point = self.detect_change_point(kpi_id, window_size=14, periods=periods)
+        return {
+            "kpi_id": kpi_id,
+            "trend": trend.dict(),
+            "moving_average_30d": moving_avg,
+            "recent_change_point": change_point,
+        }
 
     def get_moving_average(self, kpi_id: str, window_days: int = 30) -> Optional[float]:
         """
