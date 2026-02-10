@@ -7,7 +7,6 @@ tools:
   - edit
   - search
   - grep
-  - bash
 user-invokable: true
 ---
 
