@@ -252,7 +252,7 @@ uritemplate==4.2.0
 urllib3==2.6.3
 uuid_utils==0.14.0
 uvicorn==0.40.0
-websockets==15.0.1
+websockets==16.0
 whenever==0.9.5
 wrapt==2.1.1
 xxhash==3.6.0
