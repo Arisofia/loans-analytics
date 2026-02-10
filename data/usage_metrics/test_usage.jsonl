@@ -1,3 +1,0 @@
-{"event_id":"5cab2cd2-12e4-479c-a156-ef5e780718a5","timestamp":"2026-02-06T07:14:41.953480Z","user_id":"user_123","feature_name":"dashboard","action":"view","metadata":{}}
-{"event_id":"48abb947-14f9-474b-9518-c608b58ce39b","timestamp":"2026-02-06T07:14:41.953963Z","user_id":"admin","feature_name":"kpi_pipeline","action":"run","metadata":{"status":"success"}}
-{"event_id":"aaffd680-683d-465b-b3d6-b11492a87978","timestamp":"2026-02-06T07:14:41.954027Z","user_id":"user_123","feature_name":"report","action":"export","metadata":{"format":"pdf"}}

@@ -1,9 +1,0 @@
-exclude_dirs:
-  - tests
-  - apps/analytics/tests
-  - data_samples
-  - infra
-  - scripts
-  - .venv
-  - .venv-1
-  - venv
