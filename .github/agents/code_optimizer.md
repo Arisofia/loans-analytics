@@ -8,12 +8,7 @@ tools:
   - search
   - grep
   - bash
-infer: true
-metadata:
-  team: Engineering
-  domain: Fintech Analytics
-  version: 1.0.0
-  last_updated: 2026-01-31
+user-invokable: true
 ---
 
 # Code Optimizer Agent
