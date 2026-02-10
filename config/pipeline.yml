@@ -1,0 +1,138 @@
+# Unified Pipeline Configuration v2.0
+# Single source of truth for pipeline settings
+
+version: "2.0.0"
+last_updated: "2026-01-29"
+
+# PHASE 1: INGESTION
+ingestion:
+  # Data sources
+  # NOTE: Cascade API integration retired 2026-01. CSV and Supabase are primary sources.
+  sources:
+    - type: "csv"
+      enabled: true
+      location: "data/raw/"
+
+    - type: "supabase"
+      enabled: true
+      table: "loan_tape"
+
+  # Schema validation
+  validation:
+    enabled: true
+    required_columns:
+      - "loan_id"
+      - "amount"
+      - "status"
+
+    data_quality_checks:
+      - null_threshold: 0.05
+      - duplicate_detection: true
+      - checksum_verification: true
+
+# PHASE 2: TRANSFORMATION
+transformation:
+  # Null handling
+  null_handling:
+    strategy: "smart" # 'drop', 'fill', 'smart'
+    fill_values:
+      numeric: 0
+      categorical: "unknown"
+
+  # Type conversion
+  type_normalization:
+    enabled: true
+    date_format: "%Y-%m-%d"
+
+  # Outlier detection
+  outlier_detection:
+    enabled: true
+    method: "iqr" # 'iqr', 'zscore'
+    threshold: 3.0
+
+# PHASE 3: CALCULATION
+calculation:
+  # KPI Engine
+  engine: "kpi_engine_v2"
+
+  # Time series
+  time_series:
+    enabled: true
+    aggregations:
+      - "daily"
+      - "weekly"
+      - "monthly"
+
+  # Anomaly detection
+  anomaly_detection:
+    enabled: true
+    method: "statistical"
+    sensitivity: 0.95
+
+# PHASE 4: OUTPUT
+output:
+  # Export formats
+  exports:
+    parquet:
+      enabled: true
+      compression: "snappy"
+
+    csv:
+      enabled: true
+      encoding: "utf-8"
+
+    json:
+      enabled: true
+      indent: 2
+
+  # Database configuration
+  database:
+    type: "supabase"
+    enabled: true
+    url: "${SUPABASE_URL}"
+    key: "${SUPABASE_ANON_KEY}"
+    table: "kpi_timeseries_daily"
+
+  # Dashboard refresh
+  dashboard:
+    auto_refresh: true
+    webhook_url: "${DASHBOARD_WEBHOOK_URL}"
+
+# EXTERNAL INTEGRATIONS
+external_integrations:
+  supabase:
+    enabled: true
+    url: "${SUPABASE_URL}"
+    anon_key: "${SUPABASE_ANON_KEY}"
+
+  azure:
+    enabled: true
+    storage_account: "abacowebstaticfree"
+    container: "pipeline-data"
+
+  github_actions:
+    enabled: true
+    schedule: "0 2 * * *" # Daily at 2 AM
+
+# OBSERVABILITY
+observability:
+  # Logging
+  logging:
+    level: "INFO"
+    format: "json"
+    output: "logs/pipeline.log"
+
+  # Tracing
+  tracing:
+    enabled: true
+    provider: "azure_application_insights"
+    connection_string: "${APPLICATIONINSIGHTS_CONNECTION_STRING}"
+
+  # Monitoring
+  monitoring:
+    enabled: true
+    metrics:
+      - "execution_duration"
+      - "row_counts"
+      - "error_rates"
+      - "kpi_values"
