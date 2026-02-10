@@ -291,6 +291,7 @@ jobs:
         run: python scripts/monitoring/store_metrics.py metrics/pipeline_performance.json
 
       - name: Raise performance alert when degraded
+        # Use >- to fold the multiline string into a single line for evaluation
         if: >-
           ${{ needs.pipeline-orchestrator.outputs.duration != '' &&
           fromJSON(needs.pipeline-orchestrator.outputs.duration) > 15 }}

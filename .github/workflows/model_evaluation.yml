@@ -163,7 +163,9 @@ jobs:
                 }
               }
 
-              body += `View detailed report`;
+              // Split string to satisfy linter line length limit
+              body += `[View detailed report]`;
+              body += `(https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})`;
 
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
