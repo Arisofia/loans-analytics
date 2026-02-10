@@ -1,0 +1,10 @@
+apiVersion: 1
+
+groups:
+  - name: ABACO Alerts
+    folder: ABACO Alerts
+    interval: 1m
+    rules: []
+
+# Note: Alert notification channels (contact points) are configured in Alertmanager
+# Alert rules can be added dynamically via Grafana UI or API

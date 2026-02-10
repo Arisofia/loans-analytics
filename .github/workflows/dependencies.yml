@@ -1,0 +1,44 @@
+name: Dependencies (DISABLED — cloud services stopped to reduce costs)
+
+on:
+  # DISABLED: Weekly schedule stopped to reduce Actions usage
+  # schedule:
+  #   - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+# Minimal top-level permissions; write permissions are scoped to the job that needs them
+permissions:
+  contents: read
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    # Limit write permissions to this job only
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Update dependencies
+        run: |
+          pip install pip-tools
+          if [ -f "requirements.in" ]; then
+            pip-compile requirements.in --upgrade
+          else
+            echo "requirements.in not found, skipping pip-compile"
+          fi
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: "chore: update dependencies"
+          title: "chore: update dependencies"
+          branch: "auto/update-dependencies"
+          labels: dependencies
+          body: |
+            This PR updates the project dependencies to their latest versions. Please review the changes and merge if everything looks good.

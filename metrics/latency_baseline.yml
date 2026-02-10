@@ -1,0 +1,37 @@
+# Latency Baselines for Multi-Agent Scenarios
+# These baselines are used to detect performance regressions
+
+scenarios:
+  loan_analysis:
+    baseline_p99_ms: 150
+    baseline_p95_ms: 100
+    baseline_avg_ms: 75
+    baseline_success_rate: 98
+    description: "Complete loan analysis with analytics and risk agents"
+
+  risk_assessment:
+    baseline_p99_ms: 80
+    baseline_p95_ms: 60
+    baseline_avg_ms: 45
+    baseline_success_rate: 99
+    description: "Risk assessment for portfolio health"
+
+  portfolio_validation:
+    baseline_p99_ms: 50
+    baseline_p95_ms: 35
+    baseline_avg_ms: 25
+    baseline_success_rate: 99.5
+    description: "Data validation for portfolio entries"
+
+  multi_agent_coordination:
+    baseline_p99_ms: 180
+    baseline_p95_ms: 140
+    baseline_avg_ms: 100
+    baseline_success_rate: 95
+    description: "Multiple agents working together"
+
+# Global performance targets
+global:
+  max_p99_ms: 200
+  min_success_rate: 95
+  alert_threshold: 0.20  # Alert if >20% increase

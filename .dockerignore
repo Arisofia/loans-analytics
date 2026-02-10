@@ -1,0 +1,34 @@
+.git
+.gitignore
+.dockerignore
+.env
+.env.local
+__pycache__
+.pytest_cache
+.coverage
+htmlcov
+dist
+build
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+data/metrics/
+logs/
+node_modules/
+
+# Test files - exclude from Docker builds
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/jest.config.*
+**/jest.setup.*
+**/*.test.js
+**/*.spec.js
+
+# apps/web specific exclusions
+apps/web/.next
+apps/web/coverage
+apps/web/node_modules

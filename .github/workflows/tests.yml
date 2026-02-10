@@ -1,0 +1,72 @@
+# ------------------------------------------------------------------
+# Canonical test workflow for Abaco Loans Analytics
+# Delegates to unified-tests.yml — kept as the GitHub Actions entry
+# point so existing CI badges / branch-protection rules continue to work.
+# ------------------------------------------------------------------
+name: Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: pytest tests/ -v --tb=short -m "not integration"
+
+  multi-agent-tests:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run multi-agent tests
+        run: pytest python/multi_agent/ -v -k "test_" --tb=short
+
+  smoke-test:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Pipeline config validation
+        run: python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv --mode validate
