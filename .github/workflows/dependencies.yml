@@ -18,7 +18,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Update dependencies
         run: |
@@ -32,9 +32,9 @@ jobs:
       - name: Create PR
         uses: peter-evans/create-pull-request@v8
         with:
-          commit-message: 'chore: update dependencies'
-          title: 'chore: update dependencies'
-          branch: 'auto/update-dependencies'
+          commit-message: "chore: update dependencies"
+          title: "chore: update dependencies"
+          branch: "auto/update-dependencies"
           labels: dependencies
-
-
+          body: |
+            This PR updates the project dependencies to their latest versions. Please review the changes and merge if everything looks good.
