@@ -1,0 +1,98 @@
+name: CI Web
+
+permissions:
+  contents: read
+
+# Disabled: No web app exists in this repository (Python analytics platform)
+# This workflow was for a planned web frontend that was never implemented
+on:
+  workflow_dispatch: # Keep manual trigger only
+
+jobs:
+  build-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4.1.0
+        with:
+          node-version: 20
+          cache: "pnpm"
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: |
+          cd apps/web
+          pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type-check
+        run: |
+          cd apps/web
+          pnpm type-check
+
+      - name: Lint
+        run: |
+          cd apps/web
+          pnpm lint
+
+      - name: Build
+        run: |
+          cd apps/web
+          pnpm build
+
+      - name: Generate placeholder coverage (lcov)
+        run: |
+          cd apps/web
+          mkdir -p coverage
+          echo "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record" > coverage/lcov.info
+
+  build-push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4.2.0
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4.1.0
+        with:
+          node-version: 20
+          cache: "pnpm"
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: |
+          cd apps/web
+          pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type-check
+        run: |
+          cd apps/web
+          pnpm type-check
+
+      - name: Lint
+        run: |
+          cd apps/web
+          pnpm lint
+
+      - name: Build
+        run: |
+          cd apps/web
+          pnpm build
+
+      - name: Generate placeholder coverage (lcov)
+        run: |
+          cd apps/web
+          mkdir -p coverage
+          echo "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record" > coverage/lcov.info
