@@ -22,9 +22,9 @@ jobs:
           repository: ${{ github.repository }}
           retain_days: 15
           keep_minimum_runs: 10
-          delete_workflow_pattern: 'all'
+          delete_workflow_pattern: "all"
           # Excludes security and compliance workflows from deletion
-          delete_workflow_by_state_pattern: 'completed,cancelled,failure'
+          delete_workflow_by_state_pattern: "completed,cancelled,failure"
 
       - name: Cleanup summary
         run: |

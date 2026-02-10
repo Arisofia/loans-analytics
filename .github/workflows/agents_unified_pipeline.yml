@@ -29,8 +29,8 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -85,9 +85,15 @@ jobs:
           RECORDS="0"
 
           if [ -f "$RESULTS_FILE" ]; then
-            STATUS=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f); print(data.get('status', 'unknown'))")
-            DURATION=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f); print(data.get('duration_seconds', 0))")
-            RECORDS=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f); print(data.get('phases', {}).get('ingestion', {}).get('row_count', 0))")
+            STATUS=$(python -c "import json; f=open('$RESULTS_FILE');
+            data=json.load(f); print(data.get('status', 'unknown'))");
+            DURATION=$(python -c "import json; f=open('$RESULTS_FILE');
+            data=json.load(f);
+            print(data.get('duration_seconds', 0))")
+            # Split the long line using backslashes (\)
+            RECORDS=$(python -c "import json; f=open('$RESULTS_FILE'); \
+            data=json.load(f); \
+            print(data.get('phases', {}).get('ingestion', {}).get('row_count', 0))")
           fi
 
           echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
@@ -135,7 +141,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Build validation and compliance reports
         run: |
@@ -233,8 +239,8 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -291,25 +297,30 @@ jobs:
         run: python scripts/monitoring/store_metrics.py metrics/pipeline_performance.json
 
       - name: Raise performance alert when degraded
-        # Use >- to fold the multiline string into a single line for evaluation
         if: >-
-          ${{ needs.pipeline-orchestrator.outputs.duration != '' &&
-          fromJSON(needs.pipeline-orchestrator.outputs.duration) > 15 }}
+          ${{
+            needs.pipeline-orchestrator.outputs.duration != '' &&
+            fromJSON(needs.pipeline-orchestrator.outputs.duration) > 15
+          }}
         uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.create({
+            const runId = process.env.RUN_ID || 'unknown';
+            const duration = process.env.DURATION || 'unknown';
+            const issueTitle = `⚠️ Pipeline performance degraded (Run ID: ${runId})`;
+            const issueBody = [
+              `Pipeline run ${runId} exceeded performance threshold.`,
+              "",
+              `Duration: ${duration} seconds`,
+              "",
+              `Please investigate.`
+            ].join('\n');
+            github.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: '⚠️ Unified pipeline performance degradation',
-              body: `## Performance Degradation Detected\n\n**Run ID**: ${{ needs.pipeline-orchestrator.outputs.run_id }}\n**Duration**: ${{ needs.pipeline-orchestrator.outputs.duration }}s\n**Records**: ${{ needs.pipeline-orchestrator.outputs.records }}\n\n### Recommended Actions\n1. Review workflow logs and run artifacts.\n2. Check data volume spikes or upstream latency.\n3. Validate recent pipeline changes.\n`,
-              labels: ['performance', 'monitoring', 'pipeline']
-            })
-
-      - name: Upload metrics artifacts
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: performance-metrics-${{ needs.pipeline-orchestrator.outputs.run_id }}
-          path: metrics/
-          retention-days: 30
+              title: issueTitle,
+              body: issueBody
+            });
+        env:
+          RUN_ID: ${{ needs.pipeline-orchestrator.outputs.run_id }}
+          DURATION: ${{ needs.pipeline-orchestrator.outputs.duration }}
