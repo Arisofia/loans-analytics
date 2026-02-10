@@ -85,9 +85,12 @@ jobs:
           RECORDS="0"
 
           if [ -f "$RESULTS_FILE" ]; then
-            STATUS=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f); print(data.get('status', 'unknown'))")
-            DURATION=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f); print(data.get('duration_seconds', 0))")
-            RECORDS=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f); print(data.get('phases', {}).get('ingestion', {}).get('row_count', 0))")
+            STATUS=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f);\
+print(data.get('status', 'unknown'))")
+            DURATION=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f);\
+print(data.get('duration_seconds', 0))")
+            RECORDS=$(python -c "import json; f=open('$RESULTS_FILE'); data=json.load(f);\
+print(data.get('phases', {}).get('ingestion', {}).get('row_count', 0))")
           fi
 
           echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
@@ -291,7 +294,8 @@ jobs:
         run: python scripts/monitoring/store_metrics.py metrics/pipeline_performance.json
 
       - name: Raise performance alert when degraded
-        if: ${{ needs.pipeline-orchestrator.outputs.duration != '' && fromJSON(needs.pipeline-orchestrator.outputs.duration) > 15 }}
+        if: ${{ needs.pipeline-orchestrator.outputs.duration != '' &&\
+      fromJSON(needs.pipeline-orchestrator.outputs.duration) > 15 }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -299,7 +303,16 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: '⚠️ Unified pipeline performance degradation',
-              body: `## Performance Degradation Detected\n\n**Run ID**: ${{ needs.pipeline-orchestrator.outputs.run_id }}\n**Duration**: ${{ needs.pipeline-orchestrator.outputs.duration }}s\n**Records**: ${{ needs.pipeline-orchestrator.outputs.records }}\n\n### Recommended Actions\n1. Review workflow logs and run artifacts.\n2. Check data volume spikes or upstream latency.\n3. Validate recent pipeline changes.\n`,
+              body: |
+                ## Performance Degradation Detected
+                **Run ID**: ${{ needs.pipeline-orchestrator.outputs.run_id }}
+                **Duration**: ${{ needs.pipeline-orchestrator.outputs.duration }}s
+                **Records**: ${{ needs.pipeline-orchestrator.outputs.records }}
+
+                ### Recommended Actions
+                1. Review workflow logs and run artifacts.
+                2. Check data volume spikes or upstream latency.
+                3. Validate recent pipeline changes.
               labels: ['performance', 'monitoring', 'pipeline']
             })
 

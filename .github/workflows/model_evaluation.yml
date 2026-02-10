@@ -94,7 +94,9 @@ jobs:
 
           if [ "$REAL_TESTS" -eq 0 ]; then
             echo "::warning::Skipping threshold check - only placeholder tests exist"
-            echo '{"passed": true, "message": "Threshold check skipped - awaiting real evaluation tests", "skipped": true}' > threshold-results.json
+            echo '{"passed": true,\
+"message": "Threshold check skipped - awaiting real evaluation tests",\
+"skipped": true}' > threshold-results.json
           elif [ -f "scripts/evaluation/check_thresholds.py" ]; then
             python scripts/evaluation/check_thresholds.py \
               --metrics-file reports/evaluation-metrics.json \
@@ -105,7 +107,8 @@ jobs:
             }
           else
             echo "::warning::scripts/evaluation/check_thresholds.py not found, skipping threshold check"
-            echo '{"passed": false, "message": "Threshold check script not found; check not executed"}' > threshold-results.json
+            echo '{"passed": false,\
+"message": "Threshold check script not found; check not executed"}' > threshold-results.json
           fi
 
       - name: Upload evaluation reports
@@ -156,7 +159,8 @@ jobs:
                 }
               }
 
-              body += `[View detailed report](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})`;
+              body += `[View detailed report](https://github.com/${{github.repository}}/actions/runs/\
+${{github.run_id}})`;
 
               github.rest.issues.createComment({
                 issue_number: context.issue.number,

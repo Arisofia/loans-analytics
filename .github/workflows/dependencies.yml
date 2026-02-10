@@ -37,9 +37,4 @@ jobs:
           branch: 'auto/update-dependencies'
           labels: dependencies
 
-  dependency-review:
-    runs-on: ubuntu-latest
-    if: false # Disabled: workflow not triggered on pull_request
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
+
