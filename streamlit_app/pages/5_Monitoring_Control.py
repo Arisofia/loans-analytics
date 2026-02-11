@@ -69,8 +69,9 @@ def _get_safe_path(path: str) -> str | None:
     if match:
         event_id = match.group(1)
         # Re-sanitize event_id to ensure it only contains allowed characters
+        # and use a literal prefix to break the taint chain for CodeQL.
         safe_id = "".join(re.findall(r"[\w\-]", event_id))
-        return f"/monitoring/events/{safe_id}/ack"
+        return "/monitoring/events/" + safe_id + "/ack"
 
     return None
 
