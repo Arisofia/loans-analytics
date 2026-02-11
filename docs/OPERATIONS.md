@@ -1,8 +1,6 @@
 # Operational Runbook: Abaco Unified Pipeline
 
 > **⚠️ Deprecated Integrations (Retired 2026-01)**
->
-> The following integrations have been fully retired: **Slack, HubSpot, Notion, Cascade, Looker**.
 > References to `META_SYSTEM_USER_TOKEN` (Cascade) are no longer required.
 > **Current data ingestion:** CSV files or Supabase direct queries.
 
@@ -64,14 +62,19 @@ python scripts/run_data_pipeline.py \
 ## Ready-to-Execute Commands
 
 1. Run pipeline with file input:
+
    ```bash
    python scripts/run_data_pipeline.py --input data/raw/cascade/loan_tape.csv
    ```
+
 2. Run tests:
+
    ```bash
    pytest tests/ -v
    ```
+
 3. Validate config:
+
    ```bash
    python -c "from src.pipeline.orchestrator import PipelineConfig; PipelineConfig()"
    ```
