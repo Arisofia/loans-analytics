@@ -88,7 +88,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install "safety" "bandit[sarif]"
+          pip install "safety" "bandit[sarif]" "ruff"
 
       - name: Run safety check
         run: |
@@ -120,6 +120,9 @@ jobs:
 "$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",\
 "runs":[]}' > bandit-results.sarif
           fi
+
+      - name: Run Trunk Check (including Ruff)
+        run: trunk check --format=json
 
       - name: Upload Bandit SARIF results
         if: always() && hashFiles('bandit-results.sarif') != ''
