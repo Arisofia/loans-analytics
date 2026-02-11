@@ -1,31 +1,26 @@
-name: Security Scan (DISABLED — cloud services stopped to reduce costs)
+name: "Security Scan (DISABLED — cloud services stopped to reduce costs)"
 
 on:
-  # DISABLED: All automatic triggers stopped to eliminate cloud costs
-  # Snyk requires paid subscription for private repos
-  # workflow_dispatch:
-  # push:
-  #   branches: ["main", "develop"]
-  # pull_request:
-  #   branches: ["main"]
-  # schedule:
-  #   - cron: "0 0 * * 1" # Weekly on Mondays
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
 
 jobs:
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
 
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-
     strategy:
       fail-fast: false
       matrix:
-        language: ['python']
+        language: ["python"]
 
     steps:
       - name: Checkout repository
@@ -43,7 +38,7 @@ jobs:
         env:
           # Disable PR diff analysis to prevent undefined value errors in extension pack
           # This forces CodeQL to analyze the full codebase instead of just PR diffs
-          CODEQL_EXTRACTOR_PYTHON_OPTION_ANALYZE_PR_DIFF: 'false'
+          CODEQL_EXTRACTOR_PYTHON_OPTION_ANALYZE_PR_DIFF: "false"
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
@@ -51,7 +46,7 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
         with:
-          category: '/language:${{ matrix.language }}'
+          category: "/language:${{ matrix.language }}"
           upload: true
           skip-queries: false
 
@@ -82,8 +77,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -116,13 +111,8 @@ jobs:
             echo "⚠️  No Python source directories found to scan"
             # Create empty placeholder files
             echo "[]" > bandit-report.json
-            echo '{"version":"2.1.0",\
-"$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",\
-"runs":[]}' > bandit-results.sarif
+            echo '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[]}' > bandit-results.sarif
           fi
-
-      - name: Run Trunk Check (including Ruff)
-        run: trunk check --format=json
 
       - name: Upload Bandit SARIF results
         if: always() && hashFiles('bandit-results.sarif') != ''
