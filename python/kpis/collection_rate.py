@@ -7,6 +7,7 @@ import pandas as pd
 from python.validation import find_column, safe_numeric
 
 
+_FORMULA = "SUM(payments_collected) / SUM(payments_due) * 100"
 _COLLECTED_CANDIDATES = [
     "payments_collected_usd",
     "payments_collected",
@@ -45,11 +46,7 @@ def _validate_series(series: pd.Series, label: str) -> None:
 
 def calculate_collection_rate(df: pd.DataFrame | None) -> Tuple[float, Dict[str, Any]]:
     if df is None or df.shape[0] == 0:
-        return 0.0, {
-            "formula": "SUM(payments_collected) / SUM(payments_due) * 100",
-            "rows_processed": 0,
-            "calculation_status": "empty_input",
-        }
+        return 0.0, {"formula": _FORMULA, "rows_processed": 0, "calculation_status": "empty_input"}
 
     collected_col = find_column(df, _COLLECTED_CANDIDATES)
     due_col = find_column(df, _DUE_CANDIDATES)
@@ -64,7 +61,7 @@ def calculate_collection_rate(df: pd.DataFrame | None) -> Tuple[float, Dict[str,
     ]
     if missing:
         return 0.0, {
-            "formula": "SUM(payments_collected) / SUM(payments_due) * 100",
+            "formula": _FORMULA,
             "rows_processed": len(df),
             "calculation_status": "missing_columns",
             "missing_columns": missing,
@@ -81,7 +78,7 @@ def calculate_collection_rate(df: pd.DataFrame | None) -> Tuple[float, Dict[str,
 
     if due_total == 0:
         return 0.0, {
-            "formula": "SUM(payments_collected) / SUM(payments_due) * 100",
+            "formula": _FORMULA,
             "rows_processed": len(df),
             "collected_column": collected_col,
             "due_column": due_col,
@@ -92,7 +89,7 @@ def calculate_collection_rate(df: pd.DataFrame | None) -> Tuple[float, Dict[str,
     return (
         round(float(value), 2),
         {
-            "formula": "SUM(payments_collected) / SUM(payments_due) * 100",
+            "formula": _FORMULA,
             "rows_processed": len(df),
             "collected_column": collected_col,
             "due_column": due_col,
