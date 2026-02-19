@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: First checkout attempt
         id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         continue-on-error: true
       - name: Wait and retry checkout (if failed)
         if: steps.checkout.outcome == 'failure'
@@ -24,7 +24,7 @@ jobs:
           sleep 10
       - name: Second checkout attempt (if first failed)
         if: steps.checkout.outcome == 'failure'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -45,7 +45,7 @@ jobs:
     steps:
       - name: First checkout attempt
         id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         continue-on-error: true
       - name: Wait and retry checkout (if failed)
         if: steps.checkout.outcome == 'failure'
@@ -54,7 +54,7 @@ jobs:
           sleep 10
       - name: Second checkout attempt (if first failed)
         if: steps.checkout.outcome == 'failure'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -81,7 +81,7 @@ jobs:
     steps:
       - name: First checkout attempt
         id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         continue-on-error: true
       - name: Wait and retry checkout (if failed)
         if: steps.checkout.outcome == 'failure'
@@ -90,7 +90,7 @@ jobs:
           sleep 10
       - name: Second checkout attempt (if first failed)
         if: steps.checkout.outcome == 'failure'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -111,7 +111,7 @@ jobs:
     steps:
       - name: First checkout attempt
         id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         continue-on-error: true
       - name: Wait and retry checkout (if failed)
         if: steps.checkout.outcome == 'failure'
@@ -120,7 +120,7 @@ jobs:
           sleep 10
       - name: Second checkout attempt (if first failed)
         if: steps.checkout.outcome == 'failure'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
