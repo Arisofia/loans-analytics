@@ -29,7 +29,7 @@ jobs:
           fetch-depth: 0 # Keep full history so CodeQL can build PR diff range reliably
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
+        uses: github/codeql-action/init@9e907b5e64f6b83e7804b09294d44122997950d6 # v4.32.3
         with:
           languages: ${{ matrix.language }}
 
@@ -40,10 +40,10 @@ jobs:
           CODEQL_EXTRACTOR_PYTHON_OPTION_ANALYZE_PR_DIFF: "false"
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
+        uses: github/codeql-action/autobuild@9e907b5e64f6b83e7804b09294d44122997950d6 # v4.32.3
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
+        uses: github/codeql-action/analyze@9e907b5e64f6b83e7804b09294d44122997950d6 # v4.32.3
         with:
           category: "/language:${{ matrix.language }}"
           upload: ${{ vars.ENABLE_CODE_SCANNING == 'true' }}
@@ -119,7 +119,7 @@ jobs:
 
       - name: Upload Bandit SARIF results
         if: ${{ vars.ENABLE_CODE_SCANNING == 'true' && always() && hashFiles('bandit-results.sarif') != '' }}
-        uses: github/codeql-action/upload-sarif@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
+        uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6 # v4.32.3
         with:
           sarif_file: bandit-results.sarif
           category: security-audit
