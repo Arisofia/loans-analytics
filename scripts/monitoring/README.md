@@ -19,8 +19,6 @@ Scripts for monitoring, metrics collection, and dashboard management.
 
 **Dashboards:**
 
-- `backup_dashboards.sh` - Backup Grafana dashboards
-- `restore_dashboards.sh` - Restore Grafana dashboards
 - `import_dashboards.sh` - Import dashboard configurations
 
 **Configuration:**
@@ -32,9 +30,6 @@ Scripts for monitoring, metrics collection, and dashboard management.
 ```bash
 # Start monitoring stack
 ./scripts/monitoring/start_monitoring.sh
-
-# Backup dashboards
-./scripts/monitoring/backup_dashboards.sh
 
 # Export metrics
 python scripts/monitoring/metrics_exporter.py

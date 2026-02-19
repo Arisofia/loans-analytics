@@ -18,21 +18,12 @@ Scripts for repository maintenance, validation, and housekeeping.
 - `validate_copilot_agents.py` - Validate AI agent configurations
 - `validate_agent_checklist.py` - Validate agent checklist compliance
 
-## Usage Examples
+## Canonical Commands
 
-```bash
-# Run repository health check
-./scripts/maintenance/repo-doctor.sh
+For execution commands and approved variants, use:
 
-# Validate structure
-python scripts/maintenance/validate_structure.py
-
-# Cleanup old workflows
-./scripts/maintenance/cleanup_workflow_runs_by_count.sh
-
-# Validate agents
-python scripts/maintenance/validate_copilot_agents.py
-```
+- `docs/operations/SCRIPT_CANONICAL_MAP.md`
+- `docs/REPOSITORY_MAINTENANCE.md`
 
 ## Maintenance Schedule
 

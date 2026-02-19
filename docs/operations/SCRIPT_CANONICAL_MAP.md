@@ -26,10 +26,8 @@ Single source of truth for script execution paths. Use only these commands.
 
 - Auto-start monitoring stack: `bash scripts/monitoring/auto_start_monitoring.sh`
 - Monitoring health check: `bash scripts/monitoring/health_check_monitoring.sh`
-- Backup dashboards: `bash scripts/monitoring/backup_dashboards.sh`
-- Restore dashboards: `bash scripts/monitoring/restore_dashboards.sh`
 
 ## Rule
 
-- Avoid root-level wrappers (for example `scripts/run_data_pipeline.py` or `scripts/validate_structure.py`).
+- Avoid root-level wrappers and any duplicate command entrypoints.
 - Keep one active implementation path per task under `scripts/{data,maintenance,monitoring,deployment,evaluation}`.

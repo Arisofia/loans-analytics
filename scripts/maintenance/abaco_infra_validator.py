@@ -51,31 +51,8 @@ CANONICAL_SCRIPT_TARGETS = {
     SCRIPTS_DIR / "maintenance" / "repo-doctor.sh": "Repo doctor",
 }
 
-DEPRECATED_DUPLICATE_TO_CANONICAL = {
-    SCRIPTS_DIR / "generate_sample_data.py": SCRIPTS_DIR / "data" / "generate_sample_data.py",
-    SCRIPTS_DIR / "load_sample_kpis_supabase.py": SCRIPTS_DIR / "data" / "load_sample_kpis_supabase.py",
-    SCRIPTS_DIR / "seed_spanish_loans.py": SCRIPTS_DIR / "data" / "seed_spanish_loans.py",
-    SCRIPTS_DIR
-    / "generate_service_status_report.py": SCRIPTS_DIR
-    / "maintenance"
-    / "generate_service_status_report.py",
-    SCRIPTS_DIR / "validate_structure.py": SCRIPTS_DIR / "maintenance" / "validate_structure.py",
-    ARCHIVES_MAINTENANCE_DIR / "path_utils.py": SCRIPTS_DIR / "path_utils.py",
-    ARCHIVES_MAINTENANCE_DIR / "analyze_real_data.py": SCRIPTS_DIR / "data" / "analyze_real_data.py",
-    ARCHIVES_MAINTENANCE_DIR
-    / "generate_sample_data.py": SCRIPTS_DIR
-    / "data"
-    / "generate_sample_data.py",
-    ARCHIVES_MAINTENANCE_DIR
-    / "load_sample_kpis_supabase.py": SCRIPTS_DIR
-    / "data"
-    / "load_sample_kpis_supabase.py",
-    ARCHIVES_MAINTENANCE_DIR / "seed_spanish_loans.py": SCRIPTS_DIR / "data" / "seed_spanish_loans.py",
-    ARCHIVES_MAINTENANCE_DIR
-    / "generate_service_status_report.py": SCRIPTS_DIR
-    / "maintenance"
-    / "generate_service_status_report.py",
-}
+LEGACY_DUPLICATE_SEARCH_DIRS = (REPO_ROOT, SCRIPTS_DIR, ARCHIVES_MAINTENANCE_DIR)
+SCRIPT_EXTENSIONS = {".py", ".sh"}
 
 
 @dataclass
@@ -127,20 +104,7 @@ class AbacoInfraValidator:
 
     def identify_legacy_scripts(self) -> list[LegacyCandidate]:
         """Task 1: Identify duplicated script paths to remove."""
-        candidates: list[LegacyCandidate] = []
-
-        for duplicate_path, canonical_path in DEPRECATED_DUPLICATE_TO_CANONICAL.items():
-            if not duplicate_path.exists():
-                continue
-            candidates.append(
-                LegacyCandidate(
-                    path=duplicate_path,
-                    canonical_target=canonical_path,
-                    reason="Duplicate script path; canonical location already defined",
-                )
-            )
-
-        candidates.sort(key=lambda c: str(c.path))
+        candidates = self._discover_duplicate_script_paths()
 
         if self.verbose:
             for candidate in candidates:
@@ -299,7 +263,7 @@ class AbacoInfraValidator:
         )
 
         canonical_ok = all(path.exists() for path in CANONICAL_SCRIPT_TARGETS)
-        duplicates_removed = not any(path.exists() for path in DEPRECATED_DUPLICATE_TO_CANONICAL)
+        duplicates_removed = len(self._discover_duplicate_script_paths()) == 0
         checklist.append(
             ChecklistItem(
                 label=TASK_LABELS["task_3"],
@@ -464,6 +428,43 @@ class AbacoInfraValidator:
     @staticmethod
     def _write_json(path: Path, payload: dict[str, Any]) -> None:
         path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    @staticmethod
+    def _canonical_targets_by_filename() -> dict[str, Path]:
+        targets: dict[str, Path] = {}
+        for path in CANONICAL_SCRIPT_TARGETS:
+            targets[path.name] = path
+        return targets
+
+    def _discover_duplicate_script_paths(self) -> list[LegacyCandidate]:
+        """Find duplicate scripts by filename outside canonical paths."""
+        candidates: list[LegacyCandidate] = []
+        canonical_by_name = self._canonical_targets_by_filename()
+
+        for directory in LEGACY_DUPLICATE_SEARCH_DIRS:
+            if not directory.exists() or not directory.is_dir():
+                continue
+
+            for candidate_path in sorted(directory.iterdir()):
+                if not candidate_path.is_file():
+                    continue
+                if candidate_path.suffix not in SCRIPT_EXTENSIONS:
+                    continue
+
+                canonical_target = canonical_by_name.get(candidate_path.name)
+                if canonical_target is None or candidate_path == canonical_target:
+                    continue
+
+                reason = "Duplicate script filename found outside canonical location"
+                candidates.append(
+                    LegacyCandidate(
+                        path=candidate_path,
+                        canonical_target=canonical_target,
+                        reason=reason,
+                    )
+                )
+
+        return candidates
 
     @staticmethod
     def _load_manifest() -> dict[str, Any]:

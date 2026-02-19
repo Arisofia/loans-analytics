@@ -77,12 +77,7 @@ pip install -r requirements.txt
 
 ### **3. Validate Repository Structure**
 
-```bash
-# Verify all pipeline components are in place
-python scripts/maintenance/validate_structure.py
-
-# Expected output: ✅ Repository Status: IMPLEMENTED - COMPLETE
-```
+Use the canonical command listed in `docs/operations/SCRIPT_CANONICAL_MAP.md` under "Validate structure".
 
 ### **4. Run the Unified Pipeline**
 
@@ -369,20 +364,7 @@ python -c "import pandas, streamlit, pydantic; print('✅ Core dependencies inst
 
 ### **Repository Structure Validation**
 
-```bash
-# Basic validation
-python scripts/maintenance/validate_structure.py
-
-# Verbose output with file details
-python scripts/maintenance/validate_structure.py --verbose
-
-# Expected output:
-# ✅ Repository Status: IMPLEMENTED - COMPLETE
-# Total Expected: 14
-# Found: 14
-# Missing: 0
-# Completion: 100.0%
-```
+Run the single canonical structure validation command from `docs/operations/SCRIPT_CANONICAL_MAP.md`.
 
 ### **Pipeline Testing**
 
@@ -529,43 +511,14 @@ logs/runs/<YYYYMMDD_HHMMSS>/
 
 Always validate structure before making changes:
 
-```bash
-# Python validator (recommended)
-python scripts/maintenance/validate_structure.py --verbose
-
-# Deno validator (alternative)
-deno run --allow-all main.ts
-```
+Use the canonical command map:
+- `docs/operations/SCRIPT_CANONICAL_MAP.md`
 
 ### **Code Quality & Maintenance**
 
-Use the unified maintenance system:
-
-```bash
-# Quick formatting
-make format
-
-# Full maintenance (formatting + cleanup + git)
-make maintenance
-
-# Preview changes (dry-run)
-make maintenance-dry-run
-
-# Deep cleanup
-make maintenance-aggressive
-```
-
-Or use the script directly:
-
-```bash
-# Standard maintenance
-./scripts/maintenance/repo_maintenance.sh --mode=standard
-
-# View all options
-./scripts/maintenance/repo_maintenance.sh --help
-```
-
-For details, see [Repository Maintenance Guide](docs/REPOSITORY_MAINTENANCE.md)
+For the canonical maintenance command and allowed variants, see:
+- `docs/operations/SCRIPT_CANONICAL_MAP.md`
+- `docs/REPOSITORY_MAINTENANCE.md`
 
 ### **Adding New KPIs**
 
@@ -646,10 +599,10 @@ Traces AI agent decision-making, API calls, and multi-agent interactions:
 
 ## 🤝 Contributing
 
-1. Validate structure: `python scripts/maintenance/validate_structure.py`
+1. Validate structure using `docs/operations/SCRIPT_CANONICAL_MAP.md`
 2. Create feature branch: `git checkout -b feature/your-feature`
 3. Make changes and test: `pytest tests/`
-4. Validate again: `python scripts/maintenance/validate_structure.py`
+4. Validate again using the same canonical command from `docs/operations/SCRIPT_CANONICAL_MAP.md`
 5. Commit: `git commit -m "feat: your feature"`
 6. Push and create PR
 
@@ -680,11 +633,9 @@ python scripts/data/run_data_pipeline.py --mode dry-run
 
 **Structure validation fails:**
 
-```bash
-# Re-run validation with details
-python scripts/maintenance/validate_structure.py --verbose
+Use the canonical validator command from `docs/operations/SCRIPT_CANONICAL_MAP.md`, then verify expected directories exist:
 
-# Check for missing files
+```bash
 ls -la src/pipeline/ config/ scripts/
 ```
 

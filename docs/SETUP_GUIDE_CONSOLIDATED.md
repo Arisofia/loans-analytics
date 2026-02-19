@@ -425,8 +425,8 @@ pre-commit install --force
 #### Git conflicts
 
 ```bash
-# Run repo maintenance
-./scripts/maintenance/repo_maintenance.sh --mode=standard
+# Run canonical maintenance flow
+See docs/operations/SCRIPT_CANONICAL_MAP.md
 ```
 
 ---

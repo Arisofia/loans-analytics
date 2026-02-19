@@ -10,10 +10,7 @@ Use this checklist to connect the project’s external services and to start the
   - `AZURE_SQL_CONNECTION_STRING`
   - `AZURE_COSMOS_CONNECTION_STRING`
   - `AZURE_STORAGE_CONNECTION_STRING`
-- Run the Deno guard to validate required directories and environment wiring:
-  ```bash
-  deno run --allow-all main.ts
-  ```
+- Run the canonical structure validation command from `docs/operations/SCRIPT_CANONICAL_MAP.md`.
 
 ## 2. Supabase
 
@@ -79,6 +76,6 @@ Use this checklist to connect the project’s external services and to start the
 
 ## 9. Quick validation loop
 
-- Load env vars, run `deno run --allow-all main.ts`, and execute the lint/test targets from the workflows.
+- Load env vars, run the canonical structure validation command from `docs/operations/SCRIPT_CANONICAL_MAP.md`, and execute the lint/test targets from the workflows.
 - Trigger a one-off GitHub Actions run to confirm external services respond.
 - Share the Copilot/agent summary plus preview deployment link in your ticket or PR to prove end-to-end coverage.

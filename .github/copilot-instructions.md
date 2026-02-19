@@ -58,9 +58,9 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # Run pipeline (main entry point)
-python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
-python scripts/run_data_pipeline.py --mode validate  # Config check only
-python scripts/run_data_pipeline.py --mode dry-run   # Ingestion only
+python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv
+python scripts/data/run_data_pipeline.py --mode validate  # Config check only
+python scripts/data/run_data_pipeline.py --mode dry-run   # Ingestion only
 
 # Testing (uses pytest with markers)
 make test                    # Or: pytest
@@ -163,7 +163,7 @@ Agents use typed Pydantic models from `python/multi_agent/protocol.py`:
 - Multi-agent tests mock LLM calls (no API keys needed for unit tests)
 - Integration tests marked with `@pytest.mark.integration` require Supabase credentials
 - Test coverage requirement: >95% (enforced by SonarQube quality gates)
-- Run `python scripts/validate_structure.py` to verify repository completeness
+- Run the canonical structure validation command defined in `docs/operations/SCRIPT_CANONICAL_MAP.md` to verify repository completeness
 
 ## Security & Compliance
 

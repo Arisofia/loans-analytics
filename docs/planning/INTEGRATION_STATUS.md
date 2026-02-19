@@ -75,11 +75,7 @@ Fixed all Node.js built-in module imports to use `node:` protocol:
   import { dirname } from "node:path";
   ```
 
-- **[main.ts](main.ts#L4-L5)**:
-  ```typescript
-  import fs from "node:fs";
-  import path from "node:path";
-  ```
+- **Legacy root guard**: Removed from active flow during script canonicalization.
 
 **Benefits**:
 
