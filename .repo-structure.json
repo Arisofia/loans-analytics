@@ -27,8 +27,7 @@
           "config.py - Unified configuration management",
           "logging_config.py - Structured JSON logging",
           "models/ - Pydantic schemas (KPI, workflows, data contracts)",
-          "multi_agent/ - AI agent orchestrator",
-          "pipeline/ - Pipeline phase implementations"
+          "multi_agent/ - AI agent orchestrator"
         ],
         "stage": "PHASE 1-4 SUPPORT"
       },
@@ -156,13 +155,13 @@
       {
         "name": "Supabase",
         "purpose": "Database for persistent KPI storage and dashboard queries",
-        "config": "supabase.json, .env variables",
+        "config": "supabase.json",
         "integration_point": "Phase 4 (Output)"
       },
       {
         "name": "Azure Services",
         "purpose": "Blob storage, Key Vault, Static Web Apps",
-        "config": "azure.yaml, infra/azure/",
+        "config": "azure.yaml, infra/",
         "integration_point": "Data layer, infrastructure"
       },
       {
@@ -195,7 +194,7 @@
       "output": "Clean data ready for calculation"
     },
     "PHASE_3_CALCULATION": {
-      "location": "src/pipeline/calculation.py + src/kpi_engine_v2.py",
+      "location": "src/pipeline/calculation.py",
       "support_files": [
         "config/kpis/kpi_definitions.yaml",
         "python/multi_agent/"
@@ -206,7 +205,7 @@
     },
     "PHASE_4_OUTPUT": {
       "location": "src/pipeline/output.py",
-      "support_files": ["apps/analytics/api/", "streamlit_app.py"],
+      "support_files": ["streamlit_app.py"],
       "function": "Multi-format exports (Parquet/CSV/JSON), Supabase writes, dashboard refresh",
       "validation": "Transaction safety, idempotent upserts, SLA monitoring",
       "output": "Artifacts in logs/runs/, database updates, frontend refresh"
@@ -224,7 +223,7 @@
     }
   },
   "QUICK_REFERENCE": {
-    "start_pipeline": "python scripts/run_data_pipeline.py --config config/pipeline.yml",
+    "start_pipeline": "python scripts/data/run_data_pipeline.py --config config/pipeline.yml",
     "view_dashboard": "streamlit run streamlit_app.py",
     "check_logs": "logs/runs/<timestamp>/",
     "update_kpis": "Edit config/kpis/kpi_definitions.yaml (automatically loaded)",
