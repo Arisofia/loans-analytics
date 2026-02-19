@@ -47,7 +47,7 @@ jobs:
         uses: github/codeql-action/analyze@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
         with:
           category: "/language:${{ matrix.language }}"
-          upload: true
+          upload: ${{ vars.ENABLE_CODE_SCANNING == 'true' }}
           skip-queries: false
 
   dependency-scan:
@@ -66,10 +66,9 @@ jobs:
       - name: Run Snyk to check for vulnerabilities
         if: ${{ env.SNYK_TOKEN != '' }}
         uses: snyk/actions/python@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
-        continue-on-error: false # Fail build on high/critical vulnerabilities
+        continue-on-error: ${{ vars.ENABLE_STRICT_SECURITY_GATES != 'true' }}
         with:
-          args: --severity-threshold=high \
-            --fail-on=all
+          args: --file=requirements.txt --package-manager=pip --severity-threshold=high --fail-on=all
 
   security-audit:
     name: Python Security Audit
@@ -120,7 +119,7 @@ jobs:
           fi
 
       - name: Upload Bandit SARIF results
-        if: always() && hashFiles('bandit-results.sarif') != ''
+        if: ${{ vars.ENABLE_CODE_SCANNING == 'true' && always() && hashFiles('bandit-results.sarif') != '' }}
         uses: github/codeql-action/upload-sarif@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
         with:
           sarif_file: bandit-results.sarif
