@@ -16,6 +16,9 @@ jobs:
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
+    env:
+      # Avoid unstable PR diff-range extension generation in Dependabot branches.
+      CODEQL_ACTION_DIFF_INFORMED_QUERIES: "false"
 
     strategy:
       fail-fast: false
