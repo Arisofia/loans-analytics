@@ -26,8 +26,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          fetch-depth: 0 # Fetch full history to prevent git fetch errors and undefined diff range values
-          ref: ${{ github.event.pull_request && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0 # Keep full history so CodeQL can build PR diff range reliably
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
