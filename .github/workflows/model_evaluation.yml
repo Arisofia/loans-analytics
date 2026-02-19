@@ -124,7 +124,7 @@ jobs:
       - name: Comment on PR with results
         if: github.event_name == 'pull_request' && always()
         # Hash corresponds to v7.0.1
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v7.0.1
+        uses: actions/github-script@450193c5abd4cdb17ba9f3ffcfe8f635c4bb6c2a # v7.0.1
         with:
           script: |
             const fs = require('fs');

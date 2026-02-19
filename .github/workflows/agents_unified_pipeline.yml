@@ -305,7 +305,7 @@ jobs:
             needs.pipeline-orchestrator.outputs.duration != '' &&
             fromJSON(needs.pipeline-orchestrator.outputs.duration) > 15
           }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const runId = process.env.RUN_ID || 'unknown';
