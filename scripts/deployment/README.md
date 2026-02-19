@@ -6,7 +6,6 @@ Scripts for deploying and managing production environments.
 
 **Deployment:**
 
-- `deploy_to_azure.sh` - Deploy application to Azure
 - `deploy_stack.sh` - Deploy complete infrastructure stack
 - `rollback_deployment.sh` - Rollback to previous deployment
 
@@ -19,9 +18,6 @@ Scripts for deploying and managing production environments.
 ## Usage Examples
 
 ```bash
-# Deploy to Azure
-./scripts/deployment/deploy_to_azure.sh
-
 # Monitor deployment
 ./scripts/deployment/monitor_deployment.sh
 

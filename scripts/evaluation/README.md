@@ -51,12 +51,11 @@ python scripts/evaluation/generate_visualizations.py \
 
 ## Integration with CI/CD
 
-These scripts are called by `.github/workflows/model_evaluation.yml`:
+No dedicated `model_evaluation` workflow is active. Run these scripts manually as needed:
 
-1. **Pytest runs** → generates `reports/evaluation-metrics.json`
+1. **Pytest runs** → generate `reports/evaluation-metrics.json`
 2. **Visualizations** → `generate_visualizations.py` creates charts
 3. **Threshold check** → `check_thresholds.py` validates quality gates
-4. **Artifacts uploaded** → reports available in GitHub Actions
 
 ## Development
 

@@ -56,7 +56,7 @@
 ### 3. Observability & Performance Agent
 
 - Triggers:
-  - Every pipeline run (via CI workflow, e.g. `daily-ingest.yml`).
+  - Every approved pipeline run (manual or scheduled by operations).
 - Responsibilities:
   - Measure:
     - End-to-end runtime.
@@ -84,9 +84,8 @@
 
 - Pipeline Orchestrator Agent
   - Entrypoint: `scripts/data/run_data_pipeline.py`
-  - Workflows:
-    - `.github/workflows/daily-ingest.yml`
-    - `.github/workflows/agents_unified_pipeline.yml`
+  - Invocation:
+    - Manual operations execution using canonical script commands
 
 - Validation & Compliance Agent
   - Validation:
@@ -98,9 +97,8 @@
     - `logs/runs/<run_id>/compliance_report.json`
 
 - Observability & Performance Agent
-  - Workflows:
-    - `.github/workflows/daily-ingest.yml`
-    - `.github/workflows/agents_unified_pipeline.yml`
+  - Trigger Source:
+    - Pipeline execution artifacts under `logs/runs/`
   - Metrics Store:
     - Supabase `pipeline_performance_metrics` (existing)
   - Reporting:

@@ -339,7 +339,7 @@ class ServiceStatusChecker:
             status["details"]["workflow_count"] = len(workflow_files)
 
             # Check for key workflows
-            key_workflows = ["tests.yml", "security-scan.yml", "deployment.yml"]
+            key_workflows = ["tests.yml", "security-scan.yml", "pr-checks.yml"]
             existing_workflows = [w for w in key_workflows if (workflows_dir / w).exists()]
             status["details"][
                 "key_workflows"

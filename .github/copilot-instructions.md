@@ -54,9 +54,6 @@ make monitoring-health
 - `.github/workflows/tests.yml`
 - `.github/workflows/pr-checks.yml`
 - `.github/workflows/security-scan.yml`
-- `.github/workflows/daily-ingest.yml`
-- `.github/workflows/agents_unified_pipeline.yml`
-- `.github/workflows/deployment.yml`
 
 ## Documentation Sources of Truth
 

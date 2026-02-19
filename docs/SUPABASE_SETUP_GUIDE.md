@@ -213,60 +213,10 @@ az container create \
 
 ## Step 6: Automate Pipeline Execution
 
-### Option A: GitHub Actions (Recommended)
-
-Use `.github/workflows/daily-ingest.yml` (manual trigger; schedule disabled):
-
-```yaml
-name: Run Daily KPI Pipeline
-
-on:
-  schedule:
-    # Run at 6 AM UTC daily (1 AM EST)
-    - cron: "0 6 * * *"
-  workflow_dispatch: # Allow manual triggers
-
-jobs:
-  run-pipeline:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Run data pipeline
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: |
-          python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
-
-      - name: Upload pipeline logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pipeline-logs
-          path: logs/
-```
-
-**Required GitHub Secrets:**
-
-- `SUPABASE_URL`: https://goxdevkqozomyhsyxhte.supabase.co
-- `SUPABASE_ANON_KEY`: Your anon public key
-
-**Setup:**
+### Option A: Manual Execution (Canonical)
 
 ```bash
-# Add secrets to GitHub
-gh secret set SUPABASE_URL --body "https://goxdevkqozomyhsyxhte.supabase.co"
-gh secret set SUPABASE_ANON_KEY --body "<your-anon-key>"
+python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
 ```
 
 ### Option B: Local Cron Job

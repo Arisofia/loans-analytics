@@ -19,7 +19,6 @@ The following workflows are the source of truth for repository governance:
 - `.github/workflows/pr-checks.yml`
 - `.github/workflows/tests.yml`
 - `.github/workflows/security-scan.yml`
-- `.github/workflows/dependencies.yml`
 
 ## Required Review and Merge Conditions
 
