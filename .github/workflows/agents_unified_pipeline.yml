@@ -95,10 +95,12 @@ jobs:
             print(data.get('phases', {}).get('ingestion', {}).get('row_count', 0))")
           fi
 
-          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
-          echo "status=$STATUS" >> $GITHUB_OUTPUT
-          echo "duration=$DURATION" >> $GITHUB_OUTPUT
-          echo "records=$RECORDS" >> $GITHUB_OUTPUT
+          {
+            echo "run_id=$RUN_ID"
+            echo "status=$STATUS"
+            echo "duration=$DURATION"
+            echo "records=$RECORDS"
+          } >> "$GITHUB_OUTPUT"
 
           echo "Run ID: $RUN_ID"
           echo "Status: $STATUS"
@@ -106,7 +108,7 @@ jobs:
           echo "Records: $RECORDS"
 
           if [ "$EXIT_CODE" -ne 0 ]; then
-            exit $EXIT_CODE
+            exit "$EXIT_CODE"
           fi
 
       - name: Upload pipeline artifacts

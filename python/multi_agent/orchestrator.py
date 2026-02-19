@@ -3,6 +3,8 @@
 import logging
 from typing import Any, Dict, List, Optional
 
+from python.utils.usage_tracker import UsageTracker
+
 from .agents import (
     ComplianceAgent,
     GrowthStrategistAgent,
@@ -39,17 +41,55 @@ class MultiAgentOrchestrator:
         self,
         provider: LLMProvider = LLMProvider.OPENAI,
         enable_tracing: bool = False,
+        usage_tracker: Optional[UsageTracker] = None,
     ):
         """Initialize orchestrator.
 
         Args:
             provider: Default LLM provider for all agents
             enable_tracing: Enable OpenTelemetry tracing
+            usage_tracker: Optional usage tracker for continuous learning events
         """
         self.provider = provider
         self.tracer = AgentTracer(enable_otel=enable_tracing)
         self.agents = self._init_agents()
         self.scenarios = self._init_scenarios()
+        self.feedback_events: List[Dict[str, Any]] = []
+
+        if usage_tracker is not None:
+            self.usage_tracker = usage_tracker
+        else:
+            try:
+                self.usage_tracker = UsageTracker()
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.warning("Usage tracker disabled: %s", exc)
+                self.usage_tracker = None
+
+    @staticmethod
+    def _has_commentary(content: str) -> bool:
+        """Check if an agent returned non-empty commentary."""
+        return bool(content and content.strip())
+
+    def _track_learning_event(
+        self,
+        feature_name: str,
+        action: str,
+        user_id: Optional[str] = None,
+        **metadata: Any,
+    ) -> None:
+        """Track event for continuous learning when tracker is available."""
+        if not self.usage_tracker:
+            return
+
+        try:
+            self.usage_tracker.track(
+                feature_name=feature_name,
+                action=action,
+                user_id=user_id,
+                **metadata,
+            )
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.warning("Failed to track learning event (%s:%s): %s", feature_name, action, exc)
 
     def _init_agents(self) -> Dict[AgentRole, BaseAgent]:
         """Initialize all role-specific agents."""
@@ -866,7 +906,32 @@ class MultiAgentOrchestrator:
             **kwargs,
         )
 
-        return agent.process(request)
+        response = agent.process(request)
+
+        if not self._has_commentary(response.message.content):
+            raise ValueError(f"Agent {role.value} returned empty commentary")
+
+        response.metadata = {
+            **response.metadata,
+            "commentary_validated": True,
+            "continuous_learning_enabled": self.usage_tracker is not None,
+        }
+
+        self._track_learning_event(
+            feature_name="agent_response",
+            action=role.value,
+            trace_id=request.trace_id,
+            agent_role=role.value,
+            has_commentary=True,
+            message_length=len(response.message.content.strip()),
+            tokens_used=response.tokens_used,
+            cost_usd=response.cost_usd,
+            latency_ms=response.latency_ms,
+            provider=response.provider.value,
+            model=response.model,
+        )
+
+        return response
 
     def run_scenario(
         self,
@@ -891,6 +956,7 @@ class MultiAgentOrchestrator:
         trace_id = trace_id or self.tracer.generate_trace_id()
         context = {**scenario.initial_context, **initial_context}
         results: Dict[str, Any] = {}
+        agent_comments: List[Dict[str, Any]] = []
 
         logger.info("Starting scenario: %s with trace_id: %s", scenario_name, trace_id)
 
@@ -911,6 +977,16 @@ class MultiAgentOrchestrator:
                 # Store output in context for next step
                 context[step.output_key] = response.message.content
                 results[step.output_key] = response.message.content
+                agent_comments.append(
+                    {
+                        "agent_role": step.agent_role.value,
+                        "output_key": step.output_key,
+                        "comment": response.message.content,
+                        "tokens_used": response.tokens_used,
+                        "cost_usd": response.cost_usd,
+                        "latency_ms": response.latency_ms,
+                    }
+                )
 
                 logger.info(
                     "Step completed: %s -> %s",
@@ -926,6 +1002,14 @@ class MultiAgentOrchestrator:
                         exc,
                     )
                     results[step.output_key] = None
+                    agent_comments.append(
+                        {
+                            "agent_role": step.agent_role.value,
+                            "output_key": step.output_key,
+                            "comment": None,
+                            "error": str(exc),
+                        }
+                    )
                 else:
                     logger.error(
                         "Required step failed: %s: %s",
@@ -942,6 +1026,20 @@ class MultiAgentOrchestrator:
             "total_tokens": self.tracer.get_trace_tokens(trace_id),
             "steps_completed": len([k for k in results if not k.startswith("_")]),
         }
+        results["_agent_comments"] = agent_comments
+
+        self._track_learning_event(
+            feature_name="scenario_execution",
+            action=scenario_name,
+            trace_id=trace_id,
+            steps_total=len(scenario.steps),
+            steps_completed=results["_metadata"]["steps_completed"],
+            agents_involved=sorted(
+                {comment["agent_role"] for comment in agent_comments if comment.get("agent_role")}
+            ),
+            total_cost_usd=results["_metadata"]["total_cost_usd"],
+            total_tokens=results["_metadata"]["total_tokens"],
+        )
 
         logger.info(
             "Scenario completed: %s | Cost: $%.4f | Tokens: %s",
@@ -964,3 +1062,73 @@ class MultiAgentOrchestrator:
     def get_scenario(self, name: str) -> Optional[Scenario]:
         """Get scenario definition by name."""
         return self.scenarios.get(name)
+
+    def record_feedback(
+        self,
+        trace_id: str,
+        rating: int,
+        comments: str = "",
+        agent_role: Optional[AgentRole] = None,
+        user_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Record user feedback to feed continuous learning loops."""
+        if rating < 1 or rating > 5:
+            raise ValueError("rating must be between 1 and 5")
+
+        feedback = {
+            "feedback_id": self.tracer.generate_trace_id(prefix="feedback"),
+            "trace_id": trace_id,
+            "agent_role": agent_role.value if agent_role else None,
+            "rating": rating,
+            "comments": comments,
+            "metadata": metadata or {},
+        }
+        self.feedback_events.append(feedback)
+
+        self._track_learning_event(
+            feature_name="agent_feedback",
+            action="feedback_received",
+            user_id=user_id,
+            feedback_id=feedback["feedback_id"],
+            trace_id=trace_id,
+            agent_role=feedback["agent_role"] or "all_agents",
+            rating=rating,
+            comments=comments,
+            **(metadata or {}),
+        )
+
+        return feedback
+
+    def get_learning_summary(self) -> Dict[str, Any]:
+        """Return aggregate feedback stats for continuous learning dashboards."""
+        if not self.feedback_events:
+            return {
+                "feedback_events": 0,
+                "average_rating": None,
+                "by_agent": {},
+                "usage_tracking_enabled": self.usage_tracker is not None,
+            }
+
+        by_agent: Dict[str, Dict[str, Any]] = {}
+        for event in self.feedback_events:
+            role = event["agent_role"] or "all_agents"
+            role_bucket = by_agent.setdefault(role, {"count": 0, "ratings": []})
+            role_bucket["count"] += 1
+            role_bucket["ratings"].append(event["rating"])
+
+        for role, role_bucket in by_agent.items():
+            ratings = role_bucket.pop("ratings")
+            role_bucket["average_rating"] = round(sum(ratings) / len(ratings), 2)
+
+        avg_rating = round(
+            sum(event["rating"] for event in self.feedback_events) / len(self.feedback_events),
+            2,
+        )
+
+        return {
+            "feedback_events": len(self.feedback_events),
+            "average_rating": avg_rating,
+            "by_agent": by_agent,
+            "usage_tracking_enabled": self.usage_tracker is not None,
+        }
