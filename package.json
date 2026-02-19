@@ -1,7 +1,4 @@
 {
-  "devDependencies": {
-    "@azure/static-web-apps-cli": "^2.0.8"
-  },
   "overrides": {
     "tmp": "^0.2.4",
     "cookie": "^0.7.0"
