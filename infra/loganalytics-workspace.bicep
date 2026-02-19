@@ -1,30 +1,30 @@
 // Log Analytics Workspace for abaco-logs
-// Configured for FREE TIER: PerGB2018 with daily cap of 0.5 GB
+// Configured for cost control: PerGB2018 with daily cap of 0.5 GB
 param workspaceName string = 'abaco-logs'
 param location string = 'eastus'
 param sku string = 'PerGB2018'
-param retentionInDays int = 30  // Reduced from 90 to minimize costs
+// PerGB2018 keeps at least 30 days retention
+param retentionInDays int = 30
 @description('Tags to apply to the workspace')
 param tags object = {
   Environment: 'Production'
   Project: 'abaco-loans-analytics'
   ManagedBy: 'Bicep'
 }
-param retentionInDays int = 7  // Reduced to 7 for free tier
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: workspaceName
   location: location
   tags: tags
   properties: {
     sku: {
-      name: 'Free'
+      name: sku
     }
     retentionInDays: retentionInDays
     features: {
       enableLogAccessUsingOnlyResourcePermissions: true
     }
     workspaceCapping: {
-      dailyQuotaGb: json('0.5')  // Free tier: limit to 0.5 GB/day
+      dailyQuotaGb: json('0.5')
     }
     publicNetworkAccessForIngestion: 'Enabled'
     publicNetworkAccessForQuery: 'Enabled'
