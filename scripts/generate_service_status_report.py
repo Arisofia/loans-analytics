@@ -8,6 +8,7 @@ archives/maintenance/generate_service_status_report.py.
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 
@@ -23,6 +24,7 @@ if _SPEC is None or _SPEC.loader is None:
     raise ImportError(f"Cannot load archived module: {_TARGET}")
 
 _MODULE = importlib.util.module_from_spec(_SPEC)
+sys.modules[_SPEC.name] = _MODULE
 _SPEC.loader.exec_module(_MODULE)
 
 ServiceStatusChecker = _MODULE.ServiceStatusChecker
