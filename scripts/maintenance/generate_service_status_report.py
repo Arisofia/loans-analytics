@@ -525,14 +525,14 @@ def main() -> None:
         report = generate_markdown_report(results)
 
         # Write to file
-        output_file = self.repo_root / "service_status_report.md"
+        output_file = checker.repo_root / "service_status_report.md"
         output_file.write_text(report, encoding="utf-8")
 
         print(f"✅ Report written to: {output_file}")
         print()
 
         # Also output JSON for programmatic use
-        json_file = self.repo_root / "service_status_report.json"
+        json_file = checker.repo_root / "service_status_report.json"
         with open(json_file, "w", encoding="utf-8") as f:
             json.dump(
                 {
@@ -558,7 +558,7 @@ def main() -> None:
         print(error_message, file=sys.stderr)
         # Attempt to write a minimal JSON error artifact; ignore failures
         try:
-            json_file = self.repo_root / "service_status_report.json"
+            json_file = checker.repo_root / "service_status_report.json"
             with open(json_file, "w", encoding="utf-8") as f:
                 json.dump(
                     {

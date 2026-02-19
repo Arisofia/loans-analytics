@@ -228,9 +228,7 @@ class AbacoInfraValidator:
         )
 
         manifest = self._load_manifest()
-        legacy_location_ok = (
-            manifest.get("LEGACY_ARCHIVED_CONTENT", {}).get("location") == "none"
-        )
+        legacy_location_ok = manifest.get("LEGACY_ARCHIVED_CONTENT", {}).get("location") == "none"
         orchestration_trigger = (
             manifest.get("PROCESS_PHASES", {}).get("ORCHESTRATION", {}).get("trigger", "")
         )
@@ -249,9 +247,7 @@ class AbacoInfraValidator:
             ChecklistItem(
                 label=TASK_LABELS["task_3"],
                 passed=canonical_ok and duplicates_removed,
-                detail=(
-                    f"canonical_ok={canonical_ok}, duplicates_removed={duplicates_removed}"
-                ),
+                detail=(f"canonical_ok={canonical_ok}, duplicates_removed={duplicates_removed}"),
             )
         )
 
@@ -333,7 +329,9 @@ class AbacoInfraValidator:
             )
 
         self._run_command(["git", "commit", "-m", self.commit_message], check=True)
-        self.commit_hash = self._run_command(["git", "rev-parse", "--short", "HEAD"], check=True).stdout.strip()
+        self.commit_hash = self._run_command(
+            ["git", "rev-parse", "--short", "HEAD"], check=True
+        ).stdout.strip()
 
         return ChecklistItem(
             label=TASK_LABELS["task_5"],
