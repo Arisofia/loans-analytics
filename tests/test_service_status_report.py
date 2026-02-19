@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-# Add scripts to path for import
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+# Add canonical maintenance scripts path for import
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts" / "maintenance"))
 
 from generate_service_status_report import (  # noqa: E402
     ServiceStatusChecker,

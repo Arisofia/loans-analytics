@@ -6,8 +6,8 @@ Validates that core expected files and folders exist in the repository.
 Uses .repo-structure.json as source of truth.
 
 Usage:
-    python scripts/validate_structure.py
-    python scripts/validate_structure.py --verbose
+    python scripts/maintenance/validate_structure.py
+    python scripts/maintenance/validate_structure.py --verbose
 """
 
 from __future__ import annotations

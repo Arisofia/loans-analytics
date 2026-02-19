@@ -16,7 +16,7 @@ This directory contains automation workflows for the ABACO Loans Analytics platf
 **Steps:**
 
 1. Check for new CSV files in data/raw/
-2. Execute Python pipeline: `scripts/run_data_pipeline.py`
+2. Execute Python pipeline: `scripts/data/run_data_pipeline.py`
 3. Verify Supabase writes
 4. Log completion status (Grafana alerts for failures)
 
@@ -92,7 +92,7 @@ The following workflows integrate with the Monitoring & Command API (`/monitorin
    ```
 
    b. **Switch** node on `command_type`:
-   - `rerun_pipeline` → **Execute Command** node: `python scripts/run_data_pipeline.py`
+   - `rerun_pipeline` → **Execute Command** node: `python scripts/data/run_data_pipeline.py`
    - `notify_team` → **Email** or **Webhook** node
    - `scale_up` → Custom HTTP call to cloud provider
      c. **PATCH** - Mark as completed/failed:

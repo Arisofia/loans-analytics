@@ -10,7 +10,7 @@ The Abaco Loans Analytics repository uses a unified maintenance system for code 
 
 ```bash
 # Standard maintenance (recommended for regular use)
-./scripts/repo_maintenance.sh --mode=standard
+./scripts/maintenance/repo_maintenance.sh --mode=standard
 
 # Or using Makefile
 make maintenance
@@ -20,13 +20,13 @@ make maintenance
 
 ```bash
 # Dry-run to see what would be cleaned
-./scripts/repo_maintenance.sh --dry-run
+./scripts/maintenance/repo_maintenance.sh --dry-run
 make maintenance-dry-run
 ```
 
 ## The Unified Maintenance Script
 
-**Location**: `scripts/repo_maintenance.sh`
+**Location**: `scripts/maintenance/repo_maintenance.sh`
 
 This script consolidates all repository maintenance operations into a single, professional tool.
 
@@ -75,7 +75,7 @@ This script consolidates all repository maintenance operations into a single, pr
 #### Standard Mode (Recommended)
 
 ```bash
-./scripts/repo_maintenance.sh --mode=standard
+./scripts/maintenance/repo_maintenance.sh --mode=standard
 # OR
 make maintenance
 ```
@@ -94,7 +94,7 @@ make maintenance
 #### Aggressive Mode
 
 ```bash
-./scripts/repo_maintenance.sh --mode=aggressive
+./scripts/maintenance/repo_maintenance.sh --mode=aggressive
 # OR
 make maintenance-aggressive
 ```
@@ -112,7 +112,7 @@ make maintenance-aggressive
 #### Nuclear Mode ⚠️
 
 ```bash
-./scripts/repo_maintenance.sh --mode=nuclear
+./scripts/maintenance/repo_maintenance.sh --mode=nuclear
 ```
 
 **What it does**:
@@ -132,7 +132,7 @@ make maintenance-aggressive
 #### Format-Only Mode
 
 ```bash
-./scripts/repo_maintenance.sh --format-only
+./scripts/maintenance/repo_maintenance.sh --format-only
 # OR
 make format
 ```
@@ -146,7 +146,7 @@ make format
 #### Dry-Run Mode
 
 ```bash
-./scripts/repo_maintenance.sh --dry-run
+./scripts/maintenance/repo_maintenance.sh --dry-run
 # OR
 make maintenance-dry-run
 ```
@@ -160,7 +160,7 @@ make maintenance-dry-run
 #### CI Mode
 
 ```bash
-./scripts/repo_maintenance.sh --ci
+./scripts/maintenance/repo_maintenance.sh --ci
 ```
 
 **What it does**: Non-interactive mode suitable for CI/CD pipelines
@@ -246,7 +246,7 @@ make maintenance-aggressive
 
 ```bash
 # Check what needs cleaning
-./scripts/repo_maintenance.sh --dry-run
+./scripts/maintenance/repo_maintenance.sh --dry-run
 
 # Then decide between standard or aggressive
 make maintenance-aggressive
@@ -286,7 +286,7 @@ cd /path/to/abaco-loans-analytics
 Use standard mode instead of aggressive:
 
 ```bash
-./scripts/repo_maintenance.sh --mode=standard
+./scripts/maintenance/repo_maintenance.sh --mode=standard
 ```
 
 ### Want to keep reflog history
@@ -308,7 +308,7 @@ The maintenance workflow integrates seamlessly with:
 For issues or questions about repository maintenance:
 
 1. Check this documentation
-2. Review `scripts/repo_maintenance.sh --help`
+2. Review `scripts/maintenance/repo_maintenance.sh --help`
 3. See GitHub Actions runs for automated maintenance logs
 4. Check `archives/maintenance/deprecated-cleanup-scripts/README.md` for migration notes
 

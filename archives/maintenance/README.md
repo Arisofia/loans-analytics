@@ -87,7 +87,7 @@ Generate a comprehensive service status report for all system components:
 make service-status
 
 # Or run directly
-python scripts/generate_service_status_report.py
+python scripts/maintenance/generate_service_status_report.py
 ```
 
 This will:
@@ -147,11 +147,11 @@ The following sections contain detailed documentation for individual scripts. Fo
 
 | Script                         | Description                                                  | Usage                                             |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
-| **auto_start_monitoring.sh**   | Complete automation for monitoring stack                     | `bash scripts/auto_start_monitoring.sh`           |
-| **health_check_monitoring.sh** | Smart health verification with critical/optional distinction | `bash scripts/health_check_monitoring.sh`         |
+| **auto_start_monitoring.sh**   | Complete automation for monitoring stack                     | `bash scripts/monitoring/auto_start_monitoring.sh`           |
+| **health_check_monitoring.sh** | Smart health verification with critical/optional distinction | `bash scripts/monitoring/health_check_monitoring.sh`         |
 | **import_dashboards.sh**       | Automated Grafana dashboard import                           | `bash scripts/import_dashboards.sh`               |
-| **backup_dashboards.sh**       | Export all Grafana dashboards to JSON                        | `bash scripts/backup_dashboards.sh [output-dir]`  |
-| **restore_dashboards.sh**      | Import dashboards from backup                                | `bash scripts/restore_dashboards.sh [backup-dir]` |
+| **backup_dashboards.sh**       | Export all Grafana dashboards to JSON                        | `bash scripts/monitoring/backup_dashboards.sh [output-dir]`  |
+| **restore_dashboards.sh**      | Import dashboards from backup                                | `bash scripts/monitoring/restore_dashboards.sh [backup-dir]` |
 | **start_monitoring.sh**        | Basic monitoring startup (legacy)                            | `bash scripts/start_monitoring.sh`                |
 | **load_env.sh**                | Load environment variables from .env.local                   | `source scripts/load_env.sh`                      |
 | **test_metrics_api.sh**        | Test Supabase Metrics API connection                         | `bash scripts/test_metrics_api.sh`                |
@@ -168,8 +168,8 @@ The following sections contain detailed documentation for individual scripts. Fo
 
 | Script                    | Description                   | Usage                                                            |
 | ------------------------- | ----------------------------- | ---------------------------------------------------------------- |
-| **run_data_pipeline.py**  | Execute data pipeline ETL     | `python scripts/run_data_pipeline.py --input data/raw/loans.csv` |
-| **validate_structure.py** | Validate repository structure | `python scripts/validate_structure.py`                           |
+| **run_data_pipeline.py**  | Execute data pipeline ETL     | `python scripts/data/run_data_pipeline.py --input data/raw/loans.csv` |
+| **validate_structure.py** | Validate repository structure | `python scripts/maintenance/validate_structure.py`                           |
 
 ## 🔧 Utility Scripts
 
@@ -177,7 +177,7 @@ The following sections contain detailed documentation for individual scripts. Fo
 | ------------------------------------- | --------------------------------- | ------------------------------------------------------------------- |
 | **repo_maintenance.sh**               | 🧹 Unified repository maintenance | `./scripts/maintenance/repo_maintenance.sh --mode=standard`         |
 | **cleanup_workflow_runs_by_count.sh** | Delete old workflow runs by count | `./scripts/maintenance/cleanup_workflow_runs_by_count.sh --keep 25` |
-| **repo-doctor.sh**                    | Repository health checks          | `./scripts/repo-doctor.sh`                                          |
+| **repo-doctor.sh**                    | Repository health checks          | `./scripts/maintenance/repo-doctor.sh`                                          |
 | **pr_status.py**                      | Check GitHub PR status            | `python scripts/pr_status.py`                                       |
 
 ### 🧹 Repository Maintenance Script (Recommended)
@@ -281,24 +281,24 @@ make monitoring-start
 
 ```bash
 # Export all dashboards to timestamped backup
-bash scripts/backup_dashboards.sh
+bash scripts/monitoring/backup_dashboards.sh
 # Output: grafana/dashboards/backups/YYYY-MM-DD_HH-MM-SS/
 
 # Export to specific directory
-bash scripts/backup_dashboards.sh /path/to/backup
+bash scripts/monitoring/backup_dashboards.sh /path/to/backup
 
 # Restore from latest backup
-bash scripts/restore_dashboards.sh
+bash scripts/monitoring/restore_dashboards.sh
 # Default: grafana/dashboards/backups/latest/
 
 # Restore from specific backup
-bash scripts/restore_dashboards.sh grafana/dashboards/backups/2026-01-30_15-30-00/
+bash scripts/monitoring/restore_dashboards.sh grafana/dashboards/backups/2026-01-30_15-30-00/
 
 # Quick dashboard workflow
 make dashboard-backup  # Export current state
 # Make changes in Grafana UI
 make dashboard-backup  # New versioned backup
-# Rollback if needed: bash scripts/restore_dashboards.sh [previous-backup-dir]
+# Rollback if needed: bash scripts/monitoring/restore_dashboards.sh [previous-backup-dir]
 ```
 
 ### Troubleshooting

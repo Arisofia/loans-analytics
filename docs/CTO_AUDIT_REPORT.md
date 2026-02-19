@@ -14,7 +14,7 @@
   - Transformation: `src/pipeline/transformation.py`.【F:src/pipeline/transformation.py†L1-L180】
   - Calculation: `src/pipeline/calculation.py`.【F:src/pipeline/calculation.py†L1-L220】
   - Output: `src/pipeline/output.py`.【F:src/pipeline/output.py†L1-L200】
-- Runner: `scripts/run_data_pipeline.py` (CLI entrypoint).【F:scripts/run_data_pipeline.py†L1-L42】
+- Runner: `scripts/data/run_data_pipeline.py` (CLI entrypoint).【F:scripts/data/run_data_pipeline.py†L1-L42】
 - Configuration and KPI definitions: `config/pipeline.yml`, `config/kpis/kpi_definitions.yaml`.【F:config/pipeline.yml†L1-L120】【F:config/kpis/kpi_definitions.yaml†L1-L200】
 
 ### APIs (FastAPI)

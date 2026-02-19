@@ -24,4 +24,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import sys; sys.exit(0)" || exit 1
 
 # Default command: run the pipeline
-CMD ["python", "scripts/run_data_pipeline.py"]
+CMD ["python", "scripts/data/run_data_pipeline.py"]

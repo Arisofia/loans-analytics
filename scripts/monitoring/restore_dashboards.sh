@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # restore_dashboards.sh - Import dashboards from backup to Grafana
-# Usage: ./scripts/restore_dashboards.sh [backup-directory]
+# Usage: ./scripts/monitoring/restore_dashboards.sh [backup-directory]
 # Default: grafana/dashboards/backups/latest/
 
 set -euo pipefail
@@ -55,7 +55,7 @@ for ds in datasources:
 
 if [ -z "${DATASOURCE_UID}" ]; then
 	echo -e "${RED}❌ ERROR: No Prometheus datasource found${NC}"
-	echo "Configure datasource first: scripts/auto_start_monitoring.sh"
+	echo "Configure datasource first: scripts/monitoring/auto_start_monitoring.sh"
 	exit 1
 fi
 

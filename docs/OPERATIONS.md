@@ -21,13 +21,13 @@ This runbook covers deployment, execution, monitoring, incident response, and re
 ### Manual Run (Canonical)
 
 ```bash
-python scripts/run_data_pipeline.py --input data/raw/cascade/loan_tape.csv
+python scripts/data/run_data_pipeline.py --input data/raw/cascade/loan_tape.csv
 ```
 
 ### Configuration Override
 
 ```bash
-python scripts/run_data_pipeline.py \
+python scripts/data/run_data_pipeline.py \
   --input data/archives/loan_tape.csv \
   --config config/pipeline.yml
 ```
@@ -64,7 +64,7 @@ python scripts/run_data_pipeline.py \
 1. Run pipeline with file input:
 
    ```bash
-   python scripts/run_data_pipeline.py --input data/raw/cascade/loan_tape.csv
+   python scripts/data/run_data_pipeline.py --input data/raw/cascade/loan_tape.csv
    ```
 
 2. Run tests:

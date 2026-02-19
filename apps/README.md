@@ -105,5 +105,5 @@ For active production workflow, use:
 streamlit run streamlit_app.py
 
 # Run data pipeline
-python scripts/run_data_pipeline.py
+python scripts/data/run_data_pipeline.py
 ```

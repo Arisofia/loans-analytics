@@ -350,7 +350,7 @@ def main():
     logger.info("\n🚀 Next steps:")
     logger.info("  1. Inspect: head %s", output_file)
     logger.info(
-        "  2. Run pipeline: .venv/bin/python scripts/run_data_pipeline.py --input %s --verbose",
+        "  2. Run pipeline: .venv/bin/python scripts/data/run_data_pipeline.py --input %s --verbose",
         output_file,
     )
 

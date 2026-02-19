@@ -12,8 +12,8 @@ The actual implementation is in src.pipeline.orchestrator.main().
 
 Invoked by:
 - CI/CD workflows (daily-ingest.yml, agents_unified_pipeline.yml)
-- Local development: python scripts/run_data_pipeline.py
-- Validation mode: python scripts/run_data_pipeline.py --mode validate
+- Local development: python scripts/data/run_data_pipeline.py
+- Validation mode: python scripts/data/run_data_pipeline.py --mode validate
 """
 
 import sys

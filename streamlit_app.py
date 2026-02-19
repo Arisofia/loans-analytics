@@ -319,7 +319,7 @@ else:
 
     1. **Run the pipeline** to generate data:
        ```bash
-       python scripts/run_data_pipeline.py --input data/raw/loans.csv
+       python scripts/data/run_data_pipeline.py --input data/raw/loans.csv
        ```
 
     2. **Select a pipeline run** from the sidebar to view results

@@ -12,12 +12,12 @@
 #    - repo-cleanup.sh (git repository cleanup)
 #
 #  Usage:
-#    ./scripts/repo_maintenance.sh --mode=standard    # Standard cleanup
-#    ./scripts/repo_maintenance.sh --mode=aggressive  # Aggressive cleanup + gc
-#    ./scripts/repo_maintenance.sh --mode=nuclear     # Maximum cleanup
-#    ./scripts/repo_maintenance.sh --dry-run          # Preview only
-#    ./scripts/repo_maintenance.sh --format-only      # Only code formatting
-#    ./scripts/repo_maintenance.sh --ci               # CI-friendly mode
+#    ./scripts/maintenance/repo_maintenance.sh --mode=standard    # Standard cleanup
+#    ./scripts/maintenance/repo_maintenance.sh --mode=aggressive  # Aggressive cleanup + gc
+#    ./scripts/maintenance/repo_maintenance.sh --mode=nuclear     # Maximum cleanup
+#    ./scripts/maintenance/repo_maintenance.sh --dry-run          # Preview only
+#    ./scripts/maintenance/repo_maintenance.sh --format-only      # Only code formatting
+#    ./scripts/maintenance/repo_maintenance.sh --ci               # CI-friendly mode
 #
 # ==============================================================================
 
@@ -434,7 +434,7 @@ if [ "$DRY_RUN" = true ]; then
 	echo -e "${YELLOW}No changes were made. This was a preview only.${NC}"
 	echo ""
 	echo -e "${CYAN}To execute:${NC}"
-	echo -e "${CYAN}  ./scripts/repo_maintenance.sh --mode=standard${NC}"
+	echo -e "${CYAN}  ./scripts/maintenance/repo_maintenance.sh --mode=standard${NC}"
 else
 	echo -e "${GREEN}${BOLD}✅ MAINTENANCE COMPLETE${NC}"
 	echo ""

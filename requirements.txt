@@ -20,6 +20,7 @@ prefect>=2.14.0
 python-dateutil>=2.8.2
 requests>=2.31.0
 pydantic>=2.0
+pydantic-settings>=2.0
 jsonschema>=4.0
 pyarrow>=14.0
 polars>=0.20

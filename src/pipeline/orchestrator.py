@@ -8,7 +8,7 @@ Coordinates all 4 phases of the data pipeline:
 4. Output
 
 NOTE: This module is not designed to be run directly as a script.
-      Use: python scripts/run_data_pipeline.py
+      Use: python scripts/data/run_data_pipeline.py
 """
 
 import argparse
@@ -261,19 +261,19 @@ def main() -> int:
         epilog="""\
 Examples:
   # Run full pipeline with a specific CSV input file
-  python scripts/run_data_pipeline.py --input /path/to/your/data.csv
+  python scripts/data/run_data_pipeline.py --input /path/to/your/data.csv
 
   # Live mode (alias for full - all 4 phases)
-  python scripts/run_data_pipeline.py --mode live --input data/raw/abaco_real_data_20260202.csv
+  python scripts/data/run_data_pipeline.py --mode live --input data/raw/abaco_real_data_20260202.csv
 
   # Validation mode (stop after transformation)
-  python scripts/run_data_pipeline.py --mode validate
+  python scripts/data/run_data_pipeline.py --mode validate
 
   # Dry-run mode (stop after ingestion)
-  python scripts/run_data_pipeline.py --mode dry-run
+  python scripts/data/run_data_pipeline.py --mode dry-run
 
   # Custom config file
-  python scripts/run_data_pipeline.py --config config/custom_pipeline.yml
+  python scripts/data/run_data_pipeline.py --config config/custom_pipeline.yml
         """,
     )
 

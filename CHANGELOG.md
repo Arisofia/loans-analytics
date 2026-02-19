@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - **PRNG → CSPRNG Migration** (python:S2245):
   - Replaced all `random` module calls with `secrets` module (cryptographically secure)
-  - Updated `scripts/generate_sample_data.py`: Using `secrets.SystemRandom()` for financial data generation
+  - Updated `scripts/data/generate_sample_data.py`: Using `secrets.SystemRandom()` for financial data generation
   - Impact: Eliminates predictability in sample data generation; improves production security posture
   - Status: ✅ Verified in PR #220
 
@@ -85,7 +85,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - **Modified**:
   - `src/pipeline/transformation.py` (refactored for complexity, removed unused imports)
-  - `scripts/generate_sample_data.py` (CSPRNG migration, Decimal precision)
+  - `scripts/data/generate_sample_data.py` (CSPRNG migration, Decimal precision)
   - `streamlit_app/pages/3_Portfolio_Dashboard.py` (multi-agent integration)
   - `requirements.lock.txt` (dependency audit and pin updates)
   - `CHANGELOG.md` (this entry)

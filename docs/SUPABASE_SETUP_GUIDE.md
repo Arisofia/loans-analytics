@@ -144,7 +144,7 @@ database:
 ### 4.2 Run Test Pipeline
 
 ```bash
-python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
+python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv
 ```
 
 **Expected output:**
@@ -246,7 +246,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
+          python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv
 
       - name: Upload pipeline logs
         if: always()
@@ -281,7 +281,7 @@ Add:
 
 ```cron
 # Run pipeline daily at 6 AM
-0 6 * * * cd /Users/jenineferderas/Documents/Documentos\ -\ MacBook\ Pro\ \(6\)/abaco-loans-analytics && .venv/bin/python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv >> logs/pipeline_cron.log 2>&1
+0 6 * * * cd /Users/jenineferderas/Documents/Documentos\ -\ MacBook\ Pro\ \(6\)/abaco-loans-analytics && .venv/bin/python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv >> logs/pipeline_cron.log 2>&1
 ```
 
 ---

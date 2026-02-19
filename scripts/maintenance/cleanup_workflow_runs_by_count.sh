@@ -1,6 +1,6 @@
 #!/bin/bash
 # Delete all workflow runs except the most recent N runs
-# Usage: ./scripts/cleanup_workflow_runs_by_count.sh [--dry-run] [--keep N]
+# Usage: ./scripts/maintenance/cleanup_workflow_runs_by_count.sh [--dry-run] [--keep N]
 
 set -euo pipefail
 

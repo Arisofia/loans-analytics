@@ -9,9 +9,9 @@ Execute the complete 4-phase pipeline:
 4. Output - Results distribution
 
 Usage:
-    python scripts/run_data_pipeline.py
-    python scripts/run_data_pipeline.py --input data/raw/loans.csv
-    python scripts/run_data_pipeline.py --config config/pipeline.yml --mode validate
+    python scripts/data/run_data_pipeline.py
+    python scripts/data/run_data_pipeline.py --input data/raw/loans.csv
+    python scripts/data/run_data_pipeline.py --config config/pipeline.yml --mode validate
 """
 
 import argparse
@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 # Add project root to path
-project_root = Path(__file__).parent.parent
+project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
 from python.logging_config import get_logger, init_sentry  # noqa: E402
@@ -40,19 +40,19 @@ def parse_args():
         epilog="""
 Examples:
   # Run full pipeline with default config
-  python scripts/run_data_pipeline.py
+  python scripts/data/run_data_pipeline.py
 
   # Run with specific input file
-  python scripts/run_data_pipeline.py --input data/raw/loans.csv
+  python scripts/data/run_data_pipeline.py --input data/raw/loans.csv
 
   # Validate configuration and data only
-  python scripts/run_data_pipeline.py --mode validate
+  python scripts/data/run_data_pipeline.py --mode validate
 
   # Dry run (ingestion only)
-  python scripts/run_data_pipeline.py --mode dry-run
+  python scripts/data/run_data_pipeline.py --mode dry-run
 
   # Use custom config file
-  python scripts/run_data_pipeline.py --config config/custom_pipeline.yml
+  python scripts/data/run_data_pipeline.py --config config/custom_pipeline.yml
         """,
     )
 

@@ -72,25 +72,33 @@ def validate_data_files() -> dict[str, bool]:
 
 
 def validate_scripts() -> dict[str, bool]:
-    """Validate that all required scripts exist."""
+    """Validate canonical script locations."""
     print_section("SCRIPTS")
 
     results: dict[str, bool] = {}
 
     results["run_pipeline"] = check_file_exists(
-        ROOT_DIR / "scripts" / "run_data_pipeline.py", "Unified Pipeline Runner"
+        ROOT_DIR / "scripts" / "data" / "run_data_pipeline.py", "Unified Pipeline Runner"
     )
 
-    results["daily_agent_analysis"] = check_file_exists(
-        ROOT_DIR / "scripts" / "run_daily_agent_analysis.py", "Daily Agent Analysis"
+    results["validate_structure"] = check_file_exists(
+        ROOT_DIR / "scripts" / "maintenance" / "validate_structure.py",
+        "Repository Structure Validator",
     )
 
-    results["verify_client_ready"] = check_file_exists(
-        ROOT_DIR / "scripts" / "verify_client_ready.py", "Client-Readiness Verification"
+    results["service_status"] = check_file_exists(
+        ROOT_DIR / "scripts" / "maintenance" / "generate_service_status_report.py",
+        "Service Status Report Generator",
     )
 
-    results["validate_kpi_accuracy"] = check_file_exists(
-        ROOT_DIR / "scripts" / "validate_kpi_accuracy.py", "KPI Accuracy Validation"
+    results["repo_maintenance"] = check_file_exists(
+        ROOT_DIR / "scripts" / "maintenance" / "repo_maintenance.sh",
+        "Repository Maintenance Orchestrator",
+    )
+
+    results["path_utils"] = check_file_exists(
+        ROOT_DIR / "scripts" / "path_utils.py",
+        "Path Security Utilities",
     )
 
     return results
@@ -268,10 +276,10 @@ def check_agent_analysis_results() -> dict[str, bool]:
         print("  [WARN] No analysis results found")
         raw_candidates = sorted((ROOT_DIR / "data" / "raw").glob("abaco_real_data_*.csv"))
         if raw_candidates:
-            cmd = f"python scripts/run_daily_agent_analysis.py --input {raw_candidates[-1]}"
+            cmd = f"python archives/maintenance/run_daily_agent_analysis.py --input {raw_candidates[-1]}"
         else:
             cmd = (
-                "python scripts/run_daily_agent_analysis.py "
+                "python archives/maintenance/run_daily_agent_analysis.py "
                 "--input data/raw/<your_real_loans_file>.csv"
             )
         print(f"     Run to generate: {cmd}")

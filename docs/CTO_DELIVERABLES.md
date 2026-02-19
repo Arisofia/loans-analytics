@@ -21,7 +21,7 @@ This document provides three layers of the requested deliverable:
   - `src/pipeline/calculation.py`
   - `src/pipeline/output.py`
 - Unified pipeline runner:
-  - `scripts/run_data_pipeline.py`
+  - `scripts/data/run_data_pipeline.py`
 - Pipeline configuration & KPI definitions:
   - `config/pipeline.yml`
   - `config/kpis/kpi_definitions.yaml`
@@ -123,7 +123,7 @@ This document provides three layers of the requested deliverable:
 **Exec reporting & diagnostics**
 
 - Service health & diagnostics:
-  - `scripts/generate_service_status_report.py`
+  - `scripts/maintenance/generate_service_status_report.py`
   - `scripts/compare_costs.py`
   - `scripts/compare_performance.py`
 - Observability documentation:
@@ -242,7 +242,7 @@ We implemented a cloud‑native fintech analytics platform with:
 
 **Data & Compute Layer**
 
-- ETL pipeline: `src/pipeline/*.py`, `scripts/run_data_pipeline.py`
+- ETL pipeline: `src/pipeline/*.py`, `scripts/data/run_data_pipeline.py`
 - RLS + schema migrations: `supabase/migrations/*`
 - KPI services & API: `python/apps/analytics/api/*.py`, `openapi.yaml`
 
@@ -281,7 +281,7 @@ flowchart TD
   end
 
   subgraph "Pipeline"
-    "scripts/run_data_pipeline.py" --> "src/pipeline/ingestion.py"
+    "scripts/data/run_data_pipeline.py" --> "src/pipeline/ingestion.py"
     "src/pipeline/ingestion.py" --> "src/pipeline/transformation.py"
     "src/pipeline/transformation.py" --> "src/pipeline/calculation.py"
     "src/pipeline/calculation.py" --> "src/pipeline/output.py"

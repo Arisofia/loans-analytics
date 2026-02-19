@@ -349,7 +349,7 @@ supabase db push
 ### Load Sample Data
 
 ```bash
-python scripts/load_sample_kpis_supabase.py
+python scripts/data/load_sample_kpis_supabase.py
 ```
 
 **See**: [supabase-setup.md](supabase-setup.md) for detailed steps
@@ -435,7 +435,7 @@ pre-commit install --force
 
 After setup:
 
-1. **Run the pipeline**: `python scripts/run_data_pipeline.py`
+1. **Run the pipeline**: `python scripts/data/run_data_pipeline.py`
 2. **Start monitoring**: `make monitoring-start`
 3. **Explore dashboards**: <http://localhost:3001> (Grafana)
 4. **Run multi-agent**: See `python/multi_agent/README.md`

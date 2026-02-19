@@ -1,7 +1,7 @@
 {
   "repository": "abaco-loans-analytics",
   "unified_process_version": "v2.0",
-  "last_updated": "2026-01-29",
+  "last_updated": "2026-02-19",
   "status": "IMPLEMENTED",
   "implementation_date": "2026-01-29",
   "ACTIVE_PRODUCTION_WORKFLOW": {
@@ -81,73 +81,40 @@
       {
         "path": "docs/",
         "active_docs": [
-          "architecture.md - System design overview",
-          "PIPELINE_UNIFICATION_PLAN.md - Detailed pipeline spec",
+          "README.md - Documentation index",
           "OPERATIONS.md - Deployment and runbooks",
-          "MIGRATION.md - Cutover procedures",
-          "TRACING_OBSERVABILITY.md - Monitoring setup"
+          "OBSERVABILITY.md - Monitoring setup",
+          "REPOSITORY_MAINTENANCE.md - Repo hygiene and consolidation",
+          "operations/SCRIPT_CANONICAL_MAP.md - Canonical script command map"
         ],
         "stage": "DOCUMENTATION"
       }
     ],
-    "workflow_flow": "Ingestion → Validation → Transformation → KPI Calculation → Output → Dashboard"
+    "workflow_flow": "Ingestion \u2192 Validation \u2192 Transformation \u2192 KPI Calculation \u2192 Output \u2192 Dashboard"
   },
   "LEGACY_ARCHIVED_CONTENT": {
     "description": "Projects, scripts, and documentation no longer part of active workflow",
-    "location": "archive_legacy/",
+    "location": "archives/maintenance/",
     "folders": [
       {
-        "path": "archive_legacy/docs/",
+        "path": "archives/maintenance/",
         "contains": [
-          "Old migration guides (v1 → v2)",
-          "Legacy architecture diagrams",
-          "Emergency response plans (archive versions)",
-          "Deprecated technical specs",
-          "Historical audit reports"
+          "Historical diagnostics and one-off automation",
+          "Deprecated scripts replaced by canonical scripts/* paths",
+          "Reference-only maintenance artifacts"
         ],
-        "reason": "Reference only - not used in current operations"
+        "reason": "Preserved history separated from active execution paths"
       },
       {
-        "path": "archive_legacy/scripts/",
+        "path": "archives/sessions/",
         "contains": [
-          "Legacy pipeline runners (old versions of run_data_pipeline.py)",
-          "Deprecated ingestion scripts",
-          "Manual ETL helpers",
-          "One-off analysis scripts"
+          "Historical session exports",
+          "Archived run snapshots"
         ],
-        "reason": "Replaced by unified pipeline orchestrator"
-      },
-      {
-        "path": "archive_legacy/python/",
-        "contains": [
-          "Old agents/ implementations",
-          "Deprecated workflow modules",
-          "Legacy KPI engines (v1)",
-          "Older utility functions"
-        ],
-        "reason": "Superseded by current agents/ and pipeline modules"
-      },
-      {
-        "path": "archive_legacy/projects/",
-        "contains": [
-          "Experimental features",
-          "Proof-of-concept implementations",
-          "Student/contractor work",
-          "Incomplete initiatives"
-        ],
-        "reason": "Not integrated into main workflow"
-      },
-      {
-        "path": "archive_legacy/notebooks/",
-        "contains": [
-          "Jupyter notebooks (analysis, exploration)",
-          "Data science experiments",
-          "Manual KPI verification notebooks"
-        ],
-        "reason": "Ad-hoc analysis - not automated"
+        "reason": "Operational history retained outside active development paths"
       }
     ],
-    "note": "All content is preserved in git history and safely isolated from active development"
+    "note": "Archived content remains versioned in git and isolated from active development"
   },
   "EXTERNAL_INTEGRATIONS": {
     "description": "Third-party tools and services (configuration only)",
@@ -181,14 +148,19 @@
   "PROCESS_PHASES": {
     "PHASE_1_INGESTION": {
       "location": "src/pipeline/ingestion.py",
-      "support_files": ["config/pipeline.yml"],
+      "support_files": [
+        "config/pipeline.yml"
+      ],
       "function": "Load data from CSV files or Supabase with validation",
       "validation": "Pydantic schema validation, checksum verification, duplicate detection",
       "output": "Raw data stored with timestamp and immutable hash"
     },
     "PHASE_2_TRANSFORMATION": {
       "location": "src/pipeline/transformation.py",
-      "support_files": ["config/business_rules.yaml", "python/models/"],
+      "support_files": [
+        "config/business_rules.yaml",
+        "python/models/"
+      ],
       "function": "Normalize data, handle nulls/outliers, type conversion, referential integrity",
       "validation": "Pandera schema validation, business rule enforcement",
       "output": "Clean data ready for calculation"
@@ -205,14 +177,16 @@
     },
     "PHASE_4_OUTPUT": {
       "location": "src/pipeline/output.py",
-      "support_files": ["streamlit_app.py"],
+      "support_files": [
+        "streamlit_app.py"
+      ],
       "function": "Multi-format exports (Parquet/CSV/JSON), Supabase writes, dashboard refresh",
       "validation": "Transaction safety, idempotent upserts, SLA monitoring",
       "output": "Artifacts in logs/runs/, database updates, frontend refresh"
     },
     "ORCHESTRATION": {
       "location": "src/pipeline/orchestrator.py",
-      "trigger": "scripts/run_data_pipeline.py (entry point)",
+      "trigger": "scripts/data/run_data_pipeline.py (entry point)",
       "function": "Coordinates all 4 phases, manages config, logs, error handling",
       "trigger_methods": [
         "Manual CLI execution",

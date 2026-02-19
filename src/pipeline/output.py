@@ -9,7 +9,7 @@ Responsibilities:
 - SLA monitoring
 
 NOTE: This module is not designed to be run directly as a script.
-      Use: python scripts/run_data_pipeline.py
+      Use: python scripts/data/run_data_pipeline.py
 """
 
 import json

@@ -10,6 +10,7 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -69,4 +70,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Pipeline config validation
-        run: python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv --mode validate
+        run: python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv --mode validate

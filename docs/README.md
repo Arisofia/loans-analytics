@@ -43,6 +43,7 @@
 - [**REPO_OPERATIONS_MASTER.md**](REPO_OPERATIONS_MASTER.md) - Complete operations manual (1,060 lines)
 - [operations/UNIFIED_WORKFLOW.md](operations/UNIFIED_WORKFLOW.md) - Workflow descriptions (395 lines)
 - [operations/WORKFLOW_DIAGRAMS.md](operations/WORKFLOW_DIAGRAMS.md) - Visual workflows (374 lines)
+- [operations/SCRIPT_CANONICAL_MAP.md](operations/SCRIPT_CANONICAL_MAP.md) - Canonical command map (single path per task)
 - [OPERATIONS.md](OPERATIONS.md) - General operations guide
 
 ---

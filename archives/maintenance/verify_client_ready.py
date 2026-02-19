@@ -247,7 +247,7 @@ def main():
         result = subprocess.run(
             [
                 sys.executable,
-                "scripts/run_data_pipeline.py",
+                "scripts/data/run_data_pipeline.py",
                 "--mode",
                 "validate",
             ],

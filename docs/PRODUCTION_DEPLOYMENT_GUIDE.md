@@ -115,7 +115,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-CMD ["python", "scripts/run_data_pipeline.py", "--mode", "production"]
+CMD ["python", "scripts/data/run_data_pipeline.py", "--mode", "production"]
 ```
 
 **Docker Compose Production** (create as `docker-compose.prod.yml`):
@@ -532,7 +532,7 @@ Enable verbose logging:
 
 ```bash
 # Local testing
-python scripts/run_data_pipeline.py --input data/raw/sample_loans_800.csv --verbose
+python scripts/data/run_data_pipeline.py --input data/raw/sample_loans_800.csv --verbose
 
 # Production (environment variable)
 export LOG_LEVEL=DEBUG

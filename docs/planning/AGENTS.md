@@ -29,7 +29,7 @@
   - New ingestion runs (GitHub Actions schedule, manual ops request).
   - Backfills / re-runs for specific dates or portfolios.
 - Responsibilities:
-  - Call `scripts/run_data_pipeline.py` with approved parameters.
+  - Call `scripts/data/run_data_pipeline.py` with approved parameters.
   - Ensure preconditions:
     - Required secrets are present.
     - Source datasets accessible (storage / DB).
@@ -83,7 +83,7 @@
 ## Implementation Mapping
 
 - Pipeline Orchestrator Agent
-  - Entrypoint: `scripts/run_data_pipeline.py`
+  - Entrypoint: `scripts/data/run_data_pipeline.py`
   - Workflows:
     - `.github/workflows/run_pipeline_daily.yml`
     - `.github/workflows/batch_export_scheduled.yml`

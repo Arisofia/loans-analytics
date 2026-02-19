@@ -54,9 +54,9 @@ maintenance:
 # Service Status Report
 service-status:
 	@if [ -x "$(BIN)/python" ]; then \
-		"$(BIN)/python" scripts/generate_service_status_report.py; \
+		"$(BIN)/python" scripts/maintenance/generate_service_status_report.py; \
 	else \
-		"$(PYTHON)" scripts/generate_service_status_report.py; \
+		"$(PYTHON)" scripts/maintenance/generate_service_status_report.py; \
 	fi
 
 maintenance-aggressive:
@@ -67,7 +67,7 @@ maintenance-dry-run:
 
 # Monitoring Stack Automation
 monitoring-start:
-	@bash scripts/auto_start_monitoring.sh
+	@bash scripts/monitoring/auto_start_monitoring.sh
 
 monitoring-stop:
 	@docker-compose -f docker-compose.monitoring.yml down
@@ -76,13 +76,13 @@ monitoring-logs:
 	@docker-compose -f docker-compose.monitoring.yml logs -f
 
 monitoring-health:
-	@bash scripts/health_check_monitoring.sh
+	@bash scripts/monitoring/health_check_monitoring.sh
 
 dashboard-backup:
-	@bash scripts/backup_dashboards.sh
+	@bash scripts/monitoring/backup_dashboards.sh
 
 dashboard-restore:
-	@bash scripts/restore_dashboards.sh
+	@bash scripts/monitoring/restore_dashboards.sh
 
 # NOTE: run-analytics target removed (legacy script deleted in Phase B)
 # Pipeline modernization tracked separately

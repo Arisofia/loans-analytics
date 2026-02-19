@@ -578,7 +578,7 @@ python -m python.multi_agent.cli run-agent \
 
 ```bash
 # Run KPI analysis to identify trends
-python scripts/run_data_pipeline.py --input data/raw/loans.csv
+python scripts/data/run_data_pipeline.py --input data/raw/loans.csv
 
 # View results in Streamlit
 streamlit run streamlit_app.py

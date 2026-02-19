@@ -118,7 +118,7 @@ def main() -> None:
     print("=" * 60)
     print("\nNext steps:")
     print("  1. Ensure your data pipeline is configured to write to `kpi_timeseries_daily`.")
-    print("  2. Run: python scripts/run_data_pipeline.py")
+    print("  2. Run: python scripts/data/run_data_pipeline.py")
     print("  3. Verify data in Supabase: table `kpi_timeseries_daily` contains records.")
     print("  4. Refresh your production dashboard and validate KPI time series.")
 

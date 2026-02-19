@@ -36,7 +36,7 @@ echo ""
 # Check if data exists
 if [ ! -f "data/raw/spanish_loans_seed.csv" ]; then
 	echo -e "${BLUE}📊 Generating seed data...${NC}"
-	python scripts/seed_spanish_loans.py
+	python scripts/data/seed_spanish_loans.py
 	echo -e "${GREEN}✅ Seed data generated${NC}"
 fi
 

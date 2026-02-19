@@ -3,7 +3,7 @@
 # Auto Start Monitoring Stack
 # Complete automation script for Prometheus + Grafana + Alertmanager
 #
-# Usage: bash scripts/auto_start_monitoring.sh
+# Usage: bash scripts/monitoring/auto_start_monitoring.sh
 #
 
 set -euo pipefail

@@ -43,7 +43,7 @@ class TestAnalyticsIntegration:
     #     result = subprocess.run(
     #         [
     #             sys.executable,
-    #             "scripts/run_data_pipeline.py",
+    #             "scripts/data/run_data_pipeline.py",
     #             "--input", str(dataset),
     #             "--config", str(minimal_config_path)
     #         ],
@@ -118,7 +118,7 @@ class TestAnalyticsIntegration:
     #     result = subprocess.run(
     #         [
     #             sys.executable,
-    #             "scripts/run_data_pipeline.py",
+    #             "scripts/data/run_data_pipeline.py",
     #             "--input", str(dataset),
     #             "--config", str(minimal_config_path)
     #         ],
@@ -165,7 +165,7 @@ class TestAnalyticsIntegration:
     #     result = subprocess.run(
     #         [
     #             sys.executable,
-    #             "scripts/run_data_pipeline.py",
+    #             "scripts/data/run_data_pipeline.py",
     #             "--input", str(dataset),
     #             "--config", str(minimal_config_path)
     #         ],
@@ -190,7 +190,7 @@ class TestAnalyticsIntegration:
     #     result = subprocess.run(
     #         [
     #             sys.executable,
-    #             "scripts/run_data_pipeline.py",
+    #             "scripts/data/run_data_pipeline.py",
     #             "--input", str(dataset),
     #             "--config", "nonexistent_config.yml"
     #         ],
@@ -202,7 +202,7 @@ class TestAnalyticsIntegration:
     #
     #     # The modern pipeline uses default config if not found but logs warning.
     #     # If it fails, it returns non-zero.
-    #     # Actually scripts/run_data_pipeline.py returns False if exception occurs.
+    #     # Actually scripts/data/run_data_pipeline.py returns False if exception occurs.
     #     # If config file is missing, it might use defaults or fail
     #     # depending on UnifiedPipeline implementation.
     #     assert (

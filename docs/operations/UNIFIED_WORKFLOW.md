@@ -25,12 +25,12 @@ CSV/API         Ingestion &      Transformation     KPI Calculation      Output 
 
 ### 1️⃣ **EXECUTION ENTRY POINT**
 
-- **File**: `scripts/run_data_pipeline.py`
+- **File**: `scripts/data/run_data_pipeline.py`
 - **Purpose**: Main CLI entry point for pipeline execution
 - **Triggers**: Manual execution, GitHub Actions, scheduled jobs, webhooks
 - **Command**:
   ```bash
-  python scripts/run_data_pipeline.py --config config/pipeline.yml [--mode validate|publish]
+  python scripts/data/run_data_pipeline.py --config config/pipeline.yml [--mode validate|publish]
   ```
 
 ### 2️⃣ **CORE PIPELINE ORCHESTRATION**
@@ -197,7 +197,7 @@ outputs:
 ```bash
 cd /Users/jenineferderas/abaco-loans-analytics
 source .venv/bin/activate
-python scripts/run_data_pipeline.py
+python scripts/data/run_data_pipeline.py
 ```
 
 ### **Option 2: GitHub Actions (Scheduled)**
@@ -313,7 +313,7 @@ pytest tests/integration/ -v
 ### **Pipeline Validation**
 
 ```bash
-python scripts/run_data_pipeline.py --mode validate
+python scripts/data/run_data_pipeline.py --mode validate
 ```
 
 ---
@@ -379,7 +379,7 @@ See: `docs/OPERATIONS.md`
 
 | Component       | Location                         | Purpose             | Trigger             |
 | --------------- | -------------------------------- | ------------------- | ------------------- |
-| **Entry Point** | `scripts/run_data_pipeline.py`   | Start pipeline      | Manual/API/Schedule |
+| **Entry Point** | `scripts/data/run_data_pipeline.py`   | Start pipeline      | Manual/API/Schedule |
 | **Ingestion**   | `src/pipeline/ingestion.py`      | Fetch data          | Phase 1             |
 | **Transform**   | `src/pipeline/transformation.py` | Clean data          | Phase 2             |
 | **Calculate**   | `src/pipeline/calculation.py`    | Compute KPIs        | Phase 3             |

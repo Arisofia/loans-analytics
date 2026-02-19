@@ -15,9 +15,10 @@ from pathlib import Path
 
 import pytest
 
-# Add scripts to path for testing
-scripts_path = Path(__file__).parent.parent.parent / "scripts"
-sys.path.insert(0, str(scripts_path))
+# Add canonical script paths for testing
+scripts_root = Path(__file__).parent.parent.parent / "scripts"
+sys.path.insert(0, str(scripts_root / "data"))
+sys.path.insert(0, str(scripts_root))
 
 
 def test_mexican_rfc_generation_uses_secrets():

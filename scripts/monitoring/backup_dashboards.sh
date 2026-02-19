@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # backup_dashboards.sh - Export all Grafana dashboards to JSON files
-# Usage: ./scripts/backup_dashboards.sh [output-directory]
+# Usage: ./scripts/monitoring/backup_dashboards.sh [output-directory]
 # Default output: grafana/dashboards/backups/YYYY-MM-DD_HH-MM-SS/
 
 set -euo pipefail

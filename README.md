@@ -79,7 +79,7 @@ pip install -r requirements.txt
 
 ```bash
 # Verify all pipeline components are in place
-python scripts/validate_structure.py
+python scripts/maintenance/validate_structure.py
 
 # Expected output: ✅ Repository Status: IMPLEMENTED - COMPLETE
 ```
@@ -88,13 +88,13 @@ python scripts/validate_structure.py
 
 ```bash
 # Full pipeline execution with sample data
-python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv
+python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv
 
 # Dry-run (ingestion only)
-python scripts/run_data_pipeline.py --mode dry-run
+python scripts/data/run_data_pipeline.py --mode dry-run
 
 # Validate configuration
-python scripts/run_data_pipeline.py --mode validate
+python scripts/data/run_data_pipeline.py --mode validate
 ```
 
 ### **5. Launch Analytics Dashboard**
@@ -371,10 +371,10 @@ python -c "import pandas, streamlit, pydantic; print('✅ Core dependencies inst
 
 ```bash
 # Basic validation
-python scripts/validate_structure.py
+python scripts/maintenance/validate_structure.py
 
 # Verbose output with file details
-python scripts/validate_structure.py --verbose
+python scripts/maintenance/validate_structure.py --verbose
 
 # Expected output:
 # ✅ Repository Status: IMPLEMENTED - COMPLETE
@@ -407,7 +407,7 @@ pytest --cov=src --cov=python
 pytest tests/test_data_integrity.py
 
 # Validate pipeline with sample data
-python scripts/run_data_pipeline.py --input data/raw/sample_loans.csv --mode validate
+python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv --mode validate
 ```
 
 ---
@@ -459,18 +459,18 @@ Specialized agent for optimizing Python code with fintech-specific expertise:
 
 ```bash
 # Full pipeline execution
-python scripts/run_data_pipeline.py --input data/raw/loans.csv
+python scripts/data/run_data_pipeline.py --input data/raw/loans.csv
 
 # With custom configuration
-python scripts/run_data_pipeline.py --config config/custom_pipeline.yml
+python scripts/data/run_data_pipeline.py --config config/custom_pipeline.yml
 
 # Execution modes
-python scripts/run_data_pipeline.py --mode full      # All 4 phases
-python scripts/run_data_pipeline.py --mode validate  # Stop after transformation
-python scripts/run_data_pipeline.py --mode dry-run   # Ingestion only
+python scripts/data/run_data_pipeline.py --mode full      # All 4 phases
+python scripts/data/run_data_pipeline.py --mode validate  # Stop after transformation
+python scripts/data/run_data_pipeline.py --mode dry-run   # Ingestion only
 
 # Verbose logging
-python scripts/run_data_pipeline.py --verbose
+python scripts/data/run_data_pipeline.py --verbose
 ```
 
 ### **Pipeline Output**
@@ -531,7 +531,7 @@ Always validate structure before making changes:
 
 ```bash
 # Python validator (recommended)
-python scripts/validate_structure.py --verbose
+python scripts/maintenance/validate_structure.py --verbose
 
 # Deno validator (alternative)
 deno run --allow-all main.ts
@@ -559,10 +559,10 @@ Or use the script directly:
 
 ```bash
 # Standard maintenance
-./scripts/repo_maintenance.sh --mode=standard
+./scripts/maintenance/repo_maintenance.sh --mode=standard
 
 # View all options
-./scripts/repo_maintenance.sh --help
+./scripts/maintenance/repo_maintenance.sh --help
 ```
 
 For details, see [Repository Maintenance Guide](docs/REPOSITORY_MAINTENANCE.md)
@@ -571,7 +571,7 @@ For details, see [Repository Maintenance Guide](docs/REPOSITORY_MAINTENANCE.md)
 
 1. Edit `config/kpis/kpi_definitions.yaml`
 2. Add formula, unit, description, and thresholds
-3. Run pipeline to test: `python scripts/run_data_pipeline.py --mode validate`
+3. Run pipeline to test: `python scripts/data/run_data_pipeline.py --mode validate`
 4. No code changes required - configuration-driven!
 
 ---
@@ -646,10 +646,10 @@ Traces AI agent decision-making, API calls, and multi-agent interactions:
 
 ## 🤝 Contributing
 
-1. Validate structure: `python scripts/validate_structure.py`
+1. Validate structure: `python scripts/maintenance/validate_structure.py`
 2. Create feature branch: `git checkout -b feature/your-feature`
 3. Make changes and test: `pytest tests/`
-4. Validate again: `python scripts/validate_structure.py`
+4. Validate again: `python scripts/maintenance/validate_structure.py`
 5. Commit: `git commit -m "feat: your feature"`
 6. Push and create PR
 
@@ -675,14 +675,14 @@ python --version  # Should be 3.9+
 pip install -r requirements.txt
 
 # Validate configuration
-python scripts/run_data_pipeline.py --mode dry-run
+python scripts/data/run_data_pipeline.py --mode dry-run
 ```
 
 **Structure validation fails:**
 
 ```bash
 # Re-run validation with details
-python scripts/validate_structure.py --verbose
+python scripts/maintenance/validate_structure.py --verbose
 
 # Check for missing files
 ls -la src/pipeline/ config/ scripts/
