@@ -1,5 +1,3 @@
-import os
-
 from streamlit_app.utils.security import sanitize_api_base
 
 

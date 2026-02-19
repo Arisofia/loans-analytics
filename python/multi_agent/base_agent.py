@@ -130,6 +130,9 @@ class BaseAgent(ABC):
             )
 
             llm_response = self._call_llm(full_messages, request)
+            content = (llm_response.get("content") or "").strip()
+            if not content:
+                raise ValueError(f"Agent {self.role.value} returned empty content")
 
             latency_ms = (time.time() - start_time) * 1000
 
@@ -138,7 +141,7 @@ class BaseAgent(ABC):
                 agent_role=self.role,
                 message=Message(
                     role=MessageRole.ASSISTANT,
-                    content=llm_response["content"],
+                    content=content,
                 ),
                 context=request.context,
                 tokens_used=llm_response.get("tokens_used", 0),
