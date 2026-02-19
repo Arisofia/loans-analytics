@@ -9,6 +9,9 @@ import json
 import sys
 from pathlib import Path
 
+# Ensure repository root is importable when invoked as `python scripts/*.py`.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from scripts.path_utils import validate_path
 
 

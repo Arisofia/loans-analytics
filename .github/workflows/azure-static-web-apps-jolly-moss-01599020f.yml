@@ -21,9 +21,10 @@ permissions:
 jobs:
   build_and_deploy:
     if: >-
-      github.event_name == 'push' ||
+      vars.ENABLE_AZURE_SWA_DEPLOY == 'true' &&
+      (github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && github.event.action != 'closed')
+      (github.event_name == 'pull_request' && github.event.action != 'closed'))
     runs-on: ubuntu-latest
     name: Build and Deploy
     permissions:
@@ -51,7 +52,9 @@ jobs:
           skip_app_build: true
 
   close_pull_request:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    if: >-
+      vars.ENABLE_AZURE_SWA_DEPLOY == 'true' &&
+      github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Close Pull Request
     permissions:
