@@ -52,7 +52,6 @@ make monitoring-health
 ## CI/CD Workflows in Active Use
 
 - `.github/workflows/tests.yml`
-- `.github/workflows/unified-tests.yml`
 - `.github/workflows/pr-checks.yml`
 - `.github/workflows/security-scan.yml`
 - `.github/workflows/daily-ingest.yml`
