@@ -94,27 +94,9 @@
   },
   "LEGACY_ARCHIVED_CONTENT": {
     "description": "Projects, scripts, and documentation no longer part of active workflow",
-    "location": "archives/maintenance/",
-    "folders": [
-      {
-        "path": "archives/maintenance/",
-        "contains": [
-          "Historical diagnostics and one-off automation",
-          "Deprecated scripts replaced by canonical scripts/* paths",
-          "Reference-only maintenance artifacts"
-        ],
-        "reason": "Preserved history separated from active execution paths"
-      },
-      {
-        "path": "archives/sessions/",
-        "contains": [
-          "Historical session exports",
-          "Archived run snapshots"
-        ],
-        "reason": "Operational history retained outside active development paths"
-      }
-    ],
-    "note": "Archived content remains versioned in git and isolated from active development"
+    "location": "none",
+    "folders": [],
+    "note": "Legacy maintenance artifacts were removed from the repository"
   },
   "EXTERNAL_INTEGRATIONS": {
     "description": "Third-party tools and services (configuration only)",

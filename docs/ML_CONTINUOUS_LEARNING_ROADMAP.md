@@ -630,7 +630,7 @@ print(f"AUC: {score:.3f}")
 
 - Multi-Agent System: `python/multi_agent/README.md`
 - KPI Definitions: `config/kpis/kpi_definitions.yaml`
-- Pipeline Architecture: `docs/PIPELINE_ARCHITECTURE.md`
+- Pipeline Architecture: `docs/OPERATIONS.md`
 
 ---
 
@@ -643,7 +643,7 @@ To contribute to ML development:
 3. **DevOps**: Setup infrastructure in `infra/ml/`
 4. **QA**: Test models in `tests/ml/`
 
-See: `docs/CONTRIBUTING.md` (to be created)
+See: `docs/GOVERNANCE.md`
 
 ---
 

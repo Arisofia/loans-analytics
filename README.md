@@ -206,20 +206,17 @@ scripts/
 
 ### **Documentation** (`docs/`)
 
-- 📚 **[docs/README.md](docs/README.md)** - Complete documentation index (updated Jan 31, 2026)
-- 🎯 **Master Documents**: Setup Guide, CTO Audit Report, Operations Master
-- 🏗️ Architecture guides and system design
-- 🔧 Operations runbooks and deployment guides
+- 📚 **[docs/README.md](docs/README.md)** - Active documentation index
+- 🎯 **Core Docs**: Setup, Operations, Governance, Observability
+- 🏗️ Architecture and design references
+- 🔧 Runbooks, deployment, and security guides
 - 📋 Planning documents and roadmaps
-- 🗄️ **Archive**: 15 historical documents preserved (Phase 1 + Phase 2 consolidation)
 
 **Recent Updates:**
 
-- ✅ Phase 2 Consolidation Complete (Jan 31, 2026)
-- ✅ 15 files archived, -2,685 lines from active docs
-- ✅ 6 organized archive categories created
-- ✅ Single source of truth per category established
-- ✅ Zero naming conflicts
+- ✅ Canonical command consolidation completed
+- ✅ Legacy maintenance scripts removed
+- ✅ Active docs aligned to current workflow
 
 For complete structure details: [.repo-structure.json](.repo-structure.json)
 
@@ -654,10 +651,9 @@ streamlit run streamlit_app.py --logger.level=debug
 - 📖 Check [docs/README.md](docs/README.md) - Complete documentation index
 - 📚 Master Guides:
   - [docs/SETUP_GUIDE_CONSOLIDATED.md](docs/SETUP_GUIDE_CONSOLIDATED.md) - Complete setup
-  - [docs/REPO_OPERATIONS_MASTER.md](docs/REPO_OPERATIONS_MASTER.md) - Operations manual
-  - [docs/CTO_AUDIT_REPORT.md](docs/CTO_AUDIT_REPORT.md) - Production audit
-- 🔍 Review [docs/CODE_QUALITY_GUIDE.md](docs/CODE_QUALITY_GUIDE.md) for standards
-- 🗄️ Check [docs/archive/](docs/archive/) for historical context
+  - [docs/OPERATIONS.md](docs/OPERATIONS.md) - Operations manual
+  - [docs/GOVERNANCE.md](docs/GOVERNANCE.md) - Engineering governance
+- 🔍 Review [docs/checklists/REVIEWER_CHECKLIST.md](docs/checklists/REVIEWER_CHECKLIST.md) for review standards
 
 ---
 

@@ -276,10 +276,10 @@ def check_agent_analysis_results() -> dict[str, bool]:
         print("  [WARN] No analysis results found")
         raw_candidates = sorted((ROOT_DIR / "data" / "raw").glob("abaco_real_data_*.csv"))
         if raw_candidates:
-            cmd = f"python archives/maintenance/run_daily_agent_analysis.py --input {raw_candidates[-1]}"
+            cmd = f"python scripts/data/run_data_pipeline.py --input {raw_candidates[-1]}"
         else:
             cmd = (
-                "python archives/maintenance/run_daily_agent_analysis.py "
+                "python scripts/data/run_data_pipeline.py "
                 "--input data/raw/<your_real_loans_file>.csv"
             )
         print(f"     Run to generate: {cmd}")

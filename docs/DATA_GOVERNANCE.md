@@ -65,10 +65,10 @@ This document establishes the golden rules for how data is documented, stored, a
 - `2026/` — 2026 strategic targets and North Star metrics
 - `2025/` — 2025 OKRs and executive planning documents
 - All files in this directory include warnings: "⚠️ PLANNING TARGETS ONLY"
-  **Historical Records** (`/archives/`)
-- `extractions/` — Past data extraction snapshots
-- `compliance/` — Historical audit reports and validation summaries
-- `snapshots/` — Point-in-time operational snapshots
+  **Historical Records** (external retention storage)
+- Dated extraction snapshots
+- Historical audit reports and validation summaries
+- Point-in-time operational snapshots
   **Live Data** (`/data/`)
 - Daily exports and fresh data files
 - Current metrics and dashboards
@@ -83,7 +83,7 @@ This document establishes the golden rules for how data is documented, stored, a
 |---------|---------|---------|--------|
 | Dollar amount with context | "Current AUM is $7.4M" | 🔴 STATIC | Remove or move to /docs/planning/ + add warning |
 | Customer count | "We have 56 customers" | 🔴 STATIC | Replace with query: "SELECT COUNT(DISTINCT client_id)" |
-| Date-specific metric | "As of December 2025, NPL is 3.8%" | 🔴 STATIC | Move to query or to /archives/ |
+| Date-specific metric | "As of December 2025, NPL is 3.8%" | 🔴 STATIC | Move to query or historical retention storage |
 | Target labeled "TARGET" | "TARGET AUM: $16.3M for 2026" | 🟢 OK if in /docs/planning/ | Keep with warning label |
 | Process description | "Sum outstanding_principal from fact_loans" | 🟢 OK | Keep in operational docs |
 | Timestamp of doc update | "Last Updated: 2025-12-26" | 🟢 OK | Keep (meta-information) |
@@ -110,26 +110,16 @@ All dollar amounts, metrics, and targets are planning hypotheses, not current st
 
 ---
 
-### 6. Archive Policy
+### 6. Historical Retention Policy
 
-**When to archive:**
+**When to retain historical records externally:**
 
 - Documentation older than 6 months and no longer actively used
 - Historical snapshots or reports (compliance, audits, validation)
 - Past extraction processes or deprecated procedures
 - Point-in-time metrics that are no longer relevant
-  **Archive structure:**
 
-```text
-archives/
-├── extractions/2025-12-04/     # Dated extractions
-├── extractions/2025-12-11/
-├── compliance/2025-12-08_validation_summary.md
-├── snapshots/operational_2025-q4/
-└── deprecated/
-```
-
-## **Archive files remain searchable** but are excluded from main documentation navigation.
+Historical files should be retained outside the active repository tree.
 
 ### 7. Enforcement & Tooling
 
@@ -137,9 +127,9 @@ archives/
 
 ```bash
 #!/bin/bash
-# Check for dollar amounts in .md files (except /archives/ and /docs/planning/)
+# Check for dollar amounts in .md files (except /docs/planning/)
 if grep -r '\$[0-9]\+[KMB]\?' docs/ --include="*.md" \
-    --exclude-dir="planning" --exclude-dir="archives"; then
+    --exclude-dir="planning"; then
   echo "❌ ERROR: Static dollar amounts found in documentation"
   echo "Move to /docs/planning/ or use query examples instead"
   exit 1
@@ -149,7 +139,7 @@ fi
 **CI/CD check to flag static metrics:**
 
 - Scan .md files for patterns: `\$\d+[KMB]?`, `\d+\s+(customers|clients|users)`
-- Exclude /docs/planning/ and /archives/
+- Exclude /docs/planning/
 - Warn if found; fail if in core operational docs
 
 ---
@@ -161,7 +151,7 @@ fi
 | **Data Team**             | Maintain live data sources; generate exports; keep dashboards fresh |
 | **Product/Engineering**   | Update operational docs in `/docs/`; keep ADRs current              |
 | **Executive/Strategy**    | Maintain planning docs in `/docs/planning/`; review quarterly       |
-| **Compliance**            | Archive audit reports to `/archives/compliance/` with dates         |
+| **Compliance**            | Retain dated audit reports in external historical storage            |
 | **DevOps/Infrastructure** | Enforce pre-commit hooks and CI/CD checks                           |
 
 ---

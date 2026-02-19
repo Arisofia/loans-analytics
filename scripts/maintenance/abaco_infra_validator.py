@@ -25,7 +25,6 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = REPO_ROOT / ".repo-structure.json"
 SCRIPTS_DIR = REPO_ROOT / "scripts"
-ARCHIVES_MAINTENANCE_DIR = REPO_ROOT / "archives" / "maintenance"
 REPORT_PATH = REPO_ROOT / "reports" / "abaco_infra_validator_report.json"
 
 TASK_LABELS = {
@@ -51,7 +50,7 @@ CANONICAL_SCRIPT_TARGETS = {
     SCRIPTS_DIR / "maintenance" / "repo-doctor.sh": "Repo doctor",
 }
 
-LEGACY_DUPLICATE_SEARCH_DIRS = (REPO_ROOT, SCRIPTS_DIR, ARCHIVES_MAINTENANCE_DIR)
+LEGACY_DUPLICATE_SEARCH_DIRS = (REPO_ROOT, SCRIPTS_DIR)
 SCRIPT_EXTENSIONS = {".py", ".sh"}
 
 
@@ -135,40 +134,22 @@ class AbacoInfraValidator:
         set_if_changed(
             legacy,
             "location",
-            "archives/maintenance/",
-            "Aligned legacy location to archives/maintenance/",
+            "none",
+            "Aligned legacy location to none",
         )
         set_if_changed(
             legacy,
             "note",
-            "Archived content remains versioned in git and isolated from active development",
-            "Normalized legacy note to current archive strategy",
+            "Legacy maintenance artifacts were removed from the repository",
+            "Normalized legacy note to current cleanup policy",
         )
 
-        desired_legacy_folders = [
-            {
-                "path": "archives/maintenance/",
-                "contains": [
-                    "Historical diagnostics and one-off automation",
-                    "Deprecated scripts replaced by canonical scripts/* paths",
-                    "Reference-only maintenance artifacts",
-                ],
-                "reason": "Preserved history separated from active execution paths",
-            },
-            {
-                "path": "archives/sessions/",
-                "contains": [
-                    "Historical session exports",
-                    "Archived run snapshots",
-                ],
-                "reason": "Operational history retained outside active development paths",
-            },
-        ]
+        desired_legacy_folders: list[dict[str, Any]] = []
         set_if_changed(
             legacy,
             "folders",
             desired_legacy_folders,
-            "Aligned LEGACY_ARCHIVED_CONTENT folders to current archives layout",
+            "Aligned LEGACY_ARCHIVED_CONTENT folders to empty legacy layout",
         )
 
         phases = updated_manifest.setdefault("PROCESS_PHASES", {})
@@ -248,7 +229,7 @@ class AbacoInfraValidator:
 
         manifest = self._load_manifest()
         legacy_location_ok = (
-            manifest.get("LEGACY_ARCHIVED_CONTENT", {}).get("location") == "archives/maintenance/"
+            manifest.get("LEGACY_ARCHIVED_CONTENT", {}).get("location") == "none"
         )
         orchestration_trigger = (
             manifest.get("PROCESS_PHASES", {}).get("ORCHESTRATION", {}).get("trigger", "")

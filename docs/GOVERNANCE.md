@@ -34,7 +34,7 @@ The following workflows are the source of truth for repository governance:
 - Use canonical commands only (no duplicate wrappers).
 - Keep one active script path per task under `scripts/`.
 - Remove obsolete scripts when their process is retired.
-- Keep historical artifacts in `archives/maintenance/` as reference-only.
+- Do not keep deprecated executable scripts in archive folders.
 
 ## Documentation Policy
 

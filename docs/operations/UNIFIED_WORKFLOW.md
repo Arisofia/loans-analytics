@@ -261,7 +261,7 @@ curl -X POST http://localhost:8000/api/pipeline/trigger
 ### **Distributed Tracing**
 
 - **Tool**: OpenTelemetry + Azure Application Insights
-- **Setup**: See `docs/TRACING_OBSERVABILITY.md`
+- **Setup**: See `docs/OBSERVABILITY.md`
 - **Traces all**: Ingestion, transformation, calculation, output phases
 
 ### **Metrics & Alerts**
@@ -336,10 +336,10 @@ See: `docs/OPERATIONS.md`
 
 ## 📚 ARCHITECTURE DOCUMENTATION
 
-- **System Overview**: `docs/architecture.md`
-- **Pipeline Spec**: `docs/PIPELINE_UNIFICATION_PLAN.md`
+- **System Overview**: `docs/architecture/CLAUDE.md`
+- **Pipeline Spec**: `docs/OPERATIONS.md`
 - **Operations Guide**: `docs/OPERATIONS.md`
-- **Monitoring Setup**: `docs/TRACING_OBSERVABILITY.md`
+- **Monitoring Setup**: `docs/OBSERVABILITY.md`
 - **Data Dictionary**: `docs/DATA_DICTIONARY.md`
 
 ---
@@ -360,18 +360,10 @@ See: `docs/OPERATIONS.md`
 └── tests/                     ← Test suites
 ```
 
-### 📦 ARCHIVED (Legacy - DO NOT USE)
+### 📦 Legacy Content Policy
 
-```
-/archive_legacy/
-├── docs/                      ← Old documentation
-├── scripts/                   ← Deprecated runners
-├── python/                    ← Old implementations
-├── projects/                  ← Experimental work
-└── notebooks/                 ← Ad-hoc analysis
-```
-
-**All legacy content is preserved in git history and safely isolated.**
+- Legacy scripts are removed from the active tree.
+- Use git history for forensic recovery when strictly necessary.
 
 ---
 

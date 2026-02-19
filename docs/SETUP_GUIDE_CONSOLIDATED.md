@@ -439,16 +439,16 @@ After setup:
 2. **Start monitoring**: `make monitoring-start`
 3. **Explore dashboards**: <http://localhost:3001> (Grafana)
 4. **Run multi-agent**: See `python/multi_agent/README.md`
-5. **Read architecture**: [ARCHITECTURE.md](ARCHITECTURE.md)
+5. **Read architecture**: [architecture/CLAUDE.md](architecture/CLAUDE.md)
 
 ---
 
 ## 📚 Additional Resources
 
-- [DEVELOPMENT.md](DEVELOPMENT.md) - Development workflow
-- [COMMAND_REFERENCE.md](COMMAND_REFERENCE.md) - All available commands
-- [CODE_QUALITY_GUIDE.md](CODE_QUALITY_GUIDE.md) - Coding standards
-- [MONITORING_AUTOMATION_COMPLETE.md](MONITORING_AUTOMATION_COMPLETE.md) - Monitoring details
+- [OPERATIONS.md](OPERATIONS.md) - Development and operations workflow
+- [operations/SCRIPT_CANONICAL_MAP.md](operations/SCRIPT_CANONICAL_MAP.md) - Canonical commands
+- [GOVERNANCE.md](GOVERNANCE.md) - Engineering standards and controls
+- [OBSERVABILITY.md](OBSERVABILITY.md) - Monitoring details
 
 ---
 

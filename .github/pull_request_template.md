@@ -15,7 +15,7 @@ Fixes: #(issue_number)
 
 ## 📖 IMPORTANT: Repository Operations Reference
 
-🚨 **ALL repository operations must follow:** [docs/REPO_OPERATIONS_MASTER.md](../docs/REPO_OPERATIONS_MASTER.md)
+🚨 **ALL repository operations must follow:** [docs/OPERATIONS.md](../docs/OPERATIONS.md)
 
 This is your single source of truth for:
 
@@ -48,14 +48,14 @@ Select all that apply:
 
 ### Repository Operations Compliance
 
-- [ ] I have read [docs/REPO_OPERATIONS_MASTER.md](../docs/REPO_OPERATIONS_MASTER.md) (§ 2 minimum)
-- [ ] Merge conflict handling follows [§ 2.2 (Resolution Strategies)](../docs/REPO_OPERATIONS_MASTER.md#22-resolution-strategies) if applicable
+- [ ] I have read [docs/OPERATIONS.md](../docs/OPERATIONS.md) and `docs/operations/SCRIPT_CANONICAL_MAP.md`
+- [ ] Merge conflict handling follows the repository conflict resolution process in `docs/OPERATIONS.md`
 - [ ] Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) standard
 - [ ] Branch is up to date with `main` (no conflicts) or conflicts resolved per master runbook
 
 ### Code Quality & Standards
 
-- [ ] Code strictly follows project style/conventions (see [CONTRIBUTING.md](../CONTRIBUTING.md) or run `npm run lint`)
+- [ ] Code strictly follows project style/conventions (see `docs/GOVERNANCE.md` or run `npm run lint`)
 - [ ] Performed thorough self-review; removed redundant/legacy code and dead imports
 - [ ] Documented all non-trivial logic with clear docstrings (include: purpose, parameters, return values; complex algorithms require inline comments explaining _why_)
 - [ ] No hardcoded secrets, credentials, PII, or sensitive data exposed in code or logs
@@ -101,7 +101,7 @@ Select all that apply:
 Document architectural rationale, technical decisions, and trade-offs. Include links to relevant design docs or decision records.
 
 **Trade-offs & Shortcuts** (required if any):
-Any shortcuts, technical debt, or deferred work must be explicitly documented. Tag with `#TODO` or document in [ARCHITECTURE.md](../docs/ARCHITECTURE.md) with a timeline for resolution.
+Any shortcuts, technical debt, or deferred work must be explicitly documented. Tag with `#TODO` or document in [architecture notes](../docs/architecture/CLAUDE.md) with a timeline for resolution.
 
 ### Performance, Security, Compliance, or Deployment Impact
 

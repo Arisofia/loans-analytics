@@ -21,14 +21,14 @@ This runbook covers deployment, execution, monitoring, incident response, and re
 ### Manual Run (Canonical)
 
 ```bash
-python scripts/data/run_data_pipeline.py --input data/raw/cascade/loan_tape.csv
+python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
 ```
 
 ### Configuration Override
 
 ```bash
 python scripts/data/run_data_pipeline.py \
-  --input data/archives/loan_tape.csv \
+  --input data/raw/abaco_real_data_20260202.csv \
   --config config/pipeline.yml
 ```
 
@@ -55,7 +55,7 @@ python scripts/data/run_data_pipeline.py \
 
 ## Backup and Recovery
 
-- Raw inputs are archived under `data/archives/cascade`.
+- Raw inputs live under `data/raw/`.
 - Manifests and compliance reports are stored under `logs/runs/`.
 - To restore a prior run, rehydrate outputs from `data/metrics/<run_id>` and manifest.
 
@@ -64,7 +64,7 @@ python scripts/data/run_data_pipeline.py \
 1. Run pipeline with file input:
 
    ```bash
-   python scripts/data/run_data_pipeline.py --input data/raw/cascade/loan_tape.csv
+   python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
    ```
 
 2. Run tests:
