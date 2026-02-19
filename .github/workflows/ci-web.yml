@@ -51,7 +51,7 @@ jobs:
         run: |
           cd apps/web
           mkdir -p coverage
-          echo "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record" > coverage/lcov.info
+          printf 'TN:\nSF:placeholder.js\nDA:1,0\nend_of_record\n' > coverage/lcov.info
 
   build-push:
     if: github.event_name == 'push'
@@ -95,4 +95,4 @@ jobs:
         run: |
           cd apps/web
           mkdir -p coverage
-          echo "TN:\nSF:placeholder.js\nDA:1,0\nend_of_record" > coverage/lcov.info
+          printf 'TN:\nSF:placeholder.js\nDA:1,0\nend_of_record\n' > coverage/lcov.info
