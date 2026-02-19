@@ -31,7 +31,7 @@
 - `AZURE_CREDENTIALS` (Azure CLI config steps)
 - `AZURE_STATIC_WEB_APPS_TOKEN_*` (SWA deploy)
   Quick validation:
-- Run `python scripts/validate_secrets.py --presence-only`, or
+- Validate required secrets presence in repository settings, or
 - Run the GitHub Actions workflow **Verify Secrets and Integrations**.
 
 ## Decision flow

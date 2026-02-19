@@ -283,7 +283,7 @@ gcloud run deploy abaco-loans-analytics \
 
 - [ ] **Environment variables**: All required vars set (see above)
 - [ ] **Secrets management**: Use cloud provider's secret store (Azure Key Vault, AWS Secrets Manager, GCP Secret Manager)
-- [ ] **Database migrations**: Run `python scripts/setup_supabase_tables.py` (if schema changes)
+- [ ] **Database migrations**: Run `python scripts/data/setup_supabase_tables.py` (if schema changes)
 - [ ] **PII compliance**: Verify `PII_MASKING_ENABLED=true` in production
 - [ ] **Rate limiting**: Configure `python/middleware/rate_limiter.py` thresholds based on expected load
 - [ ] **Monitoring**: Application Insights / Prometheus configured
@@ -301,7 +301,7 @@ gcloud run deploy abaco-loans-analytics \
 ### Post-Deployment
 
 - [ ] **Health check**: `curl https://your-app.com/health` returns 200
-- [ ] **Smoke test**: Run `python scripts/test_supabase_connection.py`
+- [ ] **Smoke test**: Run `python scripts/data/setup_supabase_tables.py --verify-only`
 - [ ] **Log aggregation**: Verify logs appear in Application Insights / CloudWatch / Stackdriver
 - [ ] **Alert rules**: Prometheus alerts firing on test violations
 - [ ] **Dashboard**: Grafana dashboards loading data
@@ -532,7 +532,7 @@ Enable verbose logging:
 
 ```bash
 # Local testing
-python scripts/data/run_data_pipeline.py --input data/raw/sample_loans_800.csv --verbose
+python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv --verbose
 
 # Production (environment variable)
 export LOG_LEVEL=DEBUG
@@ -555,9 +555,9 @@ railway logs
 
 **Internal Resources**:
 
-- Development guide: [DEVELOPMENT.md](./DEVELOPMENT.md)
+- Development guide: [DEVELOPMENT.md](./OPERATIONS.md)
 - API security: [API_SECURITY_GUIDE.md](./API_SECURITY_GUIDE.md)
-- Data seeding: [DATA_SEEDING_GUIDE.md](./DATA_SEEDING_GUIDE.md)
+- Data seeding: [DATA_SEEDING_GUIDE.md](./DATA_GOVERNANCE.md)
 - Runbooks: `runbooks/` directory
 
 **External Support**:

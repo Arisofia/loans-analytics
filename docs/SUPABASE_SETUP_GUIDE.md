@@ -71,7 +71,7 @@ SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY}
 Run the verification script:
 
 ```bash
-python scripts/setup_supabase_tables.py --verify-only
+python scripts/data/setup_supabase_tables.py --verify-only
 ```
 
 **Expected output:**
@@ -121,7 +121,7 @@ supabase db execute -f db/migrations/002_create_kpi_timeseries_daily.sql
 Run the verification script again:
 
 ```bash
-python scripts/setup_supabase_tables.py --verify-only
+python scripts/data/setup_supabase_tables.py --verify-only
 ```
 
 ---
@@ -144,7 +144,7 @@ database:
 ### 4.2 Run Test Pipeline
 
 ```bash
-python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv
+python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
 ```
 
 **Expected output:**
@@ -215,7 +215,7 @@ az container create \
 
 ### Option A: GitHub Actions (Recommended)
 
-Create `.github/workflows/run_pipeline_daily.yml`:
+Use `.github/workflows/daily-ingest.yml` (manual trigger; schedule disabled):
 
 ```yaml
 name: Run Daily KPI Pipeline
@@ -246,7 +246,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv
+          python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
 
       - name: Upload pipeline logs
         if: always()
@@ -281,7 +281,7 @@ Add:
 
 ```cron
 # Run pipeline daily at 6 AM
-0 6 * * * cd /Users/jenineferderas/Documents/Documentos\ -\ MacBook\ Pro\ \(6\)/abaco-loans-analytics && .venv/bin/python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv >> logs/pipeline_cron.log 2>&1
+0 6 * * * cd /Users/jenineferderas/Documents/Documentos\ -\ MacBook\ Pro\ \(6\)/abaco-loans-analytics && .venv/bin/python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv >> logs/pipeline_cron.log 2>&1
 ```
 
 ---
@@ -315,7 +315,7 @@ Add:
 **Solution**:
 
 1. Follow Step 3.1 to create the table
-2. Verify with: `python scripts/setup_supabase_tables.py --verify-only`
+2. Verify with: `python scripts/data/setup_supabase_tables.py --verify-only`
 
 ### Issue 4: Dashboard shows old data
 
@@ -363,12 +363,12 @@ After completing setup:
 
 **Questions?** Contact:
 
-- **Data Engineering**: Review `docs/DATA_PIPELINE.md`
+- **Data Engineering**: Review `docs/OPERATIONS.md`
 - **Supabase Issues**: https://supabase.com/docs
-- **Dashboard Issues**: Review `streamlit_app/README.md`
+- **Dashboard Issues**: Review `README.md`
 
 **Related Documentation**:
 
-- [DEPLOYMENT_OPERATIONS_GUIDE.md](./DEPLOYMENT_OPERATIONS_GUIDE.md) - Azure container management
+- [DEPLOYMENT_OPERATIONS_GUIDE.md](./PRODUCTION_DEPLOYMENT_GUIDE.md) - Azure container management
 - [DATA_GOVERNANCE.md](./DATA_GOVERNANCE.md) - Data quality standards
-- [MONITORING_QUICK_START.md](./MONITORING_QUICK_START.md) - Observability setup
+- [MONITORING_QUICK_START.md](./OBSERVABILITY.md) - Observability setup

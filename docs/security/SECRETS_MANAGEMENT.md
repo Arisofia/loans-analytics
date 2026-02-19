@@ -37,8 +37,8 @@ access.
 
 ## Validation
 
-- Run `python scripts/validate_secrets.py` to confirm all secrets are available
-  to the runtime.
+- Use workflow checks (`.github/workflows/security-scan.yml` and related CI jobs)
+  to confirm required secrets are present in runtime contexts.
 - All workflows will fail fast if a required secret is missing.
 
 ---

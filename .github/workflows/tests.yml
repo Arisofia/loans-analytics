@@ -70,4 +70,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Pipeline config validation
-        run: python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv --mode validate
+        run: python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv --mode validate

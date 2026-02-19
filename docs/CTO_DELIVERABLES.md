@@ -36,9 +36,9 @@ This document provides three layers of the requested deliverable:
   - `supabase/migrations/20260206220000_enable_rls_missing_tables.sql`
   - `supabase/migrations/20260207100000_create_operational_events_commands.sql`
 - RLS diagnostics & smoke tests:
-  - `scripts/test-rls.js`
-  - `scripts/diagnose-rls.sh`
-  - `scripts/diagnose-rls.sql`
+  - `archives/maintenance/test-rls.js`
+  - `archives/maintenance/diagnose-rls.sh`
+  - `archives/maintenance/diagnose-rls.sql`
 
 **Real‑time KPI engine (19+ portfolio metrics)**
 
@@ -50,7 +50,7 @@ This document provides three layers of the requested deliverable:
 - API spec:
   - `openapi.yaml`
 - KPI validation:
-  - `scripts/validate_kpi_accuracy.py`
+  - `archives/maintenance/validate_kpi_accuracy.py`
 
 ---
 
@@ -118,17 +118,17 @@ This document provides three layers of the requested deliverable:
   - `python/utils/usage_tracker.py`
 - Usage tracking tests:
   - `tests/test_usage_tracker.py`
-  - `scripts/test_usage_tracker.py`
+  - `archives/maintenance/test_usage_tracker.py`
 
 **Exec reporting & diagnostics**
 
 - Service health & diagnostics:
   - `scripts/maintenance/generate_service_status_report.py`
-  - `scripts/compare_costs.py`
-  - `scripts/compare_performance.py`
+  - `archives/maintenance/compare_costs.py`
+  - `archives/maintenance/compare_performance.py`
 - Observability documentation:
   - `docs/OBSERVABILITY.md`
-  - `docs/PROMETHEUS_GRAFANA_QUICKSTART.md`
+  - `docs/OBSERVABILITY.md`
 
 ---
 
@@ -156,12 +156,12 @@ This document provides three layers of the requested deliverable:
 **RLS testing & Supabase diagnostics**
 
 - RLS smoke tests:
-  - `scripts/test-rls.js`
-  - `scripts/diagnose-rls.sh`
-  - `scripts/diagnose-rls.sql`
+  - `archives/maintenance/test-rls.js`
+  - `archives/maintenance/diagnose-rls.sh`
+  - `archives/maintenance/diagnose-rls.sql`
 - Supabase config:
   - `supabase/config.toml`
-  - `scripts/diagnose-supabase-keys.mjs`
+  - `archives/maintenance/diagnose-supabase-keys.mjs`
 
 **Security, secrets, and CI/CD**
 
@@ -172,7 +172,6 @@ This document provides three layers of the requested deliverable:
   - `.github/workflows/security-scan.yml`
   - `.github/workflows/deployment.yml`
   - `.github/workflows/agents_unified_pipeline.yml`
-  - `.github/workflows/cost-regression-detection.yml`
 - Secrets & pre‑commit policy:
   - `.pre-commit-config.yaml`
   - `.trunk/trunk.yaml`
@@ -180,7 +179,7 @@ This document provides three layers of the requested deliverable:
 **Stack validation scripts**
 
 - Client readiness:
-  - `scripts/verify_client_ready.py`
+  - `archives/maintenance/verify_client_ready.py`
 - Full stack validation:
   - `scripts/maintenance/validate_complete_stack.py`
 
@@ -254,7 +253,7 @@ We implemented a cloud‑native fintech analytics platform with:
 
 **Security & Governance**
 
-- RLS testing & diagnostics: `scripts/test-rls.js`, `scripts/diagnose-rls.sh`, `scripts/diagnose-rls.sql`
+- RLS testing & diagnostics: `archives/maintenance/test-rls.js`, `archives/maintenance/diagnose-rls.sh`, `archives/maintenance/diagnose-rls.sql`
 - Security & deployment docs: `docs/SECURITY.md`, `docs/PRODUCTION_DEPLOYMENT_GUIDE.md`, `docs/OBSERVABILITY.md`
 
 **AI Agents**

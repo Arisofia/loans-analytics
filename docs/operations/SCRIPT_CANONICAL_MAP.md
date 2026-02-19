@@ -4,7 +4,7 @@ Single source of truth for script execution paths. Use only these commands.
 
 ## Data Pipeline
 
-- Run pipeline: `python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv`
+- Run pipeline: `python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv`
 - Validate structure: `python scripts/maintenance/validate_structure.py`
 - Analyze real input files: `python scripts/data/analyze_real_data.py --data-dir ~/Downloads`
 

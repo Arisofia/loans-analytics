@@ -33,12 +33,14 @@ fi
 echo -e "${GREEN}✅ Docker and Docker Compose are ready${NC}"
 echo ""
 
-# Check if data exists
-if [ ! -f "data/raw/spanish_loans_seed.csv" ]; then
-	echo -e "${BLUE}📊 Generating seed data...${NC}"
-	python scripts/data/seed_spanish_loans.py
-	echo -e "${GREEN}✅ Seed data generated${NC}"
+# Check if canonical input data exists
+CANONICAL_INPUT="data/raw/abaco_real_data_20260202.csv"
+if [ ! -f "$CANONICAL_INPUT" ]; then
+	echo -e "${YELLOW}⚠️  Canonical input dataset not found: $CANONICAL_INPUT${NC}"
+	echo -e "${YELLOW}   Prepare data inputs before deploying the stack.${NC}"
+	exit 1
 fi
+echo -e "${GREEN}✅ Input dataset found: $CANONICAL_INPUT${NC}"
 
 # Build and start services
 echo -e "${BLUE}🏗️  Building Docker images...${NC}"

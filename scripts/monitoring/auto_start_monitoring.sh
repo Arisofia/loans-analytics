@@ -17,7 +17,7 @@ NC='\033[0m' # No Color
 
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  Abaco Monitoring Stack - Auto Start${NC}"
@@ -56,7 +56,10 @@ echo -e "${YELLOW}[2/6]${NC} Loading environment variables..."
 cd "$PROJECT_ROOT"
 
 if [[ -f .env.local ]]; then
-	source "$SCRIPT_DIR/load_env.sh"
+	set -a
+	# shellcheck source=/dev/null
+	source .env.local
+	set +a
 	echo -e "${GREEN}✓ Environment loaded from .env.local${NC}"
 else
 	echo -e "${RED}✗ .env.local not found${NC}"
@@ -84,7 +87,7 @@ echo ""
 
 # Step 3.5: Generate Alertmanager configuration (with credentials from .env.local)
 echo -e "${YELLOW}[3.5/6]${NC} Generating Alertmanager configuration with email credentials..."
-if bash scripts/generate_alertmanager_config.sh >/dev/null 2>&1; then
+if bash "$SCRIPT_DIR/generate_alertmanager_config.sh" >/dev/null 2>&1; then
 	echo -e "${GREEN}✓ Alertmanager config generated${NC}"
 else
 	echo -e "${YELLOW}⚠️  Alertmanager config generation failed (continuing anyway)${NC}"

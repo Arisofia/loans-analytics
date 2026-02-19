@@ -44,8 +44,8 @@
 
 ### Validation Scripts
 
-- `scripts/verify_client_ready.py` (environment + connectivity checks).【F:scripts/verify_client_ready.py†L1-L210】
-- `scripts/validate_kpi_accuracy.py` (KPI cross‑validation).【F:scripts/validate_kpi_accuracy.py†L1-L260】
+- `archives/maintenance/verify_client_ready.py` (environment + connectivity checks).【F:archives/maintenance/verify_client_ready.py†L1-L210】
+- `archives/maintenance/validate_kpi_accuracy.py` (KPI cross‑validation).【F:archives/maintenance/validate_kpi_accuracy.py†L1-L260】
 - `scripts/maintenance/validate_complete_stack.py` (stack-level validation).【F:scripts/maintenance/validate_complete_stack.py†L1-L260】
 
 ---
@@ -54,9 +54,9 @@
 
 ### Finding 1 — Hard-coded run IDs and sample data coupling in KPI validation
 
-**Cause/Impact:** `scripts/validate_kpi_accuracy.py` previously hard‑coded a run ID and a specific CSV path, which blocked new runs and created implicit coupling to a single dataset. This breaks repeatability and makes live validation brittle.
+**Cause/Impact:** `archives/maintenance/validate_kpi_accuracy.py` previously hard‑coded a run ID and a specific CSV path, which blocked new runs and created implicit coupling to a single dataset. This breaks repeatability and makes live validation brittle.
 
-**Remediation (implemented):** The script now accepts `--run-id` or `KPI_VALIDATION_RUN_ID` and falls back to the latest run in `logs/runs`, then selects the most recent `data/raw/abaco_real_data_*.csv` only if no clean parquet exists. It also reports missing columns as warnings rather than failing silently.【F:scripts/validate_kpi_accuracy.py†L1-L200】
+**Remediation (implemented):** The script now accepts `--run-id` or `KPI_VALIDATION_RUN_ID` and falls back to the latest run in `logs/runs`, then selects the most recent `data/raw/abaco_real_data_*.csv` only if no clean parquet exists. It also reports missing columns as warnings rather than failing silently.【F:archives/maintenance/validate_kpi_accuracy.py†L1-L200】
 
 ---
 
@@ -64,7 +64,7 @@
 
 **Cause/Impact:** The readiness check required non-critical services (OpenAI, Sentry, OTEL) and used a hardcoded date/branch. This caused false negatives during production readiness and masked the true status of mandatory dependencies.
 
-**Remediation (implemented):** The script now distinguishes required vs. optional credentials, dynamically resolves branch/date, and gracefully degrades when optional services are missing. Database checks are performed only when psycopg is available; missing psycopg now yields a warning, not a crash.【F:scripts/verify_client_ready.py†L1-L210】
+**Remediation (implemented):** The script now distinguishes required vs. optional credentials, dynamically resolves branch/date, and gracefully degrades when optional services are missing. Database checks are performed only when psycopg is available; missing psycopg now yields a warning, not a crash.【F:archives/maintenance/verify_client_ready.py†L1-L210】
 
 ---
 
@@ -93,7 +93,7 @@
 
 ### KPI Validation
 
-- `scripts/validate_kpi_accuracy.py` now validates against the most recent real run and uses clean data when available. It computes and cross-checks PAR30, PAR90, default rate, loss rate, collections, recovery, active borrowers, repeat borrower rate, portfolio yield, and AUM. 【F:scripts/validate_kpi_accuracy.py†L1-L260】
+- `archives/maintenance/validate_kpi_accuracy.py` now validates against the most recent real run and uses clean data when available. It computes and cross-checks PAR30, PAR90, default rate, loss rate, collections, recovery, active borrowers, repeat borrower rate, portfolio yield, and AUM. 【F:archives/maintenance/validate_kpi_accuracy.py†L1-L260】
 
 ### Formula Robustness Notes
 
@@ -103,8 +103,8 @@
 
 ## Phase 4 — Validation Script Readiness (Post-Remediation)
 
-- `scripts/verify_client_ready.py` now distinguishes required vs optional credentials and uses real-time branch/date to avoid false failures.【F:scripts/verify_client_ready.py†L1-L210】
-- `scripts/validate_kpi_accuracy.py` is run-ID aware and avoids hard-coded data paths, which makes it safe for live runs.【F:scripts/validate_kpi_accuracy.py†L1-L200】
+- `archives/maintenance/verify_client_ready.py` now distinguishes required vs optional credentials and uses real-time branch/date to avoid false failures.【F:archives/maintenance/verify_client_ready.py†L1-L210】
+- `archives/maintenance/validate_kpi_accuracy.py` is run-ID aware and avoids hard-coded data paths, which makes it safe for live runs.【F:archives/maintenance/validate_kpi_accuracy.py†L1-L200】
 - `scripts/maintenance/validate_complete_stack.py` avoids sample data dependencies and corrects outdated file paths.【F:scripts/maintenance/validate_complete_stack.py†L1-L260】
 
 ---
@@ -120,9 +120,9 @@ source .venv/bin/activate
 **Validation**
 
 ```bash
-python scripts/verify_client_ready.py
+python archives/maintenance/verify_client_ready.py
 python scripts/maintenance/validate_complete_stack.py
-KPI_VALIDATION_RUN_ID="<real_run_id>" python scripts/validate_kpi_accuracy.py
+KPI_VALIDATION_RUN_ID="<real_run_id>" python archives/maintenance/validate_kpi_accuracy.py
 pytest tests/ -v
 ```
 
@@ -153,13 +153,13 @@ curl http://127.0.0.1:8000/health
 **Key Risks / Gaps**
 
 - Broad read policies in RLS migrations may expose sensitive data if not scoped per table. 【F:supabase/migrations/20260204100000_enable_rls_all_tables.sql†L44-L189】
-- Some validation scripts previously depended on sample data and hard-coded run IDs (now remediated).【F:scripts/validate_kpi_accuracy.py†L1-L200】【F:scripts/maintenance/validate_complete_stack.py†L1-L260】
+- Some validation scripts previously depended on sample data and hard-coded run IDs (now remediated).【F:archives/maintenance/validate_kpi_accuracy.py†L1-L200】【F:scripts/maintenance/validate_complete_stack.py†L1-L260】
 
 **Immediate Improvements Implemented**
 
-- Run-ID aware KPI validation and real-data fallback. 【F:scripts/validate_kpi_accuracy.py†L1-L200】
-- Optional dependency handling in client readiness checks. 【F:scripts/verify_client_ready.py†L1-L210】
+- Run-ID aware KPI validation and real-data fallback. 【F:archives/maintenance/validate_kpi_accuracy.py†L1-L200】
+- Optional dependency handling in client readiness checks. 【F:archives/maintenance/verify_client_ready.py†L1-L210】
 - Updated stack validation paths and removal of sample data dependency. 【F:scripts/maintenance/validate_complete_stack.py†L1-L260】
 
 **Production Readiness Statement**
-From a code quality and architecture perspective, this repo is **nearly ready** for production-grade deployments **assuming valid credentials and infra**, with the primary gating item being **tightened RLS policy scope** and environment configuration validation in your target Supabase project.【F:supabase/migrations/20260204100000_enable_rls_all_tables.sql†L44-L189】【F:scripts/verify_client_ready.py†L1-L210】
+From a code quality and architecture perspective, this repo is **nearly ready** for production-grade deployments **assuming valid credentials and infra**, with the primary gating item being **tightened RLS policy scope** and environment configuration validation in your target Supabase project.【F:supabase/migrations/20260204100000_enable_rls_all_tables.sql†L44-L189】【F:archives/maintenance/verify_client_ready.py†L1-L210】

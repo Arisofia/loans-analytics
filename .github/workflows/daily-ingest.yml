@@ -34,7 +34,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          python scripts/data/run_data_pipeline.py --input data/raw/spanish_loans_seed.csv
+          python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
 
       - name: Notify on success
         if: success()

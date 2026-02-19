@@ -328,7 +328,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Testing – v1.0.0
 
-- All KPI sync checks pass: `python3 tools/check_kpi_sync.py --print-json`
+- KPI sync helper tooling completed for that release (helper script retired in current workflow).
 - Complete analytics pipeline runs without warnings: `python3 run_complete_analytics.py`
 - KPI parity test suite ready: `pytest tests/test_kpi_parity.py` (requires DATABASE_URL + psycopg)
 
@@ -368,5 +368,5 @@ Initial release of Abaco Loans Analytics dual-engine KPI stack with comprehensiv
   - Extended KPI groups for dashboards and ML
 - **Governance**:
   - `docs/KPI_CATALOG.md` – Single source of truth
-  - `tools/check_kpi_sync.py` – Health and artifact validation
+  - KPI sync helper tooling for health and artifact validation (retired in current workflow)
   - `tests/test_kpi_parity.py` – Python↔SQL consistency enforcement

@@ -60,7 +60,7 @@ jobs:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
           set +e
-          INPUT_FILE="data/raw/sample_loans.csv"
+          INPUT_FILE="data/raw/abaco_real_data_20260202.csv"
           echo "🚀 Unified agents pipeline run"
           echo "Input: $INPUT_FILE"
           echo "Commit: ${{ github.sha }}"
@@ -178,7 +178,7 @@ jobs:
                   "records_scanned": 0,
                   "masked_fields": [],
               },
-              "notes": ["Implement src/compliance for automated PII detection."],
+              "notes": ["Implement compliance validation module for automated PII detection."],
           }
 
           if results_file.exists():

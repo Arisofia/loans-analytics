@@ -83,7 +83,7 @@ Use the canonical command listed in `docs/operations/SCRIPT_CANONICAL_MAP.md` un
 
 ```bash
 # Full pipeline execution with sample data
-python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv
+python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
 
 # Dry-run (ingestion only)
 python scripts/data/run_data_pipeline.py --mode dry-run
@@ -103,7 +103,7 @@ streamlit run streamlit_app.py
 
 ```bash
 # Quick start with automated setup
-bash scripts/start_grafana.sh
+bash scripts/monitoring/auto_start_monitoring.sh
 
 # Or manual setup
 export GRAFANA_ADMIN_PASSWORD="your_secure_password"
@@ -118,7 +118,7 @@ docker-compose -f docker-compose.monitoring.yml up -d
 
 **New to the platform? Start here:**
 
-### 🎯 **[User Operations Guide](docs/USER_OPERATIONS_GUIDE.md)** ⭐ START HERE
+### 🎯 **[User Operations Guide](docs/OPERATIONS.md)** ⭐ START HERE
 
 Complete guide answering:
 
@@ -138,7 +138,7 @@ Strategic plan for predictive models:
 - Fraud detection scoring
 - Automated retraining infrastructure
 
-### 🔐 **[Authentication Setup Guide](docs/AUTHENTICATION_SETUP_GUIDE.md)**
+### 🔐 **[Authentication Setup Guide](docs/API_SECURITY_GUIDE.md)**
 
 Secure your platform with:
 
@@ -148,7 +148,7 @@ Secure your platform with:
 - Role-based access control (RBAC)
 - Security best practices
 
-### 📊 **[Grafana Quickstart](docs/PROMETHEUS_GRAFANA_QUICKSTART.md)**
+### 📊 **[Grafana Quickstart](docs/OBSERVABILITY.md)**
 
 Monitoring infrastructure:
 
@@ -389,7 +389,7 @@ pytest --cov=src --cov=python
 pytest tests/test_data_integrity.py
 
 # Validate pipeline with sample data
-python scripts/data/run_data_pipeline.py --input data/raw/sample_loans.csv --mode validate
+python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv --mode validate
 ```
 
 ---

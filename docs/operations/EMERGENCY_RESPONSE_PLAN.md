@@ -163,9 +163,9 @@ Repository Settings → Notifications
 
 ## RUNBOOKS REFERENCED
 
-- `docs/runbooks/pipeline-delay.md` → For data pipeline diagnosis
-- `docs/runbooks/data-loss.md` → If data corruption suspected
-- `docs/RISK_REGISTER.md` → Severity and escalation rules
+- `docs/runbooks/monitoring-guide.md` → Monitoring and diagnosis steps
+- `docs/runbooks/deployment-blocked.md` → CI/CD and deployment recovery steps
+- `docs/runbooks/dashboard-down.md` → Dashboard service restoration flow
 
 ---
 

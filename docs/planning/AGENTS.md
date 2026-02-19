@@ -13,7 +13,7 @@
   helpers (owner: data engineering, reviewer: analytics ops) ensures schema
   verification, lineage capture, and audit metadata are versioned with outputs.
 - **Validation & compliance utilities**: `src/pipeline/ingestion.py` enforces
-  required column validation today, while `src/compliance` is planned to mask
+  required column validation today, while the compliance module (planned) will mask
   detected PII, record access, and serialize the report (owner: data
   engineering, reviewer: data privacy) so that workflow context is versioned in
   `logs/runs`.
@@ -44,7 +44,7 @@
   - Immediately after each pipeline run (success or controlled failure).
 - Responsibilities:
   - Run schema validation (ingestion validation results from `src/pipeline/ingestion.py`).
-  - Run PII/compliance checks (`src/compliance`, planned).
+  - Run PII/compliance checks (compliance module, planned).
   - Persist:
     - Validation report.
     - Compliance report.
@@ -56,7 +56,7 @@
 ### 3. Observability & Performance Agent
 
 - Triggers:
-  - Every pipeline run (via CI workflow, e.g. `run_pipeline_daily.yml`).
+  - Every pipeline run (via CI workflow, e.g. `daily-ingest.yml`).
 - Responsibilities:
   - Measure:
     - End-to-end runtime.
@@ -85,22 +85,21 @@
 - Pipeline Orchestrator Agent
   - Entrypoint: `scripts/data/run_data_pipeline.py`
   - Workflows:
-    - `.github/workflows/run_pipeline_daily.yml`
-    - `.github/workflows/batch_export_scheduled.yml`
+    - `.github/workflows/daily-ingest.yml`
     - `.github/workflows/agents_unified_pipeline.yml`
 
 - Validation & Compliance Agent
   - Validation:
     - `src/pipeline/ingestion.py` (schema validation results emitted in run manifest)
   - Compliance (planned / evolving):
-    - `src/compliance`
+    - compliance validation module
   - Artefact paths:
     - `logs/runs/<run_id>/validation_report.json`
     - `logs/runs/<run_id>/compliance_report.json`
 
 - Observability & Performance Agent
   - Workflows:
-    - `.github/workflows/run_pipeline_daily.yml`
+    - `.github/workflows/daily-ingest.yml`
     - `.github/workflows/agents_unified_pipeline.yml`
   - Metrics Store:
     - Supabase `pipeline_performance_metrics` (existing)
@@ -111,6 +110,6 @@
 - Collaboration Agent
   - GitHub configuration:
     - PR templates.
-    - CODEOWNERS for `src/pipeline`, `src/kpis`, `src/compliance`.
+    - CODEOWNERS for critical paths (`src/pipeline`, `python/kpis`, `python/multi_agent`).
   - Validation:
-    - `.github/workflows/agent-checklist-validation.yml`
+    - `.github/workflows/pr-checks.yml`

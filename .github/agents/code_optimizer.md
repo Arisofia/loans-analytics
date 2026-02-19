@@ -77,7 +77,7 @@ amount = Decimal('1000.00')  # YES!
 **PII Protection:**
 
 - Never log sensitive data (SSN, email, credit card, account numbers)
-- Use existing PII masking in `src/compliance.py` and `python/multi_agent/guardrails.py`
+- Use existing PII masking/redaction in `src/pipeline/transformation.py` and `python/multi_agent/guardrails.py`
 - Add PII detection patterns for new sensitive fields
 - Validate all external inputs
 
@@ -335,7 +335,7 @@ for loan in loans.data:
 
 **OPTIMIZE when:**
 
-- Response times exceed SLA thresholds (defined in `python/config.py`)
+- Response times exceed SLA thresholds (defined in pipeline/agent config modules)
 - Database queries consistently timeout
 - Memory usage exceeds available resources
 - LLM API costs exceed budget
@@ -353,16 +353,16 @@ for loan in loans.data:
 **Key Files:**
 
 - `.github/copilot-instructions.md` - Overall project context
-- `python/config.py` - Financial guardrails and SLA settings
+- `src/pipeline/config.py` - Pipeline runtime and threshold settings
 - `config/business_rules.yaml` - Domain rules and thresholds
 - `python/logging_config.py` - Structured logging setup
-- `src/compliance.py` - PII masking implementation
+- `python/multi_agent/guardrails.py` - PII masking/redaction implementation
 
 **Documentation:**
 
-- `docs/CRITICAL_DEBT_FIXES_2026.md` - Recent technical improvements
-- `docs/SUPABASE_METRICS_INTEGRATION.md` - Database performance monitoring
-- `REPO_STRUCTURE.md` - Project organization
+- `docs/GOVERNANCE.md` - Current governance and quality gates
+- `docs/OBSERVABILITY.md` - Monitoring and alerting setup
+- `docs/operations/SCRIPT_CANONICAL_MAP.md` - Canonical scripts and commands
 
 ## Escalation
 

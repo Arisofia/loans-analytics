@@ -4,7 +4,7 @@ Use this checklist to connect the project’s external services and to start the
 
 ## 1. Azure data plane (SQL/Cosmos/Storage)
 
-- Confirm you have an Azure subscription and resource group that matches the values referenced in docs/LOCAL_SETUP.md.
+- Confirm you have an Azure subscription and resource group that matches the values referenced in docs/SETUP_GUIDE_CONSOLIDATED.md.
 - Create or reuse Azure SQL, Cosmos DB, and Storage resources; record the connection strings.
 - Export secrets to your shell (or a `.env`) before running any tooling:
   - `AZURE_SQL_CONNECTION_STRING`
@@ -66,9 +66,9 @@ Use this checklist to connect the project’s external services and to start the
 
 - Invite teammates via GitHub Copilot for Business and confirm acceptance.
 - Add the `@copilot` account to the GitHub Enterprise org so enterprise prompts and inline guidance stay enabled for this repo.
-- Run `scripts/export_copilot_slide_payload.py` after analytics updates so presentation agents receive refreshed content:
+- Run `scripts/data/run_data_pipeline.py` after analytics updates so presentation agents receive refreshed content:
   ```bash
-  python scripts/export_copilot_slide_payload.py
+  python scripts/data/run_data_pipeline.py
   ```
 - When opening PRs, ask Copilot (or another agent) to summarize CI results, SonarCloud issues, and Fitten findings using the payload above plus workflow logs.
 - Assign `@codex` to the commit/PR so the automation that posts summaries and links has a consistent owner.

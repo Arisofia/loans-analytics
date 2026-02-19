@@ -313,7 +313,7 @@ class ServiceStatusChecker:
             status["details"]["markdown_files"] = len(md_files)
 
             # Check for key documentation
-            key_docs = ["README.md", "DEVELOPMENT.md", "DEPLOYMENT_OPERATIONS_GUIDE.md"]
+            key_docs = ["README.md", "OPERATIONS.md", "PRODUCTION_DEPLOYMENT_GUIDE.md"]
             existing_docs = [d for d in key_docs if (docs_dir / d).exists()]
             status["details"]["key_docs"] = f"{len(existing_docs)}/{len(key_docs)} present"
         else:

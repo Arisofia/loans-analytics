@@ -6,16 +6,13 @@ Scripts for monitoring, metrics collection, and dashboard management.
 
 **Monitoring Stack:**
 
-- `start_monitoring.sh` - Start Prometheus/Grafana stack
-- `auto_start_monitoring.sh` - Auto-start monitoring on boot
-- `start_grafana.sh` - Start Grafana server
+- `auto_start_monitoring.sh` - Canonical monitoring stack startup
 - `health_check_monitoring.sh` - Check monitoring system health
 
 **Metrics:**
 
 - `metrics_exporter.py` - Export metrics to Prometheus format
 - `store_metrics.py` - Store metrics in database
-- `test_metrics_api.sh` - Test Supabase Metrics API
 
 **Dashboards:**
 
@@ -28,14 +25,14 @@ Scripts for monitoring, metrics collection, and dashboard management.
 ## Usage Examples
 
 ```bash
-# Start monitoring stack
-./scripts/monitoring/start_monitoring.sh
+# Start monitoring stack (canonical)
+./scripts/monitoring/auto_start_monitoring.sh
 
 # Export metrics
 python scripts/monitoring/metrics_exporter.py
 
-# Test metrics API
-./scripts/monitoring/test_metrics_api.sh
+# Health check
+./scripts/monitoring/health_check_monitoring.sh
 ```
 
 ## Configuration

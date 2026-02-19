@@ -9,8 +9,8 @@ This script:
 3. Provides clear, production-safe instructions to apply the SQL migration manually.
 
 Usage:
-    python scripts/setup_supabase_tables.py
-    python scripts/setup_supabase_tables.py --verify-only
+    python scripts/data/setup_supabase_tables.py
+    python scripts/data/setup_supabase_tables.py --verify-only
 """
 
 import argparse
@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 
 from supabase import Client, create_client
 
-project_root = Path(__file__).parent.parent
+project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
 
 
