@@ -68,7 +68,6 @@ jobs:
       - name: Run Snyk to check for vulnerabilities
         if: ${{ env.SNYK_TOKEN != '' }}
         uses: snyk/actions/python@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
-        continue-on-error: ${{ vars.ENABLE_STRICT_SECURITY_GATES != 'true' }}
         with:
           args: --file=requirements.txt --package-manager=pip --severity-threshold=high --fail-on=all
 
