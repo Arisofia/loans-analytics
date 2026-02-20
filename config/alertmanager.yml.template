@@ -10,8 +10,6 @@ global:
   smtp_auth_username: '${SMTP_USER}'
   smtp_auth_password: '${SMTP_PASSWORD}'
   smtp_require_tls: true
-  # Slack webhook (optional)
-  # slack_api_url: '${SLACK_WEBHOOK_URL}'
 
 # Templates for alert formatting
 templates:

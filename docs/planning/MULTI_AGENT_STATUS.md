@@ -264,7 +264,7 @@ pass
 - [x] Implement Risk Management agent (@risk-ai)
 - [x] Implement Financial Planning agent (@finance-ai)
 - [x] Integration with V2 Analytics Engine
-- [x] Output to Azure/Slack
+- [x] Output to Azure/Email
 **Deliverable:** Risk agent providing early warning system
 ---
 ### Sprint 5-6: Customer & Growth Agents (✅ Complete)
@@ -278,7 +278,7 @@ pass
 - [x] Implement Investor Relations agent (@investor-ai)
 - [x] Upgrade Sales Optimization agent (from stub)
 - [x] ROI & capital efficiency reporting
-- [x] Output to Figma/Azure Static Web Apps
+- [x] Output to Executive Dashboard/Azure Static Web Apps
 **Deliverable:** Board-level intelligence dashboards
 ---
 ### Sprint 9-10: Market & Operations Agents (✅ Complete)
@@ -292,7 +292,7 @@ pass
 - [x] Implement Brand & Marketing agent (@brand-ai)
 - [x] Implement Product Intelligence agent (@product-ai)
 - [x] Sentiment analysis & feature usage tracking
-- [x] Output to Figma/Amplitude
+- [x] Output to Executive Dashboard/Amplitude
 **Deliverable:** Product roadmap & brand health tracking
 ---
 ### Sprint 13-14: Talent Agent & Cross-Agent Learning (✅ Complete)

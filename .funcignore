@@ -17,8 +17,6 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .sonarqube/
-.zencoder/
-.zenflow/
 .vercel/
 .rollback/
 build/

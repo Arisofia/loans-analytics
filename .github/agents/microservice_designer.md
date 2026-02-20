@@ -627,7 +627,7 @@ Container Orchestration (Kubernetes):
     - Deployments: Manage replica sets
     - Services: Stable network endpoints
     - Ingress: External access routing
-    - ConfigMaps/Secrets: Configuration
+    - K8s configuration maps/secrets
     - Persistent Volumes: Stateful storage
 
 Serverless (AWS Lambda, Azure Functions):

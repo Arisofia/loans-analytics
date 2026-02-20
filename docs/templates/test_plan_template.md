@@ -289,7 +289,7 @@ Artifacts produced during test cycle:
 ### Status Reporting
 
 - **Frequency**: [e.g., Daily during execution, Weekly during planning]
-- **Format**: [e.g., Standup, Slack updates, Email report]
+- **Format**: [e.g., Standup, Team updates, Email report]
 - **Stakeholders**: [List key stakeholders]
 
 ### Issue Escalation

@@ -1,8 +1,6 @@
 # n8n Workflows Directory
 
-> **⚠️ Slack Integration Retired (2026-01)**
->
-> Slack notifications referenced below have been deprecated. Use Grafana alerting or email notifications instead.
+> Notifications are handled through Grafana alerting and email channels.
 
 This directory contains automation workflows for the ABACO Loans Analytics platform.
 

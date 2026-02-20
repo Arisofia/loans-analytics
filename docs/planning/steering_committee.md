@@ -308,7 +308,7 @@ Supabase uses PgBouncer for connection pooling, but under high load:
 
 Per SECURITY.md:
 
-- **body-parser**: DoS vulnerability (transitive via @hubspot/ui-extensions-dev-server)
+- **body-parser**: DoS vulnerability (transitive dependency)
   - **Impact:** LOW (not directly used, dev dependency only)
   - **Mitigation:** Monitor upstream for patches
 - **path-to-regexp**: ReDoS risk (transitive via router)

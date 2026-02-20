@@ -1,9 +1,6 @@
 # n8n + Grafana Observability Stack
 
-> **⚠️ Slack Integration Retired (2026-01)**
->
-> Slack webhook notifications referenced in this document have been deprecated.
-> Alerting is now handled via Grafana alerts and Azure diagnostics.
+> Alerting is handled via Grafana alerts and Azure diagnostics.
 
 Deployment configuration for ABACO Loans Analytics observability and automation services.
 

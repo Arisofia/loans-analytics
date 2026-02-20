@@ -249,7 +249,7 @@ features = [
 
 - [ ] Fraud scoring model: `models/fraud/fraud_detector.pkl`
 - [ ] Real-time API: `POST /predict/fraud_score`
-- [ ] Alert system integration (Slack/PagerDuty)
+- [ ] Alert system integration (Email/PagerDuty)
 
 ---
 

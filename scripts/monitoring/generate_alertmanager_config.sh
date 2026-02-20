@@ -18,7 +18,6 @@ ALERT_EMAIL_FROM="${ALERT_EMAIL_FROM:-alerts@example.com}"
 SMTP_USER="${SMTP_USER-}"
 SMTP_PASSWORD="${SMTP_PASSWORD-}"
 CRITICAL_EMAIL_TO="${CRITICAL_EMAIL_TO:-ops@example.com}"
-SLACK_WEBHOOK_URL="${SLACK_WEBHOOK_URL-}"
 
 # Generate alertmanager.yml with actual values
 cat >config/alertmanager.yml <<EOF
@@ -34,11 +33,7 @@ global:
   smtp_from: '${ALERT_EMAIL_FROM}'
   smtp_auth_username: '${SMTP_USER}'
   smtp_auth_password: '${SMTP_PASSWORD}'
-  smtp_require_tls: true$([ -n "$SLACK_WEBHOOK_URL" ] && echo "
-  # Slack webhook for notifications
-  slack_api_url: '${SLACK_WEBHOOK_URL}'" || echo "
-  # Slack webhook for notifications (configure SLACK_WEBHOOK_URL in .env.local)
-  # slack_api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'")
+  smtp_require_tls: true
 
 # Templates for alert formatting
 templates:

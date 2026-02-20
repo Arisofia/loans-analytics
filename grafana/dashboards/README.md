@@ -1,7 +1,6 @@
 # Grafana Dashboards
 
-> **⚠️ Note (2026-01):** Slack notification channels referenced below are deprecated.
-> Use Grafana native alerting with email or Azure integration.
+> **⚠️ Note (2026-01):** Use Grafana native alerting with email or Azure integration.
 
 Pre-configured dashboards for ABACO Loans Analytics observability.
 
@@ -254,7 +253,7 @@ FROM monitoring.kpi_definitions;
    - **For:** 5m
    - **Condition:** `WHEN avg() OF query(A, 5m, now) IS ABOVE 5`
 
-5. Add notification channel (Slack/Email/PagerDuty)
+5. Add notification channel (Email/PagerDuty)
 
 ### Example: PAR-30 Alert
 
@@ -262,7 +261,7 @@ FROM monitoring.kpi_definitions;
 Alert: PAR-30 Exceeds Critical Threshold
 
 Condition: avg(par_30) > 5% for 5 minutes
-Notification: Slack #risk-alerts
+Notification: Email risk-alerts@abaco.co
 Message: "🚨 PAR-30 is ${value}%, exceeds critical threshold of 5%"
 ```
 

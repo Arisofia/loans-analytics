@@ -202,19 +202,6 @@ rate(idempotency_cache_hits_total[1h]) /
 
 ### Notification Channels
 
-**Slack** (Recommended):
-
-```yaml
-# alertmanager.yml
-receivers:
-  - name: "slack-alerts"
-    slack_configs:
-      - api_url: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
-        channel: "#eng-alerts"
-        title: "{{ .GroupLabels.alertname }}"
-        text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}'
-```
-
 **PagerDuty** (For critical alerts):
 
 ```yaml
@@ -247,18 +234,18 @@ route:
   group_wait: 10s
   group_interval: 10s
   repeat_interval: 12h
-  receiver: "slack-alerts"
+  receiver: "email-team"
   routes:
-    # Critical alerts go to PagerDuty + Slack
+    # Critical alerts go to PagerDuty
     - match:
         severity: critical
       receiver: "pagerduty-critical"
       continue: true
 
-    # Warning alerts only to Slack
+    # Warning alerts to email
     - match:
         severity: warning
-      receiver: "slack-alerts"
+      receiver: "email-team"
 
     # Info alerts (daily digest)
     - match:
@@ -359,4 +346,4 @@ curl http://localhost:9093/api/v1/alerts
 
 **Maintained by**: Platform Team  
 **Last Updated**: 2026-01-30  
-**Questions**: #eng-platform on Slack
+**Questions**: platform-team@abaco.co

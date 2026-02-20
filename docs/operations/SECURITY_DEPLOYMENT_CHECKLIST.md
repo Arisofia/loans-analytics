@@ -356,10 +356,10 @@ ORDER BY schemaname, tablename;
    - [SUPABASE_RLS_HARDENING.md](security/SUPABASE_RLS_HARDENING.md) - Troubleshooting section
    - [ALERTS_PROVIDER_SETUP.md](azure/ALERTS_PROVIDER_SETUP.md) - Azure issues
 
-2. **Slack Channels**:
-   - `#infra-alerts` - Infrastructure issues
-   - `#security` - Security-related questions
-   - `#dev-support` - Application access issues
+2. **Email Channels**:
+   - `infra-alerts@abaco.co` - Infrastructure issues
+   - `security@abaco.co` - Security-related questions
+   - `dev-support@abaco.co` - Application access issues
 
 3. **Escalation Path**:
    - Level 1: DevOps team (`devops@abaco.co`)

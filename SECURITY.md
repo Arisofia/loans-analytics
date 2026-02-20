@@ -28,8 +28,7 @@ restoration procedures.
 The following advisories are present in the dependency tree (see
 package-lock.json and pnpm-lock.yaml):
 
-- **body-parser**: Denial of Service vulnerability (transitive via
-  @hubspot/ui-extensions-dev-server)
+- **body-parser**: Denial of Service vulnerability (transitive dependency)
 - **path-to-regexp**: ReDoS (Regular Expression Denial of Service) risk
   (transitive via router)
   These are not directly depended on by this project and are included via upstream

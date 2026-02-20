@@ -294,7 +294,7 @@ Add:
 - Never commit `.env.local` to git
 - Never expose `service_role` key in client-side code
 - Never hardcode credentials in scripts
-- Never share keys in Slack/email (use encrypted vault)
+- Never share keys in chat/email (use encrypted vault)
 
 ---
 

@@ -354,7 +354,7 @@ cp grafana/dashboards/abaco-loans-analytics.json /path/to/grafana/provisioning/d
 - PAR-30 > 15% (portfolio at risk threshold breach)
 - Default rate > 4% (financial guardrail violation)
 
-**Warning Alerts** (Slack/email):
+**Warning Alerts** (email):
 
 - Pipeline duration > 90s
 - LLM API errors > 5% over 5min

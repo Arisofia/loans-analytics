@@ -59,8 +59,6 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - ALERT_EMAIL_FROM=${ALERT_EMAIL_FROM}
       - CRITICAL_EMAIL_TO=${CRITICAL_EMAIL_TO}
-      # Optional: Slack webhook
-      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
     command:
       - "--config.file=/etc/alertmanager/alertmanager.yml"
       - "--storage.path=/alertmanager"

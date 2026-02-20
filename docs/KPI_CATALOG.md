@@ -105,12 +105,12 @@ Global monthly delinquency KPIs.
 
 ---
 
-## 5. Figma Dashboard & Executive Summary
+## 5. Executive Dashboard & Summary
 
-### 5.1 `public.figma_dashboard`
+### 5.1 `public.executive_dashboard`
 
 **Purpose**
-Consolidated view for board and investor reporting, aligned with Figma design bindings.
+Consolidated view for board and investor reporting.
 **Metrics Definition**
 
 - **Ingresos mensuales (Revenue)**: `True Interest Payment + True Fee Payment + True Other Payment - True Rebates`. Excludes Principal and Taxes.

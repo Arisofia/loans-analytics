@@ -14,7 +14,6 @@ This index contains only active documentation paths.
 - `docs/PRODUCTION_DEPLOYMENT_GUIDE.md`
 - `docs/SUPABASE_SETUP_GUIDE.md`
 - `docs/API_SECURITY_GUIDE.md`
-- `docs/operations/SUPABASE_EDGE_FUNCTIONS_DEPLOYMENT.md`
 
 ## Data and KPI
 

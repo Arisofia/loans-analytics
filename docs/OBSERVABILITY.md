@@ -133,14 +133,14 @@ Configured automatically via provisioning:
 - Fetches data from Cascade/CSV sources
 - Runs Python pipeline: `scripts/data/run_data_pipeline.py`
 - Writes to Supabase tables
-- Sends Slack notification on failure
+- Sends email notification on failure
 
 #### 2. **KPI Alert Monitor** (Every 15 minutes)
 
 - Queries `monitoring.kpi_values` for threshold breaches
 - Checks: `red_threshold`, `yellow_threshold` from `kpi_definitions`
 - Sends alerts to:
-  - Slack (#alerts channel)
+  - Email (`alerts@abaco.co`)
   - Email (owner_agent from kpi_definitions)
   - PagerDuty (critical only)
 
@@ -158,10 +158,10 @@ Configured automatically via provisioning:
    - **Supabase** (query, insert, update)
    - **HTTP Request** (for external APIs)
    - **Schedule Trigger** (cron jobs)
-   - **Slack** (notifications)
+   - **Email** (notifications)
    - **Code** (JavaScript/Python execution)
 
-Example: Query Supabase and send Slack alert
+Example: Query Supabase and send email alert
 
 ```javascript
 // n8n Code Node
@@ -350,7 +350,7 @@ Before deploying to production:
 - [ ] Enable SSL/TLS for Grafana (reverse proxy with Caddy/nginx)
 - [ ] Configure HTTPS for n8n webhook endpoints
 - [ ] Set up backup strategy for Grafana dashboards
-- [ ] Configure Slack/PagerDuty integration for critical alerts
+- [ ] Configure Email/PagerDuty integration for critical alerts
 - [ ] Add monitoring for Grafana/n8n containers (health checks)
 - [ ] Review RLS policies in Supabase for data access control
 - [ ] Set up log retention policies (Grafana, n8n, Supabase)
@@ -360,5 +360,5 @@ Before deploying to production:
 ---
 
 **Maintained by:** DevOps Team  
-**Support:** #observability Slack channel  
+**Support:** observability@abaco.co  
 **Last Review:** 2026-01-29
