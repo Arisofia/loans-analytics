@@ -12,8 +12,8 @@ NOTE: This module is not designed to be run directly as a script.
       Use: python scripts/data/run_data_pipeline.py
 """
 
-import json
 import ast
+import json
 import re
 import traceback
 from datetime import datetime

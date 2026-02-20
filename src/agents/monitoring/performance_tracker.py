@@ -237,6 +237,9 @@ class PerformanceTracker:
         Returns:
             Dictionary with performance report
         """
+        # Reserved for future filtering without breaking public API.
+        _ = time_window
+
         scenarios = {name: self.get_scenario_performance(name) for name in self.scenario_metrics}
 
         agents = {name: self.get_agent_performance(name) for name in self.agent_metrics}

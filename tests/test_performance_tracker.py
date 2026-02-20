@@ -1,7 +1,4 @@
 import json
-from pathlib import Path
-
-import pytest
 
 from src.agents.monitoring.performance_tracker import PerformanceMetric, PerformanceTracker
 

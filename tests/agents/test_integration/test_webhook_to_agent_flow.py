@@ -11,6 +11,7 @@ class TestWebhookToAgentFlow:
     @pytest.mark.asyncio
     async def test_webhook_triggers_agent(self, mock_n8n_webhook):
         """Test webhook can trigger agent execution."""
+        _ = mock_n8n_webhook
         webhook_handler = MagicMock()
         webhook_handler.handle_webhook.return_value = {
             "agent_triggered": True,
@@ -24,6 +25,7 @@ class TestWebhookToAgentFlow:
     @pytest.mark.timeout(60)
     async def test_webhook_to_agent_to_supabase(self, mock_n8n_webhook, mock_supabase_client):
         """Test complete flow: webhook → agent → Supabase."""
+        _ = (mock_n8n_webhook, mock_supabase_client)
         flow = MagicMock()
         flow.execute_complete_flow.return_value = {
             "webhook_received": True,

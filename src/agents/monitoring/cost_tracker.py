@@ -116,6 +116,9 @@ class CostTracker:
         if not self.current_scenario:
             raise ValueError("No active scenario. Call start_scenario() first.")
 
+        # Keep service/endpoint in signature for call-site traceability.
+        _ = (service, endpoint)
+
         # Track as API call
         scenario_metrics = self.metrics.get(self.current_scenario, [])
         for metric in reversed(scenario_metrics):

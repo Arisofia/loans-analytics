@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Optional, Type
+from typing import Optional, Type
 
 from python.multi_agent.historical_context import HistoricalContextProvider
 

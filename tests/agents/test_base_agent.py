@@ -53,6 +53,7 @@ class TestBaseAgent:
 
     def test_agent_metrics_collection(self, performance_metrics):
         """Test agent collects performance metrics."""
+        _ = performance_metrics
         agent = MagicMock()
         agent.collect_metrics.return_value = {
             "execution_time": 100,

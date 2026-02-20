@@ -259,7 +259,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
 
-    def log_message(self, format_str: str, *args: object) -> None:
+    def log_message(self, _format: str, *args: object) -> None:
         """Override to reduce log noise."""
 
 
