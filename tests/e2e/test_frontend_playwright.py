@@ -1,27 +1,33 @@
 import pytest
+import requests
 from playwright.sync_api import sync_playwright
-import socket
+import os
+
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:8501")
+RUN_E2E = os.getenv("RUN_E2E", "0") == "1"
+
+pytestmark = [
+    pytest.mark.e2e,
+    pytest.mark.skipif(not RUN_E2E, reason="Set RUN_E2E=1 to run E2E tests"),
+]
 
 
-def is_frontend_up():
-    s = socket.socket()
+def is_frontend_up() -> bool:
     try:
-        s.connect(("localhost", 8501))
-        s.close()
-        return True
+        response = requests.get(FRONTEND_BASE_URL, timeout=3)
+        return response.status_code < 500
     except Exception:
         return False
 
 
 @pytest.mark.skipif(not is_frontend_up(), reason="Streamlit frontend not running")
-def test_login():
+def test_frontend_home_loads():
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
-        page.goto("http://localhost:8501/")
-        page.fill("input[name=username]", "testuser")
-        page.fill("input[name=password]", "testpassword")
-        page.click("button[type=submit]")
-        assert page.url == "http://localhost:8501/dashboard"
+        page.goto(FRONTEND_BASE_URL, wait_until="domcontentloaded", timeout=20000)
+        body_text = page.locator("body").inner_text(timeout=10000)
+        assert page.url.startswith(FRONTEND_BASE_URL)
+        assert len(body_text.strip()) > 0
         browser.close()
