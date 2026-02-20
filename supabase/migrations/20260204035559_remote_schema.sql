@@ -130,7 +130,7 @@ drop view if exists "analytics"."kpi_weighted_fee_rate";
 
 drop view if exists "analytics"."loan_month";
 
-drop view if exists "public"."figma_dashboard";
+drop view if exists "public"."executive_dashboard";
 
 drop function if exists "public"."update_historical_kpis_updated_at"();
 
@@ -557,7 +557,6 @@ using ((auth.role() = 'service_role'::text));
 CREATE TRIGGER loan_data_broadcast_trigger AFTER INSERT OR DELETE OR UPDATE ON public.loan_data FOR EACH ROW EXECUTE FUNCTION public.loan_data_broadcast_trigger();
 
 drop schema if exists "analytics";
-
 
 
 

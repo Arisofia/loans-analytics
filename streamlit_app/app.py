@@ -282,7 +282,7 @@ def generate_kpi_exports(
         json.dumps(dashboard_metrics, indent=2, default=str),
         encoding="utf-8",
     )
-    analytics_facts = processor.get_figma_dashboard_df()
+    analytics_facts = processor.get_monthly_revenue_df()
     if not analytics_facts.empty:
         facts_path = exports_dir / "analytics_facts.csv"
         analytics_facts.to_csv(facts_path, index=False)

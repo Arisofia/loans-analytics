@@ -107,8 +107,8 @@ class KPICatalogProcessor:
         quarterly["quarter"] = quarterly["quarter_end"].dt.to_period("Q").astype(str)
         return quarterly[["quarter", "total_payments"]]
 
-    def get_figma_dashboard_df(self) -> pd.DataFrame:
-        """Build a monthly metrics frame aligned with dashboard charts."""
+    def get_monthly_revenue_df(self) -> pd.DataFrame:
+        """Build a monthly revenue metrics frame for dashboard charts."""
         if self.payments_df.empty:
             return pd.DataFrame()
         date_col = next(

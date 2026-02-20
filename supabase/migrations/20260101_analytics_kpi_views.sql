@@ -418,9 +418,9 @@ CREATE TABLE IF NOT EXISTS public.analytics_facts (
 );
 
 -- ---------------------------------------------------------------------
--- 14. FIGMA DASHBOARD VIEW
+-- 14. EXECUTIVE DASHBOARD VIEW
 -- ---------------------------------------------------------------------
-CREATE OR REPLACE VIEW public.figma_dashboard AS
+CREATE OR REPLACE VIEW public.executive_dashboard AS
 SELECT
   month::date                AS "Month",
   to_char(month,'YYYY-MM')   AS "Month Label",
