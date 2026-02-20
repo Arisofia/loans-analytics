@@ -36,7 +36,7 @@ try:
     from python.apps.analytics.api.monitoring_service import MonitoringService
     from python.apps.analytics.api.service import KPIService
     from python.logging_config import init_sentry, set_sentry_correlation
-    from python.multi_agent.orchestrator import MultiAgentOrchestrator
+    from src.agents.multi_agent.orchestrator import MultiAgentOrchestrator
 
     init_sentry(service_name="analytics-api")
 

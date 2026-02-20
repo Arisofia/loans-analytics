@@ -98,7 +98,7 @@ if not output_files:
     st.warning(
         "No agent outputs found. Run agents using:\n\n"
         "```bash\n"
-        "python -m python.multi_agent.cli \\\n"
+        "python -m src.agents.multi_agent.cli \\\n"
         "  --agent risk \\\n"
         '  --query "Your question here"\n'
         "```"
@@ -126,16 +126,16 @@ if not output_files:
         source .venv/bin/activate
 
         # Run single agent
-        python -m python.multi_agent.cli \\
+        python -m src.agents.multi_agent.cli \\
           --agent risk \\
           --query "Analyze portfolio with DPD > 30"
 
         # Run pre-built scenario
-        python -m python.multi_agent.cli \\
+        python -m src.agents.multi_agent.cli \\
           --scenario "monthly_portfolio_health"
 
         # List scenarios
-        python -m python.multi_agent.cli --list-scenarios
+        python -m src.agents.multi_agent.cli --list-scenarios
         ```
 
         ### Output Location

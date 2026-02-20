@@ -21,9 +21,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from python.multi_agent.guardrails import Guardrails
-from python.multi_agent.orchestrator import MultiAgentOrchestrator
-from python.multi_agent.protocol import LLMProvider
+from src.agents.multi_agent.guardrails import Guardrails
+from src.agents.multi_agent.orchestrator import MultiAgentOrchestrator
+from src.agents.multi_agent.protocol import LLMProvider
 
 # Add project root to path
 ROOT_DIR = Path(__file__).resolve().parent.parent

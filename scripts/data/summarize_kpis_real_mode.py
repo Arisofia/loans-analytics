@@ -23,7 +23,7 @@ import math
 import os
 from datetime import datetime, timedelta, timezone
 
-from python.multi_agent.config_historical import build_historical_context_provider
+from src.agents.multi_agent.config_historical import build_historical_context_provider
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

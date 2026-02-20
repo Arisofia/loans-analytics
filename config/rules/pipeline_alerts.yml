@@ -287,7 +287,7 @@ groups:
             of delinquent cohorts is required.
           action: |
             1. Query fact_loans WHERE days_past_due >= 90
-            2. Run python -m python.multi_agent.orchestrator --scenario risk_review
+            2. Run python -m src.agents.multi_agent.orchestrator --scenario risk_review
             3. Review PAR-90 trend in Grafana KPI dashboard
             4. Escalate to CRO if value persists above 5%
           runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/PAR-Breach
@@ -309,7 +309,7 @@ groups:
           action: |
             1. Review recent originations for underwriting quality
             2. Check collection_rate trend in Grafana
-            3. Run python -m python.multi_agent.orchestrator --scenario collections_review
+            3. Run python -m src.agents.multi_agent.orchestrator --scenario collections_review
           runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/PAR-Breach
 
       # Default rate approaching guardrail

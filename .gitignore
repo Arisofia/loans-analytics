@@ -42,6 +42,9 @@ venv/
 .lint-venv/
 .lint_venv/
 
+# Lint virtual environment (Python 3.12)
+.lint_venv312/
+
 # Linters / type checkers
 .ruff_cache/
 .mypy_cache/
