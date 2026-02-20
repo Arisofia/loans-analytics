@@ -27,7 +27,11 @@ def test_frontend_home_loads():
         context = browser.new_context()
         page = context.new_page()
         page.goto(FRONTEND_BASE_URL, wait_until="domcontentloaded", timeout=20000)
-        body_text = page.locator("body").inner_text(timeout=10000)
+        page.wait_for_selector("#root", state="attached", timeout=20000)
+        page.wait_for_function(
+            "document.querySelector('#root') && document.querySelector('#root').children.length > 0",
+            timeout=30000,
+        )
         assert page.url.startswith(FRONTEND_BASE_URL)
-        assert len(body_text.strip()) > 0
+        assert page.locator("#root").count() == 1
         browser.close()

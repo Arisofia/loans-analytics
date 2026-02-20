@@ -136,13 +136,17 @@ class UnifiedPipeline:
         Returns:
             Pipeline execution results
         """
-        # Calculate deterministic run_id for idempotency
+        # Calculate deterministic run_id for idempotency.
+        # Include mode in non-full executions to avoid returning cached full results
+        # for dry-run/validate requests that use the same input artifact.
+        mode_token = mode.replace("-", "_")
         if input_path and input_path.exists():
-
             data_hash = self._calculate_input_hash(input_path)
-            run_id = f"{datetime.now().strftime('%Y%m%d')}_{data_hash[:8]}"
+            base_run_id = f"{datetime.now().strftime('%Y%m%d')}_{data_hash[:8]}"
         else:
-            run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+            base_run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        run_id = base_run_id if mode == "full" else f"{base_run_id}_{mode_token}"
 
         logger.info("Starting pipeline execution (run_id: %s, mode: %s)", run_id, mode)
 

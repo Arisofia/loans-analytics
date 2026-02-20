@@ -13,7 +13,9 @@ Phase G4.2 Implementation
 """
 
 import os
+import socket
 from datetime import date, timedelta
+from urllib.parse import urlparse
 from uuid import uuid4
 
 import pytest
@@ -42,6 +44,24 @@ def supabase_backend():
             "SUPABASE_URL and SUPABASE_ANON_KEY environment variables required "
             "for real Supabase integration tests"
         )
+
+    supabase_url = os.getenv("SUPABASE_URL", "")
+    host = urlparse(supabase_url).hostname
+    if not host:
+        pytest.skip("SUPABASE_URL does not contain a valid hostname")
+
+    # Avoid hard failures when external DNS/network is unavailable in CI or local envs.
+    try:
+        socket.getaddrinfo(host, 443)
+    except socket.gaierror as exc:
+        pytest.skip(f"Supabase host DNS resolution failed for {host}: {exc}")
+
+    try:
+        import requests
+
+        requests.get(f"{supabase_url}/rest/v1/", timeout=5)
+    except Exception as exc:
+        pytest.skip(f"Supabase endpoint is unreachable: {exc}")
 
     backend = SupabaseHistoricalBackend()
     return backend
