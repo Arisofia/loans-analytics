@@ -259,3 +259,7 @@ models/risk/*.json
 supabase/.temp/
 bandit-report.json
 bandit-results.sarif
+cleanup.log
+.hypothesis/
+input.mp4
+output.mp4
