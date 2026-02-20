@@ -573,8 +573,9 @@ class CalculationPhase:
         for col in df.columns:
             if df[col].dtype in ["datetime64[ns]", "object"]:
                 try:
-                    pd.to_datetime(df[col], errors="raise")
-                    date_columns.append(col)
+                    parsed = pd.to_datetime(df[col], errors="coerce", format="mixed")
+                    if parsed.notna().any():
+                        date_columns.append(col)
                 except Exception as e:
                     logger.debug("Skipping non-date column %s: %s", col, e)
                     continue
