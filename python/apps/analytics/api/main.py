@@ -347,7 +347,11 @@ if app is not None:
 
                 # 3. Run Scenario
                 trace_id = str(uuid.uuid4())
-                loan_ids_from_request = [loan.id for loan in request.loans] if request.loans else []
+                loan_ids_from_request = (
+                    [loan.id for loan in request.loans if loan.id is not None]
+                    if request.loans
+                    else []
+                )
 
                 initial_context = {
                     "portfolio_data": (

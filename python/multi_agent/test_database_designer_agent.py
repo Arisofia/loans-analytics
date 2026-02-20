@@ -20,7 +20,7 @@ class TestDatabaseDesignerAgent(unittest.TestCase):
         self._init_client_patcher = patch("python.multi_agent.base_agent.BaseAgent._init_client")
         mock_init_client = self._init_client_patcher.start()
         mock_init_client.return_value = Mock()
-        self.agent = DatabaseDesignerAgent()
+        self.agent = DatabaseDesignerAgent(role=AgentRole.DATABASE_DESIGNER)
 
     def tearDown(self) -> None:
         """Tear down test fixtures."""

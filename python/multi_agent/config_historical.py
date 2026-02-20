@@ -29,8 +29,10 @@ try:
     from python.multi_agent.historical_backend_supabase import (
         SupabaseHistoricalBackend,
     )
+
+    SUPABASE_BACKEND_CLS: Optional[Type[SupabaseHistoricalBackend]] = SupabaseHistoricalBackend
 except ImportError:
-    SupabaseHistoricalBackend: Optional[Type[Any]] = None
+    SUPABASE_BACKEND_CLS = None
 
 logger = logging.getLogger(__name__)
 
@@ -82,10 +84,10 @@ def build_historical_context_provider(
             raise ValueError("REAL mode requires SUPABASE_URL and SUPABASE_ANON_KEY env vars.")
 
         # Check if Supabase backend is available
-        if SupabaseHistoricalBackend is None:
+        if SUPABASE_BACKEND_CLS is None:
             raise ValueError("REAL mode requires supabase client library to be installed.")
 
-        backend = SupabaseHistoricalBackend()
+        backend = SUPABASE_BACKEND_CLS()
         provider = HistoricalContextProvider(
             cache_ttl_seconds=cache_ttl_seconds,
             mode="REAL",

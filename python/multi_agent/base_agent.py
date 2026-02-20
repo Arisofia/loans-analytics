@@ -70,7 +70,7 @@ class BaseAgent(ABC):
 
     def _init_openai_client(self) -> Any:
         """Initialize OpenAI client."""
-        if not OpenAI:
+        if OpenAI is None:
             raise ImportError("openai package required")
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
@@ -223,9 +223,10 @@ class BaseAgent(ABC):
                 if is_retryable and attempt < max_retries - 1:
                     delay = retry_delays[min(attempt, len(retry_delays) - 1)]
                     logger.warning(
-                        "LLM call failed (attempt %d/%d): %s. Retrying in %ds...",
+                        "LLM call failed (attempt %d/%d) for agent %s: %s. Retrying in %ds...",
                         attempt + 1,
                         max_retries,
+                        self.role.value,
                         str(e),
                         delay,
                     )
@@ -233,6 +234,12 @@ class BaseAgent(ABC):
                     last_error = e
                 else:
                     # Not retryable or last attempt
+                    logger.error(
+                        "LLM call failed permanently for agent %s after %d attempts: %s",
+                        self.role.value,
+                        attempt + 1,
+                        str(e),
+                    )
                     raise
 
         # If we get here, all retries failed

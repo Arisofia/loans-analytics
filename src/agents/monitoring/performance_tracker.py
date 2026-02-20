@@ -242,7 +242,7 @@ class PerformanceTracker:
         agents = {name: self.get_agent_performance(name) for name in self.agent_metrics}
 
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "total_operations": len(self.metrics),
             "scenarios": scenarios,
             "agents": agents,

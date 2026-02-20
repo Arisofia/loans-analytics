@@ -55,6 +55,7 @@ class MultiAgentOrchestrator:
         self.agents = self._init_agents()
         self.scenarios = self._init_scenarios()
         self.feedback_events: List[Dict[str, Any]] = []
+        self.usage_tracker: Optional[UsageTracker] = None
 
         if usage_tracker is not None:
             self.usage_tracker = usage_tracker

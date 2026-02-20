@@ -144,7 +144,7 @@ class IngestionPhase:
                 }
 
             # Validate data types (vectorized for performance)
-            type_validation = {
+            type_validation: Dict[str, Any] = {
                 "loan_id": str,
                 "amount": (int, float),
                 "status": str,

@@ -75,8 +75,8 @@ class LoanPortfolioRequest(BaseModel):
 class KpiContext(BaseModel):
     metric: Optional[str] = Field(None, description="Name of the KPI metric")
     timestamp: Optional[datetime] = Field(None, description="Calculation timestamp")
-    formula: Optional[str] = Field(None, description="Formula used for calculation")
-    sample_size: Optional[int] = Field(None, description="Number of records used in calculation")
+    formula: Optional[str] = Field("", description="Formula used for calculation")
+    sample_size: Optional[int] = Field(0, description="Number of records used in calculation")
     period: str = Field(..., description="Reporting period (e.g. 'daily', 'on-demand')")
     calculation_date: datetime = Field(..., description="Date/time of calculation")
     filters: Optional[Dict[str, Any]] = None

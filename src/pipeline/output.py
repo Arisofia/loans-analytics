@@ -305,6 +305,8 @@ class OutputPhase:
             # Create Supabase client
             supabase_url = os.getenv("SUPABASE_URL")
             supabase_key = os.getenv("SUPABASE_ANON_KEY")
+            assert supabase_url is not None
+            assert supabase_key is not None
             supabase: Client = create_client(supabase_url, supabase_key)
 
             # Prepare rows for insert

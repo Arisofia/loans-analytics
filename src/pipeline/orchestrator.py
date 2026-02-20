@@ -39,12 +39,13 @@ class UnifiedPipeline:
     Input → Ingestion → Transformation → Calculation → Output → Dashboard
     """
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Optional[Path] = None, base_log_dir: Optional[Path] = None):
         """
         Initialize the unified pipeline.
 
         Args:
             config_path: Path to pipeline.yml (optional, defaults to config/pipeline.yml)
+            base_log_dir: Base directory for run logs (optional, defaults to logs/runs)
         """
         logger.info("%s", "=" * 80)
         logger.info("UNIFIED PIPELINE ORCHESTRATOR v2.0")
@@ -54,6 +55,7 @@ class UnifiedPipeline:
         self.config = PipelineConfig.load(config_path)
         self.business_rules = load_business_rules()
         self.kpi_definitions = load_kpi_definitions()
+        self.base_log_dir = base_log_dir or (Path("logs") / "runs")
 
         # Initialize phases
         self.ingestion = IngestionPhase(self.config.ingestion)
@@ -85,7 +87,7 @@ class UnifiedPipeline:
         logger.info("Starting pipeline execution (run_id: %s, mode: %s)", run_id, mode)
 
         # Create run directory
-        run_dir = Path("logs") / "runs" / run_id
+        run_dir = self.base_log_dir / run_id
 
         # Check for existing run (idempotency)
         if run_dir.exists():

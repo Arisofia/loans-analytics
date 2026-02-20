@@ -77,6 +77,10 @@ class KPIService:
                         value=float(rec["value"]),
                         unit=rec["unit"],
                         context=KpiContext(
+                            metric=rec["name"],
+                            timestamp=rec["created_at"],
+                            formula="",
+                            sample_size=0,
                             period="latest",
                             calculation_date=rec["created_at"],
                             filters={"as_of_date": as_of_date_str},
@@ -210,7 +214,7 @@ class KPIService:
 
             total_records = len(df)
             if total_records == 0:
-                return DataQualityResponse(score=100.0, issues=[])
+                return DataQualityResponse(data_quality_score=100.0, issues=[])
 
             # Duplicate Ratio
             duplicate_ratio = df.duplicated().sum() / total_records * 100.0
@@ -376,9 +380,14 @@ class KPIService:
             avg_ltv = df["ltv_ratio"].mean()
             avg_dti = df["dti_ratio"].mean()
 
+            now = datetime.now()
             context = KpiContext(
+                metric="Portfolio Overview",
+                timestamp=now,
+                formula="PAR30, Yield, LTV, DTI",
+                sample_size=len(loans),
                 period="on-demand",
-                calculation_date=datetime.now(),
+                calculation_date=now,
                 filters={"loan_count": len(loans)},
             )
 
