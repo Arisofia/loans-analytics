@@ -8,7 +8,7 @@
 
 - ✅ **Typed Protocol**: Full type safety with Pydantic models
 - ✅ **PII Guardrails**: Automatic redaction of sensitive data (SSN, email, phone, credit cards)
-- ✅ **Multi-Provider**: OpenAI, Anthropic, Gemini support with easy switching
+- ✅ **Multi-Provider**: OpenAI, Anthropic, Gemini, Grok support with easy switching
 - ✅ **Tracing & Cost Tracking**: OpenTelemetry compatible, tracks tokens and costs per trace
 - ✅ **9 Specialized Agents**: Risk, Growth, Ops, Compliance, Collections, Fraud, Pricing, Retention, Database Design
 - ✅ **KPI Integration**: Real-time validation and anomaly detection
@@ -57,10 +57,10 @@
                             │
 ┌─────────────────────────────────────────────────────────────┐
 │                 LLM Providers Layer                          │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐            │
-│  │   OpenAI   │  │ Anthropic  │  │   Gemini   │            │
-│  │ gpt-4o-mini│  │ Claude 3.5 │  │ 2.0-flash  │            │
-│  └────────────┘  └────────────┘  └────────────┘            │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌───────┐ │
+│  │   OpenAI   │  │ Anthropic  │  │   Gemini   │  │ Grok  │ │
+│  │ gpt-4o-mini│  │ Claude 3.5 │  │ 2.0-flash  │  │ xAI   │ │
+│  └────────────┘  └────────────┘  └────────────┘  └───────┘ │
 └─────────────────────────────────────────────────────────────┘
                             │
 ┌─────────────────────────────────────────────────────────────┐
@@ -93,6 +93,8 @@ pip install opentelemetry-api opentelemetry-sdk
 export OPENAI_API_KEY="your_openai_key"
 export ANTHROPIC_API_KEY="your_anthropic_key"  # Optional
 export GEMINI_API_KEY="your_gemini_key"        # Optional
+export XAI_API_KEY="your_xai_key"              # Optional (Grok)
+export XAI_BASE_URL="https://api.x.ai/v1"      # Optional override
 ```
 
 ### Basic Usage
@@ -141,7 +143,7 @@ See full documentation for:
 - Cost tracking and observability
 - OpenTelemetry integration
 - Custom scenario creation
-- Provider switching (OpenAI, Anthropic, Gemini)
+- Provider switching (OpenAI, Anthropic, Gemini, Grok)
 - Usage examples
 
 ## 🧪 Testing

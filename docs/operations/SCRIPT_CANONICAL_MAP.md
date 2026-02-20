@@ -4,28 +4,34 @@ Single source of truth for script execution paths. Use only these commands.
 
 ## Data Pipeline
 
-- Run pipeline: `python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv`
-- Validate structure: `python scripts/maintenance/validate_structure.py`
-- Analyze real input files: `python scripts/data/analyze_real_data.py --data-dir ~/Downloads`
+- Run pipeline: `python3 scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv`
+- Validate structure: `python3 scripts/maintenance/validate_structure.py`
+- Analyze real input files: `python3 scripts/data/analyze_real_data.py --data-dir ~/Downloads`
 
 ## Synthetic Data
 
-- Generate synthetic loan dataset: `python scripts/data/generate_sample_data.py`
-- Generate synthetic KPI series: `python scripts/data/load_sample_kpis_supabase.py`
-- Generate Spanish IDs for tests: `python scripts/data/seed_spanish_loans.py`
+- Generate synthetic loan dataset: `python3 scripts/data/generate_sample_data.py`
+- Generate synthetic KPI series: `python3 scripts/data/load_sample_kpis_supabase.py`
+- Generate Spanish IDs for tests: `python3 scripts/data/seed_spanish_loans.py`
 
 ## Maintenance
 
 - Repo maintenance: `./scripts/maintenance/repo_maintenance.sh --mode=standard`
 - Repo doctor: `./scripts/maintenance/repo-doctor.sh`
 - Cleanup old workflow runs: `./scripts/maintenance/cleanup_workflow_runs_by_count.sh --keep 25`
-- Service status report: `python scripts/maintenance/generate_service_status_report.py`
-- Infra validator (Task 1-5): `python scripts/maintenance/abaco_infra_validator.py --apply -v`
+- Service status report: `python3 scripts/maintenance/generate_service_status_report.py`
+- Infra validator (Task 1-5): `python3 scripts/maintenance/abaco_infra_validator.py --apply -v`
 
 ## Monitoring
 
 - Auto-start monitoring stack: `bash scripts/monitoring/auto_start_monitoring.sh`
 - Monitoring health check: `bash scripts/monitoring/health_check_monitoring.sh`
+
+## Performance
+
+- KPI profiler (cProfile, real/synthetic): `python3 scripts/performance/profile_kpi_engine.py --rows 1000000`
+- KPI scale benchmark (pandas/polars): `python3 scripts/performance/benchmark_kpi_engine_scale.py --rows 100000,500000,1000000 --mode both`
+- API load test (Locust): `locust -f tests/load/locustfile.py --headless -u 30 -r 5 -t 5m --host http://localhost:8000`
 
 ## Rule
 

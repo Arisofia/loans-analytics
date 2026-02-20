@@ -33,6 +33,7 @@ class LLMProvider(str, Enum):
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     GEMINI = "gemini"
+    GROK = "grok"
 
 
 class MessageRole(str, Enum):

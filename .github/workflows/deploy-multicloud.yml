@@ -1,0 +1,92 @@
+name: Deploy Multi-Cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      cloud:
+        description: "Deployment target"
+        required: true
+        default: "azure"
+        type: choice
+        options:
+          - azure
+          - aws
+          - both
+      environment:
+        description: "Environment name"
+        required: true
+        default: "prod"
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy-azure:
+    if: ${{ github.event.inputs.cloud == 'azure' || github.event.inputs.cloud == 'both' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip when Azure credentials are missing
+        if: ${{ secrets.AZURE_CREDENTIALS == '' || secrets.AZURE_RESOURCE_GROUP == '' }}
+        run: |
+          echo "::warning::Azure deployment skipped (AZURE_CREDENTIALS or AZURE_RESOURCE_GROUP missing)"
+          exit 0
+
+      - name: Azure login
+        if: ${{ secrets.AZURE_CREDENTIALS != '' && secrets.AZURE_RESOURCE_GROUP != '' }}
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep stack
+        if: ${{ secrets.AZURE_CREDENTIALS != '' && secrets.AZURE_RESOURCE_GROUP != '' }}
+        run: |
+          az deployment group create \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --template-file infra/main.bicep \
+            --parameters @infra/main.parameters.json \
+            --parameters environmentName="${{ github.event.inputs.environment }}"
+
+  deploy-aws:
+    if: ${{ github.event.inputs.cloud == 'aws' || github.event.inputs.cloud == 'both' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/aws
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip when AWS credentials are missing
+        if: ${{ secrets.AWS_ROLE_TO_ASSUME == '' || secrets.AWS_REGION == '' }}
+        run: |
+          echo "::warning::AWS deployment skipped (AWS_ROLE_TO_ASSUME or AWS_REGION missing)"
+          exit 0
+
+      - name: Configure AWS credentials
+        if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' && secrets.AWS_REGION != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' && secrets.AWS_REGION != '' }}
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' && secrets.AWS_REGION != '' }}
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' && secrets.AWS_REGION != '' }}
+        run: |
+          terraform apply -auto-approve \
+            -var "aws_region=${{ secrets.AWS_REGION }}" \
+            -var "environment=${{ github.event.inputs.environment }}"

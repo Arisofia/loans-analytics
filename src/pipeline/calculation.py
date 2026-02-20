@@ -14,6 +14,7 @@ NOTE: This module is not designed to be run directly as a script.
 
 import ast
 import json
+import os
 import re
 import traceback
 from datetime import datetime
@@ -34,6 +35,10 @@ class KPIFormulaEngine:
     def __init__(self, df: pd.DataFrame):
         self.df = df
         self.month_start = pd.Timestamp.now().replace(day=1)
+        self._where_cache: Dict[str, pd.Series] = {}
+        self._numeric_cache: Dict[str, pd.Series] = {}
+        self._datetime_cache: Dict[str, pd.Series] = {}
+        self._polars_enabled = os.getenv("KPI_ENGINE_USE_POLARS", "1") == "1"
 
     def calculate(self, formula: str) -> float:
         """Parse and execute a KPI formula."""
@@ -154,12 +159,49 @@ class KPIFormulaEngine:
         if date_column is None:
             return 0.0, 0.0
 
+        if self._polars_enabled and len(self.df) >= 100_000:
+            try:
+                import polars as pl
+
+                pl_df = pl.from_pandas(
+                    self.df[[date_column, "outstanding_balance"]].copy()
+                ).with_columns(
+                    pl.col(date_column).cast(pl.Datetime, strict=False).alias("date"),
+                    pl.col("outstanding_balance")
+                    .cast(pl.Float64, strict=False)
+                    .fill_null(0.0)
+                    .alias("balance"),
+                )
+                pl_df = pl_df.select(["date", "balance"]).filter(pl.col("date").is_not_null())
+                if pl_df.is_empty():
+                    return 0.0, 0.0
+
+                monthly = (
+                    pl_df.with_columns(pl.col("date").dt.truncate("1mo").alias("month"))
+                    .group_by("month")
+                    .agg(pl.col("balance").sum().alias("balance_sum"))
+                    .sort("month")
+                )
+
+                if monthly.height == 0:
+                    return 0.0, 0.0
+
+                month_to_balance = {
+                    pd.Timestamp(row["month"]).to_period("M"): float(row["balance_sum"])
+                    for row in monthly.select(["month", "balance_sum"]).to_dicts()
+                }
+                current_period = max(month_to_balance)
+                previous_period = current_period - 1
+                current_balance = month_to_balance.get(current_period, 0.0)
+                previous_balance = month_to_balance.get(previous_period, 0.0)
+                return current_balance, previous_balance
+            except Exception as exc:
+                logger.debug("Polars monthly balance path failed, falling back to pandas: %s", exc)
+
         period_df = pd.DataFrame(
             {
-                "date": pd.to_datetime(self.df[date_column], errors="coerce"),
-                "balance": pd.to_numeric(self.df["outstanding_balance"], errors="coerce").fillna(
-                    0.0
-                ),
+                "date": self._get_datetime_series(date_column),
+                "balance": self._get_numeric_series("outstanding_balance").fillna(0.0),
             }
         ).dropna(subset=["date"])
         if period_df.empty:
@@ -260,7 +302,13 @@ class KPIFormulaEngine:
 
     def _apply_where_clause(self, condition: str) -> pd.DataFrame:
         """Apply WHERE clause to filter DataFrame."""
+        cached_mask = self._where_cache.get(condition)
+        if cached_mask is not None:
+            return self.df[cached_mask]
+
         filtered_df = self.df
+        mask = pd.Series(True, index=self.df.index)
+
         try:
             if ">=" in condition:
                 parts = condition.split(">=")
@@ -269,14 +317,14 @@ class KPIFormulaEngine:
 
                 if value == "MONTH_START":
                     if col in self.df.columns:
-                        filtered_df = self.df[
-                            pd.to_datetime(self.df[col], errors="coerce") >= self.month_start
-                        ]
+                        mask = self._get_datetime_series(col) >= self.month_start
+                        filtered_df = self.df[mask.fillna(False)]
                     else:
                         filtered_df = self.df.iloc[:0]
                 elif value.isdigit():
                     if col in self.df.columns:
-                        filtered_df = self.df[self.df[col] >= int(value)]
+                        mask = self._get_numeric_series(col) >= int(value)
+                        filtered_df = self.df[mask.fillna(False)]
                     else:
                         filtered_df = self.df.iloc[:0]
 
@@ -286,7 +334,8 @@ class KPIFormulaEngine:
                 value = parts[1].strip()
                 if value.isdigit() or value.replace(".", "", 1).isdigit():
                     if col in self.df.columns:
-                        filtered_df = self.df[self.df[col] <= float(value)]
+                        mask = self._get_numeric_series(col) <= float(value)
+                        filtered_df = self.df[mask.fillna(False)]
                     else:
                         filtered_df = self.df.iloc[:0]
 
@@ -296,7 +345,8 @@ class KPIFormulaEngine:
                 value = parts[1].strip()
                 if value.isdigit() or value.replace(".", "", 1).isdigit():
                     if col in self.df.columns:
-                        filtered_df = self.df[self.df[col] > float(value)]
+                        mask = self._get_numeric_series(col) > float(value)
+                        filtered_df = self.df[mask.fillna(False)]
                     else:
                         filtered_df = self.df.iloc[:0]
 
@@ -306,7 +356,8 @@ class KPIFormulaEngine:
                 value = parts[1].strip()
                 if value.isdigit() or value.replace(".", "", 1).isdigit():
                     if col in self.df.columns:
-                        filtered_df = self.df[self.df[col] < float(value)]
+                        mask = self._get_numeric_series(col) < float(value)
+                        filtered_df = self.df[mask.fillna(False)]
                     else:
                         filtered_df = self.df.iloc[:0]
 
@@ -316,7 +367,8 @@ class KPIFormulaEngine:
                     col = match.group(1).strip()
                     values = [v.strip().strip("'\"") for v in match.group(2).split(",")]
                     if col in self.df.columns:
-                        filtered_df = self.df[self.df[col].isin(values)]
+                        mask = self.df[col].astype(str).isin(values)
+                        filtered_df = self.df[mask.fillna(False)]
                     else:
                         filtered_df = self.df.iloc[:0]
 
@@ -325,7 +377,8 @@ class KPIFormulaEngine:
                 col = parts[0].strip()
                 value = parts[1].strip().strip("'\"")
                 if col in self.df.columns:
-                    filtered_df = self.df[self.df[col] != value]
+                    mask = self.df[col].astype(str) != value
+                    filtered_df = self.df[mask.fillna(False)]
                 else:
                     filtered_df = self.df.iloc[:0]
 
@@ -334,14 +387,42 @@ class KPIFormulaEngine:
                 col = parts[0].strip()
                 value = parts[1].strip().strip("'\"")
                 if col in self.df.columns:
-                    filtered_df = self.df[self.df[col] == value]
+                    mask = self.df[col].astype(str) == value
+                    filtered_df = self.df[mask.fillna(False)]
                 else:
                     filtered_df = self.df.iloc[:0]
 
         except Exception as e:
             logger.debug("WHERE clause failed: %s - %s", condition, str(e))
 
+        if len(filtered_df) < len(self.df):
+            self._where_cache[condition] = (
+                pd.Series(self.df.index.isin(filtered_df.index), index=self.df.index)
+                .fillna(False)
+                .astype(bool)
+            )
+        else:
+            self._where_cache[condition] = pd.Series(True, index=self.df.index, dtype=bool)
+
         return filtered_df
+
+    def _get_numeric_series(self, column: str) -> pd.Series:
+        """Get numeric series with one-time coercion cache."""
+        cached = self._numeric_cache.get(column)
+        if cached is not None:
+            return cached
+        numeric = pd.to_numeric(self.df[column], errors="coerce")
+        self._numeric_cache[column] = numeric
+        return numeric
+
+    def _get_datetime_series(self, column: str) -> pd.Series:
+        """Get datetime series with one-time coercion cache."""
+        cached = self._datetime_cache.get(column)
+        if cached is not None:
+            return cached
+        dt = pd.to_datetime(self.df[column], errors="coerce")
+        self._datetime_cache[column] = dt
+        return dt
 
 
 class CalculationPhase:
@@ -440,8 +521,9 @@ class CalculationPhase:
 
         # Derive columns needed by KPI formulas but not present in raw data
         if "borrower_id" in df.columns and "loan_id" in df.columns:
-            loan_counts = df.groupby("borrower_id")["loan_id"].nunique().rename("loan_count")
-            df = df.merge(loan_counts, on="borrower_id", how="left")
+            if "loan_count" not in df.columns:
+                df = df.copy()
+                df["loan_count"] = df.groupby("borrower_id")["loan_id"].transform("nunique")
 
         kpis: Dict[str, Optional[float]] = {}
         engine = KPIFormulaEngine(df)

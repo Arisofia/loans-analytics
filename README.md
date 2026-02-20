@@ -16,6 +16,9 @@ This repository contains the Abaco financial analytics platform:
 - Canonical command map: `docs/operations/SCRIPT_CANONICAL_MAP.md`
 - Master no-stop delivery checklist: `docs/operations/MASTER_DELIVERY_TODO.md`
 - Pipeline ingestion requires explicit real input (`--input`). Dummy/sample fallback is disabled.
+- KPI engine profiling and scale benchmarks available under `scripts/performance/`.
+- Multi-agent providers include OpenAI, Anthropic, Gemini, and Grok (xAI-compatible API).
+- Multi-cloud deployment baseline includes Azure Bicep + AWS Terraform starter + Kubernetes manifests.
 
 Last reviewed: 2026-02-20
 
@@ -46,24 +49,24 @@ pip install -r requirements.txt
 3. Validate repository structure
 
 ```bash
-python scripts/maintenance/validate_structure.py
+python3 scripts/maintenance/validate_structure.py
 ```
 
 4. Run pipeline with real input
 
 ```bash
 # Full execution
-python scripts/data/run_data_pipeline.py \
+python3 scripts/data/run_data_pipeline.py \
   --input data/raw/abaco_real_data_20260202.csv \
   --mode full
 
 # Ingestion-only check
-python scripts/data/run_data_pipeline.py \
+python3 scripts/data/run_data_pipeline.py \
   --input data/raw/abaco_real_data_20260202.csv \
   --mode dry-run
 
 # Stop after transformation
-python scripts/data/run_data_pipeline.py \
+python3 scripts/data/run_data_pipeline.py \
   --input data/raw/abaco_real_data_20260202.csv \
   --mode validate
 ```
@@ -108,12 +111,20 @@ bash scripts/monitoring/auto_start_monitoring.sh
 - `scripts/maintenance/abaco_infra_validator.py`
 - `scripts/maintenance/repo_maintenance.sh`
 - `scripts/monitoring/auto_start_monitoring.sh`
+- `scripts/performance/profile_kpi_engine.py`
+- `scripts/performance/benchmark_kpi_engine_scale.py`
 
 ### Apps and analytics
 
 - `streamlit_app.py` and `streamlit_app/`
 - `python/apps/analytics/api/`
 - `python/multi_agent/`
+
+### Infra
+
+- Azure Bicep: `infra/*.bicep`
+- AWS Terraform starter: `infra/aws/`
+- Kubernetes baseline manifests: `infra/kubernetes/`
 
 ## Output artifacts
 
@@ -133,8 +144,8 @@ Pipeline runs are written under `logs/runs/<run_id>/`, including:
 Repository and pipeline checks:
 
 ```bash
-python scripts/maintenance/validate_structure.py
-python scripts/maintenance/abaco_infra_validator.py -v
+python3 scripts/maintenance/validate_structure.py
+python3 scripts/maintenance/abaco_infra_validator.py -v
 ```
 
 Quality checks:

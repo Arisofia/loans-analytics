@@ -53,6 +53,7 @@ class BaseAgent(ABC):
             LLMProvider.OPENAI: "gpt-4o-mini",
             LLMProvider.ANTHROPIC: "claude-3-5-sonnet-20241022",
             LLMProvider.GEMINI: "gemini-2.0-flash-exp",
+            LLMProvider.GROK: os.getenv("GROK_MODEL", "grok-2-latest"),
         }
         return defaults.get(self.provider, "gpt-4o-mini")
 
@@ -62,6 +63,7 @@ class BaseAgent(ABC):
             LLMProvider.OPENAI: self._init_openai_client,
             LLMProvider.ANTHROPIC: self._init_anthropic_client,
             LLMProvider.GEMINI: self._init_gemini_client,
+            LLMProvider.GROK: self._init_grok_client,
         }
         initializer = initializers.get(self.provider)
         if not initializer:
@@ -105,6 +107,26 @@ class BaseAgent(ABC):
             raise ValueError("GEMINI_API_KEY not set")
         genai.configure(api_key=api_key)
         return genai
+
+    def _init_grok_client(self) -> Any:
+        """Initialize Grok client via OpenAI-compatible API."""
+        if OpenAI is None:
+            raise ImportError("openai package required")
+
+        api_key = os.getenv("XAI_API_KEY")
+        if not api_key:
+            raise ValueError("XAI_API_KEY not set")
+
+        timeout = float(os.getenv("LLM_TIMEOUT", "60"))
+        max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
+        base_url = os.getenv("XAI_BASE_URL", "https://api.x.ai/v1")
+
+        return OpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
 
     @abstractmethod
     def get_system_prompt(self) -> str:
@@ -211,6 +233,8 @@ class BaseAgent(ABC):
                     return self._call_anthropic(messages, request)
                 if self.provider == LLMProvider.GEMINI:
                     return self._call_gemini(messages, request)
+                if self.provider == LLMProvider.GROK:
+                    return self._call_grok(messages, request)
                 raise ValueError(f"Unsupported provider: {self.provider}")
             except Exception as e:
                 error_msg = str(e).lower()
@@ -344,4 +368,37 @@ class BaseAgent(ABC):
             "tokens_used": tokens_used,
             "cost_usd": cost,
             "finish_reason": "stop",
+        }
+
+    def _call_grok(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
+        """Call Grok API through OpenAI-compatible chat completion endpoint."""
+        timeout = float(os.getenv("LLM_TIMEOUT", "60"))
+
+        response = self._client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            max_tokens=request.max_tokens,
+            temperature=request.temperature,
+            timeout=timeout,
+        )
+
+        usage = response.usage
+        tokens = usage.total_tokens if usage else 0
+
+        cost_per_1k_input = float(os.getenv("GROK_COST_PER_1K_INPUT", "0"))
+        cost_per_1k_output = float(os.getenv("GROK_COST_PER_1K_OUTPUT", "0"))
+        cost = (
+            (
+                (usage.prompt_tokens * cost_per_1k_input / 1000)
+                + (usage.completion_tokens * cost_per_1k_output / 1000)
+            )
+            if usage
+            else 0.0
+        )
+
+        return {
+            "content": response.choices[0].message.content or "",
+            "tokens_used": tokens,
+            "cost_usd": cost,
+            "finish_reason": response.choices[0].finish_reason,
         }

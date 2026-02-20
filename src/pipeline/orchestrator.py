@@ -14,8 +14,11 @@ NOTE: This module is not designed to be run directly as a script.
 import argparse
 import hashlib
 import json
+import os
 import sys
+import time
 import traceback
+from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -29,6 +32,14 @@ from .output import OutputPhase
 from .transformation import TransformationPhase
 
 logger = get_logger(__name__)
+
+try:
+    from opentelemetry import trace
+    from opentelemetry.trace import Status, StatusCode
+
+    OTEL_AVAILABLE = True
+except ImportError:
+    OTEL_AVAILABLE = False
 
 
 class UnifiedPipeline:
@@ -56,6 +67,8 @@ class UnifiedPipeline:
         self.business_rules = load_business_rules()
         self.kpi_definitions = load_kpi_definitions()
         self.base_log_dir = base_log_dir or (Path("logs") / "runs")
+        self.enable_tracing = os.getenv("PIPELINE_TRACING_ENABLED", "1") == "1" and OTEL_AVAILABLE
+        self._tracer = trace.get_tracer(__name__) if self.enable_tracing else None
 
         # Initialize phases
         self.ingestion = IngestionPhase(self.config.ingestion)
@@ -64,6 +77,53 @@ class UnifiedPipeline:
         self.output = OutputPhase(self.config.output)
 
         logger.info("All pipeline phases initialized successfully")
+
+    def _start_span(self, name: str, attributes: Optional[Dict[str, Any]] = None):
+        """Start an OpenTelemetry span when tracing is enabled."""
+        if self._tracer is None:
+            return nullcontext(None)
+        return self._tracer.start_as_current_span(name, attributes=attributes or {})
+
+    def _execute_phase(
+        self,
+        *,
+        phase_name: str,
+        run_id: str,
+        executor: Any,
+        kwargs: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Execute one pipeline phase with timing and optional tracing."""
+        with self._start_span(
+            f"pipeline.{phase_name}",
+            {
+                "pipeline.run_id": run_id,
+                "pipeline.phase": phase_name,
+            },
+        ) as phase_span:
+            started = time.perf_counter()
+            try:
+                phase_results = executor(**kwargs)
+            except Exception as exc:
+                if phase_span is not None:
+                    phase_span.record_exception(exc)
+                    phase_span.set_status(Status(StatusCode.ERROR, str(exc)))
+                raise
+
+            duration = round(time.perf_counter() - started, 6)
+            phase_results["duration_seconds"] = duration
+
+            if phase_span is not None:
+                phase_status = str(phase_results.get("status", "unknown"))
+                phase_span.set_attribute("pipeline.phase.status", phase_status)
+                phase_span.set_attribute("pipeline.phase.duration_seconds", duration)
+                if phase_status == "success":
+                    phase_span.set_status(Status(StatusCode.OK))
+                else:
+                    phase_span.set_status(
+                        Status(StatusCode.ERROR, str(phase_results.get("error", "phase_failed")))
+                    )
+
+            return phase_results
 
     def execute(self, input_path: Optional[Path] = None, mode: str = "full") -> Dict[str, Any]:
         """
@@ -109,85 +169,156 @@ class UnifiedPipeline:
             "mode": mode,
             "start_time": datetime.now().isoformat(),
             "phases": {},
+            "phase_metrics": {},
         }
 
-        try:
-            # PHASE 1: INGESTION
-            separator = "=" * 80
-            logger.info("\n%s", separator)
-            logger.info("PHASE 1: INGESTION")
-            logger.info("%s", separator)
-            phase1_results = self.ingestion.execute(input_path=input_path, run_dir=run_dir)
-            results["phases"]["ingestion"] = phase1_results
+        with self._start_span(
+            "pipeline.execute",
+            {
+                "pipeline.run_id": run_id,
+                "pipeline.mode": mode,
+            },
+        ) as pipeline_span:
+            try:
+                # PHASE 1: INGESTION
+                separator = "=" * 80
+                logger.info("\n%s", separator)
+                logger.info("PHASE 1: INGESTION")
+                logger.info("%s", separator)
+                phase1_results = self._execute_phase(
+                    phase_name="ingestion",
+                    run_id=run_id,
+                    executor=self.ingestion.execute,
+                    kwargs={"input_path": input_path, "run_dir": run_dir},
+                )
+                results["phases"]["ingestion"] = phase1_results
+                results["phase_metrics"]["ingestion"] = {
+                    "status": phase1_results.get("status"),
+                    "duration_seconds": phase1_results.get("duration_seconds", 0.0),
+                }
 
-            if phase1_results["status"] != "success":
-                error_msg = f"Phase 1 (Ingestion) failed: {phase1_results.get('error')}"
-                raise RuntimeError(error_msg)
+                if phase1_results["status"] != "success":
+                    error_msg = f"Phase 1 (Ingestion) failed: {phase1_results.get('error')}"
+                    raise RuntimeError(error_msg)
 
-            if mode == "dry-run":
-                logger.info("Dry-run mode: stopping after ingestion")
-                return self._finalize_results(results, run_dir)
+                if mode == "dry-run":
+                    logger.info("Dry-run mode: stopping after ingestion")
+                    final_results = self._finalize_results(results, run_dir)
+                    if pipeline_span is not None:
+                        pipeline_span.set_attribute("pipeline.status", final_results["status"])
+                        pipeline_span.set_attribute(
+                            "pipeline.duration_seconds", final_results["duration_seconds"]
+                        )
+                        pipeline_span.set_status(Status(StatusCode.OK))
+                    return final_results
 
-            # PHASE 2: TRANSFORMATION
-            logger.info("\n%s", separator)
-            logger.info("PHASE 2: TRANSFORMATION")
-            logger.info("%s", separator)
-            raw_data_path = (
-                Path(phase1_results["output_path"]) if phase1_results.get("output_path") else None
-            )
-            phase2_results = self.transformation.execute(
-                raw_data_path=raw_data_path, run_dir=run_dir
-            )
-            results["phases"]["transformation"] = phase2_results
+                # PHASE 2: TRANSFORMATION
+                logger.info("\n%s", separator)
+                logger.info("PHASE 2: TRANSFORMATION")
+                logger.info("%s", separator)
+                raw_data_path = (
+                    Path(phase1_results["output_path"])
+                    if phase1_results.get("output_path")
+                    else None
+                )
+                phase2_results = self._execute_phase(
+                    phase_name="transformation",
+                    run_id=run_id,
+                    executor=self.transformation.execute,
+                    kwargs={"raw_data_path": raw_data_path, "run_dir": run_dir},
+                )
+                results["phases"]["transformation"] = phase2_results
+                results["phase_metrics"]["transformation"] = {
+                    "status": phase2_results.get("status"),
+                    "duration_seconds": phase2_results.get("duration_seconds", 0.0),
+                }
 
-            if phase2_results["status"] != "success":
-                error_msg = f"Phase 2 (Transformation) failed: {phase2_results.get('error')}"
-                raise RuntimeError(error_msg)
+                if phase2_results["status"] != "success":
+                    error_msg = f"Phase 2 (Transformation) failed: {phase2_results.get('error')}"
+                    raise RuntimeError(error_msg)
 
-            if mode == "validate":
-                logger.info("Validate mode: stopping after transformation")
-                return self._finalize_results(results, run_dir)
+                if mode == "validate":
+                    logger.info("Validate mode: stopping after transformation")
+                    final_results = self._finalize_results(results, run_dir)
+                    if pipeline_span is not None:
+                        pipeline_span.set_attribute("pipeline.status", final_results["status"])
+                        pipeline_span.set_attribute(
+                            "pipeline.duration_seconds", final_results["duration_seconds"]
+                        )
+                        pipeline_span.set_status(Status(StatusCode.OK))
+                    return final_results
 
-            # PHASE 3: CALCULATION
-            logger.info("\n%s", separator)
-            logger.info("PHASE 3: CALCULATION")
-            logger.info("%s", separator)
-            clean_data_path = (
-                Path(phase2_results["output_path"]) if phase2_results.get("output_path") else None
-            )
-            phase3_results = self.calculation.execute(
-                clean_data_path=clean_data_path, run_dir=run_dir
-            )
-            results["phases"]["calculation"] = phase3_results
+                # PHASE 3: CALCULATION
+                logger.info("\n%s", separator)
+                logger.info("PHASE 3: CALCULATION")
+                logger.info("%s", separator)
+                clean_data_path = (
+                    Path(phase2_results["output_path"])
+                    if phase2_results.get("output_path")
+                    else None
+                )
+                phase3_results = self._execute_phase(
+                    phase_name="calculation",
+                    run_id=run_id,
+                    executor=self.calculation.execute,
+                    kwargs={"clean_data_path": clean_data_path, "run_dir": run_dir},
+                )
+                results["phases"]["calculation"] = phase3_results
+                results["phase_metrics"]["calculation"] = {
+                    "status": phase3_results.get("status"),
+                    "duration_seconds": phase3_results.get("duration_seconds", 0.0),
+                }
 
-            if phase3_results["status"] != "success":
-                error_msg = f"Phase 3 (Calculation) failed: {phase3_results.get('error')}"
-                raise RuntimeError(error_msg)
+                if phase3_results["status"] != "success":
+                    error_msg = f"Phase 3 (Calculation) failed: {phase3_results.get('error')}"
+                    raise RuntimeError(error_msg)
 
-            # PHASE 4: OUTPUT
-            logger.info("\n%s", separator)
-            logger.info("PHASE 4: OUTPUT")
-            logger.info("%s", separator)
-            phase4_results = self.output.execute(
-                kpi_results=phase3_results.get("kpis", {}), run_dir=run_dir
-            )
-            results["phases"]["output"] = phase4_results
+                # PHASE 4: OUTPUT
+                logger.info("\n%s", separator)
+                logger.info("PHASE 4: OUTPUT")
+                logger.info("%s", separator)
+                phase4_results = self._execute_phase(
+                    phase_name="output",
+                    run_id=run_id,
+                    executor=self.output.execute,
+                    kwargs={"kpi_results": phase3_results.get("kpis", {}), "run_dir": run_dir},
+                )
+                results["phases"]["output"] = phase4_results
+                results["phase_metrics"]["output"] = {
+                    "status": phase4_results.get("status"),
+                    "duration_seconds": phase4_results.get("duration_seconds", 0.0),
+                }
 
-            if phase4_results["status"] != "success":
-                error_msg = f"Phase 4 (Output) failed: {phase4_results.get('error')}"
-                raise RuntimeError(error_msg)
+                if phase4_results["status"] != "success":
+                    error_msg = f"Phase 4 (Output) failed: {phase4_results.get('error')}"
+                    raise RuntimeError(error_msg)
 
-            return self._finalize_results(results, run_dir)
+                final_results = self._finalize_results(results, run_dir)
+                if pipeline_span is not None:
+                    pipeline_span.set_attribute("pipeline.status", final_results["status"])
+                    pipeline_span.set_attribute(
+                        "pipeline.duration_seconds", final_results["duration_seconds"]
+                    )
+                    pipeline_span.set_status(Status(StatusCode.OK))
+                return final_results
 
-        except Exception as e:
-            logger.error("Pipeline execution failed: %s", e)
-            logger.error("%s", traceback.format_exc())
+            except Exception as e:
+                logger.error("Pipeline execution failed: %s", e)
+                logger.error("%s", traceback.format_exc())
 
-            results["status"] = "failed"
-            results["error"] = str(e)
-            results["traceback"] = traceback.format_exc()
+                results["status"] = "failed"
+                results["error"] = str(e)
+                results["traceback"] = traceback.format_exc()
 
-            return self._finalize_results(results, run_dir)
+                final_results = self._finalize_results(results, run_dir)
+                if pipeline_span is not None:
+                    pipeline_span.record_exception(e)
+                    pipeline_span.set_attribute("pipeline.status", final_results["status"])
+                    pipeline_span.set_attribute(
+                        "pipeline.duration_seconds", final_results["duration_seconds"]
+                    )
+                    pipeline_span.set_status(Status(StatusCode.ERROR, str(e)))
+                return final_results
 
     def _finalize_results(self, results: Dict[str, Any], run_dir: Path) -> Dict[str, Any]:
         """Finalize pipeline results."""

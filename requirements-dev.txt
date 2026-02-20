@@ -24,6 +24,7 @@ pytest-benchmark>=4.0.0
 allure-pytest==2.15.3
 coverage>=7.4.0
 hypothesis>=6.0.0
+locust>=2.30.0
 
 # Dev tooling
 pip-tools>=7.0.0

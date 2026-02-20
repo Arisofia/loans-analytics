@@ -6,11 +6,17 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
+try:
+    import jwt
+except ImportError:  # pragma: no cover - optional dependency in some test envs
+    jwt = None
+
 # Avoid importing FastAPI at module import time so tests don't require
 # fastapi installed. Use a lazy import and a lightweight HTTPException
 # fallback for environments without FastAPI.
 try:
     from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
+    from fastapi.responses import JSONResponse
 
     from python.apps.analytics.api.models import (
         DataQualityResponse,
@@ -90,6 +96,61 @@ if app is not None:
         Instrumentator().instrument(app).expose(app, endpoint="/metrics")
     except ImportError:
         logger.warning("prometheus-fastapi-instrumentator not installed; /metrics disabled")
+
+    jwt_enabled = os.getenv("API_JWT_ENABLED", "0") == "1"
+    jwt_secret = os.getenv("API_JWT_SECRET", "")
+    jwt_algorithm = os.getenv("API_JWT_ALGORITHM", "HS256")
+    jwt_audience = os.getenv("API_JWT_AUDIENCE")
+    jwt_issuer = os.getenv("API_JWT_ISSUER")
+    jwt_exempt_paths = {
+        item.strip()
+        for item in os.getenv(
+            "API_JWT_EXEMPT_PATHS",
+            "/health,/metrics,/docs,/openapi.json,/redoc",
+        ).split(",")
+        if item.strip()
+    }
+
+    if jwt_enabled:
+        if jwt is None:
+            raise RuntimeError("API_JWT_ENABLED=1 requires pyjwt to be installed")
+        if not jwt_secret:
+            raise RuntimeError("API_JWT_ENABLED=1 requires API_JWT_SECRET to be set")
+
+        @app.middleware("http")
+        async def jwt_auth_middleware(request: Request, call_next):
+            """Validate JWT for protected endpoints when API_JWT_ENABLED=1."""
+            path = request.url.path
+            if (
+                path in jwt_exempt_paths
+                or path.startswith("/docs")
+                or path.startswith("/redoc")
+                or path.startswith("/openapi")
+            ):
+                return await call_next(request)
+
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer "):
+                return JSONResponse(status_code=401, content={"detail": "Missing bearer token"})
+
+            token = auth_header.split(" ", 1)[1].strip()
+            if not token:
+                return JSONResponse(status_code=401, content={"detail": "Missing bearer token"})
+
+            decode_kwargs = {"algorithms": [jwt_algorithm]}
+            if jwt_audience:
+                decode_kwargs["audience"] = jwt_audience
+            if jwt_issuer:
+                decode_kwargs["issuer"] = jwt_issuer
+
+            try:
+                payload = jwt.decode(token, jwt_secret, **decode_kwargs)
+            except Exception as exc:
+                logger.warning("JWT validation failed: %s", exc)
+                return JSONResponse(status_code=401, content={"detail": "Invalid or expired token"})
+
+            request.state.jwt_payload = payload
+            return await call_next(request)
 
     @app.middleware("http")
     async def correlation_id_middleware(request: Request, call_next):
@@ -466,31 +527,56 @@ if app is not None:
     _risk_model_cache: dict = {}
 
     def _get_risk_model():
+        backend = os.getenv("DEFAULT_RISK_MODEL_BACKEND", "xgb").strip().lower()
+        if _risk_model_cache.get("backend") != backend:
+            _risk_model_cache.clear()
+            _risk_model_cache["backend"] = backend
+
         if "model" not in _risk_model_cache:
             try:
-                from python.models.default_risk_model import DefaultRiskModel
-
                 base_path = Path(__file__).resolve().parents[4]
-                model_path = base_path / "models" / "risk" / "default_risk_xgb.ubj"
-                if model_path.exists():
-                    _risk_model_cache["model"] = DefaultRiskModel.load(str(model_path))
-                    logger.info("Loaded default risk model from %s", model_path)
+                if backend in {"torch", "pytorch"}:
+                    from python.models.default_risk_torch_model import TorchDefaultRiskModel
+
+                    model_path = base_path / "models" / "risk" / "default_risk_torch.pt"
+                    if model_path.exists():
+                        _risk_model_cache["model"] = TorchDefaultRiskModel.load(str(model_path))
+                        _risk_model_cache["model_version"] = "torch_mlp_v1"
+                        logger.info("Loaded torch default risk model from %s", model_path)
+                    else:
+                        logger.warning("Torch risk model not found at %s", model_path)
+                        _risk_model_cache["model"] = None
+                        _risk_model_cache["model_version"] = "torch_mlp_v1"
                 else:
-                    logger.warning("Risk model not found at %s", model_path)
-                    _risk_model_cache["model"] = None
+                    from python.models.default_risk_model import DefaultRiskModel
+
+                    model_path = base_path / "models" / "risk" / "default_risk_xgb.ubj"
+                    if model_path.exists():
+                        _risk_model_cache["model"] = DefaultRiskModel.load(str(model_path))
+                        _risk_model_cache["model_version"] = "xgb_v1"
+                        logger.info("Loaded XGBoost default risk model from %s", model_path)
+                    else:
+                        logger.warning("XGBoost risk model not found at %s", model_path)
+                        _risk_model_cache["model"] = None
+                        _risk_model_cache["model_version"] = "xgb_v1"
             except Exception as e:
                 logger.error("Failed to load risk model: %s", e)
                 _risk_model_cache["model"] = None
-        return _risk_model_cache.get("model")
+                _risk_model_cache["model_version"] = f"{backend}_unavailable"
+
+        return _risk_model_cache.get("model"), _risk_model_cache.get("model_version", "unknown")
 
     @app.post("/predict/default", response_model=DefaultPredictionResponse)
     async def predict_default(request: DefaultPredictionRequest = Body(...)):
-        """Predict default probability for a loan using the XGBoost model."""
-        model = _get_risk_model()
+        """Predict default probability for a loan using configured backend."""
+        model, model_version = _get_risk_model()
         if model is None:
             raise HTTPException(
                 status_code=503,
-                detail="Risk model not available. Run: python scripts/train_default_risk_model.py",
+                detail=(
+                    "Risk model not available. Train and store a model under models/risk/ "
+                    "(xgb: default_risk_xgb.ubj, torch: default_risk_torch.pt)."
+                ),
             )
 
         try:
@@ -509,7 +595,7 @@ if app is not None:
             return DefaultPredictionResponse(
                 probability=round(probability, 4),
                 risk_level=risk_level,
-                model_version="xgb_v1",
+                model_version=str(model_version),
             )
         except Exception as e:
             logger.error("Error in predict_default: %s", e)

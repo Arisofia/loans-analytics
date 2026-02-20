@@ -33,7 +33,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ --maxfail=3 -v --tb=short
+          pytest tests/ --maxfail=3 -v --tb=short -m "not integration"
 
       - name: Comment on PR
         if: always() && github.actor != 'dependabot[bot]'

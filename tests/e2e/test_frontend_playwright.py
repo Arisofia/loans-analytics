@@ -1,7 +1,19 @@
 import pytest
 from playwright.sync_api import sync_playwright
+import socket
 
-# Example frontend E2E test
+
+def is_frontend_up():
+    s = socket.socket()
+    try:
+        s.connect(("localhost", 8501))
+        s.close()
+        return True
+    except Exception:
+        return False
+
+
+@pytest.mark.skipif(not is_frontend_up(), reason="Streamlit frontend not running")
 def test_login():
     with sync_playwright() as p:
         browser = p.chromium.launch()
