@@ -65,6 +65,8 @@ def calculate_collection_rate(df: pd.DataFrame | None) -> Tuple[float, Dict[str,
     collected_series = safe_numeric(df[collected_col])
     due_series = safe_numeric(df[due_col])
 
+    assert isinstance(collected_col, str)
+    assert isinstance(due_col, str)
     _validate_series(collected_series, collected_col)
     _validate_series(due_series, due_col)
 

@@ -58,8 +58,10 @@ class IngestionPhase:
             # Load data
             if input_path and input_path.exists():
                 df = self._load_from_file(input_path)
+            elif input_path and not input_path.exists():
+                raise FileNotFoundError(f"Input file not found: {input_path}")
             else:
-                logger.info("No input file provided, checking for API ingestion...")
+                logger.info("No input file provided; API ingestion is disabled")
                 df = self._load_from_api()
 
             # Validate schema
@@ -116,18 +118,10 @@ class IngestionPhase:
         return df
 
     def _load_from_api(self) -> pd.DataFrame:
-        """Load data from external API (deprecated - Cascade no longer used)."""
-        logger.warning("API ingestion deprecated - Cascade integration removed. Using sample data.")
-
-        # NOTE: Cascade API integration has been deprecated.
-        # Data is now loaded from CSV files or Supabase directly.
-
-        return pd.DataFrame(
-            {
-                "loan_id": ["LOAN001", "LOAN002"],
-                "amount": [10000, 15000],
-                "status": ["active", "active"],
-            }
+        """No-op API loader kept for backward compatibility; always fails closed."""
+        raise RuntimeError(
+            "No input file provided. API ingestion was deprecated and dummy/sample fallback "
+            "is disabled. Pass --input with a real dataset."
         )
 
     def _validate_schema(self, df: pd.DataFrame) -> Dict[str, Any]:

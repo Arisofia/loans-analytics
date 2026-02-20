@@ -13,6 +13,7 @@ NOTE: This module is not designed to be run directly as a script.
 """
 
 import json
+import ast
 import re
 import traceback
 from datetime import datetime
@@ -67,8 +68,114 @@ class KPIFormulaEngine:
         return any(op in formula for op in [" + ", " - ", " * ", " / "]) and "(" in formula
 
     def _execute_comparison_formula(self, formula: str) -> float:
-        """Execute formulas that compare periods."""
-        return 0.0
+        """Execute formulas that compare period-level balance variables."""
+        expression = formula
+        context = self._build_comparison_context()
+
+        for variable, value in context.items():
+            expression = re.sub(rf"\b{re.escape(variable)}\b", str(value), expression)
+
+        return self._safe_eval_numeric_expression(expression)
+
+    def _safe_eval_numeric_expression(self, expression: str) -> float:
+        """
+        Safely evaluate a numeric expression.
+
+        Supported operations: +, -, *, /, parentheses, unary +/-.
+        """
+        parsed = ast.parse(expression, mode="eval")
+
+        def _eval(node: ast.AST) -> float:
+            if isinstance(node, ast.Expression):
+                return _eval(node.body)
+
+            if isinstance(node, ast.BinOp):
+                left = _eval(node.left)
+                right = _eval(node.right)
+
+                if isinstance(node.op, ast.Add):
+                    return left + right
+                if isinstance(node.op, ast.Sub):
+                    return left - right
+                if isinstance(node.op, ast.Mult):
+                    return left * right
+                if isinstance(node.op, ast.Div):
+                    return 0.0 if right == 0 else left / right
+                raise ValueError(f"Unsupported binary operator: {type(node.op).__name__}")
+
+            if isinstance(node, ast.UnaryOp):
+                value = _eval(node.operand)
+                if isinstance(node.op, ast.UAdd):
+                    return value
+                if isinstance(node.op, ast.USub):
+                    return -value
+                raise ValueError(f"Unsupported unary operator: {type(node.op).__name__}")
+
+            if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+                return float(node.value)
+
+            raise ValueError(f"Unsupported expression node: {type(node).__name__}")
+
+        return float(_eval(parsed))
+
+    def _build_comparison_context(self) -> Dict[str, float]:
+        """
+        Build comparison variables used by KPI formulas.
+
+        Uses the most recent month present in the dataset as `current_month`.
+        """
+        current_balance, previous_balance = self._resolve_monthly_balances()
+        return {
+            "current_month_balance": current_balance,
+            "previous_month_balance": previous_balance,
+        }
+
+    def _resolve_monthly_balances(self) -> tuple[float, float]:
+        """
+        Resolve current/previous month balances from the available loan tape.
+
+        Returns:
+            (current_month_balance, previous_month_balance)
+        """
+        if "outstanding_balance" not in self.df.columns:
+            return 0.0, 0.0
+
+        date_candidates = [
+            "measurement_date",
+            "snapshot_date",
+            "as_of_date",
+            "reporting_date",
+            "origination_date",
+            "disbursement_date",
+            "last_payment_date",
+            "maturity_date",
+        ]
+        date_column = next((col for col in date_candidates if col in self.df.columns), None)
+        if date_column is None:
+            return 0.0, 0.0
+
+        period_df = pd.DataFrame(
+            {
+                "date": pd.to_datetime(self.df[date_column], errors="coerce"),
+                "balance": pd.to_numeric(self.df["outstanding_balance"], errors="coerce").fillna(
+                    0.0
+                ),
+            }
+        ).dropna(subset=["date"])
+        if period_df.empty:
+            return 0.0, 0.0
+
+        period_df["period"] = period_df["date"].dt.to_period("M")
+        current_period = period_df["period"].max()
+        previous_period = current_period - 1
+
+        current_balance = float(
+            period_df.loc[period_df["period"] == current_period, "balance"].sum()
+        )
+        previous_balance = float(
+            period_df.loc[period_df["period"] == previous_period, "balance"].sum()
+        )
+        return current_balance, previous_balance
 
     def _execute_arithmetic_formula(self, formula: str) -> float:
         """Execute formulas with arithmetic operations."""

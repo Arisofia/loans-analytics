@@ -77,8 +77,8 @@ class KpiContext(BaseModel):
     timestamp: Optional[datetime] = Field(None, description="Calculation timestamp")
     formula: Optional[str] = Field(None, description="Formula used for calculation")
     sample_size: Optional[int] = Field(None, description="Number of records used in calculation")
-    period: str
-    calculation_date: datetime
+    period: str = Field(..., description="Reporting period (e.g. 'daily', 'on-demand')")
+    calculation_date: datetime = Field(..., description="Date/time of calculation")
     filters: Optional[Dict[str, Any]] = None
 
 
@@ -136,6 +136,7 @@ class DataQualityResponse(BaseModel):
     average_null_ratio: Optional[float] = None
     invalid_numeric_ratio: Optional[float] = None
     data_quality_score: Optional[float] = Field(None, ge=0, le=100)
+    issues: List[str] = Field(default_factory=list)
 
 
 class ValidationErrorDetail(BaseModel):
@@ -152,6 +153,7 @@ class ValidationResponse(BaseModel):
     valid: bool
     message: Optional[str] = None
     columns_present: Optional[List[str]] = None
+    errors: List[str] = Field(default_factory=list)
 
 
 class ErrorResponse(BaseModel):

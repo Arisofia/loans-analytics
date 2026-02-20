@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import pandas as pd
 
@@ -43,7 +43,7 @@ class DataLoader:
         parquet_path: Path,
         extras: Optional[dict] = None,
     ) -> Path:
-        manifest = {
+        manifest: dict[str, Any] = {
             "dataset": dataset,
             "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             "csv": str(csv_path),

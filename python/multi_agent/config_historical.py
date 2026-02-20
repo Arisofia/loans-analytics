@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Optional
+from typing import Any, Optional, Type
 
 from python.multi_agent.historical_context import HistoricalContextProvider
 
@@ -30,7 +30,7 @@ try:
         SupabaseHistoricalBackend,
     )
 except ImportError:
-    SupabaseHistoricalBackend = None
+    SupabaseHistoricalBackend: Optional[Type[Any]] = None
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ def build_historical_context_provider(
         >>> provider.mode
         'REAL'
     """
-    effective_mode = (mode or os.getenv("HISTORICAL_CONTEXT_MODE", "MOCK")).upper()
+    effective_mode = str(mode or os.getenv("HISTORICAL_CONTEXT_MODE", "MOCK")).upper()
 
     if effective_mode not in ("MOCK", "REAL"):
         raise ValueError(f"Invalid mode: {effective_mode}. Must be 'MOCK' or 'REAL'.")
