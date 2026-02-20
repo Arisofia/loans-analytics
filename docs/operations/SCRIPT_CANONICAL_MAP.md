@@ -17,6 +17,7 @@ Single source of truth for script execution paths. Use only these commands.
 ## Maintenance
 
 - Repo maintenance: `./scripts/maintenance/repo_maintenance.sh --mode=standard`
+- Comprehensive cleanup (integrations/caches/orphans): `./scripts/maintenance/comprehensive_cleanup.sh --dry-run`
 - Repo doctor: `./scripts/maintenance/repo-doctor.sh`
 - Cleanup old workflow runs: `./scripts/maintenance/cleanup_workflow_runs_by_count.sh --keep 25`
 - Service status report: `python3 scripts/maintenance/generate_service_status_report.py`
