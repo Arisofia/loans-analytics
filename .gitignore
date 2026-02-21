@@ -101,6 +101,7 @@ out/
 # ===========================================
 *.coverage
 .coverage.*
+.coverage *
 htmlcov/
 .pytest_cache/
 pytest-report/
@@ -139,6 +140,7 @@ docker-compose.override.yml
 .azure-credentials
 AzuriteConfig
 __azurite_db_*.json
+infra/loganalytics-workspace.json
 scripts/setup_azure.sh
 local.settings.json
 
