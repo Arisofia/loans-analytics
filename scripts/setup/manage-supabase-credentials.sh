@@ -49,17 +49,16 @@ echo ""
 echo -e "${BLUE}Step 2: Testing Supabase REST API connection...${NC}"
 
 if command -v curl &> /dev/null; then
-    response=$(curl -s -w "\n%{http_code}" \
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" \
         -H "apikey: $SUPABASE_ANON_KEY" \
-        "$SUPABASE_URL/rest/v1/monitoring.kpi_definitions?select=count" 2>/dev/null || true)
-    
-    http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n-1)
+        "$SUPABASE_URL/rest/v1/monitoring.kpi_definitions?select=count" 2>/dev/null || echo "000")
     
     if [ "$http_code" = "200" ]; then
         echo -e "${GREEN}✅ REST API connection successful (HTTP 200)${NC}"
     elif [ "$http_code" = "404" ]; then
         echo -e "${YELLOW}⚠️  REST API responding (HTTP 404) - monitoring.kpi_definitions table may not exist${NC}"
+    elif [ "$http_code" = "401" ]; then
+        echo -e "${RED}❌ REST API returned 401 Unauthorized - check API key${NC}"
     else
         echo -e "${YELLOW}⚠️  REST API returned HTTP $http_code${NC}"
     fi
