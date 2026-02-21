@@ -4,15 +4,18 @@ datasources:
   - name: Supabase PostgreSQL
     type: postgres
     access: proxy
-    url: db.sddviizcgheusvwqpthm.supabase.co:5432
+    url: db.goxdevkqozomyhsyxhte.supabase.co:5432
     database: postgres
     user: postgres
     secureJsonData:
-      password: ${SUPABASE_DB_PASSWORD}
+      password: ${SUPABASE_SERVICE_ROLE_KEY}
     jsonData:
       sslmode: require
       postgresVersion: 1400
       timescaledb: false
+      maxOpenConns: 20
+      maxIdleConns: 2
+      connMaxLifetime: 14400
     editable: true
     isDefault: true
     version: 1
@@ -20,7 +23,7 @@ datasources:
   - name: Supabase REST API
     type: grafana-simple-json-datasource
     access: proxy
-    url: https://sddviizcgheusvwqpthm.supabase.co/rest/v1
+    url: https://goxdevkqozomyhsyxhte.supabase.co/rest/v1
     basicAuth: false
     withCredentials: false
     jsonData:
@@ -38,7 +41,7 @@ datasources:
     jsonData:
       cloudName: azuremonitor
       azureAuthType: msi
-      subscriptionId: ${AZURE_SUBSCRIPTION_ID}
+      subscriptionId: ${AZURE_SUBSCRIPTION_ID:-}
     editable: true
     version: 1
 
