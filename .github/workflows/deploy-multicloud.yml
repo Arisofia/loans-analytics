@@ -28,34 +28,38 @@ permissions:
 
 jobs:
   deploy-azure:
-    if: ${{ github.event.inputs.cloud == 'azure' || github.event.inputs.cloud == 'both' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.cloud == 'azure' || inputs.cloud == 'both') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Skip when Azure credentials are missing
-        if: ${{ secrets.AZURE_CREDENTIALS == '' || secrets.AZURE_RESOURCE_GROUP == '' }}
+      - name: Check Azure configuration
+        id: azure_config
         run: |
-          echo "::warning::Azure deployment skipped (AZURE_CREDENTIALS or AZURE_RESOURCE_GROUP missing)"
-          exit 0
+          if [ -z "${{ secrets.AZURE_CREDENTIALS }}" ] || [ -z "${{ secrets.AZURE_RESOURCE_GROUP }}" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Azure deployment skipped (AZURE_CREDENTIALS or AZURE_RESOURCE_GROUP missing)"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Azure login
-        if: ${{ secrets.AZURE_CREDENTIALS != '' && secrets.AZURE_RESOURCE_GROUP != '' }}
+        if: ${{ steps.azure_config.outputs.available == 'true' }}
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy Bicep stack
-        if: ${{ secrets.AZURE_CREDENTIALS != '' && secrets.AZURE_RESOURCE_GROUP != '' }}
+        if: ${{ steps.azure_config.outputs.available == 'true' }}
         run: |
           az deployment group create \
             --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
             --template-file infra/main.bicep \
             --parameters @infra/main.parameters.json \
-            --parameters environmentName="${{ github.event.inputs.environment }}"
+            --parameters environmentName="${{ inputs.environment }}"
 
   deploy-aws:
-    if: ${{ github.event.inputs.cloud == 'aws' || github.event.inputs.cloud == 'both' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.cloud == 'aws' || inputs.cloud == 'both') }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -63,30 +67,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Skip when AWS credentials are missing
-        if: ${{ secrets.AWS_ROLE_TO_ASSUME == '' || secrets.AWS_REGION == '' }}
+      - name: Check AWS configuration
+        id: aws_config
+        working-directory: .
         run: |
-          echo "::warning::AWS deployment skipped (AWS_ROLE_TO_ASSUME or AWS_REGION missing)"
-          exit 0
+          if [ -z "${{ secrets.AWS_ROLE_TO_ASSUME }}" ] || [ -z "${{ secrets.AWS_REGION }}" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::AWS deployment skipped (AWS_ROLE_TO_ASSUME or AWS_REGION missing)"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Configure AWS credentials
-        if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' && secrets.AWS_REGION != '' }}
+        if: ${{ steps.aws_config.outputs.available == 'true' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Setup Terraform
-        if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' && secrets.AWS_REGION != '' }}
+        if: ${{ steps.aws_config.outputs.available == 'true' }}
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' && secrets.AWS_REGION != '' }}
+        if: ${{ steps.aws_config.outputs.available == 'true' }}
         run: terraform init -input=false
 
       - name: Terraform Apply
-        if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' && secrets.AWS_REGION != '' }}
+        if: ${{ steps.aws_config.outputs.available == 'true' }}
         run: |
           terraform apply -auto-approve \
             -var "aws_region=${{ secrets.AWS_REGION }}" \
-            -var "environment=${{ github.event.inputs.environment }}"
+            -var "environment=${{ inputs.environment }}"
