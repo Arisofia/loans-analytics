@@ -16,6 +16,7 @@ datasources:
       maxOpenConns: 20
       maxIdleConns: 2
       connMaxLifetime: 14400
+      database: postgres
     editable: true
     isDefault: true
     version: 1
