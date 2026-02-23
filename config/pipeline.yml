@@ -91,8 +91,8 @@ output:
     enabled: true
     url: "${SUPABASE_URL}"
     key: "${SUPABASE_ANON_KEY}"
-    table: "monitoring.kpi_values"
-    definitions_table: "monitoring.kpi_definitions"
+    table: "kpi_values"
+    definitions_table: "kpi_definitions"
 
   # Dashboard refresh
   dashboard:

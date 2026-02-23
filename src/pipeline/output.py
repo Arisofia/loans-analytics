@@ -14,7 +14,7 @@ NOTE: This module is not designed to be run directly as a script.
 
 import json
 import os
-from datetime import datetime
+from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
@@ -223,14 +223,28 @@ class OutputPhase:
             logger.warning("Supabase library not installed")
             return {"status": "skipped", "reason": "supabase_not_installed"}
 
-        supabase_url = os.getenv("SUPABASE_URL")
-        supabase_key = os.getenv("SUPABASE_ANON_KEY")
+        supabase_url, supabase_key, _ = self._resolve_supabase_credentials()
 
         if not supabase_url or not supabase_key:
             logger.warning("Supabase credentials not configured in environment")
             return {"status": "skipped", "reason": "missing_credentials"}
 
         return None
+
+    def _resolve_supabase_credentials(self) -> tuple[Optional[str], Optional[str], str]:
+        """
+        Resolve Supabase credentials with safe defaults.
+
+        Prefer service role for backend pipeline writes (RLS-compliant),
+        fallback to anon key for read-only or permissive environments.
+        """
+        supabase_url = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+        service_role_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        anon_key = os.getenv("SUPABASE_ANON_KEY")
+
+        if service_role_key:
+            return supabase_url, service_role_key, "service_role"
+        return supabase_url, anon_key, "anon"
 
     def _validate_kpi_results(self, kpi_results: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Validate KPI results are present and valid."""
@@ -244,10 +258,10 @@ class OutputPhase:
         rows_to_insert = []
         timestamp = datetime.now().isoformat()
         run_date = datetime.now().date().isoformat()
-        
+
         # Check if we're using monitoring tables
         table_name = self.config.get("database", {}).get("table", "kpi_timeseries_daily")
-        is_monitoring_table = "monitoring.kpi_values" in table_name
+        is_monitoring_table = self._is_monitoring_kpi_values_table(table_name)
 
         for kpi_name, kpi_value in kpi_results.items():
             if kpi_value is None:
@@ -283,19 +297,88 @@ class OutputPhase:
 
         return rows_to_insert, timestamp, run_date
 
-    def _get_kpi_definitions_map(self, supabase: Client) -> Optional[Dict[str, int]]:
-        """Get mapping of KPI names to their IDs from monitoring.kpi_definitions."""
+    def _is_monitoring_kpi_values_table(self, table_name: str) -> bool:
+        """Return True when target table is the monitoring KPI values surface."""
+        normalized = (table_name or "").strip().lower()
+        return normalized in {"monitoring.kpi_values", "public.kpi_values", "kpi_values"}
+
+    def _get_kpi_definitions_map(
+        self, supabase: Client
+    ) -> Optional[tuple[Dict[str, str], Dict[str, int]]]:
+        """Get mapping of KPI names to KPI keys (and IDs when available)."""
         try:
-            # Query monitoring.kpi_definitions for ID mapping
-            response = supabase.table("monitoring.kpi_definitions").select("id, name").execute()
-            
-            # Build name -> id mapping
-            kpi_map = {kpi["name"]: kpi["id"] for kpi in response.data}
-            logger.info("Loaded KPI definitions: %d names mapped", len(kpi_map))
-            return kpi_map
+            definitions_table = self.config.get("database", {}).get(
+                "definitions_table", "monitoring.kpi_definitions"
+            )
+            query = self._table_query(supabase, definitions_table)
+
+            # monitoring schema may be exposed via public view (without id column).
+            response = None
+            try:
+                response = query.select("id, name, kpi_key").execute()
+            except Exception:
+                response = query.select("name, kpi_key").execute()
+
+            name_to_key: Dict[str, str] = {}
+            name_to_id: Dict[str, int] = {}
+            for kpi in response.data:
+                name = kpi.get("name") or kpi.get("kpi_key")
+                kpi_key = kpi.get("kpi_key") or name
+                if not name or not kpi_key:
+                    continue
+                name_to_key[str(name)] = str(kpi_key)
+                if kpi.get("id") is not None:
+                    name_to_id[str(name)] = int(kpi["id"])
+
+            logger.info("Loaded KPI definitions: %d names mapped", len(name_to_key))
+            return name_to_key, name_to_id
         except Exception as e:
             logger.warning("Failed to load KPI definitions: %s", e)
             return None
+
+    def _split_table_name(self, table_name: str) -> tuple[str, str]:
+        """Split a possibly schema-qualified table name into (schema, table)."""
+        if "." in table_name:
+            schema_name, bare_table = table_name.split(".", 1)
+            return schema_name, bare_table
+        return "public", table_name
+
+    def _table_query(self, supabase: Client, table_name: str):
+        """
+        Build a Supabase table query with schema support.
+
+        For `monitoring.*`, fallback to `public` views because many projects
+        expose only `public` to PostgREST.
+        """
+        schema_name, bare_table = self._split_table_name(table_name)
+        if schema_name == "monitoring":
+            return supabase.table(bare_table)
+        return supabase.schema(schema_name).table(bare_table)
+
+    def _map_monitoring_kpi_name(self, kpi_name: str) -> str:
+        """
+        Map pipeline KPI names to monitoring.kpi_definitions names.
+
+        Allows pipeline formula names and dashboard names to diverge
+        while still writing to a stable monitoring schema.
+        """
+        configured_aliases = (
+            self.config.get("database", {}).get("kpi_name_aliases", {})
+            if isinstance(self.config.get("database", {}), dict)
+            else {}
+        )
+        default_aliases = {
+            "default_rate": "npl_rate",
+            "collections_rate": "collection_rate_6m",
+            "disbursement_volume_mtd": "disbursement_volume",
+            "new_loans_count_mtd": "new_loans",
+            "total_outstanding_balance": "total_aum",
+            "total_loans_count": "loan_count",
+            "processing_time_avg": "processing_time",
+            "portfolio_growth_rate": "portfolio_rotation",
+        }
+        aliases = {**default_aliases, **configured_aliases}
+        return aliases.get(kpi_name, kpi_name)
 
     def _insert_batch_rows(self, supabase: Client, table_name: str, rows: list) -> int:
         """Insert rows in batches to Supabase."""
@@ -303,31 +386,69 @@ class OutputPhase:
         total_inserted = 0
         
         # If using monitoring tables, convert format
-        if "monitoring.kpi_values" in table_name:
-            kpi_map = self._get_kpi_definitions_map(supabase)
-            if not kpi_map:
+        is_monitoring_table = self._is_monitoring_kpi_values_table(table_name)
+        if is_monitoring_table:
+            kpi_maps = self._get_kpi_definitions_map(supabase)
+            if not kpi_maps:
                 logger.error("Cannot write to monitoring.kpi_values without KPI definitions")
                 return 0
-            
-            # Convert rows to monitoring format with kpi_id
+            name_to_key, name_to_id = kpi_maps
+
+            snapshot_id = (
+                self.config.get("database", {}).get("snapshot_id")
+                or os.getenv("PIPELINE_MONITORING_SNAPSHOT_ID")
+                or "pipeline_daily"
+            )
+            run_id = (
+                self.config.get("database", {}).get("run_id")
+                or f"pipeline_v2_{date.today().isoformat()}"
+            )
+            inputs_hash = (
+                self.config.get("database", {}).get("inputs_hash")
+                or "pipeline_v2"
+            )
+
+            # Convert rows to monitoring format with kpi_id + upsert keys
             monitoring_rows = []
             for row in rows:
-                kpi_name = row.get("kpi_name")
-                if kpi_name in kpi_map:
-                    monitoring_rows.append({
-                        "kpi_id": kpi_map[kpi_name],
+                original_name = str(row.get("kpi_name", ""))
+                mapped_name = self._map_monitoring_kpi_name(original_name)
+                if mapped_name in name_to_key:
+                    row_timestamp = row.get("timestamp")
+                    as_of_date = str(row_timestamp).split("T")[0] if row_timestamp else date.today().isoformat()
+                    value = row.get("value")
+                    mapped_kpi_key = name_to_key[mapped_name]
+                    monitoring_row: Dict[str, Any] = {
+                        "kpi_key": mapped_kpi_key,
                         "value": row.get("value"),
+                        "value_num": value,
                         "timestamp": row.get("timestamp"),
+                        "computed_at": row.get("timestamp"),
+                        "as_of_date": as_of_date,
                         "status": row.get("status", "green"),
-                    })
+                        "snapshot_id": snapshot_id,
+                        "run_id": run_id,
+                        "inputs_hash": inputs_hash,
+                    }
+                    if mapped_name in name_to_id:
+                        monitoring_row["kpi_id"] = name_to_id[mapped_name]
+                    monitoring_rows.append(monitoring_row)
                 else:
-                    logger.warning("KPI not found in definitions: %s", kpi_name)
-            
+                    logger.warning(
+                        "KPI not found in definitions: %s (mapped: %s)",
+                        original_name,
+                        mapped_name,
+                    )
+
             rows = monitoring_rows
 
         for i in range(0, len(rows), batch_size):
             batch = rows[i : i + batch_size]
-            supabase.table(table_name).insert(batch).execute()
+            query = self._table_query(supabase, table_name)
+            if is_monitoring_table:
+                query.upsert(batch, on_conflict="as_of_date,kpi_key,snapshot_id").execute()
+            else:
+                query.insert(batch).execute()
             total_inserted += len(batch)
             logger.info(
                 "Inserted batch",
@@ -359,11 +480,11 @@ class OutputPhase:
                 return result
 
             # Create Supabase client
-            supabase_url = os.getenv("SUPABASE_URL")
-            supabase_key = os.getenv("SUPABASE_ANON_KEY")
+            supabase_url, supabase_key, key_source = self._resolve_supabase_credentials()
             assert supabase_url is not None
             assert supabase_key is not None
             supabase: Client = create_client(supabase_url, supabase_key)
+            logger.info("Using Supabase credentials source: %s", key_source)
 
             # Prepare rows for insert
             rows_to_insert, timestamp, _ = self._prepare_kpi_rows(kpi_results)
