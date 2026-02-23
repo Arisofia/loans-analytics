@@ -11,12 +11,12 @@
 ### What Was Happening
 Grafana was running but displaying no data because:
 
-1. **Project Mismatch:** Grafana was pointing to production project (`goxdevkqozomyhsyxhte`) but your data is in development project (`sddviizcgheusvwqpthm`)
+1. **Project Mismatch:** Grafana was pointing to production project (`goxdevkqozomyhsyxhte`) but your data is in development project (`goxdevkqozomyhsyxhte`)
 2. **Missing Tables:** Monitoring tables (`monitoring.kpi_definitions`, `monitoring.kpi_values`) don't exist in Supabase yet
 
 ### What We Fixed
 ✅ **Aligned Supabase Projects**
-- Updated Grafana to use your development project: `sddviizcgheusvwqpthm`
+- Updated Grafana to use your development project: `goxdevkqozomyhsyxhte`
 - Updated `.env.monitoring` with correct credentials
 - Restarted Grafana with new configuration
 
@@ -31,7 +31,7 @@ Grafana was running but displaying no data because:
 Since you don't have direct PostgreSQL access from your network, use the **Supabase Web UI**:
 
 ### Quick Link
-👉 **https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/sql**
+👉 **https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/sql**
 
 ### Copy-Paste SQL Queries
 
@@ -150,7 +150,7 @@ INSERT INTO monitoring.kpi_values (kpi_id, value, timestamp, status) VALUES
 |-----------|-----|
 | **Grafana** | http://localhost:3001 |
 | **Prometheus** | http://localhost:9090 |
-| **Supabase SQL Editor** | https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/sql |
+| **Supabase SQL Editor** | https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/sql |
 
 ---
 
@@ -176,14 +176,14 @@ This will:
 ### .env.monitoring (Updated)
 ```env
 GRAFANA_ADMIN_PASSWORD=admin123
-SUPABASE_URL=https://sddviizcgheusvwqpthm.supabase.co
+SUPABASE_URL=https://goxdevkqozomyhsyxhte.supabase.co
 SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
 ### grafana/provisioning/datasources/supabase.yml (Updated)
-- ✅ PostgreSQL host: `db.sddviizcgheusvwqpthm.supabase.co:5432`
-- ✅ REST API endpoint: `https://sddviizcgheusvwqpthm.supabase.co/rest/v1`
+- ✅ PostgreSQL host: `db.goxdevkqozomyhsyxhte.supabase.co:5432`
+- ✅ REST API endpoint: `https://goxdevkqozomyhsyxhte.supabase.co/rest/v1`
 - ✅ Authentication: Uses `SUPABASE_SERVICE_ROLE_KEY`
 
 ---
@@ -243,7 +243,7 @@ streamlit run streamlit_app.py
 ## 🚀 Next Steps
 
 1. **Copy the SQL queries above**
-2. **Paste into:** https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/sql
+2. **Paste into:** https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/sql
 3. **Run each query** (Query 1 → 6 in order)
 4. **Verify in Grafana:** http://localhost:3001
 5. **Run pipeline:** `python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv`

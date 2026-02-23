@@ -62,7 +62,7 @@ def main():
             print("CREATE MONITORING TABLES")
             print("="*70 + "\n")
             
-            print("Go to: https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/sql")
+            print("Go to: https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/sql")
             print("\nCopy and run this SQL:\n")
             
             sql = """

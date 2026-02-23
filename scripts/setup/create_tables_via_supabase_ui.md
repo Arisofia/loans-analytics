@@ -5,7 +5,7 @@ Since direct PostgreSQL connection is not available from your network, use the S
 ## Steps
 
 ### 1. Open Supabase Dashboard
-- Go to: https://supabase.com/dashboard/project/sddviizcgheusvwqpthm
+- Go to: https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte
 - Login if needed
 
 ### 2. Create Tables Using SQL Editor

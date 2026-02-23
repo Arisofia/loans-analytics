@@ -11,7 +11,7 @@
 | Item | Status |
 |------|--------|
 | Grafana installed & running | ✅ http://localhost:3001 |
-| Supabase datasource configured | ✅ sddviizcgheusvwqpthm |
+| Supabase datasource configured | ✅ goxdevkqozomyhsyxhte |
 | KPI dashboards created | ✅ 3 panels ready |
 | Data pipeline tested | ✅ Executes successfully |
 | Dependencies installed | ✅ pyyaml, sentry-sdk, etc. |
@@ -24,7 +24,7 @@ The pipeline ran successfully but **data won't appear in Grafana until monitorin
 
 ### Create Tables (Copy-Paste Solution)
 
-**Go here:** https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/sql
+**Go here:** https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/sql
 
 Click "New Query" for each SQL block below:
 
@@ -136,7 +136,7 @@ python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_202602
 | Item | URL |
 |------|-----|
 | **Grafana** | http://localhost:3001 |
-| **Supabase SQL Editor** | https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/sql |
+| **Supabase SQL Editor** | https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/sql |
 | **Prometheus** | http://localhost:9090 |
 
 ---

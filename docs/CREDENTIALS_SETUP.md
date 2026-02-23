@@ -23,8 +23,8 @@ This guide covers:
 Your `.env.local` file contains credentials for **two** Supabase projects:
 
 #### Project 1: Development (Current in .env.local)
-- **Project ID:** `sddviizcgheusvwqpthm`
-- **URL:** `https://sddviizcgheusvwqpthm.supabase.co`
+- **Project ID:** `goxdevkqozomyhsyxhte`
+- **URL:** `https://goxdevkqozomyhsyxhte.supabase.co`
 - **Status:** ✅ Configured in `.env.local`
 
 #### Project 2: Production (New - goxdevkqozomyhsyxhte)
@@ -37,9 +37,9 @@ Your `.env.local` file contains credentials for **two** Supabase projects:
 Your local credentials include:
 
 ```bash
-# Supabase - Project 1 (sddviizcgheusvwqpthm)
-NEXT_PUBLIC_SUPABASE_URL=https://sddviizcgheusvwqpthm.supabase.co
-SUPABASE_PROJECT_REF=sddviizcgheusvwqpthm
+# Supabase - Project 1 (goxdevkqozomyhsyxhte)
+NEXT_PUBLIC_SUPABASE_URL=https://goxdevkqozomyhsyxhte.supabase.co
+SUPABASE_PROJECT_REF=goxdevkqozomyhsyxhte
 SUPABASE_ANON_KEY=eyJhbGc...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 SUPABASE_DATABASE_URL=postgresql://postgres:AbaC0_PG$2026_Loans!Analytics@Secure@...

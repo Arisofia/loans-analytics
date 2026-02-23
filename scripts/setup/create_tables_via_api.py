@@ -133,7 +133,7 @@ def create_tables_via_supabase():
             print("✅ monitoring.kpi_definitions already exists")
         except Exception as e:
             print("⚠️  Table creation via SDK might be limited")
-            print("   Please create tables manually via: https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/sql")
+            print("   Please create tables manually via: https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/sql")
             return False
         
         return True
@@ -190,7 +190,7 @@ def main():
     print("📋 CREATE MONITORING TABLES")
     print("=" * 70)
     print("\nSince direct PostgreSQL connections are blocked, please:")
-    print("\n1. Open: https://supabase.com/dashboard/project/sddviizcgheusvwqpthm/sql")
+    print("\n1. Open: https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/sql")
     print("\n2. Run these SQL queries in order:\n")
     
     queries = [

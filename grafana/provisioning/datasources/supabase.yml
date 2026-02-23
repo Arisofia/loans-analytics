@@ -4,7 +4,7 @@ datasources:
   - name: Supabase PostgreSQL
     type: postgres
     access: proxy
-    url: db.sddviizcgheusvwqpthm.supabase.co:5432
+    url: db.goxdevkqozomyhsyxhte.supabase.co:5432
     database: postgres
     user: postgres
     secureJsonData:
@@ -24,7 +24,7 @@ datasources:
   - name: Supabase REST API
     type: grafana-simple-json-datasource
     access: proxy
-    url: https://sddviizcgheusvwqpthm.supabase.co/rest/v1
+    url: https://goxdevkqozomyhsyxhte.supabase.co/rest/v1
     basicAuth: false
     withCredentials: false
     jsonData:

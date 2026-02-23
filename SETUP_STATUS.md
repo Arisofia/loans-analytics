@@ -228,7 +228,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 - ⚠️ Never share credentials in chat/email
 
 ### Supabase Project
-- **Development:** `sddviizcgheusvwqpthm` (in `.env.local`)
+- **Development:** `goxdevkqozomyhsyxhte` (in `.env.local`)
 - **Production:** `goxdevkqozomyhsyxhte` (in `.env.monitoring`)
 
 ### Docker Compose
