@@ -49,6 +49,9 @@ venv/
 .ruff_cache/
 .mypy_cache/
 
+# Monitoring environment file
+.env.monitoring
+
 # ===========================================
 # Node / JavaScript
 # ===========================================
