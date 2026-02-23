@@ -244,30 +244,86 @@ class OutputPhase:
         rows_to_insert = []
         timestamp = datetime.now().isoformat()
         run_date = datetime.now().date().isoformat()
+        
+        # Check if we're using monitoring tables
+        table_name = self.config.get("database", {}).get("table", "kpi_timeseries_daily")
+        is_monitoring_table = "monitoring.kpi_values" in table_name
 
         for kpi_name, kpi_value in kpi_results.items():
             if kpi_value is None:
                 logger.debug("Skipping NULL KPI: %s", kpi_name)
                 continue
 
-            rows_to_insert.append(
-                {
-                    "kpi_name": kpi_name,
-                    "kpi_value": (
-                        float(kpi_value) if isinstance(kpi_value, (int, float)) else None
-                    ),
-                    "timestamp": timestamp,
-                    "run_date": run_date,
-                    "source": "pipeline_v2",
-                }
-            )
+            if is_monitoring_table:
+                # Format for monitoring.kpi_values table
+                # kpi_id will be looked up in _write_to_database
+                rows_to_insert.append(
+                    {
+                        "kpi_name": kpi_name,
+                        "value": (
+                            float(kpi_value) if isinstance(kpi_value, (int, float)) else None
+                        ),
+                        "timestamp": timestamp,
+                        "status": "green",  # Default status, can be updated based on thresholds
+                    }
+                )
+            else:
+                # Legacy format for kpi_timeseries_daily table
+                rows_to_insert.append(
+                    {
+                        "kpi_name": kpi_name,
+                        "kpi_value": (
+                            float(kpi_value) if isinstance(kpi_value, (int, float)) else None
+                        ),
+                        "timestamp": timestamp,
+                        "run_date": run_date,
+                        "source": "pipeline_v2",
+                    }
+                )
 
         return rows_to_insert, timestamp, run_date
+
+    def _get_kpi_definitions_map(self, supabase: Client) -> Optional[Dict[str, int]]:
+        """Get mapping of KPI names to their IDs from monitoring.kpi_definitions."""
+        try:
+            # Query monitoring.kpi_definitions for ID mapping
+            response = supabase.table("monitoring.kpi_definitions").select("id, name").execute()
+            
+            # Build name -> id mapping
+            kpi_map = {kpi["name"]: kpi["id"] for kpi in response.data}
+            logger.info("Loaded KPI definitions: %d names mapped", len(kpi_map))
+            return kpi_map
+        except Exception as e:
+            logger.warning("Failed to load KPI definitions: %s", e)
+            return None
 
     def _insert_batch_rows(self, supabase: Client, table_name: str, rows: list) -> int:
         """Insert rows in batches to Supabase."""
         batch_size = 100
         total_inserted = 0
+        
+        # If using monitoring tables, convert format
+        if "monitoring.kpi_values" in table_name:
+            kpi_map = self._get_kpi_definitions_map(supabase)
+            if not kpi_map:
+                logger.error("Cannot write to monitoring.kpi_values without KPI definitions")
+                return 0
+            
+            # Convert rows to monitoring format with kpi_id
+            monitoring_rows = []
+            for row in rows:
+                kpi_name = row.get("kpi_name")
+                if kpi_name in kpi_map:
+                    monitoring_rows.append({
+                        "kpi_id": kpi_map[kpi_name],
+                        "value": row.get("value"),
+                        "timestamp": row.get("timestamp"),
+                        "status": row.get("status", "green"),
+                    })
+                else:
+                    logger.warning("KPI not found in definitions: %s", kpi_name)
+            
+            rows = monitoring_rows
 
         for i in range(0, len(rows), batch_size):
             batch = rows[i : i + batch_size]
