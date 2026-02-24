@@ -55,7 +55,7 @@ class TorchDefaultRiskModel:
             # Fallback for older torch versions (<1.13)
             payload = torch.load(path, map_location="cpu")  # nosec B614
         except Exception:
-            # If weights_only=True fails due to complex types in payload, 
+            # If weights_only=True fails due to complex types in payload,
             # we must decide if we want to allow unsafe load or fail.
             # For now, we allow it only for internal trusted models.
             payload = torch.load(path, map_location="cpu")  # nosec B614

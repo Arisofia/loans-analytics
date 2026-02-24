@@ -384,7 +384,7 @@ class OutputPhase:
         """Insert rows in batches to Supabase."""
         batch_size = 100
         total_inserted = 0
-        
+
         # If using monitoring tables, convert format
         is_monitoring_table = self._is_monitoring_kpi_values_table(table_name)
         if is_monitoring_table:
@@ -403,10 +403,7 @@ class OutputPhase:
                 self.config.get("database", {}).get("run_id")
                 or f"pipeline_v2_{date.today().isoformat()}"
             )
-            inputs_hash = (
-                self.config.get("database", {}).get("inputs_hash")
-                or "pipeline_v2"
-            )
+            inputs_hash = self.config.get("database", {}).get("inputs_hash") or "pipeline_v2"
 
             # Convert rows to monitoring format with kpi_id + upsert keys
             monitoring_rows = []
@@ -415,7 +412,11 @@ class OutputPhase:
                 mapped_name = self._map_monitoring_kpi_name(original_name)
                 if mapped_name in name_to_key:
                     row_timestamp = row.get("timestamp")
-                    as_of_date = str(row_timestamp).split("T")[0] if row_timestamp else date.today().isoformat()
+                    as_of_date = (
+                        str(row_timestamp).split("T")[0]
+                        if row_timestamp
+                        else date.today().isoformat()
+                    )
                     value = row.get("value")
                     mapped_kpi_key = name_to_key[mapped_name]
                     monitoring_row: Dict[str, Any] = {

@@ -68,4 +68,3 @@ def test_insert_batch_rows_monitoring_uses_upsert_and_conflict_keys():
     assert upsert_rows[0]["kpi_key"] == "npl_rate"
     assert upsert_rows[0]["kpi_id"] == 3
     assert query.upsert.call_args.kwargs["on_conflict"] == "as_of_date,kpi_key,snapshot_id"
-
