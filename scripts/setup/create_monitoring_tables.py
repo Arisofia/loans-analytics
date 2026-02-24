@@ -3,7 +3,6 @@
 Create monitoring tables and populate with sample KPI data in Supabase.
 """
 
-import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -189,7 +188,7 @@ def main():
     db_url = f"postgresql://postgres:{encoded_password}@db.{supabase_project}.supabase.co:5432/postgres"
     
     print(f"📍 Project: {supabase_project}")
-    print(f"📍 Connecting to database...")
+    print("📍 Connecting to database...")
     
     # Connect to database
     try:

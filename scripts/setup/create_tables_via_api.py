@@ -6,9 +6,7 @@ No direct PostgreSQL connection needed.
 
 import os
 import sys
-import json
 from pathlib import Path
-from urllib.parse import quote_plus
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -131,7 +129,7 @@ def create_tables_via_supabase():
         try:
             tables = supabase.table("monitoring.kpi_definitions").select("*").limit(1).execute()
             print("✅ monitoring.kpi_definitions already exists")
-        except Exception as e:
+        except Exception:
             print("⚠️  Table creation via SDK might be limited")
             print("   Please create tables manually via: https://supabase.com/dashboard/project/goxdevkqozomyhsyxhte/sql")
             return False

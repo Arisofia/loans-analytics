@@ -4,7 +4,6 @@ Initialize monitoring tables in Supabase automatically.
 Run this after creating the tables via Supabase UI.
 """
 
-import os
 import sys
 from pathlib import Path
 
