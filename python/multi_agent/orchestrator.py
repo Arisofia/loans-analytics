@@ -12,6 +12,8 @@ from .agents import (
     RiskAnalystAgent,
 )
 from .base_agent import BaseAgent
+from .config_historical import build_historical_context_provider
+from .historical_context import HistoricalContextProvider
 from .protocol import (
     AgentRequest,
     AgentResponse,
@@ -42,6 +44,7 @@ class MultiAgentOrchestrator:
         provider: LLMProvider = LLMProvider.OPENAI,
         enable_tracing: bool = False,
         usage_tracker: Optional[UsageTracker] = None,
+        historical_context_provider: Optional[HistoricalContextProvider] = None,
     ):
         """Initialize orchestrator.
 
@@ -49,6 +52,7 @@ class MultiAgentOrchestrator:
             provider: Default LLM provider for all agents
             enable_tracing: Enable OpenTelemetry tracing
             usage_tracker: Optional usage tracker for continuous learning events
+            historical_context_provider: Optional historical provider override
         """
         self.provider = provider
         self.tracer = AgentTracer(enable_otel=enable_tracing)
@@ -65,6 +69,17 @@ class MultiAgentOrchestrator:
             except Exception as exc:  # pylint: disable=broad-except
                 logger.warning("Usage tracker disabled: %s", exc)
                 self.usage_tracker = None
+
+        if historical_context_provider is not None:
+            self.historical_context_provider: Optional[HistoricalContextProvider] = (
+                historical_context_provider
+            )
+        else:
+            try:
+                self.historical_context_provider = build_historical_context_provider()
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.warning("Historical context disabled: %s", exc)
+                self.historical_context_provider = None
 
     @staticmethod
     def _has_commentary(content: str) -> bool:
@@ -91,6 +106,91 @@ class MultiAgentOrchestrator:
             )
         except Exception as exc:  # pylint: disable=broad-except
             logger.warning("Failed to track learning event (%s:%s): %s", feature_name, action, exc)
+
+    @staticmethod
+    def _extract_kpi_ids(context: Dict[str, Any]) -> List[str]:
+        """Extract KPI identifiers from common scenario context keys."""
+        kpi_ids: List[str] = []
+
+        kpi_id = context.get("kpi_id")
+        if isinstance(kpi_id, str) and kpi_id.strip():
+            kpi_ids.append(kpi_id.strip())
+
+        kpi_ids_list = context.get("kpi_ids")
+        if isinstance(kpi_ids_list, list):
+            kpi_ids.extend(
+                item.strip()
+                for item in kpi_ids_list
+                if isinstance(item, str) and item.strip()
+            )
+
+        kpi_anomalies = context.get("kpi_anomalies")
+        if isinstance(kpi_anomalies, list):
+            for anomaly in kpi_anomalies:
+                if isinstance(anomaly, dict):
+                    anomaly_kpi_id = anomaly.get("kpi_id")
+                    if isinstance(anomaly_kpi_id, str) and anomaly_kpi_id.strip():
+                        kpi_ids.append(anomaly_kpi_id.strip())
+
+        # De-duplicate while preserving order
+        return list(dict.fromkeys(kpi_ids))
+
+    def _enrich_context_with_historical_data(self, context: Dict[str, Any]) -> None:
+        """Populate historical context/trends when KPI IDs are available."""
+        if self.historical_context_provider is None:
+            return
+
+        if "historical_context" in context and "historical_trends" in context:
+            return
+
+        kpi_ids = self._extract_kpi_ids(context)
+        if not kpi_ids:
+            return
+
+        summaries: Dict[str, Dict[str, Any]] = {}
+        for kpi_id in kpi_ids:
+            try:
+                summaries[kpi_id] = self.historical_context_provider.agent_summary(
+                    kpi_id,
+                    periods=12,
+                )
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.warning("Historical summary unavailable for %s: %s", kpi_id, exc)
+
+        if not summaries:
+            return
+
+        first_summary = next(iter(summaries.values()))
+        if "historical_context" not in context:
+            context["historical_context"] = (
+                first_summary if len(summaries) == 1 else summaries
+            )
+
+        if "historical_trends" not in context:
+            if len(summaries) == 1:
+                context["historical_trends"] = first_summary.get("trend", {})
+            else:
+                context["historical_trends"] = {
+                    key: summary.get("trend", {}) for key, summary in summaries.items()
+                }
+
+    @staticmethod
+    def _inject_historical_prompt_context(
+        prompt: str,
+        step: ScenarioStep,
+        context: Dict[str, Any],
+    ) -> str:
+        """Attach historical context to prompts that do not already request it."""
+        if "historical_context" in step.context_keys or "historical_trends" in step.context_keys:
+            return prompt
+
+        historical_context = context.get("historical_context")
+        if not historical_context:
+            return prompt
+
+        return (
+            f"{prompt}\n\nHistorical context (auto-injected): {historical_context}"
+        )
 
     def _init_agents(self) -> Dict[AgentRole, BaseAgent]:
         """Initialize all role-specific agents."""
@@ -1025,6 +1125,7 @@ class MultiAgentOrchestrator:
 
         trace_id = trace_id or self.tracer.generate_trace_id()
         context = {**scenario.initial_context, **initial_context}
+        self._enrich_context_with_historical_data(context)
         results: Dict[str, Any] = {}
         agent_comments: List[Dict[str, Any]] = []
 
@@ -1035,6 +1136,7 @@ class MultiAgentOrchestrator:
             prompt = step.prompt_template.format(
                 **{k: context.get(k, "") for k in step.context_keys}
             )
+            prompt = self._inject_historical_prompt_context(prompt, step, context)
             # Run agent
             try:
                 response = self.run_agent(
