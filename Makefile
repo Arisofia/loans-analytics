@@ -30,7 +30,7 @@ setup:
 		echo "Python 3.10+ is required. Selected interpreter: $(PYTHON)"; \
 		exit 1; \
 	}
-	$(PYTHON) -m venv $(VENV)
+	$(PYTHON) -m venv --clear $(VENV)
 	$(BIN)/pip install --upgrade pip
 	$(BIN)/pip install -r requirements.txt
 	$(BIN)/pip install -r requirements-dev.txt
