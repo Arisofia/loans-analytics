@@ -1,5 +1,5 @@
 .PHONY: help setup format lint type-check test clean monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev
-PYTHON ?= python3
+PYTHON ?= $(shell command -v python3.12 || command -v python3.11 || command -v python3.10 || command -v python3)
 VENV := .venv
 BIN := $(VENV)/bin
 export PYTHONPATH := .
@@ -26,11 +26,21 @@ setup:
 		echo "Python executable '$(PYTHON)' not found. Run with PYTHON=python3.x"; \
 		exit 1; \
 	fi
+	@$(PYTHON) -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' || { \
+		echo "Python 3.10+ is required. Selected interpreter: $(PYTHON)"; \
+		exit 1; \
+	}
 	$(PYTHON) -m venv $(VENV)
 	$(BIN)/pip install --upgrade pip
 	$(BIN)/pip install -r requirements.txt
 	$(BIN)/pip install -r requirements-dev.txt
-	if [ -d .git ]; then $(BIN)/pre-commit install; fi
+	@if [ -d .git ]; then \
+		if [ -x "$(BIN)/pre-commit" ]; then \
+			$(BIN)/pre-commit install; \
+		else \
+			echo "Skipping pre-commit hook install: $(BIN)/pre-commit not found"; \
+		fi; \
+	fi
 format:
 	$(BIN)/black .
 	$(BIN)/isort .
