@@ -184,6 +184,72 @@ class TestTrendAnalysis(unittest.TestCase):
         expected_pct = (trend.end_value - trend.start_value) / trend.start_value * 100
         self.assertAlmostEqual(trend.percent_change, expected_pct, places=2)
 
+    def test_exponential_trend_calculation(self):
+        """Test exponential smoothing trend calculation."""
+        trend = self.provider.get_exponential_trend("default_rate", alpha=0.3, periods=3)
+
+        self.assertIsNotNone(trend)
+        self.assertEqual(trend.direction, TrendDirection.INCREASING)
+        self.assertGreater(trend.slope, 0)
+
+    def test_polynomial_trend_fitting(self):
+        """Test polynomial trend fitting with numpy."""
+        trend = self.provider.get_polynomial_trend("default_rate", degree=2, periods=3)
+
+        self.assertIsNotNone(trend)
+        self.assertIn(trend.direction, [TrendDirection.INCREASING, TrendDirection.DECREASING])
+        self.assertGreaterEqual(trend.r_squared, 0.0)
+
+    def test_weighted_moving_average(self):
+        """Test weighted moving average calculation."""
+        wma = self.provider.get_weighted_moving_average("default_rate", window_days=30)
+        ma = self.provider.get_moving_average("default_rate", window_days=30)
+
+        self.assertIsNotNone(wma)
+        self.assertIsNotNone(ma)
+        # Weighted should be slightly different from simple mean
+        self.assertNotEqual(wma, ma)
+
+    def test_multi_period_trends(self):
+        """Test multi-period trend retrieval."""
+        trends = self.provider.get_multi_period_trends("default_rate")
+
+        self.assertIn("7_day", trends)
+        self.assertIn("30_day", trends)
+        self.assertIn("90_day", trends)
+        self.assertIn("yoy", trends)
+
+    def test_trend_confidence_intervals(self):
+        """Test confidence interval calculation."""
+        ci = self.provider.get_trend_confidence_interval("default_rate", confidence=0.95)
+
+        self.assertIn("trend_slope", ci)
+        self.assertIn("lower_bound", ci)
+        self.assertIn("upper_bound", ci)
+        self.assertLessEqual(ci["lower_bound"], ci["trend_slope"])
+        self.assertGreaterEqual(ci["upper_bound"], ci["trend_slope"])
+
+    def test_standard_deviation_bands(self):
+        """Test standard deviation bands calculation."""
+        bands = self.provider.get_standard_deviation_bands("default_rate", window_days=30)
+
+        self.assertIn("moving_average", bands)
+        self.assertIn("upper_band", bands)
+        self.assertIn("lower_band", bands)
+        self.assertGreater(bands["upper_band"], bands["moving_average"])
+        self.assertLess(bands["lower_band"], bands["moving_average"])
+
+    def test_change_point_detection(self):
+        """Test change point detection logic."""
+        # Note: With default mock data, change point might not always trigger
+        # but we test that the function returns a valid result (Optional)
+        change = self.provider.detect_change_point("default_rate", window_size=5, periods=1)
+
+        if change:
+            self.assertIn("change_point_date", change)
+            self.assertIn("change_pct", change)
+            self.assertGreater(change["change_pct"], 10)
+
 
 class TestHistoricalContextProviderModes(unittest.TestCase):
     """

@@ -13,6 +13,7 @@ from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
+import numpy as np
 from pydantic import BaseModel, Field
 
 # Constant for repeated literal
@@ -459,20 +460,18 @@ class HistoricalContextProvider:
         if len(history) < degree + 2:
             return self._empty_trend(kpi_id, start_date, end_date)
 
-        # Simple polynomial fitting using numpy-like approach
-        # (without external dependency)
-        x_vals = [float(i) for i in range(len(history))]
-        y_vals = [h.value for h in history]
+        x_vals = np.array([float(i) for i in range(len(history))])
+        y_vals = np.array([h.value for h in history])
 
-        # For polynomial fitting, use linear regression as simplification
-        # (full polynomial fitting without numpy is complex)
-        coeffs = self._fit_linear(x_vals, y_vals)
-        y_pred = [coeffs[0] * x + coeffs[1] for x in x_vals]
+        # Polynomial fitting using numpy
+        coeffs = np.polyfit(x_vals, y_vals, degree)
+        p = np.poly1d(coeffs)
+        y_pred = p(x_vals)
 
         # Calculate R-squared
-        y_mean = sum(y_vals) / len(y_vals)
-        ss_res = sum((y - yp) ** 2 for y, yp in zip(y_vals, y_pred, strict=False))
-        ss_tot = sum((y - y_mean) ** 2 for y in y_vals)
+        y_mean = np.mean(y_vals)
+        ss_res = np.sum((y_vals - y_pred) ** 2)
+        ss_tot = np.sum((y_vals - y_mean) ** 2)
         r_squared = max(0.0, 1 - (ss_res / ss_tot) if ss_tot != 0 else 0.0)
 
         # Determine strength
@@ -483,7 +482,7 @@ class HistoricalContextProvider:
         else:
             strength = TrendStrength.WEAK
 
-        # Polynomial direction based on fitted curve direction at end
+        # Polynomial direction based on predicted values
         start_val = history[0].value
         end_val = history[-1].value
 
@@ -504,17 +503,55 @@ class HistoricalContextProvider:
         else:
             direction = TrendDirection.STABLE
 
+        # Use the slope of the linear fit as a simplified 'slope'
+        # for compatibility with TrendAnalysis model
+        slope = (y_pred[-1] - y_pred[0]) / len(history) if len(history) > 1 else 0.0
+
         return TrendAnalysis(
             kpi_id=kpi_id,
             direction=direction,
             strength=strength,
-            slope=coeffs[0],
+            slope=slope,
             r_squared=r_squared,
             period_days=(end_date - start_date).days,
             start_value=start_val,
             end_value=end_val,
             percent_change=percent_change,
         )
+
+    def get_standard_deviation_bands(
+        self, kpi_id: str, window_days: int = 30, num_std: float = 2.0
+    ) -> Dict[str, Any]:
+        """
+        Calculate standard deviation bands (Bollinger-style).
+
+        Args:
+            kpi_id: KPI identifier
+            window_days: Window size for moving average
+            num_std: Number of standard deviations for bands
+
+        Returns:
+            Dictionary with moving_average, upper_band, and lower_band
+        """
+        end_date = date.today()
+        start_date = end_date - timedelta(days=window_days)
+
+        history = self.get_kpi_history(kpi_id, start_date, end_date)
+
+        if not history:
+            return {}
+
+        values = np.array([h.value for h in history])
+        mean = np.mean(values)
+        std = np.std(values)
+
+        return {
+            "moving_average": mean,
+            "upper_band": mean + (num_std * std),
+            "lower_band": mean - (num_std * std),
+            "std_dev": std,
+            "num_std": num_std,
+        }
 
     def get_weighted_moving_average(self, kpi_id: str, window_days: int = 30) -> Optional[float]:
         """
@@ -549,11 +586,25 @@ class HistoricalContextProvider:
 
         return result
 
+    def get_trend_for_period(self, kpi_id: str, days: int = 30) -> TrendAnalysis:
+        """
+        Calculate trend for a KPI over a specific number of days.
+        """
+        end_date = date.today()
+        start_date = end_date - timedelta(days=days)
+        history = self.get_kpi_history(kpi_id, start_date, end_date)
+
+        if len(history) < 2:
+            return self._empty_trend(kpi_id, start_date, end_date)
+
+        values = [h.value for h in history]
+        return self._calculate_trend_from_values(kpi_id, history, values, days)
+
     def get_multi_period_trends(self, kpi_id: str) -> Dict[str, TrendAnalysis]:
         """
         Calculate trends over multiple time periods.
 
-        Returns trends for 7-day, 30-day, 90-day, and annual periods.
+        Returns trends for 7-day, 30-day, 90-day, and Year-over-Year periods.
 
         Args:
             kpi_id: KPI identifier
@@ -562,10 +613,10 @@ class HistoricalContextProvider:
             Dictionary of period -> trend analysis
         """
         return {
-            "7_day": self.get_trend(kpi_id, periods=1),
-            "30_day": self.get_trend(kpi_id, periods=1),
-            "90_day": self.get_trend(kpi_id, periods=3),
-            "annual": self.get_trend(kpi_id, periods=12),
+            "7_day": self.get_trend_for_period(kpi_id, days=7),
+            "30_day": self.get_trend_for_period(kpi_id, days=30),
+            "90_day": self.get_trend_for_period(kpi_id, days=90),
+            "yoy": self.get_trend_for_period(kpi_id, days=365),
         }
 
     def get_trend_confidence_interval(

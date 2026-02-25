@@ -874,6 +874,75 @@ class MultiAgentOrchestrator:
                     ),
                 ],
             ),
+            "trend_based_planning": Scenario(
+                name="trend_based_planning",
+                description="Use historical trends for future capacity and risk planning",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template=(
+                            "Analyze historical KPI trends: {historical_trends}. "
+                            "Project future risk levels and identify potential breaches."
+                        ),
+                        context_keys=["historical_trends"],
+                        output_key="risk_projections",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.OPS_OPTIMIZER,
+                        prompt_template=(
+                            "Based on risk projections: {risk_projections}, "
+                            "recommend resource allocation and capacity adjustments."
+                        ),
+                        context_keys=["risk_projections"],
+                        output_key="capacity_plan",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.GROWTH_STRATEGIST,
+                        prompt_template=(
+                            "Align growth targets with capacity plan: {capacity_plan} "
+                            "and risk projections: {risk_projections}."
+                        ),
+                        context_keys=["capacity_plan", "risk_projections"],
+                        output_key="strategic_alignment",
+                    ),
+                ],
+            ),
+            "performance_attribution": Scenario(
+                name="performance_attribution",
+                description="Attribute performance changes to specific events vs. historical trends",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.RISK_ANALYST,
+                        prompt_template=(
+                            "Analyze recent performance: {recent_performance} against "
+                            "historical trends: {historical_trends}. "
+                            "Identify anomalies and trend deviations."
+                        ),
+                        context_keys=["recent_performance", "historical_trends"],
+                        output_key="attribution_analysis",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.OPS_OPTIMIZER,
+                        prompt_template=(
+                            "Evaluate operational factors contributing to: "
+                            "{attribution_analysis}. Distinguish between external "
+                            "market effects and internal process changes."
+                        ),
+                        context_keys=["attribution_analysis"],
+                        output_key="operational_attribution",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.GROWTH_STRATEGIST,
+                        prompt_template=(
+                            "Update growth forecasts based on: {attribution_analysis} "
+                            "and {operational_attribution}. Adjust expectations for "
+                            "organic trend vs. event-driven growth."
+                        ),
+                        context_keys=["attribution_analysis", "operational_attribution"],
+                        output_key="revised_forecast",
+                    ),
+                ],
+            ),
         }
 
     def run_agent(
