@@ -41,7 +41,8 @@ def create_tables(conn):
         print("  ✅ Created monitoring schema")
 
         # Create kpi_definitions table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS monitoring.kpi_definitions (
                 id SERIAL PRIMARY KEY,
                 name TEXT UNIQUE NOT NULL,
@@ -53,11 +54,13 @@ def create_tables(conn):
                 owner_agent TEXT,
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
-        """)
+        """
+        )
         print("  ✅ Created kpi_definitions table")
 
         # Create kpi_values table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS monitoring.kpi_values (
                 id SERIAL PRIMARY KEY,
                 kpi_id INTEGER REFERENCES monitoring.kpi_definitions(id),
@@ -66,7 +69,8 @@ def create_tables(conn):
                 status TEXT CHECK (status IN ('green', 'yellow', 'red')),
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
-        """)
+        """
+        )
         print("  ✅ Created kpi_values table")
 
         # Create indexes

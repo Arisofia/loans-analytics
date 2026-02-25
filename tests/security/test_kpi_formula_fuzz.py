@@ -5,7 +5,8 @@ from __future__ import annotations
 import math
 
 import pandas as pd
-from hypothesis import HealthCheck, example, given, settings, strategies as st
+from hypothesis import HealthCheck, example, given, settings
+from hypothesis import strategies as st
 
 from src.pipeline.calculation import KPIFormulaEngine
 

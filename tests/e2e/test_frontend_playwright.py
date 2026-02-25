@@ -1,6 +1,7 @@
+import os
+
 import pytest
 import requests
-import os
 
 sync_playwright = pytest.importorskip(
     "playwright.sync_api",

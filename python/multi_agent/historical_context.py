@@ -1279,9 +1279,9 @@ class HistoricalContextProvider:
                                 "threshold_value": threshold,
                                 "current_value": current_value,
                                 "status": "violation",
-                                "severity": "critical"
-                                if current_value > threshold * 1.2
-                                else "warning",
+                                "severity": (
+                                    "critical" if current_value > threshold * 1.2 else "warning"
+                                ),
                             }
                         )
                 # Logic for "higher is better" KPIs (capital ratios etc)
@@ -1293,9 +1293,9 @@ class HistoricalContextProvider:
                                 "threshold_value": threshold,
                                 "current_value": current_value,
                                 "status": "violation",
-                                "severity": "critical"
-                                if current_value < threshold * 0.8
-                                else "warning",
+                                "severity": (
+                                    "critical" if current_value < threshold * 0.8 else "warning"
+                                ),
                             }
                         )
 

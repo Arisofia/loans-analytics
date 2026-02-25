@@ -1,5 +1,5 @@
 .PHONY: help setup format lint type-check test clean monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev
-PYTHON := python3
+PYTHON ?= python3
 VENV := .venv
 BIN := $(VENV)/bin
 export PYTHONPATH := .
@@ -22,6 +22,10 @@ help:
 	@echo "make monitoring-logs     - View monitoring logs"
 	@echo "make monitoring-health   - Check monitoring stack health"
 setup:
+	@if ! command -v "$(PYTHON)" >/dev/null 2>&1; then \
+		echo "Python executable '$(PYTHON)' not found. Run with PYTHON=python3.x"; \
+		exit 1; \
+	fi
 	$(PYTHON) -m venv $(VENV)
 	$(BIN)/pip install --upgrade pip
 	$(BIN)/pip install -r requirements.txt

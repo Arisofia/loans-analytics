@@ -367,7 +367,9 @@ class TestForecasting(unittest.TestCase):
 
     def test_exponential_smoothing_forecast(self):
         """Test simple exponential smoothing forecast."""
-        projections = self.provider.get_forecast("default_rate", steps=10, method="exponential_smoothing")
+        projections = self.provider.get_forecast(
+            "default_rate", steps=10, method="exponential_smoothing"
+        )
         self.assertEqual(len(projections), 10)
         self.assertEqual(projections[0].method, "exponential_smoothing")
         self.assertGreater(projections[0].predicted_value, 0)
