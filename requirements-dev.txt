@@ -30,3 +30,4 @@ locust>=2.30.0
 # Dev tooling
 pip-tools>=7.0.0
 vulture>=2.0
+pre-commit>=3.7.0

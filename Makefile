@@ -36,7 +36,12 @@ setup:
 	$(BIN)/pip install -r requirements-dev.txt
 	@if [ -d .git ]; then \
 		if [ -x "$(BIN)/pre-commit" ]; then \
-			$(BIN)/pre-commit install; \
+			HOOKS_PATH=$$(git config --get core.hooksPath || true); \
+			if [ -n "$$HOOKS_PATH" ]; then \
+				echo "Skipping pre-commit hook install: core.hooksPath is set to $$HOOKS_PATH"; \
+			elif ! $(BIN)/pre-commit install; then \
+				echo "Skipping pre-commit hook install: pre-commit install failed"; \
+			fi; \
 		else \
 			echo "Skipping pre-commit hook install: $(BIN)/pre-commit not found"; \
 		fi; \
