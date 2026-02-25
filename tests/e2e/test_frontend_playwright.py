@@ -1,7 +1,11 @@
 import pytest
 import requests
-from playwright.sync_api import sync_playwright
 import os
+
+sync_playwright = pytest.importorskip(
+    "playwright.sync_api",
+    reason="playwright is required only for optional e2e tests",
+).sync_playwright
 
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:8501")
 RUN_E2E = os.getenv("RUN_E2E", "0") == "1"

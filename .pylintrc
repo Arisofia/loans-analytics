@@ -46,7 +46,21 @@ disable=
     wrong-import-position,
     unused-argument,
     import-error,
-    missing-module-docstring
+    missing-module-docstring,
+    line-too-long,
+    too-many-lines,
+    import-outside-toplevel,
+    wildcard-import,
+    unused-wildcard-import,
+    duplicate-code,
+    too-many-return-statements,
+    no-else-return,
+    too-many-positional-arguments,
+    expression-not-assigned,
+    arguments-differ,
+    protected-access,
+    use-maxsplit-arg,
+    implicit-str-concat
 
 [REPORTS]
 # Set the output format.

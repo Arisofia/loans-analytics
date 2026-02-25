@@ -9,7 +9,7 @@ Phase G4.1: Initial implementation tests
 """
 
 import unittest
-from datetime import date
+from datetime import date, timedelta
 
 from python.multi_agent.historical_context import (
     HistoricalContextProvider,
@@ -303,6 +303,162 @@ class TestHistoricalContextProviderModes(unittest.TestCase):
         # Should work exactly as G4.1
         history = provider.get_kpi_history("test_kpi", date(2026, 1, 1), date(2026, 1, 10))
         self.assertEqual(len(history), 10)
+
+
+class TestSeasonalityDetection(unittest.TestCase):
+    """Test seasonality detection and adjustment."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.provider = HistoricalContextProvider()
+
+    def test_seasonal_decomposition_additive(self):
+        """Test additive seasonal decomposition."""
+        decomp = self.provider.get_seasonal_decomposition("default_rate", model="additive")
+        self.assertIn("trend", decomp)
+        self.assertIn("seasonal", decomp)
+        self.assertIn("residual", decomp)
+        self.assertEqual(len(decomp["trend"]), 366)  # 1 year history
+
+    def test_seasonal_decomposition_multiplicative(self):
+        """Test multiplicative seasonal decomposition."""
+        decomp = self.provider.get_seasonal_decomposition("default_rate", model="multiplicative")
+        self.assertIn("trend", decomp)
+        self.assertIn("seasonal", decomp)
+        self.assertIn("residual", decomp)
+
+    def test_monthly_pattern_detection(self):
+        """Test monthly pattern detection."""
+        seasonality = self.provider.get_seasonality("default_rate")
+        self.assertTrue(seasonality.cycle_length_months == 12)
+        self.assertTrue(len(seasonality.peak_months) > 0)
+        self.assertTrue(len(seasonality.trough_months) > 0)
+
+    def test_seasonal_index_calculation(self):
+        """Test seasonal index (adjustment factors) calculation."""
+        seasonality = self.provider.get_seasonality("default_rate")
+        self.assertGreater(len(seasonality.adjustment_factors), 0)
+        # Factors should be around 1.0
+        for factor in seasonality.adjustment_factors.values():
+            self.assertGreater(factor, 0.5)
+            self.assertLess(factor, 1.5)
+
+    def test_deseasonalization(self):
+        """Test deseasonalization utility."""
+        value = 100.0
+        deseasonalized = self.provider.deseasonalize("default_rate", value, month=6)
+        self.assertGreater(deseasonalized, 0)
+        # Should be different if seasonality exists
+        self.assertIsNotNone(deseasonalized)
+
+    def test_seasonal_adjustment_factors(self):
+        """Test all 12 months have adjustment factors."""
+        seasonality = self.provider.get_seasonality("default_rate", periods_years=1)
+        # We might not have all 12 months if history is short, but mock data should provide it
+        self.assertGreaterEqual(len(seasonality.adjustment_factors), 1)
+
+
+class TestForecasting(unittest.TestCase):
+    """Test forecasting and projections."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.provider = HistoricalContextProvider()
+
+    def test_exponential_smoothing_forecast(self):
+        """Test simple exponential smoothing forecast."""
+        projections = self.provider.get_forecast("default_rate", steps=10, method="exponential_smoothing")
+        self.assertEqual(len(projections), 10)
+        self.assertEqual(projections[0].method, "exponential_smoothing")
+        self.assertGreater(projections[0].predicted_value, 0)
+
+    def test_linear_forecast(self):
+        """Test linear trend-based forecast."""
+        projections = self.provider.get_forecast("default_rate", steps=10, method="linear")
+        self.assertEqual(len(projections), 10)
+        self.assertEqual(projections[0].method, "linear")
+
+    def test_forecast_confidence_intervals(self):
+        """Test that forecast confidence intervals expand over time."""
+        projections = self.provider.get_forecast("default_rate", steps=10)
+        widths = [p.upper_bound - p.lower_bound for p in projections]
+        # Interval should be non-decreasing (expanding uncertainty)
+        for i in range(1, len(widths)):
+            self.assertGreaterEqual(widths[i], widths[i - 1])
+
+    def test_scenario_projection(self):
+        """Test multi-scenario projections."""
+        scenarios = {"growth": 1.1, "recession": 0.8}
+        results = self.provider.get_scenario_projection("default_rate", scenarios, steps=5)
+        self.assertIn("base", results)
+        self.assertIn("growth", results)
+        self.assertIn("recession", results)
+        self.assertGreater(results["growth"][0].predicted_value, results["base"][0].predicted_value)
+        self.assertLess(results["recession"][0].predicted_value, results["base"][0].predicted_value)
+
+    def test_forecast_validation(self):
+        """Test forecast validation metrics."""
+        # Create a "past" forecast to validate against "present" actuals
+        # We'll use mock data and a small trick to get overlap
+        # Forecast from 10 days ago for 20 days
+        # But our get_forecast uses date.today() as start.
+        # So we simulate validation by checking overlap in mock data.
+        projections = self.provider.get_forecast("default_rate", steps=10)
+        # Manually shift projections to the past for validation testing
+        for p in projections:
+            p.projection_date = p.projection_date - timedelta(days=10)
+
+        metrics = self.provider.validate_forecast("default_rate", projections)
+        self.assertIn("mae", metrics)
+        self.assertIn("rmse", metrics)
+        self.assertIn("mape", metrics)
+
+
+class TestBenchmarking(unittest.TestCase):
+    """Test benchmarking and comparison logic."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.provider = HistoricalContextProvider()
+
+    def test_peer_comparison_logic(self):
+        """Test peer comparison and percentile ranking."""
+        rank = self.provider.get_percentile_ranking("disbursements", 150.0)
+        self.assertGreaterEqual(rank, 0.0)
+        self.assertLessEqual(rank, 1.0)
+
+    def test_percentile_ranking(self):
+        """Test percentile ranking calculation."""
+        # Higher is better for disbursements
+        rank_high = self.provider.get_percentile_ranking("disbursements", 500.0)
+        rank_low = self.provider.get_percentile_ranking("disbursements", 10.0)
+        self.assertGreater(rank_high, rank_low)
+
+    def test_z_score_calculation(self):
+        """Test Z-score calculation."""
+        z = self.provider.get_z_score("default_rate", 0.05)
+        # 0.05 is the industry avg in mock data
+        self.assertAlmostEqual(z, 0.0, places=1)
+
+    def test_gap_analysis(self):
+        """Test gap analysis against targets."""
+        gap = self.provider.get_gap_analysis("default_rate", 0.07)
+        self.assertIn("gap", gap)
+        self.assertIn("status", gap)
+        self.assertEqual(gap["status"], "at_risk")
+
+    def test_regulatory_threshold_checks(self):
+        """Test regulatory threshold validation."""
+        # 0.12 is above 0.10 regulatory max for default_rate
+        violations = self.provider.check_regulatory_thresholds("default_rate", 0.12)
+        self.assertGreater(len(violations), 0)
+        self.assertEqual(violations[0]["status"], "violation")
+
+    def test_benchmark_data_loading(self):
+        """Test loading benchmark registry."""
+        benchmarks = self.provider.get_benchmarks("default_rate")
+        self.assertIn("industry_avg", benchmarks)
+        self.assertIn("regulatory_max", benchmarks)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Optional
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -135,8 +136,8 @@ class EnvironmentSettings(BaseModel):
     environment: str = Field(
         default="dev", description="Current environment: dev, staging, or prod"
     )
-    prod_data_path: str | None = Field(default=None, description="Production data mount path")
-    staging_data_path: str | None = Field(default=None, description="Staging data mount path")
+    prod_data_path: Optional[str] = Field(default=None, description="Production data mount path")
+    staging_data_path: Optional[str] = Field(default=None, description="Staging data mount path")
 
     @field_validator("environment")
     @classmethod
@@ -188,7 +189,7 @@ class Settings(BaseSettings):
     kpis: KPISettings = KPISettings()
     api: ApiSettings = ApiSettings()
     supabase_pool: SupabasePoolSettings = SupabasePoolSettings()
-    database_url: str | None = Field(
+    database_url: Optional[str] = Field(
         default=None, description="Supabase database URL for connection pooling"
     )
 

@@ -110,12 +110,11 @@ class BaseAgent(ABC):
 
     def _init_grok_client(self) -> Any:
         """Initialize Grok client via OpenAI-compatible API."""
-        if OpenAI is None:
-            raise ImportError("openai package required")
-
         api_key = os.getenv("XAI_API_KEY")
         if not api_key:
             raise ValueError("XAI_API_KEY not set")
+        if OpenAI is None:
+            raise ImportError("openai package required")
 
         timeout = float(os.getenv("LLM_TIMEOUT", "60"))
         max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))

@@ -143,7 +143,7 @@ class TestMultiPeriodTrends(unittest.TestCase):
         self.assertIn("7_day", trends)
         self.assertIn("30_day", trends)
         self.assertIn("90_day", trends)
-        self.assertIn("annual", trends)
+        self.assertIn("yoy", trends)
 
         # All should be valid trends
         for _period, trend in trends.items():
@@ -157,7 +157,7 @@ class TestMultiPeriodTrends(unittest.TestCase):
         trends = self.provider.get_multi_period_trends("test_kpi")
 
         # All periods should return valid trends
-        for period in ["7_day", "30_day", "90_day", "annual"]:
+        for period in ["7_day", "30_day", "90_day", "yoy"]:
             self.assertIn(period, trends)
             self.assertGreater(trends[period].period_days, 0)
 

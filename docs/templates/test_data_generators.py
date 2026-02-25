@@ -25,6 +25,8 @@ Usage:
     users = user_gen.generate_users(count=100, mask_pii=True)
 """
 
+from __future__ import annotations
+
 import csv
 import json
 import random

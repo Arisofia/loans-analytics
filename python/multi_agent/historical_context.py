@@ -7,6 +7,8 @@ to enhance agent decision-making with historical awareness.
 Phase G4.1 Implementation
 """
 
+# pylint: disable=too-many-lines
+
 import os
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
@@ -310,13 +312,11 @@ class HistoricalContextProvider:
 
         x_mean: float = sum(x_values) / n
         y_mean: float = sum(y_values) / n
-        numerator: float = sum(
-            (x - x_mean) * (y - y_mean) for x, y in zip(x_values, y_values, strict=False)
-        )
+        numerator: float = sum((x - x_mean) * (y - y_mean) for x, y in zip(x_values, y_values))
         denominator: float = sum((x - x_mean) ** 2 for x in x_values)
         slope: float = numerator / denominator if denominator != 0 else 0.0
         y_pred: List[float] = [slope * (x - x_mean) + y_mean for x in x_values]
-        ss_res: float = sum((y - yp) ** 2 for y, yp in zip(y_values, y_pred, strict=False))
+        ss_res: float = sum((y - yp) ** 2 for y, yp in zip(y_values, y_pred))
         ss_tot: float = sum((y - y_mean) ** 2 for y in y_values)
         r_squared: float = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0.0
 
@@ -576,7 +576,7 @@ class HistoricalContextProvider:
         n = len(history)
         weights = [(i + 1) / (n * (n + 1) / 2) for i in range(n)]
 
-        weighted_sum = sum(h.value * w for h, w in zip(history, weights, strict=False))
+        weighted_sum = sum(h.value * w for h, w in zip(history, weights))
         total_weight = sum(weights)
 
         result = None
@@ -726,13 +726,13 @@ class HistoricalContextProvider:
         x_values = list(range(n))
         y_mean = sum(values) / n
 
-        numerator = sum((x - n / 2) * (y - y_mean) for x, y in zip(x_values, values, strict=False))
+        numerator = sum((x - n / 2) * (y - y_mean) for x, y in zip(x_values, values))
         denominator = sum((x - n / 2) ** 2 for x in x_values)
         slope = numerator / denominator if denominator != 0 else 0.0
 
         # Calculate R-squared
         y_pred = [slope * (x - n / 2) + y_mean for x in x_values]
-        ss_res = sum((y - yp) ** 2 for y, yp in zip(values, y_pred, strict=False))
+        ss_res = sum((y - yp) ** 2 for y, yp in zip(values, y_pred))
         ss_tot = sum((y - y_mean) ** 2 for y in values)
         r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0.0
 
@@ -776,9 +776,7 @@ class HistoricalContextProvider:
         x_mean = sum(x_values) / n
         y_mean = sum(y_values) / n
 
-        numerator = sum(
-            (x - x_mean) * (y - y_mean) for x, y in zip(x_values, y_values, strict=False)
-        )
+        numerator = sum((x - x_mean) * (y - y_mean) for x, y in zip(x_values, y_values))
         denominator = sum((x - x_mean) ** 2 for x in x_values)
 
         slope = numerator / denominator if denominator != 0 else 0.0
@@ -797,8 +795,8 @@ class HistoricalContextProvider:
         sum_x3 = sum(x**3 for x in x_values)
         sum_x4 = sum(x**4 for x in x_values)
         sum_y = sum(y_values)
-        sum_xy = sum(x * y for x, y in zip(x_values, y_values, strict=False))
-        sum_x2y = sum((x**2) * y for x, y in zip(x_values, y_values, strict=False))
+        sum_xy = sum(x * y for x, y in zip(x_values, y_values))
+        sum_x2y = sum((x**2) * y for x, y in zip(x_values, y_values))
 
         # Simplified quadratic fit (2nd order)
         # For production, use numpy.polyfit
@@ -835,3 +833,470 @@ class HistoricalContextProvider:
         ) / denom
 
         return a, b, c
+
+    # =====================================================================
+    # Phase G4.3: Seasonality Detection Methods
+    # =====================================================================
+
+    def get_seasonality(self, kpi_id: str, periods_years: int = 2) -> SeasonalityPattern:
+        """
+        Detect seasonality patterns in historical KPI data.
+
+        Analyzes data over multiple years to identify recurring monthly patterns.
+
+        Args:
+            kpi_id: KPI identifier
+            periods_years: Number of years to analyze
+
+        Returns:
+            SeasonalityPattern with detected cycles and factors
+        """
+        end_date = date.today()
+        start_date = end_date - timedelta(days=periods_years * 365)
+
+        history = self.get_kpi_history(kpi_id, start_date, end_date)
+
+        if len(history) < 12:
+            return SeasonalityPattern(
+                kpi_id=kpi_id,
+                has_seasonality=False,
+                seasonal_strength=0.0,
+            )
+
+        # Group by month
+        monthly_values: Dict[int, List[float]] = {}
+        for h in history:
+            month = h.date.month
+            if month not in monthly_values:
+                monthly_values[month] = []
+            monthly_values[month].append(h.value)
+
+        # Calculate monthly means
+        monthly_means = {m: sum(v) / len(v) for m, v in monthly_values.items()}
+        overall_mean = sum(h.value for h in history) / len(history)
+
+        # Calculate adjustment factors (ratio to mean)
+        adjustment_factors = {m: val / overall_mean for m, val in monthly_means.items()}
+
+        # Identify peaks and troughs
+        sorted_months = sorted(monthly_means.items(), key=lambda x: x[1])
+        trough_months = [m for m, v in sorted_months[:3]]
+        peak_months = [m for m, v in sorted_months[-3:]]
+
+        # Calculate seasonal strength (variance of factors)
+        factors_list = list(adjustment_factors.values())
+        seasonal_strength = float(np.std(factors_list)) if factors_list else 0.0
+        # Normalize strength to 0-1 range (approximate)
+        seasonal_strength = min(1.0, seasonal_strength * 2)
+
+        has_seasonality = seasonal_strength > 0.1
+
+        return SeasonalityPattern(
+            kpi_id=kpi_id,
+            has_seasonality=has_seasonality,
+            cycle_length_months=12,
+            peak_months=peak_months,
+            trough_months=trough_months,
+            seasonal_strength=seasonal_strength,
+            adjustment_factors=adjustment_factors,
+        )
+
+    def deseasonalize(self, kpi_id: str, value: float, month: int) -> float:
+        """
+        Remove seasonal component from a KPI value.
+
+        Args:
+            kpi_id: KPI identifier
+            value: Raw KPI value
+            month: Month of the value (1-12)
+
+        Returns:
+            Deseasonalized value
+        """
+        seasonality = self.get_seasonality(kpi_id)
+        seasonality_data = seasonality.model_dump()
+        adjustment_factors = seasonality_data.get("adjustment_factors", {})
+        factor = adjustment_factors.get(month, 1.0) if isinstance(adjustment_factors, dict) else 1.0
+        return value / factor if factor != 0 else value
+
+    def get_seasonal_decomposition(
+        self, kpi_id: str, model: str = "additive"
+    ) -> Dict[str, List[float]]:
+        """
+        Decompose KPI into trend, seasonal, and residual components.
+
+        Args:
+            kpi_id: KPI identifier
+            model: "additive" or "multiplicative"
+
+        Returns:
+            Dictionary with trend, seasonal, and residual arrays
+        """
+        end_date = date.today()
+        start_date = end_date - timedelta(days=365)
+        history = self.get_kpi_history(kpi_id, start_date, end_date)
+
+        if not history:
+            return {"trend": [], "seasonal": [], "residual": []}
+
+        values = np.array([h.value for h in history])
+        seasonality = self.get_seasonality(kpi_id)
+
+        seasonal_component = []
+        for h in history:
+            seasonality_data = seasonality.model_dump()
+            adjustment_factors = seasonality_data.get("adjustment_factors", {})
+            factor = (
+                adjustment_factors.get(h.date.month, 1.0)
+                if isinstance(adjustment_factors, dict)
+                else 1.0
+            )
+            if model == "additive":
+                # For additive, factor is difference from mean
+                overall_mean = np.mean(values)
+                seasonal_component.append((factor - 1.0) * overall_mean)
+            else:
+                seasonal_component.append(factor)
+
+        seasonal_component = np.array(seasonal_component)
+
+        # Simple trend (moving average)
+        window = 30
+        trend_component = np.convolve(values, np.ones(window) / window, mode="same")
+
+        if model == "additive":
+            residual = values - trend_component - seasonal_component
+        else:
+            residual = values / (trend_component * seasonal_component)
+
+        return {
+            "trend": trend_component.tolist(),
+            "seasonal": seasonal_component.tolist(),
+            "residual": residual.tolist(),
+        }
+
+    # =====================================================================
+    # Phase G4.4: Forecasting Methods
+    # =====================================================================
+
+    def get_forecast(
+        self,
+        kpi_id: str,
+        steps: int = 30,
+        confidence_level: float = 0.95,
+        method: str = "exponential_smoothing",
+    ) -> List[KpiProjection]:
+        """
+        Generate future projections for a KPI.
+
+        Args:
+            kpi_id: KPI identifier
+            steps: Number of days to forecast
+            confidence_level: Confidence level (0-1)
+            method: Forecasting method ("exponential_smoothing", "linear", "arima")
+
+        Returns:
+            List of KpiProjection objects
+        """
+        end_date = date.today()
+        history = self.get_kpi_history(kpi_id, end_date - timedelta(days=90), end_date)
+
+        if not history:
+            return []
+
+        values = np.array([h.value for h in history])
+        last_val = values[-1]
+
+        projections = []
+        for i in range(1, steps + 1):
+            target_date = end_date + timedelta(days=i)
+
+            if method == "linear":
+                trend = self.get_trend(kpi_id, periods=3)
+                predicted = last_val + (trend.slope * i)
+            elif method == "exponential_smoothing":
+                # Simple exponential smoothing forecast (constant level)
+                alpha = 0.3
+                level = last_val
+                for v in values:
+                    level = alpha * v + (1 - alpha) * level
+                predicted = level
+            else:
+                # Default to last value (naive)
+                predicted = last_val
+
+            # Confidence interval expands with time (square root of steps)
+            std_dev = np.std(values) if len(values) > 1 else 1.0
+            z_score = {0.80: 1.28, 0.90: 1.645, 0.95: 1.96}.get(confidence_level, 1.96)
+            uncertainty = z_score * std_dev * np.sqrt(i)
+
+            projections.append(
+                KpiProjection(
+                    kpi_id=kpi_id,
+                    projection_date=target_date,
+                    predicted_value=predicted,
+                    lower_bound=predicted - uncertainty,
+                    upper_bound=predicted + uncertainty,
+                    confidence_level=confidence_level,
+                    method=method,
+                )
+            )
+
+        return projections
+
+    def validate_forecast(self, kpi_id: str, projections: List[KpiProjection]) -> Dict[str, float]:
+        """
+        Validate forecast accuracy against actual historical data.
+
+        Args:
+            kpi_id: KPI identifier
+            projections: Previously generated projections
+
+        Returns:
+            Dictionary with accuracy metrics (MAE, RMSE, MAPE)
+        """
+        if not projections:
+            return {}
+
+        start_date = projections[0].projection_date
+        end_date = projections[-1].projection_date
+
+        actuals = self.get_kpi_history(kpi_id, start_date, end_date)
+        if not actuals:
+            return {}
+
+        actual_map = {a.date: a.value for a in actuals}
+        errors = []
+        pct_errors = []
+
+        for p in projections:
+            if p.projection_date in actual_map:
+                actual = actual_map[p.projection_date]
+                error = p.predicted_value - actual
+                errors.append(error)
+                if actual != 0:
+                    pct_errors.append(abs(error / actual))
+
+        if not errors:
+            return {}
+
+        errors_np = np.array(errors)
+        return {
+            "mae": float(np.mean(np.abs(errors_np))),
+            "rmse": float(np.sqrt(np.mean(errors_np**2))),
+            "mape": float(np.mean(pct_errors)) * 100 if pct_errors else 0.0,
+            "bias": float(np.mean(errors_np)),
+        }
+
+    def get_scenario_projection(
+        self, kpi_id: str, scenarios: Dict[str, float], steps: int = 30
+    ) -> Dict[str, List[KpiProjection]]:
+        """
+        Generate multiple scenario-based projections.
+
+        Args:
+            kpi_id: KPI identifier
+            scenarios: Map of scenario name to growth/adjustment factor
+            steps: Number of days to forecast
+
+        Returns:
+            Dictionary mapping scenario name to its projection list
+        """
+        base_forecast = self.get_forecast(kpi_id, steps=steps)
+        results = {"base": base_forecast}
+
+        for name, factor in scenarios.items():
+            scenario_projections = []
+            for p in base_forecast:
+                # Apply scenario factor (e.g., 1.1 for 10% growth)
+                adjusted_val = p.predicted_value * factor
+                scenario_projections.append(
+                    KpiProjection(
+                        kpi_id=kpi_id,
+                        projection_date=p.projection_date,
+                        predicted_value=adjusted_val,
+                        lower_bound=p.lower_bound * factor,
+                        upper_bound=p.upper_bound * factor,
+                        confidence_level=p.confidence_level,
+                        method=f"scenario_{name}",
+                    )
+                )
+            results[name] = scenario_projections
+
+        return results
+
+    # =====================================================================
+    # Phase G4.5: Benchmarking Methods
+    # =====================================================================
+
+    def get_benchmarks(self, kpi_id: str) -> Dict[str, float]:
+        """
+        Retrieve benchmark values for a KPI.
+
+        Returns industry standards, peer medians, and regulatory thresholds.
+        """
+        # Centralized benchmark registry (mock data for now)
+        registry = {
+            "default_rate": {
+                "industry_avg": 0.05,
+                "peer_median": 0.045,
+                "regulatory_max": 0.10,
+                "basel_iii_threshold": 0.08,
+            },
+            "disbursements": {
+                "industry_avg": 100.0,
+                "industry_growth_avg": 0.12,
+                "target_growth": 0.15,
+            },
+            "par_30": {
+                "industry_avg": 0.03,
+                "regulatory_limit": 0.05,
+            },
+            "npl_rate": {
+                "industry_avg": 0.04,
+                "regulatory_limit": 0.07,
+            },
+        }
+        return registry.get(kpi_id, {"industry_avg": 0.0})
+
+    def get_percentile_ranking(self, kpi_id: str, current_value: float) -> float:
+        """
+        Calculate percentile rank of current KPI value relative to peers.
+
+        Args:
+            kpi_id: KPI identifier
+            current_value: Current value to rank
+
+        Returns:
+            Percentile rank (0.0 to 1.0)
+        """
+        # Simulate peer distribution for ranking
+        benchmarks = self.get_benchmarks(kpi_id)
+        median = benchmarks.get("peer_median", benchmarks.get("industry_avg", current_value))
+
+        # Generate mock distribution centered around peer median
+        np.random.seed(abs(hash(kpi_id)) % 10000)
+        peer_data = np.random.normal(loc=median, scale=max(0.001, median * 0.2), size=100)
+
+        # Percentile rank
+        rank = float(np.sum(peer_data < current_value) / len(peer_data))
+
+        # For some KPIs (like default_rate), lower is better, so we invert the rank
+        if "rate" in kpi_id or "par" in kpi_id or "processing_time" in kpi_id:
+            return 1.0 - rank
+
+        return rank
+
+    def get_z_score(self, kpi_id: str, current_value: float) -> float:
+        """
+        Calculate Z-score relative to industry distribution.
+
+        Args:
+            kpi_id: KPI identifier
+            current_value: Current value
+
+        Returns:
+            Number of standard deviations from mean
+        """
+        benchmarks = self.get_benchmarks(kpi_id)
+        avg = benchmarks.get("industry_avg", current_value)
+        std = max(0.001, avg * 0.2)  # Mock standard deviation
+
+        return (current_value - avg) / std
+
+    def get_gap_analysis(
+        self, kpi_id: str, current_value: float, target_key: str = "industry_avg"
+    ) -> Dict[str, Any]:
+        """
+        Perform gap analysis against a specific benchmark target.
+
+        Args:
+            kpi_id: KPI identifier
+            current_value: Current value
+            target_key: Key in benchmark dict to compare against
+
+        Returns:
+            Dictionary with gap metrics and status
+        """
+        benchmarks = self.get_benchmarks(kpi_id)
+        target = benchmarks.get(target_key)
+
+        if target is None:
+            return {"error": f"Target {target_key} not found for {kpi_id}"}
+
+        gap = current_value - target
+        gap_pct = (gap / target * 100) if target != 0 else 0.0
+
+        # Determine status (depends on KPI direction)
+        is_positive_kpi = not ("rate" in kpi_id or "par" in kpi_id)
+        status = "on_track"
+
+        if is_positive_kpi:
+            if gap < -0.05 * target:
+                status = "below_target"
+            elif gap > 0.05 * target:
+                status = "above_target"
+        else:
+            if gap > 0.05 * target:
+                status = "at_risk"
+            elif gap < -0.05 * target:
+                status = "performing_well"
+
+        return {
+            "kpi_id": kpi_id,
+            "current": current_value,
+            "target": target,
+            "target_type": target_key,
+            "gap": gap,
+            "gap_pct": gap_pct,
+            "status": status,
+        }
+
+    def check_regulatory_thresholds(
+        self, kpi_id: str, current_value: float
+    ) -> List[Dict[str, Any]]:
+        """
+        Check KPI against known regulatory thresholds.
+
+        Args:
+            kpi_id: KPI identifier
+            current_value: Current value
+
+        Returns:
+            List of detected violations or warnings
+        """
+        benchmarks = self.get_benchmarks(kpi_id)
+        results = []
+
+        for key, threshold in benchmarks.items():
+            if any(word in key for word in ["regulatory", "threshold", "limit", "max"]):
+                # Logic for "lower is better" KPIs (rates, DPD)
+                if any(word in kpi_id for word in ["rate", "par", "dpd"]):
+                    if current_value > threshold:
+                        results.append(
+                            {
+                                "threshold_name": key,
+                                "threshold_value": threshold,
+                                "current_value": current_value,
+                                "status": "violation",
+                                "severity": "critical"
+                                if current_value > threshold * 1.2
+                                else "warning",
+                            }
+                        )
+                # Logic for "higher is better" KPIs (capital ratios etc)
+                elif any(word in kpi_id for word in ["ratio", "coverage", "liquidity"]):
+                    if current_value < threshold:
+                        results.append(
+                            {
+                                "threshold_name": key,
+                                "threshold_value": threshold,
+                                "current_value": current_value,
+                                "status": "violation",
+                                "severity": "critical"
+                                if current_value < threshold * 0.8
+                                else "warning",
+                            }
+                        )
+
+        return results

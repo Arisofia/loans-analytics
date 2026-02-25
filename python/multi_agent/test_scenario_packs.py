@@ -117,8 +117,8 @@ class TestScenarioIntegration(unittest.TestCase):
 
     def test_total_scenario_count(self):
         """Test total number of registered scenarios."""
-        # 4 original + 4 specialized + 3 retail + 3 SME + 3 Auto + 3 Portfolio = 20 scenarios
-        self.assertEqual(len(self.orchestrator.scenarios), 20)
+        # 4 original + 4 specialized + 3 retail + 3 SME + 3 Auto + 3 Portfolio + 2 Historical = 22 scenarios
+        self.assertEqual(len(self.orchestrator.scenarios), 22)
 
     def test_all_scenarios_have_unique_names(self):
         """Test scenario names are unique."""
@@ -141,7 +141,7 @@ class TestScenarioIntegration(unittest.TestCase):
         """Test list_scenarios returns all registered scenarios."""
         scenario_list = self.orchestrator.list_scenarios()
 
-        self.assertEqual(len(scenario_list), 20)
+        self.assertEqual(len(scenario_list), 22)
         # Check retail scenarios
         self.assertIn("retail_origination", scenario_list)
         self.assertIn("retail_portfolio_review", scenario_list)
@@ -156,6 +156,9 @@ class TestScenarioIntegration(unittest.TestCase):
         self.assertIn("portfolio_health_check", scenario_list)
         self.assertIn("strategic_planning", scenario_list)
         self.assertIn("regulatory_review", scenario_list)
+        # Check Historical scenarios
+        self.assertIn("trend_based_planning", scenario_list)
+        self.assertIn("performance_attribution", scenario_list)
 
     def test_retail_scenarios_are_product_specific(self):
         """Test retail scenarios are designed for retail lending."""

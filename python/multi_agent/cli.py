@@ -15,7 +15,7 @@ Usage:
 import argparse
 import json
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from .orchestrator import MultiAgentOrchestrator
 from .protocol import AgentRole, Message, MessageRole
@@ -62,7 +62,7 @@ def run_scenario(scenario_name: str, context: Dict[str, Any]) -> None:
 def run_agent(
     agent_role_str: str,
     user_input: str,
-    context: Dict[str, Any] | None = None,
+    context: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Run a single agent with given input."""
     try:
