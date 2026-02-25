@@ -54,7 +54,7 @@ lint:
 	$(BIN)/flake8 src python scripts
 	$(BIN)/pylint src python scripts
 type-check:
-	$(BIN)/mypy src
+	$(BIN)/mypy --check-untyped-defs src
 test:
 	$(BIN)/pytest
 clean:

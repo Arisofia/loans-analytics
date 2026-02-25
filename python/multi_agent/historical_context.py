@@ -860,6 +860,7 @@ class HistoricalContextProvider:
             return SeasonalityPattern(
                 kpi_id=kpi_id,
                 has_seasonality=False,
+                cycle_length_months=None,
                 seasonal_strength=0.0,
             )
 
@@ -942,7 +943,7 @@ class HistoricalContextProvider:
         values = np.array([h.value for h in history])
         seasonality = self.get_seasonality(kpi_id)
 
-        seasonal_component = []
+        seasonal_component: List[float] = []
         for h in history:
             seasonality_data = seasonality.model_dump()
             adjustment_factors = seasonality_data.get("adjustment_factors", {})
@@ -958,20 +959,20 @@ class HistoricalContextProvider:
             else:
                 seasonal_component.append(factor)
 
-        seasonal_component = np.array(seasonal_component)
+        seasonal_component_array = np.array(seasonal_component)
 
         # Simple trend (moving average)
         window = 30
         trend_component = np.convolve(values, np.ones(window) / window, mode="same")
 
         if model == "additive":
-            residual = values - trend_component - seasonal_component
+            residual = values - trend_component - seasonal_component_array
         else:
-            residual = values / (trend_component * seasonal_component)
+            residual = values / (trend_component * seasonal_component_array)
 
         return {
             "trend": trend_component.tolist(),
-            "seasonal": seasonal_component.tolist(),
+            "seasonal": seasonal_component_array.tolist(),
             "residual": residual.tolist(),
         }
 
