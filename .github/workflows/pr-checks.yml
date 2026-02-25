@@ -35,14 +35,23 @@ jobs:
         run: |
           pytest tests/ --maxfail=3 -v --tb=short -m "not integration and not e2e"
 
-      - name: Comment on PR
+      - name: Comment QA result on PR
         if: always() && github.actor != 'dependabot[bot]'
         uses: actions/github-script@v7
+        env:
+          JOB_STATUS: ${{ job.status }}
         with:
           script: |
+            const status = process.env.JOB_STATUS || "unknown";
+            const messageByStatus = {
+              success: "✅ Basic QA checks passed.",
+              failure: "❌ Basic QA checks failed.",
+              cancelled: "⚠️ Basic QA checks were cancelled."
+            };
+            const summary = messageByStatus[status] || `ℹ️ Basic QA checks finished with status: ${status}.`;
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: '✅ Basic QA checks completed. Review logs for details.'
+              body: `${summary} Review workflow logs for details.`
             })
