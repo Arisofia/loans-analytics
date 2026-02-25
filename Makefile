@@ -25,7 +25,7 @@ setup:
 	$(PYTHON) -m venv $(VENV)
 	$(BIN)/pip install --upgrade pip
 	$(BIN)/pip install -r requirements.txt
-	$(BIN)/pip install -r dev-requirements.txt
+	$(BIN)/pip install -r requirements-dev.txt
 	if [ -d .git ]; then $(BIN)/pre-commit install; fi
 format:
 	$(BIN)/black .
