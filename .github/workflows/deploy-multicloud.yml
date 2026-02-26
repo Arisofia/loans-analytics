@@ -154,31 +154,94 @@ jobs:
       - name: Resolve Azure auth mode
         id: azure_auth
         run: |
+          has_oidc=false
+          has_creds=false
           if [ -n "$AZURE_AD_CLIENT_ID" ] && [ -n "$AZURE_AD_TENANT_ID" ]; then
-            echo "mode=oidc" >> "$GITHUB_OUTPUT"
-          elif [ -n "$AZURE_CREDENTIALS" ]; then
-            echo "mode=creds" >> "$GITHUB_OUTPUT"
-          else
+            has_oidc=true
+          fi
+          if [ -n "$AZURE_CREDENTIALS" ]; then
+            has_creds=true
+          fi
+          echo "has_oidc=$has_oidc" >> "$GITHUB_OUTPUT"
+          echo "has_creds=$has_creds" >> "$GITHUB_OUTPUT"
+          if [ "$has_oidc" != "true" ] && [ "$has_creds" != "true" ]; then
             echo "::error::No Azure auth mode can be resolved."
             exit 1
           fi
 
-      - name: Azure login (service principal JSON secret)
-        if: ${{ steps.azure_auth.outputs.mode == 'creds' }}
-        uses: azure/login@v2
-        with:
-          creds: ${{ env.AZURE_CREDENTIALS }}
-          allow-no-subscriptions: true
-
       - name: Azure login (OIDC)
-        if: ${{ steps.azure_auth.outputs.mode == 'oidc' }}
+        id: azure_login_oidc
+        if: ${{ steps.azure_auth.outputs.has_oidc == 'true' }}
+        continue-on-error: true
         uses: azure/login@v2
         with:
           client-id: ${{ env.AZURE_AD_CLIENT_ID }}
           tenant-id: ${{ env.AZURE_AD_TENANT_ID }}
           subscription-id: ${{ steps.azure_sub.outputs.subscription_id }}
 
+      - name: Azure login (service principal JSON fallback)
+        id: azure_login_creds
+        if: ${{ steps.azure_auth.outputs.has_creds == 'true' && steps.azure_login_oidc.outcome != 'success' }}
+        run: |
+          python3 - <<'PY' > /tmp/azure_sp_login.env
+          import json
+          import os
+          import sys
+
+          raw = os.environ.get("AZURE_CREDENTIALS", "")
+          if not raw:
+            print("::error::AZURE_CREDENTIALS is empty.", file=sys.stderr)
+            sys.exit(1)
+
+          try:
+            creds = json.loads(raw)
+          except json.JSONDecodeError:
+            print("::error::AZURE_CREDENTIALS is not valid JSON.", file=sys.stderr)
+            sys.exit(1)
+
+          def pick(*keys):
+            for key in keys:
+              value = creds.get(key)
+              if isinstance(value, str) and value.strip():
+                return value.strip()
+            return ""
+
+          client_id = pick("clientId", "client_id", "appId")
+          tenant_id = pick("tenantId", "tenant_id")
+          client_secret = pick("clientSecret", "client_secret", "password")
+          missing = [name for name, value in [
+            ("clientId", client_id),
+            ("tenantId", tenant_id),
+            ("clientSecret", client_secret),
+          ] if not value]
+          if missing:
+            print(f"::error::AZURE_CREDENTIALS missing required field(s): {', '.join(missing)}", file=sys.stderr)
+            sys.exit(1)
+
+          print(f"client_id={client_id}")
+          print(f"tenant_id={tenant_id}")
+          print(f"client_secret={client_secret}")
+          PY
+
+          # shellcheck disable=SC1091
+          source /tmp/azure_sp_login.env
+          echo "::add-mask::$client_secret"
+          az login \
+            --service-principal \
+            --username "$client_id" \
+            --password "$client_secret" \
+            --tenant "$tenant_id" \
+            --allow-no-subscriptions \
+            --output none
+
+      - name: Fail if Azure authentication did not succeed
+        if: ${{ steps.azure_login_oidc.outcome != 'success' && steps.azure_login_creds.outcome != 'success' }}
+        run: |
+          echo "::error::Azure authentication failed for both OIDC and service principal JSON."
+          exit 1
+
       - name: Set active Azure subscription
+        if: ${{ steps.azure_login_oidc.outcome == 'success' || steps.azure_login_creds.outcome == 'success' }}
         run: |
           az account set --subscription "${{ steps.azure_sub.outputs.subscription_id }}"
           az account show --query '{id:id,name:name,tenantId:tenantId}' -o table
