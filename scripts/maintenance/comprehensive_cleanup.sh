@@ -13,6 +13,9 @@ set -euo pipefail
 DRY_RUN=false
 COMMIT_CHANGES=false
 COMMIT_EACH_SECTION=false
+CLEAN_WORKFLOW_RUNS=false
+KEEP_COUNT="${KEEP_COUNT:-25}"
+RUN_LIST_LIMIT="${RUN_LIST_LIMIT:-1000}"
 LOG_FILE="cleanup.log"
 
 usage() {
@@ -23,6 +26,8 @@ Options:
   --dry-run              Preview actions without deleting/modifying files.
   --commit               Commit all changes at end (if any).
   --commit-each-section  Commit after each section (implies --commit).
+  --cleanup-workflow-runs  Delete old GitHub Actions runs (keeps latest N).
+  --keep <N>             Number of workflow runs to keep (default: 25).
   --log-file <path>      Override log file path (default: cleanup.log).
   --help                 Show this help.
 USAGE
@@ -42,6 +47,18 @@ while [[ $# -gt 0 ]]; do
             COMMIT_CHANGES=true
             COMMIT_EACH_SECTION=true
             shift
+            ;;
+        --cleanup-workflow-runs)
+            CLEAN_WORKFLOW_RUNS=true
+            shift
+            ;;
+        --keep)
+            if [[ $# -lt 2 ]]; then
+                echo "Missing value for --keep"
+                exit 1
+            fi
+            KEEP_COUNT="$2"
+            shift 2
             ;;
         --log-file)
             if [[ $# -lt 2 ]]; then
@@ -134,10 +151,10 @@ ensure_gitignore_entry() {
 }
 
 log "Starting comprehensive repository cleanup..."
-log "dry_run=$DRY_RUN commit=$COMMIT_CHANGES commit_each_section=$COMMIT_EACH_SECTION"
+log "dry_run=$DRY_RUN commit=$COMMIT_CHANGES commit_each_section=$COMMIT_EACH_SECTION cleanup_workflow_runs=$CLEAN_WORKFLOW_RUNS keep_count=$KEEP_COUNT run_list_limit=$RUN_LIST_LIMIT"
 
 # 1. Remove caches and transient artifacts
-log "[1/7] Removing caches and transient artifacts..."
+log "[1/8] Removing caches and transient artifacts..."
 for p in \
     ".hypothesis" \
     ".pytest_cache" \
@@ -157,7 +174,7 @@ done
 commit_if_requested "chore(cleanup): remove caches and transient artifacts"
 
 # 2. Remove backup files and duplicate copy files
-log "[2/7] Removing backup and duplicate files..."
+log "[2/8] Removing backup and duplicate files..."
 remove_matching_files "." "*.bak" "*.backup" "*.old" "*.orig" "*.rej"
 remove_matching_files "." "* 2.*" "* 3.*" "* (2).*" "* (3).*"
 remove_matching_files "." ".env*.bak" ".env*.backup" ".env*.old" ".env*.tmp"
@@ -165,7 +182,7 @@ remove_matching_files "." "*.tmp" "*.cleanup-backup"
 commit_if_requested "chore(cleanup): remove backups and duplicate copies"
 
 # 3. Remove empty files in source/docs folders
-log "[3/7] Removing empty files..."
+log "[3/8] Removing empty files..."
 if command_exists python3; then
     if [[ "$DRY_RUN" == true ]]; then
         python3 - <<'PY'
@@ -203,7 +220,7 @@ fi
 commit_if_requested "chore(cleanup): remove empty files"
 
 # 4. Remove orphan symlinks and empty directories
-log "[4/7] Removing orphan symlinks and empty directories..."
+log "[4/8] Removing orphan symlinks and empty directories..."
 while IFS= read -r -d '' orphan; do
     remove_path "$orphan"
 done < <(find . -type l ! -exec test -e {} \; -print0 2>/dev/null || true)
@@ -220,7 +237,7 @@ fi
 commit_if_requested "chore(cleanup): remove orphan symlinks and empty directories"
 
 # 5. Update .gitignore with cleanup-related entries
-log "[5/7] Updating .gitignore..."
+log "[5/8] Updating .gitignore..."
 ensure_gitignore_entry "cleanup.log"
 ensure_gitignore_entry ".hypothesis/"
 ensure_gitignore_entry "*.mp4"
@@ -231,14 +248,14 @@ ensure_gitignore_entry "output.mp4"
 commit_if_requested "chore(cleanup): update gitignore"
 
 # 6. Verify duplicate-copy files are gone
-log "[6/7] Verifying duplicate-copy files..."
+log "[6/8] Verifying duplicate-copy files..."
 if command_exists rg; then
     count=$(rg -n "(\s2\.|\(2\)\.|\s3\.|\(3\)\.)" --hidden -g '!.git' | wc -l | awk '{print $1}')
     log "[verify] potential duplicate-copy filename references: ${count}"
 fi
 
 # 7. Post-cleanup quality checks
-log "[7/7] Running post-cleanup quality checks..."
+log "[7/8] Running post-cleanup quality checks..."
 if command_exists ruff; then
     if [[ "$DRY_RUN" == true ]]; then
         log "[dry-run] ruff check --fix ."
@@ -261,6 +278,54 @@ if command_exists mypy; then
     fi
 else
     log "[warn] mypy not found"
+fi
+
+# 8. Optional cleanup of old workflow runs
+log "[8/8] Optional cleanup of old workflow runs..."
+if [[ "$CLEAN_WORKFLOW_RUNS" == true ]]; then
+    if ! command_exists gh; then
+        log "[warn] gh not found; skipping workflow run cleanup"
+    elif ! command_exists jq; then
+        log "[warn] jq not found; skipping workflow run cleanup"
+    elif ! gh auth status >/dev/null 2>&1; then
+        log "[warn] gh is not authenticated; skipping workflow run cleanup"
+    else
+        all_runs=$(gh run list --limit "$RUN_LIST_LIMIT" --json databaseId,createdAt | \
+            jq -r 'sort_by(.createdAt) | reverse | .[].databaseId')
+        total_count=$(printf '%s\n' "$all_runs" | sed '/^$/d' | wc -l | awk '{print $1}')
+        log "[info] total workflow runs: $total_count"
+
+        if [[ "$total_count" -le "$KEEP_COUNT" ]]; then
+            log "[info] nothing to delete; keep_count=$KEEP_COUNT"
+        else
+            runs_to_delete=$(printf '%s\n' "$all_runs" | sed '/^$/d' | tail -n +$((KEEP_COUNT + 1)))
+            delete_count=$(printf '%s\n' "$runs_to_delete" | sed '/^$/d' | wc -l | awk '{print $1}')
+            log "[info] deleting $delete_count workflow runs (keeping latest $KEEP_COUNT)"
+
+            if [[ "$DRY_RUN" == true ]]; then
+                preview=$(printf '%s\n' "$runs_to_delete" | sed '/^$/d' | head -20)
+                log "[dry-run] workflow runs to delete (first 20):"
+                log "$preview"
+            else
+                deleted=0
+                failed=0
+                while IFS= read -r run_id; do
+                    [[ -z "$run_id" ]] && continue
+                    if gh run delete "$run_id" --confirm >/dev/null 2>&1; then
+                        deleted=$((deleted + 1))
+                    else
+                        failed=$((failed + 1))
+                    fi
+                    if [[ $deleted -gt 0 && $((deleted % 100)) -eq 0 ]]; then
+                        sleep 2
+                    fi
+                done <<<"$runs_to_delete"
+                log "[done] workflow runs deleted=$deleted failed=$failed"
+            fi
+        fi
+    fi
+else
+    log "[skip] use --cleanup-workflow-runs to enable this step"
 fi
 
 if [[ "$DRY_RUN" != true && "$COMMIT_CHANGES" == true && "$COMMIT_EACH_SECTION" != true ]]; then

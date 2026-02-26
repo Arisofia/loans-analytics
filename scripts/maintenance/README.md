@@ -8,8 +8,7 @@ Scripts for repository maintenance, validation, and housekeeping.
 
 - `repo-doctor.sh` - Comprehensive repository health check
 - `repo_maintenance.sh` - Routine maintenance tasks
-- `comprehensive_cleanup.sh` - Deep cleanup for retired integrations, caches, backups, and orphans
-- `cleanup_workflow_runs_by_count.sh` - Clean up old workflow runs
+- `comprehensive_cleanup.sh` - Deep cleanup for retired integrations, caches, backups, orphans, and optional workflow-runs cleanup (`--cleanup-workflow-runs --keep 25`)
 
 **Validation:**
 
@@ -29,5 +28,5 @@ For execution commands and approved variants, use:
 
 - **Daily**: CI/CD runs validation scripts automatically
 - **Weekly**: Run repo-doctor.sh
-- **Monthly**: Clean up workflow runs
+- **Monthly**: Run `comprehensive_cleanup.sh --cleanup-workflow-runs --keep 25`
 - **Quarterly**: Full repository audit
