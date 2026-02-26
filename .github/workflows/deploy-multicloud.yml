@@ -96,9 +96,13 @@ jobs:
         env:
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
           AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           [ -n "$AZURE_CREDENTIALS" ] || { echo "::error::Missing secret AZURE_CREDENTIALS"; exit 1; }
           [ -n "$AZURE_RESOURCE_GROUP" ] || { echo "::error::Missing secret AZURE_RESOURCE_GROUP"; exit 1; }
+          [ -n "$SUPABASE_URL" ] || { echo "::error::Missing secret SUPABASE_URL"; exit 1; }
+          [ -n "$SUPABASE_ANON_KEY" ] || { echo "::error::Missing secret SUPABASE_ANON_KEY"; exit 1; }
 
       - name: Validate AWS secrets
         if: ${{ steps.targets.outputs.aws == 'true' }}
