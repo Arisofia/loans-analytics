@@ -482,8 +482,8 @@ class OutputPhase:
 
             # Create Supabase client
             supabase_url, supabase_key, key_source = self._resolve_supabase_credentials()
-            assert supabase_url is not None
-            assert supabase_key is not None
+            if supabase_url is None or supabase_key is None:
+                raise RuntimeError("Supabase credentials missing during Phase 4 persistence")
             supabase: Client = create_client(supabase_url, supabase_key)
             logger.info("Using Supabase credentials source: %s", key_source)
 
