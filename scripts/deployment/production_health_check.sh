@@ -152,7 +152,7 @@ if [ -f "pyproject.toml" ]; then
 	fi
 
 	# Check for active TODOs
-	TODO_COUNT=$(grep -r "TODO:" src/ python/ --include="*.py" 2>/dev/null | wc -l || echo "0")
+	TODO_COUNT=$(grep -r "TODO:" src/ python/ --include="*.py" 2>/dev/null | wc -l | xargs || echo "0")
 	if [ "$TODO_COUNT" = "0" ]; then
 		print_status "Active TODOs" "✅" "None found"
 	else
@@ -209,21 +209,21 @@ HEALTH_OK=0
 HEALTH_WARN=0
 
 if [ "$HTTP_CODE" = "200" ]; then
-	((HEALTH_OK++))
+	HEALTH_OK=$((HEALTH_OK + 1))
 else
-	((HEALTH_WARN++))
+	HEALTH_WARN=$((HEALTH_WARN + 1))
 fi
 
 if [ "$RESPONSE_TIME_MS" -lt 5000 ] 2>/dev/null; then
-	((HEALTH_OK++))
+	HEALTH_OK=$((HEALTH_OK + 1))
 fi
 
 if [ "$TODO_COUNT" = "0" ] 2>/dev/null; then
-	((HEALTH_OK++))
+	HEALTH_OK=$((HEALTH_OK + 1))
 fi
 
 if [ -n "$VIRTUAL_ENV" ]; then
-	((HEALTH_OK++))
+	HEALTH_OK=$((HEALTH_OK + 1))
 fi
 
 echo -e "${GREEN}✅ Healthy Checks: $HEALTH_OK${NC}"
