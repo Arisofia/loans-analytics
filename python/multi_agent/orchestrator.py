@@ -119,9 +119,7 @@ class MultiAgentOrchestrator:
         kpi_ids_list = context.get("kpi_ids")
         if isinstance(kpi_ids_list, list):
             kpi_ids.extend(
-                item.strip()
-                for item in kpi_ids_list
-                if isinstance(item, str) and item.strip()
+                item.strip() for item in kpi_ids_list if isinstance(item, str) and item.strip()
             )
 
         kpi_anomalies = context.get("kpi_anomalies")
@@ -162,9 +160,7 @@ class MultiAgentOrchestrator:
 
         first_summary = next(iter(summaries.values()))
         if "historical_context" not in context:
-            context["historical_context"] = (
-                first_summary if len(summaries) == 1 else summaries
-            )
+            context["historical_context"] = first_summary if len(summaries) == 1 else summaries
 
         if "historical_trends" not in context:
             if len(summaries) == 1:
@@ -188,9 +184,7 @@ class MultiAgentOrchestrator:
         if not historical_context:
             return prompt
 
-        return (
-            f"{prompt}\n\nHistorical context (auto-injected): {historical_context}"
-        )
+        return f"{prompt}\n\nHistorical context (auto-injected): {historical_context}"
 
     def _init_agents(self) -> Dict[AgentRole, BaseAgent]:
         """Initialize all role-specific agents."""

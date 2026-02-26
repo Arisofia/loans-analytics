@@ -181,7 +181,9 @@ def _render_pricing_governance_tab(dashboard_metrics):
         completeness = governance.get("completeness", {})
         if completeness:
             st.dataframe(
-                styled_df(pd.DataFrame(list(completeness.items()), columns=["Field", "Completeness"])),
+                styled_df(
+                    pd.DataFrame(list(completeness.items()), columns=["Field", "Completeness"])
+                ),
                 use_container_width=True,
             )
 

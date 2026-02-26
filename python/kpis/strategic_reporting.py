@@ -57,9 +57,7 @@ def build_strategic_summary(metrics: dict[str, Any]) -> dict[str, Any]:
     governance = extended.get("data_governance", {})
 
     latest_unit = unit_economics[-1] if unit_economics else {}
-    total_forecast = sum(
-        _to_float(item.get("forecast_revenue_usd")) or 0.0 for item in forecast
-    )
+    total_forecast = sum(_to_float(item.get("forecast_revenue_usd")) or 0.0 for item in forecast)
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -123,10 +121,7 @@ def render_strategic_markdown(summary: dict[str, Any], links: dict[str, str]) ->
         f"- CAC (USD): `{metrics['cac_usd']}`",
         f"- LTV Realized (USD): `{metrics['ltv_usd']}`",
         f"- Gross Margin (%): `{metrics['gross_margin_pct']}`",
-        (
-            "- Revenue forecast next month (USD): "
-            f"`{metrics['next_month_revenue_forecast_usd']}`"
-        ),
+        ("- Revenue forecast next month (USD): " f"`{metrics['next_month_revenue_forecast_usd']}`"),
         f"- Revenue forecast 6M total (USD): `{metrics['forecast_6m_total_usd']}`",
         "",
         "## Data Governance",

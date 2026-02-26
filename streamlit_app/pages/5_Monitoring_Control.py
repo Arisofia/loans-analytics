@@ -65,7 +65,7 @@ ALLOWED_ENDPOINTS = {
 
 def _build_api_url(endpoint: str) -> str | None:
     """Build request URL from a fixed endpoint allowlist.
-    
+
     This function implements strict SSRF protection by:
     1. Using a sanitized base URL from an environment variable.
     2. Mapping input strings to hardcoded constant literals to break the taint chain.

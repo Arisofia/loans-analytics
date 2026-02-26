@@ -258,7 +258,9 @@ class KPICatalogProcessor:
             ]:
                 col_name = payment_cols[source_col]
                 if col_name is not None:
-                    monthly[target_col] = pd.to_numeric(monthly[col_name], errors="coerce").fillna(0)
+                    monthly[target_col] = pd.to_numeric(monthly[col_name], errors="coerce").fillna(
+                        0
+                    )
                 else:
                     monthly[target_col] = 0.0
 
@@ -370,12 +372,12 @@ class KPICatalogProcessor:
 
         if loan_cols["customer_id"] is not None:
             customer_counts = (
-                segment_df.groupby(loan_cols["segment"])[loan_cols["customer_id"]].nunique().rename("Clients")
+                segment_df.groupby(loan_cols["segment"])[loan_cols["customer_id"]]
+                .nunique()
+                .rename("Clients")
             )
         else:
-            customer_counts = (
-                segment_df.groupby(loan_cols["segment"]).size().rename("Clients")
-            )
+            customer_counts = segment_df.groupby(loan_cols["segment"]).size().rename("Clients")
 
         grouped = segment_df.groupby(loan_cols["segment"], as_index=False).agg(
             Portfolio_Value=("_outstanding", "sum"),
@@ -451,8 +453,7 @@ class KPICatalogProcessor:
             known = activity.loc[activity["event_date"] <= month_end, "customer_id"].nunique()
             active_start = month_end - pd.Timedelta(days=89)
             active = activity.loc[
-                (activity["event_date"] >= active_start)
-                & (activity["event_date"] <= month_end),
+                (activity["event_date"] >= active_start) & (activity["event_date"] <= month_end),
                 "customer_id",
             ].nunique()
             inactive = max(known - active, 0)
@@ -488,7 +489,10 @@ class KPICatalogProcessor:
             working["known_customers"] = 0
         else:
             first_seen = (
-                activity.groupby("customer_id")["event_date"].min().dt.to_period("M").dt.to_timestamp()
+                activity.groupby("customer_id")["event_date"]
+                .min()
+                .dt.to_period("M")
+                .dt.to_timestamp()
             )
             new_clients = first_seen.value_counts().sort_index()
             working["new_clients"] = working["month"].map(new_clients).fillna(0).astype(int)
@@ -506,7 +510,9 @@ class KPICatalogProcessor:
             and customer_cols["created_at"] is not None
             and customer_cols["marketing_spend"] is not None
         ):
-            marketing = self.customers_df[[customer_cols["created_at"], customer_cols["marketing_spend"]]].copy()
+            marketing = self.customers_df[
+                [customer_cols["created_at"], customer_cols["marketing_spend"]]
+            ].copy()
             marketing.columns = ["event_date", "marketing_spend_usd"]
             marketing["event_date"] = self._coerce_datetime(marketing["event_date"])
             marketing["month"] = marketing["event_date"].dt.to_period("M").dt.to_timestamp()
@@ -514,9 +520,9 @@ class KPICatalogProcessor:
                 marketing["marketing_spend_usd"],
                 errors="coerce",
             ).fillna(0)
-            marketing_spend_df = (
-                marketing.groupby("month", as_index=False)["marketing_spend_usd"].sum()
-            )
+            marketing_spend_df = marketing.groupby("month", as_index=False)[
+                "marketing_spend_usd"
+            ].sum()
 
         working = working.merge(marketing_spend_df, on="month", how="left")
         working["marketing_spend_usd"] = working["marketing_spend_usd"].fillna(0)
@@ -666,7 +672,9 @@ class KPICatalogProcessor:
         if len(model_df) < 2:
             return []
 
-        y_values = pd.to_numeric(model_df["recv_revenue_for_month"], errors="coerce").fillna(0).values
+        y_values = (
+            pd.to_numeric(model_df["recv_revenue_for_month"], errors="coerce").fillna(0).values
+        )
         x_values = np.arange(len(y_values), dtype=float)
 
         x_mean = float(x_values.mean())
@@ -703,7 +711,9 @@ class KPICatalogProcessor:
             return []
 
         scored = pd.DataFrame(segmentation)
-        scored["Portfolio_Value"] = pd.to_numeric(scored["Portfolio_Value"], errors="coerce").fillna(0)
+        scored["Portfolio_Value"] = pd.to_numeric(
+            scored["Portfolio_Value"], errors="coerce"
+        ).fillna(0)
         scored["Delinquency_Rate"] = pd.to_numeric(
             scored["Delinquency_Rate"],
             errors="coerce",
@@ -716,8 +726,7 @@ class KPICatalogProcessor:
         scored["revenue_potential_score"] = scored["Portfolio_Value"] / portfolio_max
         scored["risk_score"] = scored["Delinquency_Rate"].clip(0, 1)
         scored["priority_score"] = (
-            scored["revenue_potential_score"] * 0.7
-            + (1 - scored["risk_score"]) * 0.3
+            scored["revenue_potential_score"] * 0.7 + (1 - scored["risk_score"]) * 0.3
         ) * 100
 
         prioritized = scored.sort_values("priority_score", ascending=False)
@@ -766,18 +775,25 @@ class KPICatalogProcessor:
         if date_candidates:
             merged_dates = pd.concat(date_candidates).dropna()
             if not merged_dates.empty:
-                freshness_days = int((pd.Timestamp.utcnow().tz_localize(None) - merged_dates.max()).days)
+                freshness_days = int(
+                    (pd.Timestamp.utcnow().tz_localize(None) - merged_dates.max()).days
+                )
 
         completeness_mean = float(np.mean(list(completeness_checks.values())))
         freshness_penalty = 0.0 if freshness_days is None else min(max(freshness_days, 0) / 180, 1)
-        quality_score = max(0.0, 1 - (0.5 * (1 - completeness_mean) + 0.3 * duplicate_rate + 0.2 * freshness_penalty))
+        quality_score = max(
+            0.0,
+            1 - (0.5 * (1 - completeness_mean) + 0.3 * duplicate_rate + 0.2 * freshness_penalty),
+        )
 
         return {
             "quality_score": quality_score,
             "completeness": completeness_checks,
             "duplicate_rate": duplicate_rate,
             "freshness_days": freshness_days,
-            "governance_status": "green" if quality_score >= 0.8 else "amber" if quality_score >= 0.6 else "red",
+            "governance_status": (
+                "green" if quality_score >= 0.8 else "amber" if quality_score >= 0.6 else "red"
+            ),
         }
 
     def get_quarterly_scorecard(self) -> pd.DataFrame:

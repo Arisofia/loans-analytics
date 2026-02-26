@@ -57,7 +57,11 @@ def calculate_collection_rate(df: pd.DataFrame | None) -> Tuple[Decimal, Dict[st
         if column is None
     ]
     if collected_col is None or due_col is None:
-        missing = [label for label, column in [("collected", collected_col), ("due", due_col)] if column is None]
+        missing = [
+            label
+            for label, column in [("collected", collected_col), ("due", due_col)]
+            if column is None
+        ]
         return Decimal("0.00"), {
             "rows_processed": len(df),
             "calculation_status": "missing_columns",

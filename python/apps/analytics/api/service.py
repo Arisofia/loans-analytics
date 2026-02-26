@@ -278,7 +278,10 @@ class KPIService:
         normalized = loans_df.copy()
 
         # Required aliases for outstanding/principal/APR.
-        if "principal_balance" in normalized.columns and "outstanding_balance" not in normalized.columns:
+        if (
+            "principal_balance" in normalized.columns
+            and "outstanding_balance" not in normalized.columns
+        ):
             normalized["outstanding_balance"] = pd.to_numeric(
                 normalized["principal_balance"],
                 errors="coerce",
@@ -310,16 +313,13 @@ class KPIService:
         if "customer_id" not in normalized.columns:
             customer_ids: list[str] = []
             if not customers_df.empty and "customer_id" in customers_df.columns:
-                customer_ids = (
-                    customers_df["customer_id"].astype(str).dropna().unique().tolist()
-                )
+                customer_ids = customers_df["customer_id"].astype(str).dropna().unique().tolist()
             elif not payments_df.empty and "customer_id" in payments_df.columns:
                 customer_ids = payments_df["customer_id"].astype(str).dropna().unique().tolist()
 
             if customer_ids:
                 normalized["customer_id"] = [
-                    customer_ids[idx % len(customer_ids)]
-                    for idx in range(len(normalized))
+                    customer_ids[idx % len(customer_ids)] for idx in range(len(normalized))
                 ]
             else:
                 normalized["customer_id"] = [f"cust-{idx + 1}" for idx in range(len(normalized))]

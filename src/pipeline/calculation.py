@@ -391,9 +391,7 @@ class KPIFormulaEngine:
         except (TypeError, ValueError):
             return None
 
-    def _cache_where_mask(
-        self, condition: str, mask: pd.Series, filtered_df: pd.DataFrame
-    ) -> None:
+    def _cache_where_mask(self, condition: str, mask: pd.Series, filtered_df: pd.DataFrame) -> None:
         """Cache WHERE clause masks for repeated formula use."""
         if len(filtered_df) < len(self.df):
             self._where_cache[condition] = mask.fillna(False).astype(bool)

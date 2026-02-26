@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 
-
 import pandas as pd
 from hypothesis import HealthCheck, example, given, settings
 from hypothesis import strategies as st
@@ -43,6 +42,7 @@ def test_numeric_expression_fuzz_is_stable(a: float, b: float, c: float) -> None
     result = engine._safe_eval_numeric_expression(expression)  # noqa: SLF001
 
     from decimal import Decimal
+
     assert isinstance(result, Decimal)
     assert result.is_finite()
 
@@ -56,6 +56,7 @@ def test_division_by_zero_fails_closed(numerator: float) -> None:
     result = engine._safe_eval_numeric_expression(f"({numerator}) / 0")  # noqa: SLF001
 
     from decimal import Decimal
+
     assert result == Decimal("0.0")
 
 
@@ -71,4 +72,5 @@ def test_untrusted_formula_input_never_crashes(payload: str) -> None:
     result = engine.calculate(payload)
 
     from decimal import Decimal
+
     assert isinstance(result, Decimal)
