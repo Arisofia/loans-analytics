@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import math
+
 
 import pandas as pd
 from hypothesis import HealthCheck, example, given, settings
