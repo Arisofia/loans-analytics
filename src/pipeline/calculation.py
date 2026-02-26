@@ -149,7 +149,7 @@ class KPIFormulaEngine:
             (current_month_balance, previous_month_balance)
         """
         if "outstanding_balance" not in self.df.columns:
-            return 0.0, 0.0
+            return Decimal("0.0"), Decimal("0.0")
 
         date_candidates = [
             "measurement_date",
@@ -163,7 +163,7 @@ class KPIFormulaEngine:
         ]
         date_column = next((col for col in date_candidates if col in self.df.columns), None)
         if date_column is None:
-            return 0.0, 0.0
+            return Decimal("0.0"), Decimal("0.0")
 
         if self._polars_enabled and len(self.df) >= 100_000:
             try:
@@ -180,7 +180,7 @@ class KPIFormulaEngine:
                 )
                 pl_df = pl_df.select(["date", "balance"]).filter(pl.col("date").is_not_null())
                 if pl_df.is_empty():
-                    return 0.0, 0.0
+                    return Decimal("0.0"), Decimal("0.0")
 
                 monthly = (
                     pl_df.with_columns(pl.col("date").dt.truncate("1mo").alias("month"))
@@ -190,7 +190,7 @@ class KPIFormulaEngine:
                 )
 
                 if monthly.height == 0:
-                    return 0.0, 0.0
+                    return Decimal("0.0"), Decimal("0.0")
 
                 month_to_balance = {
                     pd.Timestamp(row["month"]).to_period("M"): float(row["balance_sum"])
@@ -211,7 +211,7 @@ class KPIFormulaEngine:
             }
         ).dropna(subset=["date"])
         if period_df.empty:
-            return 0.0, 0.0
+            return Decimal("0.0"), Decimal("0.0")
 
         period_df["period"] = period_df["date"].dt.to_period("M")
         current_period = period_df["period"].max()
@@ -225,7 +225,7 @@ class KPIFormulaEngine:
         )
         return current_balance, previous_balance
 
-    def _execute_arithmetic_formula(self, formula: str) -> float:
+    def _execute_arithmetic_formula(self, formula: str) -> Decimal:
         """Execute formulas with arithmetic operations."""
         expression = re.sub(
             r"(SUM|AVG|COUNT)\([^)]+\)",
@@ -234,18 +234,18 @@ class KPIFormulaEngine:
             flags=re.IGNORECASE,
         )
         try:
-            return float(self._safe_eval_numeric_expression(expression))
+            return self._safe_eval_numeric_expression(expression)
         except Exception as exc:
             logger.debug("Arithmetic formula evaluation failed for '%s': %s", formula, exc)
-            return 0.0
+            return Decimal("0.0")
 
     def _replace_aggregation_match(self, match: re.Match) -> str:
         """Replace an aggregation fragment with its computed numeric value."""
         return str(self._execute_simple_formula(match.group(0)))
 
-    def _execute_simple_formula(self, formula: str) -> float:
+    def _execute_simple_formula(self, formula: str) -> Decimal:
         """Execute simple aggregation formulas."""
-        result = 0.0
+        result = Decimal("0.0")
         agg_match = re.match(r"(SUM|AVG|COUNT)\((.+?)\)", formula, re.IGNORECASE)
         if not agg_match:
             return result
@@ -273,12 +273,12 @@ class KPIFormulaEngine:
             return result
 
         if agg_func == "SUM":
-            result = float(filtered_df[column].sum())
+            result = Decimal(str(filtered_df[column].sum()))
         elif agg_func == "AVG":
-            result = float(filtered_df[column].mean())
+            result = Decimal(str(filtered_df[column].mean()))
         elif agg_func == "COUNT":
-            result = float(
-                filtered_df[column].nunique() if distinct else filtered_df[column].count()
+            result = Decimal(
+                str(filtered_df[column].nunique() if distinct else filtered_df[column].count())
             )
 
         return result
@@ -563,7 +563,7 @@ class CalculationPhase:
 
     def _calculate_single_kpi(
         self, engine: KPIFormulaEngine, category: str, kpi_name: str, formula: str
-    ) -> Optional[float]:
+    ) -> Optional[Decimal]:
         """Calculate one KPI and return None on failure."""
         try:
             value = engine.calculate(formula)
