@@ -218,7 +218,7 @@ grpcio==1.78.1
     #   google-api-core
     #   grpcio-status
     #   opentelemetry-exporter-otlp-proto-grpc
-grpcio-status==1.78.0
+grpcio-status==1.71.2
     # via
     #   -r requirements.txt
     #   google-api-core
@@ -553,7 +553,7 @@ proto-plus==1.27.1
     # via
     #   google-ai-generativelanguage
     #   google-api-core
-protobuf==6.33.5
+protobuf==5.29.6
     # via
     #   -r requirements.txt
     #   google-ai-generativelanguage
