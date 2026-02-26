@@ -10,6 +10,11 @@ Principles: every chart links to a drill-down table, owner, runbook, SLA, and ne
 
 ## Streamlit Executive Dashboard (ABACO Financial Intelligence)
 
+- Local URL: `http://localhost:8501`
+- Deployed URL: `https://abaco-analytics-dashboard.azurewebsites.net`
+- Grafana URL: `http://localhost:3001/dashboards`
+- Strategic report output: `reports/strategic/strategic_report_latest.md`
+- Generation command: `make report-strategic`
 - Data sources: pipeline outputs under `data/metrics/` and dashboard exports under `exports/`.
 - KPI tiles: 52 KPIs from `analytics_facts.csv` plus scalar KPIs from `complete_kpi_dashboard.json` in the exports directory.
 - Cashflow: uses `recv_revenue_for_month`, `recv_interest_for_month`, `recv_fee_for_month`, and `sched_revenue`.

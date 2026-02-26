@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test clean monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev
+.PHONY: help setup format lint type-check test clean monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev report-strategic
 PYTHON ?= $(shell command -v python3.12 || command -v python3.11 || command -v python3.10 || command -v python3)
 VENV := .venv
 BIN := $(VENV)/bin
@@ -15,6 +15,7 @@ help:
 	@echo "make clean          - Run canonical repository maintenance cleanup"
 	@echo "make dev            - Start API server with hot-reload (uvicorn)"
 	@echo "make service-status - Generate comprehensive service status report"
+	@echo "make report-strategic - Generate strategic executive report artifacts"
 	@echo ""
 	@echo "Monitoring Stack:"
 	@echo "make monitoring-start    - Auto-start Prometheus + Grafana + Alertmanager"
@@ -88,3 +89,7 @@ monitoring-health:
 dev:
 	@echo "Starting API server on http://127.0.0.1:8000 with hot-reload..."
 	$(BIN)/uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir python --reload-dir src --reload-dir config
+
+# Strategic reporting
+report-strategic:
+	$(BIN)/python scripts/reporting/generate_strategic_report.py

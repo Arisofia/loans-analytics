@@ -16,6 +16,10 @@ if str(ROOT_DIR) not in sys.path:
 from python.config.theme import ABACO_THEME  # noqa: E402
 from python.config.tracing_setup import enable_auto_instrumentation, init_tracing  # noqa: E402
 from python.kpis.catalog_processor import KPICatalogProcessor  # noqa: E402
+from python.kpis.strategic_reporting import (  # noqa: E402
+    build_strategic_summary,
+    write_strategic_report,
+)
 from python.utils.dashboard import format_kpi_value, kpi_label  # noqa: E402
 from python.utils.normalization import normalize_dataframe_complete  # noqa: E402
 from python.utils.usage_tracker import UsageTracker  # noqa: E402
@@ -392,6 +396,33 @@ with st.sidebar:
 st.title("💰 ABACO Financial Intelligence")
 global_dashboard_metrics_var = load_kpi_dashboard()
 global_analytics_facts_var = load_analytics_facts()
+
+with st.expander("🔗 Dashboard Links & Strategic Reporting", expanded=True):
+    st.markdown("- **Streamlit (Local):** http://localhost:8501")
+    st.markdown("- **Grafana (Local):** http://localhost:3001/dashboards")
+    st.markdown(
+        "- **Streamlit (Deployed):** https://abaco-analytics-dashboard.azurewebsites.net"
+    )
+    st.markdown("- **Dashboard docs:** docs/analytics/dashboards.md")
+    if st.button("Generate Strategic Report"):
+        if global_dashboard_metrics_var:
+            strategic_summary = build_strategic_summary(global_dashboard_metrics_var)
+            strategic_links = {
+                "streamlit_local": "http://localhost:8501",
+                "grafana_local": "http://localhost:3001/dashboards",
+                "streamlit_prod": "https://abaco-analytics-dashboard.azurewebsites.net",
+                "dashboard_docs": "docs/analytics/dashboards.md",
+            }
+            strategic_json_path, strategic_md_path = write_strategic_report(
+                summary=strategic_summary,
+                links=strategic_links,
+                output_dir=ROOT_DIR / "reports" / "strategic",
+            )
+            st.success(f"Strategic report generated: {strategic_md_path}")
+            st.caption(f"JSON artifact: {strategic_json_path}")
+        else:
+            st.warning("Generate KPI exports first to create strategic report artifacts.")
+
 if not global_dashboard_metrics_var and global_analytics_facts_var.empty:
     st.warning(
         "No KPI exports detected. Generate KPI exports from the sidebar or add "
