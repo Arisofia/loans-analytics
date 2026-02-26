@@ -198,8 +198,8 @@ class KPIFormulaEngine:
                 }
                 current_period = max(month_to_balance)
                 previous_period = current_period - 1
-                current_balance = month_to_balance.get(current_period, 0.0)
-                previous_balance = month_to_balance.get(previous_period, 0.0)
+                current_balance = Decimal(str(month_to_balance.get(current_period, 0.0)))
+                previous_balance = Decimal(str(month_to_balance.get(previous_period, 0.0)))
                 return current_balance, previous_balance
             except Exception as exc:
                 logger.debug("Polars monthly balance path failed, falling back to pandas: %s", exc)
@@ -217,11 +217,11 @@ class KPIFormulaEngine:
         current_period = period_df["period"].max()
         previous_period = current_period - 1
 
-        current_balance = float(
-            period_df.loc[period_df["period"] == current_period, "balance"].sum()
+        current_balance = Decimal(
+            str(period_df.loc[period_df["period"] == current_period, "balance"].sum())
         )
-        previous_balance = float(
-            period_df.loc[period_df["period"] == previous_period, "balance"].sum()
+        previous_balance = Decimal(
+            str(period_df.loc[period_df["period"] == previous_period, "balance"].sum())
         )
         return current_balance, previous_balance
 
@@ -522,7 +522,7 @@ class CalculationPhase:
         logger.info("Calculating KPIs")
         df = self._ensure_loan_count_column(df)
         engine = KPIFormulaEngine(df)
-        kpis: Dict[str, Optional[float]] = {}
+        kpis: Dict[str, Optional[Decimal]] = {}
 
         for category, kpi_name, formula in self._iter_kpi_formulas():
             kpis[kpi_name] = self._calculate_single_kpi(engine, category, kpi_name, formula)
