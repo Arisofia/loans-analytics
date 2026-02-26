@@ -116,22 +116,28 @@ jobs:
     environment: ${{ inputs.environment }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for git history checks in deploy_prod.sh
 
       - name: Azure login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Ensure Azure CLI is available
-        run: az version
-
-      - name: Deploy Bicep stack
+      - name: Setup environment
         run: |
-          az deployment group create \
-            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
-            --template-file infra/main.bicep \
-            --parameters @infra/main.parameters.json \
-            --parameters environmentName="${{ inputs.environment }}"
+          make setup
+          echo "ABACO_API_BASE=${{ secrets.ABACO_API_BASE }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Run Hardened Deployment Script
+        env:
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+        run: |
+          # The hardened script handles lint, type-check, test, security-scan, and deployment
+          ./scripts/deploy_prod.sh
+
 
   deploy-aws:
     if: ${{ needs.preflight.outputs.should_deploy_aws == 'true' }}
