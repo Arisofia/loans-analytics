@@ -185,7 +185,6 @@ class KPICatalogProcessor:
 
         avg_apr = float(pricing_analytics.get("current", {}).get("weighted_apr", 0.0))
 
-        latest_unit = unit_economics[-1] if unit_economics else {}
         latest_forecast = revenue_forecast[0] if revenue_forecast else {}
         unit_economics_rows = unit_economics if unit_economics else []
 
