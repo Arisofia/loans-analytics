@@ -243,7 +243,20 @@ jobs:
       - name: Set active Azure subscription
         if: ${{ steps.azure_login_oidc.outcome == 'success' || steps.azure_login_creds.outcome == 'success' }}
         run: |
-          az account set --subscription "${{ steps.azure_sub.outputs.subscription_id }}"
+          target_subscription="${{ steps.azure_sub.outputs.subscription_id }}"
+          if az account set --subscription "$target_subscription" 2>/tmp/azure_set_subscription.err; then
+            echo "Using configured subscription: $target_subscription"
+          else
+            echo "::warning::Configured subscription is not accessible for this identity. Attempting fallback."
+            fallback_subscription="$(az account list --query "[0].id" -o tsv)"
+            if [ -z "$fallback_subscription" ]; then
+              echo "::error::No accessible Azure subscriptions found for the authenticated identity."
+              cat /tmp/azure_set_subscription.err || true
+              exit 1
+            fi
+            az account set --subscription "$fallback_subscription"
+            echo "::warning::Using fallback subscription: $fallback_subscription"
+          fi
           az account show --query '{id:id,name:name,tenantId:tenantId}' -o table
 
       - name: Setup environment
