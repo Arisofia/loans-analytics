@@ -43,7 +43,7 @@ echo "────────────────────────�
 
 RESPONSE=$(curl -s -w "\n%{http_code}" -m $TIMEOUT "${APP_URL}${HEALTH_ENDPOINT}" 2>&1 || echo "000")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
-BODY=$(echo "$RESPONSE" | head -n -1)
+BODY=$(echo "$RESPONSE" | sed '$d')
 
 if [ "$HTTP_CODE" = "200" ]; then
 	print_status "Health Endpoint" "✅" "Responding normally (HTTP $HTTP_CODE)"
@@ -110,7 +110,7 @@ echo "────────────────────────�
 if [ -f "pyproject.toml" ]; then
 	# Try running pylint check
 	if command -v pylint &>/dev/null; then
-		PYLINT_SCORE=$(python -m pylint src/pipeline --rcfile=.pylintrc 2>&1 | grep -oP 'rated at \K[0-9.]+' || echo "unknown")
+		PYLINT_SCORE=$(python -m pylint src/pipeline --rcfile=.pylintrc 2>&1 | grep "rated at" | sed 's/.*rated at \([0-9.]*\).*/\1/' || echo "unknown")
 		if [ "$PYLINT_SCORE" != "unknown" ]; then
 			if (($(echo "$PYLINT_SCORE >= 9.0" | bc -l))); then
 				print_status "Pylint Score" "✅" "$PYLINT_SCORE/10 (excellent)"
