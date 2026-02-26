@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test clean monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev report-strategic
+.PHONY: help setup format lint type-check test clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev report-strategic
 PYTHON ?= $(shell command -v python3.12 || command -v python3.11 || command -v python3.10 || command -v python3)
 VENV := .venv
 BIN := $(VENV)/bin
@@ -12,6 +12,7 @@ help:
 	@echo "make lint           - Run pylint, flake8, and ruff"
 	@echo "make type-check     - Run mypy static type checking"
 	@echo "make test           - Run unit tests with pytest"
+	@echo "make security-check - Run bandit and safety checks"
 	@echo "make clean          - Run canonical repository maintenance cleanup"
 	@echo "make dev            - Start API server with hot-reload (uvicorn)"
 	@echo "make service-status - Generate comprehensive service status report"
@@ -58,6 +59,9 @@ type-check:
 	$(BIN)/mypy --check-untyped-defs src
 test:
 	$(BIN)/pytest
+security-check:
+	$(BIN)/bandit -r src python scripts --quiet
+	@if $(BIN)/pip list | grep -q safety; then $(BIN)/safety check; else echo "safety not installed, skipping"; fi
 clean:
 	@bash scripts/maintenance/repo_maintenance.sh --mode=standard
 

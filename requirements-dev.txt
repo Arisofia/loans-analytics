@@ -5,6 +5,7 @@ Faker>=18.0
 requests-mock==1.12.1
 
 # QA / lint / typing
+bandit>=1.7.0
 black>=24.0.0
 isort>=5.13.0
 ruff>=0.1.0
