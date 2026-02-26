@@ -926,7 +926,7 @@ uvicorn==0.41.0
     # via prefect
 vulture==2.14
     # via -r requirements-dev.txt
-websockets==15.0.1
+websockets==16.0
     # via
     #   prefect
     #   realtime
