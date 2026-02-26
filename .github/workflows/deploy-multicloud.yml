@@ -129,6 +129,10 @@ jobs:
     needs: preflight
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    env:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      AZURE_AD_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
+      AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -147,19 +151,28 @@ jobs:
           fi
           echo "subscription_id=$subscription_id" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve Azure auth mode
+        id: azure_auth
+        run: |
+          if [ -n "$AZURE_CREDENTIALS" ]; then
+            echo "mode=creds" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=oidc" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Azure login (service principal JSON secret)
-        if: ${{ secrets.AZURE_CREDENTIALS != '' }}
+        if: ${{ steps.azure_auth.outputs.mode == 'creds' }}
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{ env.AZURE_CREDENTIALS }}
           allow-no-subscriptions: true
 
       - name: Azure login (OIDC)
-        if: ${{ secrets.AZURE_CREDENTIALS == '' }}
+        if: ${{ steps.azure_auth.outputs.mode == 'oidc' }}
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_AD_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_AD_TENANT_ID }}
+          client-id: ${{ env.AZURE_AD_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_AD_TENANT_ID }}
           subscription-id: ${{ steps.azure_sub.outputs.subscription_id }}
 
       - name: Set active Azure subscription
@@ -170,9 +183,11 @@ jobs:
       - name: Setup environment
         run: |
           make setup
-          echo "ABACO_API_BASE=${{ secrets.ABACO_API_BASE }}" >> .env
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          {
+            echo "ABACO_API_BASE=${{ secrets.ABACO_API_BASE }}"
+            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}"
+            echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
+          } >> .env
 
       - name: Run Hardened Deployment Script
         env:
