@@ -27,14 +27,25 @@ fi
 echo -e "${GREEN}✅ OS check passed ($OSTYPE)${NC}"
 
 # Check for required tools
-REQUIRED_TOOLS=("git" "python3" "docker" "docker-compose")
+REQUIRED_TOOLS=("git" "python3" "docker")
 for tool in "${REQUIRED_TOOLS[@]}"; do
     if ! command -v "$tool" &>/dev/null; then
         echo -e "${RED}❌ Required tool not found: $tool${NC}"
         exit 1
     fi
 done
-echo -e "${GREEN}✅ All required tools are available${NC}"
+
+# Resolve compose command across environments: docker-compose (v1) vs docker compose (v2 plugin).
+DOCKER_COMPOSE_CMD=()
+if command -v docker-compose &>/dev/null; then
+    DOCKER_COMPOSE_CMD=("docker-compose")
+elif docker compose version &>/dev/null; then
+    DOCKER_COMPOSE_CMD=("docker" "compose")
+else
+    echo -e "${RED}❌ Docker Compose not found (neither 'docker-compose' nor 'docker compose').${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✅ All required tools are available (${DOCKER_COMPOSE_CMD[*]})${NC}"
 
 # 2. Git Status Verification (Mandatory for Traceability)
 echo -e "\n${BLUE}[2/6] Verifying Git status...${NC}"
@@ -91,8 +102,8 @@ if [ -f "scripts/deployment/deploy_stack.sh" ]; then
     bash scripts/deployment/deploy_stack.sh
 else
     echo -e "${YELLOW}⚠️  scripts/deployment/deploy_stack.sh not found, running alternative...${NC}"
-    docker-compose -f docker-compose.dashboard.yml build
-    docker-compose -f docker-compose.dashboard.yml up -d
+    "${DOCKER_COMPOSE_CMD[@]}" -f docker-compose.dashboard.yml build
+    "${DOCKER_COMPOSE_CMD[@]}" -f docker-compose.dashboard.yml up -d
 fi
 echo -e "${GREEN}✅ Deployment phase complete${NC}"
 
