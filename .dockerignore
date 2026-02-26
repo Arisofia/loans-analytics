@@ -3,6 +3,11 @@
 .dockerignore
 .env
 .env.local
+.venv/
+.mypy_cache/
+.ruff_cache/
+.trunk/
+.vscode/
 __pycache__
 .pytest_cache
 .coverage
@@ -14,8 +19,11 @@ build
 *.pyd
 .DS_Store
 data/metrics/
+data/raw/
 logs/
 node_modules/
+docs/
+tests/
 
 # Test files - exclude from Docker builds
 **/__tests__

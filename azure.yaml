@@ -2,11 +2,6 @@
 name: abaco-loans-analytics
 metadata:
   template: azd-init@1.22.5
-  resourceGroups:
-    - name: abaco-free-rg
-      location: eastus
-    - name: abaco-loans-rg
-      location: westeurope
 services:
   abaco-loans-analytics:
     project: .

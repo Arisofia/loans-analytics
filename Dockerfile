@@ -2,15 +2,10 @@
 FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
-# Install system dependencies
-# hadolint ignore=DL3008
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  build-essential \
-  curl \
-  && rm -rf /var/lib/apt/lists/*
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+ENV PIP_DEFAULT_TIMEOUT=600
+RUN pip install --no-cache-dir --retries 10 --prefer-binary -r requirements.txt
 # Copy application code
 COPY . .
 # Expose FastAPI port
@@ -22,5 +17,5 @@ RUN useradd --system --create-home --home-dir /app appuser \
   && chown -R appuser:appuser /app
 USER appuser
 # Healthcheck and Entrypoint
-HEALTHCHECK CMD curl --fail http://localhost:8000/health || exit 1
+HEALTHCHECK CMD python -c "import sys,urllib.request;sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=5).status == 200 else 1)"
 ENTRYPOINT ["python", "-m", "python.apps.analytics.api.main"]
