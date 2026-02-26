@@ -22,35 +22,110 @@ on:
           - staging
           - prod
 
+concurrency:
+  group: deploy-multicloud-${{ github.ref_name }}-${{ inputs.environment }}-${{ inputs.cloud }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
   id-token: write
+  actions: read
 
 jobs:
-  deploy-azure:
-    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.cloud == 'azure' || inputs.cloud == 'both') }}
+  preflight:
     runs-on: ubuntu-latest
+    outputs:
+      should_deploy_azure: ${{ steps.targets.outputs.azure }}
+      should_deploy_aws: ${{ steps.targets.outputs.aws }}
+    steps:
+      - name: Validate target selection
+        id: targets
+        run: |
+          case "${{ inputs.cloud }}" in
+            azure)
+              echo "azure=true" >> "$GITHUB_OUTPUT"
+              echo "aws=false" >> "$GITHUB_OUTPUT"
+              ;;
+            aws)
+              echo "azure=false" >> "$GITHUB_OUTPUT"
+              echo "aws=true" >> "$GITHUB_OUTPUT"
+              ;;
+            both)
+              echo "azure=true" >> "$GITHUB_OUTPUT"
+              echo "aws=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Invalid cloud option: ${{ inputs.cloud }}"
+              exit 1
+              ;;
+          esac
+
+      - name: Require main branch for prod
+        if: ${{ inputs.environment == 'prod' }}
+        run: |
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            echo "::error::Production deploys are only allowed from main."
+            exit 1
+          fi
+
+      - name: Require green Tests workflow for this commit
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sha = context.sha;
+            const runs = await github.rest.actions.listWorkflowRunsForRepo({
+              owner,
+              repo,
+              head_sha: sha,
+              status: "completed",
+              per_page: 100
+            });
+            const testsRun = runs.data.workflow_runs.find(
+              run => run.name === "Tests" && run.conclusion === "success"
+            );
+            if (!testsRun) {
+              core.setFailed(`No successful 'Tests' workflow found for commit ${sha}.`);
+              return;
+            }
+            core.info(`Validated Tests run: ${testsRun.id}`);
+
+      - name: Validate Azure secrets
+        if: ${{ steps.targets.outputs.azure == 'true' }}
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+        run: |
+          [ -n "$AZURE_CREDENTIALS" ] || { echo "::error::Missing secret AZURE_CREDENTIALS"; exit 1; }
+          [ -n "$AZURE_RESOURCE_GROUP" ] || { echo "::error::Missing secret AZURE_RESOURCE_GROUP"; exit 1; }
+
+      - name: Validate AWS secrets
+        if: ${{ steps.targets.outputs.aws == 'true' }}
+        env:
+          AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          [ -n "$AWS_ROLE_TO_ASSUME" ] || { echo "::error::Missing secret AWS_ROLE_TO_ASSUME"; exit 1; }
+          [ -n "$AWS_REGION" ] || { echo "::error::Missing secret AWS_REGION"; exit 1; }
+
+  deploy-azure:
+    if: ${{ needs.preflight.outputs.should_deploy_azure == 'true' }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check Azure configuration
-        id: azure_config
-        run: |
-          if [ -z "${{ secrets.AZURE_CREDENTIALS }}" ] || [ -z "${{ secrets.AZURE_RESOURCE_GROUP }}" ]; then
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Azure deployment skipped (AZURE_CREDENTIALS or AZURE_RESOURCE_GROUP missing)"
-          else
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Azure login
-        if: ${{ steps.azure_config.outputs.available == 'true' }}
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Ensure Azure CLI is available
+        run: az version
+
       - name: Deploy Bicep stack
-        if: ${{ steps.azure_config.outputs.available == 'true' }}
         run: |
           az deployment group create \
             --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
@@ -59,42 +134,29 @@ jobs:
             --parameters environmentName="${{ inputs.environment }}"
 
   deploy-aws:
-    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.cloud == 'aws' || inputs.cloud == 'both') }}
+    if: ${{ needs.preflight.outputs.should_deploy_aws == 'true' }}
+    needs: preflight
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     defaults:
       run:
         working-directory: infra/aws
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check AWS configuration
-        id: aws_config
-        working-directory: .
-        run: |
-          if [ -z "${{ secrets.AWS_ROLE_TO_ASSUME }}" ] || [ -z "${{ secrets.AWS_REGION }}" ]; then
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::AWS deployment skipped (AWS_ROLE_TO_ASSUME or AWS_REGION missing)"
-          else
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Configure AWS credentials
-        if: ${{ steps.aws_config.outputs.available == 'true' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Setup Terraform
-        if: ${{ steps.aws_config.outputs.available == 'true' }}
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        if: ${{ steps.aws_config.outputs.available == 'true' }}
         run: terraform init -input=false
 
       - name: Terraform Apply
-        if: ${{ steps.aws_config.outputs.available == 'true' }}
         run: |
           terraform apply -auto-approve \
             -var "aws_region=${{ secrets.AWS_REGION }}" \
