@@ -187,15 +187,30 @@ class KPICatalogProcessor:
 
         latest_unit = unit_economics[-1] if unit_economics else {}
         latest_forecast = revenue_forecast[0] if revenue_forecast else {}
+        unit_economics_rows = unit_economics if unit_economics else []
+
+        def _latest_non_null_metric(metric_key: str) -> float | None:
+            for row in reversed(unit_economics_rows):
+                metric_value = row.get(metric_key)
+                if metric_value is None:
+                    continue
+                if isinstance(metric_value, float) and np.isnan(metric_value):
+                    continue
+                return float(metric_value)
+            return None
+
+        latest_cac = _latest_non_null_metric("cac_usd")
+        latest_ltv = _latest_non_null_metric("ltv_realized_usd")
+        latest_margin = _latest_non_null_metric("gross_margin_pct")
 
         strategic_confirmations = {
-            "cac_confirmed": latest_unit.get("cac_usd") is not None,
-            "ltv_confirmed": latest_unit.get("ltv_realized_usd") is not None,
-            "margin_confirmed": latest_unit.get("gross_margin_pct") is not None,
+            "cac_confirmed": latest_cac is not None,
+            "ltv_confirmed": latest_ltv is not None,
+            "margin_confirmed": latest_margin is not None,
             "revenue_forecast_confirmed": bool(revenue_forecast),
-            "latest_cac_usd": latest_unit.get("cac_usd"),
-            "latest_ltv_usd": latest_unit.get("ltv_realized_usd"),
-            "latest_gross_margin_pct": latest_unit.get("gross_margin_pct"),
+            "latest_cac_usd": latest_cac,
+            "latest_ltv_usd": latest_ltv,
+            "latest_gross_margin_pct": latest_margin,
             "next_month_revenue_forecast_usd": latest_forecast.get("forecast_revenue_usd"),
         }
 
@@ -204,9 +219,9 @@ class KPICatalogProcessor:
             "total_customers": total_customers,
             "total_outstanding_loan_value": total_outstanding,
             "avg_apr": avg_apr,
-            "cac_usd": latest_unit.get("cac_usd"),
-            "ltv_realized_usd": latest_unit.get("ltv_realized_usd"),
-            "gross_margin_pct": latest_unit.get("gross_margin_pct"),
+            "cac_usd": latest_cac,
+            "ltv_realized_usd": latest_ltv,
+            "gross_margin_pct": latest_margin,
             "revenue_forecast_next_month_usd": latest_forecast.get("forecast_revenue_usd"),
         }
 

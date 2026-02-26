@@ -107,6 +107,11 @@ class AbacoAnalyticsApiClient:
         resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)
         return self._handle_response(resp)
 
+    def get_executive_summary(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        url = f"{self.base_url}/analytics/executive-summary"
+        resp = requests.post(url, json=payload, headers=self._headers(), timeout=self.timeout)
+        return self._handle_response(resp)
+
     def get_data_quality_profile(self, portfolio: Dict[str, Any]) -> Dict[str, Any]:
         url = f"{self.base_url}/data-quality/profile"
         resp = requests.post(url, json=portfolio, headers=self._headers(), timeout=self.timeout)

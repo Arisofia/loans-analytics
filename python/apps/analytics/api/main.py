@@ -22,6 +22,8 @@ try:
         DataQualityResponse,
         DefaultPredictionRequest,
         DefaultPredictionResponse,
+        ExecutiveAnalyticsRequest,
+        ExecutiveAnalyticsResponse,
         FullAnalysisResponse,
         KpiResponse,
         KpiSingleResponse,
@@ -467,6 +469,27 @@ if app is not None:
             )
         except Exception as e:
             logger.error("Error in get_full_analysis: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+    @app.post(
+        "/analytics/executive-summary",
+        response_model=ExecutiveAnalyticsResponse,
+    )
+    async def get_executive_summary(
+        request: ExecutiveAnalyticsRequest = Body(...),
+        service: KPIService = Depends(get_kpi_service),
+    ):
+        """Strategic analytics: CAC, LTV, margins, churn, forecast and opportunities."""
+        try:
+            executive_data = await service.get_executive_analytics(
+                loans=request.loans,
+                payments=request.payments,
+                customers=request.customers,
+                schedule=request.schedule,
+            )
+            return ExecutiveAnalyticsResponse(**executive_data)
+        except Exception as e:
+            logger.error("Error in get_executive_summary: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post("/data-quality/profile", response_model=DataQualityResponse)

@@ -162,6 +162,41 @@ class ErrorResponse(BaseModel):
     details: Optional[Dict[str, Any]] = None
 
 
+class ExecutiveAnalyticsRequest(BaseModel):
+    """Request body for strategic executive analytics."""
+
+    loans: List[LoanRecord] = Field(
+        ...,
+        min_length=1,
+        description="Loan-level portfolio records",
+    )
+    payments: Optional[List[Dict[str, Any]]] = Field(
+        None,
+        description="Optional payment events for realized revenue and churn",
+    )
+    customers: Optional[List[Dict[str, Any]]] = Field(
+        None,
+        description="Optional customer master records for CAC and governance",
+    )
+    schedule: Optional[List[Dict[str, Any]]] = Field(
+        None,
+        description="Optional payment schedule rows",
+    )
+
+
+class ExecutiveAnalyticsResponse(BaseModel):
+    """Executive analytics response with confirmations and strategic tables."""
+
+    strategic_confirmations: Dict[str, Any] = Field(default_factory=dict)
+    executive_strip: Dict[str, Any] = Field(default_factory=dict)
+    churn_90d_metrics: List[Dict[str, Any]] = Field(default_factory=list)
+    unit_economics: List[Dict[str, Any]] = Field(default_factory=list)
+    pricing_analytics: Dict[str, Any] = Field(default_factory=dict)
+    revenue_forecast_6m: List[Dict[str, Any]] = Field(default_factory=list)
+    opportunity_prioritization: List[Dict[str, Any]] = Field(default_factory=list)
+    data_governance: Dict[str, Any] = Field(default_factory=dict)
+
+
 class DefaultPredictionRequest(BaseModel):
     """Request body for the /predict/default endpoint."""
 

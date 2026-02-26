@@ -13,6 +13,7 @@ from python.apps.analytics.api.models import (
     ValidationResponse,
 )
 from python.config import settings
+from python.kpis.catalog_processor import KPICatalogProcessor
 from python.logging_config import get_logger
 from python.supabase_pool import get_pool
 
@@ -195,6 +196,135 @@ class KPIService:
     def _convert_loan_records_to_dataframe(self, loans: list[LoanRecord]) -> pd.DataFrame:
         """Converts a list of LoanRecord Pydantic models to a Pandas DataFrame."""
         return pd.DataFrame([loan.model_dump() for loan in loans])
+
+    def _convert_dict_records_to_dataframe(self, rows: list[dict] | None) -> pd.DataFrame:
+        """Converts optional list-of-dict rows into a DataFrame."""
+        if not rows:
+            return pd.DataFrame()
+        return pd.DataFrame(rows)
+
+    async def get_executive_analytics(
+        self,
+        loans: list[LoanRecord],
+        payments: list[dict] | None = None,
+        customers: list[dict] | None = None,
+        schedule: list[dict] | None = None,
+    ) -> dict:
+        """Build strategic analytics for CAC/LTV/margins/churn/forecast/opportunities."""
+        try:
+            return await run_in_threadpool(
+                self._calculate_executive_analytics_sync,
+                loans,
+                payments,
+                customers,
+                schedule,
+            )
+        except Exception as e:
+            logger.error(
+                "Error generating executive analytics for actor %s: %s",
+                self.actor,
+                e,
+                exc_info=True,
+            )
+            raise
+
+    def _calculate_executive_analytics_sync(
+        self,
+        loans: list[LoanRecord],
+        payments: list[dict] | None = None,
+        customers: list[dict] | None = None,
+        schedule: list[dict] | None = None,
+    ) -> dict:
+        """Synchronous strategic analytics computation helper."""
+        loans_df = self._convert_loan_records_to_dataframe(loans)
+        payments_df = self._convert_dict_records_to_dataframe(payments)
+        customers_df = self._convert_dict_records_to_dataframe(customers)
+        schedule_df = self._convert_dict_records_to_dataframe(schedule)
+        loans_df = self._normalize_loans_for_catalog(loans_df, payments_df, customers_df)
+
+        processor = KPICatalogProcessor(
+            loans_df=loans_df,
+            payments_df=payments_df,
+            customers_df=customers_df,
+            schedule_df=schedule_df,
+        )
+        extended_kpis = processor.get_all_kpis()
+        return {
+            "strategic_confirmations": extended_kpis.get("strategic_confirmations", {}),
+            "executive_strip": extended_kpis.get("executive_strip", {}),
+            "churn_90d_metrics": extended_kpis.get("churn_90d_metrics", []),
+            "unit_economics": extended_kpis.get("unit_economics", []),
+            "pricing_analytics": extended_kpis.get("pricing_analytics", {}),
+            "revenue_forecast_6m": extended_kpis.get("revenue_forecast_6m", []),
+            "opportunity_prioritization": extended_kpis.get("opportunity_prioritization", []),
+            "data_governance": extended_kpis.get("data_governance", {}),
+        }
+
+    def _normalize_loans_for_catalog(
+        self,
+        loans_df: pd.DataFrame,
+        payments_df: pd.DataFrame,
+        customers_df: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """
+        Adapt LoanRecord schema to KPI catalog expected fields.
+
+        LoanRecord is intentionally compact for API consumers; this bridge creates
+        compatible aliases so strategic analytics can still run.
+        """
+        if loans_df.empty:
+            return loans_df
+
+        normalized = loans_df.copy()
+
+        # Required aliases for outstanding/principal/APR.
+        if "principal_balance" in normalized.columns and "outstanding_balance" not in normalized.columns:
+            normalized["outstanding_balance"] = pd.to_numeric(
+                normalized["principal_balance"],
+                errors="coerce",
+            ).fillna(0)
+        if "loan_amount" in normalized.columns and "principal_amount" not in normalized.columns:
+            normalized["principal_amount"] = pd.to_numeric(
+                normalized["loan_amount"],
+                errors="coerce",
+            ).fillna(0)
+        if "interest_rate" in normalized.columns and "interest_rate_apr" not in normalized.columns:
+            normalized["interest_rate_apr"] = pd.to_numeric(
+                normalized["interest_rate"],
+                errors="coerce",
+            ).fillna(0)
+
+        # Entity identifiers.
+        if "id" in normalized.columns and "loan_id" not in normalized.columns:
+            normalized["loan_id"] = normalized["id"].fillna("")
+        if "loan_id" not in normalized.columns:
+            normalized["loan_id"] = [f"loan-{idx + 1}" for idx in range(len(normalized))]
+
+        # Segment and date fallbacks for prioritization/forecast windows.
+        if "client_segment" not in normalized.columns:
+            normalized["client_segment"] = "general"
+        if "origination_date" not in normalized.columns:
+            normalized["origination_date"] = pd.Timestamp.now().floor("D")
+
+        # Customer assignment fallback used by churn/CAC analytics.
+        if "customer_id" not in normalized.columns:
+            customer_ids: list[str] = []
+            if not customers_df.empty and "customer_id" in customers_df.columns:
+                customer_ids = (
+                    customers_df["customer_id"].astype(str).dropna().unique().tolist()
+                )
+            elif not payments_df.empty and "customer_id" in payments_df.columns:
+                customer_ids = payments_df["customer_id"].astype(str).dropna().unique().tolist()
+
+            if customer_ids:
+                normalized["customer_id"] = [
+                    customer_ids[idx % len(customer_ids)]
+                    for idx in range(len(normalized))
+                ]
+            else:
+                normalized["customer_id"] = [f"cust-{idx + 1}" for idx in range(len(normalized))]
+
+        return normalized
 
     async def get_data_quality_profile(self, loans: list[LoanRecord] | None) -> DataQualityResponse:
         """

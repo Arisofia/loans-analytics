@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -398,11 +399,13 @@ global_dashboard_metrics_var = load_kpi_dashboard()
 global_analytics_facts_var = load_analytics_facts()
 
 with st.expander("🔗 Dashboard Links & Strategic Reporting", expanded=True):
+    deployed_dashboard_url = os.getenv(
+        "DASHBOARD_PUBLIC_URL",
+        "https://abaco-dashboard-app.kindocean-8ac70092.spaincentral.azurecontainerapps.io",
+    )
     st.markdown("- **Streamlit (Local):** http://localhost:8501")
     st.markdown("- **Grafana (Local):** http://localhost:3001/dashboards")
-    st.markdown(
-        "- **Streamlit (Deployed):** https://abaco-analytics-dashboard.azurewebsites.net"
-    )
+    st.markdown(f"- **Streamlit (Deployed):** {deployed_dashboard_url}")
     st.markdown("- **Dashboard docs:** docs/analytics/dashboards.md")
     if st.button("Generate Strategic Report"):
         if global_dashboard_metrics_var:
@@ -410,7 +413,7 @@ with st.expander("🔗 Dashboard Links & Strategic Reporting", expanded=True):
             strategic_links = {
                 "streamlit_local": "http://localhost:8501",
                 "grafana_local": "http://localhost:3001/dashboards",
-                "streamlit_prod": "https://abaco-analytics-dashboard.azurewebsites.net",
+                "streamlit_prod": deployed_dashboard_url,
                 "dashboard_docs": "docs/analytics/dashboards.md",
             }
             strategic_json_path, strategic_md_path = write_strategic_report(
