@@ -2,6 +2,7 @@
 
 import unittest
 from datetime import datetime
+from decimal import Decimal
 
 import pandas as pd
 
@@ -50,7 +51,7 @@ class TestKPIEngineV2(unittest.TestCase):
         value, context = engine.calculate_par_30()
 
         # Check that value is calculated correctly
-        self.assertIsInstance(value, float)
+        self.assertIsInstance(value, Decimal)
         self.assertGreaterEqual(value, 0.0)
 
         # Check context structure
@@ -72,7 +73,7 @@ class TestKPIEngineV2(unittest.TestCase):
         value, context = engine.calculate_collection_rate()
 
         # Check that value is calculated
-        self.assertIsInstance(value, float)
+        self.assertIsInstance(value, Decimal)
 
         # Check context structure
         self.assertIn("formula", context)
