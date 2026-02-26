@@ -12,7 +12,7 @@
       "value": "abacostg2026feb"
     },
     "containerImage": {
-      "value": "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+      "value": "abacoacr6afnx7xgboeze.azurecr.io/abaco-loans-analytics/abaco-loans-analytics-abaco-prod:20260226-1"
     }
   }
 }
