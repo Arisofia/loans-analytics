@@ -263,3 +263,4 @@ supabase/.temp/
 bandit-report.json
 bandit-results.sarif
 .hypothesis/
+data/usage_metrics/
