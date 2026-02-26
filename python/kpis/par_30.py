@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 import pandas as pd
 
-from python.validation import safe_numeric, validate_numeric_bounds
+from python.validation import safe_decimal, validate_numeric_bounds
 
 
-def calculate_par_30(df: pd.DataFrame | None) -> float:
+def calculate_par_30(df: pd.DataFrame | None) -> Decimal:
     """
     Calculate Portfolio at Risk (30+ days) as a percentage of receivables.
     Formula: SUM(dpd_30_60 + dpd_60_90 + dpd_90+) / SUM(total_receivable) * 100
@@ -14,7 +16,7 @@ def calculate_par_30(df: pd.DataFrame | None) -> float:
     Negative receivables are not allowed.
     """
     if df is None or df.shape[0] == 0:
-        return 0.0
+        return Decimal("0.00")
     # Validate required columns
     required = [
         "dpd_30_60_usd",
@@ -31,12 +33,15 @@ def calculate_par_30(df: pd.DataFrame | None) -> float:
     bounds = validate_numeric_bounds(df, columns=["total_receivable_usd"])
     if not bounds.get("total_receivable_usd_non_negative", True):
         raise ValueError("Negative receivable amounts detected.")
-    dpd_30_60 = safe_numeric(df["dpd_30_60_usd"]).sum()
-    dpd_60_90 = safe_numeric(df["dpd_60_90_usd"]).sum()
-    dpd_90_plus = safe_numeric(df["dpd_90_plus_usd"]).sum()
-    total_receivable = safe_numeric(df["total_receivable_usd"]).sum()
+
+    dpd_30_60 = sum(safe_decimal(val) for val in df["dpd_30_60_usd"])
+    dpd_60_90 = sum(safe_decimal(val) for val in df["dpd_60_90_usd"])
+    dpd_90_plus = sum(safe_decimal(val) for val in df["dpd_90_plus_usd"])
+    total_receivable = sum(safe_decimal(val) for val in df["total_receivable_usd"])
+
     if total_receivable == 0:
-        return 0.0
-    par_30 = (dpd_30_60 + dpd_60_90 + dpd_90_plus) / total_receivable * 100.0
+        return Decimal("0.00")
+
+    par_30 = (dpd_30_60 + dpd_60_90 + dpd_90_plus) / total_receivable * Decimal("100.0")
     # Standardize to 2 decimal places
-    return round(float(par_30), 2)
+    return par_30.quantize(Decimal("0.01"))

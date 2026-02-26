@@ -1176,8 +1176,8 @@ class HistoricalContextProvider:
         median = benchmarks.get("peer_median", benchmarks.get("industry_avg", current_value))
 
         # Generate mock distribution centered around peer median
-        np.random.seed(abs(hash(kpi_id)) % 10000)
-        peer_data = np.random.normal(loc=median, scale=max(0.001, median * 0.2), size=100)
+        rng = np.random.default_rng(abs(hash(kpi_id)) % 10000)
+        peer_data = rng.normal(loc=median, scale=max(0.001, median * 0.2), size=100)
 
         # Percentile rank
         rank = float(np.sum(peer_data < current_value) / len(peer_data))
@@ -1253,6 +1253,28 @@ class HistoricalContextProvider:
             "status": status,
         }
 
+    def _is_regulatory_threshold_key(self, key: str) -> bool:
+        """Return True when a benchmark key represents a regulatory threshold."""
+        return any(word in key for word in ["regulatory", "threshold", "limit", "max"])
+
+    def _classify_threshold_direction(self, kpi_id: str) -> Optional[str]:
+        """Classify whether lower or higher values are preferable for a KPI."""
+        if any(word in kpi_id for word in ["rate", "par", "dpd"]):
+            return "lower_is_better"
+        if any(word in kpi_id for word in ["ratio", "coverage", "liquidity"]):
+            return "higher_is_better"
+        return None
+
+    def _get_threshold_severity(
+        self, direction: str, current_value: float, threshold: float
+    ) -> Optional[str]:
+        """Determine severity for a threshold breach, or None if no breach."""
+        if direction == "lower_is_better" and current_value > threshold:
+            return "critical" if current_value > threshold * 1.2 else "warning"
+        if direction == "higher_is_better" and current_value < threshold:
+            return "critical" if current_value < threshold * 0.8 else "warning"
+        return None
+
     def check_regulatory_thresholds(
         self, kpi_id: str, current_value: float
     ) -> List[Dict[str, Any]]:
@@ -1267,37 +1289,27 @@ class HistoricalContextProvider:
             List of detected violations or warnings
         """
         benchmarks = self.get_benchmarks(kpi_id)
-        results = []
+        direction = self._classify_threshold_direction(kpi_id)
+        if direction is None:
+            return []
 
+        results = []
         for key, threshold in benchmarks.items():
-            if any(word in key for word in ["regulatory", "threshold", "limit", "max"]):
-                # Logic for "lower is better" KPIs (rates, DPD)
-                if any(word in kpi_id for word in ["rate", "par", "dpd"]):
-                    if current_value > threshold:
-                        results.append(
-                            {
-                                "threshold_name": key,
-                                "threshold_value": threshold,
-                                "current_value": current_value,
-                                "status": "violation",
-                                "severity": (
-                                    "critical" if current_value > threshold * 1.2 else "warning"
-                                ),
-                            }
-                        )
-                # Logic for "higher is better" KPIs (capital ratios etc)
-                elif any(word in kpi_id for word in ["ratio", "coverage", "liquidity"]):
-                    if current_value < threshold:
-                        results.append(
-                            {
-                                "threshold_name": key,
-                                "threshold_value": threshold,
-                                "current_value": current_value,
-                                "status": "violation",
-                                "severity": (
-                                    "critical" if current_value < threshold * 0.8 else "warning"
-                                ),
-                            }
-                        )
+            if not self._is_regulatory_threshold_key(key):
+                continue
+
+            severity = self._get_threshold_severity(direction, current_value, threshold)
+            if severity is None:
+                continue
+
+            results.append(
+                {
+                    "threshold_name": key,
+                    "threshold_value": threshold,
+                    "current_value": current_value,
+                    "status": "violation",
+                    "severity": severity,
+                }
+            )
 
         return results

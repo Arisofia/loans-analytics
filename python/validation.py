@@ -2,9 +2,9 @@
 Module for data validation utilities and functions.
 """
 
-import re
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from decimal import Decimal, InvalidOperation
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 import polars as pl
@@ -13,12 +13,9 @@ from python.config import settings
 
 # Unified required columns for both ingestion and analytics
 REQUIRED_ANALYTICS_COLUMNS: List[str] = settings.analytics.required_columns
-ISO8601_PATTERN = re.compile(
-    r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$"
-)
 
 
-def _missing_columns(df: pd.DataFrame, columns: List[str]) -> List[str]:
+def _missing_columns(df: Any, columns: List[str]) -> List[str]:
     return [col for col in columns if col not in df.columns]
 
 
@@ -47,16 +44,63 @@ def _default_percentage_columns(df: pd.DataFrame) -> List[str]:
     ]
 
 
+def _is_iso8601_string(value: str) -> bool:
+    normalized = value.strip()
+    if not normalized:
+        return False
+    if normalized.endswith("Z"):
+        normalized = f"{normalized[:-1]}+00:00"
+    try:
+        datetime.fromisoformat(normalized)
+        return True
+    except ValueError:
+        return False
+
+
 def _is_iso8601_value(value) -> bool:
     if pd.isnull(value):
         return True
-    if isinstance(value, str) and ISO8601_PATTERN.match(value):
-        return True
+    if isinstance(value, str):
+        return _is_iso8601_string(value)
     return isinstance(value, datetime)
 
 
 ANALYTICS_NUMERIC_COLUMNS: List[str] = settings.analytics.numeric_columns
 NUMERIC_COLUMNS: List[str] = settings.analytics.ingestion_numeric_columns
+
+
+def _validate_polars_dataframe(
+    df: pl.DataFrame,
+    required_columns: Optional[List[str]],
+    numeric_columns: Optional[List[str]],
+) -> None:
+    if required_columns:
+        missing = _missing_columns(df, required_columns)
+        if missing:
+            raise ValueError(f"Missing required columns: {', '.join(missing)}")
+    if numeric_columns:
+        for col in numeric_columns:
+            if col not in df.columns:
+                raise ValueError(f"Missing required numeric column: {col}")
+            if not df.schema[col].is_numeric():
+                raise ValueError(f"Column {col} must be numeric")
+
+
+def _validate_pandas_dataframe(
+    df: pd.DataFrame,
+    required_columns: Optional[List[str]],
+    numeric_columns: Optional[List[str]],
+) -> None:
+    if required_columns:
+        missing = _missing_columns(df, required_columns)
+        if missing:
+            if len(missing) == 1:
+                raise ValueError(f"Missing required column: {missing[0]}")
+            raise ValueError(f"Missing required columns: {', '.join(missing)}")
+    if numeric_columns:
+        for col in numeric_columns:
+            coerced = _validate_numeric_column(df, col, "Column")
+            df[col] = coerced
 
 
 def validate_dataframe(
@@ -69,28 +113,9 @@ def validate_dataframe(
     Supports both Pandas and Polars.
     """
     if isinstance(df, pl.DataFrame):
-        if required_columns:
-            missing = [col for col in required_columns if col not in df.columns]
-            if missing:
-                raise ValueError(f"Missing required columns: {', '.join(missing)}")
-        if numeric_columns:
-            for col in numeric_columns:
-                if col not in df.columns:
-                    raise ValueError(f"Missing required numeric column: {col}")
-                if not df.schema[col].is_numeric():
-                    raise ValueError(f"Column {col} must be numeric")
+        _validate_polars_dataframe(df, required_columns, numeric_columns)
         return
-    # Legacy Pandas logic
-    if required_columns:
-        missing = _missing_columns(df, required_columns)
-        if missing:
-            if len(missing) == 1:
-                raise ValueError(f"Missing required column: {missing[0]}")
-            raise ValueError(f"Missing required columns: {', '.join(missing)}")
-    if numeric_columns:
-        for col in numeric_columns:
-            coerced = _validate_numeric_column(df, col, "Column")
-            df[col] = coerced
+    _validate_pandas_dataframe(df, required_columns, numeric_columns)
 
 
 def assert_dataframe_schema(
@@ -185,6 +210,22 @@ def safe_numeric(series: pd.Series) -> pd.Series:
     return pd.to_numeric(series, errors="coerce")
 
 
+def safe_decimal(value: Any) -> Decimal:
+    """Safely convert a value to Decimal, handling currency symbols and commas."""
+    if pd.isnull(value):
+        return Decimal("0")
+    if isinstance(value, Decimal):
+        return value
+    if isinstance(value, (int, float)):
+        return Decimal(str(value))
+    # Handle string with currency symbols and commas
+    clean = str(value).translate(str.maketrans("", "", "$€£¥₽₡,"))
+    try:
+        return Decimal(clean)
+    except (InvalidOperation, ValueError):
+        return Decimal("0")
+
+
 def find_column(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
     """
     Helper to find a column in the DataFrame matching one of the candidates.
@@ -193,19 +234,27 @@ def find_column(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
     2. Case-insensitive exact match
     3. Substring match
     """
-    columns = df.columns
+    columns = list(df.columns)
+
     # 1. Exact match
     for candidate in candidates:
         if candidate in columns:
             return candidate
-    # 2. Case-insensitive exact match & 3. Substring match
-    for match_type in ["exact", "substring"]:
-        for candidate in candidates:
-            for col in columns:
-                if (match_type == "exact" and candidate.lower() == col.lower()) or (
-                    match_type == "substring" and candidate.lower() in col.lower()
-                ):
-                    return col
+
+    # 2. Case-insensitive exact match
+    lower_to_column = {col.lower(): col for col in columns}
+    for candidate in candidates:
+        match = lower_to_column.get(candidate.lower())
+        if match is not None:
+            return match
+
+    # 3. Substring match
+    for candidate in candidates:
+        candidate_lower = candidate.lower()
+        match = next((col for col in columns if candidate_lower in col.lower()), None)
+        if match is not None:
+            return match
+
     return None
 
 

@@ -18,6 +18,7 @@ import os
 import re
 import traceback
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -40,7 +41,7 @@ class KPIFormulaEngine:
         self._datetime_cache: Dict[str, pd.Series] = {}
         self._polars_enabled = os.getenv("KPI_ENGINE_USE_POLARS", "1") == "1"
 
-    def calculate(self, formula: str) -> float:
+    def calculate(self, formula: str) -> Decimal:
         """Parse and execute a KPI formula."""
         try:
             formula = formula.strip()
@@ -62,7 +63,7 @@ class KPIFormulaEngine:
                     "available_columns": list(self.df.columns),
                 },
             )
-            return 0.0
+            return Decimal("0.0")
 
     def _is_comparison_formula(self, formula: str) -> bool:
         """Check if formula compares two periods."""
@@ -72,7 +73,7 @@ class KPIFormulaEngine:
         """Check if formula contains arithmetic operations between aggregations."""
         return any(op in formula for op in [" + ", " - ", " * ", " / "]) and "(" in formula
 
-    def _execute_comparison_formula(self, formula: str) -> float:
+    def _execute_comparison_formula(self, formula: str) -> Decimal:
         """Execute formulas that compare period-level balance variables."""
         expression = formula
         context = self._build_comparison_context()
@@ -82,48 +83,53 @@ class KPIFormulaEngine:
 
         return self._safe_eval_numeric_expression(expression)
 
-    def _safe_eval_numeric_expression(self, expression: str) -> float:
+    def _safe_eval_numeric_expression(self, expression: str) -> Decimal:
         """
         Safely evaluate a numeric expression.
 
         Supported operations: +, -, *, /, parentheses, unary +/-.
         """
         parsed = ast.parse(expression, mode="eval")
+        return self._eval_numeric_ast(parsed)
 
-        def _eval(node: ast.AST) -> float:
-            if isinstance(node, ast.Expression):
-                return _eval(node.body)
+    def _eval_numeric_ast(self, node: ast.AST) -> Decimal:
+        """Recursively evaluate supported numeric AST nodes."""
+        if isinstance(node, ast.Expression):
+            return self._eval_numeric_ast(node.body)
+        if isinstance(node, ast.BinOp):
+            left = self._eval_numeric_ast(node.left)
+            right = self._eval_numeric_ast(node.right)
+            return self._eval_binary_operation(node.op, left, right)
+        if isinstance(node, ast.UnaryOp):
+            value = self._eval_numeric_ast(node.operand)
+            return self._eval_unary_operation(node.op, value)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            return Decimal(str(node.value))
+        raise ValueError(f"Unsupported expression node: {type(node).__name__}")
 
-            if isinstance(node, ast.BinOp):
-                left = _eval(node.left)
-                right = _eval(node.right)
+    @staticmethod
+    def _eval_binary_operation(operator: ast.AST, left: Decimal, right: Decimal) -> Decimal:
+        """Evaluate a supported binary operation."""
+        if isinstance(operator, ast.Add):
+            return left + right
+        if isinstance(operator, ast.Sub):
+            return left - right
+        if isinstance(operator, ast.Mult):
+            return left * right
+        if isinstance(operator, ast.Div):
+            return Decimal("0.0") if right == 0 else left / right
+        raise ValueError(f"Unsupported binary operator: {type(operator).__name__}")
 
-                if isinstance(node.op, ast.Add):
-                    return left + right
-                if isinstance(node.op, ast.Sub):
-                    return left - right
-                if isinstance(node.op, ast.Mult):
-                    return left * right
-                if isinstance(node.op, ast.Div):
-                    return 0.0 if right == 0 else left / right
-                raise ValueError(f"Unsupported binary operator: {type(node.op).__name__}")
+    @staticmethod
+    def _eval_unary_operation(operator: ast.AST, value: Decimal) -> Decimal:
+        """Evaluate a supported unary operation."""
+        if isinstance(operator, ast.UAdd):
+            return value
+        if isinstance(operator, ast.USub):
+            return -value
+        raise ValueError(f"Unsupported unary operator: {type(operator).__name__}")
 
-            if isinstance(node, ast.UnaryOp):
-                value = _eval(node.operand)
-                if isinstance(node.op, ast.UAdd):
-                    return value
-                if isinstance(node.op, ast.USub):
-                    return -value
-                raise ValueError(f"Unsupported unary operator: {type(node.op).__name__}")
-
-            if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
-                return float(node.value)
-
-            raise ValueError(f"Unsupported expression node: {type(node).__name__}")
-
-        return float(_eval(parsed))
-
-    def _build_comparison_context(self) -> Dict[str, float]:
+    def _build_comparison_context(self) -> Dict[str, Decimal]:
         """
         Build comparison variables used by KPI formulas.
 
@@ -135,7 +141,7 @@ class KPIFormulaEngine:
             "previous_month_balance": previous_balance,
         }
 
-    def _resolve_monthly_balances(self) -> tuple[float, float]:
+    def _resolve_monthly_balances(self) -> tuple[Decimal, Decimal]:
         """
         Resolve current/previous month balances from the available loan tape.
 
@@ -221,44 +227,21 @@ class KPIFormulaEngine:
 
     def _execute_arithmetic_formula(self, formula: str) -> float:
         """Execute formulas with arithmetic operations."""
-        pattern = r"(SUM|AVG|COUNT)\([^)]+\)"
-        parts = re.split(r"(\s*[\+\-\*/]\s*|\s*\*\s*100)", formula)
+        expression = re.sub(
+            r"(SUM|AVG|COUNT)\([^)]+\)",
+            self._replace_aggregation_match,
+            formula,
+            flags=re.IGNORECASE,
+        )
+        try:
+            return float(self._safe_eval_numeric_expression(expression))
+        except Exception as exc:
+            logger.debug("Arithmetic formula evaluation failed for '%s': %s", formula, exc)
+            return 0.0
 
-        result = None
-        operator = None
-
-        for part in parts:
-            part = part.strip()
-            if not part:
-                continue
-
-            if part in ["+", "-", "*", "/", "* 100"]:
-                operator = part
-            elif re.match(pattern, part):
-                value = self._execute_simple_formula(part)
-
-                if result is None:
-                    result = value
-                elif operator:
-                    if operator == "+":
-                        result = result + value
-                    elif operator == "-":
-                        result = result - value
-                    elif operator in ("*", "* 100"):
-                        result = result * value
-                    elif operator == "/" and value != 0:
-                        result = result / value
-                    operator = None
-            elif part.replace(".", "").isdigit():
-                value = float(part)
-                if result is not None and operator:
-                    if operator in ("*", "* 100"):
-                        result = result * value
-                    elif operator == "/" and value != 0:
-                        result = result / value
-                    operator = None
-
-        return result if result is not None else 0.0
+    def _replace_aggregation_match(self, match: re.Match) -> str:
+        """Replace an aggregation fragment with its computed numeric value."""
+        return str(self._execute_simple_formula(match.group(0)))
 
     def _execute_simple_formula(self, formula: str) -> float:
         """Execute simple aggregation formulas."""
@@ -306,105 +289,124 @@ class KPIFormulaEngine:
         if cached_mask is not None:
             return self.df[cached_mask]
 
-        filtered_df = self.df
-        mask = pd.Series(True, index=self.df.index)
-
-        try:
-            if ">=" in condition:
-                parts = condition.split(">=")
-                col = parts[0].strip()
-                value = parts[1].strip()
-
-                if value == "MONTH_START":
-                    if col in self.df.columns:
-                        mask = self._get_datetime_series(col) >= self.month_start
-                        filtered_df = self.df[mask.fillna(False)]
-                    else:
-                        filtered_df = self.df.iloc[:0]
-                elif value.isdigit():
-                    if col in self.df.columns:
-                        mask = self._get_numeric_series(col) >= int(value)
-                        filtered_df = self.df[mask.fillna(False)]
-                    else:
-                        filtered_df = self.df.iloc[:0]
-
-            elif "<=" in condition:
-                parts = condition.split("<=")
-                col = parts[0].strip()
-                value = parts[1].strip()
-                if value.isdigit() or value.replace(".", "", 1).isdigit():
-                    if col in self.df.columns:
-                        mask = self._get_numeric_series(col) <= float(value)
-                        filtered_df = self.df[mask.fillna(False)]
-                    else:
-                        filtered_df = self.df.iloc[:0]
-
-            elif ">" in condition and "=" not in condition.replace(">=", ""):
-                parts = condition.split(">")
-                col = parts[0].strip()
-                value = parts[1].strip()
-                if value.isdigit() or value.replace(".", "", 1).isdigit():
-                    if col in self.df.columns:
-                        mask = self._get_numeric_series(col) > float(value)
-                        filtered_df = self.df[mask.fillna(False)]
-                    else:
-                        filtered_df = self.df.iloc[:0]
-
-            elif "<" in condition and "=" not in condition.replace("<=", ""):
-                parts = condition.split("<")
-                col = parts[0].strip()
-                value = parts[1].strip()
-                if value.isdigit() or value.replace(".", "", 1).isdigit():
-                    if col in self.df.columns:
-                        mask = self._get_numeric_series(col) < float(value)
-                        filtered_df = self.df[mask.fillna(False)]
-                    else:
-                        filtered_df = self.df.iloc[:0]
-
-            elif " IN " in condition:
-                match = re.match(r"(.+?)\s+IN\s+\[(.+?)\]", condition, re.IGNORECASE)
-                if match:
-                    col = match.group(1).strip()
-                    values = [v.strip().strip("'\"") for v in match.group(2).split(",")]
-                    if col in self.df.columns:
-                        mask = self.df[col].astype(str).isin(values)
-                        filtered_df = self.df[mask.fillna(False)]
-                    else:
-                        filtered_df = self.df.iloc[:0]
-
-            elif "!=" in condition:
-                parts = condition.split("!=")
-                col = parts[0].strip()
-                value = parts[1].strip().strip("'\"")
-                if col in self.df.columns:
-                    mask = self.df[col].astype(str) != value
-                    filtered_df = self.df[mask.fillna(False)]
-                else:
-                    filtered_df = self.df.iloc[:0]
-
-            elif "=" in condition:
-                parts = condition.split("=")
-                col = parts[0].strip()
-                value = parts[1].strip().strip("'\"")
-                if col in self.df.columns:
-                    mask = self.df[col].astype(str) == value
-                    filtered_df = self.df[mask.fillna(False)]
-                else:
-                    filtered_df = self.df.iloc[:0]
-
-        except Exception as e:
-            logger.debug("WHERE clause failed: %s - %s", condition, str(e))
-
-        if len(filtered_df) < len(self.df):
-            self._where_cache[condition] = (
-                pd.Series(self.df.index.isin(filtered_df.index), index=self.df.index)
-                .fillna(False)
-                .astype(bool)
-            )
-        else:
-            self._where_cache[condition] = pd.Series(True, index=self.df.index, dtype=bool)
-
+        mask = self._build_where_mask(condition)
+        filtered_df = self.df[mask]
+        self._cache_where_mask(condition, mask, filtered_df)
         return filtered_df
+
+    def _build_where_mask(self, condition: str) -> pd.Series:
+        """Build a boolean mask from a limited SQL-like WHERE clause."""
+        try:
+            in_mask = self._parse_in_condition(condition)
+            if in_mask is not None:
+                return in_mask
+
+            for operator in (">=", "<=", "!=", ">", "<", "="):
+                parsed = self._split_binary_condition(condition, operator)
+                if parsed is None:
+                    continue
+                column, raw_value = parsed
+                return self._build_binary_mask(column, operator, raw_value)
+
+        except Exception as exc:
+            logger.debug("WHERE clause failed: %s - %s", condition, str(exc))
+
+        return self._true_mask()
+
+    def _parse_in_condition(self, condition: str) -> Optional[pd.Series]:
+        """Parse and evaluate an IN condition."""
+        match = re.match(r"(.+?)\s+IN\s+\[(.+?)\]", condition, re.IGNORECASE)
+        if not match:
+            return None
+        column = match.group(1).strip()
+        if column not in self.df.columns:
+            return self._false_mask()
+        values = [value.strip().strip("'\"") for value in match.group(2).split(",")]
+        return self.df[column].astype(str).isin(values).fillna(False).astype(bool)
+
+    @staticmethod
+    def _split_binary_condition(condition: str, operator: str) -> Optional[tuple[str, str]]:
+        """Split a binary condition into column and value."""
+        if operator not in condition:
+            return None
+        left, right = condition.split(operator, 1)
+        return left.strip(), right.strip()
+
+    def _build_binary_mask(self, column: str, operator: str, raw_value: str) -> pd.Series:
+        """Build mask for a non-IN binary condition."""
+        if column not in self.df.columns:
+            return self._false_mask()
+
+        if raw_value == "MONTH_START" and operator in {">=", "<=", ">", "<"}:
+            return self._compare_datetime_to_month_start(column, operator)
+
+        if operator in {">=", "<=", ">", "<"}:
+            numeric_value = self._parse_numeric_literal(raw_value)
+            if numeric_value is None:
+                return self._true_mask()
+            return self._compare_numeric(column, operator, numeric_value)
+
+        return self._compare_string(column, operator, raw_value.strip("'\""))
+
+    def _compare_datetime_to_month_start(self, column: str, operator: str) -> pd.Series:
+        """Compare datetime column values against MONTH_START."""
+        series = self._get_datetime_series(column)
+        if operator == ">=":
+            mask = series >= self.month_start
+        elif operator == "<=":
+            mask = series <= self.month_start
+        elif operator == ">":
+            mask = series > self.month_start
+        else:
+            mask = series < self.month_start
+        return mask.fillna(False).astype(bool)
+
+    def _compare_numeric(self, column: str, operator: str, value: float) -> pd.Series:
+        """Compare numeric column values against a numeric threshold."""
+        series = self._get_numeric_series(column)
+        if operator == ">=":
+            mask = series >= value
+        elif operator == "<=":
+            mask = series <= value
+        elif operator == ">":
+            mask = series > value
+        else:
+            mask = series < value
+        return mask.fillna(False).astype(bool)
+
+    def _compare_string(self, column: str, operator: str, value: str) -> pd.Series:
+        """Compare stringified column values using equality/inequality."""
+        series = self.df[column].astype(str)
+        if operator == "!=":
+            mask = series != value
+        else:
+            mask = series == value
+        return mask.fillna(False).astype(bool)
+
+    @staticmethod
+    def _parse_numeric_literal(value: str) -> Optional[float]:
+        """Parse numeric literal used in a WHERE expression."""
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _cache_where_mask(
+        self, condition: str, mask: pd.Series, filtered_df: pd.DataFrame
+    ) -> None:
+        """Cache WHERE clause masks for repeated formula use."""
+        if len(filtered_df) < len(self.df):
+            self._where_cache[condition] = mask.fillna(False).astype(bool)
+            return
+        self._where_cache[condition] = self._true_mask()
+
+    def _true_mask(self) -> pd.Series:
+        """Return a full True mask aligned to dataframe index."""
+        return pd.Series(True, index=self.df.index, dtype=bool)
+
+    def _false_mask(self) -> pd.Series:
+        """Return a full False mask aligned to dataframe index."""
+        return pd.Series(False, index=self.df.index, dtype=bool)
 
     def _get_numeric_series(self, column: str) -> pd.Series:
         """Get numeric series with one-time coercion cache."""
@@ -518,17 +520,31 @@ class CalculationPhase:
     def _calculate_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Calculate all KPIs from definitions."""
         logger.info("Calculating KPIs")
-
-        # Derive columns needed by KPI formulas but not present in raw data
-        if "borrower_id" in df.columns and "loan_id" in df.columns:
-            if "loan_count" not in df.columns:
-                df = df.copy()
-                df["loan_count"] = df.groupby("borrower_id")["loan_id"].transform("nunique")
-
-        kpis: Dict[str, Optional[float]] = {}
+        df = self._ensure_loan_count_column(df)
         engine = KPIFormulaEngine(df)
+        kpis: Dict[str, Optional[float]] = {}
 
-        kpi_categories = [
+        for category, kpi_name, formula in self._iter_kpi_formulas():
+            kpis[kpi_name] = self._calculate_single_kpi(engine, category, kpi_name, formula)
+
+        logger.info("Calculated %d KPIs", len(kpis))
+        return kpis
+
+    @staticmethod
+    def _ensure_loan_count_column(df: pd.DataFrame) -> pd.DataFrame:
+        """Add loan_count when borrower_id and loan_id exist."""
+        if (
+            "borrower_id" in df.columns
+            and "loan_id" in df.columns
+            and "loan_count" not in df.columns
+        ):
+            df = df.copy()
+            df["loan_count"] = df.groupby("borrower_id")["loan_id"].transform("nunique")
+        return df
+
+    def _iter_kpi_formulas(self) -> List[tuple[str, str, str]]:
+        """Collect (category, KPI name, formula) from configured KPI definitions."""
+        category_order = [
             "portfolio_kpis",
             "asset_quality_kpis",
             "cash_flow_kpis",
@@ -536,86 +552,60 @@ class CalculationPhase:
             "customer_kpis",
             "operational_kpis",
         ]
+        formulas: List[tuple[str, str, str]] = []
+        for category in category_order:
+            category_kpis = self.kpi_definitions.get(category, {})
+            for kpi_name, kpi_config in category_kpis.items():
+                formula = kpi_config.get("formula")
+                if formula:
+                    formulas.append((category, kpi_name, formula))
+        return formulas
 
-        for category in kpi_categories:
-            if category in self.kpi_definitions:
-                category_kpis = self.kpi_definitions[category]
-                for kpi_name, kpi_config in category_kpis.items():
-                    if "formula" in kpi_config:
-                        try:
-                            value = engine.calculate(kpi_config["formula"])
-                            kpis[kpi_name] = value
-                            logger.debug("Calculated %s: %s", kpi_name, value)
-                        except Exception as e:
-                            # Structured logging for KPI failures (traceability requirement)
-                            logger.warning(
-                                "KPI calculation failed",
-                                extra={
-                                    "kpi_name": kpi_name,
-                                    "category": category,
-                                    "formula": kpi_config.get("formula", "N/A"),
-                                    "error": str(e),
-                                    "error_type": type(e).__name__,
-                                },
-                            )
-                            kpis[kpi_name] = (
-                                None  # Explicit None instead of 0.0 to indicate failure
-                            )
-
-        logger.info("Calculated %d KPIs", len(kpis))
-        return kpis
+    def _calculate_single_kpi(
+        self, engine: KPIFormulaEngine, category: str, kpi_name: str, formula: str
+    ) -> Optional[float]:
+        """Calculate one KPI and return None on failure."""
+        try:
+            value = engine.calculate(formula)
+            logger.debug("Calculated %s: %s", kpi_name, value)
+            return value
+        except Exception as exc:
+            # Structured logging for KPI failures (traceability requirement)
+            logger.warning(
+                "KPI calculation failed",
+                extra={
+                    "kpi_name": kpi_name,
+                    "category": category,
+                    "formula": formula,
+                    "error": str(exc),
+                    "error_type": type(exc).__name__,
+                },
+            )
+            return None
 
     def _calculate_time_series(self, df: pd.DataFrame) -> Dict[str, List]:
         """Calculate time-series rollups."""
         logger.info("Calculating time-series rollups")
-
-        date_columns = []
-        for col in df.columns:
-            if df[col].dtype in ["datetime64[ns]", "object"]:
-                try:
-                    parsed = pd.to_datetime(df[col], errors="coerce", format="mixed")
-                    if parsed.notna().any():
-                        date_columns.append(col)
-                except Exception as e:
-                    logger.debug("Skipping non-date column %s: %s", col, e)
-                    continue
+        result = self._empty_time_series_result()
+        date_columns = self._find_date_columns(df)
 
         if not date_columns:
             logger.debug("No date columns found for time-series analysis")
-            return {"daily": [], "weekly": [], "monthly": []}
+            return result
 
         date_col = date_columns[0]
-        df_ts = df.copy()
-        df_ts[date_col] = pd.to_datetime(df_ts[date_col], errors="coerce")
-        df_ts = df_ts.dropna(subset=[date_col])
+        df_ts = self._prepare_time_series_dataframe(df, date_col)
 
         if df_ts.empty:
-            return {"daily": [], "weekly": [], "monthly": []}
+            return result
 
-        numeric_cols = df_ts.select_dtypes(include=[np.number]).columns.tolist()
+        numeric_cols = self._get_time_series_numeric_columns(df_ts)
         if not numeric_cols:
-            numeric_cols = ["amount"] if "amount" in df_ts.columns else []
+            return result
 
-        result: Dict[str, List[Dict[str, Any]]] = {"daily": [], "weekly": [], "monthly": []}
-
-        if numeric_cols:
-            try:
-                daily = df_ts.groupby(df_ts[date_col].dt.date)[numeric_cols].sum()
-                result["daily"] = daily.to_dict("records")[:30]
-            except Exception as e:
-                logger.warning("Daily rollup failed for %s: %s", date_col, e, exc_info=True)
-
-            try:
-                weekly = df_ts.groupby(df_ts[date_col].dt.to_period("W"))[numeric_cols].sum()
-                result["weekly"] = weekly.to_dict("records")[:12]
-            except Exception as e:
-                logger.warning("Weekly rollup failed for %s: %s", date_col, e, exc_info=True)
-
-            try:
-                monthly = df_ts.groupby(df_ts[date_col].dt.to_period("M"))[numeric_cols].sum()
-                result["monthly"] = monthly.to_dict("records")[:12]
-            except Exception as e:
-                logger.warning("Monthly rollup failed for %s: %s", date_col, e, exc_info=True)
+        result["daily"] = self._rollup_sum(df_ts, date_col, numeric_cols, "daily", 30)
+        result["weekly"] = self._rollup_sum(df_ts, date_col, numeric_cols, "weekly", 12)
+        result["monthly"] = self._rollup_sum(df_ts, date_col, numeric_cols, "monthly", 12)
 
         logger.info(
             "Time-series calculated: %d daily, %d weekly, %d monthly",
@@ -625,47 +615,82 @@ class CalculationPhase:
         )
         return result
 
+    @staticmethod
+    def _empty_time_series_result() -> Dict[str, List[Dict[str, Any]]]:
+        """Return empty result structure for time-series rollups."""
+        return {"daily": [], "weekly": [], "monthly": []}
+
+    def _find_date_columns(self, df: pd.DataFrame) -> List[str]:
+        """Find columns that can be interpreted as dates."""
+        date_columns: List[str] = []
+        for col in df.columns:
+            if df[col].dtype not in ["datetime64[ns]", "object"]:
+                continue
+            try:
+                parsed = pd.to_datetime(df[col], errors="coerce", format="mixed")
+                if parsed.notna().any():
+                    date_columns.append(col)
+            except Exception as exc:
+                logger.debug("Skipping non-date column %s: %s", col, exc)
+        return date_columns
+
+    @staticmethod
+    def _prepare_time_series_dataframe(df: pd.DataFrame, date_col: str) -> pd.DataFrame:
+        """Create clean dataframe with a parsed non-null date column."""
+        df_ts = df.copy()
+        df_ts[date_col] = pd.to_datetime(df_ts[date_col], errors="coerce")
+        return df_ts.dropna(subset=[date_col])
+
+    @staticmethod
+    def _get_time_series_numeric_columns(df_ts: pd.DataFrame) -> List[str]:
+        """Get numeric columns for rollups with fallback to amount."""
+        numeric_cols = df_ts.select_dtypes(include=[np.number]).columns.tolist()
+        if numeric_cols:
+            return numeric_cols
+        return ["amount"] if "amount" in df_ts.columns else []
+
+    def _rollup_sum(
+        self, df_ts: pd.DataFrame, date_col: str, numeric_cols: List[str], period: str, limit: int
+    ) -> List[Dict[str, Any]]:
+        """Aggregate numeric columns by period and return record dictionaries."""
+        try:
+            if period == "daily":
+                grouped = df_ts.groupby(df_ts[date_col].dt.date)[numeric_cols].sum()
+            elif period == "weekly":
+                grouped = df_ts.groupby(df_ts[date_col].dt.to_period("W"))[numeric_cols].sum()
+            else:
+                grouped = df_ts.groupby(df_ts[date_col].dt.to_period("M"))[numeric_cols].sum()
+            return grouped.to_dict("records")[:limit]
+        except Exception as exc:
+            logger.warning(
+                "%s rollup failed for %s: %s",
+                period.capitalize(),
+                date_col,
+                exc,
+                exc_info=True,
+            )
+            return []
+
     def _detect_anomalies(self, kpi_results: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Detect anomalies in KPI values."""
-        anomalies = []
+        anomalies: List[Dict[str, Any]] = []
 
         try:
-            # Define normal ranges for key KPIs (tuples: min, max)
-            # Values are in PERCENTAGE units to match KPI engine output
-            # (e.g., 30% = 30, not 0.30)
-            normal_ranges = {
-                "par_30": (0, 30),  # PAR-30 should be <30%
-                "par_90": (0, 15),  # PAR-90 should be <15%
-                "default_rate": (0, 4),  # Default rate <4%
-                "portfolio_yield": (5, 15),  # Yield 5-15% (factoring)
-            }
+            normal_ranges = self._default_anomaly_ranges()
 
             for kpi_name, kpi_value in kpi_results.items():
-                if kpi_value is None or not isinstance(kpi_value, (int, float)):
+                anomaly = self._build_anomaly_record(kpi_name, kpi_value, normal_ranges)
+                if anomaly is None:
                     continue
-
-                if kpi_name in normal_ranges:
-                    min_val, max_val = normal_ranges[kpi_name]
-                    if kpi_value < min_val or kpi_value > max_val:
-                        anomalies.append(
-                            {
-                                "kpi_name": kpi_name,
-                                "value": kpi_value,
-                                "expected_range": (min_val, max_val),
-                                "severity": (
-                                    "critical"
-                                    if abs(kpi_value - max_val) > max_val * 0.5
-                                    else "warning"
-                                ),
-                            }
-                        )
-                        logger.warning(
-                            "Anomaly detected in %s: %s (expected: %s-%s)",
-                            kpi_name,
-                            kpi_value,
-                            min_val,
-                            max_val,
-                        )
+                anomalies.append(anomaly)
+                min_val, max_val = anomaly["expected_range"]
+                logger.warning(
+                    "Anomaly detected in %s: %s (expected: %s-%s)",
+                    kpi_name,
+                    anomaly["value"],
+                    min_val,
+                    max_val,
+                )
 
             if anomalies:
                 logger.info("Detected %d KPI anomalies", len(anomalies))
@@ -674,6 +699,39 @@ class CalculationPhase:
             logger.error("Anomaly detection failed: %s", e, exc_info=True)
 
         return anomalies
+
+    @staticmethod
+    def _default_anomaly_ranges() -> Dict[str, tuple[float, float]]:
+        """Expected KPI ranges in percentage units (30 means 30%)."""
+        return {
+            "par_30": (0, 30),
+            "par_90": (0, 15),
+            "default_rate": (0, 4),
+            "portfolio_yield": (5, 15),
+        }
+
+    @staticmethod
+    def _build_anomaly_record(
+        kpi_name: str,
+        kpi_value: Any,
+        normal_ranges: Dict[str, tuple[float, float]],
+    ) -> Optional[Dict[str, Any]]:
+        """Return anomaly metadata if KPI value is outside expected range."""
+        if kpi_value is None or not isinstance(kpi_value, (int, float)):
+            return None
+        if kpi_name not in normal_ranges:
+            return None
+
+        min_val, max_val = normal_ranges[kpi_name]
+        if min_val <= kpi_value <= max_val:
+            return None
+
+        return {
+            "kpi_name": kpi_name,
+            "value": kpi_value,
+            "expected_range": (min_val, max_val),
+            "severity": "critical" if abs(kpi_value - max_val) > max_val * 0.5 else "warning",
+        }
 
     def _generate_manifest(
         self, kpi_results: Dict[str, Any], source_df: pd.DataFrame
