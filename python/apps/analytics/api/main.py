@@ -37,6 +37,7 @@ try:
         CommandsListResponse,
         CommandStatus,
         CommandUpdate,
+        EventAcknowledgeRequest,
         EventSeverity,
         EventsListResponse,
         OperationalEventCreate,
@@ -204,6 +205,26 @@ if app is not None:
             logger.error("Error listing events: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
+    async def _acknowledge_event_by_uuid(event_id: uuid.UUID, service: MonitoringService):
+        result = await service.acknowledge_event(event_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Event not found")
+        return result
+
+    @app.post("/monitoring/events/ack")
+    async def acknowledge_event_from_body(
+        request: EventAcknowledgeRequest = Body(...),
+        service: MonitoringService = Depends(get_monitoring_service),
+    ):
+        """Acknowledge an operational event using request body."""
+        try:
+            return await _acknowledge_event_by_uuid(request.event_id, service)
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Error acknowledging event %s: %s", request.event_id, e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
     @app.post("/monitoring/events/{event_id}/ack")
     async def acknowledge_event(
         event_id: str,
@@ -216,10 +237,7 @@ if app is not None:
             raise HTTPException(status_code=400, detail="Invalid event ID format") from exc
 
         try:
-            result = await service.acknowledge_event(eid)
-            if result is None:
-                raise HTTPException(status_code=404, detail="Event not found")
-            return result
+            return await _acknowledge_event_by_uuid(eid, service)
         except HTTPException:
             raise
         except Exception as e:

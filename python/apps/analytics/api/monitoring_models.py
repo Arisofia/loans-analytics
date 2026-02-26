@@ -58,6 +58,10 @@ class EventsListResponse(BaseModel):
     count: int = Field(..., description="Total number of events returned")
 
 
+class EventAcknowledgeRequest(BaseModel):
+    event_id: UUID = Field(..., description="Operational event ID to acknowledge")
+
+
 # --- Command Models ---
 
 

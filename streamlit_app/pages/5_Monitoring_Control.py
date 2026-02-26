@@ -1,10 +1,10 @@
 """Monitoring & Control dashboard for the self-healing platform."""
 
 import os
-import re
 import sys
 from pathlib import Path
-from urllib.parse import quote, urlparse
+from urllib.parse import urlparse
+from uuid import UUID
 
 import pandas as pd
 import requests
@@ -53,49 +53,48 @@ else:
 # ---------------------------------------------------------------------------
 
 
-def _get_safe_path(path: str) -> str | None:
-    """Validate and reconstruct path to break the taint chain for SSRF protection."""
-    if not path or not isinstance(path, str):
+MONITORING_EVENTS_ENDPOINT = "/monitoring/events"
+MONITORING_EVENTS_ACK_ENDPOINT = "/monitoring/events/ack"
+MONITORING_COMMANDS_ENDPOINT = "/monitoring/commands"
+ALLOWED_ENDPOINTS = {
+    MONITORING_EVENTS_ENDPOINT,
+    MONITORING_EVENTS_ACK_ENDPOINT,
+    MONITORING_COMMANDS_ENDPOINT,
+}
+
+
+def _build_api_url(endpoint: str) -> str | None:
+    """Build request URL from a fixed endpoint allowlist."""
+    base = API_BASE_SAFE
+    if base is None:
+        st.error("API is not configured or is untrusted. Aborting request.")
+        return None
+    if endpoint not in ALLOWED_ENDPOINTS:
+        st.error("Blocked: endpoint is not in the allowed endpoint list.")
         return None
 
-    # 1. Static paths (returns literals to break taint)
-    if path == "/monitoring/events":
-        return "/monitoring/events"
-    if path == "/monitoring/commands":
-        return "/monitoring/commands"
-
-    # 2. Dynamic paths with allowed characters (reconstructed from groups)
-    match = re.fullmatch(r"^/monitoring/events/([\w\-]+)/ack$", path)
-    if match:
-        event_id = match.group(1)
-        # Re-sanitize event_id to ensure it only contains allowed characters
-        # and use a literal prefix to break the taint chain for CodeQL.
-        safe_id = "".join(re.findall(r"[\w\-]", event_id))
-        return "/monitoring/events/" + safe_id + "/ack"
-
-    return None
+    normalized_base = base.rstrip("/")
+    url = f"{normalized_base}{endpoint}"
+    parsed_url = urlparse(url)
+    parsed_base = urlparse(normalized_base)
+    if parsed_url.netloc != parsed_base.netloc or parsed_url.scheme != parsed_base.scheme:
+        st.error("SSRF Protection: URL host mismatch.")
+        return None
+    return url
 
 
-def _api_get(path: str, params: dict | None = None):
+def _request_json(
+    method: str,
+    endpoint: str,
+    *,
+    params: dict | None = None,
+    json_body: dict | None = None,
+):
+    url = _build_api_url(endpoint)
+    if url is None:
+        return None
     try:
-        base = API_BASE_SAFE
-        if base is None:
-            st.error("API is not configured or is untrusted. Aborting request.")
-            return None
-        safe_path = _get_safe_path(path)
-        if safe_path is None:
-            st.error(f"Blocked: Path '{path}' is not in the allowed endpoints.")
-            return None
-
-        # Reconstruct URL and validate host to prevent SSRF
-        url = f"{base}/{safe_path.lstrip('/')}"
-        parsed_url = urlparse(url)
-        parsed_base = urlparse(base)
-        if parsed_url.netloc != parsed_base.netloc or parsed_url.scheme != parsed_base.scheme:
-            st.error("SSRF Protection: URL host mismatch.")
-            return None
-
-        resp = requests.get(url, params=params, timeout=5)
+        resp = requests.request(method, url, params=params, json=json_body, timeout=5)
         resp.raise_for_status()
         return resp.json()
     except Exception as e:
@@ -103,58 +102,24 @@ def _api_get(path: str, params: dict | None = None):
         return None
 
 
-def _api_post(path: str, json_body: dict | None = None):
-    try:
-        base = API_BASE_SAFE
-        if base is None:
-            st.error("API is not configured or is untrusted. Aborting request.")
-            return None
-        safe_path = _get_safe_path(path)
-        if safe_path is None:
-            st.error(f"Blocked: Path '{path}' is not in the allowed endpoints.")
-            return None
-
-        # Reconstruct URL and validate host to prevent SSRF
-        url = f"{base}/{safe_path.lstrip('/')}"
-        parsed_url = urlparse(url)
-        parsed_base = urlparse(base)
-        if parsed_url.netloc != parsed_base.netloc or parsed_url.scheme != parsed_base.scheme:
-            st.error("SSRF Protection: URL host mismatch.")
-            return None
-
-        resp = requests.post(url, json=json_body, timeout=5)
-        resp.raise_for_status()
-        return resp.json()
-    except Exception as e:
-        st.error(f"API error: {e}")
-        return None
+def _api_get_events(params: dict | None = None):
+    return _request_json("GET", MONITORING_EVENTS_ENDPOINT, params=params)
 
 
-def _api_patch(path: str, json_body: dict | None = None):
-    try:
-        base = API_BASE_SAFE
-        if base is None:
-            st.error("API is not configured or is untrusted. Aborting request.")
-            return None
-        safe_path = _get_safe_path(path)
-        if safe_path is None:
-            st.error(f"Blocked: Path '{path}' is not in the allowed endpoints.")
-            return None
+def _api_ack_event(event_id: str):
+    return _request_json(
+        "POST",
+        MONITORING_EVENTS_ACK_ENDPOINT,
+        json_body={"event_id": event_id},
+    )
 
-        # Reconstruct URL and validate host to prevent SSRF
-        url = f"{base}/{safe_path.lstrip('/')}"
-        parsed_url = urlparse(url)
-        parsed_base = urlparse(base)
-        if parsed_url.netloc != parsed_base.netloc or parsed_url.scheme != parsed_base.scheme:
-            st.error("SSRF Protection: URL host mismatch.")
-            return None
 
-        resp = requests.patch(url, json=json_body, timeout=5)
-        resp.raise_for_status()
-        return resp.json()
-    except Exception as e:
-        st.error(f"API error: {e}")
-        return None
+def _api_create_command(json_body: dict | None = None):
+    return _request_json("POST", MONITORING_COMMANDS_ENDPOINT, json_body=json_body)
+
+
+def _api_get_commands(params: dict | None = None):
+    return _request_json("GET", MONITORING_COMMANDS_ENDPOINT, params=params)
 
 
 # ---------------------------------------------------------------------------
@@ -177,7 +142,7 @@ if st.button("Refresh Events", key="refresh_events"):
     if source_filter:
         event_params["source"] = source_filter
 
-    data = _api_get("/monitoring/events", params=event_params)
+    data = _api_get_events(params=event_params)
     if data and data.get("events"):
         st.session_state["events_data"] = data["events"]
     elif data:
@@ -200,11 +165,15 @@ if "events_data" in st.session_state and st.session_state["events_data"]:
     event_id_to_ack = st.text_input("Event ID to acknowledge")
     if st.button("Acknowledge", key="ack_btn"):
         if event_id_to_ack:
-            # Sanitize event ID to prevent path traversal
-            safe_id = quote(event_id_to_ack, safe="")
-            result = _api_post(f"/monitoring/events/{safe_id}/ack")
-            if result:
-                st.success(f"Event {event_id_to_ack} acknowledged.")
+            event_id_clean = event_id_to_ack.strip()
+            try:
+                UUID(event_id_clean)
+            except ValueError:
+                st.error("Invalid event ID format. Use a UUID value.")
+            else:
+                result = _api_ack_event(event_id_clean)
+                if result:
+                    st.success(f"Event {event_id_clean} acknowledged.")
         else:
             st.warning("Enter an event ID first.")
 
@@ -245,7 +214,7 @@ if st.button("Create Command", key="create_cmd"):
         if cmd_event_id:
             body["event_id"] = cmd_event_id
 
-        result = _api_post("/monitoring/commands", json_body=body)
+        result = _api_create_command(json_body=body)
         if result:
             st.success(f"Command created: {result}")
 
@@ -265,7 +234,7 @@ if st.button("Refresh Commands", key="refresh_cmds"):
     if status_filter != "all":
         cmd_query_params["status"] = status_filter
 
-    data = _api_get("/monitoring/commands", params=cmd_query_params)
+    data = _api_get_commands(params=cmd_query_params)
     if data and data.get("commands"):
         st.session_state["commands_data"] = data["commands"]
     elif data:

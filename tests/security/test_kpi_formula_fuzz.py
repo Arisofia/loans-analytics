@@ -42,8 +42,9 @@ def test_numeric_expression_fuzz_is_stable(a: float, b: float, c: float) -> None
 
     result = engine._safe_eval_numeric_expression(expression)  # noqa: SLF001
 
-    assert isinstance(result, float)
-    assert math.isfinite(result)
+    from decimal import Decimal
+    assert isinstance(result, Decimal)
+    assert result.is_finite()
 
 
 @settings(max_examples=120, deadline=None)
@@ -54,7 +55,8 @@ def test_division_by_zero_fails_closed(numerator: float) -> None:
 
     result = engine._safe_eval_numeric_expression(f"({numerator}) / 0")  # noqa: SLF001
 
-    assert result == 0.0
+    from decimal import Decimal
+    assert result == Decimal("0.0")
 
 
 @settings(max_examples=150, deadline=None, suppress_health_check=[HealthCheck.too_slow])
@@ -68,4 +70,5 @@ def test_untrusted_formula_input_never_crashes(payload: str) -> None:
 
     result = engine.calculate(payload)
 
-    assert isinstance(result, float)
+    from decimal import Decimal
+    assert isinstance(result, Decimal)
