@@ -154,10 +154,13 @@ jobs:
       - name: Resolve Azure auth mode
         id: azure_auth
         run: |
-          if [ -n "$AZURE_CREDENTIALS" ]; then
+          if [ -n "$AZURE_AD_CLIENT_ID" ] && [ -n "$AZURE_AD_TENANT_ID" ]; then
+            echo "mode=oidc" >> "$GITHUB_OUTPUT"
+          elif [ -n "$AZURE_CREDENTIALS" ]; then
             echo "mode=creds" >> "$GITHUB_OUTPUT"
           else
-            echo "mode=oidc" >> "$GITHUB_OUTPUT"
+            echo "::error::No Azure auth mode can be resolved."
+            exit 1
           fi
 
       - name: Azure login (service principal JSON secret)
