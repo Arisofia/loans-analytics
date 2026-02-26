@@ -19,8 +19,7 @@ echo -e "${BLUE}🚀 Abaco Loans Analytics - Hardened Production Deployment${NC}
 echo -e "${BLUE}======================================================================${NC}"
 
 # 1. Environment & Prerequisites
-echo -e "
-${BLUE}[1/6] Checking environment...${NC}"
+echo -e "\n${BLUE}[1/6] Checking environment...${NC}"
 if [[ "$OSTYPE" != "darwin"* && "$OSTYPE" != "linux-gnu"* ]]; then
     echo -e "${RED}❌ Unsupported OS: $OSTYPE${NC}"
     exit 1
@@ -38,31 +37,34 @@ done
 echo -e "${GREEN}✅ All required tools are available${NC}"
 
 # 2. Git Status Verification (Mandatory for Traceability)
-echo -e "
-${BLUE}[2/6] Verifying Git status...${NC}"
-git fetch origin main --quiet
+echo -e "\n${BLUE}[2/6] Verifying Git status...${NC}"
 
-# Check for uncommitted changes
-if [[ -n $(git status --porcelain) ]]; then
-    echo -e "${RED}❌ Uncommitted changes detected.${NC}"
-    echo -e "${YELLOW}   Production deployment requires a perfectly clean state for traceability.${NC}"
-    git status -sb
-    exit 1
-fi
+if [ "${GITHUB_ACTIONS}" != "true" ]; then
+    git fetch origin main --quiet
 
-# Check if in sync with origin/main
-LOCAL=$(git rev-parse @)
-REMOTE=$(git rev-parse @{u})
-if [ "$LOCAL" != "$REMOTE" ]; then
-    echo -e "${RED}❌ Local branch is not in sync with origin/main.${NC}"
-    echo -e "${YELLOW}   Please push or pull changes before deploying to production.${NC}"
-    exit 1
+    # Check for uncommitted changes
+    if [[ -n $(git status --porcelain) ]]; then
+        echo -e "${RED}❌ Uncommitted changes detected.${NC}"
+        echo -e "${YELLOW}   Production deployment requires a perfectly clean state for traceability.${NC}"
+        git status -sb
+        exit 1
+    fi
+
+    # Check if in sync with origin/main
+    LOCAL=$(git rev-parse @)
+    REMOTE=$(git rev-parse @{u})
+    if [ "$LOCAL" != "$REMOTE" ]; then
+        echo -e "${RED}❌ Local branch is not in sync with origin/main.${NC}"
+        echo -e "${YELLOW}   Please push or pull changes before deploying to production.${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✅ Git state is clean and in sync with origin/main${NC}"
+else
+    echo -e "${GREEN}✅ CI environment detected, using current checkout state.${NC}"
 fi
-echo -e "${GREEN}✅ Git state is clean and in sync with origin/main${NC}"
 
 # 3. Security Scan
-echo -e "
-${BLUE}[3/6] Running security scan...${NC}"
+echo -e "\n${BLUE}[3/6] Running security scan...${NC}"
 if [ -f "Makefile" ] && grep -q "security-check" Makefile; then
     make security-check || { echo -e "${RED}❌ Security check failed${NC}"; exit 1; }
 else
@@ -72,29 +74,27 @@ fi
 echo -e "${GREEN}✅ Security scan passed${NC}"
 
 # 4. Quality Gate
-echo -e "
-${BLUE}[4/6] Running quality gate (lint, type-check, tests)...${NC}"
+echo -e "\n${BLUE}[4/6] Running quality gate (lint, type-check, tests)...${NC}"
 make lint || { echo -e "${RED}❌ Linting failed${NC}"; exit 1; }
 make type-check || { echo -e "${RED}❌ Type check failed${NC}"; exit 1; }
 make test || { echo -e "${RED}❌ Tests failed${NC}"; exit 1; }
 echo -e "${GREEN}✅ Quality gate passed${NC}"
 
 # 5. Deployment Phase
-echo -e "
-${BLUE}[5/6] Executing deployment...${NC}"
+echo -e "\n${BLUE}[5/6] Executing deployment...${NC}"
 # Use the canonical deployment stack if available
 if [ -f "scripts/deployment/deploy_stack.sh" ]; then
     echo -e "${BLUE}📦 Triggering stack deployment...${NC}"
     bash scripts/deployment/deploy_stack.sh
 else
     echo -e "${YELLOW}⚠️  scripts/deployment/deploy_stack.sh not found, running alternative...${NC}"
-    docker-compose -f docker-compose.yml up -d
+    docker-compose -f docker-compose.dashboard.yml build
+    docker-compose -f docker-compose.dashboard.yml up -d
 fi
 echo -e "${GREEN}✅ Deployment phase complete${NC}"
 
 # 6. Post-Deployment Verification
-echo -e "
-${BLUE}[6/6] Running post-deployment health checks...${NC}"
+echo -e "\n${BLUE}[6/6] Running post-deployment health checks...${NC}"
 if [ -f "scripts/deployment/production_health_check.sh" ]; then
     # Default to localhost for verification if no URL provided
     bash scripts/deployment/production_health_check.sh http://localhost:8501
@@ -103,8 +103,7 @@ else
     curl -s --head http://localhost:8501 | head -n 1 || { echo -e "${RED}❌ Health check failed${NC}"; exit 1; }
 fi
 
-echo -e "
-${GREEN}======================================================================${NC}"
+echo -e "\n${GREEN}======================================================================${NC}"
 echo -e "${GREEN}✅ Production deployment completed successfully!${NC}"
 echo -e "${BLUE}   Commit: $(git rev-parse --short HEAD)${NC}"
 echo -e "${BLUE}   Time:   $(date)${NC}"
