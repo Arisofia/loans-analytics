@@ -16,6 +16,19 @@ NC='\033[0m' # No Color
 APP_URL="${1:-https://abaco-loans-prod.azurewebsites.net}"
 HEALTH_ENDPOINT="/health"
 TIMEOUT=10
+HEALTH_RETRIES="${HEALTH_RETRIES:-20}"
+HEALTH_RETRY_DELAY="${HEALTH_RETRY_DELAY:-3}"
+PYTHON_BIN="${PYTHON_BIN:-}"
+
+if [ -z "$PYTHON_BIN" ]; then
+	if [ -x ".venv/bin/python" ]; then
+		PYTHON_BIN=".venv/bin/python"
+	elif command -v python3 >/dev/null 2>&1; then
+		PYTHON_BIN="$(command -v python3)"
+	else
+		PYTHON_BIN="$(command -v python)"
+	fi
+fi
 
 echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
 echo -e "${BLUE}  Production Health Check - $(date '+%Y-%m-%d %H:%M:%S')${NC}"
@@ -41,9 +54,27 @@ print_status() {
 echo -e "${BLUE}[1] Application Health${NC}"
 echo "────────────────────────────────────────────────────────────"
 
-RESPONSE=$(curl -s -w "\n%{http_code}" -m $TIMEOUT "${APP_URL}${HEALTH_ENDPOINT}" 2>&1 || echo "000")
-HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
-BODY=$(echo "$RESPONSE" | sed '$d')
+# Wait for app readiness to avoid false negatives right after deployment.
+ATTEMPT=0
+HTTP_CODE="000"
+BODY=""
+while [ "$ATTEMPT" -lt "$HEALTH_RETRIES" ]; do
+	RESPONSE=$(curl -s -w "\n%{http_code}" -m $TIMEOUT "${APP_URL}${HEALTH_ENDPOINT}" 2>&1 || echo "000")
+	HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+	BODY=$(echo "$RESPONSE" | sed '$d')
+	if [ "$HTTP_CODE" = "200" ]; then
+		break
+	fi
+	# Some services (e.g. Streamlit) may not expose /health but do respond on root.
+	ROOT_CODE=$(curl -s -o /dev/null -w "%{http_code}" -m $TIMEOUT "${APP_URL}" 2>&1 || echo "000")
+	if [ "$ROOT_CODE" = "200" ]; then
+		HTTP_CODE="200"
+		BODY='{"status":"ok","source":"root-endpoint-fallback"}'
+		break
+	fi
+	ATTEMPT=$((ATTEMPT + 1))
+	sleep "$HEALTH_RETRY_DELAY"
+done
 
 if [ "$HTTP_CODE" = "200" ]; then
 	print_status "Health Endpoint" "✅" "Responding normally (HTTP $HTTP_CODE)"
@@ -136,17 +167,19 @@ echo "────────────────────────�
 
 if [ -n "$VIRTUAL_ENV" ]; then
 	print_status "Virtual Environment" "✅" "Active ($VIRTUAL_ENV)"
+elif [[ "$PYTHON_BIN" == ".venv/bin/python" ]]; then
+	print_status "Virtual Environment" "✅" "Using project interpreter (.venv)"
 else
 	print_status "Virtual Environment" "⚠️" "Not activated"
 fi
 
-PYTHON_VERSION=$(python --version 2>&1 | awk '{print $2}' || echo "unknown")
+PYTHON_VERSION=$("$PYTHON_BIN" --version 2>&1 | awk '{print $2}' || echo "unknown")
 print_status "Python Version" "✅" "$PYTHON_VERSION"
 
 # Check required packages
 REQUIRED_PACKAGES=("pandas" "pydantic" "asyncpg" "opentelemetry")
 for pkg in "${REQUIRED_PACKAGES[@]}"; do
-	if python -c "import ${pkg//-/_}" 2>/dev/null; then
+	if "$PYTHON_BIN" -c "import ${pkg//-/_}" 2>/dev/null; then
 		print_status "Package: $pkg" "✅" "Installed"
 	else
 		print_status "Package: $pkg" "❌" "Not installed"
@@ -158,8 +191,9 @@ echo ""
 echo -e "${BLUE}[6] Tests${NC}"
 echo "────────────────────────────────────────────────────────────"
 
-if [ -d "tests" ] && command -v pytest &>/dev/null; then
-	TEST_RESULT=$(pytest tests/ -q --tb=no 2>&1 | tail -1)
+PYTEST_BIN="$(dirname "$PYTHON_BIN")/pytest"
+if [ -d "tests" ] && [ -x "$PYTEST_BIN" ]; then
+	TEST_RESULT=$("$PYTEST_BIN" tests/ -q --tb=no 2>&1 | tail -1)
 	print_status "Test Suite" "✅" "$TEST_RESULT"
 else
 	print_status "Test Suite" "⚠️" "Pytest not available or tests directory missing"

@@ -78,6 +78,9 @@ echo -e "\n${BLUE}[4/6] Running quality gate (lint, type-check, tests)...${NC}"
 make lint || { echo -e "${RED}❌ Linting failed${NC}"; exit 1; }
 make type-check || { echo -e "${RED}❌ Type check failed${NC}"; exit 1; }
 make test || { echo -e "${RED}❌ Tests failed${NC}"; exit 1; }
+# Tests generate runtime usage artifacts; clean them to preserve traceable git state.
+rm -f data/usage_metrics/usage_events.jsonl 2>/dev/null || true
+rmdir data/usage_metrics 2>/dev/null || true
 echo -e "${GREEN}✅ Quality gate passed${NC}"
 
 # 5. Deployment Phase
