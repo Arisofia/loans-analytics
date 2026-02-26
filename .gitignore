@@ -167,43 +167,6 @@ playwright/.auth
 *.mp3
 
 # ===========================================
-# Backup / cleanup artifacts
-# ===========================================
-*.cleanup-backup
-*.backup
-
-# ===========================================
-# Hidden tool / agent folders
-# ===========================================
-.rollback/
-.benchmarks/
-.vercel/
-nvm/
-
-# ===========================================
-# Generated reports (not source docs)
-# ===========================================
-service_status_report.json
-service_status_report.md
-reports/
-
-# Temporary session/status report files
-AUTOMATION_*.md
-CLEANUP_*.md
-COMPLETION_*.md
-COMPREHENSIVE_*.md
-CONSOLIDATION_*.md
-CRITICAL_FIX_*.md
-FINAL_*.md
-FIX_ALL_*.md
-OPTIMIZATION_*.md
-PROJECT_CLEANUP_*.md
-SESSION_*.md
-STATUS_*.md
-TECHNICAL_DEBT_*.md
-WORKFLOW_*.md
-
-# ===========================================
 # Root-level scripts / orphaned files
 # ===========================================
 # One-time fix/cleanup scripts
@@ -263,4 +226,3 @@ supabase/.temp/
 bandit-report.json
 bandit-results.sarif
 .hypothesis/
-data/usage_metrics/
