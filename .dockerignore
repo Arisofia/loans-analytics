@@ -1,0 +1,75 @@
+# Docker Ignore file for Abaco Loans Analytics
+# Exclude source control
+.git
+.gitignore
+.github
+
+# Exclude IDE and tool configs
+.vscode
+.idea
+.trunk
+.zenflow
+.zencoder
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.benchmarks
+
+# Exclude virtual environments
+.venv
+venv
+ENV
+env
+
+# Exclude build artifacts and caches
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+build
+develop-eggs
+dist
+downloads
+eggs
+.eggs
+lib
+lib64
+parts
+sdist
+var
+wheels
+pip-wheel-metadata
+share/python-wheels
+*.egg-info
+.installed.cfg
+*.egg
+MANIFEST
+
+# Exclude documentation
+docs/
+*.md
+
+# Exclude data and logs (unless needed for build)
+data/
+logs/
+htmlcov/
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+
+# Exclude environment files
+.env
+.env.local
+.env.*
+
+# Exclude node_modules (if any)
+node_modules/
+
+# Exclude docker-related files (not needed inside image)
+Dockerfile*
+docker-compose*.yml
+.dockerignore

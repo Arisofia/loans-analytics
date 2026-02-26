@@ -1,0 +1,27 @@
+[run]
+branch = True
+omit =
+    .venv*/*
+    .vscode/*
+    tests/*
+    */__pycache__/*
+
+[report]
+# Coverage threshold disabled for CI - agent tests use mocks
+# fail_under = 85
+skip_covered = False
+skip_empty = True
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml

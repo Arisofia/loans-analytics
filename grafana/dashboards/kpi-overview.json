@@ -1,0 +1,320 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Supabase PostgreSQL",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  COALESCE(kv.computed_at, kv.\"timestamp\", kv.as_of_date::timestamptz) as time,\n  COALESCE(kd.name, kd.display_name, kv.kpi_key) as metric,\n  COALESCE(kv.value_num, kv.value) as value\nFROM public.kpi_values kv\nLEFT JOIN public.kpi_definitions kd ON kd.kpi_key = kv.kpi_key\nWHERE kv.as_of_date >= CURRENT_DATE - INTERVAL '30 days'\n  AND COALESCE(kv.value_num, kv.value) IS NOT NULL\nORDER BY time",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": ["value_num"],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "as_of_date",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "KPI Values - Last 30 Days",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Supabase PostgreSQL",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "kpi_key",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  date::timestamptz as time,\n  kpi_id as metric,\n  COALESCE(value_numeric, value_int::numeric) as value\nFROM public.historical_kpis\nWHERE date >= CURRENT_DATE - INTERVAL '90 days'\n  AND is_final = true\n  AND COALESCE(value_numeric, value_int::numeric) IS NOT NULL\nORDER BY date",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": ["value_numeric"],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "date",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Historical KPI Trends",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Supabase PostgreSQL",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "options": {
+        "showHeader": true
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "WITH latest AS (\n  SELECT DISTINCT ON (kpi_key)\n    kpi_key,\n    COALESCE(value_num, value) AS value_num,\n    status,\n    as_of_date,\n    COALESCE(computed_at, \"timestamp\") AS computed_at,\n    created_at\n  FROM public.kpi_values\n  ORDER BY kpi_key, as_of_date DESC, COALESCE(computed_at, \"timestamp\") DESC NULLS LAST, created_at DESC NULLS LAST\n)\nSELECT\n  COALESCE(kd.name, kd.display_name, kd.kpi_key) as \"KPI Name\",\n  COALESCE(kd.category, 'Uncategorized') as \"Category\",\n  l.value_num as \"Current Value\",\n  kd.unit as \"Unit\",\n  COALESCE(l.status, 'n/a') as \"Status\",\n  COALESCE(l.computed_at, l.as_of_date::timestamptz) as \"Last Updated\"\nFROM public.kpi_definitions kd\nLEFT JOIN latest l ON l.kpi_key = kd.kpi_key\nORDER BY 2, 1",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": ["*"],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "as_of_date",
+          "where": []
+        }
+      ],
+      "title": "KPI Status Table",
+      "type": "table"
+    },
+    {
+      "datasource": "Supabase PostgreSQL",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 4,
+      "options": {
+        "showHeader": true
+      },
+      "pluginVersion": "9.0.0",
+      "targets": [
+        {
+          "format": "table",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  created_at as \"Time\",\n  COALESCE(payload->>'agent_role', source) as \"Agent\",\n  severity as \"Severity\",\n  event_type as \"Event\",\n  COALESCE(payload->>'comment', payload->>'message', payload::text) as \"Comment\"\nFROM monitoring.operational_events\nWHERE source IN ('agent', 'multi_agent', 'orchestrator', 'dashboard')\n   OR event_type ILIKE 'agent%'\n   OR payload ? 'agent_role'\nORDER BY created_at DESC\nLIMIT 200",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": ["*"],
+                "type": "column"
+              }
+            ]
+          ],
+          "timeColumn": "created_at",
+          "where": []
+        }
+      ],
+      "title": "Agent Comments Feed",
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["abaco", "kpi", "monitoring"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "ABACO KPI Overview",
+  "uid": "abaco-kpi-overview",
+  "version": 1,
+  "weekStart": ""
+}

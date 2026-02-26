@@ -1,0 +1,139 @@
+name: "Security Scan (DISABLED — cloud services stopped to reduce costs)"
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    env:
+      # Avoid unstable PR diff-range extension generation in Dependabot branches.
+      CODEQL_ACTION_DIFF_INFORMED_QUERIES: "false"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["python"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0 # Keep full history so CodeQL can build PR diff range reliably
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
+        with:
+          languages: ${{ matrix.language }}
+
+          config-file: ./.github/codeql-config.yml
+        env:
+          # Disable PR diff analysis to prevent undefined value errors in extension pack
+          # This forces CodeQL to analyze the full codebase instead of just PR diffs
+          CODEQL_EXTRACTOR_PYTHON_OPTION_ANALYZE_PR_DIFF: "false"
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
+        with:
+          category: "/language:${{ matrix.language }}"
+          upload: ${{ vars.ENABLE_CODE_SCANNING == 'true' }}
+          skip-queries: false
+
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Skip Snyk scan when token is missing
+        if: ${{ env.SNYK_TOKEN == '' }}
+        run: echo "::warning::SNYK_TOKEN is not configured. Skipping Snyk dependency scan."
+
+      - name: Run Snyk to check for vulnerabilities
+        if: ${{ env.SNYK_TOKEN != '' }}
+        uses: snyk/actions/python@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
+        with:
+          args: --file=requirements.txt --package-manager=pip --severity-threshold=high --fail-on=all
+
+  security-audit:
+    name: Python Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install "safety" "bandit[sarif]" "ruff"
+
+      - name: Run safety check
+        run: |
+          safety check --save-json safety-report.json || true
+          safety check --continue-on-error \
+            --save-json safety-results.json || true
+
+      - name: Run bandit security linter
+        run: |
+          # Dynamically discover Python source directories
+          SCAN_DIRS=()
+          for dir in python src app lib scripts; do
+            if [ -d "$dir" ]; then
+              SCAN_DIRS+=("$dir")
+            fi
+          done
+
+          if [ "${#SCAN_DIRS[@]}" -gt 0 ]; then
+            echo "Scanning directories: ${SCAN_DIRS[*]}"
+            bandit -r "${SCAN_DIRS[@]}" -f json -o bandit-report.json \
+              || echo "Bandit JSON scan encountered issues"
+            bandit -r "${SCAN_DIRS[@]}" -f sarif -o bandit-results.sarif \
+              --severity-level medium || echo "Bandit SARIF scan encountered issues"
+          else
+            echo "⚠️  No Python source directories found to scan"
+            # Create empty placeholder files
+            echo "[]" > bandit-report.json
+            printf '%s\n' "{\"version\":\"2.1.0\",\"\$schema\":\"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json\",\"runs\":[]}" > bandit-results.sarif
+          fi
+
+      - name: Upload Bandit SARIF results
+        if: ${{ vars.ENABLE_CODE_SCANNING == 'true' && always() && hashFiles('bandit-results.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
+        with:
+          sarif_file: bandit-results.sarif
+          category: security-audit
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: security-reports
+          path: |
+            safety-report.json
+            safety-results.json
+            bandit-report.json
+            bandit-results.sarif
+          retention-days: 30

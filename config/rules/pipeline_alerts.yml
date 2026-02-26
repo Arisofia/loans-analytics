@@ -1,0 +1,333 @@
+# Prometheus Alert Rules for Abaco Pipeline
+# File: config/rules/pipeline_alerts.yml
+# Monitors: 4-phase ETL pipeline, KPI calculation, connection pool, multi-agent system
+
+groups:
+  # ============================================
+  # PIPELINE EXECUTION ALERTS
+  # ============================================
+  - name: pipeline-critical
+    interval: 60s
+    rules:
+      # Pipeline failures
+      - alert: PipelineExecutionFailed
+        expr: |
+          rate(pipeline_runs_total{status="error"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          team: engineering
+          component: pipeline
+        annotations:
+          summary: "Pipeline execution failed in {{ $labels.phase }} phase"
+          description: "Pipeline {{ $labels.run_id }} failed. Check structured logs for traceback."
+          action: |
+            1. Check logs: grep "{{ $labels.run_id }}" logs/pipeline.log
+            2. Review error context in src/pipeline/{{ $labels.phase }}.py
+            3. Check data/compliance/{{ $labels.run_id }}_compliance.json
+          runbook: "https://github.com/Arisofia/abaco-loans-analytics/wiki/Pipeline-Failures"
+
+      # KPI calculation failures exceeding threshold
+      - alert: KPICalculationFailureRateHigh
+        expr: |
+          (
+            sum(rate(kpi_calculation_failures_total[5m])) by (kpi_name) /
+            sum(rate(kpi_calculations_total[5m])) by (kpi_name)
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+          team: engineering
+          component: kpi-engine
+        annotations:
+          summary: "KPI {{ $labels.kpi_name }} failure rate: {{ $value | humanizePercentage }}"
+          description: "KPI calculation failure rate exceeds 5% SLA threshold."
+          action: |
+            1. Check src/pipeline/calculation.py structured logs
+            2. Review KPI formula in config/kpis/kpi_definitions.yaml
+            3. Verify data quality in transformation phase
+            4. Check for missing columns in dataframe
+          runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/KPI-Failures
+
+      # Pipeline duration exceeding SLA
+      - alert: PipelineDurationSLABreach
+        expr: |
+          pipeline_duration_seconds > 300
+        for: 5m
+        labels:
+          severity: warning
+          team: engineering
+          component: pipeline
+        annotations:
+          summary: "Pipeline duration: {{ $value }}s (SLA: 300s)"
+          description: "Pipeline execution time exceeds 5-minute SLA. May impact dashboard refresh."
+          action: |
+            1. Check phase breakdown: pipeline_duration_seconds{phase="..."}
+            2. Review data volume: fact_loans row count
+            3. Check database query performance
+            4. Consider switching from pandas to polars
+
+  # ============================================
+  # CONNECTION POOL ALERTS
+  # ============================================
+  - name: connection-pool
+    interval: 30s
+    rules:
+      # Connection pool exhausted
+      - alert: ConnectionPoolExhausted
+        expr: |
+          connection_pool_size{state="active"} / connection_pool_size{state="total"} > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          component: connection-pool
+        annotations:
+          summary: "Connection pool at {{ $value | humanizePercentage }} utilization"
+          description: "Application connection pool nearing capacity. May cause query failures."
+          action: |
+            1. Check python/supabase_pool.py health_check()
+            2. Review pool config in python/config/__init__.py (SupabasePoolSettings)
+            3. Increase max_size if needed
+            4. Check for connection leaks in pipeline phases
+
+      # Connection pool failures
+      - alert: ConnectionPoolFailures
+        expr: |
+          rate(connection_pool_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+          component: connection-pool
+        annotations:
+          summary: "Connection pool failures detected"
+          description: "Connections are failing to initialize or execute queries."
+          action: |
+            1. Check Supabase health: https://status.supabase.com
+            2. Verify SUPABASE_DATABASE_URL env var
+            3. Review asyncpg error logs
+            4. Test connection: python scripts/test_supabase_connection.py
+
+      # Connection pool health check failures
+      - alert: ConnectionPoolHealthCheckFailed
+        expr: |
+          connection_pool_health_check == 0
+        for: 3m
+        labels:
+          severity: warning
+          team: platform
+          component: connection-pool
+        annotations:
+          summary: "Connection pool health check failed"
+          description: "Health check SELECT 1 query is failing."
+          action: |
+            1. Check database connectivity
+            2. Review firewall/security group rules
+            3. Verify Supabase credentials
+
+  # ============================================
+  # IDEMPOTENCY & CACHING ALERTS
+  # ============================================
+  - name: idempotency
+    interval: 60s
+    rules:
+      # Low cache hit rate
+      - alert: IdempotencyCacheHitRateLow
+        expr: |
+          (
+            rate(idempotency_cache_hits_total[1h]) /
+            (rate(idempotency_cache_hits_total[1h]) + rate(idempotency_cache_misses_total[1h]))
+          ) < 0.5
+        for: 30m
+        labels:
+          severity: info
+          team: engineering
+          component: orchestrator
+        annotations:
+          summary: "Idempotency cache hit rate: {{ $value | humanizePercentage }}"
+          description: "Cache effectiveness below 50%. Pipeline may be reprocessing data unnecessarily."
+          action: |
+            1. Review src/pipeline/orchestrator.py idempotency logic
+            2. Check if input data is changing frequently
+            3. Verify _calculate_input_hash() includes all relevant inputs
+            4. Consider adjusting cache TTL
+
+  # ============================================
+  # MULTI-AGENT SYSTEM ALERTS
+  # ============================================
+  - name: multi-agent
+    interval: 60s
+    rules:
+      # Agent request failures
+      - alert: AgentRequestFailureRateHigh
+        expr: |
+          (
+            sum(rate(agent_requests_total{status="error"}[5m])) by (agent) /
+            sum(rate(agent_requests_total[5m])) by (agent)
+          ) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          team: engineering
+          component: multi-agent
+        annotations:
+          summary: "Agent {{ $labels.agent }} failure rate: {{ $value | humanizePercentage }}"
+          description: "Multi-agent system experiencing elevated failure rate."
+          action: |
+            1. Check python/multi_agent/orchestrator.py logs
+            2. Review LLM provider status (OpenAI, Anthropic, Gemini)
+            3. Verify API keys: OPENAI_API_KEY, ANTHROPIC_API_KEY
+            4. Check for rate limiting
+
+      # Agent cost anomaly
+      - alert: AgentCostAnomalyDetected
+        expr: |
+          rate(agent_llm_cost_usd[1h]) >
+          (rate(agent_llm_cost_usd[7d]) * 2)
+        for: 2h
+        labels:
+          severity: warning
+          team: engineering
+          component: multi-agent
+        annotations:
+          summary: "Agent {{ $labels.agent }} cost doubled from 7-day average"
+          description: "LLM costs for {{ $labels.agent }} have spiked. Investigate prompt efficiency."
+          action: |
+            1. Check OpenTelemetry traces in python/multi_agent/tracing.py
+            2. Review token usage: agent_tokens_total{agent="..."}
+            3. Optimize prompts for brevity
+            4. Consider switching to cheaper model for non-critical tasks
+
+      # Agent latency high
+      - alert: AgentLatencyHigh
+        expr: |
+          histogram_quantile(0.95, rate(agent_duration_seconds_bucket[5m])) > 10
+        for: 10m
+        labels:
+          severity: warning
+          team: engineering
+          component: multi-agent
+        annotations:
+          summary: "Agent {{ $labels.agent }} P95 latency: {{ $value }}s"
+          description: "Agent response time exceeds 10s SLA. May impact user experience."
+          action: |
+            1. Check LLM provider latency
+            2. Review prompt complexity
+            3. Consider caching frequent queries
+            4. Implement timeout strategies
+
+  # ============================================
+  # DATA QUALITY ALERTS
+  # ============================================
+  - name: data-quality
+    interval: 300s # Every 5 minutes
+    rules:
+      # Data volume anomaly
+      - alert: DataVolumeAnomalyDetected
+        expr: |
+          abs(
+            (fact_loans_row_count - avg_over_time(fact_loans_row_count[7d])) /
+            stddev_over_time(fact_loans_row_count[7d])
+          ) > 3
+        for: 30m
+        labels:
+          severity: warning
+          team: engineering
+          component: ingestion
+        annotations:
+          summary: "fact_loans row count deviation: {{ $value }}σ from 7-day average"
+          description: "Significant deviation in data volume. Possible data quality issue or business anomaly."
+          action: |
+            1. Check src/pipeline/ingestion.py logs
+            2. Verify source data completeness
+            3. Correlate with business events (holidays, system maintenance)
+            4. Review data/raw/ for missing/duplicate files
+
+      # PII masking failures
+      - alert: PIIMaskingFailureDetected
+        expr: |
+          rate(pii_masking_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          team: compliance
+          component: transformation
+        annotations:
+          summary: "PII masking failed in transformation phase"
+          description: "CRITICAL: Personally Identifiable Information may be exposed."
+          action: |
+            1. HALT PIPELINE IMMEDIATELY
+            2. Check src/compliance.py logs
+            3. Review data/compliance/{{ $labels.run_id }}_compliance.json
+            4. Audit exposed data and notify security team
+            5. Verify PII patterns in src/transformation.py
+          runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/PII-Incident-Response
+
+  # ============================================
+  # PORTFOLIO KPI ALERTS
+  # ============================================
+  - name: portfolio-kpi-alerts
+    interval: 300s
+    rules:
+      # PAR-90 breach (Portfolio at Risk 90+ days past due)
+      - alert: PAR90AboveThreshold
+        expr: |
+          abaco_par90_ratio > 0.045
+        for: 15m
+        labels:
+          severity: critical
+          team: risk
+          component: kpi-engine
+        annotations:
+          summary: "PAR-90 at {{ $value | humanizePercentage }} — exceeds 4.5% threshold"
+          description: |
+            Portfolio at Risk (90+ days past due) has breached the 4.5% risk
+            guardrail.  Current default-rate target is <4%.  Immediate review
+            of delinquent cohorts is required.
+          action: |
+            1. Query fact_loans WHERE days_past_due >= 90
+            2. Run python -m src.agents.multi_agent.orchestrator --scenario risk_review
+            3. Review PAR-90 trend in Grafana KPI dashboard
+            4. Escalate to CRO if value persists above 5%
+          runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/PAR-Breach
+
+      # PAR-30 warning (early delinquency signal)
+      - alert: PAR30Warning
+        expr: |
+          abaco_par30_ratio > 0.08
+        for: 15m
+        labels:
+          severity: warning
+          team: risk
+          component: kpi-engine
+        annotations:
+          summary: "PAR-30 at {{ $value | humanizePercentage }} — exceeds 8% warning level"
+          description: |
+            Early-stage delinquency (30+ DPD) is elevated.  If the trend
+            continues, PAR-90 is likely to breach within 60 days.
+          action: |
+            1. Review recent originations for underwriting quality
+            2. Check collection_rate trend in Grafana
+            3. Run python -m src.agents.multi_agent.orchestrator --scenario collections_review
+          runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/PAR-Breach
+
+      # Default rate approaching guardrail
+      - alert: DefaultRateHigh
+        expr: |
+          abaco_default_rate > 0.035
+        for: 30m
+        labels:
+          severity: warning
+          team: risk
+          component: kpi-engine
+        annotations:
+          summary: "Default rate at {{ $value | humanizePercentage }} — approaching 4% guardrail"
+          description: |
+            Default rate is within 0.5pp of the 4% risk guardrail.
+            Tightening origination criteria may be warranted.
+          action: |
+            1. Review cohort-level default rates
+            2. Check concentration risk (top-10 obligors ≤30%)
+            3. Evaluate pricing adjustments via pricing agent
+          runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/Default-Rate

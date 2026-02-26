@@ -1,0 +1,99 @@
+.PHONY: help setup format lint type-check test clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev report-strategic
+PYTHON ?= $(shell command -v python3.12 || command -v python3.11 || command -v python3.10 || command -v python3)
+VENV := .venv
+BIN := $(VENV)/bin
+export PYTHONPATH := .
+# Default target
+help:
+	@echo "Abaco Loans Analytics Automation"
+	@echo "--------------------------------"
+	@echo "make setup          - Create virtual env and install dependencies"
+	@echo "make format         - Format code with black and isort"
+	@echo "make lint           - Run pylint, flake8, and ruff"
+	@echo "make type-check     - Run mypy static type checking"
+	@echo "make test           - Run unit tests with pytest"
+	@echo "make security-check - Run bandit and safety checks"
+	@echo "make clean          - Run canonical repository maintenance cleanup"
+	@echo "make dev            - Start API server with hot-reload (uvicorn)"
+	@echo "make service-status - Generate comprehensive service status report"
+	@echo "make report-strategic - Generate strategic executive report artifacts"
+	@echo ""
+	@echo "Monitoring Stack:"
+	@echo "make monitoring-start    - Auto-start Prometheus + Grafana + Alertmanager"
+	@echo "make monitoring-stop     - Stop monitoring stack"
+	@echo "make monitoring-logs     - View monitoring logs"
+	@echo "make monitoring-health   - Check monitoring stack health"
+setup:
+	@if ! command -v "$(PYTHON)" >/dev/null 2>&1; then \
+		echo "Python executable '$(PYTHON)' not found. Run with PYTHON=python3.x"; \
+		exit 1; \
+	fi
+	@$(PYTHON) -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' || { \
+		echo "Python 3.10+ is required. Selected interpreter: $(PYTHON)"; \
+		exit 1; \
+	}
+	$(PYTHON) -m venv --clear $(VENV)
+	$(BIN)/pip install --upgrade pip
+	$(BIN)/pip install -r requirements.txt
+	$(BIN)/pip install -r requirements-dev.txt
+	@if [ -d .git ]; then \
+		if [ -x "$(BIN)/pre-commit" ]; then \
+			HOOKS_PATH=$$(git config --get core.hooksPath || true); \
+			if [ -n "$$HOOKS_PATH" ]; then \
+				echo "Skipping pre-commit hook install: core.hooksPath is set to $$HOOKS_PATH"; \
+			elif ! $(BIN)/pre-commit install; then \
+				echo "Skipping pre-commit hook install: pre-commit install failed"; \
+			fi; \
+		else \
+			echo "Skipping pre-commit hook install: $(BIN)/pre-commit not found"; \
+		fi; \
+	fi
+format:
+	$(BIN)/black .
+	$(BIN)/isort .
+lint:
+	$(BIN)/ruff check .
+	$(BIN)/flake8 src python scripts
+	$(BIN)/pylint src python scripts
+type-check:
+	$(BIN)/mypy --check-untyped-defs src
+test:
+	$(BIN)/pytest
+security-check:
+	$(BIN)/bandit -r src python --quiet -x "**/test_*.py,**/tests.py"
+	@if $(BIN)/pip list | grep -q safety; then $(BIN)/safety check; else echo "safety not installed, skipping"; fi
+clean:
+	@bash scripts/maintenance/repo_maintenance.sh --mode=standard
+
+# Service Status Report
+service-status:
+	@if [ -x "$(BIN)/python" ]; then \
+		"$(BIN)/python" scripts/maintenance/generate_service_status_report.py; \
+	else \
+		"$(PYTHON)" scripts/maintenance/generate_service_status_report.py; \
+	fi
+
+# Monitoring Stack Automation
+monitoring-start:
+	@bash scripts/monitoring/auto_start_monitoring.sh
+
+monitoring-stop:
+	@docker-compose -f docker-compose.monitoring.yml down
+
+monitoring-logs:
+	@docker-compose -f docker-compose.monitoring.yml logs -f
+
+monitoring-health:
+	@bash scripts/monitoring/health_check_monitoring.sh
+
+# NOTE: run-analytics target removed (legacy script deleted in Phase B)
+# Pipeline modernization tracked separately
+
+# Development Server (hot-reload)
+dev:
+	@echo "Starting API server on http://127.0.0.1:8000 with hot-reload..."
+	$(BIN)/uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir python --reload-dir src --reload-dir config
+
+# Strategic reporting
+report-strategic:
+	$(BIN)/python scripts/reporting/generate_strategic_report.py

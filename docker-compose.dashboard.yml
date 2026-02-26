@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Streamlit Dashboard
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - ./streamlit_app:/app/streamlit_app
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - abaco-network
+
+  # Daily Agent Analysis (scheduled service)
+  agent-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DAILY_AGENT_INPUT_PATH=${DAILY_AGENT_INPUT_PATH:-}
+    command: >
+      sh -c "
+      while true; do
+        echo 'Running daily agent analysis...';
+        if [ -z \"$$DAILY_AGENT_INPUT_PATH\" ]; then
+          echo 'DAILY_AGENT_INPUT_PATH is not set. Skipping run to avoid seed/demo data in runtime.';
+          sleep 86400;
+          continue;
+        fi;
+        if [ ! -f \"$$DAILY_AGENT_INPUT_PATH\" ]; then
+          echo \"Input file not found: $$DAILY_AGENT_INPUT_PATH. Skipping run.\";
+          sleep 86400;
+          continue;
+        fi;
+        python scripts/run_daily_agent_analysis.py --input \"$$DAILY_AGENT_INPUT_PATH\";
+        echo 'Analysis complete. Sleeping for 24 hours...';
+        sleep 86400;
+      done
+      "
+    volumes:
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+      - ./python:/app/python
+    restart: unless-stopped
+    networks:
+      - abaco-network
+    depends_on:
+      - dashboard
+
+networks:
+  abaco-network:
+    driver: bridge
+
+volumes:
+  data-volume:
