@@ -24,7 +24,7 @@ annotated-doc==0.0.4
     #   typer
 annotated-types==0.7.0
     # via pydantic
-anthropic==0.83.0
+anthropic==0.84.0
     # via
     #   -r requirements.txt
     #   langchain-anthropic
@@ -39,7 +39,7 @@ apprise==1.9.7
     # via prefect
 asgi-lifespan==2.1.0
     # via prefect
-astroid==4.0.4
+astroid==4.1.1
     # via pylint
 asyncpg==0.31.0
     # via
@@ -90,7 +90,7 @@ cachetools==6.2.6
     #   py-key-value-aio
     #   pyiceberg
     #   streamlit
-certifi==2026.1.4
+certifi==2026.2.25
     # via
     #   apprise
     #   httpcore
@@ -154,11 +154,11 @@ et-xmlfile==2.0.0
     # via openpyxl
 exceptiongroup==1.3.1
     # via prefect
-faker==40.4.0
+faker==40.5.1
     # via -r requirements-dev.txt
-fakeredis[lua]==2.34.0
+fakeredis[lua]==2.34.1
     # via pydocket
-fastapi==0.129.0
+fastapi==0.133.1
     # via prefect
 flake8==7.3.0
     # via -r requirements-dev.txt
@@ -170,7 +170,7 @@ gitdb==4.0.12
     # via gitpython
 gitpython==3.1.46
     # via streamlit
-google-ai-generativelanguage==0.6.15
+google-ai-generativelanguage==0.10.0
     # via
     #   -r requirements.txt
     #   google-generativeai
@@ -201,7 +201,7 @@ googleapis-common-protos==1.72.0
     #   opentelemetry-exporter-otlp-proto-http
 graphviz==0.21
     # via prefect
-greenlet==3.3.1
+greenlet==3.3.2
     # via
     #   playwright
     #   sqlalchemy
@@ -218,7 +218,7 @@ grpcio==1.78.1
     #   google-api-core
     #   grpcio-status
     #   opentelemetry-exporter-otlp-proto-grpc
-grpcio-status==1.71.2
+grpcio-status==1.78.0
     # via
     #   -r requirements.txt
     #   google-api-core
@@ -309,9 +309,9 @@ jsonschema-specifications==2025.9.1
     # via jsonschema
 langchain==1.2.10
     # via -r requirements.txt
-langchain-anthropic==1.3.3
+langchain-anthropic==1.3.4
     # via -r requirements.txt
-langchain-core==1.2.14
+langchain-core==1.2.16
     # via
     #   -r requirements.txt
     #   langchain
@@ -320,7 +320,7 @@ langchain-core==1.2.14
     #   langgraph
     #   langgraph-checkpoint
     #   langgraph-prebuilt
-langchain-openai==1.1.9
+langchain-openai==1.1.10
     # via -r requirements.txt
 langgraph==1.0.9
     # via langchain
@@ -330,9 +330,9 @@ langgraph-checkpoint==4.0.0
     #   langgraph-prebuilt
 langgraph-prebuilt==1.0.8
     # via langgraph
-langgraph-sdk==0.3.8
+langgraph-sdk==0.3.9
     # via langgraph
-langsmith==0.7.5
+langsmith==0.7.7
     # via langchain-core
 librt==0.8.1
     # via mypy
@@ -356,7 +356,7 @@ mdurl==0.1.2
     # via markdown-it-py
 mmh3==5.2.0
     # via pyiceberg
-msal==1.34.0
+msal==1.35.0
     # via
     #   azure-identity
     #   msal-extensions
@@ -375,7 +375,7 @@ mypy-extensions==1.1.0
     #   black
     #   mypy
     #   typing-inspect
-narwhals==2.16.0
+narwhals==2.17.0
     # via
     #   altair
     #   plotly
@@ -390,7 +390,7 @@ numpy==2.4.2
     #   xgboost
 oauthlib==3.3.1
     # via requests-oauthlib
-openai==2.18.0
+openai==2.24.0
     # via
     #   -r requirements.txt
     #   langchain-openai
@@ -538,7 +538,7 @@ polars-runtime-32==1.38.1
     # via polars
 postgrest==2.28.0
     # via supabase
-prefect==3.6.18
+prefect==3.6.19
     # via -r requirements.txt
 prometheus-client==0.24.1
     # via
@@ -609,7 +609,7 @@ pydantic==2.12.5
     #   realtime
     #   storage3
     #   supabase-auth
-pydantic-core==2.41.5
+pydantic-core==2.42.0
     # via
     #   prefect
     #   pydantic
@@ -621,7 +621,7 @@ pydantic-settings==2.13.1
     #   prefect
 pydeck==0.9.1
     # via streamlit
-pydocket==0.17.8
+pydocket==0.17.9
     # via prefect
 pyee==13.0.1
     # via playwright
@@ -719,7 +719,7 @@ readchar==4.2.1
     # via prefect
 realtime==2.28.0
     # via supabase
-redis==7.2.0
+redis==7.2.1
     # via
     #   fakeredis
     #   py-key-value-aio
@@ -779,7 +779,7 @@ ruff==0.15.2
     # via -r requirements-dev.txt
 scikit-learn==1.8.0
     # via -r requirements.txt
-scipy==1.17.0
+scipy==1.17.1
     # via
     #   -r requirements.txt
     #   scikit-learn
@@ -807,7 +807,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis
-sqlalchemy[asyncio]==2.0.46
+sqlalchemy[asyncio]==2.0.47
     # via
     #   alembic
     #   prefect
@@ -854,7 +854,7 @@ tqdm==4.67.3
     #   openai
 typeguard==4.5.1
     # via pandera
-typer==0.24.0
+typer==0.24.1
     # via
     #   prefect
     #   pydocket
@@ -918,7 +918,7 @@ urllib3==2.6.3
     #   docker
     #   requests
     #   sentry-sdk
-uuid-utils==0.14.0
+uuid-utils==0.14.1
     # via
     #   langchain-core
     #   langsmith
