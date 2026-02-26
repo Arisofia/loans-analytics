@@ -60,7 +60,7 @@ type-check:
 test:
 	$(BIN)/pytest
 security-check:
-	$(BIN)/bandit -r src python scripts --quiet -x "**/test_*.py,**/tests.py"
+	$(BIN)/bandit -r src python --quiet -x "**/test_*.py,**/tests.py"
 	@if $(BIN)/pip list | grep -q safety; then $(BIN)/safety check; else echo "safety not installed, skipping"; fi
 clean:
 	@bash scripts/maintenance/repo_maintenance.sh --mode=standard

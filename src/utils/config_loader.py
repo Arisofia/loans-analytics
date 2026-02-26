@@ -1,71 +1,65 @@
-"""Secure configuration loader.
-
-Loads YAML configuration files and enforces environment variable overrides
-for sensitive values.  Hardcoded fallback secrets are explicitly rejected.
-"""
-
-from __future__ import annotations
-
+import logging
 import os
-from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 import yaml
 
-from python.logging_config import get_logger
+logger = logging.getLogger(__name__)
 
-logger = get_logger(__name__)
-
-# Sentinel values that indicate a secret was never properly configured.
-_UNSAFE_DEFAULTS = frozenset({"change_me", "changeme", "password", "secret", ""})
+_UNSAFE_DEFAULTS = {"", "password", "postgres", "admin", "changeme"}
 
 
-def load_config(path: str | Path) -> dict[str, Any]:
-    """Load a YAML config file with strict validation.
-
-    * Raises ``FileNotFoundError`` if *path* does not exist.
-    * If the config contains a ``database`` section, the ``password``
-      field is **always** overridden from the ``DB_PASSWORD`` environment
-      variable.  An unsafe or missing password causes ``ValueError``.
+def load_config(config_path: str) -> Dict[str, Any]:
+    """
+    Load YAML configuration and apply environment variable overrides.
 
     Args:
-        path: Filesystem path to the YAML configuration file.
+        config_path: Path to the configuration file.
 
     Returns:
-        Parsed configuration dictionary.
+        Dictionary containing the merged configuration.
 
     Raises:
-        FileNotFoundError: *path* does not exist on disk.
-        ValueError: A required secret is missing or set to an unsafe default.
+        FileNotFoundError: If the config file is not found.
+        ValueError: If a required security environment variable is missing
+                   or contains an unsafe default.
     """
-    config_path = Path(path)
-    if not config_path.exists():
-        raise FileNotFoundError(f"Critical config missing: {config_path}")
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
-    with open(config_path, "r", encoding="utf-8") as fh:
-        loaded = yaml.safe_load(fh)
+    with open(config_path, "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f)
 
-    if loaded is None:
-        config: dict[str, Any] = {}
-    elif not isinstance(loaded, dict):
-        raise ValueError("Invalid configuration: root YAML object must be a mapping/dictionary.")
-    else:
-        config = loaded
-    # Enforce env-var overrides for database secrets
+    # 1. Supabase credentials
+    if "supabase" in config:
+        sb_section = config["supabase"]
+        env_url = os.getenv("SUPABASE_URL")
+        env_key = os.getenv("SUPABASE_ANON_KEY")
+
+        if env_url:
+            sb_section["url"] = env_url
+        if env_key:
+            sb_section["key"] = env_key
+
+        if not sb_section.get("url") or not sb_section.get("key"):
+            raise ValueError(
+                "Supabase URL/Key must be set in config/pipeline.yml or environment variables."
+            )
+
+    # 2. Database credentials (safe defaults check)
     if "database" in config:
-        db_section = config.get("database")
-        if not isinstance(db_section, dict):
-            raise ValueError("Invalid configuration: 'database' section must be a mapping.")
+        db_section = config["database"]
+        env_password = os.getenv("DB_PASSWORD")
 
-        env_password = os.environ.get("DB_PASSWORD")
         if env_password is not None:
             db_password = env_password
         else:
             raw_password = db_section.get("password")
             if raw_password is None:
-                                    # Treat missing password as empty so it is caught by the unsafe-default check.
-                                    db_password = ""  # nosec
-                                else:                db_password = str(raw_password)
+                # Treat missing password as empty so it is caught by the unsafe-default check.
+                db_password = ""  # nosec
+            else:
+                db_password = str(raw_password)
 
         if db_password.lower() in _UNSAFE_DEFAULTS:
             raise ValueError(

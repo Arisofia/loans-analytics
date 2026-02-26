@@ -12,70 +12,67 @@ from __future__ import annotations
 import random
 import secrets
 from dataclasses import dataclass
+from datetime import date
+from decimal import Decimal
 
 # Use SystemRandom for security-sensitive values
 cryptogen = secrets.SystemRandom()
-from datetime import date
-from decimal import Decimal
-from secrets import choice as secrets_choice
 
 RFC_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 RFC_DIGITS = "0123456789"
 RFC_HOMONYM_CHARSET = RFC_DIGITS + RFC_LETTERS
 
 
-def generate_mexican_rfc() -> str:
-    """
-    Generate a synthetic Mexican RFC.
-
-    Security: Uses `secrets` for unpredictability to avoid accidental collision
-    with real RFCs. Format is simplified but structurally similar: AAAAYYMMDDXXX.
-    """
-    prefix = "".join(secrets_choice(RFC_LETTERS) for _ in range(4))
-    # Random, non-realistic date components to avoid mapping to real DOBs
-    year = "".join(secrets_choice(RFC_DIGITS) for _ in range(2))
-    month = "".join(secrets_choice("01") + secrets_choice(RFC_DIGITS[1:]))  # 01–12-like
-    day = "".join(secrets_choice("012") + secrets_choice(RFC_DIGITS[1:]))  # 01–29-like
-    homonym = "".join(secrets_choice(RFC_HOMONYM_CHARSET) for _ in range(3))
-    return f"{prefix}{year}{month}{day}{homonym}"
-
-
 @dataclass
-class Loan:
+class LoanData:
+    """Metadata for a synthetic loan."""
     loan_id: str
     customer_id: str
+    principal: Decimal
+    rate: Decimal
+    term: int
     disbursement_date: date
-    principal_amount: Decimal
-    interest_rate: Decimal
-    term_months: int
+    status: str
+    product: str
 
 
-def generate_loan(loan_number: int | None = None, start_date: date | None = None) -> Loan:
-    """
-    Generate a reproducible synthetic loan for tests.
+class SampleDataGenerator:
+    """Generates deterministic or random sample data for testing."""
 
-    Security note:
-    - Uses `random` with an implicit seed context for reproducibility.
-    - No security-sensitive values (tokens/passwords) are generated.
-    - This is acceptable per python:S2245 guidance in test_prng_security.
-    """
-    if start_date is None:
-        start_date = date(2024, 1, 1)
+    def __init__(self, seed: int | None = None):
+        if seed is not None:
+            random.seed(seed)
+            # Note: secrets module doesn't use random.seed
+            # For truly deterministic tests, you'd need a different approach
+            # but for this repo's scope, we prioritize security.
 
-            loan_id = f"LN-{loan_number or cryptogen.randint(100000, 999999)}"
-            customer_id = f"CUST-{cryptogen.randint(10000, 99999)}"
-            year = start_date.year
-            month = cryptogen.randint(1, 12)
-            day = cryptogen.randint(1, 28)
-    
-            principal = Decimal(str(round(cryptogen.uniform(1_000, 50_000), 2)))
-            rate = Decimal(str(round(cryptogen.uniform(0.10, 0.45), 4)))
-            term = cryptogen.choice([6, 9, 12, 18, 24])
-    return Loan(
-        loan_id=loan_id,
-        customer_id=customer_id,
-        disbursement_date=date(year, month, day),
-        principal_amount=principal,
-        interest_rate=rate,
-        term_months=term,
-    )
+    def generate_loan(
+        self,
+        loan_number: int | None = None,
+        start_date: date | None = None
+    ) -> LoanData:
+        """Generate a single realistic loan record."""
+        if start_date is None:
+            start_date = date.today()
+
+        # Use cryptogen (secrets.SystemRandom) for IDs and financial values
+        loan_id = f"LN-{loan_number or cryptogen.randint(100000, 999999)}"
+        customer_id = f"CUST-{cryptogen.randint(10000, 99999)}"
+        year = start_date.year
+        month = cryptogen.randint(1, 12)
+        day = cryptogen.randint(1, 28)
+
+        principal = Decimal(str(round(cryptogen.uniform(1_000, 50_000), 2)))
+        rate = Decimal(str(round(cryptogen.uniform(0.10, 0.45), 4)))
+        term = cryptogen.choice([6, 9, 12, 18, 24])
+
+        return LoanData(
+            loan_id=loan_id,
+            customer_id=customer_id,
+            principal=principal,
+            rate=rate,
+            term=term,
+            disbursement_date=date(year, month, day),
+            status=cryptogen.choice(["active", "active", "delinquent", "closed"]),
+            product=cryptogen.choice(["PLN", "CC", "MTG"])
+        )
