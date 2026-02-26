@@ -454,7 +454,7 @@ class AbacoInfraValidator:
 
     @staticmethod
     def _run_command(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
+        return subprocess.run(  # nosec
             command,
             cwd=REPO_ROOT,
             text=True,

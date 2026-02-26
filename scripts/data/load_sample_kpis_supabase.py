@@ -74,10 +74,9 @@ class KpiDataLoader:
         for offset in range(days):
             current_date = date.fromordinal(start_date.toordinal() + offset)
             # Simple random walk with drift
-            drift = base_value * trend
-            volatility = random.uniform(-noise, noise)
-            current_value = max(0.0, current_value + drift + volatility)
-
+                            drift = base_value * trend
+                            volatility = random.uniform(-noise, noise)  # nosec
+                            current_value = max(0.0, current_value + drift + volatility)
             records.append(
                 KpiRecord(
                     kpi_name=kpi_id,

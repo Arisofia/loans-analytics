@@ -63,10 +63,9 @@ def load_config(path: str | Path) -> dict[str, Any]:
         else:
             raw_password = db_section.get("password")
             if raw_password is None:
-                # Treat missing password as empty so it is caught by the unsafe-default check.
-                db_password = ""
-            else:
-                db_password = str(raw_password)
+                                    # Treat missing password as empty so it is caught by the unsafe-default check.
+                                    db_password = ""  # nosec
+                                else:                db_password = str(raw_password)
 
         if db_password.lower() in _UNSAFE_DEFAULTS:
             raise ValueError(

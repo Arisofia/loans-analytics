@@ -10,7 +10,11 @@ Follows python:S2245 guidelines for PRNG usage in security-sensitive contexts.
 from __future__ import annotations
 
 import random
+import secrets
 from dataclasses import dataclass
+
+# Use SystemRandom for security-sensitive values
+cryptogen = secrets.SystemRandom()
 from datetime import date
 from decimal import Decimal
 from secrets import choice as secrets_choice
@@ -58,16 +62,15 @@ def generate_loan(loan_number: int | None = None, start_date: date | None = None
     if start_date is None:
         start_date = date(2024, 1, 1)
 
-    loan_id = f"LN-{loan_number or random.randint(100000, 999999)}"
-    customer_id = f"CUST-{random.randint(10000, 99999)}"
-    year = start_date.year
-    month = random.randint(1, 12)
-    day = random.randint(1, 28)
-
-    principal = Decimal(str(round(random.uniform(1_000, 50_000), 2)))
-    rate = Decimal(str(round(random.uniform(0.10, 0.45), 4)))
-    term = random.choice([6, 9, 12, 18, 24])
-
+            loan_id = f"LN-{loan_number or cryptogen.randint(100000, 999999)}"
+            customer_id = f"CUST-{cryptogen.randint(10000, 99999)}"
+            year = start_date.year
+            month = cryptogen.randint(1, 12)
+            day = cryptogen.randint(1, 28)
+    
+            principal = Decimal(str(round(cryptogen.uniform(1_000, 50_000), 2)))
+            rate = Decimal(str(round(cryptogen.uniform(0.10, 0.45), 4)))
+            term = cryptogen.choice([6, 9, 12, 18, 24])
     return Loan(
         loan_id=loan_id,
         customer_id=customer_id,
