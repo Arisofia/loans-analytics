@@ -64,22 +64,41 @@ ALLOWED_ENDPOINTS = {
 
 
 def _build_api_url(endpoint: str) -> str | None:
-    """Build request URL from a fixed endpoint allowlist."""
+    """Build request URL from a fixed endpoint allowlist.
+    
+    This function implements strict SSRF protection by:
+    1. Using a sanitized base URL from an environment variable.
+    2. Mapping input strings to hardcoded constant literals to break the taint chain.
+    3. Verifying that the final constructed URL matches the expected host and scheme.
+    """
     base = API_BASE_SAFE
     if base is None:
         st.error("API is not configured or is untrusted. Aborting request.")
         return None
-    if endpoint not in ALLOWED_ENDPOINTS:
-        st.error("Blocked: endpoint is not in the allowed endpoint list.")
+
+    # Strictly map input strings to hardcoded constants to break taint for CodeQL.
+    # We do NOT use the 'endpoint' variable directly in URL construction.
+    if endpoint == MONITORING_EVENTS_ENDPOINT:
+        path = MONITORING_EVENTS_ENDPOINT
+    elif endpoint == MONITORING_EVENTS_ACK_ENDPOINT:
+        path = MONITORING_EVENTS_ACK_ENDPOINT
+    elif endpoint == MONITORING_COMMANDS_ENDPOINT:
+        path = MONITORING_COMMANDS_ENDPOINT
+    else:
+        st.error(f"Blocked: endpoint '{endpoint}' is not in the allowed list.")
         return None
 
     normalized_base = base.rstrip("/")
-    url = f"{normalized_base}{endpoint}"
+    # Construct URL using the verified literal 'path'
+    url = f"{normalized_base}{path}"
+
+    # Final host/scheme validation to prevent manipulation
     parsed_url = urlparse(url)
     parsed_base = urlparse(normalized_base)
     if parsed_url.netloc != parsed_base.netloc or parsed_url.scheme != parsed_base.scheme:
-        st.error("SSRF Protection: URL host mismatch.")
+        st.error("SSRF Protection: URL host or scheme mismatch.")
         return None
+
     return url
 
 
