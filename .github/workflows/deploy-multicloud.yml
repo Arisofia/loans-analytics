@@ -95,14 +95,19 @@ jobs:
         if: ${{ steps.targets.outputs.azure == 'true' }}
         env:
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+          AZURE_AD_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
+          AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
           AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ID_SUSCRIPCION: ${{ secrets.ID_SUSCRIPCION }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          [ -n "$AZURE_CREDENTIALS" ] || { echo "::error::Missing secret AZURE_CREDENTIALS"; exit 1; }
           [ -n "$AZURE_RESOURCE_GROUP" ] || { echo "::error::Missing secret AZURE_RESOURCE_GROUP"; exit 1; }
+          if [ -z "$AZURE_CREDENTIALS" ] && { [ -z "$AZURE_AD_CLIENT_ID" ] || [ -z "$AZURE_AD_TENANT_ID" ]; }; then
+            echo "::error::Missing Azure auth config. Provide AZURE_CREDENTIALS or AZURE_AD_CLIENT_ID + AZURE_AD_TENANT_ID."
+            exit 1
+          fi
           if [ -z "$AZURE_SUBSCRIPTION_ID" ] && [ -z "$ID_SUSCRIPCION" ]; then
             echo "::error::Missing subscription secret (set AZURE_SUBSCRIPTION_ID or ID_SUSCRIPCION)"
             exit 1
@@ -129,11 +134,38 @@ jobs:
         with:
           fetch-depth: 0 # Required for git history checks in deploy_prod.sh
 
-      - name: Azure login
+      - name: Resolve Azure subscription id
+        id: azure_sub
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ID_SUSCRIPCION: ${{ secrets.ID_SUSCRIPCION }}
+        run: |
+          subscription_id="${AZURE_SUBSCRIPTION_ID:-$ID_SUSCRIPCION}"
+          if [ -z "$subscription_id" ]; then
+            echo "::error::No Azure subscription id provided."
+            exit 1
+          fi
+          echo "subscription_id=$subscription_id" >> "$GITHUB_OUTPUT"
+
+      - name: Azure login (service principal JSON secret)
+        if: ${{ secrets.AZURE_CREDENTIALS != '' }}
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID || secrets.ID_SUSCRIPCION }}
+          allow-no-subscriptions: true
+
+      - name: Azure login (OIDC)
+        if: ${{ secrets.AZURE_CREDENTIALS == '' }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_AD_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_AD_TENANT_ID }}
+          subscription-id: ${{ steps.azure_sub.outputs.subscription_id }}
+
+      - name: Set active Azure subscription
+        run: |
+          az account set --subscription "${{ steps.azure_sub.outputs.subscription_id }}"
+          az account show --query '{id:id,name:name,tenantId:tenantId}' -o table
 
       - name: Setup environment
         run: |
