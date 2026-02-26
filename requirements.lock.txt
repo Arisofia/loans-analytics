@@ -932,7 +932,7 @@ websockets==15.0.1
     #   realtime
 wheel==0.46.3
     # via pip-tools
-wrapt==1.17.3
+wrapt==2.1.1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-dbapi
