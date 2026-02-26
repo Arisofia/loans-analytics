@@ -1,22 +1,57 @@
-# Python Dockerfile for Abaco Loans Analytics Pipeline
-# Base image - pin to Python 3.12 (minor) while tracking latest patch for security updates
-FROM python:3.12-slim
+# Stage 1: Builder
+FROM python:3.12-slim AS builder
+
+# Set build-time environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100
+
 WORKDIR /app
 
-# Install system dependencies (if needed)
-RUN apt-get update && apt-get install -y build-essential curl && rm -rf /var/lib/apt/lists/*
+# Install system dependencies needed for building Python packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and lock files
-COPY requirements.txt requirements.lock ./
+# Copy only the requirements to leverage Docker cache
+# Using requirements.lock.txt if present, otherwise requirements.txt
+COPY requirements.lock.txt ./requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.lock
+# Create wheels for all dependencies
+RUN pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt
 
-# Copy the rest of the code
+
+# Stage 2: Runtime
+FROM python:3.12-slim AS runtime
+
+# Set runtime environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+WORKDIR /app
+
+# Install runtime system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy wheels from builder and install them
+COPY --from=builder /app/wheels /wheels
+RUN pip install --no-cache-dir /wheels/* \
+    && rm -rf /wheels
+
+# Copy application code
 COPY . .
 
-# Create non-root user
-RUN adduser --system --home /app appuser && chown -R appuser:appuser /app
+# Create non-root user and set permissions
+RUN useradd --system --create-home --home-dir /app appuser \
+    && chown -R appuser:appuser /app
 USER appuser
 
 # Health check for container orchestration
