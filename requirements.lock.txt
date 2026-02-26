@@ -84,7 +84,7 @@ blinker==1.9.0
     # via streamlit
 build==1.4.0
     # via pip-tools
-cachetools==6.2.6
+cachetools==7.0.1
     # via
     #   prefect
     #   py-key-value-aio
