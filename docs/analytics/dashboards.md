@@ -20,6 +20,9 @@ Principles: every chart links to a drill-down table, owner, runbook, SLA, and ne
 - Cashflow: uses `recv_revenue_for_month`, `recv_interest_for_month`, `recv_fee_for_month`, and `sched_revenue`.
 - Agent info: sales agent volume from loan data when `sales_agent` exists, otherwise headcount from `data/support/headcount.csv`.
 - KPI exports: use the sidebar "Generate KPI exports" button to regenerate `exports/complete_kpi_dashboard.json` and `exports/analytics_facts.csv` from data.
+- Historical page: `streamlit_app/pages/6_Historical_Context.py`
+- Historical page scope: trend direction/strength, seasonality factors, and forecast confidence bands
+  powered by `python/multi_agent/historical_context.py`.
 
 ## Risk Ops Dashboard
 
