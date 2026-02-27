@@ -1,5 +1,13 @@
 .PHONY: help setup format lint type-check test e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic
-PYTHON ?= $(shell command -v python3.12 || command -v python3.11 || command -v python3.10 || command -v python3)
+PYTHON ?= $(shell \
+	for p in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do \
+		if command -v $$p >/dev/null 2>&1 && $$p -c "import pytest" >/dev/null 2>&1; then \
+			command -v $$p; \
+			exit 0; \
+		fi; \
+	done; \
+	command -v python3 || command -v python \
+)
 VENV := .venv
 BIN := $(VENV)/bin
 export PYTHONPATH := .
@@ -66,9 +74,9 @@ lint:
 type-check:
 	$(BIN)/mypy --check-untyped-defs src
 test:
-	$(BIN)/pytest
+	$(PYTHON) -m pytest
 e2e:
-	RUN_E2E=1 $(BIN)/pytest tests/e2e -m e2e
+	RUN_E2E=1 $(PYTHON) -m pytest tests/e2e -m e2e
 security-check:
 	$(BIN)/bandit -r src python --quiet -x "**/test_*.py,**/tests.py"
 	@if $(BIN)/pip list | grep -q safety; then $(BIN)/safety check; else echo "safety not installed, skipping"; fi
@@ -102,16 +110,16 @@ monitoring-health:
 # Development/API entry point (hot-reload)
 api:
 	@echo "Starting API server on http://127.0.0.1:8000 with hot-reload..."
-	$(BIN)/uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir python --reload-dir src --reload-dir config
+	$(PYTHON) -m uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir python --reload-dir src --reload-dir config
 dev: api
 
 # Multi-agent entry point
 agents:
-	$(BIN)/python -m python.multi_agent.cli list-scenarios
+	$(PYTHON) -m python.multi_agent.cli list-scenarios
 
 # KPI pipeline entry point
 kpis:
-	$(BIN)/python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
+	$(PYTHON) scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
 
 repo-map:
 	@echo "Open REPO_MAP.md"

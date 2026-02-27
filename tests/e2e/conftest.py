@@ -11,17 +11,25 @@ import requests
 DEFAULT_FRONTEND_URLS = ("http://localhost:8501", "http://localhost:8000")
 
 
+def _streamlit_health_url(base_url: str) -> str:
+    return f"{base_url.rstrip('/')}/_stcore/health"
+
+
+def _is_streamlit_up(base_url: str, timeout: int = 2) -> bool:
+    try:
+        return requests.get(_streamlit_health_url(base_url), timeout=timeout).status_code < 500
+    except Exception:
+        return False
+
+
 def _resolve_frontend_base_url() -> str:
     explicit = os.getenv("FRONTEND_BASE_URL")
-    if explicit:
+    if explicit and _is_streamlit_up(explicit):
         return explicit
 
     for url in DEFAULT_FRONTEND_URLS:
-        try:
-            if requests.get(url, timeout=2).status_code < 500:
-                return url
-        except Exception:
-            continue
+        if _is_streamlit_up(url):
+            return url
     return DEFAULT_FRONTEND_URLS[0]
 
 

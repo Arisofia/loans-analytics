@@ -134,19 +134,28 @@ class EnvironmentSettings(BaseModel):
     """Environment configuration and data path resolution."""
 
     environment: str = Field(
-        default="dev", description="Current environment: dev, staging, or prod"
+        default_factory=lambda: os.getenv("ENVIRONMENT", "dev"),
+        description="Current environment: dev, staging, or prod",
     )
-    prod_data_path: Optional[str] = Field(default=None, description="Production data mount path")
-    staging_data_path: Optional[str] = Field(default=None, description="Staging data mount path")
+    prod_data_path: Optional[str] = Field(
+        default_factory=lambda: os.getenv("PROD_DATA_PATH"),
+        description="Production data mount path",
+    )
+    staging_data_path: Optional[str] = Field(
+        default_factory=lambda: os.getenv("STAGING_DATA_PATH"),
+        description="Staging data mount path",
+    )
 
     @field_validator("environment")
     @classmethod
     def validate_environment(cls, v: str) -> str:
         """Validate environment is one of allowed values."""
+        aliases = {"development": "dev", "production": "prod"}
+        normalized = aliases.get(v.strip().lower(), v.strip().lower())
         allowed = {"dev", "staging", "prod"}
-        if v.lower() not in allowed:
+        if normalized not in allowed:
             raise ValueError(f"Environment must be one of {allowed}, got: {v}")
-        return v.lower()
+        return normalized
 
     def get_data_root(self) -> Path:
         """Get environment-specific data root path."""
@@ -186,7 +195,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    environment: EnvironmentSettings = EnvironmentSettings()
+    runtime: EnvironmentSettings = Field(default_factory=EnvironmentSettings)
     financial: FinancialGuardrails = FinancialGuardrails()
     risk: RiskParameters = RiskParameters()
     sla: SLASettings = SLASettings()
@@ -234,6 +243,11 @@ class Settings(BaseSettings):
                             app_settings.analytics.dq_invalid_numeric_weight,
                         )
         return app_settings
+
+    @property
+    def environment(self) -> EnvironmentSettings:
+        """Backwards-compatible accessor for runtime environment settings."""
+        return self.runtime
 
 
 # Singleton instance

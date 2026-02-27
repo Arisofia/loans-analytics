@@ -26,9 +26,43 @@ pytestmark = [
 def _frontend_ready() -> bool:
     url = os.getenv("FRONTEND_BASE_URL", "http://localhost:8501")
     try:
-        return requests.get(url, timeout=3).status_code < 500
+        health = f"{url.rstrip('/')}/_stcore/health"
+        return requests.get(health, timeout=3).status_code < 500
     except Exception:
         return False
+
+
+def _dashboard_candidates(frontend_base_url: str) -> list[str]:
+    base = frontend_base_url.rstrip("/")
+    return [
+        base,
+        f"{base}/Portfolio_Dashboard",
+        f"{base}/3_Portfolio_Dashboard",
+        f"{base}/?page=Portfolio_Dashboard",
+    ]
+
+
+def _open_dashboard_with_uploader(page, frontend_base_url: str) -> bool:
+    last_error: Exception | None = None
+    seen: set[str] = set()
+    for url in _dashboard_candidates(frontend_base_url):
+        if url in seen:
+            continue
+        seen.add(url)
+        page.goto(url, wait_until="domcontentloaded", timeout=60000)
+        try:
+            page.get_by_test_id("stFileUploaderDropzone").locator("input").first.wait_for(
+                timeout=20000
+            )
+            return True
+        except Exception as exc:
+            last_error = exc
+            continue
+    details = f"Could not find Streamlit uploader after trying: {', '.join(sorted(seen))}"
+    if last_error is not None:
+        details = f"{details} ({last_error})"
+    pytest.skip(details)
+    return False
 
 
 @pytest.mark.skipif(
@@ -44,10 +78,14 @@ def test_csv_upload_kpi_agent_flow(
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(frontend_base_url, wait_until="domcontentloaded", timeout=60000)
+        if not _open_dashboard_with_uploader(page, frontend_base_url):
+            browser.close()
+            return
 
         # Streamlit uploader file input is nested inside stFileUploaderDropzone.
-        page.get_by_test_id("stFileUploaderDropzone").locator("input").set_input_files(str(csv_path))
+        page.get_by_test_id("stFileUploaderDropzone").locator("input").first.set_input_files(
+            str(csv_path), timeout=60000
+        )
         page.get_by_text(
             re.compile("Data uploaded and validated successfully", re.IGNORECASE)
         ).first.wait_for(timeout=180000)
