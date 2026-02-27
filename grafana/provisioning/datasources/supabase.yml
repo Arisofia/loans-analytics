@@ -21,21 +21,6 @@ datasources:
     isDefault: true
     version: 1
 
-  - name: Supabase REST API
-    type: grafana-simple-json-datasource
-    access: proxy
-    url: ${SUPABASE_URL}/rest/v1
-    basicAuth: false
-    withCredentials: false
-    jsonData:
-      httpHeaderName1: apikey
-      httpHeaderName2: Authorization
-    secureJsonData:
-      httpHeaderValue1: ${SUPABASE_ANON_KEY}
-      httpHeaderValue2: Bearer ${SUPABASE_ANON_KEY}
-    editable: true
-    version: 1
-
   - name: Azure Monitor
     type: grafana-azure-monitor-datasource
     access: proxy

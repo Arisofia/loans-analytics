@@ -35,9 +35,9 @@ scrape_configs:
       password: "${SUPABASE_SECRET_API_KEY}" # Use envsubst or deployment-time injection
     static_configs:
       - targets:
-          - "goxdevkqozomyhsyxhte.supabase.co:443"
+          - "sddviizcgheusvwqpthm.supabase.co:443"
         labels:
-          project: "goxdevkqozomyhsyxhte"
+          project: "sddviizcgheusvwqpthm"
           env: "production"
           database: "postgres"
     metric_relabel_configs:

@@ -107,7 +107,7 @@ groups:
             1. Check Supabase health: https://status.supabase.com
             2. Verify SUPABASE_DATABASE_URL env var
             3. Review asyncpg error logs
-            4. Test connection: python scripts/test_supabase_connection.py
+            4. Test connection: python scripts/deployment/health_check.py --checks supabase
 
       # Connection pool health check failures
       - alert: ConnectionPoolHealthCheckFailed
@@ -258,10 +258,10 @@ groups:
           description: "CRITICAL: Personally Identifiable Information may be exposed."
           action: |
             1. HALT PIPELINE IMMEDIATELY
-            2. Check src/compliance.py logs
+            2. Check src/pipeline/transformation.py logs
             3. Review data/compliance/{{ $labels.run_id }}_compliance.json
             4. Audit exposed data and notify security team
-            5. Verify PII patterns in src/transformation.py
+            5. Verify PII masking logic in src/pipeline/transformation.py
           runbook: https://github.com/Arisofia/abaco-loans-analytics/wiki/PII-Incident-Response
 
   # ============================================

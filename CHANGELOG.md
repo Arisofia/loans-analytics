@@ -94,7 +94,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Compliance & Governance – v1.3.0
 
-- ✅ **PII Protection**: No changes to guardrails; existing masking in `src/compliance.py` still active
+- ✅ **PII Protection**: No changes to guardrails; existing masking in `src/pipeline/transformation.py` still active
 - ✅ **Financial Accuracy**: All Decimal calculations verified; zero float errors
 - ✅ **Audit Trail**: Complete traceability via PR #220 merge and git history
 - ✅ **Regulatory**: No compliance gaps introduced; maintained <4% default rate guardrails

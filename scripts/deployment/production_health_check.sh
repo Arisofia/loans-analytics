@@ -1,7 +1,7 @@
 #!/bin/bash
 # Production Health Check Script
-# Usage: ./scripts/production_health_check.sh [app-service-url]
-# Example: ./scripts/production_health_check.sh https://abaco-loans-prod.azurewebsites.net
+# Usage: ./scripts/deployment/production_health_check.sh [app-service-url]
+# Example: ./scripts/deployment/production_health_check.sh https://abaco-loans-prod.azurewebsites.net
 
 set -e
 

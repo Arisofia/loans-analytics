@@ -9,7 +9,7 @@ Usage:
     export HISTORICAL_CONTEXT_MODE=REAL
 
     source .venv/bin/activate
-    python scripts/summarize_kpis_real_mode.py
+    python scripts/data/summarize_kpis_real_mode.py
 
 Output:
     - KPI count, min/max/mean, and simple trend direction (up/down/flat)

@@ -24,7 +24,7 @@ SUPABASE_DEV_ANON_KEY=$(grep "^SUPABASE_ANON_KEY=" "$ENV_LOCAL" | cut -d'=' -f2)
 SUPABASE_DEV_SERVICE_ROLE=$(grep "^SUPABASE_SERVICE_ROLE_KEY=" "$ENV_LOCAL" | cut -d'=' -f2)
 POSTGRES_PASSWORD=$(grep "^POSTGRES_PASSWORD=" "$ENV_LOCAL" | cut -d'=' -f2)
 
-SUPABASE_PROD_PROJECT="goxdevkqozomyhsyxhte"
+SUPABASE_PROD_PROJECT="sddviizcgheusvwqpthm"
 SUPABASE_PROD_URL="https://${SUPABASE_PROD_PROJECT}.supabase.co"
 
 echo -e "${BLUE}Development Project:${NC}"
@@ -41,8 +41,8 @@ echo ""
 echo -e "${YELLOW}⚠️  PROJECT MISMATCH DETECTED!${NC}"
 echo ""
 echo "Your setup uses TWO different Supabase projects:"
-echo "  1. Development (goxdevkqozomyhsyxhte) - in .env.local"
-echo "  2. Production (goxdevkqozomyhsyxhte) - in Grafana datasources"
+echo "  1. Development (${SUPABASE_DEV_PROJECT}) - in .env.local"
+echo "  2. Production (${SUPABASE_PROD_PROJECT}) - in Grafana datasources"
 echo ""
 echo "This is why Grafana shows no data - they're pointing to different projects!"
 echo ""
@@ -117,11 +117,11 @@ echo "    ./scripts/setup/align-supabase-projects.sh dev"
 echo ""
 echo -e "${YELLOW}Option 2: Use Production Project${NC}"
 echo "  ❌ No data yet"
-echo "  ⚠️  Need to migrate data from development"
+echo "  ⚠️  Need to migrate data from development (manual SQL/export)"
 echo "  ✅ Grafana already configured for this"
 echo ""
 echo "  Run:"
-echo "    ./scripts/setup/migrate-supabase-data.sh"
+echo "    ./scripts/setup/align-supabase-projects.sh prod"
 echo ""
 
 # Show what needs to be created

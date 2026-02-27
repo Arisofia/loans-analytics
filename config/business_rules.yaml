@@ -147,7 +147,7 @@ amount_tiers:
 # =============================================================================
 # FINANCIAL GUARDRAILS
 # =============================================================================
-# Risk limits and operational thresholds (mirrors python/config.py)
+# Risk limits and operational thresholds (mirrors python/config/__init__.py)
 guardrails:
   # Portfolio concentration limits
   max_single_obligor: 0.04       # 4% max single borrower concentration

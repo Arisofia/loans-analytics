@@ -54,8 +54,8 @@ def main():
     print("\n" + "=" * 70)
     print("✅ Analysis complete!")
     print("\nNext steps:")
-    print("  1. Merge tables using scripts/data/prepare_real_data.py")
-    print("  2. Run pipeline on merged data")
+    print("  1. Export a consolidated CSV into data/raw/")
+    print("  2. Run pipeline: python scripts/data/run_data_pipeline.py --input data/raw/<file>.csv")
 
 
 if __name__ == "__main__":

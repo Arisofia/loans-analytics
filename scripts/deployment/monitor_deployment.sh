@@ -10,11 +10,11 @@
 # 4. Basic functionality tests
 #
 # Usage:
-#   ./scripts/monitor_deployment.sh [URL] [DURATION_HOURS]
+#   ./scripts/deployment/monitor_deployment.sh [URL] [DURATION_HOURS]
 #
 # Examples:
-#   ./scripts/monitor_deployment.sh https://abaco-analytics-dashboard.azurewebsites.net 1
-#   ./scripts/monitor_deployment.sh https://abaco-analytics-dashboard.azurewebsites.net 24
+#   ./scripts/deployment/monitor_deployment.sh https://abaco-analytics-dashboard.azurewebsites.net 1
+#   ./scripts/deployment/monitor_deployment.sh https://abaco-analytics-dashboard.azurewebsites.net 24
 #
 # Requirements:
 #   - curl

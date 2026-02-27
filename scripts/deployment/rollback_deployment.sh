@@ -12,11 +12,11 @@
 # 4. Validates health of rolled-back deployment
 #
 # Usage:
-#   ./scripts/rollback_deployment.sh [COMMITS_BACK]
+#   ./scripts/deployment/rollback_deployment.sh [COMMITS_BACK]
 #
 # Examples:
-#   ./scripts/rollback_deployment.sh         # Rollback 1 commit
-#   ./scripts/rollback_deployment.sh 3       # Rollback 3 commits
+#   ./scripts/deployment/rollback_deployment.sh         # Rollback 1 commit
+#   ./scripts/deployment/rollback_deployment.sh 3       # Rollback 3 commits
 #
 # Requirements:
 #   - GitHub CLI (gh) installed

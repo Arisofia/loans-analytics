@@ -13,7 +13,10 @@ Features used (post-engineering):
 
 Usage:
     # Training
-    python scripts/train_default_risk_model.py
+    from python.models.default_risk_model import DefaultRiskModel
+    model = DefaultRiskModel()
+    metrics = model.train(training_dataframe)
+    model.save("models/risk")
 
     # Inference (API serving)
     from python.models.default_risk_model import DefaultRiskModel
