@@ -722,6 +722,12 @@ class KPIService:
                 build_kpi_response("PAR30", "Portfolio at Risk (30+ days)", results["par30"], "%"),
                 build_kpi_response("PAR90", "Portfolio at Risk (90+ days)", results["par90"], "%"),
                 build_kpi_response(
+                    "COLLECTION_RATE",
+                    "Collection Rate",
+                    results["collection_rate"],
+                    "%",
+                ),
+                build_kpi_response(
                     "PORTFOLIO_YIELD",
                     "Weighted Average Interest Rate",
                     results["yield"] * 100,
@@ -793,6 +799,20 @@ class KPIService:
         weighted_interest = (df["interest_rate"] * df["principal_balance"]).sum()
         avg_interest_rate = (weighted_interest / total_outstanding) if total_outstanding > 0 else 0
 
+        # Collection rate proxy from available loan-level payment fields
+        scheduled = (
+            pd.to_numeric(df["total_scheduled"], errors="coerce").fillna(0)
+            if "total_scheduled" in df.columns
+            else pd.Series([0.0] * len(df), index=df.index)
+        )
+        collected = (
+            pd.to_numeric(df["last_payment_amount"], errors="coerce").fillna(0)
+            if "last_payment_amount" in df.columns
+            else pd.Series([0.0] * len(df), index=df.index)
+        )
+        total_scheduled = float(scheduled.sum())
+        collection_rate = (float(collected.sum()) / total_scheduled * 100) if total_scheduled > 0 else 0
+
         # LTV/DTI
         if "appraised_value" in df.columns and df["appraised_value"].notna().any():
             df["ltv_ratio"] = (df["loan_amount"] / df["appraised_value"] * 100).fillna(0)
@@ -812,6 +832,7 @@ class KPIService:
             "par30": par30_pct,
             "par90": par90_pct,
             "default_rate": default_rate_pct,
+            "collection_rate": collection_rate,
             "yield": avg_interest_rate,
             "aum": total_outstanding,
             "avg_ltv": df["ltv_ratio"].mean(),
