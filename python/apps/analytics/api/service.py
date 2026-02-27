@@ -38,8 +38,18 @@ KPI_API_TO_CATALOG_ID = {
     "PAR90": "par_90",
     "PAR_90": "par_90",
     "COLLECTION_RATE": "collections_rate",
+    "LOSS_RATE": "loss_rate",
+    "RECOVERY_RATE": "recovery_rate",
+    "CASH_ON_HAND": "cash_on_hand",
     "PORTFOLIO_YIELD": "portfolio_yield",
+    "AVERAGE_LOAN_SIZE": "average_loan_size",
+    "DISBURSEMENT_VOLUME_MTD": "disbursement_volume_mtd",
+    "NEW_LOANS_COUNT_MTD": "new_loans_count_mtd",
     "PORTFOLIO_HEALTH": "portfolio_growth_rate",
+    "ACTIVE_BORROWERS": "active_borrowers",
+    "REPEAT_BORROWER_RATE": "repeat_borrower_rate",
+    "AUTOMATION_RATE": "automation_rate",
+    "PROCESSING_TIME_AVG": "processing_time_avg",
     "AUM": "total_outstanding_balance",
 }
 
@@ -63,6 +73,21 @@ DEFAULT_KPI_METADATA = {
         "formula": "SUM(collected_amount) / SUM(scheduled_amount) * 100",
         "definition": "Collection efficiency against scheduled amounts.",
         "implications": "Lower collection rate reduces cash conversion and may indicate process weaknesses.",
+    },
+    "LOSS_RATE": {
+        "formula": "SUM(principal_balance WHERE status = defaulted) / SUM(loan_amount) * 100",
+        "definition": "Defaulted outstanding exposure as a share of total originated principal.",
+        "implications": "Higher loss rate increases provisioning needs and can pressure capital ratios.",
+    },
+    "RECOVERY_RATE": {
+        "formula": "SUM(recovery_value WHERE status = defaulted) / SUM(principal_balance WHERE status = defaulted) * 100",
+        "definition": "Recovery performance over defaulted exposure.",
+        "implications": "Improving recoveries lowers loss-given-default and supports earnings resilience.",
+    },
+    "CASH_ON_HAND": {
+        "formula": "SUM(current_balance)",
+        "definition": "Total current balance available across the provided portfolio records.",
+        "implications": "Lower liquidity buffer can constrain disbursement capacity and debt service flexibility.",
     },
     "PORTFOLIO_YIELD": {
         "formula": "SUM(interest_rate * principal_balance) / SUM(principal_balance) * 100",
@@ -104,20 +129,10 @@ DEFAULT_KPI_METADATA = {
         "definition": "Combined yield from interest and fee streams.",
         "implications": "Total yield should be evaluated against funding costs and credit losses.",
     },
-    "RECOVERY_RATE": {
-        "formula": "SUM(recovery_value) / SUM(defaulted_principal_balance) * 100",
-        "definition": "Recovered value as a share of defaulted exposure.",
-        "implications": "Higher recoveries reduce realized loss severity and provisioning pressure.",
-    },
     "CONCENTRATION_HHI": {
         "formula": "SUM((borrower_exposure / total_exposure)^2) * 10000",
         "definition": "Herfindahl-Hirschman index for borrower concentration risk.",
         "implications": "Higher HHI indicates concentration and lower diversification resilience.",
-    },
-    "REPEAT_BORROWER_RATE": {
-        "formula": "COUNT(borrowers_with_more_than_one_loan) / COUNT(unique_borrowers) * 100",
-        "definition": "Share of borrowers with repeat borrowing activity.",
-        "implications": "Repeat activity can signal retention strength but may amplify concentration risk.",
     },
     "CREDIT_QUALITY_INDEX": {
         "formula": "((AVG(credit_score) - 300) / 550) * 100",
@@ -129,10 +144,45 @@ DEFAULT_KPI_METADATA = {
         "definition": "Period-over-period portfolio balance growth.",
         "implications": "Growth is positive only if accompanied by stable asset-quality and collections KPIs.",
     },
+    "AVERAGE_LOAN_SIZE": {
+        "formula": "AVG(loan_amount)",
+        "definition": "Average original principal amount for loans in the current sample.",
+        "implications": "Ticket-size changes alter risk concentration and operational servicing cost profile.",
+    },
+    "DISBURSEMENT_VOLUME_MTD": {
+        "formula": "SUM(loan_amount WHERE origination_date >= MONTH_START)",
+        "definition": "Total disbursed principal during the current calendar month.",
+        "implications": "MTD disbursement momentum signals growth pace and funding utilization.",
+    },
+    "NEW_LOANS_COUNT_MTD": {
+        "formula": "COUNT(loans WHERE origination_date >= MONTH_START)",
+        "definition": "Number of originated loans in the current calendar month.",
+        "implications": "Origination count trends help separate growth from average ticket-size effects.",
+    },
     "TOTAL_LOANS_COUNT": {
         "formula": "COUNT(loans)",
         "definition": "Total number of loans represented in the analyzed population.",
         "implications": "Loan-count growth changes operational load and may require capacity planning.",
+    },
+    "ACTIVE_BORROWERS": {
+        "formula": "COUNT(DISTINCT borrower_id WHERE status != closed)",
+        "definition": "Distinct borrower count for loans still active in the portfolio context.",
+        "implications": "Borrower base concentration and engagement should be monitored with this KPI.",
+    },
+    "REPEAT_BORROWER_RATE": {
+        "formula": "COUNT(DISTINCT borrower_id with loan_count > 1) / COUNT(DISTINCT borrower_id) * 100",
+        "definition": "Share of borrowers with multiple loans in the analyzed sample.",
+        "implications": "Higher repeat usage can indicate retention strength and/or concentration build-up.",
+    },
+    "AUTOMATION_RATE": {
+        "formula": "COUNT(loans WHERE payment_frequency in ['bullet','auto']) / COUNT(loans) * 100",
+        "definition": "Share of loans with automated or bullet payment scheduling.",
+        "implications": "Higher automation can reduce servicing overhead and collection friction.",
+    },
+    "PROCESSING_TIME_AVG": {
+        "formula": "AVG(term_months)",
+        "definition": "Average term length in months for the provided loan sample.",
+        "implications": "Longer average tenor increases duration risk and prolongs exposure lifecycle.",
     },
 }
 
@@ -199,7 +249,17 @@ class KPIService:
             "PAR30": ["PAR30", "par_30"],
             "PAR90": ["PAR90", "par_90"],
             "CollectionRate": ["COLLECTION_RATE", "collections_rate"],
+            "LossRate": ["LOSS_RATE", "loss_rate"],
+            "RecoveryRate": ["RECOVERY_RATE", "recovery_rate"],
+            "CashOnHand": ["CASH_ON_HAND", "cash_on_hand"],
             "PortfolioHealth": ["AUM", "portfolio_growth_rate"],
+            "ActiveBorrowers": ["ACTIVE_BORROWERS", "active_borrowers"],
+            "RepeatBorrowerRate": ["REPEAT_BORROWER_RATE", "repeat_borrower_rate"],
+            "AutomationRate": ["AUTOMATION_RATE", "automation_rate"],
+            "AverageLoanSize": ["AVERAGE_LOAN_SIZE", "average_loan_size"],
+            "ProcessingTimeAvg": ["PROCESSING_TIME_AVG", "processing_time_avg"],
+            "DisbursementVolumeMTD": ["DISBURSEMENT_VOLUME_MTD", "disbursement_volume_mtd"],
+            "NewLoansCountMTD": ["NEW_LOANS_COUNT_MTD", "new_loans_count_mtd"],
             "LTV": ["AVG_LTV", "average_loan_size"],
             "DTI": ["AVG_DTI", "default_rate"],
             "PortfolioYield": ["PORTFOLIO_YIELD", "portfolio_yield"],
@@ -728,6 +788,9 @@ class KPIService:
                     results["collection_rate"],
                     "%",
                 ),
+                build_kpi_response("LOSS_RATE", "Loss Rate", results["loss_rate"], "%"),
+                build_kpi_response("RECOVERY_RATE", "Recovery Rate", results["recovery_rate"], "%"),
+                build_kpi_response("CASH_ON_HAND", "Cash on Hand", results["cash_on_hand"], "USD"),
                 build_kpi_response(
                     "PORTFOLIO_YIELD",
                     "Weighted Average Interest Rate",
@@ -735,9 +798,42 @@ class KPIService:
                     "%",
                 ),
                 build_kpi_response("AUM", "Assets Under Management", results["aum"], "USD"),
+                build_kpi_response(
+                    "AVERAGE_LOAN_SIZE", "Average Loan Size", results["average_loan_size"], "USD"
+                ),
+                build_kpi_response(
+                    "DISBURSEMENT_VOLUME_MTD",
+                    "Disbursement Volume MTD",
+                    results["disbursement_volume_mtd"],
+                    "USD",
+                ),
+                build_kpi_response(
+                    "NEW_LOANS_COUNT_MTD",
+                    "New Loans Count MTD",
+                    results["new_loans_count_mtd"],
+                    "count",
+                ),
                 build_kpi_response("AVG_LTV", "Average Loan-to-Value", results["avg_ltv"], "%"),
                 build_kpi_response("AVG_DTI", "Average Debt-to-Income", results["avg_dti"], "%"),
                 build_kpi_response("DEFAULT_RATE", "Default Rate", results["default_rate"], "%"),
+                build_kpi_response(
+                    "ACTIVE_BORROWERS", "Active Borrowers", results["active_borrowers"], "count"
+                ),
+                build_kpi_response(
+                    "REPEAT_BORROWER_RATE",
+                    "Repeat Borrower Rate",
+                    results["repeat_borrower_rate"],
+                    "%",
+                ),
+                build_kpi_response(
+                    "AUTOMATION_RATE", "Automation Rate", results["automation_rate"], "%"
+                ),
+                build_kpi_response(
+                    "PROCESSING_TIME_AVG",
+                    "Average Processing Time",
+                    results["processing_time_avg"],
+                    "months",
+                ),
                 build_kpi_response(
                     "TOTAL_LOANS_COUNT", "Total Loans Count", results["count"], "count"
                 ),
@@ -774,7 +870,8 @@ class KPIService:
 
     def _calculate_portfolio_performance_metrics(self, df: pd.DataFrame) -> dict:
         """Internal helper to calculate various portfolio metrics from a clean dataframe."""
-        total_outstanding = df["principal_balance"].sum()
+        total_outstanding = float(df["principal_balance"].sum())
+        total_originated = float(df["loan_amount"].sum())
 
         # DPD mapping
         def get_dpd_category(status: str) -> int:
@@ -784,23 +881,31 @@ class KPIService:
                 return 75
             return 100 if "90+" in status else 0
 
-        df["dpd"] = df["loan_status"].apply(get_dpd_category)
+        if (
+            "days_past_due" in df.columns
+            and pd.to_numeric(df["days_past_due"], errors="coerce").notna().any()
+        ):
+            df["dpd"] = pd.to_numeric(df["days_past_due"], errors="coerce").fillna(0)
+        else:
+            df["dpd"] = df["loan_status"].astype(str).apply(get_dpd_category)
 
         # PAR
-        par30_val = df[df["dpd"] > 30]["principal_balance"].sum()
+        par30_val = float(df[df["dpd"] > 30]["principal_balance"].sum())
         par30_pct = (par30_val / total_outstanding * 100) if total_outstanding > 0 else 0
-        par90_val = df[df["dpd"] > 90]["principal_balance"].sum()
+        par90_val = float(df[df["dpd"] > 90]["principal_balance"].sum())
         par90_pct = (par90_val / total_outstanding * 100) if total_outstanding > 0 else 0
 
         # Default rate
         default_mask = df["loan_status"].str.contains(r"default|charged.off", case=False, na=False)
         default_rate_pct = (default_mask.sum() / len(df) * 100) if len(df) > 0 else 0
+        defaulted_balance = float(df.loc[default_mask, "principal_balance"].sum())
+        loss_rate = (defaulted_balance / total_originated * 100) if total_originated > 0 else 0
 
         # Yield
-        weighted_interest = (df["interest_rate"] * df["principal_balance"]).sum()
+        weighted_interest = float((df["interest_rate"] * df["principal_balance"]).sum())
         avg_interest_rate = (weighted_interest / total_outstanding) if total_outstanding > 0 else 0
 
-        # Collection rate proxy from available loan-level payment fields
+        # Collection and recovery inputs from loan-level payment fields
         scheduled = (
             pd.to_numeric(df["total_scheduled"], errors="coerce").fillna(0)
             if "total_scheduled" in df.columns
@@ -815,6 +920,22 @@ class KPIService:
         collection_rate = (
             (float(collected.sum()) / total_scheduled * 100) if total_scheduled > 0 else 0
         )
+        recovery_raw = (
+            pd.to_numeric(df["recovery_value"], errors="coerce").fillna(0)
+            if "recovery_value" in df.columns
+            else pd.Series([0.0] * len(df), index=df.index)
+        )
+        if float(recovery_raw.sum()) <= 0:
+            recovery_raw = collected
+        recovery_amount = float(recovery_raw[default_mask].sum())
+        recovery_rate = (recovery_amount / defaulted_balance * 100) if defaulted_balance > 0 else 0
+
+        cash_on_hand = (
+            float(pd.to_numeric(df["current_balance"], errors="coerce").fillna(0).sum())
+            if "current_balance" in df.columns
+            else 0.0
+        )
+        average_loan_size = float(df["loan_amount"].mean()) if len(df) > 0 else 0.0
 
         # LTV/DTI
         if "appraised_value" in df.columns and df["appraised_value"].notna().any():
@@ -831,14 +952,77 @@ class KPIService:
         else:
             df["dti_ratio"] = 0.0
 
+        if "borrower_id" in df.columns and df["borrower_id"].notna().any():
+            borrower_series = df["borrower_id"].dropna().astype(str)
+            active_mask = ~df["loan_status"].str.contains(
+                r"closed|complete|paid|settled", case=False, na=False
+            )
+            active_borrowers = float(
+                df.loc[active_mask, "borrower_id"].dropna().astype(str).nunique()
+            )
+            borrower_counts = borrower_series.value_counts()
+            repeat_borrower_rate = (
+                (float((borrower_counts > 1).sum()) / float(len(borrower_counts)) * 100)
+                if len(borrower_counts) > 0
+                else 0.0
+            )
+        else:
+            active_borrowers = 0.0
+            repeat_borrower_rate = 0.0
+
+        if "payment_frequency" in df.columns:
+            automated_mask = (
+                df["payment_frequency"]
+                .fillna("")
+                .astype(str)
+                .str.contains(r"bullet|auto", case=False, na=False)
+            )
+            automation_rate = (
+                (float(automated_mask.sum()) / float(len(df)) * 100) if len(df) > 0 else 0
+            )
+        else:
+            automation_rate = 0.0
+
+        if (
+            "term_months" in df.columns
+            and pd.to_numeric(df["term_months"], errors="coerce").notna().any()
+        ):
+            processing_time_avg = float(
+                pd.to_numeric(df["term_months"], errors="coerce").dropna().mean()
+            )
+        else:
+            processing_time_avg = 0.0
+
+        if "origination_date" in df.columns:
+            origination_dates = pd.to_datetime(
+                df["origination_date"], errors="coerce", utc=True
+            ).dt.tz_convert(None)
+            month_start = pd.Timestamp.now().normalize().replace(day=1)
+            mtd_mask = origination_dates >= month_start
+            disbursement_volume_mtd = float(df.loc[mtd_mask, "loan_amount"].sum())
+            new_loans_count_mtd = float(mtd_mask.sum())
+        else:
+            disbursement_volume_mtd = 0.0
+            new_loans_count_mtd = 0.0
+
         return {
             "par30": par30_pct,
             "par90": par90_pct,
             "default_rate": default_rate_pct,
             "collection_rate": collection_rate,
+            "loss_rate": loss_rate,
+            "recovery_rate": recovery_rate,
+            "cash_on_hand": cash_on_hand,
             "yield": avg_interest_rate,
             "aum": total_outstanding,
+            "average_loan_size": average_loan_size,
+            "disbursement_volume_mtd": disbursement_volume_mtd,
+            "new_loans_count_mtd": new_loans_count_mtd,
             "avg_ltv": df["ltv_ratio"].mean(),
             "avg_dti": df["dti_ratio"].mean(),
+            "active_borrowers": active_borrowers,
+            "repeat_borrower_rate": repeat_borrower_rate,
+            "automation_rate": automation_rate,
+            "processing_time_avg": processing_time_avg,
             "count": float(len(df)),
         }

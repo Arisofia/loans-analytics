@@ -113,10 +113,18 @@ Delivery report snapshot (2026-02-27):
     `python/apps/analytics/api/models.py`,
     `python/apps/analytics/api/service.py`,
     `python/apps/analytics/api/main.py`.
+  - Expanded realtime `/analytics/kpis` coverage to include:
+    `LOSS_RATE`, `RECOVERY_RATE`, `CASH_ON_HAND`, `AVERAGE_LOAN_SIZE`,
+    `DISBURSEMENT_VOLUME_MTD`, `NEW_LOANS_COUNT_MTD`,
+    `ACTIVE_BORROWERS`, `REPEAT_BORROWER_RATE`, `AUTOMATION_RATE`,
+    `PROCESSING_TIME_AVG`.
   - Added advanced-risk tests:
     `python/tests/test_advanced_risk.py`,
     `python/tests/test_advanced_risk_api.py`,
     `python/tests/test_advanced_risk_openapi.py`.
+  - Extended realtime KPI tests:
+    `python/tests/test_kpi_service_realtime.py`,
+    `python/tests/test_kpi_realtime_api.py`.
   - Updated this checklist with validated completion state.
 - What was executed:
   - Lint/format: `ruff check .`, `black --check .`.

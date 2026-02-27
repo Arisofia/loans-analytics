@@ -50,6 +50,8 @@ class LoanRecord(BaseModel):
     borrower_id: Optional[str] = Field(None, description="Borrower identifier")
     days_past_due: Optional[float] = Field(None, description="Current days past due")
     payment_frequency: Optional[str] = Field(None, description="Payment frequency descriptor")
+    term_months: Optional[float] = Field(None, description="Loan term in months")
+    origination_date: Optional[datetime] = Field(None, description="Loan origination timestamp")
     origination_fee: Optional[float] = Field(None, description="Origination fee amount")
     origination_fee_taxes: Optional[float] = Field(None, description="Taxes charged over fees")
     total_scheduled: Optional[float] = Field(None, description="Total scheduled collections amount")
@@ -191,7 +193,17 @@ class KpiResponse(BaseModel):
     PAR30: Optional[KpiSingleResponse] = None
     PAR90: Optional[KpiSingleResponse] = None
     CollectionRate: Optional[KpiSingleResponse] = None
+    LossRate: Optional[KpiSingleResponse] = None
+    RecoveryRate: Optional[KpiSingleResponse] = None
+    CashOnHand: Optional[KpiSingleResponse] = None
     PortfolioHealth: Optional[KpiSingleResponse] = None
+    ActiveBorrowers: Optional[KpiSingleResponse] = None
+    RepeatBorrowerRate: Optional[KpiSingleResponse] = None
+    AutomationRate: Optional[KpiSingleResponse] = None
+    AverageLoanSize: Optional[KpiSingleResponse] = None
+    ProcessingTimeAvg: Optional[KpiSingleResponse] = None
+    DisbursementVolumeMTD: Optional[KpiSingleResponse] = None
+    NewLoansCountMTD: Optional[KpiSingleResponse] = None
     LTV: Optional[KpiSingleResponse] = None
     DTI: Optional[KpiSingleResponse] = None
     PortfolioYield: Optional[KpiSingleResponse] = None
