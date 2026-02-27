@@ -20,13 +20,22 @@ This directory contains E2E tests for both the backend (FastAPI) and frontend (S
    ```sh
    python3 -m playwright install
    ```
-3. Ensure backend (FastAPI) is running at http://localhost:8000
-4. Ensure frontend (Streamlit) is running at http://localhost:8501
+3. Ensure backend (FastAPI) is running at `http://localhost:8000`
+4. Ensure frontend is reachable:
+   - Local Docker/dashboard default: `http://localhost:8501`
+   - Azure startup default: `http://localhost:8000`
+5. Export E2E flags (tests are opt-in):
+   ```sh
+   export RUN_E2E=1
+   # Optional overrides:
+   export BACKEND_BASE_URL=http://localhost:8000
+   export FRONTEND_BASE_URL=http://localhost:8501
+   ```
 
 ## Running Tests
 To run all E2E tests:
 ```sh
-pytest tests/e2e --cov=.
+pytest tests/e2e -m e2e --cov=.
 ```
 
 ## Coverage

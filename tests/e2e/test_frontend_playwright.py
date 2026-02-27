@@ -8,7 +8,7 @@ sync_playwright = pytest.importorskip(
     reason="playwright is required only for optional e2e tests",
 ).sync_playwright
 
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:8501")
+DEFAULT_FRONTEND_URLS = ("http://localhost:8501", "http://localhost:8000")
 RUN_E2E = os.getenv("RUN_E2E", "0") == "1"
 
 pytestmark = [
@@ -23,6 +23,25 @@ def is_frontend_up() -> bool:
         return response.status_code < 500
     except Exception:
         return False
+
+
+def _resolve_frontend_base_url() -> str:
+    """Resolve frontend URL from env, then fallback to common local defaults."""
+    explicit = os.getenv("FRONTEND_BASE_URL")
+    if explicit:
+        return explicit
+
+    for url in DEFAULT_FRONTEND_URLS:
+        try:
+            if requests.get(url, timeout=2).status_code < 500:
+                return url
+        except Exception:
+            continue
+
+    return DEFAULT_FRONTEND_URLS[0]
+
+
+FRONTEND_BASE_URL = _resolve_frontend_base_url()
 
 
 @pytest.mark.skipif(not is_frontend_up(), reason="Streamlit frontend not running")
