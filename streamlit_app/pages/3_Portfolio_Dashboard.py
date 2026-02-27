@@ -194,12 +194,22 @@ def _kpi_snapshot_from_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
     """Build a compact KPI snapshot for agent context and UI."""
     return {
         "total_loans": int(metrics.get("total_loans", 0)),
+        "total_loans_all": int(metrics.get("total_loans_all", 0)),
+        "closed_loans": int(metrics.get("closed_loans", 0)),
         "total_portfolio": float(metrics.get("total_portfolio", 0.0)),
         "weighted_avg_rate": float(metrics.get("weighted_avg_rate", 0.0)),
         "delinquency_rate_30": float(metrics.get("delinquency_rate_30", 0.0)),
         "delinquency_rate_60": float(metrics.get("delinquency_rate_60", 0.0)),
         "delinquency_rate_90": float(metrics.get("delinquency_rate_90", 0.0)),
         "par_30_rate": float(metrics.get("par_30_rate", 0.0)),
+        "par_90_rate": float(metrics.get("par_90_rate", 0.0)),
+        "default_rate": float(metrics.get("default_rate", 0.0)),
+        "collections_rate": float(metrics.get("collections_rate", 0.0)),
+        "recovery_rate": float(metrics.get("recovery_rate", 0.0)),
+        "loss_rate": float(metrics.get("loss_rate", 0.0)),
+        "active_borrowers": int(metrics.get("active_borrowers", 0)),
+        "repeat_borrower_rate": float(metrics.get("repeat_borrower_rate", 0.0)),
+        "cash_on_hand": float(metrics.get("cash_on_hand", 0.0)),
         "expected_loss": float(metrics.get("expected_loss", 0.0)),
         "expected_loss_rate": float(metrics.get("expected_loss_rate", 0.0)),
         "avg_loan_size": float(metrics.get("avg_loan_size", 0.0)),
@@ -216,11 +226,17 @@ def _kpi_methodology_from_metrics(metrics: dict[str, Any]) -> dict[str, dict[str
     dpd_60_count = int(metrics.get("dpd_60_count", 0))
     dpd_90_count = int(metrics.get("dpd_90_count", 0))
     par_30_amount = float(metrics.get("par_30_amount", 0.0))
+    par_90_amount = float(metrics.get("par_90_amount", 0.0))
     expected_loss = float(metrics.get("expected_loss", 0.0))
+    default_count = int(metrics.get("default_count", 0))
+    default_exposure = float(metrics.get("default_exposure", 0.0))
+    collections_received = float(metrics.get("collections_received", 0.0))
+    collections_scheduled = float(metrics.get("collections_scheduled", 0.0))
+    default_collections = float(metrics.get("default_collections", 0.0))
 
     return {
         "weighted_avg_rate": {
-            "formula": "sum(principal_amount * interest_rate) / sum(principal_amount)",
+            "formula": "sum(exposure_amount * interest_rate) / sum(exposure_amount)",
             "numerator": weighted_rate_numerator,
             "denominator": total_portfolio,
             "value": float(metrics.get("weighted_avg_rate", 0.0)),
@@ -248,14 +264,42 @@ def _kpi_methodology_from_metrics(metrics: dict[str, Any]) -> dict[str, dict[str
             "unit": "percent",
         },
         "par_30_rate": {
-            "formula": "sum(principal_amount where days_past_due >= 30) / total_portfolio * 100",
+            "formula": "sum(exposure where days_past_due >= 30) / total_portfolio * 100",
             "numerator": par_30_amount,
             "denominator": total_portfolio,
             "value": float(metrics.get("par_30_rate", 0.0)),
             "unit": "percent",
         },
+        "par_90_rate": {
+            "formula": "sum(exposure where days_past_due >= 90) / total_portfolio * 100",
+            "numerator": par_90_amount,
+            "denominator": total_portfolio,
+            "value": float(metrics.get("par_90_rate", 0.0)),
+            "unit": "percent",
+        },
+        "default_rate": {
+            "formula": "count(loans where status = defaulted) / total_loans * 100",
+            "numerator": default_count,
+            "denominator": total_loans,
+            "value": float(metrics.get("default_rate", 0.0)),
+            "unit": "percent",
+        },
+        "collections_rate": {
+            "formula": "sum(last_payment_amount) / sum(total_scheduled) * 100",
+            "numerator": collections_received,
+            "denominator": collections_scheduled,
+            "value": float(metrics.get("collections_rate", 0.0)),
+            "unit": "percent",
+        },
+        "recovery_rate": {
+            "formula": "sum(last_payment_amount where status=defaulted) / sum(exposure where status=defaulted) * 100",
+            "numerator": default_collections,
+            "denominator": default_exposure,
+            "value": float(metrics.get("recovery_rate", 0.0)),
+            "unit": "percent",
+        },
         "expected_loss": {
-            "formula": "sum(risk_score * principal_amount)",
+            "formula": "sum(risk_score * exposure_amount)",
             "numerator": expected_loss,
             "denominator": None,
             "value": expected_loss,
@@ -290,7 +334,7 @@ def _kpi_methodology_rows(metrics: dict[str, Any]) -> list[dict[str, str]]:
     return [
         {
             "KPI": "Total Portfolio Value",
-            "Formula": "sum(principal_amount)",
+            "Formula": "sum(exposure_amount) for active loans",
             "Numerator": fmt_currency(total_portfolio),
             "Denominator": "n/a",
             "Value": fmt_currency(total_portfolio),
@@ -329,6 +373,34 @@ def _kpi_methodology_rows(metrics: dict[str, Any]) -> list[dict[str, str]]:
             "Numerator": fmt_currency(float(methodology["par_30_rate"]["numerator"])),
             "Denominator": fmt_currency(float(methodology["par_30_rate"]["denominator"] or 0.0)),
             "Value": fmt_percent(float(methodology["par_30_rate"]["value"])),
+        },
+        {
+            "KPI": "PAR 90",
+            "Formula": methodology["par_90_rate"]["formula"],
+            "Numerator": fmt_currency(float(methodology["par_90_rate"]["numerator"])),
+            "Denominator": fmt_currency(float(methodology["par_90_rate"]["denominator"] or 0.0)),
+            "Value": fmt_percent(float(methodology["par_90_rate"]["value"])),
+        },
+        {
+            "KPI": "Default Rate",
+            "Formula": methodology["default_rate"]["formula"],
+            "Numerator": f"{int(methodology['default_rate']['numerator']):,} loans",
+            "Denominator": f"{total_loans:,} loans",
+            "Value": fmt_percent(float(methodology["default_rate"]["value"])),
+        },
+        {
+            "KPI": "Collections Rate",
+            "Formula": methodology["collections_rate"]["formula"],
+            "Numerator": fmt_currency(float(methodology["collections_rate"]["numerator"])),
+            "Denominator": fmt_currency(float(methodology["collections_rate"]["denominator"] or 0.0)),
+            "Value": fmt_percent(float(methodology["collections_rate"]["value"])),
+        },
+        {
+            "KPI": "Recovery Rate",
+            "Formula": methodology["recovery_rate"]["formula"],
+            "Numerator": fmt_currency(float(methodology["recovery_rate"]["numerator"])),
+            "Denominator": fmt_currency(float(methodology["recovery_rate"]["denominator"] or 0.0)),
+            "Value": fmt_percent(float(methodology["recovery_rate"]["value"])),
         },
         {
             "KPI": "Expected Loss",
@@ -484,6 +556,12 @@ COLUMN_ALIASES = {
         "monto",
         "monto_prestamo",
         "monto_financiado",
+        "monto_financiar",
+        "valor_financiado",
+        "valor_factura",
+        "importe",
+        "capital_inicial",
+        "saldo_inicial",
         "capital",
         "tpv",
         "total_receivable_usd",
@@ -499,6 +577,11 @@ COLUMN_ALIASES = {
         "tasa",
         "tasa_interes",
         "tasa_de_interes",
+        "tasa_anual",
+        "tasa_nominal",
+        "tasa_efectiva",
+        "interest_rate_percent",
+        "interest_pct",
         "interest",
         "interes",
     ],
@@ -523,6 +606,9 @@ OPTIONAL_DEFAULTS = {
 DPD_30_PLUS = "DPD 30+"
 DPD_60_PLUS = "DPD 60+"
 DPD_90_PLUS = "DPD 90+"
+
+# Canonical status groups used by KPI formulas.
+STATUS_ACTIVE_EXPOSURE = {"active", "delinquent", "defaulted", "unknown"}
 
 
 def _normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
@@ -595,6 +681,61 @@ def _normalize_payment_history(value: Any) -> str:
     return "[]"
 
 
+def _get_exposure_series(df: pd.DataFrame) -> pd.Series:
+    """Resolve exposure amount with priority: outstanding -> current -> principal."""
+    candidate_columns = [
+        pd.to_numeric(df[col], errors="coerce")
+        for col in ("outstanding_balance", "current_balance", "principal_amount")
+        if col in df.columns
+    ]
+    if not candidate_columns:
+        return pd.Series(0.0, index=df.index, dtype=float)
+
+    candidate_frame = pd.concat(candidate_columns, axis=1)
+    # Use first non-null value by priority order defined above.
+    exposure = candidate_frame.bfill(axis=1).iloc[:, 0]
+    return exposure.fillna(0.0)
+
+
+def _get_numeric_series(df: pd.DataFrame, column: str) -> pd.Series:
+    """Return a numeric series for an optional column, defaulting to 0 for missing values."""
+    if column not in df.columns:
+        return pd.Series(0.0, index=df.index, dtype=float)
+    return pd.to_numeric(df[column], errors="coerce").fillna(0.0)
+
+
+def _canonicalize_status(value: Any) -> str:
+    """Normalize source status labels to canonical values."""
+    raw = str(value).strip().lower()
+    if not raw or raw == "nan":
+        return "active"
+
+    active_aliases = {"active", "current", "vigente", "open", "in_force"}
+    closed_aliases = {
+        "closed",
+        "complete",
+        "completed",
+        "paid",
+        "paid_off",
+        "paid-off",
+        "cancelled",
+        "canceled",
+        "liquidated",
+    }
+    delinquent_aliases = {"delinquent", "late", "past_due", "arrears", "mora"}
+    defaulted_aliases = {"default", "defaulted", "charged_off", "charge_off", "written_off"}
+
+    if raw in active_aliases:
+        return "active"
+    if raw in closed_aliases:
+        return "closed"
+    if raw in delinquent_aliases:
+        return "delinquent"
+    if raw in defaulted_aliases:
+        return "defaulted"
+    return "unknown"
+
+
 def validate_uploaded_data(df: pd.DataFrame) -> tuple[bool, list[str]]:
     """Validate uploaded data has minimum required columns."""
     missing_columns = [col for col in CORE_REQUIRED_COLUMNS if col not in df.columns]
@@ -643,9 +784,19 @@ def prepare_uploaded_data(df: pd.DataFrame) -> pd.DataFrame:
     if not prepared["interest_rate"].dropna().empty and prepared["interest_rate"].dropna().median() > 1:
         prepared["interest_rate"] = prepared["interest_rate"] / 100.0
 
-    prepared["current_status"] = (
-        prepared["current_status"].astype(str).str.strip().str.lower().replace({"nan": "current"})
-    )
+    prepared["current_status"] = prepared["current_status"].map(_canonicalize_status)
+
+    for numeric_col in [
+        "days_past_due",
+        "outstanding_balance",
+        "current_balance",
+        "last_payment_amount",
+        "total_scheduled",
+        "tpv",
+        "amount",
+    ]:
+        if numeric_col in prepared.columns:
+            prepared[numeric_col] = pd.to_numeric(prepared[numeric_col], errors="coerce")
 
     for col_name, default_value in OPTIONAL_DEFAULTS.items():
         if col_name not in prepared.columns:
@@ -671,11 +822,11 @@ def prepare_uploaded_data(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     status_risk_map = {
-        "current": 0.05,
-        "paid-off": 0.00,
-        "paid_off": 0.00,
+        "active": 0.05,
+        "closed": 0.00,
         "delinquent": 0.45,
-        "default": 0.90,
+        "defaulted": 0.90,
+        "unknown": 0.15,
     }
     inferred_risk = prepared["current_status"].map(status_risk_map).fillna(0.20)
     prepared["risk_score"] = pd.to_numeric(prepared["risk_score"], errors="coerce")
@@ -703,62 +854,129 @@ def calculate_days_past_due(df: pd.DataFrame) -> pd.DataFrame:
     """Calculate days past due (DPD) for each loan."""
     df = df.copy()
 
-    def get_dpd(row):
+    def get_dpd_from_history(row):
         """Calculate DPD from payment history."""
-        payment_history = parse_payment_history(row["payment_history_json"])
+        payment_history = parse_payment_history(row.get("payment_history_json", "[]"))
         if not payment_history:
             return 0
 
         # Get unpaid/late payments
         overdue_days = [
-            p["days_late"]
+            p.get("days_late", 0)
             for p in payment_history
-            if p["status"] in ["missed", "defaulted"]
-            or (p["status"] == "late_paid" and p["days_late"] > 30)
+            if p.get("status") in ["missed", "defaulted"]
+            or (p.get("status") == "late_paid" and p.get("days_late", 0) > 30)
         ]
 
         return max(overdue_days) if overdue_days else 0
 
-    df["days_past_due"] = df.apply(get_dpd, axis=1)
+    existing_dpd = (
+        pd.to_numeric(df["days_past_due"], errors="coerce").fillna(0)
+        if "days_past_due" in df.columns
+        else pd.Series(0, index=df.index, dtype=float)
+    )
+    derived_dpd = (
+        pd.to_numeric(df.apply(get_dpd_from_history, axis=1), errors="coerce").fillna(0)
+        if "payment_history_json" in df.columns
+        else pd.Series(0, index=df.index, dtype=float)
+    )
+    df["days_past_due"] = pd.concat([existing_dpd, derived_dpd], axis=1).max(axis=1)
     return df
 
 
 def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
     """Calculate key portfolio metrics."""
+    df = calculate_days_past_due(df)
+    status_series = df["current_status"] if "current_status" in df.columns else pd.Series("unknown", index=df.index)
+
+    df["exposure_amount"] = _get_exposure_series(df)
+
+    exposure_mask = status_series.isin(STATUS_ACTIVE_EXPOSURE)
+    portfolio_df = df[exposure_mask].copy()
+    total_loans_all = len(df)
+    closed_loans = int((~exposure_mask).sum())
+
     # Total portfolio value
-    total_portfolio = df["principal_amount"].sum()
+    total_portfolio = float(portfolio_df["exposure_amount"].sum())
 
     # Weighted average rate
-    total_principal = df["principal_amount"].sum()
-    weighted_rate_numerator = (df["principal_amount"] * df["interest_rate"]).sum()
-    weighted_rate = (
-        weighted_rate_numerator / total_principal if total_principal > 0 else 0
+    weighted_rate_numerator = float(
+        (portfolio_df["exposure_amount"] * portfolio_df["interest_rate"]).sum()
     )
-
-    # Calculate DPD
-    df = calculate_days_past_due(df)
+    weighted_rate = (weighted_rate_numerator / total_portfolio) if total_portfolio > 0 else 0.0
 
     # Delinquency rates
-    total_loans = len(df)
-    dpd_30_plus = len(df[df["days_past_due"] >= 30])
-    dpd_60_plus = len(df[df["days_past_due"] >= 60])
-    dpd_90_plus = len(df[df["days_past_due"] >= 90])
+    total_loans = len(portfolio_df)
+    dpd_30_plus = int((portfolio_df["days_past_due"] >= 30).sum())
+    dpd_60_plus = int((portfolio_df["days_past_due"] >= 60).sum())
+    dpd_90_plus = int((portfolio_df["days_past_due"] >= 90).sum())
 
     delinquency_rate_30 = (dpd_30_plus / total_loans * 100) if total_loans > 0 else 0
     delinquency_rate_60 = (dpd_60_plus / total_loans * 100) if total_loans > 0 else 0
     delinquency_rate_90 = (dpd_90_plus / total_loans * 100) if total_loans > 0 else 0
 
-    # PAR (Portfolio at Risk) > 30
-    par_30_amount = df[df["days_past_due"] >= 30]["principal_amount"].sum()
+    # PAR (Portfolio at Risk)
+    par_30_amount = float(portfolio_df[portfolio_df["days_past_due"] >= 30]["exposure_amount"].sum())
+    par_90_amount = float(portfolio_df[portfolio_df["days_past_due"] >= 90]["exposure_amount"].sum())
     par_30_rate = (par_30_amount / total_portfolio * 100) if total_portfolio > 0 else 0
+    par_90_rate = (par_90_amount / total_portfolio * 100) if total_portfolio > 0 else 0
 
     # Expected loss (simplified: average risk score * portfolio)
-    risk_score_sum = df["risk_score"].sum()
-    expected_loss = (df["risk_score"] * df["principal_amount"]).sum()
+    risk_score_sum = float(portfolio_df["risk_score"].sum())
+    expected_loss = float((portfolio_df["risk_score"] * portfolio_df["exposure_amount"]).sum())
     expected_loss_rate = (expected_loss / total_portfolio * 100) if total_portfolio > 0 else 0
+    avg_risk_score = float(portfolio_df["risk_score"].mean()) if total_loans > 0 else 0.0
+
+    default_mask = portfolio_df["current_status"] == "defaulted"
+    default_count = int(default_mask.sum())
+    default_exposure = float(portfolio_df.loc[default_mask, "exposure_amount"].sum())
+    default_rate = (default_count / total_loans * 100) if total_loans > 0 else 0.0
+    loss_rate = (default_exposure / total_portfolio * 100) if total_portfolio > 0 else 0.0
+
+    scheduled_sum = float(_get_numeric_series(portfolio_df, "total_scheduled").sum())
+    collected_sum = float(_get_numeric_series(portfolio_df, "last_payment_amount").sum())
+    collections_rate = (collected_sum / scheduled_sum * 100) if scheduled_sum > 0 else 0.0
+    default_collected_sum = float(
+        _get_numeric_series(portfolio_df.loc[default_mask], "last_payment_amount").sum()
+    )
+    recovery_rate = (default_collected_sum / default_exposure * 100) if default_exposure > 0 else 0.0
+
+    cash_on_hand = (
+        float(_get_numeric_series(portfolio_df, "current_balance").sum())
+        if "current_balance" in portfolio_df.columns
+        else total_portfolio
+    )
+
+    borrower_col = next(
+        (
+            col
+            for col in ("borrower_id", "borrower_id_number", "borrower_email", "borrower_name")
+            if col in portfolio_df.columns
+        ),
+        None,
+    )
+    if borrower_col:
+        borrower_series = (
+            portfolio_df[borrower_col]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+            .replace({"": pd.NA, "nan": pd.NA, "none": pd.NA, "unknown borrower": pd.NA})
+            .dropna()
+        )
+        active_borrowers = int(borrower_series.nunique())
+    else:
+        borrower_series = pd.Series(dtype=str)
+        active_borrowers = 0
+
+    if active_borrowers > 0:
+        borrower_counts = borrower_series.value_counts()
+        repeat_borrower_rate = float((borrower_counts > 1).sum() / active_borrowers * 100)
+    else:
+        repeat_borrower_rate = 0.0
 
     # Status distribution
-    status_dist = df["current_status"].value_counts().to_dict()
+    status_dist = portfolio_df["current_status"].value_counts().to_dict()
 
     return {
         "total_portfolio": total_portfolio,
@@ -772,13 +990,29 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
         "dpd_90_count": dpd_90_plus,
         "par_30_rate": par_30_rate,
         "par_30_amount": par_30_amount,
+        "par_90_rate": par_90_rate,
+        "par_90_amount": par_90_amount,
         "expected_loss": expected_loss,
         "expected_loss_rate": expected_loss_rate,
+        "default_count": default_count,
+        "default_rate": default_rate,
+        "default_exposure": default_exposure,
+        "loss_rate": loss_rate,
+        "collections_received": collected_sum,
+        "collections_scheduled": scheduled_sum,
+        "collections_rate": collections_rate,
+        "default_collections": default_collected_sum,
+        "recovery_rate": recovery_rate,
+        "cash_on_hand": cash_on_hand,
+        "active_borrowers": active_borrowers,
+        "repeat_borrower_rate": repeat_borrower_rate,
+        "total_loans_all": total_loans_all,
+        "closed_loans": closed_loans,
         "total_loans": total_loans,
         "status_distribution": status_dist,
-        "avg_loan_size": df["principal_amount"].mean(),
+        "avg_loan_size": float(portfolio_df["exposure_amount"].mean()) if total_loans > 0 else 0.0,
         "risk_score_sum": risk_score_sum,
-        "avg_risk_score": df["risk_score"].mean(),
+        "avg_risk_score": avg_risk_score,
     }
 
 
@@ -790,7 +1024,7 @@ def render_metrics_cards(metrics: dict[str, Any]):
         st.metric(
             label="💰 Total Portfolio Value",
             value=f"€{metrics['total_portfolio']:,.0f}",
-            delta=f"{metrics['total_loans']} loans",
+            delta=f"{metrics['total_loans']} active loans",
         )
 
     with col2:
@@ -816,6 +1050,34 @@ def render_metrics_cards(metrics: dict[str, Any]):
             delta_color="inverse",
         )
 
+    col5, col6, col7, col8 = st.columns(4)
+    with col5:
+        st.metric(
+            label="📉 PAR > 90",
+            value=f"{metrics.get('par_90_rate', 0.0):.2f}%",
+            delta=f"Loss Rate: {metrics.get('loss_rate', 0.0):.2f}%",
+            delta_color="inverse",
+        )
+    with col6:
+        st.metric(
+            label="🧯 Default Rate",
+            value=f"{metrics.get('default_rate', 0.0):.2f}%",
+            delta=f"{int(metrics.get('default_count', 0))} loans",
+            delta_color="inverse",
+        )
+    with col7:
+        st.metric(
+            label="💸 Collections Rate",
+            value=f"{metrics.get('collections_rate', 0.0):.2f}%",
+            delta=f"Recovery: {metrics.get('recovery_rate', 0.0):.2f}%",
+        )
+    with col8:
+        st.metric(
+            label="👥 Active Borrowers",
+            value=f"{int(metrics.get('active_borrowers', 0)):,}",
+            delta=f"Repeat: {metrics.get('repeat_borrower_rate', 0.0):.2f}%",
+        )
+
 
 def render_kpi_methodology(metrics: dict[str, Any]):
     """Render formulas and operands used to compute KPI values."""
@@ -824,7 +1086,7 @@ def render_kpi_methodology(metrics: dict[str, Any]):
             "Each KPI includes formula, numerator, denominator, and current value used by agents."
         )
         methodology_rows = _kpi_methodology_rows(metrics)
-        st.dataframe(pd.DataFrame(methodology_rows), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(methodology_rows), width="stretch", hide_index=True)
 
 
 def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
@@ -943,16 +1205,26 @@ def build_agent_portfolio_context(df: pd.DataFrame) -> dict[str, Any]:
 
     portfolio_data = {
         "total_loans": int(metrics.get("total_loans", 0)),
+        "total_loans_all": int(metrics.get("total_loans_all", 0)),
+        "closed_loans": int(metrics.get("closed_loans", 0)),
         "total_portfolio": to_native(metrics.get("total_portfolio", 0)),
         "avg_interest_rate": to_native(metrics.get("weighted_avg_rate", 0)),
         "delinquency_rate_30": to_native(metrics.get("delinquency_rate_30", 0)),
         "delinquency_rate_60": to_native(metrics.get("delinquency_rate_60", 0)),
         "delinquency_rate_90": to_native(metrics.get("delinquency_rate_90", 0)),
         "par_30_rate": to_native(metrics.get("par_30_rate", 0)),
+        "par_90_rate": to_native(metrics.get("par_90_rate", 0)),
+        "default_rate": to_native(metrics.get("default_rate", 0)),
+        "collections_rate": to_native(metrics.get("collections_rate", 0)),
+        "recovery_rate": to_native(metrics.get("recovery_rate", 0)),
+        "loss_rate": to_native(metrics.get("loss_rate", 0)),
         "expected_loss": to_native(metrics.get("expected_loss", 0)),
         "expected_loss_rate": to_native(metrics.get("expected_loss_rate", 0)),
         "avg_loan_size": to_native(metrics.get("avg_loan_size", 0)),
         "avg_risk_score": to_native(metrics.get("avg_risk_score", 0)),
+        "active_borrowers": int(metrics.get("active_borrowers", 0)),
+        "repeat_borrower_rate": to_native(metrics.get("repeat_borrower_rate", 0)),
+        "cash_on_hand": to_native(metrics.get("cash_on_hand", 0)),
         "status_distribution": {k: int(v) for k, v in status_counts.items()},
         "top_regions": {k: int(v) for k, v in region_counts.items()},
     }
@@ -968,17 +1240,29 @@ def build_agent_portfolio_context(df: pd.DataFrame) -> dict[str, Any]:
 def _build_local_agent_fallback(df: pd.DataFrame, metrics: dict[str, Any]) -> dict[str, Any]:
     """Create deterministic agent outputs when LLM credentials are unavailable."""
     total_loans = int(metrics.get("total_loans", 0))
+    total_loans_all = int(metrics.get("total_loans_all", total_loans))
+    closed_loans = int(metrics.get("closed_loans", 0))
     total_portfolio = float(metrics.get("total_portfolio", 0.0))
     weighted_rate = float(metrics.get("weighted_avg_rate", 0.0))
     delinquency_30 = float(metrics.get("delinquency_rate_30", 0.0))
     delinquency_60 = float(metrics.get("delinquency_rate_60", 0.0))
     delinquency_90 = float(metrics.get("delinquency_rate_90", 0.0))
     par_30_rate = float(metrics.get("par_30_rate", 0.0))
+    par_90_rate = float(metrics.get("par_90_rate", 0.0))
+    default_rate = float(metrics.get("default_rate", 0.0))
     expected_loss = float(metrics.get("expected_loss", 0.0))
     expected_loss_rate = float(metrics.get("expected_loss_rate", 0.0))
+    collections_rate = float(metrics.get("collections_rate", 0.0))
+    recovery_rate = float(metrics.get("recovery_rate", 0.0))
+
+    exposure = _get_exposure_series(df)
 
     top_regions_series = (
-        df.groupby("region")["principal_amount"].sum().sort_values(ascending=False).head(3)
+        df.assign(exposure_amount=exposure)
+        .groupby("region")["exposure_amount"]
+        .sum()
+        .sort_values(ascending=False)
+        .head(3)
         if "region" in df.columns and not df.empty
         else pd.Series(dtype=float)
     )
@@ -996,9 +1280,9 @@ def _build_local_agent_fallback(df: pd.DataFrame, metrics: dict[str, Any]) -> di
     else:
         status_distribution_text = "n/a"
 
-    if delinquency_30 >= 12 or par_30_rate >= 8 or expected_loss_rate >= 7:
+    if delinquency_30 >= 12 or par_30_rate >= 8 or par_90_rate >= 4 or expected_loss_rate >= 7:
         portfolio_risk = "high"
-    elif delinquency_30 >= 6 or par_30_rate >= 4 or expected_loss_rate >= 4:
+    elif delinquency_30 >= 6 or par_30_rate >= 4 or default_rate >= 2 or expected_loss_rate >= 4:
         portfolio_risk = "moderate"
     else:
         portfolio_risk = "low"
@@ -1006,15 +1290,18 @@ def _build_local_agent_fallback(df: pd.DataFrame, metrics: dict[str, Any]) -> di
     risk_analysis = (
         "Deterministic analysis generated locally (no external LLM).\n\n"
         f"1. Portfolio risk level: {portfolio_risk.upper()}.\n"
-        f"2. Exposure: €{total_portfolio:,.0f} across {total_loans:,} loans.\n"
+        f"2. Exposure: €{total_portfolio:,.0f} across {total_loans:,} active loans "
+        f"({total_loans_all:,} total, {closed_loans:,} closed).\n"
         f"3. Pricing baseline: weighted average rate {weighted_rate:.2%}.\n"
         f"4. Delinquency profile: 30+ DPD {delinquency_30:.2f}%, 60+ DPD {delinquency_60:.2f}%, "
         f"90+ DPD {delinquency_90:.2f}%.\n"
-        f"5. Capital at risk: PAR30 {par_30_rate:.2f}%.\n"
-        f"6. Expected loss: €{expected_loss:,.0f} ({expected_loss_rate:.2f}% of portfolio).\n"
-        f"7. Status distribution: {status_distribution_text}.\n"
-        f"8. Top regional concentration: {top_regions_text}.\n"
-        "9. KPI formulas and numerators/denominators are attached in `kpi_methodology`."
+        f"5. Capital at risk: PAR30 {par_30_rate:.2f}% and PAR90 {par_90_rate:.2f}%.\n"
+        f"6. Default profile: default rate {default_rate:.2f}%.\n"
+        f"7. Collections profile: collections {collections_rate:.2f}%, recoveries {recovery_rate:.2f}%.\n"
+        f"8. Expected loss: €{expected_loss:,.0f} ({expected_loss_rate:.2f}% of portfolio).\n"
+        f"9. Status distribution: {status_distribution_text}.\n"
+        f"10. Top regional concentration: {top_regions_text}.\n"
+        "11. KPI formulas and numerators/denominators are attached in `kpi_methodology`."
     )
 
     compliance_findings: list[str] = []
@@ -1029,6 +1316,10 @@ def _build_local_agent_fallback(df: pd.DataFrame, metrics: dict[str, Any]) -> di
     if expected_loss_rate >= 6:
         compliance_findings.append(
             f"Expected loss rate {expected_loss_rate:.2f}% is above conservative underwriting tolerance."
+        )
+    if collections_rate < 85:
+        compliance_findings.append(
+            f"Collections rate {collections_rate:.2f}% is below operational floor (85%)."
         )
     if not compliance_findings:
         compliance_findings.append("No hard-threshold breaches detected in deterministic checks.")
@@ -1368,9 +1659,9 @@ def render_agent_results(metrics: dict[str, Any]):
                         "Unit": details.get("unit", "n/a"),
                     }
                 )
-            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
         else:
-            st.dataframe(pd.DataFrame(_kpi_methodology_rows(metrics)), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(_kpi_methodology_rows(metrics)), width="stretch", hide_index=True)
 
 
 def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
@@ -1386,7 +1677,7 @@ def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
     )
 
     with tab1:
-        st.plotly_chart(create_delinquency_trend(df), use_container_width=True)
+        st.plotly_chart(create_delinquency_trend(df), width="stretch")
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("DPD 30+", f"{metrics['delinquency_rate_30']:.1f}%")
@@ -1396,7 +1687,7 @@ def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
             st.metric("DPD 90+", f"{metrics['delinquency_rate_90']:.1f}%")
 
     with tab2:
-        st.plotly_chart(create_risk_distribution(df), use_container_width=True)
+        st.plotly_chart(create_risk_distribution(df), width="stretch")
         col1, col2 = st.columns(2)
         with col1:
             st.metric("Average Risk Score", f"{metrics['avg_risk_score']:.4f}")
@@ -1404,7 +1695,7 @@ def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
             st.metric("Expected Loss", f"€{metrics['expected_loss']:,.0f}")
 
     with tab3:
-        st.plotly_chart(create_regional_heatmap(df), use_container_width=True)
+        st.plotly_chart(create_regional_heatmap(df), width="stretch")
         st.markdown("#### Regional Distribution")
         regional_summary = (
             df.groupby("region")
@@ -1413,10 +1704,10 @@ def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
         )
         regional_summary.columns = ["Total Amount (€)", "Loan Count", "Avg Risk"]
         regional_summary = regional_summary.sort_values("Total Amount (€)", ascending=False)
-        st.dataframe(regional_summary, use_container_width=True)
+        st.dataframe(regional_summary, width="stretch")
 
     with tab4:
-        st.plotly_chart(create_vintage_analysis(df), use_container_width=True)
+        st.plotly_chart(create_vintage_analysis(df), width="stretch")
         st.markdown("#### Status Distribution")
         status_counts = df["current_status"].value_counts()
         status_pct = (status_counts / len(df) * 100).round(1)
@@ -1508,7 +1799,7 @@ def render_loan_table(df: pd.DataFrame):
     # Display table
     st.dataframe(
         display_df,
-        use_container_width=True,
+        width="stretch",
         height=400,
         hide_index=True,
         column_config={
