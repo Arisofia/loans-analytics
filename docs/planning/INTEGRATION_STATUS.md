@@ -286,7 +286,7 @@ All requested integration tasks have been completed successfully. The multi-agen
 pip install pydantic openai
 
 # Optional LLM providers
-pip install anthropic google-generativeai
+pip install anthropic google-genai
 
 # Optional observability
 pip install opentelemetry-api opentelemetry-sdk

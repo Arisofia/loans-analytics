@@ -4,12 +4,11 @@ This is moved out of the workflow to avoid YAML parsing issues with
 large inline scripts.
 """
 
-import logging
 import importlib
+import logging
 import os
 import subprocess
 import sys
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +47,7 @@ def main() -> int:
     model_override = os.getenv("GEMINI_MODEL")
 
     # Dependency checks
-    genai = require_module("google.generativeai")
+    genai = require_module("google.genai")
     if genai is None:
         return 0
 
@@ -60,52 +59,16 @@ def main() -> int:
         getattr(requests_mod, "exceptions", None), "RequestException", Exception
     )
 
-    # Configure Gemini API
+    # Configure Gemini API client
     try:
-        configure_fn = getattr(genai, "configure", None)
-        if callable(configure_fn):
-            configure_fn(api_key=gemini_key)
-        else:
-            logger.error("google.generativeai.configure not available; skipping Gemini review.")
-            return 0
+        client = genai.Client(api_key=gemini_key)
     except Exception as e:  # pragma: no cover - defensive for SDK/runtime differences
         logger.exception("Failed to configure Gemini API: %s", e)
         return 1
 
-    # Discover model
-    model_name: Optional[str] = model_override
-    if not model_name:
-        try:
-            list_models_fn = getattr(genai, "list_models", None)
-            if callable(list_models_fn):
-                for model in list_models_fn():
-                    supported = getattr(model, "supported_generation_methods", None)
-                    if supported and "generateContent" in supported:
-                        model_name = getattr(model, "name", None)
-                        break
-            else:
-                logger.warning(
-                    "google.generativeai.list_models not available; cannot auto-detect model"
-                )
-        except (ImportError, AttributeError) as e:
-            logger.exception("Could not list Gemini models: %s", e)
-        except RuntimeError as e:
-            logger.exception("Unexpected error listing Gemini models: %s", e)
-
-    if not model_name:
-        model_name = "models/gemini-1.5-flash"
+    model_name = model_override or "gemini-2.5-flash"
+    if model_override is None:
         logger.info("No GEMINI_MODEL provided; using default model: %s", model_name)
-
-    gen_model = getattr(genai, "GenerativeModel", None)
-    if gen_model is None:
-        logger.error("google.generativeai.GenerativeModel not available; skipping review.")
-        return 0
-
-    try:
-        model = gen_model(model_name)
-    except (ImportError, ValueError) as e:
-        logger.exception("Failed to create GenerativeModel: %s", e)
-        return 0
 
     # Get diff using git
     try:
@@ -139,7 +102,7 @@ def main() -> int:
     )
 
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(model=model_name, contents=prompt)
         review_comment = getattr(response, "text", str(response))
     except (ImportError, ValueError, RuntimeError) as e:
         logger.exception("Error calling Gemini API: %s", e)

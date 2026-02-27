@@ -133,11 +133,10 @@ Delivery report snapshot (2026-02-27):
   - Tests workflow: https://github.com/Arisofia/abaco-loans-analytics/actions/runs/22498904827 (success)
   - Security scan workflow: https://github.com/Arisofia/abaco-loans-analytics/actions/runs/22498904767 (success)
 - Open risks and next actions:
-  - Remaining dependency risk: `protobuf` CVE-2026-0994 (Safety ID `85151`) is still
-    constrained by current Gemini dependency chain pins.
+  - Previous `protobuf` CVE-2026-0994 blocker has been remediated via Gemini SDK migration.
   - Next actions:
-    1. Track upstream compatibility to remove `<7` protobuf constraint in Gemini stack.
-    2. Migrate from `google-generativeai` to newer supported SDK once code path parity is validated.
+    1. Keep monitoring Safety/Snyk feeds for regressions in `protobuf`, `grpcio`, and `google-genai`.
+    2. Optionally add CI assertions for the PR-review helper script path using `google-genai`.
 
 ---
 
