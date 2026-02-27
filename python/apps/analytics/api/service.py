@@ -8,6 +8,7 @@ import pandas as pd
 from starlette.concurrency import run_in_threadpool
 
 from python.apps.analytics.api.models import (
+    AdvancedRiskResponse,
     DataQualityResponse,
     KpiContext,
     KpiSingleResponse,
@@ -15,6 +16,7 @@ from python.apps.analytics.api.models import (
     ValidationResponse,
 )
 from python.config import settings
+from python.kpis.advanced_risk import calculate_advanced_risk_metrics
 from python.kpis.catalog_processor import KPICatalogProcessor
 from python.logging_config import get_logger
 from python.supabase_pool import get_pool
@@ -50,6 +52,11 @@ DEFAULT_KPI_METADATA = {
         "definition": "Portfolio at Risk with more than 90 days past due.",
         "implications": "Higher PAR90 signals severe delinquency and elevated expected credit losses.",
     },
+    "PAR60": {
+        "formula": "SUM(principal_balance WHERE dpd > 60) / SUM(principal_balance) * 100",
+        "definition": "Portfolio at Risk with more than 60 days past due.",
+        "implications": "Rising PAR60 is an early warning for migration into severe delinquency buckets.",
+    },
     "COLLECTION_RATE": {
         "formula": "SUM(collected_amount) / SUM(scheduled_amount) * 100",
         "definition": "Collection efficiency against scheduled amounts.",
@@ -80,6 +87,41 @@ DEFAULT_KPI_METADATA = {
         "definition": "Share of loans in default status.",
         "implications": "Rising default rate typically requires underwriting and collections adjustments.",
     },
+    "COLLECTIONS_COVERAGE": {
+        "formula": "SUM(last_payment_amount) / SUM(total_scheduled) * 100",
+        "definition": "Collections coverage ratio using observed payment versus scheduled amounts.",
+        "implications": "Low coverage indicates cash conversion pressure and potential liquidity stress.",
+    },
+    "FEE_YIELD": {
+        "formula": "SUM(origination_fee + origination_fee_taxes) / SUM(principal_amount) * 100",
+        "definition": "Fee contribution as a percentage of principal originated.",
+        "implications": "Fee yield helps quantify non-interest revenue sustainability.",
+    },
+    "TOTAL_YIELD": {
+        "formula": "Interest Yield + Fee Yield",
+        "definition": "Combined yield from interest and fee streams.",
+        "implications": "Total yield should be evaluated against funding costs and credit losses.",
+    },
+    "RECOVERY_RATE": {
+        "formula": "SUM(recovery_value) / SUM(defaulted_principal_balance) * 100",
+        "definition": "Recovered value as a share of defaulted exposure.",
+        "implications": "Higher recoveries reduce realized loss severity and provisioning pressure.",
+    },
+    "CONCENTRATION_HHI": {
+        "formula": "SUM((borrower_exposure / total_exposure)^2) * 10000",
+        "definition": "Herfindahl-Hirschman index for borrower concentration risk.",
+        "implications": "Higher HHI indicates concentration and lower diversification resilience.",
+    },
+    "REPEAT_BORROWER_RATE": {
+        "formula": "COUNT(borrowers_with_more_than_one_loan) / COUNT(unique_borrowers) * 100",
+        "definition": "Share of borrowers with repeat borrowing activity.",
+        "implications": "Repeat activity can signal retention strength but may amplify concentration risk.",
+    },
+    "CREDIT_QUALITY_INDEX": {
+        "formula": "((AVG(credit_score) - 300) / 550) * 100",
+        "definition": "Normalized credit quality index from bureau score distribution.",
+        "implications": "Lower index values indicate weaker borrower credit quality mix.",
+    },
     "PORTFOLIO_GROWTH_RATE": {
         "formula": "(current_period_balance - prior_period_balance) / prior_period_balance * 100",
         "definition": "Period-over-period portfolio balance growth.",
@@ -97,6 +139,24 @@ def _normalize_kpi_key(kpi_id: str) -> str:
     return (kpi_id or "").strip().replace("-", "_").replace(" ", "_").upper()
 
 
+def _extract_kpi_metadata(kpi_id: str, kpi_def: dict) -> dict[str, str]:
+    """Helper to extract and format metadata from a single KPI definition."""
+    thresholds = kpi_def.get("thresholds")
+    threshold_note = ""
+    if isinstance(thresholds, dict) and thresholds:
+        threshold_pairs = ", ".join(f"{k}={v}" for k, v in thresholds.items())
+        threshold_note = f" Compare against configured thresholds ({threshold_pairs})."
+
+    return {
+        "formula": str(kpi_def.get("formula", "")),
+        "definition": str(kpi_def.get("description", "")),
+        "implications": (
+            "Use trend and segment context when interpreting this KPI."
+            f"{threshold_note}"
+        ),
+    }
+
+
 @lru_cache(maxsize=1)
 def _load_catalog_kpi_metadata() -> dict[str, dict[str, str]]:
     if yaml is None or not KPI_DEFINITIONS_PATH.exists():
@@ -111,26 +171,12 @@ def _load_catalog_kpi_metadata() -> dict[str, dict[str, str]]:
 
     metadata: dict[str, dict[str, str]] = {}
     for top_key, section in payload.items():
-        if not str(top_key).endswith("_kpis") or not isinstance(section, dict):
+        if not top_key.endswith("_kpis") or not isinstance(section, dict):
             continue
 
         for kpi_id, kpi_def in section.items():
-            if not isinstance(kpi_def, dict):
-                continue
-            thresholds = kpi_def.get("thresholds")
-            threshold_note = ""
-            if isinstance(thresholds, dict) and thresholds:
-                threshold_pairs = ", ".join(f"{k}={v}" for k, v in thresholds.items())
-                threshold_note = f" Compare against configured thresholds ({threshold_pairs})."
-
-            metadata[str(kpi_id).lower()] = {
-                "formula": str(kpi_def.get("formula", "")),
-                "definition": str(kpi_def.get("description", "")),
-                "implications": (
-                    "Use trend and segment context when interpreting this KPI."
-                    f"{threshold_note}"
-                ),
-            }
+            if isinstance(kpi_def, dict):
+                metadata[kpi_id.lower()] = _extract_kpi_metadata(kpi_id, kpi_def)
 
     return metadata
 
@@ -226,18 +272,20 @@ class KPIService:
                 else:
                     as_of_date_str = str(as_of_date)
 
+                formula = metadata["formula"]
                 responses.append(
                     KpiSingleResponse(
                         id=kpi_id,
                         name=kpi_name,
                         value=float(rec["value"]),
                         unit=rec["unit"],
+                        formula=formula,
                         definition=metadata["definition"],
                         implications=metadata["implications"],
                         context=KpiContext(
                             metric=kpi_name,
                             timestamp=rec["created_at"],
-                            formula=metadata["formula"],
+                            formula=formula,
                             sample_size=0,
                             period="latest",
                             calculation_date=rec["created_at"],
@@ -276,36 +324,10 @@ class KPIService:
                 return []
             df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
 
-            risk_loans: list[dict] = []
             if df.empty:
-                return risk_loans
+                return []
 
-            # Calculate LTV and DTI for each loan (optional for invoice factoring)
-            if "appraised_value" in df.columns and df["appraised_value"].notna().any():
-                df["ltv"] = (df["principal_balance"] / df["appraised_value"] * 100).fillna(0)
-            else:
-                df["ltv"] = 0.0
-            if (
-                "monthly_debt" in df.columns
-                and "borrower_income" in df.columns
-                and df["borrower_income"].notna().any()
-            ):
-                df["dti"] = (df["monthly_debt"] / df["borrower_income"] * 100).fillna(0)
-            else:
-                df["dti"] = 0.0
-
-            # Assuming 'loan_status' can be mapped to days past due for risk calculation
-            # This is a simplification; a real system would have a 'days_past_due' column
-            def get_dpd(status: str) -> int:
-                if "30-59" in status:
-                    return 45
-                if "60-89" in status:
-                    return 75
-                if "90+" in status:
-                    return 100
-                return 0
-
-            df["days_past_due"] = df["loan_status"].apply(get_dpd)
+            df = self._calculate_loan_risk_metrics(df)
 
             # Identify high-risk loans
             high_risk_df = df[
@@ -314,31 +336,9 @@ class KPIService:
                 | (df["days_past_due"] > 30)
             ]
 
+            risk_loans: list[dict] = []
             for _, rec in high_risk_df.iterrows():
-                # Calculate a mock risk score
-                ltv = rec["ltv"]
-                dti = rec["dti"]
-                dpd = rec["days_past_due"]
-
-                # Simple risk score: weighted average of LTV, DTI and DPD impact
-                risk_score = (ltv / 100 * 0.3) + (dti / 100 * 0.3) + (dpd / 100 * 0.4)
-                risk_score = min(100.0, risk_score * 100)  # Normalize to 0-100
-
-                alerts = []
-                if ltv > ltv_threshold:
-                    alerts.append(f"LTV {ltv:.1f}% exceeds threshold {ltv_threshold}%")
-                if dti > dti_threshold:
-                    alerts.append(f"DTI {dti:.1f}% exceeds threshold {dti_threshold}%")
-                if dpd > 30:
-                    alerts.append(f"DPD {dpd} indicates high credit risk")
-
-                risk_loans.append(
-                    {
-                        "loan_id": rec["id"],  # Using the new 'id' field from LoanRecord
-                        "risk_score": round(float(risk_score), 2),
-                        "alerts": alerts,
-                    }
-                )
+                risk_loans.append(self._build_loan_risk_alert(rec, ltv_threshold, dti_threshold))
 
             return risk_loans
         except Exception as e:
@@ -349,6 +349,60 @@ class KPIService:
                 exc_info=True,
             )
             raise
+
+    def _calculate_loan_risk_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Helper to compute LTV, DTI and DPD for risk analysis."""
+        # Calculate LTV and DTI for each loan (optional for invoice factoring)
+        if "appraised_value" in df.columns and df["appraised_value"].notna().any():
+            df["ltv"] = (df["principal_balance"] / df["appraised_value"] * 100).fillna(0)
+        else:
+            df["ltv"] = 0.0
+
+        if (
+            "monthly_debt" in df.columns
+            and "borrower_income" in df.columns
+            and df["borrower_income"].notna().any()
+        ):
+            df["dti"] = (df["monthly_debt"] / df["borrower_income"] * 100).fillna(0)
+        else:
+            df["dti"] = 0.0
+
+        # Assuming 'loan_status' can be mapped to days past due for risk calculation
+        def get_dpd(status: str) -> int:
+            if "30-59" in status:
+                return 45
+            if "60-89" in status:
+                return 75
+            return 100 if "90+" in status else 0
+
+        df["days_past_due"] = df["loan_status"].apply(get_dpd)
+        return df
+
+    def _build_loan_risk_alert(
+        self, rec: pd.Series, ltv_threshold: float, dti_threshold: float
+    ) -> dict:
+        """Helper to build a single loan risk alert dictionary."""
+        ltv = rec["ltv"]
+        dti = rec["dti"]
+        dpd = rec["days_past_due"]
+
+        # Simple risk score: weighted average of LTV, DTI and DPD impact
+        risk_score = (ltv / 100 * 0.3) + (dti / 100 * 0.3) + (dpd / 100 * 0.4)
+        risk_score = min(100.0, risk_score * 100)  # Normalize to 0-100
+
+        alerts = []
+        if ltv > ltv_threshold:
+            alerts.append(f"LTV {ltv:.1f}% exceeds threshold {ltv_threshold}%")
+        if dti > dti_threshold:
+            alerts.append(f"DTI {dti:.1f}% exceeds threshold {dti_threshold}%")
+        if dpd > 30:
+            alerts.append(f"DPD {dpd} indicates high credit risk")
+
+        return {
+            "loan_id": rec["id"],
+            "risk_score": round(float(risk_score), 2),
+            "alerts": alerts,
+        }
 
     def _convert_loan_records_to_dataframe(self, loans: list[LoanRecord]) -> pd.DataFrame:
         """Converts a list of LoanRecord Pydantic models to a Pandas DataFrame."""
@@ -433,55 +487,71 @@ class KPIService:
             return loans_df
 
         normalized = loans_df.copy()
-
-        # Required aliases for outstanding/principal/APR.
-        if (
-            "principal_balance" in normalized.columns
-            and "outstanding_balance" not in normalized.columns
-        ):
-            normalized["outstanding_balance"] = pd.to_numeric(
-                normalized["principal_balance"],
-                errors="coerce",
-            ).fillna(0)
-        if "loan_amount" in normalized.columns and "principal_amount" not in normalized.columns:
-            normalized["principal_amount"] = pd.to_numeric(
-                normalized["loan_amount"],
-                errors="coerce",
-            ).fillna(0)
-        if "interest_rate" in normalized.columns and "interest_rate_apr" not in normalized.columns:
-            normalized["interest_rate_apr"] = pd.to_numeric(
-                normalized["interest_rate"],
-                errors="coerce",
-            ).fillna(0)
-
-        # Entity identifiers.
-        if "id" in normalized.columns and "loan_id" not in normalized.columns:
-            normalized["loan_id"] = normalized["id"].fillna("")
-        if "loan_id" not in normalized.columns:
-            normalized["loan_id"] = [f"loan-{idx + 1}" for idx in range(len(normalized))]
-
-        # Segment and date fallbacks for prioritization/forecast windows.
-        if "client_segment" not in normalized.columns:
-            normalized["client_segment"] = "general"
-        if "origination_date" not in normalized.columns:
-            normalized["origination_date"] = pd.Timestamp.now().floor("D")
-
-        # Customer assignment fallback used by churn/CAC analytics.
-        if "customer_id" not in normalized.columns:
-            customer_ids: list[str] = []
-            if not customers_df.empty and "customer_id" in customers_df.columns:
-                customer_ids = customers_df["customer_id"].astype(str).dropna().unique().tolist()
-            elif not payments_df.empty and "customer_id" in payments_df.columns:
-                customer_ids = payments_df["customer_id"].astype(str).dropna().unique().tolist()
-
-            if customer_ids:
-                normalized["customer_id"] = [
-                    customer_ids[idx % len(customer_ids)] for idx in range(len(normalized))
-                ]
-            else:
-                normalized["customer_id"] = [f"cust-{idx + 1}" for idx in range(len(normalized))]
+        normalized = self._apply_balance_aliases(normalized)
+        normalized = self._apply_entity_identifiers(normalized)
+        normalized = self._apply_segment_date_defaults(normalized)
+        normalized = self._apply_customer_mapping(normalized, payments_df, customers_df)
 
         return normalized
+
+    def _apply_balance_aliases(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply required aliases for outstanding/principal/APR."""
+        if "principal_balance" in df.columns and "outstanding_balance" not in df.columns:
+            df["outstanding_balance"] = pd.to_numeric(
+                df["principal_balance"],
+                errors="coerce",
+            ).fillna(0)
+        if "loan_amount" in df.columns and "principal_amount" not in df.columns:
+            df["principal_amount"] = pd.to_numeric(
+                df["loan_amount"],
+                errors="coerce",
+            ).fillna(0)
+        if "interest_rate" in df.columns and "interest_rate_apr" not in df.columns:
+            df["interest_rate_apr"] = pd.to_numeric(
+                df["interest_rate"],
+                errors="coerce",
+            ).fillna(0)
+        return df
+
+    def _apply_entity_identifiers(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply entity identifier logic."""
+        if "id" in df.columns and "loan_id" not in df.columns:
+            df["loan_id"] = df["id"].fillna("")
+        if "loan_id" not in df.columns:
+            df["loan_id"] = [f"loan-{idx + 1}" for idx in range(len(df))]
+        return df
+
+    def _apply_segment_date_defaults(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply segment and date fallbacks for prioritization/forecast windows."""
+        if "client_segment" not in df.columns:
+            df["client_segment"] = "general"
+        if "origination_date" not in df.columns:
+            df["origination_date"] = pd.Timestamp.now().floor("D")
+        return df
+
+    def _apply_customer_mapping(
+        self,
+        df: pd.DataFrame,
+        payments_df: pd.DataFrame,
+        customers_df: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """Customer assignment fallback used by churn/CAC analytics."""
+        if "customer_id" in df.columns:
+            return df
+
+        customer_ids: list[str] = []
+        if not customers_df.empty and "customer_id" in customers_df.columns:
+            customer_ids = customers_df["customer_id"].astype(str).dropna().unique().tolist()
+        elif not payments_df.empty and "customer_id" in payments_df.columns:
+            customer_ids = payments_df["customer_id"].astype(str).dropna().unique().tolist()
+
+        if customer_ids:
+            df["customer_id"] = [
+                customer_ids[idx % len(customer_ids)] for idx in range(len(df))
+            ]
+        else:
+            df["customer_id"] = [f"cust-{idx + 1}" for idx in range(len(df))]
+        return df
 
     async def get_data_quality_profile(self, loans: list[LoanRecord] | None) -> DataQualityResponse:
         """
@@ -499,45 +569,11 @@ class KPIService:
                 )
             df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
 
-            total_records = len(df)
-            if total_records == 0:
+            if df.empty:
                 return DataQualityResponse(data_quality_score=100.0, issues=[])
 
-            # Duplicate Ratio
-            duplicate_ratio = df.duplicated().sum() / total_records * 100.0
-
-            # Average Null Ratio
-            # We'll check for nulls across all expected columns from the LoanRecord model
-            all_loan_record_columns = LoanRecord.model_fields.keys()
-            null_counts = df[list(all_loan_record_columns)].isnull().sum()
-            average_null_ratio = (
-                null_counts.sum() / (total_records * len(all_loan_record_columns))
-            ) * 100.0
-
-            # Invalid Numeric Ratio (simplified example)
-            # This would require more detailed validation from `validation.py`
-            # For now, let's use a placeholder. Real implementation would involve iterating
-            # through numeric columns and applying `validation.safe_numeric`.
-            invalid_numeric_ratio = 0.0  # Placeholder
-
-            # Overall Score - simple inverse of issues
-            # A more sophisticated score would weigh different issues
-            data_quality_score = 100.0 - (duplicate_ratio * 0.5 + average_null_ratio * 0.5)
-            data_quality_score = max(0.0, data_quality_score)  # Ensure score is not negative
-
-            issues = []
-            if duplicate_ratio > 0:
-                issues.append(f"Duplicate records found: {duplicate_ratio:.2f}%")
-            if average_null_ratio > 0:
-                issues.append(f"Average null values across columns: {average_null_ratio:.2f}%")
-
-            return DataQualityResponse(
-                duplicate_ratio=round(duplicate_ratio, 2),
-                average_null_ratio=round(average_null_ratio, 2),
-                invalid_numeric_ratio=round(invalid_numeric_ratio, 2),
-                data_quality_score=round(data_quality_score, 2),
-                issues=issues,
-            )
+            metrics = self._calculate_data_quality_metrics(df)
+            return DataQualityResponse(**metrics)
         except Exception as e:
             logger.error(
                 "Error calculating data quality profile for actor %s: %s",
@@ -546,6 +582,40 @@ class KPIService:
                 exc_info=True,
             )
             raise
+
+    def _calculate_data_quality_metrics(self, df: pd.DataFrame) -> dict:
+        """Helper to compute standard data quality metrics."""
+        total_records = len(df)
+        
+        # Duplicate Ratio
+        duplicate_ratio = df.duplicated().sum() / total_records * 100.0
+
+        # Average Null Ratio
+        all_loan_record_columns = LoanRecord.model_fields.keys()
+        null_counts = df[list(all_loan_record_columns)].isnull().sum()
+        average_null_ratio = (
+            null_counts.sum() / (total_records * len(all_loan_record_columns))
+        ) * 100.0
+
+        # Invalid Numeric Ratio (placeholder)
+        invalid_numeric_ratio = 0.0
+
+        # Overall Score - simple inverse of issues
+        data_quality_score = max(0.0, 100.0 - (duplicate_ratio * 0.5 + average_null_ratio * 0.5))
+
+        issues = []
+        if duplicate_ratio > 0:
+            issues.append(f"Duplicate records found: {duplicate_ratio:.2f}%")
+        if average_null_ratio > 0:
+            issues.append(f"Average null values across columns: {average_null_ratio:.2f}%")
+
+        return {
+            "duplicate_ratio": round(duplicate_ratio, 2),
+            "average_null_ratio": round(average_null_ratio, 2),
+            "invalid_numeric_ratio": round(invalid_numeric_ratio, 2),
+            "data_quality_score": round(data_quality_score, 2),
+            "issues": issues,
+        }
 
     async def validate_loan_portfolio_schema(
         self,
@@ -614,79 +684,33 @@ class KPIService:
             if df.empty:
                 return []
 
-            # Ensure numeric types
-            for col in ["loan_amount", "principal_balance", "interest_rate"]:
+            # Ensure numeric types and drop NaNs in critical columns
+            numeric_cols = ["loan_amount", "principal_balance", "interest_rate"]
+            for col in numeric_cols:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
+            df.dropna(subset=numeric_cols, inplace=True)
 
-            # Drop rows with NaN in critical calculation columns
-            df.dropna(
-                subset=["loan_amount", "principal_balance", "interest_rate"],
-                inplace=True,
-            )
             if df.empty:
                 return []
 
-            total_outstanding = df["principal_balance"].sum()
-
-            # Placeholder for DPD (Days Past Due) logic
-            # Needs to align with 'loan_status' enum from LoanRecord
-            def get_dpd_category(status: str) -> int:
-                if "30-59" in status:
-                    return 45
-                if "60-89" in status:
-                    return 75
-                if "90+" in status:
-                    return 100
-                return 0
-
-            df["dpd"] = df["loan_status"].apply(get_dpd_category)
-
-            # PAR30: % of outstanding value for loans with DPD > 30
-            par30_val = df[df["dpd"] > 30]["principal_balance"].sum()
-            par30_pct = (par30_val / total_outstanding * 100) if total_outstanding > 0 else 0
-
-            # Weighted Average Interest Rate (Portfolio Yield proxy)
-            weighted_interest_rate = (df["interest_rate"] * df["principal_balance"]).sum()
-            avg_interest_rate = (
-                (weighted_interest_rate / total_outstanding) if total_outstanding > 0 else 0
-            )
-
-            # LTV, DTI for average (optional for invoice factoring)
-            if "appraised_value" in df.columns and df["appraised_value"].notna().any():
-                df["ltv_ratio"] = (df["loan_amount"] / df["appraised_value"] * 100).fillna(0)
-            else:
-                df["ltv_ratio"] = 0.0
-            if (
-                "monthly_debt" in df.columns
-                and "borrower_income" in df.columns
-                and df["borrower_income"].notna().any()
-            ):
-                df["dti_ratio"] = (df["monthly_debt"] / df["borrower_income"] * 100).fillna(0)
-            else:
-                df["dti_ratio"] = 0.0
-            avg_ltv = df["ltv_ratio"].mean()
-            avg_dti = df["dti_ratio"].mean()
-
+            results = self._calculate_portfolio_performance_metrics(df)
             now = datetime.now()
 
-            def build_kpi_response(
-                kpi_id: str,
-                name: str,
-                value: float,
-                unit: str,
-            ) -> KpiSingleResponse:
+            def build_kpi_response(kpi_id: str, name: str, value: float, unit: str) -> KpiSingleResponse:
                 metadata = self._get_kpi_metadata(kpi_id, name)
+                formula = metadata["formula"]
                 return KpiSingleResponse(
                     id=kpi_id,
                     name=name,
-                    value=round(float(value), 2),
+                    value=round(value, 2),
                     unit=unit,
+                    formula=formula,
                     definition=metadata["definition"],
                     implications=metadata["implications"],
                     context=KpiContext(
                         metric=name,
                         timestamp=now,
-                        formula=metadata["formula"],
+                        formula=formula,
                         sample_size=len(loans),
                         period="on-demand",
                         calculation_date=now,
@@ -695,16 +719,21 @@ class KPIService:
                 )
 
             return [
-                build_kpi_response("PAR30", "Portfolio at Risk (30+ days)", par30_pct, "%"),
+                build_kpi_response("PAR30", "Portfolio at Risk (30+ days)", results["par30"], "%"),
+                build_kpi_response("PAR90", "Portfolio at Risk (90+ days)", results["par90"], "%"),
                 build_kpi_response(
                     "PORTFOLIO_YIELD",
                     "Weighted Average Interest Rate",
-                    avg_interest_rate * 100,
+                    results["yield"] * 100,
                     "%",
                 ),
-                build_kpi_response("AUM", "Assets Under Management", total_outstanding, "USD"),
-                build_kpi_response("AVG_LTV", "Average Loan-to-Value", avg_ltv, "%"),
-                build_kpi_response("AVG_DTI", "Average Debt-to-Income", avg_dti, "%"),
+                build_kpi_response("AUM", "Assets Under Management", results["aum"], "USD"),
+                build_kpi_response("AVG_LTV", "Average Loan-to-Value", results["avg_ltv"], "%"),
+                build_kpi_response("AVG_DTI", "Average Debt-to-Income", results["avg_dti"], "%"),
+                build_kpi_response("DEFAULT_RATE", "Default Rate", results["default_rate"], "%"),
+                build_kpi_response(
+                    "TOTAL_LOANS_COUNT", "Total Loans Count", results["count"], "count"
+                ),
             ]
         except Exception as e:
             logger.error(
@@ -714,3 +743,78 @@ class KPIService:
                 exc_info=True,
             )
             raise
+
+    async def calculate_advanced_risk(
+        self,
+        loans: list[LoanRecord] | None,
+    ) -> AdvancedRiskResponse:
+        """Calculate advanced risk and portfolio quality metrics for the given loan set."""
+        try:
+            if loans is None:
+                return AdvancedRiskResponse(**calculate_advanced_risk_metrics(pd.DataFrame()))
+
+            df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
+            metrics = await run_in_threadpool(calculate_advanced_risk_metrics, df)
+            return AdvancedRiskResponse(**metrics)
+        except Exception as e:
+            logger.error(
+                "Error calculating advanced risk metrics for actor %s: %s",
+                self.actor,
+                e,
+                exc_info=True,
+            )
+            raise
+
+    def _calculate_portfolio_performance_metrics(self, df: pd.DataFrame) -> dict:
+        """Internal helper to calculate various portfolio metrics from a clean dataframe."""
+        total_outstanding = df["principal_balance"].sum()
+
+        # DPD mapping
+        def get_dpd_category(status: str) -> int:
+            if "30-59" in status:
+                return 45
+            if "60-89" in status:
+                return 75
+            return 100 if "90+" in status else 0
+
+        df["dpd"] = df["loan_status"].apply(get_dpd_category)
+
+        # PAR
+        par30_val = df[df["dpd"] > 30]["principal_balance"].sum()
+        par30_pct = (par30_val / total_outstanding * 100) if total_outstanding > 0 else 0
+        par90_val = df[df["dpd"] > 90]["principal_balance"].sum()
+        par90_pct = (par90_val / total_outstanding * 100) if total_outstanding > 0 else 0
+
+        # Default rate
+        default_mask = df["loan_status"].str.contains(r"default|charged.off", case=False, na=False)
+        default_rate_pct = (default_mask.sum() / len(df) * 100) if len(df) > 0 else 0
+
+        # Yield
+        weighted_interest = (df["interest_rate"] * df["principal_balance"]).sum()
+        avg_interest_rate = (weighted_interest / total_outstanding) if total_outstanding > 0 else 0
+
+        # LTV/DTI
+        if "appraised_value" in df.columns and df["appraised_value"].notna().any():
+            df["ltv_ratio"] = (df["loan_amount"] / df["appraised_value"] * 100).fillna(0)
+        else:
+            df["ltv_ratio"] = 0.0
+
+        if (
+            "monthly_debt" in df.columns
+            and "borrower_income" in df.columns
+            and df["borrower_income"].notna().any()
+        ):
+            df["dti_ratio"] = (df["monthly_debt"] / df["borrower_income"] * 100).fillna(0)
+        else:
+            df["dti_ratio"] = 0.0
+
+        return {
+            "par30": par30_pct,
+            "par90": par90_pct,
+            "default_rate": default_rate_pct,
+            "yield": avg_interest_rate,
+            "aum": total_outstanding,
+            "avg_ltv": df["ltv_ratio"].mean(),
+            "avg_dti": df["dti_ratio"].mean(),
+            "count": float(len(df)),
+        }

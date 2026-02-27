@@ -19,6 +19,7 @@ try:
     from fastapi.responses import JSONResponse
 
     from python.apps.analytics.api.models import (
+        AdvancedRiskResponse,
         DataQualityResponse,
         DefaultPredictionRequest,
         DefaultPredictionResponse,
@@ -425,6 +426,23 @@ if app is not None:
             logger.error("Error in get_risk_alerts: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
+    @app.post(
+        "/analytics/advanced-risk",
+        response_model=AdvancedRiskResponse,
+        summary="Advanced Risk KPI Snapshot",
+        response_description="Advanced delinquency, yield, concentration, and recovery metrics",
+    )
+    async def get_advanced_risk(
+        request: LoanPortfolioRequest = Body(...),
+        service: KPIService = Depends(get_kpi_service),
+    ):
+        """Calculate advanced risk metrics and DPD bucket diagnostics for a portfolio."""
+        try:
+            return await service.calculate_advanced_risk(request.loans)
+        except Exception as e:
+            logger.error("Error in get_advanced_risk: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
     @app.post("/analytics/full-analysis", response_model=FullAnalysisResponse)
     async def get_full_analysis(
         request: LoanPortfolioRequest = Body(...), service: KPIService = Depends(get_kpi_service)
@@ -499,14 +517,22 @@ if app is not None:
                     ["total_loans_count"],
                     float(len(request.loans)) if request.loans else 0.0,
                 )
+                advanced_risk = await service.calculate_advanced_risk(request.loans)
 
-                risk_status = "CRITICAL" if par30 > 10 else "STABLE"
+                risk_status = "CRITICAL" if par30 > 10 or advanced_risk.par90 > 5 else "STABLE"
                 summary = (
                     f"PROPORTIONAL PORTFOLIO ANALYSIS ({risk_status})\n"
                     f"-------------------------------------------\n"
                     f"Portfolio Size: {loans_count} active loans\n"
                     f"Risk exposure (PAR30): {par30}%\n"
+                    f"Risk exposure (PAR60): {advanced_risk.par60}%\n"
+                    f"Severe delinquency (PAR90): {advanced_risk.par90}%\n"
+                    f"Collections coverage: {advanced_risk.collections_coverage}%\n"
                     f"Projected Yield: {yield_val}%\n\n"
+                    f"Total Yield (Interest + Fees): {advanced_risk.total_yield}%\n"
+                    f"Borrower Concentration (HHI): {advanced_risk.concentration_hhi}\n"
+                    f"Repeat Borrower Rate: {advanced_risk.repeat_borrower_rate}%\n"
+                    f"Credit Quality Index: {advanced_risk.credit_quality_index}\n\n"
                     f"The analytical engine has identified {risk_status.lower()} stability metrics "
                     "based on recent production data. Risk concentration is within acceptable "
                     "guardrails for the current AUM expansion phase."

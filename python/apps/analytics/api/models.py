@@ -47,6 +47,17 @@ class LoanRecord(BaseModel):
         le=1,
     )
     principal_balance: float = Field(..., description="Current outstanding principal balance")
+    borrower_id: Optional[str] = Field(None, description="Borrower identifier")
+    days_past_due: Optional[float] = Field(None, description="Current days past due")
+    payment_frequency: Optional[str] = Field(None, description="Payment frequency descriptor")
+    origination_fee: Optional[float] = Field(None, description="Origination fee amount")
+    origination_fee_taxes: Optional[float] = Field(None, description="Taxes charged over fees")
+    total_scheduled: Optional[float] = Field(None, description="Total scheduled collections amount")
+    last_payment_amount: Optional[float] = Field(None, description="Last collected payment amount")
+    recovery_value: Optional[float] = Field(None, description="Recovered amount from defaulted loans")
+    credit_score: Optional[float] = Field(None, description="Primary credit bureau score")
+    equifax_score: Optional[float] = Field(None, description="Equifax score when available")
+    current_balance: Optional[float] = Field(None, description="Current balance proxy for cash position")
 
 
 class LoanPortfolioRequest(BaseModel):
@@ -87,9 +98,89 @@ class KpiSingleResponse(BaseModel):
     name: Optional[str] = Field(None, description="KPI display name")
     value: float = Field(..., description="Calculated KPI value")
     unit: Optional[str] = Field(None, description="Unit of measurement")
+    formula: Optional[str] = Field(None, description="Human-readable calculation formula")
     definition: Optional[str] = Field(None, description="Business definition of the KPI")
     implications: Optional[str] = Field(None, description="Business implications of KPI movement")
     context: KpiContext
+
+
+class DPDBucketBreakdown(BaseModel):
+    bucket: str = Field(..., description="DPD bucket identifier")
+    loan_count: int = Field(..., description="Number of loans in the bucket")
+    balance: float = Field(..., description="Outstanding balance in the bucket")
+    balance_share_pct: float = Field(
+        ...,
+        description="Bucket outstanding balance as percentage of total outstanding",
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "bucket": "90_plus",
+                "loan_count": 14,
+                "balance": 128450.25,
+                "balance_share_pct": 11.82,
+            }
+        }
+    }
+
+
+class AdvancedRiskResponse(BaseModel):
+    par30: float = Field(..., description="Portfolio at Risk over 30 days (%)")
+    par60: float = Field(..., description="Portfolio at Risk over 60 days (%)")
+    par90: float = Field(..., description="Portfolio at Risk over 90 days (%)")
+    default_rate: float = Field(..., description="Defaulted loan count over total loans (%)")
+    collections_coverage: float = Field(
+        ...,
+        description="Observed collections over scheduled collections (%)",
+    )
+    fee_yield: float = Field(..., description="Fee and fee-tax yield over principal (%)")
+    total_yield: float = Field(..., description="Combined interest and fee yield (%)")
+    recovery_rate: float = Field(..., description="Recoveries over defaulted balance (%)")
+    concentration_hhi: float = Field(..., description="Borrower exposure concentration (HHI)")
+    repeat_borrower_rate: float = Field(
+        ...,
+        description="Borrowers with multiple loans over unique borrowers (%)",
+    )
+    credit_quality_index: float = Field(
+        ...,
+        description="Normalized credit quality index from bureau scores (0-100)",
+    )
+    total_loans: int = Field(..., description="Total loans analyzed")
+    dpd_buckets: List[DPDBucketBreakdown] = Field(default_factory=list)
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "par30": 18.42,
+                "par60": 11.77,
+                "par90": 6.31,
+                "default_rate": 4.82,
+                "collections_coverage": 93.44,
+                "fee_yield": 1.25,
+                "total_yield": 29.81,
+                "recovery_rate": 22.17,
+                "concentration_hhi": 846.32,
+                "repeat_borrower_rate": 27.9,
+                "credit_quality_index": 64.55,
+                "total_loans": 1247,
+                "dpd_buckets": [
+                    {
+                        "bucket": "current",
+                        "loan_count": 1066,
+                        "balance": 7421000.54,
+                        "balance_share_pct": 83.11,
+                    },
+                    {
+                        "bucket": "90_plus",
+                        "loan_count": 31,
+                        "balance": 563122.11,
+                        "balance_share_pct": 6.31,
+                    },
+                ],
+            }
+        }
+    }
 
 
 class KpiResponse(BaseModel):
