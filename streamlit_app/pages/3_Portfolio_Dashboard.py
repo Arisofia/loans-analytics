@@ -343,7 +343,9 @@ def _kpi_methodology_rows(metrics: dict[str, Any]) -> list[dict[str, str]]:
             "KPI": "Weighted Avg Rate",
             "Formula": methodology["weighted_avg_rate"]["formula"],
             "Numerator": f"{methodology['weighted_avg_rate']['numerator']:,.2f}",
-            "Denominator": fmt_currency(float(methodology["weighted_avg_rate"]["denominator"] or 0.0)),
+            "Denominator": fmt_currency(
+                float(methodology["weighted_avg_rate"]["denominator"] or 0.0)
+            ),
             "Value": f"{float(methodology['weighted_avg_rate']['value']):.2%}",
         },
         {
@@ -392,7 +394,9 @@ def _kpi_methodology_rows(metrics: dict[str, Any]) -> list[dict[str, str]]:
             "KPI": "Collections Rate",
             "Formula": methodology["collections_rate"]["formula"],
             "Numerator": fmt_currency(float(methodology["collections_rate"]["numerator"])),
-            "Denominator": fmt_currency(float(methodology["collections_rate"]["denominator"] or 0.0)),
+            "Denominator": fmt_currency(
+                float(methodology["collections_rate"]["denominator"] or 0.0)
+            ),
             "Value": fmt_percent(float(methodology["collections_rate"]["value"])),
         },
         {
@@ -413,7 +417,9 @@ def _kpi_methodology_rows(metrics: dict[str, Any]) -> list[dict[str, str]]:
             "KPI": "Expected Loss Rate",
             "Formula": methodology["expected_loss_rate"]["formula"],
             "Numerator": fmt_currency(float(methodology["expected_loss_rate"]["numerator"])),
-            "Denominator": fmt_currency(float(methodology["expected_loss_rate"]["denominator"] or 0.0)),
+            "Denominator": fmt_currency(
+                float(methodology["expected_loss_rate"]["denominator"] or 0.0)
+            ),
             "Value": fmt_percent(float(methodology["expected_loss_rate"]["value"])),
         },
         {
@@ -514,7 +520,9 @@ def _persist_agent_outputs(results: dict[str, Any]) -> int:
         error = item.get("error")
         output_key = str(item.get("output_key", "agent_output"))
         role_slug = _safe_slug(str(item.get("agent_role", "unknown_agent")))
-        timestamp = datetime.now(timezone.utc).replace(tzinfo=None).isoformat(timespec="microseconds")
+        timestamp = (
+            datetime.now(timezone.utc).replace(tzinfo=None).isoformat(timespec="microseconds")
+        )
         file_path = AGENT_OUTPUTS_DIR / f"{timestamp}_{role_slug}_response.json"
 
         status = "success" if comment else "error"
@@ -539,6 +547,7 @@ def _persist_agent_outputs(results: dict[str, Any]) -> int:
         saved += 1
 
     return saved
+
 
 # Common aliases from external exports.
 COLUMN_ALIASES = {
@@ -781,7 +790,10 @@ def prepare_uploaded_data(df: pd.DataFrame) -> pd.DataFrame:
     prepared["term_months"] = pd.to_numeric(prepared["term_months"], errors="coerce")
     prepared["origination_date"] = pd.to_datetime(prepared["origination_date"], errors="coerce")
 
-    if not prepared["interest_rate"].dropna().empty and prepared["interest_rate"].dropna().median() > 1:
+    if (
+        not prepared["interest_rate"].dropna().empty
+        and prepared["interest_rate"].dropna().median() > 1
+    ):
         prepared["interest_rate"] = prepared["interest_rate"] / 100.0
 
     prepared["current_status"] = prepared["current_status"].map(_canonicalize_status)
@@ -811,7 +823,9 @@ def prepare_uploaded_data(df: pd.DataFrame) -> pd.DataFrame:
         .fillna("Unknown Borrower")
     )
     prepared["borrower_email"] = prepared["borrower_email"].fillna("").astype(str).str.strip()
-    prepared["borrower_id_number"] = prepared["borrower_id_number"].fillna("").astype(str).str.strip()
+    prepared["borrower_id_number"] = (
+        prepared["borrower_id_number"].fillna("").astype(str).str.strip()
+    )
     prepared["region"] = (
         prepared["region"]
         .fillna("unknown")
@@ -835,9 +849,13 @@ def prepare_uploaded_data(df: pd.DataFrame) -> pd.DataFrame:
         prepared["risk_score"] = prepared["risk_score"] / 100.0
     prepared["risk_score"] = prepared["risk_score"].clip(lower=0, upper=1)
 
-    prepared["payment_history_json"] = prepared["payment_history_json"].apply(_normalize_payment_history)
+    prepared["payment_history_json"] = prepared["payment_history_json"].apply(
+        _normalize_payment_history
+    )
 
-    prepared = prepared.dropna(subset=["principal_amount", "interest_rate", "term_months", "origination_date"])
+    prepared = prepared.dropna(
+        subset=["principal_amount", "interest_rate", "term_months", "origination_date"]
+    )
     prepared["term_months"] = prepared["term_months"].astype(int)
     return prepared
 
@@ -887,7 +905,11 @@ def calculate_days_past_due(df: pd.DataFrame) -> pd.DataFrame:
 def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
     """Calculate key portfolio metrics."""
     df = calculate_days_past_due(df)
-    status_series = df["current_status"] if "current_status" in df.columns else pd.Series("unknown", index=df.index)
+    status_series = (
+        df["current_status"]
+        if "current_status" in df.columns
+        else pd.Series("unknown", index=df.index)
+    )
 
     df["exposure_amount"] = _get_exposure_series(df)
 
@@ -916,8 +938,12 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
     delinquency_rate_90 = (dpd_90_plus / total_loans * 100) if total_loans > 0 else 0
 
     # PAR (Portfolio at Risk)
-    par_30_amount = float(portfolio_df[portfolio_df["days_past_due"] >= 30]["exposure_amount"].sum())
-    par_90_amount = float(portfolio_df[portfolio_df["days_past_due"] >= 90]["exposure_amount"].sum())
+    par_30_amount = float(
+        portfolio_df[portfolio_df["days_past_due"] >= 30]["exposure_amount"].sum()
+    )
+    par_90_amount = float(
+        portfolio_df[portfolio_df["days_past_due"] >= 90]["exposure_amount"].sum()
+    )
     par_30_rate = (par_30_amount / total_portfolio * 100) if total_portfolio > 0 else 0
     par_90_rate = (par_90_amount / total_portfolio * 100) if total_portfolio > 0 else 0
 
@@ -939,7 +965,9 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
     default_collected_sum = float(
         _get_numeric_series(portfolio_df.loc[default_mask], "last_payment_amount").sum()
     )
-    recovery_rate = (default_collected_sum / default_exposure * 100) if default_exposure > 0 else 0.0
+    recovery_rate = (
+        (default_collected_sum / default_exposure * 100) if default_exposure > 0 else 0.0
+    )
 
     cash_on_hand = (
         float(_get_numeric_series(portfolio_df, "current_balance").sum())
@@ -1661,7 +1689,9 @@ def render_agent_results(metrics: dict[str, Any]):
                 )
             st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
         else:
-            st.dataframe(pd.DataFrame(_kpi_methodology_rows(metrics)), width="stretch", hide_index=True)
+            st.dataframe(
+                pd.DataFrame(_kpi_methodology_rows(metrics)), width="stretch", hide_index=True
+            )
 
 
 def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):

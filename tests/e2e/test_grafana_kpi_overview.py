@@ -69,9 +69,9 @@ def datasource_uid() -> str:
         auth=AUTH,
         timeout=10,
     )
-    assert ds_resp.status_code == 200, (
-        f"Datasource '{GRAFANA_DATASOURCE_NAME}' not found: {ds_resp.text}"
-    )
+    assert (
+        ds_resp.status_code == 200
+    ), f"Datasource '{GRAFANA_DATASOURCE_NAME}' not found: {ds_resp.text}"
 
     ds_uid = ds_resp.json().get("uid")
     assert ds_uid, "Datasource UID is missing"
@@ -97,11 +97,11 @@ def test_abaco_kpi_overview_queries(datasource_uid: str):
         auth=AUTH,
         timeout=15,
     )
-    assert dash_resp.status_code == 200, (
-        f"Dashboard UID '{GRAFANA_DASHBOARD_UID}' not found: {dash_resp.text}"
-    )
+    assert (
+        dash_resp.status_code == 200
+    ), f"Dashboard UID '{GRAFANA_DASHBOARD_UID}' not found: {dash_resp.text}"
 
-    dashboard = (dash_resp.json().get("dashboard") or {})
+    dashboard = dash_resp.json().get("dashboard") or {}
     panels = _iter_panels(dashboard.get("panels") or [])
 
     sql_targets: list[tuple[int, str, str]] = []
@@ -141,9 +141,9 @@ def test_abaco_kpi_overview_queries(datasource_uid: str):
             auth=AUTH,
             timeout=40,
         )
-        assert query_resp.status_code == 200, (
-            f"/api/ds/query failed for panel {panel_id} ({title}): {query_resp.text}"
-        )
+        assert (
+            query_resp.status_code == 200
+        ), f"/api/ds/query failed for panel {panel_id} ({title}): {query_resp.text}"
 
         result = (query_resp.json().get("results") or {}).get(ref_id) or {}
         if result.get("error"):

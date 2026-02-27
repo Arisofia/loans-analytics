@@ -28,7 +28,9 @@ try:
 except ImportError:  # pragma: no cover - optional dependency for catalog enrichment
     yaml = None
 
-KPI_DEFINITIONS_PATH = Path(__file__).resolve().parents[4] / "config" / "kpis" / "kpi_definitions.yaml"
+KPI_DEFINITIONS_PATH = (
+    Path(__file__).resolve().parents[4] / "config" / "kpis" / "kpi_definitions.yaml"
+)
 
 KPI_API_TO_CATALOG_ID = {
     "PAR30": "par_30",
@@ -151,8 +153,7 @@ def _extract_kpi_metadata(kpi_id: str, kpi_def: dict) -> dict[str, str]:
         "formula": str(kpi_def.get("formula", "")),
         "definition": str(kpi_def.get("description", "")),
         "implications": (
-            "Use trend and segment context when interpreting this KPI."
-            f"{threshold_note}"
+            "Use trend and segment context when interpreting this KPI." f"{threshold_note}"
         ),
     }
 
@@ -546,9 +547,7 @@ class KPIService:
             customer_ids = payments_df["customer_id"].astype(str).dropna().unique().tolist()
 
         if customer_ids:
-            df["customer_id"] = [
-                customer_ids[idx % len(customer_ids)] for idx in range(len(df))
-            ]
+            df["customer_id"] = [customer_ids[idx % len(customer_ids)] for idx in range(len(df))]
         else:
             df["customer_id"] = [f"cust-{idx + 1}" for idx in range(len(df))]
         return df
@@ -586,7 +585,7 @@ class KPIService:
     def _calculate_data_quality_metrics(self, df: pd.DataFrame) -> dict:
         """Helper to compute standard data quality metrics."""
         total_records = len(df)
-        
+
         # Duplicate Ratio
         duplicate_ratio = df.duplicated().sum() / total_records * 100.0
 
@@ -696,7 +695,9 @@ class KPIService:
             results = self._calculate_portfolio_performance_metrics(df)
             now = datetime.now()
 
-            def build_kpi_response(kpi_id: str, name: str, value: float, unit: str) -> KpiSingleResponse:
+            def build_kpi_response(
+                kpi_id: str, name: str, value: float, unit: str
+            ) -> KpiSingleResponse:
                 metadata = self._get_kpi_metadata(kpi_id, name)
                 formula = metadata["formula"]
                 return KpiSingleResponse(
@@ -811,7 +812,9 @@ class KPIService:
             else pd.Series([0.0] * len(df), index=df.index)
         )
         total_scheduled = float(scheduled.sum())
-        collection_rate = (float(collected.sum()) / total_scheduled * 100) if total_scheduled > 0 else 0
+        collection_rate = (
+            (float(collected.sum()) / total_scheduled * 100) if total_scheduled > 0 else 0
+        )
 
         # LTV/DTI
         if "appraised_value" in df.columns and df["appraised_value"].notna().any():

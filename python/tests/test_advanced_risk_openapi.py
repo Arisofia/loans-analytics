@@ -16,9 +16,7 @@ def test_openapi_contains_advanced_risk_endpoint_and_schema_example():
     post = spec["paths"]["/analytics/advanced-risk"]["post"]
     assert post["summary"] == "Advanced Risk KPI Snapshot"
 
-    schema_ref = (
-        post["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
-    )
+    schema_ref = post["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
     assert schema_ref.endswith("/AdvancedRiskResponse")
 
     advanced_schema = spec["components"]["schemas"]["AdvancedRiskResponse"]

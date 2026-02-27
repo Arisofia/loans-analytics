@@ -137,7 +137,9 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
         ],
     )
     principal = _resolve_series(df, ["loan_amount", "principal_amount", "amount"])
-    interest_rate = _normalize_interest_rate(_resolve_series(df, ["interest_rate", "interest_rate_apr"]))
+    interest_rate = _normalize_interest_rate(
+        _resolve_series(df, ["interest_rate", "interest_rate_apr"])
+    )
     dpd = _extract_dpd(df)
     default_mask = _build_default_mask(df, dpd)
     borrower_id = _resolve_identifier(
@@ -164,11 +166,15 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
 
     recovery = _resolve_series(df, ["recovery_value", "Recovery Value", "recovery_amount"])
     default_balance = float(balance[default_mask].sum())
-    recovery_numerator = float(recovery[default_mask].sum()) if default_mask.any() else float(recovery.sum())
+    recovery_numerator = (
+        float(recovery[default_mask].sum()) if default_mask.any() else float(recovery.sum())
+    )
     recovery_rate = round(_safe_pct(recovery_numerator, default_balance), 2)
 
     exposure_by_borrower = pd.DataFrame({"borrower_id": borrower_id, "balance": balance})
-    exposure_by_borrower = exposure_by_borrower.groupby("borrower_id", dropna=False)["balance"].sum()
+    exposure_by_borrower = exposure_by_borrower.groupby("borrower_id", dropna=False)[
+        "balance"
+    ].sum()
     if total_balance > 0 and not exposure_by_borrower.empty:
         shares = exposure_by_borrower / total_balance
         concentration_hhi = round(float((shares.pow(2).sum()) * 10000.0), 2)
@@ -177,7 +183,9 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
 
     loans_per_borrower = borrower_id.value_counts(dropna=False)
     repeat_borrowers = int((loans_per_borrower > 1).sum())
-    repeat_borrower_rate = round(_safe_pct(float(repeat_borrowers), float(len(loans_per_borrower))), 2)
+    repeat_borrower_rate = round(
+        _safe_pct(float(repeat_borrowers), float(len(loans_per_borrower))), 2
+    )
 
     dpd_buckets = [
         _build_dpd_bucket("current", dpd <= 0, balance, total_balance),

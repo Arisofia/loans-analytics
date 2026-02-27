@@ -10,7 +10,6 @@ from pathlib import Path
 import pytest
 import requests
 
-
 sync_playwright = pytest.importorskip(
     "playwright.sync_api",
     reason="playwright is required only for optional e2e tests",

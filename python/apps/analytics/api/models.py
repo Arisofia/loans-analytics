@@ -54,10 +54,14 @@ class LoanRecord(BaseModel):
     origination_fee_taxes: Optional[float] = Field(None, description="Taxes charged over fees")
     total_scheduled: Optional[float] = Field(None, description="Total scheduled collections amount")
     last_payment_amount: Optional[float] = Field(None, description="Last collected payment amount")
-    recovery_value: Optional[float] = Field(None, description="Recovered amount from defaulted loans")
+    recovery_value: Optional[float] = Field(
+        None, description="Recovered amount from defaulted loans"
+    )
     credit_score: Optional[float] = Field(None, description="Primary credit bureau score")
     equifax_score: Optional[float] = Field(None, description="Equifax score when available")
-    current_balance: Optional[float] = Field(None, description="Current balance proxy for cash position")
+    current_balance: Optional[float] = Field(
+        None, description="Current balance proxy for cash position"
+    )
 
 
 class LoanPortfolioRequest(BaseModel):
