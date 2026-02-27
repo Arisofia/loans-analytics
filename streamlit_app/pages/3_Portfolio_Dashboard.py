@@ -474,8 +474,34 @@ COLUMN_ALIASES = {
     "borrower_name": ["customer_name", "client_name", "nombre", "nombre_cliente"],
     "borrower_email": ["email", "correo", "correo_electronico", "customer_email"],
     "borrower_id_number": ["dni", "documento", "id_number", "cedula", "nif"],
-    "principal_amount": ["principal", "amount", "loan_amount", "monto", "capital"],
-    "interest_rate": ["apr", "rate", "tasa_interes", "interest"],
+    "principal_amount": [
+        "principal",
+        "loan_amount",
+        "principal_balance",
+        "outstanding_balance",
+        "current_balance",
+        "amount",
+        "monto",
+        "monto_prestamo",
+        "monto_financiado",
+        "capital",
+        "tpv",
+        "total_receivable_usd",
+        "discounted_balance_usd",
+    ],
+    "interest_rate": [
+        "interest_rate_apr",
+        "annual_interest_rate",
+        "apr",
+        "rate",
+        "rate_pct",
+        "rate_percent",
+        "tasa",
+        "tasa_interes",
+        "tasa_de_interes",
+        "interest",
+        "interes",
+    ],
     "term_months": ["term", "tenor_months", "plazo_meses", "duration_months"],
     "origination_date": ["disbursement_date", "start_date", "fecha_originacion", "fecha_inicio"],
     "current_status": ["status", "loan_status", "estado", "estado_actual"],
@@ -503,6 +529,9 @@ def _normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
     normalized = df.copy()
     normalized.columns = (
         normalized.columns.astype(str)
+        .str.normalize("NFKD")
+        .str.encode("ascii", "ignore")
+        .str.decode("ascii")
         .str.strip()
         .str.lower()
         .str.replace(" ", "_")
@@ -572,12 +601,36 @@ def validate_uploaded_data(df: pd.DataFrame) -> tuple[bool, list[str]]:
     return len(missing_columns) == 0, missing_columns
 
 
+def _suggest_columns_for_missing(df: pd.DataFrame, missing: list[str]) -> dict[str, list[str]]:
+    """Suggest likely candidate columns for each missing required field."""
+    suggestions: dict[str, list[str]] = {}
+    available = list(df.columns)
+    for canonical in missing:
+        aliases = set(COLUMN_ALIASES.get(canonical, []))
+        aliases.add(canonical)
+        matches: list[str] = []
+        for col in available:
+            col_l = col.lower()
+            if any(alias in col_l or col_l in alias for alias in aliases):
+                matches.append(col)
+        if matches:
+            suggestions[canonical] = matches[:4]
+    return suggestions
+
+
 def prepare_uploaded_data(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize upload, map aliases, and fill optional fields with safe defaults."""
     prepared = _apply_column_aliases(_normalize_column_names(df))
     valid, missing_cols = validate_uploaded_data(prepared)
     if not valid:
-        raise ValueError(f"Missing required columns: {', '.join(missing_cols)}")
+        suggestions = _suggest_columns_for_missing(prepared, missing_cols)
+        if suggestions:
+            hint = " | Suggested mappings: " + "; ".join(
+                f"{canonical} <- {', '.join(cols)}" for canonical, cols in suggestions.items()
+            )
+        else:
+            hint = ""
+        raise ValueError(f"Missing required columns: {', '.join(missing_cols)}{hint}")
 
     prepared["loan_id"] = prepared["loan_id"].astype(str).str.strip()
     prepared = prepared[prepared["loan_id"] != ""].copy()
