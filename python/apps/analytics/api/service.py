@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
 
 import pandas as pd
 from starlette.concurrency import run_in_threadpool
@@ -19,10 +21,160 @@ from python.supabase_pool import get_pool
 
 logger = get_logger(__name__)
 
+try:
+    import yaml
+except ImportError:  # pragma: no cover - optional dependency for catalog enrichment
+    yaml = None
+
+KPI_DEFINITIONS_PATH = Path(__file__).resolve().parents[4] / "config" / "kpis" / "kpi_definitions.yaml"
+
+KPI_API_TO_CATALOG_ID = {
+    "PAR30": "par_30",
+    "PAR_30": "par_30",
+    "PAR90": "par_90",
+    "PAR_90": "par_90",
+    "COLLECTION_RATE": "collections_rate",
+    "PORTFOLIO_YIELD": "portfolio_yield",
+    "PORTFOLIO_HEALTH": "portfolio_growth_rate",
+    "AUM": "total_outstanding_balance",
+}
+
+DEFAULT_KPI_METADATA = {
+    "PAR30": {
+        "formula": "SUM(principal_balance WHERE dpd > 30) / SUM(principal_balance) * 100",
+        "definition": "Portfolio at Risk with more than 30 days past due.",
+        "implications": "Higher PAR30 indicates deteriorating portfolio quality and collections pressure.",
+    },
+    "PAR90": {
+        "formula": "SUM(principal_balance WHERE dpd > 90) / SUM(principal_balance) * 100",
+        "definition": "Portfolio at Risk with more than 90 days past due.",
+        "implications": "Higher PAR90 signals severe delinquency and elevated expected credit losses.",
+    },
+    "COLLECTION_RATE": {
+        "formula": "SUM(collected_amount) / SUM(scheduled_amount) * 100",
+        "definition": "Collection efficiency against scheduled amounts.",
+        "implications": "Lower collection rate reduces cash conversion and may indicate process weaknesses.",
+    },
+    "PORTFOLIO_YIELD": {
+        "formula": "SUM(interest_rate * principal_balance) / SUM(principal_balance) * 100",
+        "definition": "Weighted average annualized portfolio yield.",
+        "implications": "Yield below risk-adjusted cost thresholds can compress margins.",
+    },
+    "AUM": {
+        "formula": "SUM(principal_balance)",
+        "definition": "Assets under management based on outstanding principal.",
+        "implications": "AUM growth improves scale, but must be balanced against delinquency and loss rates.",
+    },
+    "AVG_LTV": {
+        "formula": "AVG(loan_amount / appraised_value * 100)",
+        "definition": "Average loan-to-value ratio across the analyzed population.",
+        "implications": "Higher LTV reduces collateral buffer and increases loss-given-default sensitivity.",
+    },
+    "AVG_DTI": {
+        "formula": "AVG(monthly_debt / borrower_income * 100)",
+        "definition": "Average debt-to-income ratio across the analyzed population.",
+        "implications": "Higher DTI indicates repayment stress and potential delinquency pressure.",
+    },
+    "DEFAULT_RATE": {
+        "formula": "COUNT(loans WHERE status = defaulted) / COUNT(loans) * 100",
+        "definition": "Share of loans in default status.",
+        "implications": "Rising default rate typically requires underwriting and collections adjustments.",
+    },
+    "PORTFOLIO_GROWTH_RATE": {
+        "formula": "(current_period_balance - prior_period_balance) / prior_period_balance * 100",
+        "definition": "Period-over-period portfolio balance growth.",
+        "implications": "Growth is positive only if accompanied by stable asset-quality and collections KPIs.",
+    },
+    "TOTAL_LOANS_COUNT": {
+        "formula": "COUNT(loans)",
+        "definition": "Total number of loans represented in the analyzed population.",
+        "implications": "Loan-count growth changes operational load and may require capacity planning.",
+    },
+}
+
+
+def _normalize_kpi_key(kpi_id: str) -> str:
+    return (kpi_id or "").strip().replace("-", "_").replace(" ", "_").upper()
+
+
+@lru_cache(maxsize=1)
+def _load_catalog_kpi_metadata() -> dict[str, dict[str, str]]:
+    if yaml is None or not KPI_DEFINITIONS_PATH.exists():
+        return {}
+
+    try:
+        with open(KPI_DEFINITIONS_PATH, encoding="utf-8") as handle:
+            payload = yaml.safe_load(handle) or {}
+    except Exception as exc:  # pragma: no cover - defensive parsing fallback
+        logger.warning("Failed to load KPI catalog metadata: %s", exc)
+        return {}
+
+    metadata: dict[str, dict[str, str]] = {}
+    for top_key, section in payload.items():
+        if not str(top_key).endswith("_kpis") or not isinstance(section, dict):
+            continue
+
+        for kpi_id, kpi_def in section.items():
+            if not isinstance(kpi_def, dict):
+                continue
+            thresholds = kpi_def.get("thresholds")
+            threshold_note = ""
+            if isinstance(thresholds, dict) and thresholds:
+                threshold_pairs = ", ".join(f"{k}={v}" for k, v in thresholds.items())
+                threshold_note = f" Compare against configured thresholds ({threshold_pairs})."
+
+            metadata[str(kpi_id).lower()] = {
+                "formula": str(kpi_def.get("formula", "")),
+                "definition": str(kpi_def.get("description", "")),
+                "implications": (
+                    "Use trend and segment context when interpreting this KPI."
+                    f"{threshold_note}"
+                ),
+            }
+
+    return metadata
+
 
 class KPIService:
     def __init__(self, actor: str = "api_user"):
         self.actor = actor
+
+    def get_catalog_kpi_ids(self) -> list[str]:
+        return sorted(_load_catalog_kpi_metadata().keys())
+
+    def get_supported_catalog_kpi_ids(self) -> list[str]:
+        supported = {KPI_API_TO_CATALOG_ID.get(k, "").lower() for k in KPI_API_TO_CATALOG_ID}
+        supported = {k for k in supported if k}
+        return sorted(supported)
+
+    def get_exposed_aliases(self) -> dict[str, list[str]]:
+        return {
+            "PAR30": ["PAR30", "par_30"],
+            "PAR90": ["PAR90", "par_90"],
+            "CollectionRate": ["COLLECTION_RATE", "collections_rate"],
+            "PortfolioHealth": ["AUM", "portfolio_growth_rate"],
+            "LTV": ["AVG_LTV", "average_loan_size"],
+            "DTI": ["AVG_DTI", "default_rate"],
+            "PortfolioYield": ["PORTFOLIO_YIELD", "portfolio_yield"],
+        }
+
+    def _get_kpi_metadata(self, kpi_id: str, kpi_name: str | None = None) -> dict[str, str]:
+        normalized = _normalize_kpi_key(kpi_id)
+        catalog_key = KPI_API_TO_CATALOG_ID.get(normalized, str(kpi_id).lower())
+        catalog_metadata = _load_catalog_kpi_metadata().get(catalog_key, {})
+        default_metadata = DEFAULT_KPI_METADATA.get(normalized, {})
+        definition_fallback = kpi_name or str(kpi_id)
+        return {
+            "formula": default_metadata.get("formula")
+            or catalog_metadata.get("formula")
+            or "Not available",
+            "definition": default_metadata.get("definition")
+            or catalog_metadata.get("definition")
+            or f"KPI metric for {definition_fallback}",
+            "implications": default_metadata.get("implications")
+            or catalog_metadata.get("implications")
+            or "Interpret with trend, segmentation, and risk appetite context.",
+        }
 
     async def get_latest_kpis(self, kpi_keys: list[str] | None = None) -> list[KpiSingleResponse]:
         """
@@ -64,6 +216,9 @@ class KPIService:
 
             responses = []
             for rec in records:
+                kpi_id = str(rec["id"])
+                kpi_name = str(rec["name"])
+                metadata = self._get_kpi_metadata(kpi_id, kpi_name)
                 # Handle potential string or date/datetime objects
                 as_of_date = rec["as_of_date"]
                 if hasattr(as_of_date, "isoformat"):
@@ -73,14 +228,16 @@ class KPIService:
 
                 responses.append(
                     KpiSingleResponse(
-                        id=rec["id"],
-                        name=rec["name"],
+                        id=kpi_id,
+                        name=kpi_name,
                         value=float(rec["value"]),
                         unit=rec["unit"],
+                        definition=metadata["definition"],
+                        implications=metadata["implications"],
                         context=KpiContext(
-                            metric=rec["name"],
+                            metric=kpi_name,
                             timestamp=rec["created_at"],
-                            formula="",
+                            formula=metadata["formula"],
                             sample_size=0,
                             period="latest",
                             calculation_date=rec["created_at"],
@@ -511,53 +668,43 @@ class KPIService:
             avg_dti = df["dti_ratio"].mean()
 
             now = datetime.now()
-            context = KpiContext(
-                metric="Portfolio Overview",
-                timestamp=now,
-                formula="PAR30, Yield, LTV, DTI",
-                sample_size=len(loans),
-                period="on-demand",
-                calculation_date=now,
-                filters={"loan_count": len(loans)},
-            )
+
+            def build_kpi_response(
+                kpi_id: str,
+                name: str,
+                value: float,
+                unit: str,
+            ) -> KpiSingleResponse:
+                metadata = self._get_kpi_metadata(kpi_id, name)
+                return KpiSingleResponse(
+                    id=kpi_id,
+                    name=name,
+                    value=round(float(value), 2),
+                    unit=unit,
+                    definition=metadata["definition"],
+                    implications=metadata["implications"],
+                    context=KpiContext(
+                        metric=name,
+                        timestamp=now,
+                        formula=metadata["formula"],
+                        sample_size=len(loans),
+                        period="on-demand",
+                        calculation_date=now,
+                        filters={"loan_count": len(loans)},
+                    ),
+                )
 
             return [
-                KpiSingleResponse(
-                    id="PAR30",
-                    name="Portfolio at Risk (30+ days)",
-                    value=round(float(par30_pct), 2),
-                    unit="%",
-                    context=context,
+                build_kpi_response("PAR30", "Portfolio at Risk (30+ days)", par30_pct, "%"),
+                build_kpi_response(
+                    "PORTFOLIO_YIELD",
+                    "Weighted Average Interest Rate",
+                    avg_interest_rate * 100,
+                    "%",
                 ),
-                KpiSingleResponse(
-                    id="PORTFOLIO_YIELD",
-                    name="Weighted Average Interest Rate",
-                    # Convert to percentage
-                    value=round(float(avg_interest_rate * 100), 2),
-                    unit="%",
-                    context=context,
-                ),
-                KpiSingleResponse(
-                    id="AUM",
-                    name="Assets Under Management",
-                    value=round(float(total_outstanding), 2),
-                    unit="USD",
-                    context=context,
-                ),
-                KpiSingleResponse(
-                    id="AVG_LTV",
-                    name="Average Loan-to-Value",
-                    value=round(float(avg_ltv), 2),
-                    unit="%",
-                    context=context,
-                ),
-                KpiSingleResponse(
-                    id="AVG_DTI",
-                    name="Average Debt-to-Income",
-                    value=round(float(avg_dti), 2),
-                    unit="%",
-                    context=context,
-                ),
+                build_kpi_response("AUM", "Assets Under Management", total_outstanding, "USD"),
+                build_kpi_response("AVG_LTV", "Average Loan-to-Value", avg_ltv, "%"),
+                build_kpi_response("AVG_DTI", "Average Debt-to-Income", avg_dti, "%"),
             ]
         except Exception as e:
             logger.error(

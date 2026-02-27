@@ -26,13 +26,13 @@ class LoanRecord(BaseModel):
     borrower_income: Optional[float] = Field(
         None,
         description=(
-            "Annual borrower income. " "Optional for invoice factoring (not typically available)."
+            "Annual borrower income. Optional for invoice factoring (not typically available)."
         ),
     )
     monthly_debt: Optional[float] = Field(
         None,
         description=(
-            "Monthly debt obligations. " "Optional for invoice factoring (not typically available)."
+            "Monthly debt obligations. Optional for invoice factoring (not typically available)."
         ),
     )
     loan_status: str = Field(
@@ -87,6 +87,8 @@ class KpiSingleResponse(BaseModel):
     name: Optional[str] = Field(None, description="KPI display name")
     value: float = Field(..., description="Calculated KPI value")
     unit: Optional[str] = Field(None, description="Unit of measurement")
+    definition: Optional[str] = Field(None, description="Business definition of the KPI")
+    implications: Optional[str] = Field(None, description="Business implications of KPI movement")
     context: KpiContext
 
 
@@ -129,6 +131,21 @@ class FullAnalysisResponse(BaseModel):
     summary: str
     recommendations: List[str]
     risk_assessment: RiskAlertsResponse
+    kpis: List[KpiSingleResponse] = Field(
+        default_factory=list,
+        description="KPI snapshot used by the analysis, including formulas and implications",
+    )
+
+
+class KpiCoverageResponse(BaseModel):
+    """Coverage report between configured KPI catalog and API-supported KPIs."""
+
+    catalog_total: int
+    implemented_total: int
+    catalog_kpis: List[str] = Field(default_factory=list)
+    implemented_catalog_kpis: List[str] = Field(default_factory=list)
+    missing_catalog_kpis: List[str] = Field(default_factory=list)
+    exposed_aliases: Dict[str, List[str]] = Field(default_factory=dict)
 
 
 class DataQualityResponse(BaseModel):

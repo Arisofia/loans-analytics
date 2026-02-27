@@ -25,6 +25,7 @@ try:
         ExecutiveAnalyticsRequest,
         ExecutiveAnalyticsResponse,
         FullAnalysisResponse,
+        KpiCoverageResponse,
         KpiResponse,
         KpiSingleResponse,
         LoanPortfolioRequest,
@@ -335,6 +336,25 @@ if app is not None:
             logger.error("Error in calculate_all_kpis: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
+    @app.get("/analytics/kpis/coverage", response_model=KpiCoverageResponse)
+    async def get_kpi_coverage(service: KPIService = Depends(get_kpi_service)):
+        """Return KPI coverage between catalog definitions and API-supported KPIs."""
+        try:
+            catalog_kpis = service.get_catalog_kpi_ids()
+            implemented_catalog_kpis = service.get_supported_catalog_kpi_ids()
+            missing_catalog_kpis = sorted(set(catalog_kpis) - set(implemented_catalog_kpis))
+            return KpiCoverageResponse(
+                catalog_total=len(catalog_kpis),
+                implemented_total=len(implemented_catalog_kpis),
+                catalog_kpis=catalog_kpis,
+                implemented_catalog_kpis=implemented_catalog_kpis,
+                missing_catalog_kpis=missing_catalog_kpis,
+                exposed_aliases=service.get_exposed_aliases(),
+            )
+        except Exception as e:
+            logger.error("Error in get_kpi_coverage: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
     @app.post("/analytics/kpis/{kpi_id}", response_model=KpiSingleResponse)
     async def get_single_kpi(
         kpi_id: str,
@@ -414,9 +434,17 @@ if app is not None:
         """
         try:
             # 1. Fetch data context for the orchestrator
-            # For simplicity, we'll fetch latest KPIs as context
-            kpis = await service.get_latest_kpis()
-            kpi_summary = "\n".join([f"{k.name}: {k.value} {k.unit}" for k in kpis])
+            # Use request-scoped real-time KPIs when available, fallback to latest snapshot.
+            if request.loans:
+                kpis = await service.calculate_kpis_for_portfolio(request.loans)
+                if not kpis:
+                    kpis = await service.get_latest_kpis()
+            else:
+                kpis = await service.get_latest_kpis()
+
+            kpi_summary = "\n".join(
+                [f"{k.name}: {k.value} {k.unit} | Formula: {k.context.formula}" for k in kpis]
+            )
 
             # 2. Initialize Orchestrator
             try:
@@ -447,15 +475,30 @@ if app is not None:
                     initial_context=initial_context,
                     trace_id=trace_id,
                 )
-                summary = results.get("risk_assessment", "Analysis completed successfully.")
+                summary = (
+                    results.get("risk_analysis")
+                    or results.get("risk_assessment")
+                    or "Analysis completed successfully."
+                )
             except Exception as orch_err:
                 logger.info("Using High-Fidelity Local Analytical Engine: %s", orch_err)
                 trace_id = str(uuid.uuid4())
 
+                def get_kpi_value(candidates: list[str], default: float = 0.0) -> float:
+                    candidate_set = {candidate.lower() for candidate in candidates}
+                    for kpi in kpis:
+                        kpi_id = (kpi.id or "").lower()
+                        if kpi_id in candidate_set:
+                            return float(kpi.value)
+                    return float(default)
+
                 # High-fidelity deterministic analysis
-                par30 = next((k.value for k in kpis if k.id == "par_30"), 0.0)
-                yield_val = next((k.value for k in kpis if k.id == "portfolio_yield"), 0.0)
-                loans_count = next((k.value for k in kpis if k.id == "total_loans_count"), 0)
+                par30 = get_kpi_value(["par_30", "par30"], 0.0)
+                yield_val = get_kpi_value(["portfolio_yield"], 0.0)
+                loans_count = get_kpi_value(
+                    ["total_loans_count"],
+                    float(len(request.loans)) if request.loans else 0.0,
+                )
 
                 risk_status = "CRITICAL" if par30 > 10 else "STABLE"
                 summary = (
@@ -478,6 +521,7 @@ if app is not None:
                     "Monitor high-LTV loans",
                     "Review collection strategy for DPD > 30",
                 ],
+                kpis=kpis,
                 risk_assessment=RiskAlertsResponse(
                     high_risk_count=0,
                     total_loans=len(request.loans) if request.loans else 0,

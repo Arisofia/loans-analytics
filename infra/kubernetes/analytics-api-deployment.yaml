@@ -25,6 +25,7 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
+      automountServiceAccountToken: false
       imagePullSecrets:
         - name: ghcr-pull-secret
       containers:
@@ -78,6 +79,8 @@ spec:
             requests:
               cpu: "300m"
               memory: "512Mi"
+              ephemeral-storage: "1Gi"
             limits:
               cpu: "1500m"
               memory: "2Gi"
+              ephemeral-storage: "2Gi"

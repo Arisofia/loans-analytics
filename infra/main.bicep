@@ -71,9 +71,6 @@ resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
   tags: {
     'azd-service-name': 'abaco-loans-analytics'
   }
-  identity: {
-    type: 'SystemAssigned'
-  }
   properties: {
     managedEnvironmentId: containerAppEnv.id
     configuration: {
@@ -148,6 +145,9 @@ resource containerApp 'Microsoft.App/containerApps@2023-04-01-preview' = {
       }
     }
   }
+  identity: {
+    type: 'SystemAssigned'
+  }
 }
 
 // Key Vault for secrets management
@@ -180,12 +180,12 @@ resource appinsights 'Microsoft.Insights/components@2020-02-02' = {
 // Key Vault RBAC - Grant Container App access to secrets
 resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(keyvault.id, containerApp.id, '4633458b-17de-408a-b874-0445c86b69e6')
-  scope: keyvault
   properties: {
     principalId: containerApp.identity.principalId
     principalType: 'ServicePrincipal'
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') // Key Vault Secrets User
   }
+  scope: keyvault
 }
 
 // Container App identity can pull images from ACR
