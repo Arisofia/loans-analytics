@@ -41,7 +41,7 @@ Validation:
 - [x] `safety check --continue-on-error --save-json /tmp/safety-results.json`
 - [x] `bandit -r python src scripts -f json -o /tmp/bandit-report.json`
 - [ ] Resolve High/Critical dependency findings
-- [ ] Ensure Snyk gate is strict when scan executes (workflow must fail on High/Critical)
+- [x] Ensure Snyk gate is strict when scan executes (workflow must fail on High/Critical)
 
 Validation:
 - [ ] No blocking High/Critical vulns in dependency scan
@@ -50,6 +50,8 @@ Validation:
 Current notes:
 - `safety` still reports `protobuf` vulnerability `CVE-2026-0994` (ID `85151`), currently blocked by upstream version constraints (`google-ai-generativelanguage` and `grpcio-status` pins).
 - `bandit` report contains only `LOW` severity findings (`80`), with no `MEDIUM/HIGH`.
+- Verified strict Snyk gate in `.github/workflows/security-scan.yml`:
+  `--severity-threshold=high --fail-on=all` (scan is conditional on `SNYK_TOKEN` presence).
 
 ## Phase 3 - Real Data Pipeline Validation (All Modes)
 
@@ -71,7 +73,8 @@ Calculation integrity:
 - [x] `black --check .`
 - [x] `pytest tests/ -v --tb=short -m \"not integration\"`
 - [x] `pytest python/multi_agent/ -v -k \"test_\" --tb=short`
-- [ ] If secrets present: `pytest tests/ -v -m \"integration\" --tb=short`
+- [x] If secrets present: `pytest tests/ -v -m \"integration\" --tb=short`
+  Skipped locally (not applicable): `SUPABASE_URL` and `SUPABASE_ANON_KEY` are not set.
 
 Exit criteria:
 - [x] All required checks pass
@@ -87,19 +90,52 @@ Exit criteria:
 
 ## Phase 6 - Release Sync and Branch Hygiene
 
-- [ ] `git add -A`
-- [ ] `git commit -m \"<clear message>\"`
-- [ ] `git push origin main`
+- [x] `git add -A`
+- [x] `git commit -m \"<clear message>\"`
+- [x] `git push origin main`
 - [x] Remove only merged non-protected branches (local + remote)
 - [x] Confirm `origin/main` == local `main`
 
 ## Phase 7 - Delivery Report (Single Final Message)
 
-- [ ] What changed (files + purpose)
-- [ ] What was executed (commands + outcomes)
-- [ ] Real-data verification proof (not dummy)
-- [ ] CI results (workflow URLs and statuses)
-- [ ] Open risks (if any) and exact next actions
+- [x] What changed (files + purpose)
+- [x] What was executed (commands + outcomes)
+- [x] Real-data verification proof (not dummy)
+- [x] CI results (workflow URLs and statuses)
+- [x] Open risks (if any) and exact next actions
+
+Delivery report snapshot (2026-02-27):
+- What changed:
+  - Added advanced-risk KPI engine and API wiring:
+    `python/kpis/advanced_risk.py`,
+    `python/apps/analytics/api/models.py`,
+    `python/apps/analytics/api/service.py`,
+    `python/apps/analytics/api/main.py`.
+  - Added advanced-risk tests:
+    `python/tests/test_advanced_risk.py`,
+    `python/tests/test_advanced_risk_api.py`,
+    `python/tests/test_advanced_risk_openapi.py`.
+  - Updated this checklist with validated completion state.
+- What was executed:
+  - Lint/format: `ruff check .`, `black --check .`.
+  - Tests: `pytest tests/ -m "not integration"`, `pytest python/multi_agent/ -k "test_"`,
+    and targeted advanced-risk suites.
+  - Pipeline (real data): dry-run, validate, full modes over
+    `data/raw/abaco_real_data_20260202.csv`.
+  - Security checks: `npm audit`, `safety`, `bandit`.
+- Real-data verification proof:
+  - Full pipeline run ID: `20260227_1c0def53`.
+  - Compared recomputed KPIs from `clean_data.parquet` against
+    `logs/runs/20260227_1c0def53/kpis_output.json` using canonical formulas.
+- CI results:
+  - Tests workflow: https://github.com/Arisofia/abaco-loans-analytics/actions/runs/22498904827 (success)
+  - Security scan workflow: https://github.com/Arisofia/abaco-loans-analytics/actions/runs/22498904767 (success)
+- Open risks and next actions:
+  - Remaining dependency risk: `protobuf` CVE-2026-0994 (Safety ID `85151`) is still
+    constrained by current Gemini dependency chain pins.
+  - Next actions:
+    1. Track upstream compatibility to remove `<7` protobuf constraint in Gemini stack.
+    2. Migrate from `google-generativeai` to newer supported SDK once code path parity is validated.
 
 ---
 
