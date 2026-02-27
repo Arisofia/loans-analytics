@@ -48,7 +48,7 @@ Validation:
 - [x] Security workflow remains green after remediation
 
 Current notes:
-- Remediated `protobuf` vulnerability path by migrating Gemini SDK usage from `google-generativeai` to `google-genai` and upgrading runtime stack to:
+- Remediated `protobuf` vulnerability path by migrating from the legacy Gemini SDK to `google-genai` and upgrading runtime stack to:
   `protobuf==6.33.5`, `grpcio==1.78.0`, `grpcio-status==1.78.0`.
 - `safety` now reports `0` vulnerabilities in local CI-equivalent `.venv`.
 - `bandit` continues to report only `LOW` severity findings (`80`), with `0` medium/high.
