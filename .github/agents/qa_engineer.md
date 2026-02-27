@@ -6,7 +6,7 @@ tools:
   - read
   - edit
   - search
-  - grep
+  - grep_search
   - bash
 infer: true
 metadata:

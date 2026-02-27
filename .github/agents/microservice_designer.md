@@ -6,7 +6,7 @@ tools:
   - read
   - edit
   - search
-  - grep
+  - grep_search
   - bash
   - web_search
 infer: true

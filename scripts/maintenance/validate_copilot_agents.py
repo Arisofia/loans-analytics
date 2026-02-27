@@ -94,7 +94,7 @@ def validate_agent_config(config: Dict, filename: str) -> List[str]:
         if not config["tools"]:
             errors.append("Field 'tools' cannot be empty")
 
-        valid_tools = ["read", "edit", "search", "grep", "bash", "web_search"]
+        valid_tools = ["read", "edit", "search", "grep", "grep_search", "bash", "web_search"]
         for tool in config["tools"]:
             if not isinstance(tool, str):
                 errors.append(f"Tool '{tool}' must be a string")
@@ -147,7 +147,7 @@ def validate_agent_file(filepath: Path) -> Tuple[bool, List[str]]:
 
 def main():
     """Main validation entry point."""
-    repo_root = Path(__file__).parent.parent
+    repo_root = Path(__file__).parent.parent.parent
     agents_dir = repo_root / ".github" / "agents"
 
     print("=" * 70)
@@ -161,7 +161,13 @@ def main():
 
     # Find all agent files (exclude README and other non-agent files)
     # Agent files are identified by having YAML frontmatter, but we exclude known docs
-    excluded_files = {"README.md", "USAGE_EXAMPLES.md"}
+    excluded_files = {
+        "README.md",
+        "USAGE_EXAMPLES.md",
+        "MICROSERVICE_DESIGNER_USAGE.md",
+        "TESTCRAFTPRO_QUICKSTART.md",
+        "TESTCRAFTPRO_USAGE.md",
+    }
     agent_files = [f for f in agents_dir.glob("*.md") if f.name not in excluded_files]
 
     if not agent_files:
