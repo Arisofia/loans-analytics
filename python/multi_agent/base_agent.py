@@ -98,15 +98,14 @@ class BaseAgent(ABC):
     def _init_gemini_client(self) -> Any:
         """Initialize Gemini client."""
         try:
-            import google.generativeai as genai  # pylint: disable=import-outside-toplevel
+            import google.genai as genai  # pylint: disable=import-outside-toplevel
         except ImportError as exc:
-            raise ImportError("google-generativeai package required") from exc
+            raise ImportError("google-genai package required") from exc
 
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY not set")
-        genai.configure(api_key=api_key)
-        return genai
+        return genai.Client(api_key=api_key)
 
     def _init_grok_client(self) -> Any:
         """Initialize Grok client via OpenAI-compatible API."""
@@ -336,37 +335,41 @@ class BaseAgent(ABC):
 
     def _call_gemini(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:
         """Call Gemini API."""
-
-        model = self._client.GenerativeModel(self.model)
+        try:
+            from google.genai import types as genai_types  # pylint: disable=import-outside-toplevel
+        except ImportError as exc:
+            raise ImportError("google-genai package required") from exc
 
         prompt_parts = []
         for msg in messages:
             prompt_parts.append(f"{msg['role'].upper()}: {msg['content']}")
         prompt = "\n\n".join(prompt_parts)
 
-        timeout = int(os.getenv("LLM_TIMEOUT", "60"))
-
-        # Configure request with timeout
-        response = model.generate_content(
-            prompt,
-            generation_config={
-                "max_output_tokens": request.max_tokens,
-                "temperature": request.temperature,
-            },
-            request_options={"timeout": timeout},
+        response = self._client.models.generate_content(
+            model=self.model,
+            contents=prompt,
+            config=genai_types.GenerateContentConfig(
+                max_output_tokens=request.max_tokens,
+                temperature=request.temperature,
+            ),
         )
 
-        tokens = getattr(response, "usage_metadata", None)
-        tokens_used = tokens.total_token_count if tokens else 0
+        usage = getattr(response, "usage_metadata", None)
+        tokens_used = int(getattr(usage, "total_token_count", 0) or 0)
 
         cost_per_1k = 0.0001
         cost = tokens_used * cost_per_1k / 1000
+        finish_reason = "stop"
+        candidates = getattr(response, "candidates", None) or []
+        if candidates:
+            raw_finish = getattr(candidates[0], "finish_reason", None)
+            finish_reason = str(getattr(raw_finish, "name", raw_finish) or "stop").lower()
 
         return {
-            "content": response.text,
+            "content": getattr(response, "text", "") or "",
             "tokens_used": tokens_used,
             "cost_usd": cost,
-            "finish_reason": "stop",
+            "finish_reason": finish_reason,
         }
 
     def _call_grok(self, messages: List[Dict[str, str]], request: AgentRequest) -> Dict[str, Any]:

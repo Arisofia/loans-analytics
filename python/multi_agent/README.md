@@ -81,7 +81,7 @@
 pip install pydantic openai
 
 # Optional providers
-pip install anthropic google-generativeai
+pip install anthropic google-genai
 
 # Optional observability
 pip install opentelemetry-api opentelemetry-sdk

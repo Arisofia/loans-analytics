@@ -2,29 +2,25 @@ import argparse
 import os
 import sys
 
-import google.generativeai as genai
-from google.api_core import exceptions
+import google.genai as genai
+from google.genai import types
 
 
 def setup_gemini(api_key):
-    """Configures the Gemini API."""
+    """Create and return Gemini client."""
     if not api_key:
         print("Error: GOOGLE_API_KEY environment variable not set.", file=sys.stderr)
         sys.exit(1)
-    genai.configure(api_key=api_key)
+    return genai.Client(api_key=api_key)
 
 
-def get_model(model_name="gemini-1.5-flash"):
-    """Instantiates the generative model."""
-    generation_config = {
-        "temperature": 0.7,
-        "top_p": 0.95,
-        "top_k": 64,
-        "max_output_tokens": 8192,
-    }
-    return genai.GenerativeModel(
-        model_name=model_name,
-        generation_config=generation_config,
+def get_generation_config():
+    """Build generation config for CLI calls."""
+    return types.GenerateContentConfig(
+        temperature=0.7,
+        top_p=0.95,
+        top_k=64,
+        max_output_tokens=8192,
     )
 
 
@@ -48,7 +44,7 @@ def main():
     args = parser.parse_args()
 
     api_key = os.environ.get("GOOGLE_API_KEY")
-    setup_gemini(api_key)
+    client = setup_gemini(api_key)
 
     user_input = read_input(args)
 
@@ -56,16 +52,20 @@ def main():
         print("Usage: python3 gemini_cli.py [PROMPT] or echo [PROMPT] | python3 gemini_cli.py")
         sys.exit(1)
 
-    model = get_model(args.model)
+    generation_config = get_generation_config()
 
     try:
         # Stream the response for a better CLI feel
-        response = model.generate_content(user_input, stream=True)
-        for chunk in response:
-            print(chunk.text, end="", flush=True)
+        stream = client.models.generate_content_stream(
+            model=args.model,
+            contents=user_input,
+            config=generation_config,
+        )
+        for chunk in stream:
+            chunk_text = getattr(chunk, "text", "")
+            if chunk_text:
+                print(chunk_text, end="", flush=True)
         print()  # Newline at the end
-    except exceptions.GoogleAPICallError as e:
-        print(f"\nAPI Error: {e}", file=sys.stderr)
     except Exception as e:
         print(f"\nUnexpected Error: {e}", file=sys.stderr)
 

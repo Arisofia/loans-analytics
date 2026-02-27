@@ -40,16 +40,18 @@ Validation:
 - [x] Run security scans:
 - [x] `safety check --continue-on-error --save-json /tmp/safety-results.json`
 - [x] `bandit -r python src scripts -f json -o /tmp/bandit-report.json`
-- [ ] Resolve High/Critical dependency findings
+- [x] Resolve High/Critical dependency findings
 - [x] Ensure Snyk gate is strict when scan executes (workflow must fail on High/Critical)
 
 Validation:
-- [ ] No blocking High/Critical vulns in dependency scan
+- [x] No blocking High/Critical vulns in dependency scan
 - [x] Security workflow remains green after remediation
 
 Current notes:
-- `safety` still reports `protobuf` vulnerability `CVE-2026-0994` (ID `85151`), currently blocked by upstream version constraints (`google-ai-generativelanguage` and `grpcio-status` pins).
-- `bandit` report contains only `LOW` severity findings (`80`), with no `MEDIUM/HIGH`.
+- Remediated `protobuf` vulnerability path by migrating Gemini SDK usage from `google-generativeai` to `google-genai` and upgrading runtime stack to:
+  `protobuf==6.33.5`, `grpcio==1.78.0`, `grpcio-status==1.78.0`.
+- `safety` now reports `0` vulnerabilities in local CI-equivalent `.venv`.
+- `bandit` continues to report only `LOW` severity findings (`80`), with `0` medium/high.
 - Verified strict Snyk gate in `.github/workflows/security-scan.yml`:
   `--severity-threshold=high --fail-on=all` (scan is conditional on `SNYK_TOKEN` presence).
 
