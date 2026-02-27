@@ -10,6 +10,7 @@ This directory contains E2E tests for both the backend (FastAPI) and frontend (S
 ## Structure
 - `test_backend_api.py`: Backend integration tests using pytest and requests
 - `test_frontend_playwright.py`: Frontend E2E tests using Playwright
+- `test_csv_kpi_agent_flow.py`: Real business flow (CSV upload -> KPI cards -> Agent Analysis outputs)
 
 ## Setup
 1. Install development dependencies:
@@ -85,7 +86,7 @@ with sync_playwright() as p:
     page.goto(url, wait_until="domcontentloaded", timeout=60000)
 
     # Upload CSV
-    page.set_input_files("input[type='file']", csv_path)
+    page.get_by_test_id("stFileUploaderDropzone").locator("input").set_input_files(csv_path)
     page.get_by_text("Data uploaded and validated successfully", exact=False).wait_for(timeout=180000)
 
     # KPI section visible after load/validation
@@ -112,6 +113,11 @@ for path in sorted(glob.glob("data/agent_outputs/*_response.json"))[-3:]:
         data = json.load(f)
     print(path, data.get("scenario_name"), data.get("output_key"), data.get("status"))
 PY
+```
+
+To run the executable business flow test directly:
+```sh
+RUN_E2E=1 pytest tests/e2e/test_csv_kpi_agent_flow.py -m e2e -v --tb=short
 ```
 
 ## Coverage
