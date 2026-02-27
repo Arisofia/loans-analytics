@@ -44,11 +44,11 @@ setup:
 		echo "Python executable '$(PYTHON)' not found. Run with PYTHON=python3.x"; \
 		exit 1; \
 	fi
-	@$(PYTHON) -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' || { \
+	@"$(PYTHON)" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' || { \
 		echo "Python 3.10+ is required. Selected interpreter: $(PYTHON)"; \
 		exit 1; \
 	}
-	$(PYTHON) -m venv --clear $(VENV)
+	"$(PYTHON)" -m venv --clear $(VENV)
 	$(BIN)/pip install --upgrade pip
 	$(BIN)/pip install -r requirements.txt
 	$(BIN)/pip install -r requirements-dev.txt
@@ -74,9 +74,9 @@ lint:
 type-check:
 	$(BIN)/mypy --check-untyped-defs src
 test:
-	$(PYTHON) -m pytest
+	"$(PYTHON)" -m pytest
 e2e:
-	RUN_E2E=1 $(PYTHON) -m pytest tests/e2e -m e2e
+	RUN_E2E=1 "$(PYTHON)" -m pytest tests/e2e -m e2e
 security-check:
 	$(BIN)/bandit -r src python --quiet -x "**/test_*.py,**/tests.py"
 	@if $(BIN)/pip list | grep -q safety; then $(BIN)/safety check; else echo "safety not installed, skipping"; fi
@@ -110,16 +110,16 @@ monitoring-health:
 # Development/API entry point (hot-reload)
 api:
 	@echo "Starting API server on http://127.0.0.1:8000 with hot-reload..."
-	$(PYTHON) -m uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir python --reload-dir src --reload-dir config
+	"$(PYTHON)" -m uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir python --reload-dir src --reload-dir config
 dev: api
 
 # Multi-agent entry point
 agents:
-	$(PYTHON) -m python.multi_agent.cli list-scenarios
+	"$(PYTHON)" -m python.multi_agent.cli list-scenarios
 
 # KPI pipeline entry point
 kpis:
-	$(PYTHON) scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
+	"$(PYTHON)" scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
 
 repo-map:
 	@echo "Open REPO_MAP.md"
