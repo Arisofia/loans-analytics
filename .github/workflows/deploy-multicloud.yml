@@ -26,14 +26,11 @@ concurrency:
   group: deploy-multicloud-${{ github.ref_name }}-${{ inputs.environment }}-${{ inputs.cloud }}
   cancel-in-progress: false
 
-permissions:
-  contents: read
-  id-token: write
-  actions: read
-
 jobs:
   preflight:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
     outputs:
       should_deploy_azure: ${{ steps.targets.outputs.azure }}
       should_deploy_aws: ${{ steps.targets.outputs.aws }}
@@ -122,6 +119,9 @@ jobs:
     if: ${{ needs.preflight.outputs.should_deploy_azure == 'true' }}
     needs: preflight
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     environment: ${{ inputs.environment }}
     env:
       AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
@@ -273,6 +273,9 @@ jobs:
     if: ${{ needs.preflight.outputs.should_deploy_aws == 'true' }}
     needs: preflight
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     environment: ${{ inputs.environment }}
     defaults:
       run:

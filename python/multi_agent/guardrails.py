@@ -86,7 +86,7 @@ class Guardrails:
 
         # Truncate to prevent log flooding
         if len(text) > max_length:
-            text = text[:max_length] + "...[truncated]"
+            text = f"{text[:max_length]}...[truncated]"
 
         return text
 

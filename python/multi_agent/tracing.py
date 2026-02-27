@@ -40,7 +40,7 @@ class AgentTracer:
         if not self.enable_otel or not self.tracer:
             return None
 
-        span = self.tracer.start_span(
+        return self.tracer.start_span(
             name=f"agent.{agent_role.value}",
             attributes={
                 "trace_id": request.trace_id,
@@ -50,7 +50,6 @@ class AgentTracer:
                 "message_count": len(request.messages),
             },
         )
-        return span
 
     def end_trace(
         self,

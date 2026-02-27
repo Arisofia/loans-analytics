@@ -292,14 +292,22 @@ class KpiContextProvider:
 
         for kpi_name, kpi_data in context["kpis"].items():
             definition = kpi_data["definition"]
-            lines.append(f"**{kpi_name}**")
-            lines.append(f"  Formula: {definition['formula']}")
-            lines.append(f"  Source: {definition['source_table']}")
+            lines.extend(
+                [
+                    f"**{kpi_name}**",
+                    f"  Formula: {definition['formula']}",
+                    f"  Source: {definition['source_table']}",
+                ]
+            )
 
             if "current_value" in kpi_data:
                 status_icon = "✅" if kpi_data["is_valid"] else "❌"
-                lines.append(f"  Current Value: {kpi_data['current_value']} {status_icon}")
-                lines.append(f"  Status: {kpi_data['validation_message']}")
+                lines.extend(
+                    [
+                        f"  Current Value: {kpi_data['current_value']} {status_icon}",
+                        f"  Status: {kpi_data['validation_message']}",
+                    ]
+                )
             else:
                 lines.append("  Current Value: Not available")
 

@@ -17,7 +17,7 @@ on:
           - "true"
 
 env:
-  ENABLE_CODE_SCANNING: ${{ github.event_name == 'workflow_dispatch' && inputs.enable_code_scanning || 'false' }}
+  ENABLE_CODE_SCANNING: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.enable_code_scanning || 'false' }}
 
 jobs:
   codeql:
