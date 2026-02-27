@@ -23,10 +23,6 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-from src.agents.multi_agent.guardrails import Guardrails
-from src.agents.multi_agent.orchestrator import MultiAgentOrchestrator
-from src.agents.multi_agent.protocol import LLMProvider
-
 # Add project root to path
 ROOT_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -35,6 +31,9 @@ if str(ROOT_DIR) not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from src.agents.multi_agent.guardrails import Guardrails  # noqa: E402
+from src.agents.multi_agent.orchestrator import MultiAgentOrchestrator  # noqa: E402
+from src.agents.multi_agent.protocol import LLMProvider  # noqa: E402
 from streamlit_app.utils.security import sanitize_api_base  # noqa: E402
 
 # Page configuration
