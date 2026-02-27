@@ -56,29 +56,25 @@ BEGIN
     END IF;
 END $$;
 
--- Add metadata comments for audit trail
-COMMENT ON TABLE public.financial_statements IS 'RLS enabled: 2026-02-04';
-COMMENT ON TABLE public.payment_schedule IS 'RLS enabled: 2026-02-04';
-COMMENT ON TABLE public.real_payment IS 'RLS enabled: 2026-02-04';
-COMMENT ON TABLE public.loan_data IS 'RLS enabled: 2026-02-04';
-COMMENT ON TABLE public.customer_data IS 'RLS enabled: 2026-02-04';
-COMMENT ON TABLE public.historical_kpis IS 'RLS enabled: 2026-02-04';
+-- Add metadata comments for audit trail using a single literal definition.
+DO $$
+DECLARE
+    audit_comment CONSTANT TEXT := 'RLS enabled: 2026-02-04';
+    table_name TEXT;
+BEGIN
+    FOREACH table_name IN ARRAY ARRAY[
+        'financial_statements',
+        'payment_schedule',
+        'real_payment',
+        'loan_data',
+        'customer_data',
+        'historical_kpis'
+    ]
+    LOOP
+        IF to_regclass(format('public.%I', table_name)) IS NOT NULL THEN
+            EXECUTE format('COMMENT ON TABLE public.%I IS %L', table_name, audit_comment);
+        END IF;
+    END LOOP;
+END $$;
 
 COMMIT;
-
--- ============================================================================
--- POST-MIGRATION VERIFICATION QUERY
--- ============================================================================
-
--- Run this to verify RLS is enabled:
---
--- SELECT schemaname, tablename, rowsecurity
--- FROM pg_tables
--- WHERE schemaname IN ('public', 'monitoring')
--- AND tablename IN (
---   'financial_statements', 'payment_schedule', 'real_payment',
---   'loan_data', 'customer_data', 'historical_kpis', 'kpi_values'
--- )
--- ORDER BY schemaname, tablename;
---
--- Expected: rowsecurity = true for all rows

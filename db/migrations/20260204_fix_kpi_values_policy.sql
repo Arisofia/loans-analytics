@@ -19,11 +19,20 @@ DROP POLICY IF EXISTS "allow_insert" ON monitoring.kpi_values;
 -- CREATE SECURE POLICIES
 -- ============================================================================
 
+-- Shared literal used by policies and trigger defaults.
+CREATE OR REPLACE FUNCTION monitoring.service_role_name()
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+AS $$
+    SELECT 'service_role'::TEXT
+$$;
+
 -- Policy 1: Service role has full access (for pipeline/backend)
 CREATE POLICY "Service role full access to KPIs" ON monitoring.kpi_values
   FOR ALL
-  USING (auth.jwt()->>'role' = 'service_role')
-  WITH CHECK (auth.jwt()->>'role' = 'service_role');
+  USING (auth.jwt()->>'role' = monitoring.service_role_name())
+  WITH CHECK (auth.jwt()->>'role' = monitoring.service_role_name());
 
 -- Policy 2: Authenticated internal users can insert (for manual corrections)
 -- Restricted to @abaco.* email domain
@@ -37,7 +46,7 @@ CREATE POLICY "Internal users insert KPIs" ON monitoring.kpi_values
 -- Policy 3: Authenticated users can read KPIs (for dashboards)
 CREATE POLICY "Authenticated users read KPIs" ON monitoring.kpi_values
   FOR SELECT
-  USING (auth.jwt()->>'role' IN ('authenticated', 'service_role'));
+  USING (auth.jwt()->>'role' IN ('authenticated', monitoring.service_role_name()));
 
 -- ============================================================================
 -- ADD AUDIT TRAIL
@@ -63,7 +72,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     NEW.created_by := COALESCE(
         auth.jwt()->>'sub',  -- User ID from JWT
-        'service_role'       -- Default for service role
+        monitoring.service_role_name()  -- Default for service role
     );
     RETURN NEW;
 END;
@@ -107,11 +116,9 @@ COMMIT;
 
 -- What was the issue?
 -- -------------------
--- Original policy:
---   CREATE POLICY "allow_insert" ON monitoring.kpi_values
---     FOR INSERT WITH CHECK (true);
---
--- This allowed ANY user (even unauthenticated) to insert KPI values, enabling:
+-- Original policy "allow_insert" used an unconditional WITH CHECK (true), which
+-- allowed any user (including unauthenticated users) to insert KPI values.
+-- This enabled:
 -- - Data pollution attacks
 -- - Metric manipulation
 -- - Denial of service via excessive inserts
@@ -130,29 +137,3 @@ COMMIT;
 -- - Internal users are authenticated via Supabase Auth
 -- - Domain restriction prevents external users from manipulating KPIs
 -- - Audit trail enables forensic analysis if needed
-
--- ============================================================================
--- POST-MIGRATION VERIFICATION
--- ============================================================================
-
--- Run this to verify policies:
---
--- SELECT policyname, cmd, qual, with_check
--- FROM pg_policies
--- WHERE schemaname = 'monitoring'
--- AND tablename = 'kpi_values';
---
--- Expected output: 3 policies (service_role full, internal insert, authenticated read)
-
--- Test insert as service_role:
--- (Requires service_role JWT in application code)
---
--- INSERT INTO monitoring.kpi_values (metric_name, value, timestamp)
--- VALUES ('test_metric', 42, NOW());
---
--- Expected: Success (service_role has full access)
-
--- Test insert as regular authenticated user:
--- (Should fail if email is not @abaco.*)
---
--- Expected: RLS policy violation error
