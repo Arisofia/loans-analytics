@@ -12,7 +12,7 @@ Complete dashboard with:
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -130,6 +130,8 @@ CORE_REQUIRED_COLUMNS = [
 MONITORING_EVENTS_ENDPOINT = "/monitoring/events"
 ABACO_API_BASE = os.environ.get("ABACO_API_BASE", "http://localhost:8000")
 ABACO_API_BASE_SAFE = sanitize_api_base(ABACO_API_BASE)
+AGENT_OUTPUTS_DIR = REPO_ROOT / "data" / "agent_outputs"
+AGENT_OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _build_monitoring_events_url() -> str | None:
@@ -187,6 +189,285 @@ def _emit_agent_comments_to_monitoring(results: dict[str, Any]) -> int:
         except requests.RequestException:
             continue
     return emitted
+
+
+def _kpi_snapshot_from_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
+    """Build a compact KPI snapshot for agent context and UI."""
+    return {
+        "total_loans": int(metrics.get("total_loans", 0)),
+        "total_portfolio": float(metrics.get("total_portfolio", 0.0)),
+        "weighted_avg_rate": float(metrics.get("weighted_avg_rate", 0.0)),
+        "delinquency_rate_30": float(metrics.get("delinquency_rate_30", 0.0)),
+        "delinquency_rate_60": float(metrics.get("delinquency_rate_60", 0.0)),
+        "delinquency_rate_90": float(metrics.get("delinquency_rate_90", 0.0)),
+        "par_30_rate": float(metrics.get("par_30_rate", 0.0)),
+        "expected_loss": float(metrics.get("expected_loss", 0.0)),
+        "expected_loss_rate": float(metrics.get("expected_loss_rate", 0.0)),
+        "avg_loan_size": float(metrics.get("avg_loan_size", 0.0)),
+        "avg_risk_score": float(metrics.get("avg_risk_score", 0.0)),
+    }
+
+
+def _kpi_methodology_from_metrics(metrics: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Build machine-readable KPI methodology for agents and output traces."""
+    total_loans = int(metrics.get("total_loans", 0))
+    total_portfolio = float(metrics.get("total_portfolio", 0.0))
+    weighted_rate_numerator = float(metrics.get("weighted_rate_numerator", 0.0))
+    dpd_30_count = int(metrics.get("dpd_30_count", 0))
+    dpd_60_count = int(metrics.get("dpd_60_count", 0))
+    dpd_90_count = int(metrics.get("dpd_90_count", 0))
+    par_30_amount = float(metrics.get("par_30_amount", 0.0))
+    expected_loss = float(metrics.get("expected_loss", 0.0))
+
+    return {
+        "weighted_avg_rate": {
+            "formula": "sum(principal_amount * interest_rate) / sum(principal_amount)",
+            "numerator": weighted_rate_numerator,
+            "denominator": total_portfolio,
+            "value": float(metrics.get("weighted_avg_rate", 0.0)),
+            "unit": "ratio",
+        },
+        "delinquency_rate_30": {
+            "formula": "count(loans where days_past_due >= 30) / total_loans * 100",
+            "numerator": dpd_30_count,
+            "denominator": total_loans,
+            "value": float(metrics.get("delinquency_rate_30", 0.0)),
+            "unit": "percent",
+        },
+        "delinquency_rate_60": {
+            "formula": "count(loans where days_past_due >= 60) / total_loans * 100",
+            "numerator": dpd_60_count,
+            "denominator": total_loans,
+            "value": float(metrics.get("delinquency_rate_60", 0.0)),
+            "unit": "percent",
+        },
+        "delinquency_rate_90": {
+            "formula": "count(loans where days_past_due >= 90) / total_loans * 100",
+            "numerator": dpd_90_count,
+            "denominator": total_loans,
+            "value": float(metrics.get("delinquency_rate_90", 0.0)),
+            "unit": "percent",
+        },
+        "par_30_rate": {
+            "formula": "sum(principal_amount where days_past_due >= 30) / total_portfolio * 100",
+            "numerator": par_30_amount,
+            "denominator": total_portfolio,
+            "value": float(metrics.get("par_30_rate", 0.0)),
+            "unit": "percent",
+        },
+        "expected_loss": {
+            "formula": "sum(risk_score * principal_amount)",
+            "numerator": expected_loss,
+            "denominator": None,
+            "value": expected_loss,
+            "unit": "currency_eur",
+        },
+        "expected_loss_rate": {
+            "formula": "expected_loss / total_portfolio * 100",
+            "numerator": expected_loss,
+            "denominator": total_portfolio,
+            "value": float(metrics.get("expected_loss_rate", 0.0)),
+            "unit": "percent",
+        },
+    }
+
+
+def _kpi_methodology_rows(metrics: dict[str, Any]) -> list[dict[str, str]]:
+    """Build a user-facing KPI methodology table."""
+
+    def fmt_currency(value: float) -> str:
+        return f"€{value:,.2f}"
+
+    def fmt_percent(value: float) -> str:
+        return f"{value:.2f}%"
+
+    def fmt_ratio(value: float) -> str:
+        return f"{value:.4f}"
+
+    methodology = _kpi_methodology_from_metrics(metrics)
+    total_loans = int(metrics.get("total_loans", 0))
+    total_portfolio = float(metrics.get("total_portfolio", 0.0))
+
+    return [
+        {
+            "KPI": "Total Portfolio Value",
+            "Formula": "sum(principal_amount)",
+            "Numerator": fmt_currency(total_portfolio),
+            "Denominator": "n/a",
+            "Value": fmt_currency(total_portfolio),
+        },
+        {
+            "KPI": "Weighted Avg Rate",
+            "Formula": methodology["weighted_avg_rate"]["formula"],
+            "Numerator": f"{methodology['weighted_avg_rate']['numerator']:,.2f}",
+            "Denominator": fmt_currency(float(methodology["weighted_avg_rate"]["denominator"] or 0.0)),
+            "Value": f"{float(methodology['weighted_avg_rate']['value']):.2%}",
+        },
+        {
+            "KPI": "DPD 30+ Rate",
+            "Formula": methodology["delinquency_rate_30"]["formula"],
+            "Numerator": f"{int(methodology['delinquency_rate_30']['numerator']):,} loans",
+            "Denominator": f"{total_loans:,} loans",
+            "Value": fmt_percent(float(methodology["delinquency_rate_30"]["value"])),
+        },
+        {
+            "KPI": "DPD 60+ Rate",
+            "Formula": methodology["delinquency_rate_60"]["formula"],
+            "Numerator": f"{int(methodology['delinquency_rate_60']['numerator']):,} loans",
+            "Denominator": f"{total_loans:,} loans",
+            "Value": fmt_percent(float(methodology["delinquency_rate_60"]["value"])),
+        },
+        {
+            "KPI": "DPD 90+ Rate",
+            "Formula": methodology["delinquency_rate_90"]["formula"],
+            "Numerator": f"{int(methodology['delinquency_rate_90']['numerator']):,} loans",
+            "Denominator": f"{total_loans:,} loans",
+            "Value": fmt_percent(float(methodology["delinquency_rate_90"]["value"])),
+        },
+        {
+            "KPI": "PAR 30",
+            "Formula": methodology["par_30_rate"]["formula"],
+            "Numerator": fmt_currency(float(methodology["par_30_rate"]["numerator"])),
+            "Denominator": fmt_currency(float(methodology["par_30_rate"]["denominator"] or 0.0)),
+            "Value": fmt_percent(float(methodology["par_30_rate"]["value"])),
+        },
+        {
+            "KPI": "Expected Loss",
+            "Formula": methodology["expected_loss"]["formula"],
+            "Numerator": fmt_currency(float(methodology["expected_loss"]["numerator"])),
+            "Denominator": "n/a",
+            "Value": fmt_currency(float(methodology["expected_loss"]["value"])),
+        },
+        {
+            "KPI": "Expected Loss Rate",
+            "Formula": methodology["expected_loss_rate"]["formula"],
+            "Numerator": fmt_currency(float(methodology["expected_loss_rate"]["numerator"])),
+            "Denominator": fmt_currency(float(methodology["expected_loss_rate"]["denominator"] or 0.0)),
+            "Value": fmt_percent(float(methodology["expected_loss_rate"]["value"])),
+        },
+        {
+            "KPI": "Average Loan Size",
+            "Formula": "total_portfolio / total_loans",
+            "Numerator": fmt_currency(total_portfolio),
+            "Denominator": f"{total_loans:,} loans",
+            "Value": fmt_currency(float(metrics.get("avg_loan_size", 0.0))),
+        },
+        {
+            "KPI": "Average Risk Score",
+            "Formula": "sum(risk_score) / total_loans",
+            "Numerator": f"{float(metrics.get('risk_score_sum', 0.0)):.4f}",
+            "Denominator": f"{total_loans:,} loans",
+            "Value": fmt_ratio(float(metrics.get("avg_risk_score", 0.0))),
+        },
+    ]
+
+
+def _enrich_agent_results_with_kpis(
+    results: dict[str, Any], metrics: dict[str, Any], mode: str
+) -> dict[str, Any]:
+    """Attach KPI snapshot and formulas to scenario outputs."""
+    enriched = dict(results)
+    enriched["kpi_snapshot"] = _kpi_snapshot_from_metrics(metrics)
+    enriched["kpi_methodology"] = _kpi_methodology_from_metrics(metrics)
+    metadata = enriched.get("_metadata", {})
+    if not isinstance(metadata, dict):
+        metadata = {}
+    metadata["analysis_mode"] = mode
+    metadata["kpi_count"] = len(enriched["kpi_snapshot"])
+    enriched["_metadata"] = metadata
+    return enriched
+
+
+def _emit_kpi_snapshot_to_monitoring(results: dict[str, Any]) -> int:
+    """Publish KPI snapshot event for monitoring/Grafana feeds."""
+    kpi_snapshot = results.get("kpi_snapshot")
+    if not isinstance(kpi_snapshot, dict) or not kpi_snapshot:
+        return 0
+
+    events_url = _build_monitoring_events_url()
+    if events_url is None:
+        return 0
+
+    metadata = results.get("_metadata", {}) if isinstance(results.get("_metadata"), dict) else {}
+    message = (
+        "KPI snapshot | "
+        f"Portfolio: €{float(kpi_snapshot.get('total_portfolio', 0.0)):,.0f} | "
+        f"DPD30+: {float(kpi_snapshot.get('delinquency_rate_30', 0.0)):.2f}% | "
+        f"PAR30: {float(kpi_snapshot.get('par_30_rate', 0.0)):.2f}% | "
+        f"Expected Loss: €{float(kpi_snapshot.get('expected_loss', 0.0)):,.0f}"
+    )
+    body = {
+        "event_type": "agent_kpi_snapshot",
+        "severity": "info",
+        "source": "dashboard",
+        "payload": {
+            "message": message,
+            "kpis": kpi_snapshot,
+            "kpi_methodology": results.get("kpi_methodology", {}),
+            "scenario_name": metadata.get("scenario_name"),
+            "trace_id": metadata.get("trace_id"),
+            "analysis_mode": metadata.get("analysis_mode"),
+        },
+    }
+    try:
+        resp = requests.post(events_url, json=body, timeout=5)
+        resp.raise_for_status()
+        return 1
+    except requests.RequestException:
+        return 0
+
+
+def _safe_slug(value: str) -> str:
+    """Return a filesystem-safe slug for filenames."""
+    lowered = value.lower().replace("_", "-").strip()
+    slug = "".join(ch if ch.isalnum() or ch == "-" else "-" for ch in lowered)
+    slug = "-".join(part for part in slug.split("-") if part)
+    return slug or "unknown"
+
+
+def _persist_agent_outputs(results: dict[str, Any]) -> int:
+    """Persist each agent output to data/agent_outputs for the Agent Insights page."""
+    comments = results.get("_agent_comments", [])
+    if not isinstance(comments, list) or not comments:
+        return 0
+
+    metadata = results.get("_metadata", {}) if isinstance(results.get("_metadata"), dict) else {}
+    scenario_name = str(metadata.get("scenario_name", "unknown_scenario"))
+    trace_id = metadata.get("trace_id")
+    saved = 0
+
+    for item in comments:
+        if not isinstance(item, dict):
+            continue
+        comment = item.get("comment")
+        error = item.get("error")
+        output_key = str(item.get("output_key", "agent_output"))
+        role_slug = _safe_slug(str(item.get("agent_role", "unknown_agent")))
+        timestamp = datetime.now(timezone.utc).replace(tzinfo=None).isoformat(timespec="microseconds")
+        file_path = AGENT_OUTPUTS_DIR / f"{timestamp}_{role_slug}_response.json"
+
+        status = "success" if comment else "error"
+        response_text = str(comment) if comment else str(error or "")
+
+        payload = {
+            "query": f"{scenario_name}:{output_key}",
+            "response": response_text,
+            "status": status,
+            "tokens_used": int(item.get("tokens_used") or 0),
+            "cost_usd": float(item.get("cost_usd") or 0.0),
+            "latency_ms": float(item.get("latency_ms") or 0.0),
+            "trace_id": trace_id,
+            "scenario_name": scenario_name,
+            "output_key": output_key,
+            "analysis_mode": metadata.get("analysis_mode"),
+            "kpi_snapshot": results.get("kpi_snapshot", {}),
+        }
+
+        with open(file_path, "w", encoding="utf-8") as output_file:
+            json.dump(payload, output_file, ensure_ascii=False, indent=2)
+        saved += 1
+
+    return saved
 
 # Common aliases from external exports.
 COLUMN_ALIASES = {
@@ -397,10 +678,9 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
 
     # Weighted average rate
     total_principal = df["principal_amount"].sum()
+    weighted_rate_numerator = (df["principal_amount"] * df["interest_rate"]).sum()
     weighted_rate = (
-        (df["principal_amount"] * df["interest_rate"]).sum() / total_principal
-        if total_principal > 0
-        else 0
+        weighted_rate_numerator / total_principal if total_principal > 0 else 0
     )
 
     # Calculate DPD
@@ -421,6 +701,7 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
     par_30_rate = (par_30_amount / total_portfolio * 100) if total_portfolio > 0 else 0
 
     # Expected loss (simplified: average risk score * portfolio)
+    risk_score_sum = df["risk_score"].sum()
     expected_loss = (df["risk_score"] * df["principal_amount"]).sum()
     expected_loss_rate = (expected_loss / total_portfolio * 100) if total_portfolio > 0 else 0
 
@@ -430,15 +711,21 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict[str, Any]:
     return {
         "total_portfolio": total_portfolio,
         "weighted_avg_rate": weighted_rate,
+        "weighted_rate_numerator": weighted_rate_numerator,
         "delinquency_rate_30": delinquency_rate_30,
         "delinquency_rate_60": delinquency_rate_60,
         "delinquency_rate_90": delinquency_rate_90,
+        "dpd_30_count": dpd_30_plus,
+        "dpd_60_count": dpd_60_plus,
+        "dpd_90_count": dpd_90_plus,
         "par_30_rate": par_30_rate,
+        "par_30_amount": par_30_amount,
         "expected_loss": expected_loss,
         "expected_loss_rate": expected_loss_rate,
         "total_loans": total_loans,
         "status_distribution": status_dist,
         "avg_loan_size": df["principal_amount"].mean(),
+        "risk_score_sum": risk_score_sum,
         "avg_risk_score": df["risk_score"].mean(),
     }
 
@@ -476,6 +763,16 @@ def render_metrics_cards(metrics: dict[str, Any]):
             delta=f"Expected Loss: {metrics['expected_loss_rate']:.2f}%",
             delta_color="inverse",
         )
+
+
+def render_kpi_methodology(metrics: dict[str, Any]):
+    """Render formulas and operands used to compute KPI values."""
+    with st.expander("📘 KPI Calculation Methodology", expanded=False):
+        st.caption(
+            "Each KPI includes formula, numerator, denominator, and current value used by agents."
+        )
+        methodology_rows = _kpi_methodology_rows(metrics)
+        st.dataframe(pd.DataFrame(methodology_rows), use_container_width=True, hide_index=True)
 
 
 def create_delinquency_trend(df: pd.DataFrame) -> go.Figure:
@@ -574,6 +871,8 @@ def create_risk_distribution(df: pd.DataFrame) -> go.Figure:
 def build_agent_portfolio_context(df: pd.DataFrame) -> dict[str, Any]:
     """Build sanitized portfolio context for multi-agent analysis."""
     metrics = calculate_portfolio_metrics(df)
+    kpi_snapshot = _kpi_snapshot_from_metrics(metrics)
+    kpi_methodology = _kpi_methodology_from_metrics(metrics)
     status_counts = (
         df["current_status"].value_counts(dropna=False).to_dict()
         if "current_status" in df.columns
@@ -593,15 +892,147 @@ def build_agent_portfolio_context(df: pd.DataFrame) -> dict[str, Any]:
     portfolio_data = {
         "total_loans": int(metrics.get("total_loans", 0)),
         "total_portfolio": to_native(metrics.get("total_portfolio", 0)),
-        "avg_interest_rate": to_native(metrics.get("avg_interest_rate", 0)),
+        "avg_interest_rate": to_native(metrics.get("weighted_avg_rate", 0)),
         "delinquency_rate_30": to_native(metrics.get("delinquency_rate_30", 0)),
         "delinquency_rate_60": to_native(metrics.get("delinquency_rate_60", 0)),
         "delinquency_rate_90": to_native(metrics.get("delinquency_rate_90", 0)),
+        "par_30_rate": to_native(metrics.get("par_30_rate", 0)),
+        "expected_loss": to_native(metrics.get("expected_loss", 0)),
+        "expected_loss_rate": to_native(metrics.get("expected_loss_rate", 0)),
+        "avg_loan_size": to_native(metrics.get("avg_loan_size", 0)),
+        "avg_risk_score": to_native(metrics.get("avg_risk_score", 0)),
         "status_distribution": {k: int(v) for k, v in status_counts.items()},
         "top_regions": {k: int(v) for k, v in region_counts.items()},
     }
 
-    return Guardrails.sanitize_context({"portfolio_data": portfolio_data})
+    context = {
+        "portfolio_data": portfolio_data,
+        "kpi_snapshot": kpi_snapshot,
+        "kpi_methodology": kpi_methodology,
+    }
+    return Guardrails.sanitize_context(context)
+
+
+def _build_local_agent_fallback(df: pd.DataFrame, metrics: dict[str, Any]) -> dict[str, Any]:
+    """Create deterministic agent outputs when LLM credentials are unavailable."""
+    total_loans = int(metrics.get("total_loans", 0))
+    total_portfolio = float(metrics.get("total_portfolio", 0.0))
+    weighted_rate = float(metrics.get("weighted_avg_rate", 0.0))
+    delinquency_30 = float(metrics.get("delinquency_rate_30", 0.0))
+    delinquency_60 = float(metrics.get("delinquency_rate_60", 0.0))
+    delinquency_90 = float(metrics.get("delinquency_rate_90", 0.0))
+    par_30_rate = float(metrics.get("par_30_rate", 0.0))
+    expected_loss = float(metrics.get("expected_loss", 0.0))
+    expected_loss_rate = float(metrics.get("expected_loss_rate", 0.0))
+
+    top_regions_series = (
+        df.groupby("region")["principal_amount"].sum().sort_values(ascending=False).head(3)
+        if "region" in df.columns and not df.empty
+        else pd.Series(dtype=float)
+    )
+    top_regions_text = (
+        ", ".join(f"{idx}: €{val:,.0f}" for idx, val in top_regions_series.items())
+        if not top_regions_series.empty
+        else "No regional breakdown available"
+    )
+
+    status_distribution = metrics.get("status_distribution", {})
+    if isinstance(status_distribution, dict):
+        status_distribution_text = ", ".join(
+            f"{status}: {count}" for status, count in status_distribution.items()
+        )
+    else:
+        status_distribution_text = "n/a"
+
+    if delinquency_30 >= 12 or par_30_rate >= 8 or expected_loss_rate >= 7:
+        portfolio_risk = "high"
+    elif delinquency_30 >= 6 or par_30_rate >= 4 or expected_loss_rate >= 4:
+        portfolio_risk = "moderate"
+    else:
+        portfolio_risk = "low"
+
+    risk_analysis = (
+        "Deterministic analysis generated locally (no external LLM).\n\n"
+        f"1. Portfolio risk level: {portfolio_risk.upper()}.\n"
+        f"2. Exposure: €{total_portfolio:,.0f} across {total_loans:,} loans.\n"
+        f"3. Pricing baseline: weighted average rate {weighted_rate:.2%}.\n"
+        f"4. Delinquency profile: 30+ DPD {delinquency_30:.2f}%, 60+ DPD {delinquency_60:.2f}%, "
+        f"90+ DPD {delinquency_90:.2f}%.\n"
+        f"5. Capital at risk: PAR30 {par_30_rate:.2f}%.\n"
+        f"6. Expected loss: €{expected_loss:,.0f} ({expected_loss_rate:.2f}% of portfolio).\n"
+        f"7. Status distribution: {status_distribution_text}.\n"
+        f"8. Top regional concentration: {top_regions_text}.\n"
+        "9. KPI formulas and numerators/denominators are attached in `kpi_methodology`."
+    )
+
+    compliance_findings: list[str] = []
+    if delinquency_30 >= 10:
+        compliance_findings.append(
+            f"Elevated arrears signal (DPD 30+ = {delinquency_30:.2f}%) requires enhanced monitoring."
+        )
+    if delinquency_90 >= 4:
+        compliance_findings.append(
+            f"Severe delinquency (DPD 90+ = {delinquency_90:.2f}%) requires immediate collections controls."
+        )
+    if expected_loss_rate >= 6:
+        compliance_findings.append(
+            f"Expected loss rate {expected_loss_rate:.2f}% is above conservative underwriting tolerance."
+        )
+    if not compliance_findings:
+        compliance_findings.append("No hard-threshold breaches detected in deterministic checks.")
+
+    compliance_review = "Compliance checkpoint:\n" + "\n".join(
+        f"{idx}. {item}" for idx, item in enumerate(compliance_findings, start=1)
+    )
+
+    ops_recommendations = (
+        "Operational actions:\n"
+        "1. Prioritize collections queues for 60+ DPD loans and track cure rate weekly.\n"
+        "2. Apply tighter underwriting cutoffs for high-risk cohorts (risk_score and late history).\n"
+        "3. Launch regional mitigation plan for top concentration regions and cap incremental exposure.\n"
+        "4. Review pricing floor against expected loss to preserve risk-adjusted margin.\n"
+        "5. Recompute KPI pack daily and publish to monitoring with the same formulas."
+    )
+
+    trace_id = f"local-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')}"
+    return {
+        "risk_analysis": risk_analysis,
+        "compliance_review": compliance_review,
+        "ops_recommendations": ops_recommendations,
+        "_metadata": {
+            "scenario_name": "loan_risk_review",
+            "trace_id": trace_id,
+            "total_cost_usd": 0.0,
+            "total_tokens": 0,
+            "steps_completed": 3,
+        },
+        "_agent_comments": [
+            {
+                "agent_role": "risk_analyst",
+                "output_key": "risk_analysis",
+                "comment": risk_analysis,
+                "tokens_used": 0,
+                "cost_usd": 0.0,
+                "latency_ms": 0.0,
+            },
+            {
+                "agent_role": "compliance",
+                "output_key": "compliance_review",
+                "comment": compliance_review,
+                "tokens_used": 0,
+                "cost_usd": 0.0,
+                "latency_ms": 0.0,
+            },
+            {
+                "agent_role": "ops_optimizer",
+                "output_key": "ops_recommendations",
+                "comment": ops_recommendations,
+                "tokens_used": 0,
+                "cost_usd": 0.0,
+                "latency_ms": 0.0,
+            },
+        ],
+    }
 
 
 def create_regional_heatmap(df: pd.DataFrame) -> go.Figure:
@@ -700,32 +1131,69 @@ def render_sidebar() -> Any:
     if st.button("🔍 Run Agent Analysis"):
         if not st.session_state.get("data_loaded"):
             st.warning("Please upload data before running agent analysis.")
-        elif not os.getenv("OPENAI_API_KEY"):
-            st.warning("OPENAI_API_KEY is not set. Please configure it to run agents.")
         else:
             with st.spinner("Running multi-agent analysis..."):
+                df = st.session_state.get("loan_data")
+                if not isinstance(df, pd.DataFrame) or df.empty:
+                    st.warning("No valid loan data available for analysis.")
+                    return uploaded_files
+                metrics = calculate_portfolio_metrics(df)
+                context = build_agent_portfolio_context(df)
+                has_openai_key = bool(os.getenv("OPENAI_API_KEY"))
                 try:
-                    df = st.session_state.get("loan_data")
-                    context = build_agent_portfolio_context(df)
-                    orchestrator = MultiAgentOrchestrator(
-                        provider=LLMProvider.OPENAI,
-                        enable_tracing=False,
-                    )
-                    results = orchestrator.run_scenario("loan_risk_review", context)
+                    if has_openai_key:
+                        orchestrator = MultiAgentOrchestrator(
+                            provider=LLMProvider.OPENAI,
+                            enable_tracing=False,
+                        )
+                        base_results = orchestrator.run_scenario("loan_risk_review", context)
+                        analysis_mode = "llm_openai"
+                    else:
+                        base_results = _build_local_agent_fallback(df, metrics)
+                        analysis_mode = "local_fallback"
+
+                    results = _enrich_agent_results_with_kpis(base_results, metrics, analysis_mode)
                     st.session_state["agent_results"] = results
                     emitted_events = _emit_agent_comments_to_monitoring(results)
-                    st.success("✅ Agent analysis completed")
+                    emitted_kpi_events = _emit_kpi_snapshot_to_monitoring(results)
+                    saved_outputs = _persist_agent_outputs(results)
+
+                    if analysis_mode == "llm_openai":
+                        st.success("✅ Agent analysis completed")
+                    else:
+                        st.warning(
+                            "OPENAI_API_KEY is not set. Generated deterministic local analysis with full KPIs."
+                        )
+
                     if emitted_events > 0:
                         st.info(
                             f"📝 Published {emitted_events} agent comments to monitoring feed (Grafana)."
                         )
+                    if emitted_kpi_events > 0:
+                        st.info("📊 Published KPI snapshot event to monitoring feed (Grafana).")
                     elif ABACO_API_BASE_SAFE is None:
                         st.caption(
                             "Agent comments were generated locally. "
                             "Set ABACO_API_BASE to publish them to Monitoring/Grafana."
                         )
+                    if saved_outputs > 0:
+                        st.caption(
+                            f"Saved {saved_outputs} agent output files to data/agent_outputs for Agent Insights."
+                        )
                 except Exception as exc:
-                    st.error(f"❌ Agent analysis failed: {exc}")
+                    fallback_results = _enrich_agent_results_with_kpis(
+                        _build_local_agent_fallback(df, metrics),
+                        metrics,
+                        "local_fallback_after_error",
+                    )
+                    st.session_state["agent_results"] = fallback_results
+                    _emit_agent_comments_to_monitoring(fallback_results)
+                    _emit_kpi_snapshot_to_monitoring(fallback_results)
+                    _persist_agent_outputs(fallback_results)
+                    st.warning(
+                        "LLM agent execution failed. Deterministic local analysis was generated instead."
+                    )
+                    st.error(f"Original LLM error: {exc}")
 
     st.markdown("---")
     st.caption("💡 Upload your own CSV to analyze the loan portfolio")
@@ -797,13 +1265,25 @@ def render_data_format_guide():
         st.markdown("- `payment_history_json`")
 
 
-def render_agent_results():
+def render_agent_results(metrics: dict[str, Any]):
     """Render AI agent analysis results if available."""
     if "agent_results" not in st.session_state:
+        st.info("Run `Agent Analysis` to generate risk, compliance, and operations outputs.")
         return
 
     st.markdown("### 🤖 AI Analysis Results")
     results = st.session_state.get("agent_results", {})
+    metadata = results.get("_metadata", {}) if isinstance(results.get("_metadata"), dict) else {}
+    kpi_snapshot = results.get("kpi_snapshot")
+    if not isinstance(kpi_snapshot, dict) or not kpi_snapshot:
+        kpi_snapshot = _kpi_snapshot_from_metrics(metrics)
+
+    cols = st.columns(4)
+    cols[0].metric("Portfolio", f"€{float(kpi_snapshot.get('total_portfolio', 0.0)):,.0f}")
+    cols[1].metric("DPD 30+", f"{float(kpi_snapshot.get('delinquency_rate_30', 0.0)):.2f}%")
+    cols[2].metric("PAR 30", f"{float(kpi_snapshot.get('par_30_rate', 0.0)):.2f}%")
+    cols[3].metric("Expected Loss", f"€{float(kpi_snapshot.get('expected_loss', 0.0)):,.0f}")
+
     with st.expander("View multi-agent outputs", expanded=True):
         if results.get("risk_analysis"):
             st.markdown("**Risk Analysis**")
@@ -814,9 +1294,31 @@ def render_agent_results():
         if results.get("ops_recommendations"):
             st.markdown("**Ops Recommendations**")
             st.write(results["ops_recommendations"])
-        metadata = results.get("_metadata")
         if metadata:
-            st.caption(f"Trace ID: {metadata.get('trace_id', 'n/a')}")
+            st.caption(
+                f"Trace ID: {metadata.get('trace_id', 'n/a')} | Mode: {metadata.get('analysis_mode', 'n/a')}"
+            )
+
+    with st.expander("KPI basis used in agent analysis", expanded=False):
+        methodology = results.get("kpi_methodology")
+        if isinstance(methodology, dict) and methodology:
+            rows = []
+            for kpi_id, details in methodology.items():
+                if not isinstance(details, dict):
+                    continue
+                rows.append(
+                    {
+                        "KPI": kpi_id,
+                        "Formula": details.get("formula", "n/a"),
+                        "Numerator": details.get("numerator", "n/a"),
+                        "Denominator": details.get("denominator", "n/a"),
+                        "Value": details.get("value", "n/a"),
+                        "Unit": details.get("unit", "n/a"),
+                    }
+                )
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        else:
+            st.dataframe(pd.DataFrame(_kpi_methodology_rows(metrics)), use_container_width=True, hide_index=True)
 
 
 def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
@@ -1005,8 +1507,9 @@ def main():
 
     st.markdown("### 📊 Key Portfolio Metrics")
     render_metrics_cards(metrics)
+    render_kpi_methodology(metrics)
 
-    render_agent_results()
+    render_agent_results(metrics)
 
     st.markdown("---")
     render_visualization_tabs(df, metrics)

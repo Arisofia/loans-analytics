@@ -230,16 +230,19 @@ class MultiAgentOrchestrator:
                         agent_role=AgentRole.RISK_ANALYST,
                         prompt_template=(
                             "Analyze the loan portfolio: {portfolio_data}. "
-                            "Identify key risk metrics, concentrations, and trends."
+                            "Use KPI calculation basis: {kpi_methodology}. "
+                            "Identify key risk metrics, concentrations, and trends. "
+                            "For every KPI cited, include the formula and the computed value."
                         ),
-                        context_keys=["portfolio_data"],
+                        context_keys=["portfolio_data", "kpi_methodology"],
                         output_key="risk_analysis",
                     ),
                     ScenarioStep(
                         agent_role=AgentRole.COMPLIANCE,
                         prompt_template=(
                             "Review risk findings for regulatory compliance: "
-                            "{risk_analysis}. Flag any violations."
+                            "{risk_analysis}. Flag any violations and reference "
+                            "which KPI calculations support the finding."
                         ),
                         context_keys=["risk_analysis"],
                         output_key="compliance_review",
@@ -249,7 +252,7 @@ class MultiAgentOrchestrator:
                         prompt_template=(
                             "Recommend operational improvements based on risk "
                             "findings: {risk_analysis} and compliance review: "
-                            "{compliance_review}."
+                            "{compliance_review}. Include KPI impact per recommendation."
                         ),
                         context_keys=["risk_analysis", "compliance_review"],
                         output_key="ops_recommendations",
