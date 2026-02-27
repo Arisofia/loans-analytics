@@ -1,4 +1,4 @@
-.PHONY: help setup format lint type-check test clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev report-strategic
+.PHONY: help setup format lint type-check test e2e clean security-check monitoring-start monitoring-stop monitoring-logs monitoring-health service-status dev api agents kpis repo-map owner-map report-strategic
 PYTHON ?= $(shell command -v python3.12 || command -v python3.11 || command -v python3.10 || command -v python3)
 VENV := .venv
 BIN := $(VENV)/bin
@@ -7,14 +7,22 @@ export PYTHONPATH := .
 help:
 	@echo "Abaco Loans Analytics Automation"
 	@echo "--------------------------------"
+	@echo "Canonical Entry Points:"
+	@echo "make api            - Start Analytics API (hot reload)"
+	@echo "make agents         - List available multi-agent scenarios"
+	@echo "make kpis           - Run unified KPI pipeline (real data)"
+	@echo "make test           - Run default unit/integration-safe test suite"
+	@echo "make e2e            - Run opt-in E2E suite (RUN_E2E=1)"
+	@echo "make clean          - Run canonical repository maintenance cleanup"
+	@echo ""
 	@echo "make setup          - Create virtual env and install dependencies"
 	@echo "make format         - Format code with black and isort"
 	@echo "make lint           - Run pylint, flake8, and ruff"
 	@echo "make type-check     - Run mypy static type checking"
-	@echo "make test           - Run unit tests with pytest"
 	@echo "make security-check - Run bandit and safety checks"
-	@echo "make clean          - Run canonical repository maintenance cleanup"
-	@echo "make dev            - Start API server with hot-reload (uvicorn)"
+	@echo "make dev            - Alias of make api"
+	@echo "make repo-map       - Open architecture map (REPO_MAP.md)"
+	@echo "make owner-map      - Open ownership map (docs/OWNER_MAP.md)"
 	@echo "make service-status - Generate comprehensive service status report"
 	@echo "make report-strategic - Generate strategic executive report artifacts"
 	@echo ""
@@ -59,6 +67,8 @@ type-check:
 	$(BIN)/mypy --check-untyped-defs src
 test:
 	$(BIN)/pytest
+e2e:
+	RUN_E2E=1 $(BIN)/pytest tests/e2e -m e2e
 security-check:
 	$(BIN)/bandit -r src python --quiet -x "**/test_*.py,**/tests.py"
 	@if $(BIN)/pip list | grep -q safety; then $(BIN)/safety check; else echo "safety not installed, skipping"; fi
@@ -89,10 +99,27 @@ monitoring-health:
 # NOTE: run-analytics target removed (legacy script deleted in Phase B)
 # Pipeline modernization tracked separately
 
-# Development Server (hot-reload)
-dev:
+# Development/API entry point (hot-reload)
+api:
 	@echo "Starting API server on http://127.0.0.1:8000 with hot-reload..."
 	$(BIN)/uvicorn python.apps.analytics.api.main:app --host 127.0.0.1 --port 8000 --reload --reload-dir python --reload-dir src --reload-dir config
+dev: api
+
+# Multi-agent entry point
+agents:
+	$(BIN)/python -m python.multi_agent.cli list-scenarios
+
+# KPI pipeline entry point
+kpis:
+	$(BIN)/python scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
+
+repo-map:
+	@echo "Open REPO_MAP.md"
+	@sed -n '1,200p' REPO_MAP.md
+
+owner-map:
+	@echo "Open docs/OWNER_MAP.md"
+	@sed -n '1,220p' docs/OWNER_MAP.md
 
 # Strategic reporting
 report-strategic:

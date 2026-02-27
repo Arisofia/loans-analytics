@@ -1,7 +1,7 @@
 """Comprehensive tests for the multi-agent system.
 
 These tests are designed to be discovered and executed by pytest.
-Run with: python3 -m pytest python/multi_agent/tests.py -v
+Run with: python3 -m pytest python/multi_agent/test_multi_agent_unittest.py -v
 """
 
 import unittest

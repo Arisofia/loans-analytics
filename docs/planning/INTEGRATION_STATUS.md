@@ -124,7 +124,7 @@ MultiAgentOrchestrator
 
 **Status**: ✅ **ALL TESTS PASSING**
 
-**File**: [python/multi_agent/tests.py](python/multi_agent/tests.py) (300+ lines)
+**File**: [python/multi_agent/test_multi_agent_unittest.py](python/multi_agent/test_multi_agent_unittest.py) (300+ lines)
 
 **Test Results**:
 
@@ -150,10 +150,10 @@ MultiAgentOrchestrator
 
 ```bash
 # From repo root
-python3 -m pytest python/multi_agent/tests.py -v
+python3 -m pytest python/multi_agent/test_multi_agent_unittest.py -v
 
 # Or with coverage
-python3 -m pytest python/multi_agent/tests.py --cov=python.multi_agent
+python3 -m pytest python/multi_agent/test_multi_agent_unittest.py --cov=python.multi_agent
 ```
 
 ---
@@ -181,10 +181,10 @@ python/multi_agent/
 ├── orchestrator.py      (260 lines) - Multi-agent coordinator
 ├── guardrails.py        (60 lines)  - PII redaction
 ├── tracing.py           (137 lines) - Observability
-├── tests.py             (300 lines) - Comprehensive test suite
+├── test_multi_agent_unittest.py (300 lines) - Comprehensive test suite
 ├── examples.py          (270 lines) - Usage examples
 ├── README.md            - Full documentation
-└── VALIDATION_REPORT.txt - Test results
+└── Validation report artifact removed (stale output no longer tracked)
 ```
 
 ---
@@ -208,7 +208,7 @@ python3 -m python.multi_agent.examples
 ### 3. Run Tests
 
 ```bash
-python3 -m pytest python/multi_agent/tests.py -v
+python3 -m pytest python/multi_agent/test_multi_agent_unittest.py -v
 ```
 
 ### 4. Use in Code
@@ -360,13 +360,13 @@ def analyze_loan(loan_data: dict):
 
 ```bash
 # Run all multi-agent tests
-python3 -m pytest python/multi_agent/tests.py -v
+python3 -m pytest python/multi_agent/test_multi_agent_unittest.py -v
 
 # Run with coverage
-python3 -m pytest python/multi_agent/tests.py --cov=python.multi_agent
+python3 -m pytest python/multi_agent/test_multi_agent_unittest.py --cov=python.multi_agent
 
 # Run specific test class
-python3 -m pytest python/multi_agent/tests.py::TestOrchestrator -v
+python3 -m pytest python/multi_agent/test_multi_agent_unittest.py::TestOrchestrator -v
 ```
 
 ### Documentation
@@ -374,7 +374,7 @@ python3 -m pytest python/multi_agent/tests.py::TestOrchestrator -v
 - **[Multi-Agent Scenarios](docs/multi-agent-scenarios.md)** - Complete scenario library with usage examples
 - **[Change Checklist](docs/MULTI_AGENT_CHANGE_CHECKLIST.md)** - Required checklist for any multi-agent changes
 - **[Examples](python/multi_agent/examples.py)** - 5 working code examples
-- **[Tests](python/multi_agent/tests.py)** - 21 comprehensive unit tests
+- **[Tests](python/multi_agent/test_multi_agent_unittest.py)** - 21 comprehensive unit tests
 
 ---
 
@@ -418,7 +418,7 @@ Track these KPIs for the multi-agent system:
 
 | Metric                    | Target            | How to Monitor                       |
 | ------------------------- | ----------------- | ------------------------------------ |
-| **Test Pass Rate**        | 100%              | `pytest python/multi_agent/tests.py` |
+| **Test Pass Rate**        | 100%              | `pytest python/multi_agent/test_multi_agent_unittest.py` |
 | **Scenario Success Rate** | ≥95%              | Application logs with trace IDs      |
 | **Average Latency**       | <15s per scenario | Trace logs (`latency_ms` field)      |
 | **Cost per Scenario**     | <$0.10            | `tracer.get_trace_cost(trace_id)`    |

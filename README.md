@@ -14,6 +14,8 @@ This repository contains the Abaco financial analytics platform:
 ## Current status
 
 - Canonical command map: `docs/operations/SCRIPT_CANONICAL_MAP.md`
+- Repository architecture index: `REPO_MAP.md`
+- Folder ownership map: `docs/OWNER_MAP.md`
 - Master no-stop delivery checklist: `docs/operations/MASTER_DELIVERY_TODO.md`
 - Pipeline ingestion requires explicit real input (`--input`). Dummy/sample fallback is disabled.
 - KPI engine profiling and scale benchmarks available under `scripts/performance/`.
@@ -44,6 +46,16 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
+```
+
+Short entry points:
+
+```bash
+make api
+make agents
+make kpis
+make test
+make e2e
 ```
 
 3. Validate repository structure
