@@ -102,8 +102,25 @@ def validate_agent_config(config: Dict, filename: str) -> List[str]:
                 errors.append(f"Unknown tool '{tool}'. " f"Valid tools: {', '.join(valid_tools)}")
 
     # Validate optional fields
-    if "infer" in config and not isinstance(config["infer"], bool):
-        errors.append(f"Field 'infer' must be boolean, got {type(config['infer']).__name__}")
+    if "infer" in config:
+        errors.append(
+            "Field 'infer' is deprecated. Use 'user-invokable' or "
+            "'disable-model-invocation' instead."
+        )
+
+    if "user-invokable" in config and not isinstance(config["user-invokable"], bool):
+        errors.append(
+            "Field 'user-invokable' must be boolean, "
+            f"got {type(config['user-invokable']).__name__}"
+        )
+
+    if "disable-model-invocation" in config and not isinstance(
+        config["disable-model-invocation"], bool
+    ):
+        errors.append(
+            "Field 'disable-model-invocation' must be boolean, "
+            f"got {type(config['disable-model-invocation']).__name__}"
+        )
 
     return errors
 

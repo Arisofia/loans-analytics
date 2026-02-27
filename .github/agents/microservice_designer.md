@@ -6,10 +6,10 @@ tools:
   - read
   - edit
   - search
-  - grep_search
+  - grep
   - bash
   - web_search
-infer: true
+user-invokable: true
 metadata:
   team: Architecture
   domain: Distributed Systems

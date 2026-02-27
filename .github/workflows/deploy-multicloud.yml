@@ -98,18 +98,12 @@ jobs:
           AZURE_AD_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
           AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
           AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ID_SUSCRIPCION: ${{ secrets.ID_SUSCRIPCION }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           [ -n "$AZURE_RESOURCE_GROUP" ] || { echo "::error::Missing secret AZURE_RESOURCE_GROUP"; exit 1; }
           if [ -z "$AZURE_CREDENTIALS" ] && { [ -z "$AZURE_AD_CLIENT_ID" ] || [ -z "$AZURE_AD_TENANT_ID" ]; }; then
             echo "::error::Missing Azure auth config. Provide AZURE_CREDENTIALS or AZURE_AD_CLIENT_ID + AZURE_AD_TENANT_ID."
-            exit 1
-          fi
-          if [ -z "$AZURE_SUBSCRIPTION_ID" ] && [ -z "$ID_SUSCRIPCION" ]; then
-            echo "::error::Missing subscription secret (set AZURE_SUBSCRIPTION_ID or ID_SUSCRIPCION)"
             exit 1
           fi
           [ -n "$SUPABASE_URL" ] || { echo "::error::Missing secret SUPABASE_URL"; exit 1; }
@@ -133,6 +127,8 @@ jobs:
       AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       AZURE_AD_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
       AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ID_SUSCRIPCION: ${{ secrets.ID_SUSCRIPCION }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -140,9 +136,6 @@ jobs:
 
       - name: Resolve Azure subscription id
         id: azure_sub
-        env:
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ID_SUSCRIPCION: ${{ secrets.ID_SUSCRIPCION }}
         run: |
           subscription_id="${AZURE_SUBSCRIPTION_ID:-$ID_SUSCRIPCION}"
           if [ -z "$subscription_id" ]; then

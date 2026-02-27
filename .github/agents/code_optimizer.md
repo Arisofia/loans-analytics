@@ -6,7 +6,7 @@ tools:
   - read
   - edit
   - search
-  - grep_search
+  - grep
 user-invokable: true
 ---
 

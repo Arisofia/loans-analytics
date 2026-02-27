@@ -6,16 +6,27 @@ on:
   pull_request:
     branches: ["main"]
   workflow_dispatch:
+    inputs:
+      enable_code_scanning:
+        description: "Upload SARIF/CodeQL results to GitHub Security tab"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
-permissions:
-  contents: read
-  security-events: write
-  actions: read
+env:
+  ENABLE_CODE_SCANNING: ${{ github.event_name == 'workflow_dispatch' && inputs.enable_code_scanning || 'false' }}
 
 jobs:
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     env:
       # Avoid unstable PR diff-range extension generation in Dependabot branches.
       CODEQL_ACTION_DIFF_INFORMED_QUERIES: "false"
@@ -49,12 +60,14 @@ jobs:
         uses: github/codeql-action/analyze@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
         with:
           category: "/language:${{ matrix.language }}"
-          upload: ${{ vars.ENABLE_CODE_SCANNING == 'true' }}
+          upload: ${{ env.ENABLE_CODE_SCANNING == 'true' }}
           skip-queries: false
 
   dependency-scan:
     name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
     steps:
@@ -74,6 +87,10 @@ jobs:
   security-audit:
     name: Python Security Audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
 
     steps:
       - name: Checkout repository
@@ -120,7 +137,7 @@ jobs:
           fi
 
       - name: Upload Bandit SARIF results
-        if: ${{ vars.ENABLE_CODE_SCANNING == 'true' && always() && hashFiles('bandit-results.sarif') != '' }}
+        if: ${{ env.ENABLE_CODE_SCANNING == 'true' && always() && hashFiles('bandit-results.sarif') != '' }}
         uses: github/codeql-action/upload-sarif@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
         with:
           sarif_file: bandit-results.sarif

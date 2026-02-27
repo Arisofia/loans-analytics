@@ -150,9 +150,9 @@ tools:
   - read
   - edit
   - search
-  - grep_search
+  - grep
   - bash
-infer: true
+user-invokable: true
 metadata:
   team: Engineering
   version: 1.0.0

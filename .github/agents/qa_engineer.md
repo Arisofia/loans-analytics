@@ -6,9 +6,9 @@ tools:
   - read
   - edit
   - search
-  - grep_search
+  - grep
   - bash
-infer: true
+user-invokable: true
 metadata:
   team: Quality Assurance
   domain: Testing & Quality

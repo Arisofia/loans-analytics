@@ -5,6 +5,7 @@ large inline scripts.
 """
 
 import logging
+import importlib
 import os
 import subprocess
 import sys
@@ -13,7 +14,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 
-def require_env_vars(*env_vars):
+def require_env_vars(*env_vars: str) -> bool:
     """Check that all required environment variables are set."""
     missing = [v for v in env_vars if not os.getenv(v)]
     if missing:
@@ -22,10 +23,10 @@ def require_env_vars(*env_vars):
     return True
 
 
-def require_module(modname):
+def require_module(modname: str):
     """Dynamically import a module and return it, or None if not available."""
     try:
-        return __import__(modname)
+        return importlib.import_module(modname)
     except ImportError:
         logger.warning("Required module '%s' not installed; skipping review.", modname)
         return None
@@ -55,8 +56,8 @@ def main() -> int:
     if requests_mod is None:
         return 0
 
-    request_exception = getattr(requests_mod, "exceptions", requests_mod).__dict__.get(
-        "RequestException", Exception
+    request_exception = getattr(
+        getattr(requests_mod, "exceptions", None), "RequestException", Exception
     )
 
     # Configure Gemini API
@@ -67,7 +68,7 @@ def main() -> int:
         else:
             logger.error("google.generativeai.configure not available; skipping Gemini review.")
             return 0
-    except ImportError as e:
+    except Exception as e:  # pragma: no cover - defensive for SDK/runtime differences
         logger.exception("Failed to configure Gemini API: %s", e)
         return 1
 
@@ -91,6 +92,10 @@ def main() -> int:
         except RuntimeError as e:
             logger.exception("Unexpected error listing Gemini models: %s", e)
 
+    if not model_name:
+        model_name = "models/gemini-1.5-flash"
+        logger.info("No GEMINI_MODEL provided; using default model: %s", model_name)
+
     gen_model = getattr(genai, "GenerativeModel", None)
     if gen_model is None:
         logger.error("google.generativeai.GenerativeModel not available; skipping review.")
@@ -111,8 +116,8 @@ def main() -> int:
             check=True,
         )
         diff = result.stdout
-    except subprocess.CalledProcessError:
-        logger.exception("Error getting diff from git")
+    except subprocess.CalledProcessError as e:
+        logger.exception("Error getting diff from git: %s", e.stderr)
         return 1
 
     if not diff.strip():
@@ -157,9 +162,6 @@ def main() -> int:
         logger.info("Review posted successfully")
     except request_exception:
         logger.exception("Failed to post review")
-        return 1
-    except ConnectionError as e:
-        logger.exception("Network error posting review: %s", e)
         return 1
 
     return 0

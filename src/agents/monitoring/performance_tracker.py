@@ -6,7 +6,9 @@ Tracks latency, success rates, and system health metrics.
 from __future__ import annotations
 
 import json
+import math
 import statistics
+import threading
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -42,9 +44,32 @@ class PerformanceTracker:
 
     def __init__(self):
         """Initialize performance tracker."""
+        self._lock = threading.RLock()
         self.metrics: List[PerformanceMetric] = []
         self.scenario_metrics: Dict[str, List[PerformanceMetric]] = defaultdict(list)
         self.agent_metrics: Dict[str, List[PerformanceMetric]] = defaultdict(list)
+
+    @staticmethod
+    def _validate_name(name: str, field_name: str) -> None:
+        """Validate a name-like argument."""
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError(f"{field_name} must be a non-empty string")
+
+    @staticmethod
+    def _validate_duration(duration_ms: float) -> None:
+        """Validate duration value."""
+        if not isinstance(duration_ms, (int, float)) or not math.isfinite(duration_ms):
+            raise ValueError("duration_ms must be a finite number")
+        if duration_ms < 0:
+            raise ValueError("duration_ms must be non-negative")
+
+    @staticmethod
+    def _validate_count(name: str, value: int) -> None:
+        """Validate a non-negative count argument."""
+        if not isinstance(value, int):
+            raise ValueError(f"{name} must be an integer")
+        if value < 0:
+            raise ValueError(f"{name} must be non-negative")
 
     def track_scenario_latency(
         self,
@@ -62,14 +87,17 @@ class PerformanceTracker:
         Returns:
             PerformanceMetric object
         """
+        self._validate_name(scenario_name, "scenario_name")
+        self._validate_duration(duration_ms)
         metric = PerformanceMetric(
             operation_name=scenario_name,
             duration_ms=duration_ms,
             success=success,
             scenario_name=scenario_name,
         )
-        self.metrics.append(metric)
-        self.scenario_metrics[scenario_name].append(metric)
+        with self._lock:
+            self.metrics.append(metric)
+            self.scenario_metrics[scenario_name].append(metric)
         return metric
 
     def track_agent_latency(
@@ -90,6 +118,10 @@ class PerformanceTracker:
         Returns:
             PerformanceMetric object
         """
+        self._validate_name(agent_name, "agent_name")
+        self._validate_duration(duration_ms)
+        if scenario_name is not None:
+            self._validate_name(scenario_name, "scenario_name")
         metric = PerformanceMetric(
             operation_name=f"{agent_name}_execution",
             duration_ms=duration_ms,
@@ -97,10 +129,11 @@ class PerformanceTracker:
             agent_name=agent_name,
             scenario_name=scenario_name,
         )
-        self.metrics.append(metric)
-        self.agent_metrics[agent_name].append(metric)
-        if scenario_name:
-            self.scenario_metrics[scenario_name].append(metric)
+        with self._lock:
+            self.metrics.append(metric)
+            self.agent_metrics[agent_name].append(metric)
+            if scenario_name:
+                self.scenario_metrics[scenario_name].append(metric)
         return metric
 
     def track_success_rate(
@@ -119,6 +152,9 @@ class PerformanceTracker:
         Returns:
             Dictionary with success rate metrics
         """
+        self._validate_name(scenario_name, "scenario_name")
+        self._validate_count("successes", successes)
+        self._validate_count("failures", failures)
         total = successes + failures
         success_rate = successes / total if total > 0 else 0.0
 
@@ -169,7 +205,9 @@ class PerformanceTracker:
         Returns:
             Dictionary with performance statistics
         """
-        metrics = self.scenario_metrics.get(scenario_name, [])
+        self._validate_name(scenario_name, "scenario_name")
+        with self._lock:
+            metrics = list(self.scenario_metrics.get(scenario_name, []))
         if not metrics:
             return {
                 "scenario_name": scenario_name,
@@ -178,7 +216,7 @@ class PerformanceTracker:
                 "latency": {},
             }
 
-        successes = sum(1 for m in metrics if m.success)
+        successes = sum(m.success for m in metrics)
         failures = len(metrics) - successes
         success_rate = successes / len(metrics) if metrics else 0.0
 
@@ -203,7 +241,9 @@ class PerformanceTracker:
         Returns:
             Dictionary with performance statistics
         """
-        metrics = self.agent_metrics.get(agent_name, [])
+        self._validate_name(agent_name, "agent_name")
+        with self._lock:
+            metrics = list(self.agent_metrics.get(agent_name, []))
         if not metrics:
             return {
                 "agent_name": agent_name,
@@ -212,7 +252,7 @@ class PerformanceTracker:
                 "latency": {},
             }
 
-        successes = sum(1 for m in metrics if m.success)
+        successes = sum(m.success for m in metrics)
         failures = len(metrics) - successes
         success_rate = successes / len(metrics) if metrics else 0.0
 
@@ -239,14 +279,17 @@ class PerformanceTracker:
         """
         # Reserved for future filtering without breaking public API.
         _ = time_window
+        with self._lock:
+            scenario_names = list(self.scenario_metrics.keys())
+            agent_names = list(self.agent_metrics.keys())
+            total_operations = len(self.metrics)
 
-        scenarios = {name: self.get_scenario_performance(name) for name in self.scenario_metrics}
-
-        agents = {name: self.get_agent_performance(name) for name in self.agent_metrics}
+        scenarios = {name: self.get_scenario_performance(name) for name in scenario_names}
+        agents = {name: self.get_agent_performance(name) for name in agent_names}
 
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "total_operations": len(self.metrics),
+            "total_operations": total_operations,
             "scenarios": scenarios,
             "agents": agents,
         }
@@ -269,6 +312,4 @@ class PerformanceTracker:
         k = (len(data) - 1) * percentile
         f = int(k)
         c = k - f
-        if f + 1 < len(data):
-            return data[f] + c * (data[f + 1] - data[f])
-        return data[f]
+        return data[f] + c * (data[f + 1] - data[f]) if f + 1 < len(data) else data[f]

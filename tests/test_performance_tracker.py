@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from src.agents.monitoring.performance_tracker import PerformanceMetric, PerformanceTracker
 
 
@@ -81,3 +83,23 @@ def test_get_performance_report(tmp_path):
     with open(report_file, "r") as f:
         saved_report = json.load(f)
     assert saved_report["total_operations"] == 2
+
+
+def test_track_scenario_latency_validates_inputs():
+    tracker = PerformanceTracker()
+
+    with pytest.raises(ValueError, match="scenario_name"):
+        tracker.track_scenario_latency("", 10.0)
+
+    with pytest.raises(ValueError, match="duration_ms"):
+        tracker.track_scenario_latency("scenario_1", -1.0)
+
+
+def test_track_success_rate_validates_counts():
+    tracker = PerformanceTracker()
+
+    with pytest.raises(ValueError, match="successes"):
+        tracker.track_success_rate("scenario_1", -1, 0)
+
+    with pytest.raises(ValueError, match="failures"):
+        tracker.track_success_rate("scenario_1", 1, -1)
