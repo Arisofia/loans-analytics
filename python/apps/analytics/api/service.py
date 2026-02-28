@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
+from typing import Dict, List
 import uuid
 
 import pandas as pd
@@ -30,13 +31,14 @@ from python.apps.analytics.api.models import (
     StressTestMetrics,
     StressTestResponse,
     ValidationResponse,
+    VintageCurvePoint,
+    VintageCurveResponse,
 )
 from python.config import settings
 from python.kpis.advanced_risk import calculate_advanced_risk_metrics
 from python.kpis.catalog_processor import KPICatalogProcessor
 from python.kpis.unit_economics import (
     calculate_cost_of_risk,
-    calculate_cure_rate,
     calculate_lgd,
     calculate_nim,
     calculate_npl_ratio,
@@ -58,8 +60,14 @@ KPI_DEFINITIONS_PATH = (
 KPI_API_TO_CATALOG_ID = {
     "PAR30": "par_30",
     "PAR_30": "par_30",
+    "PAR60": "par_60",
+    "PAR_60": "par_60",
     "PAR90": "par_90",
     "PAR_90": "par_90",
+    "DPD_1_30": "dpd_1_30",
+    "DPD_31_60": "dpd_31_60",
+    "DPD_61_90": "dpd_61_90",
+    "DPD_90_PLUS": "dpd_90_plus",
     "COLLECTION_RATE": "collections_rate",
     "DEFAULT_RATE": "default_rate",
     "TOTAL_LOANS_COUNT": "total_loans_count",
@@ -98,6 +106,26 @@ DEFAULT_KPI_METADATA = {
         "formula": "SUM(principal_balance WHERE dpd > 60) / SUM(principal_balance) * 100",
         "definition": "Portfolio at Risk with more than 60 days past due.",
         "implications": "Rising PAR60 is an early warning for migration into severe delinquency buckets.",
+    },
+    "DPD_1_30": {
+        "formula": "SUM(principal_balance WHERE 0 < dpd <= 30) / SUM(principal_balance) * 100",
+        "definition": "Outstanding balance share in the 1-30 days past due bucket.",
+        "implications": "A rising 1-30 DPD bucket indicates early collections pressure building.",
+    },
+    "DPD_31_60": {
+        "formula": "SUM(principal_balance WHERE 30 < dpd <= 60) / SUM(principal_balance) * 100",
+        "definition": "Outstanding balance share in the 31-60 days past due bucket.",
+        "implications": "A rising 31-60 DPD bucket is an early warning of roll-forward risk into severe delinquency.",
+    },
+    "DPD_61_90": {
+        "formula": "SUM(principal_balance WHERE 60 < dpd <= 90) / SUM(principal_balance) * 100",
+        "definition": "Outstanding balance share in the 61-90 days past due bucket.",
+        "implications": "Growth in 61-90 DPD points to elevated near-term loss and recovery workload.",
+    },
+    "DPD_90_PLUS": {
+        "formula": "SUM(principal_balance WHERE dpd > 90) / SUM(principal_balance) * 100",
+        "definition": "Outstanding balance share in the 90+ days past due bucket.",
+        "implications": "A higher 90+ DPD bucket signals severe delinquency and higher expected credit losses.",
     },
     "COLLECTION_RATE": {
         "formula": "SUM(collected_amount) / SUM(scheduled_amount) * 100",
@@ -327,7 +355,12 @@ class KPIService:
     def get_exposed_aliases(self) -> dict[str, list[str]]:
         return {
             "PAR30": ["PAR30", "par_30"],
+            "PAR60": ["PAR60", "par_60"],
             "PAR90": ["PAR90", "par_90"],
+            "DPD1_30": ["DPD_1_30", "dpd_1_30"],
+            "DPD31_60": ["DPD_31_60", "dpd_31_60"],
+            "DPD61_90": ["DPD_61_90", "dpd_61_90"],
+            "DPD90Plus": ["DPD_90_PLUS", "dpd_90_plus"],
             "CollectionRate": ["COLLECTION_RATE", "collections_rate"],
             "DefaultRate": ["DEFAULT_RATE", "default_rate"],
             "TotalLoansCount": ["TOTAL_LOANS_COUNT", "total_loans_count"],
@@ -885,6 +918,30 @@ class KPIService:
                 build_kpi_response("PAR60", "Portfolio at Risk (60+ days)", results["par60"], "%"),
                 build_kpi_response("PAR90", "Portfolio at Risk (90+ days)", results["par90"], "%"),
                 build_kpi_response(
+                    "DPD_1_30",
+                    "DPD Bucket (1-30 days)",
+                    results["dpd_1_30"],
+                    "%",
+                ),
+                build_kpi_response(
+                    "DPD_31_60",
+                    "DPD Bucket (31-60 days)",
+                    results["dpd_31_60"],
+                    "%",
+                ),
+                build_kpi_response(
+                    "DPD_61_90",
+                    "DPD Bucket (61-90 days)",
+                    results["dpd_61_90"],
+                    "%",
+                ),
+                build_kpi_response(
+                    "DPD_90_PLUS",
+                    "DPD Bucket (90+ days)",
+                    results["dpd_90_plus"],
+                    "%",
+                ),
+                build_kpi_response(
                     "COLLECTION_RATE",
                     "Collection Rate",
                     results["collection_rate"],
@@ -1128,6 +1185,107 @@ class KPIService:
             generated_at=datetime.now(),
             cohorts=cohort_rows,
             summary=summary,
+        )
+
+    async def calculate_vintage_curves(
+        self,
+        loans: list[LoanRecord],
+    ) -> VintageCurveResponse:
+        """Calculate delinquency curves by Months on Book (MoB)."""
+        return await run_in_threadpool(self._calculate_vintage_curves_sync, loans)
+
+    def _calculate_vintage_curves_sync(
+        self,
+        loans: list[LoanRecord],
+    ) -> VintageCurveResponse:
+        """Synchronous implementation of vintage curve analytics."""
+        df = self._convert_loan_records_to_dataframe(loans)
+        if df.empty:
+            return VintageCurveResponse(
+                generated_at=datetime.now(), curves={}, portfolio_average_curve=[]
+            )
+
+        df = df.copy()
+
+        # 1. Resolve Dates and calculate Months on Book (MoB)
+        now = pd.Timestamp.now().normalize()
+        origination = pd.to_datetime(df["origination_date"], errors="coerce").dt.tz_localize(None)
+
+        # Fill missing origination with median or now (fallback)
+        if origination.isna().all():
+            origination = pd.Series([now] * len(df))
+        else:
+            origination = origination.fillna(origination.median())
+
+        df["origination"] = origination
+        df["cohort"] = df["origination"].dt.to_period("M").astype(str)
+
+        # MoB = Number of months between origination and today
+        df["mob"] = (
+            (now.year - df["origination"].dt.year) * 12 + (now.month - df["origination"].dt.month)
+        ).clip(lower=0)
+
+        # 2. Resolve Risk Signals
+        if "days_past_due" in df.columns:
+            dpd = pd.to_numeric(df["days_past_due"], errors="coerce").fillna(0.0)
+        else:
+            # Proxy DPD from status if column is missing
+            status = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
+            dpd = pd.Series([0.0] * len(df), index=df.index)
+            dpd = dpd.mask(status.str.contains(r"90\+|default", na=False), 100.0)
+            dpd = dpd.mask(status.str.contains(r"30-89|30\+", na=False), 45.0)
+
+        df["is_npl"] = (dpd > 90) | df.get("loan_status", pd.Series([""])).str.contains(
+            "default", case=False, na=False
+        )
+        df["is_default"] = df.get("loan_status", pd.Series([""])).str.contains(
+            "default", case=False, na=False
+        )
+
+        # 3. Build Curves
+        curves: Dict[str, List[VintageCurvePoint]] = {}
+
+        # For each cohort, we only have ONE data point (their current MoB)
+        # unless the input data contains historical snapshots.
+        # To simulate a 'curve' from a single snapshot, we treat each cohort's
+        # current state as the point at MoB=X.
+
+        for cohort, group in df.groupby("cohort"):
+            # Calculate aggregate for this cohort at its specific current age
+            mob = int(group["mob"].iloc[0])
+            loan_count = len(group)
+            npl_ratio = (group["is_npl"].sum() / loan_count * 100) if loan_count > 0 else 0.0
+            cum_default = (group["is_default"].sum() / loan_count * 100) if loan_count > 0 else 0.0
+
+            curves[str(cohort)] = [
+                VintageCurvePoint(
+                    months_on_book=mob,
+                    cumulative_default_rate=round(float(cum_default), 2),
+                    npl_ratio=round(float(npl_ratio), 2),
+                    loan_count=int(loan_count),
+                )
+            ]
+
+        # 4. Build Portfolio Average Curve (Current state vs Age)
+        avg_curve: List[VintageCurvePoint] = []
+        for mob, group in df.groupby("mob"):
+            loan_count = len(group)
+            npl_ratio = (group["is_npl"].sum() / loan_count * 100) if loan_count > 0 else 0.0
+            cum_default = (group["is_default"].sum() / loan_count * 100) if loan_count > 0 else 0.0
+
+            avg_curve.append(
+                VintageCurvePoint(
+                    months_on_book=int(mob),
+                    cumulative_default_rate=round(float(cum_default), 2),
+                    npl_ratio=round(float(npl_ratio), 2),
+                    loan_count=int(loan_count),
+                )
+            )
+
+        avg_curve.sort(key=lambda x: x.months_on_book)
+
+        return VintageCurveResponse(
+            generated_at=datetime.now(), curves=curves, portfolio_average_curve=avg_curve
         )
 
     async def calculate_stress_test(
@@ -1763,6 +1921,32 @@ class KPIService:
         par60_pct = (par60_val / total_outstanding * 100) if total_outstanding > 0 else 0
         par90_val = float(df[df["dpd"] > 90]["principal_balance"].sum())
         par90_pct = (par90_val / total_outstanding * 100) if total_outstanding > 0 else 0
+        dpd_1_30 = (
+            float(df[(df["dpd"] > 0) & (df["dpd"] <= 30)]["principal_balance"].sum())
+            / total_outstanding
+            * 100
+            if total_outstanding > 0
+            else 0
+        )
+        dpd_31_60 = (
+            float(df[(df["dpd"] > 30) & (df["dpd"] <= 60)]["principal_balance"].sum())
+            / total_outstanding
+            * 100
+            if total_outstanding > 0
+            else 0
+        )
+        dpd_61_90 = (
+            float(df[(df["dpd"] > 60) & (df["dpd"] <= 90)]["principal_balance"].sum())
+            / total_outstanding
+            * 100
+            if total_outstanding > 0
+            else 0
+        )
+        dpd_90_plus = (
+            float(df[df["dpd"] > 90]["principal_balance"].sum()) / total_outstanding * 100
+            if total_outstanding > 0
+            else 0
+        )
 
         # Default rate
         default_mask = df["loan_status"].str.contains(
@@ -1899,6 +2083,10 @@ class KPIService:
             "par30": par30_pct,
             "par60": par60_pct,
             "par90": par90_pct,
+            "dpd_1_30": dpd_1_30,
+            "dpd_31_60": dpd_31_60,
+            "dpd_61_90": dpd_61_90,
+            "dpd_90_plus": dpd_90_plus,
             "default_rate": default_rate_pct,
             "collection_rate": collection_rate,
             "loss_rate": loss_rate,

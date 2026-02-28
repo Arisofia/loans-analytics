@@ -122,6 +122,11 @@ def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
     assert kpi_map["REPEAT_BORROWER_RATE"].value == 100.0
     assert kpi_map["AUTOMATION_RATE"].value == 50.0
     assert kpi_map["PROCESSING_TIME_AVG"].value == 9.0
+    assert kpi_map["PAR60"].value == 33.33
+    assert kpi_map["DPD_1_30"].value == 0.0
+    assert kpi_map["DPD_31_60"].value == 0.0
+    assert kpi_map["DPD_61_90"].value == 0.0
+    assert kpi_map["DPD_90_PLUS"].value == 33.33
 
 
 def test_supported_catalog_kpis_include_remaining_catalog_ids():

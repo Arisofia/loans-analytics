@@ -105,6 +105,11 @@ def test_calculate_all_kpis_includes_expanded_metrics():
     assert body["RepeatBorrowerRate"]["value"] == 100.0
     assert body["AutomationRate"]["value"] == 50.0
     assert body["ProcessingTimeAvg"]["value"] == 9.0
+    assert body["PAR60"]["value"] == 33.33
+    assert body["DPD1_30"]["value"] == 0.0
+    assert body["DPD31_60"]["value"] == 0.0
+    assert body["DPD61_90"]["value"] == 0.0
+    assert body["DPD90Plus"]["value"] == 33.33
 
 
 def test_get_single_kpi_supports_new_path_aliases():
@@ -178,3 +183,7 @@ def test_get_single_kpi_supports_new_path_aliases():
     avg_dti = client.post("/analytics/kpis/avg-dti", json=payload)
     assert avg_dti.status_code == 200
     assert avg_dti.json()["id"] == "AVG_DTI"
+
+    dpd_90_plus = client.post("/analytics/kpis/dpd-90-plus", json=payload)
+    assert dpd_90_plus.status_code == 200
+    assert dpd_90_plus.json()["id"] == "DPD_90_PLUS"

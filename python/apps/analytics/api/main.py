@@ -42,6 +42,7 @@ try:
         StressTestRequest,
         StressTestResponse,
         ValidationResponse,
+        VintageCurveResponse,
     )
     from python.apps.analytics.api.monitoring_models import (
         CommandCreate,
@@ -335,6 +336,11 @@ if app is not None:
             return KpiResponse(
                 PAR30=kpi_map.get("PAR30") or kpi_map.get("par_30"),
                 PAR90=kpi_map.get("PAR90") or kpi_map.get("par_90"),
+                PAR60=kpi_map.get("PAR60") or kpi_map.get("par_60"),
+                DPD1_30=kpi_map.get("DPD_1_30") or kpi_map.get("dpd_1_30"),
+                DPD31_60=kpi_map.get("DPD_31_60") or kpi_map.get("dpd_31_60"),
+                DPD61_90=kpi_map.get("DPD_61_90") or kpi_map.get("dpd_61_90"),
+                DPD90Plus=kpi_map.get("DPD_90_PLUS") or kpi_map.get("dpd_90_plus"),
                 CollectionRate=kpi_map.get("COLLECTION_RATE") or kpi_map.get("collections_rate"),
                 DefaultRate=kpi_map.get("DEFAULT_RATE") or kpi_map.get("default_rate"),
                 TotalLoansCount=kpi_map.get("TOTAL_LOANS_COUNT")
@@ -366,7 +372,6 @@ if app is not None:
                 DTI=kpi_map.get("AVG_DTI") or kpi_map.get("avg_dti"),
                 PortfolioYield=kpi_map.get("PORTFOLIO_YIELD") or kpi_map.get("portfolio_yield"),
                 # Next Generation KPIs
-                PAR60=kpi_map.get("PAR60") or kpi_map.get("par_60"),
                 NPL=kpi_map.get("NPL") or kpi_map.get("npl_ratio"),
                 LGD=kpi_map.get("LGD") or kpi_map.get("lgd"),
                 CoR=kpi_map.get("COR") or kpi_map.get("cost_of_risk"),
@@ -437,6 +442,14 @@ if app is not None:
             "portfolio-yield": "PORTFOLIO_YIELD",
             "par60": "PAR60",
             "par-60": "PAR60",
+            "dpd-1-30": "DPD_1_30",
+            "dpd_1_30": "DPD_1_30",
+            "dpd-31-60": "DPD_31_60",
+            "dpd_31_60": "DPD_31_60",
+            "dpd-61-90": "DPD_61_90",
+            "dpd_61_90": "DPD_61_90",
+            "dpd-90-plus": "DPD_90_PLUS",
+            "dpd_90_plus": "DPD_90_PLUS",
             "npl": "NPL",
             "npl-ratio": "NPL",
             "lgd": "LGD",
@@ -529,6 +542,23 @@ if app is not None:
             return await service.calculate_cohort_analytics(request.loans)
         except Exception as e:
             logger.error("Error in get_cohort_analytics: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+    @app.post(
+        "/analytics/vintages",
+        response_model=VintageCurveResponse,
+        summary="Vintage Curve Analytics",
+        response_description="Evolution of delinquency by Months on Book (MoB)",
+    )
+    async def get_vintage_curves(
+        request: CohortAnalyticsRequest = Body(...),
+        service: KPIService = Depends(get_kpi_service),
+    ):
+        """Calculate delinquency curves by Months on Book (MoB)."""
+        try:
+            return await service.calculate_vintage_curves(request.loans)
+        except Exception as e:
+            logger.error("Error in get_vintage_curves: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post(

@@ -210,6 +210,10 @@ class KpiResponse(BaseModel):
     PAR30: Optional[KpiSingleResponse] = None
     PAR60: Optional[KpiSingleResponse] = None
     PAR90: Optional[KpiSingleResponse] = None
+    DPD1_30: Optional[KpiSingleResponse] = None
+    DPD31_60: Optional[KpiSingleResponse] = None
+    DPD61_90: Optional[KpiSingleResponse] = None
+    DPD90Plus: Optional[KpiSingleResponse] = None
     CollectionRate: Optional[KpiSingleResponse] = None
     DefaultRate: Optional[KpiSingleResponse] = None
     TotalLoansCount: Optional[KpiSingleResponse] = None
@@ -378,6 +382,23 @@ class CohortAnalyticsResponse(BaseModel):
     generated_at: datetime
     cohorts: List[CohortMetrics] = Field(default_factory=list)
     summary: CohortAnalyticsSummary
+
+
+class VintageCurvePoint(BaseModel):
+    months_on_book: int = Field(..., description="Age of the loan in months")
+    cumulative_default_rate: float = Field(..., description="Cumulative default % at this age")
+    npl_ratio: float = Field(..., description="Current NPL % at this age")
+    loan_count: int = Field(..., description="Number of loans at this age")
+
+
+class VintageCurveResponse(BaseModel):
+    generated_at: datetime
+    curves: Dict[str, List[VintageCurvePoint]] = Field(
+        ..., description="Map of cohort month to its delinquency evolution curve"
+    )
+    portfolio_average_curve: List[VintageCurvePoint] = Field(
+        ..., description="Average curve across all vintages"
+    )
 
 
 class SegmentAnalyticsRequest(BaseModel):

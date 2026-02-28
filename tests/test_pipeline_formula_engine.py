@@ -65,3 +65,36 @@ def test_ingestion_without_input_fails_instead_of_using_dummy_data():
 
     assert result["status"] == "failed"
     assert "dummy/sample fallback is disabled" in result["error"]
+
+
+def test_dpd_bucket_formulas_support_range_logic_via_aggregation_deltas():
+    """DPD bucket formulas should support bounded ranges using aggregation arithmetic."""
+    df = pd.DataFrame(
+        {
+            "dpd": [0, 15, 45, 95],
+            "outstanding_balance": [100.0, 200.0, 300.0, 400.0],
+        }
+    )
+    engine = KPIFormulaEngine(df)
+
+    f_1_30 = (
+        "(SUM(outstanding_balance WHERE dpd <= 30) - "
+        "SUM(outstanding_balance WHERE dpd <= 0)) / "
+        "SUM(outstanding_balance) * 100"
+    )
+    f_31_60 = (
+        "(SUM(outstanding_balance WHERE dpd <= 60) - "
+        "SUM(outstanding_balance WHERE dpd <= 30)) / "
+        "SUM(outstanding_balance) * 100"
+    )
+    f_61_90 = (
+        "(SUM(outstanding_balance WHERE dpd <= 90) - "
+        "SUM(outstanding_balance WHERE dpd <= 60)) / "
+        "SUM(outstanding_balance) * 100"
+    )
+    f_90_plus = "SUM(outstanding_balance WHERE dpd > 90) / SUM(outstanding_balance) * 100"
+
+    assert engine.calculate(f_1_30) == pytest.approx(20.0)
+    assert engine.calculate(f_31_60) == pytest.approx(30.0)
+    assert engine.calculate(f_61_90) == pytest.approx(0.0)
+    assert engine.calculate(f_90_plus) == pytest.approx(40.0)

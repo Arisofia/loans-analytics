@@ -68,6 +68,38 @@ asset_quality_kpis:
       warning: 1
       critical: 2
 
+  dpd_1_30:
+    formula: "(SUM(outstanding_balance WHERE dpd <= 30) - SUM(outstanding_balance WHERE dpd <= 0)) / SUM(outstanding_balance) * 100"
+    unit: "percentage"
+    description: "Outstanding balance share in 1-30 DPD bucket"
+    thresholds:
+      warning: 8
+      critical: 15
+
+  dpd_31_60:
+    formula: "(SUM(outstanding_balance WHERE dpd <= 60) - SUM(outstanding_balance WHERE dpd <= 30)) / SUM(outstanding_balance) * 100"
+    unit: "percentage"
+    description: "Outstanding balance share in 31-60 DPD bucket"
+    thresholds:
+      warning: 4
+      critical: 8
+
+  dpd_61_90:
+    formula: "(SUM(outstanding_balance WHERE dpd <= 90) - SUM(outstanding_balance WHERE dpd <= 60)) / SUM(outstanding_balance) * 100"
+    unit: "percentage"
+    description: "Outstanding balance share in 61-90 DPD bucket"
+    thresholds:
+      warning: 2
+      critical: 5
+
+  dpd_90_plus:
+    formula: "SUM(outstanding_balance WHERE dpd > 90) / SUM(outstanding_balance) * 100"
+    unit: "percentage"
+    description: "Outstanding balance share in 90+ DPD bucket"
+    thresholds:
+      warning: 1
+      critical: 3
+
   npl_ratio:
     formula: "SUM(balance WHERE dpd > 90 OR status = 'defaulted') / SUM(balance) * 100"
     unit: "percentage"
