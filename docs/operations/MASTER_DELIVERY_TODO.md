@@ -118,6 +118,9 @@ Delivery report snapshot (2026-02-27):
     `DISBURSEMENT_VOLUME_MTD`, `NEW_LOANS_COUNT_MTD`,
     `ACTIVE_BORROWERS`, `REPEAT_BORROWER_RATE`, `AUTOMATION_RATE`,
     `PROCESSING_TIME_AVG`.
+  - Closed remaining catalog coverage gaps by wiring:
+    `DEFAULT_RATE`, `TOTAL_LOANS_COUNT`, and `CUSTOMER_LIFETIME_VALUE`
+    in realtime API metadata/aliases.
   - Added advanced-risk tests:
     `python/tests/test_advanced_risk.py`,
     `python/tests/test_advanced_risk_api.py`,

@@ -38,6 +38,8 @@ KPI_API_TO_CATALOG_ID = {
     "PAR90": "par_90",
     "PAR_90": "par_90",
     "COLLECTION_RATE": "collections_rate",
+    "DEFAULT_RATE": "default_rate",
+    "TOTAL_LOANS_COUNT": "total_loans_count",
     "LOSS_RATE": "loss_rate",
     "RECOVERY_RATE": "recovery_rate",
     "CASH_ON_HAND": "cash_on_hand",
@@ -46,6 +48,7 @@ KPI_API_TO_CATALOG_ID = {
     "DISBURSEMENT_VOLUME_MTD": "disbursement_volume_mtd",
     "NEW_LOANS_COUNT_MTD": "new_loans_count_mtd",
     "PORTFOLIO_HEALTH": "portfolio_growth_rate",
+    "CUSTOMER_LIFETIME_VALUE": "customer_lifetime_value",
     "ACTIVE_BORROWERS": "active_borrowers",
     "REPEAT_BORROWER_RATE": "repeat_borrower_rate",
     "AUTOMATION_RATE": "automation_rate",
@@ -184,6 +187,11 @@ DEFAULT_KPI_METADATA = {
         "definition": "Average term length in months for the provided loan sample.",
         "implications": "Longer average tenor increases duration risk and prolongs exposure lifecycle.",
     },
+    "CUSTOMER_LIFETIME_VALUE": {
+        "formula": "SUM(tpv) / COUNT(DISTINCT borrower_id)",
+        "definition": "Average total processed value per borrower in the provided loan sample.",
+        "implications": "Higher CLV can improve unit economics if loss and servicing costs remain controlled.",
+    },
 }
 
 
@@ -249,10 +257,13 @@ class KPIService:
             "PAR30": ["PAR30", "par_30"],
             "PAR90": ["PAR90", "par_90"],
             "CollectionRate": ["COLLECTION_RATE", "collections_rate"],
+            "DefaultRate": ["DEFAULT_RATE", "default_rate"],
+            "TotalLoansCount": ["TOTAL_LOANS_COUNT", "total_loans_count"],
             "LossRate": ["LOSS_RATE", "loss_rate"],
             "RecoveryRate": ["RECOVERY_RATE", "recovery_rate"],
             "CashOnHand": ["CASH_ON_HAND", "cash_on_hand"],
             "PortfolioHealth": ["AUM", "portfolio_growth_rate"],
+            "CustomerLifetimeValue": ["CUSTOMER_LIFETIME_VALUE", "customer_lifetime_value"],
             "ActiveBorrowers": ["ACTIVE_BORROWERS", "active_borrowers"],
             "RepeatBorrowerRate": ["REPEAT_BORROWER_RATE", "repeat_borrower_rate"],
             "AutomationRate": ["AUTOMATION_RATE", "automation_rate"],
@@ -813,6 +824,12 @@ class KPIService:
                     results["new_loans_count_mtd"],
                     "count",
                 ),
+                build_kpi_response(
+                    "CUSTOMER_LIFETIME_VALUE",
+                    "Customer Lifetime Value",
+                    results["customer_lifetime_value"],
+                    "USD",
+                ),
                 build_kpi_response("AVG_LTV", "Average Loan-to-Value", results["avg_ltv"], "%"),
                 build_kpi_response("AVG_DTI", "Average Debt-to-Income", results["avg_dti"], "%"),
                 build_kpi_response("DEFAULT_RATE", "Default Rate", results["default_rate"], "%"),
@@ -1005,6 +1022,19 @@ class KPIService:
             disbursement_volume_mtd = 0.0
             new_loans_count_mtd = 0.0
 
+        if "tpv" in df.columns and pd.to_numeric(df["tpv"], errors="coerce").notna().any():
+            tpv_series = pd.to_numeric(df["tpv"], errors="coerce").fillna(0)
+        else:
+            tpv_series = pd.to_numeric(df["loan_amount"], errors="coerce").fillna(0)
+        unique_borrowers = (
+            float(df["borrower_id"].dropna().astype(str).nunique())
+            if "borrower_id" in df.columns
+            else 0.0
+        )
+        customer_lifetime_value = (
+            float(tpv_series.sum()) / unique_borrowers if unique_borrowers > 0 else 0.0
+        )
+
         return {
             "par30": par30_pct,
             "par90": par90_pct,
@@ -1018,6 +1048,7 @@ class KPIService:
             "average_loan_size": average_loan_size,
             "disbursement_volume_mtd": disbursement_volume_mtd,
             "new_loans_count_mtd": new_loans_count_mtd,
+            "customer_lifetime_value": customer_lifetime_value,
             "avg_ltv": df["ltv_ratio"].mean(),
             "avg_dti": df["dti_ratio"].mean(),
             "active_borrowers": active_borrowers,

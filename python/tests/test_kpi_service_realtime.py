@@ -81,6 +81,7 @@ def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
             payment_frequency="bullet",
             term_months=6.0,
             origination_date=month_start,
+            tpv=1000.0,
         ),
         LoanRecord(
             id="L2",
@@ -97,6 +98,7 @@ def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
             payment_frequency="manual",
             term_months=12.0,
             origination_date=month_start,
+            tpv=500.0,
         ),
     ]
 
@@ -109,7 +111,16 @@ def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
     assert kpi_map["AVERAGE_LOAN_SIZE"].value == 1250.0
     assert kpi_map["DISBURSEMENT_VOLUME_MTD"].value == 2500.0
     assert kpi_map["NEW_LOANS_COUNT_MTD"].value == 2.0
+    assert kpi_map["CUSTOMER_LIFETIME_VALUE"].value == 1500.0
+    assert kpi_map["DEFAULT_RATE"].value == 50.0
+    assert kpi_map["TOTAL_LOANS_COUNT"].value == 2.0
     assert kpi_map["ACTIVE_BORROWERS"].value == 1.0
     assert kpi_map["REPEAT_BORROWER_RATE"].value == 100.0
     assert kpi_map["AUTOMATION_RATE"].value == 50.0
     assert kpi_map["PROCESSING_TIME_AVG"].value == 9.0
+
+
+def test_supported_catalog_kpis_include_remaining_catalog_ids():
+    service = KPIService(actor="test_user")
+    supported = set(service.get_supported_catalog_kpi_ids())
+    assert {"default_rate", "total_loans_count", "customer_lifetime_value"}.issubset(supported)

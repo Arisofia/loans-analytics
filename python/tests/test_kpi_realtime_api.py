@@ -58,6 +58,7 @@ def test_calculate_all_kpis_includes_expanded_metrics():
                 "payment_frequency": "bullet",
                 "term_months": 6.0,
                 "origination_date": month_start.isoformat(),
+                "tpv": 1000.0,
             },
             {
                 "id": "L2",
@@ -74,6 +75,7 @@ def test_calculate_all_kpis_includes_expanded_metrics():
                 "payment_frequency": "manual",
                 "term_months": 12.0,
                 "origination_date": month_start.isoformat(),
+                "tpv": 500.0,
             },
         ]
     }
@@ -88,7 +90,51 @@ def test_calculate_all_kpis_includes_expanded_metrics():
     assert body["AverageLoanSize"]["value"] == 1250.0
     assert body["DisbursementVolumeMTD"]["value"] == 2500.0
     assert body["NewLoansCountMTD"]["value"] == 2.0
+    assert body["CustomerLifetimeValue"]["value"] == 1500.0
+    assert body["DefaultRate"]["value"] == 50.0
+    assert body["TotalLoansCount"]["value"] == 2.0
     assert body["ActiveBorrowers"]["value"] == 1.0
     assert body["RepeatBorrowerRate"]["value"] == 100.0
     assert body["AutomationRate"]["value"] == 50.0
     assert body["ProcessingTimeAvg"]["value"] == 9.0
+
+
+def test_get_single_kpi_supports_new_path_aliases():
+    client = TestClient(app)
+    month_start = datetime.now().replace(day=2, hour=0, minute=0, second=0, microsecond=0)
+    payload = {
+        "loans": [
+            {
+                "id": "L1",
+                "borrower_id": "B1",
+                "loan_amount": 1000.0,
+                "principal_balance": 1000.0,
+                "interest_rate": 0.1,
+                "loan_status": "current",
+                "origination_date": month_start.isoformat(),
+                "tpv": 1000.0,
+            },
+            {
+                "id": "L2",
+                "borrower_id": "B1",
+                "loan_amount": 1500.0,
+                "principal_balance": 500.0,
+                "interest_rate": 0.2,
+                "loan_status": "default",
+                "origination_date": month_start.isoformat(),
+                "tpv": 500.0,
+            },
+        ]
+    }
+    clv = client.post("/analytics/kpis/customer-lifetime-value", json=payload)
+    assert clv.status_code == 200
+    assert clv.json()["id"] == "CUSTOMER_LIFETIME_VALUE"
+    assert clv.json()["value"] == 1500.0
+
+    default_rate = client.post("/analytics/kpis/default-rate", json=payload)
+    assert default_rate.status_code == 200
+    assert default_rate.json()["id"] == "DEFAULT_RATE"
+
+    total_loans = client.post("/analytics/kpis/total-loans-count", json=payload)
+    assert total_loans.status_code == 200
+    assert total_loans.json()["id"] == "TOTAL_LOANS_COUNT"

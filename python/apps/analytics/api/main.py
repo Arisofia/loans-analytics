@@ -327,10 +327,15 @@ if app is not None:
                 PAR30=kpi_map.get("PAR30") or kpi_map.get("par_30"),
                 PAR90=kpi_map.get("PAR90") or kpi_map.get("par_90"),
                 CollectionRate=kpi_map.get("COLLECTION_RATE") or kpi_map.get("collections_rate"),
+                DefaultRate=kpi_map.get("DEFAULT_RATE") or kpi_map.get("default_rate"),
+                TotalLoansCount=kpi_map.get("TOTAL_LOANS_COUNT")
+                or kpi_map.get("total_loans_count"),
                 LossRate=kpi_map.get("LOSS_RATE") or kpi_map.get("loss_rate"),
                 RecoveryRate=kpi_map.get("RECOVERY_RATE") or kpi_map.get("recovery_rate"),
                 CashOnHand=kpi_map.get("CASH_ON_HAND") or kpi_map.get("cash_on_hand"),
                 PortfolioHealth=kpi_map.get("AUM") or kpi_map.get("portfolio_growth_rate"),
+                CustomerLifetimeValue=kpi_map.get("CUSTOMER_LIFETIME_VALUE")
+                or kpi_map.get("customer_lifetime_value"),
                 ActiveBorrowers=kpi_map.get("ACTIVE_BORROWERS") or kpi_map.get("active_borrowers"),
                 RepeatBorrowerRate=kpi_map.get("REPEAT_BORROWER_RATE")
                 or kpi_map.get("repeat_borrower_rate"),
@@ -386,6 +391,8 @@ if app is not None:
             "par30": "PAR30",
             "par90": "PAR90",
             "collection-rate": "COLLECTION_RATE",
+            "default-rate": "DEFAULT_RATE",
+            "total-loans-count": "TOTAL_LOANS_COUNT",
             "loss-rate": "LOSS_RATE",
             "recovery-rate": "RECOVERY_RATE",
             "cash-on-hand": "CASH_ON_HAND",
@@ -397,6 +404,7 @@ if app is not None:
             "processing-time-avg": "PROCESSING_TIME_AVG",
             "disbursement-volume-mtd": "DISBURSEMENT_VOLUME_MTD",
             "new-loans-count-mtd": "NEW_LOANS_COUNT_MTD",
+            "customer-lifetime-value": "CUSTOMER_LIFETIME_VALUE",
             "ltv": "LTV",
             "dti": "DTI",
             "portfolio-yield": "PORTFOLIO_YIELD",

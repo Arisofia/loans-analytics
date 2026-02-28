@@ -64,6 +64,9 @@ class LoanRecord(BaseModel):
     current_balance: Optional[float] = Field(
         None, description="Current balance proxy for cash position"
     )
+    tpv: Optional[float] = Field(
+        None, description="Total processed value attributed to the loan/borrower"
+    )
 
 
 class LoanPortfolioRequest(BaseModel):
@@ -193,10 +196,13 @@ class KpiResponse(BaseModel):
     PAR30: Optional[KpiSingleResponse] = None
     PAR90: Optional[KpiSingleResponse] = None
     CollectionRate: Optional[KpiSingleResponse] = None
+    DefaultRate: Optional[KpiSingleResponse] = None
+    TotalLoansCount: Optional[KpiSingleResponse] = None
     LossRate: Optional[KpiSingleResponse] = None
     RecoveryRate: Optional[KpiSingleResponse] = None
     CashOnHand: Optional[KpiSingleResponse] = None
     PortfolioHealth: Optional[KpiSingleResponse] = None
+    CustomerLifetimeValue: Optional[KpiSingleResponse] = None
     ActiveBorrowers: Optional[KpiSingleResponse] = None
     RepeatBorrowerRate: Optional[KpiSingleResponse] = None
     AutomationRate: Optional[KpiSingleResponse] = None
