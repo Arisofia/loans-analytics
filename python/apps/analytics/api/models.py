@@ -302,6 +302,7 @@ class FullAnalysisResponse(BaseModel):
     risk_assessment: RiskAlertsResponse
     risk_stratification: Optional[RiskStratificationResponse] = None
     risk_heatmap: Optional[RiskHeatmapResponse] = None
+    vintage_curves: Optional[VintageCurveResponse] = None
     kpis: List[KpiSingleResponse] = Field(
         default_factory=list,
         description="KPI snapshot used by the analysis, including formulas and implications",

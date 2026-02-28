@@ -1884,6 +1884,20 @@ class KPIService:
             reason = f"Collections coverage of {coverage:.1f}% is healthy."
         decision_flags.append(DecisionFlag(flag="Liquidity", status=status, reason=reason))
 
+        # 4. Recovery Flag (Cure Rate)
+        roll_rates = await self.calculate_roll_rate_analytics(loans)
+        cure_rate = roll_rates.summary.portfolio_cure_rate_pct
+        if cure_rate < 20:
+            status = "red"
+            reason = f"Cure rate of {cure_rate:.1f}% indicates poor recovery from delinquency."
+        elif cure_rate < 40:
+            status = "yellow"
+            reason = f"Cure rate of {cure_rate:.1f}% is below optimal levels."
+        else:
+            status = "green"
+            reason = f"Cure rate of {cure_rate:.1f}% shows healthy collection efficiency."
+        decision_flags.append(DecisionFlag(flag="Recovery", status=status, reason=reason))
+
         summary = (
             f"Portfolio shows {par30:.1f}% PAR30 across {advanced_risk.total_loans} loans. "
             f"Asset quality is {decision_flags[1].status} and diversification is {decision_flags[0].status}."

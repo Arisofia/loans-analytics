@@ -838,6 +838,7 @@ if app is not None:
 
             risk_stratification = await service.get_risk_stratification(request.loans)
             risk_heatmap_data = await service.get_risk_heatmap_summary(request.loans)
+            vintage_curves_data = await service.calculate_vintage_curves(request.loans)
 
             return FullAnalysisResponse(
                 analysis_id=trace_id,
@@ -852,6 +853,7 @@ if app is not None:
                 ),
                 risk_stratification=risk_stratification,
                 risk_heatmap=risk_heatmap_data,
+                vintage_curves=vintage_curves_data,
             )
         except Exception as e:
             logger.error("Error in get_full_analysis: %s", e)

@@ -835,6 +835,8 @@ components:
           $ref: "#/components/schemas/RiskStratificationResponse"
         risk_heatmap:
           $ref: "#/components/schemas/RiskHeatmapResponse"
+        vintage_curves:
+          $ref: "#/components/schemas/VintageCurveResponse"
         kpis:
           type: array
           items:
