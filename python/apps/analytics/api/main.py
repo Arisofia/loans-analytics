@@ -684,12 +684,18 @@ if app is not None:
                     else []
                 )
 
+                # Fetch extra analytical layers for the context
+                risk_stratification = await service.get_risk_stratification(request.loans)
+                vintage_curves = await service.calculate_vintage_curves(request.loans)
+
                 initial_context = {
                     "portfolio_data": (
                         "Recent KPI Snapshot:\n"
                         f"{kpi_summary}\n"
                         f"Target Loans: {', '.join(loan_ids_from_request)}"
-                    )
+                    ),
+                    "risk_stratification": risk_stratification.model_dump_json(),
+                    "vintage_data": vintage_curves.model_dump_json(),
                 }
 
                 results = orchestrator.run_scenario(
@@ -719,8 +725,12 @@ if app is not None:
                 churn_90d = get_kpi_value(["churn_90d"], 0.0)
                 clv = get_kpi_value(["customer_lifetime_value"], 0.0)
                 clv_cac_ratio = (clv / cac) if cac > 0 else 0.0
+                
                 advanced_risk = await service.calculate_advanced_risk(request.loans)
+                risk_strat = await service.get_risk_stratification(request.loans)
+                vintage = await service.calculate_vintage_curves(request.loans)
                 roll_rates = await service.calculate_roll_rate_analytics(request.loans)
+                
                 has_transition_history = roll_rates.summary.historical_coverage_pct > 0
                 transition_block = (
                     f"Portfolio Cure Rate: {roll_rates.summary.portfolio_cure_rate_pct}%\n"
@@ -731,11 +741,14 @@ if app is not None:
                     else ""
                 )
 
+                strat_summary = " | ".join([f"{f.flag}: {f.status.upper()}" for f in risk_strat.decision_flags])
+                
                 risk_status = "CRITICAL" if par30 > 10 or advanced_risk.par90 > 5 else "STABLE"
                 summary = (
                     f"PROPORTIONAL PORTFOLIO ANALYSIS ({risk_status})\n"
                     f"-------------------------------------------\n"
                     f"Portfolio Size: {loans_count} active loans\n"
+                    f"Risk stratification: {strat_summary}\n"
                     f"Risk exposure (PAR30): {par30}%\n"
                     f"Risk exposure (PAR60): {advanced_risk.par60}%\n"
                     f"Severe delinquency (PAR90): {advanced_risk.par90}%\n"
@@ -751,6 +764,7 @@ if app is not None:
                     f"90-Day Churn: {churn_90d}%\n"
                     f"6-Month Revenue Forecast: ${forecast_6m}\n"
                     f"CLV/CAC Ratio: {round(clv_cac_ratio, 2)}x\n\n"
+                    f"Lifecycle Analysis: Average NPL ratio for 6MoB+ loans is {round(sum(p.npl_ratio for p in vintage.portfolio_average_curve if p.months_on_book >= 6)/(len([p for p in vintage.portfolio_average_curve if p.months_on_book >= 6]) or 1), 2)}%.\n\n"
                     f"The analytical engine has identified {risk_status.lower()} stability metrics "
                     "based on recent production data. Risk concentration is within acceptable "
                     "guardrails for the current AUM expansion phase."

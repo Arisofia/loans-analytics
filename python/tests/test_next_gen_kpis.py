@@ -1,6 +1,8 @@
 """Next Generation KPI and Risk Stratification tests."""
 
 import pytest
+import pandas as pd
+from datetime import datetime
 
 from python.apps.analytics.api.models import LoanRecord
 from python.apps.analytics.api.service import KPIService
@@ -54,9 +56,10 @@ async def test_calculate_kpis_for_portfolio_includes_next_gen_kpis():
     # LGD = 100 - 20 = 80%
     assert kpi_map["LGD"].value == 80.0
 
-    # Loss rate = 1000 / 2000 = 50% (of total principal)
-    # COR uses loss rate proxy
-    assert kpi_map["COR"].value == 50.0
+    # NPL = 50% (1000/2000)
+    # LGD = 80% (1 - 20% recovery)
+    # COR = NPL * LGD = 50 * 0.8 = 40%
+    assert kpi_map["COR"].value == 40.0
 
 
 @pytest.mark.asyncio
@@ -110,3 +113,48 @@ async def test_get_risk_stratification():
     assert flags["Liquidity"].status == "yellow"
 
     assert response.summary
+
+
+@pytest.mark.asyncio
+async def test_get_vintage_curves():
+    service = KPIService(actor="test_user")
+    now = datetime.now()
+    loans = [
+        # Older loan (6 MoB), Current
+        LoanRecord(
+            id="OLD",
+            origination_date=now - pd.DateOffset(months=6),
+            loan_amount=1000.0,
+            principal_balance=800.0,
+            interest_rate=0.1,
+            loan_status="current",
+            days_past_due=0.0,
+        ),
+        # Newer loan (1 MoB), Defaulted
+        LoanRecord(
+            id="NEW",
+            origination_date=now - pd.DateOffset(months=1),
+            loan_amount=1000.0,
+            principal_balance=1000.0,
+            interest_rate=0.1,
+            loan_status="default",
+            days_past_due=95.0,
+        ),
+    ]
+
+    response = await service.calculate_vintage_curves(loans)
+
+    # Verify curves exist
+    assert len(response.curves) == 2
+    assert len(response.portfolio_average_curve) == 2
+
+    # The avg curve should have points at MoB 1 and MoB 6
+    avg_points = {p.months_on_book: p for p in response.portfolio_average_curve}
+    assert 1 in avg_points
+    assert 6 in avg_points
+
+    # MoB 1 point (New loan) should be defaulted
+    assert avg_points[1].npl_ratio == 100.0
+
+    # MoB 6 point (Old loan) should be healthy
+    assert avg_points[6].npl_ratio == 0.0

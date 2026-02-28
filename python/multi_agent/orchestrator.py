@@ -224,17 +224,18 @@ class MultiAgentOrchestrator:
         return {
             "loan_risk_review": Scenario(
                 name="loan_risk_review",
-                description="Comprehensive loan portfolio risk assessment",
+                description="Comprehensive loan portfolio risk assessment with vintage and stratification depth",
                 steps=[
                     ScenarioStep(
                         agent_role=AgentRole.RISK_ANALYST,
                         prompt_template=(
                             "Analyze the loan portfolio: {portfolio_data}. "
-                            "Use KPI calculation basis: {kpi_methodology}. "
-                            "Identify key risk metrics, concentrations, and trends. "
+                            "Layer 1 - Stratification: Review decision flags and risk buckets: {risk_stratification}. "
+                            "Layer 2 - Vintage: Analyze delinquency evolution by Months on Book (MoB): {vintage_data}. "
+                            "Identify toxic vintages, concentration triggers, and structural asset quality trends. "
                             "For every KPI cited, include the formula and the computed value."
                         ),
-                        context_keys=["portfolio_data", "kpi_methodology"],
+                        context_keys=["portfolio_data", "risk_stratification", "vintage_data"],
                         output_key="risk_analysis",
                     ),
                     ScenarioStep(

@@ -74,10 +74,11 @@ def _resolve_dpd(df: pd.DataFrame) -> pd.Series:
 
 def _resolve_default_mask(df: pd.DataFrame, dpd: pd.Series) -> pd.Series:
     status_col = _first_col(df, ["loan_status", "status", "current_status"])
+    mask = dpd > 90
     if status_col:
         status = df[status_col].astype(str).str.lower()
-        return status.str.contains(r"default|charged", regex=True, na=False)
-    return dpd > 90
+        mask = mask | status.str.contains(r"default|charged|90\+", regex=True, na=False)
+    return mask
 
 
 def calculate_npl_ratio(df: pd.DataFrame) -> dict[str, Any]:
