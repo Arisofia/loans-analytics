@@ -132,6 +132,12 @@ Delivery report snapshot (2026-02-27):
     `python/tests/test_stress_test.py`,
     `python/tests/test_stress_test_api.py`,
     `python/tests/test_stress_test_openapi.py`.
+  - Added origination cohort analytics endpoint:
+    `/analytics/cohorts` with month-level PAR/default/collection metrics and summary
+    plus contract coverage:
+    `python/tests/test_cohort_analytics.py`,
+    `python/tests/test_cohort_analytics_api.py`,
+    `python/tests/test_cohort_analytics_openapi.py`.
   - Added advanced-risk tests:
     `python/tests/test_advanced_risk.py`,
     `python/tests/test_advanced_risk_api.py`,

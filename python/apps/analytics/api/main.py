@@ -20,6 +20,8 @@ try:
 
     from python.apps.analytics.api.models import (
         AdvancedRiskResponse,
+        CohortAnalyticsRequest,
+        CohortAnalyticsResponse,
         DataQualityResponse,
         DefaultPredictionRequest,
         DefaultPredictionResponse,
@@ -487,6 +489,23 @@ if app is not None:
             return await service.calculate_advanced_risk(request.loans)
         except Exception as e:
             logger.error("Error in get_advanced_risk: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+    @app.post(
+        "/analytics/cohorts",
+        response_model=CohortAnalyticsResponse,
+        summary="Origination Cohort Analytics",
+        response_description="Vintage-level risk and collections metrics by origination month",
+    )
+    async def get_cohort_analytics(
+        request: CohortAnalyticsRequest = Body(...),
+        service: KPIService = Depends(get_kpi_service),
+    ):
+        """Calculate cohort/vintage metrics (PAR, default, collections) by origination month."""
+        try:
+            return await service.calculate_cohort_analytics(request.loans)
+        except Exception as e:
+            logger.error("Error in get_cohort_analytics: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post(

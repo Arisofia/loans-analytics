@@ -311,6 +311,41 @@ class StressTestResponse(BaseModel):
     alerts: List[str] = Field(default_factory=list)
 
 
+class CohortAnalyticsRequest(BaseModel):
+    """Request body for origination cohort analytics."""
+
+    loans: List[LoanRecord] = Field(
+        ...,
+        min_length=1,
+        description="Loan records used for cohort/vintage aggregation",
+    )
+
+
+class CohortMetrics(BaseModel):
+    cohort_month: str
+    loan_count: int
+    originated_amount_usd: float
+    outstanding_amount_usd: float
+    par30_pct: float
+    par90_pct: float
+    default_rate_pct: float
+    collection_rate_pct: float
+
+
+class CohortAnalyticsSummary(BaseModel):
+    cohort_count: int
+    total_loans: int
+    weighted_par30_pct: float
+    highest_risk_cohort: Optional[str] = None
+    strongest_collection_cohort: Optional[str] = None
+
+
+class CohortAnalyticsResponse(BaseModel):
+    generated_at: datetime
+    cohorts: List[CohortMetrics] = Field(default_factory=list)
+    summary: CohortAnalyticsSummary
+
+
 class KpiCoverageResponse(BaseModel):
     """Coverage report between configured KPI catalog and API-supported KPIs."""
 

@@ -10,6 +10,9 @@ from starlette.concurrency import run_in_threadpool
 
 from python.apps.analytics.api.models import (
     AdvancedRiskResponse,
+    CohortAnalyticsResponse,
+    CohortAnalyticsSummary,
+    CohortMetrics,
     DataQualityResponse,
     KpiContext,
     KpiSingleResponse,
@@ -928,6 +931,143 @@ class KPIService:
             )
             raise
 
+    async def calculate_cohort_analytics(
+        self,
+        loans: list[LoanRecord] | None,
+    ) -> CohortAnalyticsResponse:
+        """Build cohort/vintage metrics grouped by loan origination month."""
+        try:
+            if loans is None:
+                loans = []
+            return await run_in_threadpool(self._calculate_cohort_analytics_sync, loans)
+        except Exception as e:
+            logger.error(
+                "Error calculating cohort analytics for actor %s: %s",
+                self.actor,
+                e,
+                exc_info=True,
+            )
+            raise
+
+    def _calculate_cohort_analytics_sync(
+        self,
+        loans: list[LoanRecord],
+    ) -> CohortAnalyticsResponse:
+        df = self._convert_loan_records_to_dataframe(loans)
+        if df.empty:
+            return CohortAnalyticsResponse(
+                generated_at=datetime.now(),
+                cohorts=[],
+                summary=CohortAnalyticsSummary(
+                    cohort_count=0,
+                    total_loans=0,
+                    weighted_par30_pct=0.0,
+                    highest_risk_cohort=None,
+                    strongest_collection_cohort=None,
+                ),
+            )
+
+        df = df.copy()
+        df["loan_amount"] = pd.to_numeric(df["loan_amount"], errors="coerce").fillna(0.0)
+        df["principal_balance"] = pd.to_numeric(df["principal_balance"], errors="coerce").fillna(
+            0.0
+        )
+
+        origination_raw = (
+            pd.to_datetime(df["origination_date"], errors="coerce", utc=True).dt.tz_convert(None)
+            if "origination_date" in df.columns
+            else pd.Series([pd.Timestamp.now()] * len(df), index=df.index)
+        )
+        month_fallback = pd.Timestamp.now().replace(day=1).normalize()
+        df["cohort_month"] = origination_raw.fillna(month_fallback).dt.to_period("M").astype(str)
+
+        if "days_past_due" in df.columns:
+            dpd = pd.to_numeric(df["days_past_due"], errors="coerce").fillna(0.0).clip(lower=0)
+        else:
+            status = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
+            dpd = pd.Series([0.0] * len(df), index=df.index, dtype=float)
+            dpd = dpd.mask(
+                status.str.contains(r"90\+|default|charged", regex=True, na=False), 100.0
+            )
+            dpd = dpd.mask(status.str.contains(r"60-89|60\+", regex=True, na=False), 75.0)
+            dpd = dpd.mask(status.str.contains(r"30-59|30\+", regex=True, na=False), 45.0)
+
+        status_series = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
+        default_mask = status_series.str.contains(r"default|charged", regex=True, na=False)
+
+        collected = (
+            pd.to_numeric(df["last_payment_amount"], errors="coerce").fillna(0.0)
+            if "last_payment_amount" in df.columns
+            else pd.Series([0.0] * len(df), index=df.index)
+        )
+        scheduled = (
+            pd.to_numeric(df["total_scheduled"], errors="coerce").fillna(0.0)
+            if "total_scheduled" in df.columns
+            else pd.Series([0.0] * len(df), index=df.index)
+        )
+
+        cohort_rows: list[CohortMetrics] = []
+        for cohort_month, group_idx in df.groupby("cohort_month").groups.items():
+            idx = list(group_idx)
+            group_balance = float(df.loc[idx, "principal_balance"].sum())
+            group_originated = float(df.loc[idx, "loan_amount"].sum())
+            group_loans = int(len(idx))
+
+            par30 = self._safe_pct(
+                float(df.loc[idx, "principal_balance"][dpd.loc[idx] > 30].sum()), group_balance
+            )
+            par90 = self._safe_pct(
+                float(df.loc[idx, "principal_balance"][dpd.loc[idx] > 90].sum()), group_balance
+            )
+            default_rate = self._safe_pct(float(default_mask.loc[idx].sum()), float(group_loans))
+            collection_rate = self._safe_pct(
+                float(collected.loc[idx].sum()), float(scheduled.loc[idx].sum())
+            )
+
+            cohort_rows.append(
+                CohortMetrics(
+                    cohort_month=str(cohort_month),
+                    loan_count=group_loans,
+                    originated_amount_usd=round(group_originated, 2),
+                    outstanding_amount_usd=round(group_balance, 2),
+                    par30_pct=round(par30, 2),
+                    par90_pct=round(par90, 2),
+                    default_rate_pct=round(default_rate, 2),
+                    collection_rate_pct=round(collection_rate, 2),
+                )
+            )
+
+        cohort_rows.sort(key=lambda row: row.cohort_month)
+        total_outstanding = sum(row.outstanding_amount_usd for row in cohort_rows)
+        weighted_par30 = (
+            sum(row.par30_pct * row.outstanding_amount_usd for row in cohort_rows)
+            / total_outstanding
+            if total_outstanding > 0
+            else 0.0
+        )
+
+        highest_risk = (
+            max(cohort_rows, key=lambda row: row.par90_pct).cohort_month if cohort_rows else None
+        )
+        strongest_collection = (
+            max(cohort_rows, key=lambda row: row.collection_rate_pct).cohort_month
+            if cohort_rows
+            else None
+        )
+
+        summary = CohortAnalyticsSummary(
+            cohort_count=len(cohort_rows),
+            total_loans=int(len(df)),
+            weighted_par30_pct=round(weighted_par30, 2),
+            highest_risk_cohort=highest_risk,
+            strongest_collection_cohort=strongest_collection,
+        )
+        return CohortAnalyticsResponse(
+            generated_at=datetime.now(),
+            cohorts=cohort_rows,
+            summary=summary,
+        )
+
     async def calculate_stress_test(
         self,
         loans: list[LoanRecord] | None,
@@ -1409,3 +1549,10 @@ class KPIService:
     def _clamp_pct(value: float) -> float:
         """Clamp percentage-like values into [0, 100] range."""
         return max(0.0, min(100.0, float(value)))
+
+    @staticmethod
+    def _safe_pct(numerator: float, denominator: float) -> float:
+        """Safe percentage helper that guards against zero/negative denominators."""
+        if denominator <= 0:
+            return 0.0
+        return (float(numerator) / float(denominator)) * 100.0
