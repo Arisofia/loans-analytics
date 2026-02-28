@@ -34,6 +34,13 @@ from python.apps.analytics.api.models import (
 from python.config import settings
 from python.kpis.advanced_risk import calculate_advanced_risk_metrics
 from python.kpis.catalog_processor import KPICatalogProcessor
+from python.kpis.unit_economics import (
+    calculate_cost_of_risk,
+    calculate_cure_rate,
+    calculate_lgd,
+    calculate_nim,
+    calculate_npl_ratio,
+)
 from python.logging_config import get_logger
 from python.supabase_pool import get_pool
 
@@ -343,6 +350,11 @@ class KPIService:
             "LTV": ["AVG_LTV", "avg_ltv"],
             "DTI": ["AVG_DTI", "avg_dti"],
             "PortfolioYield": ["PORTFOLIO_YIELD", "portfolio_yield"],
+            "NPL": ["NPL", "npl_ratio"],
+            "LGD": ["LGD", "lgd_pct"],
+            "CoR": ["COR", "cost_of_risk_pct"],
+            "NIM": ["NIM", "nim_pct"],
+            "CureRate": ["CURERATE", "cure_rate_pct"],
         }
 
     def _get_kpi_metadata(self, kpi_id: str, kpi_name: str | None = None) -> dict[str, str]:
@@ -835,6 +847,13 @@ class KPIService:
             results = self._calculate_portfolio_performance_metrics(df)
             roll_rates = await self.calculate_roll_rate_analytics(loans)
             cure_rate = roll_rates.summary.portfolio_cure_rate_pct
+
+            # Use specialized unit_economics module for next-gen KPI precision
+            npl_data = calculate_npl_ratio(df)
+            lgd_data = calculate_lgd(df)
+            cor_data = calculate_cost_of_risk(df)
+            nim_data = calculate_nim(df)
+
             now = datetime.now()
 
             def build_kpi_response(
@@ -873,13 +892,12 @@ class KPIService:
                 ),
                 build_kpi_response("LOSS_RATE", "Loss Rate", results["loss_rate"], "%"),
                 build_kpi_response("RECOVERY_RATE", "Recovery Rate", results["recovery_rate"], "%"),
-                build_kpi_response("NPL", "Non-Performing Loans", results["npl"], "%"),
-                build_kpi_response("LGD", "Loss Given Default", results["lgd"], "%"),
-                build_kpi_response("COR", "Cost of Risk", results["cor"], "%"),
+                # Next Generation KPIs
+                build_kpi_response("NPL", "Non-Performing Loans", npl_data["npl_ratio"], "%"),
+                build_kpi_response("LGD", "Loss Given Default", lgd_data["lgd_pct"], "%"),
+                build_kpi_response("COR", "Cost of Risk", cor_data["cost_of_risk_pct"], "%"),
                 build_kpi_response("CURERATE", "Cure Rate", cure_rate, "%"),
-                build_kpi_response(
-                    "NIM", "Net Interest Margin", results["gross_margin_pct"], "%"
-                ),  # Proxy NIM using gross margin
+                build_kpi_response("NIM", "Net Interest Margin", nim_data["nim_pct"], "%"),
                 build_kpi_response("CASH_ON_HAND", "Cash on Hand", results["cash_on_hand"], "USD"),
                 build_kpi_response(
                     "PORTFOLIO_YIELD",
