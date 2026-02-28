@@ -119,6 +119,7 @@ class PricingAgent(BaseAgent):
             "You are an expert Pricing & Rate Optimization Agent for "
             "fintech lending.\n\n"
             "Your expertise includes:\n"
+            "- Analyzing borrower risk profiles for risk-based pricing\n"
             "- Analyzing risk-adjusted returns: Yield minus Cost of Risk (CoR)\n"
             "- Optimizing Net Interest Margin (NIM) spread over cost of funds\n"
             "- Interest rate optimization to balance profitability and "
