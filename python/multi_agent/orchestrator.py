@@ -1047,6 +1047,32 @@ class MultiAgentOrchestrator:
                     ),
                 ],
             ),
+            "strategic_profitability_review": Scenario(
+                name="strategic_profitability_review",
+                description="Strategic analysis of portfolio profitability and unit economics",
+                steps=[
+                    ScenarioStep(
+                        agent_role=AgentRole.GROWTH_STRATEGIST,
+                        prompt_template=(
+                            "Analyze portfolio unit economics: {portfolio_data}. "
+                            "Review CAC, CLV, and Payback Period. "
+                            "Assess if growth is sustainable given the current Net Interest Margin (NIM)."
+                        ),
+                        context_keys=["portfolio_data"],
+                        output_key="growth_analysis",
+                    ),
+                    ScenarioStep(
+                        agent_role=AgentRole.PRICING,
+                        prompt_template=(
+                            "Optimize pricing based on: {growth_analysis}. "
+                            "Considering the Cost of Risk (CoR) and LGD provided in {portfolio_data}, "
+                            "recommend interest rate or fee adjustments to maximize NIM while remaining competitive."
+                        ),
+                        context_keys=["growth_analysis", "portfolio_data"],
+                        output_key="pricing_recommendations",
+                    ),
+                ],
+            ),
         }
 
     def run_agent(
