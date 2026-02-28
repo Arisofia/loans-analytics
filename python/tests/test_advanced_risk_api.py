@@ -91,9 +91,20 @@ def test_full_analysis_deterministic_summary_includes_advanced_metrics(monkeypat
     assert "Collections coverage" in summary
     assert "Borrower Concentration (HHI)" in summary
     assert "Credit Quality Index" in summary
+    assert "Customer Acquisition Cost (CAC)" in summary
+    assert "Gross Margin" in summary
+    assert "6-Month Revenue Forecast" in summary
 
     kpi_ids = {k["id"] for k in body["kpis"]}
     assert "PAR30" in kpi_ids
     assert "PAR90" in kpi_ids
     assert "DEFAULT_RATE" in kpi_ids
     assert "TOTAL_LOANS_COUNT" in kpi_ids
+    assert "CAC" in kpi_ids
+    assert "GROSS_MARGIN_PCT" in kpi_ids
+    assert "REVENUE_FORECAST_6M" in kpi_ids
+    assert "CHURN_90D" in kpi_ids
+
+    recommendations = body["recommendations"]
+    assert any("recovery" in rec.lower() for rec in recommendations)
+    assert any("collection" in rec.lower() for rec in recommendations)

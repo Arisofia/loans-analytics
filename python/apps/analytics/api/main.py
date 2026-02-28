@@ -506,6 +506,14 @@ if app is not None:
                 [f"{k.name}: {k.value} {k.unit} | Formula: {k.context.formula}" for k in kpis]
             )
 
+            def get_kpi_value(candidates: list[str], default: float = 0.0) -> float:
+                candidate_set = {candidate.lower() for candidate in candidates}
+                for kpi in kpis:
+                    kpi_id = (kpi.id or "").lower()
+                    if kpi_id in candidate_set:
+                        return float(kpi.value)
+                return float(default)
+
             # 2. Initialize Orchestrator
             try:
                 # Attempt real LLM run if keys exist
@@ -544,14 +552,6 @@ if app is not None:
                 logger.info("Using High-Fidelity Local Analytical Engine: %s", orch_err)
                 trace_id = str(uuid.uuid4())
 
-                def get_kpi_value(candidates: list[str], default: float = 0.0) -> float:
-                    candidate_set = {candidate.lower() for candidate in candidates}
-                    for kpi in kpis:
-                        kpi_id = (kpi.id or "").lower()
-                        if kpi_id in candidate_set:
-                            return float(kpi.value)
-                    return float(default)
-
                 # High-fidelity deterministic analysis
                 par30 = get_kpi_value(["par_30", "par30"], 0.0)
                 yield_val = get_kpi_value(["portfolio_yield"], 0.0)
@@ -559,6 +559,12 @@ if app is not None:
                     ["total_loans_count"],
                     float(len(request.loans)) if request.loans else 0.0,
                 )
+                cac = get_kpi_value(["cac"], 0.0)
+                gross_margin = get_kpi_value(["gross_margin_pct"], 0.0)
+                forecast_6m = get_kpi_value(["revenue_forecast_6m"], 0.0)
+                churn_90d = get_kpi_value(["churn_90d"], 0.0)
+                clv = get_kpi_value(["customer_lifetime_value"], 0.0)
+                clv_cac_ratio = (clv / cac) if cac > 0 else 0.0
                 advanced_risk = await service.calculate_advanced_risk(request.loans)
 
                 risk_status = "CRITICAL" if par30 > 10 or advanced_risk.par90 > 5 else "STABLE"
@@ -575,20 +581,54 @@ if app is not None:
                     f"Borrower Concentration (HHI): {advanced_risk.concentration_hhi}\n"
                     f"Repeat Borrower Rate: {advanced_risk.repeat_borrower_rate}%\n"
                     f"Credit Quality Index: {advanced_risk.credit_quality_index}\n\n"
+                    f"Customer Acquisition Cost (CAC): ${cac}\n"
+                    f"Gross Margin: {gross_margin}%\n"
+                    f"90-Day Churn: {churn_90d}%\n"
+                    f"6-Month Revenue Forecast: ${forecast_6m}\n"
+                    f"CLV/CAC Ratio: {round(clv_cac_ratio, 2)}x\n\n"
                     f"The analytical engine has identified {risk_status.lower()} stability metrics "
                     "based on recent production data. Risk concentration is within acceptable "
                     "guardrails for the current AUM expansion phase."
                 )
 
             # 4. Map results to Response Model
+            recommendations: list[str] = []
+            par90 = get_kpi_value(["par_90", "par90"], 0.0)
+            collection_rate = get_kpi_value(["collections_rate", "collection_rate"], 0.0)
+            cac = get_kpi_value(["cac"], 0.0)
+            clv = get_kpi_value(["customer_lifetime_value"], 0.0)
+            gross_margin = get_kpi_value(["gross_margin_pct"], 0.0)
+            churn_90d = get_kpi_value(["churn_90d"], 0.0)
+            clv_cac_ratio = (clv / cac) if cac > 0 else 0.0
+
+            if par90 > 5:
+                recommendations.append("Activate focused recovery actions for the 90+ DPD cohort.")
+            if collection_rate < 90:
+                recommendations.append(
+                    "Increase collection intensity for delinquent accounts to improve cash conversion."
+                )
+            if gross_margin < 20:
+                recommendations.append(
+                    "Review pricing and direct cost controls to restore gross margin above 20%."
+                )
+            if cac > 0 and clv_cac_ratio < 3:
+                recommendations.append(
+                    "Optimize acquisition channels to move CLV/CAC toward a 3x threshold."
+                )
+            if churn_90d > 10:
+                recommendations.append(
+                    "Launch 90-day retention interventions for at-risk borrowers."
+                )
+            if not recommendations:
+                recommendations = [
+                    "Maintain underwriting and collections cadence with weekly KPI monitoring.",
+                    "Track executive unit economics (CAC, margin, churn) as portfolio grows.",
+                ]
 
             return FullAnalysisResponse(
                 analysis_id=trace_id,
                 summary=summary,
-                recommendations=[
-                    "Monitor high-LTV loans",
-                    "Review collection strategy for DPD > 30",
-                ],
+                recommendations=recommendations,
                 kpis=kpis,
                 risk_assessment=RiskAlertsResponse(
                     high_risk_count=0,
