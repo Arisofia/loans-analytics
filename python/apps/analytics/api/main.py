@@ -337,8 +337,12 @@ if app is not None:
                 PAR30=kpi_map.get("PAR30") or kpi_map.get("par_30"),
                 PAR90=kpi_map.get("PAR90") or kpi_map.get("par_90"),
                 PAR60=kpi_map.get("PAR60") or kpi_map.get("par_60"),
-                DPD1_30=kpi_map.get("DPD_1_30") or kpi_map.get("dpd_1_30"),
-                DPD31_60=kpi_map.get("DPD_31_60") or kpi_map.get("dpd_31_60"),
+                DPD1_30=kpi_map.get("DPD_1_30")
+                or kpi_map.get("dpd_1_30")
+                or kpi_map.get("delinq_1_30_rate"),
+                DPD31_60=kpi_map.get("DPD_31_60")
+                or kpi_map.get("dpd_31_60")
+                or kpi_map.get("delinq_31_60_rate"),
                 DPD61_90=kpi_map.get("DPD_61_90") or kpi_map.get("dpd_61_90"),
                 DPD90Plus=kpi_map.get("DPD_90_PLUS") or kpi_map.get("dpd_90_plus"),
                 CollectionRate=kpi_map.get("COLLECTION_RATE") or kpi_map.get("collections_rate"),
