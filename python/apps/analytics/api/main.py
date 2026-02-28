@@ -353,8 +353,8 @@ if app is not None:
                 or kpi_map.get("disbursement_volume_mtd"),
                 NewLoansCountMTD=kpi_map.get("NEW_LOANS_COUNT_MTD")
                 or kpi_map.get("new_loans_count_mtd"),
-                LTV=kpi_map.get("AVG_LTV") or kpi_map.get("average_loan_size"),
-                DTI=kpi_map.get("AVG_DTI") or kpi_map.get("default_rate"),
+                LTV=kpi_map.get("AVG_LTV") or kpi_map.get("avg_ltv"),
+                DTI=kpi_map.get("AVG_DTI") or kpi_map.get("avg_dti"),
                 PortfolioYield=kpi_map.get("PORTFOLIO_YIELD") or kpi_map.get("portfolio_yield"),
                 audit_trail=[{"kpi_count": len(kpis), "source": "production-snapshot"}],
             )
@@ -414,8 +414,10 @@ if app is not None:
             "disbursement-volume-mtd": "DISBURSEMENT_VOLUME_MTD",
             "new-loans-count-mtd": "NEW_LOANS_COUNT_MTD",
             "customer-lifetime-value": "CUSTOMER_LIFETIME_VALUE",
-            "ltv": "LTV",
-            "dti": "DTI",
+            "ltv": "AVG_LTV",
+            "avg-ltv": "AVG_LTV",
+            "dti": "AVG_DTI",
+            "avg-dti": "AVG_DTI",
             "portfolio-yield": "PORTFOLIO_YIELD",
         }
 

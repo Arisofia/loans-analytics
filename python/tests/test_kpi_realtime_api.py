@@ -162,3 +162,19 @@ def test_get_single_kpi_supports_new_path_aliases():
     churn = client.post("/analytics/kpis/churn-90d", json=payload)
     assert churn.status_code == 200
     assert churn.json()["id"] == "CHURN_90D"
+
+    ltv = client.post("/analytics/kpis/ltv", json=payload)
+    assert ltv.status_code == 200
+    assert ltv.json()["id"] == "AVG_LTV"
+
+    avg_ltv = client.post("/analytics/kpis/avg-ltv", json=payload)
+    assert avg_ltv.status_code == 200
+    assert avg_ltv.json()["id"] == "AVG_LTV"
+
+    dti = client.post("/analytics/kpis/dti", json=payload)
+    assert dti.status_code == 200
+    assert dti.json()["id"] == "AVG_DTI"
+
+    avg_dti = client.post("/analytics/kpis/avg-dti", json=payload)
+    assert avg_dti.status_code == 200
+    assert avg_dti.json()["id"] == "AVG_DTI"

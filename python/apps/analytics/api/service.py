@@ -299,8 +299,8 @@ class KPIService:
             "GrossMarginPct": ["GROSS_MARGIN_PCT", "gross_margin_pct"],
             "RevenueForecast6M": ["REVENUE_FORECAST_6M", "revenue_forecast_6m"],
             "Churn90D": ["CHURN_90D", "churn_90d"],
-            "LTV": ["AVG_LTV", "average_loan_size"],
-            "DTI": ["AVG_DTI", "default_rate"],
+            "LTV": ["AVG_LTV", "avg_ltv"],
+            "DTI": ["AVG_DTI", "avg_dti"],
             "PortfolioYield": ["PORTFOLIO_YIELD", "portfolio_yield"],
         }
 
