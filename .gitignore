@@ -73,6 +73,7 @@ logs/
 data/metrics/
 data/archives/
 data/agent_outputs/
+data/usage_metrics/
 exports/
 outputs/
 .streamlit/
