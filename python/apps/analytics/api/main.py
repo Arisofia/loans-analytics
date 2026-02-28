@@ -34,6 +34,8 @@ try:
         LoanPortfolioRequest,
         RiskAlertsResponse,
         RiskLoan,
+        SegmentAnalyticsRequest,
+        SegmentAnalyticsResponse,
         StressTestRequest,
         StressTestResponse,
         ValidationResponse,
@@ -506,6 +508,27 @@ if app is not None:
             return await service.calculate_cohort_analytics(request.loans)
         except Exception as e:
             logger.error("Error in get_cohort_analytics: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+    @app.post(
+        "/analytics/segments",
+        response_model=SegmentAnalyticsResponse,
+        summary="Segment Drill-down Analytics",
+        response_description="Segment-level KPI snapshot for risk and collections monitoring",
+    )
+    async def get_segment_analytics(
+        request: SegmentAnalyticsRequest = Body(...),
+        service: KPIService = Depends(get_kpi_service),
+    ):
+        """Calculate KPI drill-down by selected segment dimension."""
+        try:
+            return await service.calculate_segment_analytics(
+                loans=request.loans,
+                dimension=request.dimension,
+                top_n=request.top_n,
+            )
+        except Exception as e:
+            logger.error("Error in get_segment_analytics: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post(

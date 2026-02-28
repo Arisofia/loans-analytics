@@ -17,6 +17,9 @@ from python.apps.analytics.api.models import (
     KpiContext,
     KpiSingleResponse,
     LoanRecord,
+    SegmentAnalyticsResponse,
+    SegmentAnalyticsSummary,
+    SegmentMetrics,
     StressTestAssumptions,
     StressTestMetrics,
     StressTestResponse,
@@ -1097,6 +1100,143 @@ class KPIService:
             )
             raise
 
+    async def calculate_segment_analytics(
+        self,
+        loans: list[LoanRecord] | None,
+        dimension: str = "risk_band",
+        top_n: int = 20,
+    ) -> SegmentAnalyticsResponse:
+        """Compute segment-level KPI drill-down by the selected dimension."""
+        try:
+            if loans is None:
+                loans = []
+            return await run_in_threadpool(
+                self._calculate_segment_analytics_sync,
+                loans,
+                dimension,
+                top_n,
+            )
+        except Exception as e:
+            logger.error(
+                "Error calculating segment analytics for actor %s: %s",
+                self.actor,
+                e,
+                exc_info=True,
+            )
+            raise
+
+    def _calculate_segment_analytics_sync(
+        self,
+        loans: list[LoanRecord],
+        dimension: str,
+        top_n: int,
+    ) -> SegmentAnalyticsResponse:
+        df = self._convert_loan_records_to_dataframe(loans)
+        if df.empty:
+            return SegmentAnalyticsResponse(
+                generated_at=datetime.now(),
+                segments=[],
+                summary=SegmentAnalyticsSummary(
+                    dimension=dimension,
+                    segment_count=0,
+                    total_loans=0,
+                    largest_segment=None,
+                    riskiest_segment=None,
+                ),
+            )
+
+        df = df.copy()
+        df["principal_balance"] = pd.to_numeric(df["principal_balance"], errors="coerce").fillna(
+            0.0
+        )
+        df["interest_rate"] = pd.to_numeric(df["interest_rate"], errors="coerce").fillna(0.0)
+        if "loan_amount" in df.columns:
+            df["loan_amount"] = pd.to_numeric(df["loan_amount"], errors="coerce").fillna(0.0)
+        else:
+            df["loan_amount"] = df["principal_balance"]
+
+        if "days_past_due" in df.columns:
+            dpd = pd.to_numeric(df["days_past_due"], errors="coerce").fillna(0.0).clip(lower=0)
+        else:
+            status = df.get("loan_status", pd.Series([""] * len(df))).astype(str).str.lower()
+            dpd = pd.Series([0.0] * len(df), index=df.index, dtype=float)
+            dpd = dpd.mask(
+                status.str.contains(r"90\+|default|charged", regex=True, na=False), 100.0
+            )
+            dpd = dpd.mask(status.str.contains(r"60-89|60\+", regex=True, na=False), 75.0)
+            dpd = dpd.mask(status.str.contains(r"30-59|30\+", regex=True, na=False), 45.0)
+
+        default_mask = (
+            df.get("loan_status", pd.Series([""] * len(df)))
+            .astype(str)
+            .str.contains(r"default|charged", regex=True, case=False, na=False)
+        )
+
+        collected = (
+            pd.to_numeric(df["last_payment_amount"], errors="coerce").fillna(0.0)
+            if "last_payment_amount" in df.columns
+            else pd.Series([0.0] * len(df), index=df.index)
+        )
+        scheduled = (
+            pd.to_numeric(df["total_scheduled"], errors="coerce").fillna(0.0)
+            if "total_scheduled" in df.columns
+            else pd.Series([0.0] * len(df), index=df.index)
+        )
+
+        segments = self._build_segment_dimension(df, dpd, dimension)
+        df["segment_value"] = segments.fillna("unknown").astype(str)
+
+        segment_rows: list[SegmentMetrics] = []
+        for segment_value, group_idx in df.groupby("segment_value").groups.items():
+            idx = list(group_idx)
+            outstanding = float(df.loc[idx, "principal_balance"].sum())
+            loan_count = int(len(idx))
+            par30 = self._safe_pct(
+                float(df.loc[idx, "principal_balance"][dpd.loc[idx] > 30].sum()), outstanding
+            )
+            par90 = self._safe_pct(
+                float(df.loc[idx, "principal_balance"][dpd.loc[idx] > 90].sum()), outstanding
+            )
+            default_rate = self._safe_pct(float(default_mask.loc[idx].sum()), float(loan_count))
+            collection_rate = self._safe_pct(
+                float(collected.loc[idx].sum()), float(scheduled.loc[idx].sum())
+            )
+            avg_rate = float(df.loc[idx, "interest_rate"].mean()) * 100.0
+
+            segment_rows.append(
+                SegmentMetrics(
+                    segment=str(segment_value),
+                    loan_count=loan_count,
+                    outstanding_usd=round(outstanding, 2),
+                    par30_pct=round(par30, 2),
+                    par90_pct=round(par90, 2),
+                    default_rate_pct=round(default_rate, 2),
+                    avg_interest_rate_pct=round(avg_rate, 2),
+                    collection_rate_pct=round(collection_rate, 2),
+                )
+            )
+
+        segment_rows.sort(key=lambda row: row.outstanding_usd, reverse=True)
+        segment_rows = segment_rows[: int(top_n)]
+
+        largest_segment = segment_rows[0].segment if segment_rows else None
+        riskiest_segment = (
+            max(segment_rows, key=lambda row: row.par90_pct).segment if segment_rows else None
+        )
+
+        summary = SegmentAnalyticsSummary(
+            dimension=dimension,
+            segment_count=len(segment_rows),
+            total_loans=int(len(df)),
+            largest_segment=largest_segment,
+            riskiest_segment=riskiest_segment,
+        )
+        return SegmentAnalyticsResponse(
+            generated_at=datetime.now(),
+            segments=segment_rows,
+            summary=summary,
+        )
+
     def _calculate_stress_test_sync(
         self,
         loans: list[LoanRecord],
@@ -1556,3 +1696,32 @@ class KPIService:
         if denominator <= 0:
             return 0.0
         return (float(numerator) / float(denominator)) * 100.0
+
+    @staticmethod
+    def _build_segment_dimension(
+        df: pd.DataFrame,
+        dpd: pd.Series,
+        dimension: str,
+    ) -> pd.Series:
+        normalized = (dimension or "risk_band").strip().lower()
+        if normalized == "risk_band":
+            result = pd.Series(["current"] * len(df), index=df.index, dtype=object)
+            result = result.mask((dpd > 0) & (dpd <= 30), "dpd_1_30")
+            result = result.mask((dpd > 30) & (dpd <= 60), "dpd_31_60")
+            result = result.mask((dpd > 60) & (dpd <= 90), "dpd_61_90")
+            result = result.mask(dpd > 90, "dpd_90_plus")
+            return result
+        if normalized == "ticket_size_band":
+            amounts = pd.to_numeric(
+                df.get("loan_amount", pd.Series([0] * len(df))), errors="coerce"
+            ).fillna(0)
+            result = pd.Series(["ticket_<1k"] * len(df), index=df.index, dtype=object)
+            result = result.mask((amounts >= 1000) & (amounts < 5000), "ticket_1k_5k")
+            result = result.mask((amounts >= 5000) & (amounts < 10000), "ticket_5k_10k")
+            result = result.mask(amounts >= 10000, "ticket_10k_plus")
+            return result
+        if normalized == "payment_frequency":
+            return df.get("payment_frequency", pd.Series(["unknown"] * len(df))).fillna("unknown")
+        if normalized == "loan_status":
+            return df.get("loan_status", pd.Series(["unknown"] * len(df))).fillna("unknown")
+        return pd.Series(["unknown"] * len(df), index=df.index, dtype=object)

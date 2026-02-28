@@ -346,6 +346,51 @@ class CohortAnalyticsResponse(BaseModel):
     summary: CohortAnalyticsSummary
 
 
+class SegmentAnalyticsRequest(BaseModel):
+    """Request body for segment drill-down analytics."""
+
+    loans: List[LoanRecord] = Field(
+        ...,
+        min_length=1,
+        description="Loan records used to compute segment-level KPIs",
+    )
+    dimension: str = Field(
+        "risk_band",
+        description="Segmentation dimension: risk_band, ticket_size_band, payment_frequency, or loan_status",
+    )
+    top_n: int = Field(
+        20,
+        ge=1,
+        le=200,
+        description="Maximum number of segments to return",
+    )
+
+
+class SegmentMetrics(BaseModel):
+    segment: str
+    loan_count: int
+    outstanding_usd: float
+    par30_pct: float
+    par90_pct: float
+    default_rate_pct: float
+    avg_interest_rate_pct: float
+    collection_rate_pct: float
+
+
+class SegmentAnalyticsSummary(BaseModel):
+    dimension: str
+    segment_count: int
+    total_loans: int
+    largest_segment: Optional[str] = None
+    riskiest_segment: Optional[str] = None
+
+
+class SegmentAnalyticsResponse(BaseModel):
+    generated_at: datetime
+    segments: List[SegmentMetrics] = Field(default_factory=list)
+    summary: SegmentAnalyticsSummary
+
+
 class KpiCoverageResponse(BaseModel):
     """Coverage report between configured KPI catalog and API-supported KPIs."""
 

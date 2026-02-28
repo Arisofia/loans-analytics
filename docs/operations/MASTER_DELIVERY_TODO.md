@@ -138,6 +138,12 @@ Delivery report snapshot (2026-02-27):
     `python/tests/test_cohort_analytics.py`,
     `python/tests/test_cohort_analytics_api.py`,
     `python/tests/test_cohort_analytics_openapi.py`.
+  - Added segment drill-down analytics endpoint:
+    `/analytics/segments` with dimension-based KPI slices (`risk_band`, `ticket_size_band`,
+    `payment_frequency`, `loan_status`) and summary metadata, with tests:
+    `python/tests/test_segment_analytics.py`,
+    `python/tests/test_segment_analytics_api.py`,
+    `python/tests/test_segment_analytics_openapi.py`.
   - Added advanced-risk tests:
     `python/tests/test_advanced_risk.py`,
     `python/tests/test_advanced_risk_api.py`,
