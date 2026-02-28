@@ -208,6 +208,7 @@ class AdvancedRiskResponse(BaseModel):
 
 class KpiResponse(BaseModel):
     PAR30: Optional[KpiSingleResponse] = None
+    PAR60: Optional[KpiSingleResponse] = None
     PAR90: Optional[KpiSingleResponse] = None
     CollectionRate: Optional[KpiSingleResponse] = None
     DefaultRate: Optional[KpiSingleResponse] = None
@@ -231,7 +232,13 @@ class KpiResponse(BaseModel):
     LTV: Optional[KpiSingleResponse] = None
     DTI: Optional[KpiSingleResponse] = None
     PortfolioYield: Optional[KpiSingleResponse] = None
-    # Changed from AuditEntry as it's not defined in this file.
+    # Next Generation KPIs
+    NPL: Optional[KpiSingleResponse] = None
+    LGD: Optional[KpiSingleResponse] = None
+    CoR: Optional[KpiSingleResponse] = None
+    NIM: Optional[KpiSingleResponse] = None
+    CureRate: Optional[KpiSingleResponse] = None
+    # Audit trail
     audit_trail: Optional[List[Dict[str, Any]]] = None
 
 
@@ -257,11 +264,24 @@ class RiskAlertsResponse(BaseModel):
     high_risk_loans: List[RiskLoan] = Field(..., description="List of high-risk loans")
 
 
+class DecisionFlag(BaseModel):
+    flag: str = Field(..., description="Flag identifier (e.g. 'Concentration', 'Liquidity')")
+    status: str = Field(..., description="Status color: green, yellow, red")
+    reason: str = Field(..., description="Reasoning for the flag status")
+
+
+class RiskStratificationResponse(BaseModel):
+    buckets: List[DPDBucketBreakdown] = Field(..., description="Breakdown by DPD buckets")
+    decision_flags: List[DecisionFlag] = Field(..., description="Portfolio decision flags")
+    summary: str = Field(..., description="High-level risk summary")
+
+
 class FullAnalysisResponse(BaseModel):
     analysis_id: str
     summary: str
     recommendations: List[str]
     risk_assessment: RiskAlertsResponse
+    risk_stratification: Optional[RiskStratificationResponse] = None
     kpis: List[KpiSingleResponse] = Field(
         default_factory=list,
         description="KPI snapshot used by the analysis, including formulas and implications",

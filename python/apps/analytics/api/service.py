@@ -14,9 +14,11 @@ from python.apps.analytics.api.models import (
     CohortAnalyticsSummary,
     CohortMetrics,
     DataQualityResponse,
+    DecisionFlag,
     KpiContext,
     KpiSingleResponse,
     LoanRecord,
+    RiskStratificationResponse,
     RollRateAnalyticsResponse,
     RollRateAnalyticsSummary,
     RollRateBucketSummary,
@@ -229,6 +231,31 @@ DEFAULT_KPI_METADATA = {
         "formula": "inactive_90d / known_customers * 100",
         "definition": "90-day churn estimate from customer activity windows.",
         "implications": "Higher churn weakens portfolio durability and can elevate CAC requirements.",
+    },
+    "NPL": {
+        "formula": "SUM(principal_balance WHERE dpd > 90) / SUM(principal_balance) * 100",
+        "definition": "Non-Performing Loans ratio (synonymous with PAR90).",
+        "implications": "Key regulatory and performance metric for asset quality.",
+    },
+    "LGD": {
+        "formula": "(1 - Recovery Rate / 100) * 100",
+        "definition": "Loss Given Default - share of defaulted exposure not expected to be recovered.",
+        "implications": "Determines the severity of losses once a default occurs.",
+    },
+    "COR": {
+        "formula": "Loss Rate (provisioning proxy)",
+        "definition": "Cost of Risk - annualized credit losses over total portfolio principal.",
+        "implications": "Direct hit to profitability; must be covered by net interest margin.",
+    },
+    "NIM": {
+        "formula": "(Interest Income - Interest Expense) / Average Earning Assets",
+        "definition": "Net Interest Margin - spread between lending yield and funding cost.",
+        "implications": "Primary driver of banking-model profitability.",
+    },
+    "CURERATE": {
+        "formula": "Migration from Delinquent to Current",
+        "definition": "Share of delinquent loans that return to current status in the next observation.",
+        "implications": "Higher cure rates indicate effective collections and healthy borrower behavior.",
     },
 }
 
@@ -806,6 +833,8 @@ class KPIService:
                 return []
 
             results = self._calculate_portfolio_performance_metrics(df)
+            roll_rates = await self.calculate_roll_rate_analytics(loans)
+            cure_rate = roll_rates.summary.portfolio_cure_rate_pct
             now = datetime.now()
 
             def build_kpi_response(
@@ -834,6 +863,7 @@ class KPIService:
 
             return [
                 build_kpi_response("PAR30", "Portfolio at Risk (30+ days)", results["par30"], "%"),
+                build_kpi_response("PAR60", "Portfolio at Risk (60+ days)", results["par60"], "%"),
                 build_kpi_response("PAR90", "Portfolio at Risk (90+ days)", results["par90"], "%"),
                 build_kpi_response(
                     "COLLECTION_RATE",
@@ -843,6 +873,13 @@ class KPIService:
                 ),
                 build_kpi_response("LOSS_RATE", "Loss Rate", results["loss_rate"], "%"),
                 build_kpi_response("RECOVERY_RATE", "Recovery Rate", results["recovery_rate"], "%"),
+                build_kpi_response("NPL", "Non-Performing Loans", results["npl"], "%"),
+                build_kpi_response("LGD", "Loss Given Default", results["lgd"], "%"),
+                build_kpi_response("COR", "Cost of Risk", results["cor"], "%"),
+                build_kpi_response("CURERATE", "Cure Rate", cure_rate, "%"),
+                build_kpi_response(
+                    "NIM", "Net Interest Margin", results["gross_margin_pct"], "%"
+                ),  # Proxy NIM using gross margin
                 build_kpi_response("CASH_ON_HAND", "Cash on Hand", results["cash_on_hand"], "USD"),
                 build_kpi_response(
                     "PORTFOLIO_YIELD",
@@ -1618,6 +1655,68 @@ class KPIService:
             alerts=alerts,
         )
 
+    async def get_risk_stratification(
+        self,
+        loans: list[LoanRecord] | None,
+    ) -> RiskStratificationResponse:
+        """Categorize portfolio by risk buckets and identify key decision flags."""
+        if loans is None or not loans:
+            return RiskStratificationResponse(
+                buckets=[], decision_flags=[], summary="No loans provided for stratification."
+            )
+
+        advanced_risk = await self.calculate_advanced_risk(loans)
+
+        decision_flags = []
+
+        # 1. Concentration Flag
+        hhi = advanced_risk.concentration_hhi
+        if hhi > 2500:
+            status = "red"
+            reason = f"HHI of {hhi:.0f} indicates high borrower concentration risk."
+        elif hhi > 1500:
+            status = "yellow"
+            reason = f"HHI of {hhi:.0f} indicates moderate borrower concentration."
+        else:
+            status = "green"
+            reason = f"HHI of {hhi:.0f} indicates healthy portfolio diversification."
+        decision_flags.append(DecisionFlag(flag="Concentration", status=status, reason=reason))
+
+        # 2. Asset Quality Flag
+        par30 = advanced_risk.par30
+        if par30 > 15:
+            status = "red"
+            reason = f"PAR30 of {par30:.1f}% exceeds high-risk threshold."
+        elif par30 > 8:
+            status = "yellow"
+            reason = f"PAR30 of {par30:.1f}% is in the cautionary zone."
+        else:
+            status = "green"
+            reason = f"PAR30 of {par30:.1f}% is within healthy limits."
+        decision_flags.append(DecisionFlag(flag="Asset Quality", status=status, reason=reason))
+
+        # 3. Liquidity Flag (Collections Coverage)
+        coverage = advanced_risk.collections_coverage
+        if coverage < 80:
+            status = "red"
+            reason = f"Collections coverage of {coverage:.1f}% indicates severe liquidity pressure."
+        elif coverage < 90:
+            status = "yellow"
+            reason = f"Collections coverage of {coverage:.1f}% is below target."
+        else:
+            status = "green"
+            reason = f"Collections coverage of {coverage:.1f}% is healthy."
+        decision_flags.append(DecisionFlag(flag="Liquidity", status=status, reason=reason))
+
+        summary = (
+            f"Portfolio shows {par30:.1f}% PAR30 across {advanced_risk.total_loans} loans. "
+            f"Asset quality is {decision_flags[1].status} and diversification is {decision_flags[0].status}."
+        )
+
+        return RiskStratificationResponse(
+            buckets=advanced_risk.dpd_buckets, decision_flags=decision_flags, summary=summary
+        )
+
     def _calculate_portfolio_performance_metrics(self, df: pd.DataFrame) -> dict:
         """Internal helper to calculate various portfolio metrics from a clean dataframe."""
         total_outstanding = float(df["principal_balance"].sum())
@@ -1642,11 +1741,15 @@ class KPIService:
         # PAR
         par30_val = float(df[df["dpd"] > 30]["principal_balance"].sum())
         par30_pct = (par30_val / total_outstanding * 100) if total_outstanding > 0 else 0
+        par60_val = float(df[df["dpd"] > 60]["principal_balance"].sum())
+        par60_pct = (par60_val / total_outstanding * 100) if total_outstanding > 0 else 0
         par90_val = float(df[df["dpd"] > 90]["principal_balance"].sum())
         par90_pct = (par90_val / total_outstanding * 100) if total_outstanding > 0 else 0
 
         # Default rate
-        default_mask = df["loan_status"].str.contains(r"default|charged.off", case=False, na=False)
+        default_mask = df["loan_status"].str.contains(
+            r"default|charged.off|90\+", case=False, na=False
+        ) | (df["dpd"] > 90)
         default_rate_pct = (default_mask.sum() / len(df) * 100) if len(df) > 0 else 0
         defaulted_balance = float(df.loc[default_mask, "principal_balance"].sum())
         loss_rate = (defaulted_balance / total_originated * 100) if total_originated > 0 else 0
@@ -1679,6 +1782,11 @@ class KPIService:
             recovery_raw = collected
         recovery_amount = float(recovery_raw[default_mask].sum())
         recovery_rate = (recovery_amount / defaulted_balance * 100) if defaulted_balance > 0 else 0
+
+        # Derived Next-Gen KPIs
+        npl_pct = par90_pct
+        lgd_pct = (100.0 - recovery_rate) if defaulted_balance > 0 else 0.0
+        cor_pct = loss_rate  # Use loss rate as a proxy for Cost of Risk
 
         cash_on_hand = (
             float(pd.to_numeric(df["current_balance"], errors="coerce").fillna(0).sum())
@@ -1771,11 +1879,15 @@ class KPIService:
 
         return {
             "par30": par30_pct,
+            "par60": par60_pct,
             "par90": par90_pct,
             "default_rate": default_rate_pct,
             "collection_rate": collection_rate,
             "loss_rate": loss_rate,
             "recovery_rate": recovery_rate,
+            "npl": npl_pct,
+            "lgd": lgd_pct,
+            "cor": cor_pct,
             "cash_on_hand": cash_on_hand,
             "yield": avg_interest_rate,
             "aum": total_outstanding,

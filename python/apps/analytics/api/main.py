@@ -34,6 +34,7 @@ try:
         LoanPortfolioRequest,
         RiskAlertsResponse,
         RiskLoan,
+        RiskStratificationResponse,
         RollRateAnalyticsRequest,
         RollRateAnalyticsResponse,
         SegmentAnalyticsRequest,
@@ -364,6 +365,13 @@ if app is not None:
                 LTV=kpi_map.get("AVG_LTV") or kpi_map.get("avg_ltv"),
                 DTI=kpi_map.get("AVG_DTI") or kpi_map.get("avg_dti"),
                 PortfolioYield=kpi_map.get("PORTFOLIO_YIELD") or kpi_map.get("portfolio_yield"),
+                # Next Generation KPIs
+                PAR60=kpi_map.get("PAR60") or kpi_map.get("par_60"),
+                NPL=kpi_map.get("NPL") or kpi_map.get("npl_ratio"),
+                LGD=kpi_map.get("LGD") or kpi_map.get("lgd"),
+                CoR=kpi_map.get("COR") or kpi_map.get("cost_of_risk"),
+                NIM=kpi_map.get("NIM") or kpi_map.get("net_interest_margin"),
+                CureRate=kpi_map.get("CURERATE") or kpi_map.get("cure_rate"),
                 audit_trail=[{"kpi_count": len(kpis), "source": "production-snapshot"}],
             )
         except Exception as e:
@@ -427,6 +435,17 @@ if app is not None:
             "dti": "AVG_DTI",
             "avg-dti": "AVG_DTI",
             "portfolio-yield": "PORTFOLIO_YIELD",
+            "par60": "PAR60",
+            "par-60": "PAR60",
+            "npl": "NPL",
+            "npl-ratio": "NPL",
+            "lgd": "LGD",
+            "cor": "COR",
+            "cost-of-risk": "COR",
+            "nim": "NIM",
+            "net-interest-margin": "NIM",
+            "cure-rate": "CURERATE",
+            "curerate": "CURERATE",
         }
 
         db_key = kpi_key_map.get(kpi_id.lower(), kpi_id.upper())
@@ -573,6 +592,23 @@ if app is not None:
             logger.error("Error in run_stress_test: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
+    @app.post(
+        "/analytics/risk-stratification",
+        response_model=RiskStratificationResponse,
+        summary="Portfolio Risk Stratification",
+        response_description="Risk bucket breakdown and key portfolio decision flags",
+    )
+    async def get_risk_stratification(
+        request: LoanPortfolioRequest = Body(...),
+        service: KPIService = Depends(get_kpi_service),
+    ):
+        """Categorize portfolio by risk buckets and identify key decision flags."""
+        try:
+            return await service.get_risk_stratification(request.loans)
+        except Exception as e:
+            logger.error("Error in get_risk_stratification: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
     @app.post("/analytics/full-analysis", response_model=FullAnalysisResponse)
     async def get_full_analysis(
         request: LoanPortfolioRequest = Body(...), service: KPIService = Depends(get_kpi_service)
@@ -654,6 +690,16 @@ if app is not None:
                 clv = get_kpi_value(["customer_lifetime_value"], 0.0)
                 clv_cac_ratio = (clv / cac) if cac > 0 else 0.0
                 advanced_risk = await service.calculate_advanced_risk(request.loans)
+                roll_rates = await service.calculate_roll_rate_analytics(request.loans)
+                has_transition_history = roll_rates.summary.historical_coverage_pct > 0
+                transition_block = (
+                    f"Portfolio Cure Rate: {roll_rates.summary.portfolio_cure_rate_pct}%\n"
+                    f"Portfolio Roll-Forward Rate: {roll_rates.summary.portfolio_roll_forward_rate_pct}%\n"
+                    f"Worst Migration Path: {roll_rates.summary.worst_migration_path or 'n/a'}\n"
+                    f"Best Cure Source: {roll_rates.summary.best_cure_source or 'n/a'}\n\n"
+                    if has_transition_history
+                    else ""
+                )
 
                 risk_status = "CRITICAL" if par30 > 10 or advanced_risk.par90 > 5 else "STABLE"
                 summary = (
@@ -669,6 +715,7 @@ if app is not None:
                     f"Borrower Concentration (HHI): {advanced_risk.concentration_hhi}\n"
                     f"Repeat Borrower Rate: {advanced_risk.repeat_borrower_rate}%\n"
                     f"Credit Quality Index: {advanced_risk.credit_quality_index}\n\n"
+                    f"{transition_block}"
                     f"Customer Acquisition Cost (CAC): ${cac}\n"
                     f"Gross Margin: {gross_margin}%\n"
                     f"90-Day Churn: {churn_90d}%\n"
@@ -688,6 +735,7 @@ if app is not None:
             gross_margin = get_kpi_value(["gross_margin_pct"], 0.0)
             churn_90d = get_kpi_value(["churn_90d"], 0.0)
             clv_cac_ratio = (clv / cac) if cac > 0 else 0.0
+            roll_rates = await service.calculate_roll_rate_analytics(request.loans)
 
             if par90 > 5:
                 recommendations.append("Activate focused recovery actions for the 90+ DPD cohort.")
@@ -707,11 +755,27 @@ if app is not None:
                 recommendations.append(
                     "Launch 90-day retention interventions for at-risk borrowers."
                 )
+            if (
+                roll_rates.summary.historical_coverage_pct > 0
+                and roll_rates.summary.portfolio_roll_forward_rate_pct >= 20
+            ):
+                recommendations.append(
+                    "Tighten early-stage collections and underwriting triggers to reduce roll-forward migration."
+                )
+            if (
+                roll_rates.summary.historical_coverage_pct > 0
+                and roll_rates.summary.portfolio_cure_rate_pct < 30
+            ):
+                recommendations.append(
+                    "Deploy targeted cure campaigns for delinquent borrowers to improve rollback to current status."
+                )
             if not recommendations:
                 recommendations = [
                     "Maintain underwriting and collections cadence with weekly KPI monitoring.",
                     "Track executive unit economics (CAC, margin, churn) as portfolio grows.",
                 ]
+
+            risk_stratification = await service.get_risk_stratification(request.loans)
 
             return FullAnalysisResponse(
                 analysis_id=trace_id,
@@ -724,6 +788,7 @@ if app is not None:
                     risk_ratio=0.0,
                     high_risk_loans=[],
                 ),
+                risk_stratification=risk_stratification,
             )
         except Exception as e:
             logger.error("Error in get_full_analysis: %s", e)

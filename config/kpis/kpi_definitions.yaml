@@ -10,8 +10,8 @@
 # Status values after normalization:
 #   active (was "Current"), closed (was "Complete"), defaulted (was "Default")
 
-version: "3.0.0"
-last_updated: "2026-02-08"
+version: "3.1.0"
+last_updated: "2026-02-28"
 
 # Portfolio Performance KPIs
 portfolio_kpis:
@@ -52,6 +52,14 @@ asset_quality_kpis:
       warning: 3
       critical: 5
 
+  par_60:
+    formula: "SUM(outstanding_balance WHERE dpd >= 60) / SUM(outstanding_balance) * 100"
+    unit: "percentage"
+    description: "Portfolio at Risk - 60 days past due (early-warning for severe delinquency migration)"
+    thresholds:
+      warning: 2
+      critical: 3.5
+
   par_90:
     formula: "SUM(outstanding_balance WHERE dpd >= 90) / SUM(outstanding_balance) * 100"
     unit: "percentage"
@@ -59,6 +67,14 @@ asset_quality_kpis:
     thresholds:
       warning: 1
       critical: 2
+
+  npl_ratio:
+    formula: "SUM(balance WHERE dpd > 90 OR status = 'defaulted') / SUM(balance) * 100"
+    unit: "percentage"
+    description: "Non-Performing Loan ratio - balance-weighted exposure to severely delinquent and defaulted accounts"
+    thresholds:
+      warning: 5
+      critical: 10
 
   default_rate:
     formula: "COUNT(loan_id WHERE status = 'defaulted') / COUNT(loan_id) * 100"
@@ -72,6 +88,30 @@ asset_quality_kpis:
     formula: "SUM(outstanding_balance WHERE status = 'defaulted') / SUM(principal_amount) * 100"
     unit: "percentage"
     description: "Outstanding balance at risk as percentage of disbursed principal"
+
+  lgd:
+    formula: "(defaulted_balance - recovered_amount) / defaulted_balance * 100"
+    unit: "percentage"
+    description: "Loss Given Default - % of defaulted exposure not recovered"
+    thresholds:
+      warning: 60
+      critical: 80
+
+  cost_of_risk:
+    formula: "NPL_ratio * LGD / 100"
+    unit: "percentage"
+    description: "Expected credit loss as % of total portfolio balance (Cost of Risk)"
+    thresholds:
+      warning: 3
+      critical: 6
+
+  cure_rate:
+    formula: "delinquent_loans_with_recent_payment / total_delinquent_loans * 100"
+    unit: "percentage"
+    description: "Proxy cure rate: delinquent loans showing payment activity (requires T/T-1 snapshot for precision)"
+    thresholds:
+      target: 30
+      warning: 15
 
 # Cash Flow KPIs
 cash_flow_kpis:
@@ -96,6 +136,24 @@ cash_flow_kpis:
     formula: "SUM(current_balance)"
     unit: "USD"
     description: "Total current cash position across portfolio"
+
+  net_interest_margin:
+    formula: "(weighted_interest_yield - funding_cost_rate) * 100"
+    unit: "percentage"
+    description: "Net Interest Margin - spread between portfolio gross yield and assumed funding cost (default 8%)"
+    thresholds:
+      warning: 5
+      target: 10
+      critical: 2
+
+  payback_period:
+    formula: "CAC / monthly_ARPU"
+    unit: "months"
+    description: "CAC Payback Period - months to recover customer acquisition cost from monthly revenue"
+    thresholds:
+      target: 12
+      warning: 18
+      critical: 24
 
 # Growth KPIs
 growth_kpis:

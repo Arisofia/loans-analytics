@@ -329,7 +329,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-  /analytics/kpis/portfolio-yield:
+  /analytics/portfolio-yield:
     post:
       summary: Calculate Portfolio Yield
       description: |
@@ -350,6 +350,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/KpiSingleResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /analytics/risk-stratification:
+    post:
+      summary: Portfolio Risk Stratification
+      description: |
+        Categorizes the portfolio by risk buckets and identifies key decision flags for
+        concentration, asset quality, and liquidity.
+      operationId: getRiskStratification
+      tags:
+        - Analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanPortfolioRequest"
+      responses:
+        "200":
+          description: Portfolio risk stratification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskStratificationResponse"
         "400":
           description: Invalid request
           content:
@@ -605,9 +633,27 @@ components:
       properties:
         PAR30:
           $ref: "#/components/schemas/KpiSingleResponse"
+        PAR60:
+          $ref: "#/components/schemas/KpiSingleResponse"
         PAR90:
           $ref: "#/components/schemas/KpiSingleResponse"
         CollectionRate:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        DefaultRate:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        LossRate:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        RecoveryRate:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        NPL:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        LGD:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        COR:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        CURERATE:
+          $ref: "#/components/schemas/KpiSingleResponse"
+        NIM:
           $ref: "#/components/schemas/KpiSingleResponse"
         PortfolioHealth:
           $ref: "#/components/schemas/KpiSingleResponse"
@@ -683,37 +729,72 @@ components:
           maxItems: 10000
           items:
             $ref: "#/components/schemas/RiskLoan"
-    FullAnalysisResponse:
+    DecisionFlag:
+      type: object
+      required:
+        - flag
+        - status
+        - reason
+      properties:
+        flag:
+          type: string
+        status:
+          type: string
+          enum: [green, yellow, red]
+        reason:
+          type: string
+    RiskStratificationResponse:
+      type: object
+      required:
+        - buckets
+        - decision_flags
+        - summary
+      properties:
+        buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/DPDBucketBreakdown"
+        decision_flags:
+          type: array
+          items:
+            $ref: "#/components/schemas/DecisionFlag"
+        summary:
+          type: string
+    DPDBucketBreakdown:
       type: object
       properties:
-        portfolio_delinquency_rate_percent:
+        bucket:
+          type: string
+        loan_count:
+          type: integer
+        balance:
           type: number
-          format: float
-        portfolio_yield_percent:
+        balance_share_pct:
           type: number
-          format: float
-        average_ltv_ratio_percent:
-          type: number
-          format: float
-        average_dti_ratio_percent:
-          type: number
-          format: float
-        data_quality_score:
-          type: number
-          format: float
-          minimum: 0
-          maximum: 100
-        average_null_ratio_percent:
-          type: number
-          format: float
-        invalid_numeric_ratio_percent:
-          type: number
-          format: float
-        coercion_report:
-          type: object
-          additionalProperties:
-            type: integer
-          description: Count of invalid values coerced per column
+    FullAnalysisResponse:
+      type: object
+      required:
+        - analysis_id
+        - summary
+        - recommendations
+        - risk_assessment
+      properties:
+        analysis_id:
+          type: string
+        summary:
+          type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        risk_assessment:
+          $ref: "#/components/schemas/RiskAlertsResponse"
+        risk_stratification:
+          $ref: "#/components/schemas/RiskStratificationResponse"
+        kpis:
+          type: array
+          items:
+            $ref: "#/components/schemas/KpiSingleResponse"
     DataQualityResponse:
       type: object
       properties:
