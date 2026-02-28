@@ -253,12 +253,16 @@ jobs:
           az account show --query '{id:id,name:name,tenantId:tenantId}' -o table
 
       - name: Setup environment
+        env:
+          ABACO_API_BASE: ${{ secrets.ABACO_API_BASE }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           make setup
           {
-            echo "ABACO_API_BASE=${{ secrets.ABACO_API_BASE }}"
-            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}"
-            echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
+            echo "ABACO_API_BASE=$ABACO_API_BASE"
+            echo "SUPABASE_URL=$SUPABASE_URL"
+            echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
           } >> .env
 
       - name: Run Hardened Deployment Script
@@ -296,7 +300,10 @@ jobs:
         run: terraform init -input=false
 
       - name: Terraform Apply
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
         run: |
           terraform apply -auto-approve \
-            -var "aws_region=${{ secrets.AWS_REGION }}" \
-            -var "environment=${{ inputs.environment }}"
+            -var "aws_region=$AWS_REGION" \
+            -var "environment=$DEPLOY_ENVIRONMENT"
