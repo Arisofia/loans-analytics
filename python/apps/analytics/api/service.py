@@ -1893,6 +1893,52 @@ class KPIService:
             buckets=advanced_risk.dpd_buckets, decision_flags=decision_flags, summary=summary
         )
 
+    async def get_risk_heatmap_summary(self, loans: list[LoanRecord] | None) -> dict[str, Any]:
+        """Build a structured heatmap summary of bucket-level exposure and risk intensity."""
+        if not loans:
+            return {"status": "no_data", "heatmap": [], "critical_buckets": []}
+
+        df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
+        metrics = self._calculate_portfolio_performance_metrics(df)
+
+        buckets = [
+            {"id": "1_30", "label": "Early (1-30 DPD)", "value": metrics["dpd_1_30"], "threshold": 8.0},
+            {"id": "31_60", "label": "Warning (31-60 DPD)", "value": metrics["dpd_31_60"], "threshold": 4.0},
+            {"id": "61_90", "label": "Severe (61-90 DPD)", "value": metrics["dpd_61_90"], "threshold": 2.0},
+            {"id": "90_plus", "label": "NPL (90+ DPD)", "value": metrics["dpd_90_plus"], "threshold": 1.0},
+        ]
+
+        heatmap = []
+        critical_buckets = []
+        for b in buckets:
+            intensity = "low"
+            if b["value"] > b["threshold"] * 2:
+                intensity = "high"
+                critical_buckets.append(b["label"])
+            elif b["value"] > b["threshold"]:
+                intensity = "medium"
+
+            heatmap.append({
+                "bucket": b["id"],
+                "label": b["label"],
+                "exposure_pct": round(b["value"], 2),
+                "risk_intensity": intensity
+            })
+
+        narrative = "Portfolio risk is well-distributed."
+        if critical_buckets:
+            narrative = f"Critical risk concentration identified in: {', '.join(critical_buckets)}."
+        elif any(h["risk_intensity"] == "medium" for h in heatmap):
+            narrative = "Moderate risk migration detected in early-stage buckets."
+
+        return {
+            "status": "success",
+            "heatmap": heatmap,
+            "critical_buckets": critical_buckets,
+            "narrative": narrative,
+            "overall_par30": round(metrics["par30"], 2)
+        }
+
     def _calculate_portfolio_performance_metrics(self, df: pd.DataFrame) -> dict:
         """Internal helper to calculate various portfolio metrics from a clean dataframe."""
         total_outstanding = float(df["principal_balance"].sum())

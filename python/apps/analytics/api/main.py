@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -691,6 +692,7 @@ if app is not None:
                 # Fetch extra analytical layers for the context
                 risk_stratification = await service.get_risk_stratification(request.loans)
                 vintage_curves = await service.calculate_vintage_curves(request.loans)
+                risk_heatmap = await service.get_risk_heatmap_summary(request.loans)
 
                 initial_context = {
                     "portfolio_data": (
@@ -700,6 +702,7 @@ if app is not None:
                     ),
                     "risk_stratification": risk_stratification.model_dump_json(),
                     "vintage_data": vintage_curves.model_dump_json(),
+                    "risk_heatmap": json.dumps(risk_heatmap),
                 }
 
                 results = orchestrator.run_scenario(
@@ -729,12 +732,21 @@ if app is not None:
                 churn_90d = get_kpi_value(["churn_90d"], 0.0)
                 clv = get_kpi_value(["customer_lifetime_value"], 0.0)
                 clv_cac_ratio = (clv / cac) if cac > 0 else 0.0
-                
+
                 advanced_risk = await service.calculate_advanced_risk(request.loans)
                 risk_strat = await service.get_risk_stratification(request.loans)
                 vintage = await service.calculate_vintage_curves(request.loans)
                 roll_rates = await service.calculate_roll_rate_analytics(request.loans)
-                
+
+                dpd_1_30 = get_kpi_value(["dpd_1_30", "delinq_1_30_rate"], 0.0)
+                dpd_31_60 = get_kpi_value(["dpd_31_60", "delinq_31_60_rate"], 0.0)
+                par60 = get_kpi_value(["par_60", "par60"], advanced_risk.par60)
+                risk_heatmap = (
+                    f"1-30:{round(dpd_1_30, 2)}% | "
+                    f"31-60:{round(dpd_31_60, 2)}% | "
+                    f"60+:{round(par60, 2)}%"
+                )
+
                 has_transition_history = roll_rates.summary.historical_coverage_pct > 0
                 transition_block = (
                     f"Portfolio Cure Rate: {roll_rates.summary.portfolio_cure_rate_pct}%\n"
@@ -746,13 +758,14 @@ if app is not None:
                 )
 
                 strat_summary = " | ".join([f"{f.flag}: {f.status.upper()}" for f in risk_strat.decision_flags])
-                
+
                 risk_status = "CRITICAL" if par30 > 10 or advanced_risk.par90 > 5 else "STABLE"
                 summary = (
                     f"PROPORTIONAL PORTFOLIO ANALYSIS ({risk_status})\n"
                     f"-------------------------------------------\n"
                     f"Portfolio Size: {loans_count} active loans\n"
                     f"Risk stratification: {strat_summary}\n"
+                    f"Risk Heatmap: {risk_heatmap}\n"
                     f"Risk exposure (PAR30): {par30}%\n"
                     f"Risk exposure (PAR60): {advanced_risk.par60}%\n"
                     f"Severe delinquency (PAR90): {advanced_risk.par90}%\n"

@@ -231,11 +231,17 @@ class MultiAgentOrchestrator:
                         prompt_template=(
                             "Analyze the loan portfolio: {portfolio_data}. "
                             "Layer 1 - Stratification: Review decision flags and risk buckets: {risk_stratification}. "
-                            "Layer 2 - Vintage: Analyze delinquency evolution by Months on Book (MoB): {vintage_data}. "
+                            "Layer 2 - Heatmap: Analyze the risk intensity by DPD bucket: {risk_heatmap}. "
+                            "Layer 3 - Vintage: Analyze delinquency evolution by Months on Book (MoB): {vintage_data}. "
                             "Identify toxic vintages, concentration triggers, and structural asset quality trends. "
                             "For every KPI cited, include the formula and the computed value."
                         ),
-                        context_keys=["portfolio_data", "risk_stratification", "vintage_data"],
+                        context_keys=[
+                            "portfolio_data",
+                            "risk_stratification",
+                            "risk_heatmap",
+                            "vintage_data",
+                        ],
                         output_key="risk_analysis",
                     ),
                     ScenarioStep(

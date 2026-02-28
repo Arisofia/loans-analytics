@@ -91,6 +91,7 @@ def test_full_analysis_deterministic_summary_includes_advanced_metrics(monkeypat
     assert "Collections coverage" in summary
     assert "Borrower Concentration (HHI)" in summary
     assert "Credit Quality Index" in summary
+    assert "Risk Heatmap:" in summary
     assert "Customer Acquisition Cost (CAC)" in summary
     assert "Gross Margin" in summary
     assert "6-Month Revenue Forecast" in summary
