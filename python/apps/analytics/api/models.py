@@ -254,6 +254,63 @@ class FullAnalysisResponse(BaseModel):
     )
 
 
+class StressTestRequest(BaseModel):
+    """Request body for portfolio stress testing analytics."""
+
+    loans: List[LoanRecord] = Field(
+        ...,
+        min_length=1,
+        description="Loan-level records used to build baseline and stressed projections",
+    )
+    par_deterioration_pct: float = Field(
+        25.0,
+        description="Relative deterioration applied to delinquency/default/loss metrics (%)",
+    )
+    collection_efficiency_pct: float = Field(
+        -10.0,
+        description="Relative shock to collection efficiency (%) (negative means deterioration)",
+    )
+    recovery_efficiency_pct: float = Field(
+        -15.0,
+        description="Relative shock to recovery efficiency (%) (negative means deterioration)",
+    )
+    funding_cost_bps: float = Field(
+        150.0,
+        ge=0.0,
+        description="Additional funding cost in basis points to stress margin and forecast",
+    )
+
+
+class StressTestAssumptions(BaseModel):
+    par_deterioration_pct: float
+    collection_efficiency_pct: float
+    recovery_efficiency_pct: float
+    funding_cost_bps: float
+
+
+class StressTestMetrics(BaseModel):
+    par30_pct: float
+    par90_pct: float
+    default_rate_pct: float
+    loss_rate_pct: float
+    collection_rate_pct: float
+    recovery_rate_pct: float
+    gross_margin_pct: float
+    revenue_forecast_6m_usd: float
+    expected_credit_loss_usd: float
+    expected_collections_usd: float
+
+
+class StressTestResponse(BaseModel):
+    scenario_id: str
+    generated_at: datetime
+    assumptions: StressTestAssumptions
+    baseline: StressTestMetrics
+    stressed: StressTestMetrics
+    deltas: StressTestMetrics
+    alerts: List[str] = Field(default_factory=list)
+
+
 class KpiCoverageResponse(BaseModel):
     """Coverage report between configured KPI catalog and API-supported KPIs."""
 

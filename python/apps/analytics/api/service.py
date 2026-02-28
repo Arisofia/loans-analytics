@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
+import uuid
 
 import pandas as pd
 from starlette.concurrency import run_in_threadpool
@@ -13,6 +14,9 @@ from python.apps.analytics.api.models import (
     KpiContext,
     KpiSingleResponse,
     LoanRecord,
+    StressTestAssumptions,
+    StressTestMetrics,
+    StressTestResponse,
     ValidationResponse,
 )
 from python.config import settings
@@ -924,6 +928,212 @@ class KPIService:
             )
             raise
 
+    async def calculate_stress_test(
+        self,
+        loans: list[LoanRecord] | None,
+        par_deterioration_pct: float = 25.0,
+        collection_efficiency_pct: float = -10.0,
+        recovery_efficiency_pct: float = -15.0,
+        funding_cost_bps: float = 150.0,
+    ) -> StressTestResponse:
+        """Run deterministic stress projections for core risk and unit-economics metrics."""
+        try:
+            if loans is None:
+                loans = []
+            return await run_in_threadpool(
+                self._calculate_stress_test_sync,
+                loans,
+                par_deterioration_pct,
+                collection_efficiency_pct,
+                recovery_efficiency_pct,
+                funding_cost_bps,
+            )
+        except Exception as e:
+            logger.error(
+                "Error calculating stress test for actor %s: %s",
+                self.actor,
+                e,
+                exc_info=True,
+            )
+            raise
+
+    def _calculate_stress_test_sync(
+        self,
+        loans: list[LoanRecord],
+        par_deterioration_pct: float,
+        collection_efficiency_pct: float,
+        recovery_efficiency_pct: float,
+        funding_cost_bps: float,
+    ) -> StressTestResponse:
+        df = self._convert_loan_records_to_dataframe(loans)
+        if df.empty:
+            zero_metrics = StressTestMetrics(
+                par30_pct=0.0,
+                par90_pct=0.0,
+                default_rate_pct=0.0,
+                loss_rate_pct=0.0,
+                collection_rate_pct=0.0,
+                recovery_rate_pct=0.0,
+                gross_margin_pct=0.0,
+                revenue_forecast_6m_usd=0.0,
+                expected_credit_loss_usd=0.0,
+                expected_collections_usd=0.0,
+            )
+            assumptions = StressTestAssumptions(
+                par_deterioration_pct=par_deterioration_pct,
+                collection_efficiency_pct=collection_efficiency_pct,
+                recovery_efficiency_pct=recovery_efficiency_pct,
+                funding_cost_bps=funding_cost_bps,
+            )
+            return StressTestResponse(
+                scenario_id=str(uuid.uuid4()),
+                generated_at=datetime.now(),
+                assumptions=assumptions,
+                baseline=zero_metrics,
+                stressed=zero_metrics,
+                deltas=zero_metrics,
+                alerts=[],
+            )
+
+        baseline_raw = self._calculate_portfolio_performance_metrics(df.copy())
+        total_originated = float(pd.to_numeric(df["loan_amount"], errors="coerce").fillna(0).sum())
+        total_scheduled = (
+            float(pd.to_numeric(df["total_scheduled"], errors="coerce").fillna(0).sum())
+            if "total_scheduled" in df.columns
+            else 0.0
+        )
+
+        baseline = StressTestMetrics(
+            par30_pct=round(float(baseline_raw["par30"]), 2),
+            par90_pct=round(float(baseline_raw["par90"]), 2),
+            default_rate_pct=round(float(baseline_raw["default_rate"]), 2),
+            loss_rate_pct=round(float(baseline_raw["loss_rate"]), 2),
+            collection_rate_pct=round(float(baseline_raw["collection_rate"]), 2),
+            recovery_rate_pct=round(float(baseline_raw["recovery_rate"]), 2),
+            gross_margin_pct=round(float(baseline_raw["gross_margin_pct"]), 2),
+            revenue_forecast_6m_usd=round(float(baseline_raw["revenue_forecast_6m"]), 2),
+            expected_credit_loss_usd=round(
+                total_originated * float(baseline_raw["loss_rate"]) / 100.0,
+                2,
+            ),
+            expected_collections_usd=round(
+                total_scheduled * float(baseline_raw["collection_rate"]) / 100.0,
+                2,
+            ),
+        )
+
+        par_factor = 1.0 + (float(par_deterioration_pct) / 100.0)
+        collection_factor = 1.0 + (float(collection_efficiency_pct) / 100.0)
+        recovery_factor = 1.0 + (float(recovery_efficiency_pct) / 100.0)
+
+        stressed_par30 = self._clamp_pct(baseline.par30_pct * par_factor)
+        stressed_par90 = self._clamp_pct(
+            baseline.par90_pct * (1.0 + ((float(par_deterioration_pct) * 1.2) / 100.0))
+        )
+        stressed_default = self._clamp_pct(
+            baseline.default_rate_pct * (1.0 + ((float(par_deterioration_pct) * 0.8) / 100.0))
+        )
+        stressed_loss = self._clamp_pct(
+            baseline.loss_rate_pct * (1.0 + ((float(par_deterioration_pct) * 1.1) / 100.0))
+        )
+        stressed_collection = self._clamp_pct(baseline.collection_rate_pct * collection_factor)
+        stressed_recovery = self._clamp_pct(baseline.recovery_rate_pct * recovery_factor)
+
+        funding_cost_pct = float(funding_cost_bps) / 100.0
+        loss_drag = max(0.0, stressed_loss - baseline.loss_rate_pct) * 0.35
+        recovery_drag = max(0.0, baseline.recovery_rate_pct - stressed_recovery) * 0.15
+        par_drag = max(0.0, stressed_par30 - baseline.par30_pct) * 0.10
+        collection_drag = max(0.0, baseline.collection_rate_pct - stressed_collection) * 0.08
+        stressed_margin = round(
+            baseline.gross_margin_pct
+            - funding_cost_pct
+            - loss_drag
+            - recovery_drag
+            - par_drag
+            - collection_drag,
+            2,
+        )
+
+        forecast_drag = (
+            max(0.0, stressed_default - baseline.default_rate_pct) * 0.5
+            + max(
+                0.0,
+                baseline.collection_rate_pct - stressed_collection,
+            )
+            * 0.3
+        )
+        stressed_forecast = max(
+            0.0,
+            baseline.revenue_forecast_6m_usd * (1.0 - (forecast_drag / 100.0)),
+        )
+
+        stressed = StressTestMetrics(
+            par30_pct=round(stressed_par30, 2),
+            par90_pct=round(stressed_par90, 2),
+            default_rate_pct=round(stressed_default, 2),
+            loss_rate_pct=round(stressed_loss, 2),
+            collection_rate_pct=round(stressed_collection, 2),
+            recovery_rate_pct=round(stressed_recovery, 2),
+            gross_margin_pct=round(stressed_margin, 2),
+            revenue_forecast_6m_usd=round(stressed_forecast, 2),
+            expected_credit_loss_usd=round((total_originated * stressed_loss) / 100.0, 2),
+            expected_collections_usd=round((total_scheduled * stressed_collection) / 100.0, 2),
+        )
+
+        deltas = StressTestMetrics(
+            par30_pct=round(stressed.par30_pct - baseline.par30_pct, 2),
+            par90_pct=round(stressed.par90_pct - baseline.par90_pct, 2),
+            default_rate_pct=round(stressed.default_rate_pct - baseline.default_rate_pct, 2),
+            loss_rate_pct=round(stressed.loss_rate_pct - baseline.loss_rate_pct, 2),
+            collection_rate_pct=round(
+                stressed.collection_rate_pct - baseline.collection_rate_pct, 2
+            ),
+            recovery_rate_pct=round(stressed.recovery_rate_pct - baseline.recovery_rate_pct, 2),
+            gross_margin_pct=round(stressed.gross_margin_pct - baseline.gross_margin_pct, 2),
+            revenue_forecast_6m_usd=round(
+                stressed.revenue_forecast_6m_usd - baseline.revenue_forecast_6m_usd,
+                2,
+            ),
+            expected_credit_loss_usd=round(
+                stressed.expected_credit_loss_usd - baseline.expected_credit_loss_usd,
+                2,
+            ),
+            expected_collections_usd=round(
+                stressed.expected_collections_usd - baseline.expected_collections_usd,
+                2,
+            ),
+        )
+
+        alerts: list[str] = []
+        if stressed.par90_pct >= 10.0:
+            alerts.append("Severe delinquency stress: PAR90 exceeds 10%.")
+        if stressed.collection_rate_pct < 75.0:
+            alerts.append("Collections stress: projected collection rate below 75%.")
+        if stressed.gross_margin_pct < 0.0:
+            alerts.append("Profitability stress: projected gross margin turns negative.")
+        if (
+            baseline.expected_credit_loss_usd > 0
+            and stressed.expected_credit_loss_usd >= baseline.expected_credit_loss_usd * 1.25
+        ):
+            alerts.append("Capital stress: expected credit loss increases by at least 25%.")
+
+        assumptions = StressTestAssumptions(
+            par_deterioration_pct=round(float(par_deterioration_pct), 2),
+            collection_efficiency_pct=round(float(collection_efficiency_pct), 2),
+            recovery_efficiency_pct=round(float(recovery_efficiency_pct), 2),
+            funding_cost_bps=round(float(funding_cost_bps), 2),
+        )
+
+        return StressTestResponse(
+            scenario_id=str(uuid.uuid4()),
+            generated_at=datetime.now(),
+            assumptions=assumptions,
+            baseline=baseline,
+            stressed=stressed,
+            deltas=deltas,
+            alerts=alerts,
+        )
+
     def _calculate_portfolio_performance_metrics(self, df: pd.DataFrame) -> dict:
         """Internal helper to calculate various portfolio metrics from a clean dataframe."""
         total_outstanding = float(df["principal_balance"].sum())
@@ -1194,3 +1404,8 @@ class KPIService:
             return float(candidate)
         except Exception:
             return 0.0
+
+    @staticmethod
+    def _clamp_pct(value: float) -> float:
+        """Clamp percentage-like values into [0, 100] range."""
+        return max(0.0, min(100.0, float(value)))

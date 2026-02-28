@@ -32,6 +32,8 @@ try:
         LoanPortfolioRequest,
         RiskAlertsResponse,
         RiskLoan,
+        StressTestRequest,
+        StressTestResponse,
         ValidationResponse,
     )
     from python.apps.analytics.api.monitoring_models import (
@@ -485,6 +487,29 @@ if app is not None:
             return await service.calculate_advanced_risk(request.loans)
         except Exception as e:
             logger.error("Error in get_advanced_risk: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+    @app.post(
+        "/analytics/stress-test",
+        response_model=StressTestResponse,
+        summary="Portfolio Stress Test",
+        response_description="Baseline vs stressed projections for risk and unit-economics KPIs",
+    )
+    async def run_stress_test(
+        request: StressTestRequest = Body(...),
+        service: KPIService = Depends(get_kpi_service),
+    ):
+        """Run deterministic stress projections for delinquency, collections, losses and margin."""
+        try:
+            return await service.calculate_stress_test(
+                loans=request.loans,
+                par_deterioration_pct=request.par_deterioration_pct,
+                collection_efficiency_pct=request.collection_efficiency_pct,
+                recovery_efficiency_pct=request.recovery_efficiency_pct,
+                funding_cost_bps=request.funding_cost_bps,
+            )
+        except Exception as e:
+            logger.error("Error in run_stress_test: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post("/analytics/full-analysis", response_model=FullAnalysisResponse)

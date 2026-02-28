@@ -126,6 +126,12 @@ Delivery report snapshot (2026-02-27):
     with deterministic fallback for single-month forecast inputs.
   - Enriched deterministic `/analytics/full-analysis` narrative and recommendations
     to include executive KPI context (`CAC`, margin, churn, forecast, CLV/CAC ratio).
+  - Added deterministic stress-testing analytics endpoint:
+    `/analytics/stress-test` with typed assumptions + baseline/stressed/delta outputs
+    and regression coverage:
+    `python/tests/test_stress_test.py`,
+    `python/tests/test_stress_test_api.py`,
+    `python/tests/test_stress_test_openapi.py`.
   - Added advanced-risk tests:
     `python/tests/test_advanced_risk.py`,
     `python/tests/test_advanced_risk_api.py`,
