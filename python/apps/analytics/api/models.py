@@ -201,6 +201,10 @@ class KpiResponse(BaseModel):
     LossRate: Optional[KpiSingleResponse] = None
     RecoveryRate: Optional[KpiSingleResponse] = None
     CashOnHand: Optional[KpiSingleResponse] = None
+    CAC: Optional[KpiSingleResponse] = None
+    GrossMarginPct: Optional[KpiSingleResponse] = None
+    RevenueForecast6M: Optional[KpiSingleResponse] = None
+    Churn90D: Optional[KpiSingleResponse] = None
     PortfolioHealth: Optional[KpiSingleResponse] = None
     CustomerLifetimeValue: Optional[KpiSingleResponse] = None
     ActiveBorrowers: Optional[KpiSingleResponse] = None

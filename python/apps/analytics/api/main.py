@@ -333,6 +333,11 @@ if app is not None:
                 LossRate=kpi_map.get("LOSS_RATE") or kpi_map.get("loss_rate"),
                 RecoveryRate=kpi_map.get("RECOVERY_RATE") or kpi_map.get("recovery_rate"),
                 CashOnHand=kpi_map.get("CASH_ON_HAND") or kpi_map.get("cash_on_hand"),
+                CAC=kpi_map.get("CAC") or kpi_map.get("cac"),
+                GrossMarginPct=kpi_map.get("GROSS_MARGIN_PCT") or kpi_map.get("gross_margin_pct"),
+                RevenueForecast6M=kpi_map.get("REVENUE_FORECAST_6M")
+                or kpi_map.get("revenue_forecast_6m"),
+                Churn90D=kpi_map.get("CHURN_90D") or kpi_map.get("churn_90d"),
                 PortfolioHealth=kpi_map.get("AUM") or kpi_map.get("portfolio_growth_rate"),
                 CustomerLifetimeValue=kpi_map.get("CUSTOMER_LIFETIME_VALUE")
                 or kpi_map.get("customer_lifetime_value"),
@@ -396,6 +401,10 @@ if app is not None:
             "loss-rate": "LOSS_RATE",
             "recovery-rate": "RECOVERY_RATE",
             "cash-on-hand": "CASH_ON_HAND",
+            "cac": "CAC",
+            "gross-margin-pct": "GROSS_MARGIN_PCT",
+            "revenue-forecast-6m": "REVENUE_FORECAST_6M",
+            "churn-90d": "CHURN_90D",
             "portfolio-health": "PORTFOLIO_HEALTH",
             "active-borrowers": "ACTIVE_BORROWERS",
             "repeat-borrower-rate": "REPEAT_BORROWER_RATE",

@@ -91,6 +91,14 @@ def test_calculate_all_kpis_includes_expanded_metrics():
     assert body["DisbursementVolumeMTD"]["value"] == 2500.0
     assert body["NewLoansCountMTD"]["value"] == 2.0
     assert body["CustomerLifetimeValue"]["value"] == 1500.0
+    assert body["CAC"]["id"] == "CAC"
+    assert body["CAC"]["value"] > 0.0
+    assert body["GrossMarginPct"]["id"] == "GROSS_MARGIN_PCT"
+    assert 0.0 <= body["GrossMarginPct"]["value"] <= 100.0
+    assert body["RevenueForecast6M"]["id"] == "REVENUE_FORECAST_6M"
+    assert body["RevenueForecast6M"]["value"] > 0.0
+    assert body["Churn90D"]["id"] == "CHURN_90D"
+    assert body["Churn90D"]["value"] == 0.0
     assert body["DefaultRate"]["value"] == 50.0
     assert body["TotalLoansCount"]["value"] == 2.0
     assert body["ActiveBorrowers"]["value"] == 1.0
@@ -138,3 +146,19 @@ def test_get_single_kpi_supports_new_path_aliases():
     total_loans = client.post("/analytics/kpis/total-loans-count", json=payload)
     assert total_loans.status_code == 200
     assert total_loans.json()["id"] == "TOTAL_LOANS_COUNT"
+
+    cac = client.post("/analytics/kpis/cac", json=payload)
+    assert cac.status_code == 200
+    assert cac.json()["id"] == "CAC"
+
+    margin = client.post("/analytics/kpis/gross-margin-pct", json=payload)
+    assert margin.status_code == 200
+    assert margin.json()["id"] == "GROSS_MARGIN_PCT"
+
+    forecast = client.post("/analytics/kpis/revenue-forecast-6m", json=payload)
+    assert forecast.status_code == 200
+    assert forecast.json()["id"] == "REVENUE_FORECAST_6M"
+
+    churn = client.post("/analytics/kpis/churn-90d", json=payload)
+    assert churn.status_code == 200
+    assert churn.json()["id"] == "CHURN_90D"

@@ -54,6 +54,10 @@ KPI_API_TO_CATALOG_ID = {
     "AUTOMATION_RATE": "automation_rate",
     "PROCESSING_TIME_AVG": "processing_time_avg",
     "AUM": "total_outstanding_balance",
+    "CAC": "cac",
+    "GROSS_MARGIN_PCT": "gross_margin_pct",
+    "REVENUE_FORECAST_6M": "revenue_forecast_6m",
+    "CHURN_90D": "churn_90d",
 }
 
 DEFAULT_KPI_METADATA = {
@@ -192,6 +196,26 @@ DEFAULT_KPI_METADATA = {
         "definition": "Average total processed value per borrower in the provided loan sample.",
         "implications": "Higher CLV can improve unit economics if loss and servicing costs remain controlled.",
     },
+    "CAC": {
+        "formula": "SUM(marketing_spend) / COUNT(new_customers)",
+        "definition": "Customer acquisition cost estimated from catalog processor unit economics.",
+        "implications": "Lower CAC improves payback and growth efficiency.",
+    },
+    "GROSS_MARGIN_PCT": {
+        "formula": "(revenue - direct_costs - risk_cost_proxy) / revenue * 100",
+        "definition": "Gross margin from strategic unit-economics model.",
+        "implications": "Declining gross margin can indicate pricing or risk-cost pressure.",
+    },
+    "REVENUE_FORECAST_6M": {
+        "formula": "SUM(forecast_revenue_usd for next 6 months)",
+        "definition": "Total projected revenue across the next six forecasted months.",
+        "implications": "Forecast deterioration can signal slowing growth or margin compression ahead.",
+    },
+    "CHURN_90D": {
+        "formula": "inactive_90d / known_customers * 100",
+        "definition": "90-day churn estimate from customer activity windows.",
+        "implications": "Higher churn weakens portfolio durability and can elevate CAC requirements.",
+    },
 }
 
 
@@ -271,6 +295,10 @@ class KPIService:
             "ProcessingTimeAvg": ["PROCESSING_TIME_AVG", "processing_time_avg"],
             "DisbursementVolumeMTD": ["DISBURSEMENT_VOLUME_MTD", "disbursement_volume_mtd"],
             "NewLoansCountMTD": ["NEW_LOANS_COUNT_MTD", "new_loans_count_mtd"],
+            "CAC": ["CAC", "cac"],
+            "GrossMarginPct": ["GROSS_MARGIN_PCT", "gross_margin_pct"],
+            "RevenueForecast6M": ["REVENUE_FORECAST_6M", "revenue_forecast_6m"],
+            "Churn90D": ["CHURN_90D", "churn_90d"],
             "LTV": ["AVG_LTV", "average_loan_size"],
             "DTI": ["AVG_DTI", "default_rate"],
             "PortfolioYield": ["PORTFOLIO_YIELD", "portfolio_yield"],
@@ -830,6 +858,17 @@ class KPIService:
                     results["customer_lifetime_value"],
                     "USD",
                 ),
+                build_kpi_response("CAC", "Customer Acquisition Cost", results["cac"], "USD"),
+                build_kpi_response(
+                    "GROSS_MARGIN_PCT", "Gross Margin %", results["gross_margin_pct"], "%"
+                ),
+                build_kpi_response(
+                    "REVENUE_FORECAST_6M",
+                    "Revenue Forecast (6M)",
+                    results["revenue_forecast_6m"],
+                    "USD",
+                ),
+                build_kpi_response("CHURN_90D", "90-Day Churn Rate", results["churn_90d"], "%"),
                 build_kpi_response("AVG_LTV", "Average Loan-to-Value", results["avg_ltv"], "%"),
                 build_kpi_response("AVG_DTI", "Average Debt-to-Income", results["avg_dti"], "%"),
                 build_kpi_response("DEFAULT_RATE", "Default Rate", results["default_rate"], "%"),
@@ -1034,6 +1073,7 @@ class KPIService:
         customer_lifetime_value = (
             float(tpv_series.sum()) / unique_borrowers if unique_borrowers > 0 else 0.0
         )
+        executive_metrics = self._calculate_realtime_executive_metrics(df)
 
         return {
             "par30": par30_pct,
@@ -1049,6 +1089,10 @@ class KPIService:
             "disbursement_volume_mtd": disbursement_volume_mtd,
             "new_loans_count_mtd": new_loans_count_mtd,
             "customer_lifetime_value": customer_lifetime_value,
+            "cac": executive_metrics["cac"],
+            "gross_margin_pct": executive_metrics["gross_margin_pct"],
+            "revenue_forecast_6m": executive_metrics["revenue_forecast_6m"],
+            "churn_90d": executive_metrics["churn_90d"],
             "avg_ltv": df["ltv_ratio"].mean(),
             "avg_dti": df["dti_ratio"].mean(),
             "active_borrowers": active_borrowers,
@@ -1057,3 +1101,96 @@ class KPIService:
             "processing_time_avg": processing_time_avg,
             "count": float(len(df)),
         }
+
+    def _calculate_realtime_executive_metrics(self, df: pd.DataFrame) -> dict[str, float]:
+        """
+        Derive executive metrics (CAC, margin, forecast, churn) from the existing
+        KPI catalog processor so the standard realtime endpoint can expose them.
+        """
+        try:
+            normalized = self._normalize_loans_for_catalog(
+                df.copy(),
+                pd.DataFrame(),
+                pd.DataFrame(),
+            )
+            processor = KPICatalogProcessor(
+                loans_df=normalized,
+                payments_df=pd.DataFrame(),
+                customers_df=pd.DataFrame(),
+                schedule_df=pd.DataFrame(),
+            )
+            extended = processor.get_all_kpis()
+            revenue_df = processor.get_monthly_revenue_df()
+        except Exception as exc:
+            logger.warning("Executive KPI fallback failed in realtime path: %s", exc)
+            return {
+                "cac": 0.0,
+                "gross_margin_pct": 0.0,
+                "revenue_forecast_6m": 0.0,
+                "churn_90d": 0.0,
+            }
+
+        executive_strip = extended.get("executive_strip", {}) or {}
+        unit_economics = extended.get("unit_economics", []) or []
+        churn_rows = extended.get("churn_90d_metrics", []) or []
+        forecast_rows = extended.get("revenue_forecast_6m", []) or []
+
+        def last_metric(rows: list[dict], key: str) -> float | None:
+            for row in reversed(rows):
+                value = row.get(key)
+                if value is None:
+                    continue
+                if pd.isna(value):
+                    continue
+                return float(value)
+            return None
+
+        cac_value = self._safe_float(
+            executive_strip.get("cac_usd"),
+            default=last_metric(unit_economics, "cac_usd"),
+        )
+        margin_ratio = self._safe_float(
+            executive_strip.get("gross_margin_pct"),
+            default=last_metric(unit_economics, "gross_margin_pct"),
+        )
+        churn_ratio = self._safe_float(last_metric(churn_rows, "churn90d_pct"))
+        forecast_sum = float(
+            sum(
+                self._safe_float(row.get("forecast_revenue_usd"))
+                for row in forecast_rows
+                if isinstance(row, dict)
+            )
+        )
+        if forecast_sum <= 0 and isinstance(revenue_df, pd.DataFrame) and not revenue_df.empty:
+            if "recv_revenue_for_month" in revenue_df.columns:
+                revenue_series = pd.to_numeric(
+                    revenue_df["recv_revenue_for_month"],
+                    errors="coerce",
+                ).fillna(0)
+                if len(revenue_series) > 0:
+                    forecast_sum = max(0.0, float(revenue_series.iloc[-1]) * 6.0)
+
+        return {
+            "cac": round(cac_value, 4),
+            "gross_margin_pct": round(self._ratio_to_percent(margin_ratio), 4),
+            "revenue_forecast_6m": round(forecast_sum, 4),
+            "churn_90d": round(self._ratio_to_percent(churn_ratio), 4),
+        }
+
+    @staticmethod
+    def _ratio_to_percent(value: float) -> float:
+        """Convert ratio-like values (0-1) to percent while preserving percent inputs."""
+        if pd.isna(value):
+            return 0.0
+        return float(value * 100.0) if -1.5 <= float(value) <= 1.5 else float(value)
+
+    @staticmethod
+    def _safe_float(value: float | int | None, default: float | None = 0.0) -> float:
+        """Safely coerce optional numeric values to float."""
+        candidate = default if value is None else value
+        try:
+            if candidate is None or pd.isna(candidate):
+                return 0.0
+            return float(candidate)
+        except Exception:
+            return 0.0

@@ -121,6 +121,9 @@ Delivery report snapshot (2026-02-27):
   - Closed remaining catalog coverage gaps by wiring:
     `DEFAULT_RATE`, `TOTAL_LOANS_COUNT`, and `CUSTOMER_LIFETIME_VALUE`
     in realtime API metadata/aliases.
+  - Promoted executive metrics into standard `/analytics/kpis` realtime response:
+    `CAC`, `GROSS_MARGIN_PCT`, `REVENUE_FORECAST_6M`, `CHURN_90D`
+    with deterministic fallback for single-month forecast inputs.
   - Added advanced-risk tests:
     `python/tests/test_advanced_risk.py`,
     `python/tests/test_advanced_risk_api.py`,

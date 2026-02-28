@@ -112,6 +112,10 @@ def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
     assert kpi_map["DISBURSEMENT_VOLUME_MTD"].value == 2500.0
     assert kpi_map["NEW_LOANS_COUNT_MTD"].value == 2.0
     assert kpi_map["CUSTOMER_LIFETIME_VALUE"].value == 1500.0
+    assert kpi_map["CAC"].value > 0.0
+    assert 0.0 <= kpi_map["GROSS_MARGIN_PCT"].value <= 100.0
+    assert kpi_map["REVENUE_FORECAST_6M"].value > 0.0
+    assert kpi_map["CHURN_90D"].value == 0.0
     assert kpi_map["DEFAULT_RATE"].value == 50.0
     assert kpi_map["TOTAL_LOANS_COUNT"].value == 2.0
     assert kpi_map["ACTIVE_BORROWERS"].value == 1.0
