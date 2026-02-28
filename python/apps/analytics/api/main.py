@@ -34,6 +34,8 @@ try:
         LoanPortfolioRequest,
         RiskAlertsResponse,
         RiskLoan,
+        RollRateAnalyticsRequest,
+        RollRateAnalyticsResponse,
         SegmentAnalyticsRequest,
         SegmentAnalyticsResponse,
         StressTestRequest,
@@ -529,6 +531,23 @@ if app is not None:
             )
         except Exception as e:
             logger.error("Error in get_segment_analytics: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+    @app.post(
+        "/analytics/roll-rates",
+        response_model=RollRateAnalyticsResponse,
+        summary="Roll-Rate and Cure-Rate Analytics",
+        response_description="Transition matrix and cure/migration diagnostics across DPD buckets",
+    )
+    async def get_roll_rate_analytics(
+        request: RollRateAnalyticsRequest = Body(...),
+        service: KPIService = Depends(get_kpi_service),
+    ):
+        """Calculate transition analytics between previous and current delinquency buckets."""
+        try:
+            return await service.calculate_roll_rate_analytics(request.loans)
+        except Exception as e:
+            logger.error("Error in get_roll_rate_analytics: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post(

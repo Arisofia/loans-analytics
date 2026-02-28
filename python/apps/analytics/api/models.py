@@ -49,6 +49,20 @@ class LoanRecord(BaseModel):
     principal_balance: float = Field(..., description="Current outstanding principal balance")
     borrower_id: Optional[str] = Field(None, description="Borrower identifier")
     days_past_due: Optional[float] = Field(None, description="Current days past due")
+    previous_days_past_due: Optional[float] = Field(
+        None,
+        description=(
+            "Prior observation days past due used for roll-rate/cure-rate transition analytics."
+        ),
+    )
+    previous_loan_status: Optional[str] = Field(
+        None,
+        description="Prior observation loan status for transition analytics when previous DPD is absent.",
+    )
+    previous_principal_balance: Optional[float] = Field(
+        None,
+        description="Prior observation outstanding principal used as from-bucket exposure weight.",
+    )
     payment_frequency: Optional[str] = Field(None, description="Payment frequency descriptor")
     term_months: Optional[float] = Field(None, description="Loan term in months")
     origination_date: Optional[datetime] = Field(None, description="Loan origination timestamp")
@@ -389,6 +403,50 @@ class SegmentAnalyticsResponse(BaseModel):
     generated_at: datetime
     segments: List[SegmentMetrics] = Field(default_factory=list)
     summary: SegmentAnalyticsSummary
+
+
+class RollRateAnalyticsRequest(BaseModel):
+    """Request body for roll-rate and cure-rate transition analytics."""
+
+    loans: List[LoanRecord] = Field(
+        ...,
+        min_length=1,
+        description="Loan records with current and optional previous delinquency signals",
+    )
+
+
+class RollRateTransition(BaseModel):
+    from_bucket: str
+    to_bucket: str
+    loan_count: int
+    exposure_usd: float
+    loan_share_pct: float
+    exposure_share_pct: float
+
+
+class RollRateBucketSummary(BaseModel):
+    from_bucket: str
+    loan_count: int
+    exposure_usd: float
+    cure_rate_pct: float
+    roll_forward_rate_pct: float
+    stability_rate_pct: float
+
+
+class RollRateAnalyticsSummary(BaseModel):
+    total_loans: int
+    historical_coverage_pct: float
+    portfolio_cure_rate_pct: float
+    portfolio_roll_forward_rate_pct: float
+    worst_migration_path: Optional[str] = None
+    best_cure_source: Optional[str] = None
+
+
+class RollRateAnalyticsResponse(BaseModel):
+    generated_at: datetime
+    transition_matrix: List[RollRateTransition] = Field(default_factory=list)
+    bucket_summaries: List[RollRateBucketSummary] = Field(default_factory=list)
+    summary: RollRateAnalyticsSummary
 
 
 class KpiCoverageResponse(BaseModel):

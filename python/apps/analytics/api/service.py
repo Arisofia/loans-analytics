@@ -17,6 +17,10 @@ from python.apps.analytics.api.models import (
     KpiContext,
     KpiSingleResponse,
     LoanRecord,
+    RollRateAnalyticsResponse,
+    RollRateAnalyticsSummary,
+    RollRateBucketSummary,
+    RollRateTransition,
     SegmentAnalyticsResponse,
     SegmentAnalyticsSummary,
     SegmentMetrics,
@@ -1237,6 +1241,206 @@ class KPIService:
             summary=summary,
         )
 
+    async def calculate_roll_rate_analytics(
+        self,
+        loans: list[LoanRecord] | None,
+    ) -> RollRateAnalyticsResponse:
+        """Compute roll-rate and cure-rate transition analytics from previous to current DPD buckets."""
+        try:
+            if loans is None:
+                loans = []
+            return await run_in_threadpool(self._calculate_roll_rate_analytics_sync, loans)
+        except Exception as e:
+            logger.error(
+                "Error calculating roll-rate analytics for actor %s: %s",
+                self.actor,
+                e,
+                exc_info=True,
+            )
+            raise
+
+    def _calculate_roll_rate_analytics_sync(
+        self,
+        loans: list[LoanRecord],
+    ) -> RollRateAnalyticsResponse:
+        df = self._convert_loan_records_to_dataframe(loans)
+        if df.empty:
+            return RollRateAnalyticsResponse(
+                generated_at=datetime.now(),
+                transition_matrix=[],
+                bucket_summaries=[],
+                summary=RollRateAnalyticsSummary(
+                    total_loans=0,
+                    historical_coverage_pct=0.0,
+                    portfolio_cure_rate_pct=0.0,
+                    portfolio_roll_forward_rate_pct=0.0,
+                    worst_migration_path=None,
+                    best_cure_source=None,
+                ),
+            )
+
+        df = df.copy()
+        current_dpd = self._derive_dpd_series(
+            df=df,
+            dpd_column="days_past_due",
+            status_column="loan_status",
+        )
+        previous_dpd_raw = self._derive_dpd_series(
+            df=df,
+            dpd_column="previous_days_past_due",
+            status_column="previous_loan_status",
+        )
+
+        explicit_previous_signal = (
+            pd.to_numeric(df.get("previous_days_past_due"), errors="coerce").notna()
+            if "previous_days_past_due" in df.columns
+            else pd.Series([False] * len(df), index=df.index)
+        )
+        if "previous_loan_status" in df.columns:
+            previous_status_present = (
+                df["previous_loan_status"].fillna("").astype(str).str.strip() != ""
+            )
+            explicit_previous_signal = explicit_previous_signal | previous_status_present
+
+        previous_dpd = previous_dpd_raw.where(explicit_previous_signal, current_dpd)
+
+        to_balance = pd.to_numeric(df["principal_balance"], errors="coerce").fillna(0.0)
+        if "previous_principal_balance" in df.columns:
+            from_balance = (
+                pd.to_numeric(df["previous_principal_balance"], errors="coerce")
+                .fillna(to_balance)
+                .astype(float)
+            )
+        else:
+            from_balance = to_balance.astype(float)
+
+        df["from_bucket"] = previous_dpd.apply(self._map_dpd_to_bucket)
+        df["to_bucket"] = current_dpd.apply(self._map_dpd_to_bucket)
+        df["from_severity"] = df["from_bucket"].map(self._bucket_severity).astype(int)
+        df["to_severity"] = df["to_bucket"].map(self._bucket_severity).astype(int)
+        df["from_exposure_usd"] = from_balance
+
+        matrix_df = (
+            df.groupby(["from_bucket", "to_bucket"], dropna=False)
+            .agg(
+                loan_count=("from_bucket", "size"),
+                exposure_usd=("from_exposure_usd", "sum"),
+            )
+            .reset_index()
+        )
+        matrix_df["from_order"] = matrix_df["from_bucket"].map(self._bucket_severity)
+        matrix_df["to_order"] = matrix_df["to_bucket"].map(self._bucket_severity)
+        matrix_df = matrix_df.sort_values(["from_order", "to_order"])
+
+        from_totals_count = matrix_df.groupby("from_bucket")["loan_count"].sum().to_dict()
+        from_totals_exposure = matrix_df.groupby("from_bucket")["exposure_usd"].sum().to_dict()
+
+        transition_matrix: list[RollRateTransition] = []
+        for _, row in matrix_df.iterrows():
+            from_bucket = str(row["from_bucket"])
+            to_bucket = str(row["to_bucket"])
+            loan_count = int(row["loan_count"])
+            exposure = float(row["exposure_usd"])
+            transition_matrix.append(
+                RollRateTransition(
+                    from_bucket=from_bucket,
+                    to_bucket=to_bucket,
+                    loan_count=loan_count,
+                    exposure_usd=round(exposure, 2),
+                    loan_share_pct=round(
+                        self._safe_pct(loan_count, float(from_totals_count.get(from_bucket, 0))), 2
+                    ),
+                    exposure_share_pct=round(
+                        self._safe_pct(
+                            exposure,
+                            float(from_totals_exposure.get(from_bucket, 0.0)),
+                        ),
+                        2,
+                    ),
+                )
+            )
+
+        bucket_summaries: list[RollRateBucketSummary] = []
+        for bucket in self._bucket_order():
+            from_mask = df["from_bucket"] == bucket
+            bucket_count = int(from_mask.sum())
+            bucket_exposure = float(df.loc[from_mask, "from_exposure_usd"].sum())
+            cure_count = int(
+                (
+                    from_mask & (df["to_bucket"] == "current") & (df["from_bucket"] != "current")
+                ).sum()
+            )
+            roll_forward_count = int((from_mask & (df["to_severity"] > df["from_severity"])).sum())
+            stable_count = int((from_mask & (df["to_bucket"] == df["from_bucket"])).sum())
+
+            bucket_summaries.append(
+                RollRateBucketSummary(
+                    from_bucket=bucket,
+                    loan_count=bucket_count,
+                    exposure_usd=round(bucket_exposure, 2),
+                    cure_rate_pct=round(self._safe_pct(cure_count, float(bucket_count)), 2),
+                    roll_forward_rate_pct=round(
+                        self._safe_pct(roll_forward_count, float(bucket_count)),
+                        2,
+                    ),
+                    stability_rate_pct=round(self._safe_pct(stable_count, float(bucket_count)), 2),
+                )
+            )
+
+        delinquent_mask = df["from_bucket"] != "current"
+        cured_portfolio = int((delinquent_mask & (df["to_bucket"] == "current")).sum())
+        delinquent_total = int(delinquent_mask.sum())
+
+        max_severity = max(self._bucket_severity.values())
+        roll_eligible_mask = df["from_severity"] < max_severity
+        roll_forward_portfolio = int(
+            (roll_eligible_mask & (df["to_severity"] > df["from_severity"])).sum()
+        )
+        roll_eligible_total = int(roll_eligible_mask.sum())
+
+        migration_rows = matrix_df[matrix_df["to_order"] > matrix_df["from_order"]].sort_values(
+            ["loan_count", "exposure_usd"], ascending=False
+        )
+        worst_migration_path = (
+            f"{migration_rows.iloc[0]['from_bucket']}->{migration_rows.iloc[0]['to_bucket']}"
+            if not migration_rows.empty and int(migration_rows.iloc[0]["loan_count"]) > 0
+            else None
+        )
+
+        cure_candidates = [
+            row for row in bucket_summaries if row.from_bucket != "current" and row.loan_count > 0
+        ]
+        if cure_candidates:
+            best_cure_row = max(
+                cure_candidates, key=lambda row: (row.cure_rate_pct, row.loan_count)
+            )
+            best_cure_source = (
+                best_cure_row.from_bucket if best_cure_row.cure_rate_pct > 0 else None
+            )
+        else:
+            best_cure_source = None
+
+        summary = RollRateAnalyticsSummary(
+            total_loans=int(len(df)),
+            historical_coverage_pct=round(
+                self._safe_pct(int(explicit_previous_signal.sum()), int(len(df))),
+                2,
+            ),
+            portfolio_cure_rate_pct=round(self._safe_pct(cured_portfolio, delinquent_total), 2),
+            portfolio_roll_forward_rate_pct=round(
+                self._safe_pct(roll_forward_portfolio, roll_eligible_total),
+                2,
+            ),
+            worst_migration_path=worst_migration_path,
+            best_cure_source=best_cure_source,
+        )
+        return RollRateAnalyticsResponse(
+            generated_at=datetime.now(),
+            transition_matrix=transition_matrix,
+            bucket_summaries=bucket_summaries,
+            summary=summary,
+        )
+
     def _calculate_stress_test_sync(
         self,
         loans: list[LoanRecord],
@@ -1725,3 +1929,51 @@ class KPIService:
         if normalized == "loan_status":
             return df.get("loan_status", pd.Series(["unknown"] * len(df))).fillna("unknown")
         return pd.Series(["unknown"] * len(df), index=df.index, dtype=object)
+
+    @staticmethod
+    def _derive_dpd_series(
+        df: pd.DataFrame,
+        dpd_column: str,
+        status_column: str,
+    ) -> pd.Series:
+        if (
+            dpd_column in df.columns
+            and pd.to_numeric(df[dpd_column], errors="coerce").notna().any()
+        ):
+            return pd.to_numeric(df[dpd_column], errors="coerce").fillna(0.0).clip(lower=0.0)
+
+        status = (
+            df.get(status_column, pd.Series([""] * len(df), index=df.index)).astype(str).str.lower()
+        )
+        dpd = pd.Series([0.0] * len(df), index=df.index, dtype=float)
+        dpd = dpd.mask(status.str.contains(r"90\+|default|charged", regex=True, na=False), 100.0)
+        dpd = dpd.mask(status.str.contains(r"60-89|60\+", regex=True, na=False), 75.0)
+        dpd = dpd.mask(status.str.contains(r"30-59|30\+", regex=True, na=False), 45.0)
+        return dpd
+
+    @staticmethod
+    def _map_dpd_to_bucket(dpd_value: float) -> str:
+        value = float(dpd_value)
+        if value <= 0:
+            return "current"
+        if value <= 30:
+            return "1_30"
+        if value <= 60:
+            return "31_60"
+        if value <= 90:
+            return "61_90"
+        return "90_plus"
+
+    @staticmethod
+    def _bucket_order() -> list[str]:
+        return ["current", "1_30", "31_60", "61_90", "90_plus"]
+
+    @property
+    def _bucket_severity(self) -> dict[str, int]:
+        return {
+            "current": 0,
+            "1_30": 1,
+            "31_60": 2,
+            "61_90": 3,
+            "90_plus": 4,
+        }

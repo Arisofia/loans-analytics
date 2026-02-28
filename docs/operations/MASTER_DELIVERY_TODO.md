@@ -144,6 +144,12 @@ Delivery report snapshot (2026-02-27):
     `python/tests/test_segment_analytics.py`,
     `python/tests/test_segment_analytics_api.py`,
     `python/tests/test_segment_analytics_openapi.py`.
+  - Added roll-rate and cure-rate transition analytics endpoint:
+    `/analytics/roll-rates` with DPD migration matrix, bucket-level cure/roll-forward rates,
+    and portfolio transition summary, with tests:
+    `python/tests/test_roll_rate_analytics.py`,
+    `python/tests/test_roll_rate_analytics_api.py`,
+    `python/tests/test_roll_rate_analytics_openapi.py`.
   - Added advanced-risk tests:
     `python/tests/test_advanced_risk.py`,
     `python/tests/test_advanced_risk_api.py`,
