@@ -280,12 +280,28 @@ class RiskStratificationResponse(BaseModel):
     summary: str = Field(..., description="High-level risk summary")
 
 
+class RiskHeatmapBucket(BaseModel):
+    bucket: str = Field(..., description="Bucket identifier (e.g. '1_30')")
+    label: str = Field(..., description="Human-readable label")
+    exposure_pct: float = Field(..., description="Percentage of portfolio exposure")
+    risk_intensity: str = Field(..., description="Qualitative risk level: low, medium, high")
+
+
+class RiskHeatmapResponse(BaseModel):
+    status: str
+    heatmap: List[RiskHeatmapBucket]
+    critical_buckets: List[str]
+    narrative: str
+    overall_par30: float
+
+
 class FullAnalysisResponse(BaseModel):
     analysis_id: str
     summary: str
     recommendations: List[str]
     risk_assessment: RiskAlertsResponse
     risk_stratification: Optional[RiskStratificationResponse] = None
+    risk_heatmap: Optional[RiskHeatmapResponse] = None
     kpis: List[KpiSingleResponse] = Field(
         default_factory=list,
         description="KPI snapshot used by the analysis, including formulas and implications",

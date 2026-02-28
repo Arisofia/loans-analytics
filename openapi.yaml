@@ -760,6 +760,48 @@ components:
             $ref: "#/components/schemas/DecisionFlag"
         summary:
           type: string
+    RiskHeatmapBucket:
+      type: object
+      required:
+        - bucket
+        - label
+        - exposure_pct
+        - risk_intensity
+      properties:
+        bucket:
+          type: string
+        label:
+          type: string
+        exposure_pct:
+          type: number
+          format: float
+        risk_intensity:
+          type: string
+          enum: [low, medium, high]
+    RiskHeatmapResponse:
+      type: object
+      required:
+        - status
+        - heatmap
+        - critical_buckets
+        - narrative
+        - overall_par30
+      properties:
+        status:
+          type: string
+        heatmap:
+          type: array
+          items:
+            $ref: "#/components/schemas/RiskHeatmapBucket"
+        critical_buckets:
+          type: array
+          items:
+            type: string
+        narrative:
+          type: string
+        overall_par30:
+          type: number
+          format: float
     DPDBucketBreakdown:
       type: object
       properties:
@@ -791,6 +833,8 @@ components:
           $ref: "#/components/schemas/RiskAlertsResponse"
         risk_stratification:
           $ref: "#/components/schemas/RiskStratificationResponse"
+        risk_heatmap:
+          $ref: "#/components/schemas/RiskHeatmapResponse"
         kpis:
           type: array
           items:

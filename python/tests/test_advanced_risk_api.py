@@ -109,3 +109,32 @@ def test_full_analysis_deterministic_summary_includes_advanced_metrics(monkeypat
     recommendations = body["recommendations"]
     assert any("recovery" in rec.lower() for rec in recommendations)
     assert any("collection" in rec.lower() for rec in recommendations)
+
+
+def test_full_analysis_structured_risk_layers():
+    client = TestClient(app)
+    response = client.post("/analytics/full-analysis", json=_sample_payload())
+    assert response.status_code == 200
+
+    body = response.json()
+    
+    # Check Risk Stratification
+    assert "risk_stratification" in body
+    strat = body["risk_stratification"]
+    assert "buckets" in strat
+    assert "decision_flags" in strat
+    assert len(strat["decision_flags"]) == 3
+    
+    # Check Risk Heatmap
+    assert "risk_heatmap" in body
+    heatmap_data = body["risk_heatmap"]
+    assert heatmap_data["status"] == "success"
+    assert len(heatmap_data["heatmap"]) == 4
+    
+    # Verify intensity mapping logic in test data
+    # L2 is 110 DPD -> 90+ bucket
+    # Balance: 1000 / 1900 total = 52.6%
+    # Threshold for 90+ is 1.0%, so 52.6% is definitely 'high' intensity
+    npl_bucket = next(b for b in heatmap_data["heatmap"] if b["bucket"] == "90_plus")
+    assert npl_bucket["risk_intensity"] == "high"
+    assert "NPL (90+ DPD)" in heatmap_data["critical_buckets"]
