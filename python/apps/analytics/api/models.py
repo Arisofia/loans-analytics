@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -295,20 +297,6 @@ class RiskHeatmapResponse(BaseModel):
     overall_par30: float
 
 
-class FullAnalysisResponse(BaseModel):
-    analysis_id: str
-    summary: str
-    recommendations: List[str]
-    risk_assessment: RiskAlertsResponse
-    risk_stratification: Optional[RiskStratificationResponse] = None
-    risk_heatmap: Optional[RiskHeatmapResponse] = None
-    vintage_curves: Optional[VintageCurveResponse] = None
-    kpis: List[KpiSingleResponse] = Field(
-        default_factory=list,
-        description="KPI snapshot used by the analysis, including formulas and implications",
-    )
-
-
 class StressTestRequest(BaseModel):
     """Request body for portfolio stress testing analytics."""
 
@@ -415,6 +403,20 @@ class VintageCurveResponse(BaseModel):
     )
     portfolio_average_curve: List[VintageCurvePoint] = Field(
         ..., description="Average curve across all vintages"
+    )
+
+
+class FullAnalysisResponse(BaseModel):
+    analysis_id: str
+    summary: str
+    recommendations: List[str]
+    risk_assessment: RiskAlertsResponse
+    risk_stratification: Optional[RiskStratificationResponse] = None
+    risk_heatmap: Optional[RiskHeatmapResponse] = None
+    vintage_curves: Optional[VintageCurveResponse] = None
+    kpis: List[KpiSingleResponse] = Field(
+        default_factory=list,
+        description="KPI snapshot used by the analysis, including formulas and implications",
     )
 
 

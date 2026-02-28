@@ -117,20 +117,21 @@ def test_full_analysis_structured_risk_layers():
     assert response.status_code == 200
 
     body = response.json()
-    
+
     # Check Risk Stratification
     assert "risk_stratification" in body
     strat = body["risk_stratification"]
     assert "buckets" in strat
     assert "decision_flags" in strat
-    assert len(strat["decision_flags"]) == 3
-    
+    assert len(strat["decision_flags"]) == 4
+    assert any(flag["flag"] == "Recovery" for flag in strat["decision_flags"])
+
     # Check Risk Heatmap
     assert "risk_heatmap" in body
     heatmap_data = body["risk_heatmap"]
     assert heatmap_data["status"] == "success"
     assert len(heatmap_data["heatmap"]) == 4
-    
+
     # Verify intensity mapping logic in test data
     # L2 is 110 DPD -> 90+ bucket
     # Balance: 1000 / 1900 total = 52.6%

@@ -93,13 +93,14 @@ async def test_get_risk_stratification():
     response = await service.get_risk_stratification(loans)
 
     assert len(response.buckets) > 0
-    assert len(response.decision_flags) == 3
+    assert len(response.decision_flags) == 4
 
     # Verify decision flags
     flags = {f.flag: f for f in response.decision_flags}
     assert "Concentration" in flags
     assert "Asset Quality" in flags
     assert "Liquidity" in flags
+    assert "Recovery" in flags
 
     # HHI for 1000 and 5000 in 6000 total
     # share1 = 1/6, share2 = 5/6
@@ -111,6 +112,7 @@ async def test_get_risk_stratification():
 
     # Collections coverage = 500 / 600 = 83.3%
     assert flags["Liquidity"].status == "yellow"
+    assert flags["Recovery"].status == "red"
 
     assert response.summary
 
