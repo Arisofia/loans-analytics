@@ -504,7 +504,12 @@ class KPICatalogProcessor:
             working["known_customers"] = known_series
 
         customer_cols = self._customer_columns()
-        marketing_spend_df = pd.DataFrame(columns=["month", "marketing_spend_usd"])
+        marketing_spend_df = pd.DataFrame(
+            {
+                "month": pd.Series(dtype="datetime64[ns]"),
+                "marketing_spend_usd": pd.Series(dtype="float64"),
+            }
+        )
         if (
             not self.customers_df.empty
             and customer_cols["created_at"] is not None
@@ -525,10 +530,14 @@ class KPICatalogProcessor:
             ].sum()
 
         working = working.merge(marketing_spend_df, on="month", how="left")
-        working["marketing_spend_usd"] = working["marketing_spend_usd"].fillna(0)
+        working["marketing_spend_usd"] = pd.to_numeric(
+            working["marketing_spend_usd"],
+            errors="coerce",
+        ).astype("float64")
+        working["marketing_spend_usd"] = working["marketing_spend_usd"].fillna(0.0)
         working["cac_is_proxy"] = working["marketing_spend_usd"] <= 0
 
-        proxy_spend = (working["recv_revenue_for_month"] * 0.2).fillna(0)
+        proxy_spend = (working["recv_revenue_for_month"] * 0.2).astype("float64").fillna(0.0)
         working.loc[working["cac_is_proxy"], "marketing_spend_usd"] = proxy_spend
 
         working["cac_usd"] = np.where(
