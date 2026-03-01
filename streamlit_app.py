@@ -125,6 +125,10 @@ def _load_upload_metadata(run_dir: Path) -> dict[str, Any]:
     return _load_json(run_dir / "upload_metadata.json")
 
 
+def _load_segment_snapshot(run_dir: Path) -> dict[str, Any]:
+    return _load_json(run_dir / "segment_snapshot.json")
+
+
 def _resolve_series_by_aliases(df: pd.DataFrame, aliases: list[str]) -> pd.Series | None:
     lower_map = {col.lower(): col for col in df.columns}
     for alias in aliases:
@@ -633,6 +637,49 @@ elif page == "📊 Dashboard" and selected_run:
             for field, count in readiness.items()
         ]
         st.caption("Control de Mora mapped fields: " + " | ".join(readiness_parts))
+
+        segment_snapshot = _load_segment_snapshot(run_dir)
+        segment_dimensions = segment_snapshot.get("dimensions", {})
+        if isinstance(segment_dimensions, dict) and segment_dimensions:
+            st.subheader("🧩 Segment Snapshot (Run)")
+            generated_at = segment_snapshot.get("generated_at", "unknown")
+            as_of_date = segment_snapshot.get("as_of_date", "unknown")
+            st.caption(f"Generated at: {generated_at} | As-of: {as_of_date}")
+
+            available_dimensions = sorted(segment_dimensions.keys())
+            selected_dimension = st.selectbox(
+                "Segment dimension",
+                options=available_dimensions,
+                index=0,
+                key=f"segment_dimension_{selected_run}",
+            )
+
+            rows = segment_dimensions.get(selected_dimension, [])
+            if rows:
+                seg_df = pd.DataFrame(rows)
+                preferred_cols = [
+                    "segment",
+                    "loan_count",
+                    "total_outstanding_balance",
+                    "par_30",
+                    "par_60",
+                    "par_90",
+                    "default_rate",
+                    "avg_dpd",
+                    "portfolio_yield",
+                ]
+                display_cols = [col for col in preferred_cols if col in seg_df.columns]
+                st.dataframe(seg_df[display_cols], width="stretch")
+
+                if "segment" in seg_df.columns:
+                    chart_cols = [col for col in ["par_30", "par_60", "par_90"] if col in seg_df.columns]
+                    if chart_cols:
+                        chart_df = seg_df.set_index("segment")[chart_cols].head(12)
+                        st.bar_chart(chart_df)
+            else:
+                st.info("No segment rows available for the selected dimension.")
+        else:
+            st.info("No segment snapshot artifact found for this run.")
 
         st.markdown("---")
 
