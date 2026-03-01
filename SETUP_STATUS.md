@@ -12,12 +12,12 @@
 - ✅ Fixed datasource configuration with correct Supabase project ID
 - ✅ Updated PostgreSQL connection to use `SUPABASE_SERVICE_ROLE_KEY`
 - ✅ Added connection pooling settings for optimal performance
-- ✅ Updated `docker-compose.monitoring.yml` with environment variables
+- ✅ Updated `docker-compose.yml (monitoring profile)` with environment variables
 - ✅ Created `scripts/monitoring/setup-grafana.sh` automation script
 
 **Files Modified:**
 - `grafana/provisioning/datasources/supabase.yml`
-- `docker-compose.monitoring.yml`
+- `docker-compose.yml (monitoring profile)`
 
 **New File:**
 - `scripts/monitoring/setup-grafana.sh`
@@ -232,9 +232,9 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
 - **Production:** `goxdevkqozomyhsyxhte` (in `.env.monitoring`)
 
 ### Docker Compose
-- **Monitoring Stack:** `docker-compose.monitoring.yml`
-- **Start:** `docker-compose -f docker-compose.monitoring.yml up -d`
-- **Stop:** `docker-compose -f docker-compose.monitoring.yml down`
+- **Monitoring Stack:** `docker-compose.yml (monitoring profile)`
+- **Start:** `docker compose --profile monitoring up -d`
+- **Stop:** `docker compose --profile monitoring down`
 
 ---
 
@@ -260,8 +260,8 @@ open http://localhost:3001
 
 ### Grafana won't start
 ```bash
-docker-compose -f docker-compose.monitoring.yml logs grafana
-docker-compose -f docker-compose.monitoring.yml down -v
+docker compose --profile monitoring logs grafana
+docker compose --profile monitoring down -v
 ./scripts/monitoring/setup-grafana.sh
 ```
 

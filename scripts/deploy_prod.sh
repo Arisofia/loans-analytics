@@ -102,8 +102,8 @@ if [ -f "scripts/deployment/deploy_stack.sh" ]; then
     bash scripts/deployment/deploy_stack.sh
 else
     echo -e "${YELLOW}⚠️  scripts/deployment/deploy_stack.sh not found, running alternative...${NC}"
-    "${DOCKER_COMPOSE_CMD[@]}" -f docker-compose.dashboard.yml build
-    "${DOCKER_COMPOSE_CMD[@]}" -f docker-compose.dashboard.yml up -d
+    "${DOCKER_COMPOSE_CMD[@]}" --profile dashboard build dashboard agent-scheduler
+    "${DOCKER_COMPOSE_CMD[@]}" --profile dashboard up -d dashboard agent-scheduler
 fi
 echo -e "${GREEN}✅ Deployment phase complete${NC}"
 

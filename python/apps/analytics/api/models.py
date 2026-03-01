@@ -98,6 +98,17 @@ class LoanRecord(BaseModel):
     utilization_pct: Optional[float] = Field(
         None, description="Utilization percentage for utilization-band segmentation"
     )
+    # Enriched fields from CONTROL DE MORA new format (run 20260301_181356+)
+    collections_eligible: Optional[str] = Field(
+        None, description="Y/N flag — whether this loan is eligible for active collection (procede_a_cobrar)"
+    )
+    government_sector: Optional[str] = Field(
+        None, description="GOES flag — identifies government-sector employer"
+    )
+    ministry: Optional[str] = Field(None, description="Government ministry or institution name")
+    capital_collected: Optional[float] = Field(None, description="Principal already collected (capitalcobrado)")
+    total_payment_received: Optional[float] = Field(None, description="Total payments received (montototalabonado)")
+    mdsc_posted: Optional[float] = Field(None, description="1 if MDSC debit authorization posted, 0 otherwise")
 
 
 class LoanPortfolioRequest(BaseModel):
@@ -176,12 +187,15 @@ class DPDBucketWithAction(DPDBucketBreakdown):
     )
 
 
+CALCULATION_FORMULA = "Calculation formula"
+
+
 class NplMetrics(BaseModel):
     npl_ratio: float = Field(..., description="Non-performing loan ratio (%)")
     npl_balance: float = Field(..., description="Total NPL outstanding balance (USD)")
     total_balance: float = Field(..., description="Total portfolio balance (USD)")
     npl_loan_count: int = Field(..., description="Number of non-performing loans")
-    formula: str = Field(..., description="Calculation formula")
+    formula: str = Field(..., description=CALCULATION_FORMULA)
 
 
 class LgdMetrics(BaseModel):
@@ -189,7 +203,7 @@ class LgdMetrics(BaseModel):
     recovery_rate_pct: float = Field(..., description="Recovery rate on defaulted balance (%)")
     defaulted_balance: float = Field(..., description="Defaulted loan balance (USD)")
     recovered_amount: float = Field(..., description="Recovered amount from defaulted loans (USD)")
-    formula: str = Field(..., description="Calculation formula")
+    formula: str = Field(..., description=CALCULATION_FORMULA)
 
 
 class CostOfRiskMetrics(BaseModel):
@@ -197,7 +211,7 @@ class CostOfRiskMetrics(BaseModel):
     npl_ratio: float = Field(..., description="NPL ratio used in calculation (%)")
     lgd_pct: float = Field(..., description="LGD used in calculation (%)")
     expected_loss_balance: float = Field(..., description="Expected credit loss in USD")
-    formula: str = Field(..., description="Calculation formula")
+    formula: str = Field(..., description=CALCULATION_FORMULA)
 
 
 class NimMetrics(BaseModel):
@@ -206,7 +220,7 @@ class NimMetrics(BaseModel):
     funding_cost_pct: float = Field(..., description="Assumed funding cost (%)")
     interest_income: float = Field(..., description="Total interest income (USD)")
     total_balance: float = Field(..., description="Total portfolio balance used (USD)")
-    formula: str = Field(..., description="Calculation formula")
+    formula: str = Field(..., description=CALCULATION_FORMULA)
 
 
 class PaybackMetrics(BaseModel):
@@ -215,14 +229,14 @@ class PaybackMetrics(BaseModel):
     )
     cac: float = Field(..., description="Customer acquisition cost (USD)")
     monthly_arpu: float = Field(..., description="Monthly average revenue per user (USD)")
-    formula: str = Field(..., description="Calculation formula")
+    formula: str = Field(..., description=CALCULATION_FORMULA)
 
 
 class CureRateMetrics(BaseModel):
     cure_rate_pct: float = Field(..., description="Cure rate proxy (%)")
     delinquent_count: int = Field(..., description="Total delinquent loan count")
     curing_count: int = Field(..., description="Delinquent loans with recent payment activity")
-    formula: str = Field(..., description="Calculation formula")
+    formula: str = Field(..., description=CALCULATION_FORMULA)
     note: str = Field(..., description="Methodology note")
 
 
@@ -363,6 +377,12 @@ class KpiResponse(BaseModel):
     CoR: Optional[KpiSingleResponse] = None
     NIM: Optional[KpiSingleResponse] = None
     CureRate: Optional[KpiSingleResponse] = None
+    # Enriched KPIs from CONTROL DE MORA format (run 20260301_181356+)
+    CollectionsEligibleRate: Optional[KpiSingleResponse] = None
+    GovernmentSectorExposureRate: Optional[KpiSingleResponse] = None
+    AvgCreditLineUtilization: Optional[KpiSingleResponse] = None
+    CapitalCollectionRate: Optional[KpiSingleResponse] = None
+    MdscPostedRate: Optional[KpiSingleResponse] = None
     # Audit trail
     audit_trail: Optional[List[Dict[str, Any]]] = None
 
@@ -580,6 +600,7 @@ class SegmentMetrics(BaseModel):
     loan_count: int
     outstanding_usd: float
     par30_pct: float
+    par60_pct: float = 0.0
     par90_pct: float
     default_rate_pct: float
     avg_interest_rate_pct: float

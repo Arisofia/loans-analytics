@@ -1502,10 +1502,13 @@ class KPIService:
             outstanding = float(df.loc[idx, "principal_balance"].sum())
             loan_count = int(len(idx))
             par30 = self._safe_pct(
-                float(df.loc[idx, "principal_balance"][dpd.loc[idx] > 30].sum()), outstanding
+                float(df.loc[idx, "principal_balance"][dpd.loc[idx] >= 30].sum()), outstanding
+            )
+            par60 = self._safe_pct(
+                float(df.loc[idx, "principal_balance"][dpd.loc[idx] >= 60].sum()), outstanding
             )
             par90 = self._safe_pct(
-                float(df.loc[idx, "principal_balance"][dpd.loc[idx] > 90].sum()), outstanding
+                float(df.loc[idx, "principal_balance"][dpd.loc[idx] >= 90].sum()), outstanding
             )
             default_rate = self._safe_pct(float(default_mask.loc[idx].sum()), float(loan_count))
             collection_rate = self._safe_pct(
@@ -1519,6 +1522,7 @@ class KPIService:
                     loan_count=loan_count,
                     outstanding_usd=round(outstanding, 2),
                     par30_pct=round(par30, 2),
+                    par60_pct=round(par60, 2),
                     par90_pct=round(par90, 2),
                     default_rate_pct=round(default_rate, 2),
                     avg_interest_rate_pct=round(avg_rate, 2),
@@ -2499,6 +2503,12 @@ class KPIService:
             return series_for(["kam_farmer", "cod_kam_farmer"])
         if normalized == "advisory_channel":
             return series_for(["advisory_channel", "asesoriadigital"])
+        if normalized == "ministry":
+            return series_for(["ministry", "ministerio"])
+        if normalized == "government_sector":
+            return series_for(["government_sector", "goes"])
+        if normalized == "collections_eligible":
+            return series_for(["collections_eligible", "procede_a_cobrar"])
         if normalized == "origination_month":
             origination = pd.to_datetime(df.get("origination_date"), errors="coerce")
             return origination.dt.to_period("M").astype(str).replace("NaT", "unknown")

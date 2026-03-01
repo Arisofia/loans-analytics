@@ -153,7 +153,8 @@ def validate_docker() -> dict[str, bool]:
     )
 
     results["docker_compose_monitoring"] = check_file_exists(
-        ROOT_DIR / "docker-compose.monitoring.yml", "Monitoring docker-compose"
+        ROOT_DIR / "docker-compose.yml",
+        "Monitoring profile in canonical docker-compose.yml",
     )
 
     results["prometheus_config"] = check_file_exists(

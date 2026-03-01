@@ -96,10 +96,10 @@ monitoring-start:
 	@bash scripts/monitoring/auto_start_monitoring.sh
 
 monitoring-stop:
-	@docker-compose -f docker-compose.monitoring.yml down
+	@docker compose --profile monitoring down
 
 monitoring-logs:
-	@docker-compose -f docker-compose.monitoring.yml logs -f
+	@docker compose --profile monitoring logs -f
 
 monitoring-health:
 	@bash scripts/monitoring/health_check_monitoring.sh

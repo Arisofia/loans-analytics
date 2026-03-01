@@ -41,4 +41,4 @@ DATABASE_URL=postgres://... ./scripts/monitoring/harden_rls_sensitive_tables.sh
 
 ## Configuration
 
-See `docker-compose.monitoring.yml` and `config/prometheus.yml` for monitoring configuration.
+See `docker-compose.yml (monitoring profile)` and `config/prometheus.yml` for monitoring configuration.

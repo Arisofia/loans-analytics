@@ -384,6 +384,12 @@ if app is not None:
                 CoR=kpi_map.get("COR") or kpi_map.get("cost_of_risk"),
                 NIM=kpi_map.get("NIM") or kpi_map.get("net_interest_margin"),
                 CureRate=kpi_map.get("CURERATE") or kpi_map.get("cure_rate"),
+                # Enriched KPIs from CONTROL DE MORA format
+                CollectionsEligibleRate=kpi_map.get("collections_eligible_rate"),
+                GovernmentSectorExposureRate=kpi_map.get("government_sector_exposure_rate"),
+                AvgCreditLineUtilization=kpi_map.get("avg_credit_line_utilization"),
+                CapitalCollectionRate=kpi_map.get("capital_collection_rate"),
+                MdscPostedRate=kpi_map.get("mdsc_posted_rate"),
                 audit_trail=[{"kpi_count": len(kpis), "source": "production-snapshot"}],
             )
         except Exception as e:

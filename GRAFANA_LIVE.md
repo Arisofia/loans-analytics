@@ -108,12 +108,12 @@ docker logs alertmanager -f
 
 ### Stop All Services
 ```bash
-docker-compose -f docker-compose.monitoring.yml down
+docker compose --profile monitoring down
 ```
 
 ### Restart Services
 ```bash
-docker-compose -f docker-compose.monitoring.yml restart
+docker compose --profile monitoring restart
 ```
 
 ---
@@ -184,7 +184,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
 **Dashboards:** `grafana/provisioning/dashboards/`
 
-**Docker Compose:** `docker-compose.monitoring.yml`
+**Docker Compose:** `docker-compose.yml (monitoring profile)`
 
 ---
 

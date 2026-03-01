@@ -24,13 +24,20 @@ if ! command -v docker &>/dev/null; then
 	rm get-docker.sh
 fi
 
-if ! command -v docker-compose &>/dev/null; then
+# Resolve compose command across environments
+DOCKER_COMPOSE_CMD=()
+if command -v docker-compose &>/dev/null; then
+	DOCKER_COMPOSE_CMD=("docker-compose")
+elif docker compose version &>/dev/null; then
+	DOCKER_COMPOSE_CMD=("docker" "compose")
+else
 	echo -e "${YELLOW}⚠️  Docker Compose not found. Installing...${NC}"
 	sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 	sudo chmod +x /usr/local/bin/docker-compose
+	DOCKER_COMPOSE_CMD=("docker-compose")
 fi
 
-echo -e "${GREEN}✅ Docker and Docker Compose are ready${NC}"
+echo -e "${GREEN}✅ Docker and Docker Compose are ready (${DOCKER_COMPOSE_CMD[*]})${NC}"
 echo ""
 
 # Check if canonical input data exists
@@ -44,11 +51,11 @@ echo -e "${GREEN}✅ Input dataset found: $CANONICAL_INPUT${NC}"
 
 # Build and start services
 echo -e "${BLUE}🏗️  Building Docker images...${NC}"
-docker-compose -f docker-compose.dashboard.yml build
+"${DOCKER_COMPOSE_CMD[@]}" --profile dashboard build dashboard agent-scheduler
 
 echo ""
 echo -e "${BLUE}🚀 Starting services...${NC}"
-docker-compose -f docker-compose.dashboard.yml up -d
+"${DOCKER_COMPOSE_CMD[@]}" --profile dashboard up -d dashboard agent-scheduler
 
 echo ""
 echo -e "${GREEN}✅ Deployment complete!${NC}"
@@ -64,10 +71,10 @@ echo "=========================================="
 echo "📋 Management Commands:"
 echo "=========================================="
 echo ""
-echo "  View logs:       docker-compose -f docker-compose.dashboard.yml logs -f"
-echo "  Stop services:   docker-compose -f docker-compose.dashboard.yml down"
-echo "  Restart:         docker-compose -f docker-compose.dashboard.yml restart"
-echo "  Status:          docker-compose -f docker-compose.dashboard.yml ps"
+echo "  View logs:       ${DOCKER_COMPOSE_CMD[*]} --profile dashboard logs -f"
+echo "  Stop services:   ${DOCKER_COMPOSE_CMD[*]} --profile dashboard down"
+echo "  Restart:         ${DOCKER_COMPOSE_CMD[*]} --profile dashboard restart"
+echo "  Status:          ${DOCKER_COMPOSE_CMD[*]} --profile dashboard ps"
 echo ""
 echo "=========================================="
 echo "📚 Quick Start:"

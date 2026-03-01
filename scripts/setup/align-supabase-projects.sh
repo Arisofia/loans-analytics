@@ -60,7 +60,7 @@ echo ""
 echo -e "${BLUE}Step 3: Restarting Grafana...${NC}"
 
 cd "$PROJECT_ROOT"
-docker-compose -f docker-compose.monitoring.yml restart grafana
+docker compose --profile monitoring restart grafana
 
 # Wait for restart
 sleep 5

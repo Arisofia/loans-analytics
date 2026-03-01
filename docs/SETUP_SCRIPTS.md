@@ -124,7 +124,7 @@
 
 **Files Used:**
 - `.env.monitoring` (created or updated)
-- `docker-compose.monitoring.yml`
+- `docker-compose.yml (monitoring profile)`
 
 ---
 
@@ -159,7 +159,7 @@ docker ps
 docker logs grafana
 
 # Restart stack
-docker-compose -f docker-compose.monitoring.yml restart
+docker compose --profile monitoring restart
 ```
 
 If GitHub secrets not available in workflows:
@@ -211,7 +211,7 @@ nano .env.local
 
 # OR manually
 nano .env.monitoring
-docker-compose -f docker-compose.monitoring.yml restart
+docker compose --profile monitoring restart
 ```
 
 ---
@@ -267,7 +267,7 @@ https://github.com/arisofia/abaco-loans-analytics/settings/secrets/actions
 
 5. **Restart services**
    ```bash
-   docker-compose -f docker-compose.monitoring.yml restart
+   docker compose --profile monitoring restart
    ```
 
 ---

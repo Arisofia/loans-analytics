@@ -66,7 +66,7 @@ EOF
 ./scripts/monitoring/setup-grafana.sh
 
 # OR manually with Docker Compose
-docker-compose --env-file .env.monitoring -f docker-compose.monitoring.yml up -d
+docker compose --env-file .env.monitoring --profile monitoring up -d
 ```
 
 ### 4. Access Grafana
@@ -187,7 +187,7 @@ Headers:
    ```bash
    echo | openssl s_client -connect db.goxdevkqozomyhsyxhte.supabase.co:5432
    ```
-3. Restart Grafana: `docker-compose -f docker-compose.monitoring.yml restart grafana`
+3. Restart Grafana: `docker compose --profile monitoring restart grafana`
 
 ### Issue: 401 Unauthorized on REST API
 
@@ -196,7 +196,7 @@ Headers:
 2. Update `.env.monitoring` with new keys
 3. Restart stack: 
    ```bash
-   docker-compose --env-file .env.monitoring -f docker-compose.monitoring.yml restart
+   docker compose --env-file .env.monitoring --profile monitoring restart
    ```
 
 ### Issue: "No data" in dashboards
@@ -219,8 +219,8 @@ Headers:
 docker logs grafana
 
 # Clean and restart
-docker-compose -f docker-compose.monitoring.yml down -v
-docker-compose --env-file .env.monitoring -f docker-compose.monitoring.yml up -d
+docker compose --profile monitoring down -v
+docker compose --env-file .env.monitoring --profile monitoring up -d
 ```
 
 ---
@@ -243,7 +243,7 @@ Before deploying to production:
 ## Files Changed
 
 - `grafana/provisioning/datasources/supabase.yml` - Updated project IDs and auth
-- `docker-compose.monitoring.yml` - Added environment variables
+- `docker-compose.yml (monitoring profile)` - Added environment variables
 - `scripts/monitoring/setup-grafana.sh` - New setup automation script
 
 ---

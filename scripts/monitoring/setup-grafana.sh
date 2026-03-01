@@ -81,10 +81,10 @@ echo -e "${BLUE}🐳 Starting monitoring stack...${NC}"
 cd "$PROJECT_ROOT"
 
 # Stop existing containers
-docker-compose -f docker-compose.monitoring.yml down 2>/dev/null || true
+docker compose --profile monitoring down 2>/dev/null || true
 
 # Start new containers with environment file
-docker-compose --env-file "$MONITORING_ENV" -f docker-compose.monitoring.yml up -d
+docker compose --env-file "$MONITORING_ENV" --profile monitoring up -d prometheus grafana alertmanager
 
 # Wait for services to start
 echo -e "${BLUE}⏳ Waiting for services to start...${NC}"

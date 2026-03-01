@@ -107,8 +107,8 @@ echo ""
 
 # Step 5: Start monitoring stack
 echo -e "${YELLOW}[5/6]${NC} Starting monitoring stack..."
-docker-compose -f docker-compose.monitoring.yml down >/dev/null 2>&1 || true
-docker-compose -f docker-compose.monitoring.yml up -d
+docker compose --profile monitoring down >/dev/null 2>&1 || true
+docker compose --profile monitoring up -d prometheus grafana alertmanager
 
 # Wait for services to be ready
 echo -e "${YELLOW}Waiting for services to start...${NC}"
@@ -129,7 +129,7 @@ done
 
 if [[ $ALL_HEALTHY != true ]]; then
 	echo -e "${RED}Some services failed to start. Check logs:${NC}"
-	echo -e "${YELLOW}docker-compose -f docker-compose.monitoring.yml logs${NC}"
+	echo -e "${YELLOW}docker compose --profile monitoring logs${NC}"
 	exit 1
 fi
 echo ""
@@ -188,9 +188,9 @@ echo -e "  • Grafana:       ${GREEN}http://localhost:3001${NC} (admin / ${GRAF
 echo -e "  • Alertmanager:  ${GREEN}http://localhost:9093${NC}"
 echo ""
 echo -e "${BLUE}Quick Commands:${NC}"
-echo -e "  • View logs:     ${YELLOW}docker-compose -f docker-compose.monitoring.yml logs -f${NC}"
-echo -e "  • Stop stack:    ${YELLOW}docker-compose -f docker-compose.monitoring.yml down${NC}"
-echo -e "  • Restart:       ${YELLOW}docker-compose -f docker-compose.monitoring.yml restart${NC}"
+echo -e "  • View logs:     ${YELLOW}docker compose --profile monitoring logs -f${NC}"
+echo -e "  • Stop stack:    ${YELLOW}docker compose --profile monitoring down${NC}"
+echo -e "  • Restart:       ${YELLOW}docker compose --profile monitoring restart${NC}"
 echo ""
 echo -e "${BLUE}Targets Status:${NC}"
 echo -e "  Check at: ${YELLOW}http://localhost:9090/targets${NC}"

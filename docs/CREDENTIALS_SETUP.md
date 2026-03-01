@@ -237,7 +237,7 @@ gh secret set SUPABASE_DATABASE_URL --body '<new-connection-string>'
 
 **Step 5: Restart services**
 ```bash
-docker-compose -f docker-compose.monitoring.yml restart grafana
+docker compose --profile monitoring restart grafana
 ```
 
 ---
@@ -289,7 +289,7 @@ grep "secrets\." .github/workflows/*.yml
 ./scripts/setup/manage-supabase-credentials.sh
 
 # Restart Grafana
-docker-compose -f docker-compose.monitoring.yml restart grafana
+docker compose --profile monitoring restart grafana
 
 # Check logs
 docker logs grafana
