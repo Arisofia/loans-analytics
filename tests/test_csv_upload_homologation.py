@@ -249,8 +249,8 @@ class TestClassifyLoanIdDuplicates:
         df = pd.DataFrame({"amount": [100.0]})
         assert _classify_loan_id_duplicates(df) == []
 
-    def test_no_borrower_id_column_uses_amount_only(self):
-        """Without borrower_id, different amounts still classify as snapshot (info)."""
+    def test_no_borrower_id_column_falls_back_to_generic(self):
+        """Without a borrower column, duplicate loan_ids classify as generic warning."""
         df = pd.DataFrame(
             {
                 "loan_id": ["A", "A"],
@@ -260,7 +260,7 @@ class TestClassifyLoanIdDuplicates:
         result = _classify_loan_id_duplicates(df)
         assert len(result) == 1
         level, _ = result[0]
-        assert level == "info"
+        assert level == "warning"
 
     def test_no_borrower_id_same_amount_classified_as_exact(self):
         """Without borrower_id, same amounts still classify as exact duplicate (warning)."""
@@ -360,6 +360,7 @@ class TestValidateForPipeline:
 # is already populated before the dashboard module is loaded via importlib.
 import importlib.util as _ilu  # noqa: E402
 import os as _os  # noqa: E402
+from unittest.mock import patch as _patch  # noqa: E402
 
 # plotly is imported by the dashboard at module level.  The real plotly package
 # is available in the test environment, so we just need it imported here so the
@@ -398,7 +399,10 @@ _dash_spec = _ilu.spec_from_file_location(
     ),
 )
 _dash_mod = _ilu.module_from_spec(_dash_spec)
-_dash_spec.loader.exec_module(_dash_mod)
+# Patch Path.mkdir so module-level directory creation (AGENT_OUTPUTS_DIR) does not
+# touch the filesystem during import, keeping tests hermetic and faster.
+with _patch("pathlib.Path.mkdir"):
+    _dash_spec.loader.exec_module(_dash_mod)
 
 
 class TestPortfolioDashboardDesembolsos:
@@ -465,8 +469,9 @@ class TestPortfolioDashboardDesembolsos:
         df = self._normalize_and_alias(self._desembolsos_raw())
         assert "origination_date" in df.columns
 
-    def test_codcliente_suffix_variants_mapped(self):
-        """CodCliente_, CodCliente_2 suffix variants should all map to borrower_id."""
+    def test_codcliente_suffix_variants_not_directly_aliased(self):
+        """CodCliente_, CodCliente_2 suffix variants are intentionally excluded from
+        COLUMN_ALIASES — they require upstream coalescing before aliasing."""
         raw = pd.DataFrame(
             {
                 "loan_id": ["D001", "D002"],
@@ -479,11 +484,11 @@ class TestPortfolioDashboardDesembolsos:
                 "CodCliente_2": [None, "C2"],
             }
         )
-        # After normalize: codcliente_ and codcliente_2 both in COLUMN_ALIASES for borrower_id
+        # After normalize: codcliente_ and codcliente_2 are NOT in COLUMN_ALIASES;
+        # they are excluded to avoid picking only one column when both are present.
         df = self._normalize_and_alias(raw)
-        # At least one variant maps to borrower_id
-        has_borrower = "borrower_id" in df.columns
-        assert has_borrower, "borrower_id should be mapped from CodCliente_ or CodCliente_2"
+        # Suffix variants are not directly mapped; borrower_id is absent without coalescing.
+        assert "borrower_id" not in df.columns
 
 
 class TestPortfolioDashboardDuplicateClassification:

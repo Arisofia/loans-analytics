@@ -35,6 +35,7 @@ from src.agents.multi_agent.guardrails import Guardrails  # noqa: E402
 from src.agents.multi_agent.orchestrator import MultiAgentOrchestrator  # noqa: E402
 from src.agents.multi_agent.protocol import LLMProvider  # noqa: E402
 from streamlit_app.components.csv_upload import (  # noqa: E402
+    BORROWER_ID_COLS,
     _classify_loan_id_duplicates,
     _coerce_numeric as _coerce_amount,
 )
@@ -1635,8 +1636,16 @@ def handle_file_upload(uploaded_files: Any) -> bool:
             f"Files: {len(uploaded_files)} | Rows: {len(prepared_df):,}"
         )
 
-        # Classify any duplicate loan_id rows into typed scenarios
-        for level, message in _classify_loan_id_duplicates(merged_df):
+        # Classify any duplicate loan_id rows into typed scenarios.
+        # _classify_loan_id_duplicates uses the `amount` column for exact-vs-snapshot
+        # detection; Dashboard uses `principal_amount`. Build a narrow view (loan_id +
+        # borrower columns + amount) to avoid copying the full prepared_df.
+        _cls_candidates = ["loan_id"] + list(BORROWER_ID_COLS) + ["principal_amount"]
+        _cls_cols = [c for c in _cls_candidates if c in prepared_df.columns]
+        classify_df = prepared_df[_cls_cols].rename(
+            columns={"principal_amount": "amount"}, errors="ignore"
+        )
+        for level, message in _classify_loan_id_duplicates(classify_df):
             if level == "info":
                 st.info(f"ℹ️ {message}")
             else:
