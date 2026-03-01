@@ -309,7 +309,7 @@ class TestKPIServiceUnitEconomics:
 
         result = await service.calculate_unit_economics(loans)
 
-        # Should have at least 2 buckets (current + 1_30 or dpd_1_30)
+        # Should have at least 2 buckets (current + 1_30)
         assert len(result.dpd_migration) >= 2
 
         # Every action should be non-empty

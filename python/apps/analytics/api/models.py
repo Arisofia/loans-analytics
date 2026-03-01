@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -153,7 +153,9 @@ class DPDBucketBreakdown(BaseModel):
 class DPDBucketWithAction(DPDBucketBreakdown):
     """DPD bucket with risk level and recommended operational action."""
 
-    risk_level: str = Field(..., description="Risk level: low, medium, high, critical")
+    risk_level: Literal["low", "medium", "high", "critical"] = Field(
+        ..., description="Risk level: low, medium, high, critical"
+    )
     recommended_action: str = Field(
         ..., description="Recommended collections or risk action for this bucket"
     )
