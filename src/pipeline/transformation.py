@@ -77,6 +77,13 @@ class TransformationPhase:
     LOW_NULL_THRESHOLD_PCT: float = 5.0  # Below this: fill with median/mode
     HIGH_NULL_THRESHOLD_PCT: float = 30.0  # Above this: use default fill
     MISSING_NUMERIC_INDICATOR: int = -999  # Indicator for missing numeric values
+    # Cash-flow transaction fields where null should mean "no movement" (0),
+    # never statistical imputation.
+    FORCE_ZERO_NUMERIC_COLUMNS: Set[str] = {
+        "last_payment_amount",
+        "payment_amount",
+        "recovery_value",
+    }
 
     def __init__(self, config: Dict[str, Any], business_rules: Optional[Dict[str, Any]] = None):
         """
@@ -341,6 +348,10 @@ class TransformationPhase:
 
     def _handle_numeric_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
         """Apply numeric null handling strategy for a column."""
+        if col in self.FORCE_ZERO_NUMERIC_COLUMNS:
+            df[col] = df[col].fillna(0)
+            return "filled_zero (cashflow_semantics)"
+
         if null_pct < self.LOW_NULL_THRESHOLD_PCT:
             return self._fill_numeric_with_median(df, col)
         if null_pct < self.HIGH_NULL_THRESHOLD_PCT:

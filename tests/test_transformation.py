@@ -132,6 +132,26 @@ class TestNullHandling:
         assert "smart_actions" in metrics
         assert metrics["final_total_nulls"] == 0
 
+    def test_smart_strategy_forces_zero_for_cashflow_fields(self):
+        """Cash-flow nulls should be zero-filled, not median/imputed."""
+        config = {"null_handling": {"strategy": "smart"}}
+        transformer = TransformationPhase(config)
+        df = pd.DataFrame(
+            {
+                "loan_id": ["L001", "L002", "L003", "L004"],
+                "last_payment_amount": [100.0, None, 50.0, None],
+                "recovery_value": [None, 10.0, None, 0.0],
+            }
+        )
+
+        out, metrics = transformer._handle_nulls(df)
+
+        assert out["last_payment_amount"].tolist() == [100.0, 0.0, 50.0, 0.0]
+        assert out["recovery_value"].tolist() == [0.0, 10.0, 0.0, 0.0]
+        actions = metrics.get("smart_actions", {})
+        assert actions.get("last_payment_amount") == "filled_zero (cashflow_semantics)"
+        assert actions.get("recovery_value") == "filled_zero (cashflow_semantics)"
+
 
 class TestTypeNormalization:
     """Test type normalization functionality."""

@@ -149,9 +149,9 @@ def calculate_advanced_risk_metrics(df: pd.DataFrame) -> dict[str, Any]:
     total_balance = float(balance.sum())
     total_loans = int(len(df))
 
-    par30 = round(_safe_pct(float(balance[dpd > 30].sum()), total_balance), 2)
-    par60 = round(_safe_pct(float(balance[dpd > 60].sum()), total_balance), 2)
-    par90 = round(_safe_pct(float(balance[dpd > 90].sum()), total_balance), 2)
+    par30 = round(_safe_pct(float(balance[dpd >= 30].sum()), total_balance), 2)
+    par60 = round(_safe_pct(float(balance[dpd >= 60].sum()), total_balance), 2)
+    par90 = round(_safe_pct(float(balance[dpd >= 90].sum()), total_balance), 2)
     default_rate = round(_safe_pct(float(default_mask.sum()), float(total_loans)), 2)
 
     collected = _resolve_series(df, ["last_payment_amount", "payment_amount", "payments_collected"])

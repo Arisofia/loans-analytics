@@ -85,7 +85,7 @@ def test_calculate_all_kpis_includes_expanded_metrics():
     body = response.json()
     assert body["LossRate"]["id"] == "LOSS_RATE"
     assert body["LossRate"]["value"] == 20.0
-    assert body["RecoveryRate"]["value"] == 20.0
+    assert body["RecoveryRate"]["value"] == 10.0
     assert body["CashOnHand"]["value"] == 500.0
     assert body["AverageLoanSize"]["value"] == 1250.0
     assert body["DisbursementVolumeMTD"]["value"] == 2500.0

@@ -93,17 +93,17 @@ KPI_API_TO_CATALOG_ID = {
 
 DEFAULT_KPI_METADATA = {
     "PAR30": {
-        "formula": "SUM(principal_balance WHERE dpd > 30) / SUM(principal_balance) * 100",
+        "formula": "SUM(principal_balance WHERE dpd >= 30) / SUM(principal_balance) * 100",
         "definition": "Portfolio at Risk with more than 30 days past due.",
         "implications": "Higher PAR30 indicates deteriorating portfolio quality and collections pressure.",
     },
     "PAR90": {
-        "formula": "SUM(principal_balance WHERE dpd > 90) / SUM(principal_balance) * 100",
+        "formula": "SUM(principal_balance WHERE dpd >= 90) / SUM(principal_balance) * 100",
         "definition": "Portfolio at Risk with more than 90 days past due.",
         "implications": "Higher PAR90 signals severe delinquency and elevated expected credit losses.",
     },
     "PAR60": {
-        "formula": "SUM(principal_balance WHERE dpd > 60) / SUM(principal_balance) * 100",
+        "formula": "SUM(principal_balance WHERE dpd >= 60) / SUM(principal_balance) * 100",
         "definition": "Portfolio at Risk with more than 60 days past due.",
         "implications": "Rising PAR60 is an early warning for migration into severe delinquency buckets.",
     },
@@ -138,7 +138,7 @@ DEFAULT_KPI_METADATA = {
         "implications": "Higher loss rate increases provisioning needs and can pressure capital ratios.",
     },
     "RECOVERY_RATE": {
-        "formula": "SUM(recovery_value WHERE status = defaulted) / SUM(principal_balance WHERE status = defaulted) * 100",
+        "formula": "SUM(last_payment_amount WHERE status = defaulted) / SUM(principal_balance WHERE status = defaulted) * 100",
         "definition": "Recovery performance over defaulted exposure.",
         "implications": "Improving recoveries lowers loss-given-default and supports earnings resilience.",
     },
@@ -218,7 +218,7 @@ DEFAULT_KPI_METADATA = {
         "implications": "Origination count trends help separate growth from average ticket-size effects.",
     },
     "TOTAL_LOANS_COUNT": {
-        "formula": "COUNT(loans)",
+        "formula": "COUNT(DISTINCT loan_id WHERE status != closed)",
         "definition": "Total number of loans represented in the analyzed population.",
         "implications": "Loan-count growth changes operational load and may require capacity planning.",
     },
@@ -1975,11 +1975,11 @@ class KPIService:
             df["dpd"] = df["loan_status"].astype(str).apply(get_dpd_category)
 
         # PAR
-        par30_val = float(df[df["dpd"] > 30]["principal_balance"].sum())
+        par30_val = float(df[df["dpd"] >= 30]["principal_balance"].sum())
         par30_pct = (par30_val / total_outstanding * 100) if total_outstanding > 0 else 0
-        par60_val = float(df[df["dpd"] > 60]["principal_balance"].sum())
+        par60_val = float(df[df["dpd"] >= 60]["principal_balance"].sum())
         par60_pct = (par60_val / total_outstanding * 100) if total_outstanding > 0 else 0
-        par90_val = float(df[df["dpd"] > 90]["principal_balance"].sum())
+        par90_val = float(df[df["dpd"] >= 90]["principal_balance"].sum())
         par90_pct = (par90_val / total_outstanding * 100) if total_outstanding > 0 else 0
         dpd_1_30 = (
             float(df[(df["dpd"] > 0) & (df["dpd"] <= 30)]["principal_balance"].sum())
@@ -2008,13 +2008,20 @@ class KPIService:
             else 0
         )
 
-        # Default rate
-        default_mask = df["loan_status"].str.contains(
+        status_series = df["loan_status"].astype(str)
+
+        # Default rate / loss-rate mask (keeps realtime behavior, including severe arrears)
+        default_mask = status_series.str.contains(
             r"default|charged.off|90\+", case=False, na=False
         ) | (df["dpd"] > 90)
         default_rate_pct = (default_mask.sum() / len(df) * 100) if len(df) > 0 else 0
         defaulted_balance = float(df.loc[default_mask, "principal_balance"].sum())
         loss_rate = (defaulted_balance / total_originated * 100) if total_originated > 0 else 0
+
+        # Recovery-rate mask follows KPI catalog semantics: explicit defaulted status only.
+        status_defaulted_mask = status_series.str.contains(
+            r"default|charged", case=False, na=False
+        )
 
         # Yield
         weighted_interest = float((df["interest_rate"] * df["principal_balance"]).sum())
@@ -2035,26 +2042,33 @@ class KPIService:
         collection_rate = (
             (float(collected.sum()) / total_scheduled * 100) if total_scheduled > 0 else 0
         )
-        recovery_raw = (
-            pd.to_numeric(df["recovery_value"], errors="coerce").fillna(0)
-            if "recovery_value" in df.columns
-            else pd.Series([0.0] * len(df), index=df.index)
+        recovery_amount = float(collected[status_defaulted_mask].sum())
+        defaulted_balance_for_recovery = float(df.loc[status_defaulted_mask, "principal_balance"].sum())
+        recovery_rate = (
+            (recovery_amount / defaulted_balance_for_recovery * 100)
+            if defaulted_balance_for_recovery > 0
+            else 0
         )
-        if float(recovery_raw.sum()) <= 0:
-            recovery_raw = collected
-        recovery_amount = float(recovery_raw[default_mask].sum())
-        recovery_rate = (recovery_amount / defaulted_balance * 100) if defaulted_balance > 0 else 0
 
         # Derived Next-Gen KPIs
         npl_pct = par90_pct
         lgd_pct = (100.0 - recovery_rate) if defaulted_balance > 0 else 0.0
         cor_pct = loss_rate  # Use loss rate as a proxy for Cost of Risk
 
-        cash_on_hand = (
-            float(pd.to_numeric(df["current_balance"], errors="coerce").fillna(0).sum())
-            if "current_balance" in df.columns
-            else 0.0
-        )
+        if "current_balance" in df.columns:
+            current_balance_series = pd.to_numeric(df["current_balance"], errors="coerce")
+            null_or_zero_ratio = (
+                (current_balance_series.isna() | (current_balance_series == 0)).mean()
+                if len(current_balance_series) > 0
+                else 1.0
+            )
+            if null_or_zero_ratio > 0.8:
+                # Mirror pipeline transformation fallback to keep snapshot parity.
+                cash_on_hand = float(pd.to_numeric(df["principal_balance"], errors="coerce").fillna(0).sum())
+            else:
+                cash_on_hand = float(current_balance_series.fillna(0).sum())
+        else:
+            cash_on_hand = 0.0
         average_loan_size = float(df["loan_amount"].mean()) if len(df) > 0 else 0.0
 
         # LTV/DTI
@@ -2139,6 +2153,14 @@ class KPIService:
         )
         executive_metrics = self._calculate_realtime_executive_metrics(df)
 
+        if "id" in df.columns and df["id"].notna().any():
+            non_closed_mask = ~status_series.str.contains(
+                r"closed|complete|paid|settled", case=False, na=False
+            )
+            total_loans_count = float(df.loc[non_closed_mask, "id"].astype(str).nunique())
+        else:
+            total_loans_count = float(len(df))
+
         return {
             "par30": par30_pct,
             "par60": par60_pct,
@@ -2171,7 +2193,7 @@ class KPIService:
             "repeat_borrower_rate": repeat_borrower_rate,
             "automation_rate": automation_rate,
             "processing_time_avg": processing_time_avg,
-            "count": float(len(df)),
+            "count": total_loans_count,
         }
 
     def _calculate_realtime_executive_metrics(self, df: pd.DataFrame) -> dict[str, float]:

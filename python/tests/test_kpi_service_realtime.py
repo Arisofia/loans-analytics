@@ -106,7 +106,10 @@ def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
     kpi_map = {k.id: k for k in response}
 
     assert kpi_map["LOSS_RATE"].value == 20.0
-    assert kpi_map["RECOVERY_RATE"].value == 20.0
+    # Recovery follows KPI catalog semantics:
+    # SUM(last_payment_amount WHERE status=defaulted) / SUM(defaulted principal)
+    # = 50 / 500 = 10%
+    assert kpi_map["RECOVERY_RATE"].value == 10.0
     assert kpi_map["CASH_ON_HAND"].value == 500.0
     assert kpi_map["AVERAGE_LOAN_SIZE"].value == 1250.0
     assert kpi_map["DISBURSEMENT_VOLUME_MTD"].value == 2500.0
