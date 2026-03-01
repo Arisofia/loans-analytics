@@ -178,7 +178,7 @@ def render_csv_upload() -> None:
                 key=f"process_{uploaded_file.name}",
                 type="primary",
             ):
-                valid, missing, issues = _validate_for_pipeline(prepared_df)
+                valid, missing, issues, notices = _validate_for_pipeline(prepared_df)
                 if not valid:
                     st.error(
                         "Cannot process this file yet. Missing required columns after mapping: "
@@ -186,13 +186,15 @@ def render_csv_upload() -> None:
                     )
                 elif issues:
                     st.warning("Data quality warnings: " + " | ".join(issues))
+                elif notices:
+                    st.info("Validation notes: " + " | ".join(notices))
                 _run_pipeline(prepared_df, f"prepared_{_safe_filename(uploaded_file.name)}.csv")
 
     if len(prepared_frames) > 1:
         st.markdown("---")
         st.subheader("🧩 Consolidated Dataset (All Uploaded Files)")
         consolidated = _merge_prepared_frames([frame for _, frame in prepared_frames])
-        valid, missing, issues = _validate_for_pipeline(consolidated)
+        valid, missing, issues, notices = _validate_for_pipeline(consolidated)
 
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -214,6 +216,8 @@ def render_csv_upload() -> None:
             else:
                 if issues:
                     st.warning("Data quality warnings: " + " | ".join(issues))
+                elif notices:
+                    st.info("Validation notes: " + " | ".join(notices))
                 _run_pipeline(consolidated, "consolidated_upload.csv")
 
 
@@ -438,16 +442,84 @@ def _merge_prepared_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
     return _prepare_dataframe(merged)
 
 
-def _validate_for_pipeline(df: pd.DataFrame) -> tuple[bool, list[str], list[str]]:
+def _duplicate_loan_diagnostics(df: pd.DataFrame) -> tuple[list[str], list[str]]:
+    """Diagnose duplicate loan_id rows and separate true issues from expected snapshots."""
+    warnings: list[str] = []
+    notices: list[str] = []
+
+    if "loan_id" not in df.columns:
+        return warnings, notices
+
+    work = df.copy()
+    work["_loan_id"] = work["loan_id"].astype(str).str.strip()
+    work = work[work["_loan_id"] != ""]
+    if work.empty:
+        return warnings, notices
+
+    dup = work[work["_loan_id"].duplicated(keep=False)].copy()
+    if dup.empty:
+        return warnings, notices
+
+    client_col = next(
+        (
+            col
+            for col in ("client_code", "borrower_id", "client_name", "borrower_name")
+            if col in dup.columns
+        ),
+        None,
+    )
+    if client_col is not None:
+        dup["_client_key"] = dup[client_col].fillna("").astype(str).str.strip()
+    else:
+        dup["_client_key"] = ""
+
+    dup["_amount_key"] = _coerce_numeric(dup["amount"]) if "amount" in dup.columns else 0.0
+    dup["_amount_key_rounded"] = dup["_amount_key"].round(2)
+
+    grouped = dup.groupby("_loan_id", dropna=False)
+    client_nunique = grouped["_client_key"].apply(lambda s: s[s != ""].nunique())
+    amount_nunique = grouped["_amount_key_rounded"].nunique()
+
+    client_conflict_ids = client_nunique[client_nunique > 1].index.tolist()
+    exact_duplicate_ids = [
+        loan_id
+        for loan_id in client_nunique.index
+        if client_nunique.loc[loan_id] <= 1 and amount_nunique.loc[loan_id] <= 1
+    ]
+    snapshot_ids = [
+        loan_id
+        for loan_id in client_nunique.index
+        if client_nunique.loc[loan_id] <= 1 and amount_nunique.loc[loan_id] > 1
+    ]
+
+    if client_conflict_ids:
+        warnings.append(
+            f"{len(client_conflict_ids)} loan_id values map to multiple clients (possible merge issue)"
+        )
+    if exact_duplicate_ids:
+        warnings.append(
+            f"{len(exact_duplicate_ids)} loan_id values repeat with the same client and amount"
+        )
+    if snapshot_ids:
+        notices.append(
+            f"{len(snapshot_ids)} loan_id values look like historical snapshots "
+            "(same client, varying amount)"
+        )
+
+    return warnings, notices
+
+
+def _validate_for_pipeline(df: pd.DataFrame) -> tuple[bool, list[str], list[str], list[str]]:
     missing = [col for col in PIPELINE_REQUIRED_COLUMNS if col not in df.columns]
     issues: list[str] = []
+    notices: list[str] = []
 
     if "loan_id" in df.columns:
         if df["loan_id"].astype(str).str.strip().eq("").all():
             issues.append("All loan_id values are empty")
-        duplicate_count = int(df["loan_id"].astype(str).duplicated().sum())
-        if duplicate_count > 0:
-            issues.append(f"{duplicate_count} duplicate loan_id values")
+        duplicate_warnings, duplicate_notices = _duplicate_loan_diagnostics(df)
+        issues.extend(duplicate_warnings)
+        notices.extend(duplicate_notices)
 
     if "amount" in df.columns and pd.to_numeric(df["amount"], errors="coerce").eq(0).all():
         issues.append("All amount values are zero after mapping")
@@ -455,11 +527,11 @@ def _validate_for_pipeline(df: pd.DataFrame) -> tuple[bool, list[str], list[str]
     if "status" in df.columns and df["status"].astype(str).str.strip().eq("").all():
         issues.append("All status values are empty")
 
-    return len(missing) == 0, missing, issues
+    return len(missing) == 0, missing, issues, notices
 
 
 def _render_validation(df: pd.DataFrame) -> None:
-    valid, missing, issues = _validate_for_pipeline(df)
+    valid, missing, issues, notices = _validate_for_pipeline(df)
     if valid:
         st.success("✅ Required pipeline columns present after alias mapping (loan_id, amount, status)")
     else:
@@ -468,7 +540,10 @@ def _render_validation(df: pd.DataFrame) -> None:
     if issues:
         for issue in issues:
             st.warning(f"⚠️ {issue}")
-    else:
+    if notices:
+        for notice in notices:
+            st.info(f"ℹ️ {notice}")
+    if not issues and not notices:
         st.success("✅ No critical data-quality warnings detected")
 
 

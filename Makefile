@@ -121,6 +121,10 @@ agents:
 kpis:
 	"$(PYTHON)" scripts/data/run_data_pipeline.py --input data/raw/abaco_real_data_20260202.csv
 
+# Train default-risk model artifact for /predict/default endpoint
+train-risk-model:
+	"$(PYTHON)" scripts/ml/train_default_risk_model.py
+
 repo-map:
 	@echo "Open REPO_MAP.md"
 	@sed -n '1,200p' REPO_MAP.md

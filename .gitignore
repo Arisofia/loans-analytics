@@ -30,6 +30,7 @@ venv/
 .hypothesis/
 .coverage
 .coverage.*
+.coverage*
 htmlcov/
 coverage.xml
 junit.xml
@@ -76,6 +77,7 @@ data/agent_outputs/
 data/usage_metrics/
 exports/
 outputs/
+reports/
 .streamlit/
 apps/web/playwright-report/
 playwright/.e2e
