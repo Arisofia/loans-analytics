@@ -494,16 +494,27 @@ def _classify_loan_id_duplicates(df: pd.DataFrame) -> list[tuple[str, str]]:
         if len(group) < 2:
             continue
 
-        unique_borrowers = group[borrower_col].nunique() if has_borrower else 1
+        # Determine whether we actually have any borrower information for this group.
+        # If the borrower column exists but is entirely null within this loan_id group,
+        # treat borrower as unavailable and fall back to generic classification instead
+        # of treating it as "same borrower" based on amount alone.
+        borrower_info_available = has_borrower and group[borrower_col].notna().any()
 
-        if unique_borrowers > 1:
-            suspicious_count += 1
-        elif has_amount:
-            if group["amount"].nunique() == 1:
-                exact_dup_count += 1
+        if borrower_info_available:
+            unique_borrowers = group[borrower_col].dropna().nunique()
+
+            if unique_borrowers > 1:
+                suspicious_count += 1
+            elif has_amount:
+                if group["amount"].nunique() == 1:
+                    exact_dup_count += 1
+                else:
+                    snapshot_count += 1
             else:
-                snapshot_count += 1
+                generic_count += 1
         else:
+            # Borrower is unavailable for this group (no column or all-null),
+            # so don't attempt exact/snapshot classification based on amount.
             generic_count += 1
 
     messages: list[tuple[str, str]] = []
