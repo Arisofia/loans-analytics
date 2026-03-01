@@ -262,8 +262,8 @@ class TestClassifyLoanIdDuplicates:
         level, _ = result[0]
         assert level == "warning"
 
-    def test_no_borrower_id_same_amount_classified_as_exact(self):
-        """Without borrower_id, same amounts still classify as exact duplicate (warning)."""
+    def test_no_borrower_id_same_amount_falls_back_to_generic(self):
+        """Without borrower_id, same-amount duplicate loan_ids still produce a generic duplicate warning."""
         df = pd.DataFrame(
             {
                 "loan_id": ["A", "A"],

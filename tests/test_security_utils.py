@@ -26,3 +26,21 @@ def test_private_allowed_via_env(monkeypatch):
         assert sanitize_api_base("http://10.0.0.1") == "http://10.0.0.1"
     finally:
         monkeypatch.delenv("ALLOW_PRIVATE_API_BASE", raising=False)
+
+
+def test_link_local_blocked_by_default():
+    # 169.254.169.254 is the AWS instance metadata SSRF target (link-local)
+    assert sanitize_api_base("http://169.254.169.254") is None
+
+
+def test_loopback_blocked_by_default():
+    # Loopback is non-global and should be blocked unless explicitly opted in
+    assert sanitize_api_base("http://127.0.0.1") is None
+
+
+def test_loopback_allowed_via_env(monkeypatch):
+    monkeypatch.setenv("ALLOW_PRIVATE_API_BASE", "1")
+    try:
+        assert sanitize_api_base("http://127.0.0.1") == "http://127.0.0.1"
+    finally:
+        monkeypatch.delenv("ALLOW_PRIVATE_API_BASE", raising=False)

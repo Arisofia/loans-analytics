@@ -737,10 +737,14 @@ def _classify_loan_id_duplicates(df: pd.DataFrame) -> list[tuple[str, str]]:
     if "loan_id" not in df.columns:
         return []
 
-    id_series = df["loan_id"].astype(str).str.strip()
-    # Exclude null/empty/sentinel values so NaN loan_ids are not treated as a real ID.
-    null_sentinels = frozenset({"nan", "None", "NaN", "none", "NA", ""})
-    valid_id_mask = ~id_series.isin(null_sentinels)
+    # Work from the raw column to detect true nulls before any stringification.
+    loan_id_raw = df["loan_id"]
+    id_is_null = loan_id_raw.isna()
+    id_series = loan_id_raw.astype(str).str.strip()
+    # Exclude null/empty/sentinel values so NaN / NA loan_ids are not treated as a real ID.
+    # Include the stringified representation of pd.NA ("<NA>") to robustly handle nullable dtypes.
+    null_sentinels = frozenset({"nan", "None", "NaN", "none", "NA", "", "<NA>"})
+    valid_id_mask = ~(id_is_null | id_series.isin(null_sentinels))
     dup_mask = id_series.duplicated(keep=False) & valid_id_mask
     if not dup_mask.any():
         return []

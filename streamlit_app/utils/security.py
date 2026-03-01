@@ -33,7 +33,7 @@ def sanitize_api_base(base: str) -> Optional[str]:
             # Try to parse the host directly as a literal IP address.
             # Literal IPs are validated here without any DNS round-trip.
             ip = ipaddress.ip_address(host)
-            if ip.is_private and not ip.is_loopback:
+            if not ip.is_global:
                 if os.environ.get("ALLOW_PRIVATE_API_BASE") != "1":
                     return None
         except ValueError:
@@ -42,7 +42,7 @@ def sanitize_api_base(base: str) -> Optional[str]:
                 for res in socket.getaddrinfo(host, None):
                     addr = res[4][0]
                     ip = ipaddress.ip_address(addr)
-                    if ip.is_private and not ip.is_loopback:
+                    if not ip.is_global:
                         if os.environ.get("ALLOW_PRIVATE_API_BASE") != "1":
                             return None
             except socket.gaierror:
