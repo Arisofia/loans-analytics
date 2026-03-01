@@ -84,6 +84,19 @@ class TransformationPhase:
         "payment_amount",
         "recovery_value",
     }
+    # Emit high-null warnings only for KPI-critical numeric fields.
+    HIGH_NULL_WARNING_NUMERIC_COLUMNS: Set[str] = {
+        "amount",
+        "principal_amount",
+        "current_balance",
+        "outstanding_balance",
+        "interest_rate",
+        "dpd",
+        "days_past_due",
+        "last_payment_amount",
+        "total_scheduled",
+        "recovery_value",
+    }
 
     def __init__(self, config: Dict[str, Any], business_rules: Optional[Dict[str, Any]] = None):
         """
@@ -379,7 +392,8 @@ class TransformationPhase:
             return f"skipped_zero_fill (null_pct={null_pct:.1f}% > 99.5%)"
 
         df[col] = df[col].fillna(0)
-        logger.warning("Column '%s' has %.1f%% nulls", col, null_pct)
+        if col in self.HIGH_NULL_WARNING_NUMERIC_COLUMNS:
+            logger.warning("Column '%s' has %.1f%% nulls", col, null_pct)
         return f"filled_zero (high_null: {null_pct:.1f}%)"
 
     def _handle_categorical_nulls(self, df: pd.DataFrame, col: str, null_pct: float) -> str:
@@ -499,6 +513,7 @@ class TransformationPhase:
 
         self._normalize_interest_rate(df, rules_applied)
         self._normalize_equifax_score(df, rules_applied)
+        self._enforce_non_negative_balances(df, rules_applied)
         self._apply_dpd_bucket_rule(df, rules_applied, fields_created)
         self._apply_risk_category_rule(df, rules_applied, fields_created)
         self._apply_amount_tier_rule(df, rules_applied, fields_created)
@@ -512,6 +527,22 @@ class TransformationPhase:
 
         logger.info("Applied %d business rules", len(rules_applied))
         return df, metrics
+
+    def _enforce_non_negative_balances(self, df: pd.DataFrame, rules_applied: List[str]) -> None:
+        """Clip negative balances to zero to keep exposure semantics consistent."""
+        affected = 0
+        for col in ("outstanding_balance", "current_balance"):
+            if col not in df.columns:
+                continue
+            series = pd.to_numeric(df[col], errors="coerce")
+            negative_mask = series < 0
+            negative_count = int(negative_mask.sum())
+            if negative_count > 0:
+                df[col] = series.clip(lower=0)
+                affected += negative_count
+        if affected > 0:
+            logger.info("Clipped %d negative balance values to zero", affected)
+            rules_applied.append("non_negative_balance_enforcement")
 
     def _normalize_interest_rate(self, df: pd.DataFrame, rules_applied: List[str]) -> None:
         """Normalize interest_rate to annual decimal based on data semantics.
