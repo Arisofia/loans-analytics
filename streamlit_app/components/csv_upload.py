@@ -438,6 +438,93 @@ def _merge_prepared_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
     return _prepare_dataframe(merged)
 
 
+def _classify_loan_id_duplicates(df: pd.DataFrame) -> list[tuple[str, str]]:
+    """Classify duplicate loan_id rows into typed groups.
+
+    Returns a list of (level, message) pairs where level is ``"warning"`` or
+    ``"info"``, covering three distinct scenarios:
+
+    * **Exact duplicates** – same ``loan_id`` + same ``borrower_id`` + same
+      ``amount``.  These are data entry errors and should be deduplicated
+      before pipeline execution.  Reported as ``"warning"``.
+    * **Historical snapshots** – same ``loan_id`` + same ``borrower_id`` +
+      *different* ``amount``.  These represent balance-rollup snapshots and
+      are expected.  Reported as ``"info"``.
+    * **Suspicious merges** – same ``loan_id`` shared by *different*
+      ``borrower_id`` values.  Indicates a likely data-quality issue.
+      Reported as ``"warning"``.
+    """
+    if "loan_id" not in df.columns:
+        return []
+
+    id_series = df["loan_id"].astype(str)
+    dup_mask = id_series.duplicated(keep=False)
+    if not dup_mask.any():
+        return []
+
+    dup_df = df[dup_mask].copy()
+    dup_df["_loan_id_str"] = id_series[dup_mask]
+
+    has_borrower = "borrower_id" in dup_df.columns
+    has_amount = "amount" in dup_df.columns
+
+    exact_dup_count: int = 0
+    snapshot_count: int = 0
+    suspicious_count: int = 0
+    generic_count: int = 0
+
+    for loan_id_val, group in dup_df.groupby("_loan_id_str", sort=False):
+        if len(group) < 2:
+            continue
+
+        unique_borrowers = group["borrower_id"].nunique() if has_borrower else 1
+
+        if unique_borrowers > 1:
+            suspicious_count += 1
+        elif has_amount:
+            if group["amount"].nunique() == 1:
+                exact_dup_count += 1
+            else:
+                snapshot_count += 1
+        else:
+            generic_count += 1
+
+    messages: list[tuple[str, str]] = []
+    if exact_dup_count:
+        messages.append(
+            (
+                "warning",
+                f"{exact_dup_count} loan_id(s) have exact duplicate rows "
+                "(same borrower, same amount) — consider deduplicating before processing",
+            )
+        )
+    if snapshot_count:
+        messages.append(
+            (
+                "info",
+                f"{snapshot_count} loan_id(s) appear as historical snapshots "
+                "(same borrower, different amounts) — treated as balance rollups",
+            )
+        )
+    if suspicious_count:
+        messages.append(
+            (
+                "warning",
+                f"{suspicious_count} loan_id(s) are shared across different borrowers "
+                "(suspicious merge) — verify source data integrity",
+            )
+        )
+    if generic_count:
+        messages.append(
+            (
+                "warning",
+                f"{generic_count} loan_id(s) have duplicate rows "
+                "(borrower/amount columns unavailable for detailed classification)",
+            )
+        )
+    return messages
+
+
 def _validate_for_pipeline(df: pd.DataFrame) -> tuple[bool, list[str], list[str]]:
     missing = [col for col in PIPELINE_REQUIRED_COLUMNS if col not in df.columns]
     issues: list[str] = []
@@ -445,9 +532,6 @@ def _validate_for_pipeline(df: pd.DataFrame) -> tuple[bool, list[str], list[str]
     if "loan_id" in df.columns:
         if df["loan_id"].astype(str).str.strip().eq("").all():
             issues.append("All loan_id values are empty")
-        duplicate_count = int(df["loan_id"].astype(str).duplicated().sum())
-        if duplicate_count > 0:
-            issues.append(f"{duplicate_count} duplicate loan_id values")
 
     if "amount" in df.columns and pd.to_numeric(df["amount"], errors="coerce").eq(0).all():
         issues.append("All amount values are zero after mapping")
@@ -470,6 +554,13 @@ def _render_validation(df: pd.DataFrame) -> None:
             st.warning(f"⚠️ {issue}")
     else:
         st.success("✅ No critical data-quality warnings detected")
+
+    # Typed duplicate loan_id classification (warning / info by scenario)
+    for level, message in _classify_loan_id_duplicates(df):
+        if level == "info":
+            st.info(f"ℹ️ {message}")
+        else:
+            st.warning(f"⚠️ {message}")
 
 
 def _run_pipeline(df: pd.DataFrame, filename: str) -> None:
