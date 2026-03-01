@@ -525,6 +525,14 @@ class VintageCurveResponse(BaseModel):
     )
 
 
+class AnalysisLayer(BaseModel):
+    layer: str = Field(..., description="Layer name (e.g. 'Risk', 'Growth')")
+    what: str = Field(..., description="The core finding or observation")
+    why: str = Field(..., description="The root cause or data driver")
+    so_what: str = Field(..., description="The business impact or implication")
+    now_what: str = Field(..., description="The immediate recommended action")
+
+
 class FullAnalysisResponse(BaseModel):
     analysis_id: str
     summary: str
@@ -533,6 +541,10 @@ class FullAnalysisResponse(BaseModel):
     risk_stratification: Optional[RiskStratificationResponse] = None
     risk_heatmap: Optional[RiskHeatmapResponse] = None
     vintage_curves: Optional[VintageCurveResponse] = None
+    layered_analysis: List[AnalysisLayer] = Field(
+        default_factory=list,
+        description="Deep insights following the 'What, Why, So What, Now What' framework",
+    )
     kpis: List[KpiSingleResponse] = Field(
         default_factory=list,
         description="KPI snapshot used by the analysis, including formulas and implications",

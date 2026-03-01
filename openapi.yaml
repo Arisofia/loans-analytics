@@ -802,6 +802,25 @@ components:
         overall_par30:
           type: number
           format: float
+    AnalysisLayer:
+      type: object
+      required:
+        - layer
+        - what
+        - why
+        - so_what
+        - now_what
+      properties:
+        layer:
+          type: string
+        what:
+          type: string
+        why:
+          type: string
+        so_what:
+          type: string
+        now_what:
+          type: string
     DPDBucketBreakdown:
       type: object
       properties:
@@ -837,6 +856,10 @@ components:
           $ref: "#/components/schemas/RiskHeatmapResponse"
         vintage_curves:
           $ref: "#/components/schemas/VintageCurveResponse"
+        layered_analysis:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalysisLayer"
         kpis:
           type: array
           items:

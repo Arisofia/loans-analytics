@@ -139,3 +139,25 @@ def test_full_analysis_structured_risk_layers():
     npl_bucket = next(b for b in heatmap_data["heatmap"] if b["bucket"] == "90_plus")
     assert npl_bucket["risk_intensity"] == "high"
     assert "NPL (90+ DPD)" in heatmap_data["critical_buckets"]
+
+
+def test_full_analysis_layered_insights():
+    client = TestClient(app)
+    response = client.post("/analytics/full-analysis", json=_sample_payload())
+    assert response.status_code == 200
+
+    body = response.json()
+    
+    # Check Layered Analysis
+    assert "layered_analysis" in body
+    layers = body["layered_analysis"]
+    assert len(layers) >= 3
+    
+    risk_layer = next(l for l in layers if l["layer"] == "Portfolio Risk")
+    assert "what" in risk_layer
+    assert "why" in risk_layer
+    assert "so_what" in risk_layer
+    assert "now_what" in risk_layer
+    
+    growth_layer = next(l for l in layers if l["layer"] == "Growth & Profitability")
+    assert growth_layer["now_what"] is not None
