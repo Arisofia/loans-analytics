@@ -643,7 +643,36 @@ COLUMN_ALIASES = {
     "risk_score": ["score", "riesgo", "risk", "credit_score"],
     "region": ["province", "zona", "location", "state"],
     # DESEMBOLSOS / CONTROL DE MORA delinquency field
-    "days_past_due": ["dias_mora", "dias_de_mora", "dpd"],
+    "days_past_due": ["dias_mora", "dias_de_mora", "dpd", "dias_vencido", "mora_en_dias"],
+    # Segment fields from CONTROL DE MORA format
+    "company": ["empresa", "compania"],
+    "credit_line": ["lineacredito"],
+    "kam_hunter": [
+        "cod_kam_hunter",
+        "cod_kam_hunter_",
+        "cod_kam_hunter1",
+        "cod_kam_hunter_1",
+    ],
+    "kam_farmer": [
+        "cod_kam_farmer",
+        "cod_kam_farmer_",
+        "cod_kam_farmer1",
+        "cod_kam_farmer_1",
+        "farmer",
+    ],
+    # New enriched fields
+    "collections_eligible": ["procede_a_cobrar"],
+    "delinquency_definition": ["definicion_m"],
+    "delinquency_bucket_raw": ["rango_m"],
+    "credit_line_range": ["rango_de_la_linea"],
+    "ministry": ["ministerio"],
+    "government_sector": ["goes"],
+    "capital_collected": ["capitalcobrado"],
+    "total_payment_received": ["montototalabonado"],
+    "utilization_pct": ["porcentaje_utilizado"],
+    "approved_value": ["valoraprobado"],
+    "mdsc_posted": ["mdscposteado"],
+    "advisory_channel": ["asesoriadigital"],
 }
 
 OPTIONAL_DEFAULTS = {

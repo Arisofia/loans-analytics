@@ -195,6 +195,22 @@ ALIAS_MAP: dict[str, list[str]] = {
     "advisory_channel": ["asesoriadigital"],
     "application_date": ["fechasolicitado"],
     "utilization_pct": ["porcentaje_utilizado"],
+    "collections_eligible": ["procede_a_cobrar"],
+    "delinquency_definition": ["definicion_m"],
+    "delinquency_bucket_raw": ["rango_m"],
+    "credit_line_range": ["rango_de_la_linea"],
+    "ministry": ["ministerio"],
+    "government_sector": ["goes"],
+    "capital_collected": ["capitalcobrado"],
+    "total_payment_received": ["montototalabonado"],
+    "mdsc_posted": ["mdscposteado"],
+    "negotiation_days": ["diasnegociacion", "dias_negociacion"],
+    "days_to_pay": ["dias_en_pagar"],
+    "disbursement_count": ["numerodesembolsos"],
+    "approved_value": ["valoraprobado"],
+    "negotiation_income": ["ingreso_total_por_desembolso", "ingreso_pagadopendiente"],
+    "commission_code": ["comision_cobrada"],
+    "pending_income": ["ingresos_pendiente"],
 }
 
 

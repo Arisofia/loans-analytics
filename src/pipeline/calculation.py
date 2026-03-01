@@ -255,7 +255,7 @@ class KPIFormulaEngine:
 
     def _replace_aggregation_match(self, match: re.Match) -> str:
         """Replace an aggregation fragment with its computed numeric value."""
-        return str(self._execute_simple_formula(match.group(0)))
+        return str(self._execute_simple_formula(match[0]))
 
     def _execute_simple_formula(self, formula: str) -> Decimal:
         """Execute simple aggregation formulas."""
@@ -264,18 +264,17 @@ class KPIFormulaEngine:
         if not agg_match:
             return result
 
-        agg_func = agg_match.group(1).upper()
-        content = agg_match.group(2).strip()
+        agg_func = agg_match[1].upper()
+        content = agg_match[2].strip()
 
         distinct = False
         if content.startswith("DISTINCT "):
             distinct = True
             content = content[9:].strip()
 
-        where_match = re.match(r"(.+?)\s+WHERE\s+(.+)", content, re.IGNORECASE)
-        if where_match:
-            column = where_match.group(1).strip()
-            condition = where_match.group(2).strip()
+        if where_match := re.match(r"(.+?)\s+WHERE\s+(.+)", content, re.IGNORECASE):
+            column = where_match[1].strip()
+            condition = where_match[2].strip()
             filtered_df = self._apply_where_clause(condition)
         else:
             column = content
@@ -388,16 +387,14 @@ class KPIFormulaEngine:
                 i += 1
                 continue
             if depth == 0 and upper.startswith(token, i):
-                part = normalized[start:i].strip()
-                if part:
+                if part := normalized[start:i].strip():
                     parts.append(part)
                 i += len(token)
                 start = i
                 continue
             i += 1
 
-        tail = normalized[start:].strip()
-        if tail:
+        if tail := normalized[start:].strip():
             parts.append(tail)
         return parts
 
@@ -406,10 +403,10 @@ class KPIFormulaEngine:
         match = re.match(r"(.+?)\s+IN\s+\[(.+?)\]", condition, re.IGNORECASE)
         if not match:
             return None
-        column = match.group(1).strip()
+        column = match[1].strip()
         if column not in self.df.columns:
             return self._false_mask()
-        values = [value.strip().strip("'\"") for value in match.group(2).split(",")]
+        values = [value.strip().strip("'\"") for value in match[2].split(",")]
         return self.df[column].astype(str).isin(values).fillna(False).astype(bool)
 
     @staticmethod
@@ -465,10 +462,7 @@ class KPIFormulaEngine:
     def _compare_string(self, column: str, operator: str, value: str) -> pd.Series:
         """Compare stringified column values using equality/inequality."""
         series = self.df[column].astype(str)
-        if operator == "!=":
-            mask = series != value
-        else:
-            mask = series == value
+        mask = series != value if operator == "!=" else series == value
         return mask.fillna(False).astype(bool)
 
     @staticmethod
@@ -554,15 +548,17 @@ class CalculationPhase:
         logger.info("Starting Phase 3: Calculation")
 
         try:
-            # Load data
-            if df is None:
-                if clean_data_path and clean_data_path.exists():
-                    df = pd.read_parquet(clean_data_path)
-                else:
-                    raise ValueError("No data provided for calculation")
+            df = self._load_input_dataframe(clean_data_path=clean_data_path, df=df)
 
             # Calculate KPIs
             kpi_results = self._calculate_kpis(df)
+
+            # Segment-level KPIs (by company, credit_line, kam_hunter, kam_farmer)
+            segment_kpis = self._calculate_segment_kpis(df)
+
+            # Enriched KPIs from new CONTROL DE MORA fields
+            enriched_kpis = self._calculate_enriched_kpis(df)
+            kpi_results.update(enriched_kpis)
 
             # Time-series rollups
             time_series = self._calculate_time_series(df)
@@ -576,8 +572,12 @@ class CalculationPhase:
             # Store results
             if run_dir:
                 kpi_path = run_dir / "kpi_results.parquet"
-                kpi_df = pd.DataFrame([kpi_results])
+                kpi_df = pd.DataFrame([{k: v for k, v in kpi_results.items() if not isinstance(v, dict)}])
                 kpi_df.to_parquet(kpi_path, index=False)
+
+                segment_path = run_dir / "segment_kpis.json"
+                with open(segment_path, "w") as f:
+                    json.dump(segment_kpis, f, indent=2, default=str)
 
                 manifest_path = run_dir / "calculation_manifest.json"
 
@@ -585,11 +585,13 @@ class CalculationPhase:
                     json.dump(manifest, f, indent=2, default=str)
 
                 logger.info("Saved KPI results to %s", kpi_path)
+                logger.info("Saved segment KPIs to %s", segment_path)
 
             results = {
                 "status": "success",
                 "kpi_count": len(kpi_results),
                 "kpis": kpi_results,
+                "segment_kpis": segment_kpis,
                 "time_series": time_series,
                 "anomalies": anomalies,
                 "manifest": manifest,
@@ -609,25 +611,23 @@ class CalculationPhase:
                 "timestamp": datetime.now().isoformat(),
             }
 
+    @staticmethod
+    def _load_input_dataframe(
+        clean_data_path: Optional[Path], df: Optional[pd.DataFrame]
+    ) -> pd.DataFrame:
+        """Resolve input dataframe from in-memory frame or parquet path."""
+        if df is not None:
+            return df
+        if clean_data_path and clean_data_path.exists():
+            return pd.read_parquet(clean_data_path)
+        raise ValueError("No data provided for calculation")
+
     def _calculate_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Calculate all KPIs from definitions."""
         logger.info("Calculating KPIs")
         df = self._ensure_loan_count_column(df)
 
-        # Use full dataframe for most KPIs
-        engine_full = KPIFormulaEngine(df)
-
-        # Use de-duplicated dataframe for grain-sensitive KPIs (averages, counts)
-        # to avoid double-counting loans. Use loan_uid if available.
-        dedupe_col = "loan_uid" if "loan_uid" in df.columns else "loan_id"
-        if dedupe_col in df.columns:
-            if "origination_date" in df.columns:
-                df_unique = df.sort_values("origination_date").drop_duplicates(dedupe_col)
-            else:
-                df_unique = df.drop_duplicates(dedupe_col)
-            engine_unique = KPIFormulaEngine(df_unique)
-        else:
-            engine_unique = engine_full
+        engine_full, engine_unique = self._build_kpi_engines(df)
 
         kpis: Dict[str, Optional[Decimal]] = {}
 
@@ -639,57 +639,71 @@ class CalculationPhase:
             kpis[kpi_name] = self._calculate_single_kpi(engine, category, kpi_name, formula)
 
         # Derived risk KPIs independent of YAML formulas.
-        balance_col = None
-        for candidate in ["outstanding_balance", "current_balance"]:
-            if candidate in df.columns:
-                balance_col = candidate
-                break
-
-        if "dpd" in df.columns and "status" in df.columns and balance_col is not None:
-            # Filter for active/defaulted only
-            active_mask = df["status"].isin(["active", "delinquent", "defaulted"])
-            active_df = df[active_mask]
-            total_out = Decimal(str(active_df[balance_col].sum()))
-
-            if total_out > 0:
-                npl_mask = (active_df["dpd"] >= 90) | (active_df["status"] == "defaulted")
-                npl_out = Decimal(str(active_df.loc[npl_mask, balance_col].sum()))
-                npl_ratio = (npl_out / total_out) * 100
-                # Keep YAML and derived NPL metrics aligned for downstream consumers.
-                kpis["npl_ratio"] = npl_ratio
-                kpis["npl_90_ratio"] = npl_ratio
-
-                defaulted_out = Decimal(
-                    str(
-                        active_df.loc[
-                            active_df["status"] == "defaulted",
-                            balance_col,
-                        ].sum()
-                    )
-                )
-                kpis["defaulted_outstanding_ratio"] = (defaulted_out / total_out) * 100
-
-                if "borrower_id" in active_df.columns:
-                    concentration = (
-                        active_df.groupby("borrower_id")[balance_col]
-                        .sum()
-                        .sort_values(ascending=False)
-                        .head(10)
-                        .sum()
-                    )
-                    kpis["top_10_borrower_concentration"] = (
-                        Decimal(str(concentration)) / total_out
-                    ) * 100
-                else:
-                    kpis["top_10_borrower_concentration"] = Decimal("0.0")
-            else:
-                kpis["npl_ratio"] = Decimal("0.0")
-                kpis["npl_90_ratio"] = Decimal("0.0")
-                kpis["defaulted_outstanding_ratio"] = Decimal("0.0")
-                kpis["top_10_borrower_concentration"] = Decimal("0.0")
+        kpis.update(self._calculate_derived_risk_kpis(df))
 
         logger.info("Calculated %d KPIs", len(kpis))
         return kpis
+
+    @staticmethod
+    def _build_kpi_engines(df: pd.DataFrame) -> tuple[KPIFormulaEngine, KPIFormulaEngine]:
+        """Build full and grain-aware KPI engines."""
+        engine_full = KPIFormulaEngine(df)
+        dedupe_col = "loan_uid" if "loan_uid" in df.columns else "loan_id"
+        if dedupe_col not in df.columns:
+            return engine_full, engine_full
+
+        if "origination_date" in df.columns:
+            df_unique = df.sort_values("origination_date").drop_duplicates(dedupe_col)
+        else:
+            df_unique = df.drop_duplicates(dedupe_col)
+        return engine_full, KPIFormulaEngine(df_unique)
+
+    def _calculate_derived_risk_kpis(self, df: pd.DataFrame) -> Dict[str, Decimal]:
+        """Compute derived risk KPIs not covered by the formula catalog."""
+        balance_col = next((c for c in ("outstanding_balance", "current_balance") if c in df.columns), None)
+        if "dpd" not in df.columns or "status" not in df.columns or balance_col is None:
+            return {}
+
+        active_df = df[df["status"].isin(["active", "delinquent", "defaulted"])]
+        total_out = Decimal(str(active_df[balance_col].sum()))
+
+        if total_out <= 0:
+            return {
+                "npl_ratio": Decimal("0.0"),
+                "npl_90_ratio": Decimal("0.0"),
+                "defaulted_outstanding_ratio": Decimal("0.0"),
+                "top_10_borrower_concentration": Decimal("0.0"),
+            }
+
+        npl_mask = (active_df["dpd"] >= 90) | (active_df["status"] == "defaulted")
+        npl_out = Decimal(str(active_df.loc[npl_mask, balance_col].sum()))
+        npl_ratio = (npl_out / total_out) * 100
+        defaulted_out = Decimal(str(active_df.loc[active_df["status"] == "defaulted", balance_col].sum()))
+
+        return {
+            "npl_ratio": npl_ratio,
+            "npl_90_ratio": npl_ratio,
+            "defaulted_outstanding_ratio": (defaulted_out / total_out) * 100,
+            "top_10_borrower_concentration": self._top_10_borrower_concentration(
+                active_df, balance_col, total_out
+            ),
+        }
+
+    @staticmethod
+    def _top_10_borrower_concentration(
+        active_df: pd.DataFrame, balance_col: str, total_out: Decimal
+    ) -> Decimal:
+        """Compute top-10 borrower concentration ratio."""
+        if "borrower_id" not in active_df.columns or total_out <= 0:
+            return Decimal("0.0")
+        concentration = (
+            active_df.groupby("borrower_id")[balance_col]
+            .sum()
+            .sort_values(ascending=False)
+            .head(10)
+            .sum()
+        )
+        return (Decimal(str(concentration)) / total_out) * 100
 
     @staticmethod
     def _ensure_loan_count_column(df: pd.DataFrame) -> pd.DataFrame:
@@ -893,6 +907,124 @@ class CalculationPhase:
             "expected_range": (min_val, max_val),
             "severity": "critical" if abs(kpi_value - max_val) > max_val * 0.5 else "warning",
         }
+
+    def _calculate_segment_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Compute PAR30/60/90, default_rate, and outstanding_balance by segment dimension.
+
+        Segment dimensions: company, credit_line, kam_hunter, kam_farmer.
+        Returns a nested dict: {dimension: {segment_value: {kpi: value}}}.
+        """
+        segment_dims = [
+            col for col in ("company", "credit_line", "kam_hunter", "kam_farmer")
+            if col in df.columns
+        ]
+        if not segment_dims:
+            return {}
+
+        balance_col = next(
+            (c for c in ("outstanding_balance", "current_balance", "amount") if c in df.columns),
+            None,
+        )
+        dpd_col = next((c for c in ("dpd", "days_past_due") if c in df.columns), None)
+        status_col = "status" if "status" in df.columns else None
+
+        if balance_col is None:
+            return {}
+
+        active_mask = (
+            df[status_col].isin(["active", "delinquent", "defaulted"])
+            if status_col
+            else pd.Series(True, index=df.index)
+        )
+        work = df[active_mask].copy()
+        work[balance_col] = pd.to_numeric(work[balance_col], errors="coerce").fillna(0.0)
+        if dpd_col:
+            work[dpd_col] = pd.to_numeric(work[dpd_col], errors="coerce").fillna(0.0)
+
+        result: Dict[str, Any] = {}
+        for dim in segment_dims:
+            dim_result: Dict[str, Any] = {}
+            for seg_val, grp in work.groupby(dim, sort=False):
+                total_bal = float(grp[balance_col].sum())
+                if total_bal <= 0:
+                    continue
+                seg_kpis: Dict[str, Any] = {
+                    "outstanding_balance": round(total_bal, 2),
+                    "loan_count": int(len(grp)),
+                }
+                if dpd_col:
+                    seg_kpis["par_30"] = round(
+                        float(grp.loc[grp[dpd_col] >= 30, balance_col].sum()) / total_bal * 100, 4
+                    )
+                    seg_kpis["par_60"] = round(
+                        float(grp.loc[grp[dpd_col] >= 60, balance_col].sum()) / total_bal * 100, 4
+                    )
+                    seg_kpis["par_90"] = round(
+                        float(grp.loc[grp[dpd_col] >= 90, balance_col].sum()) / total_bal * 100, 4
+                    )
+                if status_col:
+                    n = len(grp)
+                    seg_kpis["default_rate"] = round(
+                        float((grp[status_col] == "defaulted").sum()) / n * 100 if n > 0 else 0.0,
+                        4,
+                    )
+                dim_result[str(seg_val)] = seg_kpis
+            result[dim] = dim_result
+
+        return result
+
+    @staticmethod
+    def _resolve_col(df: pd.DataFrame, *candidates: str) -> Optional[str]:
+        """Return the first candidate column present in df, or None."""
+        return next((c for c in candidates if c in df.columns), None)
+
+    def _calculate_enriched_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Compute new KPIs available from the CONTROL DE MORA enriched format.
+
+        Accepts both canonical names (post-homologation) and raw source names
+        so the method works on existing parquet files and fresh re-runs alike.
+        """
+        enriched: Dict[str, Any] = {}
+
+        balance_col = self._resolve_col(
+            df, "outstanding_balance", "current_balance", "amount"
+        )
+        total_bal = float(df[balance_col].sum()) if balance_col else 0.0
+
+        eligible_col = self._resolve_col(df, "collections_eligible", "procede_a_cobrar")
+        if eligible_col and total_bal > 0:
+            eligible_mask = df[eligible_col].astype(str).str.strip().str.upper() == "Y"
+            eligible_bal = float(df.loc[eligible_mask, balance_col].sum()) if balance_col else 0.0
+            enriched["collections_eligible_rate"] = round(eligible_bal / total_bal * 100, 4)
+
+        goes_col = self._resolve_col(df, "government_sector", "goes")
+        if goes_col and total_bal > 0:
+            goes_mask = df[goes_col].astype(str).str.strip().str.upper() == "GOES"
+            goes_bal = float(df.loc[goes_mask, balance_col].sum()) if balance_col else 0.0
+            enriched["government_sector_exposure_rate"] = round(goes_bal / total_bal * 100, 4)
+
+        util_col = self._resolve_col(df, "utilization_pct", "porcentaje_utilizado")
+        if util_col:
+            raw_util = df[util_col].astype(str).str.replace(r"[$,%\s]", "", regex=True)
+            util_series = pd.to_numeric(raw_util, errors="coerce").dropna()
+            if len(util_series) > 0:
+                median_val = float(util_series.median())
+                if median_val < 2.0:
+                    util_series = util_series * 100
+                enriched["avg_credit_line_utilization"] = round(float(util_series.mean()), 4)
+
+        cap_col = self._resolve_col(df, "capital_collected", "capitalcobrado")
+        if cap_col and balance_col and total_bal > 0:
+            cap_coll = pd.to_numeric(df[cap_col], errors="coerce").fillna(0.0).sum()
+            enriched["capital_collection_rate"] = round(float(cap_coll) / total_bal * 100, 4)
+
+        mdsc_col = self._resolve_col(df, "mdsc_posted", "mdscposteado")
+        if mdsc_col:
+            mdsc = pd.to_numeric(df[mdsc_col], errors="coerce").fillna(0.0)
+            n = len(mdsc)
+            enriched["mdsc_posted_rate"] = round(float(mdsc.sum()) / n * 100, 4) if n > 0 else 0.0
+
+        return enriched
 
     def _generate_manifest(
         self, kpi_results: Dict[str, Any], source_df: pd.DataFrame

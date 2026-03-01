@@ -216,3 +216,139 @@ operational_kpis:
     formula: "COUNT(loan_id WHERE payment_frequency = 'bullet') / COUNT(loan_id) * 100"
     unit: "percentage"
     description: "Percentage of bullet (auto-settlement) loans"
+
+# Enriched KPIs — available from CONTROL DE MORA format (run 20260301_181356+)
+enriched_kpis:
+  collections_eligible_rate:
+    id: "collections_eligible_rate"
+    name: "Collections Eligible Rate"
+    category: "collections"
+    definition: "Percentage of outstanding balance flagged as eligible for active collection (procede_a_cobrar = Y)"
+    formula: "SUM(outstanding_balance WHERE collections_eligible = 'Y') / SUM(outstanding_balance) * 100"
+    inputs: ["outstanding_balance", "collections_eligible"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+    thresholds:
+      warning: 60
+      target: 80
+
+  government_sector_exposure_rate:
+    id: "government_sector_exposure_rate"
+    name: "Government Sector Exposure Rate"
+    category: "risk"
+    definition: "Percentage of total outstanding balance concentrated in government-sector clients (GOES)"
+    formula: "SUM(outstanding_balance WHERE government_sector = 'GOES') / SUM(outstanding_balance) * 100"
+    inputs: ["outstanding_balance", "government_sector"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+    thresholds:
+      warning: 40
+      critical: 60
+
+  avg_credit_line_utilization:
+    id: "avg_credit_line_utilization"
+    name: "Average Credit Line Utilization"
+    category: "risk"
+    definition: "Average percentage of approved credit line utilized across active borrowers"
+    formula: "AVG(utilization_pct) * 100"
+    inputs: ["utilization_pct"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "medium"
+    thresholds:
+      warning: 70
+      critical: 90
+
+  capital_collection_rate:
+    id: "capital_collection_rate"
+    name: "Capital Collection Rate"
+    category: "collections"
+    definition: "Ratio of principal already collected (capitalcobrado) to total outstanding balance"
+    formula: "SUM(capital_collected) / SUM(outstanding_balance) * 100"
+    inputs: ["capital_collected", "outstanding_balance"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+
+  mdsc_posted_rate:
+    id: "mdsc_posted_rate"
+    name: "MDSC Posted Rate"
+    category: "operations"
+    definition: "Percentage of loans where the MDSC (debit authorization) has been posted"
+    formula: "COUNT(loan_id WHERE mdsc_posted = 1) / COUNT(loan_id) * 100"
+    inputs: ["mdsc_posted"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "medium"
+
+# Segment KPI definitions (computed by _calculate_segment_kpis; not YAML-formula driven)
+segment_kpis:
+  par_30_by_company:
+    id: "par_30_by_company"
+    name: "PAR 30 by Company"
+    category: "risk"
+    definition: "PAR30 disaggregated by company segment (Abaco Financial / Abaco Technologies)"
+    formula: "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100 GROUP BY company"
+    inputs: ["outstanding_balance", "dpd", "company"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+
+  par_30_by_credit_line:
+    id: "par_30_by_credit_line"
+    name: "PAR 30 by Credit Line"
+    category: "risk"
+    definition: "PAR30 broken down by credit line limit bucket"
+    formula: "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100 GROUP BY credit_line"
+    inputs: ["outstanding_balance", "dpd", "credit_line"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+
+  par_30_by_kam_hunter:
+    id: "par_30_by_kam_hunter"
+    name: "PAR 30 by KAM Hunter"
+    category: "risk"
+    definition: "PAR30 by originating KAM (hunter) — identifies which sales managers have higher-risk originations"
+    formula: "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100 GROUP BY kam_hunter"
+    inputs: ["outstanding_balance", "dpd", "kam_hunter"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+
+  par_30_by_kam_farmer:
+    id: "par_30_by_kam_farmer"
+    name: "PAR 30 by KAM Farmer"
+    category: "collections"
+    definition: "PAR30 by servicing KAM (farmer) — measures collection effectiveness per account manager"
+    formula: "SUM(outstanding_balance WHERE dpd >= 30) / SUM(outstanding_balance) * 100 GROUP BY kam_farmer"
+    inputs: ["outstanding_balance", "dpd", "kam_farmer"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
+
+  default_rate_by_ministry:
+    id: "default_rate_by_ministry"
+    name: "Default Rate by Ministry / Institution"
+    category: "risk"
+    definition: "Default rate segmented by government ministry or institution — flags concentration risk in public sector employer groups"
+    formula: "COUNT(loan_id WHERE status = 'defaulted') / COUNT(loan_id) * 100 GROUP BY ministry"
+    inputs: ["status", "ministry", "loan_id"]
+    unit: "percentage"
+    implementability_status: "requires_new_data"
+    priority: "medium"
+    notes: "ministry column present in CONTROL DE MORA; add ministry to segment_dims in _calculate_segment_kpis to enable"
+
+  early_warning_flow_31_60:
+    id: "early_warning_flow_31_60"
+    name: "Early Warning: 31-60 DPD Flow Rate by Cohort"
+    category: "risk"
+    definition: "Percentage of previously current loans (dpd <= 30) that flowed into the 31-60 DPD bucket — leading indicator of deterioration"
+    formula: "requires T and T-1 snapshots"
+    inputs: ["outstanding_balance", "dpd", "origination_date"]
+    unit: "percentage"
+    implementability_status: "requires_new_data"
+    priority: "high"
+    notes: "Requires consecutive monthly snapshots; will be enabled once multi-period pipeline runs are stored"
