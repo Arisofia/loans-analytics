@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 import sys
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -106,6 +107,7 @@ ALIAS_MAP: dict[str, list[str]] = {
     "client_name": ["cliente", "cliente_", "cliente1"],
     "issuer_code": ["codemisor"],
     "issuer_name": ["emisor"],
+    "company": ["company", "empresa", "compania"],
     "credit_line": ["lineacredito"],
     "kam_hunter": ["cod_kam_hunter", "cod_kam_hunter_", "cod_kam_hunter1"],
     "kam_farmer": ["cod_kam_farmer", "cod_kam_farmer_", "cod_kam_farmer1"],
@@ -557,6 +559,11 @@ def _run_pipeline(df: pd.DataFrame, filename: str) -> None:
         run_dir = Path("logs/runs") / run_id
         run_dir.mkdir(parents=True, exist_ok=True)
 
+        upload_meta = _build_upload_metadata(df, filename)
+        (run_dir / "upload_metadata.json").write_text(
+            json.dumps(upload_meta, indent=2, default=str)
+        )
+
         input_path = run_dir / filename
         df.to_csv(input_path, index=False)
 
@@ -648,6 +655,56 @@ def _run_pipeline(df: pd.DataFrame, filename: str) -> None:
     except Exception as exc:
         st.error(f"❌ Pipeline execution failed: {exc}")
         st.exception(exc)
+
+
+def _build_upload_metadata(df: pd.DataFrame, filename: str) -> dict[str, Any]:
+    as_of_date, as_of_source = _detect_as_of_date(df)
+    tracked_fields = ["company", "credit_line", "kam_hunter", "kam_farmer"]
+    field_non_empty: dict[str, int] = {}
+    for field in tracked_fields:
+        if field in df.columns:
+            series = df[field]
+            non_empty = ((~series.isna()) & (series.astype(str).str.strip() != "")).sum()
+            field_non_empty[field] = int(non_empty)
+        else:
+            field_non_empty[field] = 0
+
+    return {
+        "source_file": filename,
+        "uploaded_at": datetime.now().isoformat(),
+        "detected_as_of_date": as_of_date,
+        "detected_as_of_source": as_of_source,
+        "row_count": int(len(df)),
+        "column_count": int(len(df.columns)),
+        "field_non_empty": field_non_empty,
+    }
+
+
+def _detect_as_of_date(df: pd.DataFrame) -> tuple[str | None, str | None]:
+    primary_candidates = [
+        "as_of_date",
+        "snapshot_date",
+        "measurement_date",
+        "reporting_date",
+        "fecha_corte",
+        "fecha_de_corte",
+        "cutoff_date",
+        "data_ingest_ts",
+    ]
+    fallback_candidates = [
+        "last_payment_date",
+        "origination_date",
+        "application_date",
+    ]
+
+    for col in [*primary_candidates, *fallback_candidates]:
+        if col not in df.columns:
+            continue
+        parsed = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
+        max_dt = parsed.max()
+        if pd.notna(max_dt):
+            return str(max_dt.date()), col
+    return None, None
 
 
 def _safe_filename(name: str) -> str:
