@@ -56,18 +56,14 @@ else:
 MONITORING_EVENTS_ENDPOINT = "/monitoring/events"
 MONITORING_EVENTS_ACK_ENDPOINT = "/monitoring/events/ack"
 MONITORING_COMMANDS_ENDPOINT = "/monitoring/commands"
-ACTION_GET_EVENTS = "get_events"
-ACTION_ACK_EVENT = "ack_event"
-ACTION_CREATE_COMMAND = "create_command"
-ACTION_GET_COMMANDS = "get_commands"
 
 
-def _build_api_request(action: str) -> tuple[str, str] | None:
-    """Build a request (method, URL) from a fixed action allowlist.
+def _build_api_url(path: str) -> str | None:
+    """Build a request URL from a fixed literal path.
 
     This function implements strict SSRF protection by:
     1. Using a sanitized base URL from an environment variable.
-    2. Mapping action keys to hardcoded method/path literals.
+    2. Accepting only hardcoded literal paths from local wrappers.
     3. Verifying that the final constructed URL matches the expected host and scheme.
     """
     base = API_BASE_SAFE
@@ -75,25 +71,8 @@ def _build_api_request(action: str) -> tuple[str, str] | None:
         st.error("API is not configured or is untrusted. Aborting request.")
         return None
 
-    # Strict action-to-route mapping (no free-form path from callers).
-    if action == ACTION_GET_EVENTS:
-        method = "GET"
-        path = MONITORING_EVENTS_ENDPOINT
-    elif action == ACTION_ACK_EVENT:
-        method = "POST"
-        path = MONITORING_EVENTS_ACK_ENDPOINT
-    elif action == ACTION_CREATE_COMMAND:
-        method = "POST"
-        path = MONITORING_COMMANDS_ENDPOINT
-    elif action == ACTION_GET_COMMANDS:
-        method = "GET"
-        path = MONITORING_COMMANDS_ENDPOINT
-    else:
-        st.error(f"Blocked: unsupported monitoring action '{action}'.")
-        return None
-
     normalized_base = base.rstrip("/")
-    # Construct URL using verified literal path mapped from action.
+    # Construct URL using verified literal path from wrapper functions.
     url = f"{normalized_base}{path}"
 
     # Final host/scheme validation to prevent manipulation
@@ -103,19 +82,19 @@ def _build_api_request(action: str) -> tuple[str, str] | None:
         st.error("SSRF Protection: URL host or scheme mismatch.")
         return None
 
-    return method, url
+    return url
 
 
 def _request_json(
-    action: str,
+    method: str,
+    path: str,
     *,
     params: dict | None = None,
     json_body: dict | None = None,
 ):
-    request_spec = _build_api_request(action)
-    if request_spec is None:
+    url = _build_api_url(path)
+    if url is None:
         return None
-    method, url = request_spec
     try:
         resp = requests.request(method, url, params=params, json=json_body, timeout=5)
         resp.raise_for_status()
@@ -126,22 +105,23 @@ def _request_json(
 
 
 def _api_get_events(params: dict | None = None):
-    return _request_json(ACTION_GET_EVENTS, params=params)
+    return _request_json("GET", MONITORING_EVENTS_ENDPOINT, params=params)
 
 
 def _api_ack_event(event_id: str):
     return _request_json(
-        ACTION_ACK_EVENT,
+        "POST",
+        MONITORING_EVENTS_ACK_ENDPOINT,
         json_body={"event_id": event_id},
     )
 
 
 def _api_create_command(json_body: dict | None = None):
-    return _request_json(ACTION_CREATE_COMMAND, json_body=json_body)
+    return _request_json("POST", MONITORING_COMMANDS_ENDPOINT, json_body=json_body)
 
 
 def _api_get_commands(params: dict | None = None):
-    return _request_json(ACTION_GET_COMMANDS, params=params)
+    return _request_json("GET", MONITORING_COMMANDS_ENDPOINT, params=params)
 
 
 # ---------------------------------------------------------------------------
