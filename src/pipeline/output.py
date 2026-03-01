@@ -89,6 +89,10 @@ class OutputPhase:
                 json_path = self._export_json(kpi_results, run_dir)
                 exports["json"] = str(json_path)
 
+                segment_snapshot_path = self._export_segment_snapshot(run_dir)
+                if segment_snapshot_path is not None:
+                    exports["segment_snapshot"] = str(segment_snapshot_path)
+
             # Export KPI audit trail if engine is provided
             if kpi_engine is not None:
                 audit_path = self._export_kpi_audit_trail(kpi_engine)
@@ -174,6 +178,178 @@ class OutputPhase:
 
         logger.info("Exported JSON: %s", output_path)
         return output_path
+
+    def _export_segment_snapshot(self, run_dir: Path) -> Optional[Path]:
+        """
+        Export segment-level risk snapshot from clean/transformed dataset.
+
+        Produces `segment_snapshot.json` with per-dimension rows for:
+        company, credit_line, kam_hunter, kam_farmer.
+        """
+        data_path: Optional[Path] = None
+        for candidate in ("clean_data.parquet", "transformed.parquet"):
+            candidate_path = run_dir / candidate
+            if candidate_path.exists():
+                data_path = candidate_path
+                break
+
+        if data_path is None:
+            logger.debug("Segment snapshot skipped: no clean/transformed parquet in %s", run_dir)
+            return None
+
+        try:
+            df = pd.read_parquet(data_path)
+        except Exception as exc:
+            logger.warning("Segment snapshot skipped: could not read %s (%s)", data_path, exc)
+            return None
+
+        if df.empty:
+            logger.debug("Segment snapshot skipped: source dataframe is empty")
+            return None
+
+        balance_col = self._resolve_first_column(
+            df, ["outstanding_balance", "current_balance", "balance"]
+        )
+        status_col = self._resolve_first_column(df, ["status", "loan_status"])
+        dpd_col = self._resolve_first_column(df, ["dpd", "days_past_due"])
+        loan_id_col = self._resolve_first_column(df, ["loan_id", "loan_uid"])
+        interest_rate_col = self._resolve_first_column(df, ["interest_rate"])
+
+        if balance_col is None:
+            logger.debug("Segment snapshot skipped: no balance column present")
+            return None
+
+        working = df.copy()
+        working["__balance"] = pd.to_numeric(working[balance_col], errors="coerce").fillna(0.0)
+        working["__status"] = (
+            working[status_col].astype(str).str.strip().str.lower()
+            if status_col is not None
+            else pd.Series(["unknown"] * len(working), index=working.index, dtype=object)
+        )
+        working["__dpd"] = (
+            pd.to_numeric(working[dpd_col], errors="coerce").fillna(0.0)
+            if dpd_col is not None
+            else pd.Series([0.0] * len(working), index=working.index, dtype=float)
+        )
+
+        if interest_rate_col is not None:
+            interest_rate = pd.to_numeric(working[interest_rate_col], errors="coerce")
+            # Normalize 0-100 scales to 0-1 if needed.
+            if interest_rate.notna().any() and float(interest_rate.median()) > 1:
+                interest_rate = interest_rate / 100.0
+            working["__interest_rate"] = interest_rate
+        else:
+            working["__interest_rate"] = pd.Series([pd.NA] * len(working), index=working.index)
+
+        missing_markers = {"", "nan", "none", "null", "n/a", "missing", "unknown"}
+        dimensions = ["company", "credit_line", "kam_hunter", "kam_farmer"]
+        dimension_rows: Dict[str, list[Dict[str, Any]]] = {}
+
+        for dimension in dimensions:
+            if dimension not in working.columns:
+                continue
+
+            raw_segment = working[dimension].astype(str).str.strip()
+            normalized_segment = raw_segment.str.lower()
+            valid_mask = ~normalized_segment.isin(missing_markers)
+            if valid_mask.sum() == 0:
+                continue
+
+            segment_df = working.loc[valid_mask].copy()
+            segment_df["__segment"] = raw_segment.loc[valid_mask]
+            grouped = segment_df.groupby("__segment", dropna=False)
+
+            rows: list[Dict[str, Any]] = []
+            for segment_name, group in grouped:
+                balance_sum = Decimal(str(group["__balance"].sum()))
+                if balance_sum <= 0:
+                    continue
+
+                if loan_id_col is not None:
+                    loan_count = int(group[loan_id_col].astype(str).nunique())
+                else:
+                    loan_count = int(len(group))
+
+                par_30 = self._segment_ratio(group, balance_sum, dpd_threshold=30)
+                par_60 = self._segment_ratio(group, balance_sum, dpd_threshold=60)
+                par_90 = self._segment_ratio(group, balance_sum, dpd_threshold=90)
+                default_rate = self._segment_default_rate(group, loan_count)
+                avg_dpd = Decimal(str(group["__dpd"].mean()))
+
+                row: Dict[str, Any] = {
+                    "segment": str(segment_name),
+                    "loan_count": loan_count,
+                    "total_outstanding_balance": float(balance_sum),
+                    "par_30": float(par_30),
+                    "par_60": float(par_60),
+                    "par_90": float(par_90),
+                    "default_rate": float(default_rate),
+                    "avg_dpd": float(avg_dpd),
+                }
+
+                if group["__interest_rate"].notna().any():
+                    portfolio_yield = Decimal(str(group["__interest_rate"].mean())) * Decimal("100")
+                    row["portfolio_yield"] = float(portfolio_yield)
+
+                rows.append(row)
+
+            if rows:
+                rows.sort(key=lambda item: item["total_outstanding_balance"], reverse=True)
+                dimension_rows[dimension] = rows[:25]
+
+        if not dimension_rows:
+            logger.debug("Segment snapshot skipped: no segment rows generated")
+            return None
+
+        payload = {
+            "generated_at": datetime.now().isoformat(),
+            "run_id": run_dir.name,
+            "source_data_path": data_path.name,
+            "as_of_date": self._derive_segment_as_of_date(working),
+            "dimensions": dimension_rows,
+        }
+
+        output_path = run_dir / "segment_snapshot.json"
+        with open(output_path, "w", encoding="utf-8") as file_handle:
+            json.dump(payload, file_handle, indent=2, default=str)
+
+        logger.info("Exported segment snapshot: %s", output_path)
+        return output_path
+
+    @staticmethod
+    def _resolve_first_column(df: pd.DataFrame, candidates: list[str]) -> Optional[str]:
+        available = {col.lower(): col for col in df.columns}
+        for candidate in candidates:
+            found = available.get(candidate.lower())
+            if found is not None:
+                return found
+        return None
+
+    @staticmethod
+    def _segment_ratio(group: pd.DataFrame, balance_sum: Decimal, dpd_threshold: int) -> Decimal:
+        if balance_sum <= 0:
+            return Decimal("0")
+        delinquent_outstanding = Decimal(
+            str(group.loc[group["__dpd"] >= dpd_threshold, "__balance"].sum())
+        )
+        return (delinquent_outstanding / balance_sum) * Decimal("100")
+
+    @staticmethod
+    def _segment_default_rate(group: pd.DataFrame, loan_count: int) -> Decimal:
+        if loan_count <= 0:
+            return Decimal("0")
+        defaulted_count = int((group["__status"] == "defaulted").sum())
+        return (Decimal(defaulted_count) / Decimal(loan_count)) * Decimal("100")
+
+    @staticmethod
+    def _derive_segment_as_of_date(df: pd.DataFrame) -> Optional[str]:
+        for date_col in ("as_of_date", "snapshot_date", "fecha_actual", "origination_date"):
+            if date_col in df.columns:
+                parsed = pd.to_datetime(df[date_col], errors="coerce", format="mixed")
+                max_dt = parsed.max()
+                if pd.notna(max_dt):
+                    return max_dt.date().isoformat()
+        return None
 
     def _export_kpi_audit_trail(self, kpi_engine: Any) -> Optional[Path]:
         """

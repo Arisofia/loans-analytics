@@ -1,4 +1,7 @@
+import json
 from unittest.mock import MagicMock, patch
+
+import pandas as pd
 
 from src.pipeline.output import OutputPhase
 
@@ -68,3 +71,51 @@ def test_insert_batch_rows_monitoring_uses_upsert_and_conflict_keys():
     assert upsert_rows[0]["kpi_key"] == "npl_rate"
     assert upsert_rows[0]["kpi_id"] == 3
     assert query.upsert.call_args.kwargs["on_conflict"] == "as_of_date,kpi_key,snapshot_id"
+
+
+def test_execute_exports_segment_snapshot_when_clean_data_available(tmp_path):
+    output = OutputPhase({"database": {"enabled": False}})
+
+    clean_df = pd.DataFrame(
+        [
+            {
+                "loan_id": "L1",
+                "outstanding_balance": 100.0,
+                "status": "active",
+                "dpd": 0,
+                "company": "Abaco Financial",
+                "credit_line": "SME",
+                "kam_hunter": "H1",
+                "kam_farmer": "F1",
+                "origination_date": "2026-02-26",
+                "interest_rate": 0.12,
+            },
+            {
+                "loan_id": "L2",
+                "outstanding_balance": 200.0,
+                "status": "defaulted",
+                "dpd": 120,
+                "company": "Abaco Financial",
+                "credit_line": "SME",
+                "kam_hunter": "H1",
+                "kam_farmer": "F1",
+                "origination_date": "2026-02-26",
+                "interest_rate": 0.18,
+            },
+        ]
+    )
+    clean_df.to_parquet(tmp_path / "clean_data.parquet", index=False)
+
+    result = output.execute({"par_30": 12.3}, run_dir=tmp_path)
+
+    assert result["status"] == "success"
+    assert "segment_snapshot" in result["exports"]
+
+    segment_snapshot_path = tmp_path / "segment_snapshot.json"
+    assert segment_snapshot_path.exists()
+
+    with open(segment_snapshot_path, "r", encoding="utf-8") as file_handle:
+        payload = json.load(file_handle)
+    assert payload["run_id"] == tmp_path.name
+    assert "company" in payload["dimensions"]
+    assert payload["dimensions"]["company"][0]["loan_count"] == 2
