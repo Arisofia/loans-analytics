@@ -215,6 +215,8 @@ class UnitEconomicsRequest(BaseModel):
     loans: List[LoanRecord] = Field(
         ...,
         description="Loan-level records for unit economics computation",
+        min_items=0,
+        max_items=10000,
     )
     funding_cost_rate: float = Field(
         0.08,
