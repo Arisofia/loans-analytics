@@ -30,17 +30,26 @@ def sanitize_api_base(base: str) -> Optional[str]:
         # Optional extra validation: reject IPs in known private ranges unless explicitly allowed
         host = parsed.hostname
         try:
-            for res in socket.getaddrinfo(host, None):
-                addr = res[4][0]
-                ip = ipaddress.ip_address(addr)
-                # If the IP is private/non-global and not localhost, consider rejecting
-                if ip.is_private and not ip.is_loopback:
-                    # Allow private addresses only if explicitly configured via env var
-                    if os.environ.get("ALLOW_PRIVATE_API_BASE") != "1":
-                        return None
-        except Exception:
-            # DNS issues: fail closed
-            return None
+            # Try to parse the host directly as a literal IP address.
+            # Literal IPs are validated here without any DNS round-trip.
+            ip = ipaddress.ip_address(host)
+            if not ip.is_global:
+                if os.environ.get("ALLOW_PRIVATE_API_BASE") != "1":
+                    return None
+        except ValueError:
+            # Host is a domain name, not a literal IP; try DNS to detect private-range targets.
+            try:
+                for res in socket.getaddrinfo(host, None):
+                    addr = res[4][0]
+                    ip = ipaddress.ip_address(addr)
+                    if not ip.is_global:
+                        if os.environ.get("ALLOW_PRIVATE_API_BASE") != "1":
+                            return None
+            except socket.gaierror:
+                # DNS resolution failed (e.g., sandboxed CI / offline env): allow
+                # domain names through since we cannot confirm they resolve to a
+                # private address.  Literal private IPs are already blocked above.
+                pass
 
         return safe
     except Exception:

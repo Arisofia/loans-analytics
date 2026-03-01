@@ -34,6 +34,11 @@ if str(REPO_ROOT) not in sys.path:
 from src.agents.multi_agent.guardrails import Guardrails  # noqa: E402
 from src.agents.multi_agent.orchestrator import MultiAgentOrchestrator  # noqa: E402
 from src.agents.multi_agent.protocol import LLMProvider  # noqa: E402
+from streamlit_app.components.csv_upload import (  # noqa: E402
+    BORROWER_ID_COLS,
+    _classify_loan_id_duplicates,
+    _coerce_numeric as _coerce_amount,
+)
 from streamlit_app.utils.security import sanitize_api_base  # noqa: E402
 
 # Page configuration
@@ -551,10 +556,33 @@ def _persist_agent_outputs(results: dict[str, Any]) -> int:
 
 # Common aliases from external exports.
 COLUMN_ALIASES = {
-    "loan_id": ["id_loan", "idprestamo", "prestamo_id", "loanid", "id"],
+    "loan_id": [
+        "id_loan",
+        "idprestamo",
+        "prestamo_id",
+        "loanid",
+        "id",
+        # DESEMBOLSOS / CONTROL DE MORA specific
+        "numero_desembolso",
+        "codigo_desembolso",
+        "correlativo_de_operaciones",
+        "nrc",
+        "application_id",
+    ],
     "borrower_name": ["customer_name", "client_name", "nombre", "nombre_cliente"],
     "borrower_email": ["email", "correo", "correo_electronico", "customer_email"],
     "borrower_id_number": ["dni", "documento", "id_number", "cedula", "nif"],
+    # Canonical borrower key used for duplicate classification and KPI aggregation
+    "borrower_id": [
+        "customer_id",
+        "customer_id_cust",
+        "codcliente",
+        # Note: suffix-style variants like "codcliente_1", "codcliente_2" are
+        # intentionally not aliased here because they can appear as multiple
+        # separate columns in the same export and should be coalesced upstream.
+        "codcliente1",
+        "cliente_id",
+    ],
     "principal_amount": [
         "principal",
         "loan_amount",
@@ -575,6 +603,12 @@ COLUMN_ALIASES = {
         "tpv",
         "total_receivable_usd",
         "discounted_balance_usd",
+        # DESEMBOLSOS / CONTROL DE MORA specific
+        "monto_del_desembolso",
+        "monto_financiado_real_por_desembolso",
+        "monto_total_aprobado_por_desembolso",
+        "monto_financiado_real",
+        "monto_total_aprobado",
     ],
     "interest_rate": [
         "interest_rate_apr",
@@ -595,11 +629,21 @@ COLUMN_ALIASES = {
         "interes",
     ],
     "term_months": ["term", "tenor_months", "plazo_meses", "duration_months"],
-    "origination_date": ["disbursement_date", "start_date", "fecha_originacion", "fecha_inicio"],
+    "origination_date": [
+        "disbursement_date",
+        "start_date",
+        "fecha_originacion",
+        "fecha_inicio",
+        "fecha_desembolso",
+        "fechadesembolso",
+        "fecha_de_desembolso",
+    ],
     "current_status": ["status", "loan_status", "estado", "estado_actual"],
     "payment_history_json": ["payment_history", "payments_json", "historial_pagos"],
     "risk_score": ["score", "riesgo", "risk", "credit_score"],
     "region": ["province", "zona", "location", "state"],
+    # DESEMBOLSOS / CONTROL DE MORA delinquency field
+    "days_past_due": ["dias_mora", "dias_de_mora", "dpd"],
 }
 
 OPTIONAL_DEFAULTS = {
@@ -782,7 +826,9 @@ def prepare_uploaded_data(df: pd.DataFrame) -> pd.DataFrame:
     prepared["loan_id"] = prepared["loan_id"].astype(str).str.strip()
     prepared = prepared[prepared["loan_id"] != ""].copy()
 
-    prepared["principal_amount"] = pd.to_numeric(prepared["principal_amount"], errors="coerce")
+    # Use _coerce_amount (alias for csv_upload._coerce_numeric) which correctly handles
+    # currency symbols and US-style thousands separators for numeric amounts.
+    prepared["principal_amount"] = _coerce_amount(prepared["principal_amount"])
     prepared["interest_rate"] = pd.to_numeric(prepared["interest_rate"], errors="coerce")
     prepared["term_months"] = pd.to_numeric(prepared["term_months"], errors="coerce")
     prepared["origination_date"] = pd.to_datetime(prepared["origination_date"], errors="coerce")
@@ -1589,6 +1635,22 @@ def handle_file_upload(uploaded_files: Any) -> bool:
             "✅ Data uploaded and validated successfully! "
             f"Files: {len(uploaded_files)} | Rows: {len(prepared_df):,}"
         )
+
+        # Classify any duplicate loan_id rows into typed scenarios.
+        # _classify_loan_id_duplicates uses the `amount` column for exact-vs-snapshot
+        # detection; Dashboard uses `principal_amount`. Build a narrow view (loan_id +
+        # borrower columns + amount) to avoid copying the full prepared_df.
+        _cls_candidates = ["loan_id"] + list(BORROWER_ID_COLS) + ["principal_amount"]
+        _cls_cols = [c for c in _cls_candidates if c in prepared_df.columns]
+        classify_df = prepared_df[_cls_cols].rename(
+            columns={"principal_amount": "amount"}, errors="ignore"
+        )
+        for level, message in _classify_loan_id_duplicates(classify_df):
+            if level == "info":
+                st.info(f"ℹ️ {message}")
+            else:
+                st.warning(f"⚠️ {message}")
+
         return True
     except ValueError as exc:
         st.error(f"❌ {exc}")

@@ -39,6 +39,16 @@ except ImportError as exc:
 
 PIPELINE_REQUIRED_COLUMNS = ["loan_id", "amount", "status"]
 
+# Priority order for resolving borrower identity when classifying duplicate loan_id rows.
+# Checked in order; the first column present in the DataFrame is used.
+# This list is shared by _classify_loan_id_duplicates (csv_upload) and the Dashboard.
+BORROWER_ID_COLS: tuple[str, ...] = (
+    "borrower_id",
+    "client_code",
+    "client_name",
+    "borrower_name",
+)
+
 ALIAS_MAP: dict[str, list[str]] = {
     "loan_id": [
         "id_loan",
@@ -704,71 +714,116 @@ def _merge_prepared_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
     return merged
 
 
-def _duplicate_loan_diagnostics(df: pd.DataFrame) -> tuple[list[str], list[str]]:
-    """Diagnose duplicate loan_id rows and separate true issues from expected snapshots."""
-    warnings: list[str] = []
-    notices: list[str] = []
+def _classify_loan_id_duplicates(df: pd.DataFrame) -> list[tuple[str, str]]:
+    """Classify duplicate loan_id rows into typed groups.
 
+    Returns a list of (level, message) pairs where level is ``"warning"`` or
+    ``"info"``, covering three distinct scenarios:
+
+    * **Exact duplicates** – same ``loan_id`` + same borrower + same
+      ``amount``.  These are data entry errors and should be deduplicated
+      before pipeline execution.  Reported as ``"warning"``.
+    * **Historical snapshots** – same ``loan_id`` + same borrower +
+      *different* ``amount``.  These represent balance-rollup snapshots and
+      are expected.  Reported as ``"info"``.
+    * **Suspicious merges** – same ``loan_id`` shared by *different*
+      borrower values.  Indicates a likely data-quality issue.
+      Reported as ``"warning"``.
+
+    The borrower identifier is resolved from the first available column among:
+    ``borrower_id``, ``client_code``, ``client_name``, ``borrower_name``.
+    This makes the function robust to pre- and post-homologation DataFrames.
+    """
     if "loan_id" not in df.columns:
-        return warnings, notices
+        return []
 
-    work = df.copy()
-    work["_loan_id"] = work["loan_id"].astype(str).str.strip()
-    work = work[work["_loan_id"] != ""]
-    if work.empty:
-        return warnings, notices
+    # Work from the raw column to detect true nulls before any stringification.
+    loan_id_raw = df["loan_id"]
+    id_is_null = loan_id_raw.isna()
+    id_series = loan_id_raw.astype(str).str.strip()
+    # Exclude null/empty/sentinel values so NaN / NA loan_ids are not treated as a real ID.
+    # Include the stringified representation of pd.NA ("<NA>") to robustly handle nullable dtypes.
+    null_sentinels = frozenset({"nan", "None", "NaN", "none", "NA", "", "<NA>"})
+    valid_id_mask = ~(id_is_null | id_series.isin(null_sentinels))
+    dup_mask = id_series.duplicated(keep=False) & valid_id_mask
+    if not dup_mask.any():
+        return []
 
-    dup = work[work["_loan_id"].duplicated(keep=False)].copy()
-    if dup.empty:
-        return warnings, notices
+    dup_df = df[dup_mask].copy()
+    dup_df["_loan_id_str"] = id_series[dup_mask]
 
-    client_col = next(
-        (
-            col
-            for col in ("client_code", "borrower_id", "client_name", "borrower_name")
-            if col in dup.columns
-        ),
-        None,
-    )
-    if client_col is not None:
-        dup["_client_key"] = dup[client_col].fillna("").astype(str).str.strip()
-    else:
-        dup["_client_key"] = ""
+    # Resolve borrower key: accept any common identifier column so the function
+    # works correctly both before and after alias homologation.
+    borrower_col = next((c for c in BORROWER_ID_COLS if c in dup_df.columns), None)
+    has_borrower = borrower_col is not None
+    has_amount = "amount" in dup_df.columns
 
-    dup["_amount_key"] = _coerce_numeric(dup["amount"]) if "amount" in dup.columns else 0.0
-    dup["_amount_key_rounded"] = dup["_amount_key"].round(2)
+    exact_dup_count: int = 0
+    snapshot_count: int = 0
+    suspicious_count: int = 0
+    generic_count: int = 0
 
-    grouped = dup.groupby("_loan_id", dropna=False)
-    client_nunique = grouped["_client_key"].apply(lambda s: s[s != ""].nunique())
-    amount_nunique = grouped["_amount_key_rounded"].nunique()
+    for _, group in dup_df.groupby("_loan_id_str", sort=False):
+        if len(group) < 2:
+            continue
 
-    client_conflict_ids = client_nunique[client_nunique > 1].index.tolist()
-    exact_duplicate_ids = [
-        loan_id
-        for loan_id in client_nunique.index
-        if client_nunique.loc[loan_id] <= 1 and amount_nunique.loc[loan_id] <= 1
-    ]
-    snapshot_ids = [
-        loan_id
-        for loan_id in client_nunique.index
-        if client_nunique.loc[loan_id] <= 1 and amount_nunique.loc[loan_id] > 1
-    ]
+        # Determine whether we actually have any borrower information for this group.
+        # If the borrower column exists but is entirely null within this loan_id group,
+        # treat borrower as unavailable and fall back to generic classification instead
+        # of treating it as "same borrower" based on amount alone.
+        borrower_info_available = has_borrower and group[borrower_col].notna().any()
 
-    if client_conflict_ids:
-        warnings.append(
-            f"{len(client_conflict_ids)} loan_id values map to multiple clients (possible merge issue)"
+        if borrower_info_available:
+            unique_borrowers = group[borrower_col].dropna().nunique()
+
+            if unique_borrowers > 1:
+                suspicious_count += 1
+            elif has_amount:
+                if group["amount"].nunique() == 1:
+                    exact_dup_count += 1
+                else:
+                    snapshot_count += 1
+            else:
+                generic_count += 1
+        else:
+            # Borrower is unavailable for this group (no column or all-null),
+            # so don't attempt exact/snapshot classification based on amount.
+            generic_count += 1
+
+    messages: list[tuple[str, str]] = []
+    if exact_dup_count:
+        messages.append(
+            (
+                "warning",
+                f"{exact_dup_count} loan_id(s) have exact duplicate rows "
+                "(same borrower, same amount) — consider deduplicating before processing",
+            )
         )
-    if exact_duplicate_ids:
-        warnings.append(
-            f"{len(exact_duplicate_ids)} loan_id values repeat with the same client and amount"
+    if snapshot_count:
+        messages.append(
+            (
+                "info",
+                f"{snapshot_count} loan_id(s) appear as historical snapshots "
+                "(same borrower, different amounts) — treated as balance rollups",
+            )
         )
-    if snapshot_ids:
-        notices.append(
-            f"{len(snapshot_ids)} loan_id values look like historical snapshots "
-            "(same client, varying amount)"
+    if suspicious_count:
+        messages.append(
+            (
+                "warning",
+                f"{suspicious_count} loan_id(s) are shared across different borrowers "
+                "(suspicious merge) — verify source data integrity",
+            )
         )
-
-    return warnings, notices
+    if generic_count:
+        messages.append(
+            (
+                "warning",
+                f"{generic_count} loan_id(s) have duplicate rows "
+                "(borrower/amount columns unavailable for detailed classification)",
+            )
+        )
+    return messages
 
 
 def _validate_for_pipeline(df: pd.DataFrame) -> tuple[bool, list[str], list[str], list[str]]:
@@ -779,9 +834,12 @@ def _validate_for_pipeline(df: pd.DataFrame) -> tuple[bool, list[str], list[str]
     if "loan_id" in df.columns:
         if df["loan_id"].astype(str).str.strip().eq("").all():
             issues.append("All loan_id values are empty")
-        duplicate_warnings, duplicate_notices = _duplicate_loan_diagnostics(df)
-        issues.extend(duplicate_warnings)
-        notices.extend(duplicate_notices)
+        else:
+            for level, message in _classify_loan_id_duplicates(df):
+                if level == "info":
+                    notices.append(message)
+                else:
+                    issues.append(message)
 
     if "amount" in df.columns and pd.to_numeric(df["amount"], errors="coerce").eq(0).all():
         issues.append("All amount values are zero after mapping")
