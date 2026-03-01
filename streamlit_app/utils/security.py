@@ -30,8 +30,8 @@ def sanitize_api_base(base: str) -> Optional[str]:
         # Optional extra validation: reject IPs in known private ranges unless explicitly allowed
         host = parsed.hostname
         try:
-            # Try to parse the host directly as a literal IP address first.
-            # This avoids DNS lookups for domain names (which may fail in sandboxed/CI envs).
+            # Try to parse the host directly as a literal IP address.
+            # Literal IPs are validated here without any DNS round-trip.
             ip = ipaddress.ip_address(host)
             if ip.is_private and not ip.is_loopback:
                 if os.environ.get("ALLOW_PRIVATE_API_BASE") != "1":

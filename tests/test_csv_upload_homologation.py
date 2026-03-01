@@ -358,14 +358,14 @@ class TestValidateForPipeline:
 
 # These imports are deferred to mid-file so that the streamlit stub (_st_stub)
 # is already populated before the dashboard module is loaded via importlib.
-import importlib.util as _ilu
-import os as _os
+import importlib.util as _ilu  # noqa: E402
+import os as _os  # noqa: E402
 
 # plotly is imported by the dashboard at module level.  The real plotly package
 # is available in the test environment, so we just need it imported here so the
 # dashboard module can resolve it when exec_module() runs.
-import plotly.express  # noqa: F401  – side-effect import; ensures plotly is in sys.modules
-import plotly.graph_objects  # noqa: F401
+import plotly.express  # noqa: E402, F401  – side-effect import; ensures plotly is in sys.modules
+import plotly.graph_objects  # noqa: E402, F401
 
 for _attr in [
     "session_state",
