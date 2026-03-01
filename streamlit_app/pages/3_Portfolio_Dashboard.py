@@ -576,8 +576,9 @@ COLUMN_ALIASES = {
         "customer_id",
         "customer_id_cust",
         "codcliente",
-        "codcliente_",
-        "codcliente_2",
+        # Note: suffix-style variants like "codcliente_1", "codcliente_2" are
+        # intentionally not aliased here because they can appear as multiple
+        # separate columns in the same export and should be coalesced upstream.
         "codcliente1",
         "cliente_id",
     ],
