@@ -14,11 +14,18 @@ from python.apps.analytics.api.models import (
     CohortAnalyticsResponse,
     CohortAnalyticsSummary,
     CohortMetrics,
+    CostOfRiskMetrics,
+    CureRateMetrics,
     DataQualityResponse,
+    DPDBucketWithAction,
     DecisionFlag,
     KpiContext,
     KpiSingleResponse,
+    LgdMetrics,
     LoanRecord,
+    NimMetrics,
+    NplMetrics,
+    PaybackMetrics,
     RiskStratificationResponse,
     RollRateAnalyticsResponse,
     RollRateAnalyticsSummary,
@@ -30,6 +37,7 @@ from python.apps.analytics.api.models import (
     StressTestAssumptions,
     StressTestMetrics,
     StressTestResponse,
+    UnitEconomicsResponse,
     ValidationResponse,
     VintageCurvePoint,
     VintageCurveResponse,
@@ -38,6 +46,7 @@ from python.config import settings
 from python.kpis.advanced_risk import calculate_advanced_risk_metrics
 from python.kpis.catalog_processor import KPICatalogProcessor
 from python.kpis.unit_economics import (
+    calculate_all_unit_economics,
     calculate_cost_of_risk,
     calculate_lgd,
     calculate_nim,
@@ -1049,6 +1058,79 @@ class KPIService:
                 exc_info=True,
             )
             raise
+
+    async def calculate_unit_economics(
+        self,
+        loans: list[LoanRecord] | None,
+        funding_cost_rate: float = 0.08,
+        cac: float = 0.0,
+        monthly_arpu: float = 0.0,
+    ) -> UnitEconomicsResponse:
+        """Calculate unit-economics and credit-quality KPIs for a loan portfolio.
+
+        Computes NPL ratio, Loss Given Default, Cost of Risk, Net Interest Margin,
+        CAC payback period, cure rate, and DPD migration with recommended actions.
+
+        Args:
+            loans: Loan-level records.
+            funding_cost_rate: Annualized cost of funds as decimal (default 8%).
+            cac: Customer acquisition cost in USD for payback period.
+            monthly_arpu: Monthly average revenue per user in USD for payback period.
+
+        Returns:
+            UnitEconomicsResponse with all unit-economics KPIs and decision-ready DPD migration.
+        """
+        try:
+            if loans is None:
+                loans = []
+            return await run_in_threadpool(
+                self._calculate_unit_economics_sync,
+                loans,
+                funding_cost_rate,
+                cac,
+                monthly_arpu,
+            )
+        except Exception as e:
+            logger.error(
+                "Error calculating unit economics for actor %s: %s",
+                self.actor,
+                e,
+                exc_info=True,
+            )
+            raise
+
+    def _calculate_unit_economics_sync(
+        self,
+        loans: list[LoanRecord],
+        funding_cost_rate: float,
+        cac: float,
+        monthly_arpu: float,
+    ) -> UnitEconomicsResponse:
+        """Synchronous unit economics computation helper."""
+        df = self._convert_loan_records_to_dataframe(loans)
+        raw = calculate_all_unit_economics(df, funding_cost_rate, cac, monthly_arpu)
+
+        dpd_migration = [
+            DPDBucketWithAction(**bucket) for bucket in raw["dpd_migration"]
+        ]
+
+        logger.info(
+            "Unit economics calculated for actor=%s, loans=%d, npl=%.4f%%",
+            self.actor,
+            len(loans),
+            raw["npl"].get("npl_ratio", 0.0),
+        )
+
+        return UnitEconomicsResponse(
+            generated_at=datetime.now(),
+            npl=NplMetrics(**raw["npl"]),
+            lgd=LgdMetrics(**raw["lgd"]),
+            cost_of_risk=CostOfRiskMetrics(**raw["cost_of_risk"]),
+            nim=NimMetrics(**raw["nim"]),
+            payback=PaybackMetrics(**raw["payback"]),
+            cure_rate=CureRateMetrics(**raw["cure_rate"]),
+            dpd_migration=dpd_migration,
+        )
 
     async def calculate_cohort_analytics(
         self,
