@@ -42,6 +42,8 @@ try:
         SegmentAnalyticsResponse,
         StressTestRequest,
         StressTestResponse,
+        UnitEconomicsRequest,
+        UnitEconomicsResponse,
         ValidationResponse,
         VintageCurveResponse,
     )
@@ -642,6 +644,37 @@ if app is not None:
             return await service.get_risk_stratification(request.loans)
         except Exception as e:
             logger.error("Error in get_risk_stratification: %s", e)
+            raise HTTPException(status_code=500, detail="Internal server error") from e
+
+    @app.post(
+        "/analytics/unit-economics",
+        response_model=UnitEconomicsResponse,
+        summary="Unit Economics & Credit Quality KPIs",
+        response_description=(
+            "NPL ratio, LGD, Cost of Risk, NIM, CAC payback period, cure rate, "
+            "and DPD migration with recommended actions"
+        ),
+    )
+    async def get_unit_economics(
+        request: UnitEconomicsRequest = Body(...),
+        service: KPIService = Depends(get_kpi_service),
+    ):
+        """
+        Calculate unit-economics and credit-quality KPIs for a loan portfolio.
+
+        Returns NPL, LGD, Cost of Risk, NIM, CAC payback period, cure rate, and
+        a DPD migration table with risk levels and recommended operational actions.
+        This endpoint turns portfolio data into actionable decisions.
+        """
+        try:
+            return await service.calculate_unit_economics(
+                loans=request.loans,
+                funding_cost_rate=request.funding_cost_rate,
+                cac=request.cac,
+                monthly_arpu=request.monthly_arpu,
+            )
+        except Exception as e:
+            logger.error("Error in get_unit_economics: %s", e)
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @app.post("/analytics/full-analysis", response_model=FullAnalysisResponse)

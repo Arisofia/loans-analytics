@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -163,6 +163,110 @@ class DPDBucketBreakdown(BaseModel):
             }
         }
     }
+
+
+class DPDBucketWithAction(DPDBucketBreakdown):
+    """DPD bucket with risk level and recommended operational action."""
+
+    risk_level: Literal["low", "medium", "high", "critical"] = Field(
+        ..., description="Risk level: low, medium, high, critical"
+    )
+    recommended_action: str = Field(
+        ..., description="Recommended collections or risk action for this bucket"
+    )
+
+
+class NplMetrics(BaseModel):
+    npl_ratio: float = Field(..., description="Non-performing loan ratio (%)")
+    npl_balance: float = Field(..., description="Total NPL outstanding balance (USD)")
+    total_balance: float = Field(..., description="Total portfolio balance (USD)")
+    npl_loan_count: int = Field(..., description="Number of non-performing loans")
+    formula: str = Field(..., description="Calculation formula")
+
+
+class LgdMetrics(BaseModel):
+    lgd_pct: float = Field(..., description="Loss Given Default (%)")
+    recovery_rate_pct: float = Field(..., description="Recovery rate on defaulted balance (%)")
+    defaulted_balance: float = Field(..., description="Defaulted loan balance (USD)")
+    recovered_amount: float = Field(..., description="Recovered amount from defaulted loans (USD)")
+    formula: str = Field(..., description="Calculation formula")
+
+
+class CostOfRiskMetrics(BaseModel):
+    cost_of_risk_pct: float = Field(..., description="Cost of Risk as % of portfolio (%)")
+    npl_ratio: float = Field(..., description="NPL ratio used in calculation (%)")
+    lgd_pct: float = Field(..., description="LGD used in calculation (%)")
+    expected_loss_balance: float = Field(..., description="Expected credit loss in USD")
+    formula: str = Field(..., description="Calculation formula")
+
+
+class NimMetrics(BaseModel):
+    nim_pct: float = Field(..., description="Net Interest Margin (%)")
+    gross_yield_pct: float = Field(..., description="Portfolio gross yield (%)")
+    funding_cost_pct: float = Field(..., description="Assumed funding cost (%)")
+    interest_income: float = Field(..., description="Total interest income (USD)")
+    total_balance: float = Field(..., description="Total portfolio balance used (USD)")
+    formula: str = Field(..., description="Calculation formula")
+
+
+class PaybackMetrics(BaseModel):
+    payback_months: Optional[float] = Field(
+        None, description="CAC payback period in months (None if inputs are zero)"
+    )
+    cac: float = Field(..., description="Customer acquisition cost (USD)")
+    monthly_arpu: float = Field(..., description="Monthly average revenue per user (USD)")
+    formula: str = Field(..., description="Calculation formula")
+
+
+class CureRateMetrics(BaseModel):
+    cure_rate_pct: float = Field(..., description="Cure rate proxy (%)")
+    delinquent_count: int = Field(..., description="Total delinquent loan count")
+    curing_count: int = Field(..., description="Delinquent loans with recent payment activity")
+    formula: str = Field(..., description="Calculation formula")
+    note: str = Field(..., description="Methodology note")
+
+
+class UnitEconomicsRequest(BaseModel):
+    """Request body for unit economics analytics."""
+
+    loans: List[LoanRecord] = Field(
+        ...,
+        min_length=0,
+        max_length=10000,
+        description="Loan-level records for unit economics computation",
+    )
+    funding_cost_rate: float = Field(
+        0.08,
+        ge=0.0,
+        le=1.0,
+        description="Annualized cost of funds as decimal (default 8%)",
+    )
+    cac: float = Field(
+        0.0,
+        ge=0.0,
+        description="Customer acquisition cost in USD for payback period calculation",
+    )
+    monthly_arpu: float = Field(
+        0.0,
+        ge=0.0,
+        description="Monthly average revenue per user in USD for payback period calculation",
+    )
+
+
+class UnitEconomicsResponse(BaseModel):
+    """Unit economics analytics response with credit quality and profitability KPIs."""
+
+    generated_at: datetime
+    npl: NplMetrics
+    lgd: LgdMetrics
+    cost_of_risk: CostOfRiskMetrics
+    nim: NimMetrics
+    payback: PaybackMetrics
+    cure_rate: CureRateMetrics
+    dpd_migration: List[DPDBucketWithAction] = Field(
+        default_factory=list,
+        description="DPD bucket distribution with risk levels and recommended actions",
+    )
 
 
 class AdvancedRiskResponse(BaseModel):
