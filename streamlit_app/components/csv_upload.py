@@ -406,6 +406,8 @@ def _nullify_missing_entries(series: pd.Series) -> pd.Series:
 def _coalesce_series(series_list: list[pd.Series], index: pd.Index, default: Any = pd.NA) -> pd.Series:
     """Return first non-null value across candidate series without using bfill."""
     if not series_list:
+        if isinstance(default, pd.Series):
+            return default.reindex(index)
         return pd.Series(default, index=index)
 
     merged = series_list[0].copy()
@@ -714,14 +716,24 @@ def _merge_prepared_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
         if "loan_id" in merged.columns and "loan_id" in frame.columns:
             merged = merged.merge(frame, on="loan_id", how="outer", suffixes=("", "_dup"))
             dup_cols = [col for col in merged.columns if col.endswith("_dup")]
+            updates: dict[str, pd.Series] = {}
+            drop_cols: list[str] = []
+            rename_map: dict[str, str] = {}
             for dup_col in dup_cols:
                 base_col = dup_col[:-4]
                 if base_col in merged.columns:
                     fill_mask = merged[base_col].isna() & merged[dup_col].notna()
-                    merged[base_col] = merged[base_col].where(~fill_mask, merged[dup_col])
-                    merged = merged.drop(columns=[dup_col])
+                    updates[base_col] = merged[base_col].where(~fill_mask, merged[dup_col])
+                    drop_cols.append(dup_col)
                 else:
-                    merged = merged.rename(columns={dup_col: base_col})
+                    rename_map[dup_col] = base_col
+
+            if updates:
+                merged = merged.assign(**updates)
+            if drop_cols:
+                merged = merged.drop(columns=drop_cols)
+            if rename_map:
+                merged = merged.rename(columns=rename_map)
         else:
             merged = pd.concat([merged, frame], ignore_index=True, sort=False)
         # Defragment after repeated merge/column operations.
