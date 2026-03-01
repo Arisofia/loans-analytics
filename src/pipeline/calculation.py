@@ -508,7 +508,13 @@ class KPIFormulaEngine:
         cached = self._datetime_cache.get(column)
         if cached is not None:
             return cached
-        dt = pd.to_datetime(self.df[column], errors="coerce")
+        # Use mixed-format parser when available to avoid noisy inference warnings
+        # on heterogeneous real-world date columns.
+        try:
+            dt = pd.to_datetime(self.df[column], errors="coerce", format="mixed")
+        except TypeError:
+            # pandas versions without format='mixed'
+            dt = pd.to_datetime(self.df[column], errors="coerce")
         self._datetime_cache[column] = dt
         return dt
 

@@ -529,8 +529,12 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
         prepared["loan_id"] = prepared["loan_id"].astype(str).str.strip()
         prepared = prepared[prepared["loan_id"] != ""].copy()
 
-    prepared["amount"] = _derive_amount(prepared)
-    prepared["status"] = _derive_status(prepared)
+    # Consolidate blocks before adding canonical columns to reduce fragmentation warnings.
+    prepared = prepared.copy()
+    prepared = prepared.assign(
+        amount=_derive_amount(prepared),
+        status=_derive_status(prepared),
+    )
 
     # Derive canonical balance/amount fields expected by KPI formulas.
     balance_sources: list[pd.Series] = []
@@ -573,10 +577,12 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
     else:
         principal_series = prepared["amount"]
 
-    prepared["outstanding_balance"] = _coerce_numeric(balance_series)
-    prepared["current_balance"] = _coerce_numeric(balance_series)
-    prepared["principal_amount"] = _coerce_numeric(principal_series)
-    prepared["amount"] = _coerce_numeric(prepared["amount"])
+    prepared = prepared.assign(
+        outstanding_balance=_coerce_numeric(balance_series),
+        current_balance=_coerce_numeric(balance_series),
+        principal_amount=_coerce_numeric(principal_series),
+        amount=_coerce_numeric(prepared["amount"]),
+    )
 
     # Provide generic 'balance' alias used by some KPI formulas.
     if "balance" not in prepared.columns:
