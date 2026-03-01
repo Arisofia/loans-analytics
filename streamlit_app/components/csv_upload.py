@@ -370,6 +370,7 @@ def _apply_aliases(df: pd.DataFrame) -> pd.DataFrame:
     """
     normalized = df.copy()
     all_columns = list(normalized.columns)
+    canonical_values: dict[str, pd.Series] = {}
 
     for canonical, aliases in ALIAS_MAP.items():
         candidates: list[str] = []
@@ -382,15 +383,16 @@ def _apply_aliases(df: pd.DataFrame) -> pd.DataFrame:
         if not candidates:
             continue
         if len(candidates) == 1:
-            normalized[canonical] = normalized[candidates[0]]
+            canonical_values[canonical] = normalized[candidates[0]]
             continue
-        merged_series = _nullify_missing_entries(normalized[candidates[0]])
-        for col in candidates[1:]:
-            candidate_series = _nullify_missing_entries(normalized[col])
-            fill_mask = merged_series.isna() & candidate_series.notna()
-            merged_series = merged_series.where(~fill_mask, candidate_series)
-        normalized[canonical] = merged_series
+        merged_series = _coalesce_series(
+            [_nullify_missing_entries(normalized[col]) for col in candidates],
+            index=normalized.index,
+        )
+        canonical_values[canonical] = merged_series
 
+    if canonical_values:
+        normalized = normalized.assign(**canonical_values)
     return normalized.copy()
 
 
@@ -399,6 +401,22 @@ def _nullify_missing_entries(series: pd.Series) -> pd.Series:
     text = series.astype(str).str.strip().str.lower()
     missing_mask = series.isna() | text.isin({"", "nan", "none", "null"})
     return series.where(~missing_mask, pd.NA)
+
+
+def _coalesce_series(series_list: list[pd.Series], index: pd.Index, default: Any = pd.NA) -> pd.Series:
+    """Return first non-null value across candidate series without using bfill."""
+    if not series_list:
+        return pd.Series(default, index=index)
+
+    merged = series_list[0].copy()
+    for candidate in series_list[1:]:
+        fill_mask = merged.isna() & candidate.notna()
+        if fill_mask.any():
+            merged = merged.where(~fill_mask, candidate)
+
+    if default is pd.NA:
+        return merged
+    return merged.fillna(default)
 
 
 def _canonicalize_status(value: Any) -> str:
@@ -516,9 +534,7 @@ def _derive_amount(df: pd.DataFrame) -> pd.Series:
 
     if not amount_sources:
         return pd.Series(0.0, index=df.index, dtype=float)
-
-    amount_df = pd.concat(amount_sources, axis=1)
-    return amount_df.bfill(axis=1).iloc[:, 0].fillna(0.0)
+    return _coalesce_series(amount_sources, index=df.index, default=0.0)
 
 
 def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
@@ -567,15 +583,12 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
         if source_col in prepared.columns:
             principal_sources.append(_coerce_numeric_nullable(prepared[source_col]).rename(source_col))
 
-    if balance_sources:
-        balance_series = pd.concat(balance_sources, axis=1).bfill(axis=1).iloc[:, 0]
-    else:
-        balance_series = pd.Series(0.0, index=prepared.index, dtype=float)
-
-    if principal_sources:
-        principal_series = pd.concat(principal_sources, axis=1).bfill(axis=1).iloc[:, 0]
-    else:
-        principal_series = prepared["amount"]
+    balance_series = _coalesce_series(balance_sources, index=prepared.index, default=0.0)
+    principal_series = _coalesce_series(
+        principal_sources,
+        index=prepared.index,
+        default=prepared["amount"],
+    )
 
     prepared = prepared.assign(
         outstanding_balance=_coerce_numeric(balance_series),
