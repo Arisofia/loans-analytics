@@ -94,7 +94,8 @@ class TestUnitEconomicsEndpoint:
         assert "total_balance" in npl
         assert "npl_loan_count" in npl
         assert "formula" in npl
-        # L3 (800) and L4 (300) have dpd > 90 or default status → at least L3 is NPL
+        # At minimum, L3 (800, default, 95 DPD) should be classified as NPL; L4 (300, 75 DPD in 60–89 bucket)
+        # may or may not be included depending on the NPL rule, so npl_ratio should be greater than zero.
         assert npl["npl_ratio"] > 0
 
     def test_lgd_structure(self):
