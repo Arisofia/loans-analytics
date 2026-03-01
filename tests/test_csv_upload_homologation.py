@@ -69,10 +69,10 @@ class TestCoerceNumeric:
         assert list(out) == [100.0, 200.0, 300.0]
 
     def test_decimal_comma_locale(self):
-        # European locale: comma as decimal separator (e.g. "1.234,56")
-        # After normalisation, "1.234" should become 1234 and "56" would be
-        # the decimal part – but in our _coerce_numeric the comma-only branch
-        # converts "1234,56" → "1234.56" while "1,234" → "1234".
+        # European-style locale: comma as decimal separator for plain numbers,
+        # without a thousands dot. In our _coerce_numeric implementation, the
+        # "comma-only" branch converts "1234,56" → "1234.56" while "1,234" →
+        # "1234". Mixed "1.234,56"-style patterns are not normalised here.
         s = pd.Series(["1234,56"])
         out = _coerce_numeric(s)
         assert out.iloc[0] == 1234.56
