@@ -195,6 +195,24 @@ class TestUnitEconomicsEndpoint:
         for bucket in body["dpd_migration"]:
             assert bucket["recommended_action"].strip() != ""
 
+    def test_dpd_migration_bucket_names_normalized(self):
+        """DPD migration bucket names must use the same convention as /analytics/advanced-risk
+        (no 'dpd_' prefix): current, 1_30, 31_60, 61_90, 90_plus."""
+        client = TestClient(app)
+        payload = {"loans": _mixed_portfolio()}
+        body = client.post("/analytics/unit-economics", json=payload).json()
+
+        bucket_names = {b["bucket"] for b in body["dpd_migration"]}
+        # Normalized names must NOT carry the 'dpd_' prefix
+        assert not any(name.startswith("dpd_") for name in bucket_names), (
+            f"Found un-normalized bucket names: {bucket_names}"
+        )
+        # All returned names must be from the expected set
+        expected = {"current", "1_30", "31_60", "61_90", "90_plus"}
+        assert bucket_names.issubset(expected), (
+            f"Unexpected bucket names: {bucket_names - expected}"
+        )
+
     def test_single_current_loan(self):
         """All metrics should return sane zero/near-zero values for a healthy portfolio."""
         client = TestClient(app)
