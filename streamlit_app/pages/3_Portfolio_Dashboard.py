@@ -692,17 +692,14 @@ def _normalize_payment_history(value: Any) -> str:
 
 def _get_exposure_series(df: pd.DataFrame) -> pd.Series:
     """Resolve exposure amount with priority: outstanding -> current -> principal."""
-    candidate_columns = [
-        pd.to_numeric(df[col], errors="coerce")
-        for col in ("outstanding_balance", "current_balance", "principal_amount")
-        if col in df.columns
+    candidate_names = [
+        col for col in ("outstanding_balance", "current_balance", "principal_amount") if col in df
     ]
-    if not candidate_columns:
+    if not candidate_names:
         return pd.Series(0.0, index=df.index, dtype=float)
-
-    candidate_frame = pd.concat(candidate_columns, axis=1)
-    # Use first non-null value by priority order defined above.
-    exposure = candidate_frame.bfill(axis=1).iloc[:, 0]
+    exposure = pd.to_numeric(df[candidate_names[0]], errors="coerce")
+    for col in candidate_names[1:]:
+        exposure = exposure.combine_first(pd.to_numeric(df[col], errors="coerce"))
     return exposure.fillna(0.0)
 
 
@@ -1580,7 +1577,7 @@ def handle_file_upload(uploaded_files: Any) -> bool:
     try:
         normalized_frames: list[pd.DataFrame] = []
         for uploaded_file in uploaded_files:
-            raw_df = pd.read_csv(uploaded_file)
+            raw_df = pd.read_csv(uploaded_file, low_memory=False)
             normalized_frames.append(_apply_column_aliases(_normalize_column_names(raw_df)))
 
         merged_df = _merge_uploaded_frames(normalized_frames)

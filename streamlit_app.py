@@ -265,7 +265,7 @@ elif page == "📊 Dashboard" and selected_run:
 
             # Display as table
             st.subheader("📋 Full KPI Table")
-            st.dataframe(kpi_df.T, use_container_width=True)
+            st.dataframe(kpi_df.T, width="stretch")
 
             # Download button
             csv = kpi_df.to_csv(index=False)

@@ -39,7 +39,7 @@ def render_cashflow_trends(analytics_facts):
                 markers=True,
             )
             st.markdown('<div data-testid="chart-revenue">', unsafe_allow_html=True)
-            st.plotly_chart(apply_theme(fig_cash), use_container_width=True)
+            st.plotly_chart(apply_theme(fig_cash), width="stretch")
             st.markdown("</div>", unsafe_allow_html=True)
             latest_cash = cash_df.sort_values("month").iloc[-1]
             c1, c2, c3, c4 = st.columns(4)
@@ -93,7 +93,7 @@ def render_growth_analysis(total_outstanding):
             y="Projected",
             title="12-Month Portfolio Growth Projection",
         )
-        st.plotly_chart(apply_theme(fig_growth), use_container_width=True)
+        st.plotly_chart(apply_theme(fig_growth), width="stretch")
     return g_col2
 
 
@@ -109,7 +109,7 @@ def render_category_breakdown(merged, col):
                     names="categoria",
                     title="Portfolio by Category",
                 )
-                st.plotly_chart(apply_theme(fig_cat), use_container_width=True)
+                st.plotly_chart(apply_theme(fig_cat), width="stretch")
             else:
                 if "categoria" in merged.columns and "outstanding_loan_value" not in merged.columns:
                     st.info(

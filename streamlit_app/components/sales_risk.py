@@ -29,7 +29,7 @@ def render_sales_performance(merged, load_agent_headcount):
             fig_sales = px.bar(
                 sales_agg, x="sales_agent", y="Count", title="Sales Agent Loan Count"
             )
-        st.plotly_chart(apply_theme(fig_sales), use_container_width=True)
+        st.plotly_chart(apply_theme(fig_sales), width="stretch")
     else:
         headcount_df = load_agent_headcount()
         if not headcount_df.empty and {"month", "function", "fte_count"}.issubset(
@@ -45,7 +45,7 @@ def render_sales_performance(merged, load_agent_headcount):
                 color="team" if "team" in latest_headcount.columns else None,
                 title="Headcount by Function",
             )
-            st.plotly_chart(apply_theme(fig_headcount), use_container_width=True)
+            st.plotly_chart(apply_theme(fig_headcount), width="stretch")
         else:
             st.info(
                 "Sales agent data not found. Provide agent"
@@ -73,7 +73,7 @@ def render_risk_analysis(merged):
             )
             dpd_dist.columns = ["Bucket", "Count"]
             fig_dpd = px.bar(dpd_dist, x="Bucket", y="Count", title="DPD Bucket Distribution")
-            st.plotly_chart(apply_theme(fig_dpd), use_container_width=True)
+            st.plotly_chart(apply_theme(fig_dpd), width="stretch")
     with r_col2:
         st.subheader("Data Quality Audit")
         score = 100.0

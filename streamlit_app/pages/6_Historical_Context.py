@@ -189,7 +189,7 @@ chart.update_layout(
     template="plotly_white",
     height=460,
 )
-st.plotly_chart(chart, use_container_width=True)
+st.plotly_chart(chart, width="stretch")
 
 left_col, right_col = st.columns(2)
 with left_col:
@@ -200,7 +200,7 @@ with left_col:
     if not seasonality_frame.empty:
         st.dataframe(
             seasonality_frame[["month", "adjustment_factor"]],
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
     else:
@@ -211,7 +211,7 @@ with right_col:
     if not forecast_frame.empty:
         display_frame = forecast_frame.copy()
         display_frame["date"] = display_frame["date"].dt.date
-        st.dataframe(display_frame, use_container_width=True, hide_index=True)
+        st.dataframe(display_frame, width="stretch", hide_index=True)
     else:
         st.info("Forecast output is empty for the selected inputs.")
 

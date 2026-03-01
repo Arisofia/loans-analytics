@@ -40,8 +40,8 @@ def _render_forecasting_tab(dashboard_metrics):
             line={"dash": "dot"},
             fill="tonexty",
         )
-    st.plotly_chart(apply_theme(fig), use_container_width=True)
-    st.dataframe(styled_df(forecast_df), use_container_width=True)
+    st.plotly_chart(apply_theme(fig), width="stretch")
+    st.dataframe(styled_df(forecast_df), width="stretch")
 
 
 def _render_opportunity_tab(dashboard_metrics):
@@ -64,9 +64,9 @@ def _render_opportunity_tab(dashboard_metrics):
             color="Delinquency_Rate" if "Delinquency_Rate" in opportunity_df.columns else None,
             title="Priority Score by Segment",
         )
-        st.plotly_chart(apply_theme(fig), use_container_width=True)
+        st.plotly_chart(apply_theme(fig), width="stretch")
 
-    st.dataframe(styled_df(opportunity_df), use_container_width=True)
+    st.dataframe(styled_df(opportunity_df), width="stretch")
 
 
 def _render_churn_tab(dashboard_metrics):
@@ -85,14 +85,14 @@ def _render_churn_tab(dashboard_metrics):
                 title="90-Day Churn Rate Trend",
                 markers=True,
             )
-            st.plotly_chart(apply_theme(fig_churn), use_container_width=True)
+            st.plotly_chart(apply_theme(fig_churn), width="stretch")
             st.write("**Churn Metrics Summary:**")
             latest_churn = churn_df.sort_values("month").iloc[-1]
             ch_c1, ch_c2, ch_c3 = st.columns(3)
             ch_c1.metric("Active (90d)", f"{int(latest_churn['active_90d']):,}")
             ch_c2.metric("Inactive (90d)", f"{int(latest_churn['inactive_90d']):,}")
             ch_c3.metric("Churn Rate", f"{latest_churn['churn90d_pct']:.2%}")
-            st.dataframe(styled_df(churn_df), use_container_width=True)
+            st.dataframe(styled_df(churn_df), width="stretch")
     else:
         st.info("Churn analytics requires historical disbursement or payment data.")
 
@@ -124,7 +124,7 @@ def _render_unit_economics_tab(dashboard_metrics):
                 line_color="green",
                 annotation_text="Target (3.0x)",
             )
-            st.plotly_chart(apply_theme(fig_ratio), use_container_width=True)
+            st.plotly_chart(apply_theme(fig_ratio), width="stretch")
 
         if "gross_margin_pct" in unit_df.columns:
             fig_margin = px.line(
@@ -134,9 +134,9 @@ def _render_unit_economics_tab(dashboard_metrics):
                 title="Gross Margin Trend",
                 markers=True,
             )
-            st.plotly_chart(apply_theme(fig_margin), use_container_width=True)
+            st.plotly_chart(apply_theme(fig_margin), width="stretch")
 
-    st.dataframe(styled_df(unit_df), use_container_width=True)
+    st.dataframe(styled_df(unit_df), width="stretch")
 
 
 def _render_pricing_governance_tab(dashboard_metrics):
@@ -167,7 +167,7 @@ def _render_pricing_governance_tab(dashboard_metrics):
                 title="Pricing Trend",
                 markers=True,
             )
-            st.plotly_chart(apply_theme(fig_price), use_container_width=True)
+            st.plotly_chart(apply_theme(fig_price), width="stretch")
 
     governance = dashboard_metrics.get("extended_kpis", {}).get("data_governance", {})
     if governance:
@@ -184,7 +184,7 @@ def _render_pricing_governance_tab(dashboard_metrics):
                 styled_df(
                     pd.DataFrame(list(completeness.items()), columns=["Field", "Completeness"])
                 ),
-                use_container_width=True,
+                width="stretch",
             )
 
 

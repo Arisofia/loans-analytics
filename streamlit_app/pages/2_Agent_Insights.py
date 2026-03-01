@@ -278,7 +278,7 @@ elif display_mode == "📊 Summary Table":
 
     st.dataframe(
         df,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 

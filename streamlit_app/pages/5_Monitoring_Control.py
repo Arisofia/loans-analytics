@@ -176,7 +176,7 @@ if "events_data" in st.session_state and st.session_state["events_data"]:
         if c in df.columns
     ]
     st.dataframe(
-        df[display_cols].sort_values("created_at", ascending=False), use_container_width=True
+        df[display_cols].sort_values("created_at", ascending=False), width="stretch"
     )
 
     # Acknowledge button
@@ -269,5 +269,5 @@ if "commands_data" in st.session_state and st.session_state["commands_data"]:
     ]
     st.dataframe(
         df_cmds[display_cols].sort_values("created_at", ascending=False),
-        use_container_width=True,
+        width="stretch",
     )

@@ -49,7 +49,7 @@ else:
         st.metric("Unique Actions", df["action"].nunique())
 
     st.subheader("Event Log")
-    st.dataframe(df.sort_values(by="timestamp", ascending=False), use_container_width=True)
+    st.dataframe(df.sort_values(by="timestamp", ascending=False), width="stretch")
 
     st.subheader("Feature Usage Breakdown")
     feature_counts = df["feature_name"].value_counts().reset_index()
