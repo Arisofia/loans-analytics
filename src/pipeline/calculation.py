@@ -731,8 +731,7 @@ class CalculationPhase:
         for category in category_order:
             category_kpis = self.kpi_definitions.get(category, {})
             for kpi_name, kpi_config in category_kpis.items():
-                formula = kpi_config.get("formula")
-                if formula:
+                if formula := kpi_config.get("formula"):
                     formulas.append((category, kpi_name, formula))
         return formulas
 
@@ -819,8 +818,7 @@ class CalculationPhase:
     @staticmethod
     def _get_time_series_numeric_columns(df_ts: pd.DataFrame) -> List[str]:
         """Get numeric columns for rollups with fallback to amount."""
-        numeric_cols = df_ts.select_dtypes(include=[np.number]).columns.tolist()
-        if numeric_cols:
+        if numeric_cols := df_ts.select_dtypes(include=[np.number]).columns.tolist():
             return numeric_cols
         return ["amount"] if "amount" in df_ts.columns else []
 
@@ -914,64 +912,107 @@ class CalculationPhase:
         Segment dimensions: company, credit_line, kam_hunter, kam_farmer.
         Returns a nested dict: {dimension: {segment_value: {kpi: value}}}.
         """
-        segment_dims = [
-            col for col in ("company", "credit_line", "kam_hunter", "kam_farmer")
-            if col in df.columns
-        ]
+        segment_dims = self._available_segment_dimensions(df)
         if not segment_dims:
             return {}
 
-        balance_col = next(
-            (c for c in ("outstanding_balance", "current_balance", "amount") if c in df.columns),
-            None,
-        )
-        dpd_col = next((c for c in ("dpd", "days_past_due") if c in df.columns), None)
+        balance_col = self._resolve_col(df, "outstanding_balance", "current_balance", "amount")
+        dpd_col = self._resolve_col(df, "dpd", "days_past_due")
         status_col = "status" if "status" in df.columns else None
 
         if balance_col is None:
             return {}
 
+        work = self._prepare_segment_workframe(df, balance_col, dpd_col, status_col)
+        if work.empty:
+            return {}
+
+        return {
+            dim: self._calculate_dimension_segment_kpis(work, dim, balance_col, dpd_col, status_col)
+            for dim in segment_dims
+        }
+
+    @staticmethod
+    def _available_segment_dimensions(df: pd.DataFrame) -> List[str]:
+        """Return supported segment dimensions present in the dataframe."""
+        return [
+            col
+            for col in ("company", "credit_line", "kam_hunter", "kam_farmer")
+            if col in df.columns
+        ]
+
+    @staticmethod
+    def _prepare_segment_workframe(
+        df: pd.DataFrame, balance_col: str, dpd_col: Optional[str], status_col: Optional[str]
+    ) -> pd.DataFrame:
+        """Build normalized dataframe used for segment KPI aggregation."""
         active_mask = (
             df[status_col].isin(["active", "delinquent", "defaulted"])
             if status_col
-            else pd.Series(True, index=df.index)
+            else pd.Series(True, index=df.index, dtype=bool)
         )
-        work = df[active_mask].copy()
+        work = df.loc[active_mask].copy()
+        if work.empty:
+            return work
+
         work[balance_col] = pd.to_numeric(work[balance_col], errors="coerce").fillna(0.0)
         if dpd_col:
             work[dpd_col] = pd.to_numeric(work[dpd_col], errors="coerce").fillna(0.0)
+        return work
 
-        result: Dict[str, Any] = {}
-        for dim in segment_dims:
-            dim_result: Dict[str, Any] = {}
-            for seg_val, grp in work.groupby(dim, sort=False):
-                total_bal = float(grp[balance_col].sum())
-                if total_bal <= 0:
-                    continue
-                seg_kpis: Dict[str, Any] = {
-                    "outstanding_balance": round(total_bal, 2),
-                    "loan_count": int(len(grp)),
-                }
-                if dpd_col:
-                    seg_kpis["par_30"] = round(
-                        float(grp.loc[grp[dpd_col] >= 30, balance_col].sum()) / total_bal * 100, 4
-                    )
-                    seg_kpis["par_60"] = round(
-                        float(grp.loc[grp[dpd_col] >= 60, balance_col].sum()) / total_bal * 100, 4
-                    )
-                    seg_kpis["par_90"] = round(
-                        float(grp.loc[grp[dpd_col] >= 90, balance_col].sum()) / total_bal * 100, 4
-                    )
-                if status_col:
-                    n = len(grp)
-                    seg_kpis["default_rate"] = round(
-                        float((grp[status_col] == "defaulted").sum()) / n * 100 if n > 0 else 0.0,
-                        4,
-                    )
+    def _calculate_dimension_segment_kpis(
+        self,
+        work: pd.DataFrame,
+        dim: str,
+        balance_col: str,
+        dpd_col: Optional[str],
+        status_col: Optional[str],
+    ) -> Dict[str, Any]:
+        """Aggregate segment KPIs for a single dimension."""
+        dim_result: Dict[str, Any] = {}
+        for seg_val, grp in work.groupby(dim, sort=False):
+            if seg_kpis := self._calculate_segment_group_kpis(grp, balance_col, dpd_col, status_col):
                 dim_result[str(seg_val)] = seg_kpis
-            result[dim] = dim_result
+        return dim_result
 
-        return result
+    def _calculate_segment_group_kpis(
+        self,
+        grp: pd.DataFrame,
+        balance_col: str,
+        dpd_col: Optional[str],
+        status_col: Optional[str],
+    ) -> Optional[Dict[str, Any]]:
+        """Compute KPI bundle for one segment group."""
+        total_bal = float(grp[balance_col].sum())
+        if total_bal <= 0:
+            return None
+
+        seg_kpis: Dict[str, Any] = {
+            "outstanding_balance": round(total_bal, 2),
+            "loan_count": len(grp),
+        }
+        if dpd_col:
+            seg_kpis.update(self._calculate_segment_par_metrics(grp, balance_col, dpd_col, total_bal))
+        if status_col:
+            seg_kpis["default_rate"] = self._calculate_segment_default_rate(grp, status_col)
+        return seg_kpis
+
+    @staticmethod
+    def _calculate_segment_par_metrics(
+        grp: pd.DataFrame, balance_col: str, dpd_col: str, total_bal: float
+    ) -> Dict[str, float]:
+        """Compute PAR30/60/90 for a segment group."""
+        return {
+            "par_30": round(float(grp.loc[grp[dpd_col] >= 30, balance_col].sum()) / total_bal * 100, 4),
+            "par_60": round(float(grp.loc[grp[dpd_col] >= 60, balance_col].sum()) / total_bal * 100, 4),
+            "par_90": round(float(grp.loc[grp[dpd_col] >= 90, balance_col].sum()) / total_bal * 100, 4),
+        }
+
+    @staticmethod
+    def _calculate_segment_default_rate(grp: pd.DataFrame, status_col: str) -> float:
+        """Compute default rate for a segment group."""
+        n = len(grp)
+        return round(float((grp[status_col] == "defaulted").sum()) / n * 100, 4) if n > 0 else 0.0
 
     @staticmethod
     def _resolve_col(df: pd.DataFrame, *candidates: str) -> Optional[str]:
@@ -986,45 +1027,96 @@ class CalculationPhase:
         """
         enriched: Dict[str, Any] = {}
 
-        balance_col = self._resolve_col(
-            df, "outstanding_balance", "current_balance", "amount"
-        )
+        balance_col = self._resolve_col(df, "outstanding_balance", "current_balance", "amount")
         total_bal = float(df[balance_col].sum()) if balance_col else 0.0
 
-        eligible_col = self._resolve_col(df, "collections_eligible", "procede_a_cobrar")
-        if eligible_col and total_bal > 0:
-            eligible_mask = df[eligible_col].astype(str).str.strip().str.upper() == "Y"
-            eligible_bal = float(df.loc[eligible_mask, balance_col].sum()) if balance_col else 0.0
-            enriched["collections_eligible_rate"] = round(eligible_bal / total_bal * 100, 4)
+        self._add_categorical_exposure_rate(
+            enriched,
+            "collections_eligible_rate",
+            df,
+            balance_col,
+            total_bal,
+            ("collections_eligible", "procede_a_cobrar"),
+            "Y",
+        )
+        self._add_categorical_exposure_rate(
+            enriched,
+            "government_sector_exposure_rate",
+            df,
+            balance_col,
+            total_bal,
+            ("government_sector", "goes"),
+            "GOES",
+        )
 
-        goes_col = self._resolve_col(df, "government_sector", "goes")
-        if goes_col and total_bal > 0:
-            goes_mask = df[goes_col].astype(str).str.strip().str.upper() == "GOES"
-            goes_bal = float(df.loc[goes_mask, balance_col].sum()) if balance_col else 0.0
-            enriched["government_sector_exposure_rate"] = round(goes_bal / total_bal * 100, 4)
+        if util_col := self._resolve_col(df, "utilization_pct", "porcentaje_utilizado"):
+            avg_utilization = self._calculate_avg_credit_line_utilization(df, util_col)
+            if avg_utilization is not None:
+                enriched["avg_credit_line_utilization"] = avg_utilization
 
-        util_col = self._resolve_col(df, "utilization_pct", "porcentaje_utilizado")
-        if util_col:
-            raw_util = df[util_col].astype(str).str.replace(r"[$,%\s]", "", regex=True)
-            util_series = pd.to_numeric(raw_util, errors="coerce").dropna()
-            if len(util_series) > 0:
-                median_val = float(util_series.median())
-                if median_val < 2.0:
-                    util_series = util_series * 100
-                enriched["avg_credit_line_utilization"] = round(float(util_series.mean()), 4)
+        capital_rate = self._calculate_capital_collection_rate(df, balance_col, total_bal)
+        if capital_rate is not None:
+            enriched["capital_collection_rate"] = capital_rate
 
-        cap_col = self._resolve_col(df, "capital_collected", "capitalcobrado")
-        if cap_col and balance_col and total_bal > 0:
-            cap_coll = pd.to_numeric(df[cap_col], errors="coerce").fillna(0.0).sum()
-            enriched["capital_collection_rate"] = round(float(cap_coll) / total_bal * 100, 4)
-
-        mdsc_col = self._resolve_col(df, "mdsc_posted", "mdscposteado")
-        if mdsc_col:
-            mdsc = pd.to_numeric(df[mdsc_col], errors="coerce").fillna(0.0)
-            n = len(mdsc)
-            enriched["mdsc_posted_rate"] = round(float(mdsc.sum()) / n * 100, 4) if n > 0 else 0.0
+        mdsc_rate = self._calculate_mdsc_posted_rate(df)
+        if mdsc_rate is not None:
+            enriched["mdsc_posted_rate"] = mdsc_rate
 
         return enriched
+
+    def _add_categorical_exposure_rate(
+        self,
+        target: Dict[str, Any],
+        metric_name: str,
+        df: pd.DataFrame,
+        balance_col: Optional[str],
+        total_bal: float,
+        candidates: tuple[str, str],
+        match_value: str,
+    ) -> None:
+        """Add balance-weighted exposure for a categorical flag column."""
+        source_col = self._resolve_col(df, *candidates)
+        if source_col is None or balance_col is None or total_bal <= 0:
+            return
+
+        flag_mask = df[source_col].astype(str).str.strip().str.upper() == match_value
+        flagged_balance = float(df.loc[flag_mask, balance_col].sum())
+        target[metric_name] = round(flagged_balance / total_bal * 100, 4)
+
+    @staticmethod
+    def _calculate_avg_credit_line_utilization(df: pd.DataFrame, util_col: str) -> Optional[float]:
+        """Compute average utilization, normalizing percent-like raw formats."""
+        raw_util = df[util_col].astype(str).str.replace(r"[$,%\s]", "", regex=True)
+        util_series = pd.to_numeric(raw_util, errors="coerce").dropna()
+        if util_series.empty:
+            return None
+
+        if float(util_series.median()) < 2.0:
+            util_series = util_series * 100
+        return round(float(util_series.mean()), 4)
+
+    def _calculate_capital_collection_rate(
+        self, df: pd.DataFrame, balance_col: Optional[str], total_bal: float
+    ) -> Optional[float]:
+        """Compute capital collection ratio over outstanding balance."""
+        cap_col = self._resolve_col(df, "capital_collected", "capitalcobrado")
+        if cap_col is None or balance_col is None or total_bal <= 0:
+            return None
+
+        cap_collected = pd.to_numeric(df[cap_col], errors="coerce").fillna(0.0).sum()
+        return round(float(cap_collected) / total_bal * 100, 4)
+
+    def _calculate_mdsc_posted_rate(self, df: pd.DataFrame) -> Optional[float]:
+        """Compute average posted MDSC rate in percentage points."""
+        mdsc_col = self._resolve_col(df, "mdsc_posted", "mdscposteado")
+        if mdsc_col is None:
+            return None
+
+        mdsc = pd.to_numeric(df[mdsc_col], errors="coerce").fillna(0.0)
+        n = len(mdsc)
+        if n <= 0:
+            return 0.0
+        return round(float(mdsc.sum()) / n * 100, 4)
 
     def _generate_manifest(
         self, kpi_results: Dict[str, Any], source_df: pd.DataFrame
