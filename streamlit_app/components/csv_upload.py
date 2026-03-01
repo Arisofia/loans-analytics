@@ -69,6 +69,12 @@ ALIAS_MAP: dict[str, list[str]] = {
         "principal_balance",
         "outstanding_balance",
         "current_balance",
+        "saldo",
+        "saldo_capital",
+        "capital_pendiente",
+        "monto_vigente",
+        "monto_actual",
+        "monto_total",
         "monto_del_desembolso",
         "monto_financiado_real_por_desembolso",
         "monto_total_aprobado_por_desembolso",
@@ -104,13 +110,33 @@ ALIAS_MAP: dict[str, list[str]] = {
     "last_payment_amount": ["payment_amount", "monto_pagado", "ultimo_pago", "last_real_payment"],
     "recovery_value": ["recovery_value_", "recovery_value", "recovery_amount"],
     "client_code": ["codcliente", "codcliente_", "codcliente_2", "codcliente1"],
-    "client_name": ["cliente", "cliente_", "cliente1"],
+    "client_name": [
+        "cliente",
+        "cliente_",
+        "cliente1",
+        "nombre_cliente",
+        "nombre_del_cliente",
+        "nombrecliente",
+        "razon_social",
+    ],
     "issuer_code": ["codemisor"],
     "issuer_name": ["emisor"],
     "company": ["company", "empresa", "compania"],
     "credit_line": ["lineacredito"],
-    "kam_hunter": ["cod_kam_hunter", "cod_kam_hunter_", "cod_kam_hunter1"],
-    "kam_farmer": ["cod_kam_farmer", "cod_kam_farmer_", "cod_kam_farmer1"],
+    "kam_hunter": [
+        "cod_kam_hunter",
+        "cod_kam_hunter_",
+        "cod_kam_hunter1",
+        "cod_kam_hunter_1",
+        "kam_hunter",
+    ],
+    "kam_farmer": [
+        "cod_kam_farmer",
+        "cod_kam_farmer_",
+        "cod_kam_farmer1",
+        "cod_kam_farmer_1",
+        "kam_farmer",
+    ],
     "advisory_channel": ["asesoriadigital"],
     "application_date": ["fechasolicitado"],
     "utilization_pct": ["porcentaje_utilizado"],
@@ -158,7 +184,7 @@ def render_csv_upload() -> None:
         ):
             st.write(f"**Rows:** {len(raw_df):,} | **Columns:** {len(raw_df.columns)}")
             st.subheader("📊 Data Preview")
-            st.dataframe(raw_df.head(10), width="stretch")
+            st.dataframe(_to_arrow_safe_display_df(raw_df.head(10)), width="stretch")
 
             with st.expander("📋 Column Information"):
                 col_info = pd.DataFrame(
@@ -170,7 +196,7 @@ def render_csv_upload() -> None:
                         "Null %": (raw_df.isna().sum() / len(raw_df) * 100).round(2),
                     }
                 )
-                st.dataframe(col_info, width="stretch")
+                st.dataframe(_to_arrow_safe_display_df(col_info), width="stretch")
 
             st.subheader("✅ Validation Checks")
             _render_validation(prepared_df)
@@ -206,7 +232,7 @@ def render_csv_upload() -> None:
         with col3:
             st.metric("Unique loan_id", int(consolidated["loan_id"].nunique()) if "loan_id" in consolidated.columns else 0)
 
-        st.dataframe(consolidated.head(15), width="stretch")
+        st.dataframe(_to_arrow_safe_display_df(consolidated.head(15)), width="stretch")
         _render_validation(consolidated)
 
         if st.button("🚀 Process Consolidated Dataset", key="process_consolidated", type="primary"):
@@ -245,6 +271,31 @@ def _normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
     return normalized
 
 
+def _to_arrow_safe_display_df(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Convert object columns to nullable strings for Streamlit/Arrow rendering.
+    """
+    safe = df.copy()
+    for col in safe.columns:
+        series = safe[col]
+        if series.dtype == "object":
+            safe[col] = series.map(_stringify_nullable).astype("string")
+    return safe
+
+
+def _stringify_nullable(value: Any) -> Any:
+    if pd.isna(value):
+        return pd.NA
+    if isinstance(value, bytes):
+        for encoding in ("utf-8", "latin-1"):
+            try:
+                return value.decode(encoding)
+            except Exception:
+                continue
+        return repr(value)
+    return str(value)
+
+
 def _alias_matches(columns: list[str], alias: str) -> list[str]:
     """
     Return exact and suffix variations for one alias.
@@ -278,12 +329,18 @@ def _apply_aliases(df: pd.DataFrame) -> pd.DataFrame:
         if len(candidates) == 1:
             normalized[canonical] = normalized[candidates[0]]
             continue
-        merged_series = normalized[candidates[0]]
+        merged_series = normalized[candidates[0]].replace(
+            {"": pd.NA, "nan": pd.NA, "None": pd.NA, "NaN": pd.NA}
+        )
         for col in candidates[1:]:
-            merged_series = merged_series.combine_first(normalized[col])
+            candidate_series = normalized[col].replace(
+                {"": pd.NA, "nan": pd.NA, "None": pd.NA, "NaN": pd.NA}
+            )
+            fill_mask = merged_series.isna() & candidate_series.notna()
+            merged_series = merged_series.where(~fill_mask, candidate_series)
         normalized[canonical] = merged_series
 
-    return normalized
+    return normalized.copy()
 
 
 def _canonicalize_status(value: Any) -> str:
@@ -322,6 +379,10 @@ def _canonicalize_status(value: Any) -> str:
 
 
 def _coerce_numeric(series: pd.Series) -> pd.Series:
+    return _coerce_numeric_nullable(series).fillna(0.0)
+
+
+def _coerce_numeric_nullable(series: pd.Series) -> pd.Series:
     text = series.astype(str).str.strip()
     text = text.replace({"": None, "nan": None, "None": None, "NaN": None})
     cleaned = text.str.replace(r"[^0-9,.\-]", "", regex=True)
@@ -340,7 +401,7 @@ def _coerce_numeric(series: pd.Series) -> pd.Series:
     if other_mask.any():
         cleaned.loc[other_mask] = cleaned.loc[other_mask].str.replace(",", "", regex=False)
 
-    return pd.to_numeric(cleaned, errors="coerce").fillna(0.0)
+    return pd.to_numeric(cleaned, errors="coerce")
 
 
 def _derive_status(df: pd.DataFrame) -> pd.Series:
@@ -357,7 +418,7 @@ def _derive_status(df: pd.DataFrame) -> pd.Series:
 
 def _derive_amount(df: pd.DataFrame) -> pd.Series:
     if "amount" in df.columns:
-        amount = _coerce_numeric(df["amount"])
+        amount = _coerce_numeric_nullable(df["amount"])
     else:
         amount = pd.Series([None] * len(df), index=df.index, dtype=float)
     for fallback_col in [
@@ -373,7 +434,7 @@ def _derive_amount(df: pd.DataFrame) -> pd.Series:
         "monto_total_aprobado",
     ]:
         if fallback_col in df.columns:
-            fallback = _coerce_numeric(df[fallback_col])
+            fallback = _coerce_numeric_nullable(df[fallback_col])
             amount = amount.fillna(fallback)
     return amount.fillna(0.0)
 
@@ -420,28 +481,102 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
                 prepared["application_date"]
             )
 
-    return prepared
+    # If borrower_name is missing, reuse mapped client_name to keep loan↔client association visible.
+    if "borrower_name" not in prepared.columns and "client_name" in prepared.columns:
+        prepared["borrower_name"] = prepared["client_name"]
+    elif "borrower_name" in prepared.columns and "client_name" in prepared.columns:
+        borrower_series = prepared["borrower_name"].replace(
+            {"": pd.NA, "nan": pd.NA, "None": pd.NA, "NaN": pd.NA}
+        )
+        client_series = prepared["client_name"].replace(
+            {"": pd.NA, "nan": pd.NA, "None": pd.NA, "NaN": pd.NA}
+        )
+        fill_mask = borrower_series.isna() & client_series.notna()
+        prepared["borrower_name"] = borrower_series.where(~fill_mask, client_series)
+
+    return prepared.copy()
+
+
+def _collapse_to_loan_level(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Collapse repeated rows per loan_id to avoid many-to-many merge explosions.
+
+    Strategy:
+    - Normalize and keep non-empty loan_id rows.
+    - Build an event ordering using available date columns.
+    - Keep the latest non-null value per column inside each loan_id group.
+    """
+    if "loan_id" not in df.columns:
+        return df
+
+    work = df.copy()
+    work["loan_id"] = work["loan_id"].astype(str).str.strip()
+    work = work[work["loan_id"] != ""].copy()
+    if work.empty:
+        return work
+
+    date_candidates = [
+        "as_of_date",
+        "snapshot_date",
+        "measurement_date",
+        "reporting_date",
+        "last_payment_date",
+        "origination_date",
+        "application_date",
+        "maturity_date",
+    ]
+    present_dates = [col for col in date_candidates if col in work.columns]
+    for col in present_dates:
+        work[col] = pd.to_datetime(work[col], errors="coerce")
+
+    if present_dates:
+        work["_event_date"] = work[present_dates].max(axis=1)
+    else:
+        work["_event_date"] = pd.NaT
+
+    work["_row_order"] = range(len(work))
+    work = work.sort_values(
+        ["loan_id", "_event_date", "_row_order"],
+        ascending=[True, True, True],
+        na_position="last",
+    )
+
+    collapsed = work.groupby("loan_id", as_index=False).last()
+    collapsed = collapsed.drop(columns=["_event_date", "_row_order"], errors="ignore")
+    return collapsed
 
 
 def _merge_prepared_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
     if not frames:
         return pd.DataFrame()
 
-    merged = frames[0].copy()
-    for frame in frames[1:]:
+    normalized_frames: list[pd.DataFrame] = []
+    for frame in frames:
+        prepared = _prepare_dataframe(frame)
+        if "loan_id" in prepared.columns:
+            prepared = _collapse_to_loan_level(prepared)
+        normalized_frames.append(prepared)
+
+    merged = normalized_frames[0].copy()
+    for frame in normalized_frames[1:]:
         if "loan_id" in merged.columns and "loan_id" in frame.columns:
             merged = merged.merge(frame, on="loan_id", how="outer", suffixes=("", "_dup"))
             dup_cols = [col for col in merged.columns if col.endswith("_dup")]
             for dup_col in dup_cols:
                 base_col = dup_col[:-4]
                 if base_col in merged.columns:
-                    merged[base_col] = merged[base_col].combine_first(merged[dup_col])
+                    fill_mask = merged[base_col].isna() & merged[dup_col].notna()
+                    merged[base_col] = merged[base_col].where(~fill_mask, merged[dup_col])
                     merged = merged.drop(columns=[dup_col])
                 else:
                     merged = merged.rename(columns={dup_col: base_col})
         else:
             merged = pd.concat([merged, frame], ignore_index=True, sort=False)
-    return _prepare_dataframe(merged)
+
+    merged = _prepare_dataframe(merged)
+    if "loan_id" in merged.columns:
+        merged = _collapse_to_loan_level(merged)
+    return merged
 
 
 def _duplicate_loan_diagnostics(df: pd.DataFrame) -> tuple[list[str], list[str]]:
@@ -619,7 +754,7 @@ def _run_pipeline(df: pd.DataFrame, filename: str) -> None:
             st.subheader("Calculated KPIs")
             kpi_df = pd.DataFrame([calc_result["kpis"]]).T
             kpi_df.columns = ["Value"]
-            st.dataframe(kpi_df, width="stretch")
+            st.dataframe(_to_arrow_safe_display_df(kpi_df), width="stretch")
 
         st.subheader("📥 Download Results")
         col1, col2, col3 = st.columns(3)
