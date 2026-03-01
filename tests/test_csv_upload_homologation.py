@@ -35,7 +35,7 @@ for _attr in [
 ]:
     setattr(_st_stub, _attr, lambda *a, **k: None)
 
-sys.modules.setdefault("streamlit", _st_stub)
+sys.modules["streamlit"] = _st_stub
 
 from streamlit_app.components.csv_upload import (  # noqa: E402
     _alias_matches,
