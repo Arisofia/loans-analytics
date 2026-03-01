@@ -701,13 +701,25 @@ def _merge_uploaded_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
         if "loan_id" in merged.columns and "loan_id" in frame.columns:
             merged = merged.merge(frame, on="loan_id", how="outer", suffixes=("", "_dup"))
             dup_cols = [col for col in merged.columns if col.endswith("_dup")]
+            updates: dict[str, pd.Series] = {}
+            drop_cols: list[str] = []
+            rename_map: dict[str, str] = {}
             for dup_col in dup_cols:
                 base_col = dup_col[:-4]
                 if base_col in merged.columns:
-                    merged[base_col] = merged[base_col].combine_first(merged[dup_col])
-                    merged = merged.drop(columns=[dup_col])
+                    fill_mask = merged[base_col].isna() & merged[dup_col].notna()
+                    updates[base_col] = merged[base_col].where(~fill_mask, merged[dup_col])
+                    drop_cols.append(dup_col)
                 else:
-                    merged = merged.rename(columns={dup_col: base_col})
+                    rename_map[dup_col] = base_col
+            if updates:
+                merged = merged.assign(**updates)
+            if drop_cols:
+                merged = merged.drop(columns=drop_cols)
+            if rename_map:
+                merged = merged.rename(columns=rename_map)
+            # Defragment after repeated merge/column updates.
+            merged = merged.copy()
         else:
             merged = pd.concat([merged, frame], ignore_index=True, sort=False)
     return merged
@@ -743,7 +755,10 @@ def _get_exposure_series(df: pd.DataFrame) -> pd.Series:
         return pd.Series(0.0, index=df.index, dtype=float)
     exposure = pd.to_numeric(df[candidate_names[0]], errors="coerce")
     for col in candidate_names[1:]:
-        exposure = exposure.combine_first(pd.to_numeric(df[col], errors="coerce"))
+        candidate = pd.to_numeric(df[col], errors="coerce")
+        fill_mask = exposure.isna() & candidate.notna()
+        if fill_mask.any():
+            exposure = exposure.where(~fill_mask, candidate)
     return exposure.fillna(0.0)
 
 
