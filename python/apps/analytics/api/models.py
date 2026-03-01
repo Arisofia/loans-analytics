@@ -68,6 +68,9 @@ class LoanRecord(BaseModel):
     payment_frequency: Optional[str] = Field(None, description="Payment frequency descriptor")
     term_months: Optional[float] = Field(None, description="Loan term in months")
     origination_date: Optional[datetime] = Field(None, description="Loan origination timestamp")
+    application_date: Optional[datetime] = Field(
+        None, description="Loan application timestamp when available"
+    )
     origination_fee: Optional[float] = Field(None, description="Origination fee amount")
     origination_fee_taxes: Optional[float] = Field(None, description="Taxes charged over fees")
     total_scheduled: Optional[float] = Field(None, description="Total scheduled collections amount")
@@ -82,6 +85,18 @@ class LoanRecord(BaseModel):
     )
     tpv: Optional[float] = Field(
         None, description="Total processed value attributed to the loan/borrower"
+    )
+    # Optional segmentation fields from CONTROL DE MORA / DESEMBOLSOS homologation.
+    company: Optional[str] = Field(None, description="Company/portfolio owner segment")
+    credit_line: Optional[str] = Field(None, description="Credit line segment")
+    client_code: Optional[str] = Field(None, description="Client code segment")
+    issuer: Optional[str] = Field(None, description="Issuer segment")
+    issuer_name: Optional[str] = Field(None, description="Issuer display name segment")
+    kam_hunter: Optional[str] = Field(None, description="KAM hunter segment")
+    kam_farmer: Optional[str] = Field(None, description="KAM farmer segment")
+    advisory_channel: Optional[str] = Field(None, description="Advisory/digital channel segment")
+    utilization_pct: Optional[float] = Field(
+        None, description="Utilization percentage for utilization-band segmentation"
     )
 
 
@@ -430,7 +445,11 @@ class SegmentAnalyticsRequest(BaseModel):
     )
     dimension: str = Field(
         "risk_band",
-        description="Segmentation dimension: risk_band, ticket_size_band, payment_frequency, or loan_status",
+        description=(
+            "Segmentation dimension: risk_band, ticket_size_band, payment_frequency, loan_status, "
+            "company, credit_line, client_code, issuer, kam_hunter, kam_farmer, advisory_channel, "
+            "origination_month, application_month, utilization_band"
+        ),
     )
     top_n: int = Field(
         20,

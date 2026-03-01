@@ -639,22 +639,31 @@ class CalculationPhase:
             kpis[kpi_name] = self._calculate_single_kpi(engine, category, kpi_name, formula)
 
         # Derived risk KPIs independent of YAML formulas.
-        if "dpd" in df.columns and "status" in df.columns and "current_balance" in df.columns:
+        balance_col = None
+        for candidate in ["outstanding_balance", "current_balance"]:
+            if candidate in df.columns:
+                balance_col = candidate
+                break
+
+        if "dpd" in df.columns and "status" in df.columns and balance_col is not None:
             # Filter for active/defaulted only
             active_mask = df["status"].isin(["active", "delinquent", "defaulted"])
             active_df = df[active_mask]
-            total_out = Decimal(str(active_df["current_balance"].sum()))
+            total_out = Decimal(str(active_df[balance_col].sum()))
 
             if total_out > 0:
                 npl_mask = (active_df["dpd"] >= 90) | (active_df["status"] == "defaulted")
-                npl_out = Decimal(str(active_df.loc[npl_mask, "current_balance"].sum()))
-                kpis["npl_90_ratio"] = (npl_out / total_out) * 100
+                npl_out = Decimal(str(active_df.loc[npl_mask, balance_col].sum()))
+                npl_ratio = (npl_out / total_out) * 100
+                # Keep YAML and derived NPL metrics aligned for downstream consumers.
+                kpis["npl_ratio"] = npl_ratio
+                kpis["npl_90_ratio"] = npl_ratio
 
                 defaulted_out = Decimal(
                     str(
                         active_df.loc[
                             active_df["status"] == "defaulted",
-                            "current_balance",
+                            balance_col,
                         ].sum()
                     )
                 )
@@ -662,7 +671,7 @@ class CalculationPhase:
 
                 if "borrower_id" in active_df.columns:
                     concentration = (
-                        active_df.groupby("borrower_id")["current_balance"]
+                        active_df.groupby("borrower_id")[balance_col]
                         .sum()
                         .sort_values(ascending=False)
                         .head(10)
@@ -674,6 +683,7 @@ class CalculationPhase:
                 else:
                     kpis["top_10_borrower_concentration"] = Decimal("0.0")
             else:
+                kpis["npl_ratio"] = Decimal("0.0")
                 kpis["npl_90_ratio"] = Decimal("0.0")
                 kpis["defaulted_outstanding_ratio"] = Decimal("0.0")
                 kpis["top_10_borrower_concentration"] = Decimal("0.0")

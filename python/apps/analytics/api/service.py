@@ -2308,6 +2308,15 @@ class KPIService:
         dimension: str,
     ) -> pd.Series:
         normalized = (dimension or "risk_band").strip().lower()
+
+        def series_for(aliases: list[str], default: str = "unknown") -> pd.Series:
+            lower_map = {col.lower(): col for col in df.columns}
+            for alias in aliases:
+                matched = lower_map.get(alias.lower())
+                if matched is not None:
+                    return df[matched].fillna(default).astype(str)
+            return pd.Series([default] * len(df), index=df.index, dtype=object)
+
         if normalized == "risk_band":
             result = pd.Series(["current"] * len(df), index=df.index, dtype=object)
             result = result.mask((dpd > 0) & (dpd <= 30), "dpd_1_30")
@@ -2328,6 +2337,39 @@ class KPIService:
             return df.get("payment_frequency", pd.Series(["unknown"] * len(df))).fillna("unknown")
         if normalized == "loan_status":
             return df.get("loan_status", pd.Series(["unknown"] * len(df))).fillna("unknown")
+        if normalized == "company":
+            return series_for(["company"])
+        if normalized == "credit_line":
+            return series_for(["credit_line", "lineacredito", "linea_credito"])
+        if normalized == "client_code":
+            return series_for(["client_code", "codcliente"])
+        if normalized == "issuer":
+            return series_for(["issuer_name", "issuer"])
+        if normalized == "kam_hunter":
+            return series_for(["kam_hunter", "cod_kam_hunter"])
+        if normalized == "kam_farmer":
+            return series_for(["kam_farmer", "cod_kam_farmer"])
+        if normalized == "advisory_channel":
+            return series_for(["advisory_channel", "asesoriadigital"])
+        if normalized == "origination_month":
+            origination = pd.to_datetime(df.get("origination_date"), errors="coerce")
+            return origination.dt.to_period("M").astype(str).replace("NaT", "unknown")
+        if normalized == "application_month":
+            application = pd.to_datetime(df.get("application_date"), errors="coerce")
+            return application.dt.to_period("M").astype(str).replace("NaT", "unknown")
+        if normalized == "utilization_band":
+            util = pd.to_numeric(
+                df.get("utilization_pct", df.get("porcentaje_utilizado", pd.Series([0] * len(df)))),
+                errors="coerce",
+            )
+            util = util.fillna(0.0)
+            if (util <= 1.0).all():
+                util = util * 100.0
+            return pd.cut(
+                util,
+                bins=[-0.001, 25, 50, 75, 100, float("inf")],
+                labels=["0_25", "25_50", "50_75", "75_100", "100_plus"],
+            ).astype(str)
         return pd.Series(["unknown"] * len(df), index=df.index, dtype=object)
 
     @staticmethod

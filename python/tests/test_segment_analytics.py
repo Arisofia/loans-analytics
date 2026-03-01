@@ -17,6 +17,11 @@ def _segment_loans() -> list[LoanRecord]:
             loan_status="current",
             days_past_due=0,
             payment_frequency="monthly",
+            company="CompanyA",
+            credit_line="SME",
+            kam_hunter="H1",
+            kam_farmer="F1",
+            utilization_pct=0.20,
             total_scheduled=200.0,
             last_payment_amount=190.0,
         ),
@@ -29,6 +34,11 @@ def _segment_loans() -> list[LoanRecord]:
             loan_status="60-89 days past due",
             days_past_due=75,
             payment_frequency="biweekly",
+            company="CompanyA",
+            credit_line="SME",
+            kam_hunter="H2",
+            kam_farmer="F2",
+            utilization_pct=0.55,
             total_scheduled=400.0,
             last_payment_amount=240.0,
         ),
@@ -41,6 +51,11 @@ def _segment_loans() -> list[LoanRecord]:
             loan_status="default",
             days_past_due=120,
             payment_frequency="monthly",
+            company="CompanyB",
+            credit_line="Enterprise",
+            kam_hunter="H2",
+            kam_farmer="F2",
+            utilization_pct=0.92,
             total_scheduled=800.0,
             last_payment_amount=300.0,
         ),
@@ -79,3 +94,36 @@ def test_calculate_segment_analytics_ticket_size():
     assert "ticket_<1k" in segments
     assert "ticket_1k_5k" in segments
     assert "ticket_10k_plus" in segments
+
+
+def test_calculate_segment_analytics_company_dimension():
+    service = KPIService(actor="test_user")
+    response = asyncio.run(
+        service.calculate_segment_analytics(
+            loans=_segment_loans(),
+            dimension="company",
+            top_n=10,
+        )
+    )
+
+    segments = {row.segment for row in response.segments}
+    assert response.summary.dimension == "company"
+    assert "CompanyA" in segments
+    assert "CompanyB" in segments
+
+
+def test_calculate_segment_analytics_utilization_band_dimension():
+    service = KPIService(actor="test_user")
+    response = asyncio.run(
+        service.calculate_segment_analytics(
+            loans=_segment_loans(),
+            dimension="utilization_band",
+            top_n=10,
+        )
+    )
+
+    segments = {row.segment for row in response.segments}
+    assert response.summary.dimension == "utilization_band"
+    assert "0_25" in segments
+    assert "50_75" in segments
+    assert "75_100" in segments

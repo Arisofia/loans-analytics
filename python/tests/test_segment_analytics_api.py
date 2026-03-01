@@ -19,6 +19,11 @@ def _payload() -> dict:
                 "loan_status": "current",
                 "days_past_due": 0,
                 "payment_frequency": "monthly",
+                "company": "CompanyA",
+                "credit_line": "SME",
+                "kam_hunter": "H1",
+                "kam_farmer": "F1",
+                "utilization_pct": 0.20,
                 "total_scheduled": 200.0,
                 "last_payment_amount": 190.0,
             },
@@ -31,6 +36,11 @@ def _payload() -> dict:
                 "loan_status": "60-89 days past due",
                 "days_past_due": 75,
                 "payment_frequency": "biweekly",
+                "company": "CompanyA",
+                "credit_line": "SME",
+                "kam_hunter": "H2",
+                "kam_farmer": "F2",
+                "utilization_pct": 0.55,
                 "total_scheduled": 400.0,
                 "last_payment_amount": 240.0,
             },
@@ -43,6 +53,11 @@ def _payload() -> dict:
                 "loan_status": "default",
                 "days_past_due": 120,
                 "payment_frequency": "monthly",
+                "company": "CompanyB",
+                "credit_line": "Enterprise",
+                "kam_hunter": "H2",
+                "kam_farmer": "F2",
+                "utilization_pct": 0.92,
                 "total_scheduled": 800.0,
                 "last_payment_amount": 300.0,
             },
@@ -72,3 +87,16 @@ def test_segment_analytics_endpoint_supports_ticket_size_dimension():
     assert response.status_code == 200
     body = response.json()
     assert body["summary"]["dimension"] == "ticket_size_band"
+
+
+def test_segment_analytics_endpoint_supports_company_dimension():
+    client = TestClient(app)
+    payload = _payload()
+    payload["dimension"] = "company"
+    response = client.post("/analytics/segments", json=payload)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["summary"]["dimension"] == "company"
+    segments = {row["segment"] for row in body["segments"]}
+    assert "CompanyA" in segments
+    assert "CompanyB" in segments
