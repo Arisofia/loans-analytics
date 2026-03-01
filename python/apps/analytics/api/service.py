@@ -1110,8 +1110,18 @@ class KPIService:
         df = self._convert_loan_records_to_dataframe(loans)
         raw = calculate_all_unit_economics(df, funding_cost_rate, cac, monthly_arpu)
 
+        def _normalize_dpd_bucket_dict(bucket: Dict[str, Any]) -> Dict[str, Any]:
+            """Normalize DPD bucket naming to match other API surfaces (strip 'dpd_' prefix)."""
+            normalized = dict(bucket)
+            for key in ("dpd_bucket", "bucket"):
+                value = normalized.get(key)
+                if isinstance(value, str) and value.startswith("dpd_"):
+                    normalized[key] = value[len("dpd_") :]
+            return normalized
+
         dpd_migration = [
-            DPDBucketWithAction(**bucket) for bucket in raw["dpd_migration"]
+            DPDBucketWithAction(**_normalize_dpd_bucket_dict(bucket))
+            for bucket in raw["dpd_migration"]
         ]
 
         logger.info(
