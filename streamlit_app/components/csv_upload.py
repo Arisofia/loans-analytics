@@ -473,7 +473,7 @@ def _classify_loan_id_duplicates(df: pd.DataFrame) -> list[tuple[str, str]]:
     suspicious_count: int = 0
     generic_count: int = 0
 
-    for loan_id_val, group in dup_df.groupby("_loan_id_str", sort=False):
+    for _, group in dup_df.groupby("_loan_id_str", sort=False):
         if len(group) < 2:
             continue
 
