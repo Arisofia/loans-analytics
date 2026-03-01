@@ -36,7 +36,7 @@ services:
       retries: 3
 
   dashboard:
-    profiles: [ "web" ]
+    profiles: [ "web", "dashboard" ]
     build:
       context: .
       dockerfile: Dockerfile.dashboard
@@ -55,7 +55,28 @@ services:
       retries: 3
     depends_on:
       - api
+
+  agent-scheduler:
+    profiles: [ "dashboard" ]
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAILY_AGENT_INPUT_PATH: ${DAILY_AGENT_INPUT_PATH:-}
+    entrypoint: [ "/bin/sh", "/app/scripts/monitoring/run_agent_scheduler.sh" ]
+    healthcheck:
+      disable: true
+    volumes:
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+      - ./python:/app/python
+    restart: unless-stopped
+    depends_on:
+      - dashboard
+
   n8n:
+    profiles: [ "web" ]
     image: n8nio/n8n:latest
     ports:
       - "5678:5678"
@@ -78,6 +99,90 @@ services:
       - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
+
+  prometheus:
+    profiles: [ "monitoring" ]
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./config/prometheus.generated.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.enable-lifecycle"
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  grafana:
+    profiles: [ "monitoring" ]
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      - GF_SERVER_ROOT_URL=http://localhost:3001
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
+      - SUPABASE_DB_HOST=${SUPABASE_DB_HOST:-}
+      - SUPABASE_DB_PORT=${SUPABASE_DB_PORT:-5432}
+      - SUPABASE_DB_NAME=${SUPABASE_DB_NAME:-postgres}
+      - SUPABASE_DB_USER=${SUPABASE_DB_USER:-}
+      - SUPABASE_DB_PASSWORD=${SUPABASE_DB_PASSWORD:-}
+      - AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID:-}
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  alertmanager:
+    profiles: [ "monitoring" ]
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./config/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    environment:
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com:587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - ALERT_EMAIL_FROM=${ALERT_EMAIL_FROM}
+      - CRITICAL_EMAIL_TO=${CRITICAL_EMAIL_TO}
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    restart: unless-stopped
+    networks:
+      - monitoring
+
 volumes:
   db-data:
   n8n-data:
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  alertmanager-data:
+    driver: local
+
+networks:
+  monitoring:
+    driver: bridge
