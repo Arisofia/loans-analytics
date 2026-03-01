@@ -6,6 +6,7 @@ import sys
 import types
 
 import pandas as pd
+import pytest
 
 # ---------------------------------------------------------------------------
 # Stub out streamlit so csv_upload can be imported without a running session
@@ -58,15 +59,15 @@ class TestCoerceNumeric:
     def test_dollar_sign_and_thousands(self):
         s = pd.Series(["$50,000", "$1,234.56", "10000", ""])
         out = _coerce_numeric(s)
-        assert out.iloc[0] == 50000.0
-        assert out.iloc[1] == 1234.56
-        assert out.iloc[2] == 10000.0
-        assert out.iloc[3] == 0.0
+        assert out.iloc[0] == pytest.approx(50000.0)
+        assert out.iloc[1] == pytest.approx(1234.56)
+        assert out.iloc[2] == pytest.approx(10000.0)
+        assert out.iloc[3] == pytest.approx(0.0)
 
     def test_plain_integers(self):
         s = pd.Series(["100", "200", "300"])
         out = _coerce_numeric(s)
-        assert list(out) == [100.0, 200.0, 300.0]
+        assert list(out) == pytest.approx([100.0, 200.0, 300.0])
 
     def test_decimal_comma_locale(self):
         # European-style locale: comma as decimal separator for plain numbers,
@@ -75,12 +76,12 @@ class TestCoerceNumeric:
         # "1234". Mixed "1.234,56"-style patterns are not normalised here.
         s = pd.Series(["1234,56"])
         out = _coerce_numeric(s)
-        assert out.iloc[0] == 1234.56
+        assert out.iloc[0] == pytest.approx(1234.56)
 
     def test_nan_and_none(self):
         s = pd.Series([None, "nan", "NaN", "None"])
         out = _coerce_numeric(s)
-        assert (out == 0.0).all()
+        assert list(out) == pytest.approx([0.0, 0.0, 0.0, 0.0])
 
 
 # ---------------------------------------------------------------------------
@@ -151,7 +152,7 @@ class TestApplyAliases:
         raw = pd.DataFrame({"numero_desembolso": ["D001"], "monto_del_desembolso": ["$50,000"]})
         prepared = _prepare_dataframe(raw)
         assert "amount" in prepared.columns
-        assert prepared["amount"].iloc[0] == 50000.0
+        assert prepared["amount"].iloc[0] == pytest.approx(50000.0)
 
     def test_codcliente_suffix_variants_coalesced(self):
         """When CSV has both CodCliente_ and CodCliente_2, they should be merged."""
@@ -451,8 +452,8 @@ class TestPortfolioDashboardDesembolsos:
         aliased = self._normalize_and_alias(raw)
         prepared = _dash_mod.prepare_uploaded_data(aliased)
         assert "principal_amount" in prepared.columns
-        assert prepared["principal_amount"].iloc[0] == 50000.0
-        assert prepared["principal_amount"].iloc[1] == 30000.0
+        assert prepared["principal_amount"].iloc[0] == pytest.approx(50000.0)
+        assert prepared["principal_amount"].iloc[1] == pytest.approx(30000.0)
 
     def test_dias_mora_mapped_to_days_past_due(self):
         raw = pd.DataFrame(
