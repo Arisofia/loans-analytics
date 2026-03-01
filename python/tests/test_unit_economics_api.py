@@ -214,8 +214,9 @@ class TestUnitEconomicsEndpoint:
         payload = {"loans": _mixed_portfolio()}
         body = client.post("/analytics/unit-economics", json=payload).json()
 
-        # generated_at should be parseable as an ISO datetime
-        dt = datetime.fromisoformat(body["generated_at"])
+        # generated_at should be parseable as an ISO datetime; handle 'Z' suffix for Python < 3.11
+        raw_ts = body["generated_at"].replace("Z", "+00:00")
+        dt = datetime.fromisoformat(raw_ts)
         assert isinstance(dt, datetime)
 
 
