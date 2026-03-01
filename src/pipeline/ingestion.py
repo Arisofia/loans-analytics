@@ -73,7 +73,15 @@ class IngestionPhase:
             # Store raw data
             if run_dir:
                 output_path = run_dir / "raw_data.parquet"
-                df.to_parquet(output_path, index=False)
+                try:
+                    df.to_parquet(output_path, index=False)
+                except Exception as parquet_error:
+                    logger.warning(
+                        "Parquet write failed on raw frame; applying Arrow-safe coercion. Error: %s",
+                        parquet_error,
+                    )
+                    df = self._make_arrow_safe(df)
+                    df.to_parquet(output_path, index=False)
                 logger.info("Saved raw data to %s", output_path)
             else:
                 output_path = None
@@ -108,7 +116,7 @@ class IngestionPhase:
         logger.info("Loading data from file: %s", file_path)
 
         if file_path.suffix.lower() == ".csv":
-            df = pd.read_csv(file_path)
+            df = pd.read_csv(file_path, low_memory=False)
         elif file_path.suffix.lower() in [".parquet", ".pq"]:
             df = pd.read_parquet(file_path)
         else:
@@ -116,6 +124,33 @@ class IngestionPhase:
 
         logger.info("Loaded %d rows from %s", len(df), file_path.name)
         return df
+
+    def _make_arrow_safe(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Coerce object columns to nullable strings so PyArrow can serialize mixed-type columns.
+        """
+        safe = df.copy()
+        safe.columns = [str(col) for col in safe.columns]
+
+        for col in safe.columns:
+            series = safe[col]
+            if series.dtype == "object":
+                safe[col] = series.map(self._to_nullable_string).astype("string")
+
+        return safe
+
+    @staticmethod
+    def _to_nullable_string(value: Any) -> Any:
+        if pd.isna(value):
+            return pd.NA
+        if isinstance(value, bytes):
+            for encoding in ("utf-8", "latin-1"):
+                try:
+                    return value.decode(encoding)
+                except Exception:
+                    continue
+            return repr(value)
+        return str(value)
 
     def _load_from_api(self) -> pd.DataFrame:
         """No-op API loader kept for backward compatibility; always fails closed."""

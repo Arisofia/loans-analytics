@@ -332,23 +332,27 @@ class TestClassifyLoanIdDuplicates:
 class TestValidateForPipeline:
     def test_valid_frame_returns_true(self):
         df = pd.DataFrame({"loan_id": ["A"], "amount": [100.0], "status": ["active"]})
-        valid, missing, issues = _validate_for_pipeline(df)
+        valid, missing, issues, notices = _validate_for_pipeline(df)
         assert valid is True
         assert missing == []
         assert issues == []
+        assert notices == []
 
     def test_missing_required_columns(self):
         df = pd.DataFrame({"loan_id": ["A"]})
-        valid, missing, issues = _validate_for_pipeline(df)
+        valid, missing, issues, notices = _validate_for_pipeline(df)
         assert valid is False
         assert "amount" in missing
         assert "status" in missing
+        assert isinstance(issues, list)
+        assert isinstance(notices, list)
 
     def test_all_zeros_amount_reported(self):
         df = pd.DataFrame({"loan_id": ["A"], "amount": [0.0], "status": ["active"]})
-        valid, missing, issues = _validate_for_pipeline(df)
+        valid, missing, issues, notices = _validate_for_pipeline(df)
         assert valid is True
         assert any("zero" in i.lower() for i in issues)
+        assert isinstance(notices, list)
 
 
 # ---------------------------------------------------------------------------

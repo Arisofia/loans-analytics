@@ -228,6 +228,25 @@ class TestBusinessRules:
         # 100000 should be "large" (>= 100000 and < 500000)
         assert df[df["loan_id"] == "L005"]["amount_tier"].values[0] == "large"
 
+    def test_non_negative_balance_enforcement(self, default_config):
+        """Negative current/outstanding balances should be clipped to zero."""
+        df = pd.DataFrame(
+            {
+                "loan_id": ["L001", "L002"],
+                "amount": [10000, 12000],
+                "status": ["active", "delinquent"],
+                "dpd": [0, 35],
+                "outstanding_balance": [1000.0, -25.0],
+                "current_balance": [500.0, -10.0],
+            }
+        )
+        transformer = TransformationPhase(default_config)
+        out, metrics = transformer._apply_business_rules(df)
+
+        assert (out["outstanding_balance"] >= 0).all()
+        assert (out["current_balance"] >= 0).all()
+        assert "non_negative_balance_enforcement" in metrics["rule_names"]
+
 
 class TestCustomRules:
     """Test custom business rule application."""

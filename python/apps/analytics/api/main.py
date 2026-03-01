@@ -977,6 +977,39 @@ if app is not None:
 
         return _risk_model_cache.get("model"), _risk_model_cache.get("model_version", "unknown")
 
+    def _map_default_request_to_model_features(request: DefaultPredictionRequest) -> dict[str, float]:
+        """
+        Adapt API request fields to the feature schema expected by DefaultRiskModel.
+        """
+        loan_amount = float(request.loan_amount)
+
+        # API requests send percentage-like interest rates (e.g., 12.5), model expects decimal.
+        rate = float(request.interest_rate)
+        if rate > 1.0:
+            rate = rate / 100.0
+
+        ltv_ratio = max(0.0, float(request.ltv_ratio))
+        collateral_value = loan_amount
+        if ltv_ratio > 0:
+            collateral_value = loan_amount / max(ltv_ratio / 100.0, 1e-9)
+
+        # Conservative scheduled proxy keeps payment_ratio in a bounded range.
+        scheduled_proxy = loan_amount * (1.0 + (rate * max(float(request.term_months), 0.0) / 12.0))
+
+        return {
+            "principal_amount": loan_amount,
+            "interest_rate": rate,
+            "term_months": float(request.term_months),
+            "collateral_value": float(collateral_value),
+            "outstanding_balance": loan_amount,
+            "tpv": loan_amount,
+            "equifax_score": float(request.credit_score),
+            "last_payment_amount": 0.0,
+            "total_scheduled": max(float(scheduled_proxy), 0.0),
+            "origination_fee": 0.0,
+            "days_past_due": float(request.days_past_due),
+        }
+
     @app.post("/predict/default", response_model=DefaultPredictionResponse)
     async def predict_default(request: DefaultPredictionRequest = Body(...)):
         """Predict default probability for a loan using configured backend."""
@@ -991,7 +1024,7 @@ if app is not None:
             )
 
         try:
-            loan_data = request.model_dump()
+            loan_data = _map_default_request_to_model_features(request)
             probability = model.predict_proba(loan_data)
 
             if probability >= 0.7:
