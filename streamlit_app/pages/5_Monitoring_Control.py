@@ -56,19 +56,18 @@ else:
 MONITORING_EVENTS_ENDPOINT = "/monitoring/events"
 MONITORING_EVENTS_ACK_ENDPOINT = "/monitoring/events/ack"
 MONITORING_COMMANDS_ENDPOINT = "/monitoring/commands"
-ALLOWED_ENDPOINTS = {
-    MONITORING_EVENTS_ENDPOINT,
-    MONITORING_EVENTS_ACK_ENDPOINT,
-    MONITORING_COMMANDS_ENDPOINT,
-}
+ACTION_GET_EVENTS = "get_events"
+ACTION_ACK_EVENT = "ack_event"
+ACTION_CREATE_COMMAND = "create_command"
+ACTION_GET_COMMANDS = "get_commands"
 
 
-def _build_api_url(endpoint: str) -> str | None:
-    """Build request URL from a fixed endpoint allowlist.
+def _build_api_request(action: str) -> tuple[str, str] | None:
+    """Build a request (method, URL) from a fixed action allowlist.
 
     This function implements strict SSRF protection by:
     1. Using a sanitized base URL from an environment variable.
-    2. Mapping input strings to hardcoded constant literals to break the taint chain.
+    2. Mapping action keys to hardcoded method/path literals.
     3. Verifying that the final constructed URL matches the expected host and scheme.
     """
     base = API_BASE_SAFE
@@ -76,20 +75,25 @@ def _build_api_url(endpoint: str) -> str | None:
         st.error("API is not configured or is untrusted. Aborting request.")
         return None
 
-    # Strictly map input strings to hardcoded constants to break taint for CodeQL.
-    # We do NOT use the 'endpoint' variable directly in URL construction.
-    if endpoint == MONITORING_EVENTS_ENDPOINT:
+    # Strict action-to-route mapping (no free-form path from callers).
+    if action == ACTION_GET_EVENTS:
+        method = "GET"
         path = MONITORING_EVENTS_ENDPOINT
-    elif endpoint == MONITORING_EVENTS_ACK_ENDPOINT:
+    elif action == ACTION_ACK_EVENT:
+        method = "POST"
         path = MONITORING_EVENTS_ACK_ENDPOINT
-    elif endpoint == MONITORING_COMMANDS_ENDPOINT:
+    elif action == ACTION_CREATE_COMMAND:
+        method = "POST"
+        path = MONITORING_COMMANDS_ENDPOINT
+    elif action == ACTION_GET_COMMANDS:
+        method = "GET"
         path = MONITORING_COMMANDS_ENDPOINT
     else:
-        st.error(f"Blocked: endpoint '{endpoint}' is not in the allowed list.")
+        st.error(f"Blocked: unsupported monitoring action '{action}'.")
         return None
 
     normalized_base = base.rstrip("/")
-    # Construct URL using the verified literal 'path'
+    # Construct URL using verified literal path mapped from action.
     url = f"{normalized_base}{path}"
 
     # Final host/scheme validation to prevent manipulation
@@ -99,19 +103,19 @@ def _build_api_url(endpoint: str) -> str | None:
         st.error("SSRF Protection: URL host or scheme mismatch.")
         return None
 
-    return url
+    return method, url
 
 
 def _request_json(
-    method: str,
-    endpoint: str,
+    action: str,
     *,
     params: dict | None = None,
     json_body: dict | None = None,
 ):
-    url = _build_api_url(endpoint)
-    if url is None:
+    request_spec = _build_api_request(action)
+    if request_spec is None:
         return None
+    method, url = request_spec
     try:
         resp = requests.request(method, url, params=params, json=json_body, timeout=5)
         resp.raise_for_status()
@@ -122,23 +126,22 @@ def _request_json(
 
 
 def _api_get_events(params: dict | None = None):
-    return _request_json("GET", MONITORING_EVENTS_ENDPOINT, params=params)
+    return _request_json(ACTION_GET_EVENTS, params=params)
 
 
 def _api_ack_event(event_id: str):
     return _request_json(
-        "POST",
-        MONITORING_EVENTS_ACK_ENDPOINT,
+        ACTION_ACK_EVENT,
         json_body={"event_id": event_id},
     )
 
 
 def _api_create_command(json_body: dict | None = None):
-    return _request_json("POST", MONITORING_COMMANDS_ENDPOINT, json_body=json_body)
+    return _request_json(ACTION_CREATE_COMMAND, json_body=json_body)
 
 
 def _api_get_commands(params: dict | None = None):
-    return _request_json("GET", MONITORING_COMMANDS_ENDPOINT, params=params)
+    return _request_json(ACTION_GET_COMMANDS, params=params)
 
 
 # ---------------------------------------------------------------------------
