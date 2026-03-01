@@ -6,7 +6,6 @@ import sys
 import types
 
 import pandas as pd
-import pytest
 
 # ---------------------------------------------------------------------------
 # Stub out streamlit so csv_upload can be imported without a running session
