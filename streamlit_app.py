@@ -86,6 +86,8 @@ REQUIRED_RUN_KPIS = [
     "total_loans_count",
 ]
 
+MISSING_TEXT_MARKERS = {"", "nan", "none", "null", "n/a", "missing", "unknown"}
+
 
 def _run_type(run_id: str) -> str:
     run_id_l = run_id.lower()
@@ -131,6 +133,11 @@ def _resolve_series_by_aliases(df: pd.DataFrame, aliases: list[str]) -> pd.Serie
         if matched is not None:
             return df[matched]
     return None
+
+
+def _is_semantically_present(series: pd.Series) -> pd.Series:
+    text = series.astype(str).str.strip().str.lower()
+    return (~series.isna()) & (~text.isin(MISSING_TEXT_MARKERS))
 
 
 def _extract_run_timestamp(run_dir: Path, pipeline_results: dict[str, Any]) -> "pd.Timestamp":
@@ -269,9 +276,7 @@ def _classify_run(
             missing_fields.append(field)
             continue
 
-        text_non_empty = (
-            (~series.isna()) & (series.astype(str).str.strip() != "") & (series.astype(str) != "nan")
-        ).sum()
+        text_non_empty = _is_semantically_present(series).sum()
         if text_non_empty == 0:
             empty_fields.append(field)
             continue
@@ -307,7 +312,7 @@ def _field_non_empty_count(run_df: pd.DataFrame | None, canonical_field: str) ->
     series = _resolve_series_by_aliases(run_df, aliases)
     if series is None:
         return None
-    return int(((~series.isna()) & (series.astype(str).str.strip() != "")).sum())
+    return int(_is_semantically_present(series).sum())
 
 
 @st.cache_data(show_spinner=False)

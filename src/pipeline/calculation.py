@@ -311,6 +311,24 @@ class KPIFormulaEngine:
     def _build_where_mask(self, condition: str) -> pd.Series:
         """Build a boolean mask from a limited SQL-like WHERE clause."""
         try:
+            condition = re.sub(r"\s+", " ", self._strip_outer_parentheses(condition).strip())
+            if not condition:
+                return self._false_mask()
+
+            or_parts = self._split_logical_condition(condition, "OR")
+            if len(or_parts) > 1:
+                mask = self._false_mask()
+                for part in or_parts:
+                    mask = mask | self._build_where_mask(part)
+                return mask.fillna(False).astype(bool)
+
+            and_parts = self._split_logical_condition(condition, "AND")
+            if len(and_parts) > 1:
+                mask = self._true_mask()
+                for part in and_parts:
+                    mask = mask & self._build_where_mask(part)
+                return mask.fillna(False).astype(bool)
+
             in_mask = self._parse_in_condition(condition)
             if in_mask is not None:
                 return in_mask
@@ -325,7 +343,63 @@ class KPIFormulaEngine:
         except Exception as exc:
             logger.debug("WHERE clause failed: %s - %s", condition, str(exc))
 
-        return self._true_mask()
+        # Fail closed for malformed/unsupported predicates.
+        return self._false_mask()
+
+    @staticmethod
+    def _strip_outer_parentheses(condition: str) -> str:
+        """Strip redundant outer parentheses from a condition string."""
+        trimmed = condition.strip()
+        while trimmed.startswith("(") and trimmed.endswith(")"):
+            depth = 0
+            balanced = True
+            for idx, ch in enumerate(trimmed):
+                if ch == "(":
+                    depth += 1
+                elif ch == ")":
+                    depth -= 1
+                if depth == 0 and idx < len(trimmed) - 1:
+                    balanced = False
+                    break
+            if not balanced or depth != 0:
+                break
+            trimmed = trimmed[1:-1].strip()
+        return trimmed
+
+    @staticmethod
+    def _split_logical_condition(condition: str, operator: str) -> List[str]:
+        """Split a condition by logical operator at top-level depth."""
+        token = f" {operator.upper()} "
+        normalized = condition
+        upper = normalized.upper()
+        parts: List[str] = []
+        depth = 0
+        start = 0
+        i = 0
+
+        while i < len(normalized):
+            ch = normalized[i]
+            if ch == "(":
+                depth += 1
+                i += 1
+                continue
+            if ch == ")" and depth > 0:
+                depth -= 1
+                i += 1
+                continue
+            if depth == 0 and upper.startswith(token, i):
+                part = normalized[start:i].strip()
+                if part:
+                    parts.append(part)
+                i += len(token)
+                start = i
+                continue
+            i += 1
+
+        tail = normalized[start:].strip()
+        if tail:
+            parts.append(tail)
+        return parts
 
     def _parse_in_condition(self, condition: str) -> Optional[pd.Series]:
         """Parse and evaluate an IN condition."""
@@ -357,7 +431,7 @@ class KPIFormulaEngine:
         if operator in {">=", "<=", ">", "<"}:
             numeric_value = self._parse_numeric_literal(raw_value)
             if numeric_value is None:
-                return self._true_mask()
+                return self._false_mask()
             return self._compare_numeric(column, operator, numeric_value)
 
         return self._compare_string(column, operator, raw_value.strip("'\""))
@@ -709,7 +783,7 @@ class CalculationPhase:
     def _prepare_time_series_dataframe(df: pd.DataFrame, date_col: str) -> pd.DataFrame:
         """Create clean dataframe with a parsed non-null date column."""
         df_ts = df.copy()
-        df_ts[date_col] = pd.to_datetime(df_ts[date_col], errors="coerce")
+        df_ts[date_col] = pd.to_datetime(df_ts[date_col], errors="coerce", format="mixed")
         return df_ts.dropna(subset=[date_col])
 
     @staticmethod

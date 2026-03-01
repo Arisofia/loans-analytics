@@ -98,3 +98,41 @@ def test_dpd_bucket_formulas_support_range_logic_via_aggregation_deltas():
     assert engine.calculate(f_31_60) == pytest.approx(30.0)
     assert engine.calculate(f_61_90) == pytest.approx(0.0)
     assert engine.calculate(f_90_plus) == pytest.approx(40.0)
+
+
+def test_where_clause_supports_or_conditions_for_npl_ratio_style_formulas():
+    """OR predicates in WHERE clauses must not fail open to 100% numerator coverage."""
+    df = pd.DataFrame(
+        {
+            "dpd": [10, 95, 0],
+            "status": ["active", "delinquent", "defaulted"],
+            "outstanding_balance": [100.0, 200.0, 300.0],
+        }
+    )
+    engine = KPIFormulaEngine(df)
+    formula = (
+        "SUM(outstanding_balance WHERE dpd > 90 OR status = 'defaulted') "
+        "/ SUM(outstanding_balance) * 100"
+    )
+
+    # Numerator = 200 (dpd>90) + 300 (defaulted), denominator = 600.
+    assert float(engine.calculate(formula)) == pytest.approx(83.3333333333)
+
+
+def test_where_clause_supports_and_conditions():
+    """AND predicates should be evaluated as intersection of simple filters."""
+    df = pd.DataFrame(
+        {
+            "dpd": [10, 95, 0],
+            "status": ["active", "delinquent", "defaulted"],
+            "outstanding_balance": [100.0, 200.0, 300.0],
+        }
+    )
+    engine = KPIFormulaEngine(df)
+    formula = (
+        "SUM(outstanding_balance WHERE dpd > 30 AND status != 'defaulted') "
+        "/ SUM(outstanding_balance) * 100"
+    )
+
+    # Only second row matches both predicates.
+    assert float(engine.calculate(formula)) == pytest.approx(33.3333333333)

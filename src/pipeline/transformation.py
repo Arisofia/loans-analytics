@@ -834,6 +834,7 @@ class TransformationPhase:
     ) -> Tuple[pd.DataFrame, Dict[str, int], int]:
         """Detect and flag outliers in specified columns."""
         outlier_counts: Dict[str, int] = {}
+        outlier_flags: Dict[str, pd.Series] = {}
         any_outlier_mask = pd.Series(False, index=df.index, dtype=bool)
 
         for col in check_cols:
@@ -844,24 +845,17 @@ class TransformationPhase:
             )
             outlier_count = outliers.sum()
             if outlier_count > 0:
-                self._record_outlier_flag(df, col, outliers, outlier_counts)
-                any_outlier_mask = any_outlier_mask | outliers.fillna(False).astype(bool)
+                outlier_counts[col] = int(outlier_count)
+                outlier_flags[f"{col}_outlier"] = outliers.fillna(False).astype(bool)
+                any_outlier_mask = any_outlier_mask | outlier_flags[f"{col}_outlier"]
+                logger.info("Found %d outliers in column '%s'", int(outlier_count), col)
+
+        if outlier_flags:
+            # Add all outlier flag columns in one shot to avoid DataFrame fragmentation.
+            flags_df = pd.DataFrame(outlier_flags, index=df.index)
+            df = pd.concat([df, flags_df], axis=1)
 
         return df, outlier_counts, int(any_outlier_mask.sum())
-
-    def _record_outlier_flag(
-        self,
-        df: pd.DataFrame,
-        col: str,
-        outliers: pd.Series,
-        outlier_counts: Dict[str, int],
-    ) -> None:
-        """Record outlier flag for a column."""
-        outlier_count = int(outliers.sum())
-        outlier_flag_col = f"{col}_outlier"
-        df[outlier_flag_col] = outliers
-        outlier_counts[col] = outlier_count
-        logger.info("Found %d outliers in column '%s'", outlier_count, col)
 
     def _create_outlier_metrics(
         self,

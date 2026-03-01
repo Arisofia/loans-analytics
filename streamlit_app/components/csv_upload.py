@@ -88,8 +88,52 @@ ALIAS_MAP: dict[str, list[str]] = {
         "importe",
         "capital",
     ],
+    "outstanding_balance": [
+        "outstanding_balance",
+        "current_balance",
+        "principal_balance",
+        "totalsaldovigente",
+        "saldo_vigente",
+        "saldo_pendiente",
+        "capital_pendiente",
+        "saldo",
+        "saldo_capital",
+    ],
+    "current_balance": [
+        "current_balance",
+        "outstanding_balance",
+        "principal_balance",
+        "totalsaldovigente",
+        "saldo_vigente",
+        "saldo_pendiente",
+        "capital_pendiente",
+        "saldo",
+        "saldo_capital",
+    ],
+    "principal_amount": [
+        "principal_amount",
+        "loan_amount",
+        "monto_del_desembolso",
+        "monto_financiado_real_por_desembolso",
+        "monto_total_aprobado_por_desembolso",
+        "monto_financiado_real",
+        "monto_total_aprobado",
+        "montodesembolsado",
+        "amount",
+    ],
     "status": ["loan_status", "current_status", "estado", "estado_actual"],
-    "days_past_due": ["dpd", "dias_mora", "dias_de_mora"],
+    "days_past_due": [
+        "dpd",
+        "dias_mora",
+        "dias_de_mora",
+        "dias_en_mora",
+        "dias_vencido",
+        "mora_en_dias",
+        "diias_mora_m",
+        "dias_mora_m",
+        "dias_atraso",
+        "days_overdue",
+    ],
     "origination_date": [
         "disbursement_date",
         "fecha_desembolso",
@@ -102,6 +146,7 @@ ALIAS_MAP: dict[str, list[str]] = {
         "apr",
         "rate",
         "tasa",
+        "tasainteres",
         "tasa_interes",
         "tasa_de_interes",
         "tasa_anual",
@@ -329,18 +374,21 @@ def _apply_aliases(df: pd.DataFrame) -> pd.DataFrame:
         if len(candidates) == 1:
             normalized[canonical] = normalized[candidates[0]]
             continue
-        merged_series = normalized[candidates[0]].replace(
-            {"": pd.NA, "nan": pd.NA, "None": pd.NA, "NaN": pd.NA}
-        )
+        merged_series = _nullify_missing_entries(normalized[candidates[0]])
         for col in candidates[1:]:
-            candidate_series = normalized[col].replace(
-                {"": pd.NA, "nan": pd.NA, "None": pd.NA, "NaN": pd.NA}
-            )
+            candidate_series = _nullify_missing_entries(normalized[col])
             fill_mask = merged_series.isna() & candidate_series.notna()
             merged_series = merged_series.where(~fill_mask, candidate_series)
         normalized[canonical] = merged_series
 
     return normalized.copy()
+
+
+def _nullify_missing_entries(series: pd.Series) -> pd.Series:
+    """Normalize textual missing markers to <NA> without dtype downcast warnings."""
+    text = series.astype(str).str.strip().str.lower()
+    missing_mask = series.isna() | text.isin({"", "nan", "none", "null"})
+    return series.where(~missing_mask, pd.NA)
 
 
 def _canonicalize_status(value: Any) -> str:
@@ -405,26 +453,45 @@ def _coerce_numeric_nullable(series: pd.Series) -> pd.Series:
 
 
 def _derive_status(df: pd.DataFrame) -> pd.Series:
+    dpd_col = "days_past_due" if "days_past_due" in df.columns else "dpd" if "dpd" in df.columns else None
+    dpd = _coerce_numeric(df[dpd_col]) if dpd_col else None
+
     if "status" in df.columns:
-        return df["status"].apply(_canonicalize_status)
-    if "days_past_due" in df.columns:
-        dpd = _coerce_numeric(df["days_past_due"])
+        status = df["status"].apply(_canonicalize_status).astype(object)
+        if dpd is not None:
+            delinquent_mask = (dpd > 0) & (dpd < 90)
+            defaulted_mask = dpd >= 90
+
+            # DPD-based overrides when status is generic/unknown.
+            status = status.mask(status.isin(["active", "unknown"]) & delinquent_mask, "delinquent")
+            status = status.mask(status.isin(["active", "unknown"]) & defaulted_mask, "defaulted")
+            status = status.mask(status == "unknown", "active")
+        return status
+
+    if dpd is not None:
         status = pd.Series(["active"] * len(df), index=df.index, dtype=object)
         status = status.mask((dpd > 0) & (dpd < 90), "delinquent")
         status = status.mask(dpd >= 90, "defaulted")
         return status
+
     return pd.Series(["active"] * len(df), index=df.index, dtype=object)
 
 
 def _derive_amount(df: pd.DataFrame) -> pd.Series:
+    amount_sources: list[pd.Series] = []
     if "amount" in df.columns:
-        amount = _coerce_numeric_nullable(df["amount"])
-    else:
-        amount = pd.Series([None] * len(df), index=df.index, dtype=float)
+        amount_sources.append(_coerce_numeric_nullable(df["amount"]).rename("amount"))
+
     for fallback_col in [
         "outstanding_balance",
         "current_balance",
         "principal_balance",
+        "totalsaldovigente",
+        "saldo_vigente",
+        "saldo_pendiente",
+        "capital_pendiente",
+        "saldo",
+        "saldo_capital",
         "principal_amount",
         "loan_amount",
         "monto_del_desembolso",
@@ -432,11 +499,16 @@ def _derive_amount(df: pd.DataFrame) -> pd.Series:
         "monto_total_aprobado_por_desembolso",
         "monto_financiado_real",
         "monto_total_aprobado",
+        "montodesembolsado",
     ]:
         if fallback_col in df.columns:
-            fallback = _coerce_numeric_nullable(df[fallback_col])
-            amount = amount.fillna(fallback)
-    return amount.fillna(0.0)
+            amount_sources.append(_coerce_numeric_nullable(df[fallback_col]).rename(fallback_col))
+
+    if not amount_sources:
+        return pd.Series(0.0, index=df.index, dtype=float)
+
+    amount_df = pd.concat(amount_sources, axis=1)
+    return amount_df.bfill(axis=1).iloc[:, 0].fillna(0.0)
 
 
 def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
@@ -450,6 +522,56 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
     prepared["amount"] = _derive_amount(prepared)
     prepared["status"] = _derive_status(prepared)
 
+    # Derive canonical balance/amount fields expected by KPI formulas.
+    balance_sources: list[pd.Series] = []
+    for source_col in [
+        "totalsaldovigente",
+        "saldo_vigente",
+        "saldo_pendiente",
+        "capital_pendiente",
+        "saldo",
+        "saldo_capital",
+        "outstanding_balance",
+        "current_balance",
+        "amount",
+    ]:
+        if source_col in prepared.columns:
+            balance_sources.append(_coerce_numeric_nullable(prepared[source_col]).rename(source_col))
+
+    principal_sources: list[pd.Series] = []
+    for source_col in [
+        "principal_amount",
+        "loan_amount",
+        "monto_del_desembolso",
+        "monto_financiado_real_por_desembolso",
+        "monto_total_aprobado_por_desembolso",
+        "monto_financiado_real",
+        "monto_total_aprobado",
+        "montodesembolsado",
+        "amount",
+    ]:
+        if source_col in prepared.columns:
+            principal_sources.append(_coerce_numeric_nullable(prepared[source_col]).rename(source_col))
+
+    if balance_sources:
+        balance_series = pd.concat(balance_sources, axis=1).bfill(axis=1).iloc[:, 0]
+    else:
+        balance_series = pd.Series(0.0, index=prepared.index, dtype=float)
+
+    if principal_sources:
+        principal_series = pd.concat(principal_sources, axis=1).bfill(axis=1).iloc[:, 0]
+    else:
+        principal_series = prepared["amount"]
+
+    prepared["outstanding_balance"] = _coerce_numeric(balance_series)
+    prepared["current_balance"] = _coerce_numeric(balance_series)
+    prepared["principal_amount"] = _coerce_numeric(principal_series)
+    prepared["amount"] = _coerce_numeric(prepared["amount"])
+
+    # Provide generic 'balance' alias used by some KPI formulas.
+    if "balance" not in prepared.columns:
+        prepared["balance"] = prepared["outstanding_balance"]
+
     for numeric_col in [
         "days_past_due",
         "interest_rate",
@@ -459,6 +581,7 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
         "current_balance",
         "outstanding_balance",
         "principal_amount",
+        "balance",
     ]:
         if numeric_col in prepared.columns:
             prepared[numeric_col] = _coerce_numeric(prepared[numeric_col])
@@ -477,8 +600,8 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
     if "application_date" in prepared.columns:
         prepared["application_date"] = pd.to_datetime(prepared["application_date"], errors="coerce")
         if "origination_date" in prepared.columns:
-            prepared["origination_date"] = prepared["origination_date"].fillna(
-                prepared["application_date"]
+            prepared["origination_date"] = prepared["origination_date"].where(
+                prepared["origination_date"].notna(), prepared["application_date"]
             )
 
     # If borrower_name is missing, reuse mapped client_name to keep loan↔client association visible.
@@ -572,6 +695,8 @@ def _merge_prepared_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
                     merged = merged.rename(columns={dup_col: base_col})
         else:
             merged = pd.concat([merged, frame], ignore_index=True, sort=False)
+        # Defragment after repeated merge/column operations.
+        merged = merged.copy()
 
     merged = _prepare_dataframe(merged)
     if "loan_id" in merged.columns:
