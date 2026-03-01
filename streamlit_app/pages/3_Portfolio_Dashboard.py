@@ -826,7 +826,7 @@ def prepare_uploaded_data(df: pd.DataFrame) -> pd.DataFrame:
     prepared = prepared[prepared["loan_id"] != ""].copy()
 
     # Use _coerce_amount (alias for csv_upload._coerce_numeric) which correctly handles
-    # currency symbols, US thousands commas, and European decimal-comma notation.
+    # currency symbols and US-style thousands separators for numeric amounts.
     prepared["principal_amount"] = _coerce_amount(prepared["principal_amount"])
     prepared["interest_rate"] = pd.to_numeric(prepared["interest_rate"], errors="coerce")
     prepared["term_months"] = pd.to_numeric(prepared["term_months"], errors="coerce")
