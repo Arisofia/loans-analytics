@@ -38,6 +38,16 @@ except ImportError as exc:
 
 PIPELINE_REQUIRED_COLUMNS = ["loan_id", "amount", "status"]
 
+# Priority order for resolving borrower identity when classifying duplicate loan_id rows.
+# Checked in order; the first column present in the DataFrame is used.
+# This list is shared by _classify_loan_id_duplicates (csv_upload) and the Dashboard.
+BORROWER_ID_COLS: tuple[str, ...] = (
+    "borrower_id",
+    "client_code",
+    "client_name",
+    "borrower_name",
+)
+
 ALIAS_MAP: dict[str, list[str]] = {
     "loan_id": [
         "id_loan",
@@ -444,15 +454,19 @@ def _classify_loan_id_duplicates(df: pd.DataFrame) -> list[tuple[str, str]]:
     Returns a list of (level, message) pairs where level is ``"warning"`` or
     ``"info"``, covering three distinct scenarios:
 
-    * **Exact duplicates** – same ``loan_id`` + same ``borrower_id`` + same
+    * **Exact duplicates** – same ``loan_id`` + same borrower + same
       ``amount``.  These are data entry errors and should be deduplicated
       before pipeline execution.  Reported as ``"warning"``.
-    * **Historical snapshots** – same ``loan_id`` + same ``borrower_id`` +
+    * **Historical snapshots** – same ``loan_id`` + same borrower +
       *different* ``amount``.  These represent balance-rollup snapshots and
       are expected.  Reported as ``"info"``.
     * **Suspicious merges** – same ``loan_id`` shared by *different*
-      ``borrower_id`` values.  Indicates a likely data-quality issue.
+      borrower values.  Indicates a likely data-quality issue.
       Reported as ``"warning"``.
+
+    The borrower identifier is resolved from the first available column among:
+    ``borrower_id``, ``client_code``, ``client_name``, ``borrower_name``.
+    This makes the function robust to pre- and post-homologation DataFrames.
     """
     if "loan_id" not in df.columns:
         return []
@@ -465,7 +479,10 @@ def _classify_loan_id_duplicates(df: pd.DataFrame) -> list[tuple[str, str]]:
     dup_df = df[dup_mask].copy()
     dup_df["_loan_id_str"] = id_series[dup_mask]
 
-    has_borrower = "borrower_id" in dup_df.columns
+    # Resolve borrower key: accept any common identifier column so the function
+    # works correctly both before and after alias homologation.
+    borrower_col = next((c for c in BORROWER_ID_COLS if c in dup_df.columns), None)
+    has_borrower = borrower_col is not None
     has_amount = "amount" in dup_df.columns
 
     exact_dup_count: int = 0
@@ -477,7 +494,7 @@ def _classify_loan_id_duplicates(df: pd.DataFrame) -> list[tuple[str, str]]:
         if len(group) < 2:
             continue
 
-        unique_borrowers = group["borrower_id"].nunique() if has_borrower else 1
+        unique_borrowers = group[borrower_col].nunique() if has_borrower else 1
 
         if unique_borrowers > 1:
             suspicious_count += 1

@@ -45,6 +45,7 @@ from streamlit_app.components.csv_upload import (  # noqa: E402
     _normalize_column_names,
     _prepare_dataframe,
     _validate_for_pipeline,
+    BORROWER_ID_COLS,
 )
 
 
@@ -274,6 +275,54 @@ class TestClassifyLoanIdDuplicates:
         level, _ = result[0]
         assert level == "warning"
 
+    def test_client_code_used_as_borrower_fallback(self):
+        """client_code column used when borrower_id is absent (pre-homologation CSV)."""
+        df = pd.DataFrame(
+            {
+                "loan_id": ["A", "A"],
+                "client_code": ["C1", "C1"],
+                "amount": [100.0, 100.0],
+            }
+        )
+        result = _classify_loan_id_duplicates(df)
+        assert len(result) == 1
+        level, _ = result[0]
+        assert level == "warning"  # same client + same amount → exact dup
+
+    def test_client_name_used_as_borrower_fallback(self):
+        """client_name column used when neither borrower_id nor client_code is present."""
+        df = pd.DataFrame(
+            {
+                "loan_id": ["A", "A"],
+                "client_name": ["Alice", "Bob"],  # different clients → suspicious
+                "amount": [100.0, 100.0],
+            }
+        )
+        result = _classify_loan_id_duplicates(df)
+        assert len(result) == 1
+        level, msg = result[0]
+        assert level == "warning"
+        assert "suspicious" in msg.lower()
+
+    def test_borrower_id_takes_priority_over_client_code(self):
+        """When both borrower_id and client_code present, borrower_id is used."""
+        df = pd.DataFrame(
+            {
+                "loan_id": ["A", "A"],
+                "borrower_id": ["b1", "b2"],   # different → suspicious
+                "client_code": ["C1", "C1"],    # same — should be ignored
+                "amount": [100.0, 100.0],
+            }
+        )
+        result = _classify_loan_id_duplicates(df)
+        assert any("suspicious" in msg.lower() for _, msg in result)
+
+    def test_borrower_id_cols_constant_priority(self):
+        """BORROWER_ID_COLS defines priority: borrower_id first, then client_code, etc."""
+        assert BORROWER_ID_COLS[0] == "borrower_id"
+        assert "client_code" in BORROWER_ID_COLS
+        assert "client_name" in BORROWER_ID_COLS
+
 
 # ---------------------------------------------------------------------------
 # _validate_for_pipeline – generic checks unaffected by new logic
@@ -300,3 +349,167 @@ class TestValidateForPipeline:
         valid, missing, issues = _validate_for_pipeline(df)
         assert valid is True
         assert any("zero" in i.lower() for i in issues)
+
+
+# ---------------------------------------------------------------------------
+# Portfolio Dashboard (3_Portfolio_Dashboard.py) – DESEMBOLSOS homologation,
+# currency parsing, and duplicate classification wiring
+# ---------------------------------------------------------------------------
+
+# These imports are deferred to mid-file so that the streamlit stub (_st_stub)
+# is already populated before the dashboard module is loaded via importlib.
+import importlib.util as _ilu
+import os as _os
+
+# plotly is imported by the dashboard at module level.  The real plotly package
+# is available in the test environment, so we just need it imported here so the
+# dashboard module can resolve it when exec_module() runs.
+import plotly.express  # noqa: F401  – side-effect import; ensures plotly is in sys.modules
+import plotly.graph_objects  # noqa: F401
+
+for _attr in [
+    "session_state",
+    "cache_data",
+    "cache_resource",
+    "spinner",
+    "tabs",
+    "plotly_chart",
+    "selectbox",
+    "checkbox",
+    "radio",
+    "text_input",
+    "number_input",
+    "caption",
+    "write",
+    "sidebar",
+]:
+    setattr(_st_stub, _attr, lambda *a, **k: None)
+setattr(_st_stub, "session_state", {})
+
+_os.environ.setdefault("ABACO_API_BASE", "http://localhost:8000")
+
+_dash_spec = _ilu.spec_from_file_location(
+    "_portfolio_dashboard_test",
+    str(
+        __import__("pathlib").Path(__file__).parent.parent
+        / "streamlit_app"
+        / "pages"
+        / "3_Portfolio_Dashboard.py"
+    ),
+)
+_dash_mod = _ilu.module_from_spec(_dash_spec)
+_dash_spec.loader.exec_module(_dash_mod)
+
+
+class TestPortfolioDashboardDesembolsos:
+    """Verify that the Portfolio Dashboard correctly handles DESEMBOLSOS/CONTROL DE MORA CSVs."""
+
+    def _desembolsos_raw(self) -> pd.DataFrame:
+        """Minimal DESEMBOLSOS-style CSV with Spanish column names and currency values."""
+        return pd.DataFrame(
+            {
+                "Numero_Desembolso": ["D001", "D002"],
+                "Monto_del_Desembolso": ["$50,000", "$30,000"],
+                "CodCliente": ["C1", "C2"],
+                "Estado": ["Vigente", "Mora"],
+                "Tasa_de_Interes": [0.12, 0.18],
+                "Plazo_Meses": [12, 24],
+                "Fecha_Desembolso": ["2025-01-01", "2025-02-01"],
+            }
+        )
+
+    def _normalize_and_alias(self, raw: pd.DataFrame) -> pd.DataFrame:
+        return _dash_mod._apply_column_aliases(_dash_mod._normalize_column_names(raw))
+
+    def test_numero_desembolso_mapped_to_loan_id(self):
+        df = self._normalize_and_alias(self._desembolsos_raw())
+        assert "loan_id" in df.columns
+        assert list(df["loan_id"]) == ["D001", "D002"]
+
+    def test_codcliente_mapped_to_borrower_id(self):
+        df = self._normalize_and_alias(self._desembolsos_raw())
+        assert "borrower_id" in df.columns
+        assert list(df["borrower_id"]) == ["C1", "C2"]
+
+    def test_monto_del_desembolso_mapped_to_principal_amount(self):
+        df = self._normalize_and_alias(self._desembolsos_raw())
+        assert "principal_amount" in df.columns
+        # Raw value still a string at this stage; check non-null
+        assert df["principal_amount"].notna().all()
+
+    def test_currency_parsed_correctly_in_prepare(self):
+        """$50,000 must be parsed as 50000.0, not NaN or 50.0."""
+        raw = self._desembolsos_raw()
+        aliased = self._normalize_and_alias(raw)
+        prepared = _dash_mod.prepare_uploaded_data(aliased)
+        assert "principal_amount" in prepared.columns
+        assert prepared["principal_amount"].iloc[0] == 50000.0
+        assert prepared["principal_amount"].iloc[1] == 30000.0
+
+    def test_dias_mora_mapped_to_days_past_due(self):
+        raw = pd.DataFrame(
+            {
+                "loan_id": ["D001"],
+                "principal_amount": [10000.0],
+                "interest_rate": [0.12],
+                "term_months": [12],
+                "origination_date": ["2025-01-01"],
+                "current_status": ["active"],
+                "Dias_Mora": [35],
+            }
+        )
+        df = self._normalize_and_alias(raw)
+        assert "days_past_due" in df.columns
+
+    def test_origination_date_aliased_from_fecha_desembolso(self):
+        df = self._normalize_and_alias(self._desembolsos_raw())
+        assert "origination_date" in df.columns
+
+    def test_codcliente_suffix_variants_mapped(self):
+        """CodCliente_, CodCliente_2 suffix variants should all map to borrower_id."""
+        raw = pd.DataFrame(
+            {
+                "loan_id": ["D001", "D002"],
+                "principal_amount": [10000, 20000],
+                "interest_rate": [0.12, 0.18],
+                "term_months": [12, 24],
+                "origination_date": ["2025-01-01", "2025-02-01"],
+                "current_status": ["active", "active"],
+                "CodCliente_": ["C1", None],
+                "CodCliente_2": [None, "C2"],
+            }
+        )
+        # After normalize: codcliente_ and codcliente_2 both in COLUMN_ALIASES for borrower_id
+        df = self._normalize_and_alias(raw)
+        # At least one variant maps to borrower_id
+        has_borrower = "borrower_id" in df.columns
+        assert has_borrower, "borrower_id should be mapped from CodCliente_ or CodCliente_2"
+
+
+class TestPortfolioDashboardDuplicateClassification:
+    """Verify that _classify_loan_id_duplicates is wired and usable from the Dashboard."""
+
+    def test_classify_imported_from_csv_upload(self):
+        """Dashboard imports _classify_loan_id_duplicates from csv_upload module."""
+        assert hasattr(_dash_mod, "_classify_loan_id_duplicates")
+
+    def test_exact_duplicate_returns_warning(self):
+        df = pd.DataFrame(
+            {"loan_id": ["A", "A"], "borrower_id": ["b1", "b1"], "amount": [100.0, 100.0]}
+        )
+        result = _dash_mod._classify_loan_id_duplicates(df)
+        assert any(level == "warning" and "exact" in msg.lower() for level, msg in result)
+
+    def test_historical_snapshot_returns_info(self):
+        df = pd.DataFrame(
+            {"loan_id": ["A", "A"], "borrower_id": ["b1", "b1"], "amount": [100.0, 90.0]}
+        )
+        result = _dash_mod._classify_loan_id_duplicates(df)
+        assert any(level == "info" and "snapshot" in msg.lower() for level, msg in result)
+
+    def test_suspicious_merge_returns_warning(self):
+        df = pd.DataFrame(
+            {"loan_id": ["A", "A"], "borrower_id": ["b1", "b2"], "amount": [100.0, 100.0]}
+        )
+        result = _dash_mod._classify_loan_id_duplicates(df)
+        assert any(level == "warning" and "suspicious" in msg.lower() for level, msg in result)
