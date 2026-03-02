@@ -550,7 +550,6 @@ class CalculationPhase:
         try:
             df = self._load_input_dataframe(clean_data_path=clean_data_path, df=df)
 
-
             # Calculate KPIs
             kpi_results = self._calculate_kpis(df)
 
@@ -564,6 +563,10 @@ class CalculationPhase:
             # Time-series rollups
             time_series = self._calculate_time_series(df)
 
+            # NSM: recurrent TPV from active clients (monthly)
+            client_tpv_ts = self._build_client_tpv_timeseries(df)
+            nsm_recurrent_tpv = self._calculate_recurrent_tpv(client_tpv_ts)
+
             # Anomaly detection
             anomalies = self._detect_anomalies(kpi_results)
 
@@ -573,7 +576,9 @@ class CalculationPhase:
             # Store results
             if run_dir:
                 kpi_path = run_dir / "kpi_results.parquet"
-                kpi_df = pd.DataFrame([{k: v for k, v in kpi_results.items() if not isinstance(v, dict)}])
+                kpi_df = pd.DataFrame(
+                    [{k: v for k, v in kpi_results.items() if not isinstance(v, dict)}]
+                )
                 kpi_df.to_parquet(kpi_path, index=False)
 
                 segment_path = run_dir / "segment_kpis.json"
@@ -585,6 +590,11 @@ class CalculationPhase:
                 with open(manifest_path, "w") as f:
                     json.dump(manifest, f, indent=2, default=str)
 
+                nsm_path = run_dir / "nsm_recurrent_tpv.json"
+                with open(nsm_path, "w") as f:
+                    json.dump(nsm_recurrent_tpv, f, indent=2, default=str)
+                logger.info("Saved NSM recurrent TPV to %s", nsm_path)
+
                 logger.info("Saved KPI results to %s", kpi_path)
                 logger.info("Saved segment KPIs to %s", segment_path)
 
@@ -594,6 +604,7 @@ class CalculationPhase:
                 "kpis": kpi_results,
                 "segment_kpis": segment_kpis,
                 "time_series": time_series,
+                "nsm_recurrent_tpv": nsm_recurrent_tpv,
                 "anomalies": anomalies,
                 "manifest": manifest,
                 "timestamp": datetime.now().isoformat(),
@@ -661,7 +672,9 @@ class CalculationPhase:
 
     def _calculate_derived_risk_kpis(self, df: pd.DataFrame) -> Dict[str, Decimal]:
         """Compute derived risk KPIs not covered by the formula catalog."""
-        balance_col = next((c for c in ("outstanding_balance", "current_balance") if c in df.columns), None)
+        balance_col = next(
+            (c for c in ("outstanding_balance", "current_balance") if c in df.columns), None
+        )
         if "dpd" not in df.columns or "status" not in df.columns or balance_col is None:
             return {}
 
@@ -679,7 +692,9 @@ class CalculationPhase:
         npl_mask = (active_df["dpd"] >= 90) | (active_df["status"] == "defaulted")
         npl_out = Decimal(str(active_df.loc[npl_mask, balance_col].sum()))
         npl_ratio = (npl_out / total_out) * 100
-        defaulted_out = Decimal(str(active_df.loc[active_df["status"] == "defaulted", balance_col].sum()))
+        defaulted_out = Decimal(
+            str(active_df.loc[active_df["status"] == "defaulted", balance_col].sum())
+        )
 
         return {
             "npl_ratio": npl_ratio,
@@ -945,7 +960,7 @@ class CalculationPhase:
             dimensions.append("kam_hunter")
         if any(c in df.columns for c in ("kam_farmer", "cod_kam_farmer", "farmer")):
             dimensions.append("kam_farmer")
-        
+
         if any(c in df.columns for c in ("gov", "ministry", "ministerio")):
             dimensions.append("gov")
         if any(c in df.columns for c in ("industry", "industria", "giro")):
@@ -983,7 +998,7 @@ class CalculationPhase:
     ) -> Dict[str, Any]:
         """Aggregate segment KPIs for a single dimension."""
         dim_result: Dict[str, Any] = {}
-        
+
         # Mapping dimension key to possible column names
         dim_map = {
             "company": ["company", "empresa", "compania"],
@@ -994,13 +1009,15 @@ class CalculationPhase:
             "industry": ["industry", "industria", "giro"],
             "doc_type": ["doc_type"]
         }
-        
+
         resolved_dim = self._resolve_col(work, *(dim_map.get(dim, [dim])))
         if not resolved_dim:
             return {}
 
         for seg_val, grp in work.groupby(resolved_dim, sort=False):
-            if seg_kpis := self._calculate_segment_group_kpis(grp, balance_col, dpd_col, status_col):
+            if seg_kpis := self._calculate_segment_group_kpis(
+                grp, balance_col, dpd_col, status_col
+            ):
                 dim_result[str(seg_val)] = seg_kpis
         return dim_result
 
@@ -1021,7 +1038,9 @@ class CalculationPhase:
             "loan_count": len(grp),
         }
         if dpd_col:
-            seg_kpis.update(self._calculate_segment_par_metrics(grp, balance_col, dpd_col, total_bal))
+            seg_kpis.update(
+                self._calculate_segment_par_metrics(grp, balance_col, dpd_col, total_bal)
+            )
         if status_col:
             seg_kpis["default_rate"] = self._calculate_segment_default_rate(grp, status_col)
         return seg_kpis
@@ -1032,9 +1051,15 @@ class CalculationPhase:
     ) -> Dict[str, float]:
         """Compute PAR30/60/90 for a segment group."""
         return {
-            "par_30": round(float(grp.loc[grp[dpd_col] >= 30, balance_col].sum()) / total_bal * 100, 4),
-            "par_60": round(float(grp.loc[grp[dpd_col] >= 60, balance_col].sum()) / total_bal * 100, 4),
-            "par_90": round(float(grp.loc[grp[dpd_col] >= 90, balance_col].sum()) / total_bal * 100, 4),
+            "par_30": round(
+                float(grp.loc[grp[dpd_col] >= 30, balance_col].sum()) / total_bal * 100, 4
+            ),
+            "par_60": round(
+                float(grp.loc[grp[dpd_col] >= 60, balance_col].sum()) / total_bal * 100, 4
+            ),
+            "par_90": round(
+                float(grp.loc[grp[dpd_col] >= 90, balance_col].sum()) / total_bal * 100, 4
+            ),
         }
 
     @staticmethod
@@ -1146,6 +1171,132 @@ class CalculationPhase:
         if n <= 0:
             return 0.0
         return round(float(mdsc.sum()) / n * 100, 4)
+
+    @staticmethod
+    def _build_client_tpv_timeseries(df: pd.DataFrame) -> pd.DataFrame:
+        """Build per-(period, client) TPV timeseries from transaction data.
+
+        Resolves client identity, date, and amount columns using candidate names
+        in priority order.  Returns an empty DataFrame when required columns are
+        missing.
+
+        Returns:
+            DataFrame with columns: period (YYYY-MM str), client_id, tpv.
+        """
+        if df.empty:
+            return pd.DataFrame(columns=["period", "client_id", "tpv"])
+
+        client_col = next(
+            (c for c in ("client_id", "borrower_id", "CodCliente") if c in df.columns),
+            None,
+        )
+        date_col = next(
+            (
+                c
+                for c in (
+                    "origination_date",
+                    "FechaDesembolso",
+                    "application_date",
+                    "disbursement_date",
+                )
+                if c in df.columns
+            ),
+            None,
+        )
+        amount_col = next(
+            (
+                c
+                for c in ("amount", "MontoDesembolsado", "ValorAprobado", "loan_amount")
+                if c in df.columns
+            ),
+            None,
+        )
+
+        if client_col is None or date_col is None or amount_col is None:
+            logger.debug(
+                "_build_client_tpv_timeseries: missing required columns "
+                "(client=%s, date=%s, amount=%s)",
+                client_col,
+                date_col,
+                amount_col,
+            )
+            return pd.DataFrame(columns=["period", "client_id", "tpv"])
+
+        work = df[[client_col, date_col, amount_col]].copy()
+        work["_date"] = pd.to_datetime(work[date_col], errors="coerce")
+        work = work.dropna(subset=["_date"])
+        work["period"] = work["_date"].dt.to_period("M").astype(str)
+        work["tpv"] = pd.to_numeric(work[amount_col], errors="coerce").fillna(0.0)
+        work = work.rename(columns={client_col: "client_id"})
+
+        result = work.groupby(["period", "client_id"], as_index=False)["tpv"].sum()
+        return result[["period", "client_id", "tpv"]]
+
+    @staticmethod
+    def _calculate_recurrent_tpv(ts: pd.DataFrame) -> Dict[str, Any]:
+        """Classify clients as new / recurrent / recovered per period and compute TPV.
+
+        Args:
+            ts: DataFrame with columns period, client_id, tpv
+                (output of _build_client_tpv_timeseries).
+
+        Returns:
+            Dict with keys ``by_period``, ``latest_period``, ``latest``.
+            Returns ``{}`` on empty input.
+        """
+        if ts.empty:
+            return {}
+
+        periods = sorted(ts["period"].unique())
+        pivot = ts.pivot_table(index="client_id", columns="period", values="tpv", fill_value=0.0)
+
+        by_period: Dict[str, Any] = {}
+        for i, period in enumerate(periods):
+            active_mask = pivot[period] > 0
+
+            if i == 0:
+                # First period – everyone is new
+                new_mask = active_mask
+                recurrent_mask = pd.Series(False, index=pivot.index)
+                recovered_mask = pd.Series(False, index=pivot.index)
+            else:
+                prev_period = periods[i - 1]
+                prior_periods = periods[:i]
+
+                # Recurrent: active now AND active in immediately previous period
+                recurrent_mask = active_mask & (pivot[prev_period] > 0)
+
+                # Seen in any earlier period (not necessarily previous)
+                ever_seen_before = (pivot[prior_periods] > 0).any(axis=1)
+
+                # New: active now AND never seen in ANY prior period
+                new_mask = active_mask & ~ever_seen_before
+
+                # Recovered: active now, seen before, but NOT in the previous period
+                recovered_mask = active_mask & ever_seen_before & ~recurrent_mask
+
+            tpv_total = round(float(pivot.loc[active_mask, period].sum()), 2)
+            tpv_new = round(float(pivot.loc[new_mask, period].sum()), 2)
+            tpv_recurrent = round(float(pivot.loc[recurrent_mask, period].sum()), 2)
+            tpv_recovered = round(float(pivot.loc[recovered_mask, period].sum()), 2)
+
+            by_period[period] = {
+                "tpv_total": tpv_total,
+                "tpv_new": tpv_new,
+                "tpv_recurrent": tpv_recurrent,
+                "tpv_recovered": tpv_recovered,
+                "active_clients": int(active_mask.sum()),
+                "new_clients": int(new_mask.sum()),
+                "recurrent_clients": int(recurrent_mask.sum()),
+                "recovered_clients": int(recovered_mask.sum()),
+            }
+
+        latest_period = periods[-1]
+        return {
+            "by_period": by_period,
+            "latest_period": latest_period,
+            "latest": by_period[latest_period],
+        }
 
     def _generate_manifest(
         self, kpi_results: Dict[str, Any], source_df: pd.DataFrame

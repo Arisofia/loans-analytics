@@ -10,6 +10,7 @@ Complete dashboard with:
 """
 
 import json
+import logging
 import os
 import sys
 from datetime import datetime, timezone
@@ -40,6 +41,8 @@ from streamlit_app.components.csv_upload import (  # noqa: E402
     _coerce_numeric as _coerce_amount,
 )
 from streamlit_app.utils.security import sanitize_api_base  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 # Page configuration
 st.set_page_config(
@@ -1827,11 +1830,19 @@ def render_segment_breakdown(df: pd.DataFrame) -> None:
     dim_col = next(k for k, v in available_dims.items() if v == dim_label)
 
     exposure_col = next(
-        (c for c in ("outstanding_balance", "current_balance", "principal_amount") if c in df.columns),
+        (
+            c
+            for c in ("outstanding_balance", "current_balance", "principal_amount")
+            if c in df.columns
+        ),
         None,
     )
     dpd_col = next((c for c in ("days_past_due", "dpd") if c in df.columns), None)
-    status_col = "current_status" if "current_status" in df.columns else "status" if "status" in df.columns else None
+    status_col = (
+        "current_status"
+        if "current_status" in df.columns
+        else "status" if "status" in df.columns else None
+    )
 
     if exposure_col is None:
         st.warning("No balance column found for segment analysis.")
@@ -1853,11 +1864,22 @@ def render_segment_breakdown(df: pd.DataFrame) -> None:
             "Outstanding ($)": round(total, 0),
         }
         if dpd_col:
-            row["PAR 30 (%)"] = round(float(grp.loc[grp[dpd_col] >= 30, exposure_col].sum()) / total * 100, 2)
-            row["PAR 60 (%)"] = round(float(grp.loc[grp[dpd_col] >= 60, exposure_col].sum()) / total * 100, 2)
-            row["PAR 90 (%)"] = round(float(grp.loc[grp[dpd_col] >= 90, exposure_col].sum()) / total * 100, 2)
+            row["PAR 30 (%)"] = round(
+                float(grp.loc[grp[dpd_col] >= 30, exposure_col].sum()) / total * 100, 2
+            )
+            row["PAR 60 (%)"] = round(
+                float(grp.loc[grp[dpd_col] >= 60, exposure_col].sum()) / total * 100, 2
+            )
+            row["PAR 90 (%)"] = round(
+                float(grp.loc[grp[dpd_col] >= 90, exposure_col].sum()) / total * 100, 2
+            )
         if status_col:
-            defaulted = grp[status_col].astype(str).str.contains(r"default|charged", case=False, na=False).sum()
+            defaulted = (
+                grp[status_col]
+                .astype(str)
+                .str.contains(r"default|charged", case=False, na=False)
+                .sum()
+            )
             row["Default Rate (%)"] = round(float(defaulted) / len(grp) * 100, 2)
         rows.append(row)
 
@@ -1874,7 +1896,11 @@ def render_segment_breakdown(df: pd.DataFrame) -> None:
             y=["PAR 30 (%)", "PAR 60 (%)", "PAR 90 (%)"],
             barmode="group",
             title=f"PAR 30 / 60 / 90 by {dim_label}",
-            color_discrete_map={"PAR 30 (%)": "#ffc107", "PAR 60 (%)": "#ff9800", "PAR 90 (%)": "#dc3545"},
+            color_discrete_map={
+                "PAR 30 (%)": "#ffc107",
+                "PAR 60 (%)": "#ff9800",
+                "PAR 90 (%)": "#dc3545",
+            },
             height=380,
         )
         fig.update_layout(xaxis_tickangle=-30, legend_title_text="")
@@ -2079,6 +2105,69 @@ def render_loan_table(df: pd.DataFrame):
         )
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def _fetch_nsm_data(api_url: str) -> dict | None:
+    """Fetch NSM data from the analytics API, cached for 60 seconds."""
+    try:
+        resp = requests.get(api_url, timeout=5)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception as exc:
+        logger.warning("NSM API call failed (%s): %s", api_url, exc)
+        return None
+
+
+def render_nsm_section() -> None:
+    """Render the North Star Metric (Recurrent TPV) section from the analytics API."""
+    st.markdown("### 🌟 North Star Metric — Recurrent TPV")
+
+    if ABACO_API_BASE_SAFE is None:
+        st.warning("API base URL is not configured. Set ABACO_API_BASE to enable this section.")
+        return
+
+    nsm_url = f"{ABACO_API_BASE_SAFE.rstrip('/')}/analytics/nsm"
+    data = _fetch_nsm_data(nsm_url)
+    if data is None:
+        st.info("NSM data not available.")
+        return
+
+    latest_period = data.get("latest_period")
+    latest = data.get("latest") or {}
+    by_period = data.get("by_period") or {}
+
+    if not latest_period:
+        st.info("No NSM data found. Run the pipeline to generate recurrent TPV metrics.")
+        return
+
+    # Headline KPI cards
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Period", latest_period)
+    col2.metric("Recurrent TPV", f"${latest.get('tpv_recurrent', 0):,.2f}")
+    col3.metric("New TPV", f"${latest.get('tpv_new', 0):,.2f}")
+    col4.metric("Recovered TPV", f"${latest.get('tpv_recovered', 0):,.2f}")
+
+    col5, col6, col7, col8 = st.columns(4)
+    col5.metric("Active Clients", latest.get("active_clients", 0))
+    col6.metric("Recurrent Clients", latest.get("recurrent_clients", 0))
+    col7.metric("New Clients", latest.get("new_clients", 0))
+    col8.metric("Recovered Clients", latest.get("recovered_clients", 0))
+
+    # Time-series line chart
+    if by_period:
+        chart_data = {
+            p: {
+                "Total TPV": m.get("tpv_total", 0),
+                "Recurrent TPV": m.get("tpv_recurrent", 0),
+                "New TPV": m.get("tpv_new", 0),
+                "Recovered TPV": m.get("tpv_recovered", 0),
+            }
+            for p, m in sorted(by_period.items())
+        }
+        chart_df = pd.DataFrame.from_dict(chart_data, orient="index")
+        chart_df.index.name = "Period"
+        st.line_chart(chart_df)
+
+
 def main():
     """Main application entry point."""
     st.markdown(
@@ -2105,6 +2194,9 @@ def main():
     render_kpi_methodology(metrics)
 
     render_agent_results(metrics)
+
+    st.markdown("---")
+    render_nsm_section()
 
     st.markdown("---")
     render_visualization_tabs(df, metrics)
