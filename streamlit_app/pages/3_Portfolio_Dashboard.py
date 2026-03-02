@@ -1938,9 +1938,274 @@ def render_segment_breakdown(df: pd.DataFrame) -> None:
     st.dataframe(seg_df, width="stretch", hide_index=True)
 
 
+def _first_existing_column(df: pd.DataFrame, candidates: tuple[str, ...]) -> str | None:
+    """Return first existing column name from a candidate tuple."""
+    return next((col for col in candidates if col in df.columns), None)
+
+
+def _coerce_datetime_series(
+    df: pd.DataFrame, candidates: tuple[str, ...]
+) -> tuple[pd.Series, str | None]:
+    """Resolve and parse a datetime column from candidate names."""
+    col = _first_existing_column(df, candidates)
+    if col is None:
+        return pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]"), None
+    return pd.to_datetime(df[col], errors="coerce"), col
+
+
+def _coerce_money_series(
+    df: pd.DataFrame, candidates: tuple[str, ...]
+) -> tuple[pd.Series, str | None]:
+    """Resolve and parse a numeric/money column from candidate names."""
+    col = _first_existing_column(df, candidates)
+    if col is None:
+        return pd.Series(0.0, index=df.index, dtype=float), None
+    return _coerce_amount(df[col]).fillna(0.0), col
+
+
+def _calculate_temporal_active_set(
+    df: pd.DataFrame, cutoff: pd.Timestamp, key_strategy: str
+) -> tuple[pd.DataFrame, dict[str, Any], str | None]:
+    """Build temporal active subset and return deduplicated frame plus metadata."""
+    disb_series, disb_col = _coerce_datetime_series(
+        df, ("origination_date", "fechadesembolso", "fecha_de_desembolso")
+    )
+    if disb_col is None:
+        return (
+            pd.DataFrame(),
+            {},
+            "No disbursement date column found (expected origination_date/fechadesembolso).",
+        )
+
+    pay_series, pay_col = _coerce_datetime_series(df, ("fecha_de_pago", "payment_date"))
+    principal_series, principal_col = _coerce_money_series(
+        df,
+        (
+            "montodesembolsado",
+            "monto_del_desembolso",
+            "principal_amount",
+            "amount",
+            "monto_financiado_real_por_desembolso",
+            "monto_total_aprobado_por_desembolso",
+        ),
+    )
+    outstanding_series, outstanding_col = _coerce_money_series(
+        df,
+        (
+            "outstanding_balance",
+            "current_balance",
+            "totalsaldovigente",
+            "principal_amount",
+            "amount",
+        ),
+    )
+
+    temporal_mask = disb_series.notna() & (disb_series <= cutoff)
+    if pay_col is not None:
+        temporal_mask = temporal_mask & (pay_series.isna() | (pay_series > cutoff))
+
+    work = df.loc[temporal_mask].copy()
+    if work.empty:
+        return (
+            work,
+            {
+                "raw_rows": 0,
+                "dedup_rows": 0,
+                "principal_sum": 0.0,
+                "outstanding_sum": 0.0,
+                "disbursement_col": disb_col,
+                "payment_col": pay_col,
+                "principal_col": principal_col,
+                "outstanding_col": outstanding_col,
+                "key_label": "N/A",
+            },
+            None,
+        )
+
+    principal_work = principal_series.loc[work.index].fillna(0.0)
+    outstanding_work = outstanding_series.loc[work.index].fillna(0.0)
+    disb_work = disb_series.loc[work.index]
+
+    if key_strategy == "operational_stable":
+        client_col = _first_existing_column(
+            df, ("codcliente", "client_code", "borrower_id", "borrower_id_number")
+        )
+        disb_num_col = _first_existing_column(
+            df,
+            (
+                "numerodesembolso",
+                "numero_desembolso",
+                "codigo_desembolso",
+                "correlativo_de_operaciones",
+                "loan_id",
+            ),
+        )
+        due_date_series, due_col = _coerce_datetime_series(
+            df, ("fechacobro", "fechapagoprogramado")
+        )
+        due_work = due_date_series.loc[work.index].dt.strftime("%Y-%m-%d").fillna("NA")
+        key_parts = [
+            (
+                work[client_col].astype(str).str.strip()
+                if client_col
+                else pd.Series("NA", index=work.index)
+            ),
+            (
+                work[disb_num_col].astype(str).str.strip()
+                if disb_num_col
+                else pd.Series("NA", index=work.index)
+            ),
+            principal_work.round(2).map(lambda x: f"{x:.2f}"),
+            due_work,
+        ]
+        key_label = (
+            "Operational key: "
+            f"{client_col or 'NA'} + {disb_num_col or 'NA'} + "
+            f"{principal_col or 'NA'} + {due_col or 'NA'}"
+        )
+    else:
+        loan_col = _first_existing_column(df, ("loan_id",))
+        due_date_series, due_col = _coerce_datetime_series(df, ("fechacobro",))
+        due_work = due_date_series.loc[work.index].dt.strftime("%Y-%m-%d").fillna("NA")
+        key_parts = [
+            (
+                work[loan_col].astype(str).str.strip()
+                if loan_col
+                else pd.Series("NA", index=work.index)
+            ),
+            principal_work.round(2).map(lambda x: f"{x:.2f}"),
+            due_work,
+        ]
+        key_label = f"Legacy key: {loan_col or 'NA'} + {principal_col or 'NA'} + {due_col or 'NA'}"
+
+    work = work.assign(
+        _temporal_principal=principal_work,
+        _temporal_outstanding=outstanding_work,
+        _temporal_disbursement_date=disb_work.dt.strftime("%Y-%m-%d").fillna("NA"),
+    )
+    work["_temporal_key"] = key_parts[0].fillna("NA")
+    for part in key_parts[1:]:
+        work["_temporal_key"] = work["_temporal_key"] + "|" + part.fillna("NA")
+
+    dedup = work.drop_duplicates(subset=["_temporal_key"]).copy()
+    metadata = {
+        "raw_rows": int(len(work)),
+        "dedup_rows": int(len(dedup)),
+        "principal_sum": float(dedup["_temporal_principal"].sum()),
+        "outstanding_sum": float(dedup["_temporal_outstanding"].sum()),
+        "disbursement_col": disb_col,
+        "payment_col": pay_col,
+        "principal_col": principal_col,
+        "outstanding_col": outstanding_col,
+        "key_label": key_label,
+    }
+    return dedup, metadata, None
+
+
+def render_temporal_active_set(df: pd.DataFrame) -> None:
+    """Render temporal active-set filter and totals for reconciliation."""
+    st.subheader("⏱️ Temporal Active Set")
+    st.caption(
+        "Definition: disbursement_date <= cutoff and (payment_date is null or payment_date > cutoff). "
+        "Use this to reconcile principal disbursed pending payment."
+    )
+
+    disb_dates, disb_col = _coerce_datetime_series(
+        df, ("origination_date", "fechadesembolso", "fecha_de_desembolso")
+    )
+    valid_disb = disb_dates.dropna()
+    if disb_col is None or valid_disb.empty:
+        st.warning(
+            "Temporal filter unavailable: missing disbursement dates "
+            "(origination_date/fechadesembolso/fecha_de_desembolso)."
+        )
+        return
+
+    min_cutoff = valid_disb.min().date()
+    max_cutoff = min(valid_disb.max().date(), datetime.now().date())
+
+    col1, col2 = st.columns(2)
+    with col1:
+        cutoff_date = st.date_input(
+            "Cutoff date",
+            value=max_cutoff,
+            min_value=min_cutoff,
+            max_value=max_cutoff,
+            key="temporal_active_cutoff",
+        )
+    with col2:
+        key_choice = st.selectbox(
+            "Dedup key",
+            options=[
+                "operational_stable",
+                "loan_legacy",
+            ],
+            format_func=lambda x: (
+                "Operational stable (codcliente + numerodesembolso + monto + fechacobro)"
+                if x == "operational_stable"
+                else "Legacy (loan_id + monto + fechacobro)"
+            ),
+            key="temporal_active_key_choice",
+        )
+
+    dedup_df, metadata, error = _calculate_temporal_active_set(
+        df,
+        cutoff=pd.Timestamp(cutoff_date),
+        key_strategy=key_choice,
+    )
+    if error:
+        st.warning(error)
+        return
+
+    metric_cols = st.columns(4)
+    metric_cols[0].metric("Rows (raw)", f"{metadata['raw_rows']:,}")
+    metric_cols[1].metric("Rows (dedup)", f"{metadata['dedup_rows']:,}")
+    metric_cols[2].metric("Principal Pending ($)", f"{metadata['principal_sum']:,.2f}")
+    metric_cols[3].metric("Outstanding Snapshot ($)", f"{metadata['outstanding_sum']:,.2f}")
+
+    st.caption(
+        "Columns used: "
+        f"disbursement={metadata.get('disbursement_col') or 'NA'} | "
+        f"payment={metadata.get('payment_col') or 'NA'} | "
+        f"principal={metadata.get('principal_col') or 'NA'} | "
+        f"outstanding={metadata.get('outstanding_col') or 'NA'}"
+    )
+    st.caption(metadata.get("key_label", ""))
+
+    st.markdown("#### Temporal Active Set (Deduplicated)")
+    display_cols = [
+        col
+        for col in (
+            "loan_id",
+            "codcliente",
+            "numerodesembolso",
+            "codigo_desembolso",
+            "fechadesembolso",
+            "origination_date",
+            "fecha_de_pago",
+            "fechacobro",
+            "montodesembolsado",
+            "outstanding_balance",
+            "_temporal_principal",
+            "_temporal_outstanding",
+            "_temporal_key",
+        )
+        if col in dedup_df.columns
+    ]
+    st.dataframe(dedup_df[display_cols], width="stretch", hide_index=True)
+
+    export_csv = dedup_df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="📥 Export temporal active set (CSV)",
+        data=export_csv,
+        file_name=f"temporal_active_set_{cutoff_date}_{key_choice}.csv",
+        mime="text/csv",
+    )
+
+
 def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
     """Render all visualization tabs."""
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
         [
             "📈 Delinquency Trends",
             "📊 Risk Distribution",
@@ -1948,6 +2213,7 @@ def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
             "📅 Vintage Analysis",
             "📋 Loan Table",
             "🏷️ Segment Breakdown",
+            "⏱️ Temporal Active Set",
         ]
     )
 
@@ -1997,6 +2263,9 @@ def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
 
     with tab6:
         render_segment_breakdown(df)
+
+    with tab7:
+        render_temporal_active_set(df)
 
 
 def render_loan_table(df: pd.DataFrame):
