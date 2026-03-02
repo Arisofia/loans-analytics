@@ -1,4 +1,4 @@
-name: "Security Scan (DISABLED — cloud services stopped to reduce costs)"
+name: "Security Scan"
 
 on:
   push:
@@ -6,18 +6,6 @@ on:
   pull_request:
     branches: ["main"]
   workflow_dispatch:
-    inputs:
-      enable_code_scanning:
-        description: "Upload SARIF/CodeQL results to GitHub Security tab"
-        required: false
-        default: "false"
-        type: choice
-        options:
-          - "false"
-          - "true"
-
-env:
-  ENABLE_CODE_SCANNING: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.enable_code_scanning || 'false' }}
 
 jobs:
   codeql:
@@ -48,6 +36,7 @@ jobs:
           languages: ${{ matrix.language }}
 
           config-file: ./.github/codeql-config.yml
+          disable-default-queries: false
         env:
           # Disable PR diff analysis to prevent undefined value errors in extension pack
           # This forces CodeQL to analyze the full codebase instead of just PR diffs
@@ -60,7 +49,7 @@ jobs:
         uses: github/codeql-action/analyze@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
         with:
           category: "/language:${{ matrix.language }}"
-          upload: ${{ env.ENABLE_CODE_SCANNING == 'true' }}
+          upload: true
           skip-queries: false
 
   dependency-scan:
@@ -137,7 +126,7 @@ jobs:
           fi
 
       - name: Upload Bandit SARIF results
-        if: ${{ env.ENABLE_CODE_SCANNING == 'true' && always() && hashFiles('bandit-results.sarif') != '' }}
+        if: ${{ always() && hashFiles('bandit-results.sarif') != '' }}
         uses: github/codeql-action/upload-sarif@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
         with:
           sarif_file: bandit-results.sarif
