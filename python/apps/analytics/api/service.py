@@ -2179,31 +2179,9 @@ class KPIService:
         total_outstanding = float(df["principal_balance"].sum())
         total_originated = float(df["loan_amount"].sum())
 
-        # DPD mapping
-        def get_dpd_category(status: str) -> int:
-            if "30-59" in status:
-                return 45
-            if "60-89" in status:
-                return 75
-            return 100 if "90+" in status else 0
-
-        if (
-            "days_past_due" in df.columns
-            and pd.to_numeric(df["days_past_due"], errors="coerce").notna().any()
-        ):
-            df["dpd"] = pd.to_numeric(df["days_past_due"], errors="coerce").fillna(0)
-        else:
-            df["dpd"] = df["loan_status"].astype(str).apply(get_dpd_category)
+        df["dpd"] = self._derive_dpd_series(df, "days_past_due", "loan_status")
 
         par_metrics = self._calculate_par_and_bucket_metrics(df, total_outstanding)
-        par30_pct = par_metrics["par30"]
-        par60_pct = par_metrics["par60"]
-        par90_pct = par_metrics["par90"]
-        dpd_1_30 = par_metrics["dpd_1_30"]
-        dpd_31_60 = par_metrics["dpd_31_60"]
-        dpd_61_90 = par_metrics["dpd_61_90"]
-        dpd_90_plus = par_metrics["dpd_90_plus"]
-
         status_series = df["loan_status"].astype(str)
 
         # Default rate / loss-rate mask (keeps realtime behavior, including severe arrears)
@@ -2228,34 +2206,23 @@ class KPIService:
         )
 
         # Derived Next-Gen KPIs
-        npl_pct = par90_pct
+        npl_pct = par_metrics["par90"]
         lgd_pct = (100.0 - recovery_rate) if defaulted_balance > 0 else 0.0
         cor_pct = loss_rate  # Use loss rate as a proxy for Cost of Risk
 
-        cash_on_hand = self._calculate_cash_on_hand(df)
-        average_loan_size = float(df["loan_amount"].mean()) if len(df) > 0 else 0.0
-
-        # LTV/DTI
         self._populate_ltv_dti_ratios(df)
-
         active_borrowers, repeat_borrower_rate = self._calculate_borrower_metrics(df)
-        automation_rate = self._calculate_automation_rate(df)
-
-        processing_time_avg = self._calculate_processing_time_avg(df)
-        disbursement_volume_mtd, new_loans_count_mtd = self._calculate_mtd_metrics(df)
-        customer_lifetime_value = self._calculate_customer_lifetime_value(df)
         executive_metrics = self._calculate_realtime_executive_metrics(df)
-
-        total_loans_count = self._calculate_total_loans_count(df, status_series)
+        disbursement_volume_mtd, new_loans_count_mtd = self._calculate_mtd_metrics(df)
 
         return {
-            "par30": par30_pct,
-            "par60": par60_pct,
-            "par90": par90_pct,
-            "dpd_1_30": dpd_1_30,
-            "dpd_31_60": dpd_31_60,
-            "dpd_61_90": dpd_61_90,
-            "dpd_90_plus": dpd_90_plus,
+            "par30": par_metrics["par30"],
+            "par60": par_metrics["par60"],
+            "par90": par_metrics["par90"],
+            "dpd_1_30": par_metrics["dpd_1_30"],
+            "dpd_31_60": par_metrics["dpd_31_60"],
+            "dpd_61_90": par_metrics["dpd_61_90"],
+            "dpd_90_plus": par_metrics["dpd_90_plus"],
             "default_rate": default_rate_pct,
             "collection_rate": collection_rate,
             "loss_rate": loss_rate,
@@ -2263,13 +2230,13 @@ class KPIService:
             "npl": npl_pct,
             "lgd": lgd_pct,
             "cor": cor_pct,
-            "cash_on_hand": cash_on_hand,
+            "cash_on_hand": self._calculate_cash_on_hand(df),
             "yield": avg_interest_rate,
             "aum": total_outstanding,
-            "average_loan_size": average_loan_size,
+            "average_loan_size": float(df["loan_amount"].mean()) if len(df) > 0 else 0.0,
             "disbursement_volume_mtd": disbursement_volume_mtd,
             "new_loans_count_mtd": new_loans_count_mtd,
-            "customer_lifetime_value": customer_lifetime_value,
+            "customer_lifetime_value": self._calculate_customer_lifetime_value(df),
             "cac": executive_metrics["cac"],
             "gross_margin_pct": executive_metrics["gross_margin_pct"],
             "revenue_forecast_6m": executive_metrics["revenue_forecast_6m"],
@@ -2278,9 +2245,9 @@ class KPIService:
             "avg_dti": df["dti_ratio"].mean(),
             "active_borrowers": active_borrowers,
             "repeat_borrower_rate": repeat_borrower_rate,
-            "automation_rate": automation_rate,
-            "processing_time_avg": processing_time_avg,
-            "count": total_loans_count,
+            "automation_rate": self._calculate_automation_rate(df),
+            "processing_time_avg": self._calculate_processing_time_avg(df),
+            "count": self._calculate_total_loans_count(df, status_series),
         }
 
     @staticmethod

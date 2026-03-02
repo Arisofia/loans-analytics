@@ -909,34 +909,45 @@ if app is not None:
             kpi_summary = _build_kpi_summary_text(kpis)
             trace_id, summary = await _resolve_full_analysis_summary(request, service, kpis, kpi_summary)
 
-            # 4. Map results to Response Model
-            roll_rates = await service.calculate_roll_rate_analytics(request.loans)
-            recommendations = _build_full_analysis_recommendations(kpis, roll_rates)
-
-            risk_stratification = await service.get_risk_stratification(request.loans)
-            risk_heatmap_data = await service.get_risk_heatmap_summary(request.loans)
-            vintage_curves_data = await service.calculate_vintage_curves(request.loans)
-            layered_analysis = await service.get_layered_insights(request.loans)
-
-            return FullAnalysisResponse(
-                analysis_id=trace_id,
-                summary=summary,
-                recommendations=recommendations,
-                kpis=kpis,
-                risk_assessment=RiskAlertsResponse(
-                    high_risk_count=0,
-                    total_loans=len(request.loans) if request.loans else 0,
-                    risk_ratio=0.0,
-                    high_risk_loans=[],
-                ),
-                risk_stratification=risk_stratification,
-                risk_heatmap=risk_heatmap_data,
-                vintage_curves=vintage_curves_data,
-                layered_analysis=layered_analysis,
+            return await _map_full_analysis_response(
+                request, service, kpis, trace_id, summary
             )
         except Exception as e:
             logger.error("Error in get_full_analysis: %s", e)
             raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
+
+    async def _map_full_analysis_response(
+        request: "LoanPortfolioRequest",
+        service: "KPIService",
+        kpis: list[Any],
+        trace_id: str,
+        summary: str,
+    ) -> FullAnalysisResponse:
+        """Map raw analysis results to structured FullAnalysisResponse model."""
+        roll_rates = await service.calculate_roll_rate_analytics(request.loans)
+        recommendations = _build_full_analysis_recommendations(kpis, roll_rates)
+
+        risk_stratification = await service.get_risk_stratification(request.loans)
+        risk_heatmap_data = await service.get_risk_heatmap_summary(request.loans)
+        vintage_curves_data = await service.calculate_vintage_curves(request.loans)
+        layered_analysis = await service.get_layered_insights(request.loans)
+
+        return FullAnalysisResponse(
+            analysis_id=trace_id,
+            summary=summary,
+            recommendations=recommendations,
+            kpis=kpis,
+            risk_assessment=RiskAlertsResponse(
+                high_risk_count=0,
+                total_loans=len(request.loans) if request.loans else 0,
+                risk_ratio=0.0,
+                high_risk_loans=[],
+            ),
+            risk_stratification=risk_stratification,
+            risk_heatmap=risk_heatmap_data,
+            vintage_curves=vintage_curves_data,
+            layered_analysis=layered_analysis,
+        )
 
     @app.post(
         "/analytics/executive-summary",
