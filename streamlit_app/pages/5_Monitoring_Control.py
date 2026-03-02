@@ -182,8 +182,7 @@ if "events_data" in st.session_state and st.session_state["events_data"]:
             except ValueError:
                 st.error("Invalid event ID format. Use a UUID value.")
             else:
-                result = _api_ack_event(event_id_clean)
-                if result:
+                if result := _api_ack_event(event_id_clean):
                     st.success(f"Event {event_id_clean} acknowledged.")
         else:
             st.warning("Enter an event ID first.")
@@ -225,8 +224,7 @@ if st.button("Create Command", key="create_cmd"):
         if cmd_event_id:
             body["event_id"] = cmd_event_id
 
-        result = _api_create_command(json_body=body)
-        if result:
+        if result := _api_create_command(json_body=body):
             st.success(f"Command created: {result}")
 
 st.divider()

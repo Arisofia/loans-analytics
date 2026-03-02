@@ -1801,15 +1801,19 @@ def render_segment_breakdown(df: pd.DataFrame) -> None:
     """Render PAR30/60/90 and default rate broken down by segment dimension."""
     st.subheader("🏷️ Segment Risk Breakdown")
 
-    SEGMENT_DIMS = {
+    segment_dims = {
         "company": "Company",
         "credit_line": "Credit Line",
         "kam_hunter": "KAM Hunter",
         "kam_farmer": "KAM Farmer",
-        "current_status": "Loan Status",
         "dpd_bucket": "DPD Bucket",
     }
-    available_dims = {k: v for k, v in SEGMENT_DIMS.items() if k in df.columns}
+    if "current_status" in df.columns:
+        segment_dims["current_status"] = "Loan Status"
+    elif "status" in df.columns:
+        segment_dims["status"] = "Loan Status"
+
+    available_dims = {k: v for k, v in segment_dims.items() if k in df.columns}
     if not available_dims:
         st.info("No segment dimension columns found in the current dataset.")
         return
@@ -1853,7 +1857,7 @@ def render_segment_breakdown(df: pd.DataFrame) -> None:
             row["PAR 60 (%)"] = round(float(grp.loc[grp[dpd_col] >= 60, exposure_col].sum()) / total * 100, 2)
             row["PAR 90 (%)"] = round(float(grp.loc[grp[dpd_col] >= 90, exposure_col].sum()) / total * 100, 2)
         if status_col:
-            defaulted = (grp[status_col].astype(str).str.lower() == "defaulted").sum()
+            defaulted = grp[status_col].astype(str).str.contains(r"default|charged", case=False, na=False).sum()
             row["Default Rate (%)"] = round(float(defaulted) / len(grp) * 100, 2)
         rows.append(row)
 
