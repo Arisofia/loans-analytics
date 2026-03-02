@@ -129,6 +129,37 @@ def _load_segment_snapshot(run_dir: Path) -> dict[str, Any]:
     return _load_json(run_dir / "segment_snapshot.json")
 
 
+def _resolve_source_file(run_dir: Path, pipeline_results: dict[str, Any], upload_meta: dict[str, Any]) -> str:
+    """Resolve run lineage source with upload metadata as primary source."""
+    source_file = upload_meta.get("source_file")
+    if isinstance(source_file, str) and source_file.strip():
+        return source_file
+
+    direct_source = pipeline_results.get("source_path")
+    if isinstance(direct_source, str) and direct_source.strip():
+        return Path(direct_source).name
+
+    phases = pipeline_results.get("phases", {}) if isinstance(pipeline_results, dict) else {}
+    if isinstance(phases, dict):
+        ingestion = phases.get("ingestion", {})
+        if isinstance(ingestion, dict):
+            for key in ("input_path", "source_path", "input_file", "source_file"):
+                value = ingestion.get(key)
+                if isinstance(value, str) and value.strip():
+                    return Path(value).name
+
+    parquet_hint = run_dir / "raw_data.parquet"
+    if parquet_hint.exists():
+        return parquet_hint.name
+    return "pipeline/default"
+
+
+def _format_as_of_for_display(as_of_ts: "pd.Timestamp") -> str:
+    if pd.notna(as_of_ts):
+        return str(as_of_ts.date())
+    return "from run metadata"
+
+
 def _resolve_series_by_aliases(df: pd.DataFrame, aliases: list[str]) -> pd.Series | None:
     lower_map = {col.lower(): col for col in df.columns}
     for alias in aliases:
@@ -319,7 +350,8 @@ def _field_non_empty_count(run_df: pd.DataFrame | None, canonical_field: str) ->
 
 
 @st.cache_data(show_spinner=False)
-def build_trends_frame(logs_dir: str) -> pd.DataFrame:
+def build_trends_frame(logs_dir: str, cache_key: tuple[int, int] | None = None) -> pd.DataFrame:
+    _ = cache_key  # cache invalidation token derived from filesystem state
     base = Path(logs_dir)
     if not base.exists():
         return pd.DataFrame()
@@ -343,7 +375,7 @@ def build_trends_frame(logs_dir: str) -> pd.DataFrame:
             "run_type": _run_type(run_dir.name),
             "run_timestamp": run_timestamp,
             "as_of_date": as_of_date,
-            "source_file": upload_meta.get("source_file", ""),
+            "source_file": _resolve_source_file(run_dir, pipeline_results, upload_meta),
             "integration_status": integration_status,
             "integration_notes": " | ".join(integration_notes),
         }
@@ -364,11 +396,21 @@ def build_trends_frame(logs_dir: str) -> pd.DataFrame:
     return trends
 
 
+def _trends_cache_key(logs_dir: Path) -> tuple[int, int]:
+    if not logs_dir.exists():
+        return (0, 0)
+    run_dirs = [p for p in logs_dir.iterdir() if p.is_dir()]
+    if not run_dirs:
+        return (0, 0)
+    latest_mtime = max(int(p.stat().st_mtime) for p in run_dirs)
+    return (len(run_dirs), latest_mtime)
+
+
 def render_trends_section(logs_dir: Path) -> None:
     st.markdown("---")
     st.header("📉 Historical Trends Across Runs")
 
-    trends = build_trends_frame(str(logs_dir))
+    trends = build_trends_frame(str(logs_dir), _trends_cache_key(logs_dir))
     if trends.empty:
         st.info("No run outputs found to build historical trends.")
         return
@@ -612,15 +654,13 @@ elif page == "📊 Dashboard" and selected_run:
 
         run_df = _load_run_dataframe(run_dir)
         upload_meta = _load_upload_metadata(run_dir)
+        display_as_of = _format_as_of_for_display(_derive_as_of_date(run_dir, results, run_df))
         st.subheader("🧾 Source Data Integration")
         meta_col1, meta_col2, meta_col3 = st.columns(3)
         with meta_col1:
-            st.metric("Source File", upload_meta.get("source_file", "pipeline/default"))
+            st.metric("Source File", _resolve_source_file(run_dir, results, upload_meta))
         with meta_col2:
-            st.metric(
-                "Detected As-of",
-                upload_meta.get("detected_as_of_date", "from run metadata"),
-            )
+            st.metric("Detected As-of", display_as_of)
         with meta_col3:
             company_non_empty = _field_non_empty_count(run_df, "company")
             if company_non_empty is None:
