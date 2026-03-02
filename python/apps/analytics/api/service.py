@@ -970,6 +970,36 @@ class KPIService:
                 build_kpi_response("COR", "Cost of Risk", cor_data["cost_of_risk_pct"], "%"),
                 build_kpi_response("CURERATE", "Cure Rate", cure_rate, "%"),
                 build_kpi_response("NIM", "Net Interest Margin", nim_data["nim_pct"], "%"),
+                build_kpi_response(
+                    "collections_eligible_rate",
+                    "Collections Eligible Rate",
+                    results["collections_eligible_rate"],
+                    "%",
+                ),
+                build_kpi_response(
+                    "government_sector_exposure_rate",
+                    "Government Sector Exposure Rate",
+                    results["government_sector_exposure_rate"],
+                    "%",
+                ),
+                build_kpi_response(
+                    "avg_credit_line_utilization",
+                    "Average Credit Line Utilization",
+                    results["avg_credit_line_utilization"],
+                    "%",
+                ),
+                build_kpi_response(
+                    "capital_collection_rate",
+                    "Capital Collection Rate",
+                    results["capital_collection_rate"],
+                    "%",
+                ),
+                build_kpi_response(
+                    "mdsc_posted_rate",
+                    "MDSC Posted Rate",
+                    results["mdsc_posted_rate"],
+                    "%",
+                ),
                 build_kpi_response("CASH_ON_HAND", "Cash on Hand", results["cash_on_hand"], "USD"),
                 build_kpi_response(
                     "PORTFOLIO_YIELD",
@@ -2214,6 +2244,7 @@ class KPIService:
         active_borrowers, repeat_borrower_rate = self._calculate_borrower_metrics(df)
         executive_metrics = self._calculate_realtime_executive_metrics(df)
         disbursement_volume_mtd, new_loans_count_mtd = self._calculate_mtd_metrics(df)
+        enriched_metrics = self._calculate_realtime_enriched_metrics(df, total_outstanding)
 
         return {
             "par30": par_metrics["par30"],
@@ -2248,7 +2279,86 @@ class KPIService:
             "automation_rate": self._calculate_automation_rate(df),
             "processing_time_avg": self._calculate_processing_time_avg(df),
             "count": self._calculate_total_loans_count(df, status_series),
+            "collections_eligible_rate": enriched_metrics["collections_eligible_rate"],
+            "government_sector_exposure_rate": enriched_metrics["government_sector_exposure_rate"],
+            "avg_credit_line_utilization": enriched_metrics["avg_credit_line_utilization"],
+            "capital_collection_rate": enriched_metrics["capital_collection_rate"],
+            "mdsc_posted_rate": enriched_metrics["mdsc_posted_rate"],
         }
+
+    @staticmethod
+    def _first_present_column(df: pd.DataFrame, *candidates: str) -> str | None:
+        """Return first candidate column found in dataframe."""
+        return next((col for col in candidates if col in df.columns), None)
+
+    def _calculate_realtime_enriched_metrics(
+        self, df: pd.DataFrame, total_outstanding: float
+    ) -> dict[str, float]:
+        """
+        Compute enriched CONTROL DE MORA KPIs in realtime mode.
+
+        Uses canonical and raw fallbacks for compatibility with mixed payloads.
+        """
+        metrics = {
+            "collections_eligible_rate": 0.0,
+            "government_sector_exposure_rate": 0.0,
+            "avg_credit_line_utilization": 0.0,
+            "capital_collection_rate": 0.0,
+            "mdsc_posted_rate": 0.0,
+        }
+
+        if df.empty:
+            return metrics
+
+        balance_col = self._first_present_column(
+            df, "principal_balance", "outstanding_balance", "current_balance", "loan_amount"
+        )
+        if balance_col is None:
+            return metrics
+
+        balance = pd.to_numeric(df[balance_col], errors="coerce").fillna(0.0)
+        denom = float(balance.sum()) if total_outstanding <= 0 else float(total_outstanding)
+        if denom <= 0:
+            return metrics
+
+        eligible_col = self._first_present_column(df, "collections_eligible", "procede_a_cobrar")
+        if eligible_col is not None:
+            eligible_mask = (
+                df[eligible_col].astype(str).str.strip().str.upper().isin({"Y", "YES", "SI", "S", "TRUE", "1"})
+            )
+            metrics["collections_eligible_rate"] = self._safe_pct(
+                float(balance[eligible_mask].sum()), denom
+            )
+
+        govt_col = self._first_present_column(df, "government_sector", "goes")
+        if govt_col is not None:
+            govt_mask = df[govt_col].astype(str).str.strip().str.upper().eq("GOES")
+            metrics["government_sector_exposure_rate"] = self._safe_pct(
+                float(balance[govt_mask].sum()), denom
+            )
+
+        util_col = self._first_present_column(df, "utilization_pct", "porcentaje_utilizado")
+        if util_col is not None:
+            raw_util = df[util_col].astype(str).str.replace(r"[$,%\s]", "", regex=True)
+            util_series = pd.to_numeric(raw_util, errors="coerce").dropna()
+            if not util_series.empty:
+                median_val = float(util_series.median())
+                if median_val < 2.0:
+                    util_series = util_series * 100
+                metrics["avg_credit_line_utilization"] = float(util_series.mean())
+
+        cap_col = self._first_present_column(df, "capital_collected", "capitalcobrado")
+        if cap_col is not None:
+            cap_collected = pd.to_numeric(df[cap_col], errors="coerce").fillna(0.0)
+            metrics["capital_collection_rate"] = self._safe_pct(float(cap_collected.sum()), denom)
+
+        mdsc_col = self._first_present_column(df, "mdsc_posted", "mdscposteado")
+        if mdsc_col is not None:
+            mdsc = pd.to_numeric(df[mdsc_col], errors="coerce").fillna(0.0)
+            if len(mdsc) > 0:
+                metrics["mdsc_posted_rate"] = self._safe_pct(float(mdsc.sum()), float(len(mdsc)))
+
+        return metrics
 
     @staticmethod
     def _calculate_cash_on_hand(df: pd.DataFrame) -> float:
