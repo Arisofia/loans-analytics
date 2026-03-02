@@ -572,6 +572,25 @@ class AnalysisLayer(BaseModel):
     now_what: str = Field(..., description="The immediate recommended action")
 
 
+class PortfolioHealthComponent(BaseModel):
+    dimension: str
+    value: float
+    unit: str
+    weight: float
+    points_earned: float
+    status: Literal["healthy", "at_risk", "warning", "critical"]
+    thresholds: Dict[str, float] = Field(default_factory=dict)
+    direction: Literal["lower_is_better", "higher_is_better"]
+
+
+class PortfolioHealthScore(BaseModel):
+    score: float = Field(..., ge=0, le=100, description="Composite portfolio health score (0-100)")
+    traffic_light: Literal["healthy", "at_risk", "warning", "critical"]
+    components: List[PortfolioHealthComponent] = Field(default_factory=list)
+    formula: str
+    interpretation: str
+
+
 class FullAnalysisResponse(BaseModel):
     analysis_id: str
     summary: str
@@ -588,6 +607,8 @@ class FullAnalysisResponse(BaseModel):
         default_factory=list,
         description="KPI snapshot used by the analysis, including formulas and implications",
     )
+    unit_economics: Optional[UnitEconomicsResponse] = None
+    portfolio_health: Optional[PortfolioHealthScore] = None
 
 
 class SegmentAnalyticsRequest(BaseModel):
@@ -760,6 +781,20 @@ class ExecutiveAnalyticsResponse(BaseModel):
     revenue_forecast_6m: List[Dict[str, Any]] = Field(default_factory=list)
     opportunity_prioritization: List[Dict[str, Any]] = Field(default_factory=list)
     data_governance: Dict[str, Any] = Field(default_factory=dict)
+    risk_kpis: List[KpiSingleResponse] = Field(default_factory=list)
+    portfolio_health: Optional[PortfolioHealthScore] = None
+
+
+class DecisionDashboardResponse(BaseModel):
+    """Unified decision view combining health score, risk, and KPI context."""
+
+    generated_at: datetime
+    portfolio_health: PortfolioHealthScore
+    risk_stratification: RiskStratificationResponse
+    risk_heatmap: RiskHeatmapResponse
+    unit_economics: UnitEconomicsResponse
+    kpis: List[KpiSingleResponse] = Field(default_factory=list)
+    recommendations: List[str] = Field(default_factory=list)
 
 
 class DefaultPredictionRequest(BaseModel):

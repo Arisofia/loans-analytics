@@ -19,6 +19,7 @@ from python.apps.analytics.api.models import (
     CostOfRiskMetrics,
     CureRateMetrics,
     DataQualityResponse,
+    DecisionDashboardResponse,
     DPDBucketWithAction,
     DecisionFlag,
     KpiContext,
@@ -30,6 +31,9 @@ from python.apps.analytics.api.models import (
     NSMPeriodMetrics,
     NSMRecurrentTPVResponse,
     PaybackMetrics,
+    PortfolioHealthComponent,
+    PortfolioHealthScore,
+    RiskHeatmapResponse,
     RiskStratificationResponse,
     RollRateAnalyticsResponse,
     RollRateAnalyticsSummary,
@@ -49,6 +53,7 @@ from python.apps.analytics.api.models import (
 from python.config import settings
 from python.kpis.advanced_risk import calculate_advanced_risk_metrics
 from python.kpis.catalog_processor import KPICatalogProcessor
+from python.kpis.health_score import calculate_portfolio_health_score
 from python.kpis.unit_economics import (
     calculate_all_unit_economics,
     calculate_cost_of_risk,
@@ -752,6 +757,29 @@ class KPIService:
             schedule_df=schedule_df,
         )
         extended_kpis = processor.get_all_kpis()
+        now = datetime.now()
+
+        if loans_df.empty:
+            risk_kpis: list[KpiSingleResponse] = []
+            portfolio_health = PortfolioHealthScore(
+                score=100.0,
+                traffic_light="healthy",
+                components=[],
+                formula=(
+                    "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
+                    "CostOfRisk(15pts) + DefaultRate(15pts)"
+                ),
+                interpretation="No loans provided; score defaults to healthy baseline.",
+            )
+        else:
+            metrics = self._calculate_portfolio_performance_metrics(loans_df.copy())
+            risk_kpis = self._build_risk_kpi_snapshot_from_metrics(
+                metrics,
+                sample_size=len(loans_df),
+                timestamp=now,
+            )
+            portfolio_health = self._build_portfolio_health_score_from_metrics(metrics)
+
         return {
             "strategic_confirmations": extended_kpis.get("strategic_confirmations", {}),
             "executive_strip": extended_kpis.get("executive_strip", {}),
@@ -761,7 +789,133 @@ class KPIService:
             "revenue_forecast_6m": extended_kpis.get("revenue_forecast_6m", []),
             "opportunity_prioritization": extended_kpis.get("opportunity_prioritization", []),
             "data_governance": extended_kpis.get("data_governance", {}),
+            "risk_kpis": risk_kpis,
+            "portfolio_health": portfolio_health,
         }
+
+    def _build_risk_kpi_snapshot_from_metrics(
+        self,
+        metrics: dict[str, float],
+        *,
+        sample_size: int,
+        timestamp: datetime,
+    ) -> list[KpiSingleResponse]:
+        """Build compact risk KPI snapshot used by executive/decision views."""
+        snapshot_defs = [
+            ("PAR30", "Portfolio at Risk (30+ days)", metrics.get("par30", 0.0), "%"),
+            ("PAR60", "Portfolio at Risk (60+ days)", metrics.get("par60", 0.0), "%"),
+            ("PAR90", "Portfolio at Risk (90+ days)", metrics.get("par90", 0.0), "%"),
+            ("DEFAULT_RATE", "Default Rate", metrics.get("default_rate", 0.0), "%"),
+            ("NPL", "Non-Performing Loans", metrics.get("npl", 0.0), "%"),
+            ("LGD", "Loss Given Default", metrics.get("lgd", 0.0), "%"),
+            ("COR", "Cost of Risk", metrics.get("cor", 0.0), "%"),
+            ("COLLECTION_RATE", "Collection Rate", metrics.get("collection_rate", 0.0), "%"),
+        ]
+        return [
+            self._build_kpi_single_response(
+                kpi_id=kpi_id,
+                name=name,
+                value=value,
+                unit=unit,
+                timestamp=timestamp,
+                sample_size=sample_size,
+                period="on-demand",
+                filters={"loan_count": sample_size},
+            )
+            for kpi_id, name, value, unit in snapshot_defs
+        ]
+
+    def _build_portfolio_health_score_from_metrics(
+        self, metrics: dict[str, float]
+    ) -> PortfolioHealthScore:
+        """Map numeric KPI metrics into the composite portfolio health object."""
+        payload = calculate_portfolio_health_score(
+            par30=float(metrics.get("par30", 0.0)),
+            collection_rate=float(metrics.get("collection_rate", 0.0)),
+            npl=float(metrics.get("npl", 0.0)),
+            cost_of_risk=float(metrics.get("cor", 0.0)),
+            default_rate=float(metrics.get("default_rate", 0.0)),
+        )
+        components = [PortfolioHealthComponent(**item) for item in payload.get("components", [])]
+        return PortfolioHealthScore(
+            score=float(payload.get("score", 0.0)),
+            traffic_light=str(payload.get("traffic_light", "critical")),
+            components=components,
+            formula=str(payload.get("formula", "")),
+            interpretation=str(payload.get("interpretation", "")),
+        )
+
+    async def get_portfolio_health_score(
+        self,
+        loans: list[LoanRecord] | None,
+    ) -> PortfolioHealthScore:
+        """Compute portfolio health score for the provided loan set."""
+        if not loans:
+            return PortfolioHealthScore(
+                score=100.0,
+                traffic_light="healthy",
+                components=[],
+                formula=(
+                    "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
+                    "CostOfRisk(15pts) + DefaultRate(15pts)"
+                ),
+                interpretation="No loans provided; score defaults to healthy baseline.",
+            )
+
+        df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
+        if df.empty:
+            return PortfolioHealthScore(
+                score=100.0,
+                traffic_light="healthy",
+                components=[],
+                formula=(
+                    "PAR30(25pts) + CollectionRate(25pts) + NPL(20pts) + "
+                    "CostOfRisk(15pts) + DefaultRate(15pts)"
+                ),
+                interpretation="No loans provided; score defaults to healthy baseline.",
+            )
+        metrics = self._calculate_portfolio_performance_metrics(df)
+        return self._build_portfolio_health_score_from_metrics(metrics)
+
+    async def get_decision_dashboard(
+        self,
+        loans: list[LoanRecord] | None,
+    ) -> DecisionDashboardResponse:
+        """Build unified decision dashboard payload for portfolio triage."""
+        if not loans:
+            raise ValueError("Decision dashboard requires loan data.")
+
+        health = await self.get_portfolio_health_score(loans)
+        risk_stratification = await self.get_risk_stratification(loans)
+        heatmap_raw = await self.get_risk_heatmap_summary(loans)
+        risk_heatmap = RiskHeatmapResponse(**heatmap_raw)
+        unit_economics = await self.calculate_unit_economics(loans)
+        kpis = await self.calculate_kpis_for_portfolio(loans)
+
+        recommendations: list[str] = []
+        if health.traffic_light in {"critical", "warning"}:
+            recommendations.append(
+                "Prioritize remediation on the weakest health-score components this week."
+            )
+        red_flags = [flag.flag for flag in risk_stratification.decision_flags if flag.status == "red"]
+        if red_flags:
+            recommendations.append(
+                f"Escalate red risk flags to committee: {', '.join(red_flags)}."
+            )
+        if not recommendations:
+            recommendations.append(
+                "Maintain current strategy and monitor trend deltas in PAR and collections."
+            )
+
+        return DecisionDashboardResponse(
+            generated_at=datetime.now(),
+            portfolio_health=health,
+            risk_stratification=risk_stratification,
+            risk_heatmap=risk_heatmap,
+            unit_economics=unit_economics,
+            kpis=kpis,
+            recommendations=recommendations,
+        )
 
     def _normalize_loans_for_catalog(
         self,

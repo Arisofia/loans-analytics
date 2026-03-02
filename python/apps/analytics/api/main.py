@@ -24,6 +24,7 @@ try:
         CohortAnalyticsRequest,
         CohortAnalyticsResponse,
         DataQualityResponse,
+        DecisionDashboardResponse,
         DefaultPredictionRequest,
         DefaultPredictionResponse,
         ExecutiveAnalyticsRequest,
@@ -944,6 +945,8 @@ if app is not None:
         risk_heatmap_data = await service.get_risk_heatmap_summary(request.loans)
         vintage_curves_data = await service.calculate_vintage_curves(request.loans)
         layered_analysis = await service.get_layered_insights(request.loans)
+        unit_economics = await service.calculate_unit_economics(request.loans)
+        portfolio_health = await service.get_portfolio_health_score(request.loans)
 
         return FullAnalysisResponse(
             analysis_id=trace_id,
@@ -960,7 +963,31 @@ if app is not None:
             risk_heatmap=risk_heatmap_data,
             vintage_curves=vintage_curves_data,
             layered_analysis=layered_analysis,
+            unit_economics=unit_economics,
+            portfolio_health=portfolio_health,
         )
+
+    @app.post(
+        "/analytics/decision-dashboard",
+        response_model=DecisionDashboardResponse,
+    )
+    async def get_decision_dashboard(
+        request: LoanPortfolioRequest = Body(...),
+        service: KPIService = Depends(get_kpi_service),
+    ):
+        """Unified portfolio decision dashboard with health score and risk drill-down."""
+        try:
+            if not request.loans:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Decision dashboard requires loan records in request.loans",
+                )
+            return await service.get_decision_dashboard(request.loans)
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Error in get_decision_dashboard: %s", e)
+            raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR) from e
 
     @app.post(
         "/analytics/executive-summary",
