@@ -10,6 +10,7 @@ Complete dashboard with:
 """
 
 import json
+import logging
 import os
 import sys
 from datetime import datetime, timezone
@@ -40,6 +41,8 @@ from streamlit_app.components.csv_upload import (  # noqa: E402
     _coerce_numeric as _coerce_amount,
 )
 from streamlit_app.utils.security import sanitize_api_base  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 # Page configuration
 st.set_page_config(
@@ -2102,6 +2105,18 @@ def render_loan_table(df: pd.DataFrame):
         )
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def _fetch_nsm_data(api_url: str) -> dict | None:
+    """Fetch NSM data from the analytics API, cached for 60 seconds."""
+    try:
+        resp = requests.get(api_url, timeout=5)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception as exc:
+        logger.warning("NSM API call failed (%s): %s", api_url, exc)
+        return None
+
+
 def render_nsm_section() -> None:
     """Render the North Star Metric (Recurrent TPV) section from the analytics API."""
     st.markdown("### 🌟 North Star Metric — Recurrent TPV")
@@ -2111,12 +2126,9 @@ def render_nsm_section() -> None:
         return
 
     nsm_url = f"{ABACO_API_BASE_SAFE.rstrip('/')}/analytics/nsm"
-    try:
-        resp = requests.get(nsm_url, timeout=5)
-        resp.raise_for_status()
-        data = resp.json()
-    except Exception as exc:
-        st.info(f"NSM data not available: {exc}")
+    data = _fetch_nsm_data(nsm_url)
+    if data is None:
+        st.info("NSM data not available.")
         return
 
     latest_period = data.get("latest_period")
