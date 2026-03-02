@@ -167,9 +167,7 @@ if "events_data" in st.session_state and st.session_state["events_data"]:
         for c in ["created_at", "severity", "event_type", "source", "id", "acknowledged_at"]
         if c in df.columns
     ]
-    st.dataframe(
-        df[display_cols].sort_values("created_at", ascending=False), width="stretch"
-    )
+    st.dataframe(df[display_cols].sort_values("created_at", ascending=False), width="stretch")
 
     # Acknowledge button
     st.subheader("Acknowledge Event")

@@ -147,17 +147,21 @@ def test_full_analysis_layered_insights():
     assert response.status_code == 200
 
     body = response.json()
-    
+
     # Check Layered Analysis
     assert "layered_analysis" in body
     layers = body["layered_analysis"]
     assert len(layers) >= 3
-    
-    risk_layer = next(l for l in layers if l["layer"] == "Portfolio Risk")
+
+    risk_layer = next(
+        layer_item for layer_item in layers if layer_item["layer"] == "Portfolio Risk"
+    )
     assert "what" in risk_layer
     assert "why" in risk_layer
     assert "so_what" in risk_layer
     assert "now_what" in risk_layer
-    
-    growth_layer = next(l for l in layers if l["layer"] == "Growth & Profitability")
+
+    growth_layer = next(
+        layer_item for layer_item in layers if layer_item["layer"] == "Growth & Profitability"
+    )
     assert growth_layer["now_what"] is not None

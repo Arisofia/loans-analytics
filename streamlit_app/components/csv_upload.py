@@ -248,15 +248,13 @@ ALIAS_MAP: dict[str, list[str]] = {
 def render_csv_upload() -> None:
     """Render CSV upload interface with validation and processing."""
     st.header("📤 CSV Data Upload")
-    st.markdown(
-        """
+    st.markdown("""
     Upload loan data files to process through the analytics pipeline.
 
     **Supported file types:** CSV, Excel (.xlsx, .xls)
     **Max file size:** 200 MB
     **Pipeline required columns after mapping:** loan_id, amount, status
-    """
-    )
+    """)
 
     uploaded_files = st.file_uploader(
         "Choose CSV/Excel file(s)",
@@ -332,7 +330,10 @@ def render_csv_upload() -> None:
         with col2:
             st.metric("Columns", len(consolidated.columns))
         with col3:
-            st.metric("Unique loan_id", int(consolidated["loan_id"].nunique()) if "loan_id" in consolidated.columns else 0)
+            st.metric(
+                "Unique loan_id",
+                int(consolidated["loan_id"].nunique()) if "loan_id" in consolidated.columns else 0,
+            )
 
         st.dataframe(_to_arrow_safe_display_df(consolidated.head(15)), width="stretch")
         _render_validation(consolidated)
@@ -450,7 +451,9 @@ def _nullify_missing_entries(series: pd.Series) -> pd.Series:
     return series.where(~missing_mask, pd.NA)
 
 
-def _coalesce_series(series_list: list[pd.Series], index: pd.Index, default: Any = pd.NA) -> pd.Series:
+def _coalesce_series(
+    series_list: list[pd.Series], index: pd.Index, default: Any = pd.NA
+) -> pd.Series:
     """Return first non-null value across candidate series without using bfill."""
     if not series_list:
         if isinstance(default, pd.Series):
@@ -538,7 +541,9 @@ def _coerce_numeric_nullable(series: pd.Series) -> pd.Series:
 
 
 def _derive_status(df: pd.DataFrame) -> pd.Series:
-    dpd_col = "days_past_due" if "days_past_due" in df.columns else "dpd" if "dpd" in df.columns else None
+    dpd_col = (
+        "days_past_due" if "days_past_due" in df.columns else "dpd" if "dpd" in df.columns else None
+    )
     dpd = _coerce_numeric(df[dpd_col]) if dpd_col else None
 
     if "status" in df.columns:
@@ -623,7 +628,9 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
         "amount",
     ]:
         if source_col in prepared.columns:
-            balance_sources.append(_coerce_numeric_nullable(prepared[source_col]).rename(source_col))
+            balance_sources.append(
+                _coerce_numeric_nullable(prepared[source_col]).rename(source_col)
+            )
 
     principal_sources: list[pd.Series] = []
     for source_col in [
@@ -638,7 +645,9 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
         "amount",
     ]:
         if source_col in prepared.columns:
-            principal_sources.append(_coerce_numeric_nullable(prepared[source_col]).rename(source_col))
+            principal_sources.append(
+                _coerce_numeric_nullable(prepared[source_col]).rename(source_col)
+            )
 
     balance_series = _coalesce_series(balance_sources, index=prepared.index, default=0.0)
     principal_series = _coalesce_series(
@@ -753,7 +762,9 @@ def _collapse_to_loan_level(df: pd.DataFrame) -> pd.DataFrame:
     if present_dates:
         work = work.assign(**{col: _to_datetime_mixed(work[col]) for col in present_dates})
 
-    event_date = work[present_dates].max(axis=1) if present_dates else pd.Series(pd.NaT, index=work.index)
+    event_date = (
+        work[present_dates].max(axis=1) if present_dates else pd.Series(pd.NaT, index=work.index)
+    )
     work = work.assign(_event_date=event_date, _row_order=range(len(work))).copy()
     work = work.sort_values(
         ["loan_id", "_event_date", "_row_order"],
@@ -926,7 +937,9 @@ def _validate_for_pipeline(df: pd.DataFrame) -> tuple[bool, list[str], list[str]
 def _render_validation(df: pd.DataFrame) -> None:
     valid, missing, issues, notices = _validate_for_pipeline(df)
     if valid:
-        st.success("✅ Required pipeline columns present after alias mapping (loan_id, amount, status)")
+        st.success(
+            "✅ Required pipeline columns present after alias mapping (loan_id, amount, status)"
+        )
     else:
         st.error("❌ Missing required pipeline columns after alias mapping: " + ", ".join(missing))
 
@@ -974,7 +987,9 @@ def _run_pipeline(df: pd.DataFrame, filename: str) -> None:
         status_text.text("Phase 2/4: Transforming data...")
         progress_bar.progress(50)
         transformation = TransformationPhase(pipeline_cfg.transformation, business_rules)
-        transform_result = transformation.execute(raw_data_path=run_dir / "raw_data.parquet", run_dir=run_dir)
+        transform_result = transformation.execute(
+            raw_data_path=run_dir / "raw_data.parquet", run_dir=run_dir
+        )
         if transform_result["status"] != "success":
             st.error(f"❌ Transformation failed: {transform_result.get('error')}")
             return
@@ -982,7 +997,9 @@ def _run_pipeline(df: pd.DataFrame, filename: str) -> None:
         status_text.text("Phase 3/4: Calculating KPIs...")
         progress_bar.progress(75)
         calculation = CalculationPhase(pipeline_cfg.calculation, kpi_definitions)
-        calc_result = calculation.execute(clean_data_path=run_dir / "clean_data.parquet", run_dir=run_dir)
+        calc_result = calculation.execute(
+            clean_data_path=run_dir / "clean_data.parquet", run_dir=run_dir
+        )
         if calc_result["status"] != "success":
             st.error(f"❌ Calculation failed: {calc_result.get('error')}")
             return
@@ -1020,7 +1037,9 @@ def _run_pipeline(df: pd.DataFrame, filename: str) -> None:
             csv_path = run_dir / "kpis_output.csv"
             if csv_path.exists():
                 with open(csv_path, "rb") as fh:
-                    st.download_button("📄 Download CSV", fh, file_name=f"kpis_{run_id}.csv", mime="text/csv")
+                    st.download_button(
+                        "📄 Download CSV", fh, file_name=f"kpis_{run_id}.csv", mime="text/csv"
+                    )
 
         with col2:
             json_path = run_dir / "kpis_output.json"

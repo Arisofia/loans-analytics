@@ -49,7 +49,6 @@ from streamlit_app.components.csv_upload import (  # noqa: E402
     BORROWER_ID_COLS,
 )
 
-
 # ---------------------------------------------------------------------------
 # _coerce_numeric – currency / thousands-separator parsing
 # ---------------------------------------------------------------------------
@@ -310,8 +309,8 @@ class TestClassifyLoanIdDuplicates:
         df = pd.DataFrame(
             {
                 "loan_id": ["A", "A"],
-                "borrower_id": ["b1", "b2"],   # different → suspicious
-                "client_code": ["C1", "C1"],    # same — should be ignored
+                "borrower_id": ["b1", "b2"],  # different → suspicious
+                "client_code": ["C1", "C1"],  # same — should be ignored
                 "amount": [100.0, 100.0],
             }
         )

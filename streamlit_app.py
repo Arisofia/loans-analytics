@@ -129,7 +129,9 @@ def _load_segment_snapshot(run_dir: Path) -> dict[str, Any]:
     return _load_json(run_dir / "segment_snapshot.json")
 
 
-def _resolve_source_file(run_dir: Path, pipeline_results: dict[str, Any], upload_meta: dict[str, Any]) -> str:
+def _resolve_source_file(
+    run_dir: Path, pipeline_results: dict[str, Any], upload_meta: dict[str, Any]
+) -> str:
     """Resolve run lineage source with upload metadata as primary source."""
     source_file = upload_meta.get("source_file")
     if isinstance(source_file, str) and source_file.strip():
@@ -205,7 +207,9 @@ def _build_portfolio_payload_from_run_df(run_df: pd.DataFrame) -> dict[str, Any]
     )
     status_s = _resolve_series_by_aliases(run_df, ["loan_status", "status", "current_status"])
     rate_s = _resolve_series_by_aliases(run_df, ["interest_rate", "interest_rate_apr", "apr"])
-    dpd_s = _resolve_series_by_aliases(run_df, ["days_past_due", "dpd", "dias_vencido", "mora_en_dias"])
+    dpd_s = _resolve_series_by_aliases(
+        run_df, ["days_past_due", "dpd", "dias_vencido", "mora_en_dias"]
+    )
 
     if amount_s is None or principal_s is None:
         return None
@@ -499,7 +503,9 @@ def build_trends_frame(logs_dir: str, cache_key: tuple[int, int] | None = None) 
     trends = pd.DataFrame(rows)
     trends["run_timestamp"] = pd.to_datetime(trends["run_timestamp"], errors="coerce")
     trends["as_of_date"] = pd.to_datetime(trends["as_of_date"], errors="coerce")
-    trends = trends.sort_values(["run_timestamp", "run_id"], na_position="last").reset_index(drop=True)
+    trends = trends.sort_values(["run_timestamp", "run_id"], na_position="last").reset_index(
+        drop=True
+    )
     trends["trend_point"] = trends.apply(
         lambda r: f"{r['as_of_date'].date() if pd.notna(r['as_of_date']) else 'n/a'} | {r['run_id']}",
         axis=1,
@@ -528,7 +534,8 @@ def render_trends_section(logs_dir: Path) -> None:
 
     status_counts = trends["integration_status"].value_counts(dropna=False).to_dict()
     summary_parts = [
-        f"{k}: {v}" for k, v in [
+        f"{k}: {v}"
+        for k, v in [
             ("fully_populated", status_counts.get("fully_populated", 0)),
             ("partially_populated", status_counts.get("partially_populated", 0)),
             ("inconsistent", status_counts.get("inconsistent", 0)),
@@ -562,10 +569,10 @@ def render_trends_section(logs_dir: Path) -> None:
         for row in run_rows.itertuples(index=False)
     }
     selected_labels = st.multiselect(
-            "Runs included in trends",
-            options=list(run_label_map.keys()),
-            default=list(run_label_map.keys()),
-        )
+        "Runs included in trends",
+        options=list(run_label_map.keys()),
+        default=list(run_label_map.keys()),
+    )
     selected_runs = [run_label_map[label] for label in selected_labels]
 
     filtered = trends[trends["run_id"].isin(selected_runs)].copy()
@@ -627,6 +634,7 @@ def render_trends_section(logs_dir: Path) -> None:
     table_cols = [c for c in table_cols if c in filtered.columns]
     st.subheader("🧾 Trend Dataset")
     st.dataframe(filtered[table_cols], width="stretch")
+
 
 # Set page config
 st.set_page_config(
@@ -780,9 +788,7 @@ elif page == "📊 Dashboard" and selected_run:
                 st.metric("Company Rows", f"{company_non_empty:,}")
 
         control_fields = ["company", "credit_line", "kam_hunter", "kam_farmer"]
-        readiness = {
-            field: _field_non_empty_count(run_df, field) for field in control_fields
-        }
+        readiness = {field: _field_non_empty_count(run_df, field) for field in control_fields}
         readiness_parts = [
             f"{field}={count if count is not None else 'missing'}"
             for field, count in readiness.items()
@@ -823,7 +829,9 @@ elif page == "📊 Dashboard" and selected_run:
                 st.dataframe(seg_df[display_cols], width="stretch")
 
                 if "segment" in seg_df.columns:
-                    chart_cols = [col for col in ["par_30", "par_60", "par_90"] if col in seg_df.columns]
+                    chart_cols = [
+                        col for col in ["par_30", "par_60", "par_90"] if col in seg_df.columns
+                    ]
                     if chart_cols:
                         chart_df = seg_df.set_index("segment")[chart_cols].head(12)
                         st.bar_chart(chart_df)
@@ -878,7 +886,11 @@ elif page == "📊 Dashboard" and selected_run:
             payload_source = "derived_from_clean_data"
 
         if portfolio_request:
-            loan_count = len(portfolio_request.get("loans", [])) if isinstance(portfolio_request, dict) else 0
+            loan_count = (
+                len(portfolio_request.get("loans", []))
+                if isinstance(portfolio_request, dict)
+                else 0
+            )
             st.caption(f"Portfolio payload source: {payload_source} | loans: {loan_count:,}")
             api_client = AbacoAnalyticsApiClient()
             col_api1, col_api2 = st.columns(2)

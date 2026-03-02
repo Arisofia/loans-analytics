@@ -8,10 +8,10 @@ from python.apps.analytics.api.main import app
 from python.apps.analytics.api.models import LoanRecord
 from python.apps.analytics.api.service import KPIService
 
-
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_loan(
     loan_id: str,
@@ -56,6 +56,7 @@ def _mixed_portfolio() -> list[dict]:
 # ---------------------------------------------------------------------------
 # FastAPI integration tests (via TestClient)
 # ---------------------------------------------------------------------------
+
 
 class TestUnitEconomicsEndpoint:
     """Tests for POST /analytics/unit-economics."""
@@ -204,14 +205,14 @@ class TestUnitEconomicsEndpoint:
 
         bucket_names = {b["bucket"] for b in body["dpd_migration"]}
         # Normalized names must NOT carry the 'dpd_' prefix
-        assert not any(name.startswith("dpd_") for name in bucket_names), (
-            f"Found un-normalized bucket names: {bucket_names}"
-        )
+        assert not any(
+            name.startswith("dpd_") for name in bucket_names
+        ), f"Found un-normalized bucket names: {bucket_names}"
         # All returned names must be from the expected set
         expected = {"current", "1_30", "31_60", "61_90", "90_plus"}
-        assert bucket_names.issubset(expected), (
-            f"Unexpected bucket names: {bucket_names - expected}"
-        )
+        assert bucket_names.issubset(
+            expected
+        ), f"Unexpected bucket names: {bucket_names - expected}"
 
     def test_single_current_loan(self):
         """All metrics should return sane zero/near-zero values for a healthy portfolio."""
@@ -242,6 +243,7 @@ class TestUnitEconomicsEndpoint:
 # ---------------------------------------------------------------------------
 # Service-level unit tests (without HTTP layer)
 # ---------------------------------------------------------------------------
+
 
 class TestKPIServiceUnitEconomics:
     """Unit tests for KPIService.calculate_unit_economics()."""
@@ -365,9 +367,7 @@ class TestKPIServiceUnitEconomics:
             ),
         ]
 
-        result = await service.calculate_unit_economics(
-            loans, cac=240.0, monthly_arpu=20.0
-        )
+        result = await service.calculate_unit_economics(loans, cac=240.0, monthly_arpu=20.0)
 
         # Payback = 240 / 20 = 12 months
         assert result.payback.payback_months == pytest.approx(12.0, abs=0.01)

@@ -1007,7 +1007,7 @@ class CalculationPhase:
             "kam_farmer": ["kam_farmer", "cod_kam_farmer", "farmer"],
             "gov": ["gov", "ministry", "ministerio"],
             "industry": ["industry", "industria", "giro"],
-            "doc_type": ["doc_type"]
+            "doc_type": ["doc_type"],
         }
 
         resolved_dim = self._resolve_col(work, *(dim_map.get(dim, [dim])))

@@ -2105,7 +2105,25 @@ def render_loan_table(df: pd.DataFrame):
         )
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+def _safe_cache_data_decorator(*decorator_args: Any, **decorator_kwargs: Any):
+    """Return a resilient cache_data decorator (fallback to no-op in tests)."""
+    cache_data = getattr(st, "cache_data", None)
+    if callable(cache_data):
+        try:
+            decorated = cache_data(*decorator_args, **decorator_kwargs)
+            if callable(decorated):
+                return decorated
+        except Exception:
+            # In test stubs, cache_data can be a placeholder that is not a real decorator.
+            pass
+
+    def _identity(fn):
+        return fn
+
+    return _identity
+
+
+@_safe_cache_data_decorator(ttl=60, show_spinner=False)
 def _fetch_nsm_data(api_url: str) -> dict | None:
     """Fetch NSM data from the analytics API, cached for 60 seconds."""
     try:
