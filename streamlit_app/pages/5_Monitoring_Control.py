@@ -56,6 +56,11 @@ else:
 MONITORING_EVENTS_ENDPOINT = "/monitoring/events"
 MONITORING_EVENTS_ACK_ENDPOINT = "/monitoring/events/ack"
 MONITORING_COMMANDS_ENDPOINT = "/monitoring/commands"
+ALLOWED_ENDPOINTS = {
+    MONITORING_EVENTS_ENDPOINT,
+    MONITORING_EVENTS_ACK_ENDPOINT,
+    MONITORING_COMMANDS_ENDPOINT,
+}
 
 
 def _build_api_url(path: str) -> str | None:
@@ -69,6 +74,10 @@ def _build_api_url(path: str) -> str | None:
     base = API_BASE_SAFE
     if base is None:
         st.error("API is not configured or is untrusted. Aborting request.")
+        return None
+
+    if path not in ALLOWED_ENDPOINTS:
+        st.error("SSRF Protection: endpoint is not in the allowed API route list.")
         return None
 
     normalized_base = base.rstrip("/")
