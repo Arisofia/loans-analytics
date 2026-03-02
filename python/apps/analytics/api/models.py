@@ -792,4 +792,4 @@ class NSMRecurrentTPVResponse(BaseModel):
 
     latest_period: Optional[str] = None
     latest: Optional[NSMPeriodMetrics] = None
-    by_period: Dict[str, NSMPeriodMetrics] = {}
+    by_period: Dict[str, NSMPeriodMetrics] = Field(default_factory=dict)
