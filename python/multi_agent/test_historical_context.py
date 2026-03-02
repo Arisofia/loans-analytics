@@ -380,6 +380,13 @@ class TestForecasting(unittest.TestCase):
         self.assertEqual(len(projections), 10)
         self.assertEqual(projections[0].method, "linear")
 
+    def test_arima_forecasting(self):
+        """Test ARIMA-compatible forecast path."""
+        projections = self.provider.get_forecast("default_rate", steps=10, method="arima")
+        self.assertEqual(len(projections), 10)
+        self.assertEqual(projections[0].method, "arima")
+        self.assertGreater(projections[0].predicted_value, 0)
+
     def test_forecast_confidence_intervals(self):
         """Test that forecast confidence intervals expand over time."""
         projections = self.provider.get_forecast("default_rate", steps=10)
@@ -414,6 +421,23 @@ class TestForecasting(unittest.TestCase):
         self.assertIn("mae", metrics)
         self.assertIn("rmse", metrics)
         self.assertIn("mape", metrics)
+
+    def test_forecast_accuracy_metrics(self):
+        """Test forecast metrics completeness and basic bounds."""
+        projections = self.provider.get_forecast(
+            "default_rate", steps=7, method="exponential_smoothing"
+        )
+        for p in projections:
+            p.projection_date = p.projection_date - timedelta(days=7)
+
+        metrics = self.provider.validate_forecast("default_rate", projections)
+        self.assertIn("mae", metrics)
+        self.assertIn("rmse", metrics)
+        self.assertIn("mape", metrics)
+        self.assertIn("bias", metrics)
+        self.assertGreaterEqual(metrics["mae"], 0.0)
+        self.assertGreaterEqual(metrics["rmse"], 0.0)
+        self.assertGreaterEqual(metrics["mape"], 0.0)
 
 
 class TestBenchmarking(unittest.TestCase):
