@@ -242,7 +242,7 @@ class OutputPhase:
             working["__interest_rate"] = pd.Series([pd.NA] * len(working), index=working.index)
 
         missing_markers = {"", "nan", "none", "null", "n/a", "missing", "unknown"}
-        dimensions = ["company", "credit_line", "kam_hunter", "kam_farmer", "gov", "industry"]
+        dimensions = ["company", "credit_line", "kam_hunter", "kam_farmer", "gov", "industry", "doc_type"]
         dimension_rows: Dict[str, list[Dict[str, Any]]] = {}
 
         for dimension in dimensions:

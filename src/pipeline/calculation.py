@@ -950,6 +950,8 @@ class CalculationPhase:
             dimensions.append("gov")
         if any(c in df.columns for c in ("industry", "industria", "giro")):
             dimensions.append("industry")
+        if "doc_type" in df.columns:
+            dimensions.append("doc_type")
         return dimensions
 
     @staticmethod
@@ -989,7 +991,8 @@ class CalculationPhase:
             "kam_hunter": ["kam_hunter", "cod_kam_hunter"],
             "kam_farmer": ["kam_farmer", "cod_kam_farmer", "farmer"],
             "gov": ["gov", "ministry", "ministerio"],
-            "industry": ["industry", "industria", "giro"]
+            "industry": ["industry", "industria", "giro"],
+            "doc_type": ["doc_type"]
         }
         
         resolved_dim = self._resolve_col(work, *(dim_map.get(dim, [dim])))

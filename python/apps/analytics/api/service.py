@@ -2713,6 +2713,7 @@ class KPIService:
             "advisory_channel": ["advisory_channel", "asesoriadigital"],
             "gov": ["gov", "ministry", "ministerio"],
             "industry": ["industry", "industria", "giro"],
+            "doc_type": ["doc_type"],
             "government_sector": ["government_sector", "goes"],
             "collections_eligible": ["collections_eligible", "procede_a_cobrar"],
         }
