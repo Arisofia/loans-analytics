@@ -329,13 +329,13 @@ segment_kpis:
     implementability_status: "implement_now"
     priority: "high"
 
-  default_rate_by_ministry:
-    id: "default_rate_by_ministry"
-    name: "Default Rate by Ministry / Institution"
+  default_rate_by_gov:
+    id: "default_rate_by_gov"
+    name: "Default Rate by Gov / Institution"
     category: "risk"
-    definition: "Default rate segmented by government ministry or institution — flags concentration risk in public sector employer groups"
-    formula: "COUNT(loan_id WHERE status = 'defaulted') / COUNT(loan_id) * 100 GROUP BY ministry"
-    inputs: ["status", "ministry", "loan_id"]
+    definition: "Default rate segmented by government institution or entity — flags concentration risk in public sector groups"
+    formula: "COUNT(loan_id WHERE status = 'defaulted') / COUNT(loan_id) * 100 GROUP BY gov"
+    inputs: ["status", "gov", "loan_id"]
     unit: "percentage"
     implementability_status: "implement_now"
     priority: "medium"

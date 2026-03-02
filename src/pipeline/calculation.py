@@ -550,6 +550,7 @@ class CalculationPhase:
         try:
             df = self._load_input_dataframe(clean_data_path=clean_data_path, df=df)
 
+
             # Calculate KPIs
             kpi_results = self._calculate_kpis(df)
 
@@ -909,7 +910,7 @@ class CalculationPhase:
     def _calculate_segment_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Compute PAR30/60/90, default_rate, and outstanding_balance by segment dimension.
 
-        Segment dimensions: company, credit_line, kam_hunter, kam_farmer, ministry.
+        Segment dimensions: company, credit_line, kam_hunter, kam_farmer, gov.
         Returns a nested dict: {dimension: {segment_value: {kpi: value}}}.
         """
         segment_dims = self._available_segment_dimensions(df)
@@ -935,11 +936,19 @@ class CalculationPhase:
     @staticmethod
     def _available_segment_dimensions(df: pd.DataFrame) -> List[str]:
         """Return supported segment dimensions present in the dataframe."""
-        return [
-            col
-            for col in ("company", "credit_line", "kam_hunter", "kam_farmer", "ministry")
-            if col in df.columns
-        ]
+        dimensions = []
+        if "company" in df.columns or "empresa" in df.columns:
+            dimensions.append("company")
+        if any(c in df.columns for c in ("credit_line", "lineacredito", "linea_credito")):
+            dimensions.append("credit_line")
+        if "kam_hunter" in df.columns or "cod_kam_hunter" in df.columns:
+            dimensions.append("kam_hunter")
+        if any(c in df.columns for c in ("kam_farmer", "cod_kam_farmer", "farmer")):
+            dimensions.append("kam_farmer")
+        
+        if any(c in df.columns for c in ("gov", "ministry", "ministerio")):
+            dimensions.append("gov")
+        return dimensions
 
     @staticmethod
     def _prepare_segment_workframe(
@@ -970,7 +979,21 @@ class CalculationPhase:
     ) -> Dict[str, Any]:
         """Aggregate segment KPIs for a single dimension."""
         dim_result: Dict[str, Any] = {}
-        for seg_val, grp in work.groupby(dim, sort=False):
+        
+        # Mapping dimension key to possible column names
+        dim_map = {
+            "company": ["company", "empresa", "compania"],
+            "credit_line": ["credit_line", "lineacredito", "linea_credito"],
+            "kam_hunter": ["kam_hunter", "cod_kam_hunter"],
+            "kam_farmer": ["kam_farmer", "cod_kam_farmer", "farmer"],
+            "gov": ["gov", "ministry", "ministerio"]
+        }
+        
+        resolved_dim = self._resolve_col(work, *(dim_map.get(dim, [dim])))
+        if not resolved_dim:
+            return {}
+
+        for seg_val, grp in work.groupby(resolved_dim, sort=False):
             if seg_kpis := self._calculate_segment_group_kpis(grp, balance_col, dpd_col, status_col):
                 dim_result[str(seg_val)] = seg_kpis
         return dim_result

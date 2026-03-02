@@ -2711,7 +2711,7 @@ class KPIService:
             "kam_hunter": ["kam_hunter", "cod_kam_hunter"],
             "kam_farmer": ["kam_farmer", "cod_kam_farmer"],
             "advisory_channel": ["advisory_channel", "asesoriadigital"],
-            "ministry": ["ministry", "ministerio"],
+            "gov": ["gov", "ministry", "ministerio"],
             "government_sector": ["government_sector", "goes"],
             "collections_eligible": ["collections_eligible", "procede_a_cobrar"],
         }

@@ -220,7 +220,8 @@ class TransformationPhase:
             "definicion_m": "delinquency_definition",
             "rango_m": "delinquency_bucket_raw",
             "rango_de_la_linea": "credit_line_range",
-            "ministerio": "ministry",
+            "ministerio": "gov",
+            "ministry": "gov",
             "goes": "government_sector",
             "capitalcobrado": "capital_collected",
             "montototalabonado": "total_payment_received",
@@ -518,6 +519,7 @@ class TransformationPhase:
         - DPD bucket assignments
         - Risk categorization
         - Custom field derivations
+        - Automated Government Entity Identification
 
         Args:
             df: Input DataFrame
@@ -530,6 +532,7 @@ class TransformationPhase:
         rules_applied: List[str] = []
         fields_created: List[str] = []
 
+        self._automate_gov_identification(df, rules_applied, fields_created)
         self._normalize_interest_rate(df, rules_applied)
         self._normalize_equifax_score(df, rules_applied)
         self._enforce_non_negative_balances(df, rules_applied)
@@ -546,6 +549,71 @@ class TransformationPhase:
 
         logger.info("Applied %d business rules", len(rules_applied))
         return df, metrics
+
+    def _automate_gov_identification(
+        self, df: pd.DataFrame, rules_applied: List[str], fields_created: List[str]
+    ) -> None:
+        """
+        Identify government and public entities from 'emisor' (Pagador).
+        Synchronizes 'gov' (entity name) and 'government_sector' (GOES flag).
+        """
+        # Determine source columns
+        pagador_col = next((c for c in ("emisor", "issuer_name", "issuer") if c in df.columns), None)
+        goes_source = next((c for c in ("government_sector", "goes") if c in df.columns), None)
+        
+        if not pagador_col:
+            return
+
+        # Ensure columns exist
+        if "gov" not in df.columns:
+            df["gov"] = "No"
+            fields_created.append("gov")
+        if "government_sector" not in df.columns:
+            df["government_sector"] = "PRIVATE"
+            fields_created.append("government_sector")
+
+        # Government keywords (Spanish context)
+        gov_keywords = [
+            "MINISTERIO", "INSTITUTO", "COMISION", "PROCURADURIA", "ALCALDIA",
+            "MUNICIPALIDAD", "GOBIERNO", "ASAMBLEA", "CORTE", "ORGANO",
+            "CONSEJO", "FONDO", "BANCO CENTRAL", "FISCALIA", "DEFENSORIA",
+            "UNIVERSIDAD", "LOTERIA", "VICEPRESIDENCIA", "PRESIDENCIA",
+            "AUTORIDAD", "SUPERINTENDENCIA", "CENTRO NACIONAL", "INSAFOR",
+            "INCAF", "ANDA", "SIGET", "GOES",
+        ]
+
+        pattern = "|".join(gov_keywords)
+        
+        # 1. Identify by keywords in Emisor (Pagador)
+        keyword_match_mask = df[pagador_col].astype(str).str.upper().str.contains(pattern, na=False)
+        
+        # 2. Identify by existing GOES flag
+        if goes_source:
+            existing_goes_mask = df[goes_source].astype(str).str.upper().str.strip() == "GOES"
+        else:
+            existing_goes_mask = pd.Series(False, index=df.index)
+
+        # Unified Gov Mask: True if keywords match OR if source flag says GOES
+        is_gov_mask = keyword_match_mask | existing_goes_mask
+        
+        # Determine which rows need automated naming
+        gov_needs_name = is_gov_mask & df["gov"].astype(str).str.lower().isin(["", "no", "nan", "none", "missing"])
+        
+        # Apply Naming: Use Pagador name for identified gov entities
+        df.loc[gov_needs_name, "gov"] = df.loc[gov_needs_name, pagador_col]
+        
+        # Synchronize GOES flag: If gov is identified, set sector to GOES
+        # This ensures government_sector_exposure_rate is accurate
+        df.loc[is_gov_mask, "government_sector"] = "GOES"
+        
+        # Fallback for non-gov
+        is_not_gov_mask = ~is_gov_mask
+        needs_fallback_mask = df["gov"].astype(str).str.lower().isin(["", "no", "nan", "none", "missing"])
+        df.loc[is_not_gov_mask & needs_fallback_mask, "gov"] = "No"
+        df.loc[is_not_gov_mask, "government_sector"] = "PRIVATE"
+        
+        rules_applied.append("automated_gov_unification")
+        logger.info("Automated Gov unification applied. Synchronized 'gov' and 'government_sector'.")
 
     def _enforce_non_negative_balances(self, df: pd.DataFrame, rules_applied: List[str]) -> None:
         """Clip negative balances to zero to keep exposure semantics consistent."""
