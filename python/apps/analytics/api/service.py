@@ -317,11 +317,19 @@ def _normalize_kpi_key(kpi_id: str) -> str:
     return (kpi_id or "").strip().replace("-", "_").replace(" ", "_").upper()
 
 
-def _extract_kpi_metadata(kpi_def: dict) -> dict[str, str]:
+def _extract_kpi_metadata(kpi_def: dict[str, Any]) -> dict[str, Any]:
     """Helper to extract and format metadata from a single KPI definition."""
-    thresholds = kpi_def.get("thresholds")
+    raw_thresholds = kpi_def.get("thresholds")
+    thresholds: dict[str, float] = {}
+    if isinstance(raw_thresholds, dict):
+        for key, value in raw_thresholds.items():
+            try:
+                thresholds[str(key)] = float(value)
+            except (TypeError, ValueError):
+                continue
+
     threshold_note = ""
-    if isinstance(thresholds, dict) and thresholds:
+    if thresholds:
         threshold_pairs = ", ".join(f"{k}={v}" for k, v in thresholds.items())
         threshold_note = f" Compare against configured thresholds ({threshold_pairs})."
 
@@ -331,11 +339,13 @@ def _extract_kpi_metadata(kpi_def: dict) -> dict[str, str]:
         "implications": (
             "Use trend and segment context when interpreting this KPI." f"{threshold_note}"
         ),
+        "thresholds": thresholds,
+        "benchmark": thresholds.get("target"),
     }
 
 
 @lru_cache(maxsize=1)
-def _load_catalog_kpi_metadata() -> dict[str, dict[str, str]]:
+def _load_catalog_kpi_metadata() -> dict[str, dict[str, Any]]:
     if yaml is None or not KPI_DEFINITIONS_PATH.exists():
         return {}
 
@@ -346,7 +356,7 @@ def _load_catalog_kpi_metadata() -> dict[str, dict[str, str]]:
         logger.warning("Failed to load KPI catalog metadata: %s", exc)
         return {}
 
-    metadata: dict[str, dict[str, str]] = {}
+    metadata: dict[str, dict[str, Any]] = {}
     for top_key, section in payload.items():
         if not top_key.endswith("_kpis") or not isinstance(section, dict):
             continue
@@ -408,12 +418,19 @@ class KPIService:
             "CureRate": ["CURERATE", "cure_rate_pct"],
         }
 
-    def _get_kpi_metadata(self, kpi_id: str, kpi_name: str | None = None) -> dict[str, str]:
+    def _get_kpi_metadata(self, kpi_id: str, kpi_name: str | None = None) -> dict[str, Any]:
         normalized = _normalize_kpi_key(kpi_id)
         catalog_key = KPI_API_TO_CATALOG_ID.get(normalized, str(kpi_id).lower())
         catalog_metadata = _load_catalog_kpi_metadata().get(catalog_key, {})
         default_metadata = DEFAULT_KPI_METADATA.get(normalized, {})
         definition_fallback = kpi_name or str(kpi_id)
+        thresholds = catalog_metadata.get("thresholds")
+        if not isinstance(thresholds, dict):
+            thresholds = {}
+        benchmark = catalog_metadata.get("benchmark")
+        if benchmark is None and "target" in thresholds:
+            benchmark = thresholds.get("target")
+
         return {
             "formula": default_metadata.get("formula")
             or catalog_metadata.get("formula")
@@ -424,7 +441,89 @@ class KPIService:
             "implications": default_metadata.get("implications")
             or catalog_metadata.get("implications")
             or "Interpret with trend, segmentation, and risk appetite context.",
+            "thresholds": thresholds,
+            "benchmark": benchmark,
         }
+
+    @staticmethod
+    def _evaluate_kpi_status(value: float, thresholds: dict[str, float]) -> str:
+        """Evaluate KPI status from configured thresholds.
+
+        Direction inference:
+        - critical > warning: higher values are riskier.
+        - critical < warning: lower values are riskier.
+        """
+        if not thresholds:
+            return "unknown"
+
+        critical = thresholds.get("critical")
+        warning = thresholds.get("warning")
+        target = thresholds.get("target")
+
+        if critical is not None and warning is not None:
+            if critical > warning:
+                if value >= critical:
+                    return "critical"
+                if value >= warning:
+                    return "warning"
+                if target is None or value <= target:
+                    return "on_target"
+                return "below_target"
+            if critical < warning:
+                if value <= critical:
+                    return "critical"
+                if value <= warning:
+                    return "warning"
+                if target is None or value >= target:
+                    return "on_target"
+                return "below_target"
+
+        # Fallback when only target exists or thresholds are not directional.
+        if target is not None:
+            return "on_target" if value >= target else "below_target"
+        return "unknown"
+
+    def _build_kpi_single_response(
+        self,
+        *,
+        kpi_id: str,
+        name: str,
+        value: float,
+        unit: str,
+        timestamp: datetime,
+        sample_size: int,
+        period: str,
+        filters: dict[str, Any],
+    ) -> KpiSingleResponse:
+        metadata = self._get_kpi_metadata(kpi_id, name)
+        formula = metadata["formula"]
+        thresholds = metadata.get("thresholds")
+        thresholds = thresholds if isinstance(thresholds, dict) else {}
+        benchmark = metadata.get("benchmark")
+        benchmark_value = float(benchmark) if isinstance(benchmark, (int, float)) else None
+        rounded_value = round(float(value), 2)
+
+        return KpiSingleResponse(
+            id=kpi_id,
+            name=name,
+            value=rounded_value,
+            unit=unit,
+            status=self._evaluate_kpi_status(rounded_value, thresholds),
+            benchmark=benchmark_value,
+            thresholds=thresholds or None,
+            formula=formula,
+            definition=metadata["definition"],
+            implications=metadata["implications"],
+            context=KpiContext(
+                metric=name,
+                timestamp=timestamp,
+                formula=formula,
+                sample_size=sample_size,
+                period=period,
+                calculation_date=timestamp,
+                filters=filters,
+            ),
+        )
 
     async def get_latest_kpis(self, kpi_keys: list[str] | None = None) -> list[KpiSingleResponse]:
         """
@@ -468,33 +567,22 @@ class KPIService:
             for rec in records:
                 kpi_id = str(rec["id"])
                 kpi_name = str(rec["name"])
-                metadata = self._get_kpi_metadata(kpi_id, kpi_name)
-                # Handle potential string or date/datetime objects
                 as_of_date = rec["as_of_date"]
                 if hasattr(as_of_date, "isoformat"):
                     as_of_date_str = as_of_date.isoformat()
                 else:
                     as_of_date_str = str(as_of_date)
 
-                formula = metadata["formula"]
                 responses.append(
-                    KpiSingleResponse(
-                        id=kpi_id,
+                    self._build_kpi_single_response(
+                        kpi_id=kpi_id,
                         name=kpi_name,
                         value=float(rec["value"]),
                         unit=rec["unit"],
-                        formula=formula,
-                        definition=metadata["definition"],
-                        implications=metadata["implications"],
-                        context=KpiContext(
-                            metric=kpi_name,
-                            timestamp=rec["created_at"],
-                            formula=formula,
-                            sample_size=0,
-                            period="latest",
-                            calculation_date=rec["created_at"],
-                            filters={"as_of_date": as_of_date_str},
-                        ),
+                        timestamp=rec["created_at"],
+                        sample_size=0,
+                        period="latest",
+                        filters={"as_of_date": as_of_date_str},
                     )
                 )
 
@@ -910,25 +998,15 @@ class KPIService:
             def build_kpi_response(
                 kpi_id: str, name: str, value: float, unit: str
             ) -> KpiSingleResponse:
-                metadata = self._get_kpi_metadata(kpi_id, name)
-                formula = metadata["formula"]
-                return KpiSingleResponse(
-                    id=kpi_id,
+                return self._build_kpi_single_response(
+                    kpi_id=kpi_id,
                     name=name,
-                    value=round(value, 2),
+                    value=value,
                     unit=unit,
-                    formula=formula,
-                    definition=metadata["definition"],
-                    implications=metadata["implications"],
-                    context=KpiContext(
-                        metric=name,
-                        timestamp=now,
-                        formula=formula,
-                        sample_size=len(loans),
-                        period="on-demand",
-                        calculation_date=now,
-                        filters={"loan_count": len(loans)},
-                    ),
+                    timestamp=now,
+                    sample_size=len(loans),
+                    period="on-demand",
+                    filters={"loan_count": len(loans)},
                 )
 
             return [

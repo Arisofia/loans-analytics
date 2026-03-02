@@ -38,6 +38,9 @@ def test_calculate_all_kpis_includes_collection_rate_for_realtime_input():
     assert body["CollectionRate"] is not None
     assert body["CollectionRate"]["id"] == "COLLECTION_RATE"
     assert body["CollectionRate"]["value"] == 62.0
+    assert body["CollectionRate"]["status"] == "critical"
+    assert body["CollectionRate"]["benchmark"] == 95.0
+    assert body["CollectionRate"]["thresholds"]["warning"] == 85.0
 
 
 def test_calculate_all_kpis_includes_expanded_metrics():
@@ -106,6 +109,7 @@ def test_calculate_all_kpis_includes_expanded_metrics():
     assert body["AutomationRate"]["value"] == 50.0
     assert body["ProcessingTimeAvg"]["value"] == 9.0
     assert body["PAR60"]["value"] == 33.33
+    assert body["PAR60"]["status"] == "critical"
     assert body["DPD1_30"]["value"] == 0.0
     assert body["DPD31_60"]["value"] == 0.0
     assert body["DPD61_90"]["value"] == 0.0
@@ -147,6 +151,8 @@ def test_get_single_kpi_supports_new_path_aliases():
     default_rate = client.post("/analytics/kpis/default-rate", json=payload)
     assert default_rate.status_code == 200
     assert default_rate.json()["id"] == "DEFAULT_RATE"
+    assert default_rate.json()["status"] == "critical"
+    assert default_rate.json()["thresholds"]["critical"] == 5.0
 
     total_loans = client.post("/analytics/kpis/total-loans-count", json=payload)
     assert total_loans.status_code == 200

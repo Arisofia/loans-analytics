@@ -36,6 +36,10 @@ def test_calculate_kpis_for_portfolio_includes_collection_rate():
     assert "COLLECTION_RATE" in kpi_map
     assert kpi_map["COLLECTION_RATE"].value == 62.0
     assert kpi_map["COLLECTION_RATE"].formula
+    assert kpi_map["COLLECTION_RATE"].status == "critical"
+    assert kpi_map["COLLECTION_RATE"].benchmark == 95.0
+    assert kpi_map["COLLECTION_RATE"].thresholds is not None
+    assert kpi_map["COLLECTION_RATE"].thresholds.get("warning") == 85.0
 
 
 def test_calculate_kpis_for_portfolio_collection_rate_defaults_to_zero():
@@ -126,6 +130,7 @@ def test_calculate_kpis_for_portfolio_includes_expanded_realtime_kpis():
     assert kpi_map["AUTOMATION_RATE"].value == 50.0
     assert kpi_map["PROCESSING_TIME_AVG"].value == 9.0
     assert kpi_map["PAR60"].value == 33.33
+    assert kpi_map["PAR60"].status == "critical"
     assert kpi_map["DPD_1_30"].value == 0.0
     assert kpi_map["DPD_31_60"].value == 0.0
     assert kpi_map["DPD_61_90"].value == 0.0

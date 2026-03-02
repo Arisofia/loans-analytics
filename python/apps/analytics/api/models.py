@@ -156,6 +156,18 @@ class KpiSingleResponse(BaseModel):
     name: Optional[str] = Field(None, description="KPI display name")
     value: float = Field(..., description="Calculated KPI value")
     unit: Optional[str] = Field(None, description="Unit of measurement")
+    status: Literal["below_target", "on_target", "warning", "critical", "unknown"] = Field(
+        "unknown",
+        description="Threshold evaluation status for this KPI",
+    )
+    benchmark: Optional[float] = Field(
+        None,
+        description="Benchmark/target value used for KPI interpretation when available",
+    )
+    thresholds: Optional[Dict[str, float]] = Field(
+        None,
+        description="Configured KPI thresholds (for example: target, warning, critical)",
+    )
     formula: Optional[str] = Field(None, description="Human-readable calculation formula")
     definition: Optional[str] = Field(None, description="Business definition of the KPI")
     implications: Optional[str] = Field(None, description="Business implications of KPI movement")
