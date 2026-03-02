@@ -10,10 +10,6 @@ from src.pipeline.calculation import CalculationPhase
 # ---------------------------------------------------------------------------
 
 
-def _make_calc() -> CalculationPhase:
-    return CalculationPhase(config={}, kpi_definitions={})
-
-
 def _make_df(rows: list[dict]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
