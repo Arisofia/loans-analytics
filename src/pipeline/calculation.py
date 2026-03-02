@@ -1223,7 +1223,12 @@ class CalculationPhase:
             return pd.DataFrame(columns=["period", "client_id", "tpv"])
 
         work = df[[client_col, date_col, amount_col]].copy()
-        work["_date"] = pd.to_datetime(work[date_col], errors="coerce")
+        try:
+            # Explicit mixed parsing avoids pandas format inference warnings.
+            work["_date"] = pd.to_datetime(work[date_col], format="mixed", errors="coerce")
+        except TypeError:
+            # Compatibility fallback for pandas versions without format="mixed".
+            work["_date"] = pd.to_datetime(work[date_col], errors="coerce")
         work = work.dropna(subset=["_date"])
         work["period"] = work["_date"].dt.to_period("M").astype(str)
         work["tpv"] = pd.to_numeric(work[amount_col], errors="coerce").fillna(0.0)
