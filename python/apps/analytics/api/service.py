@@ -2052,48 +2052,19 @@ class KPIService:
         df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
         metrics = self._calculate_portfolio_performance_metrics(df)
 
-        layers = []
-
-        # 1. Risk Layer
-        risk_status = "stable"
-        if metrics["par30"] > 10 or metrics["npl"] > 5:
-            risk_status = "elevated"
-
         heatmap_summary = await self.get_risk_heatmap_summary(loans)
-        critical_buckets = [b["label"] for b in heatmap_summary["heatmap"] if b["risk_intensity"] == "high"]
-
-        layers.append(AnalysisLayer(
-            layer="Portfolio Risk",
-            what=f"Portfolio risk is currently {risk_status} with PAR30 at {metrics['par30']:.1f}%.",
-            why=f"Driver: {', '.join(critical_buckets) if critical_buckets else 'Normal migration patterns'}.",
-            so_what=f"Impact: Potential {metrics['cor']:.1f}% hit to margin from expected credit losses.",
-            now_what="Action: Trigger intensive collections for high-intensity buckets and review underwriting for toxic cohorts."
-        ))
-
-        # 2. Growth & Profitability Layer
-        nim = metrics.get("gross_margin_pct", 0.0)  # Using gross margin as proxy for NIM
-        clv_cac = (metrics["customer_lifetime_value"] / metrics["cac"]) if metrics["cac"] > 0 else 0.0
-
-        layers.append(AnalysisLayer(
-            layer="Growth & Profitability",
-            what=f"Unit economics show a {clv_cac:.1f}x CLV/CAC ratio and {nim:.1f}% NIM.",
-            why="Driver: High repeat borrower rate and stable yield spread.",
-            so_what="Impact: Growth is sustainable and provides positive risk-adjusted returns.",
-            now_what="Action: Maintain acquisition cadence while monitoring for any margin compression."
-        ))
-
-        # 3. Operations Layer
+        critical_buckets = [
+            bucket["label"]
+            for bucket in heatmap_summary["heatmap"]
+            if bucket["risk_intensity"] == "high"
+        ]
         cure_rate = (await self.calculate_roll_rate_analytics(loans)).summary.portfolio_cure_rate_pct
 
-        layers.append(AnalysisLayer(
-            layer="Operational Efficiency",
-            what=f"Collections efficiency is at {metrics['collection_rate']:.1f}% with a {cure_rate:.1f}% cure rate.",
-            why="Driver: Effective early-stage intervention and automated PTP tracking.",
-            so_what="Impact: High cash conversion speed reduces funding pressure.",
-            now_what="Action: Optimize SMS/Call timing based on DPD migration patterns to further improve cure rates."
-        ))
-
-        return layers
+        return [
+            self._build_portfolio_risk_layer(metrics, critical_buckets),
+            self._build_growth_profitability_layer(metrics),
+            self._build_operational_efficiency_layer(metrics, cure_rate),
+        ]
 
     async def get_risk_heatmap_summary(self, loans: list[LoanRecord] | None) -> dict[str, Any]:
         """Build a structured heatmap summary of bucket-level exposure and risk intensity."""
@@ -2103,43 +2074,105 @@ class KPIService:
         df = await run_in_threadpool(self._convert_loan_records_to_dataframe, loans)
         metrics = self._calculate_portfolio_performance_metrics(df)
 
-        buckets = [
-            {"id": "1_30", "label": "Early (1-30 DPD)", "value": metrics["dpd_1_30"], "threshold": 8.0},
-            {"id": "31_60", "label": "Warning (31-60 DPD)", "value": metrics["dpd_31_60"], "threshold": 4.0},
-            {"id": "61_90", "label": "Severe (61-90 DPD)", "value": metrics["dpd_61_90"], "threshold": 2.0},
-            {"id": "90_plus", "label": "NPL (90+ DPD)", "value": metrics["dpd_90_plus"], "threshold": 1.0},
-        ]
-
-        heatmap = []
-        critical_buckets = []
-        for b in buckets:
-            intensity = "low"
-            if b["value"] > b["threshold"] * 2:
-                intensity = "high"
-                critical_buckets.append(b["label"])
-            elif b["value"] > b["threshold"]:
-                intensity = "medium"
-
-            heatmap.append({
-                "bucket": b["id"],
-                "label": b["label"],
-                "exposure_pct": round(b["value"], 2),
-                "risk_intensity": intensity
-            })
-
-        narrative = "Portfolio risk is well-distributed."
-        if critical_buckets:
-            narrative = f"Critical risk concentration identified in: {', '.join(critical_buckets)}."
-        elif any(h["risk_intensity"] == "medium" for h in heatmap):
-            narrative = "Moderate risk migration detected in early-stage buckets."
+        buckets = self._build_heatmap_buckets(metrics)
+        heatmap, critical_buckets = self._build_heatmap_rows(buckets)
+        narrative = self._build_heatmap_narrative(critical_buckets, heatmap)
 
         return {
             "status": "success",
             "heatmap": heatmap,
             "critical_buckets": critical_buckets,
             "narrative": narrative,
-            "overall_par30": round(metrics["par30"], 2)
+            "overall_par30": round(metrics["par30"], 2),
         }
+
+    @staticmethod
+    def _build_portfolio_risk_layer(
+        metrics: dict[str, float], critical_buckets: list[str]
+    ) -> AnalysisLayer:
+        risk_status = "elevated" if metrics["par30"] > 10 or metrics["npl"] > 5 else "stable"
+        risk_driver = ", ".join(critical_buckets) if critical_buckets else "Normal migration patterns"
+        return AnalysisLayer(
+            layer="Portfolio Risk",
+            what=f"Portfolio risk is currently {risk_status} with PAR30 at {metrics['par30']:.1f}%.",
+            why=f"Driver: {risk_driver}.",
+            so_what=f"Impact: Potential {metrics['cor']:.1f}% hit to margin from expected credit losses.",
+            now_what=(
+                "Action: Trigger intensive collections for high-intensity buckets and review "
+                "underwriting for toxic cohorts."
+            ),
+        )
+
+    @staticmethod
+    def _build_growth_profitability_layer(metrics: dict[str, float]) -> AnalysisLayer:
+        nim = metrics.get("gross_margin_pct", 0.0)  # Using gross margin as proxy for NIM
+        clv_cac = (metrics["customer_lifetime_value"] / metrics["cac"]) if metrics["cac"] > 0 else 0.0
+        return AnalysisLayer(
+            layer="Growth & Profitability",
+            what=f"Unit economics show a {clv_cac:.1f}x CLV/CAC ratio and {nim:.1f}% NIM.",
+            why="Driver: High repeat borrower rate and stable yield spread.",
+            so_what="Impact: Growth is sustainable and provides positive risk-adjusted returns.",
+            now_what="Action: Maintain acquisition cadence while monitoring for any margin compression.",
+        )
+
+    @staticmethod
+    def _build_operational_efficiency_layer(
+        metrics: dict[str, float], cure_rate: float
+    ) -> AnalysisLayer:
+        return AnalysisLayer(
+            layer="Operational Efficiency",
+            what=f"Collections efficiency is at {metrics['collection_rate']:.1f}% with a {cure_rate:.1f}% cure rate.",
+            why="Driver: Effective early-stage intervention and automated PTP tracking.",
+            so_what="Impact: High cash conversion speed reduces funding pressure.",
+            now_what=(
+                "Action: Optimize SMS/Call timing based on DPD migration patterns to further "
+                "improve cure rates."
+            ),
+        )
+
+    @staticmethod
+    def _build_heatmap_buckets(metrics: dict[str, float]) -> list[dict[str, Any]]:
+        return [
+            {"id": "1_30", "label": "Early (1-30 DPD)", "value": metrics["dpd_1_30"], "threshold": 8.0},
+            {"id": "31_60", "label": "Warning (31-60 DPD)", "value": metrics["dpd_31_60"], "threshold": 4.0},
+            {"id": "61_90", "label": "Severe (61-90 DPD)", "value": metrics["dpd_61_90"], "threshold": 2.0},
+            {"id": "90_plus", "label": "NPL (90+ DPD)", "value": metrics["dpd_90_plus"], "threshold": 1.0},
+        ]
+
+    @staticmethod
+    def _bucket_risk_intensity(value: float, threshold: float) -> str:
+        if value > threshold * 2:
+            return "high"
+        if value > threshold:
+            return "medium"
+        return "low"
+
+    def _build_heatmap_rows(
+        self, buckets: list[dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], list[str]]:
+        heatmap: list[dict[str, Any]] = []
+        critical_buckets: list[str] = []
+        for bucket in buckets:
+            intensity = self._bucket_risk_intensity(float(bucket["value"]), float(bucket["threshold"]))
+            if intensity == "high":
+                critical_buckets.append(str(bucket["label"]))
+            heatmap.append(
+                {
+                    "bucket": bucket["id"],
+                    "label": bucket["label"],
+                    "exposure_pct": round(float(bucket["value"]), 2),
+                    "risk_intensity": intensity,
+                }
+            )
+        return heatmap, critical_buckets
+
+    @staticmethod
+    def _build_heatmap_narrative(critical_buckets: list[str], heatmap: list[dict[str, Any]]) -> str:
+        if critical_buckets:
+            return f"Critical risk concentration identified in: {', '.join(critical_buckets)}."
+        if any(bucket["risk_intensity"] == "medium" for bucket in heatmap):
+            return "Moderate risk migration detected in early-stage buckets."
+        return "Portfolio risk is well-distributed."
 
     def _calculate_portfolio_performance_metrics(self, df: pd.DataFrame) -> dict:
         """Internal helper to calculate various portfolio metrics from a clean dataframe."""
