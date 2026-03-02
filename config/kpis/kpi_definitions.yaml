@@ -16,9 +16,9 @@ last_updated: "2026-02-28"
 # Portfolio Performance KPIs
 portfolio_kpis:
   total_outstanding_balance:
-    formula: "SUM(outstanding_balance WHERE status IN ['active', 'defaulted'])"
+    formula: "SUM(outstanding_balance WHERE status != 'closed')"
     unit: "USD"
-    description: "Total outstanding principal across all active loans"
+    description: "Total outstanding principal across all non-closed loans (active + delinquent + defaulted)"
     thresholds:
       warning: 10000000
       critical: 50000000
@@ -339,6 +339,17 @@ segment_kpis:
     unit: "percentage"
     implementability_status: "implement_now"
     priority: "medium"
+
+  default_rate_by_industry:
+    id: "default_rate_by_industry"
+    name: "Default Rate by Industry"
+    category: "risk"
+    definition: "Default rate segmented by debtor's industry (Retail, Services, Manufacturing, etc.) — automatically identified from debtor name"
+    formula: "COUNT(loan_id WHERE status = 'defaulted') / COUNT(loan_id) * 100 GROUP BY industry"
+    inputs: ["status", "industry", "loan_id"]
+    unit: "percentage"
+    implementability_status: "implement_now"
+    priority: "high"
 
   early_warning_flow_31_60:
     id: "early_warning_flow_31_60"

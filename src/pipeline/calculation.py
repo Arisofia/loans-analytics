@@ -925,7 +925,7 @@ class CalculationPhase:
     def _calculate_segment_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Compute PAR30/60/90, default_rate, and outstanding_balance by segment dimension.
 
-        Segment dimensions: company, credit_line, kam_hunter, kam_farmer, gov.
+        Segment dimensions: company, credit_line, kam_hunter, kam_farmer, gov, industry, doc_type.
         Returns a nested dict: {dimension: {segment_value: {kpi: value}}}.
         """
         segment_dims = self._available_segment_dimensions(df)
@@ -963,6 +963,8 @@ class CalculationPhase:
 
         if any(c in df.columns for c in ("gov", "ministry", "ministerio")):
             dimensions.append("gov")
+        if any(c in df.columns for c in ("industry", "industria", "giro")):
+            dimensions.append("industry")
         return dimensions
 
     @staticmethod
@@ -1002,6 +1004,7 @@ class CalculationPhase:
             "kam_hunter": ["kam_hunter", "cod_kam_hunter"],
             "kam_farmer": ["kam_farmer", "cod_kam_farmer", "farmer"],
             "gov": ["gov", "ministry", "ministerio"],
+            "industry": ["industry", "industria", "giro"],
         }
 
         resolved_dim = self._resolve_col(work, *(dim_map.get(dim, [dim])))
