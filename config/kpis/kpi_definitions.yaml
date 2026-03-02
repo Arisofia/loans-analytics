@@ -337,9 +337,8 @@ segment_kpis:
     formula: "COUNT(loan_id WHERE status = 'defaulted') / COUNT(loan_id) * 100 GROUP BY ministry"
     inputs: ["status", "ministry", "loan_id"]
     unit: "percentage"
-    implementability_status: "requires_new_data"
+    implementability_status: "implement_now"
     priority: "medium"
-    notes: "ministry column present in CONTROL DE MORA; add ministry to segment_dims in _calculate_segment_kpis to enable"
 
   early_warning_flow_31_60:
     id: "early_warning_flow_31_60"

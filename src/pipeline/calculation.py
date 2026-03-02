@@ -909,7 +909,7 @@ class CalculationPhase:
     def _calculate_segment_kpis(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Compute PAR30/60/90, default_rate, and outstanding_balance by segment dimension.
 
-        Segment dimensions: company, credit_line, kam_hunter, kam_farmer.
+        Segment dimensions: company, credit_line, kam_hunter, kam_farmer, ministry.
         Returns a nested dict: {dimension: {segment_value: {kpi: value}}}.
         """
         segment_dims = self._available_segment_dimensions(df)
@@ -937,7 +937,7 @@ class CalculationPhase:
         """Return supported segment dimensions present in the dataframe."""
         return [
             col
-            for col in ("company", "credit_line", "kam_hunter", "kam_farmer")
+            for col in ("company", "credit_line", "kam_hunter", "kam_farmer", "ministry")
             if col in df.columns
         ]
 
