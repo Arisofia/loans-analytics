@@ -2564,96 +2564,114 @@ class KPIService:
         return (float(numerator) / float(denominator)) * 100.0
 
     @staticmethod
+    def _series_from_aliases(
+        df: pd.DataFrame, aliases: list[str], default: str = "unknown"
+    ) -> pd.Series:
+        lower_map = {col.lower(): col for col in df.columns}
+        for alias in aliases:
+            matched = lower_map.get(alias.lower())
+            if matched is not None:
+                return df[matched].fillna(default).astype(str)
+        return pd.Series([default] * len(df), index=df.index, dtype=object)
+
+    @staticmethod
+    def _build_risk_band_series(df: pd.DataFrame, dpd: pd.Series) -> pd.Series:
+        result = pd.Series(["current"] * len(df), index=df.index, dtype=object)
+        result = result.mask((dpd > 0) & (dpd <= 30), "dpd_1_30")
+        result = result.mask((dpd > 30) & (dpd <= 60), "dpd_31_60")
+        result = result.mask((dpd > 60) & (dpd <= 90), "dpd_61_90")
+        result = result.mask(dpd > 90, "dpd_90_plus")
+        return result
+
+    @staticmethod
+    def _build_ticket_size_band_series(df: pd.DataFrame) -> pd.Series:
+        amount_source = (
+            df["loan_amount"]
+            if "loan_amount" in df.columns
+            else pd.Series([0] * len(df), index=df.index)
+        )
+        amounts = pd.to_numeric(amount_source, errors="coerce").fillna(0)
+        result = pd.Series(["ticket_<1k"] * len(df), index=df.index, dtype=object)
+        result = result.mask((amounts >= 1000) & (amounts < 5000), "ticket_1k_5k")
+        result = result.mask((amounts >= 5000) & (amounts < 10000), "ticket_5k_10k")
+        result = result.mask(amounts >= 10000, "ticket_10k_plus")
+        return result
+
+    @staticmethod
+    def _build_month_period_series(df: pd.DataFrame, source_column: str) -> pd.Series:
+        source = (
+            df[source_column]
+            if source_column in df.columns
+            else pd.Series([None] * len(df), index=df.index)
+        )
+        parsed = pd.to_datetime(source, errors="coerce")
+        return parsed.dt.to_period("M").astype(str).replace("NaT", "unknown")
+
+    @staticmethod
+    def _build_utilization_band_series(df: pd.DataFrame) -> pd.Series:
+        if "utilization_pct" in df.columns:
+            util_source = df["utilization_pct"]
+        elif "porcentaje_utilizado" in df.columns:
+            util_source = df["porcentaje_utilizado"]
+        else:
+            util_source = pd.Series([0] * len(df), index=df.index)
+        util = pd.to_numeric(util_source, errors="coerce").fillna(0.0)
+        if (util <= 1.0).all():
+            util = util * 100.0
+        return pd.cut(
+            util,
+            bins=[-0.001, 25, 50, 75, 100, float("inf")],
+            labels=["0_25", "25_50", "50_75", "75_100", "100_plus"],
+        ).astype(str)
+
+    @staticmethod
+    def _segment_aliases() -> dict[str, list[str]]:
+        return {
+            "company": ["company"],
+            "credit_line": ["credit_line", "lineacredito", "linea_credito"],
+            "client_code": ["client_code", "codcliente"],
+            "issuer": ["issuer_name", "issuer"],
+            "kam_hunter": ["kam_hunter", "cod_kam_hunter"],
+            "kam_farmer": ["kam_farmer", "cod_kam_farmer"],
+            "advisory_channel": ["advisory_channel", "asesoriadigital"],
+            "ministry": ["ministry", "ministerio"],
+            "government_sector": ["government_sector", "goes"],
+            "collections_eligible": ["collections_eligible", "procede_a_cobrar"],
+        }
+
+    @staticmethod
     def _build_segment_dimension(
         df: pd.DataFrame,
         dpd: pd.Series,
         dimension: str,
     ) -> pd.Series:
         normalized = (dimension or "risk_band").strip().lower()
-
-        def series_for(aliases: list[str], default: str = "unknown") -> pd.Series:
-            lower_map = {col.lower(): col for col in df.columns}
-            for alias in aliases:
-                matched = lower_map.get(alias.lower())
-                if matched is not None:
-                    return df[matched].fillna(default).astype(str)
-            return pd.Series([default] * len(df), index=df.index, dtype=object)
-
         if normalized == "risk_band":
-            result = pd.Series(["current"] * len(df), index=df.index, dtype=object)
-            result = result.mask((dpd > 0) & (dpd <= 30), "dpd_1_30")
-            result = result.mask((dpd > 30) & (dpd <= 60), "dpd_31_60")
-            result = result.mask((dpd > 60) & (dpd <= 90), "dpd_61_90")
-            result = result.mask(dpd > 90, "dpd_90_plus")
-            return result
+            return KPIService._build_risk_band_series(df, dpd)
         if normalized == "ticket_size_band":
-            amount_source = (
-                df["loan_amount"]
-                if "loan_amount" in df.columns
-                else pd.Series([0] * len(df), index=df.index)
-            )
-            amounts = pd.to_numeric(amount_source, errors="coerce").fillna(0)
-            result = pd.Series(["ticket_<1k"] * len(df), index=df.index, dtype=object)
-            result = result.mask((amounts >= 1000) & (amounts < 5000), "ticket_1k_5k")
-            result = result.mask((amounts >= 5000) & (amounts < 10000), "ticket_5k_10k")
-            result = result.mask(amounts >= 10000, "ticket_10k_plus")
-            return result
+            return KPIService._build_ticket_size_band_series(df)
         if normalized == "payment_frequency":
-            return df.get("payment_frequency", pd.Series(["unknown"] * len(df))).fillna("unknown")
+            return df.get(
+                "payment_frequency",
+                pd.Series(["unknown"] * len(df), index=df.index),
+            ).fillna("unknown")
         if normalized == "loan_status":
-            return df.get("loan_status", pd.Series(["unknown"] * len(df))).fillna("unknown")
-        if normalized == "company":
-            return series_for(["company"])
-        if normalized == "credit_line":
-            return series_for(["credit_line", "lineacredito", "linea_credito"])
-        if normalized == "client_code":
-            return series_for(["client_code", "codcliente"])
-        if normalized == "issuer":
-            return series_for(["issuer_name", "issuer"])
-        if normalized == "kam_hunter":
-            return series_for(["kam_hunter", "cod_kam_hunter"])
-        if normalized == "kam_farmer":
-            return series_for(["kam_farmer", "cod_kam_farmer"])
-        if normalized == "advisory_channel":
-            return series_for(["advisory_channel", "asesoriadigital"])
-        if normalized == "ministry":
-            return series_for(["ministry", "ministerio"])
-        if normalized == "government_sector":
-            return series_for(["government_sector", "goes"])
-        if normalized == "collections_eligible":
-            return series_for(["collections_eligible", "procede_a_cobrar"])
+            return df.get(
+                "loan_status",
+                pd.Series(["unknown"] * len(df), index=df.index),
+            ).fillna("unknown")
+
+        aliases_map = KPIService._segment_aliases()
+        if normalized in aliases_map:
+            return KPIService._series_from_aliases(df, aliases_map[normalized])
+
         if normalized == "origination_month":
-            origination_source = (
-                df["origination_date"]
-                if "origination_date" in df.columns
-                else pd.Series([None] * len(df), index=df.index)
-            )
-            origination = pd.to_datetime(origination_source, errors="coerce")
-            return origination.dt.to_period("M").astype(str).replace("NaT", "unknown")
+            return KPIService._build_month_period_series(df, "origination_date")
         if normalized == "application_month":
-            application_source = (
-                df["application_date"]
-                if "application_date" in df.columns
-                else pd.Series([None] * len(df), index=df.index)
-            )
-            application = pd.to_datetime(application_source, errors="coerce")
-            return application.dt.to_period("M").astype(str).replace("NaT", "unknown")
+            return KPIService._build_month_period_series(df, "application_date")
         if normalized == "utilization_band":
-            if "utilization_pct" in df.columns:
-                util_source = df["utilization_pct"]
-            elif "porcentaje_utilizado" in df.columns:
-                util_source = df["porcentaje_utilizado"]
-            else:
-                util_source = pd.Series([0] * len(df), index=df.index)
-            util = pd.to_numeric(util_source, errors="coerce")
-            util = util.fillna(0.0)
-            if (util <= 1.0).all():
-                util = util * 100.0
-            return pd.cut(
-                util,
-                bins=[-0.001, 25, 50, 75, 100, float("inf")],
-                labels=["0_25", "25_50", "50_75", "75_100", "100_plus"],
-            ).astype(str)
+            return KPIService._build_utilization_band_series(df)
+
         return pd.Series(["unknown"] * len(df), index=df.index, dtype=object)
 
     @staticmethod
