@@ -1581,63 +1581,75 @@ class KPIService:
     ) -> RollRateAnalyticsResponse:
         df = self._convert_loan_records_to_dataframe(loans)
         if df.empty:
-            return RollRateAnalyticsResponse(
-                generated_at=datetime.now(),
-                transition_matrix=[],
-                bucket_summaries=[],
-                summary=RollRateAnalyticsSummary(
-                    total_loans=0,
-                    historical_coverage_pct=0.0,
-                    portfolio_cure_rate_pct=0.0,
-                    portfolio_roll_forward_rate_pct=0.0,
-                    worst_migration_path=None,
-                    best_cure_source=None,
-                ),
-            )
+            return self._empty_roll_rate_analytics_response()
 
-        df = df.copy()
+        prepared_df, matrix_df, explicit_previous_signal = self._build_roll_rate_base_frames(df)
+        transition_matrix = self._build_roll_rate_transition_matrix(matrix_df)
+        bucket_summaries = self._build_roll_rate_bucket_summaries(prepared_df)
+        summary = self._build_roll_rate_summary(
+            prepared_df,
+            matrix_df,
+            bucket_summaries,
+            explicit_previous_signal,
+        )
+
+        return RollRateAnalyticsResponse(
+            generated_at=datetime.now(),
+            transition_matrix=transition_matrix,
+            bucket_summaries=bucket_summaries,
+            summary=summary,
+        )
+
+    def _empty_roll_rate_analytics_response(self) -> RollRateAnalyticsResponse:
+        return RollRateAnalyticsResponse(
+            generated_at=datetime.now(),
+            transition_matrix=[],
+            bucket_summaries=[],
+            summary=RollRateAnalyticsSummary(
+                total_loans=0,
+                historical_coverage_pct=0.0,
+                portfolio_cure_rate_pct=0.0,
+                portfolio_roll_forward_rate_pct=0.0,
+                worst_migration_path=None,
+                best_cure_source=None,
+            ),
+        )
+
+    def _build_roll_rate_base_frames(
+        self, df: pd.DataFrame
+    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
+        work = df.copy()
         current_dpd = self._derive_dpd_series(
-            df=df,
+            df=work,
             dpd_column="days_past_due",
             status_column="loan_status",
         )
         previous_dpd_raw = self._derive_dpd_series(
-            df=df,
+            df=work,
             dpd_column="previous_days_past_due",
             status_column="previous_loan_status",
         )
-
-        if "previous_days_past_due" in df.columns:
-            previous_dpd_source = df["previous_days_past_due"]
-            explicit_previous_signal = pd.to_numeric(previous_dpd_source, errors="coerce").notna()
-        else:
-            explicit_previous_signal = pd.Series([False] * len(df), index=df.index)
-        if "previous_loan_status" in df.columns:
-            previous_status_present = (
-                df["previous_loan_status"].fillna("").astype(str).str.strip() != ""
-            )
-            explicit_previous_signal = explicit_previous_signal | previous_status_present
-
+        explicit_previous_signal = self._resolve_explicit_previous_signal(work)
         previous_dpd = previous_dpd_raw.where(explicit_previous_signal, current_dpd)
 
-        to_balance = pd.to_numeric(df["principal_balance"], errors="coerce").fillna(0.0)
-        if "previous_principal_balance" in df.columns:
+        to_balance = pd.to_numeric(work["principal_balance"], errors="coerce").fillna(0.0)
+        if "previous_principal_balance" in work.columns:
             from_balance = (
-                pd.to_numeric(df["previous_principal_balance"], errors="coerce")
+                pd.to_numeric(work["previous_principal_balance"], errors="coerce")
                 .fillna(to_balance)
                 .astype(float)
             )
         else:
             from_balance = to_balance.astype(float)
 
-        df["from_bucket"] = previous_dpd.apply(self._map_dpd_to_bucket)
-        df["to_bucket"] = current_dpd.apply(self._map_dpd_to_bucket)
-        df["from_severity"] = df["from_bucket"].map(self._bucket_severity).astype(int)
-        df["to_severity"] = df["to_bucket"].map(self._bucket_severity).astype(int)
-        df["from_exposure_usd"] = from_balance
+        work["from_bucket"] = previous_dpd.apply(self._map_dpd_to_bucket)
+        work["to_bucket"] = current_dpd.apply(self._map_dpd_to_bucket)
+        work["from_severity"] = work["from_bucket"].map(self._bucket_severity).astype(int)
+        work["to_severity"] = work["to_bucket"].map(self._bucket_severity).astype(int)
+        work["from_exposure_usd"] = from_balance
 
         matrix_df = (
-            df.groupby(["from_bucket", "to_bucket"], dropna=False)
+            work.groupby(["from_bucket", "to_bucket"], dropna=False)
             .agg(
                 loan_count=("from_bucket", "size"),
                 exposure_usd=("from_exposure_usd", "sum"),
@@ -1647,36 +1659,56 @@ class KPIService:
         matrix_df["from_order"] = matrix_df["from_bucket"].map(self._bucket_severity)
         matrix_df["to_order"] = matrix_df["to_bucket"].map(self._bucket_severity)
         matrix_df = matrix_df.sort_values(["from_order", "to_order"])
+        return work, matrix_df, explicit_previous_signal
 
+    @staticmethod
+    def _resolve_explicit_previous_signal(df: pd.DataFrame) -> pd.Series:
+        if "previous_days_past_due" in df.columns:
+            previous_dpd_source = df["previous_days_past_due"]
+            explicit_previous_signal = pd.to_numeric(previous_dpd_source, errors="coerce").notna()
+        else:
+            explicit_previous_signal = pd.Series([False] * len(df), index=df.index)
+
+        if "previous_loan_status" in df.columns:
+            previous_status_present = (
+                df["previous_loan_status"].fillna("").astype(str).str.strip() != ""
+            )
+            explicit_previous_signal = explicit_previous_signal | previous_status_present
+        return explicit_previous_signal
+
+    def _build_roll_rate_transition_matrix(
+        self, matrix_df: pd.DataFrame
+    ) -> list[RollRateTransition]:
         from_totals_count = matrix_df.groupby("from_bucket")["loan_count"].sum().to_dict()
         from_totals_exposure = matrix_df.groupby("from_bucket")["exposure_usd"].sum().to_dict()
-
-        transition_matrix: list[RollRateTransition] = []
+        transitions: list[RollRateTransition] = []
         for _, row in matrix_df.iterrows():
             from_bucket = str(row["from_bucket"])
             to_bucket = str(row["to_bucket"])
             loan_count = int(row["loan_count"])
             exposure = float(row["exposure_usd"])
-            transition_matrix.append(
+            transitions.append(
                 RollRateTransition(
                     from_bucket=from_bucket,
                     to_bucket=to_bucket,
                     loan_count=loan_count,
                     exposure_usd=round(exposure, 2),
                     loan_share_pct=round(
-                        self._safe_pct(loan_count, float(from_totals_count.get(from_bucket, 0))), 2
+                        self._safe_pct(loan_count, float(from_totals_count.get(from_bucket, 0))),
+                        2,
                     ),
                     exposure_share_pct=round(
-                        self._safe_pct(
-                            exposure,
-                            float(from_totals_exposure.get(from_bucket, 0.0)),
-                        ),
+                        self._safe_pct(exposure, float(from_totals_exposure.get(from_bucket, 0.0))),
                         2,
                     ),
                 )
             )
+        return transitions
 
-        bucket_summaries: list[RollRateBucketSummary] = []
+    def _build_roll_rate_bucket_summaries(
+        self, df: pd.DataFrame
+    ) -> list[RollRateBucketSummary]:
+        summaries: list[RollRateBucketSummary] = []
         for bucket in self._bucket_order():
             from_mask = df["from_bucket"] == bucket
             bucket_count = int(from_mask.sum())
@@ -1688,8 +1720,7 @@ class KPIService:
             )
             roll_forward_count = int((from_mask & (df["to_severity"] > df["from_severity"])).sum())
             stable_count = int((from_mask & (df["to_bucket"] == df["from_bucket"])).sum())
-
-            bucket_summaries.append(
+            summaries.append(
                 RollRateBucketSummary(
                     from_bucket=bucket,
                     loan_count=bucket_count,
@@ -1702,7 +1733,15 @@ class KPIService:
                     stability_rate_pct=round(self._safe_pct(stable_count, float(bucket_count)), 2),
                 )
             )
+        return summaries
 
+    def _build_roll_rate_summary(
+        self,
+        df: pd.DataFrame,
+        matrix_df: pd.DataFrame,
+        bucket_summaries: list[RollRateBucketSummary],
+        explicit_previous_signal: pd.Series,
+    ) -> RollRateAnalyticsSummary:
         delinquent_mask = df["from_bucket"] != "current"
         cured_portfolio = int((delinquent_mask & (df["to_bucket"] == "current")).sum())
         delinquent_total = int(delinquent_mask.sum())
@@ -1727,16 +1766,14 @@ class KPIService:
             row for row in bucket_summaries if row.from_bucket != "current" and row.loan_count > 0
         ]
         if cure_candidates:
-            best_cure_row = max(
-                cure_candidates, key=lambda row: (row.cure_rate_pct, row.loan_count)
-            )
+            best_cure_row = max(cure_candidates, key=lambda row: (row.cure_rate_pct, row.loan_count))
             best_cure_source = (
                 best_cure_row.from_bucket if best_cure_row.cure_rate_pct > 0 else None
             )
         else:
             best_cure_source = None
 
-        summary = RollRateAnalyticsSummary(
+        return RollRateAnalyticsSummary(
             total_loans=int(len(df)),
             historical_coverage_pct=round(
                 self._safe_pct(int(explicit_previous_signal.sum()), int(len(df))),
@@ -1749,12 +1786,6 @@ class KPIService:
             ),
             worst_migration_path=worst_migration_path,
             best_cure_source=best_cure_source,
-        )
-        return RollRateAnalyticsResponse(
-            generated_at=datetime.now(),
-            transition_matrix=transition_matrix,
-            bucket_summaries=bucket_summaries,
-            summary=summary,
         )
 
     def _calculate_stress_test_sync(
@@ -2131,39 +2162,14 @@ class KPIService:
         else:
             df["dpd"] = df["loan_status"].astype(str).apply(get_dpd_category)
 
-        # PAR
-        par30_val = float(df[df["dpd"] >= 30]["principal_balance"].sum())
-        par30_pct = (par30_val / total_outstanding * 100) if total_outstanding > 0 else 0
-        par60_val = float(df[df["dpd"] >= 60]["principal_balance"].sum())
-        par60_pct = (par60_val / total_outstanding * 100) if total_outstanding > 0 else 0
-        par90_val = float(df[df["dpd"] >= 90]["principal_balance"].sum())
-        par90_pct = (par90_val / total_outstanding * 100) if total_outstanding > 0 else 0
-        dpd_1_30 = (
-            float(df[(df["dpd"] > 0) & (df["dpd"] <= 30)]["principal_balance"].sum())
-            / total_outstanding
-            * 100
-            if total_outstanding > 0
-            else 0
-        )
-        dpd_31_60 = (
-            float(df[(df["dpd"] > 30) & (df["dpd"] <= 60)]["principal_balance"].sum())
-            / total_outstanding
-            * 100
-            if total_outstanding > 0
-            else 0
-        )
-        dpd_61_90 = (
-            float(df[(df["dpd"] > 60) & (df["dpd"] <= 90)]["principal_balance"].sum())
-            / total_outstanding
-            * 100
-            if total_outstanding > 0
-            else 0
-        )
-        dpd_90_plus = (
-            float(df[df["dpd"] > 90]["principal_balance"].sum()) / total_outstanding * 100
-            if total_outstanding > 0
-            else 0
-        )
+        par_metrics = self._calculate_par_and_bucket_metrics(df, total_outstanding)
+        par30_pct = par_metrics["par30"]
+        par60_pct = par_metrics["par60"]
+        par90_pct = par_metrics["par90"]
+        dpd_1_30 = par_metrics["dpd_1_30"]
+        dpd_31_60 = par_metrics["dpd_31_60"]
+        dpd_61_90 = par_metrics["dpd_61_90"]
+        dpd_90_plus = par_metrics["dpd_90_plus"]
 
         status_series = df["loan_status"].astype(str)
 
@@ -2184,27 +2190,8 @@ class KPIService:
         weighted_interest = float((df["interest_rate"] * df["principal_balance"]).sum())
         avg_interest_rate = (weighted_interest / total_outstanding) if total_outstanding > 0 else 0
 
-        # Collection and recovery inputs from loan-level payment fields
-        scheduled = (
-            pd.to_numeric(df["total_scheduled"], errors="coerce").fillna(0)
-            if "total_scheduled" in df.columns
-            else pd.Series([0.0] * len(df), index=df.index)
-        )
-        collected = (
-            pd.to_numeric(df["last_payment_amount"], errors="coerce").fillna(0)
-            if "last_payment_amount" in df.columns
-            else pd.Series([0.0] * len(df), index=df.index)
-        )
-        total_scheduled = float(scheduled.sum())
-        collection_rate = (
-            (float(collected.sum()) / total_scheduled * 100) if total_scheduled > 0 else 0
-        )
-        recovery_amount = float(collected[status_defaulted_mask].sum())
-        defaulted_balance_for_recovery = float(df.loc[status_defaulted_mask, "principal_balance"].sum())
-        recovery_rate = (
-            (recovery_amount / defaulted_balance_for_recovery * 100)
-            if defaulted_balance_for_recovery > 0
-            else 0
+        collection_rate, recovery_rate = self._calculate_collection_recovery_metrics(
+            df, status_defaulted_mask
         )
 
         # Derived Next-Gen KPIs
@@ -2212,111 +2199,21 @@ class KPIService:
         lgd_pct = (100.0 - recovery_rate) if defaulted_balance > 0 else 0.0
         cor_pct = loss_rate  # Use loss rate as a proxy for Cost of Risk
 
-        if "current_balance" in df.columns:
-            current_balance_series = pd.to_numeric(df["current_balance"], errors="coerce")
-            null_or_zero_ratio = (
-                (current_balance_series.isna() | (current_balance_series == 0)).mean()
-                if len(current_balance_series) > 0
-                else 1.0
-            )
-            if null_or_zero_ratio > 0.8:
-                # Mirror pipeline transformation fallback to keep snapshot parity.
-                cash_on_hand = float(pd.to_numeric(df["principal_balance"], errors="coerce").fillna(0).sum())
-            else:
-                cash_on_hand = float(current_balance_series.fillna(0).sum())
-        else:
-            cash_on_hand = 0.0
+        cash_on_hand = self._calculate_cash_on_hand(df)
         average_loan_size = float(df["loan_amount"].mean()) if len(df) > 0 else 0.0
 
         # LTV/DTI
-        if "appraised_value" in df.columns and df["appraised_value"].notna().any():
-            df["ltv_ratio"] = (df["loan_amount"] / df["appraised_value"] * 100).fillna(0)
-        else:
-            df["ltv_ratio"] = 0.0
+        self._populate_ltv_dti_ratios(df)
 
-        if (
-            "monthly_debt" in df.columns
-            and "borrower_income" in df.columns
-            and df["borrower_income"].notna().any()
-        ):
-            df["dti_ratio"] = (df["monthly_debt"] / df["borrower_income"] * 100).fillna(0)
-        else:
-            df["dti_ratio"] = 0.0
+        active_borrowers, repeat_borrower_rate = self._calculate_borrower_metrics(df)
+        automation_rate = self._calculate_automation_rate(df)
 
-        if "borrower_id" in df.columns and df["borrower_id"].notna().any():
-            borrower_series = df["borrower_id"].dropna().astype(str)
-            active_mask = ~df["loan_status"].str.contains(
-                r"closed|complete|paid|settled", case=False, na=False
-            )
-            active_borrowers = float(
-                df.loc[active_mask, "borrower_id"].dropna().astype(str).nunique()
-            )
-            borrower_counts = borrower_series.value_counts()
-            repeat_borrower_rate = (
-                (float((borrower_counts > 1).sum()) / float(len(borrower_counts)) * 100)
-                if len(borrower_counts) > 0
-                else 0.0
-            )
-        else:
-            active_borrowers = 0.0
-            repeat_borrower_rate = 0.0
-
-        if "payment_frequency" in df.columns:
-            automated_mask = (
-                df["payment_frequency"]
-                .fillna("")
-                .astype(str)
-                .str.contains(r"bullet|auto", case=False, na=False)
-            )
-            automation_rate = (
-                (float(automated_mask.sum()) / float(len(df)) * 100) if len(df) > 0 else 0
-            )
-        else:
-            automation_rate = 0.0
-
-        if (
-            "term_months" in df.columns
-            and pd.to_numeric(df["term_months"], errors="coerce").notna().any()
-        ):
-            processing_time_avg = float(
-                pd.to_numeric(df["term_months"], errors="coerce").dropna().mean()
-            )
-        else:
-            processing_time_avg = 0.0
-
-        if "origination_date" in df.columns:
-            origination_dates = pd.to_datetime(
-                df["origination_date"], errors="coerce", utc=True
-            ).dt.tz_convert(None)
-            month_start = pd.Timestamp.now().normalize().replace(day=1)
-            mtd_mask = origination_dates >= month_start
-            disbursement_volume_mtd = float(df.loc[mtd_mask, "loan_amount"].sum())
-            new_loans_count_mtd = float(mtd_mask.sum())
-        else:
-            disbursement_volume_mtd = 0.0
-            new_loans_count_mtd = 0.0
-
-        if "tpv" in df.columns and pd.to_numeric(df["tpv"], errors="coerce").notna().any():
-            tpv_series = pd.to_numeric(df["tpv"], errors="coerce").fillna(0)
-        else:
-            tpv_series = pd.to_numeric(df["loan_amount"], errors="coerce").fillna(0)
-        unique_borrowers = (
-            float(df["borrower_id"].dropna().astype(str).nunique())
-            if "borrower_id" in df.columns
-            else 0.0
-        )
-        customer_lifetime_value = (
-            float(tpv_series.sum()) / unique_borrowers if unique_borrowers > 0 else 0.0
-        )
+        processing_time_avg = self._calculate_processing_time_avg(df)
+        disbursement_volume_mtd, new_loans_count_mtd = self._calculate_mtd_metrics(df)
+        customer_lifetime_value = self._calculate_customer_lifetime_value(df)
         executive_metrics = self._calculate_realtime_executive_metrics(df)
 
-        if "id" in df.columns and df["id"].notna().any():
-            non_closed_mask = ~status_series.str.contains(
-                r"closed|complete|paid|settled", case=False, na=False
-            )
-            total_loans_count = float(df.loc[non_closed_mask, "id"].astype(str).nunique())
-        else:
-            total_loans_count = float(len(df))
+        total_loans_count = self._calculate_total_loans_count(df, status_series)
 
         return {
             "par30": par30_pct,
@@ -2352,6 +2249,171 @@ class KPIService:
             "processing_time_avg": processing_time_avg,
             "count": total_loans_count,
         }
+
+    @staticmethod
+    def _calculate_cash_on_hand(df: pd.DataFrame) -> float:
+        if "current_balance" not in df.columns:
+            return 0.0
+        current_balance_series = pd.to_numeric(df["current_balance"], errors="coerce")
+        null_or_zero_ratio = (
+            (current_balance_series.isna() | (current_balance_series == 0)).mean()
+            if len(current_balance_series) > 0
+            else 1.0
+        )
+        if null_or_zero_ratio > 0.8:
+            # Mirror pipeline transformation fallback to keep snapshot parity.
+            return float(pd.to_numeric(df["principal_balance"], errors="coerce").fillna(0).sum())
+        return float(current_balance_series.fillna(0).sum())
+
+    @staticmethod
+    def _populate_ltv_dti_ratios(df: pd.DataFrame) -> None:
+        if "appraised_value" in df.columns and df["appraised_value"].notna().any():
+            df["ltv_ratio"] = (df["loan_amount"] / df["appraised_value"] * 100).fillna(0)
+        else:
+            df["ltv_ratio"] = 0.0
+
+        if (
+            "monthly_debt" in df.columns
+            and "borrower_income" in df.columns
+            and df["borrower_income"].notna().any()
+        ):
+            df["dti_ratio"] = (df["monthly_debt"] / df["borrower_income"] * 100).fillna(0)
+        else:
+            df["dti_ratio"] = 0.0
+
+    @staticmethod
+    def _calculate_processing_time_avg(df: pd.DataFrame) -> float:
+        if "term_months" in df.columns and pd.to_numeric(df["term_months"], errors="coerce").notna().any():
+            return float(pd.to_numeric(df["term_months"], errors="coerce").dropna().mean())
+        return 0.0
+
+    @staticmethod
+    def _calculate_mtd_metrics(df: pd.DataFrame) -> tuple[float, float]:
+        if "origination_date" not in df.columns:
+            return 0.0, 0.0
+        origination_dates = pd.to_datetime(df["origination_date"], errors="coerce", utc=True).dt.tz_convert(
+            None
+        )
+        month_start = pd.Timestamp.now().normalize().replace(day=1)
+        mtd_mask = origination_dates >= month_start
+        disbursement_volume_mtd = float(df.loc[mtd_mask, "loan_amount"].sum())
+        new_loans_count_mtd = float(mtd_mask.sum())
+        return disbursement_volume_mtd, new_loans_count_mtd
+
+    @staticmethod
+    def _calculate_customer_lifetime_value(df: pd.DataFrame) -> float:
+        if "tpv" in df.columns and pd.to_numeric(df["tpv"], errors="coerce").notna().any():
+            tpv_series = pd.to_numeric(df["tpv"], errors="coerce").fillna(0)
+        else:
+            tpv_series = pd.to_numeric(df["loan_amount"], errors="coerce").fillna(0)
+
+        unique_borrowers = (
+            float(df["borrower_id"].dropna().astype(str).nunique())
+            if "borrower_id" in df.columns
+            else 0.0
+        )
+        return float(tpv_series.sum()) / unique_borrowers if unique_borrowers > 0 else 0.0
+
+    @staticmethod
+    def _calculate_total_loans_count(df: pd.DataFrame, status_series: pd.Series) -> float:
+        if "id" in df.columns and df["id"].notna().any():
+            non_closed_mask = ~status_series.str.contains(
+                r"closed|complete|paid|settled", case=False, na=False
+            )
+            return float(df.loc[non_closed_mask, "id"].astype(str).nunique())
+        return float(len(df))
+
+    def _calculate_par_and_bucket_metrics(
+        self, df: pd.DataFrame, total_outstanding: float
+    ) -> dict[str, float]:
+        par30_val = float(df[df["dpd"] >= 30]["principal_balance"].sum())
+        par60_val = float(df[df["dpd"] >= 60]["principal_balance"].sum())
+        par90_val = float(df[df["dpd"] >= 90]["principal_balance"].sum())
+        return {
+            "par30": (par30_val / total_outstanding * 100) if total_outstanding > 0 else 0.0,
+            "par60": (par60_val / total_outstanding * 100) if total_outstanding > 0 else 0.0,
+            "par90": (par90_val / total_outstanding * 100) if total_outstanding > 0 else 0.0,
+            "dpd_1_30": (
+                float(df[(df["dpd"] > 0) & (df["dpd"] <= 30)]["principal_balance"].sum())
+                / total_outstanding
+                * 100
+                if total_outstanding > 0
+                else 0.0
+            ),
+            "dpd_31_60": (
+                float(df[(df["dpd"] > 30) & (df["dpd"] <= 60)]["principal_balance"].sum())
+                / total_outstanding
+                * 100
+                if total_outstanding > 0
+                else 0.0
+            ),
+            "dpd_61_90": (
+                float(df[(df["dpd"] > 60) & (df["dpd"] <= 90)]["principal_balance"].sum())
+                / total_outstanding
+                * 100
+                if total_outstanding > 0
+                else 0.0
+            ),
+            "dpd_90_plus": (
+                float(df[df["dpd"] > 90]["principal_balance"].sum()) / total_outstanding * 100
+                if total_outstanding > 0
+                else 0.0
+            ),
+        }
+
+    def _calculate_collection_recovery_metrics(
+        self,
+        df: pd.DataFrame,
+        status_defaulted_mask: pd.Series,
+    ) -> tuple[float, float]:
+        scheduled = (
+            pd.to_numeric(df["total_scheduled"], errors="coerce").fillna(0)
+            if "total_scheduled" in df.columns
+            else pd.Series([0.0] * len(df), index=df.index)
+        )
+        collected = (
+            pd.to_numeric(df["last_payment_amount"], errors="coerce").fillna(0)
+            if "last_payment_amount" in df.columns
+            else pd.Series([0.0] * len(df), index=df.index)
+        )
+        total_scheduled = float(scheduled.sum())
+        collection_rate = (float(collected.sum()) / total_scheduled * 100) if total_scheduled > 0 else 0.0
+        recovery_amount = float(collected[status_defaulted_mask].sum())
+        defaulted_balance_for_recovery = float(df.loc[status_defaulted_mask, "principal_balance"].sum())
+        recovery_rate = (
+            (recovery_amount / defaulted_balance_for_recovery * 100)
+            if defaulted_balance_for_recovery > 0
+            else 0.0
+        )
+        return collection_rate, recovery_rate
+
+    def _calculate_borrower_metrics(self, df: pd.DataFrame) -> tuple[float, float]:
+        if "borrower_id" not in df.columns or not df["borrower_id"].notna().any():
+            return 0.0, 0.0
+        borrower_series = df["borrower_id"].dropna().astype(str)
+        active_mask = ~df["loan_status"].str.contains(
+            r"closed|complete|paid|settled", case=False, na=False
+        )
+        active_borrowers = float(df.loc[active_mask, "borrower_id"].dropna().astype(str).nunique())
+        borrower_counts = borrower_series.value_counts()
+        repeat_borrower_rate = (
+            (float((borrower_counts > 1).sum()) / float(len(borrower_counts)) * 100)
+            if len(borrower_counts) > 0
+            else 0.0
+        )
+        return active_borrowers, repeat_borrower_rate
+
+    @staticmethod
+    def _calculate_automation_rate(df: pd.DataFrame) -> float:
+        if "payment_frequency" not in df.columns:
+            return 0.0
+        automated_mask = (
+            df["payment_frequency"]
+            .fillna("")
+            .astype(str)
+            .str.contains(r"bullet|auto", case=False, na=False)
+        )
+        return (float(automated_mask.sum()) / float(len(df)) * 100) if len(df) > 0 else 0.0
 
     def _calculate_realtime_executive_metrics(self, df: pd.DataFrame) -> dict[str, float]:
         """
