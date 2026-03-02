@@ -48,6 +48,7 @@ jobs:
           fi
 
       - name: Initialize CodeQL
+        if: steps.code_scanning.outputs.enabled == 'true'
         uses: github/codeql-action/init@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
         with:
           languages: ${{ matrix.language }}
@@ -59,6 +60,7 @@ jobs:
           CODEQL_EXTRACTOR_PYTHON_OPTION_ANALYZE_PR_DIFF: "false"
 
       - name: Autobuild
+        if: steps.code_scanning.outputs.enabled == 'true'
         uses: github/codeql-action/autobuild@89a39a4e59826350b863aa6b6252a07ad50cf83e # v4.32.4
 
       - name: Perform CodeQL Analysis
