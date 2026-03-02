@@ -162,8 +162,35 @@ ALIAS_MAP: dict[str, list[str]] = {
         "tasa_de_interes",
         "tasa_anual",
     ],
-    "total_scheduled": ["scheduled_amount", "total_due", "monto_programado"],
-    "last_payment_amount": ["payment_amount", "monto_pagado", "ultimo_pago", "last_real_payment"],
+    "due_date": [
+        "due_date",
+        "fechapagoprogramado",
+        "fecha_vencimiento",
+        "fecha_de_vencimiento",
+        "fecha_vto",
+    ],
+    "last_payment_date": [
+        "last_payment_date",
+        "payment_date",
+        "fecha_de_pago",
+        "fechacobro",
+        "fecha_pago",
+    ],
+    "total_scheduled": [
+        "scheduled_amount",
+        "total_due",
+        "monto_programado",
+        "monto_cuota",
+        "cuota",
+        "valorcuota",
+    ],
+    "last_payment_amount": [
+        "payment_amount",
+        "monto_pagado",
+        "ultimo_pago",
+        "last_real_payment",
+        "_pagado",
+    ],
     "recovery_value": ["recovery_value_", "recovery_value", "recovery_amount"],
     "client_code": ["codcliente", "codcliente_", "codcliente_2", "codcliente1"],
     "client_name": [
@@ -195,6 +222,9 @@ ALIAS_MAP: dict[str, list[str]] = {
     ],
     "advisory_channel": ["asesoriadigital"],
     "application_date": ["fechasolicitado"],
+    "term_months": ["term_months", "plazo", "plazo_meses", "term_max", "term_ponderado"],
+    "payment_frequency": ["payment_frequency", "frecuencia_pago", "tipo_pago"],
+    "tpv": ["tpv", "ingreso_total_por_desembolso", "montototalabonado"],
     "utilization_pct": ["porcentaje_utilizado"],
     "collections_eligible": ["procede_a_cobrar"],
     "delinquency_definition": ["definicion_m"],
@@ -635,6 +665,8 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
         "last_payment_amount",
         "total_scheduled",
         "recovery_value",
+        "term_months",
+        "tpv",
         "current_balance",
         "outstanding_balance",
         "principal_amount",
@@ -664,6 +696,15 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
         date_updates["origination_date"] = origination_dt
     elif application_dt is not None:
         date_updates["origination_date"] = application_dt
+
+    if "due_date" in prepared.columns:
+        date_updates["due_date"] = _to_datetime_mixed(prepared["due_date"])
+
+    if "last_payment_date" in prepared.columns:
+        date_updates["last_payment_date"] = _to_datetime_mixed(prepared["last_payment_date"])
+
+    if "maturity_date" in prepared.columns:
+        date_updates["maturity_date"] = _to_datetime_mixed(prepared["maturity_date"])
 
     if date_updates:
         prepared = prepared.assign(**date_updates)
@@ -732,45 +773,18 @@ def _merge_prepared_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
     if not frames:
         return pd.DataFrame()
 
-    normalized_frames: list[pd.DataFrame] = []
-    for frame in frames:
-        prepared = _prepare_dataframe(frame)
-        if "loan_id" in prepared.columns:
-            prepared = _collapse_to_loan_level(prepared)
-        normalized_frames.append(prepared)
+    normalized_frames = [_prepare_dataframe(frame) for frame in frames]
+    stacked = pd.concat(normalized_frames, ignore_index=True, sort=False).copy()
 
-    merged = normalized_frames[0].copy()
-    for frame in normalized_frames[1:]:
-        if "loan_id" in merged.columns and "loan_id" in frame.columns:
-            merged = merged.merge(frame, on="loan_id", how="outer", suffixes=("", "_dup"))
-            dup_cols = [col for col in merged.columns if col.endswith("_dup")]
-            updates: dict[str, pd.Series] = {}
-            drop_cols: list[str] = []
-            rename_map: dict[str, str] = {}
-            for dup_col in dup_cols:
-                base_col = dup_col[:-4]
-                if base_col in merged.columns:
-                    fill_mask = merged[base_col].isna() & merged[dup_col].notna()
-                    updates[base_col] = merged[base_col].where(~fill_mask, merged[dup_col])
-                    drop_cols.append(dup_col)
-                else:
-                    rename_map[dup_col] = base_col
+    # Resolve cross-source overlap by most recent event_date per loan_id while
+    # keeping the latest non-null value per column.
+    if "loan_id" in stacked.columns:
+        stacked = _collapse_to_loan_level(stacked)
 
-            if updates:
-                merged = merged.assign(**updates)
-            if drop_cols:
-                merged = merged.drop(columns=drop_cols)
-            if rename_map:
-                merged = merged.rename(columns=rename_map)
-        else:
-            merged = pd.concat([merged, frame], ignore_index=True, sort=False)
-        # Defragment after repeated merge/column operations.
-        merged = merged.copy()
-
-    merged = _prepare_dataframe(merged)
+    merged = _prepare_dataframe(stacked)
     if "loan_id" in merged.columns:
         merged = _collapse_to_loan_level(merged)
-    return merged
+    return merged.copy()
 
 
 def _classify_loan_id_duplicates(df: pd.DataFrame) -> list[tuple[str, str]]:

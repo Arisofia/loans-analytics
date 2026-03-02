@@ -2712,6 +2712,7 @@ class KPIService:
             "kam_farmer": ["kam_farmer", "cod_kam_farmer"],
             "advisory_channel": ["advisory_channel", "asesoriadigital"],
             "gov": ["gov", "ministry", "ministerio"],
+            "industry": ["industry", "industria", "giro"],
             "government_sector": ["government_sector", "goes"],
             "collections_eligible": ["collections_eligible", "procede_a_cobrar"],
         }
