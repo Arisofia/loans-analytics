@@ -131,12 +131,9 @@ def _score_higher_is_better(value: float, thresholds: dict[str, float], weight: 
 def _traffic_light(score: float) -> str:
     if score >= 80:
         return "healthy"
-    elif score >= 60:
+    if score >= 60:
         return "at_risk"
-    elif score >= 40:
-        return "warning"
-    else:
-        return "critical"
+    return "warning" if score >= 40 else "critical"
 
 
 def calculate_portfolio_health_score(
