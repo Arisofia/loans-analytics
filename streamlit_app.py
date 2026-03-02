@@ -169,6 +169,117 @@ def _resolve_series_by_aliases(df: pd.DataFrame, aliases: list[str]) -> pd.Serie
     return None
 
 
+def _clean_optional_text(value: Any) -> str | None:
+    if pd.isna(value):
+        return None
+    text = str(value).strip()
+    if text.lower() in MISSING_TEXT_MARKERS:
+        return None
+    return text
+
+
+def _build_portfolio_payload_from_run_df(run_df: pd.DataFrame) -> dict[str, Any] | None:
+    """
+    Build API-compatible LoanPortfolioRequest payload from a run dataframe.
+
+    This is used when pipeline results do not already contain a serialized
+    portfolio payload.
+    """
+    if run_df is None or run_df.empty:
+        return None
+
+    loan_id_s = _resolve_series_by_aliases(run_df, ["loan_id", "id"])
+    amount_s = _resolve_series_by_aliases(
+        run_df,
+        [
+            "loan_amount",
+            "amount",
+            "principal_amount",
+            "monto_del_desembolso",
+            "monto_financiado_real_por_desembolso",
+            "monto_total_aprobado_por_desembolso",
+        ],
+    )
+    principal_s = _resolve_series_by_aliases(
+        run_df, ["principal_balance", "outstanding_balance", "current_balance", "amount"]
+    )
+    status_s = _resolve_series_by_aliases(run_df, ["loan_status", "status", "current_status"])
+    rate_s = _resolve_series_by_aliases(run_df, ["interest_rate", "interest_rate_apr", "apr"])
+    dpd_s = _resolve_series_by_aliases(run_df, ["days_past_due", "dpd", "dias_vencido", "mora_en_dias"])
+
+    if amount_s is None or principal_s is None:
+        return None
+
+    loan_amount = pd.to_numeric(amount_s, errors="coerce").fillna(0.0).clip(lower=0.0)
+    principal_balance = pd.to_numeric(principal_s, errors="coerce").fillna(0.0).clip(lower=0.0)
+    interest_rate = (
+        pd.to_numeric(rate_s, errors="coerce").fillna(0.0)
+        if rate_s is not None
+        else pd.Series(0.0, index=run_df.index)
+    )
+    if not interest_rate.empty and float(interest_rate.median()) > 1:
+        interest_rate = interest_rate / 100.0
+    interest_rate = interest_rate.clip(lower=0.0, upper=1.0)
+
+    status = (
+        status_s.astype(str).str.strip().str.lower()
+        if status_s is not None
+        else pd.Series("active", index=run_df.index, dtype="string")
+    )
+    status = status.replace({"nan": "active", "none": "active", "": "active", "current": "active"})
+
+    dpd = (
+        pd.to_numeric(dpd_s, errors="coerce").fillna(0.0).clip(lower=0.0)
+        if dpd_s is not None
+        else pd.Series(0.0, index=run_df.index)
+    )
+
+    company_s = _resolve_series_by_aliases(run_df, ["company", "empresa"])
+    credit_line_s = _resolve_series_by_aliases(run_df, ["credit_line", "lineacredito"])
+    kam_hunter_s = _resolve_series_by_aliases(
+        run_df, ["kam_hunter", "cod_kam_hunter", "cod_kam_hunter_"]
+    )
+    kam_farmer_s = _resolve_series_by_aliases(
+        run_df, ["kam_farmer", "cod_kam_farmer", "cod_kam_farmer_"]
+    )
+    ministry_s = _resolve_series_by_aliases(run_df, ["ministry", "ministerio"])
+    gov_sector_s = _resolve_series_by_aliases(run_df, ["government_sector", "goes"])
+    collections_s = _resolve_series_by_aliases(run_df, ["collections_eligible", "procede_a_cobrar"])
+
+    loans: list[dict[str, Any]] = []
+    for idx in run_df.index:
+        loan_id = (
+            _clean_optional_text(loan_id_s.loc[idx])
+            if loan_id_s is not None
+            else f"loan-{int(idx) + 1}"
+        )
+        rec: dict[str, Any] = {
+            "id": loan_id or f"loan-{int(idx) + 1}",
+            "loan_amount": float(loan_amount.loc[idx]),
+            "loan_status": str(status.loc[idx]),
+            "interest_rate": float(interest_rate.loc[idx]),
+            "principal_balance": float(principal_balance.loc[idx]),
+            "days_past_due": float(dpd.loc[idx]),
+        }
+
+        optional_fields = [
+            ("company", company_s),
+            ("credit_line", credit_line_s),
+            ("kam_hunter", kam_hunter_s),
+            ("kam_farmer", kam_farmer_s),
+            ("ministry", ministry_s),
+            ("government_sector", gov_sector_s),
+            ("collections_eligible", collections_s),
+        ]
+        for field_name, series in optional_fields:
+            if series is not None:
+                rec[field_name] = _clean_optional_text(series.loc[idx])
+
+        loans.append(rec)
+
+    return {"loans": loans}
+
+
 def _is_semantically_present(series: pd.Series) -> pd.Series:
     text = series.astype(str).str.strip().str.lower()
     return (~series.isna()) & (~text.isin(MISSING_TEXT_MARKERS))
@@ -761,8 +872,14 @@ elif page == "📊 Dashboard" and selected_run:
         st.subheader("🛰 Backend Portfolio Analysis (API)")
 
         portfolio_request = results.get("portfolio")
+        payload_source = "pipeline_results"
+        if not portfolio_request and run_df is not None:
+            portfolio_request = _build_portfolio_payload_from_run_df(run_df)
+            payload_source = "derived_from_clean_data"
 
         if portfolio_request:
+            loan_count = len(portfolio_request.get("loans", [])) if isinstance(portfolio_request, dict) else 0
+            st.caption(f"Portfolio payload source: {payload_source} | loans: {loan_count:,}")
             api_client = AbacoAnalyticsApiClient()
             col_api1, col_api2 = st.columns(2)
             with col_api1:
@@ -783,7 +900,7 @@ elif page == "📊 Dashboard" and selected_run:
                         except Exception as exc:
                             st.error(f"Status fetch failed: {exc}")
         else:
-            st.info("No portfolio payload found in results to send to the API.")
+            st.info("No portfolio payload available to send to the API.")
 
         if kpis:
             kpi_df = pd.DataFrame([kpis]).reindex(sorted(kpis.keys()), axis=1)
