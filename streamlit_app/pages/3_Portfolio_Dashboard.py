@@ -1797,15 +1797,127 @@ def render_agent_results(metrics: dict[str, Any]):
             )
 
 
+def render_segment_breakdown(df: pd.DataFrame) -> None:
+    """Render PAR30/60/90 and default rate broken down by segment dimension."""
+    st.subheader("🏷️ Segment Risk Breakdown")
+
+    SEGMENT_DIMS = {
+        "company": "Company",
+        "credit_line": "Credit Line",
+        "kam_hunter": "KAM Hunter",
+        "kam_farmer": "KAM Farmer",
+        "current_status": "Loan Status",
+        "dpd_bucket": "DPD Bucket",
+    }
+    available_dims = {k: v for k, v in SEGMENT_DIMS.items() if k in df.columns}
+    if not available_dims:
+        st.info("No segment dimension columns found in the current dataset.")
+        return
+
+    dim_label = st.selectbox(
+        "Segment dimension",
+        options=list(available_dims.values()),
+        index=0,
+        key="seg_dim_select",
+    )
+    dim_col = next(k for k, v in available_dims.items() if v == dim_label)
+
+    exposure_col = next(
+        (c for c in ("outstanding_balance", "current_balance", "principal_amount") if c in df.columns),
+        None,
+    )
+    dpd_col = next((c for c in ("days_past_due", "dpd") if c in df.columns), None)
+    status_col = "current_status" if "current_status" in df.columns else "status" if "status" in df.columns else None
+
+    if exposure_col is None:
+        st.warning("No balance column found for segment analysis.")
+        return
+
+    work = df.copy()
+    work[exposure_col] = pd.to_numeric(work[exposure_col], errors="coerce").fillna(0.0)
+    if dpd_col:
+        work[dpd_col] = pd.to_numeric(work[dpd_col], errors="coerce").fillna(0.0)
+
+    rows = []
+    for seg_val, grp in work.groupby(dim_col, sort=False):
+        total = float(grp[exposure_col].sum())
+        if total <= 0:
+            continue
+        row: dict[str, Any] = {
+            "Segment": str(seg_val),
+            "Loans": int(len(grp)),
+            "Outstanding ($)": round(total, 0),
+        }
+        if dpd_col:
+            row["PAR 30 (%)"] = round(float(grp.loc[grp[dpd_col] >= 30, exposure_col].sum()) / total * 100, 2)
+            row["PAR 60 (%)"] = round(float(grp.loc[grp[dpd_col] >= 60, exposure_col].sum()) / total * 100, 2)
+            row["PAR 90 (%)"] = round(float(grp.loc[grp[dpd_col] >= 90, exposure_col].sum()) / total * 100, 2)
+        if status_col:
+            defaulted = (grp[status_col].astype(str).str.lower() == "defaulted").sum()
+            row["Default Rate (%)"] = round(float(defaulted) / len(grp) * 100, 2)
+        rows.append(row)
+
+    if not rows:
+        st.info("No data for selected dimension.")
+        return
+
+    seg_df = pd.DataFrame(rows).sort_values("Outstanding ($)", ascending=False)
+
+    if "PAR 30 (%)" in seg_df.columns:
+        fig = px.bar(
+            seg_df,
+            x="Segment",
+            y=["PAR 30 (%)", "PAR 60 (%)", "PAR 90 (%)"],
+            barmode="group",
+            title=f"PAR 30 / 60 / 90 by {dim_label}",
+            color_discrete_map={"PAR 30 (%)": "#ffc107", "PAR 60 (%)": "#ff9800", "PAR 90 (%)": "#dc3545"},
+            height=380,
+        )
+        fig.update_layout(xaxis_tickangle=-30, legend_title_text="")
+        st.plotly_chart(fig, width="stretch")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        outstanding_fig = px.bar(
+            seg_df,
+            x="Segment",
+            y="Outstanding ($)",
+            title=f"Outstanding Balance by {dim_label}",
+            color="Outstanding ($)",
+            color_continuous_scale="Blues",
+            height=340,
+        )
+        outstanding_fig.update_layout(xaxis_tickangle=-30, showlegend=False)
+        st.plotly_chart(outstanding_fig, width="stretch")
+
+    with col2:
+        if "Default Rate (%)" in seg_df.columns:
+            default_fig = px.bar(
+                seg_df,
+                x="Segment",
+                y="Default Rate (%)",
+                title=f"Default Rate by {dim_label}",
+                color="Default Rate (%)",
+                color_continuous_scale="Reds",
+                height=340,
+            )
+            default_fig.update_layout(xaxis_tickangle=-30, showlegend=False)
+            st.plotly_chart(default_fig, width="stretch")
+
+    st.markdown("#### Segment Detail Table")
+    st.dataframe(seg_df, width="stretch", hide_index=True)
+
+
 def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
     """Render all visualization tabs."""
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
         [
             "📈 Delinquency Trends",
             "📊 Risk Distribution",
             "🗺️ Regional Analysis",
             "📅 Vintage Analysis",
             "📋 Loan Table",
+            "🏷️ Segment Breakdown",
         ]
     )
 
@@ -1852,6 +1964,9 @@ def render_visualization_tabs(df: pd.DataFrame, metrics: dict[str, Any]):
 
     with tab5:
         render_loan_table(df)
+
+    with tab6:
+        render_segment_breakdown(df)
 
 
 def render_loan_table(df: pd.DataFrame):

@@ -584,7 +584,8 @@ class SegmentAnalyticsRequest(BaseModel):
         description=(
             "Segmentation dimension: risk_band, ticket_size_band, payment_frequency, loan_status, "
             "company, credit_line, client_code, issuer, kam_hunter, kam_farmer, advisory_channel, "
-            "origination_month, application_month, utilization_band"
+            "origination_month, application_month, utilization_band, "
+            "ministry, government_sector, collections_eligible"
         ),
     )
     top_n: int = Field(
