@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 import sys
 import json
+import warnings
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -434,7 +435,15 @@ def _coalesce_series(series_list: list[pd.Series], index: pd.Index, default: Any
 
     if default is pd.NA:
         return merged
-    return merged.fillna(default)
+    return merged.where(merged.notna(), default)
+
+
+def _to_datetime_mixed(series: pd.Series) -> pd.Series:
+    """Parse mixed-format date columns while remaining compatible with older pandas."""
+    try:
+        return pd.to_datetime(series, errors="coerce", format="mixed")
+    except TypeError:
+        return pd.to_datetime(series, errors="coerce")
 
 
 def _canonicalize_status(value: Any) -> str:
@@ -477,8 +486,8 @@ def _coerce_numeric(series: pd.Series) -> pd.Series:
 
 
 def _coerce_numeric_nullable(series: pd.Series) -> pd.Series:
-    text = series.astype(str).str.strip()
-    text = text.replace({"": None, "nan": None, "None": None, "NaN": None})
+    text = series.astype("string").str.strip()
+    text = text.mask(text.isin({"", "nan", "none", "null"}), pd.NA)
     cleaned = text.str.replace(r"[^0-9,.\-]", "", regex=True)
 
     comma_only_mask = cleaned.str.contains(",", na=False) & ~cleaned.str.contains(r"\.", na=False)
@@ -617,8 +626,9 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
 
     # Provide generic 'balance' alias used by some KPI formulas.
     if "balance" not in prepared.columns:
-        prepared["balance"] = prepared["outstanding_balance"]
+        prepared = prepared.assign(balance=prepared["outstanding_balance"])
 
+    numeric_updates: dict[str, pd.Series] = {}
     for numeric_col in [
         "days_past_due",
         "interest_rate",
@@ -631,38 +641,41 @@ def _prepare_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
         "balance",
     ]:
         if numeric_col in prepared.columns:
-            prepared[numeric_col] = _coerce_numeric(prepared[numeric_col])
+            numeric_updates[numeric_col] = _coerce_numeric(prepared[numeric_col])
+    if numeric_updates:
+        prepared = prepared.assign(**numeric_updates)
 
     if "interest_rate" in prepared.columns:
         numeric_rate = _coerce_numeric(prepared["interest_rate"])
         if not numeric_rate.empty and numeric_rate.median() > 1:
             numeric_rate = numeric_rate / 100.0
-        prepared["interest_rate"] = numeric_rate
+        prepared = prepared.assign(interest_rate=numeric_rate)
+
+    date_updates: dict[str, pd.Series] = {}
+    application_dt: pd.Series | None = None
+    if "application_date" in prepared.columns:
+        application_dt = _to_datetime_mixed(prepared["application_date"])
+        date_updates["application_date"] = application_dt
 
     if "origination_date" in prepared.columns:
-        prepared["origination_date"] = pd.to_datetime(prepared["origination_date"], errors="coerce")
-    elif "application_date" in prepared.columns:
-        prepared["origination_date"] = pd.to_datetime(prepared["application_date"], errors="coerce")
+        origination_dt = _to_datetime_mixed(prepared["origination_date"])
+        if application_dt is not None:
+            origination_dt = origination_dt.where(origination_dt.notna(), application_dt)
+        date_updates["origination_date"] = origination_dt
+    elif application_dt is not None:
+        date_updates["origination_date"] = application_dt
 
-    if "application_date" in prepared.columns:
-        prepared["application_date"] = pd.to_datetime(prepared["application_date"], errors="coerce")
-        if "origination_date" in prepared.columns:
-            prepared["origination_date"] = prepared["origination_date"].where(
-                prepared["origination_date"].notna(), prepared["application_date"]
-            )
+    if date_updates:
+        prepared = prepared.assign(**date_updates)
 
     # If borrower_name is missing, reuse mapped client_name to keep loan↔client association visible.
     if "borrower_name" not in prepared.columns and "client_name" in prepared.columns:
-        prepared["borrower_name"] = prepared["client_name"]
+        prepared = prepared.assign(borrower_name=prepared["client_name"])
     elif "borrower_name" in prepared.columns and "client_name" in prepared.columns:
-        borrower_series = prepared["borrower_name"].replace(
-            {"": pd.NA, "nan": pd.NA, "None": pd.NA, "NaN": pd.NA}
-        )
-        client_series = prepared["client_name"].replace(
-            {"": pd.NA, "nan": pd.NA, "None": pd.NA, "NaN": pd.NA}
-        )
+        borrower_series = _nullify_missing_entries(prepared["borrower_name"])
+        client_series = _nullify_missing_entries(prepared["client_name"])
         fill_mask = borrower_series.isna() & client_series.notna()
-        prepared["borrower_name"] = borrower_series.where(~fill_mask, client_series)
+        prepared = prepared.assign(borrower_name=borrower_series.where(~fill_mask, client_series))
 
     return prepared.copy()
 
@@ -696,22 +709,21 @@ def _collapse_to_loan_level(df: pd.DataFrame) -> pd.DataFrame:
         "maturity_date",
     ]
     present_dates = [col for col in date_candidates if col in work.columns]
-    for col in present_dates:
-        work[col] = pd.to_datetime(work[col], errors="coerce")
-
     if present_dates:
-        work["_event_date"] = work[present_dates].max(axis=1)
-    else:
-        work["_event_date"] = pd.NaT
+        work = work.assign(**{col: _to_datetime_mixed(work[col]) for col in present_dates})
 
-    work["_row_order"] = range(len(work))
+    event_date = work[present_dates].max(axis=1) if present_dates else pd.Series(pd.NaT, index=work.index)
+    work = work.assign(_event_date=event_date, _row_order=range(len(work))).copy()
     work = work.sort_values(
         ["loan_id", "_event_date", "_row_order"],
         ascending=[True, True, True],
         na_position="last",
     )
+    work = work.copy()
 
-    collapsed = work.groupby("loan_id", as_index=False).last()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", pd.errors.PerformanceWarning)
+        collapsed = work.groupby("loan_id", as_index=False).last()
     collapsed = collapsed.drop(columns=["_event_date", "_row_order"], errors="ignore")
     return collapsed
 
@@ -916,6 +928,7 @@ def _render_validation(df: pd.DataFrame) -> None:
 
 def _run_pipeline(df: pd.DataFrame, filename: str) -> None:
     """Execute the full data pipeline on a prepared dataset."""
+    df = df.copy()
     progress_bar = st.progress(0)
     status_text = st.empty()
 
@@ -1065,7 +1078,10 @@ def _detect_as_of_date(df: pd.DataFrame) -> tuple[str | None, str | None]:
     for col in [*primary_candidates, *fallback_candidates]:
         if col not in df.columns:
             continue
-        parsed = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
+        try:
+            parsed = pd.to_datetime(df[col], errors="coerce", dayfirst=True, format="mixed")
+        except TypeError:
+            parsed = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
         max_dt = parsed.max()
         if pd.notna(max_dt):
             return str(max_dt.date()), col
